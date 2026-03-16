@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <meta name="apple-mobile-web-app-title" content="SMARTCoach"/>
+<link rel="apple-touch-icon" href="icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach</title>
 <!-- build:1773666528231 -->
@@ -45,7 +46,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rlaps{font-size:13px;color:var(--G3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px;margin-bottom:2px}
 .row-bot{display:flex;align-items:center;gap:8px;margin-top:5px}
 .rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum";flex:1}
-.rtime{font-size:14px;color:#222;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";padding-top:2px}
+.rtime{font-size:14px;color:#444;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";margin-top:2px}.rlaplist{margin-top:6px;display:flex;flex-direction:column;gap:3px}.rlapitem{display:flex;justify-content:space-between;align-items:center;padding:2px 0}.rlapnum{font-size:12px;color:var(--G3)}.rlaptm{font-size:14px;font-weight:700;color:#222;font-variant-numeric:tabular-nums}
 .row-btns{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .sbtn{background:var(--W);border:2.5px solid var(--R);color:var(--R);border-radius:12px;font-size:17px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap;font-family:inherit;-webkit-appearance:none;user-select:none}
 .sbtn.on{background:var(--R);color:var(--W)}
@@ -425,12 +426,7 @@ function rr(){
   updMB();
 }
 function rHTML(r){
-  var llapslbl='',llapsline='';
-  if(CL.cfg.laps&&r.laps.length){
-    llapslbl='laps';
-    var lt=r.laps.map(function(x){return fmt(x);}).join('  ');
-    llapsline=lt.length>36?lt.substring(0,34)+'...':lt;
-  }
+
   var rtDisplay='';
   if(r.on&&CL.cfg.laps)rtDisplay=fmt(gle(r));
   else if(r.saved.length)rtDisplay=fmt(r.saved[r.saved.length-1].ms);
@@ -442,8 +438,7 @@ function rHTML(r){
         'oninput="uN('+r.id+',this.value)" onblur="save()"/>'+
       '<div class="ibtn" onclick="oEnt('+r.id+')">i</div>'+
     '</div>'+
-    '<div class="rlabel" id="rb-'+r.id+'">'+llapslbl+'</div>'+
-    '<div class="rlaps" id="rl-'+r.id+'">'+llapsline+'</div>'+
+    '<div class="rlaplist" id="rl-'+r.id+'">'+r.laps.map(function(x,i){return'<div class="rlapitem"><span class="rlapnum">Lap '+(i+1)+'</span><span class="rlaptm">'+fmt(x)+'</span></div>';}).join('')+'</div>'+
     '<div class="row-bot" style="flex-direction:column;align-items:flex-start">'+'<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
       '<div class="rtime" id="rt-'+r.id+'" style="'+(rtDisplay?'':'display:none')+'">'+rtDisplay+'</div>'+
       '<div class="row-btns">'+
@@ -483,10 +478,19 @@ function togR(id){
 }
 function doLap(id){
   var r=find(id);if(!r||!r.on)return;
-  var n=now();r.laps.push(r.le+(n-r.lt));r.le=0;r.lt=n;
-  var lb=document.getElementById('rb-'+r.id),ll=document.getElementById('rl-'+r.id);
-  if(lb)lb.textContent='laps';
-  if(ll){var t=r.laps.map(function(x){return fmt(x);}).join('  ');ll.textContent=t.length>36?t.substring(0,34)+'...':t;}
+  var n=now();
+  var lapTime=r.le+(n-r.lt);
+  r.laps.push(lapTime);
+  r.el+=(n-r.t0);r.le=0;r.lt=0;r.on=false;
+  var row=document.getElementById('rr-'+r.id);
+  if(row){
+    var vEl=row.querySelector('.rtotal');if(vEl)vEl.textContent=fmt(r.el);
+    var ll=row.querySelector('.rlaplist');
+    if(ll)ll.innerHTML=r.laps.map(function(x,i){return'<div class="rlapitem"><span class="rlapnum">Lap '+(i+1)+'</span><span class="rlaptm">'+fmt(x)+'</span></div>';}).join('');
+    var sb=row.querySelector('.sbtn');if(sb){sb.textContent='Start';sb.classList.remove('on');}
+    var lb=row.querySelector('.lapbtn');if(lb)lb.classList.remove('vis');
+  }
+  save();updMB();
 }
 function masterToggle(){
   if(!CL)return;
@@ -519,7 +523,7 @@ function tick(){
       var v=document.getElementById('rv-'+r.id);
       var t=document.getElementById('rt-'+r.id);
       if(v)v.textContent=fmt(ge(r));
-      if(t&&CL.cfg.laps){t.textContent='Lap: '+fmt(gle(r));t.style.display='';}
+      var row2=document.getElementById('rr-'+r.id);if(row2&&CL.cfg.laps){var ct=row2.querySelector('.rcurrlap');if(ct)ct.textContent='Current: '+fmt(gle(r));}
     });
   },100);
 }
