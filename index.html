@@ -29,7 +29,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SCROLL */
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--G1)}
 
-/* ── RUNNER ROW ── */
+/* ââ RUNNER ROW ââ */
 .runner-row{background:var(--G1);border-bottom:0.5px solid var(--G2);padding:8px 12px 10px 14px}
 .row-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0}
@@ -143,3 +143,458 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div style="margin-top:18px;font-size:26px;font-weight:800;color:#2B4FCC;letter-spacing:0.5px">SMARTCoach</div>
   <div style="margin-top:6px;font-size:14px;color:#8e8e93">Timing &amp; Performance Tracker</div>
 </div>
+<!-- LOGS SCREEN -->
+<div class="screen active" id="s-logs">
+  <div class="nav">
+    <div class="nav-btn" onclick="sm('ml')">Edit</div>
+    <div class="nav-title">
+      <svg class="smart-logo" width="28" height="28" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="70" cy="70" r="68" fill="#fff" stroke="#2B4FCC" stroke-width="4"/>
+        <circle cx="70" cy="90" r="5" fill="#2B4FCC"/>
+        <path d="M56 76 Q70 62 84 76" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
+        <path d="M46 65 Q70 40 94 65" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
+        <path d="M36 54 Q70 18 104 54" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
+        <rect x="22" y="96" width="96" height="32" rx="8" fill="#2B4FCC"/>
+        <text x="70" y="118" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="800" fill="#fff" letter-spacing="2">SMART</text>
+      </svg>
+      <span style="color:#fff">Logs</span>
+    </div>
+    <div class="nav-btn r" onclick="shareAll()">Share</div>
+  </div>
+  <div class="scroll"><div class="lsec" id="ll"></div></div>
+  <div class="tbar">
+    <button class="tbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.8" fill="#2B4FCC" stroke="none"/></svg><span>Info</span></button>
+    <button class="tbtn" onclick="sm('ml')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
+    <button class="tbtn" onclick="delLog()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
+  </div>
+</div>
+
+<!-- RUNNERS SCREEN -->
+<div class="screen" id="s-log">
+  <div class="nav">
+    <div class="nav-btn" onclick="go('s-logs')">â¹ Logs</div>
+    <div class="nav-title">
+      <svg class="smart-logo" width="24" height="24" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="70" cy="70" r="68" fill="#fff" stroke="#2B4FCC" stroke-width="4"/>
+        <circle cx="70" cy="90" r="5" fill="#2B4FCC"/>
+        <path d="M56 76 Q70 62 84 76" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
+        <path d="M46 65 Q70 40 94 65" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
+        <path d="M36 54 Q70 18 104 54" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
+        <rect x="22" y="96" width="96" height="32" rx="8" fill="#2B4FCC"/>
+        <text x="70" y="118" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="800" fill="#fff" letter-spacing="2">SMART</text>
+      </svg>
+      <span id="ltit" style="color:#fff">Log</span>
+    </div>
+    <div class="nav-btn r" onclick="shareLog()">Share</div>
+  </div>
+  <div class="scroll" id="rs"></div>
+  <div class="bigbtns">
+    <button class="bb bl" id="mb" onclick="masterToggle()">Start</button>
+    <button class="bb gy" onclick="masterReset()">Reset</button>
+  </div>
+  <div class="tbar">
+    <button class="tbtn" onclick="go('s-sort')"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Sort</span></button>
+    <button class="tbtn" onclick="sums()"><svg viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg><span>Sum</span></button>
+    <button class="tbtn" onclick="addR()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
+    <button class="tbtn" onclick="go('s-set')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
+    <button class="tbtn" onclick="delR()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
+  </div>
+</div>
+
+<!-- LOG ENTRY -->
+<div class="screen" id="s-ent">
+  <div class="nav">
+    <div class="nav-btn" onclick="go('s-log')">â¹ Back</div>
+    <div class="nav-title" style="color:#fff">Log Entry</div>
+    <div style="min-width:60px"></div>
+  </div>
+  <div class="scroll">
+    <div class="lsec">
+      <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">âº</span></div>
+      <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">âº</span></div>
+      <div class="erow"><span class="elbl" id="en" style="color:#555;font-weight:600"></span></div>
+      <div class="erow" id="enote-row" style="display:none"><span class="elbl" id="enotes" style="color:#666;font-size:15px"></span></div>
+    </div>
+    <div class="lhdr">LAPS</div>
+    <div class="lsec" style="margin-top:0" id="elaps"></div>
+  </div>
+  <div class="bact">
+    <span class="blnk" onclick="clrLaps()">Clear Laps</span>
+    <span class="blnk" onclick="go('s-log')">Done</span>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen" id="s-set">
+  <div class="nav">
+    <div class="nav-btn" onclick="go('s-log')">â¹ Back</div>
+    <div class="nav-title" style="color:#fff">Log Settings</div>
+    <div class="nav-btn r" onclick="saveSets()">Done</div>
+  </div>
+  <div class="scroll">
+    <div class="lsec">
+      <div class="nrow">
+        <span class="nlbl">Workout Name</span>
+        <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Workout 1"/>
+      </div>
+      <div class="trow"><span style="font-size:17px">Laps</span><div class="tog on" id="tl" onclick="tg('laps')"></div></div>
+      <div class="trow"><span style="font-size:17px">Multiple</span><div class="tog on" id="tm" onclick="tg('multiple')"></div></div>
+      <div class="trow"><span style="font-size:17px">Notes on Detail Line</span><div class="tog on" id="tn" onclick="tg('notes')"></div></div>
+      <div class="trow" style="border-bottom:none"><span style="font-size:17px">Beep on Start</span><div class="tog on" id="tb" onclick="tg('beep')"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SORT -->
+<div class="screen" id="s-sort">
+  <div class="nav">
+    <div class="nav-btn" onclick="go('s-log')">â¹ Back</div>
+    <div class="nav-title" style="color:#fff">Sort</div>
+    <div style="min-width:60px"></div>
+  </div>
+  <div class="scroll"><div class="lsec" id="sl"></div></div>
+  <div style="flex-shrink:0;padding-bottom:max(10px,env(safe-area-inset-bottom));background:var(--G0)">
+    <div class="sortbtns">
+      <button class="sortbtn on" id="ss-latest" onclick="setSort('latest')">Latest</button>
+      <button class="sortbtn" id="ss-earliest" onclick="setSort('earliest')">Earliest</button>
+      <button class="sortbtn" id="ss-longest" onclick="setSort('longest')">Longest</button>
+      <button class="sortbtn" id="ss-shortest" onclick="setSort('shortest')">Shortest</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD LOG MODAL -->
+<div class="mover h" id="ml">
+  <div class="msh">
+    <div class="mhd"></div>
+    <div class="mttl">New Log</div>
+    <input class="minp" id="mln" placeholder="e.g. Workout 4" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"/>
+    <button class="mbtn" onclick="createLog()">Create</button>
+    <button class="mbtn c" onclick="hm('ml')">Cancel</button>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="mover h" id="msh">
+  <div class="msh">
+    <div class="mhd"></div>
+    <div class="mttl">Share Results</div>
+    <div class="shbox" id="shtxt"></div>
+    <button class="mbtn" onclick="copyShare()">Copy / Share</button>
+    <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
+  </div>
+</div>
+
+<script>
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={};
+
+/* PERSIST */
+function save(){
+  try{
+    var s=logs.map(function(l){
+      return{id:l.id,name:l.name,cfg:l.cfg,runners:l.runners.map(function(r){
+        return{id:r.id,name:r.name,note:r.note||'',saved:r.saved||[]};
+      })};
+    });
+    localStorage.setItem('sc1',JSON.stringify(s));
+    localStorage.setItem('sc1_lid',String(lid));
+    localStorage.setItem('sc1_rid',String(rid));
+  }catch(e){}
+}
+function load(){
+  try{
+    var d=localStorage.getItem('sc1');
+    if(d){
+      var raw=JSON.parse(d);
+      logs=raw.map(function(l){
+        return{id:l.id,name:l.name,cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
+          runners:l.runners.map(function(r){
+            return{id:r.id,name:r.name,note:r.note||'',saved:r.saved||[],
+              on:false,el:0,t0:0,le:0,lt:0,laps:[]};
+          })};
+      });
+      lid=parseInt(localStorage.getItem('sc1_lid')||'10');
+      rid=parseInt(localStorage.getItem('sc1_rid')||'10');
+    }
+  }catch(e){}
+  if(!logs.length){
+    logs=[
+      {id:lid++,name:'Workout 1',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
+      {id:lid++,name:'Workout 2',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
+      {id:lid++,name:'Workout 3',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]}
+    ];
+    save();
+  }
+}
+
+/* UTILS */
+function fmt(ms){
+  if(ms<0)ms=0;
+  var m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),t=Math.floor((ms%1000)/100);
+  return(m<10?'0':'')+m+':'+(s<10?'0':'')+s+'.'+t;
+}
+function tstr(ts){
+  if(!ts)return'â';
+  var d=new Date(ts);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' at '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'});
+}
+function now(){return Date.now();}
+function beep(){
+  try{
+    var c=new(window.AudioContext||window.webkitAudioContext)();
+    var o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.value=1047;
+    g.gain.setValueAtTime(0.5,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15);
+    o.start();o.stop(c.currentTime+0.15);
+  }catch(e){}
+}
+function ge(r){return r.on?r.el+(now()-r.t0):r.el;}
+function gle(r){return r.on?r.le+(now()-r.lt):r.le;}
+function ex(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function find(id){for(var i=0;i<CL.runners.length;i++)if(CL.runners[i].id===id)return CL.runners[i];return null;}
+
+/* NAV */
+function go(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  if(id==='s-logs')rl();
+  else if(id==='s-log')rr();
+  else if(id==='s-sort')rSort();
+  else if(id==='s-set')oSet();
+}
+function sm(id){document.getElementById(id).classList.remove('h');}
+function hm(id){document.getElementById(id).classList.add('h');}
+
+/* LOGS */
+function rl(){
+  var el=document.getElementById('ll');
+  if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap Add to create a log</div>';return;}
+  el.innerHTML=logs.map(function(l){
+    var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
+    return'<div class="lrow" onclick="oLog('+l.id+')">'+
+      '<span class="ltxt">'+ex(l.name)+'</span>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
+      '<span style="color:#bbb;font-size:16px">âº</span></div></div>';
+  }).join('');
+}
+function oLog(id){
+  for(var i=0;i<logs.length;i++){if(logs[i].id===id){CL=logs[i];break;}}
+  document.getElementById('ltit').textContent=CL.name;
+  go('s-log');
+}
+function createLog(){
+  var name=document.getElementById('mln').value.trim()||'New Log';
+  logs.unshift({id:lid++,name:name,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
+  hm('ml');document.getElementById('mln').value='';save();rl();
+}
+function delLog(){
+  if(!logs.length)return;
+  if(confirm('Delete "'+logs[logs.length-1].name+'"?')){logs.pop();save();rl();}
+}
+function shareAll(){
+  var t='SMARTCoach â All Logs\n'+new Date().toLocaleDateString()+'\n\n';
+  logs.forEach(function(l){
+    t+=l.name+'\n';
+    l.runners.forEach(function(r){
+      if(r.saved.length){t+='  '+r.name+':\n';r.saved.forEach(function(s,i){t+='    Run '+(i+1)+': '+fmt(s.ms)+'\n';});}
+    });
+    t+='\n';
+  });
+  oShare(t);
+}
+function mkR(){
+  return{id:rid++,name:'Runner '+((CL?CL.runners.length:0)+1),note:'',
+    on:false,el:0,t0:0,le:0,lt:0,laps:[],saved:[],ts:null};
+}
+function addR(){if(CL){CL.runners.push(mkR());save();rr();}}
+function delR(){
+  if(!CL||!CL.runners.length)return;
+  if(confirm('Remove last runner?')){CL.runners.pop();save();rr();}
+}
+function rr(){
+  if(!CL)return;
+  var el=document.getElementById('rs');
+  if(!CL.runners.length){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
+  }else{
+    el.innerHTML=CL.runners.map(function(r){return rHTML(r);}).join('');
+  }
+  updMB();
+}
+function rHTML(r){
+  var llapslbl='',llapsline='';
+  if(CL.cfg.laps&&r.laps.length){
+    llapslbl='laps';
+    var lt=r.laps.map(function(x){return fmt(x);}).join('  ');
+    llapsline=lt.length>36?lt.substring(0,34)+'...':lt;
+  }
+  var rtDisplay='';
+  if(r.on&&CL.cfg.laps)rtDisplay=fmt(gle(r));
+  else if(r.saved.length)rtDisplay=fmt(r.saved[r.saved.length-1].ms);
+
+  return'<div class="runner-row" id="rr-'+r.id+'">'+
+    '<div class="row-top">'+
+      '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Athlete name" '+
+        'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
+        'oninput="uN('+r.id+',this.value)" onblur="save()"/>'+
+      '<div class="ibtn" onclick="oEnt('+r.id+')">i</div>'+
+    '</div>'+
+    '<input class="rnotes" id="rnote-'+r.id+'" type="text" value="'+ex(r.note||'')+'" placeholder="Notes..." '+
+      'autocomplete="off" autocorrect="off" spellcheck="false" '+
+      'oninput="uNote('+r.id+',this.value)" onblur="save()"/>'+
+    '<div class="rlabel" id="rb-'+r.id+'">'+llapslbl+'</div>'+
+    '<div class="rlaps" id="rl-'+r.id+'">'+llapsline+'</div>'+
+    '<div class="row-bot">'+
+      '<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
+      '<div class="rtime" id="rt-'+r.id+'">'+rtDisplay+'</div>'+
+      '<div class="row-btns">'+
+        '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">Lap</button>'+
+        '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+function uN(id,v){var r=find(id);if(r)r.name=v;}
+function uNote(id,v){var r=find(id);if(r)r.note=v;}
+function updMB(){
+  var any=CL&&CL.runners.some(function(r){return r.on;});
+  var b=document.getElementById('mb');
+  if(b){b.textContent=any?'Stop':'Start';b.style.background=any?'#555':'#2B4FCC';}
+}
+function togR(id){
+  var r=find(id);if(!r)return;
+  if(r.on){
+    var n=now();r.el+=n-r.t0;r.le+=n-r.lt;r.on=false;
+    r.saved.push({ms:r.el,ts:r.ts,laps:r.laps.slice(),note:r.note});
+    r.el=0;r.le=0;r.laps=[];r.lt=0;save();
+  }else{
+    if(CL.cfg.beep)beep();
+    if(!CL.cfg.multiple){
+      CL.runners.forEach(function(x){
+        if(x.id!==id&&x.on){
+          var n2=now();x.el+=n2-x.t0;x.le+=n2-x.lt;x.on=false;
+          x.saved.push({ms:x.el,ts:x.ts,laps:x.laps.slice(),note:x.note});
+          x.el=0;x.le=0;x.laps=[];
+        }
+      });
+    }
+    var n3=now();r.t0=n3;r.lt=n3;r.on=true;r.ts=n3;
+  }
+  rr();tick();
+}
+function doLap(id){
+  var r=find(id);if(!r||!r.on)return;
+  var n=now();r.laps.push(r.le+(n-r.lt));r.le=0;r.lt=n;
+  var lb=document.getElementById('rb-'+r.id),ll=document.getElementById('rl-'+r.id);
+  if(lb)lb.textContent='laps';
+  if(ll){var t=r.laps.map(function(x){return fmt(x);}).join('  ');ll.textContent=t.length>36?t.substring(0,34)+'...':t;}
+}
+function masterToggle(){
+  if(!CL)return;
+  var any=CL.runners.some(function(r){return r.on;});
+  if(any){
+    var n=now();
+    CL.runners.forEach(function(r){
+      if(r.on){r.el+=n-r.t0;r.le+=n-r.lt;r.on=false;
+        r.saved.push({ms:r.el,ts:r.ts,laps:r.laps.slice(),note:r.note});r.el=0;r.le=0;r.laps=[];}
+    });
+    save();
+  }else{
+    if(CL.cfg.beep)beep();
+    var n2=now();CL.runners.forEach(function(r){r.t0=n2;r.lt=n2;r.on=true;r.ts=n2;});
+    tick();
+  }
+  rr();
+}
+function masterReset(){
+  if(!CL)return;
+  CL.runners.forEach(function(r){r.on=false;r.el=0;r.le=0;r.laps=[];r.t0=0;r.lt=0;});
+  rr();
+}
+function tick(){
+  if(tk)return;
+  tk=setInterval(function(){
+    if(!CL){clearInterval(tk);tk=null;return;}
+    if(!CL.runners.some(function(r){return r.on;})){clearInterval(tk);tk=null;return;}
+    CL.runners.filter(function(r){return r.on;}).forEach(function(r){
+      var v=document.getElementById('rv-'+r.id);
+      var t=document.getElementById('rt-'+r.id);
+      if(v)v.textContent=fmt(ge(r));
+      if(t&&CL.cfg.laps)t.textContent=fmt(gle(r));
+    });
+  },100);
+}
+
+/* ENTRY */
+function oEnt(rid2){
+  var r=find(rid2);CE=r;
+  var last=r.saved.length?r.saved[r.saved.length-1]:null;
+  document.getElementById('et').textContent=last?fmt(last.ms):'00:00.0';
+  document.getElementById('ed').textContent=last?tstr(last.ts):'â';
+  document.getElementById('en').textContent=r.name;
+  var nr=document.getElementById('enote-row'),ne=document.getElementById('enotes');
+  if(r.note){ne.textContent='Note: '+r.note;nr.style.display='flex';}else{nr.style.display='none';}
+  var lp=document.getElementById('elaps'),laps=last?last.laps:[],h='';
+  h+=laps.length?laps.map(function(x,i){
+    return'<div class="laprow"><div style="flex:1"><div class="laptm">'+fmt(x)+'</div><div class="lapsub">Lap '+(i+1)+'</div></div><span style="color:#bbb">âº</span></div>';
+  }).join(''):'<div style="padding:14px 16px;color:#8e8e93;background:#fff;font-size:15px">No laps recorded</div>';
+  lp.innerHTML=h;
+  go('s-ent');
+}
+function clrLaps(){
+  if(!CE)return;
+  if(CE.saved.length)CE.saved[CE.saved.length-1].laps=[];
+  CE.laps=[];save();oEnt(CE.id);
+}
+function oSet(){
+  if(!CL)return;
+  TC={laps:CL.cfg.laps,multiple:CL.cfg.multiple,notes:CL.cfg.notes,beep:CL.cfg.beep};
+  document.getElementById('sn').value=CL.name;
+  [{k:'laps',e:'tl'},{k:'multiple',e:'tm'},{k:'notes',e:'tn'},{k:G'beep',e:'tb'}].forEach(function(x){
+    document.getElementById(x.e).className='tog'+(TC[x.k]?' on':'');
+  });
+}
+function tg(k){TC[k]=TC[k]?0:1;var map={laps:'tl',multiple:'tm',notes:'tn',beep:'tb'};document.getElementById(map[k]).className='tog'+(TC[k]?' on':'');}
+function saveSets(){
+  if(!CL)return;var n=document.getElementById('sn').value.trim();if(n)CL.name=n;
+  CL.cfg={laps:TC.laps,multiple:TC.multiple,notes:TC.notes,beep:TC.beep};
+  document.getElementById('ltit').textContent=CL.name;save();go('s-log');
+}
+function sortR(){
+  if(!CL)return[];var rs=CL.runners.slice();
+  function best(r){return r.saved.length?Math.min.apply(null,r.saved.map(function(s){return s.ms;})):Infinity;}
+  function lat(r){return r.saved.length?Math.max.apply(null,r.saved.map(function(s){return s.ts;})):0;}
+  if(SM==='longest')rs.sort(function(a,b){return best(b)-best(a);});
+  else if(SM==='shortest')rs.sort(function(a,b){return best(a)-best(b);});
+  else if(SM==='earliest')rs.sort(function(a,b){return lat(a)-lat(b);});
+  else rs.sort(function(a,b){return lat(b)-lat(a);});return rs;
+}
+function rSort(){
+  var rs=sortR(),el=document.getElementById('sl');
+  el.innerHTML=rs.length?rs.map(function(r){var last=r.saved.length?r.saved[r.saved.length-1]:null;return'<div class="srow"><span class="stm">'+(last?fmt(last.ms):'00:00.0')+'</span><span class="sdt">'+(last?ex(r.name)+' â '+tstr(last.ts):ex(r.name))+'</span></div>';}).join(''):'<div style="padding:16px;color:#8e8e93">No times yet</div>';
+  ['latest','earliest','longest','shortest'].forEach(function(k){document.getElementById('ss-'+k).className='sortbtn'+(SM===k?' on':'');});
+}
+function setSort(m){SM=m;rSort();}
+function shareLog(){
+  if(!CL)return;var t='SMARTCoach â '+CL.name+'\n'+new Date().toLocaleDateString()+'\n\n';
+  CL.runners.forEach(function(r){t+=r.name+':\n';if(!r.saved.length){t+='  (no times)\n';return;}r.saved.forEach(function(s,i){t+='  Run '+(i+1)+': '+fmt(s.ms);if(s.laps&&s.laps.length)t+='  [Laps: '+s.laps.map(function(x){return fmt(x);}).join(', ')+']';if(s.note)t+='  ('+s.note+')';t+='\n';});});oShare(t);
+}
+function sums(){
+  if(!CL)return;var t='SMARTCoach â '+CL.name+' Summary\n'+new Date().toLocaleDateString()+'\n\n';
+  CL.runners.forEach(function(r){var sum=r.saved.reduce(function(a,s){return a+s.ms;},0);var avg=r.saved.length?sum/r.saved.length:0;var best=r.saved.length?Math.min.apply(null,r.saved.map(function(s){return s.ms;})):0;t+=r.name+'\n  Runs: '+Rsaved.length+'\n  Best: '+fmt(best)+'\n  Avg: '+fmt(avg)+'\n\n';});oShare(t);
+}
+function oShare(txt){document.getElementById('shtxt').textContent=txt;sm('msh');}
+function copyShare(){
+  var txt=document.getElementById('shtxt').textContent;
+  if(navigator.share){navigator.share({title:'SMARTCoach Results', text:txt}).catch(function(){});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(txt).catch(function(){});}
+  else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}
+  var b=event.target;b.textContent='Copied!';setTimeout(function(){b.textContent='Copy / Share';},1500);
+}
+load();rl();
+setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
+document.addEventListener('touchend',function(e){var t=e.target;if(t.tagName==='BUTTON'||t.classList.contains('blnk')||t.classList.contains('ibtn')||t.classList.contains('tog'))e.preventDefault();},{passive:false});
+</script>
+</body>
+</html>
