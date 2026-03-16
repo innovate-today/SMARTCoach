@@ -444,8 +444,7 @@ function rHTML(r){
     '</div>'+
     '<div class="rlabel" id="rb-'+r.id+'">'+llapslbl+'</div>'+
     '<div class="rlaps" id="rl-'+r.id+'">'+llapsline+'</div>'+
-    '<div class="row-bot" style="flex-direction:column;align-items:flex-start">'+'
-      '<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
+    '<div class="row-bot" style="flex-direction:column;align-items:flex-start">'+'<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
       '<div class="rtime" id="rt-'+r.id+'" style="'+(rtDisplay?'':'display:none')+'">'+rtDisplay+'</div>'+
       '<div class="row-btns">'+
         '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">Lap</button>'+
