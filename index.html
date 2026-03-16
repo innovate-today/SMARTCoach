@@ -12,7 +12,7 @@
 <!-- build:1773666528231 -->
 <!-- v1773662596808 -->
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 :root{--R:#2B4FCC;--B:#000;--W:#fff;--G0:#f0f0f0;--G1:#e2e2e2;--G2:#c6c6c8;--G3:#8e8e93}
 html,body{height:100%;overflow:hidden;background:var(--B)}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;font-size:16px;color:var(--B)}
@@ -45,7 +45,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rlaps{font-size:13px;color:var(--G3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px;margin-bottom:2px}
 .row-bot{display:flex;align-items:center;gap:8px;margin-top:5px}
 .rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum";flex:1}
-.rtime{font-size:13px;color:var(--G3);font-variant-numeric:tabular-nums;font-feature-settings:"tnum";align-self:flex-end;padding-bottom:2px}
+.rtime{font-size:14px;color:#222;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";padding-top:2px}
 .row-btns{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .sbtn{background:var(--W);border:2.5px solid var(--R);color:var(--R);border-radius:12px;font-size:17px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap;font-family:inherit;-webkit-appearance:none;user-select:none}
 .sbtn.on{background:var(--R);color:var(--W)}
@@ -351,7 +351,7 @@ function beep(){
     o.start();o.stop(c.currentTime+0.15);
   }catch(e){}
 }
-function ge(r){return r.on?r.el+(now()-r.t0):r.el;}
+function ge(r){return r.on?r.el+(now()-r.t0):(r._stop!=null?r._stop:r.el);}
 function gle(r){return r.on?r.le+(now()-r.lt):r.le;}
 function ex(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function find(id){for(var i=0;i<CL.runners.length;i++)if(CL.runners[i].id===id)return CL.runners[i];return null;}
