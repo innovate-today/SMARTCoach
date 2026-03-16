@@ -33,9 +33,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--G1)}
 
 /* ââ RUNNER ROW ââ */
-.runner-row{background:var(--G1);border-bottom:0.5px solid var(--G2);padding:8px 12px 10px 14px}
-.row-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0}
+.runner-row{background:var(--G1);border-bottom:0.5px solid var(--G2);padding:8px 10px 8px 12px}
+.row-top{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:nowrap}
+.rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0;max-width:140px}
 .rname:focus{border-color:var(--R)}
 .rname::placeholder{color:#bbb;font-weight:400}
 .ibtn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--R);color:var(--R);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;font-weight:700;background:none;flex-shrink:0;user-select:none}
@@ -43,8 +43,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rnotes:focus{border-color:var(--G3)}
 .rnotes::placeholder{color:#ccc}
 .rlabel{font-size:12px;color:var(--G3);min-height:14px}
-.rlaps{font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px;margin-bottom:2px;font-weight:600;font-variant-numeric:tabular-nums}.rlapslbl{font-size:11px;color:var(--G3);font-weight:400}
-.row-bot{display:flex;align-items:center;gap:8px;margin-top:5px}
+.rlaps{font-size:13px;color:#333;white-space:normal;word-break:break-word;min-height:16px;margin-top:3px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.6}.rlapslbl{font-size:11px;color:var(--G3);font-weight:400;text-transform:uppercase;letter-spacing:.3px}
+.row-bot{display:flex;align-items:center;gap:8px;margin-top:4px;margin-bottom:2px}
 .rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum";flex:1}
 .rtime{font-size:14px;color:#444;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";margin-top:2px}.rlaplist{margin-top:6px;display:flex;flex-direction:column;gap:3px}.rlapitem{display:flex;justify-content:space-between;align-items:center;padding:2px 0}.rlapnum{font-size:12px;color:var(--G3)}.rlaptm{font-size:14px;font-weight:700;color:#222;font-variant-numeric:tabular-nums}
 .row-btns{display:flex;align-items:center;gap:6px;flex-shrink:0}
@@ -430,26 +430,35 @@ function rr(){
   updMB();
 }
 function rHTML(r){
-  /* laps display: "0:32.1 / 0:28.4 / 0:31.0" on one line */
-  var lapsStr=r.laps.length?r.laps.map(function(x){return fmt(x);}).join(' / '):'';
+  /* laps: wrap every 5 laps to a new line */
+  var lapsHtml='';
+  if(CL.cfg.laps&&r.laps.length){
+    var lines=[],chunk=[];
+    r.laps.forEach(function(x,i){
+      chunk.push(fmt(x));
+      if(chunk.length===5){lines.push(chunk.join(' / '));chunk=[];}
+    });
+    if(chunk.length)lines.push(chunk.join(' / '));
+    lapsHtml='<div class="rlaps" id="rl-'+r.id+'"><span class="rlapslbl">Laps: </span>'+lines.join(' /<br>')+'</div>';
+  }else{
+    lapsHtml='<div class="rlaps" id="rl-'+r.id+'"></div>';
+  }
 
   return'<div class="runner-row" id="rr-'+r.id+'">'+
     '<div class="row-top">'+
-      '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Athlete name" '+
+      '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name" '+
         'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
         'oninput="uN('+r.id+',this.value)" onblur="save()"/>'+
-      '<div class="ibtn" onclick="oEnt('+r.id+')">i</div>'+
-    '</div>'+
-    '<div class="row-bot">'+
-      '<div style="flex:1">'+
-        '<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
-        '<div class="rlaps" id="rl-'+r.id+'">'+(lapsStr?'<span class="rlapslbl">Laps: </span>'+lapsStr:'')+'</div>'+
-      '</div>'+
-      '<div class="row-btns">'+
+      '<div class="row-btns" style="gap:6px">'+
         '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">Lap</button>'+
         '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>'+
       '</div>'+
+      '<div class="ibtn" onclick="oEnt('+r.id+')">i</div>'+
     '</div>'+
+    '<div class="row-bot">'+
+      '<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
+    '</div>'+
+    lapsHtml+
   '</div>';
 }
 function uN(id,v){var r=find(id);if(r)r.name=v;}
@@ -497,14 +506,19 @@ function togR(id){
 function doLap(id){
   var r=find(id);if(!r||!r.on)return;
   var n=now();
-  var lapTime=r.le+(n-r.lt);   /* time for THIS lap */
+  var lapTime=r.le+(n-r.lt);
   r.laps.push(lapTime);
-  r.le=0;r.lt=n;               /* reset lap counter, keep total running */
-  /* update lap display inline without full rr() */
+  r.le=0;r.lt=n;
+  /* rebuild lap display with 5-per-line wrapping */
   var lapEl=document.getElementById('rl-'+r.id);
-  if(lapEl){
-    var s=r.laps.map(function(x){return fmt(x);}).join(' / ');
-    lapEl.innerHTML='<span class="rlapslbl">Laps: </span>'+s;
+  if(lapEl&&CL.cfg.laps){
+    var lines=[],chunk=[];
+    r.laps.forEach(function(x){
+      chunk.push(fmt(x));
+      if(chunk.length===5){lines.push(chunk.join(' / '));chunk=[];}
+    });
+    if(chunk.length)lines.push(chunk.join(' / '));
+    lapEl.innerHTML='<span class="rlapslbl">Laps: </span>'+lines.join(' /<br>');
   }
 }
 
