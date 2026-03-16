@@ -44,8 +44,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rnotes::placeholder{color:#ccc}
 .rlabel{font-size:12px;color:var(--G3);min-height:14px}
 .rlaps{font-size:13px;color:#333;white-space:normal;word-break:break-word;min-height:16px;margin-top:3px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.6}.rlapslbl{font-size:11px;color:var(--G3);font-weight:400;text-transform:uppercase;letter-spacing:.3px}
-.row-bot{display:flex;align-items:center;gap:8px;margin-top:4px;margin-bottom:2px}
-.rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum";flex:1}
+.row-bot{display:flex;align-items:flex-end;gap:0px;margin-top:4px;margin-bottom:2px}
+.rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum"}.rlaptime{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";color:#2B4FCC;align-self:flex-end;padding-bottom:3px;padding-left:10px;min-width:70px}
 .rtime{font-size:14px;color:#444;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";margin-top:2px}.rlaplist{margin-top:6px;display:flex;flex-direction:column;gap:3px}.rlapitem{display:flex;justify-content:space-between;align-items:center;padding:2px 0}.rlapnum{font-size:12px;color:var(--G3)}.rlaptm{font-size:14px;font-weight:700;color:#222;font-variant-numeric:tabular-nums}
 .row-btns{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .sbtn{background:var(--W);border:2.5px solid var(--R);color:var(--R);border-radius:12px;font-size:17px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap;font-family:inherit;-webkit-appearance:none;user-select:none}
@@ -291,7 +291,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <script>
 var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={};
 
-/* PERSIST */
 function save(){
   try{
     var s=logs.map(function(l){
@@ -330,7 +329,6 @@ function load(){
   }
 }
 
-/* UTILS */
 function fmt(ms){
   if(ms<0)ms=0;
   var m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),t=Math.floor((ms%1000)/100);
@@ -352,14 +350,16 @@ function beep(){
     o.start();o.stop(c.currentTime+0.15);
   }catch(e){}
 }
-/* ge: total elapsed. When stopped, r.el holds the frozen total */
-function ge(r){return r.on?r.el+(now()-r.t0):r.el;}
-/* gle: current lap elapsed */
-function gle(r){return r.on?r.le+(now()-r.lt):r.le;}
+
+/* el = total frozen elapsed (never resets unless masterReset)
+   t0 = timestamp when last started
+   le = current lap elapsed (resets on each lap tap)
+   lt = timestamp when current lap started */
+function ge(r){return r.on ? r.el+(now()-r.t0) : r.el;}
+function gle(r){return r.on ? r.le+(now()-r.lt) : r.le;}
 function ex(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function find(id){for(var i=0;i<CL.runners.length;i++)if(CL.runners[i].id===id)return CL.runners[i];return null;}
 
-/* NAV */
 function go(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
@@ -371,7 +371,6 @@ function go(id){
 function sm(id){document.getElementById(id).classList.remove('h');}
 function hm(id){document.getElementById(id).classList.add('h');}
 
-/* LOGS */
 function rl(){
   var el=document.getElementById('ll');
   if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap Add to create a log</div>';return;}
@@ -409,7 +408,6 @@ function shareAll(){
   oShare(t);
 }
 
-/* RUNNERS */
 function mkR(){
   return{id:rid++,name:'Runner '+((CL?CL.runners.length:0)+1),note:'',
     on:false,el:0,t0:0,le:0,lt:0,laps:[],saved:[],ts:null};
@@ -430,11 +428,10 @@ function rr(){
   updMB();
 }
 function rHTML(r){
-  /* laps: wrap every 5 laps to a new line */
   var lapsHtml='';
   if(CL.cfg.laps&&r.laps.length){
     var lines=[],chunk=[];
-    r.laps.forEach(function(x,i){
+    r.laps.forEach(function(x){
       chunk.push(fmt(x));
       if(chunk.length===5){lines.push(chunk.join(' / '));chunk=[];}
     });
@@ -443,7 +440,6 @@ function rHTML(r){
   }else{
     lapsHtml='<div class="rlaps" id="rl-'+r.id+'"></div>';
   }
-
   return'<div class="runner-row" id="rr-'+r.id+'">'+
     '<div class="row-top">'+
       '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name" '+
@@ -457,6 +453,7 @@ function rHTML(r){
     '</div>'+
     '<div class="row-bot">'+
       '<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
+      '<div class="rlaptime" id="rt-'+r.id+'">'+(r.on?fmt(gle(r)):'')+'</div>'+
     '</div>'+
     lapsHtml+
   '</div>';
@@ -469,47 +466,63 @@ function updMB(){
   if(b){b.textContent=any?'Stop':'Start';b.style.background=any?'#555':'#2B4FCC';}
 }
 
-/* STOP an individual runner: freeze el, keep laps, save run */
+/* Stop a runner: freeze el at current total, freeze le, clear running state */
 function stopRunner(r){
   if(!r.on)return;
   var n=now();
-  r.el+=n-r.t0;   /* freeze total at current value */
-  r.le+=n-r.lt;
+  r.el+=n-r.t0;   /* freeze total time */
+  r.le+=n-r.lt;   /* freeze current lap time */
   r.on=false;
   r.saved.push({ms:r.el,ts:r.ts,laps:r.laps.slice(),note:r.note});
-  /* keep r.el so display holds the stopped time */
-  /* keep r.laps so they stay visible */
 }
 
-/* TOGGLE individual runner start/stop */
+/* Individual start/stop toggle */
 function togR(id){
   var r=find(id);if(!r)return;
   if(r.on){
+    /* STOP: freeze time, save run */
     stopRunner(r);
     save();
+    /* update display to show frozen time */
+    var row=document.getElementById('rr-'+r.id);
+    if(row){
+      var vEl=row.querySelector('.rtotal');if(vEl)vEl.textContent=fmt(r.el);
+      var ltEl=row.querySelector('.rlaptime');if(ltEl)ltEl.textContent='';
+      var sb=row.querySelector('.sbtn');if(sb){sb.textContent='Start';sb.classList.remove('on');}
+      var lb=row.querySelector('.lapbtn');if(lb)lb.classList.remove('vis');
+    }
+    updMB();
   }else{
+    /* START: resume from current el, new lap from scratch */
     if(CL.cfg.beep)beep();
     if(!CL.cfg.multiple){
-      CL.runners.forEach(function(x){
-        if(x.id!==id&&x.on){stopRunner(x);}
-      });
+      CL.runners.forEach(function(x){if(x.id!==id&&x.on)stopRunner(x);});
     }
-    /* Start fresh run - el stays as display but t0 resets for new elapsed */
-    r.el=0;r.le=0;r.laps=[];r.lt=0;
-    var n=now();r.t0=n;r.lt=n;r.on=true;r.ts=n;
+    var n=now();
+    r.t0=n;          /* new start point - el stays frozen from before */
+    r.lt=n;          /* new lap start */
+    r.le=0;          /* reset current lap counter */
+    r.on=true;
+    if(!r.ts)r.ts=n; /* only set ts on very first start */
+    /* update display */
+    var row=document.getElementById('rr-'+r.id);
+    if(row){
+      var sb=row.querySelector('.sbtn');if(sb){sb.textContent='Stop';sb.classList.add('on');}
+      if(CL.cfg.laps){var lb=row.querySelector('.lapbtn');if(lb)lb.classList.add('vis');}
+    }
+    updMB();
     tick();
   }
-  rr();
 }
 
-/* LAP: record split time, keep runner running */
+/* Lap: record split time, keep runner running, reset lap counter */
 function doLap(id){
   var r=find(id);if(!r||!r.on)return;
   var n=now();
-  var lapTime=r.le+(n-r.lt);
+  var lapTime=r.le+(n-r.lt);  /* time for THIS lap only */
   r.laps.push(lapTime);
-  r.le=0;r.lt=n;
-  /* rebuild lap display with 5-per-line wrapping */
+  r.le=0;r.lt=n;               /* reset lap timer, keep total running */
+  /* update lap list display */
   var lapEl=document.getElementById('rl-'+r.id);
   if(lapEl&&CL.cfg.laps){
     var lines=[],chunk=[];
@@ -522,48 +535,60 @@ function doLap(id){
   }
 }
 
-/* MASTER START/STOP - controls all runners */
+/* Master Start/Stop: controls ALL runners */
 function masterToggle(){
   if(!CL)return;
   var any=CL.runners.some(function(r){return r.on;});
   if(any){
-    /* STOP all running runners */
+    /* STOP ALL */
     CL.runners.forEach(function(r){if(r.on)stopRunner(r);});
     save();
+    rr(); /* re-render to show frozen times */
   }else{
-    /* START all runners */
+    /* START ALL */
     if(CL.cfg.beep)beep();
     var n=now();
     CL.runners.forEach(function(r){
-      r.el=0;r.le=0;r.laps=[];r.lt=n;
-      r.t0=n;r.on=true;r.ts=n;
+      r.t0=n;       /* resume from wherever el is frozen */
+      r.lt=n;
+      r.le=0;       /* reset lap counter on fresh start */
+      r.on=true;
+      if(!r.ts)r.ts=n;
     });
+    rr();
     tick();
   }
-  rr();
 }
 
-/* RESET - only when reset button tapped */
+/* Reset: ONLY this clears timers back to zero */
 function masterReset(){
   if(!CL)return;
-  CL.runners.forEach(function(r){r.on=false;r.el=0;r.le=0;r.laps=[];r.t0=0;r.lt=0;});
+  if(!confirm('Reset all timers to 0?'))return;
+  CL.runners.forEach(function(r){
+    r.on=false;r.el=0;r.t0=0;r.le=0;r.lt=0;r.laps=[];r.ts=null;
+  });
   rr();
 }
 
-/* TICK - update live displays */
+/* Tick: update live displays every 100ms */
 function tick(){
   if(tk)return;
   tk=setInterval(function(){
     if(!CL){clearInterval(tk);tk=null;return;}
-    if(!CL.runners.some(function(r){return r.on;})){clearInterval(tk);tk=null;return;}
+    var anyOn=CL.runners.some(function(r){return r.on;});
+    if(!anyOn){clearInterval(tk);tk=null;return;}
     CL.runners.filter(function(r){return r.on;}).forEach(function(r){
-      var v=document.getElementById('rv-'+r.id);
-      if(v)v.textContent=fmt(ge(r));
+      var row=document.getElementById('rr-'+r.id);
+      if(!row)return;
+      var vEl=row.querySelector('.rtotal');
+      if(vEl)vEl.textContent=fmt(ge(r));
+      var ltEl=row.querySelector('.rlaptime');
+      if(ltEl)ltEl.textContent=fmt(gle(r));
     });
   },100);
 }
 
-/* ENTRY / INFO SCREEN */
+/* Info/Entry screen */
 function oEnt(rid2){
   var r=find(rid2);CE=r;
   var last=r.saved.length?r.saved[r.saved.length-1]:null;
@@ -585,7 +610,6 @@ function clrLaps(){
   CE.laps=[];save();oEnt(CE.id);
 }
 
-/* SETTINGS */
 function oSet(){
   if(!CL)return;
   TC={laps:CL.cfg.laps,multiple:CL.cfg.multiple,notes:CL.cfg.notes,beep:CL.cfg.beep};
@@ -601,7 +625,6 @@ function saveSets(){
   document.getElementById('ltit').textContent=CL.name;save();go('s-log');
 }
 
-/* SORT */
 function sortR(){
   if(!CL)return[];var rs=CL.runners.slice();
   function best(r){return r.saved.length?Math.min.apply(null,r.saved.map(function(s){return s.ms;})):Infinity;}
@@ -618,7 +641,6 @@ function rSort(){
 }
 function setSort(m){SM=m;rSort();}
 
-/* SHARE */
 function shareLog(){
   if(!CL)return;var t='SMARTCoach - '+CL.name+'\n'+new Date().toLocaleDateString()+'\n\n';
   CL.runners.forEach(function(r){t+=r.name+':\n';if(!r.saved.length){t+='  (no times)\n';return;}r.saved.forEach(function(s,i){t+='  Run '+(i+1)+': '+fmt(s.ms);if(s.laps&&s.laps.length)t+='  [Laps: '+s.laps.map(function(x){return fmt(x);}).join(' / ')+']';if(s.note)t+='  ('+s.note+')';t+='\n';});});oShare(t);
