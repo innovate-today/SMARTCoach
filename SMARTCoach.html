@@ -235,7 +235,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="lsec">
       <div class="nrow">
         <span class="nlbl">Workout Name</span>
-        <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Boys 1600"/>
+        <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Workout 1"/>
       </div>
       <div class="trow"><span style="font-size:17px">Laps</span><div class="tog on" id="tl" onclick="tg('laps')"></div></div>
       <div class="trow"><span style="font-size:17px">Multiple</span><div class="tog on" id="tm" onclick="tg('multiple')"></div></div>
@@ -268,7 +268,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="msh">
     <div class="mhd"></div>
     <div class="mttl">New Log</div>
-    <input class="minp" id="mln" placeholder="e.g. Boys 1600" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"/>
+    <input class="minp" id="mln" placeholder="e.g. Workout 4" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"/>
     <button class="mbtn" onclick="createLog()">Create</button>
     <button class="mbtn c" onclick="hm('ml')">Cancel</button>
   </div>
@@ -319,9 +319,9 @@ function load(){
   }catch(e){}
   if(!logs.length){
     logs=[
-      {id:lid++,name:'Lynch 3200 - Girls',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
-      {id:lid++,name:'Boys 1600 Lynch',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
-      {id:lid++,name:'1 Mile',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]}
+      {id:lid++,name:'Workout 1',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
+      {id:lid++,name:'Workout 2',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
+      {id:lid++,name:'Workout 3',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]}
     ];
     save();
   }
