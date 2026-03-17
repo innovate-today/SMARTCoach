@@ -240,10 +240,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <span class="nlbl">Workout Name</span>
         <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Workout 1"/>
       </div>
-      <div class="trow"><span style="font-size:17px">Laps</span><div class="tog on" id="tl" onclick="tg('laps')"></div></div>
-      <div class="trow"><span style="font-size:17px">Multiple</span><div class="tog on" id="tm" onclick="tg('multiple')"></div></div>
-      <div class="trow"><span style="font-size:17px">Notes on Detail Line</span><div class="tog on" id="tn" onclick="tg('notes')"></div></div>
-      <div class="trow" style="border-bottom:none"><span style="font-size:17px">Beep on Start</span><div class="tog on" id="tb" onclick="tg('beep')"></div></div>
+      <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('laps')">Laps &#9432;</span><div class="tog on" id="tl" onclick="tg('laps')"></div></div>
+      <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('multiple')">Multiple &#9432;</span><div class="tog on" id="tm" onclick="tg('multiple')"></div></div>
+      <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('notes')">Notes on Detail Line &#9432;</span><div class="tog on" id="tn" onclick="tg('notes')"></div></div>
+      <div class="trow" style="border-bottom:none"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('beep')">Beep on Start &#9432;</span><div class="tog on" id="tb" onclick="tg('beep')"></div></div>
     </div>
   </div>
 </div>
@@ -658,6 +658,19 @@ function copyShare(){
   var b=event.target;b.textContent='Copied!';setTimeout(function(){b.textContent='Copy / Share';},1500);
 }
 
+
+var _info={
+  laps:{t:'Laps',b:'Shows laps. Tap the Lap button during a run to record each lap split time. All lap times appear on the runner row separated by a slash.'},
+  multiple:{t:'Multiple',b:'Allows multiple stopwatches to run at once. When off, starting one runner automatically stops any other runner that is currently running.'},
+  notes:{t:'Notes on Detail Line',b:'Instead of showing the date and time in the stopwatch log, the notes are shown on the detail line of each entry.'},
+  beep:{t:'Beep on Start',b:'Beeps when the start, stop, or lap button is tapped. Useful for eyes-free coaching on the track.'}
+};
+function showInfo(k){
+  var d=_info[k];if(!d)return;
+  document.getElementById('info-title').textContent=d.t;
+  document.getElementById('info-body').textContent=d.b;
+  sm('m-info');
+}
 load();rl();
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
@@ -667,5 +680,6 @@ document.addEventListener('touchstart',function(e){
   }
 },{passive:false});
 </script>
+<div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
 </body>
 </html>
