@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach</title>
+<!-- bust:1774222668118 -->
 <!-- build:1773666528231 -->
 <!-- v1773662596808 -->
 <style>
@@ -175,7 +176,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- RUNNERS SCREEN -->
 <div class="screen" id="s-group">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-groups')">â¹ Logs</div>
+    <div class="nav-btn" onclick="go('s-groups')">â¹ Groups</div>
     <div class="nav-title">
       <svg class="smart-logo" width="24" height="24" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
         <circle cx="70" cy="70" r="68" fill="#fff" stroke="#2B4FCC" stroke-width="4"/>
@@ -238,7 +239,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="lsec">
       <div class="nrow">
         <span class="nlbl">Workout Name</span>
-        <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Workout 1"/>
+        <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Morning Practice"/>
       </div>
       <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('laps')">Laps &#9432;</span><div class="tog on" id="tl" onclick="tg('laps')"></div></div>
       <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('multiple')">Multiple &#9432;</span><div class="tog on" id="tm" onclick="tg('multiple')"></div></div>
@@ -320,9 +321,7 @@ function load(){
       rid=parseInt(localStorage.getItem('sc1_rid')||'10');
     }
   }catch(e){}
-  if(!logs.length){
-    /* No default groups - user starts fresh */
-  }
+  /* no defaults */
 }
 
 function fmt(ms){
