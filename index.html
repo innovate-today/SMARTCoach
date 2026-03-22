@@ -321,12 +321,7 @@ function load(){
     }
   }catch(e){}
   if(!logs.length){
-    logs=[
-      {id:lid++,name:'Workout 1',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
-      {id:lid++,name:'Workout 2',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
-      {id:lid++,name:'Workout 3',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]}
-    ];
-    save();
+    /* No default groups - user starts fresh */
   }
 }
 
@@ -374,7 +369,7 @@ function hm(id){document.getElementById(id).classList.add('h');}
 
 function rl(){
   var el=document.getElementById('ll');
-  if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap Add to create a group</div>';return;}
+  if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap + to add a group</div>';return;}
   el.innerHTML=logs.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
     return'<div class="lrow" onclick="oGroup('+l.id+')">'+
