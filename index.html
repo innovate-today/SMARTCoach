@@ -147,7 +147,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div style="margin-top:6px;font-size:14px;color:#8e8e93">Timing &amp; Performance Tracker</div>
 </div>
 <!-- LOGS SCREEN -->
-<div class="screen active" id="s-logs">
+<div class="screen active" id="s-groups">
   <div class="nav">
     <div class="nav-btn" onclick="sm('ml')">Edit</div>
     <div class="nav-title">
@@ -168,14 +168,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="tbar">
     <button class="tbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.8" fill="#2B4FCC" stroke="none"/></svg><span>Info</span></button>
     <button class="tbtn" onclick="sm('ml')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
-    <button class="tbtn" onclick="delLog()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
+    <button class="tbtn" onclick="delGroup()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
   </div>
 </div>
 
 <!-- RUNNERS SCREEN -->
-<div class="screen" id="s-log">
+<div class="screen" id="s-group">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-logs')">â¹ Logs</div>
+    <div class="nav-btn" onclick="go('s-groups')">â¹ Logs</div>
     <div class="nav-title">
       <svg class="smart-logo" width="24" height="24" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
         <circle cx="70" cy="70" r="68" fill="#fff" stroke="#2B4FCC" stroke-width="4"/>
@@ -186,9 +186,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <rect x="22" y="96" width="96" height="32" rx="8" fill="#2B4FCC"/>
         <text x="70" y="118" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="800" fill="#fff" letter-spacing="2">SMART</text>
       </svg>
-      <span id="ltit" style="color:#fff">Log</span>
+      <span id="ltit" style="color:#fff">Group</span>
     </div>
-    <div class="nav-btn r" onclick="shareLog()">Share</div>
+    <div class="nav-btn r" onclick="shareGroup()">Share</div>
   </div>
   <div class="scroll" id="rs"></div>
   <div class="bigbtns">
@@ -207,8 +207,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- LOG ENTRY -->
 <div class="screen" id="s-ent">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-log')">â¹ Back</div>
-    <div class="nav-title" style="color:#fff">Log Entry</div>
+    <div class="nav-btn" onclick="go('s-group')">â¹ Back</div>
+    <div class="nav-title" style="color:#fff">Group Entry</div>
     <div style="min-width:60px"></div>
   </div>
   <div class="scroll">
@@ -223,14 +223,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
   <div class="bact">
     <span class="blnk" onclick="clrLaps()">Clear Laps</span>
-    <span class="blnk" onclick="go('s-log')">Done</span>
+    <span class="blnk" onclick="go('s-group')">Done</span>
   </div>
 </div>
 
 <!-- SETTINGS -->
 <div class="screen" id="s-set">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-log')">â¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">â¹ Back</div>
     <div class="nav-title" style="color:#fff">Group Settings</div>
     <div class="nav-btn r" onclick="saveSets()">Done</div>
   </div>
@@ -251,7 +251,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- SORT -->
 <div class="screen" id="s-sort">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-log')">â¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">â¹ Back</div>
     <div class="nav-title" style="color:#fff">Sort</div>
     <div style="min-width:60px"></div>
   </div>
@@ -272,7 +272,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl">New Group</div>
     <input class="minp" id="mln" placeholder="e.g. Workout 4" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"/>
-    <button class="mbtn" onclick="createLog()">Create</button>
+    <button class="mbtn" onclick="createGroup()">Create</button>
     <button class="mbtn c" onclick="hm('ml')">Cancel</button>
   </div>
 </div>
@@ -284,6 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mttl">Share Results</div>
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy / Share</button>
+    <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
 </div>
@@ -363,8 +364,8 @@ function find(id){for(var i=0;i<CL.runners.length;i++)if(CL.runners[i].id===id)r
 function go(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
-  if(id==='s-logs')rl();
-  else if(id==='s-log')rr();
+  if(id==='s-groups')rl();
+  else if(id==='s-group')rr();
   else if(id==='s-sort')rSort();
   else if(id==='s-set')oSet();
 }
@@ -376,23 +377,23 @@ function rl(){
   if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap Add to create a group</div>';return;}
   el.innerHTML=logs.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
-    return'<div class="lrow" onclick="oLog('+l.id+')">'+
+    return'<div class="lrow" onclick="oGroup('+l.id+')">'+
       '<span class="ltxt">'+ex(l.name)+'</span>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
       '<span style="color:#bbb;font-size:16px">&rsaquo;</span></div></div>';
   }).join('');
 }
-function oLog(id){
+function oGroup(id){
   for(var i=0;i<logs.length;i++){if(logs[i].id===id){CL=logs[i];break;}}
   document.getElementById('ltit').textContent=CL.name;
-  go('s-log');
+  go('s-group');
 }
-function createLog(){
-  var name=document.getElementById('mln').value.trim()||'New Log';
+function createGroup(){
+  var name=document.getElementById('mln').value.trim()||'New Group';
   logs.unshift({id:lid++,name:name,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
   hm('ml');document.getElementById('mln').value='';save();rl();
 }
-function delLog(){
+function delGroup(){
   if(!logs.length)return;
   if(confirm('Delete "'+logs[logs.length-1].name+'"?')){logs.pop();save();rl();}
 }
@@ -623,7 +624,7 @@ function tg(k){TC[k]=TC[k]?0:1;var map={laps:'tl',multiple:'tm',notes:'tn',beep:
 function saveSets(){
   if(!CL)return;var n=document.getElementById('sn').value.trim();if(n)CL.name=n;
   CL.cfg={laps:TC.laps,multiple:TC.multiple,notes:TC.notes,beep:TC.beep};
-  document.getElementById('ltit').textContent=CL.name;save();go('s-log');
+  document.getElementById('ltit').textContent=CL.name;save();go('s-group');
 }
 
 function sortR(){
@@ -642,7 +643,7 @@ function rSort(){
 }
 function setSort(m){SM=m;rSort();}
 
-function shareLog(){
+function shareGroup(){
   if(!CL)return;var t='SMARTCoach - '+CL.name+'\n'+new Date().toLocaleDateString()+'\n\n';
   CL.runners.forEach(function(r){t+=r.name+':\n';if(!r.saved.length){t+='  (no times)\n';return;}r.saved.forEach(function(s,i){t+='  Run '+(i+1)+': '+fmt(s.ms);if(s.laps&&s.laps.length)t+='  [Laps: '+s.laps.map(function(x){return fmt(x);}).join(' / ')+']';if(s.note)t+='  ('+s.note+')';t+='\n';});});oShare(t);
 }
@@ -715,6 +716,41 @@ function deleteRunner(id){
   if(!CL)return;
   CL.runners=CL.runners.filter(function(r){return r.id!==id;});
   save();rr();
+}
+
+function exportSheets(){
+  if(!CL)return;
+  /* Build TSV: tab-separated, ready to paste into Google Sheets */
+  var rows=[];
+  /* Header row */
+  rows.push(['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Lap 6','Lap 7','Lap 8','Notes'].join('\t'));
+  CL.runners.forEach(function(r){
+    if(!r.saved.length){
+      rows.push([CL.name,r.name,'','','','','','','','','','',''].join('\t'));
+    }else{
+      r.saved.forEach(function(s,i){
+        var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
+        for(var j=0;j<8;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
+        cols.push(s.note||'');
+        rows.push(cols.join('\t'));
+      });
+    }
+  });
+  var tsv=rows.join('\n');
+  /* Copy TSV to clipboard */
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(tsv).then(function(){
+      var btn=document.querySelector('.mbtn[style*="0f9d58"]');
+      if(btn){btn.textContent='Copied! Paste into Sheets';setTimeout(function(){btn.textContent='Export for Google Sheets';},2500);}
+    }).catch(function(){_fallbackCopy(tsv);});
+  }else{_fallbackCopy(tsv);}
+}
+function _fallbackCopy(txt){
+  var ta=document.createElement('textarea');ta.value=txt;
+  document.body.appendChild(ta);ta.select();
+  document.execCommand('copy');document.body.removeChild(ta);
+  var btn=document.querySelector('.mbtn[style*="0f9d58"]');
+  if(btn){btn.textContent='Copied! Paste into Sheets';setTimeout(function(){btn.textContent='Export for Google Sheets';},2500);}
 }
 load();rl();
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
