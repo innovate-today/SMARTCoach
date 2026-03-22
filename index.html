@@ -33,8 +33,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--G1)}
 
 /* ââ RUNNER ROW ââ */
-.runner-row{background:var(--G1);border-bottom:0.5px solid var(--G2);padding:8px 10px 8px 12px}
-.row-top{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:nowrap}
+.runner-row{background:var(--G1);border-bottom:0.5px solid var(--G2);padding:4px 10px 4px 12px;position:relative;overflow:hidden;transition:transform .2s}.rdelbtn{position:absolute;right:0;top:0;bottom:0;width:75px;background:#ff3b30;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;cursor:pointer;user-select:none;transform:translateX(75px);transition:transform .2s}
+.row-top{display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:nowrap}
 .rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0;max-width:140px}
 .rname:focus{border-color:var(--R)}
 .rname::placeholder{color:#bbb;font-weight:400}
@@ -44,7 +44,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rnotes::placeholder{color:#ccc}
 .rlabel{font-size:12px;color:var(--G3);min-height:14px}
 .rlaps{font-size:13px;color:#333;white-space:normal;word-break:break-word;min-height:16px;margin-top:3px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.6}.rlapslbl{font-size:11px;color:var(--G3);font-weight:400;text-transform:uppercase;letter-spacing:.3px}
-.row-bot{display:flex;align-items:flex-end;gap:0px;margin-top:4px;margin-bottom:2px}
+.row-bot{display:flex;align-items:flex-end;gap:0px;margin-top:2px;margin-bottom:0}
 .rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum"}.rlaptime{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";color:#2B4FCC;align-self:flex-end;padding-bottom:3px;padding-left:10px;min-width:70px}
 .rtime{font-size:14px;color:#444;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";margin-top:2px}.rlaplist{margin-top:6px;display:flex;flex-direction:column;gap:3px}.rlapitem{display:flex;justify-content:space-between;align-items:center;padding:2px 0}.rlapnum{font-size:12px;color:var(--G3)}.rlaptm{font-size:14px;font-weight:700;color:#222;font-variant-numeric:tabular-nums}
 .row-btns{display:flex;align-items:center;gap:6px;flex-shrink:0}
@@ -160,7 +160,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <rect x="22" y="96" width="96" height="32" rx="8" fill="#2B4FCC"/>
         <text x="70" y="118" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="800" fill="#fff" letter-spacing="2">SMART</text>
       </svg>
-      <span style="color:#fff">Logs</span>
+      <span style="color:#fff">Groups</span>
     </div>
     <div class="nav-btn r" onclick="shareAll()">Share</div>
   </div>
@@ -231,7 +231,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <div class="screen" id="s-set">
   <div class="nav">
     <div class="nav-btn" onclick="go('s-log')">â¹ Back</div>
-    <div class="nav-title" style="color:#fff">Log Settings</div>
+    <div class="nav-title" style="color:#fff">Group Settings</div>
     <div class="nav-btn r" onclick="saveSets()">Done</div>
   </div>
   <div class="scroll">
@@ -270,7 +270,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <div class="mover h" id="ml">
   <div class="msh">
     <div class="mhd"></div>
-    <div class="mttl">New Log</div>
+    <div class="mttl">New Group</div>
     <input class="minp" id="mln" placeholder="e.g. Workout 4" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"/>
     <button class="mbtn" onclick="createLog()">Create</button>
     <button class="mbtn c" onclick="hm('ml')">Cancel</button>
@@ -373,7 +373,7 @@ function hm(id){document.getElementById(id).classList.add('h');}
 
 function rl(){
   var el=document.getElementById('ll');
-  if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap Add to create a log</div>';return;}
+  if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap Add to create a group</div>';return;}
   el.innerHTML=logs.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
     return'<div class="lrow" onclick="oLog('+l.id+')">'+
@@ -397,7 +397,7 @@ function delLog(){
   if(confirm('Delete "'+logs[logs.length-1].name+'"?')){logs.pop();save();rl();}
 }
 function shareAll(){
-  var t='SMARTCoach - All Logs\n'+new Date().toLocaleDateString()+'\n\n';
+  var t='SMARTCoach - All Groups\n'+new Date().toLocaleDateString()+'\n\n';
   logs.forEach(function(l){
     t+=l.name+'\n';
     l.runners.forEach(function(r){
@@ -440,7 +440,8 @@ function rHTML(r){
   }else{
     lapsHtml='<div class="rlaps" id="rl-'+r.id+'"></div>';
   }
-  return'<div class="runner-row" id="rr-'+r.id+'">'+
+  return'<div class="rdelbtn" id="db-'+r.id+'" onclick="deleteRunner('+r.id+')">Delete</div>'+
+  '<div class="runner-row" id="rr-'+r.id+'" ontouchstart="_ss(event,'+r.id+')" ontouchmove="_sm(event,'+r.id+')" ontouchend="_se(event,'+r.id+')">'+
     '<div class="row-top">'+
       '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name" '+
         'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
@@ -670,6 +671,50 @@ function showInfo(k){
   document.getElementById('info-title').textContent=d.t;
   document.getElementById('info-body').textContent=d.b;
   sm('m-info');
+}
+
+var _sw={};
+function _ss(e,id){var t=e.touches[0];_sw[id]={x:t.clientX,y:t.clientY};}
+function _sm(e,id){
+  var s=_sw[id];if(!s)return;
+  var dx=e.touches[0].clientX-s.x,dy=Math.abs(e.touches[0].clientY-s.y);
+  if(dy>15){delete _sw[id];return;}
+  if(dx<-5){
+    var cl=Math.max(-75,dx);
+    var rw=document.getElementById('rr-'+id);
+    var db=document.getElementById('db-'+id);
+    if(rw)rw.style.transform='translateX('+cl+'px)';
+    if(db)db.style.transform='translateX('+(75+cl)+'px)';
+    e.preventDefault();
+  }
+}
+function _se(e,id){
+  var s=_sw[id];if(!s)return;
+  var dx=e.changedTouches[0].clientX-s.x;
+  var rw=document.getElementById('rr-'+id);
+  var db=document.getElementById('db-'+id);
+  if(dx<-40){
+    if(rw)rw.style.transform='translateX(-75px)';
+    if(db)db.style.transform='translateX(0)';
+  }else{
+    if(rw)rw.style.transform='';
+    if(db)db.style.transform='';
+  }
+  delete _sw[id];
+}
+function _closeAll(){
+  if(!CL)return;
+  CL.runners.forEach(function(r){
+    var rw=document.getElementById('rr-'+r.id);
+    var db=document.getElementById('db-'+r.id);
+    if(rw)rw.style.transform='';
+    if(db)db.style.transform='';
+  });
+}
+function deleteRunner(id){
+  if(!CL)return;
+  CL.runners=CL.runners.filter(function(r){return r.id!==id;});
+  save();rr();
 }
 load();rl();
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
