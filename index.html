@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<!-- build:1774468200805 -->
+<!-- build:1774468645113 -->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
@@ -732,70 +732,56 @@ function deleteRunner(id){
 
 function exportSheets(){
   if(!CL)return;
+  /* Build tab-separated values for Google Sheets */
   var rows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join('\t')];
   CL.runners.forEach(function(r){
-    if(!r.saved.length){rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));}
-    else{r.saved.forEach(function(s,i){
-      var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
-      for(var j=0;j<5;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
-      cols.push(s.note||'');rows.push(cols.join('\t'));
-    });}
+    if(!r.saved.length){
+      rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));
+    }else{
+      r.saved.forEach(function(s,i){
+        var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
+        for(var j=0;j<5;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
+        cols.push(s.note||'');
+        rows.push(cols.join('\t'));
+      });
+    }
   });
   var tsv=rows.join('\n');
+  window._sheetsData=tsv;
+  /* Show in share box */
   document.getElementById('shtxt').textContent=tsv;
-  window._csvForShare=rows.map(function(r){return r.split('\t').join(',');}).join('\n');
   sm('msh');
+  /* Copy directly here - we are inside a user gesture */
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(tsv).then(function(){
+      var btn=document.getElementById('csv-btn');
+      if(btn){var o=btn.textContent;btn.textContent='Copied! Paste into Sheets';btn.style.background='#0a7a44';setTimeout(function(){btn.textContent=o;btn.style.background='#0f9d58';},3000);}
+    }).catch(function(){});
+  }
 }
 function shareCSV(){
-  var csv=window._csvForShare||'';
-  var tsv=window._tsvForShare||'';
-  if(!csv){alert('No data. Record some times first.');return;}
+  var tsv=window._sheetsData||'';
+  if(!tsv)return;
+  /* Build CSV from TSV */
+  var csv=tsv.split('\n').map(function(row){
+    return row.split('\t').map(function(c){return c.indexOf(',')>=0?'"'+c+'"':c;}).join(',');
+  }).join('\n');
   var fname=(CL?CL.name:'SMARTCoach').replace(/[^a-z0-9]/gi,'_')+'.csv';
-
-  /* Method 1: Try native file share (works in Safari browser, not PWA) */
   var blob=new Blob([csv],{type:'text/csv'});
   var file=new File([blob],fname,{type:'text/csv'});
   if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:'SMARTCoach - '+(CL?CL.name:'Data')}).then(function(){
-    }).catch(function(){
-      tryMailto(csv,fname);
-    });
-    return;
+    navigator.share({files:[file],title:'SMARTCoach - '+(CL?CL.name:'Data')}).catch(function(){doDownload(blob,fname);});
+  }else if(navigator.share){
+    navigator.share({title:'SMARTCoach',text:tsv}).catch(function(){doDownload(blob,fname);});
+  }else{
+    doDownload(blob,fname);
   }
-
-  /* Method 2: Email with CSV as attachment via mailto (works in PWA) */
-  tryMailto(csv,fname);
 }
-function tryMailto(csv,fname){
-  /* Build mailto link - opens Mail app on iOS */
-  var subject=encodeURIComponent('SMARTCoach Data - '+(CL?CL.name:'Export'));
-  var body=encodeURIComponent(
-    'Your SMARTCoach data is attached below as CSV.\n\n'+
-    'To import into Google Sheets:\n'+
-    '1. Copy the data below\n'+
-    '2. Open Google Sheets\n'+
-    '3. File > Import > Paste\n\n'+
-    '--- DATA ---\n'+
-    csv
-  );
-  /* Try mailto first */
-  var mailLink='mailto:?subject='+subject+'&body='+body;
-  /* Also offer data URI download as fallback */
-  var dataUri='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  
-  /* Show options in share box */
-  var box=document.getElementById('shtxt');
-  if(box){
-    box.innerHTML='<div style="font-size:12px;color:#333;line-height:1.6">'+
-      '<a href="'+mailLink+'" style="display:block;background:#0f9d58;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:8px">'+
-        '&#9993; Email CSV to myself</a>'+
-      '<a href="'+dataUri+'" download="'+fname+'" style="display:block;background:#2B4FCC;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:700;font-size:15px;text-decoration:none">'+
-        '&#8595; Download CSV file</a>'+
-      '<div style="margin-top:10px;font-size:11px;color:#888;text-align:center">'+
-        'Email yourself the CSV, then open the attachment in Google Sheets'+
-      '</div>'+
-    '</div>';
-  }
+function doDownload(blob,fname){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download=fname;document.body.appendChild(a);a.click();
+  document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url);},1000);
 }
 
 function doDownload(blob,fname){
