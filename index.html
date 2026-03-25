@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<!-- build:1774468645113 -->
+<!-- build:1774468918866 -->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
@@ -732,33 +732,25 @@ function deleteRunner(id){
 
 function exportSheets(){
   if(!CL)return;
-  /* Build tab-separated values for Google Sheets */
   var rows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join('\t')];
   CL.runners.forEach(function(r){
-    if(!r.saved.length){
-      rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));
-    }else{
-      r.saved.forEach(function(s,i){
-        var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
-        for(var j=0;j<5;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
-        cols.push(s.note||'');
-        rows.push(cols.join('\t'));
-      });
-    }
+    if(!r.saved.length){rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));}
+    else{r.saved.forEach(function(s,i){
+      var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
+      for(var j=0;j<5;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
+      cols.push(s.note||'');rows.push(cols.join('\t'));
+    });}
   });
   var tsv=rows.join('\n');
   window._sheetsData=tsv;
-  /* Show in share box */
   document.getElementById('shtxt').textContent=tsv;
   sm('msh');
-  /* Copy directly here - we are inside a user gesture */
-  if(navigator.clipboard&&window.isSecureContext){
-    navigator.clipboard.writeText(tsv).then(function(){
-      var btn=document.getElementById('csv-btn');
-      if(btn){var o=btn.textContent;btn.textContent='Copied! Paste into Sheets';btn.style.background='#0a7a44';setTimeout(function(){btn.textContent=o;btn.style.background='#0f9d58';},3000);}
-    }).catch(function(){});
-  }
+  navigator.clipboard.writeText(tsv).then(function(){
+    var btn=document.getElementById('csv-btn');
+    if(btn){var o=btn.textContent;btn.textContent='Copied! Paste into Sheets';btn.style.background='#0a7a44';setTimeout(function(){btn.textContent=o;btn.style.background='#0f9d58';},3000);}
+  }).catch(function(){});
 }
+
 function shareCSV(){
   var tsv=window._sheetsData||'';
   if(!tsv)return;
