@@ -286,7 +286,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mttl">Share Results</div>
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy / Share</button>
-    <button class="mbtn" style="margin-top:8px;background:#0f9d58" id="sheets-btn" onclick="exportSheets()">Export for Google Sheets</button>
+    <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
 </div>
@@ -731,23 +731,54 @@ function deleteRunner(id){
 
 function exportSheets(){
   if(!CL)return;
-  var rows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join('\t')];
+  /* Build CSV rows */
+  var csvRows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join(',')];
+  var tsvRows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join('\t')];
   CL.runners.forEach(function(r){
-    if(!r.saved.length){rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));}
-    else{r.saved.forEach(function(s,i){
+    if(!r.saved.length){
+      csvRows.push([CL.name,r.name,'','','','','','','',''].join(','));
+      tsvRows.push([CL.name,r.name,'','','','','','','',''].join('\t'));
+    }else{r.saved.forEach(function(s,i){
       var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
       for(var j=0;j<5;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
-      cols.push(s.note||'');rows.push(cols.join('\t'));
+      cols.push(s.note||'');
+      csvRows.push(cols.join(','));
+      tsvRows.push(cols.join('\t'));
     });}
   });
-  var tsv=rows.join('\n');
-  /* Show data in share box */
-  document.getElementById('shtxt').textContent=tsv;
-  document.getElementById('msh').querySelector('.mttl').textContent='Copy then Paste into Sheets';
-  sm('msh');
-  /* Try auto-copy */
+  window._csvData=csvRows.join('\n');
+  window._tsvData=tsvRows.join('\n');
+  document.getElementById('sheets-txt').textContent=window._tsvData;
+  sm('m-sheets');
+}
+function doShareCSV(){
+  var csv=window._csvData||'';
+  if(!csv)return;
+  var fname=CL.name.replace(/[^a-z0-9]/gi,'_')+'.csv';
+  var blob=new Blob([csv],{type:'text/csv'});
+  var file=new File([blob],fname,{type:'text/csv'});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:'SMARTCoach - '+CL.name}).catch(function(){});
+  }else if(navigator.share){
+    navigator.share({title:'SMARTCoach - '+CL.name,text:window._tsvData}).catch(function(){});
+  }else{
+    /* Desktop fallback: download the CSV */
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download=fname;a.click();
+    URL.revokeObjectURL(url);
+  }
+}
+function doSheetsCopy(){
+  var tsv=window._tsvData||'';
+  var btn=document.getElementById('sheets-copy-btn');
+  function done(){if(btn){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy Text';},2000);}}
   if(navigator.clipboard&&window.isSecureContext){
-    navigator.clipboard.writeText(tsv).catch(function(){});
+    navigator.clipboard.writeText(tsv).then(done).catch(function(){
+      try{var ta=document.createElement('textarea');ta.value=tsv;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);done();}catch(e){}
+    });
+  }else{
+    try{var ta=document.createElement('textarea');ta.value=tsv;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);done();}catch(e){}
   }
 }
 
@@ -799,5 +830,6 @@ document.addEventListener('touchstart',function(e){
 },{passive:false});
 </script>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h" id="m-sheets"><div class="msh"><div class="mhd"></div><div class="mttl">Export to Google Sheets</div><div style="padding:0 16px 8px;font-size:14px;color:#555;text-align:center;line-height:1.6">Tap <strong>Share CSV File</strong> to send a .csv file directly to Google Sheets, Numbers, or Email.</div><button class="mbtn" id="share-csv-btn" onclick="doShareCSV()" style="background:#0f9d58">&#8679; Share CSV File</button><div style="padding:8px 16px 4px;font-size:13px;color:#888;text-align:center">or copy tab-separated text:</div><div class="shbox" id="sheets-txt" style="margin:0 16px;font-size:11px;max-height:120px"></div><button class="mbtn" id="sheets-copy-btn" onclick="doSheetsCopy()" style="margin-top:8px">Copy Text</button><button class="mbtn c" onclick="hm('m-sheets')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 </body>
 </html>
