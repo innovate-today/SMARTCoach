@@ -440,8 +440,7 @@ function rHTML(r){
   '<div class="rdelbtn" id="db-'+r.id+'" onclick="deleteRunner('+r.id+')">Delete</div>'+
   '<div class="runner-row" id="rr-'+r.id+'" ontouchstart="_ss(event,'+r.id+')" ontouchmove="_sm(event,'+r.id+')" ontouchend="_se(event,'+r.id+')">'+
     '<div class="row-top">'+
-      '<div id="chk-'+r.id+'" onclick="toggleSel('+r.id+')" style="width:20px;height:20px;border-radius:50%;border:2px solid '+(r.sel?'#2B4FCC':'#ccc')+';background:'+(r.sel?'#2B4FCC':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;margin-right:2px">'+(r.sel?'<svg width="11" height="11" viewBox="0 0 11 11"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+\'</div>\'+
-  \'<input class="rname" id="rn-'+r.id+'"' type="text" value="'+ex(r.name)+'" placeholder="Name" '+
+      '<div id="chk-'+r.id+'" onclick="toggleSel('+r.id+')" style="width:20px;height:20px;border-radius:50%;border:2px solid '+(r.sel?'#2B4FCC':'#ccc')+';background:'+(r.sel?'#2B4FCC':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;margin-right:2px">'+(r.sel?'<svg width="11" height="11" viewBox="0 0 11 11"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'<input class="rname" id="rn-'+r.id+'"' type="text" value="'+ex(r.name)+'" placeholder="Name" '+
         'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
         'oninput="uN('+r.id+',this.value)" onblur="save()"/>'+
       '<div class="row-btns" style="gap:6px">'+
