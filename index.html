@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach</title>
+<meta name="version" content="1774470692234"/>
 <!-- v1774460805528 -->
 <!-- bust:1774222668118 -->
 <!-- build:1773666528231 -->
@@ -732,44 +733,23 @@ function deleteRunner(id){
 
 function exportSheets(){
   if(!CL)return;
-  var rows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join('\t')];
+  var rows=[['Group','Runner','Run#','Total','Lap1','Lap2','Lap3','Lap4','Lap5','Notes'].join('\t')];
   CL.runners.forEach(function(r){
     if(!r.saved.length){rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));}
     else{r.saved.forEach(function(s,i){
-      var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
-      for(var j=0;j<5;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
-      cols.push(s.note||'');rows.push(cols.join('\t'));
+      var c=[CL.name,r.name,i+1,fmt(s.ms)];
+      for(var j=0;j<5;j++)c.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
+      c.push(s.note||'');rows.push(c.join('\t'));
     });}
   });
   var tsv=rows.join('\n');
-  window._sheetsData=tsv;
-  /* Show in share modal with selectable textarea */
-  var box=document.getElementById('shtxt');
-  box.innerHTML='';
-  /* Instructions */
-  var inst=document.createElement('div');
-  inst.style.cssText='font-size:13px;color:#333;margin-bottom:8px;line-height:1.5;text-align:center';
-  inst.textContent='Tap the box below, then Select All and Copy. Paste into Google Sheets.';
-  box.appendChild(inst);
-  /* Selectable textarea */
-  var ta=document.createElement('textarea');
-  ta.value=tsv;
-  ta.style.cssText='width:100%;height:80px;font-size:11px;font-family:monospace;border:1px solid #ccc;border-radius:6px;padding:6px;box-sizing:border-box;resize:none;';
-  ta.addEventListener('focus',function(){ta.select();});
-  ta.addEventListener('touchstart',function(){setTimeout(function(){ta.select();},50);},{passive:true});
-  box.appendChild(ta);
+  document.getElementById('shtxt').textContent=tsv;
   sm('msh');
-  document.getElementById('msh').querySelector('.mttl').textContent='Export to Google Sheets';
-  /* Try clipboard silently */
-  if(navigator.clipboard&&window.isSecureContext){
-    navigator.clipboard.writeText(tsv).then(function(){
-      inst.textContent='Copied! Open Google Sheets and paste.';
-      inst.style.color='#0a7a44';
-      inst.style.fontWeight='700';
-    }).catch(function(){});
-  }
+  navigator.clipboard.writeText(tsv).then(function(){
+    var b=document.getElementById('csv-btn');
+    if(b){b.textContent='Copied!';b.style.background='#0a7a44';setTimeout(function(){b.textContent='Export to Google Sheets';b.style.background='#0f9d58';},3000);}
+  }).catch(function(){});
 }
-
 function shareCSV(){
   var tsv=window._sheetsData||'';
   if(!tsv)return;
