@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach</title>
+<!-- v1774460805528 -->
 <!-- bust:1774222668118 -->
 <!-- build:1773666528231 -->
 <!-- v1773662596808 -->
@@ -544,15 +545,13 @@ function masterToggle(){
     save();
     rr(); /* re-render to show frozen times */
   }else{
-    /* START ALL */
+    /* START SELECTED */
     if(CL.cfg.beep)beep();
     var n=now();
+    var hasSel=CL.runners.some(function(r){return r.sel;});
     CL.runners.forEach(function(r){
-      r.t0=n;       /* resume from wherever el is frozen */
-      r.lt=n;
-      r.le=0;       /* reset lap counter on fresh start */
-      r.on=true;
-      if(!r.ts)r.ts=n;
+      if(hasSel&&!r.sel)return;
+      r.t0=n;r.lt=n;r.le=0;r.on=true;if(!r.ts)r.ts=n;
     });
     rr();
     tick();
