@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<!-- build:1774468918866 -->
+<!-- build:1774470307996 -->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
@@ -285,7 +285,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl">Share Results</div>
     <div class="shbox" id="shtxt"></div>
-    <button class="mbtn" onclick="copyShare()">Copy / Share</button>
+    <button class="mbtn" onclick="copyShare()">Copy &amp; Share Results</button>
     <button class="mbtn" id="csv-btn" onclick="exportSheets()" style="margin-top:8px;background:#0f9d58">&#8679; Open in Google Sheets / Numbers</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
@@ -743,12 +743,31 @@ function exportSheets(){
   });
   var tsv=rows.join('\n');
   window._sheetsData=tsv;
-  document.getElementById('shtxt').textContent=tsv;
+  /* Show in share modal with selectable textarea */
+  var box=document.getElementById('shtxt');
+  box.innerHTML='';
+  /* Instructions */
+  var inst=document.createElement('div');
+  inst.style.cssText='font-size:13px;color:#333;margin-bottom:8px;line-height:1.5;text-align:center';
+  inst.textContent='Tap the box below, then Select All and Copy. Paste into Google Sheets.';
+  box.appendChild(inst);
+  /* Selectable textarea */
+  var ta=document.createElement('textarea');
+  ta.value=tsv;
+  ta.style.cssText='width:100%;height:80px;font-size:11px;font-family:monospace;border:1px solid #ccc;border-radius:6px;padding:6px;box-sizing:border-box;resize:none;';
+  ta.addEventListener('focus',function(){ta.select();});
+  ta.addEventListener('touchstart',function(){setTimeout(function(){ta.select();},50);},{passive:true});
+  box.appendChild(ta);
   sm('msh');
-  navigator.clipboard.writeText(tsv).then(function(){
-    var btn=document.getElementById('csv-btn');
-    if(btn){var o=btn.textContent;btn.textContent='Copied! Paste into Sheets';btn.style.background='#0a7a44';setTimeout(function(){btn.textContent=o;btn.style.background='#0f9d58';},3000);}
-  }).catch(function(){});
+  document.getElementById('msh').querySelector('.mttl').textContent='Export to Google Sheets';
+  /* Try clipboard silently */
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(tsv).then(function(){
+      inst.textContent='Copied! Open Google Sheets and paste.';
+      inst.style.color='#0a7a44';
+      inst.style.fontWeight='700';
+    }).catch(function(){});
+  }
 }
 
 function shareCSV(){
