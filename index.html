@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<!-- build:1774467122402 -->
+<!-- build:1774467452559 -->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
@@ -286,6 +286,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mttl">Share Results</div>
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy / Share</button>
+    <button class="mbtn" id="csv-btn" onclick="shareCSV()" style="margin-top:8px;background:#0f9d58">&#8679; Open in Google Sheets / Numbers</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
@@ -731,26 +732,44 @@ function deleteRunner(id){
 
 function exportSheets(){
   if(!CL)return;
-  /* Build CSV rows */
-  var csvRows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join(',')];
-  var tsvRows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join('\t')];
+  var rows=[['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Notes'].join('\t')];
   CL.runners.forEach(function(r){
-    if(!r.saved.length){
-      csvRows.push([CL.name,r.name,'','','','','','','',''].join(','));
-      tsvRows.push([CL.name,r.name,'','','','','','','',''].join('\t'));
-    }else{r.saved.forEach(function(s,i){
+    if(!r.saved.length){rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));}
+    else{r.saved.forEach(function(s,i){
       var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
       for(var j=0;j<5;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
-      cols.push(s.note||'');
-      csvRows.push(cols.join(','));
-      tsvRows.push(cols.join('\t'));
+      cols.push(s.note||'');rows.push(cols.join('\t'));
     });}
   });
-  window._csvData=csvRows.join('\n');
-  window._tsvData=tsvRows.join('\n');
-  document.getElementById('sheets-txt').textContent=window._tsvData;
-  sm('m-sheets');
+  var tsv=rows.join('\n');
+  document.getElementById('shtxt').textContent=tsv;
+  window._csvForShare=rows.map(function(r){return r.split('\t').join(',');}).join('\n');
+  sm('msh');
 }
+function shareCSV(){
+  var csv=window._csvForShare||'';
+  if(!csv){alert('No data to export. Record some times first.');return;}
+  var fname=(CL?CL.name:'SMARTCoach').replace(/[^a-z0-9]/gi,'_')+'.csv';
+  var blob=new Blob([csv],{type:'text/csv'});
+  var file=new File([blob],fname,{type:'text/csv'});
+  /* Try file share first (iOS 15+, opens Sheets/Numbers directly) */
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:'SMARTCoach '+fname}).catch(function(){doDownload(blob,fname);});
+  }else if(navigator.share){
+    /* Older iOS - share as text */
+    navigator.share({title:'SMARTCoach Data',text:csv}).catch(function(){doDownload(blob,fname);});
+  }else{
+    /* Desktop - download file */
+    doDownload(blob,fname);
+  }
+}
+function doDownload(blob,fname){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download=fname;document.body.appendChild(a);a.click();
+  document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url);},1000);
+}
+
 function doShareCSV(){
   var csv=window._csvData||'';
   if(!csv)return;
