@@ -36,7 +36,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SCROLL */
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--G1)}
 
-/* ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ RUNNER ROW ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ */
+/* ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ RUNNER ROW ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ */
 .rr-wrap{position:relative;overflow:hidden;border-bottom:1px solid var(--G2);}.rdelbtn{position:absolute;right:0;top:0;bottom:0;width:72px;background:#ff3b30;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;}.runner-row{background:var(--G1);padding:4px 8px 4px 10px;position:relative;transition:transform .2s ease;will-change:transform;}.runner-row.selected{background:#eef0ff;border-left:3px solid #2B4FCC;}.row-top{display:flex;align-items:center;gap:5px;margin-bottom:2px;flex-wrap:nowrap}
 .rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0;max-width:140px}
 .rname:focus{border-color:var(--R)}
@@ -178,7 +178,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- RUNNERS SCREEN -->
 <div class="screen" id="s-group">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-groups')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Groups</div>
+    <div class="nav-btn" onclick="go('s-groups')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Groups</div>
     <div class="nav-title">
       <svg class="smart-logo" width="24" height="24" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
         <circle cx="70" cy="70" r="68" fill="#fff" stroke="#2B4FCC" stroke-width="4"/>
@@ -210,14 +210,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- LOG ENTRY -->
 <div class="screen" id="s-ent">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Group Entry</div>
     <div style="min-width:60px"></div>
   </div>
   <div class="scroll">
     <div class="lsec">
-      <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂº</span></div>
-      <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂº</span></div>
+      <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂº</span></div>
+      <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂº</span></div>
       <div class="erow"><span class="elbl" id="en" style="color:#555;font-weight:600"></span></div>
       <div class="erow" id="enote-row" style="display:none"><span class="elbl" id="enotes" style="color:#666;font-size:15px"></span></div>
     </div>
@@ -233,7 +233,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- SETTINGS -->
 <div class="screen" id="s-set">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Group Settings</div>
     <div class="nav-btn r" onclick="saveSets()">Done</div>
   </div>
@@ -254,7 +254,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- SORT -->
 <div class="screen" id="s-sort">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Sort</div>
     <div style="min-width:60px"></div>
   </div>
@@ -288,7 +288,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy &amp; Share Results</button>
     <button class="mbtn" id="csv-btn" onclick="exportSheets()" style="background:#0f9d58;margin-top:8px">Export to Google Sheets</button>
-    <button class="mbtn" id="csv-btn" onclick="exportSheets()" style="margin-top:8px;background:#0f9d58">&#8679; Open in Google Sheets / Numbers</button>
+    
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
