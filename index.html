@@ -3,7 +3,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<!-- build:1774470307996 -->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
@@ -11,9 +10,6 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach</title>
-<meta name="version" content="1774470692234"/>
-<!-- v1774460805528 -->
-<!-- bust:1774222668118 -->
 <!-- build:1773666528231 -->
 <!-- v1773662596808 -->
 <style>
@@ -36,12 +32,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SCROLL */
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--G1)}
 
-/* ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ RUNNER ROW ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ */
-.rr-wrap{position:relative;overflow:hidden;border-bottom:1px solid var(--G2);}.rdelbtn{position:absolute;right:0;top:0;bottom:0;width:72px;background:#ff3b30;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;}.runner-row{background:var(--G1);padding:4px 8px 4px 10px;position:relative;transition:transform .2s ease;will-change:transform;}.runner-row.selected{background:#eef0ff;border-left:3px solid #2B4FCC;}.row-top{display:flex;align-items:center;gap:5px;margin-bottom:2px;flex-wrap:nowrap}
+/* Ã¢ÂÂÃ¢ÂÂ RUNNER ROW Ã¢ÂÂÃ¢ÂÂ */
+.rr-wrap{position:relative;overflow:hidden;border-bottom:0.5px solid var(--G2)}.runner-row{background:var(--G1);padding:0 10px 0 12px;position:relative;transition:transform .2s;will-change:transform}.rdelbtn{position:absolute;right:0;top:0;bottom:0;width:75px;background:#ff3b30;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;cursor:pointer;user-select:none;z-index:1;border-bottom:0.5px solid var(--G2)}
+.row-top{display:flex;align-items:center;gap:6px;margin-bottom:0;flex-wrap:nowrap;padding-top:3px}
 .rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0;max-width:140px}
 .rname:focus{border-color:var(--R)}
 .rname::placeholder{color:#bbb;font-weight:400}
-.ibtn{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--R);color:var(--R);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;font-weight:700;background:none;flex-shrink:0;user-select:none}
+.ibtn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--R);color:var(--R);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;font-weight:700;background:none;flex-shrink:0;user-select:none}
 .rnotes{font-size:13px;color:#444;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:5px 10px;width:100%;caret-color:var(--R);-webkit-appearance:none;margin-bottom:4px}
 .rnotes:focus{border-color:var(--G3)}
 .rnotes::placeholder{color:#ccc}
@@ -51,11 +48,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum"}.rlaptime{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";color:#2B4FCC;align-self:flex-end;padding-bottom:3px;padding-left:10px;min-width:70px}
 .rtime{font-size:14px;color:#444;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";margin-top:2px}.rlaplist{margin-top:6px;display:flex;flex-direction:column;gap:3px}.rlapitem{display:flex;justify-content:space-between;align-items:center;padding:2px 0}.rlapnum{font-size:12px;color:var(--G3)}.rlaptm{font-size:14px;font-weight:700;color:#222;font-variant-numeric:tabular-nums}
 .row-btns{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.sbtn{background:var(--W);border:2px solid var(--R);color:var(--R);border-radius:10px;font-size:13px;font-weight:700;padding:4px 9px;cursor:pointer;white-space:nowrap;font-family:inherit;-webkit-appearance:none;user-select:none}
+.sbtn{background:var(--W);border:2.5px solid var(--R);color:var(--R);border-radius:12px;font-size:17px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap;font-family:inherit;-webkit-appearance:none;user-select:none}
 .sbtn.on{background:var(--R);color:var(--W)}
 .sbtn:active{opacity:.7}
-.lapbtn{background:var(--W);border:2px solid #555;color:#333;border-radius:10px;font-size:13px;font-weight:700;padding:5px 9px;cursor:pointer;font-family:inherit;-webkit-appearance:none;user-select:none;display:none}
-.lapbtn.vis{display:inline-flex;align-items:center;}
+.lapbtn{background:var(--W);border:2.5px solid #555;color:#333;border-radius:12px;font-size:17px;font-weight:700;padding:9px 14px;cursor:pointer;font-family:inherit;-webkit-appearance:none;user-select:none;display:none}
+.lapbtn.vis{display:inline-block}
 .lapbtn:active{background:#eee}
 
 /* BIG BTNS */
@@ -178,7 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- RUNNERS SCREEN -->
 <div class="screen" id="s-group">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-groups')">ÃÂ¢ÃÂÃÂ¹ Groups</div>
+    <div class="nav-btn" onclick="go('s-groups')">Ã¢ÂÂ¹ Logs</div>
     <div class="nav-title">
       <svg class="smart-logo" width="24" height="24" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
         <circle cx="70" cy="70" r="68" fill="#fff" stroke="#2B4FCC" stroke-width="4"/>
@@ -210,14 +207,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- LOG ENTRY -->
 <div class="screen" id="s-ent">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂ¢ÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">Ã¢ÂÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Group Entry</div>
     <div style="min-width:60px"></div>
   </div>
   <div class="scroll">
     <div class="lsec">
-      <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">ÃÂ¢ÃÂÃÂº</span></div>
-      <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">ÃÂ¢ÃÂÃÂº</span></div>
+      <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">Ã¢ÂÂº</span></div>
+      <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">Ã¢ÂÂº</span></div>
       <div class="erow"><span class="elbl" id="en" style="color:#555;font-weight:600"></span></div>
       <div class="erow" id="enote-row" style="display:none"><span class="elbl" id="enotes" style="color:#666;font-size:15px"></span></div>
     </div>
@@ -233,7 +230,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- SETTINGS -->
 <div class="screen" id="s-set">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂ¢ÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">Ã¢ÂÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Group Settings</div>
     <div class="nav-btn r" onclick="saveSets()">Done</div>
   </div>
@@ -241,7 +238,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="lsec">
       <div class="nrow">
         <span class="nlbl">Workout Name</span>
-        <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Morning Practice"/>
+        <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Workout 1"/>
       </div>
       <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('laps')">Laps &#9432;</span><div class="tog on" id="tl" onclick="tg('laps')"></div></div>
       <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('multiple')">Multiple &#9432;</span><div class="tog on" id="tm" onclick="tg('multiple')"></div></div>
@@ -254,7 +251,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- SORT -->
 <div class="screen" id="s-sort">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂ¢ÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">Ã¢ÂÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Sort</div>
     <div style="min-width:60px"></div>
   </div>
@@ -286,8 +283,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl">Share Results</div>
     <div class="shbox" id="shtxt"></div>
-    <button class="mbtn" onclick="copyShare()">Copy &amp; Share Results</button>
-    <button class="mbtn" id="csv-btn" onclick="exportSheets()" style="margin-top:8px;background:#0f9d58">&#8679; Open in Google Sheets / Numbers</button>
+    <button class="mbtn" onclick="copyShare()">Copy / Share</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
@@ -317,14 +313,21 @@ function load(){
         return{id:l.id,name:l.name,cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',saved:r.saved||[],
-              on:false,el:0,t0:0,le:0,lt:0,laps:[],sel:true};
+              on:false,el:0,t0:0,le:0,lt:0,laps:[]};
           })};
       });
       lid=parseInt(localStorage.getItem('sc1_lid')||'10');
       rid=parseInt(localStorage.getItem('sc1_rid')||'10');
     }
   }catch(e){}
-  /* no defaults */
+  if(!logs.length){
+    logs=[
+      {id:lid++,name:'Workout 1',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
+      {id:lid++,name:'Workout 2',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
+      {id:lid++,name:'Workout 3',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]}
+    ];
+    save();
+  }
 }
 
 function fmt(ms){
@@ -371,7 +374,7 @@ function hm(id){document.getElementById(id).classList.add('h');}
 
 function rl(){
   var el=document.getElementById('ll');
-  if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap + to add a group</div>';return;}
+  if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap Add to create a group</div>';return;}
   el.innerHTML=logs.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
     return'<div class="lrow" onclick="oGroup('+l.id+')">'+
@@ -408,7 +411,7 @@ function shareAll(){
 
 function mkR(){
   return{id:rid++,name:'Runner '+((CL?CL.runners.length:0)+1),note:'',
-    on:false,el:0,t0:0,le:0,lt:0,laps:[],saved:[],ts:null,sel:true};
+    on:false,el:0,t0:0,le:0,lt:0,laps:[],saved:[],ts:null};
 }
 function addR(){if(CL){CL.runners.push(mkR());save();rr();}}
 function delR(){
@@ -439,30 +442,26 @@ function rHTML(r){
     lapsHtml='<div class="rlaps" id="rl-'+r.id+'"></div>';
   }
   return'<div class="rr-wrap" id="rw-'+r.id+'">'+
-    '<div class="rdelbtn" id="db-'+r.id+'" onclick="deleteRunner('+r.id+')">Delete</div>'+
-    '<div class="runner-row'+(r.sel?' selected':'')+'" id="rr-'+r.id+'"'+
-      ' ontouchstart="_ss(event,'+r.id+')"'+
-      ' ontouchmove="_sm(event,'+r.id+')"'+
-      ' ontouchend="_se(event,'+r.id+')">'+
-      '<div class="row-top">'+
-        '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name"'+
-          ' autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"'+
-          ' oninput="uN('+r.id+',this.value)" onblur="save()"/>'+
-        '<div class="row-btns" style="gap:5px;display:flex;align-items:center;flex-shrink:0">'+
-          '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">Lap</button>'+
-          '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>'+
-        '</div>'+
-        '<div class="ibtn" onclick="oEnt('+r.id+')">i</div>'+
+  '<div class="rdelbtn" id="db-'+r.id+'" onclick="deleteRunner('+r.id+')">Delete</div>'+
+  '<div class="runner-row" id="rr-'+r.id+'" ontouchstart="_ss(event,'+r.id+')" ontouchmove="_sm(event,'+r.id+')" ontouchend="_se(event,'+r.id+')">'+
+    '<div class="row-top">'+
+      '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name" '+
+        'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
+        'oninput="uN('+r.id+',this.value)" onblur="save()"/>'+
+      '<div class="row-btns" style="gap:6px">'+
+        '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">Lap</button>'+
+        '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>'+
       '</div>'+
-      '<div class="row-bot">'+
-        '<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
-        '<div class="rlaptime" id="rt-'+r.id+'">'+(r.on?fmt(gle(r)):'')+'</div>'+
-      '</div>'+
-      lapsHtml+
+      '<div class="ibtn" onclick="oEnt('+r.id+')">i</div>'+
     '</div>'+
+    '<div class="row-bot">'+
+      '<div class="rtotal" id="rv-'+r.id+'">'+fmt(ge(r))+'</div>'+
+      '<div class="rlaptime" id="rt-'+r.id+'">'+(r.on?fmt(gle(r)):'')+'</div>'+
+    '</div>'+
+    lapsHtml+
+  '</div>'+
   '</div>';
 }
-
 function uN(id,v){var r=find(id);if(r)r.name=v;}
 function uNote(id,v){var r=find(id);if(r)r.note=v;}
 function updMB(){
@@ -550,13 +549,15 @@ function masterToggle(){
     save();
     rr(); /* re-render to show frozen times */
   }else{
-    /* START SELECTED */
+    /* START ALL */
     if(CL.cfg.beep)beep();
     var n=now();
-    var hasSel=CL.runners.some(function(r){return r.sel;});
     CL.runners.forEach(function(r){
-      if(hasSel&&!r.sel)return;
-      r.t0=n;r.lt=n;r.le=0;r.on=true;if(!r.ts)r.ts=n;
+      r.t0=n;       /* resume from wherever el is frozen */
+      r.lt=n;
+      r.le=0;       /* reset lap counter on fresh start */
+      r.on=true;
+      if(!r.ts)r.ts=n;
     });
     rr();
     tick();
@@ -733,86 +734,31 @@ function deleteRunner(id){
 
 function exportSheets(){
   if(!CL)return;
-  var rows=[['Group','Runner','Run#','Total','Lap1','Lap2','Lap3','Lap4','Lap5','Notes'].join('\t')];
+  /* Build TSV: tab-separated, ready to paste into Google Sheets */
+  var rows=[];
+  /* Header row */
+  rows.push(['Group','Runner','Run#','Total Time','Lap 1','Lap 2','Lap 3','Lap 4','Lap 5','Lap 6','Lap 7','Lap 8','Notes'].join('\t'));
   CL.runners.forEach(function(r){
-    if(!r.saved.length){rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));}
-    else{r.saved.forEach(function(s,i){
-      var c=[CL.name,r.name,i+1,fmt(s.ms)];
-      for(var j=0;j<5;j++)c.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
-      c.push(s.note||'');rows.push(c.join('\t'));
-    });}
+    if(!r.saved.length){
+      rows.push([CL.name,r.name,'','','','','','','','','','',''].join('\t'));
+    }else{
+      r.saved.forEach(function(s,i){
+        var cols=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
+        for(var j=0;j<8;j++)cols.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
+        cols.push(s.note||'');
+        rows.push(cols.join('\t'));
+      });
+    }
   });
   var tsv=rows.join('\n');
-  document.getElementById('shtxt').textContent=tsv;
-  sm('msh');
-  navigator.clipboard.writeText(tsv).then(function(){
-    var b=document.getElementById('csv-btn');
-    if(b){b.textContent='Copied!';b.style.background='#0a7a44';setTimeout(function(){b.textContent='Export to Google Sheets';b.style.background='#0f9d58';},3000);}
-  }).catch(function(){});
+  /* Copy TSV to clipboard */
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(tsv).then(function(){
+      var btn=document.querySelector('.mbtn[style*="0f9d58"]');
+      if(btn){btn.textContent='Copied! Paste into Sheets';setTimeout(function(){btn.textContent='Export for Google Sheets';},2500);}
+    }).catch(function(){_fallbackCopy(tsv);});
+  }else{_fallbackCopy(tsv);}
 }
-function shareCSV(){
-  var tsv=window._sheetsData||'';
-  if(!tsv)return;
-  /* Build CSV from TSV */
-  var csv=tsv.split('\n').map(function(row){
-    return row.split('\t').map(function(c){return c.indexOf(',')>=0?'"'+c+'"':c;}).join(',');
-  }).join('\n');
-  var fname=(CL?CL.name:'SMARTCoach').replace(/[^a-z0-9]/gi,'_')+'.csv';
-  var blob=new Blob([csv],{type:'text/csv'});
-  var file=new File([blob],fname,{type:'text/csv'});
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:'SMARTCoach - '+(CL?CL.name:'Data')}).catch(function(){doDownload(blob,fname);});
-  }else if(navigator.share){
-    navigator.share({title:'SMARTCoach',text:tsv}).catch(function(){doDownload(blob,fname);});
-  }else{
-    doDownload(blob,fname);
-  }
-}
-function doDownload(blob,fname){
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url;a.download=fname;document.body.appendChild(a);a.click();
-  document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url);},1000);
-}
-
-function doDownload(blob,fname){
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url;a.download=fname;document.body.appendChild(a);a.click();
-  document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url);},1000);
-}
-
-function doShareCSV(){
-  var csv=window._csvData||'';
-  if(!csv)return;
-  var fname=CL.name.replace(/[^a-z0-9]/gi,'_')+'.csv';
-  var blob=new Blob([csv],{type:'text/csv'});
-  var file=new File([blob],fname,{type:'text/csv'});
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:'SMARTCoach - '+CL.name}).catch(function(){});
-  }else if(navigator.share){
-    navigator.share({title:'SMARTCoach - '+CL.name,text:window._tsvData}).catch(function(){});
-  }else{
-    /* Desktop fallback: download the CSV */
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;a.download=fname;a.click();
-    URL.revokeObjectURL(url);
-  }
-}
-function doSheetsCopy(){
-  var tsv=window._tsvData||'';
-  var btn=document.getElementById('sheets-copy-btn');
-  function done(){if(btn){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy Text';},2000);}}
-  if(navigator.clipboard&&window.isSecureContext){
-    navigator.clipboard.writeText(tsv).then(done).catch(function(){
-      try{var ta=document.createElement('textarea');ta.value=tsv;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);done();}catch(e){}
-    });
-  }else{
-    try{var ta=document.createElement('textarea');ta.value=tsv;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);done();}catch(e){}
-  }
-}
-
 function _fallbackCopy(txt){
   var ta=document.createElement('textarea');ta.value=txt;
   document.body.appendChild(ta);ta.select();
@@ -820,17 +766,15 @@ function _fallbackCopy(txt){
   var btn=document.querySelector('.mbtn[style*="0f9d58"]');
   if(btn){btn.textContent='Copied! Paste into Sheets';setTimeout(function(){btn.textContent='Export for Google Sheets';},2500);}
 }
-
-function toggleSel(id){
-  var r=find(id);if(!r)return;
-  r.sel=!r.sel;
-  var row=document.getElementById('rr-'+id);
-  if(row)row.className='runner-row'+(r.sel?' selected':'');
-  var chk=document.getElementById('chk-'+id);
-  if(chk){chk.style.borderColor=r.sel?'#2B4FCC':'#ccc';chk.style.background=r.sel?'#2B4FCC':'transparent';chk.innerHTML=r.sel?'<svg width="11" height="11" viewBox="0 0 11 11"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':'';}
-}
+load();rl();
+setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
+document.addEventListener('touchstart',function(e){
+  var t=e.target;
+  if(t.tagName==='BUTTON'||t.classList.contains('blnk')||t.classList.contains('ibtn')||t.classList.contains('tog')){
+    e.preventDefault();t.click();
+  }
+},{passive:false});
 </script>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h" id="m-sheets"><div class="msh"><div class="mhd"></div><div class="mttl">Export to Google Sheets</div><div style="padding:0 16px 8px;font-size:14px;color:#555;text-align:center;line-height:1.6">Tap <strong>Share CSV File</strong> to send a .csv file directly to Google Sheets, Numbers, or Email.</div><button class="mbtn" id="share-csv-btn" onclick="doShareCSV()" style="background:#0f9d58">&#8679; Share CSV File</button><div style="padding:8px 16px 4px;font-size:13px;color:#888;text-align:center">or copy tab-separated text:</div><div class="shbox" id="sheets-txt" style="margin:0 16px;font-size:11px;max-height:120px"></div><button class="mbtn" id="sheets-copy-btn" onclick="doSheetsCopy()" style="margin-top:8px">Copy Text</button><button class="mbtn c" onclick="hm('m-sheets')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 </body>
 </html>
