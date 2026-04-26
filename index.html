@@ -32,7 +32,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SCROLL */
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--G1)}
 
-/* ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ RUNNER ROW ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ */
+/* ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ RUNNER ROW ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ */
 .rr-wrap{position:relative;overflow:hidden;border-bottom:0.5px solid var(--G2)}.runner-row{background:var(--G1);padding:2px 10px 2px 12px;position:relative;transition:transform .2s;will-change:transform;z-index:1}.rdelbtn{position:absolute;right:0;top:0;bottom:0;width:75px;background:#ff3b30;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;cursor:pointer;user-select:none;z-index:1;border-bottom:0.5px solid var(--G2)}
 .row-top{display:flex;align-items:center;gap:6px;margin-bottom:0;flex-wrap:nowrap;padding-top:3px}
 .rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0;max-width:140px}
@@ -124,7 +124,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SPLASH / HOME */
 .splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;height:100dvh;background:var(--W);position:absolute;inset:0;z-index:200;transition:opacity .4s}
 .splash.gone{opacity:0;pointer-events:none}
-</style>
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}</style>
 </head>
 <body>
 
@@ -207,14 +207,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- LOG ENTRY -->
 <div class="screen" id="s-ent">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Group Entry</div>
     <div style="min-width:60px"></div>
   </div>
   <div class="scroll">
     <div class="lsec">
-      <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂº</span></div>
-      <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂº</span></div>
+      <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂº</span></div>
+      <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂº</span></div>
       <div class="erow"><span class="elbl" id="en" style="color:#555;font-weight:600"></span></div>
       <div class="erow" id="enote-row" style="display:none"><span class="elbl" id="enotes" style="color:#666;font-size:15px"></span></div>
     </div>
@@ -230,7 +230,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- SETTINGS -->
 <div class="screen" id="s-set">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Group Settings</div>
     <div class="nav-btn r" onclick="saveSets()">Done</div>
   </div>
@@ -251,7 +251,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- SORT -->
 <div class="screen" id="s-sort">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
+    <div class="nav-btn" onclick="go('s-group')">ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¹ Back</div>
     <div class="nav-title" style="color:#fff">Sort</div>
     <div style="min-width:60px"></div>
   </div>
@@ -769,6 +769,87 @@ function _fallbackCopy(txt){
   var btn=document.querySelector('.mbtn[style*="0f9d58"]');
   if(btn){btn.textContent='Copied! Paste into Sheets';setTimeout(function(){btn.textContent='Export for Google Sheets';},2500);}
 }
+
+var _GHL_PIT='pit-c2b54bca-9948-47ee-b1d9-bbce5d263d7b';
+var _GHL_LOC='QxwjWekSyUf7sDOFHPB4';
+function openSync(){
+  hm('msh');
+  var name='';
+  if(CL&&CL.runners.length===1)name=CL.runners[0].name;
+  document.getElementById('sy-name').value=name;
+  document.getElementById('sy-status').textContent='';
+  var btn=document.getElementById('sy-btn');
+  btn.textContent='Sync to GHL';btn.style.background='#2B4FCC';btn.disabled=false;
+  sm('m-sync');
+}
+function doGHLSync(){
+  if(!CL)return;
+  var btn=document.getElementById('sy-btn');
+  var status=document.getElementById('sy-status');
+  var athleteName=document.getElementById('sy-name').value.trim();
+  if(!athleteName){status.textContent='Please enter athlete name.';status.style.color='#c00';return;}
+  var season=document.getElementById('sy-season').value;
+  var phase=document.getElementById('sy-phase').value;
+  var wtype=document.getElementById('sy-wtype').value;
+  var esys=document.getElementById('sy-esys').value;
+  var surf=document.getElementById('sy-surf').value;
+  var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  var lines=['SMARTCoach Session — '+dateStr,'Group: '+CL.name+' | Season: '+season,'Phase: '+phase+' | Type: '+wtype,'Energy System: '+esys+' | Surface: '+surf,''];
+  CL.runners.forEach(function(r){
+    if(!r.saved.length)return;
+    lines.push('Athlete: '+r.name);
+    r.saved.forEach(function(s,i){
+      var lapStr=s.laps&&s.laps.length?'Laps: '+s.laps.map(function(l){return fmt(l);}).join(' / '):'';
+      lines.push('  Run '+(i+1)+': '+fmt(s.ms)+(lapStr?' | '+lapStr:'')+(s.note?' | '+s.note:''));
+    });
+  });
+  var noteBody=lines.join('\n');
+  btn.textContent='Syncing...';btn.disabled=true;
+  status.textContent='Looking up athlete...';status.style.color='#555';
+  var nameParts=athleteName.split(' ');
+  var firstName=nameParts[0]||'';
+  var lastName=nameParts.slice(1).join(' ')||'';
+  fetch('https://services.leadconnectorhq.com/contacts/?locationId='+_GHL_LOC+'&query='+encodeURIComponent(athleteName)+'&limit=5',{
+    headers:{'Authorization':'Bearer '+_GHL_PIT,'Version':'2021-07-28'}
+  }).then(function(r){return r.json();}).then(function(data){
+    var existing=data.contacts&&data.contacts.find(function(c){
+      return ((c.firstName||'')+' '+(c.lastName||'')).trim().toLowerCase()===athleteName.toLowerCase();
+    });
+    if(existing){
+      status.textContent='Athlete found. Logging session...';
+      return _ghlNote(existing.id,noteBody,status,btn);
+    }
+    status.textContent='Creating athlete contact...';
+    return fetch('https://services.leadconnectorhq.com/contacts/',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+_GHL_PIT,'Version':'2021-07-28','Content-Type':'application/json'},
+      body:JSON.stringify({firstName:firstName,lastName:lastName,locationId:_GHL_LOC,tags:['smartcoach-athlete',season.toLowerCase()+'-athlete']})
+    }).then(function(r){return r.json();}).then(function(c){
+      status.textContent='Athlete created. Logging session...';
+      return _ghlNote(c.contact.id,noteBody,status,btn);
+    });
+  }).catch(function(e){
+    status.textContent='Error: '+e.message;status.style.color='#c00';
+    btn.textContent='Sync to GHL';btn.disabled=false;
+  });
+}
+function _ghlNote(contactId,body,status,btn){
+  return fetch('https://services.leadconnectorhq.com/contacts/'+contactId+'/notes',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+_GHL_PIT,'Version':'2021-07-28','Content-Type':'application/json'},
+    body:JSON.stringify({body:body,userId:contactId})
+  }).then(function(r){return r.json();}).then(function(n){
+    if(n.note||n.id){
+      status.textContent='Synced to GHL!';status.style.color='#0a7a44';status.style.fontWeight='700';
+      btn.textContent='Synced!';btn.style.background='#0a7a44';
+      setTimeout(function(){btn.textContent='Sync to GHL';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
+    }else{
+      status.textContent='Note error. Try again.';status.style.color='#c00';
+      btn.textContent='Sync to GHL';btn.disabled=false;
+    }
+  });
+}
+
 load();rl();
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
@@ -779,5 +860,6 @@ document.addEventListener('touchstart',function(e){
 },{passive:false});
 </script>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to GHL</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete Name</label><input id="sy-name" class="sinp" type="text" placeholder="First Last" autocomplete="off"/></div><div class="srow"><label class="slbl">Season</label><select id="sy-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Phase</label><select id="sy-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout Type</label><select id="sy-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Plyometrics</option><option>Strength Circuit</option><option>Hill Sprints</option></select></div><div class="srow"><label class="slbl">Energy System</label><select id="sy-esys" class="sinp"><option>ATP-PC (Phosphagen)</option><option>Glycolytic (Anaerobic)</option><option>Oxidative (Aerobic)</option><option>Mixed</option></select></div><div class="srow"><label class="slbl">Surface</label><select id="sy-surf" class="sinp"><option>Track</option><option>Grass</option><option>Trail</option><option>Indoor</option><option>Road</option></select></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doGHLSync()" style="background:#2B4FCC">Sync to GHL</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
 </html>
