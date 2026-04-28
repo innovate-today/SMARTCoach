@@ -285,8 +285,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy / Share</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
-    <button class="mbtn c" style="margin-top:8px" <button class="mbtn" onclick="openSync()" style="background:#2B4FCC;margin-top:8px">SMART Trak Sync</button>
-    onclick="hm('msh')">Close</button>
+    <button class="mbtn" onclick="openSync()" style="background:#2B4FCC;margin-top:8px">SMART Trak Sync</button>
+    <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
 </div>
 
@@ -771,8 +771,6 @@ function _fallbackCopy(txt){
   if(btn){btn.textContent='Copied! Paste into Sheets';setTimeout(function(){btn.textContent='Export for Google Sheets';},2500);}
 }
 
-var _GHL_PIT='pit-c2b54bca-9948-47ee-b1d9-bbce5d263d7b';
-var _GHL_LOC='QxwjWekSyUf7sDOFHPB4';
 function openSync(){
   hm('msh');
   var name='';
@@ -788,66 +786,59 @@ function doGHLSync(){
   var btn=document.getElementById('sy-btn');
   var status=document.getElementById('sy-status');
   var athleteName=document.getElementById('sy-name').value.trim();
-  if(!athleteName){status.textContent='Please enter athlete name.';status.style.color='#c00';return;}
   var season=document.getElementById('sy-season').value;
   var phase=document.getElementById('sy-phase').value;
   var wtype=document.getElementById('sy-wtype').value;
   var esys=document.getElementById('sy-esys').value;
   var surf=document.getElementById('sy-surf').value;
-  var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  var lines=['SMARTCoach Session ÃÂ¢ÃÂÃÂ '+dateStr,'Group: '+CL.name+' | Season: '+season,'Phase: '+phase+' | Type: '+wtype,'Energy System: '+esys+' | Surface: '+surf,''];
-  CL.runners.forEach(function(r){
-    if(!r.saved.length)return;
-    lines.push('Athlete: '+r.name);
-    r.saved.forEach(function(s,i){
-      var lapStr=s.laps&&s.laps.length?'Laps: '+s.laps.map(function(l){return fmt(l);}).join(' / '):'';
-      lines.push('  Run '+(i+1)+': '+fmt(s.ms)+(lapStr?' | '+lapStr:'')+(s.note?' | '+s.note:''));
-    });
+
+  var athletes=CL.runners.filter(function(r){return r.saved&&r.saved.length;}).map(function(r){
+    return {
+      name:(athleteName&&CL.runners.length===1)?athleteName:r.name,
+      runs:r.saved.map(function(s,i){
+        return {
+          runNumber:i+1,
+          totalMs:s.ms,
+          total:fmt(s.ms),
+          laps:(s.laps||[]).map(function(l){return {ms:l,time:fmt(l)};}),
+          note:s.note||'',
+          timestamp:s.ts||null
+        };
+      })
+    };
   });
-  var noteBody=lines.join('\n');
+
+  if(!athletes.length){status.textContent='No saved times to sync.';status.style.color='#c00';return;}
+  if(CL.runners.length===1&&!athletes[0].name.trim()){status.textContent='Please enter athlete name.';status.style.color='#c00';return;}
+
   btn.textContent='Syncing...';btn.disabled=true;
-  status.textContent='Looking up athlete...';status.style.color='#555';
-  var nameParts=athleteName.split(' ');
-  var firstName=nameParts[0]||'';
-  var lastName=nameParts.slice(1).join(' ')||'';
-  fetch('https://services.leadconnectorhq.com/contacts/?locationId='+_GHL_LOC+'&query='+encodeURIComponent(athleteName)+'&limit=5',{
-    headers:{'Authorization':'Bearer '+_GHL_PIT,'Version':'2021-07-28'}
-  }).then(function(r){return r.json();}).then(function(data){
-    var existing=data.contacts&&data.contacts.find(function(c){
-      return ((c.firstName||'')+' '+(c.lastName||'')).trim().toLowerCase()===athleteName.toLowerCase();
-    });
-    if(existing){
-      status.textContent='Athlete found. Logging session...';
-      return _ghlNote(existing.id,noteBody,status,btn);
-    }
-    status.textContent='Creating athlete contact...';
-    return fetch('https://services.leadconnectorhq.com/contacts/',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+_GHL_PIT,'Version':'2021-07-28','Content-Type':'application/json'},
-      body:JSON.stringify({firstName:firstName,lastName:lastName,locationId:_GHL_LOC,tags:['smartcoach-athlete',season.toLowerCase()+'-athlete']})
-    }).then(function(r){return r.json();}).then(function(c){
-      status.textContent='Athlete created. Logging session...';
-      return _ghlNote(c.contact.id,noteBody,status,btn);
-    });
+  status.textContent='Sending session securely...';status.style.color='#555';status.style.fontWeight='400';
+
+  fetch('/api/ghl/sync-session',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      groupName:CL.name,
+      season:season,
+      phase:phase,
+      workoutType:wtype,
+      energySystem:esys,
+      surface:surf,
+      sessionDate:new Date().toISOString(),
+      athletes:athletes
+    })
+  }).then(function(r){
+    return r.json().then(function(data){return {ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Sync failed');
+    var count=result.data&&result.data.synced?result.data.synced.length:athletes.length;
+    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' to GHL!';
+    status.style.color='#0a7a44';status.style.fontWeight='700';
+    btn.textContent='Synced!';btn.style.background='#0a7a44';
+    setTimeout(function(){btn.textContent='Sync to GHL';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
   }).catch(function(e){
     status.textContent='Error: '+e.message;status.style.color='#c00';
     btn.textContent='Sync to GHL';btn.disabled=false;
-  });
-}
-function _ghlNote(contactId,body,status,btn){
-  return fetch('https://services.leadconnectorhq.com/contacts/'+contactId+'/notes',{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+_GHL_PIT,'Version':'2021-07-28','Content-Type':'application/json'},
-    body:JSON.stringify({body:body,userId:contactId})
-  }).then(function(r){return r.json();}).then(function(n){
-    if(n.note||n.id){
-      status.textContent='Synced to GHL!';status.style.color='#0a7a44';status.style.fontWeight='700';
-      btn.textContent='Synced!';btn.style.background='#0a7a44';
-      setTimeout(function(){btn.textContent='Sync to GHL';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
-    }else{
-      status.textContent='Note error. Try again.';status.style.color='#c00';
-      btn.textContent='Sync to GHL';btn.disabled=false;
-    }
   });
 }
 
