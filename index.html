@@ -285,7 +285,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy / Share</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
-    <button class="mbtn" onclick="openSync()" style="background:#2B4FCC;margin-top:8px">SMART Trak Sync</button>
+    <button class="mbtn" onclick="openSync()" style="background:#2B4FCC;margin-top:8px">SMART TraK Sync</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
 </div>
@@ -778,10 +778,10 @@ function openSync(){
   document.getElementById('sy-name').value=name;
   document.getElementById('sy-status').textContent='';
   var btn=document.getElementById('sy-btn');
-  btn.textContent='Sync to GHL';btn.style.background='#2B4FCC';btn.disabled=false;
+  btn.textContent='Sync to SMART TraK';btn.style.background='#2B4FCC';btn.disabled=false;
   sm('m-sync');
 }
-function doGHLSync(){
+function doSMARTTraKSync(){
   if(!CL)return;
   var btn=document.getElementById('sy-btn');
   var status=document.getElementById('sy-status');
@@ -814,7 +814,7 @@ function doGHLSync(){
   btn.textContent='Syncing...';btn.disabled=true;
   status.textContent='Sending session securely...';status.style.color='#555';status.style.fontWeight='400';
 
-  fetch('/api/ghl/sync-session',{
+  fetch('/api/smart-trak/sync-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -832,13 +832,13 @@ function doGHLSync(){
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Sync failed');
     var count=result.data&&result.data.synced?result.data.synced.length:athletes.length;
-    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' to GHL!';
+    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' to SMART TraK!';
     status.style.color='#0a7a44';status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
-    setTimeout(function(){btn.textContent='Sync to GHL';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
+    setTimeout(function(){btn.textContent='Sync to SMART TraK';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
   }).catch(function(e){
     status.textContent='Error: '+e.message;status.style.color='#c00';
-    btn.textContent='Sync to GHL';btn.disabled=false;
+    btn.textContent='Sync to SMART TraK';btn.disabled=false;
   });
 }
 
@@ -852,6 +852,6 @@ document.addEventListener('touchstart',function(e){
 },{passive:false});
 </script>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to GHL</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete Name</label><input id="sy-name" class="sinp" type="text" placeholder="First Last" autocomplete="off"/></div><div class="srow"><label class="slbl">Season</label><select id="sy-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Phase</label><select id="sy-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout Type</label><select id="sy-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Plyometrics</option><option>Strength Circuit</option><option>Hill Sprints</option></select></div><div class="srow"><label class="slbl">Energy System</label><select id="sy-esys" class="sinp"><option>ATP-PC (Phosphagen)</option><option>Glycolytic (Anaerobic)</option><option>Oxidative (Aerobic)</option><option>Mixed</option></select></div><div class="srow"><label class="slbl">Surface</label><select id="sy-surf" class="sinp"><option>Track</option><option>Grass</option><option>Trail</option><option>Indoor</option><option>Road</option></select></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doGHLSync()" style="background:#2B4FCC">Sync to GHL</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMART TraK</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete Name</label><input id="sy-name" class="sinp" type="text" placeholder="First Last" autocomplete="off"/></div><div class="srow"><label class="slbl">Season</label><select id="sy-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Phase</label><select id="sy-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout Type</label><select id="sy-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Plyometrics</option><option>Strength Circuit</option><option>Hill Sprints</option></select></div><div class="srow"><label class="slbl">Energy System</label><select id="sy-esys" class="sinp"><option>ATP-PC (Phosphagen)</option><option>Glycolytic (Anaerobic)</option><option>Oxidative (Aerobic)</option><option>Mixed</option></select></div><div class="srow"><label class="slbl">Surface</label><select id="sy-surf" class="sinp"><option>Track</option><option>Grass</option><option>Trail</option><option>Indoor</option><option>Road</option></select></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMART TraK</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
 </html>
