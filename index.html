@@ -597,10 +597,11 @@ function masterToggle(){
 /* Reset: ONLY this clears timers back to zero */
 function masterReset(){
   if(!CL)return;
-  if(!confirm('Reset all timers to 0?'))return;
+  if(!confirm('Reset all timers and saved run history for this group?'))return;
   CL.runners.forEach(function(r){
-    r.on=false;r.el=0;r.t0=0;r.le=0;r.lt=0;r.laps=[];r.ts=null;
+    r.on=false;r.el=0;r.t0=0;r.le=0;r.lt=0;r.laps=[];r.saved=[];r.ts=null;
   });
+  save();
   rr();
 }
 
