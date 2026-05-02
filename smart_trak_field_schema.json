@@ -1,0 +1,133 @@
+{
+  "objects": [
+    {
+      "displayName": "Performance Record",
+      "apiKey": "performance_record",
+      "priority": 1,
+      "minimumFields": [
+        { "displayName": "Record Name", "apiKey": "record_name", "type": "text", "required": true },
+        { "displayName": "Athlete Contact", "apiKey": "athlete_contact_id", "type": "contact_relation_or_text", "required": true },
+        { "displayName": "Athlete Name Snapshot", "apiKey": "athlete_name_snapshot", "type": "text", "required": true },
+        { "displayName": "Source Session ID", "apiKey": "source_session_id", "type": "text", "required": true },
+        { "displayName": "Source Record ID", "apiKey": "source_record_id", "type": "text", "required": true },
+        { "displayName": "Group Name", "apiKey": "group_name", "type": "text", "required": true },
+        { "displayName": "Session Date", "apiKey": "session_date", "type": "datetime", "required": true },
+        { "displayName": "Season", "apiKey": "season", "type": "dropdown", "required": true, "optionsRef": "season" },
+        { "displayName": "Phase", "apiKey": "phase", "type": "dropdown", "required": true, "optionsRef": "phase" },
+        { "displayName": "Workout Type", "apiKey": "workout_type", "type": "dropdown", "required": true, "optionsRef": "workout_type" },
+        { "displayName": "Energy System", "apiKey": "energy_system", "type": "dropdown", "required": true, "optionsRef": "energy_system" },
+        { "displayName": "Surface", "apiKey": "surface", "type": "dropdown", "required": false, "optionsRef": "surface" },
+        { "displayName": "Rep Number", "apiKey": "rep_number", "type": "number", "required": true },
+        { "displayName": "Total Time Display", "apiKey": "total_time_display", "type": "text", "required": true },
+        { "displayName": "Total Time MS", "apiKey": "total_time_ms", "type": "number", "required": true },
+        { "displayName": "Splits JSON", "apiKey": "splits_json", "type": "long_text", "required": false },
+        { "displayName": "Coach Note", "apiKey": "coach_note", "type": "long_text", "required": false },
+        { "displayName": "Synced At", "apiKey": "synced_at", "type": "datetime", "required": true }
+      ]
+    },
+    {
+      "displayName": "Season Record",
+      "apiKey": "season_record",
+      "priority": 2,
+      "minimumFields": [
+        { "displayName": "Record Name", "apiKey": "record_name", "type": "text", "required": true },
+        { "displayName": "Athlete Contact", "apiKey": "athlete_contact_id", "type": "contact_relation_or_text", "required": true },
+        { "displayName": "Athlete Name Snapshot", "apiKey": "athlete_name_snapshot", "type": "text", "required": true },
+        { "displayName": "Season", "apiKey": "season", "type": "dropdown", "required": true, "optionsRef": "season" },
+        { "displayName": "Season Year", "apiKey": "season_year", "type": "number", "required": true },
+        { "displayName": "Sport", "apiKey": "sport", "type": "dropdown_or_text", "required": true },
+        { "displayName": "Primary Event", "apiKey": "primary_event", "type": "text", "required": false },
+        { "displayName": "Practice Session Count", "apiKey": "practice_session_count", "type": "number", "required": false },
+        { "displayName": "Performance Record Count", "apiKey": "performance_record_count", "type": "number", "required": false },
+        { "displayName": "Meet Count", "apiKey": "meet_count", "type": "number", "required": false },
+        { "displayName": "Season Bests JSON", "apiKey": "season_bests_json", "type": "long_text", "required": false },
+        { "displayName": "Injury Flag", "apiKey": "injury_flag", "type": "checkbox", "required": false },
+        { "displayName": "Coach Season Notes", "apiKey": "coach_season_notes", "type": "long_text", "required": false },
+        { "displayName": "Source Record ID", "apiKey": "source_record_id", "type": "text", "required": true },
+        { "displayName": "Last Calculated At", "apiKey": "last_calculated_at", "type": "datetime", "required": false }
+      ]
+    },
+    {
+      "displayName": "Meet Result",
+      "apiKey": "meet_result",
+      "priority": 3,
+      "minimumFields": [
+        { "displayName": "Record Name", "apiKey": "record_name", "type": "text", "required": true },
+        { "displayName": "Athlete Contact", "apiKey": "athlete_contact_id", "type": "contact_relation_or_text", "required": true },
+        { "displayName": "Athlete Name Snapshot", "apiKey": "athlete_name_snapshot", "type": "text", "required": true },
+        { "displayName": "Meet Name", "apiKey": "meet_name", "type": "text", "required": true },
+        { "displayName": "Meet Date", "apiKey": "meet_date", "type": "date", "required": true },
+        { "displayName": "Season", "apiKey": "season", "type": "dropdown", "required": true, "optionsRef": "season" },
+        { "displayName": "Season Year", "apiKey": "season_year", "type": "number", "required": true },
+        { "displayName": "Sport", "apiKey": "sport", "type": "dropdown_or_text", "required": true },
+        { "displayName": "Event", "apiKey": "event", "type": "text", "required": true },
+        { "displayName": "Result Display", "apiKey": "result_display", "type": "text", "required": true },
+        { "displayName": "Result MS", "apiKey": "result_ms", "type": "number", "required": false },
+        { "displayName": "Wind", "apiKey": "wind", "type": "text", "required": false },
+        { "displayName": "Splits JSON", "apiKey": "splits_json", "type": "long_text", "required": false },
+        { "displayName": "Is PR", "apiKey": "is_pr", "type": "checkbox", "required": false },
+        { "displayName": "Is Season Best", "apiKey": "is_season_best", "type": "checkbox", "required": false },
+        { "displayName": "Coach Race Notes", "apiKey": "coach_race_notes", "type": "long_text", "required": false },
+        { "displayName": "Source System", "apiKey": "source_system", "type": "dropdown_or_text", "required": true },
+        { "displayName": "Source Record ID", "apiKey": "source_record_id", "type": "text", "required": true }
+      ]
+    },
+    {
+      "displayName": "Training Plan",
+      "apiKey": "training_plan",
+      "priority": 4,
+      "minimumFields": [
+        { "displayName": "Record Name", "apiKey": "record_name", "type": "text", "required": true },
+        { "displayName": "Athlete Contact", "apiKey": "athlete_contact_id", "type": "contact_relation_or_text", "required": true },
+        { "displayName": "Athlete Name Snapshot", "apiKey": "athlete_name_snapshot", "type": "text", "required": true },
+        { "displayName": "Plan Scope", "apiKey": "plan_scope", "type": "dropdown", "required": true, "optionsRef": "plan_scope" },
+        { "displayName": "Plan Date", "apiKey": "plan_date", "type": "date", "required": true },
+        { "displayName": "Season", "apiKey": "season", "type": "dropdown", "required": true, "optionsRef": "season" },
+        { "displayName": "Season Year", "apiKey": "season_year", "type": "number", "required": true },
+        { "displayName": "Phase", "apiKey": "phase", "type": "dropdown", "required": true, "optionsRef": "phase" },
+        { "displayName": "Workout Type", "apiKey": "workout_type", "type": "dropdown", "required": true, "optionsRef": "workout_type" },
+        { "displayName": "Energy System", "apiKey": "energy_system", "type": "dropdown", "required": true, "optionsRef": "energy_system" },
+        { "displayName": "Workout Title", "apiKey": "workout_title", "type": "text", "required": true },
+        { "displayName": "Workout Description", "apiKey": "workout_description", "type": "long_text", "required": true },
+        { "displayName": "Target Time Display", "apiKey": "target_time_display", "type": "text", "required": false },
+        { "displayName": "Target Time Min MS", "apiKey": "target_time_min_ms", "type": "number", "required": false },
+        { "displayName": "Target Time Max MS", "apiKey": "target_time_max_ms", "type": "number", "required": false },
+        { "displayName": "Anchor Event", "apiKey": "anchor_event", "type": "text", "required": false },
+        { "displayName": "Anchor Performance Display", "apiKey": "anchor_performance_display", "type": "text", "required": false },
+        { "displayName": "Anchor Performance MS", "apiKey": "anchor_performance_ms", "type": "number", "required": false },
+        { "displayName": "AI Rationale", "apiKey": "ai_rationale", "type": "long_text", "required": false },
+        { "displayName": "Approval Status", "apiKey": "approval_status", "type": "dropdown", "required": true, "optionsRef": "approval_status" },
+        { "displayName": "Source System", "apiKey": "source_system", "type": "dropdown_or_text", "required": true },
+        { "displayName": "Source Record ID", "apiKey": "source_record_id", "type": "text", "required": true }
+      ]
+    }
+  ],
+  "dropdowns": {
+    "season": ["summer", "fall", "winter", "spring"],
+    "phase": ["gpp", "spp", "pre_competition", "competition", "transition"],
+    "energy_system": ["atp_pc", "glycolytic", "oxidative", "mixed"],
+    "surface": ["track", "grass", "trail", "indoor", "road", "turf", "hills", "other"],
+    "plan_scope": ["individual", "group", "team"],
+    "approval_status": ["draft", "approved", "rejected", "completed", "skipped"],
+    "workout_type": [
+      "acceleration",
+      "max_velocity",
+      "speed_endurance_i",
+      "special_endurance_i",
+      "special_endurance_ii",
+      "lactate_tolerance",
+      "extensive_tempo",
+      "intensive_tempo",
+      "lactate_threshold",
+      "easy_recovery_run",
+      "long_run",
+      "aerobic_power",
+      "plyometrics",
+      "strength_circuit",
+      "hill_sprints",
+      "race",
+      "time_trial",
+      "other"
+    ]
+  }
+}

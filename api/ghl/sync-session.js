@@ -1,5 +1,6 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
+const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 
 module.exports = async function handler(req, res) {
   setCorsHeaders(res);
@@ -30,7 +31,14 @@ module.exports = async function handler(req, res) {
     for (const athlete of session.athletes) {
       const contact = await findOrCreateContact({ token, locationId, athlete, session });
       await addSessionNote({ token, contactId: contact.id, body: buildNoteBody(session, athlete) });
-      synced.push({ athlete: athlete.name, contactId: contact.id });
+      const performanceRecords = await addPerformanceRecords({
+        token,
+        locationId,
+        contactId: contact.id,
+        athlete,
+        session,
+      });
+      synced.push({ athlete: athlete.name, contactId: contact.id, performanceRecords });
     }
 
     res.status(200).json({ success: true, synced });
@@ -93,6 +101,7 @@ function normalizeRun(raw, index) {
         })).filter((lap) => lap.time)
       : [],
     note: clean(raw && raw.note),
+    timestamp: raw && raw.timestamp ? new Date(raw.timestamp) : null,
   };
 }
 
@@ -163,6 +172,76 @@ async function addSessionNote({ token, contactId, body }) {
   });
 }
 
+async function addPerformanceRecords({ token, locationId, contactId, athlete, session }) {
+  const created = [];
+
+  for (const run of athlete.runs) {
+    const properties = buildPerformanceRecordProperties({
+      locationId,
+      contactId,
+      athlete,
+      session,
+      run,
+    });
+
+    const record = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
+      method: "POST",
+      body: {
+        locationId,
+        properties,
+      },
+    });
+
+    created.push({
+      runNumber: run.runNumber,
+      recordId: record.id || (record.record && record.record.id) || null,
+      sourceRecordId: properties.source_record_id,
+    });
+  }
+
+  return created;
+}
+
+function buildPerformanceRecordProperties({ locationId, contactId, athlete, session, run }) {
+  const sessionDate = validDate(run.timestamp) || validDate(session.sessionDate) || new Date();
+  const syncedAt = new Date();
+  const groupSlug = slugValue(session.groupName);
+  const athleteSlug = slugValue(athlete.name);
+  const dateSlug = sessionDate.toISOString().slice(0, 10).replace(/-/g, "");
+  const sourceSessionId = `sc_${dateSlug}_${groupSlug}`;
+  const sourceRecordId = `${sourceSessionId}_${athleteSlug}_run_${run.runNumber}`;
+  const recordName = `${athlete.name} - ${session.workoutType} - Run ${run.runNumber}`;
+  const splits = run.laps.map((lap, index) => ({
+    lap: index + 1,
+    ms: lap.ms,
+    time: lap.time,
+  }));
+
+  return {
+    performance_record: recordName,
+    record_name: recordName,
+    athlete_contact: contactId,
+    athlete_name_snapshot: athlete.name,
+    source_session_id: sourceSessionId,
+    source_record_id: sourceRecordId,
+    group_name: session.groupName,
+    session_date: dateOnly(sessionDate),
+    season: optionValue(session.season),
+    phase: optionValue(session.phase),
+    workout_type: optionValue(session.workoutType),
+    energy_system: energySystemValue(session.energySystem),
+    surface: optionValue(session.surface),
+    rep_number: run.runNumber,
+    total_time_display: run.total,
+    total_time_ms: run.totalMs,
+    splits_json: JSON.stringify(splits),
+    coach_note: run.note,
+    synced_at: dateOnly(syncedAt),
+  };
+}
+
 async function ghlFetch({ token, path, method, body }) {
   const response = await fetch(`${GHL_BASE_URL}${path}`, {
     method,
@@ -220,11 +299,43 @@ function buildNoteBody(session, athlete) {
 }
 
 function slugTag(value, suffix) {
-  const slug = clean(value)
+  const slug = slugValue(value);
+  return slug ? `smartcoach-${slug}-${suffix}` : "";
+}
+
+function slugValue(value) {
+  return clean(value)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  return slug ? `smartcoach-${slug}-${suffix}` : "";
+}
+
+function optionValue(value) {
+  return clean(value)
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/\+/g, "plus")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+function energySystemValue(value) {
+  const normalized = optionValue(value);
+  if (normalized.indexOf("atp_pc") === 0) return "atp_pc";
+  if (normalized.indexOf("glycolytic") === 0) return "glycolytic";
+  if (normalized.indexOf("oxidative") === 0) return "oxidative";
+  if (normalized.indexOf("mixed") === 0) return "mixed";
+  return normalized;
+}
+
+function validDate(value) {
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) return null;
+  return value;
+}
+
+function dateOnly(value) {
+  const date = validDate(value) || new Date();
+  return date.toISOString().slice(0, 10);
 }
 
 function clean(value) {
