@@ -1,6 +1,8 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
+const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
+const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 
 module.exports = async function handler(req, res) {
   setCorsHeaders(res);
@@ -83,6 +85,8 @@ function normalizeSession(payload) {
 function normalizeAthlete(raw) {
   return {
     name: clean(raw && raw.name),
+    contactId: clean(raw && raw.contactId),
+    smartcoachAthleteId: clean(raw && raw.smartcoachAthleteId),
     runs: Array.isArray(raw && raw.runs)
       ? raw.runs.map(normalizeRun).filter((run) => run.total)
       : [],
@@ -106,9 +110,19 @@ function normalizeRun(raw, index) {
 }
 
 async function findOrCreateContact({ token, locationId, athlete, session }) {
+  if (athlete.contactId) {
+    const contact = await getContact({ token, contactId: athlete.contactId });
+    if (contact && contact.id) {
+      await addTags({ token, contactId: contact.id, tags: buildTags(session) });
+      await markContactAsSmartCoachAthlete({ token, contact, athlete });
+      return contact;
+    }
+  }
+
   const existing = await findExistingContact({ token, locationId, athleteName: athlete.name });
   if (existing) {
     await addTags({ token, contactId: existing.id, tags: buildTags(session) });
+    await markContactAsSmartCoachAthlete({ token, contact: existing, athlete });
     return existing;
   }
 
@@ -133,7 +147,18 @@ async function findOrCreateContact({ token, locationId, athlete, session }) {
   if (!contact || !contact.id) {
     throw httpError(502, `GHL did not return a contact for ${athlete.name}.`);
   }
+  await markContactAsSmartCoachAthlete({ token, contact, athlete });
   return contact;
+}
+
+async function getContact({ token, contactId }) {
+  const result = await ghlFetch({
+    token,
+    path: `/contacts/${encodeURIComponent(contactId)}`,
+    method: "GET",
+  });
+
+  return result.contact || result;
 }
 
 async function findExistingContact({ token, locationId, athleteName }) {
@@ -160,6 +185,26 @@ async function addTags({ token, contactId, tags }) {
     });
   } catch (error) {
     if (error.statusCode !== 404) throw error;
+  }
+}
+
+async function markContactAsSmartCoachAthlete({ token, contact, athlete }) {
+  const smartcoachAthleteId = athlete.smartcoachAthleteId || existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID) || buildAthleteId(athlete.name);
+
+  try {
+    await ghlFetch({
+      token,
+      path: `/contacts/${encodeURIComponent(contact.id)}`,
+      method: "PUT",
+      body: {
+        customFields: [
+          { id: SMARTCOACH_ACTIVE_FIELD_ID, value: "Yes" },
+          { id: SMARTCOACH_ATHLETE_ID_FIELD_ID, value: smartcoachAthleteId },
+        ],
+      },
+    });
+  } catch (error) {
+    if (error.statusCode && error.statusCode >= 500) throw error;
   }
 }
 
@@ -308,6 +353,21 @@ function slugValue(value) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function buildAthleteId(name) {
+  return `sca_${slugValue(name).replace(/-/g, "_") || "athlete"}`;
+}
+
+function existingCustomFieldValue(contact, fieldId) {
+  const fields = Array.isArray(contact && contact.customFields) ? contact.customFields : [];
+  const field = fields.find((item) => {
+    if (!item) return false;
+    return item.id === fieldId || item.fieldId === fieldId || item.field_id === fieldId;
+  });
+  if (!field) return "";
+  const value = field.value || field.fieldValue || field.field_value;
+  return value ? String(value) : "";
 }
 
 function optionValue(value) {

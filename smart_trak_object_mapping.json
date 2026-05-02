@@ -1,4 +1,18 @@
 {
+  "contactFields": {
+    "smartcoach_active": {
+      "id": "xepTMFvtaTwFdLVrOeQH",
+      "fieldKey": "contact.smartcoach_active",
+      "type": "RADIO",
+      "name": "SMARTCoach Active"
+    },
+    "smartcoach_athlete_id": {
+      "id": "Vi7fmpkblrGZqZFyNBI2",
+      "fieldKey": "contact.smartcoach_athlete_id",
+      "type": "TEXT",
+      "name": "SMARTCoach Athlete ID"
+    }
+  },
   "objects": {
     "performance_record": {
       "displayName": "Performance Record",

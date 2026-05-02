@@ -535,18 +535,68 @@ These are not new custom objects, but they should exist on the GHL contact for e
 | School | `school` | Text | No | Trinity Christian Addison |
 | Team/Club | `team_club` | Text | No | SMART Speed |
 | Athlete Status | `athlete_status` | Dropdown | No | active |
+| SMARTCoach Active | `smartcoach_active` | Checkbox/Radio | Yes | true |
+| SMARTCoach Athlete ID | `smartcoach_athlete_id` | Text | No | sca_avery_womble_2027 |
 | Parent/Guardian Name | `parent_guardian_name` | Text | No | Parent Name |
 | Parent/Guardian Email | `parent_guardian_email` | Email | No | parent@example.com |
 | Recruiting Opt In | `recruiting_opt_in` | Checkbox | No | true |
+
+## Athlete Roster Resolution
+
+To avoid duplicate contacts once SMARTCoach is live, the app should prefer a controlled SMART Trak athlete roster instead of free-typed names.
+
+Recommended workflow:
+
+1. SMART Trak/GHL remains the source of truth for athlete contacts.
+2. SMARTCoach loads active athletes from GHL through a Vercel API endpoint.
+3. The runner name input becomes a searchable dropdown backed by active GHL contacts.
+4. The selected athlete stores both display name and GHL contact ID locally.
+5. Sync uses the selected GHL contact ID first, then name fallback only when needed.
+
+Roster filter:
+
+- Include contacts where `smartcoach_active` is true.
+- Also allow fallback inclusion for contacts tagged `smartcoach-athlete` and not marked inactive.
+
+Coach field workflow:
+
+- If an athlete is missing, the app should offer `Add Athlete`.
+- If an athlete exists but is inactive, the app should offer `Set Active`.
+- Both actions should call Vercel server endpoints so the GHL private token stays server-side.
+
+Recommended endpoints:
+
+- `GET /api/ghl/athletes?active=true`
+- `POST /api/ghl/athletes`
+- `PATCH /api/ghl/athletes/:contactId`
+
+Recommended local runner shape:
+
+```json
+{
+  "id": 1,
+  "name": "Avery Womble",
+  "contactId": "GHL_CONTACT_ID",
+  "smartcoachAthleteId": "sca_avery_womble_2027"
+}
+```
+
+Sync rule:
+
+- If `contactId` exists, sync to that contact.
+- If `contactId` is missing but the name exactly matches one active athlete, attach to that contact.
+- If no active match exists, create a new contact only after the coach confirms `Add Athlete`.
+- If multiple matches exist, require the coach to choose one before syncing.
 
 ## Implementation Order
 
 1. Create the four custom objects in SMART Trak/GHL.
 2. Add the minimum viable fields for Performance Record first.
 3. Update `/api/ghl/sync-session.js` to create Performance Records after contact note sync.
-4. Add Season Record creation/update once Performance Records are being created reliably.
-5. Add Meet Result manual entry/import workflow.
-6. Add Training Plan records with the first AI pace calculator.
+4. Add athlete roster lookup and active/inactive contact management to prevent duplicate athlete contacts.
+5. Add Season Record creation/update once Performance Records are being created reliably.
+6. Add Meet Result manual entry/import workflow.
+7. Add Training Plan records with the first AI pace calculator.
 
 ## Dedupe Strategy
 

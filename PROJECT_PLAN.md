@@ -214,11 +214,12 @@ Tiers:
 
 ## Current Priority Order
 
-1. GHL Custom Objects: create Performance Record and Season Record objects.
-2. AI pace calculator: first AI feature and highest immediate coaching value.
-3. Coach dashboard: desktop web app for reviewing all data.
-4. Subscription/auth foundation: use Vercel server-side support for gating and plans.
-5. Parent/recruiting/athlete portals after the data model and dashboard are stable.
+1. Athlete roster lookup: load active SMART Trak/GHL athletes into the app to prevent duplicate contacts.
+2. GHL Season Records: create/update season summaries after Performance Records are reliable.
+3. AI pace calculator: first AI feature and highest immediate coaching value.
+4. Coach dashboard: desktop web app for reviewing all data.
+5. Subscription/auth foundation: use Vercel server-side support for gating and plans.
+6. Parent/recruiting/athlete portals after the data model and dashboard are stable.
 
 ## Latest Continuation Notes
 
@@ -231,6 +232,8 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added SMART Trak object/field mapping files for Performance Records, Season Records, Meet Results, and Training Plans
 - Updated `/api/ghl/sync-session.js` so sync now keeps the existing contact note and also attempts to create a structured Performance Record for each saved run
 - Verified the updated sync flow with a local mocked API run; live SMART Trak test still pending
+- Live test confirmed: contact note and structured Performance Record are both created successfully
+- Identified duplicate-contact risk from free-typed athlete names; next design priority is active athlete roster lookup from SMART Trak/GHL
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works
