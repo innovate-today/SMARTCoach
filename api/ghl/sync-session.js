@@ -389,7 +389,7 @@ function buildSeasonRecordProperties({ contactId, athlete, session, performanceR
     source_record_id: sourceRecordId,
     season: optionValue(session.season),
     season_year: seasonYear,
-    sport: "track_and_field",
+    sport: "track",
     primary_event: existingProperties.primary_event || "",
     practice_session_count: seasonBests.practiceSessionCount,
     performance_record_count: seasonBests.performanceRecordCount,

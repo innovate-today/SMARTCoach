@@ -292,7 +292,7 @@ Avery Womble - Spring 2026 - Track
 | Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
 | Season Year | `season_year` | Number | Yes | 2026 | Calendar year. |
-| Sport | `sport` | Dropdown/Text | Yes | track_and_field | Track, cross country, etc. |
+| Sport | `sport` | Dropdown/Text | Yes | track | Track, cross country, etc. |
 | Primary Event | `primary_event` | Text | No | 400m | Athlete focus. |
 | Secondary Events | `secondary_events` | Text | No | 200m, 4x400 | Comma-separated for now. |
 | Event Family | `event_family` | Dropdown | No | sprints | Shared picklist. |
@@ -374,7 +374,7 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 | Meet Date | `meet_date` | Date | Yes | 2026-03-28 | Competition date. |
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
 | Season Year | `season_year` | Number | Yes | 2026 | Calendar year. |
-| Sport | `sport` | Dropdown/Text | Yes | track_and_field | Track or cross country. |
+| Sport | `sport` | Dropdown/Text | Yes | track | Track or cross country. |
 | Event | `event` | Text | Yes | 400m | Official event. |
 | Event Family | `event_family` | Dropdown | No | sprints | Shared picklist. |
 | Round | `round` | Dropdown/Text | No | final | Final, prelim, semi, heat. |
@@ -527,7 +527,7 @@ These are not new custom objects, but they should exist on the GHL contact for e
 
 | Field | API Key | Type | Required | Example |
 |---|---|---:|---:|---|
-| Athlete Sport | `athlete_sport` | Dropdown/Text | No | track_and_field |
+| Athlete Sport | `athlete_sport` | Dropdown/Text | No | track |
 | Primary Event | `primary_event` | Text | No | 400m |
 | Secondary Events | `secondary_events` | Text | No | 200m, 4x400 |
 | Graduation Year | `graduation_year` | Number | No | 2027 |
