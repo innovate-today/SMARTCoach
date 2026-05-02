@@ -1,6 +1,6 @@
-# SMART TraK Field Build Guide
+# SMARTCoach Pro Field Build Guide
 
-Use this when creating SMARTCoach/SMART Trak objects and fields directly in GoHighLevel outside the Codex in-app browser.
+Use this when creating SMARTCoach Pro objects and fields directly in GoHighLevel outside the Codex in-app browser.
 
 Source model:
 
@@ -8,7 +8,7 @@ Source model:
 
 ## Current Constraint
 
-The Codex in-app browser is not able to complete the GoHighLevel login flow in this session. You can still create the fields by logging into GoHighLevel/SMART Trak in your normal browser and following this guide.
+The Codex in-app browser is not able to complete the GoHighLevel login flow in this session. You can still create the fields by logging into GoHighLevel/SMARTCoach Pro in your normal browser and following this guide.
 
 If API access is available later, the same object and field names can be automated from `smart_trak_field_schema.json`.
 

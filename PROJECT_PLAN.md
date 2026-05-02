@@ -17,8 +17,8 @@ Live app:
 Deployment/source of truth:
 
 - The active app is deployed through Vercel.
-- The CRM integration is GoHighLevel, branded in the product as SMART Trak.
-- SMARTCoach has been confirmed to sync successfully with SMART Trak/GHL.
+- The CRM integration is GoHighLevel, branded in the product as SMARTCoach Pro.
+- SMARTCoach has been confirmed to sync successfully with SMARTCoach Pro/GHL.
 
 Current consolidated repo:
 
@@ -39,7 +39,7 @@ Existing features:
 - Swipe to delete runners
 - Selective start: tap circle to choose which runners start
 - Share results modal
-- SMART Trak/GHL Sync button
+- SMARTCoach Pro/GHL Sync button
 - Hosted/deployed through Vercel
 
 ## Phase 1: GHL Sync
@@ -48,7 +48,7 @@ Status: Done and confirmed working
 
 Goal:
 
-- Tap Share, then Sync to GHL/SMART TraK
+- Tap Share, then Sync to GHL/SMARTCoach Pro
 - Tag the session with Season, Phase, Workout Type, Energy System, Surface
 - App calls GHL API directly or through server function, avoiding webhooks and per-execution charges
 - Creates athlete as a GHL Contact if new
@@ -214,7 +214,7 @@ Tiers:
 
 ## Current Priority Order
 
-1. Athlete roster lookup: load active SMART Trak/GHL athletes into the app to prevent duplicate contacts.
+1. Athlete roster lookup: load active SMARTCoach Pro/GHL athletes into the app to prevent duplicate contacts.
 2. GHL Season Records: create/update season summaries after Performance Records are reliable.
 3. AI pace calculator: first AI feature and highest immediate coaching value.
 4. Coach dashboard: desktop web app for reviewing all data.
@@ -228,19 +228,19 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Fixed broken back/forward glyphs in `index.html` and `app.html`
 - Fixed damaged `RUNNER ROW` CSS comments
 - Fixed `white-space:nowraw` to `white-space:nowrap`
-- Updated project truth: Vercel is active, SMART Trak/GHL sync is confirmed working
-- Added SMART Trak object/field mapping files for Performance Records, Season Records, Meet Results, and Training Plans
+- Updated project truth: Vercel is active, SMARTCoach Pro/GHL sync is confirmed working
+- Added SMARTCoach Pro object/field mapping files for Performance Records, Season Records, Meet Results, and Training Plans
 - Updated `/api/ghl/sync-session.js` so sync now keeps the existing contact note and also attempts to create a structured Performance Record for each saved run
-- Verified the updated sync flow with a local mocked API run; live SMART Trak test still pending
+- Verified the updated sync flow with a local mocked API run; live SMARTCoach Pro test still pending
 - Live test confirmed: contact note and structured Performance Record are both created successfully
-- Identified duplicate-contact risk from free-typed athlete names; next design priority is active athlete roster lookup from SMART Trak/GHL
+- Identified duplicate-contact risk from free-typed athlete names; next design priority is active athlete roster lookup from SMARTCoach Pro/GHL
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works
   - Start/lap/stop works
   - Share opens
   - Sheets export renders tabular text
-  - SMART TraK sync modal opens
+  - SMARTCoach Pro sync modal opens
   - No console errors
 
 ## Resume Checklist
@@ -250,6 +250,6 @@ When picking this project back up:
 1. Open this file first.
 2. Inspect current git status in this repo.
 3. Treat Vercel as the active deployment environment.
-4. Treat SMART Trak/GHL sync as confirmed working unless new evidence says otherwise.
+4. Treat SMARTCoach Pro/GHL sync as confirmed working unless new evidence says otherwise.
 5. Continue with GHL custom objects, AI pace calculator, and dashboard work.
 6. Keep changes scoped and record major decisions in this file.

@@ -14,4 +14,4 @@ The browser app calls `/api/ghl/sync-session`. That serverless function calls Hi
 1. Import this GitHub repo into Vercel.
 2. Add the two environment variables above.
 3. Point `app.smartcoach-pro.com` to the Vercel project.
-4. Test Share -> SMART Trak Sync with one athlete who has saved times.
+4. Test Share -> SMARTCoach Pro Sync with one athlete who has saved times.

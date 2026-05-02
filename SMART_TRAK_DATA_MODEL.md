@@ -1,6 +1,6 @@
-# SMART TraK Data Model
+# SMARTCoach Pro Data Model
 
-This document defines the first structured GoHighLevel/SMART TraK data model for SMARTCoach.
+This document defines the first structured GoHighLevel/SMARTCoach Pro data model for SMARTCoach.
 
 The model starts from what the app already syncs successfully today:
 
@@ -20,7 +20,7 @@ The first production goal is to keep the existing contact note sync working, the
 
 ## Naming Rules
 
-Use these naming conventions in GHL/SMART TraK:
+Use these naming conventions in GHL/SMARTCoach Pro:
 
 - Object names are singular display names.
 - API keys are lowercase snake case.
@@ -543,11 +543,11 @@ These are not new custom objects, but they should exist on the GHL contact for e
 
 ## Athlete Roster Resolution
 
-To avoid duplicate contacts once SMARTCoach is live, the app should prefer a controlled SMART Trak athlete roster instead of free-typed names.
+To avoid duplicate contacts once SMARTCoach is live, the app should prefer a controlled SMARTCoach Pro athlete roster instead of free-typed names.
 
 Recommended workflow:
 
-1. SMART Trak/GHL remains the source of truth for athlete contacts.
+1. SMARTCoach Pro/GHL remains the source of truth for athlete contacts.
 2. SMARTCoach loads active athletes from GHL through a Vercel API endpoint.
 3. The runner name input becomes a searchable dropdown backed by active GHL contacts.
 4. The selected athlete stores both display name and GHL contact ID locally.
@@ -590,7 +590,7 @@ Sync rule:
 
 ## Implementation Order
 
-1. Create the four custom objects in SMART Trak/GHL.
+1. Create the four custom objects in SMARTCoach Pro/GHL.
 2. Add the minimum viable fields for Performance Record first.
 3. Update `/api/ghl/sync-session.js` to create Performance Records after contact note sync.
 4. Add athlete roster lookup and active/inactive contact management to prevent duplicate athlete contacts.
