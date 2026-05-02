@@ -598,9 +598,9 @@ function optionValue(value) {
 
 function energySystemValue(value) {
   const normalized = optionValue(value);
-  if (normalized.indexOf("atp_pc") === 0) return "atp_pc";
-  if (normalized.indexOf("glycolytic") === 0) return "glycolytic";
-  if (normalized.indexOf("oxidative") === 0) return "oxidative";
+  if (normalized.indexOf("atp_pc") === 0) return "atp_pc_phosphagen";
+  if (normalized.indexOf("glycolytic") === 0) return "glycolytic_anaerobic";
+  if (normalized.indexOf("oxidative") === 0) return "oxidative_aerobic";
   if (normalized.indexOf("mixed") === 0) return "mixed";
   return normalized;
 }
