@@ -214,8 +214,8 @@ Tiers:
 
 ## Current Priority Order
 
-1. Athlete roster lookup: load active SMARTCoach Pro/GHL athletes into the app to prevent duplicate contacts.
-2. GHL Season Records: create/update season summaries after Performance Records are reliable.
+1. Test Season Record creation/update in the live SMARTCoach Pro sync flow.
+2. Meet Result entry: add official race results separate from practice timing.
 3. AI pace calculator: first AI feature and highest immediate coaching value.
 4. Coach dashboard: desktop web app for reviewing all data.
 5. Subscription/auth foundation: use Vercel server-side support for gating and plans.
@@ -234,6 +234,11 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Verified the updated sync flow with a local mocked API run; live SMARTCoach Pro test still pending
 - Live test confirmed: contact note and structured Performance Record are both created successfully
 - Identified duplicate-contact risk from free-typed athlete names; next design priority is active athlete roster lookup from SMARTCoach Pro/GHL
+- Added active athlete roster lookup from SMARTCoach Pro/GHL using `SMARTCoach Active = Yes`
+- Updated sync payloads to include GHL contact IDs when an active athlete is selected, reducing duplicate contacts
+- Standardized visible product wording to SMARTCoach Pro while leaving stable internal API routes unchanged
+- Added Season Record upsert to sync: one Season Record per athlete, season, and year, with practice session count, performance record count, latest session summary, and practice bests JSON
+- Verified Season Record create/update behavior with a local mocked API run; live Season Record test still pending
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works

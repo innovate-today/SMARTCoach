@@ -244,7 +244,7 @@ Avery Womble - Special Endurance I - 300m - 00:52.4 - Apr 26, 2026
 Start with these fields if GHL setup needs to be lean:
 
 - `record_name`
-- `athlete_contact_id`
+- `athlete_contact`
 - `athlete_name_snapshot`
 - `source_session_id`
 - `source_record_id`
@@ -594,7 +594,7 @@ Sync rule:
 2. Add the minimum viable fields for Performance Record first.
 3. Update `/api/ghl/sync-session.js` to create Performance Records after contact note sync.
 4. Add athlete roster lookup and active/inactive contact management to prevent duplicate athlete contacts.
-5. Add Season Record creation/update once Performance Records are being created reliably.
+5. Add Season Record creation/update once Performance Records are being created reliably. Done in the sync function; live test pending.
 6. Add Meet Result manual entry/import workflow.
 7. Add Training Plan records with the first AI pace calculator.
 

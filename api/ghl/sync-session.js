@@ -1,6 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
+const SEASON_RECORD_SCHEMA_KEY = "custom_objects.season_records";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 
@@ -40,7 +41,15 @@ module.exports = async function handler(req, res) {
         athlete,
         session,
       });
-      synced.push({ athlete: athlete.name, contactId: contact.id, performanceRecords });
+      const seasonRecord = await upsertSeasonRecord({
+        token,
+        locationId,
+        contactId: contact.id,
+        athlete,
+        session,
+        performanceRecords,
+      });
+      synced.push({ athlete: athlete.name, contactId: contact.id, performanceRecords, seasonRecord });
     }
 
     res.status(200).json({ success: true, synced });
@@ -249,13 +258,85 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
   return created;
 }
 
+async function upsertSeasonRecord({ token, locationId, contactId, athlete, session, performanceRecords }) {
+  const sourceRecordId = buildSeasonSourceRecordId({ contactId, session });
+  const existing = await findSeasonRecord({ token, locationId, sourceRecordId });
+  const properties = buildSeasonRecordProperties({
+    contactId,
+    athlete,
+    session,
+    performanceRecordCount: performanceRecords.length,
+    existing,
+    sourceRecordId,
+  });
+
+  if (existing && existing.id) {
+    const updated = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}`,
+      method: "PUT",
+      body: {
+        locationId,
+        properties,
+      },
+    });
+
+    return {
+      action: "updated",
+      recordId: updated.id || (updated.record && updated.record.id) || existing.id,
+      sourceRecordId,
+    };
+  }
+
+  const created = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records`,
+    method: "POST",
+    body: {
+      locationId,
+      properties,
+    },
+  });
+
+  return {
+    action: "created",
+    recordId: created.id || (created.record && created.record.id) || null,
+    sourceRecordId,
+  };
+}
+
+async function findSeasonRecord({ token, locationId, sourceRecordId }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records/search`,
+      method: "POST",
+      body: {
+        locationId,
+        page: 1,
+        pageLimit: 1,
+        filters: [
+          {
+            field: "source_record_id",
+            operator: "eq",
+            value: sourceRecordId,
+          },
+        ],
+      },
+    });
+
+    return firstRecord(result);
+  } catch (error) {
+    if (error.statusCode && error.statusCode >= 500) throw error;
+    return null;
+  }
+}
+
 function buildPerformanceRecordProperties({ locationId, contactId, athlete, session, run }) {
   const sessionDate = validDate(run.timestamp) || validDate(session.sessionDate) || new Date();
   const syncedAt = new Date();
-  const groupSlug = slugValue(session.groupName);
   const athleteSlug = slugValue(athlete.name);
-  const dateSlug = sessionDate.toISOString().slice(0, 10).replace(/-/g, "");
-  const sourceSessionId = `sc_${dateSlug}_${groupSlug}`;
+  const sourceSessionId = buildSourceSessionId(session, sessionDate);
   const sourceRecordId = `${sourceSessionId}_${athleteSlug}_run_${run.runNumber}`;
   const recordName = `${athlete.name} - ${session.workoutType} - Run ${run.runNumber}`;
   const splits = run.laps.map((lap, index) => ({
@@ -284,6 +365,90 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     splits_json: JSON.stringify(splits),
     coach_note: run.note,
     synced_at: dateOnly(syncedAt),
+  };
+}
+
+function buildSeasonRecordProperties({ contactId, athlete, session, performanceRecordCount, existing, sourceRecordId }) {
+  const sessionDate = validDate(session.sessionDate) || new Date();
+  const seasonYear = sessionDate.getFullYear();
+  const recordName = `${athlete.name} - ${session.season} ${seasonYear}`;
+  const existingProperties = recordProperties(existing);
+  const seasonBests = updateSeasonBests({
+    existingValue: existingProperties.season_bests_json,
+    athlete,
+    session,
+    sourceSessionId: buildSourceSessionId(session),
+    performanceRecordCount,
+  });
+
+  return {
+    season_record: recordName,
+    record_name: recordName,
+    athlete_contact: contactId,
+    athlete_name_snapshot: athlete.name,
+    source_record_id: sourceRecordId,
+    season: optionValue(session.season),
+    season_year: seasonYear,
+    sport: "track_and_field",
+    primary_event: existingProperties.primary_event || "",
+    practice_session_count: seasonBests.practiceSessionCount,
+    performance_record_count: seasonBests.performanceRecordCount,
+    meet_count: numberValue(existingProperties.meet_count),
+    season_bests_json: JSON.stringify(seasonBests.summary),
+    injury_flag: existingProperties.injury_flag || "No",
+    coach_season_notes: existingProperties.coach_season_notes || "",
+    last_calculated_at: dateOnly(new Date()),
+  };
+}
+
+function updateSeasonBests({ existingValue, athlete, session, sourceSessionId, performanceRecordCount }) {
+  const summary = parseJsonObject(existingValue);
+  const sessions = Array.isArray(summary.sessions) ? summary.sessions : [];
+  const sessionIds = sessions.map((item) => item && item.sourceSessionId).filter(Boolean);
+  const isNewSession = sessionIds.indexOf(sourceSessionId) < 0;
+  const previousPerformanceCount = Number(summary.performanceRecordCount) || 0;
+  const fastestRun = fastestSavedRun(athlete.runs);
+  const workoutKey = optionValue(session.workoutType) || "workout";
+  const workoutBests = summary.practiceBestsByWorkoutType || {};
+  const currentBest = workoutBests[workoutKey];
+
+  if (fastestRun && (!currentBest || !Number(currentBest.ms) || fastestRun.totalMs < Number(currentBest.ms))) {
+    workoutBests[workoutKey] = {
+      workoutType: session.workoutType,
+      ms: fastestRun.totalMs,
+      display: fastestRun.total,
+      sessionDate: dateOnly(validDate(session.sessionDate) || new Date()),
+    };
+  }
+
+  if (isNewSession) {
+    sessions.push({
+      sourceSessionId,
+      sessionDate: dateOnly(validDate(session.sessionDate) || new Date()),
+      groupName: session.groupName,
+      workoutType: session.workoutType,
+      performanceRecordCount,
+    });
+  }
+
+  summary.sessions = sessions.slice(-100);
+  summary.practiceBestsByWorkoutType = workoutBests;
+  summary.lastSession = {
+    sourceSessionId,
+    sessionDate: dateOnly(validDate(session.sessionDate) || new Date()),
+    groupName: session.groupName,
+    workoutType: session.workoutType,
+    phase: session.phase,
+    energySystem: session.energySystem,
+    surface: session.surface,
+  };
+  summary.performanceRecordCount = previousPerformanceCount + performanceRecordCount;
+  summary.practiceSessionCount = isNewSession ? sessions.length : sessions.length || 1;
+
+  return {
+    summary,
+    performanceRecordCount: summary.performanceRecordCount,
+    practiceSessionCount: summary.practiceSessionCount,
   };
 }
 
@@ -316,6 +481,18 @@ function buildTags(session) {
     slugTag(session.workoutType, "workout"),
     slugTag(session.phase, "phase"),
   ].filter(Boolean);
+}
+
+function buildSeasonSourceRecordId({ contactId, session }) {
+  const sessionDate = validDate(session.sessionDate) || new Date();
+  return `sr_${slugValue(contactId)}_${sessionDate.getFullYear()}_${optionValue(session.season) || "season"}`;
+}
+
+function buildSourceSessionId(session, dateValue) {
+  const sessionDate = validDate(dateValue) || validDate(session.sessionDate) || new Date();
+  const groupSlug = slugValue(session.groupName);
+  const dateSlug = sessionDate.toISOString().slice(0, 10).replace(/-/g, "");
+  return `sc_${dateSlug}_${groupSlug}`;
 }
 
 function buildNoteBody(session, athlete) {
@@ -368,6 +545,46 @@ function existingCustomFieldValue(contact, fieldId) {
   if (!field) return "";
   const value = field.value || field.fieldValue || field.field_value;
   return value ? String(value) : "";
+}
+
+function firstRecord(result) {
+  const candidates = [
+    result && result.record,
+    result && Array.isArray(result.records) && result.records[0],
+    result && Array.isArray(result.items) && result.items[0],
+    result && result.data && Array.isArray(result.data.records) && result.data.records[0],
+    result && result.data && Array.isArray(result.data.items) && result.data.items[0],
+  ];
+  return candidates.find(Boolean) || null;
+}
+
+function recordProperties(record) {
+  if (!record) return {};
+  return record.properties || record.fields || record.customFields || {};
+}
+
+function parseJsonObject(value) {
+  if (!value) return {};
+  if (typeof value === "object" && !Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function fastestSavedRun(runs) {
+  return runs.reduce((best, run) => {
+    if (!run.totalMs) return best;
+    if (!best || run.totalMs < best.totalMs) return run;
+    return best;
+  }, null);
+}
+
+function numberValue(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
 }
 
 function optionValue(value) {
