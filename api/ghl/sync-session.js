@@ -33,6 +33,15 @@ module.exports = async function handler(req, res) {
 
     for (const athlete of session.athletes) {
       const contact = await findOrCreateContact({ token, locationId, athlete, session });
+      if (!session.forceDuplicateSync) {
+        const duplicates = await findDuplicatePerformanceRecords({ token, locationId, contactId: contact.id, athlete, session });
+        if (duplicates.length) {
+          throw httpError(409, "This workout appears to have already been synced.", {
+            code: "DUPLICATE_SYNC",
+            duplicates,
+          });
+        }
+      }
       await addSessionNote({ token, contactId: contact.id, body: buildNoteBody(session, athlete) });
       const performanceRecords = await addPerformanceRecords({
         token,
@@ -54,7 +63,10 @@ module.exports = async function handler(req, res) {
 
     res.status(200).json({ success: true, synced });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message || "GHL sync failed." });
+    const body = { error: error.message || "GHL sync failed." };
+    if (error.code) body.code = error.code;
+    if (error.duplicates) body.duplicates = error.duplicates;
+    res.status(error.statusCode || 500).json(body);
   }
 };
 
@@ -87,6 +99,7 @@ function normalizeSession(payload) {
     energySystem: clean(payload.energySystem) || "Unspecified",
     surface: clean(payload.surface) || "Unspecified",
     sessionDate: payload.sessionDate ? new Date(payload.sessionDate) : new Date(),
+    forceDuplicateSync: payload.forceDuplicateSync === true,
     athletes,
   };
 }
@@ -228,15 +241,16 @@ async function addSessionNote({ token, contactId, body }) {
 
 async function addPerformanceRecords({ token, locationId, contactId, athlete, session }) {
   const created = [];
+  const forceSuffix = session.forceDuplicateSync ? `resync_${Date.now()}` : "";
 
   for (const run of athlete.runs) {
-    const properties = buildPerformanceRecordProperties({
+    const properties = preparePerformanceRecordProperties(buildPerformanceRecordProperties({
       locationId,
       contactId,
       athlete,
       session,
       run,
-    });
+    }), forceSuffix);
 
     const record = await ghlFetch({
       token,
@@ -256,6 +270,37 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
   }
 
   return created;
+}
+
+async function findDuplicatePerformanceRecords({ token, locationId, contactId, athlete, session }) {
+  const duplicates = [];
+
+  for (const run of athlete.runs) {
+    const properties = buildPerformanceRecordProperties({
+      locationId,
+      contactId,
+      athlete,
+      session,
+      run,
+    });
+    const existing = await findObjectRecord({
+      token,
+      locationId,
+      schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY,
+      sourceRecordId: properties.source_record_id,
+    });
+
+    if (existing) {
+      duplicates.push({
+        athlete: athlete.name,
+        runNumber: run.runNumber,
+        sourceRecordId: properties.source_record_id,
+        recordId: existing.id || null,
+      });
+    }
+  }
+
+  return duplicates;
 }
 
 async function upsertSeasonRecord({ token, locationId, contactId, athlete, session, performanceRecords }) {
@@ -306,10 +351,19 @@ async function upsertSeasonRecord({ token, locationId, contactId, athlete, sessi
 }
 
 async function findSeasonRecord({ token, locationId, sourceRecordId }) {
+  return findObjectRecord({
+    token,
+    locationId,
+    schemaKey: SEASON_RECORD_SCHEMA_KEY,
+    sourceRecordId,
+  });
+}
+
+async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }) {
   try {
     const result = await ghlFetch({
       token,
-      path: `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records/search`,
+      path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
       method: "POST",
       body: {
         locationId,
@@ -365,6 +419,16 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     splits_json: JSON.stringify(splits),
     coach_note: run.note,
     synced_at: dateOnly(syncedAt),
+  };
+}
+
+function preparePerformanceRecordProperties(properties, forceSuffix) {
+  if (!forceSuffix) return properties;
+  return {
+    ...properties,
+    performance_record: `${properties.performance_record} (Resync)`,
+    record_name: `${properties.record_name} (Resync)`,
+    source_record_id: `${properties.source_record_id}_${forceSuffix}`,
   };
 }
 
@@ -638,8 +702,10 @@ function safeJson(text) {
   }
 }
 
-function httpError(statusCode, message) {
+function httpError(statusCode, message, details) {
   const error = new Error(message);
   error.statusCode = statusCode;
+  if (details && details.code) error.code = details.code;
+  if (details && details.duplicates) error.duplicates = details.duplicates;
   return error;
 }

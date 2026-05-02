@@ -811,7 +811,7 @@ function openSync(){
   btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;
   sm('m-sync');
 }
-function doSMARTTraKSync(){
+function doSMARTTraKSync(forceDuplicateSync){
   if(!CL)return;
   var btn=document.getElementById('sy-btn');
   var status=document.getElementById('sy-status');
@@ -859,18 +859,30 @@ function doSMARTTraKSync(){
       energySystem:esys,
       surface:surf,
       sessionDate:new Date().toISOString(),
+      forceDuplicateSync:forceDuplicateSync===true,
       athletes:athletes
     })
   }).then(function(r){
-    return r.json().then(function(data){return {ok:r.ok,data:data};});
+    return r.json().then(function(data){return {ok:r.ok,status:r.status,data:data};});
   }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Sync failed');
+    if(!result.ok){
+      var err=new Error(result.data&&result.data.error?result.data.error:'Sync failed');
+      err.status=result.status;err.data=result.data;throw err;
+    }
     var count=result.data&&result.data.synced?result.data.synced.length:athletes.length;
     status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' to SMARTCoach Pro!';
     status.style.color='#0a7a44';status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
     setTimeout(function(){btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
   }).catch(function(e){
+    if(e.status===409&&e.data&&e.data.code==='DUPLICATE_SYNC'){
+      btn.textContent='Sync to SMARTCoach Pro';btn.disabled=false;
+      status.textContent='This workout was already synced.';status.style.color='#c47a00';status.style.fontWeight='700';
+      if(confirm('This workout appears to have already been synced. Sync it again anyway?')){
+        doSMARTTraKSync(true);
+      }
+      return;
+    }
     status.textContent='Error: '+e.message;status.style.color='#c00';
     btn.textContent='Sync to SMARTCoach Pro';btn.disabled=false;
   });

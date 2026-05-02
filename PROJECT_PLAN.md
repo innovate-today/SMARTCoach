@@ -239,6 +239,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Standardized visible product wording to SMARTCoach Pro while leaving stable internal API routes unchanged
 - Added Season Record upsert to sync: one Season Record per athlete, season, and year, with practice session count, performance record count, latest session summary, and practice bests JSON
 - Verified Season Record create/update behavior with a local mocked API run; live Season Record test still pending
+- Added duplicate sync protection: existing Performance Records are detected by `source_record_id`; the app asks before intentionally syncing the same workout again
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works
