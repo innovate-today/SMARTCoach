@@ -112,9 +112,9 @@
     "workout_type": [
       "acceleration",
       "max_velocity",
-      "speed_endurance_i",
-      "special_endurance_i",
-      "special_endurance_ii",
+      "speed_endurance_1",
+      "special_endurance_1",
+      "special_endurance_2",
       "lactate_tolerance",
       "extensive_tempo",
       "intensive_tempo",

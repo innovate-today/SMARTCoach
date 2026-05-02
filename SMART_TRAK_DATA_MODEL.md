@@ -204,7 +204,7 @@ Avery Womble - Special Endurance I - 300m - 00:52.4 - Apr 26, 2026
 | Session Date | `session_date` | Date/DateTime | Yes | 2026-04-26T15:30:00Z | From sync payload. |
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
 | Phase | `phase` | Dropdown | Yes | competition | Shared picklist. |
-| Workout Type | `workout_type` | Dropdown | Yes | special_endurance_i | Shared picklist. |
+| Workout Type | `workout_type` | Dropdown | Yes | special_endurance_1 | Shared picklist. |
 | Energy System | `energy_system` | Dropdown | Yes | glycolytic | Shared picklist. |
 | Surface | `surface` | Dropdown | No | track | Shared picklist. |
 | Event Family | `event_family` | Dropdown | No | sprints | Useful for dashboard filtering. |
@@ -464,7 +464,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
 | Season Year | `season_year` | Number | Yes | 2026 | Calendar year. |
 | Phase | `phase` | Dropdown | Yes | spp | Shared picklist. |
-| Workout Type | `workout_type` | Dropdown | Yes | special_endurance_i | Shared picklist. |
+| Workout Type | `workout_type` | Dropdown | Yes | special_endurance_1 | Shared picklist. |
 | Energy System | `energy_system` | Dropdown | Yes | glycolytic | Shared picklist. |
 | Surface | `surface` | Dropdown | No | track | Shared picklist. |
 | Workout Title | `workout_title` | Text | Yes | 6x200m Special Endurance I | Coach-facing title. |

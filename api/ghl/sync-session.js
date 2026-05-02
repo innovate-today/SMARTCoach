@@ -356,7 +356,7 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     session_date: dateOnly(sessionDate),
     season: optionValue(session.season),
     phase: optionValue(session.phase),
-    workout_type: optionValue(session.workoutType),
+    workout_type: workoutTypeValue(session.workoutType),
     energy_system: energySystemValue(session.energySystem),
     surface: optionValue(session.surface),
     rep_number: run.runNumber,
@@ -603,6 +603,17 @@ function energySystemValue(value) {
   if (normalized.indexOf("oxidative") === 0) return "oxidative";
   if (normalized.indexOf("mixed") === 0) return "mixed";
   return normalized;
+}
+
+function workoutTypeValue(value) {
+  const normalized = optionValue(value);
+  const aliases = {
+    speed_endurance_i: "speed_endurance_1",
+    speed_endurance_ii: "speed_endurance_2",
+    special_endurance_i: "special_endurance_1",
+    special_endurance_ii: "special_endurance_2",
+  };
+  return aliases[normalized] || normalized;
 }
 
 function validDate(value) {
