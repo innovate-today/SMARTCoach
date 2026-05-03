@@ -380,6 +380,14 @@ function applyAthleteMatch(r){
   r.smartcoachAthleteId=a?(a.smartcoachAthleteId||''):'';
   return a;
 }
+function athleteSelectedInGroup(name, runnerId){
+  if(!CL)return false;
+  var n=String(name||'').trim().toLowerCase();
+  if(!n)return false;
+  return CL.runners.some(function(r){
+    return r.id!==runnerId&&String(r.name||'').trim().toLowerCase()===n;
+  });
+}
 function athleteNameControl(r){
   if(!AR.length){
     return '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name" list="athletes-list" '+
@@ -390,6 +398,7 @@ function athleteNameControl(r){
   var hasCurrent=!!findAthleteByName(r.name);
   if(!hasCurrent)opts.push('<option value="'+ex(r.name)+'">'+ex(r.name)+'</option>');
   AR.forEach(function(a){
+    if(athleteSelectedInGroup(a.name,r.id))return;
     opts.push('<option value="'+ex(a.name)+'"'+(String(a.name).toLowerCase()===String(r.name).toLowerCase()?' selected':'')+'>'+ex(a.name)+'</option>');
   });
   return '<select class="rname" id="rn-'+r.id+'" onchange="uN('+r.id+',this.value);save()">'+opts.join('')+'</select>';
@@ -860,6 +869,14 @@ function doSMARTTraKSync(forceDuplicateSync){
 
   if(!athletes.length){status.textContent='No saved times to sync.';status.style.color='#c00';return;}
   if(CL.runners.length===1&&!athletes[0].name.trim()){status.textContent='Please enter athlete name.';status.style.color='#c00';return;}
+  var seenAthletes={};
+  for(var ai=0;ai<athletes.length;ai++){
+    var key=String(athletes[ai].contactId||athletes[ai].name||'').trim().toLowerCase();
+    if(key&&seenAthletes[key]){
+      status.textContent='Each athlete can only be selected once in this group.';status.style.color='#c00';return;
+    }
+    if(key)seenAthletes[key]=true;
+  }
 
   btn.textContent='Syncing...';btn.disabled=true;
   status.textContent='Sending session securely...';status.style.color='#555';status.style.fontWeight='400';
