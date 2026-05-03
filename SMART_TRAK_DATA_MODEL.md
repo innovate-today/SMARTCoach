@@ -165,7 +165,7 @@ Relationships:
 
 Recommended relationship fields:
 
-- `athlete_contact_id`: GHL contact ID for reliable linking.
+- `athlete_contact`: GHL contact ID for reliable linking.
 - `athlete_name_snapshot`: athlete name at the time of record creation.
 - `season_record_id`: optional parent season summary link.
 - `source_session_id`: SMARTCoach session/group sync ID where available.
@@ -198,7 +198,7 @@ Avery Womble - Special Endurance I - 300m - 00:52.4 - Apr 26, 2026
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
 | Record Name | `record_name` | Text | Yes | Avery Womble - Special Endurance I - Run 1 | Human-readable CRM title. |
-| Athlete Contact | `athlete_contact_id` | Contact relation/Text | Yes | abc123 | GHL contact ID. Use relation if available, otherwise text. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. Use relation if available, otherwise text. |
 | Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Keeps display stable if contact name changes. |
 | Source System | `source_system` | Dropdown | Yes | smartcoach | Default `smartcoach`. |
 | Source Session ID | `source_session_id` | Text | Yes | sc_20260426_speed_work | Dedupe key for session. |
@@ -291,7 +291,7 @@ Avery Womble - Spring 2026 - Track
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
 | Record Name | `record_name` | Text | Yes | Avery Womble - Spring 2026 | Human-readable CRM title. |
-| Athlete Contact | `athlete_contact_id` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
 | Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
 | Season Year | `season_year` | Number | Yes | 2026 | Calendar year. |
@@ -330,7 +330,7 @@ Avery Womble - Spring 2026 - Track
 ### Minimum Viable Fields For First Implementation
 
 - `record_name`
-- `athlete_contact_id`
+- `athlete_contact`
 - `athlete_name_snapshot`
 - `season`
 - `season_year`
@@ -371,7 +371,7 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
 | Record Name | `record_name` | Text | Yes | Avery Womble - 400m - 54.8 | Human-readable CRM title. |
-| Athlete Contact | `athlete_contact_id` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
 | Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Meet Name | `meet_name` | Text | Yes | District Meet | Official meet name. |
 | Meet Date | `meet_date` | Date | Yes | 2026-03-28 | Competition date. |
@@ -413,7 +413,7 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 ### Minimum Viable Fields For First Implementation
 
 - `record_name`
-- `athlete_contact_id`
+- `athlete_contact`
 - `athlete_name_snapshot`
 - `meet_name`
 - `meet_date`
@@ -457,8 +457,9 @@ Avery Womble - 400m Bests
 
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
+| Athlete Best | `athlete_best` | Text | Yes | Avery Womble - 400m Bests | Primary display field. |
 | Record Name | `record_name` | Text | Yes | Avery Womble - 400m Bests | Human-readable title. |
-| Athlete Contact | `athlete_contact_id` | Contact relation/Text | Yes | abc123 | GHL contact association. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact association. |
 | Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Sport | `sport` | Dropdown/Text | Yes | track | Track or cross country. |
 | Event | `event` | Text | Yes | 400m | Event this best record tracks. |
@@ -483,8 +484,9 @@ Avery Womble - 400m Bests
 
 ### Minimum Viable Fields For First Implementation
 
+- `athlete_best`
 - `record_name`
-- `athlete_contact_id`
+- `athlete_contact`
 - `athlete_name_snapshot`
 - `sport`
 - `event`
@@ -529,6 +531,7 @@ Trinity Christian - Girls 400m School Record
 
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
+| Record | `record` | Text | Yes | Trinity Christian - Girls 400m School Record | Primary display field. |
 | Record Name | `record_name` | Text | Yes | Trinity Christian - Girls 400m School Record | Human-readable title. |
 | Record Scope | `record_scope` | Dropdown | Yes | school | school, team, club, grade, meet, facility, district, state_standard. |
 | Organization Name | `organization_name` | Text | Yes | Trinity Christian Addison | School/team/club name. |
@@ -558,6 +561,7 @@ Trinity Christian - Girls 400m School Record
 
 ### Minimum Viable Fields For First Implementation
 
+- `record`
 - `record_name`
 - `record_scope`
 - `organization_name`
@@ -606,7 +610,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
 | Record Name | `record_name` | Text | Yes | Avery Womble - 6x200m SE I | Human-readable CRM title. |
-| Athlete Contact | `athlete_contact_id` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
 | Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Plan Scope | `plan_scope` | Dropdown | Yes | individual | individual, group, team. |
 | Group Name | `group_name` | Text | No | 400m Group | For group/team prescriptions. |
@@ -650,7 +654,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 ### Minimum Viable Fields For First Implementation
 
 - `record_name`
-- `athlete_contact_id`
+- `athlete_contact`
 - `athlete_name_snapshot`
 - `plan_scope`
 - `plan_date`

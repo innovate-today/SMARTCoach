@@ -251,6 +251,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added Meet Result saves from meet timing groups, readable split/season summary fields, and Season Record updates from Meet Results
 - Next PB/SB data step: create an `Athlete Best` parent custom object associated with the athlete contact, then use it to auto-detect lifetime PBs and current-season SBs and trigger later parent/athlete notification workflows
 - Added `Records` custom object concept for school/team/club records so SMARTCoach can detect and later notify when an athlete ties or breaks a school record
+- Added non-breaking backend support for `Athlete Best`: once the custom object exists in SMARTCoach Pro/GHL, Meet Result saves can update PB/SB records and auto-mark PRs
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works
