@@ -1213,8 +1213,17 @@ function submitCapturedMeetResults(forceDuplicateSync){
       err.status=failed.status;err.data=failed.data;throw err;
     }
     markMeetSavedRuns(results);
-    status.textContent='Saved '+results.length+' meet result'+(results.length===1?'':'s')+' to SMARTCoach Pro!';
-    status.style.color='#0a7a44';status.style.fontWeight='700';
+    var skippedBest=results.find(function(result){
+      return result.data&&result.data.athleteBest&&result.data.athleteBest.action==='skipped';
+    });
+    if(skippedBest){
+      status.textContent='Meet result saved. Athlete Best skipped: '+(skippedBest.data.athleteBest.reason||'Needs review in SMARTCoach Pro.');
+      status.style.color='#c47a00';
+    }else{
+      status.textContent='Saved '+results.length+' meet result'+(results.length===1?'':'s')+' to SMARTCoach Pro!';
+      status.style.color='#0a7a44';
+    }
+    status.style.fontWeight='700';
     btn.textContent='Saved!';btn.style.background='#0a7a44';
     setTimeout(function(){btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
   }).catch(function(e){

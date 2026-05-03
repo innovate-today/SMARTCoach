@@ -513,7 +513,7 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
   const isSb = meetResult.isSeasonBest === true;
   const today = dateOnly(new Date());
 
-  return {
+  const properties = {
     athlete_best: recordName,
     record_name: recordName,
     athlete_contact: contactId,
@@ -539,6 +539,7 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
     source_system: "smartcoach_pro",
     source_record_id: sourceRecordId,
   };
+  return compactProperties(properties);
 }
 
 function buildAthleteBestSourceRecordId({ contactId, meetResult }) {
@@ -548,6 +549,15 @@ function buildAthleteBestSourceRecordId({ contactId, meetResult }) {
 function sameSeason(existingProperties, meetResult) {
   return optionValue(existingProperties.season) === optionValue(meetResult.season)
     && Number(existingProperties.season_year) === meetResult.meetDate.getFullYear();
+}
+
+function compactProperties(properties) {
+  return Object.keys(properties).reduce((cleaned, key) => {
+    const value = properties[key];
+    if (value === "" || value === null || typeof value === "undefined") return cleaned;
+    cleaned[key] = value;
+    return cleaned;
+  }, {});
 }
 
 function buildSourceRecordId({ contactId, meetResult }) {
