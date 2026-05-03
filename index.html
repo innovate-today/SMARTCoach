@@ -544,9 +544,10 @@ function rl(){
   if(!shown.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">'+(GV==='archive'?'No archived seasons yet':'Tap Add to create a group')+'</div>';return;}
   el.innerHTML=shown.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
+    var title=l.type==='meet'?ex(l.eventName||l.name||'Meet Event'):ex(l.name);
     var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(l.meetName||'Meet')+' · '+ex(l.season||'')+' '+(l.seasonYear||'')+'</div>':'';
     return'<div class="lrow" onclick="oGroup('+l.id+')">'+
-      '<span class="ltxt">'+ex(l.name)+sub+'</span>'+
+      '<span class="ltxt">'+title+sub+'</span>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
       '<span style="color:#bbb;font-size:16px">&rsaquo;</span></div></div>';
   }).join('');
@@ -564,7 +565,8 @@ function createGroup(){
 }
 function createMeetGroup(){
   var meet=document.getElementById('mg-meet').value.trim()||'New Meet';
-  var event=document.getElementById('mg-event').value.trim()||'Event';
+  var event=document.getElementById('mg-event').value.trim();
+  if(!event){alert('Enter the event name first.');return;}
   var date=document.getElementById('mg-date').value||new Date().toISOString().slice(0,10);
   var season=document.getElementById('mg-season').value||currentSeason().season;
   var year=new Date(date+'T00:00:00').getFullYear()||currentSeason().year;
