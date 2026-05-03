@@ -394,14 +394,14 @@ function athleteNameControl(r){
       'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
       'oninput="uN('+r.id+',this.value)" onblur="save()"/>';
   }
-  var opts=[];
+  var opts=['<option value="__add_athlete__">+ Add Athlete</option>'];
   var hasCurrent=!!findAthleteByName(r.name);
   if(!hasCurrent)opts.push('<option value="'+ex(r.name)+'">'+ex(r.name)+'</option>');
   AR.forEach(function(a){
     if(athleteSelectedInGroup(a.name,r.id))return;
     opts.push('<option value="'+ex(a.name)+'"'+(String(a.name).toLowerCase()===String(r.name).toLowerCase()?' selected':'')+'>'+ex(a.name)+'</option>');
   });
-  return '<select class="rname" id="rn-'+r.id+'" onchange="uN('+r.id+',this.value);save()">'+opts.join('')+'</select>';
+  return '<select class="rname" id="rn-'+r.id+'" onchange="handleAthleteSelect('+r.id+',this)">'+opts.join('')+'</select>';
 }
 function loadAthletes(){
   fetch('/api/smart-trak/athletes').then(function(r){
@@ -412,6 +412,45 @@ function loadAthletes(){
     renderAthleteList();
     if(CL)rr();
   }).catch(function(){AR=[];renderAthleteList();});
+}
+function handleAthleteSelect(id,el){
+  if(el.value==='__add_athlete__'){
+    addAthleteForRunner(id);
+    return;
+  }
+  uN(id,el.value);save();rr();
+}
+function addAthleteForRunner(id){
+  var r=find(id);if(!r)return;
+  var name=prompt('Athlete name');
+  name=String(name||'').trim();
+  if(!name){rr();return;}
+  if(athleteSelectedInGroup(name,id)){
+    alert('That athlete is already selected in this group.');
+    rr();return;
+  }
+  fetch('/api/smart-trak/athletes',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name})
+  }).then(function(resp){
+    return resp.json().then(function(data){return {ok:resp.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Could not add athlete');
+    var a=result.data&&result.data.athlete;
+    if(a){
+      var existing=findAthleteByName(a.name);
+      if(!existing)AR.push(a);
+      AR.sort(function(x,y){return x.name.localeCompare(y.name);});
+      r.name=a.name;r.contactId=a.id;r.smartcoachAthleteId=a.smartcoachAthleteId||'';
+    }else{
+      r.name=name;applyAthleteMatch(r);
+    }
+    renderAthleteList();save();rr();
+  }).catch(function(e){
+    alert('Could not add athlete: '+e.message);
+    rr();
+  });
 }
 
 function go(id){
