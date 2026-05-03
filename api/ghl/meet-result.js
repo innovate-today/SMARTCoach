@@ -117,6 +117,7 @@ function normalizeMeetResult(payload) {
     contactId: clean(payload.contactId),
     smartcoachAthleteId: clean(payload.smartcoachAthleteId),
     meetName: clean(payload.meetName),
+    meetRecordId: clean(payload.meetRecordId),
     meetDate: validDate(meetDate) || new Date(),
     season: clean(payload.season) || "Unspecified",
     sport: clean(payload.sport) || "track",
@@ -207,7 +208,7 @@ function buildMeetResultProperties({ contactId, meetResult }) {
   const sourceRecordId = meetResult.sourceRecordId || buildSourceRecordId({ contactId, meetResult });
   const splitLines = formatSplitsForNote(meetResult.splitsJson);
 
-  return {
+  const properties = {
     meet_result: recordName,
     record_name: recordName,
     athlete_contact: contactId,
@@ -228,6 +229,10 @@ function buildMeetResultProperties({ contactId, meetResult }) {
     source_system: "smartcoach_pro",
     source_record_id: sourceRecordId,
   };
+  if (process.env.ENABLE_MEET_RECORD_ID_FIELD === "true" && meetResult.meetRecordId) {
+    properties.meet_record_id = meetResult.meetRecordId;
+  }
+  return properties;
 }
 
 async function addMeetResultNote({ token, contactId, meetResult }) {

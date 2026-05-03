@@ -258,6 +258,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added non-breaking `Meet` endpoint and app picker: coaches can select preloaded meets from GHL or add a meet on the fly
 - Added SMARTCoach Pro/GHL `Meet` object field mapping for `custom_objects.meets`
 - Future plan: add GHL Community integration so coaches can attach image/video when syncing a new PB/PR, then auto-post the highlight to the SMARTCoach Pro community
+- Passed selected GHL Meet record IDs through meet timing groups and Meet Result saves for clean meet schedule linking
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works

@@ -423,6 +423,7 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 | Record Name | `record_name` | Text | Yes | Avery Womble - 400m - 54.8 | Human-readable CRM title. |
 | Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
 | Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
+| Meet Record ID | `meet_record_id` | Text | No | rec123 | GHL Meet object record ID selected in the app. |
 | Meet Name | `meet_name` | Text | Yes | District Meet | Official meet name. |
 | Meet Date | `meet_date` | Date | Yes | 2026-03-28 | Competition date. |
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
@@ -466,6 +467,7 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 - `athlete_contact`
 - `athlete_name_snapshot`
 - `meet_name`
+- `meet_record_id`
 - `meet_date`
 - `season`
 - `season_year`

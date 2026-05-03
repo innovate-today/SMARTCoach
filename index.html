@@ -317,7 +317,7 @@ var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[],
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',eventName:l.eventName||'',cfg:l.cfg,runners:l.runners.map(function(r){
+      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',cfg:l.cfg,runners:l.runners.map(function(r){
         return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',saved:r.saved||[]};
       })};
     });
@@ -333,7 +333,7 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,eventName:meta.eventName,cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
+        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -363,7 +363,7 @@ function currentSeason(){
 }
 function normalizeGroupMeta(l){
   var cs=currentSeason();
-  return{type:l.type||'training',season:l.season||cs.season,seasonYear:Number(l.seasonYear)||cs.year,meetName:l.meetName||'',meetDate:l.meetDate||'',eventName:l.eventName||''};
+  return{type:l.type||'training',season:l.season||cs.season,seasonYear:Number(l.seasonYear)||cs.year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||''};
 }
 function isCurrentGroup(l){
   var cs=currentSeason();
@@ -609,17 +609,23 @@ function createMeetGroup(){
   var date=document.getElementById('mg-date').value||new Date().toISOString().slice(0,10);
   var season=document.getElementById('mg-season').value||currentSeason().season;
   var year=new Date(date+'T00:00:00').getFullYear()||currentSeason().year;
-  createMeetGroupFromValues({meetName:meet,meetDate:date,season:season,seasonYear:year,eventName:event});
+  var selectedMeet=selectedMeetOption();
+  createMeetGroupFromValues({meetName:meet,meetDate:date,meetRecordId:selectedMeet&&selectedMeet.id||'',season:season,seasonYear:year,eventName:event});
   maybeCreateMeetRecord({meetName:meet,meetDate:date,season:season,seasonYear:year});
 }
 function createMeetGroupFromValues(data){
-  logs.unshift({id:lid++,name:data.eventName,type:'meet',season:data.season,seasonYear:data.seasonYear,meetName:data.meetName,meetDate:data.meetDate,eventName:data.eventName,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
+  logs.unshift({id:lid++,name:data.eventName,type:'meet',season:data.season,seasonYear:data.seasonYear,meetName:data.meetName,meetDate:data.meetDate,meetRecordId:data.meetRecordId||'',eventName:data.eventName,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
   hm('mmg');
   document.getElementById('mg-meet').value='';
   document.getElementById('mg-event').value='400m';
   document.getElementById('mg-event-other').value='';
   toggleMeetEventOther();
   save();rl();
+}
+function selectedMeetOption(){
+  var sel=document.getElementById('mg-meet-select');
+  if(!sel||sel.value==='__new__')return null;
+  return MT[parseInt(sel.value)]||null;
 }
 function maybeCreateMeetRecord(data){
   var sel=document.getElementById('mg-meet-select');
@@ -632,6 +638,11 @@ function maybeCreateMeetRecord(data){
     if(result&&result.meet&&!MT.some(function(m){return String(m.name).toLowerCase()===String(result.meet.name).toLowerCase()&&m.date===result.meet.date;})){
       MT.push(result.meet);
       renderMeetOptions();
+      var created=logs[0];
+      if(created&&created.type==='meet'&&created.meetName===result.meet.name&&created.meetDate===result.meet.date){
+        created.meetRecordId=result.meet.id||'';
+        save();
+      }
     }
   }).catch(function(){});
 }
@@ -1170,6 +1181,7 @@ function submitCapturedMeetResults(forceDuplicateSync){
           smartcoachAthleteId:r.smartcoachAthleteId||(matched&&matched.smartcoachAthleteId)||'',
           meetName:CL.meetName||'Meet',
           meetDate:CL.meetDate||new Date().toISOString().slice(0,10),
+          meetRecordId:CL.meetRecordId||'',
           season:CL.season||currentSeason().season,
           sport:'track',
           event:CL.eventName||CL.name||'Event',
