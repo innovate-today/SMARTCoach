@@ -54,7 +54,7 @@ async function listActiveAthletes({ token, locationId }) {
 
   return (result.contacts || [])
     .map(normalizeContact)
-    .filter((athlete) => athlete.smartcoachActive)
+    .filter((athlete) => athlete.smartcoachActive || (athlete.smartcoachAthleteId && athlete.tags.indexOf("smartcoach-athlete") >= 0))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -195,18 +195,61 @@ function contactName(contact) {
 }
 
 function existingCustomFieldValue(contact, fieldId) {
-  const fields = Array.isArray(contact && contact.customFields) ? contact.customFields : [];
+  const fields = customFieldList(contact);
   const field = fields.find((item) => {
     if (!item) return false;
-    return item.id === fieldId || item.fieldId === fieldId || item.field_id === fieldId;
+    return item.id === fieldId || item.fieldId === fieldId || item.field_id === fieldId || item.customFieldId === fieldId;
   });
   if (!field) return "";
-  const value = field.value || field.fieldValue || field.field_value;
-  return value ? String(value) : "";
+  return fieldValue(field);
 }
 
 function isActiveValue(value) {
-  return /^(yes|true|active|1)$/i.test(clean(value));
+  return /^(yes|y|true|active|1|on)$/i.test(clean(value));
+}
+
+function customFieldList(contact) {
+  if (!contact) return [];
+  if (Array.isArray(contact.customFields)) return contact.customFields;
+  if (Array.isArray(contact.customField)) return contact.customField;
+  if (Array.isArray(contact.customFieldsData)) return contact.customFieldsData;
+  if (contact.customFields && typeof contact.customFields === "object") {
+    return Object.keys(contact.customFields).map((key) => ({
+      id: key,
+      value: contact.customFields[key],
+    }));
+  }
+  return [];
+}
+
+function fieldValue(field) {
+  const value = firstPresent([
+    field.value,
+    field.fieldValue,
+    field.field_value,
+    field.valueString,
+    field.value_string,
+  ]);
+
+  if (Array.isArray(value)) {
+    return value.map(fieldValuePart).filter(Boolean).join(", ");
+  }
+  return fieldValuePart(value);
+}
+
+function fieldValuePart(value) {
+  if (value === null || typeof value === "undefined") return "";
+  if (typeof value === "object") {
+    return clean(value.value || value.name || value.label || value.key || value.id);
+  }
+  return clean(value);
+}
+
+function firstPresent(values) {
+  for (const value of values) {
+    if (value !== null && typeof value !== "undefined" && value !== "") return value;
+  }
+  return "";
 }
 
 function buildAthleteId(name) {
