@@ -149,6 +149,38 @@
         "source_record_id": { "id": "YiGgS06tpfPhEPAxfXvs", "type": "TEXT", "name": "Source Record ID" }
       }
     },
+    "record": {
+      "displayName": "Record",
+      "pluralDisplayName": "Records",
+      "parentId": "Oo7tfkXRNuJUOpCvxgjb",
+      "internalName": "custom_objects.records",
+      "primaryDisplayFieldKey": "record",
+      "fields": {
+        "record": { "id": "ftIsXzZszu3s0cfJ55MU", "type": "TEXT", "name": "Record" },
+        "record_name": { "id": "Ala2zAEATtHjj37Cn6f6", "type": "TEXT", "name": "Record Name" },
+        "record_type": { "id": "kFI5EuUMaWNNr1MWCRCC", "type": "SINGLE_OPTIONS", "name": "Record Type" },
+        "record_scope": { "id": "csicg5cTEMH2il824CdN", "type": "SINGLE_OPTIONS", "name": "Record Scope" },
+        "sport": { "id": "NFlleoMtJlvlB1KAOqpR", "type": "SINGLE_OPTIONS", "name": "Sport" },
+        "event": { "id": "tCE1zz6sODLctaBJaBZD", "type": "TEXT", "name": "Event" },
+        "result_display": { "id": "oECaYRLL3M0uczHeLVYC", "type": "TEXT", "name": "Result Display" },
+        "result_ms": { "id": "WgDubsuUq1Ws9MqXAP4f", "type": "NUMERICAL", "name": "Result MS" },
+        "result_mark": { "id": "5DLRSYC15cAiFPWnUEt2", "type": "TEXT", "name": "Result Mark" },
+        "athlete_contact": { "id": "lgSfedW35TT44Nxgl7tY", "type": "TEXT", "name": "Athlete Contact" },
+        "athlete_name_snapshot": { "id": "OjTWebwJU389MGpccJ2b", "type": "TEXT", "name": "Athlete Name Snapshot" },
+        "meet_name": { "id": "8sjv8sNmaTJiCQIIJ952", "type": "TEXT", "name": "Meet Name" },
+        "meet_record_id": { "id": "KXbl4VsRWz9KvTBsUdvI", "type": "TEXT", "name": "Meet Record ID" },
+        "meet_result_id": { "id": "2oFmwcjJZLPtIqJ5Nf9z", "type": "TEXT", "name": "Meet Result ID" },
+        "record_date": { "id": "lXHnJHTLrt0njYh0wIRX", "type": "DATE", "name": "Record Date" },
+        "season": { "id": "iMNFBo9WoJhJvHI1sdP0", "type": "SINGLE_OPTIONS", "name": "Season" },
+        "season_year": { "id": "VasiHyN6NJt5Q28z15Oq", "type": "NUMERICAL", "name": "Season Year" },
+        "is_current": { "id": "Lxh59hEN9aOEBgOQCo7A", "type": "RADIO", "name": "Is Current" },
+        "previous_record_display": { "id": "dxbcu3xfwRmcw5pFm5o9", "type": "TEXT", "name": "Previous Record Display" },
+        "previous_record_holder": { "id": "vgp96xCWvxPovRoC3HTf", "type": "TEXT", "name": "Previous Record Holder" },
+        "record_notes": { "id": "nn0km6vLhgz6K7V7lUe", "type": "LARGE_TEXT", "name": "Record Notes" },
+        "source_system": { "id": "P7whQtB5LxBtJ8qZHBRC", "type": "TEXT", "name": "Source System" },
+        "source_record_id": { "id": "r3wIXtI98pc4XX8ciJ3f", "type": "TEXT", "name": "Source Record ID" }
+      }
+    },
     "training_plan": {
       "displayName": "Training Plan",
       "pluralDisplayName": "Training Plans",
