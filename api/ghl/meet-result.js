@@ -514,7 +514,7 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
   const existingSbMs = sameSeason(existingProperties, meetResult) ? numberValue(existingProperties.season_best_ms) : 0;
   const isPb = meetResult.isPr === true;
   const isSb = meetResult.isSeasonBest === true;
-  const now = new Date().toISOString();
+  const today = dateOnly(new Date());
 
   return {
     athlete_best: recordName,
@@ -537,8 +537,8 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
     season_best_source_record_id: isSb ? meetResultSourceRecordId : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_source_record_id || "" : "",
     last_result_display: meetResult.resultDisplay,
     last_result_date: dateOnly(meetResult.meetDate),
-    pb_updated_at: isPb ? now : existingProperties.pb_updated_at || "",
-    sb_updated_at: isSb ? now : existingProperties.sb_updated_at || "",
+    pb_updated_at: isPb ? today : existingProperties.pb_updated_at || "",
+    sb_updated_at: isSb ? today : existingProperties.sb_updated_at || "",
     source_system: "smartcoach_pro",
     source_record_id: sourceRecordId,
   };

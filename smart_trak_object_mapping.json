@@ -116,6 +116,39 @@
         "source_record_id": { "id": "3HVSAaItyvtLXYNasRAJ", "type": "TEXT", "name": "Source Record ID" }
       }
     },
+    "athlete_best": {
+      "displayName": "Athlete Best",
+      "pluralDisplayName": "Athlete Bests",
+      "parentId": "GcCHXo4Pe0qMMMhMOMTy",
+      "internalName": "custom_objects.athlete_bests",
+      "primaryDisplayFieldKey": "athlete_best",
+      "fields": {
+        "athlete_best": { "id": "jn5nc7qSiYSQtt94Ca1Y", "type": "TEXT", "name": "Athlete Best" },
+        "record_name": { "id": "7tgi7a8kIRxZ5rM74wLc", "type": "TEXT", "name": "Record Name" },
+        "athlete_contact": { "id": "JNGhbB93E0xRao1jAm47", "type": "TEXT", "name": "Athlete Contact" },
+        "athlete_name_snapshot": { "id": "m20bSENWaEB4jBMtXgMD", "type": "TEXT", "name": "Athlete Name Snapshot" },
+        "sport": { "id": "MgJOkv8vDZ2LXjKKa9Fy", "type": "SINGLE_OPTIONS", "name": "Sport" },
+        "event": { "id": "0zkuDc0aDTpw5hPOKADa", "type": "TEXT", "name": "Event" },
+        "personal_best_display": { "id": "h1rwv5B4JSLfNnsTL7qJ", "type": "TEXT", "name": "Personal Best Display" },
+        "personal_best_ms": { "id": "A41qTuKrn6CSj4bIxYub", "type": "NUMERICAL", "name": "Personal Best MS" },
+        "personal_best_meet": { "id": "mRbdhzawlZ0Q386Zv3X2", "type": "TEXT", "name": "Personal Best Meet" },
+        "personal_best_date": { "id": "tOWqZJ9HUKMtE6THTOfZ", "type": "DATE", "name": "Personal Best Date" },
+        "personal_best_source_record_id": { "id": "HGvcSThGA6oCRZslFdVF", "type": "TEXT", "name": "Personal Best Source Record ID" },
+        "season": { "id": "axxdLORoKlxurfiyZ9qY", "type": "SINGLE_OPTIONS", "name": "Season" },
+        "season_year": { "id": "duYmVm8mrPNyyHySMWKg", "type": "NUMERICAL", "name": "Season Year" },
+        "season_best_display": { "id": "6Xc5844e5EwfqBltPYU9", "type": "TEXT", "name": "Season Best Display" },
+        "season_best_ms": { "id": "KJditKZJ9jPO4527w2AZ", "type": "NUMERICAL", "name": "Season Best MS" },
+        "season_best_meet": { "id": "rRAorB4W8yNzZiIyWeV8", "type": "TEXT", "name": "Season Best Meet" },
+        "season_best_date": { "id": "AffLPRbHGOzMUgKaALwi", "type": "DATE", "name": "Season Best Date" },
+        "season_best_source_record_id": { "id": "vcYvvujgdeRco5GtemMY", "type": "TEXT", "name": "Season Best Source Record ID" },
+        "last_result_display": { "id": "JlPshYvArSOfoUTP7Gn6", "type": "TEXT", "name": "Last Result Display" },
+        "last_result_date": { "id": "LLzkfQDCtloVaUzEWQxE", "type": "DATE", "name": "Last Result Date" },
+        "pb_updated_at": { "id": "k1w3pxjbB1L2DGNB8coZ", "type": "DATE", "name": "PB Updated At" },
+        "sb_updated_at": { "id": "MODH7stU8tJI9hhGlHrP", "type": "DATE", "name": "SB Updated At" },
+        "source_system": { "id": "IF741t59qMvF1DFOJtdQ", "type": "TEXT", "name": "Source System" },
+        "source_record_id": { "id": "YiGgS06tpfPhEPAxfXvs", "type": "TEXT", "name": "Source Record ID" }
+      }
+    },
     "training_plan": {
       "displayName": "Training Plan",
       "pluralDisplayName": "Training Plans",
