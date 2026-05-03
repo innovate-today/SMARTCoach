@@ -330,6 +330,12 @@ function load(){
     save();
   }
 }
+function syncedRunCount(r){
+  return (r.saved||[]).filter(function(s){return s&&s.synced;}).length;
+}
+function hasSyncedRuns(r){
+  return syncedRunCount(r)>0;
+}
 
 function fmt(ms){
   if(ms<0)ms=0;
@@ -881,7 +887,9 @@ function renderSyncAthletes(){
   if(!rs.length){box.innerHTML='<div style="font-size:12px;color:#777;padding:8px 12px;background:#fff">No saved times yet</div>';return;}
   box.innerHTML=rs.map(function(r){
     var runs=r.saved.length;
-    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" checked><span>'+ex(r.name)+'<small>'+runs+' saved run'+(runs===1?'':'s')+'</small></span></label>';
+    var synced=syncedRunCount(r);
+    var note=synced?runs+' saved run'+(runs===1?'':'s')+' · '+synced+' already synced':runs+' saved run'+(runs===1?'':'s');
+    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" '+(synced===runs?'':'checked')+'><span>'+ex(r.name)+'<small>'+note+'</small></span></label>';
   }).join('');
 }
 function doSMARTTraKSync(forceDuplicateSync){
@@ -895,11 +903,21 @@ function doSMARTTraKSync(forceDuplicateSync){
   var surf=document.getElementById('sy-surf').value;
   var selectedIds={};
   document.querySelectorAll('.sy-runner:checked').forEach(function(cb){selectedIds[parseInt(cb.value)]=true;});
+  var selectedRunners=CL.runners.filter(function(r){return selectedIds[r.id]&&r.saved&&r.saved.length;});
+  var localSynced=selectedRunners.filter(hasSyncedRuns);
+  if(localSynced.length&&!forceDuplicateSync){
+    status.textContent='One or more selected athletes were already synced.';status.style.color='#c47a00';status.style.fontWeight='700';
+    if(confirm('One or more selected athletes already have synced runs. Sync them again anyway?')){
+      doSMARTTraKSync(true);
+    }
+    return;
+  }
 
-  var athletes=CL.runners.filter(function(r){return selectedIds[r.id]&&r.saved&&r.saved.length;}).map(function(r){
+  var athletes=selectedRunners.map(function(r){
     var name=r.name;
     var matched=findAthleteByName(name)||findAthleteByName(r.name);
     return {
+      runnerId:r.id,
       name:name,
       contactId:r.contactId||(matched&&matched.id)||'',
       smartcoachAthleteId:r.smartcoachAthleteId||(matched&&matched.smartcoachAthleteId)||'',
@@ -951,6 +969,7 @@ function doSMARTTraKSync(forceDuplicateSync){
       err.status=result.status;err.data=result.data;throw err;
     }
     var count=result.data&&result.data.synced?result.data.synced.length:athletes.length;
+    markSyncedRuns(result.data&&result.data.synced);
     status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' to SMARTCoach Pro!';
     status.style.color='#0a7a44';status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
@@ -967,6 +986,25 @@ function doSMARTTraKSync(forceDuplicateSync){
     status.textContent='Error: '+e.message;status.style.color='#c00';
     btn.textContent='Sync to SMARTCoach Pro';btn.disabled=false;
   });
+}
+function markSyncedRuns(synced){
+  if(!CL||!synced)return;
+  var byRunner={};
+  synced.forEach(function(item){if(item&&item.runnerId)byRunner[item.runnerId]=item;});
+  CL.runners.forEach(function(r){
+    var item=byRunner[r.id];
+    if(!item)return;
+    var records=item.performanceRecords||[];
+    r.saved.forEach(function(s,i){
+      var rec=records[i]||{};
+      s.synced=true;
+      s.syncedAt=new Date().toISOString();
+      if(rec.sourceRecordId)s.sourceRecordId=rec.sourceRecordId;
+      if(rec.recordId)s.performanceRecordId=rec.recordId;
+    });
+  });
+  save();
+  renderSyncAthletes();
 }
 
 load();rl();loadAthletes();

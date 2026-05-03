@@ -58,7 +58,7 @@ module.exports = async function handler(req, res) {
         session,
         performanceRecords,
       });
-      synced.push({ athlete: athlete.name, contactId: contact.id, performanceRecords, seasonRecord });
+      synced.push({ runnerId: athlete.runnerId, athlete: athlete.name, contactId: contact.id, performanceRecords, seasonRecord });
     }
 
     res.status(200).json({ success: true, synced });
@@ -106,6 +106,7 @@ function normalizeSession(payload) {
 
 function normalizeAthlete(raw) {
   return {
+    runnerId: clean(raw && raw.runnerId),
     name: clean(raw && raw.name),
     contactId: clean(raw && raw.contactId),
     smartcoachAthleteId: clean(raw && raw.smartcoachAthleteId),
