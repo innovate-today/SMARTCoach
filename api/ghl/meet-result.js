@@ -30,6 +30,10 @@ module.exports = async function handler(req, res) {
     const meetResult = normalizeMeetResult(payload);
     const contact = await findOrCreateContact({ token, locationId, meetResult });
     const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
+    const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
+    if (duplicate && !meetResult.forceDuplicateSync) {
+      throw httpError(409, "This meet result appears to have already been saved.");
+    }
 
     const record = await ghlFetch({
       token,
@@ -37,6 +41,7 @@ module.exports = async function handler(req, res) {
       method: "POST",
       body: { locationId, properties },
     });
+    await addMeetResultNote({ token, contactId: contact.id, meetResult });
 
     res.status(200).json({
       success: true,
@@ -84,6 +89,8 @@ function normalizeMeetResult(payload) {
     isPr: truthy(payload.isPr),
     isSeasonBest: truthy(payload.isSeasonBest),
     coachRaceNotes: clean(payload.coachRaceNotes),
+    sourceRecordId: clean(payload.sourceRecordId),
+    forceDuplicateSync: payload.forceDuplicateSync === true,
   };
 }
 
@@ -158,7 +165,7 @@ async function markContactAsSmartCoachAthlete({ token, contact, meetResult }) {
 function buildMeetResultProperties({ contactId, meetResult }) {
   const seasonYear = meetResult.meetDate.getFullYear();
   const recordName = `${meetResult.athleteName} - ${meetResult.event} - ${meetResult.resultDisplay} - ${meetResult.meetName}`;
-  const sourceRecordId = buildSourceRecordId({ contactId, meetResult });
+  const sourceRecordId = meetResult.sourceRecordId || buildSourceRecordId({ contactId, meetResult });
 
   return {
     meet_result: recordName,
@@ -181,6 +188,53 @@ function buildMeetResultProperties({ contactId, meetResult }) {
     source_system: "smartcoach_pro",
     source_record_id: sourceRecordId,
   };
+}
+
+async function addMeetResultNote({ token, contactId, meetResult }) {
+  const lines = [
+    `SMARTCoach Meet Result - ${dateOnly(meetResult.meetDate)}`,
+    `Meet: ${meetResult.meetName} | Season: ${meetResult.season}`,
+    `Event: ${meetResult.event} | Result: ${meetResult.resultDisplay}`,
+    meetResult.wind ? `Wind: ${meetResult.wind}` : "",
+    `Flags: PR ${meetResult.isPr ? "Yes" : "No"} | SB ${meetResult.isSeasonBest ? "Yes" : "No"}`,
+  ].filter(Boolean);
+
+  if (meetResult.splitsJson && meetResult.splitsJson !== "[]") lines.push(`Splits: ${meetResult.splitsJson}`);
+  if (meetResult.coachRaceNotes) lines.push(`Notes: ${meetResult.coachRaceNotes}`);
+
+  await ghlFetch({
+    token,
+    path: `/contacts/${encodeURIComponent(contactId)}/notes`,
+    method: "POST",
+    body: { body: lines.join("\n") },
+  });
+}
+
+async function findDuplicateMeetResult({ token, locationId, sourceRecordId }) {
+  if (!sourceRecordId) return null;
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records/search`,
+      method: "POST",
+      body: {
+        locationId,
+        page: 1,
+        pageLimit: 1,
+        filters: [
+          {
+            field: "source_record_id",
+            operator: "eq",
+            value: sourceRecordId,
+          },
+        ],
+      },
+    });
+    return firstRecord(result);
+  } catch (error) {
+    if (error.statusCode && error.statusCode >= 500) throw error;
+    return null;
+  }
 }
 
 function buildSourceRecordId({ contactId, meetResult }) {
@@ -274,6 +328,17 @@ function clean(value) {
 
 function safeJson(text) {
   try { return JSON.parse(text); } catch (error) { return { message: text }; }
+}
+
+function firstRecord(result) {
+  const candidates = [
+    result && result.record,
+    result && Array.isArray(result.records) && result.records[0],
+    result && Array.isArray(result.items) && result.items[0],
+    result && result.data && Array.isArray(result.data.records) && result.data.records[0],
+    result && result.data && Array.isArray(result.data.items) && result.data.items[0],
+  ];
+  return candidates.find(Boolean) || null;
 }
 
 function httpError(statusCode, message) {
