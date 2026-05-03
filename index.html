@@ -124,7 +124,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SPLASH / HOME */
 .splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;height:100dvh;background:var(--W);position:absolute;inset:0;z-index:200;transition:opacity .4s}
 .splash.gone{opacity:0;pointer-events:none}
-.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}</style>
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}</style>
 </head>
 <body>
 
@@ -868,27 +868,36 @@ function _fallbackCopy(txt){
 function openSync(){
   hm('msh');
   loadAthletes();
-  var name='';
-  if(CL&&CL.runners.length===1)name=CL.runners[0].name;
-  document.getElementById('sy-name').value=name;
+  renderSyncAthletes();
   document.getElementById('sy-status').textContent='';
   var btn=document.getElementById('sy-btn');
   btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;
   sm('m-sync');
 }
+function renderSyncAthletes(){
+  var box=document.getElementById('sy-athletes');
+  if(!box||!CL)return;
+  var rs=CL.runners.filter(function(r){return r.saved&&r.saved.length;});
+  if(!rs.length){box.innerHTML='<div style="font-size:12px;color:#777;padding:8px 12px;background:#fff">No saved times yet</div>';return;}
+  box.innerHTML=rs.map(function(r){
+    var runs=r.saved.length;
+    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" checked><span>'+ex(r.name)+'<small>'+runs+' saved run'+(runs===1?'':'s')+'</small></span></label>';
+  }).join('');
+}
 function doSMARTTraKSync(forceDuplicateSync){
   if(!CL)return;
   var btn=document.getElementById('sy-btn');
   var status=document.getElementById('sy-status');
-  var athleteName=document.getElementById('sy-name').value.trim();
   var season=document.getElementById('sy-season').value;
   var phase=document.getElementById('sy-phase').value;
   var wtype=document.getElementById('sy-wtype').value;
   var esys=document.getElementById('sy-esys').value;
   var surf=document.getElementById('sy-surf').value;
+  var selectedIds={};
+  document.querySelectorAll('.sy-runner:checked').forEach(function(cb){selectedIds[parseInt(cb.value)]=true;});
 
-  var athletes=CL.runners.filter(function(r){return r.saved&&r.saved.length;}).map(function(r){
-    var name=(athleteName&&CL.runners.length===1)?athleteName:r.name;
+  var athletes=CL.runners.filter(function(r){return selectedIds[r.id]&&r.saved&&r.saved.length;}).map(function(r){
+    var name=r.name;
     var matched=findAthleteByName(name)||findAthleteByName(r.name);
     return {
       name:name,
@@ -907,8 +916,7 @@ function doSMARTTraKSync(forceDuplicateSync){
     };
   });
 
-  if(!athletes.length){status.textContent='No saved times to sync.';status.style.color='#c00';return;}
-  if(CL.runners.length===1&&!athletes[0].name.trim()){status.textContent='Please enter athlete name.';status.style.color='#c00';return;}
+  if(!athletes.length){status.textContent='Select at least one athlete with saved times.';status.style.color='#c00';return;}
   var seenAthletes={};
   for(var ai=0;ai<athletes.length;ai++){
     var key=String(athletes[ai].contactId||athletes[ai].name||'').trim().toLowerCase();
@@ -972,6 +980,6 @@ document.addEventListener('touchstart',function(e){
 </script>
 <datalist id="athletes-list"></datalist>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMARTCoach Pro</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete Name</label><input id="sy-name" class="sinp" type="text" placeholder="First Last" list="athletes-list" autocomplete="off"/></div><div class="srow"><label class="slbl">Season</label><select id="sy-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Phase</label><select id="sy-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout Type</label><select id="sy-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Plyometrics</option><option>Strength Circuit</option><option>Hill Sprints</option></select></div><div class="srow"><label class="slbl">Energy System</label><select id="sy-esys" class="sinp"><option>ATP-PC (Phosphagen)</option><option>Glycolytic (Anaerobic)</option><option>Oxidative (Aerobic)</option><option>Mixed</option></select></div><div class="srow"><label class="slbl">Surface</label><select id="sy-surf" class="sinp"><option>Track</option><option>Grass</option><option>Trail</option><option>Indoor</option><option>Road</option></select></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMARTCoach Pro</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMARTCoach Pro</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Season</label><select id="sy-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Phase</label><select id="sy-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout Type</label><select id="sy-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Plyometrics</option><option>Strength Circuit</option><option>Hill Sprints</option></select></div><div class="srow"><label class="slbl">Energy System</label><select id="sy-esys" class="sinp"><option>ATP-PC (Phosphagen)</option><option>Glycolytic (Anaerobic)</option><option>Oxidative (Aerobic)</option><option>Mixed</option></select></div><div class="srow"><label class="slbl">Surface</label><select id="sy-surf" class="sinp"><option>Track</option><option>Grass</option><option>Trail</option><option>Indoor</option><option>Road</option></select></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMARTCoach Pro</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
 </html>

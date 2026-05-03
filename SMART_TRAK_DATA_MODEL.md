@@ -88,8 +88,8 @@ API key: `energy_system`
 Options:
 
 - `atp_pc`
-- `glycolytic`
-- `oxidative`
+- `glycolytic_anaerobic`
+- `oxidative_aerobic`
 - `mixed`
 
 ### Surface

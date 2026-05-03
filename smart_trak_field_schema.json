@@ -105,7 +105,7 @@
   "dropdowns": {
     "season": ["summer", "fall", "winter", "spring"],
     "phase": ["gpp", "spp", "pre_competition", "competition", "transition"],
-    "energy_system": ["atp_pc_phosphagen", "glycolytic_anaerobic", "oxidative_aerobic", "mixed"],
+    "energy_system": ["atp_pc", "glycolytic_anaerobic", "oxidative_aerobic", "mixed"],
     "surface": ["track", "grass", "trail", "indoor", "road", "turf", "hills", "other"],
     "plan_scope": ["individual", "group", "team"],
     "approval_status": ["draft", "approved", "rejected", "completed", "skipped"],
