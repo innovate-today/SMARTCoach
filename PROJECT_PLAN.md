@@ -120,6 +120,7 @@ GHL custom objects:
 - Meet Result: official race results, event, time, place, splits, conditions
 - Season Record: full season summary, volume, peak performance, injury log
 - Athlete Best: athlete-level parent object for lifetime PBs and current season bests by event
+- Records: school/team/club records by event, classification, gender, season, and record scope
 - Training Plan: AI-generated weekly plan per athlete
 
 Seasons tracked:
@@ -172,7 +173,9 @@ GHL automations:
 - Weekly progress email, AI drafted and coach approved
 - PR alert
 - SB alert
+- School/team record alert
 - Parent and athlete notification when a new PB or SB is detected from a saved Meet Result
+- Parent, athlete, and coach notification when a school/team record is tied or broken
 - Meet day notification
 - Injury flag notification and training load adjustment
 - End-of-season summary
@@ -247,6 +250,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added the first Training/Meets/Archive group separation layer: current-season Training keeps the existing simple group creation flow, Meets can create meet/event timing groups, and Archive hides past-season groups by default while keeping them viewable
 - Added Meet Result saves from meet timing groups, readable split/season summary fields, and Season Record updates from Meet Results
 - Next PB/SB data step: create an `Athlete Best` parent custom object associated with the athlete contact, then use it to auto-detect lifetime PBs and current-season SBs and trigger later parent/athlete notification workflows
+- Added `Records` custom object concept for school/team/club records so SMARTCoach can detect and later notify when an athlete ties or breaks a school record
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works

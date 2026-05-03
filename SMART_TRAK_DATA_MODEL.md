@@ -160,6 +160,7 @@ Relationships:
 - Contact has many Training Plans.
 - Season Record can summarize many Performance Records and Meet Results.
 - Athlete Best is the athlete-level parent record for PB/SB detection by event.
+- Records stores school/team/club standards; Meet Results can be compared against Records for school-record detection.
 - Training Plan can reference recent Performance Records and target future Performance Records.
 
 Recommended relationship fields:
@@ -502,7 +503,83 @@ Avery Womble - 400m Bests
 - `source_system`
 - `source_record_id`
 
-## Object 5: Training Plan
+## Object 5: Records
+
+Display name: `Record`
+
+API key: `record`
+
+Purpose:
+
+Stores school, team, club, grade-level, and meet records that athletes can chase. Meet Results can be compared against this object to detect tied or broken records and trigger coach, parent, and athlete notifications later.
+
+Creation trigger:
+
+- Coach or admin enters existing school/team records.
+- Later: import from a school record book, CSV, athletic.net, MileSplit, or dashboard form.
+- Updated automatically when a saved Meet Result breaks or ties the current record.
+
+Primary display format:
+
+```text
+Trinity Christian - Girls 400m School Record
+```
+
+### Fields
+
+| Field | API Key | Type | Required | Example | Notes |
+|---|---|---:|---:|---|---|
+| Record Name | `record_name` | Text | Yes | Trinity Christian - Girls 400m School Record | Human-readable title. |
+| Record Scope | `record_scope` | Dropdown | Yes | school | school, team, club, grade, meet, facility, district, state_standard. |
+| Organization Name | `organization_name` | Text | Yes | Trinity Christian Addison | School/team/club name. |
+| Sport | `sport` | Dropdown/Text | Yes | track | Track or cross country. |
+| Gender/Division | `gender_division` | Dropdown/Text | No | girls | Girls, boys, varsity, JV, open, etc. |
+| Classification | `classification` | Text | No | TAPPS 5A | Optional class/division. |
+| Season | `season` | Dropdown | No | spring | Useful for seasonal records. |
+| Event | `event` | Text | Yes | 400m | Event being tracked. |
+| Record Display | `record_display` | Text | Yes | 54.82 | Current record mark. |
+| Record MS | `record_ms` | Number | No | 54820 | Timed events; lower is better. |
+| Record Value Numeric | `record_value_numeric` | Number | No | 5.82 | Jumps/throws/points later. |
+| Record Unit | `record_unit` | Text | No | seconds | seconds, meters, feet_inches, points. |
+| Record Holder Contact | `record_holder_contact_id` | Contact relation/Text | No | abc123 | Current holder if in CRM. |
+| Record Holder Name | `record_holder_name` | Text | Yes | Avery Womble | Current holder display. |
+| Record Meet | `record_meet` | Text | No | State Championship | Meet where set. |
+| Record Date | `record_date` | Date | No | 2026-05-03 | Date set. |
+| Record Source Record ID | `record_source_record_id` | Text | No | mr_... | Meet Result that set current record. |
+| Previous Record Display | `previous_record_display` | Text | No | 55.10 | Previous mark before last update. |
+| Previous Record Holder Name | `previous_record_holder_name` | Text | No | Vanessa Smith | Previous holder. |
+| Last Challenge Result ID | `last_challenge_result_id` | Text | No | mr_... | Most recent Meet Result checked. |
+| Last Broken At | `last_broken_at` | DateTime | No | 2026-05-03T18:45:00Z | Workflow trigger helper. |
+| Last Tied At | `last_tied_at` | DateTime | No | 2026-05-03T18:45:00Z | Workflow trigger helper. |
+| Notification Status | `notification_status` | Dropdown/Text | No | pending | pending, sent, suppressed. |
+| Coach Notes | `coach_notes` | Long Text | No | Converted from hand time | Admin context. |
+| Source System | `source_system` | Text | Yes | manual | manual, smartcoach_pro, csv, athletic_net. |
+| Source Record ID | `source_record_id` | Text | Yes | rec_school_tca_girls_400m | One per scope/org/division/event. |
+
+### Minimum Viable Fields For First Implementation
+
+- `record_name`
+- `record_scope`
+- `organization_name`
+- `sport`
+- `gender_division`
+- `event`
+- `record_display`
+- `record_ms`
+- `record_holder_contact_id`
+- `record_holder_name`
+- `record_meet`
+- `record_date`
+- `record_source_record_id`
+- `previous_record_display`
+- `previous_record_holder_name`
+- `last_broken_at`
+- `last_tied_at`
+- `notification_status`
+- `source_system`
+- `source_record_id`
+
+## Object 6: Training Plan
 
 Display name: `Training Plan`
 
@@ -664,13 +741,15 @@ Sync rule:
 
 ## Implementation Order
 
-1. Create the four custom objects in SMARTCoach Pro/GHL.
+1. Create the first four custom objects in SMARTCoach Pro/GHL.
 2. Add the minimum viable fields for Performance Record first.
 3. Update `/api/ghl/sync-session.js` to create Performance Records after contact note sync.
 4. Add athlete roster lookup and active/inactive contact management to prevent duplicate athlete contacts.
 5. Add Season Record creation/update once Performance Records are being created reliably. Done in the sync function; live test pending.
 6. Add Meet Result manual entry/import workflow.
-7. Add Training Plan records with the first AI pace calculator.
+7. Add Athlete Best records for automatic PB/SB detection.
+8. Add Records records for school/team/club record detection and school-record alert workflows.
+9. Add Training Plan records with the first AI pace calculator.
 
 ## Dedupe Strategy
 
@@ -681,6 +760,8 @@ Recommended IDs:
 - Performance Record: `pr_{contactId}_{sessionDate}_{groupSlug}_run_{runNumber}`
 - Season Record: `sr_{contactId}_{seasonYear}_{season}`
 - Meet Result: `mr_{contactId}_{meetDate}_{eventSlug}_{roundOrFinal}`
+- Athlete Best: `ab_{contactId}_{eventSlug}`
+- Records: `rec_{recordScope}_{organizationSlug}_{divisionSlug}_{eventSlug}`
 - Training Plan: `tp_{contactId}_{planDate}_{workoutType}_{shortHash}`
 
 If GHL custom objects do not enforce uniqueness directly, the sync function should search by `source_record_id` before creating a new record.
