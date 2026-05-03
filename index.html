@@ -380,6 +380,20 @@ function applyAthleteMatch(r){
   r.smartcoachAthleteId=a?(a.smartcoachAthleteId||''):'';
   return a;
 }
+function athleteNameControl(r){
+  if(!AR.length){
+    return '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name" list="athletes-list" '+
+      'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
+      'oninput="uN('+r.id+',this.value)" onblur="save()"/>';
+  }
+  var opts=[];
+  var hasCurrent=!!findAthleteByName(r.name);
+  if(!hasCurrent)opts.push('<option value="'+ex(r.name)+'">'+ex(r.name)+'</option>');
+  AR.forEach(function(a){
+    opts.push('<option value="'+ex(a.name)+'"'+(String(a.name).toLowerCase()===String(r.name).toLowerCase()?' selected':'')+'>'+ex(a.name)+'</option>');
+  });
+  return '<select class="rname" id="rn-'+r.id+'" onchange="uN('+r.id+',this.value);save()">'+opts.join('')+'</select>';
+}
 function loadAthletes(){
   fetch('/api/smart-trak/athletes').then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
@@ -475,9 +489,7 @@ function rHTML(r){
   '<div class="rdelbtn" id="db-'+r.id+'" onclick="deleteRunner('+r.id+')">Delete</div>'+
   '<div class="runner-row" id="rr-'+r.id+'" ontouchstart="_ss(event,'+r.id+')" ontouchmove="_sm(event,'+r.id+')" ontouchend="_se(event,'+r.id+')">'+
     '<div class="row-top">'+
-      '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name" list="athletes-list" '+
-        'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
-        'oninput="uN('+r.id+',this.value)" onblur="save()"/>'+
+      athleteNameControl(r)+
       '<div class="row-btns" style="gap:6px">'+
         '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">Lap</button>'+
         '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>'+
