@@ -199,7 +199,8 @@ async function addMeetResultNote({ token, contactId, meetResult }) {
     `Flags: PR ${meetResult.isPr ? "Yes" : "No"} | SB ${meetResult.isSeasonBest ? "Yes" : "No"}`,
   ].filter(Boolean);
 
-  if (meetResult.splitsJson && meetResult.splitsJson !== "[]") lines.push(`Splits: ${meetResult.splitsJson}`);
+  const splits = formatSplitsForNote(meetResult.splitsJson);
+  if (splits.length) lines.push("Splits:", ...splits);
   if (meetResult.coachRaceNotes) lines.push(`Notes: ${meetResult.coachRaceNotes}`);
 
   await ghlFetch({
@@ -208,6 +209,25 @@ async function addMeetResultNote({ token, contactId, meetResult }) {
     method: "POST",
     body: { body: lines.join("\n") },
   });
+}
+
+function formatSplitsForNote(splitsJson) {
+  if (!splitsJson || splitsJson === "[]") return [];
+  let splits;
+  try {
+    splits = typeof splitsJson === "string" ? JSON.parse(splitsJson) : splitsJson;
+  } catch (error) {
+    return [];
+  }
+  if (!Array.isArray(splits)) return [];
+  return splits
+    .map((split, index) => {
+      const time = clean(split && split.time);
+      if (!time) return "";
+      const lap = Number(split && split.lap) || index + 1;
+      return `Lap ${lap}: ${time}`;
+    })
+    .filter(Boolean);
 }
 
 async function findDuplicateMeetResult({ token, locationId, sourceRecordId }) {
