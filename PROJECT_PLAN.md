@@ -256,6 +256,8 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added coach confirmation for PB/SB in the meet-save flow so empty or incomplete GHL history does not falsely mark first-time results as records
 - Changed new Meet Event entry to use a standard event dropdown, with `Other` available for unusual distances
 - Added non-breaking `Meet` endpoint and app picker: coaches can select preloaded meets from GHL or add a meet on the fly
+- Added SMARTCoach Pro/GHL `Meet` object field mapping for `custom_objects.meets`
+- Future plan: add GHL Community integration so coaches can attach image/video when syncing a new PB/PR, then auto-post the highlight to the SMARTCoach Pro community
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works
