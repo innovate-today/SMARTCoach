@@ -200,6 +200,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="tbar">
     <button class="tbtn" onclick="go('s-sort')"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Sort</span></button>
     <button class="tbtn" onclick="sums()"><svg viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg><span>Sum</span></button>
+    <button class="tbtn pro-only" onclick="openPaceCalc()"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="8.01" y2="11"/><line x1="12" y1="11" x2="12.01" y2="11"/><line x1="16" y1="11" x2="16.01" y2="11"/><line x1="8" y1="15" x2="8.01" y2="15"/><line x1="12" y1="15" x2="12.01" y2="15"/><line x1="16" y1="15" x2="16.01" y2="15"/></svg><span>Pace</span></button>
     <button class="tbtn" onclick="addR()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn" onclick="go('s-set')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
     <button class="tbtn" onclick="delR()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
@@ -949,6 +950,54 @@ function profileSection(title,rows){
   if(!rows||!rows.length)return '<div class="profile-sec"><h4>'+ex(title)+'</h4><div class="profile-row">No data yet</div></div>';
   return '<div class="profile-sec"><h4>'+ex(title)+'</h4>'+rows.join('')+'</div>';
 }
+function openPaceCalc(){
+  if(!isProPlan())return;
+  loadAthletes();
+  var first=(CL&&CL.runners&&CL.runners.length)?CL.runners[0].name:'';
+  document.getElementById('pc-athlete').innerHTML=athleteOptions(first);
+  document.getElementById('pc-result').innerHTML='';
+  document.getElementById('pc-anchor-time').value='';
+  sm('m-pace');
+}
+function calcTrainingPace(){
+  var status=document.getElementById('pc-result');
+  var event=document.getElementById('pc-anchor-event').value;
+  var anchorMs=parseMs(document.getElementById('pc-anchor-time').value);
+  var workout=document.getElementById('pc-wtype').value;
+  var phase=document.getElementById('pc-phase').value;
+  var rule=paceRule(workout);
+  var anchorDistance=eventDistance(event);
+  if(!anchorDistance||!anchorMs){status.innerHTML='<div class="profile-sec"><div class="profile-row">Enter an anchor performance first.</div></div>';return;}
+  var baseMsPerMeter=anchorMs/anchorDistance;
+  var fast=Math.round(baseMsPerMeter*rule.distance/rule.high);
+  var slow=Math.round(baseMsPerMeter*rule.distance/rule.low);
+  var mid=Math.round((fast+slow)/2);
+  var per100=Math.round(mid/rule.distance*100);
+  var per400=Math.round(mid/rule.distance*400);
+  status.innerHTML='<div class="profile-sec"><h4>Target Range</h4><div class="profile-row"><b>'+ex(rule.label)+'</b><small>'+rule.distance+'m reps at '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'% of '+ex(event)+' pace</small></div><div class="profile-row"><b>'+fmt(fast)+' - '+fmt(slow)+'</b><small>Avg pace: '+fmt(per100)+' per 100m · '+fmt(per400)+' per 400m</small></div><div class="profile-row"><small>Phase: '+ex(phase)+'. This is a baseline target; adjust for fatigue, weather, recovery, and athlete readiness.</small></div></div>';
+}
+function paceRule(workout){
+  var rules={
+    'Acceleration':{label:'Acceleration',distance:30,low:.95,high:1},
+    'Max Velocity':{label:'Max Velocity',distance:60,low:.95,high:1},
+    'Speed Endurance I':{label:'Speed Endurance I',distance:150,low:.88,high:.95},
+    'Special Endurance I':{label:'Special Endurance I',distance:300,low:.85,high:.90},
+    'Special Endurance II':{label:'Special Endurance II',distance:500,low:.80,high:.88},
+    'Lactate Tolerance':{label:'Lactate Tolerance',distance:300,low:.82,high:.88},
+    'Intensive Tempo':{label:'Intensive Tempo',distance:400,low:.75,high:.82},
+    'Extensive Tempo':{label:'Extensive Tempo',distance:400,low:.65,high:.75},
+    'Lactate Threshold':{label:'Lactate Threshold',distance:1000,low:.82,high:.88},
+    'Easy/Recovery Run':{label:'Easy/Recovery Run',distance:400,low:.60,high:.70},
+    'Long Run':{label:'Long Run',distance:400,low:.60,high:.72},
+    'Aerobic Power':{label:'Aerobic Power',distance:800,low:.78,high:.86},
+    'Hill Sprints':{label:'Hill Sprints',distance:60,low:.90,high:.98}
+  };
+  return rules[workout]||{label:workout,distance:400,low:.75,high:.85};
+}
+function eventDistance(event){
+  var map={'100m':100,'200m':200,'400m':400,'600m':600,'800m':800,'1500m':1500,'1600m':1600,'1 Mile':1609.34,'3200m':3200,'5K':5000};
+  return map[event]||0;
+}
 
 function oSet(){
   if(!CL)return;
@@ -1525,6 +1574,7 @@ document.addEventListener('touchstart',function(e){
 <datalist id="athletes-list"></datalist>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-profile"><div class="msh"><div class="mhd"></div><div class="mttl" id="profile-title">Athlete Profile</div><div class="profile-box" id="profile-body"></div><button class="mbtn c" onclick="hm('m-profile')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h pro-only" id="m-pace"><div class="msh"><div class="mhd"></div><div class="mttl">Training Pace</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="pc-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Anchor</label><select id="pc-anchor-event" class="sinp"><option>400m</option><option>100m</option><option>200m</option><option>600m</option><option>800m</option><option>1500m</option><option>1600m</option><option>1 Mile</option><option>3200m</option><option>5K</option></select></div><div class="srow"><label class="slbl">Time</label><input id="pc-anchor-time" class="sinp" type="text" placeholder="52.00" autocomplete="off"/></div><div class="srow"><label class="slbl">Phase</label><select id="pc-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout</label><select id="pc-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Hill Sprints</option></select></div></div><div id="pc-result" class="profile-box"></div><button class="mbtn" onclick="calcTrainingPace()" style="background:#2B4FCC">Calculate Pace</button><button class="mbtn c" onclick="hm('m-pace')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-meet"><div class="msh"><div class="mhd"></div><div class="mttl">Add Meet Result</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="mr-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Meet</label><input id="mr-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div><div class="srow"><label class="slbl">Date</label><input id="mr-date" class="sinp" type="date"/></div><div class="srow"><label class="slbl">Season</label><select id="mr-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Event</label><input id="mr-event" class="sinp" type="text" placeholder="400m" autocomplete="off"/></div><div class="srow"><label class="slbl">Result</label><input id="mr-result" class="sinp" type="text" placeholder="54.82" autocomplete="off"/></div><div class="srow"><label class="slbl">Wind</label><input id="mr-wind" class="sinp" type="text" placeholder="+1.2" autocomplete="off"/></div><div class="srow"><label class="slbl">Flags</label><div style="flex:1;display:flex;gap:12px"><label class="mcheck"><input id="mr-pr" type="checkbox">PR</label><label class="mcheck"><input id="mr-sb" type="checkbox">SB</label></div></div><div class="srow"><label class="slbl">Notes</label><input id="mr-notes" class="sinp" type="text" placeholder="Race notes" autocomplete="off"/></div></div><div id="mr-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="mr-btn" onclick="submitMeetResult()" style="background:#2B4FCC">Save Meet Result</button><button class="mbtn c" onclick="hm('m-meet')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><div class="sinp" id="ms-event" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMARTCoach Pro</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Season</label><select id="sy-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Phase</label><select id="sy-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout Type</label><select id="sy-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Plyometrics</option><option>Strength Circuit</option><option>Hill Sprints</option></select></div><div class="srow"><label class="slbl">Energy System</label><select id="sy-esys" class="sinp"><option>ATP-PC (Phosphagen)</option><option>Glycolytic (Anaerobic)</option><option>Oxidative (Aerobic)</option><option>Mixed</option></select></div><div class="srow"><label class="slbl">Surface</label><select id="sy-surf" class="sinp"><option>Track</option><option>Grass</option><option>Trail</option><option>Indoor</option><option>Road</option></select></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMARTCoach Pro</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
