@@ -214,6 +214,7 @@ function buildMeetResultProperties({ contactId, meetResult }) {
     athlete_contact: contactId,
     athlete_name_snapshot: meetResult.athleteName,
     meet_name: meetResult.meetName,
+    meet_record_id: meetResult.meetRecordId,
     meet_date: dateOnly(meetResult.meetDate),
     season: optionValue(meetResult.season),
     season_year: seasonYear,
@@ -229,9 +230,6 @@ function buildMeetResultProperties({ contactId, meetResult }) {
     source_system: "smartcoach_pro",
     source_record_id: sourceRecordId,
   };
-  if (process.env.ENABLE_MEET_RECORD_ID_FIELD === "true" && meetResult.meetRecordId) {
-    properties.meet_record_id = meetResult.meetRecordId;
-  }
   return properties;
 }
 

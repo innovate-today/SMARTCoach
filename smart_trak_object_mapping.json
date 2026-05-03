@@ -99,6 +99,7 @@
         "athlete_contact": { "id": "ZBi4Oj4pmCQs8ekqaNr2", "type": "TEXT", "name": "Athlete Contact" },
         "athlete_name_snapshot": { "id": "NxKoU2l9QohpmzRt2gin", "type": "TEXT", "name": "Athlete Name Snapshot" },
         "meet_name": { "id": "bCOXXRAtRqmCJnMZFLvB", "type": "TEXT", "name": "Meet Name" },
+        "meet_record_id": { "id": "bYvSIORqUN3ziyxsDNY5", "type": "TEXT", "name": "Meet Record ID" },
         "meet_date": { "id": "rYZUhun2ynmK8MNsYgph", "type": "DATE", "name": "Meet Date" },
         "season": { "id": "E7WkU0NjC48zZzSNMlMJ", "type": "SINGLE_OPTIONS", "name": "Season" },
         "season_year": { "id": "jImFId2bLt2Hhox7TTDR", "type": "NUMERICAL", "name": "Season Year" },
