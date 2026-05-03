@@ -75,7 +75,6 @@ module.exports = async function handler(req, res) {
       contactId: contact.id,
       meetResult,
       existing: athleteBestLookup.record,
-      objectAvailable: athleteBestLookup.available,
       sourceRecordId: athleteBestSourceRecordId,
       meetResultSourceRecordId: properties.source_record_id,
     });
@@ -441,7 +440,7 @@ async function findOptionalObjectRecord({ token, locationId, schemaKey, sourceRe
     return { available: true, record: firstRecord(result) || null };
   } catch (error) {
     if (error.statusCode && error.statusCode >= 500) throw error;
-    return { available: false, record: null };
+    return { available: true, record: null, lookupWarning: error.message || "Athlete Best lookup failed; create will be attempted." };
   }
 }
 
@@ -462,9 +461,7 @@ function calculateMeetResultFlags({ existingSeasonRecord, athleteBestLookup, mee
   return { isSeasonBest, isPr };
 }
 
-async function upsertAthleteBest({ token, locationId, contactId, meetResult, existing, objectAvailable, sourceRecordId, meetResultSourceRecordId }) {
-  if (!objectAvailable) return { action: "skipped", reason: "Athlete Best object is not available yet." };
-
+async function upsertAthleteBest({ token, locationId, contactId, meetResult, existing, sourceRecordId, meetResultSourceRecordId }) {
   const properties = buildAthleteBestProperties({
     contactId,
     meetResult,
@@ -501,7 +498,7 @@ async function upsertAthleteBest({ token, locationId, contactId, meetResult, exi
     };
   } catch (error) {
     if (error.statusCode && error.statusCode >= 500) throw error;
-    return { action: "skipped", reason: error.message || "Athlete Best object is not configured yet." };
+    return { action: "skipped", statusCode: error.statusCode || null, reason: error.message || "Athlete Best object is not configured yet." };
   }
 }
 
