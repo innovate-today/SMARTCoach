@@ -125,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SPLASH / HOME */
 .splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;height:100dvh;background:var(--W);position:absolute;inset:0;z-index:200;transition:opacity .4s}
 .splash.gone{opacity:0;pointer-events:none}
-.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}.mcheck{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#333}.mcheck input{width:18px;height:18px;accent-color:var(--R)}</style>
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.srow.h{display:none}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}.mcheck{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#333}.mcheck input{width:18px;height:18px;accent-color:var(--R)}</style>
 </head>
 <body>
 
@@ -288,7 +288,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="srow"><label class="slbl">Meet</label><input id="mg-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div>
       <div class="srow"><label class="slbl">Date</label><input id="mg-date" class="sinp" type="date"/></div>
       <div class="srow"><label class="slbl">Season</label><select id="mg-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div>
-      <div class="srow"><label class="slbl">Event</label><input id="mg-event" class="sinp" type="text" placeholder="400m" autocomplete="off"/></div>
+      <div class="srow"><label class="slbl">Event</label><select id="mg-event" class="sinp" onchange="toggleMeetEventOther()"><option>400m</option><option>600m</option><option>800m</option><option>1500m</option><option>1600m</option><option>1 Mile</option><option>3K</option><option>3200m</option><option>2 Mile</option><option>4K</option><option>5K</option><option>8K</option><option>10K</option><option>15K</option><option>Half Marathon</option><option>Marathon</option><option>Other</option></select></div>
+      <div class="srow h" id="mg-event-other-row"><label class="slbl">Specify</label><input id="mg-event-other" class="sinp" type="text" placeholder="Event name" autocomplete="off"/></div>
     </div>
     <button class="mbtn" onclick="createMeetGroup()">Create</button>
     <button class="mbtn c" onclick="hm('mmg')">Cancel</button>
@@ -565,7 +566,8 @@ function createGroup(){
 }
 function createMeetGroup(){
   var meet=document.getElementById('mg-meet').value.trim()||'New Meet';
-  var event=document.getElementById('mg-event').value.trim();
+  var event=document.getElementById('mg-event').value;
+  if(event==='Other')event=document.getElementById('mg-event-other').value.trim();
   if(!event){alert('Enter the event name first.');return;}
   var date=document.getElementById('mg-date').value||new Date().toISOString().slice(0,10);
   var season=document.getElementById('mg-season').value||currentSeason().season;
@@ -573,8 +575,15 @@ function createMeetGroup(){
   logs.unshift({id:lid++,name:event,type:'meet',season:season,seasonYear:year,meetName:meet,meetDate:date,eventName:event,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
   hm('mmg');
   document.getElementById('mg-meet').value='';
-  document.getElementById('mg-event').value='';
+  document.getElementById('mg-event').value='400m';
+  document.getElementById('mg-event-other').value='';
+  toggleMeetEventOther();
   save();rl();
+}
+function toggleMeetEventOther(){
+  var row=document.getElementById('mg-event-other-row');
+  var sel=document.getElementById('mg-event');
+  if(row&&sel)row.classList.toggle('h',sel.value!=='Other');
 }
 function delGroup(){
   var shown=visibleGroups();
@@ -1062,6 +1071,8 @@ function openMeetSave(){
   document.getElementById('ms-date').textContent=CL.meetDate||new Date().toISOString().slice(0,10);
   document.getElementById('ms-status').textContent='';
   document.getElementById('ms-wind').value='';
+  document.getElementById('ms-pr').checked=false;
+  document.getElementById('ms-sb').checked=false;
   document.getElementById('ms-notes').value='';
   var btn=document.getElementById('ms-btn');
   btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;
@@ -1087,8 +1098,8 @@ function submitCapturedMeetResults(forceDuplicateSync){
     return;
   }
   var wind=document.getElementById('ms-wind').value.trim();
-  var isPr=false;
-  var isSeasonBest=false;
+  var isPr=document.getElementById('ms-pr').checked;
+  var isSeasonBest=document.getElementById('ms-sb').checked;
   var notes=document.getElementById('ms-notes').value.trim();
   var queue=[];
   selected.forEach(function(r){
@@ -1317,7 +1328,7 @@ document.addEventListener('touchstart',function(e){
 <datalist id="athletes-list"></datalist>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-meet"><div class="msh"><div class="mhd"></div><div class="mttl">Add Meet Result</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="mr-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Meet</label><input id="mr-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div><div class="srow"><label class="slbl">Date</label><input id="mr-date" class="sinp" type="date"/></div><div class="srow"><label class="slbl">Season</label><select id="mr-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Event</label><input id="mr-event" class="sinp" type="text" placeholder="400m" autocomplete="off"/></div><div class="srow"><label class="slbl">Result</label><input id="mr-result" class="sinp" type="text" placeholder="54.82" autocomplete="off"/></div><div class="srow"><label class="slbl">Wind</label><input id="mr-wind" class="sinp" type="text" placeholder="+1.2" autocomplete="off"/></div><div class="srow"><label class="slbl">Flags</label><div style="flex:1;display:flex;gap:12px"><label class="mcheck"><input id="mr-pr" type="checkbox">PR</label><label class="mcheck"><input id="mr-sb" type="checkbox">SB</label></div></div><div class="srow"><label class="slbl">Notes</label><input id="mr-notes" class="sinp" type="text" placeholder="Race notes" autocomplete="off"/></div></div><div id="mr-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="mr-btn" onclick="submitMeetResult()" style="background:#2B4FCC">Save Meet Result</button><button class="mbtn c" onclick="hm('m-meet')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
-<div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><div class="sinp" id="ms-event" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><div class="sinp" id="ms-event" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Confirm</label><div style="flex:1;display:flex;gap:12px"><label class="mcheck"><input id="ms-pr" type="checkbox">PB</label><label class="mcheck"><input id="ms-sb" type="checkbox">SB</label></div></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMARTCoach Pro</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Season</label><select id="sy-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Phase</label><select id="sy-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout Type</label><select id="sy-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Plyometrics</option><option>Strength Circuit</option><option>Hill Sprints</option></select></div><div class="srow"><label class="slbl">Energy System</label><select id="sy-esys" class="sinp"><option>ATP-PC (Phosphagen)</option><option>Glycolytic (Anaerobic)</option><option>Oxidative (Aerobic)</option><option>Mixed</option></select></div><div class="srow"><label class="slbl">Surface</label><select id="sy-surf" class="sinp"><option>Track</option><option>Grass</option><option>Trail</option><option>Indoor</option><option>Road</option></select></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMARTCoach Pro</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
 </html>

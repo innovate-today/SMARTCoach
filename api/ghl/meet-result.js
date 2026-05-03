@@ -452,10 +452,10 @@ function calculateMeetResultFlags({ existingSeasonRecord, athleteBestLookup, mee
   const summary = Object.keys(parsedSummary).length ? parsedSummary : parseReadableSeasonBests(existingProperties.season_bests_json);
   const eventKey = optionValue(meetResult.event) || "event";
   const currentBest = summary && summary.meetBestsByEvent ? summary.meetBestsByEvent[eventKey] : null;
-  const isSeasonBest = !!meetResult.resultMs && (!currentBest || !Number(currentBest.ms) || meetResult.resultMs < Number(currentBest.ms));
+  const isSeasonBest = !!meetResult.resultMs && !!currentBest && !!Number(currentBest.ms) && meetResult.resultMs < Number(currentBest.ms);
   const bestProperties = recordProperties(athleteBestLookup && athleteBestLookup.record);
   const existingPbMs = numberValue(bestProperties.personal_best_ms);
-  const isPr = !!(athleteBestLookup && athleteBestLookup.available) && !!meetResult.resultMs && (!existingPbMs || meetResult.resultMs < existingPbMs);
+  const isPr = !!(athleteBestLookup && athleteBestLookup.available) && !!meetResult.resultMs && !!existingPbMs && meetResult.resultMs < existingPbMs;
   return { isSeasonBest, isPr };
 }
 
@@ -509,8 +509,8 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
   const recordName = `${meetResult.athleteName} - ${event} Bests`;
   const existingPbMs = numberValue(existingProperties.personal_best_ms);
   const existingSbMs = sameSeason(existingProperties, meetResult) ? numberValue(existingProperties.season_best_ms) : 0;
-  const isPb = !!meetResult.resultMs && (!existingPbMs || meetResult.resultMs < existingPbMs);
-  const isSb = !!meetResult.resultMs && (!existingSbMs || meetResult.resultMs < existingSbMs);
+  const isPb = meetResult.isPr === true;
+  const isSb = meetResult.isSeasonBest === true;
   const now = new Date().toISOString();
 
   return {
@@ -527,11 +527,11 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
     personal_best_source_record_id: isPb ? meetResultSourceRecordId : existingProperties.personal_best_source_record_id || "",
     season: optionValue(meetResult.season),
     season_year: seasonYear,
-    season_best_display: isSb ? meetResult.resultDisplay : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_display || "" : meetResult.resultDisplay,
-    season_best_ms: isSb ? meetResult.resultMs : sameSeason(existingProperties, meetResult) ? numberValue(existingProperties.season_best_ms) || null : meetResult.resultMs,
-    season_best_meet: isSb ? meetResult.meetName : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_meet || "" : meetResult.meetName,
-    season_best_date: isSb ? dateOnly(meetResult.meetDate) : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_date || "" : dateOnly(meetResult.meetDate),
-    season_best_source_record_id: isSb ? meetResultSourceRecordId : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_source_record_id || "" : meetResultSourceRecordId,
+    season_best_display: isSb ? meetResult.resultDisplay : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_display || "" : "",
+    season_best_ms: isSb ? meetResult.resultMs : sameSeason(existingProperties, meetResult) ? existingSbMs || null : null,
+    season_best_meet: isSb ? meetResult.meetName : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_meet || "" : "",
+    season_best_date: isSb ? dateOnly(meetResult.meetDate) : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_date || "" : "",
+    season_best_source_record_id: isSb ? meetResultSourceRecordId : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_source_record_id || "" : "",
     last_result_display: meetResult.resultDisplay,
     last_result_date: dateOnly(meetResult.meetDate),
     pb_updated_at: isPb ? now : existingProperties.pb_updated_at || "",

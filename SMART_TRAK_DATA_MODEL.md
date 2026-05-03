@@ -431,6 +431,12 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 - `source_system`
 - `source_record_id`
 
+PB/SB confirmation rule:
+
+- If a stored Athlete Best or Season Record already exists, SMARTCoach can auto-detect a new PB/SB when the saved result beats the stored mark.
+- If the database has no prior mark for that athlete/event, the coach must confirm PB and/or SB during the meet-save flow before the result is flagged as a record.
+- This prevents an empty CRM database from treating every first synced result as a confirmed PB/SB.
+
 ## Object 4: Athlete Best
 
 Display name: `Athlete Best`
