@@ -67,6 +67,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .tbtn{display:flex;flex-direction:column;align-items:center;cursor:pointer;gap:3px;padding:4px 10px;background:none;border:none;user-select:none}
 .tbtn svg{width:23px;height:23px;stroke:var(--R);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tbtn span{font-size:10px;color:#888}
+.gfilters{display:flex;gap:6px;padding:8px 10px;background:var(--G0);border-bottom:0.5px solid var(--G2);flex-shrink:0}.gf{flex:1;border:1px solid var(--G2);background:#fff;color:#333;border-radius:8px;font-size:13px;font-weight:700;padding:8px 4px;font-family:inherit}.gf.on{background:var(--R);border-color:var(--R);color:#fff}
 
 /* LISTS */
 .lsec{border-top:0.5px solid var(--G2);border-bottom:0.5px solid var(--G2);margin-top:16px}
@@ -149,7 +150,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- LOGS SCREEN -->
 <div class="screen active" id="s-groups">
   <div class="nav">
-    <div class="nav-btn" onclick="sm('ml')">Edit</div>
+    <div class="nav-btn" onclick="addGroupForView()">Add</div>
     <div class="nav-title">
       <svg class="smart-logo" width="28" height="28" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
         <circle cx="70" cy="70" r="68" fill="#fff" stroke="#2B4FCC" stroke-width="4"/>
@@ -164,10 +165,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     </div>
     <div class="nav-btn r" onclick="shareAll()">Share</div>
   </div>
+  <div class="gfilters"><button class="gf on" id="gf-training" onclick="setGroupView('training')">Training</button><button class="gf" id="gf-meets" onclick="setGroupView('meets')">Meets</button><button class="gf" id="gf-archive" onclick="setGroupView('archive')">Archive</button></div>
   <div class="scroll"><div class="lsec" id="ll"></div></div>
   <div class="tbar">
     <button class="tbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.8" fill="#2B4FCC" stroke="none"/></svg><span>Info</span></button>
-    <button class="tbtn" onclick="sm('ml')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
+    <button class="tbtn" onclick="addGroupForView()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn" onclick="delGroup()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
   </div>
 </div>
@@ -277,6 +279,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
 </div>
 
+<!-- ADD MEET GROUP MODAL -->
+<div class="mover h" id="mmg">
+  <div class="msh">
+    <div class="mhd"></div>
+    <div class="mttl">New Meet Event</div>
+    <div style="padding:0 4px 4px">
+      <div class="srow"><label class="slbl">Meet</label><input id="mg-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div>
+      <div class="srow"><label class="slbl">Date</label><input id="mg-date" class="sinp" type="date"/></div>
+      <div class="srow"><label class="slbl">Season</label><select id="mg-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div>
+      <div class="srow"><label class="slbl">Event</label><input id="mg-event" class="sinp" type="text" placeholder="400m" autocomplete="off"/></div>
+    </div>
+    <button class="mbtn" onclick="createMeetGroup()">Create</button>
+    <button class="mbtn c" onclick="hm('mmg')">Cancel</button>
+  </div>
+</div>
+
 <!-- SHARE MODAL -->
 <div class="mover h" id="msh">
   <div class="msh">
@@ -292,12 +310,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[];
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], GV='training';
 
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,name:l.name,cfg:l.cfg,runners:l.runners.map(function(r){
+      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',eventName:l.eventName||'',cfg:l.cfg,runners:l.runners.map(function(r){
         return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',saved:r.saved||[]};
       })};
     });
@@ -312,7 +330,8 @@ function load(){
     if(d){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
-        return{id:l.id,name:l.name,cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
+        var meta=normalizeGroupMeta(l);
+        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,eventName:meta.eventName,cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -323,13 +342,30 @@ function load(){
     }
   }catch(e){}
   if(!logs.length){
+    var cs=currentSeason();
     logs=[
-      {id:lid++,name:'Workout 1',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
-      {id:lid++,name:'Workout 2',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
-      {id:lid++,name:'Workout 3',cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]}
+      {id:lid++,name:'Workout 1',type:'training',season:cs.season,seasonYear:cs.year,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
+      {id:lid++,name:'Workout 2',type:'training',season:cs.season,seasonYear:cs.year,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
+      {id:lid++,name:'Workout 3',type:'training',season:cs.season,seasonYear:cs.year,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]}
     ];
     save();
   }
+}
+function currentSeason(){
+  var d=new Date(),m=d.getMonth()+1,y=d.getFullYear(),s='Spring';
+  if(m===12||m<=2)s='Winter';
+  else if(m>=3&&m<=5)s='Spring';
+  else if(m>=6&&m<=8)s='Summer';
+  else s='Fall';
+  return{season:s,year:y};
+}
+function normalizeGroupMeta(l){
+  var cs=currentSeason();
+  return{type:l.type||'training',season:l.season||cs.season,seasonYear:Number(l.seasonYear)||cs.year,meetName:l.meetName||'',meetDate:l.meetDate||'',eventName:l.eventName||''};
+}
+function isCurrentGroup(l){
+  var cs=currentSeason();
+  return String(l.season||cs.season)===cs.season&&Number(l.seasonYear||cs.year)===cs.year;
 }
 function syncedRunCount(r){
   return (r.saved||[]).filter(function(s){return s&&s.synced;}).length;
@@ -472,30 +508,80 @@ function go(id){
 function sm(id){document.getElementById(id).classList.remove('h');}
 function hm(id){document.getElementById(id).classList.add('h');}
 
+function setGroupView(view){
+  GV=view;
+  ['training','meets','archive'].forEach(function(v){
+    var b=document.getElementById('gf-'+v);
+    if(b)b.classList.toggle('on',v===view);
+  });
+  rl();
+}
+function addGroupForView(){
+  if(GV==='meets'){
+    var d=document.getElementById('mg-date');
+    if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);
+    var cs=currentSeason();
+    var s=document.getElementById('mg-season');
+    if(s)s.value=cs.season;
+    sm('mmg');
+  }else{
+    if(GV==='archive')setGroupView('training');
+    sm('ml');
+  }
+}
+function visibleGroups(){
+  return logs.filter(function(l){
+    var type=l.type||'training';
+    if(GV==='archive')return !isCurrentGroup(l);
+    if(!isCurrentGroup(l))return false;
+    if(GV==='meets')return type==='meet';
+    return type!=='meet';
+  });
+}
 function rl(){
   var el=document.getElementById('ll');
-  if(!logs.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">Tap Add to create a group</div>';return;}
-  el.innerHTML=logs.map(function(l){
+  var shown=visibleGroups();
+  if(!shown.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">'+(GV==='archive'?'No archived seasons yet':'Tap Add to create a group')+'</div>';return;}
+  el.innerHTML=shown.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
+    var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(l.meetName||'Meet')+' · '+ex(l.season||'')+' '+(l.seasonYear||'')+'</div>':'';
     return'<div class="lrow" onclick="oGroup('+l.id+')">'+
-      '<span class="ltxt">'+ex(l.name)+'</span>'+
+      '<span class="ltxt">'+ex(l.name)+sub+'</span>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
       '<span style="color:#bbb;font-size:16px">&rsaquo;</span></div></div>';
   }).join('');
 }
 function oGroup(id){
   for(var i=0;i<logs.length;i++){if(logs[i].id===id){CL=logs[i];break;}}
-  document.getElementById('ltit').textContent=CL.name;
+  document.getElementById('ltit').textContent=CL.type==='meet'?(CL.meetName+' · '+(CL.eventName||CL.name)):CL.name;
   go('s-group');
 }
 function createGroup(){
   var name=document.getElementById('mln').value.trim()||'New Group';
-  logs.unshift({id:lid++,name:name,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
+  var cs=currentSeason();
+  logs.unshift({id:lid++,name:name,type:'training',season:cs.season,seasonYear:cs.year,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
   hm('ml');document.getElementById('mln').value='';save();rl();
 }
+function createMeetGroup(){
+  var meet=document.getElementById('mg-meet').value.trim()||'New Meet';
+  var event=document.getElementById('mg-event').value.trim()||'Event';
+  var date=document.getElementById('mg-date').value||new Date().toISOString().slice(0,10);
+  var season=document.getElementById('mg-season').value||currentSeason().season;
+  var year=new Date(date+'T00:00:00').getFullYear()||currentSeason().year;
+  logs.unshift({id:lid++,name:event,type:'meet',season:season,seasonYear:year,meetName:meet,meetDate:date,eventName:event,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
+  hm('mmg');
+  document.getElementById('mg-meet').value='';
+  document.getElementById('mg-event').value='';
+  save();rl();
+}
 function delGroup(){
-  if(!logs.length)return;
-  if(confirm('Delete "'+logs[logs.length-1].name+'"?')){logs.pop();save();rl();}
+  var shown=visibleGroups();
+  if(!shown.length)return;
+  var target=shown[shown.length-1];
+  if(confirm('Delete "'+target.name+'"?')){
+    logs=logs.filter(function(l){return l.id!==target.id;});
+    save();rl();
+  }
 }
 function shareAll(){
   var t='SMARTCoach - All Groups\n'+new Date().toLocaleDateString()+'\n\n';
