@@ -125,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SPLASH / HOME */
 .splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;height:100dvh;background:var(--W);position:absolute;inset:0;z-index:200;transition:opacity .4s}
 .splash.gone{opacity:0;pointer-events:none}
-.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.srow.h{display:none}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}.sync-athlete-main{flex:1;min-width:0}.best-flags{display:flex;gap:8px;align-items:center;flex-shrink:0}.best-flag{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#333}.best-flag input{width:16px;height:16px}.best-hint{color:#777}.best-hint.good{color:#0a7a44}.best-hint.warn{color:#c47a00}.profile-box{padding:0 12px 10px;max-height:68vh;overflow:auto;text-align:left}.profile-sec{background:#fff;border-bottom:0.5px solid #e5e5ea;padding:10px 12px}.profile-sec h4{font-size:12px;letter-spacing:0;color:#777;margin-bottom:6px}.profile-row{font-size:13px;color:#333;line-height:1.35;padding:4px 0}.profile-row b{font-size:14px}.profile-row small{display:block;color:#777;margin-top:1px}.mcheck{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#333}.mcheck input{width:18px;height:18px;accent-color:var(--R)}</style>
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.srow.h{display:none}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}.sync-athlete-main{flex:1;min-width:0}.best-flags{display:flex;gap:8px;align-items:center;flex-shrink:0}.best-flag{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#333}.best-flag input{width:16px;height:16px}.best-hint{color:#777}.best-hint.good{color:#0a7a44}.best-hint.warn{color:#c47a00}.profile-box{padding:0 12px 10px;max-height:68vh;overflow:auto;text-align:left}.profile-sec{background:#fff;border-bottom:0.5px solid #e5e5ea;padding:10px 12px}.profile-sec h4{font-size:12px;letter-spacing:0;color:#777;margin-bottom:6px}.profile-row{font-size:13px;color:#333;line-height:1.35;padding:4px 0}.profile-row b{font-size:14px}.profile-row small{display:block;color:#777;margin-top:1px}.plan-essential .pro-only{display:none!important}.mcheck{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#333}.mcheck input{width:18px;height:18px;accent-color:var(--R)}</style>
 </head>
 <body>
 
@@ -218,7 +218,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow"><span class="elbl" id="en" style="color:#555;font-weight:600"></span></div>
-      <div class="erow" onclick="openAthleteProfile()"><span class="elbl" style="color:var(--R);font-weight:600">SMARTCoach Pro Profile</span><span style="color:#bbb">&rsaquo;</span></div>
+      <div class="erow pro-only" onclick="openAthleteProfile()"><span class="elbl" style="color:var(--R);font-weight:600">SMARTCoach Pro Profile</span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow" id="enote-row" style="display:none"><span class="elbl" id="enotes" style="color:#666;font-size:15px"></span></div>
     </div>
     <div class="lhdr">LAPS</div>
@@ -226,7 +226,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
   <div class="bact">
     <span class="blnk" onclick="clrLaps()">Clear Laps</span>
-    <span class="blnk" onclick="openAthleteProfile()">Profile</span>
+    <span class="blnk pro-only" onclick="openAthleteProfile()">Profile</span>
     <span class="blnk" onclick="go('s-group')">Done</span>
   </div>
 </div>
@@ -307,8 +307,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy / Share</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
-    <button class="mbtn" onclick="openMeetResult()" style="background:#555;margin-top:8px">Add Meet Result</button>
-    <button class="mbtn" onclick="openSMARTCoachSave()" style="background:#2B4FCC;margin-top:8px">Save to SMARTCoach Pro</button>
+    <button class="mbtn pro-only" onclick="openMeetResult()" style="background:#555;margin-top:8px">Add Meet Result</button>
+    <button class="mbtn pro-only" onclick="openSMARTCoachSave()" style="background:#2B4FCC;margin-top:8px">Save to SMARTCoach Pro</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
 </div>
@@ -316,6 +316,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <script>
 var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], GV='training';
 
+function productPlan(){
+  return localStorage.getItem('sc_plan')||'pro';
+}
+function isProPlan(){
+  return productPlan()!=='essential';
+}
+function applyPlanMode(){
+  document.body.classList.toggle('plan-essential',!isProPlan());
+}
 function save(){
   try{
     var s=logs.map(function(l){
@@ -446,7 +455,7 @@ function athleteSelectedInGroup(name, runnerId){
   });
 }
 function athleteNameControl(r){
-  if(!AR.length){
+  if(!isProPlan()||!AR.length){
     return '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name" list="athletes-list" '+
       'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
       'oninput="uN('+r.id+',this.value)" onblur="save()"/>';
@@ -462,6 +471,7 @@ function athleteNameControl(r){
   return '<select class="rname" id="rn-'+r.id+'" onchange="handleAthleteSelect('+r.id+',this)">'+opts.join('')+'</select>';
 }
 function loadAthletes(){
+  if(!isProPlan()){AR=[];renderAthleteList();return;}
   fetch('/api/smart-trak/athletes').then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
@@ -893,6 +903,7 @@ function clrLaps(){
   CE.laps=[];save();oEnt(CE.id);
 }
 function openAthleteProfile(){
+  if(!isProPlan())return;
   if(!CE)return;
   var matched=findAthleteByName(CE.name)||{};
   var contactId=CE.contactId||matched.id||'';
@@ -1098,6 +1109,7 @@ function _fallbackCopy(txt){
 }
 
 function openSync(){
+  if(!isProPlan())return;
   hm('msh');
   loadAthletes();
   renderSyncAthletes();
@@ -1107,6 +1119,7 @@ function openSync(){
   sm('m-sync');
 }
 function openSMARTCoachSave(){
+  if(!isProPlan())return;
   if(CL&&CL.type==='meet')openMeetSave();
   else openSync();
 }
@@ -1120,6 +1133,7 @@ function athleteOptions(selectedName){
   return opts.join('');
 }
 function openMeetResult(){
+  if(!isProPlan())return;
   hm('msh');
   loadAthletes();
   var first=(CL&&CL.runners&&CL.runners.length)?CL.runners[0].name:'';
@@ -1499,7 +1513,7 @@ function markSyncedRuns(synced){
   renderSyncAthletes();
 }
 
-load();rl();loadAthletes();
+applyPlanMode();load();rl();loadAthletes();
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
   var t=e.target;
