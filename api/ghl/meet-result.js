@@ -166,6 +166,7 @@ function buildMeetResultProperties({ contactId, meetResult }) {
   const seasonYear = meetResult.meetDate.getFullYear();
   const recordName = `${meetResult.athleteName} - ${meetResult.event} - ${meetResult.resultDisplay} - ${meetResult.meetName}`;
   const sourceRecordId = meetResult.sourceRecordId || buildSourceRecordId({ contactId, meetResult });
+  const splitLines = formatSplitsForNote(meetResult.splitsJson);
 
   return {
     meet_result: recordName,
@@ -181,7 +182,7 @@ function buildMeetResultProperties({ contactId, meetResult }) {
     result_display: meetResult.resultDisplay,
     result_ms: meetResult.resultMs,
     wind: meetResult.wind,
-    splits_json: meetResult.splitsJson || "[]",
+    splits_json: splitLines.length ? splitLines.join("\n") : "",
     is_pr: meetResult.isPr ? "Yes" : "No",
     is_season_best: meetResult.isSeasonBest ? "Yes" : "No",
     coach_race_notes: meetResult.coachRaceNotes,
