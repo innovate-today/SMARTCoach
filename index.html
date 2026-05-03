@@ -394,13 +394,14 @@ function athleteNameControl(r){
       'autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" '+
       'oninput="uN('+r.id+',this.value)" onblur="save()"/>';
   }
-  var opts=['<option value="__add_athlete__">+ Add Athlete</option>'];
+  var opts=[];
   var hasCurrent=!!findAthleteByName(r.name);
-  if(!hasCurrent)opts.push('<option value="'+ex(r.name)+'">'+ex(r.name)+'</option>');
+  if(!hasCurrent)opts.push('<option value="'+ex(r.name)+'" selected>'+ex(r.name)+'</option>');
   AR.forEach(function(a){
     if(athleteSelectedInGroup(a.name,r.id))return;
     opts.push('<option value="'+ex(a.name)+'"'+(String(a.name).toLowerCase()===String(r.name).toLowerCase()?' selected':'')+'>'+ex(a.name)+'</option>');
   });
+  opts.push('<option value="__add_athlete__">+ Add Athlete</option>');
   return '<select class="rname" id="rn-'+r.id+'" onchange="handleAthleteSelect('+r.id+',this)">'+opts.join('')+'</select>';
 }
 function loadAthletes(){
