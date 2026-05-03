@@ -65,6 +65,7 @@ function normalizePlan(payload) {
   const primaryEvent = clean(payload.primaryEvent) || "400m";
   const phaseFocus = clean(payload.phaseFocus) || "Balanced";
   const planDate = clean(payload.planDate) || new Date().toISOString().slice(0, 10);
+  const workoutDescription = clean(payload.workoutDescription);
 
   return {
     contactId: clean(payload.contactId),
@@ -76,6 +77,7 @@ function normalizePlan(payload) {
     primaryEvent,
     phaseFocus,
     planDate,
+    workoutDescription,
   };
 }
 
@@ -83,7 +85,7 @@ function buildTrainingPlanProperties(plan) {
   const isIndividual = !!plan.contactId;
   const subject = isIndividual ? plan.athleteName : plan.groupName;
   const title = `${plan.season} ${plan.seasonYear} Season Plan - ${subject}`;
-  const description = buildSeasonPlanDescription(plan);
+  const description = plan.workoutDescription || buildSeasonPlanDescription(plan);
   const sourceRecordId = [
     "tp",
     "season",
@@ -103,7 +105,6 @@ function buildTrainingPlanProperties(plan) {
     season: optionValue(plan.season),
     season_year: plan.seasonYear,
     phase: phaseValue(plan.phaseFocus),
-    workout_type: "season_plan",
     energy_system: "mixed",
     workout_title: title,
     workout_description: description,

@@ -1009,6 +1009,7 @@ function openSeasonPlan(){
   document.getElementById('tp-group').value=(CL&&CL.name)||'Team';
   document.getElementById('tp-athlete').innerHTML=seasonPlanAthleteOptions();
   document.getElementById('tp-status').textContent='';
+  refreshSeasonPlanDraft();
   var btn=document.getElementById('tp-btn');
   btn.textContent='Create Season Plan';btn.disabled=false;btn.style.background='#2B4FCC';
   sm('m-training-plan');
@@ -1020,12 +1021,10 @@ function seasonPlanAthleteOptions(){
   });
   return opts.join('');
 }
-function createSeasonPlan(){
-  var btn=document.getElementById('tp-btn');
-  var status=document.getElementById('tp-status');
+function seasonPlanPayload(){
   var athleteEl=document.getElementById('tp-athlete');
   var opt=athleteEl.options[athleteEl.selectedIndex];
-  var payload={
+  return {
     groupName:document.getElementById('tp-group').value.trim()||'Team',
     contactId:athleteEl.value,
     athleteName:opt&&athleteEl.value?opt.getAttribute('data-name'):'',
@@ -1034,8 +1033,45 @@ function createSeasonPlan(){
     seasonYear:Number(document.getElementById('tp-year').value)||currentSeason().year,
     primaryEvent:document.getElementById('tp-event').value,
     phaseFocus:document.getElementById('tp-phase').value,
-    planDate:new Date().toISOString().slice(0,10)
+    planDate:new Date().toISOString().slice(0,10),
+    workoutDescription:(document.getElementById('tp-description')&&document.getElementById('tp-description').value.trim())||''
   };
+}
+function seasonPlanDraftText(plan){
+  var subject=plan.contactId?plan.athleteName:plan.groupName;
+  return [
+    plan.season+' '+plan.seasonYear+' season plan for '+subject+'.',
+    'Primary focus: '+plan.primaryEvent+'.',
+    'Phase focus: '+plan.phaseFocus+'.',
+    '',
+    'Season Structure:',
+    '1. Foundation: mechanics, rhythm, aerobic support, general strength.',
+    '2. Development: event-specific speed, lactate tolerance, technical consistency.',
+    '3. Competition: sharpen race modeling, reduce unnecessary volume, protect recovery.',
+    '4. Peak: keep intensity high, volume low, and prioritize freshness.',
+    '',
+    'Weekly Rhythm:',
+    '- 2 quality sessions',
+    '- 1 technical or speed-support session',
+    '- 1-2 recovery / tempo sessions',
+    '- Meet-week adjustments based on race schedule',
+    '',
+    'Coach Adjustments:',
+    '- Add phase dates',
+    '- Add priority meets',
+    '- Adjust volume and recovery weeks',
+    '- Add athlete-specific notes where needed'
+  ].join('\n');
+}
+function refreshSeasonPlanDraft(){
+  var text=document.getElementById('tp-description');
+  if(text)text.value=seasonPlanDraftText(seasonPlanPayload());
+}
+function createSeasonPlan(){
+  var btn=document.getElementById('tp-btn');
+  var status=document.getElementById('tp-status');
+  var payload=seasonPlanPayload();
+  if(!payload.workoutDescription){status.textContent='Add plan details before saving.';status.style.color='#c00';return;}
   btn.textContent='Creating...';btn.disabled=true;
   status.textContent='Saving season plan to SMARTCoach Pro...';status.style.color='#555';status.style.fontWeight='400';
   fetch('/api/smart-trak/training-plan',{
@@ -1630,7 +1666,7 @@ document.addEventListener('touchstart',function(e){
 <datalist id="athletes-list"></datalist>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-profile"><div class="msh"><div class="mhd"></div><div class="mttl" id="profile-title">Athlete Profile</div><div class="profile-box" id="profile-body"></div><button class="mbtn c" onclick="hm('m-profile')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Season Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Group</label><input id="tp-group" class="sinp" type="text" placeholder="Team / Group" autocomplete="off"/></div><div class="srow"><label class="slbl">Athlete</label><select id="tp-athlete" class="sinp"><option value="">Whole group</option></select></div><div class="srow"><label class="slbl">Season</label><select id="tp-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Year</label><input id="tp-year" class="sinp" type="number" inputmode="numeric" placeholder="2026"/></div><div class="srow"><label class="slbl">Event Focus</label><select id="tp-event" class="sinp"><option>400m</option><option>100m / 200m</option><option>800m</option><option>1600m</option><option>3200m</option><option>Cross Country</option><option>Multi-Event</option></select></div><div class="srow"><label class="slbl">Focus</label><select id="tp-phase" class="sinp"><option>General Prep</option><option>Specific Prep</option><option>Pre-Competition</option><option>Competition</option><option>Transition / Recovery</option></select></div></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="createSeasonPlan()" style="background:#2B4FCC">Create Season Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Season Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Group</label><input id="tp-group" class="sinp" type="text" placeholder="Team / Group" autocomplete="off" oninput="refreshSeasonPlanDraft()"/></div><div class="srow"><label class="slbl">Athlete</label><select id="tp-athlete" class="sinp" onchange="refreshSeasonPlanDraft()"><option value="">Whole group</option></select></div><div class="srow"><label class="slbl">Season</label><select id="tp-season" class="sinp" onchange="refreshSeasonPlanDraft()"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Year</label><input id="tp-year" class="sinp" type="number" inputmode="numeric" placeholder="2026" oninput="refreshSeasonPlanDraft()"/></div><div class="srow"><label class="slbl">Event Focus</label><select id="tp-event" class="sinp" onchange="refreshSeasonPlanDraft()"><option>400m</option><option>100m / 200m</option><option>800m</option><option>1600m</option><option>3200m</option><option>Cross Country</option><option>Multi-Event</option></select></div><div class="srow"><label class="slbl">Focus</label><select id="tp-phase" class="sinp" onchange="refreshSeasonPlanDraft()"><option>General Prep</option><option>Specific Prep</option><option>Pre-Competition</option><option>Competition</option><option>Transition / Recovery</option></select></div><div style="padding:4px 12px"><textarea id="tp-description" class="sinp" style="width:100%;height:210px;resize:vertical;line-height:1.35" placeholder="Edit season plan before saving"></textarea></div></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="createSeasonPlan()" style="background:#2B4FCC">Create Season Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h pro-only" id="m-pace"><div class="msh"><div class="mhd"></div><div class="mttl">Training Pace</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="pc-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Best Event</label><select id="pc-anchor-event" class="sinp"><option>400m</option><option>100m</option><option>200m</option><option>600m</option><option>800m</option><option>1500m</option><option>1600m</option><option>1 Mile</option><option>3200m</option><option>5K</option></select></div><div class="srow"><label class="slbl">Best Time</label><input id="pc-anchor-time" class="sinp" type="text" placeholder="52.00" autocomplete="off"/></div><div class="srow"><label class="slbl">Phase</label><select id="pc-phase" class="sinp"><option>General Prep</option><option>Specific Prep</option><option>Pre-Competition</option><option>Competition</option><option>Transition / Recovery</option></select></div><div class="srow"><label class="slbl">Workout</label><select id="pc-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Hill Sprints</option></select></div></div><div id="pc-result" class="profile-box"></div><button class="mbtn" onclick="calcTrainingPace()" style="background:#2B4FCC">Calculate Pace</button><button class="mbtn c" onclick="hm('m-pace')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-meet"><div class="msh"><div class="mhd"></div><div class="mttl">Add Meet Result</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="mr-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Meet</label><input id="mr-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div><div class="srow"><label class="slbl">Date</label><input id="mr-date" class="sinp" type="date"/></div><div class="srow"><label class="slbl">Season</label><select id="mr-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Event</label><input id="mr-event" class="sinp" type="text" placeholder="400m" autocomplete="off"/></div><div class="srow"><label class="slbl">Result</label><input id="mr-result" class="sinp" type="text" placeholder="54.82" autocomplete="off"/></div><div class="srow"><label class="slbl">Wind</label><input id="mr-wind" class="sinp" type="text" placeholder="+1.2" autocomplete="off"/></div><div class="srow"><label class="slbl">Flags</label><div style="flex:1;display:flex;gap:12px"><label class="mcheck"><input id="mr-pr" type="checkbox">PR</label><label class="mcheck"><input id="mr-sb" type="checkbox">SB</label></div></div><div class="srow"><label class="slbl">Notes</label><input id="mr-notes" class="sinp" type="text" placeholder="Race notes" autocomplete="off"/></div></div><div id="mr-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="mr-btn" onclick="submitMeetResult()" style="background:#2B4FCC">Save Meet Result</button><button class="mbtn c" onclick="hm('m-meet')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><div class="sinp" id="ms-event" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
