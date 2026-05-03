@@ -417,7 +417,7 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     rep_number: run.runNumber,
     total_time_display: run.total,
     total_time_ms: run.totalMs,
-    splits_json: JSON.stringify(splits),
+    splits_json: formatLapSplits(splits).join("\n"),
     coach_note: run.note,
     synced_at: dateOnly(syncedAt),
   };
@@ -440,6 +440,7 @@ function buildSeasonRecordProperties({ contactId, athlete, session, performanceR
   const existingProperties = recordProperties(existing);
   const seasonBests = updateSeasonBests({
     existingValue: existingProperties.season_bests_json,
+    existingProperties,
     athlete,
     session,
     sourceSessionId: buildSourceSessionId(session),
@@ -459,19 +460,21 @@ function buildSeasonRecordProperties({ contactId, athlete, session, performanceR
     practice_session_count: seasonBests.practiceSessionCount,
     performance_record_count: seasonBests.performanceRecordCount,
     meet_count: numberValue(existingProperties.meet_count),
-    season_bests_json: JSON.stringify(seasonBests.summary),
+    season_bests_json: formatSeasonBestsForField(seasonBests.summary),
     injury_flag: existingProperties.injury_flag || "No",
     coach_season_notes: existingProperties.coach_season_notes || "",
     last_calculated_at: dateOnly(new Date()),
   };
 }
 
-function updateSeasonBests({ existingValue, athlete, session, sourceSessionId, performanceRecordCount }) {
-  const summary = parseJsonObject(existingValue);
+function updateSeasonBests({ existingValue, existingProperties, athlete, session, sourceSessionId, performanceRecordCount }) {
+  const parsedSummary = parseJsonObject(existingValue);
+  const summary = Object.keys(parsedSummary).length ? parsedSummary : parseReadableSeasonBests(existingValue);
   const sessions = Array.isArray(summary.sessions) ? summary.sessions : [];
   const sessionIds = sessions.map((item) => item && item.sourceSessionId).filter(Boolean);
   const isNewSession = sessionIds.indexOf(sourceSessionId) < 0;
-  const previousPerformanceCount = Number(summary.performanceRecordCount) || 0;
+  const previousPerformanceCount = numberValue(existingProperties && existingProperties.performance_record_count) || Number(summary.performanceRecordCount) || 0;
+  const previousPracticeSessionCount = numberValue(existingProperties && existingProperties.practice_session_count) || Number(summary.practiceSessionCount) || 0;
   const fastestRun = fastestSavedRun(athlete.runs);
   const workoutKey = optionValue(session.workoutType) || "workout";
   const workoutBests = summary.practiceBestsByWorkoutType || {};
@@ -508,13 +511,98 @@ function updateSeasonBests({ existingValue, athlete, session, sourceSessionId, p
     surface: session.surface,
   };
   summary.performanceRecordCount = previousPerformanceCount + performanceRecordCount;
-  summary.practiceSessionCount = isNewSession ? sessions.length : sessions.length || 1;
+  summary.practiceSessionCount = isNewSession ? previousPracticeSessionCount + 1 : previousPracticeSessionCount || sessions.length || 1;
 
   return {
     summary,
     performanceRecordCount: summary.performanceRecordCount,
     practiceSessionCount: summary.practiceSessionCount,
   };
+}
+
+function formatLapSplits(splits) {
+  if (!Array.isArray(splits)) return [];
+  return splits
+    .map((split, index) => {
+      const time = clean(split && split.time);
+      if (!time) return "";
+      const lap = Number(split && split.lap) || index + 1;
+      return `Lap ${lap}: ${time}`;
+    })
+    .filter(Boolean);
+}
+
+function formatSeasonBestsForField(summary) {
+  const lines = [
+    `Practice Sessions: ${Number(summary && summary.practiceSessionCount) || 0}`,
+    `Performance Records: ${Number(summary && summary.performanceRecordCount) || 0}`,
+  ];
+
+  if (summary && summary.lastSession) {
+    lines.push("");
+    lines.push("Last Session:");
+    lines.push(`${summary.lastSession.sessionDate || ""} - ${summary.lastSession.groupName || ""} - ${summary.lastSession.workoutType || ""}`.replace(/\s+-\s+$/g, ""));
+  }
+
+  const bests = summary && summary.practiceBestsByWorkoutType ? Object.keys(summary.practiceBestsByWorkoutType) : [];
+  if (bests.length) {
+    lines.push("");
+    lines.push("Practice Bests:");
+    bests.sort().forEach((key) => {
+      const best = summary.practiceBestsByWorkoutType[key] || {};
+      lines.push(`${best.workoutType || key}: ${best.display || ""}${best.sessionDate ? ` (${best.sessionDate})` : ""}`);
+    });
+  }
+
+  const sessions = Array.isArray(summary && summary.sessions) ? summary.sessions.slice(-5) : [];
+  if (sessions.length) {
+    lines.push("");
+    lines.push("Recent Sessions:");
+    sessions.forEach((session) => {
+      lines.push(`${session.sessionDate || ""} - ${session.groupName || ""} - ${session.workoutType || ""} - ${Number(session.performanceRecordCount) || 0} records`);
+    });
+  }
+
+  return lines.join("\n");
+}
+
+function parseReadableSeasonBests(value) {
+  const text = clean(value);
+  const summary = {};
+  if (!text) return summary;
+
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  let section = "";
+  lines.forEach((line) => {
+    if (line === "Practice Bests:" || line === "Recent Sessions:" || line === "Last Session:") {
+      section = line.replace(/:$/, "");
+      return;
+    }
+
+    const countMatch = line.match(/^(Practice Sessions|Performance Records):\s*(\d+)/i);
+    if (countMatch) {
+      if (/Practice Sessions/i.test(countMatch[1])) summary.practiceSessionCount = Number(countMatch[2]) || 0;
+      if (/Performance Records/i.test(countMatch[1])) summary.performanceRecordCount = Number(countMatch[2]) || 0;
+      return;
+    }
+
+    if (section === "Practice Bests") {
+      const bestMatch = line.match(/^(.+?):\s*(.+?)(?:\s*\((\d{4}-\d{2}-\d{2})\))?$/);
+      if (!bestMatch) return;
+      const workoutType = bestMatch[1].trim();
+      const display = bestMatch[2].trim();
+      const key = optionValue(workoutType) || "workout";
+      if (!summary.practiceBestsByWorkoutType) summary.practiceBestsByWorkoutType = {};
+      summary.practiceBestsByWorkoutType[key] = {
+        workoutType,
+        ms: parseTimeToMs(display),
+        display,
+        sessionDate: bestMatch[3] || "",
+      };
+    }
+  });
+
+  return summary;
 }
 
 async function ghlFetch({ token, path, method, body }) {
@@ -650,6 +738,16 @@ function fastestSavedRun(runs) {
 function numberValue(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function parseTimeToMs(value) {
+  const text = clean(value).toLowerCase().replace(/s$/, "");
+  const parts = text.split(":").map((part) => part.trim());
+  if (!parts.length || parts.some((part) => part === "" || Number.isNaN(Number(part)))) return null;
+  if (parts.length === 1) return Math.round(Number(parts[0]) * 1000);
+  if (parts.length === 2) return Math.round((Number(parts[0]) * 60 + Number(parts[1])) * 1000);
+  if (parts.length === 3) return Math.round((Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2])) * 1000);
+  return null;
 }
 
 function optionValue(value) {

@@ -38,7 +38,7 @@
         "rep_number": { "id": "J0SJxcm3yeraYzoYgjXe", "type": "NUMERICAL", "name": "Rep Number" },
         "total_time_display": { "id": "z9eZIcIL1B7yaeR5jXHI", "type": "TEXT", "name": "Total Time Display" },
         "total_time_ms": { "id": "tzmjjgk4FwJLfJDZ1KAc", "type": "NUMERICAL", "name": "Total Time MS" },
-        "splits_json": { "id": "bIjfXwW7mDCkkjGS4LL5", "type": "LARGE_TEXT", "name": "Splits JSON" },
+        "splits_json": { "id": "bIjfXwW7mDCkkjGS4LL5", "type": "LARGE_TEXT", "name": "Splits" },
         "coach_note": { "id": "Afy8b8lAbUoti9cCqa1m", "type": "LARGE_TEXT", "name": "Coach Note" },
         "synced_at": { "id": "NUUHIKY92jN766cQnEPE", "type": "DATE", "name": "Synced At" }
       }
@@ -63,7 +63,7 @@
         "practice_session_count": { "id": "8nd2HI5FUJyvILjA0mQP", "type": "NUMERICAL", "name": "Practice Session Count" },
         "performance_record_count": { "id": "KhjVnLVAMWwYEsVWa9ZO", "type": "NUMERICAL", "name": "Performance Record Count" },
         "meet_count": { "id": "NDrW2kejWTFTaM97JylC", "type": "NUMERICAL", "name": "Meet Count" },
-        "season_bests_json": { "id": "rQFq6KJIvMUNTjxivXXE", "type": "LARGE_TEXT", "name": "Season Bests JSON" },
+        "season_bests_json": { "id": "rQFq6KJIvMUNTjxivXXE", "type": "LARGE_TEXT", "name": "Season Bests" },
         "injury_flag": { "id": "lDWtzKoUg8PMXWgshTnr", "type": "RADIO", "name": "Injury Flag" },
         "coach_season_notes": { "id": "95A6ARRZyhcR01mKJGSX", "type": "LARGE_TEXT", "name": "Coach Season Notes" },
         "last_calculated_at": { "id": "CibNnzktFg36p6kluI2q", "type": "DATE", "name": "Last Calculated At" }
@@ -90,7 +90,7 @@
         "result_display": { "id": "Cu9h6mq2X6uPSQG6IraM", "type": "TEXT", "name": "Result Display" },
         "result_ms": { "id": "tqdu89hWLwfdiylZzxqj", "type": "NUMERICAL", "name": "Result MS" },
         "wind": { "id": "sYR9reCyygQaHH3x88DR", "type": "TEXT", "name": "Wind" },
-        "splits_json": { "id": "kT3jmzTT9uFrJxvZSeUK", "type": "LARGE_TEXT", "name": "Splits JSON" },
+        "splits_json": { "id": "kT3jmzTT9uFrJxvZSeUK", "type": "LARGE_TEXT", "name": "Splits" },
         "is_pr": { "id": "XMvKfEECN6PCcA0TKwzN", "type": "RADIO", "name": "Is PR" },
         "is_season_best": { "id": "zO57s50B9sf62EPdoq7J", "type": "RADIO", "name": "Is Season Best" },
         "coach_race_notes": { "id": "84pkqVasLVDNye0XCVaH", "type": "LARGE_TEXT", "name": "Coach Race Notes" },
