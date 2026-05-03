@@ -1,0 +1,179 @@
+const GHL_BASE_URL = "https://services.leadconnectorhq.com";
+const GHL_VERSION = "2021-07-28";
+const MEET_SCHEMA_KEY = "custom_objects.meets";
+
+module.exports = async function handler(req, res) {
+  setCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const token = process.env.GHL_PRIVATE_INTEGRATION_TOKEN;
+  const locationId = process.env.GHL_LOCATION_ID;
+
+  if (!token || !locationId) {
+    res.status(500).json({ error: "GHL meets are not configured on the server." });
+    return;
+  }
+
+  try {
+    if (req.method === "GET") {
+      const meets = await listMeets({ token, locationId });
+      res.status(200).json({ success: true, meets, objectAvailable: true });
+      return;
+    }
+
+    if (req.method === "POST") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      const meet = await createMeet({ token, locationId, payload });
+      res.status(200).json({ success: true, meet });
+      return;
+    }
+
+    res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    if (error.statusCode && error.statusCode < 500) {
+      res.status(200).json({ success: true, meets: [], objectAvailable: false, warning: error.message });
+      return;
+    }
+    res.status(error.statusCode || 500).json({ error: error.message || "Meet request failed." });
+  }
+};
+
+function setCorsHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+async function listMeets({ token, locationId }) {
+  const result = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/search`,
+    method: "POST",
+    body: { locationId, page: 1, pageLimit: 100 },
+  });
+
+  return recordsFromResult(result).map(normalizeMeet).filter((meet) => meet.name).sort((a, b) => {
+    return String(a.date || "").localeCompare(String(b.date || "")) || a.name.localeCompare(b.name);
+  });
+}
+
+async function createMeet({ token, locationId, payload }) {
+  const name = clean(payload && payload.meetName);
+  const date = clean(payload && payload.meetDate);
+  const season = clean(payload && payload.season) || currentSeason().season;
+  const seasonYear = Number(payload && payload.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : currentSeason().year);
+
+  if (!name) throw httpError(400, "Meet name is required.");
+
+  const properties = {
+    meet: name,
+    record_name: name,
+    meet_name: name,
+    meet_date: date || "",
+    season: optionValue(season),
+    season_year: seasonYear,
+    status: "scheduled",
+    source_system: "smartcoach_pro",
+    source_record_id: `meet_${date ? date.replace(/-/g, "") : seasonYear}_${slugValue(name)}`,
+  };
+
+  const record = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records`,
+    method: "POST",
+    body: { locationId, properties },
+  });
+
+  return normalizeMeet(record.record || record, properties);
+}
+
+async function ghlFetch({ token, path, method, body }) {
+  const response = await fetch(`${GHL_BASE_URL}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Version: GHL_VERSION,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await response.text();
+  const data = text ? safeJson(text) : {};
+  if (!response.ok) throw httpError(response.status, data.message || data.error || `GHL request failed with ${response.status}.`);
+  return data;
+}
+
+function normalizeMeet(record, fallbackProperties) {
+  const props = fallbackProperties || recordProperties(record);
+  const date = clean(props.meet_date || props.date);
+  return {
+    id: record && record.id ? record.id : clean(props.source_record_id),
+    name: clean(props.meet_name || props.meet || props.record_name),
+    date,
+    season: labelValue(props.season) || (date ? seasonForDate(date).season : ""),
+    seasonYear: Number(props.season_year) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null),
+    location: clean(props.location),
+    status: clean(props.status) || "scheduled",
+  };
+}
+
+function recordsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.records) ? result.records : []),
+    ...(Array.isArray(result && result.items) ? result.items : []),
+    ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
+    ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
+  ];
+}
+
+function recordProperties(record) {
+  return (record && (record.properties || record.fields || record.customFields)) || {};
+}
+
+function currentSeason() {
+  return seasonForDate(new Date().toISOString().slice(0, 10));
+}
+
+function seasonForDate(dateText) {
+  const d = new Date(`${dateText}T00:00:00`);
+  const m = d.getMonth() + 1;
+  const y = d.getFullYear();
+  if (m === 12 || m <= 2) return { season: "Winter", year: y };
+  if (m >= 3 && m <= 5) return { season: "Spring", year: y };
+  if (m >= 6 && m <= 8) return { season: "Summer", year: y };
+  return { season: "Fall", year: y };
+}
+
+function labelValue(value) {
+  const text = clean(value);
+  if (!text) return "";
+  return text.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+
+function optionValue(value) {
+  return clean(value).toLowerCase().replace(/&/g, "and").replace(/\+/g, "plus").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function slugValue(value) {
+  return clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function clean(value) {
+  return String(value || "").trim();
+}
+
+function safeJson(text) {
+  try { return JSON.parse(text); } catch (error) { return { message: text }; }
+}
+
+function httpError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}

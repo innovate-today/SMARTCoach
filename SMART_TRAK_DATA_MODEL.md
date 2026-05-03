@@ -345,7 +345,57 @@ Avery Womble - Spring 2026 - Track
 - `source_record_id`
 - `last_calculated_at`
 
-## Object 3: Meet Result
+## Object 3: Meet
+
+Display name: `Meet`
+
+API key: `meet`
+
+Purpose:
+
+Stores the season meet schedule so coaches can select a meet in the app instead of typing meet name/date repeatedly on meet day.
+
+Creation trigger:
+
+- Coach or admin enters the season schedule in SMARTCoach Pro/GHL.
+- Coach can also add a meet from the app if it is missing.
+
+Primary display format:
+
+```text
+District Meet - May 3, 2026
+```
+
+### Fields
+
+| Field | API Key | Type | Required | Example | Notes |
+|---|---|---:|---:|---|---|
+| Meet | `meet` | Text | Yes | District Meet | Primary display field. |
+| Record Name | `record_name` | Text | Yes | District Meet | Human-readable title. |
+| Meet Name | `meet_name` | Text | Yes | District Meet | Name shown in app dropdown. |
+| Meet Date | `meet_date` | Date | Yes | 2026-05-03 | Used to prefill meet group. |
+| Season | `season` | Dropdown | Yes | spring | Shared picklist. |
+| Season Year | `season_year` | Number | Yes | 2026 | Calendar year. |
+| Location | `location` | Text | No | Trinity Christian Addison | Optional venue. |
+| Host School | `host_school` | Text | No | Trinity Christian | Optional. |
+| Meet Type | `meet_type` | Dropdown/Text | No | district | regular, invitational, district, regional, state, time_trial. |
+| Status | `status` | Dropdown/Text | Yes | scheduled | scheduled, completed, canceled. |
+| Source System | `source_system` | Text | Yes | smartcoach_pro | manual, smartcoach_pro, csv. |
+| Source Record ID | `source_record_id` | Text | Yes | meet_20260503_district_meet | Dedupe key. |
+
+### Minimum Viable Fields For First Implementation
+
+- `meet`
+- `record_name`
+- `meet_name`
+- `meet_date`
+- `season`
+- `season_year`
+- `status`
+- `source_system`
+- `source_record_id`
+
+## Object 4: Meet Result
 
 Display name: `Meet Result`
 
@@ -437,7 +487,7 @@ PB/SB confirmation rule:
 - If the database has no prior mark for that athlete/event, the coach must confirm PB and/or SB during the meet-save flow before the result is flagged as a record.
 - This prevents an empty CRM database from treating every first synced result as a confirmed PB/SB.
 
-## Object 4: Athlete Best
+## Object 5: Athlete Best
 
 Display name: `Athlete Best`
 
@@ -511,7 +561,7 @@ Avery Womble - 400m Bests
 - `source_system`
 - `source_record_id`
 
-## Object 5: Records
+## Object 6: Records
 
 Display name: `Record`
 
@@ -589,7 +639,7 @@ Trinity Christian - Girls 400m School Record
 - `source_system`
 - `source_record_id`
 
-## Object 6: Training Plan
+## Object 7: Training Plan
 
 Display name: `Training Plan`
 

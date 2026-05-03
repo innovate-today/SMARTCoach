@@ -285,7 +285,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl">New Meet Event</div>
     <div style="padding:0 4px 4px">
-      <div class="srow"><label class="slbl">Meet</label><input id="mg-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div>
+      <div class="srow"><label class="slbl">Meet</label><select id="mg-meet-select" class="sinp" onchange="handleMeetSelect()"><option value="__new__">+ Add Meet</option></select></div>
+      <div class="srow" id="mg-meet-name-row"><label class="slbl">Name</label><input id="mg-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div>
       <div class="srow"><label class="slbl">Date</label><input id="mg-date" class="sinp" type="date"/></div>
       <div class="srow"><label class="slbl">Season</label><select id="mg-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div>
       <div class="srow"><label class="slbl">Event</label><select id="mg-event" class="sinp" onchange="toggleMeetEventOther()"><option>400m</option><option>600m</option><option>800m</option><option>1500m</option><option>1600m</option><option>1 Mile</option><option>3K</option><option>3200m</option><option>2 Mile</option><option>4K</option><option>5K</option><option>8K</option><option>10K</option><option>15K</option><option>Half Marathon</option><option>Marathon</option><option>Other</option></select></div>
@@ -311,7 +312,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], GV='training';
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], GV='training';
 
 function save(){
   try{
@@ -519,6 +520,7 @@ function setGroupView(view){
 }
 function addGroupForView(){
   if(GV==='meets'){
+    loadMeets();
     var d=document.getElementById('mg-date');
     if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);
     var cs=currentSeason();
@@ -528,6 +530,41 @@ function addGroupForView(){
   }else{
     if(GV==='archive')setGroupView('training');
     sm('ml');
+  }
+}
+function loadMeets(){
+  fetch('/api/smart-trak/meets').then(function(r){
+    return r.json().then(function(data){return {ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Meets unavailable');
+    MT=(result.data&&result.data.meets)||[];
+    renderMeetOptions();
+  }).catch(function(){MT=[];renderMeetOptions();});
+}
+function renderMeetOptions(){
+  var sel=document.getElementById('mg-meet-select');
+  if(!sel)return;
+  var opts=MT.map(function(m,i){
+    var label=m.name+(m.date?' - '+m.date:'');
+    return '<option value="'+i+'">'+ex(label)+'</option>';
+  });
+  opts.push('<option value="__new__">+ Add Meet</option>');
+  sel.innerHTML=opts.join('');
+  sel.value=MT.length?'0':'__new__';
+  handleMeetSelect();
+}
+function handleMeetSelect(){
+  var sel=document.getElementById('mg-meet-select');
+  if(!sel)return;
+  var isNew=sel.value==='__new__';
+  var nameRow=document.getElementById('mg-meet-name-row');
+  if(nameRow)nameRow.classList.toggle('h',!isNew);
+  if(!isNew){
+    var meet=MT[parseInt(sel.value)];
+    if(!meet)return;
+    document.getElementById('mg-meet').value=meet.name||'';
+    if(meet.date)document.getElementById('mg-date').value=meet.date;
+    if(meet.season)document.getElementById('mg-season').value=meet.season;
   }
 }
 function visibleGroups(){
@@ -572,13 +609,31 @@ function createMeetGroup(){
   var date=document.getElementById('mg-date').value||new Date().toISOString().slice(0,10);
   var season=document.getElementById('mg-season').value||currentSeason().season;
   var year=new Date(date+'T00:00:00').getFullYear()||currentSeason().year;
-  logs.unshift({id:lid++,name:event,type:'meet',season:season,seasonYear:year,meetName:meet,meetDate:date,eventName:event,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
+  createMeetGroupFromValues({meetName:meet,meetDate:date,season:season,seasonYear:year,eventName:event});
+  maybeCreateMeetRecord({meetName:meet,meetDate:date,season:season,seasonYear:year});
+}
+function createMeetGroupFromValues(data){
+  logs.unshift({id:lid++,name:data.eventName,type:'meet',season:data.season,seasonYear:data.seasonYear,meetName:data.meetName,meetDate:data.meetDate,eventName:data.eventName,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
   hm('mmg');
   document.getElementById('mg-meet').value='';
   document.getElementById('mg-event').value='400m';
   document.getElementById('mg-event-other').value='';
   toggleMeetEventOther();
   save();rl();
+}
+function maybeCreateMeetRecord(data){
+  var sel=document.getElementById('mg-meet-select');
+  if(!sel||sel.value!=='__new__')return;
+  fetch('/api/smart-trak/meets',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  }).then(function(r){return r.json();}).then(function(result){
+    if(result&&result.meet&&!MT.some(function(m){return String(m.name).toLowerCase()===String(result.meet.name).toLowerCase()&&m.date===result.meet.date;})){
+      MT.push(result.meet);
+      renderMeetOptions();
+    }
+  }).catch(function(){});
 }
 function toggleMeetEventOther(){
   var row=document.getElementById('mg-event-other-row');

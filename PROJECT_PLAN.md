@@ -117,6 +117,7 @@ GHL custom objects:
 
 - Athlete Contact: name, sport, primary event, grad year, gender, school
 - Performance Record: every timed session, splits, phase, workout type, energy system
+- Meet: season meet schedule used by the app's meet-day dropdown
 - Meet Result: official race results, event, time, place, splits, conditions
 - Season Record: full season summary, volume, peak performance, injury log
 - Athlete Best: athlete-level parent object for lifetime PBs and current season bests by event
@@ -254,6 +255,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added non-breaking backend support for `Athlete Best`: once the custom object exists in SMARTCoach Pro/GHL, Meet Result saves can update PB/SB records and auto-mark PRs
 - Added coach confirmation for PB/SB in the meet-save flow so empty or incomplete GHL history does not falsely mark first-time results as records
 - Changed new Meet Event entry to use a standard event dropdown, with `Other` available for unusual distances
+- Added non-breaking `Meet` endpoint and app picker: coaches can select preloaded meets from GHL or add a meet on the fly
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works
