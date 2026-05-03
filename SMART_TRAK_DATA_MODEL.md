@@ -156,8 +156,10 @@ Relationships:
 - Contact has many Performance Records.
 - Contact has many Meet Results.
 - Contact has many Season Records.
+- Contact has many Athlete Best records.
 - Contact has many Training Plans.
 - Season Record can summarize many Performance Records and Meet Results.
+- Athlete Best is the athlete-level parent record for PB/SB detection by event.
 - Training Plan can reference recent Performance Records and target future Performance Records.
 
 Recommended relationship fields:
@@ -393,9 +395,9 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 | Split 1 MS | `split_1_ms` | Number | No | 27100 | Numeric split. |
 | Split 2 Display | `split_2_display` | Text | No | 27.7 | Official or coach split. |
 | Split 2 MS | `split_2_ms` | Number | No | 27700 | Numeric split. |
-| Splits JSON | `splits_json` | Long Text | No | `[{"label":"200m","ms":27100}]` | Flexible splits. |
-| Is PR | `is_pr` | Checkbox | No | true | Calculated. |
-| Is Season Best | `is_season_best` | Checkbox | No | true | Calculated. |
+| Splits | `splits_json` | Long Text | No | Lap 1: 27.1 | Flexible readable splits. |
+| Is PR | `is_pr` | Checkbox | No | true | Calculated from Athlete Best once that object exists. |
+| Is Season Best | `is_season_best` | Checkbox | No | true | Calculated from Season Record event best. |
 | Qualifying Standard | `qualifying_standard` | Text | No | State auto | Optional. |
 | Qualifying Status | `qualifying_status` | Dropdown/Text | No | qualified | Future standards workflow. |
 | Video URL | `video_url` | URL | No | https://... | Race video. |
@@ -428,7 +430,79 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 - `source_system`
 - `source_record_id`
 
-## Object 4: Training Plan
+## Object 4: Athlete Best
+
+Display name: `Athlete Best`
+
+API key: `athlete_best`
+
+Purpose:
+
+Stores the athlete-level best marks by event. This becomes the parent object for automatic PB/SB detection, dashboard best marks, recruiting profiles, and parent/athlete alert workflows.
+
+Creation trigger:
+
+- Created or updated when a Meet Result is saved.
+- One record per athlete and event.
+- Associated with the athlete contact.
+
+Primary display format:
+
+```text
+Avery Womble - 400m Bests
+```
+
+### Fields
+
+| Field | API Key | Type | Required | Example | Notes |
+|---|---|---:|---:|---|---|
+| Record Name | `record_name` | Text | Yes | Avery Womble - 400m Bests | Human-readable title. |
+| Athlete Contact | `athlete_contact_id` | Contact relation/Text | Yes | abc123 | GHL contact association. |
+| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
+| Sport | `sport` | Dropdown/Text | Yes | track | Track or cross country. |
+| Event | `event` | Text | Yes | 400m | Event this best record tracks. |
+| Personal Best Display | `personal_best_display` | Text | No | 54.82 | Lifetime PB. |
+| Personal Best MS | `personal_best_ms` | Number | No | 54820 | Numeric PB for comparisons. |
+| Personal Best Meet | `personal_best_meet` | Text | No | District Meet | Meet where PB was set. |
+| Personal Best Date | `personal_best_date` | Date | No | 2026-05-03 | PB date. |
+| Personal Best Source Record ID | `personal_best_source_record_id` | Text | No | mr_... | Link/dedupe source. |
+| Season | `season` | Dropdown | Yes | spring | Current season being tracked for SB. |
+| Season Year | `season_year` | Number | Yes | 2026 | Current season year. |
+| Season Best Display | `season_best_display` | Text | No | 54.82 | Current season best. |
+| Season Best MS | `season_best_ms` | Number | No | 54820 | Numeric SB for comparisons. |
+| Season Best Meet | `season_best_meet` | Text | No | District Meet | Meet where SB was set. |
+| Season Best Date | `season_best_date` | Date | No | 2026-05-03 | SB date. |
+| Season Best Source Record ID | `season_best_source_record_id` | Text | No | mr_... | Link/dedupe source. |
+| Last Result Display | `last_result_display` | Text | No | 55.10 | Most recent meet result. |
+| Last Result Date | `last_result_date` | Date | No | 2026-05-10 | Most recent result date. |
+| PB Updated At | `pb_updated_at` | DateTime | No | 2026-05-03T18:45:00Z | Workflow trigger helper. |
+| SB Updated At | `sb_updated_at` | DateTime | No | 2026-05-03T18:45:00Z | Workflow trigger helper. |
+| Source System | `source_system` | Text | Yes | smartcoach_pro | Source label. |
+| Source Record ID | `source_record_id` | Text | Yes | ab_contact_400m | One per athlete/event. |
+
+### Minimum Viable Fields For First Implementation
+
+- `record_name`
+- `athlete_contact_id`
+- `athlete_name_snapshot`
+- `sport`
+- `event`
+- `personal_best_display`
+- `personal_best_ms`
+- `personal_best_meet`
+- `personal_best_date`
+- `season`
+- `season_year`
+- `season_best_display`
+- `season_best_ms`
+- `season_best_meet`
+- `season_best_date`
+- `pb_updated_at`
+- `sb_updated_at`
+- `source_system`
+- `source_record_id`
+
+## Object 5: Training Plan
 
 Display name: `Training Plan`
 

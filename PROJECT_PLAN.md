@@ -119,6 +119,7 @@ GHL custom objects:
 - Performance Record: every timed session, splits, phase, workout type, energy system
 - Meet Result: official race results, event, time, place, splits, conditions
 - Season Record: full season summary, volume, peak performance, injury log
+- Athlete Best: athlete-level parent object for lifetime PBs and current season bests by event
 - Training Plan: AI-generated weekly plan per athlete
 
 Seasons tracked:
@@ -170,6 +171,8 @@ GHL automations:
 
 - Weekly progress email, AI drafted and coach approved
 - PR alert
+- SB alert
+- Parent and athlete notification when a new PB or SB is detected from a saved Meet Result
 - Meet day notification
 - Injury flag notification and training load adjustment
 - End-of-season summary
@@ -242,6 +245,8 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added duplicate sync protection: existing Performance Records are detected by `source_record_id`; the app asks before intentionally syncing the same workout again
 - Added first Meet Result entry path: app modal plus `/api/smart-trak/meet-result` endpoint to create GHL Meet Result custom object records
 - Added the first Training/Meets/Archive group separation layer: current-season Training keeps the existing simple group creation flow, Meets can create meet/event timing groups, and Archive hides past-season groups by default while keeping them viewable
+- Added Meet Result saves from meet timing groups, readable split/season summary fields, and Season Record updates from Meet Results
+- Next PB/SB data step: create an `Athlete Best` parent custom object associated with the athlete contact, then use it to auto-detect lifetime PBs and current-season SBs and trigger later parent/athlete notification workflows
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works

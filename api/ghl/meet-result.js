@@ -30,6 +30,15 @@ module.exports = async function handler(req, res) {
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const meetResult = normalizeMeetResult(payload);
     const contact = await findOrCreateContact({ token, locationId, meetResult });
+    const seasonSourceRecordId = buildSeasonSourceRecordId({ contactId: contact.id, meetResult });
+    const existingSeasonRecord = await findObjectRecord({
+      token,
+      locationId,
+      schemaKey: SEASON_RECORD_SCHEMA_KEY,
+      sourceRecordId: seasonSourceRecordId,
+    });
+    const autoFlags = calculateMeetResultFlags({ existingSeasonRecord, meetResult });
+    meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
     const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
     const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
     if (duplicate && !meetResult.forceDuplicateSync) {
@@ -48,6 +57,8 @@ module.exports = async function handler(req, res) {
       locationId,
       contactId: contact.id,
       meetResult,
+      existing: existingSeasonRecord,
+      sourceRecordId: seasonSourceRecordId,
     });
 
     res.status(200).json({
@@ -266,14 +277,7 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId }) {
   }
 }
 
-async function upsertSeasonRecord({ token, locationId, contactId, meetResult }) {
-  const sourceRecordId = buildSeasonSourceRecordId({ contactId, meetResult });
-  const existing = await findObjectRecord({
-    token,
-    locationId,
-    schemaKey: SEASON_RECORD_SCHEMA_KEY,
-    sourceRecordId,
-  });
+async function upsertSeasonRecord({ token, locationId, contactId, meetResult, existing, sourceRecordId }) {
   const properties = buildSeasonRecordProperties({ contactId, meetResult, existing, sourceRecordId });
 
   if (existing && existing.id) {
@@ -394,6 +398,16 @@ async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }
 
 function buildSeasonSourceRecordId({ contactId, meetResult }) {
   return `sr_${slugValue(contactId)}_${meetResult.meetDate.getFullYear()}_${optionValue(meetResult.season) || "season"}`;
+}
+
+function calculateMeetResultFlags({ existingSeasonRecord, meetResult }) {
+  const existingProperties = recordProperties(existingSeasonRecord);
+  const parsedSummary = parseJsonObject(existingProperties.season_bests_json);
+  const summary = Object.keys(parsedSummary).length ? parsedSummary : parseReadableSeasonBests(existingProperties.season_bests_json);
+  const eventKey = optionValue(meetResult.event) || "event";
+  const currentBest = summary && summary.meetBestsByEvent ? summary.meetBestsByEvent[eventKey] : null;
+  const isSeasonBest = !!meetResult.resultMs && (!currentBest || !Number(currentBest.ms) || meetResult.resultMs < Number(currentBest.ms));
+  return { isSeasonBest };
 }
 
 function buildSourceRecordId({ contactId, meetResult }) {
