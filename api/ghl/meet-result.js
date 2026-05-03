@@ -1,6 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
+const SEASON_RECORD_SCHEMA_KEY = "custom_objects.season_records";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 
@@ -42,6 +43,12 @@ module.exports = async function handler(req, res) {
       body: { locationId, properties },
     });
     await addMeetResultNote({ token, contactId: contact.id, meetResult });
+    const seasonRecord = await upsertSeasonRecord({
+      token,
+      locationId,
+      contactId: contact.id,
+      meetResult,
+    });
 
     res.status(200).json({
       success: true,
@@ -49,6 +56,7 @@ module.exports = async function handler(req, res) {
       contactId: contact.id,
       recordId: record.id || (record.record && record.record.id) || null,
       sourceRecordId: properties.source_record_id,
+      seasonRecord,
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Meet result sync failed." });
@@ -258,6 +266,136 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId }) {
   }
 }
 
+async function upsertSeasonRecord({ token, locationId, contactId, meetResult }) {
+  const sourceRecordId = buildSeasonSourceRecordId({ contactId, meetResult });
+  const existing = await findObjectRecord({
+    token,
+    locationId,
+    schemaKey: SEASON_RECORD_SCHEMA_KEY,
+    sourceRecordId,
+  });
+  const properties = buildSeasonRecordProperties({ contactId, meetResult, existing, sourceRecordId });
+
+  if (existing && existing.id) {
+    const updated = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}`,
+      method: "PUT",
+      body: { locationId, properties },
+    });
+    return {
+      action: "updated",
+      recordId: updated.id || (updated.record && updated.record.id) || existing.id,
+      sourceRecordId,
+    };
+  }
+
+  const created = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records`,
+    method: "POST",
+    body: { locationId, properties },
+  });
+  return {
+    action: "created",
+    recordId: created.id || (created.record && created.record.id) || null,
+    sourceRecordId,
+  };
+}
+
+function buildSeasonRecordProperties({ contactId, meetResult, existing, sourceRecordId }) {
+  const existingProperties = recordProperties(existing);
+  const seasonYear = meetResult.meetDate.getFullYear();
+  const recordName = `${meetResult.athleteName} - ${meetResult.season} ${seasonYear}`;
+  const seasonSummary = updateSeasonSummaryForMeet({ existingProperties, meetResult });
+
+  return {
+    season_record: recordName,
+    record_name: recordName,
+    athlete_contact: contactId,
+    athlete_name_snapshot: meetResult.athleteName,
+    source_record_id: sourceRecordId,
+    season: optionValue(meetResult.season),
+    season_year: seasonYear,
+    sport: sportValue(meetResult.sport),
+    primary_event: existingProperties.primary_event || meetResult.event,
+    practice_session_count: numberValue(existingProperties.practice_session_count),
+    performance_record_count: numberValue(existingProperties.performance_record_count),
+    meet_count: seasonSummary.meetCount,
+    season_bests_json: formatSeasonBestsForField(seasonSummary.summary),
+    injury_flag: existingProperties.injury_flag || "No",
+    coach_season_notes: existingProperties.coach_season_notes || "",
+    last_calculated_at: dateOnly(new Date()),
+  };
+}
+
+function updateSeasonSummaryForMeet({ existingProperties, meetResult }) {
+  const parsedSummary = parseJsonObject(existingProperties.season_bests_json);
+  const summary = Object.keys(parsedSummary).length ? parsedSummary : parseReadableSeasonBests(existingProperties.season_bests_json);
+  const meetBests = summary.meetBestsByEvent || {};
+  const eventKey = optionValue(meetResult.event) || "event";
+  const currentBest = meetBests[eventKey];
+
+  if (meetResult.resultMs && (!currentBest || !Number(currentBest.ms) || meetResult.resultMs < Number(currentBest.ms))) {
+    meetBests[eventKey] = {
+      event: meetResult.event,
+      display: meetResult.resultDisplay,
+      ms: meetResult.resultMs,
+      meetName: meetResult.meetName,
+      meetDate: dateOnly(meetResult.meetDate),
+      isPr: meetResult.isPr,
+      isSeasonBest: meetResult.isSeasonBest,
+    };
+  }
+
+  const recentMeets = Array.isArray(summary.recentMeets) ? summary.recentMeets : [];
+  recentMeets.push({
+    meetDate: dateOnly(meetResult.meetDate),
+    meetName: meetResult.meetName,
+    event: meetResult.event,
+    resultDisplay: meetResult.resultDisplay,
+  });
+
+  summary.meetBestsByEvent = meetBests;
+  summary.recentMeets = recentMeets.slice(-100);
+  summary.meetCount = numberValue(existingProperties.meet_count) + 1;
+
+  return {
+    summary,
+    meetCount: summary.meetCount,
+  };
+}
+
+async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
+      method: "POST",
+      body: {
+        locationId,
+        page: 1,
+        pageLimit: 1,
+        filters: [
+          {
+            field: "source_record_id",
+            operator: "eq",
+            value: sourceRecordId,
+          },
+        ],
+      },
+    });
+    return firstRecord(result);
+  } catch (error) {
+    if (error.statusCode && error.statusCode >= 500) throw error;
+    return null;
+  }
+}
+
+function buildSeasonSourceRecordId({ contactId, meetResult }) {
+  return `sr_${slugValue(contactId)}_${meetResult.meetDate.getFullYear()}_${optionValue(meetResult.season) || "season"}`;
+}
+
 function buildSourceRecordId({ contactId, meetResult }) {
   return [
     "mr",
@@ -295,6 +433,126 @@ function parseTimeToMs(value) {
   if (parts.length === 2) return Math.round((Number(parts[0]) * 60 + Number(parts[1])) * 1000);
   if (parts.length === 3) return Math.round((Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2])) * 1000);
   return null;
+}
+
+function formatSeasonBestsForField(summary) {
+  const lines = [
+    `Practice Sessions: ${Number(summary && summary.practiceSessionCount) || 0}`,
+    `Performance Records: ${Number(summary && summary.performanceRecordCount) || 0}`,
+  ];
+
+  if (summary && summary.lastSession) {
+    lines.push("");
+    lines.push("Last Session:");
+    lines.push(`${summary.lastSession.sessionDate || ""} - ${summary.lastSession.groupName || ""} - ${summary.lastSession.workoutType || ""}`.replace(/\s+-\s+$/g, ""));
+  }
+
+  const practiceBests = summary && summary.practiceBestsByWorkoutType ? Object.keys(summary.practiceBestsByWorkoutType) : [];
+  if (practiceBests.length) {
+    lines.push("");
+    lines.push("Practice Bests:");
+    practiceBests.sort().forEach((key) => {
+      const best = summary.practiceBestsByWorkoutType[key] || {};
+      lines.push(`${best.workoutType || key}: ${best.display || ""}${best.sessionDate ? ` (${best.sessionDate})` : ""}`);
+    });
+  }
+
+  const meetBests = summary && summary.meetBestsByEvent ? Object.keys(summary.meetBestsByEvent) : [];
+  if (meetBests.length) {
+    lines.push("");
+    lines.push("Best Meet Results:");
+    meetBests.sort().forEach((key) => {
+      const best = summary.meetBestsByEvent[key] || {};
+      lines.push(`${best.event || key}: ${best.display || ""}${best.meetName ? ` - ${best.meetName}` : ""}${best.meetDate ? ` (${best.meetDate})` : ""}`);
+    });
+  }
+
+  const sessions = Array.isArray(summary && summary.sessions) ? summary.sessions.slice(-5) : [];
+  if (sessions.length) {
+    lines.push("");
+    lines.push("Recent Sessions:");
+    sessions.forEach((session) => {
+      lines.push(`${session.sessionDate || ""} - ${session.groupName || ""} - ${session.workoutType || ""} - ${Number(session.performanceRecordCount) || 0} records`);
+    });
+  }
+
+  const meets = Array.isArray(summary && summary.recentMeets) ? summary.recentMeets.slice(-5) : [];
+  if (meets.length) {
+    lines.push("");
+    lines.push("Recent Meets:");
+    meets.forEach((meet) => {
+      lines.push(`${meet.meetDate || ""} - ${meet.meetName || ""} - ${meet.event || ""} - ${meet.resultDisplay || ""}`);
+    });
+  }
+
+  return lines.join("\n");
+}
+
+function parseReadableSeasonBests(value) {
+  const text = clean(value);
+  const summary = {};
+  if (!text) return summary;
+
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  let section = "";
+  lines.forEach((line) => {
+    if (line === "Practice Bests:" || line === "Best Meet Results:" || line === "Recent Sessions:" || line === "Recent Meets:" || line === "Last Session:") {
+      section = line.replace(/:$/, "");
+      return;
+    }
+
+    const countMatch = line.match(/^(Practice Sessions|Performance Records):\s*(\d+)/i);
+    if (countMatch) {
+      if (/Practice Sessions/i.test(countMatch[1])) summary.practiceSessionCount = Number(countMatch[2]) || 0;
+      if (/Performance Records/i.test(countMatch[1])) summary.performanceRecordCount = Number(countMatch[2]) || 0;
+      return;
+    }
+
+    if (section === "Practice Bests") {
+      const bestMatch = line.match(/^(.+?):\s*(.+?)(?:\s*\((\d{4}-\d{2}-\d{2})\))?$/);
+      if (!bestMatch) return;
+      const workoutType = bestMatch[1].trim();
+      const display = bestMatch[2].trim();
+      const key = optionValue(workoutType) || "workout";
+      if (!summary.practiceBestsByWorkoutType) summary.practiceBestsByWorkoutType = {};
+      summary.practiceBestsByWorkoutType[key] = {
+        workoutType,
+        display,
+        ms: parseTimeToMs(display),
+        sessionDate: bestMatch[3] || "",
+      };
+    }
+
+    if (section === "Best Meet Results") {
+      const bestMatch = line.match(/^(.+?):\s*(.+?)(?:\s+-\s+(.+?))?(?:\s*\((\d{4}-\d{2}-\d{2})\))?$/);
+      if (!bestMatch) return;
+      const event = bestMatch[1].trim();
+      const display = bestMatch[2].trim();
+      const key = optionValue(event) || "event";
+      if (!summary.meetBestsByEvent) summary.meetBestsByEvent = {};
+      summary.meetBestsByEvent[key] = {
+        event,
+        display,
+        ms: parseTimeToMs(display),
+        meetName: (bestMatch[3] || "").trim(),
+        meetDate: bestMatch[4] || "",
+      };
+    }
+
+    if (section === "Recent Meets") {
+      const parts = line.split(" - ").map((part) => part.trim());
+      if (parts.length < 4) return;
+      if (!summary.recentMeets) summary.recentMeets = [];
+      summary.recentMeets.push({
+        meetDate: parts[0],
+        meetName: parts[1],
+        event: parts[2],
+        resultDisplay: parts.slice(3).join(" - "),
+      });
+    }
+  });
+
+  return summary;
 }
 
 function existingCustomFieldValue(contact, fieldId) {
@@ -360,6 +618,27 @@ function firstRecord(result) {
     result && result.data && Array.isArray(result.data.items) && result.data.items[0],
   ];
   return candidates.find(Boolean) || null;
+}
+
+function recordProperties(record) {
+  if (!record) return {};
+  return record.properties || record.fields || record.customFields || {};
+}
+
+function parseJsonObject(value) {
+  if (!value) return {};
+  if (typeof value === "object" && !Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function numberValue(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
 }
 
 function httpError(statusCode, message) {

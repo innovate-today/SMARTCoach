@@ -554,12 +554,31 @@ function formatSeasonBestsForField(summary) {
     });
   }
 
+  const meetBests = summary && summary.meetBestsByEvent ? Object.keys(summary.meetBestsByEvent) : [];
+  if (meetBests.length) {
+    lines.push("");
+    lines.push("Best Meet Results:");
+    meetBests.sort().forEach((key) => {
+      const best = summary.meetBestsByEvent[key] || {};
+      lines.push(`${best.event || key}: ${best.display || ""}${best.meetName ? ` - ${best.meetName}` : ""}${best.meetDate ? ` (${best.meetDate})` : ""}`);
+    });
+  }
+
   const sessions = Array.isArray(summary && summary.sessions) ? summary.sessions.slice(-5) : [];
   if (sessions.length) {
     lines.push("");
     lines.push("Recent Sessions:");
     sessions.forEach((session) => {
       lines.push(`${session.sessionDate || ""} - ${session.groupName || ""} - ${session.workoutType || ""} - ${Number(session.performanceRecordCount) || 0} records`);
+    });
+  }
+
+  const meets = Array.isArray(summary && summary.recentMeets) ? summary.recentMeets.slice(-5) : [];
+  if (meets.length) {
+    lines.push("");
+    lines.push("Recent Meets:");
+    meets.forEach((meet) => {
+      lines.push(`${meet.meetDate || ""} - ${meet.meetName || ""} - ${meet.event || ""} - ${meet.resultDisplay || ""}`);
     });
   }
 
@@ -574,7 +593,7 @@ function parseReadableSeasonBests(value) {
   const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   let section = "";
   lines.forEach((line) => {
-    if (line === "Practice Bests:" || line === "Recent Sessions:" || line === "Last Session:") {
+    if (line === "Practice Bests:" || line === "Best Meet Results:" || line === "Recent Sessions:" || line === "Recent Meets:" || line === "Last Session:") {
       section = line.replace(/:$/, "");
       return;
     }
@@ -599,6 +618,34 @@ function parseReadableSeasonBests(value) {
         display,
         sessionDate: bestMatch[3] || "",
       };
+    }
+
+    if (section === "Best Meet Results") {
+      const bestMatch = line.match(/^(.+?):\s*(.+?)(?:\s+-\s+(.+?))?(?:\s*\((\d{4}-\d{2}-\d{2})\))?$/);
+      if (!bestMatch) return;
+      const event = bestMatch[1].trim();
+      const display = bestMatch[2].trim();
+      const key = optionValue(event) || "event";
+      if (!summary.meetBestsByEvent) summary.meetBestsByEvent = {};
+      summary.meetBestsByEvent[key] = {
+        event,
+        display,
+        ms: parseTimeToMs(display),
+        meetName: (bestMatch[3] || "").trim(),
+        meetDate: bestMatch[4] || "",
+      };
+    }
+
+    if (section === "Recent Meets") {
+      const parts = line.split(" - ").map((part) => part.trim());
+      if (parts.length < 4) return;
+      if (!summary.recentMeets) summary.recentMeets = [];
+      summary.recentMeets.push({
+        meetDate: parts[0],
+        meetName: parts[1],
+        event: parts[2],
+        resultDisplay: parts.slice(3).join(" - "),
+      });
     }
   });
 
