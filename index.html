@@ -124,7 +124,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SPLASH / HOME */
 .splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;height:100dvh;background:var(--W);position:absolute;inset:0;z-index:200;transition:opacity .4s}
 .splash.gone{opacity:0;pointer-events:none}
-.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}</style>
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}.mcheck{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#333}.mcheck input{width:18px;height:18px;accent-color:var(--R)}</style>
 </head>
 <body>
 
@@ -285,6 +285,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy / Share</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
+    <button class="mbtn" onclick="openMeetResult()" style="background:#555;margin-top:8px">Add Meet Result</button>
     <button class="mbtn" onclick="openSync()" style="background:#2B4FCC;margin-top:8px">SMARTCoach Pro Sync</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
@@ -880,6 +881,68 @@ function openSync(){
   btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;
   sm('m-sync');
 }
+function athleteOptions(selectedName){
+  var opts=[];
+  if(!AR.length)opts.push('<option value="">No active athletes loaded</option>');
+  AR.forEach(function(a){
+    var selected=String(a.name).toLowerCase()===String(selectedName||'').toLowerCase()?' selected':'';
+    opts.push('<option value="'+ex(a.id)+'" data-name="'+ex(a.name)+'" data-athlete-id="'+ex(a.smartcoachAthleteId||'')+'"'+selected+'>'+ex(a.name)+'</option>');
+  });
+  return opts.join('');
+}
+function openMeetResult(){
+  hm('msh');
+  loadAthletes();
+  var first=(CL&&CL.runners&&CL.runners.length)?CL.runners[0].name:'';
+  var dateInput=document.getElementById('mr-date');
+  if(dateInput&&!dateInput.value)dateInput.value=new Date().toISOString().slice(0,10);
+  document.getElementById('mr-athlete').innerHTML=athleteOptions(first);
+  document.getElementById('mr-status').textContent='';
+  var btn=document.getElementById('mr-btn');
+  btn.textContent='Save Meet Result';btn.style.background='#2B4FCC';btn.disabled=false;
+  sm('m-meet');
+}
+function submitMeetResult(){
+  var btn=document.getElementById('mr-btn');
+  var status=document.getElementById('mr-status');
+  var athleteEl=document.getElementById('mr-athlete');
+  var opt=athleteEl.options[athleteEl.selectedIndex];
+  var payload={
+    contactId:athleteEl.value,
+    athleteName:opt?opt.getAttribute('data-name'):'',
+    smartcoachAthleteId:opt?opt.getAttribute('data-athlete-id'):'',
+    meetName:document.getElementById('mr-meet').value.trim(),
+    meetDate:document.getElementById('mr-date').value,
+    season:document.getElementById('mr-season').value,
+    sport:'track',
+    event:document.getElementById('mr-event').value.trim(),
+    resultDisplay:document.getElementById('mr-result').value.trim(),
+    wind:document.getElementById('mr-wind').value.trim(),
+    isPr:document.getElementById('mr-pr').checked,
+    isSeasonBest:document.getElementById('mr-sb').checked,
+    coachRaceNotes:document.getElementById('mr-notes').value.trim()
+  };
+  if(!payload.contactId){status.textContent='Select an athlete.';status.style.color='#c00';return;}
+  if(!payload.meetName||!payload.event||!payload.resultDisplay){status.textContent='Meet, event, and result are required.';status.style.color='#c00';return;}
+  btn.textContent='Saving...';btn.disabled=true;
+  status.textContent='Saving meet result...';status.style.color='#555';status.style.fontWeight='400';
+  fetch('/api/smart-trak/meet-result',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(function(r){
+    return r.json().then(function(data){return {ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Meet result save failed');
+    status.textContent='Meet result saved to SMARTCoach Pro!';
+    status.style.color='#0a7a44';status.style.fontWeight='700';
+    btn.textContent='Saved!';btn.style.background='#0a7a44';
+    setTimeout(function(){btn.textContent='Save Meet Result';btn.style.background='#2B4FCC';btn.disabled=false;},2500);
+  }).catch(function(e){
+    status.textContent='Error: '+e.message;status.style.color='#c00';
+    btn.textContent='Save Meet Result';btn.disabled=false;
+  });
+}
 function renderSyncAthletes(){
   var box=document.getElementById('sy-athletes');
   if(!box||!CL)return;
@@ -1018,6 +1081,7 @@ document.addEventListener('touchstart',function(e){
 </script>
 <datalist id="athletes-list"></datalist>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h" id="m-meet"><div class="msh"><div class="mhd"></div><div class="mttl">Add Meet Result</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="mr-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Meet</label><input id="mr-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div><div class="srow"><label class="slbl">Date</label><input id="mr-date" class="sinp" type="date"/></div><div class="srow"><label class="slbl">Season</label><select id="mr-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Event</label><input id="mr-event" class="sinp" type="text" placeholder="400m" autocomplete="off"/></div><div class="srow"><label class="slbl">Result</label><input id="mr-result" class="sinp" type="text" placeholder="54.82" autocomplete="off"/></div><div class="srow"><label class="slbl">Wind</label><input id="mr-wind" class="sinp" type="text" placeholder="+1.2" autocomplete="off"/></div><div class="srow"><label class="slbl">Flags</label><div style="flex:1;display:flex;gap:12px"><label class="mcheck"><input id="mr-pr" type="checkbox">PR</label><label class="mcheck"><input id="mr-sb" type="checkbox">SB</label></div></div><div class="srow"><label class="slbl">Notes</label><input id="mr-notes" class="sinp" type="text" placeholder="Race notes" autocomplete="off"/></div></div><div id="mr-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="mr-btn" onclick="submitMeetResult()" style="background:#2B4FCC">Save Meet Result</button><button class="mbtn c" onclick="hm('m-meet')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMARTCoach Pro</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Season</label><select id="sy-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Phase</label><select id="sy-phase" class="sinp"><option>GPP</option><option>SPP</option><option>Pre-Competition</option><option>Competition</option><option>Transition</option></select></div><div class="srow"><label class="slbl">Workout Type</label><select id="sy-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Plyometrics</option><option>Strength Circuit</option><option>Hill Sprints</option></select></div><div class="srow"><label class="slbl">Energy System</label><select id="sy-esys" class="sinp"><option>ATP-PC (Phosphagen)</option><option>Glycolytic (Anaerobic)</option><option>Oxidative (Aerobic)</option><option>Mixed</option></select></div><div class="srow"><label class="slbl">Surface</label><select id="sy-surf" class="sinp"><option>Track</option><option>Grass</option><option>Trail</option><option>Indoor</option><option>Road</option></select></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMARTCoach Pro</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
 </html>
