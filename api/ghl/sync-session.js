@@ -2,6 +2,7 @@ const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const SEASON_RECORD_SCHEMA_KEY = "custom_objects.season_records";
+const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 
@@ -30,6 +31,7 @@ module.exports = async function handler(req, res) {
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const session = normalizeSession(payload);
     const synced = [];
+    const linkedPerformanceRecords = [];
 
     for (const athlete of session.athletes) {
       const contact = await findOrCreateContact({ token, locationId, athlete, session });
@@ -58,10 +60,25 @@ module.exports = async function handler(req, res) {
         session,
         performanceRecords,
       });
+      performanceRecords.forEach((record) => {
+        linkedPerformanceRecords.push({
+          athlete: athlete.name,
+          runNumber: record.runNumber,
+          recordId: record.recordId,
+          sourceRecordId: record.sourceRecordId,
+        });
+      });
       synced.push({ runnerId: athlete.runnerId, athlete: athlete.name, contactId: contact.id, performanceRecords, seasonRecord });
     }
 
-    res.status(200).json({ success: true, synced });
+    const planDayUpdate = await updateLinkedTrainingPlanDay({
+      token,
+      locationId,
+      session,
+      linkedPerformanceRecords,
+    });
+
+    res.status(200).json({ success: true, synced, planDayUpdate });
   } catch (error) {
     const body = { error: error.message || "GHL sync failed." };
     if (error.code) body.code = error.code;
@@ -100,6 +117,12 @@ function normalizeSession(payload) {
     surface: clean(payload.surface) || "Unspecified",
     sessionDate: payload.sessionDate ? new Date(payload.sessionDate) : new Date(),
     forceDuplicateSync: payload.forceDuplicateSync === true,
+    trainingPlanId: clean(payload.trainingPlanId),
+    trainingPlanSourceId: clean(payload.trainingPlanSourceId),
+    trainingPlanTitle: clean(payload.trainingPlanTitle),
+    trainingPlanDayId: clean(payload.trainingPlanDayId),
+    trainingPlanDaySourceId: clean(payload.trainingPlanDaySourceId),
+    trainingPlanDayTitle: clean(payload.trainingPlanDayTitle),
     athletes,
   };
 }
@@ -358,6 +381,49 @@ async function findSeasonRecord({ token, locationId, sourceRecordId }) {
     schemaKey: SEASON_RECORD_SCHEMA_KEY,
     sourceRecordId,
   });
+}
+
+async function updateLinkedTrainingPlanDay({ token, locationId, session, linkedPerformanceRecords }) {
+  if (!session.trainingPlanDayId || !linkedPerformanceRecords.length) return null;
+
+  const linkedText = linkedPerformanceRecords.map((record) => {
+    return [
+      record.athlete,
+      `Run ${record.runNumber}`,
+      record.recordId || record.sourceRecordId,
+    ].filter(Boolean).join(" - ");
+  }).join("\n");
+
+  try {
+    const updated = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/${encodeURIComponent(session.trainingPlanDayId)}`,
+      method: "PUT",
+      body: {
+        locationId,
+        properties: {
+          status: "completed",
+          linked_performance_record_ids: linkedText,
+          coach_notes: [
+            `Completed from SMARTCoach Pro on ${dateOnly(validDate(session.sessionDate) || new Date())}.`,
+            session.trainingPlanTitle ? `Plan: ${session.trainingPlanTitle}` : "",
+            session.trainingPlanDayTitle ? `Workout: ${session.trainingPlanDayTitle}` : "",
+          ].filter(Boolean).join("\n"),
+        },
+      },
+    });
+
+    return {
+      action: "updated",
+      recordId: updated.id || (updated.record && updated.record.id) || session.trainingPlanDayId,
+    };
+  } catch (error) {
+    return {
+      action: "skipped",
+      recordId: session.trainingPlanDayId,
+      reason: error.message || "Training plan day update failed.",
+    };
+  }
 }
 
 async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }) {
@@ -705,9 +771,14 @@ function buildNoteBody(session, athlete) {
     `Group: ${session.groupName} | Season: ${session.season}`,
     `Phase: ${session.phase} | Type: ${session.workoutType}`,
     `Energy System: ${session.energySystem} | Surface: ${session.surface}`,
-    "",
-    `Athlete: ${athlete.name}`,
   ];
+
+  if (session.trainingPlanTitle || session.trainingPlanDayTitle) {
+    lines.push(`Plan: ${session.trainingPlanTitle || "Selected Training Plan"}`);
+    if (session.trainingPlanDayTitle) lines.push(`Scheduled Workout: ${session.trainingPlanDayTitle}`);
+  }
+
+  lines.push("", `Athlete: ${athlete.name}`);
 
   athlete.runs.forEach((run) => {
     const lapText = run.laps.length

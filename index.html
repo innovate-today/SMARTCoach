@@ -330,7 +330,7 @@ function applyPlanMode(){
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',cfg:l.cfg,runners:l.runners.map(function(r){
+      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',cfg:l.cfg,runners:l.runners.map(function(r){
         return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',saved:r.saved||[]};
       })};
     });
@@ -346,7 +346,7 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
+        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -716,7 +716,8 @@ function delR(){
 function rr(){
   if(!CL)return;
   var el=document.getElementById('rs');
-  var planHtml=CL.trainingPlanTitle?'<div class="lsec" style="margin-top:8px"><div class="erow pro-only" onclick="openSeasonPlan(true)"><span class="elbl"><b>Plan</b><br><small style="color:#777">'+ex(CL.trainingPlanTitle)+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>':'';
+  var planSub=[CL.trainingPlanTitle,CL.trainingPlanDayTitle].filter(Boolean).join(' · ');
+  var planHtml=planSub?'<div class="lsec" style="margin-top:8px"><div class="erow pro-only" onclick="openSeasonPlan(true)"><span class="elbl"><b>Plan</b><br><small style="color:#777">'+ex(planSub)+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>':'';
   if(!CL.runners.length){
     el.innerHTML=planHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else{
@@ -1070,13 +1071,14 @@ function renderTrainingPlanDetail(plan,days,loading){
 }
 function loadTrainingPlanDays(plan){
   var key=(plan.id||'')+'|'+(plan.sourceRecordId||'')+'|'+todayISO();
-  if(TPD[key]){renderTrainingPlanDetail(plan,TPD[key],false);return;}
+  if(TPD[key]){plan.todayDays=TPD[key];renderTrainingPlanDetail(plan,TPD[key],false);return;}
   var url='/api/smart-trak/training-plan?kind=days&date='+encodeURIComponent(todayISO())+'&trainingPlanId='+encodeURIComponent(plan.id||'')+'&planSourceId='+encodeURIComponent(plan.sourceRecordId||'');
   fetch(url).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Plan days unavailable');
     TPD[key]=(result.data&&result.data.days)||[];
+    plan.todayDays=TPD[key];
     var selected=TP[parseInt(document.getElementById('tp-plan').value)]||null;
     if(selected&&selected.id===plan.id)renderTrainingPlanDetail(plan,TPD[key],false);
   }).catch(function(){
@@ -1092,6 +1094,10 @@ function useSelectedTrainingPlan(){
     TPA.trainingPlanSourceId=plan.sourceRecordId||'';
     TPA.trainingPlanTitle=plan.title||'';
     TPA.trainingPlanDescription=plan.description||'';
+    var day=(plan.todayDays&&plan.todayDays[0])||null;
+    TPA.trainingPlanDayId=day&&day.id||'';
+    TPA.trainingPlanDaySourceId=day&&day.sourceRecordId||'';
+    TPA.trainingPlanDayTitle=day&&day.title||'';
     save();
     rl();
     if(CL&&TPA.id===CL.id)rr();
@@ -1616,6 +1622,12 @@ function doSMARTTraKSync(forceDuplicateSync){
       surface:surf,
       sessionDate:new Date().toISOString(),
       forceDuplicateSync:forceDuplicateSync===true,
+      trainingPlanId:CL.trainingPlanId||'',
+      trainingPlanSourceId:CL.trainingPlanSourceId||'',
+      trainingPlanTitle:CL.trainingPlanTitle||'',
+      trainingPlanDayId:CL.trainingPlanDayId||'',
+      trainingPlanDaySourceId:CL.trainingPlanDaySourceId||'',
+      trainingPlanDayTitle:CL.trainingPlanDayTitle||'',
       athletes:athletes
     })
   }).then(function(r){
@@ -1627,8 +1639,15 @@ function doSMARTTraKSync(forceDuplicateSync){
     }
     var count=result.data&&result.data.synced?result.data.synced.length:athletes.length;
     markSyncedRuns(result.data&&result.data.synced);
-    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' to SMARTCoach Pro!';
-    status.style.color='#0a7a44';status.style.fontWeight='700';
+    var planUpdate=result.data&&result.data.planDayUpdate;
+    if(planUpdate&&planUpdate.action==='skipped'){
+      status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+'. Plan day update needs review.';
+      status.style.color='#c47a00';
+    }else{
+      status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' to SMARTCoach Pro!';
+      status.style.color='#0a7a44';
+    }
+    status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
     setTimeout(function(){btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
   }).catch(function(e){
