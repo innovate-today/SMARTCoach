@@ -649,12 +649,12 @@ API key: `training_plan`
 
 Purpose:
 
-Stores planned workouts and AI/coach prescriptions. This lets SMARTCoach compare planned vs completed work and gives the AI a record of why workouts were prescribed.
+Stores planned workouts and coach-approved prescriptions. This lets SMARTCoach compare planned vs completed work and keep a record of why workouts were prescribed.
 
 Creation trigger:
 
 - Coach creates plan manually in dashboard.
-- AI generates suggested plan for coach approval.
+- Guided Plan Builder creates a draft from coach answers for coach review and approval.
 - Later: weekly plan generator creates records in bulk.
 
 Primary display format:
@@ -695,7 +695,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 | Anchor Performance Display | `anchor_performance_display` | Text | No | 52.0 | Human-readable anchor. |
 | Anchor Performance MS | `anchor_performance_ms` | Number | No | 52000 | Numeric anchor. |
 | Adjustment Factors JSON | `adjustment_factors_json` | Long Text | No | `{"temperature_f":82}` | Phase, fatigue, temp, days since hard session. |
-| AI Rationale | `ai_rationale` | Long Text | No | Glycolytic capacity improving... | Why this plan was suggested. |
+| Plan Rationale | `ai_rationale` | Long Text | No | Built backward from championship date... | Why this plan was suggested. Internal field key remains `ai_rationale` for compatibility. |
 | Coach Notes | `coach_notes` | Long Text | No | Keep full recovery honest | Manual notes. |
 | Approval Status | `approval_status` | Dropdown | Yes | draft | draft, approved, rejected, completed, skipped. |
 | Approved By | `approved_by` | Text | No | Marcus Moore | Coach approval. |
@@ -704,7 +704,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 | Completed Performance IDs | `completed_performance_ids` | Long Text | No | pr_1,pr_2,pr_3 | Links completed records. |
 | Completed Summary | `completed_summary` | Long Text | No | 5 of 6 reps completed in range | Planned vs actual. |
 | Compliance Percent | `compliance_percent` | Number | No | 83 | Completed on target. |
-| Source System | `source_system` | Dropdown/Text | Yes | ai | manual, ai, template. |
+| Source System | `source_system` | Dropdown/Text | Yes | guided_builder | manual, guided_builder, template. |
 | Source Record ID | `source_record_id` | Text | Yes | tp_avery_20260407_se1 | Dedupe key. |
 | Created At | `created_at` | DateTime | Yes | 2026-04-06T17:45:00Z | Creation timestamp. |
 | Last Updated At | `last_updated_at` | DateTime | No | 2026-04-07T19:00:00Z | Update timestamp. |

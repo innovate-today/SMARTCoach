@@ -259,7 +259,7 @@ function normalizePlan(payload) {
   const priorityMeets = cleanLines(payload.priorityMeets);
   const noPracticeDates = cleanLines(payload.noPracticeDates);
   const schoolConstraints = cleanLines(payload.schoolConstraints);
-  const mode = optionValue(payload.mode || payload.creationMode || (Array.isArray(payload.days) ? "manual" : "ai_assisted"));
+  const mode = optionValue(payload.mode || payload.creationMode || (Array.isArray(payload.days) ? "manual" : "guided"));
 
   return {
     mode,
@@ -360,7 +360,7 @@ function buildSeasonPlanDescription(plan) {
 
 function buildPlanRationale(plan) {
   const lines = [
-    plan.mode === "manual" ? "Manual training plan created by coach." : "AI-assisted draft generated from coach questionnaire. Review and edit before use.",
+    plan.mode === "manual" ? "Manual training plan created by coach." : "Guided draft created from coach questionnaire. Review and edit before use.",
     `Goal: peak on ${plan.peakDate}.`,
     `Event focus: ${plan.primaryEvent}.`,
     `Assigned group: ${plan.assignedGroup}.`,
