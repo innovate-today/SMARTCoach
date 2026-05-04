@@ -254,8 +254,8 @@ function normalizePlan(payload) {
   const planDate = clean(payload.planDate) || new Date().toISOString().slice(0, 10);
   const workoutDescription = clean(payload.workoutDescription);
   const startDate = dateOnly(payload.planStartDate || payload.startDate || payload.planDate) || planDate;
-  const endDate = dateOnly(payload.planEndDate || payload.endDate) || addDays(startDate, 27);
-  const peakDate = dateOnly(payload.peakDate) || endDate;
+  const peakDate = dateOnly(payload.peakDate);
+  const endDate = dateOnly(payload.planEndDate || payload.endDate) || peakDate || addDays(startDate, 27);
   const calendarName = clean(payload.calendarName) || `${season} ${seasonYear}`;
   const seasonBlock = clean(payload.seasonBlock) || season;
   const blockType = clean(payload.blockType) || clean(payload.phaseFocus) || "General Prep";
@@ -267,6 +267,7 @@ function normalizePlan(payload) {
 
   return {
     mode,
+    planName: clean(payload.planName),
     contactId: clean(payload.contactId),
     athleteName,
     smartcoachAthleteId: clean(payload.smartcoachAthleteId),
@@ -278,7 +279,7 @@ function normalizePlan(payload) {
     planDate,
     startDate,
     endDate,
-    peakDate,
+    peakDate: peakDate || endDate,
     calendarName,
     seasonBlock,
     blockType,
@@ -295,7 +296,7 @@ function normalizePlan(payload) {
 function buildTrainingPlanProperties(plan) {
   const isIndividual = !!plan.contactId;
   const subject = isIndividual ? plan.athleteName : plan.groupName;
-  const title = `${plan.season} ${plan.seasonYear} Season Plan - ${subject}`;
+  const title = plan.planName || `${plan.season} ${plan.seasonYear} Season Plan - ${subject}`;
   const description = plan.workoutDescription || buildSeasonPlanDescription(plan);
   const sourceRecordId = [
     "tp",
