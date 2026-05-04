@@ -1,6 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const TRAINING_PLAN_SCHEMA_KEY = "custom_objects.training_plans";
+const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const FIELD_IDS = {
   training_plan: ["TZbFrs7XAmFTbCUR7Bht"],
   record_name: ["OvqHfsUnX102D7iK41rN"],
@@ -15,6 +16,37 @@ const FIELD_IDS = {
   anchor_event: ["K8lUUy8QsRzhRnbBgvr0"],
   approval_status: ["XCJ9MKxQxgruGMab4e8P"],
   source_record_id: ["XamLCl30IO0beWQ462JU"],
+  calendar_name: ["oLgx1BacaZCIi55eKbhO"],
+  plan_start_date: ["gTIZmnm82T88MYPx8p1l"],
+  plan_end_date: ["rzKp8TBDvZCVSGxG9HdN"],
+  peak_date: ["SRII1JNaDZtIWCJVzzO1"],
+  season_block: ["ecYV9yKFSdqqIxyOejYV"],
+  block_type: ["zQrdfDur9qLX2C9udnMF"],
+  priority_meets: ["EhAPkIEtmrDtDdziXYQ0"],
+  no_practice_dates: ["plfPz0IR9fZwcpeH8VLW"],
+  school_constraints: ["WOHufSoDSSu6JUrwwk7r"],
+  assigned_group: ["3PH9C8pu8d9mydxmqKHK"],
+};
+const DAY_FIELD_IDS = {
+  training_plan_days: ["XhD36I8Z805YGdGZpQWy"],
+  training_plan_id: ["IBFftNR0WSnH9Jqs1M3A"],
+  date: ["6q19e2FwmyEBsnR36FOb"],
+  day_type: ["nnU4navT4X42RmarQEMi"],
+  group_name: ["52CgNzqxeSkCNB9JapQH"],
+  athlete_contact: ["X7OV4qThdvmNTZTukHRj"],
+  athlete_name_snapshot: ["dHhOi4g4nyOWTBUK9Huq"],
+  workout_title: ["9AUuS96TYVKaZb5CwojP"],
+  workout_details: ["HDkxzLyHwS7UYfzWULdX"],
+  workout_type: ["JeJSK2v1i6hr5j5JWvnb"],
+  energy_system: ["w9CkbegIX3HfeZIkJeKR"],
+  target_splits__paces: ["SU6YdLenqSayX2Aa6EsV"],
+  planned_volume: ["QuuQJG8PsE3WbeNtgYTf"],
+  status: ["AewprcRcLKYVJY54KWPd"],
+  linked_meet_id: ["T6HHd6GVO24DY1iOKxln"],
+  linked_performance_record_ids: ["CFhffn65Dq4j5PzR6C7G"],
+  coach_notes: ["HMK0dChJi5Q0wN1vgm9b"],
+  source_system: ["m9uiJIeFwx8yyqZ3pPX5"],
+  source_record_id: ["sBcjXM5l5LytSQZWVV13"],
 };
 
 module.exports = async function handler(req, res) {
@@ -40,6 +72,18 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
+      if (req.query && (req.query.kind === "days" || req.query.trainingPlanId || req.query.planId || req.query.date)) {
+        const days = await listTrainingPlanDays({
+          token,
+          locationId,
+          trainingPlanId: clean(req.query.trainingPlanId || req.query.planId),
+          planSourceId: clean(req.query.planSourceId),
+          date: clean(req.query.date),
+          groupName: clean(req.query.groupName),
+        });
+        res.status(200).json({ success: true, days });
+        return;
+      }
       const plans = await listTrainingPlans({ token, locationId });
       res.status(200).json({ success: true, plans });
       return;
@@ -93,6 +137,7 @@ function normalizeTrainingPlanRecord(record) {
   const props = recordProperties(record);
   return {
     id: record && record.id ? record.id : prop(props, "source_record_id"),
+    sourceRecordId: prop(props, "source_record_id"),
     title: prop(props, "workout_title") || prop(props, "record_name") || prop(props, "training_plan"),
     scope: labelValue(prop(props, "plan_scope")),
     season: labelValue(prop(props, "season")),
@@ -101,8 +146,65 @@ function normalizeTrainingPlanRecord(record) {
     event: prop(props, "anchor_event"),
     athleteName: prop(props, "athlete_name_snapshot"),
     planDate: prop(props, "plan_date"),
+    startDate: prop(props, "plan_start_date"),
+    endDate: prop(props, "plan_end_date"),
+    peakDate: prop(props, "peak_date"),
+    calendarName: prop(props, "calendar_name"),
+    seasonBlock: labelValue(prop(props, "season_block")),
+    blockType: labelValue(prop(props, "block_type")),
+    assignedGroup: prop(props, "assigned_group"),
+    priorityMeets: prop(props, "priority_meets"),
+    noPracticeDates: prop(props, "no_practice_dates"),
+    schoolConstraints: prop(props, "school_constraints"),
     approvalStatus: labelValue(prop(props, "approval_status")),
     description: prop(props, "workout_description"),
+  };
+}
+
+async function listTrainingPlanDays({ token, locationId, trainingPlanId, planSourceId, date, groupName }) {
+  const result = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/search`,
+    method: "POST",
+    body: { locationId, page: 1, pageLimit: 100 },
+  });
+
+  const planIds = [trainingPlanId, planSourceId].filter(Boolean).map((value) => value.toLowerCase());
+  const wantedDate = dateOnly(date);
+  const wantedGroup = clean(groupName).toLowerCase();
+
+  return recordsFromResult(result).map(normalizeTrainingPlanDayRecord).filter((day) => {
+    const dayPlanId = clean(day.trainingPlanId).toLowerCase();
+    if (planIds.length && planIds.indexOf(dayPlanId) === -1) return false;
+    if (wantedDate && dateOnly(day.date) !== wantedDate) return false;
+    if (wantedGroup && clean(day.groupName).toLowerCase() !== wantedGroup) return false;
+    return true;
+  }).sort((a, b) => {
+    return String(a.date || "").localeCompare(String(b.date || "")) || a.title.localeCompare(b.title);
+  });
+}
+
+function normalizeTrainingPlanDayRecord(record) {
+  const props = recordProperties(record);
+  return {
+    id: record && record.id ? record.id : dayProp(props, "source_record_id"),
+    sourceRecordId: dayProp(props, "source_record_id"),
+    trainingPlanId: dayProp(props, "training_plan_id"),
+    date: dayProp(props, "date"),
+    dayType: labelValue(dayProp(props, "day_type")),
+    groupName: dayProp(props, "group_name"),
+    athleteContact: dayProp(props, "athlete_contact"),
+    athleteName: dayProp(props, "athlete_name_snapshot"),
+    title: dayProp(props, "workout_title") || dayProp(props, "training_plan_days"),
+    details: dayProp(props, "workout_details"),
+    workoutType: labelValue(dayProp(props, "workout_type")),
+    energySystem: labelValue(dayProp(props, "energy_system")),
+    targetSplits: dayProp(props, "target_splits__paces"),
+    plannedVolume: dayProp(props, "planned_volume"),
+    status: labelValue(dayProp(props, "status")),
+    linkedMeetId: dayProp(props, "linked_meet_id"),
+    linkedPerformanceRecordIds: dayProp(props, "linked_performance_record_ids"),
+    coachNotes: dayProp(props, "coach_notes"),
   };
 }
 
@@ -266,6 +368,15 @@ function recordProperties(record) {
 
 function prop(props, key) {
   const keys = [key, `custom_objects.training_plans.${key}`].concat(FIELD_IDS[key] || []);
+  return firstPropValue(props, keys);
+}
+
+function dayProp(props, key) {
+  const keys = [key, `custom_objects.training_plan_days.${key}`].concat(DAY_FIELD_IDS[key] || []);
+  return firstPropValue(props, keys);
+}
+
+function firstPropValue(props, keys) {
   for (const item of keys) {
     const value = readPropValue(props, item);
     if (value) return value;
@@ -294,6 +405,12 @@ function optionValue(value) {
 
 function slugValue(value) {
   return clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function dateOnly(value) {
+  const text = clean(value);
+  if (!text) return "";
+  return text.slice(0, 10);
 }
 
 function clean(value) {

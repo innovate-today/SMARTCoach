@@ -169,7 +169,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="scroll"><div class="lsec" id="ll"></div></div>
   <div class="tbar">
     <button class="tbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.8" fill="#2B4FCC" stroke="none"/></svg><span>Info</span></button>
-    <button class="tbtn pro-only" onclick="openSeasonPlan()"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Plan</span></button>
+    <button class="tbtn pro-only" onclick="openSeasonPlan(false)"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Plan</span></button>
     <button class="tbtn" onclick="addGroupForView()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn" onclick="delGroup()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
   </div>
@@ -201,6 +201,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="tbar">
     <button class="tbtn" onclick="go('s-sort')"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Sort</span></button>
     <button class="tbtn" onclick="sums()"><svg viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg><span>Sum</span></button>
+    <button class="tbtn pro-only" onclick="openSeasonPlan(true)"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Plan</span></button>
     <button class="tbtn" onclick="addR()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn" onclick="go('s-set')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
     <button class="tbtn" onclick="delR()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
@@ -315,7 +316,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], GV='training';
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GV='training';
 
 function productPlan(){
   return localStorage.getItem('sc_plan')||'pro';
@@ -329,7 +330,7 @@ function applyPlanMode(){
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',cfg:l.cfg,runners:l.runners.map(function(r){
+      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',cfg:l.cfg,runners:l.runners.map(function(r){
         return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',saved:r.saved||[]};
       })};
     });
@@ -345,7 +346,7 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
+        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -372,6 +373,10 @@ function currentSeason(){
   else if(m>=6&&m<=8)s='Summer';
   else s='Fall';
   return{season:s,year:y};
+}
+function todayISO(){
+  var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+m+'-'+day;
 }
 function normalizeGroupMeta(l){
   var cs=currentSeason();
@@ -610,7 +615,7 @@ function rl(){
   el.innerHTML=shown.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
     var title=l.type==='meet'?ex(l.eventName||l.name||'Meet Event'):ex(l.name);
-    var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(l.meetName||'Meet')+' · '+ex(l.season||'')+' '+(l.seasonYear||'')+'</div>':'';
+    var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(l.meetName||'Meet')+' · '+ex(l.season||'')+' '+(l.seasonYear||'')+'</div>':(l.trainingPlanTitle?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(l.trainingPlanTitle)+'</div>':'');
     return'<div class="lrow" onclick="oGroup('+l.id+')">'+
       '<span class="ltxt">'+title+sub+'</span>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
@@ -711,10 +716,11 @@ function delR(){
 function rr(){
   if(!CL)return;
   var el=document.getElementById('rs');
+  var planHtml=CL.trainingPlanTitle?'<div class="lsec" style="margin-top:8px"><div class="erow pro-only" onclick="openSeasonPlan(true)"><span class="elbl"><b>Plan</b><br><small style="color:#777">'+ex(CL.trainingPlanTitle)+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>':'';
   if(!CL.runners.length){
-    el.innerHTML='<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
+    el.innerHTML=planHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else{
-    el.innerHTML=CL.runners.map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=planHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
   }
   updMB();
 }
@@ -998,14 +1004,15 @@ function eventDistance(event){
   var map={'100m':100,'200m':200,'400m':400,'600m':600,'800m':800,'1500m':1500,'1600m':1600,'1 Mile':1609.34,'3200m':3200,'5K':5000};
   return map[event]||0;
 }
-function openSeasonPlan(){
+function openSeasonPlan(assignToGroup){
   if(!isProPlan())return;
+  TPA=(assignToGroup&&CL)?CL:null;
   document.getElementById('tp-status').textContent='Loading plans from SMARTCoach Pro...';
   document.getElementById('tp-status').style.color='#555';
   document.getElementById('tp-plan').innerHTML='<option>Loading...</option>';
   document.getElementById('tp-detail').innerHTML='';
   var btn=document.getElementById('tp-btn');
-  btn.textContent='Use Selected Plan';btn.disabled=true;btn.style.background='#2B4FCC';
+  btn.textContent=TPA?'Use Selected Plan':'Open Group to Use Plan';btn.disabled=true;btn.style.background='#2B4FCC';
   sm('m-training-plan');
   fetch('/api/smart-trak/training-plan').then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
@@ -1030,30 +1037,66 @@ function renderTrainingPlanOptions(){
     return;
   }
   sel.innerHTML=TP.map(function(p,i){
-    var meta=[p.season,p.seasonYear,p.approvalStatus].filter(Boolean).join(' · ');
+    var meta=[p.season,p.seasonYear,p.seasonBlock,p.approvalStatus].filter(Boolean).join(' · ');
     return '<option value="'+i+'">'+ex(p.title+(meta?' - '+meta:''))+'</option>';
   }).join('');
   status.textContent='';
-  document.getElementById('tp-btn').disabled=false;
+  document.getElementById('tp-btn').disabled=!TPA;
   showSelectedTrainingPlan();
 }
 function showSelectedTrainingPlan(){
   var sel=document.getElementById('tp-plan');
   var plan=TP[parseInt(sel.value)]||null;
   if(!plan){document.getElementById('tp-detail').innerHTML='';return;}
-  document.getElementById('tp-detail').innerHTML='<div class="profile-sec"><h4>'+ex(plan.approvalStatus||'Plan')+'</h4><div class="profile-row"><b>'+ex(plan.title)+'</b><small>'+ex([plan.season,plan.seasonYear,plan.phase,plan.event,plan.athleteName].filter(Boolean).join(' · '))+'</small></div><div class="profile-row"><small>'+ex(plan.description||'No plan details entered yet.')+'</small></div></div>';
+  renderTrainingPlanDetail(plan,null,true);
+  loadTrainingPlanDays(plan);
+}
+function renderTrainingPlanDetail(plan,days,loading){
+  var dates=[plan.startDate,plan.endDate].filter(Boolean).join(' to ');
+  var meta=[plan.calendarName,plan.season,plan.seasonYear,plan.seasonBlock,plan.blockType,plan.assignedGroup].filter(Boolean).join(' · ');
+  var todayHtml='';
+  if(loading){
+    todayHtml='<div class="profile-row"><small>Loading today&apos;s workout...</small></div>';
+  }else if(days&&days.length){
+    todayHtml=days.map(function(d){
+      var detail=[d.dayType,d.workoutType,d.energySystem,d.plannedVolume].filter(Boolean).join(' · ');
+      var body=[d.details,d.targetSplits,d.coachNotes].filter(Boolean).join('\n\n');
+      return '<div class="profile-row"><b>'+ex(d.title||'Workout')+'</b><small>'+ex(detail)+'</small>'+(body?'<small style="white-space:pre-wrap">'+ex(body)+'</small>':'')+'</div>';
+    }).join('');
+  }else{
+    todayHtml='<div class="profile-row"><small>No workout scheduled for today.</small></div>';
+  }
+  document.getElementById('tp-detail').innerHTML='<div class="profile-sec"><h4>'+ex(plan.approvalStatus||'Plan')+'</h4><div class="profile-row"><b>'+ex(plan.title)+'</b><small>'+ex(meta)+'</small>'+(dates?'<small>'+ex(dates)+'</small>':'')+(plan.peakDate?'<small>Peak date: '+ex(plan.peakDate)+'</small>':'')+'</div><div class="profile-row"><small style="white-space:pre-wrap">'+ex(plan.description||'No plan details entered yet.')+'</small></div></div><div class="profile-sec"><h4>Today</h4>'+todayHtml+'</div>';
+}
+function loadTrainingPlanDays(plan){
+  var key=(plan.id||'')+'|'+(plan.sourceRecordId||'')+'|'+todayISO();
+  if(TPD[key]){renderTrainingPlanDetail(plan,TPD[key],false);return;}
+  var url='/api/smart-trak/training-plan?kind=days&date='+encodeURIComponent(todayISO())+'&trainingPlanId='+encodeURIComponent(plan.id||'')+'&planSourceId='+encodeURIComponent(plan.sourceRecordId||'');
+  fetch(url).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Plan days unavailable');
+    TPD[key]=(result.data&&result.data.days)||[];
+    var selected=TP[parseInt(document.getElementById('tp-plan').value)]||null;
+    if(selected&&selected.id===plan.id)renderTrainingPlanDetail(plan,TPD[key],false);
+  }).catch(function(){
+    renderTrainingPlanDetail(plan,[],false);
+  });
 }
 function useSelectedTrainingPlan(){
   var sel=document.getElementById('tp-plan');
   var plan=TP[parseInt(sel.value)]||null;
   if(!plan)return;
-  if(CL){
-    CL.trainingPlanId=plan.id||'';
-    CL.trainingPlanTitle=plan.title||'';
-    CL.trainingPlanDescription=plan.description||'';
+  if(TPA){
+    TPA.trainingPlanId=plan.id||'';
+    TPA.trainingPlanSourceId=plan.sourceRecordId||'';
+    TPA.trainingPlanTitle=plan.title||'';
+    TPA.trainingPlanDescription=plan.description||'';
     save();
+    rl();
+    if(CL&&TPA.id===CL.id)rr();
   }
-  document.getElementById('tp-status').textContent='Plan selected for this group.';
+  document.getElementById('tp-status').textContent=TPA?'Plan selected for this group.':'Open a group first, then choose Plan.';
   document.getElementById('tp-status').style.color='#0a7a44';
   document.getElementById('tp-status').style.fontWeight='700';
 }
