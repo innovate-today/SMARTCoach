@@ -307,7 +307,7 @@ function buildTrainingPlanProperties(plan) {
     record_name: title,
     athlete_contact: plan.contactId,
     athlete_name_snapshot: plan.athleteName,
-    plan_scope: "season",
+    plan_scope: planScopeValue("Season"),
     plan_date: plan.planDate,
     season: optionValue(plan.season),
     season_year: plan.seasonYear,
@@ -323,7 +323,7 @@ function buildTrainingPlanProperties(plan) {
     plan_end_date: plan.endDate,
     peak_date: plan.peakDate,
     season_block: optionValue(plan.seasonBlock),
-    block_type: optionValue(plan.blockType),
+    block_type: blockTypeValue(plan.blockType),
     priority_meets: plan.priorityMeets,
     no_practice_dates: plan.noPracticeDates,
     school_constraints: plan.schoolConstraints,
@@ -474,7 +474,7 @@ function buildTrainingPlanDayProperties(plan, day, planRecord) {
     training_plan_days: `${dateOnly(day.date)} - ${title}`,
     training_plan_id: planRecord.planRecordId || planRecord.planSourceRecordId,
     date: dateOnly(day.date),
-    day_type: optionValue(day.dayType),
+    day_type: dayTypeValue(day.dayType),
     group_name: clean(day.groupName) || plan.assignedGroup,
     athlete_contact: clean(day.athleteContact) || plan.contactId,
     athlete_name_snapshot: clean(day.athleteName) || plan.athleteName,
@@ -484,7 +484,7 @@ function buildTrainingPlanDayProperties(plan, day, planRecord) {
     energy_system: energySystemValue(day.energySystem),
     target_splits__paces: clean(day.targetSplits || day.targetSplitsPaces),
     planned_volume: clean(day.plannedVolume),
-    status: optionValue(day.status || "draft"),
+    status: dayStatusValue(day.status || "draft"),
     linked_meet_id: clean(day.linkedMeetId),
     linked_performance_record_ids: clean(day.linkedPerformanceRecordIds),
     coach_notes: clean(day.coachNotes),
@@ -612,6 +612,67 @@ function phaseLabel(value) {
     transition: "Transition / Recovery",
   };
   return labels[normalized] || value;
+}
+
+function planScopeValue(value) {
+  const normalized = optionValue(value);
+  const aliases = {
+    individual: "individual",
+    group: "group",
+    week: "team",
+    team: "team",
+    season: "season",
+    mesocycle: "mesocycle",
+  };
+  return aliases[normalized] || normalized || "season";
+}
+
+function dayTypeValue(value) {
+  const normalized = optionValue(value);
+  const aliases = {
+    workout: "workout",
+    technical: "workout",
+    meet: "meet",
+    recovery: "recovery",
+    rest: "no_practice",
+    no_practice: "no_practice",
+    travel: "travel",
+  };
+  return aliases[normalized] || "workout";
+}
+
+function dayStatusValue(value) {
+  const normalized = optionValue(value);
+  const aliases = {
+    draft: "draft",
+    approved: "adjusted",
+    adjusted: "adjusted",
+    scheduled: "scheduled",
+    completed: "completed",
+    skipped: "skipped",
+    canceled: "skipped",
+    cancelled: "skipped",
+    needs_review: "draft",
+  };
+  return aliases[normalized] || "draft";
+}
+
+function blockTypeValue(value) {
+  const normalized = optionValue(value);
+  const aliases = {
+    general_prep: "cross_country",
+    cross_country: "cross_country",
+    specific_prep: "track_prep",
+    track_prep: "track_prep",
+    pre_competition: "track_season",
+    competition: "track_season",
+    track_season: "track_season",
+    recovery: "recovery",
+    transition: "recovery",
+    peak: "custom",
+    custom: "custom",
+  };
+  return aliases[normalized] || "custom";
 }
 
 function workoutTypeValue(value) {
