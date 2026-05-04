@@ -93,21 +93,51 @@ module.exports = async function handler(req, res) {
     const plan = normalizePlan(payload);
     const properties = buildTrainingPlanProperties(plan);
 
-    const record = await ghlFetch({
+    const record = await createObjectRecordWithOptionFallback({
       token,
-      path: `/objects/${encodeURIComponent(TRAINING_PLAN_SCHEMA_KEY)}/records`,
-      method: "POST",
-      body: { locationId, properties },
+      locationId,
+      schemaKey: TRAINING_PLAN_SCHEMA_KEY,
+      properties,
+      optionKeys: ["plan_scope", "season", "phase", "energy_system", "approval_status", "season_block", "block_type"],
     });
+
+    const recordId = record.id || (record.record && record.record.id) || null;
+    const days = buildTrainingPlanDays(plan, {
+      recordId,
+      sourceRecordId: properties.source_record_id,
+      title: properties.workout_title,
+    });
+    const createdDays = [];
+
+    for (const day of days) {
+      const dayProperties = buildTrainingPlanDayProperties(plan, day, {
+        planRecordId: recordId,
+        planSourceRecordId: properties.source_record_id,
+      });
+      const dayRecord = await createObjectRecordWithOptionFallback({
+        token,
+        locationId,
+        schemaKey: TRAINING_PLAN_DAY_SCHEMA_KEY,
+        properties: dayProperties,
+        optionKeys: ["day_type", "workout_type", "energy_system", "status"],
+      });
+      createdDays.push({
+        recordId: dayRecord.id || (dayRecord.record && dayRecord.record.id) || null,
+        sourceRecordId: dayProperties.source_record_id,
+        date: dayProperties.date,
+        title: dayProperties.workout_title,
+      });
+    }
 
     res.status(200).json({
       success: true,
       plan: {
-        recordId: record.id || (record.record && record.record.id) || null,
+        recordId,
         sourceRecordId: properties.source_record_id,
         title: properties.workout_title,
         description: properties.workout_description,
       },
+      days: createdDays,
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Training plan save failed." });
@@ -219,8 +249,20 @@ function normalizePlan(payload) {
   const phaseFocus = clean(payload.phaseFocus) || "Balanced";
   const planDate = clean(payload.planDate) || new Date().toISOString().slice(0, 10);
   const workoutDescription = clean(payload.workoutDescription);
+  const startDate = dateOnly(payload.planStartDate || payload.startDate || payload.planDate) || planDate;
+  const endDate = dateOnly(payload.planEndDate || payload.endDate) || addDays(startDate, 27);
+  const peakDate = dateOnly(payload.peakDate) || endDate;
+  const calendarName = clean(payload.calendarName) || `${season} ${seasonYear}`;
+  const seasonBlock = clean(payload.seasonBlock) || season;
+  const blockType = clean(payload.blockType) || clean(payload.phaseFocus) || "General Prep";
+  const assignedGroup = clean(payload.assignedGroup) || groupName;
+  const priorityMeets = cleanLines(payload.priorityMeets);
+  const noPracticeDates = cleanLines(payload.noPracticeDates);
+  const schoolConstraints = cleanLines(payload.schoolConstraints);
+  const mode = optionValue(payload.mode || payload.creationMode || (Array.isArray(payload.days) ? "manual" : "ai_assisted"));
 
   return {
+    mode,
     contactId: clean(payload.contactId),
     athleteName,
     smartcoachAthleteId: clean(payload.smartcoachAthleteId),
@@ -230,7 +272,19 @@ function normalizePlan(payload) {
     primaryEvent,
     phaseFocus,
     planDate,
+    startDate,
+    endDate,
+    peakDate,
+    calendarName,
+    seasonBlock,
+    blockType,
+    priorityMeets,
+    noPracticeDates,
+    schoolConstraints,
+    assignedGroup,
     workoutDescription,
+    days: normalizePlanDays(payload.days),
+    questionnaire: normalizeQuestionnaire(payload.questionnaire || payload.answers || payload),
   };
 }
 
@@ -262,8 +316,18 @@ function buildTrainingPlanProperties(plan) {
     workout_title: title,
     workout_description: description,
     anchor_event: plan.primaryEvent,
-    ai_rationale: "Baseline season plan draft generated from selected season, event focus, and training phase. Review and edit before assigning workouts.",
+    ai_rationale: buildPlanRationale(plan),
     approval_status: "draft",
+    calendar_name: plan.calendarName,
+    plan_start_date: plan.startDate,
+    plan_end_date: plan.endDate,
+    peak_date: plan.peakDate,
+    season_block: optionValue(plan.seasonBlock),
+    block_type: optionValue(plan.blockType),
+    priority_meets: plan.priorityMeets,
+    no_practice_dates: plan.noPracticeDates,
+    school_constraints: plan.schoolConstraints,
+    assigned_group: plan.assignedGroup,
     source_system: "smartcoach_pro",
     source_record_id: sourceRecordId,
   });
@@ -292,6 +356,212 @@ function buildSeasonPlanDescription(plan) {
     "Coach Review:",
     "Use athlete bests, recent meet results, training response, soreness, and school calendar before finalizing weekly workouts.",
   ].join("\n");
+}
+
+function buildPlanRationale(plan) {
+  const lines = [
+    plan.mode === "manual" ? "Manual training plan created by coach." : "AI-assisted draft generated from coach questionnaire. Review and edit before use.",
+    `Goal: peak on ${plan.peakDate}.`,
+    `Event focus: ${plan.primaryEvent}.`,
+    `Assigned group: ${plan.assignedGroup}.`,
+  ];
+  if (plan.priorityMeets) lines.push(`Priority meets: ${plan.priorityMeets}`);
+  if (plan.noPracticeDates) lines.push(`No-practice dates: ${plan.noPracticeDates}`);
+  if (plan.schoolConstraints) lines.push(`School constraints: ${plan.schoolConstraints}`);
+  return lines.join("\n");
+}
+
+function buildTrainingPlanDays(plan, createdPlan) {
+  if (plan.days.length) return plan.days;
+  return generateDraftPlanDays(plan, createdPlan);
+}
+
+function generateDraftPlanDays(plan) {
+  const noPractice = new Set(parseDateList(plan.noPracticeDates));
+  const start = parseISODate(plan.startDate);
+  const end = parseISODate(plan.endDate);
+  if (!start || !end || start > end) return [];
+
+  const days = [];
+  let cursor = new Date(start);
+  let week = 1;
+  while (cursor <= end && days.length < 120) {
+    const date = dateOnly(cursor);
+    const dow = cursor.getUTCDay();
+    if (!noPractice.has(date) && dow !== 0) {
+      days.push(draftDayForDate({ plan, date, dow, week }));
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+    if (dow === 6) week += 1;
+  }
+  return days;
+}
+
+function draftDayForDate({ plan, date, dow, week }) {
+  const templates = {
+    1: {
+      dayType: "Workout",
+      workoutTitle: `${plan.primaryEvent} speed development`,
+      workoutDetails: "Acceleration mechanics, short fast reps, full recovery. Coach should edit reps, distances, and recoveries before use.",
+      workoutType: "Acceleration",
+      energySystem: "ATP-PC (Phosphagen)",
+      plannedVolume: "Low volume / high quality",
+    },
+    2: {
+      dayType: "Recovery",
+      workoutTitle: "Recovery / aerobic support",
+      workoutDetails: "Easy aerobic work, mobility, drills, and general strength. Keep effort controlled.",
+      workoutType: "Easy/Recovery Run",
+      energySystem: "Oxidative (Aerobic)",
+      plannedVolume: "Low to moderate",
+    },
+    3: {
+      dayType: "Workout",
+      workoutTitle: `${plan.primaryEvent} event-specific session`,
+      workoutDetails: "Primary quality day. Build race rhythm, target pace awareness, and technical consistency.",
+      workoutType: week < 3 ? "Intensive Tempo" : "Special Endurance I",
+      energySystem: week < 3 ? "Mixed" : "Glycolytic (Anaerobic)",
+      plannedVolume: "Moderate",
+    },
+    4: {
+      dayType: "Technical",
+      workoutTitle: "Technical / rhythm day",
+      workoutDetails: "Drills, wickets/strides, relay exchange or event-specific skill work. Keep nervous system fresh.",
+      workoutType: "Max Velocity",
+      energySystem: "ATP-PC (Phosphagen)",
+      plannedVolume: "Low",
+    },
+    5: {
+      dayType: "Workout",
+      workoutTitle: "Competition rhythm / tempo",
+      workoutDetails: "Meet-week adjustment point. If racing within 48 hours, reduce volume and sharpen only.",
+      workoutType: week % 2 ? "Speed Endurance I" : "Extensive Tempo",
+      energySystem: week % 2 ? "Glycolytic (Anaerobic)" : "Oxidative (Aerobic)",
+      plannedVolume: "Moderate",
+    },
+    6: {
+      dayType: "Meet",
+      workoutTitle: "Meet / controlled effort",
+      workoutDetails: "Use for scheduled meet, time trial, or controlled aerobic work. Edit based on actual calendar.",
+      workoutType: "Long Run",
+      energySystem: "Mixed",
+      plannedVolume: "Coach choice",
+    },
+  };
+  const template = templates[dow] || templates[2];
+  return {
+    date,
+    groupName: plan.assignedGroup,
+    athleteContact: plan.contactId,
+    athleteName: plan.athleteName,
+    targetSplits: "",
+    status: "draft",
+    coachNotes: `Draft week ${week}. Coach should review and adjust.`,
+    ...template,
+  };
+}
+
+function buildTrainingPlanDayProperties(plan, day, planRecord) {
+  const sourceRecordId = clean(day.sourceRecordId) || [
+    "tpd",
+    slugValue(planRecord.planSourceRecordId || planRecord.planRecordId || plan.groupName),
+    dateOnly(day.date).replace(/-/g, ""),
+    slugValue(day.workoutTitle || day.dayType || "day"),
+  ].filter(Boolean).join("_");
+  const title = clean(day.workoutTitle) || clean(day.title) || "Training Plan Day";
+
+  return compactProperties({
+    training_plan_days: `${dateOnly(day.date)} - ${title}`,
+    training_plan_id: planRecord.planRecordId || planRecord.planSourceRecordId,
+    date: dateOnly(day.date),
+    day_type: optionValue(day.dayType),
+    group_name: clean(day.groupName) || plan.assignedGroup,
+    athlete_contact: clean(day.athleteContact) || plan.contactId,
+    athlete_name_snapshot: clean(day.athleteName) || plan.athleteName,
+    workout_title: title,
+    workout_details: clean(day.workoutDetails || day.details),
+    workout_type: workoutTypeValue(day.workoutType),
+    energy_system: energySystemValue(day.energySystem),
+    target_splits__paces: clean(day.targetSplits || day.targetSplitsPaces),
+    planned_volume: clean(day.plannedVolume),
+    status: optionValue(day.status || "draft"),
+    linked_meet_id: clean(day.linkedMeetId),
+    linked_performance_record_ids: clean(day.linkedPerformanceRecordIds),
+    coach_notes: clean(day.coachNotes),
+    source_system: "smartcoach_pro",
+    source_record_id: sourceRecordId,
+  });
+}
+
+function normalizePlanDays(days) {
+  if (!Array.isArray(days)) return [];
+  return days.map((day, index) => ({
+    date: dateOnly(day && day.date),
+    dayType: clean(day && (day.dayType || day.type)),
+    groupName: clean(day && day.groupName),
+    athleteContact: clean(day && day.athleteContact),
+    athleteName: clean(day && day.athleteName),
+    workoutTitle: clean(day && (day.workoutTitle || day.title)) || `Training Day ${index + 1}`,
+    workoutDetails: clean(day && (day.workoutDetails || day.details)),
+    workoutType: clean(day && day.workoutType),
+    energySystem: clean(day && day.energySystem),
+    targetSplits: clean(day && (day.targetSplits || day.targetSplitsPaces)),
+    plannedVolume: clean(day && day.plannedVolume),
+    status: clean(day && day.status) || "draft",
+    linkedMeetId: clean(day && day.linkedMeetId),
+    linkedPerformanceRecordIds: clean(day && day.linkedPerformanceRecordIds),
+    coachNotes: clean(day && day.coachNotes),
+    sourceRecordId: clean(day && day.sourceRecordId),
+  })).filter((day) => day.date && day.workoutTitle);
+}
+
+function normalizeQuestionnaire(value) {
+  if (!value || typeof value !== "object") return {};
+  const fields = [
+    "season",
+    "seasonYear",
+    "groupName",
+    "athleteName",
+    "primaryEvent",
+    "phaseFocus",
+    "planStartDate",
+    "planEndDate",
+    "peakDate",
+    "priorityMeets",
+    "noPracticeDates",
+    "schoolConstraints",
+    "assignedGroup",
+    "recentResults",
+    "weeklyPracticeDays",
+    "trainingPreferences",
+    "injuryLimitations",
+  ];
+  return fields.reduce((answers, key) => {
+    const answer = cleanLines(value[key]);
+    if (answer) answers[key] = answer;
+    return answers;
+  }, {});
+}
+
+async function createObjectRecordWithOptionFallback({ token, locationId, schemaKey, properties, optionKeys }) {
+  try {
+    return await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(schemaKey)}/records`,
+      method: "POST",
+      body: { locationId, properties },
+    });
+  } catch (error) {
+    if (!optionKeys || !optionKeys.length || !/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "")) throw error;
+    const fallback = { ...properties };
+    optionKeys.forEach((key) => delete fallback[key]);
+    return ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(schemaKey)}/records`,
+      method: "POST",
+      body: { locationId, properties: fallback },
+    });
+  }
 }
 
 async function ghlFetch({ token, path, method, body }) {
@@ -342,6 +612,29 @@ function phaseLabel(value) {
     transition: "Transition / Recovery",
   };
   return labels[normalized] || value;
+}
+
+function workoutTypeValue(value) {
+  const normalized = optionValue(value);
+  const aliases = {
+    easy_recovery_run: "easy_recovery_run",
+    recovery_run: "easy_recovery_run",
+    special_endurance_1: "special_endurance_i",
+    special_endurance_i: "special_endurance_i",
+    special_endurance_2: "special_endurance_ii",
+    special_endurance_ii: "special_endurance_ii",
+    speed_endurance_1: "speed_endurance_i",
+    speed_endurance_i: "speed_endurance_i",
+  };
+  return aliases[normalized] || normalized;
+}
+
+function energySystemValue(value) {
+  const normalized = optionValue(value);
+  if (normalized.indexOf("atp") >= 0 || normalized.indexOf("phosphagen") >= 0) return "atp_pc_phosphagen";
+  if (normalized.indexOf("glycolytic") >= 0 || normalized.indexOf("anaerobic") >= 0) return "glycolytic_anaerobic";
+  if (normalized.indexOf("oxidative") >= 0 || normalized.indexOf("aerobic") >= 0) return "oxidative_aerobic";
+  return normalized || "mixed";
 }
 
 function compactProperties(properties) {
@@ -408,9 +701,33 @@ function slugValue(value) {
 }
 
 function dateOnly(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
   const text = clean(value);
   if (!text) return "";
   return text.slice(0, 10);
+}
+
+function parseISODate(value) {
+  const text = dateOnly(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const date = new Date(`${text}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function addDays(value, count) {
+  const date = parseISODate(value);
+  if (!date) return "";
+  date.setUTCDate(date.getUTCDate() + Number(count || 0));
+  return dateOnly(date);
+}
+
+function parseDateList(value) {
+  return cleanLines(value).split(/\r?\n|,/).map(dateOnly).filter(Boolean);
+}
+
+function cleanLines(value) {
+  if (Array.isArray(value)) return value.map(clean).filter(Boolean).join("\n");
+  return clean(value).split(/\r?\n|,/).map((line) => line.trim()).filter(Boolean).join("\n");
 }
 
 function clean(value) {
