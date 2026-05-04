@@ -35,6 +35,8 @@ The stopwatch app should not create plans. It should only select an existing pla
 
 When a coach reaches practice and needs to adjust, the stopwatch app shows the next five scheduled workouts and allows a different workout to be selected for that group.
 
+Groups can have a default plan. Individual athletes inside that group can be assigned a different plan/day override without creating a separate timing group. Sync should link each athlete to the plan day they actually followed.
+
 ## Questionnaire Endpoint
 
 `GET /api/smart-trak/training-plan?kind=questionnaire`

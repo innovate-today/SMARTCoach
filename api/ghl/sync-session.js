@@ -66,6 +66,10 @@ module.exports = async function handler(req, res) {
           runNumber: record.runNumber,
           recordId: record.recordId,
           sourceRecordId: record.sourceRecordId,
+          trainingPlanId: athlete.trainingPlanId || session.trainingPlanId,
+          trainingPlanTitle: athlete.trainingPlanTitle || session.trainingPlanTitle,
+          trainingPlanDayId: athlete.trainingPlanDayId || session.trainingPlanDayId,
+          trainingPlanDayTitle: athlete.trainingPlanDayTitle || session.trainingPlanDayTitle,
         });
       });
       synced.push({ runnerId: athlete.runnerId, athlete: athlete.name, contactId: contact.id, performanceRecords, seasonRecord });
@@ -133,6 +137,12 @@ function normalizeAthlete(raw) {
     name: clean(raw && raw.name),
     contactId: clean(raw && raw.contactId),
     smartcoachAthleteId: clean(raw && raw.smartcoachAthleteId),
+    trainingPlanId: clean(raw && raw.trainingPlanId),
+    trainingPlanSourceId: clean(raw && raw.trainingPlanSourceId),
+    trainingPlanTitle: clean(raw && raw.trainingPlanTitle),
+    trainingPlanDayId: clean(raw && raw.trainingPlanDayId),
+    trainingPlanDaySourceId: clean(raw && raw.trainingPlanDaySourceId),
+    trainingPlanDayTitle: clean(raw && raw.trainingPlanDayTitle),
     runs: Array.isArray(raw && raw.runs)
       ? raw.runs.map(normalizeRun).filter((run) => run.total)
       : [],
@@ -384,46 +394,63 @@ async function findSeasonRecord({ token, locationId, sourceRecordId }) {
 }
 
 async function updateLinkedTrainingPlanDay({ token, locationId, session, linkedPerformanceRecords }) {
-  if (!session.trainingPlanDayId || !linkedPerformanceRecords.length) return null;
+  if (!linkedPerformanceRecords.length) return null;
+  const groups = linkedPerformanceRecords.reduce((grouped, record) => {
+    const dayId = clean(record.trainingPlanDayId || session.trainingPlanDayId);
+    if (!dayId) return grouped;
+    if (!grouped[dayId]) grouped[dayId] = [];
+    grouped[dayId].push(record);
+    return grouped;
+  }, {});
+  const dayIds = Object.keys(groups);
+  if (!dayIds.length) return null;
+  const updates = [];
 
-  const linkedText = linkedPerformanceRecords.map((record) => {
-    return [
-      record.athlete,
-      `Run ${record.runNumber}`,
-      record.recordId || record.sourceRecordId,
-    ].filter(Boolean).join(" - ");
-  }).join("\n");
+  for (const dayId of dayIds) {
+    const records = groups[dayId];
+    const first = records[0] || {};
+    const linkedText = records.map((record) => {
+      return [
+        record.athlete,
+        `Run ${record.runNumber}`,
+        record.recordId || record.sourceRecordId,
+      ].filter(Boolean).join(" - ");
+    }).join("\n");
 
-  try {
-    const updated = await ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/${encodeURIComponent(session.trainingPlanDayId)}`,
-      method: "PUT",
-      body: {
-        locationId,
-        properties: {
-          status: "completed",
-          linked_performance_record_ids: linkedText,
-          coach_notes: [
-            `Completed from SMARTCoach Pro on ${dateOnly(validDate(session.sessionDate) || new Date())}.`,
-            session.trainingPlanTitle ? `Plan: ${session.trainingPlanTitle}` : "",
-            session.trainingPlanDayTitle ? `Workout: ${session.trainingPlanDayTitle}` : "",
-          ].filter(Boolean).join("\n"),
+    try {
+      const updated = await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/${encodeURIComponent(dayId)}`,
+        method: "PUT",
+        body: {
+          locationId,
+          properties: {
+            status: "completed",
+            linked_performance_record_ids: linkedText,
+            coach_notes: [
+              `Completed from SMARTCoach Pro on ${dateOnly(validDate(session.sessionDate) || new Date())}.`,
+              (first.trainingPlanTitle || session.trainingPlanTitle) ? `Plan: ${first.trainingPlanTitle || session.trainingPlanTitle}` : "",
+              (first.trainingPlanDayTitle || session.trainingPlanDayTitle) ? `Workout: ${first.trainingPlanDayTitle || session.trainingPlanDayTitle}` : "",
+            ].filter(Boolean).join("\n"),
+          },
         },
-      },
-    });
+      });
 
-    return {
-      action: "updated",
-      recordId: updated.id || (updated.record && updated.record.id) || session.trainingPlanDayId,
-    };
-  } catch (error) {
-    return {
-      action: "skipped",
-      recordId: session.trainingPlanDayId,
-      reason: error.message || "Training plan day update failed.",
-    };
+      updates.push({
+        action: "updated",
+        recordId: updated.id || (updated.record && updated.record.id) || dayId,
+      });
+    } catch (error) {
+      updates.push({
+        action: "skipped",
+        recordId: dayId,
+        reason: error.message || "Training plan day update failed.",
+      });
+    }
   }
+
+  if (updates.length === 1) return updates[0];
+  return { action: updates.some((item) => item.action === "skipped") ? "partial" : "updated", updates };
 }
 
 async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }) {
@@ -773,9 +800,11 @@ function buildNoteBody(session, athlete) {
     `Energy System: ${session.energySystem} | Surface: ${session.surface}`,
   ];
 
-  if (session.trainingPlanTitle || session.trainingPlanDayTitle) {
-    lines.push(`Plan: ${session.trainingPlanTitle || "Selected Training Plan"}`);
-    if (session.trainingPlanDayTitle) lines.push(`Scheduled Workout: ${session.trainingPlanDayTitle}`);
+  const planTitle = athlete.trainingPlanTitle || session.trainingPlanTitle;
+  const planDayTitle = athlete.trainingPlanDayTitle || session.trainingPlanDayTitle;
+  if (planTitle || planDayTitle) {
+    lines.push(`Plan: ${planTitle || "Selected Training Plan"}`);
+    if (planDayTitle) lines.push(`Scheduled Workout: ${planDayTitle}`);
   }
 
   lines.push("", `Athlete: ${athlete.name}`);
