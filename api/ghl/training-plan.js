@@ -1,6 +1,21 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const TRAINING_PLAN_SCHEMA_KEY = "custom_objects.training_plans";
+const FIELD_IDS = {
+  training_plan: ["TZbFrs7XAmFTbCUR7Bht"],
+  record_name: ["OvqHfsUnX102D7iK41rN"],
+  athlete_name_snapshot: ["nqVp4dTUMuxj1rhffuPh"],
+  plan_scope: ["kAcRWNKWu5ZqVbCqxAfG"],
+  plan_date: ["572QXhX7AZQl2Sv1yvxE"],
+  season: ["BTJL9ysYRPNal1bHo24b"],
+  season_year: ["nDJkgdm2LcgiWEUVN95p"],
+  phase: ["YcWgORo7ArBkbQt0Gq5j"],
+  workout_title: ["lYFu6UiKLQzPLINzyLky"],
+  workout_description: ["g9sEI9j8luk5EosAN56m"],
+  anchor_event: ["K8lUUy8QsRzhRnbBgvr0"],
+  approval_status: ["XCJ9MKxQxgruGMab4e8P"],
+  source_record_id: ["XamLCl30IO0beWQ462JU"],
+};
 
 module.exports = async function handler(req, res) {
   setCorsHeaders(res);
@@ -10,7 +25,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (req.method !== "POST") {
+  if (req.method !== "POST" && req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
@@ -24,6 +39,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    if (req.method === "GET") {
+      const plans = await listTrainingPlans({ token, locationId });
+      res.status(200).json({ success: true, plans });
+      return;
+    }
+
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const plan = normalizePlan(payload);
     const properties = buildTrainingPlanProperties(plan);
@@ -51,8 +72,38 @@ module.exports = async function handler(req, res) {
 
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+async function listTrainingPlans({ token, locationId }) {
+  const result = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(TRAINING_PLAN_SCHEMA_KEY)}/records/search`,
+    method: "POST",
+    body: { locationId, page: 1, pageLimit: 100 },
+  });
+
+  return recordsFromResult(result).map(normalizeTrainingPlanRecord).filter((plan) => plan.title).sort((a, b) => {
+    return String(b.planDate || "").localeCompare(String(a.planDate || "")) || a.title.localeCompare(b.title);
+  });
+}
+
+function normalizeTrainingPlanRecord(record) {
+  const props = recordProperties(record);
+  return {
+    id: record && record.id ? record.id : prop(props, "source_record_id"),
+    title: prop(props, "workout_title") || prop(props, "record_name") || prop(props, "training_plan"),
+    scope: labelValue(prop(props, "plan_scope")),
+    season: labelValue(prop(props, "season")),
+    seasonYear: Number(prop(props, "season_year")) || null,
+    phase: labelValue(prop(props, "phase")),
+    event: prop(props, "anchor_event"),
+    athleteName: prop(props, "athlete_name_snapshot"),
+    planDate: prop(props, "plan_date"),
+    approvalStatus: labelValue(prop(props, "approval_status")),
+    description: prop(props, "workout_description"),
+  };
 }
 
 function normalizePlan(payload) {
@@ -200,6 +251,43 @@ function compactProperties(properties) {
   }, {});
 }
 
+function recordsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.records) ? result.records : []),
+    ...(Array.isArray(result && result.items) ? result.items : []),
+    ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
+    ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
+  ];
+}
+
+function recordProperties(record) {
+  return (record && (record.properties || record.fields || record.customFields)) || {};
+}
+
+function prop(props, key) {
+  const keys = [key, `custom_objects.training_plans.${key}`].concat(FIELD_IDS[key] || []);
+  for (const item of keys) {
+    const value = readPropValue(props, item);
+    if (value) return value;
+  }
+  return "";
+}
+
+function readPropValue(props, key) {
+  if (!props) return "";
+  if (Array.isArray(props)) {
+    const field = props.find((item) => item && (item.key === key || item.id === key || item.fieldKey === key || item.fieldId === key || item.customFieldId === key));
+    return field ? clean(field.value || field.fieldValue || field.field_value) : "";
+  }
+  return clean(props[key]);
+}
+
+function labelValue(value) {
+  const text = clean(value);
+  if (!text) return "";
+  return text.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+
 function optionValue(value) {
   return clean(value).toLowerCase().replace(/&/g, "and").replace(/\+/g, "plus").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 }
@@ -209,6 +297,7 @@ function slugValue(value) {
 }
 
 function clean(value) {
+  if (value && typeof value === "object") return clean(value.value || value.name || value.label || value.id);
   return String(value || "").trim();
 }
 
