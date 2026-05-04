@@ -105,6 +105,7 @@ function payloadFromForm(){
     payload.planName||'Guided plan draft',
     payload.priorityMeets?'Priority Meets:\n'+payload.priorityMeets:'',
     payload.noPracticeDates?'No-Practice Dates:\n'+payload.noPracticeDates:'',
+    payload.currentFitnessDistance||payload.currentFitnessTime?'Current Fitness Set:\n'+[payload.currentFitnessDistance,payload.currentFitnessTime].filter(Boolean).join(' - '):'',
     payload.recentResults?'Current Fitness:\n'+payload.recentResults:'',
     payload.trainingLimits?'Training Limits:\n'+payload.trainingLimits:'',
     payload.coachPreferences?'Coach Preferences:\n'+payload.coachPreferences:'',

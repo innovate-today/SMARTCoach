@@ -276,6 +276,8 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added recruiting planning detail: recruiting may need a dedicated custom object for generated profile versions, approval, links/PDFs, send history, college recipients, and opt-in tracking, but this must be weighed against the GHL custom-object limit
 - Product wording decision: coach-facing Training Plan creation should be called Guided Plan Builder or Plan Builder, not AI, even if generation happens behind the scenes
 - Training Plan creation moved out of the stopwatch surface: use `https://app.smartcoach-pro.com/plan-builder.html` as a SMARTCoach Pro/GHL custom link; the stopwatch app only selects existing plans/days and can switch to another upcoming workout when practice conditions change
+- Training Plan days now need actual workout prescriptions, not generic themes: examples include `3 x 1 mile / recovery equals completed rep time`, with target split guidance based on each athlete's latest 1 Mile, 2 Mile, or 5K fitness set
+- Future dashboard planning note: add a planning table with Athlete, Group, Recent Race distance/time, Previous Week Mileage, and Current Week Mileage so plans can account for current fitness and training load
 - Passed selected GHL Meet record IDs through meet timing groups and Meet Result saves for clean meet schedule linking
 - Verified `index.html` in the in-app browser:
   - App loads

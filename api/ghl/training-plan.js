@@ -14,7 +14,11 @@ const FIELD_IDS = {
   workout_title: ["lYFu6UiKLQzPLINzyLky"],
   workout_description: ["g9sEI9j8luk5EosAN56m"],
   anchor_event: ["K8lUUy8QsRzhRnbBgvr0"],
+  anchor_performance_display: ["SDMuNahR6frsYwo6NGye"],
+  anchor_performance_ms: ["pnqr230BjRDKkOo0Yi6W"],
+  ai_rationale: ["LaNI9Ia7SiIspIsx3w1V"],
   approval_status: ["XCJ9MKxQxgruGMab4e8P"],
+  source_system: ["R6Gf6mGhsRVlc0YNDdI8"],
   source_record_id: ["XamLCl30IO0beWQ462JU"],
   calendar_name: ["oLgx1BacaZCIi55eKbhO"],
   plan_start_date: ["gTIZmnm82T88MYPx8p1l"],
@@ -263,7 +267,10 @@ function normalizePlan(payload) {
   const priorityMeets = cleanLines(payload.priorityMeets);
   const noPracticeDates = cleanLines(payload.noPracticeDates);
   const schoolConstraints = cleanLines(payload.schoolConstraints);
+  const weeklyPracticeDays = cleanLines(payload.weeklyPracticeDays);
   const mode = optionValue(payload.mode || payload.creationMode || (Array.isArray(payload.days) ? "manual" : "guided"));
+  const currentFitnessDistance = clean(payload.currentFitnessDistance || payload.recentRaceDistance) || "Latest 1 Mile / 2 Mile / 5K";
+  const currentFitnessTime = clean(payload.currentFitnessTime || payload.recentRaceTime);
 
   return {
     mode,
@@ -286,7 +293,10 @@ function normalizePlan(payload) {
     priorityMeets,
     noPracticeDates,
     schoolConstraints,
+    weeklyPracticeDays,
     assignedGroup,
+    currentFitnessDistance,
+    currentFitnessTime,
     workoutDescription,
     days: normalizePlanDays(payload.days),
     questionnaire: normalizeQuestionnaire(payload.questionnaire || payload.answers || payload),
@@ -320,7 +330,9 @@ function buildTrainingPlanProperties(plan) {
     energy_system: "mixed",
     workout_title: title,
     workout_description: description,
-    anchor_event: plan.primaryEvent,
+    anchor_event: plan.currentFitnessDistance || plan.primaryEvent,
+    anchor_performance_display: plan.currentFitnessTime,
+    anchor_performance_ms: parseTimeToMs(plan.currentFitnessTime),
     ai_rationale: buildPlanRationale(plan),
     approval_status: "draft",
     calendar_name: plan.calendarName,
@@ -373,6 +385,8 @@ function buildPlanRationale(plan) {
   if (plan.priorityMeets) lines.push(`Priority meets: ${plan.priorityMeets}`);
   if (plan.noPracticeDates) lines.push(`No-practice dates: ${plan.noPracticeDates}`);
   if (plan.schoolConstraints) lines.push(`School constraints: ${plan.schoolConstraints}`);
+  if (plan.weeklyPracticeDays) lines.push(`Normal practice days: ${plan.weeklyPracticeDays}`);
+  if (plan.currentFitnessDistance || plan.currentFitnessTime) lines.push(`Current fitness set: ${[plan.currentFitnessDistance, plan.currentFitnessTime].filter(Boolean).join(" - ")}`);
   return lines.join("\n");
 }
 
@@ -383,6 +397,7 @@ function buildTrainingPlanDays(plan, createdPlan) {
 
 function generateDraftPlanDays(plan) {
   const noPractice = new Set(parseDateList(plan.noPracticeDates));
+  const practiceDays = parsePracticeDays(plan.weeklyPracticeDays);
   const start = parseISODate(plan.startDate);
   const end = parseISODate(plan.endDate);
   if (!start || !end || start > end) return [];
@@ -393,7 +408,7 @@ function generateDraftPlanDays(plan) {
   while (cursor <= end && days.length < 120) {
     const date = dateOnly(cursor);
     const dow = cursor.getUTCDay();
-    if (!noPractice.has(date) && dow !== 0) {
+    if (!noPractice.has(date) && practiceDays.has(dow)) {
       days.push(draftDayForDate({ plan, date, dow, week }));
     }
     cursor.setUTCDate(cursor.getUTCDate() + 1);
@@ -403,66 +418,138 @@ function generateDraftPlanDays(plan) {
 }
 
 function draftDayForDate({ plan, date, dow, week }) {
-  const templates = {
-    1: {
-      dayType: "Workout",
-      workoutTitle: `${plan.primaryEvent} speed development`,
-      workoutDetails: "Acceleration mechanics, short fast reps, full recovery. Coach should edit reps, distances, and recoveries before use.",
-      workoutType: "Acceleration",
-      energySystem: "ATP-PC (Phosphagen)",
-      plannedVolume: "Low volume / high quality",
-    },
-    2: {
-      dayType: "Recovery",
-      workoutTitle: "Recovery / aerobic support",
-      workoutDetails: "Easy aerobic work, mobility, drills, and general strength. Keep effort controlled.",
-      workoutType: "Easy/Recovery Run",
-      energySystem: "Oxidative (Aerobic)",
-      plannedVolume: "Low to moderate",
-    },
-    3: {
-      dayType: "Workout",
-      workoutTitle: `${plan.primaryEvent} event-specific session`,
-      workoutDetails: "Primary quality day. Build race rhythm, target pace awareness, and technical consistency.",
-      workoutType: week < 3 ? "Intensive Tempo" : "Special Endurance I",
-      energySystem: week < 3 ? "Mixed" : "Glycolytic (Anaerobic)",
-      plannedVolume: "Moderate",
-    },
-    4: {
-      dayType: "Technical",
-      workoutTitle: "Technical / rhythm day",
-      workoutDetails: "Drills, wickets/strides, relay exchange or event-specific skill work. Keep nervous system fresh.",
-      workoutType: "Max Velocity",
-      energySystem: "ATP-PC (Phosphagen)",
-      plannedVolume: "Low",
-    },
-    5: {
-      dayType: "Workout",
-      workoutTitle: "Competition rhythm / tempo",
-      workoutDetails: "Meet-week adjustment point. If racing within 48 hours, reduce volume and sharpen only.",
-      workoutType: week % 2 ? "Speed Endurance I" : "Extensive Tempo",
-      energySystem: week % 2 ? "Glycolytic (Anaerobic)" : "Oxidative (Aerobic)",
-      plannedVolume: "Moderate",
-    },
-    6: {
-      dayType: "Meet",
-      workoutTitle: "Meet / controlled effort",
-      workoutDetails: "Use for scheduled meet, time trial, or controlled aerobic work. Edit based on actual calendar.",
-      workoutType: "Long Run",
-      energySystem: "Mixed",
-      plannedVolume: "Coach choice",
-    },
-  };
+  const templates = isDistanceEvent(plan.primaryEvent) ? distanceWorkoutTemplates(plan, week) : trackWorkoutTemplates(plan, week);
   const template = templates[dow] || templates[2];
   return {
     date,
     groupName: plan.assignedGroup,
     athleteContact: plan.contactId,
     athleteName: plan.athleteName,
-    targetSplits: "",
     status: "draft",
-    coachNotes: `Draft week ${week}. Coach should review and adjust.`,
+    coachNotes: `Draft week ${week}. Coach should review and adjust based on readiness, weather, and available practice time.`,
     ...template,
+  };
+}
+
+function distanceWorkoutTemplates(plan, week) {
+  const fitness = currentFitnessLabel(plan);
+  const mileRepTarget = targetFormula({ repDistance: "1 mile", low: 0.92, high: 0.95, plan });
+  const tempoTarget = targetFormula({ repDistance: "1 mile", low: 0.84, high: 0.88, plan });
+  return {
+    1: {
+      dayType: "Recovery",
+      workoutTitle: "Easy distance + strides",
+      workoutDetails: "35-45 min easy distance. Finish with 6 x 100m relaxed strides / walk-back recovery.",
+      workoutType: "Easy/Recovery Run",
+      energySystem: "Oxidative (Aerobic)",
+      targetSplits: `Easy distance at 65-75% of ${fitness}. Strides relaxed, not all-out.`,
+      plannedVolume: "35-45 min + 6 strides",
+    },
+    2: {
+      dayType: "Workout",
+      workoutTitle: "3 x 1 mile intervals",
+      workoutDetails: "3 x 1 mile. Recovery equals the completed rep time. Keep reps even. If the group is flat or weather is poor, reduce to 2 x 1 mile or move to easy distance.",
+      workoutType: "Lactate Threshold",
+      energySystem: "Mixed",
+      targetSplits: `${mileRepTarget}\nRecovery: work rate = recovery, so rest for the completed rep time.`,
+      plannedVolume: "3 miles quality",
+    },
+    3: {
+      dayType: "Recovery",
+      workoutTitle: "Recovery distance",
+      workoutDetails: "25-35 min very easy distance + mobility. Keep effort conversational.",
+      workoutType: "Easy/Recovery Run",
+      energySystem: "Oxidative (Aerobic)",
+      targetSplits: `60-70% of ${fitness}.`,
+      plannedVolume: "25-35 min",
+    },
+    4: {
+      dayType: "Workout",
+      workoutTitle: "Tempo intervals",
+      workoutDetails: "4 x 5 min tempo / 1 min easy jog recovery. Stay controlled and smooth.",
+      workoutType: "Intensive Tempo",
+      energySystem: "Oxidative (Aerobic)",
+      targetSplits: `${tempoTarget}\nUse controlled breathing as the final check.`,
+      plannedVolume: "20 min tempo work",
+    },
+    5: {
+      dayType: "Workout",
+      workoutTitle: "Pre-meet rhythm or aerobic support",
+      workoutDetails: "20-30 min easy + 4 x 200m rhythm / 200m walk-jog recovery. If racing within 24 hours, keep this as easy distance only.",
+      workoutType: "Extensive Tempo",
+      energySystem: "Oxidative (Aerobic)",
+      targetSplits: `200m rhythm at 75-82% of ${fitness}.`,
+      plannedVolume: "Low to moderate",
+    },
+    6: {
+      dayType: "Workout",
+      workoutTitle: "Long run",
+      workoutDetails: "45-70 min long run depending on training age and weekly mileage. Keep effort steady, not forced.",
+      workoutType: "Long Run",
+      energySystem: "Oxidative (Aerobic)",
+      targetSplits: `65-75% of ${fitness}.`,
+      plannedVolume: "45-70 min",
+    },
+  };
+}
+
+function trackWorkoutTemplates(plan, week) {
+  const fitness = currentFitnessLabel(plan);
+  return {
+    1: {
+      dayType: "Workout",
+      workoutTitle: `${plan.primaryEvent} acceleration + mechanics`,
+      workoutDetails: "Warmup, sprint drills, 6 x 30m acceleration / full walk-back recovery, 4 x 60m fast relaxed / 4-6 min recovery.",
+      workoutType: "Acceleration",
+      energySystem: "ATP-PC (Phosphagen)",
+      targetSplits: `Fast relaxed. Use ${fitness} only as context; quality matters more than volume.`,
+      plannedVolume: "Low volume / high quality",
+    },
+    2: {
+      dayType: "Recovery",
+      workoutTitle: "Tempo recovery",
+      workoutDetails: "8-10 x 100m relaxed tempo / 100m walk. Add mobility and general strength.",
+      workoutType: "Extensive Tempo",
+      energySystem: "Oxidative (Aerobic)",
+      targetSplits: `65-75% of ${fitness}.`,
+      plannedVolume: "800-1000m tempo",
+    },
+    3: {
+      dayType: "Workout",
+      workoutTitle: `${plan.primaryEvent} event-specific reps`,
+      workoutDetails: week < 3 ? "5 x 200m / 3 min recovery. Smooth, even reps." : "3 x 300m / 8-10 min recovery. Hold form through the last 100m.",
+      workoutType: week < 3 ? "Intensive Tempo" : "Special Endurance I",
+      energySystem: week < 3 ? "Mixed" : "Glycolytic (Anaerobic)",
+      targetSplits: week < 3 ? `75-82% of ${fitness}.` : `85-90% of ${fitness}.`,
+      plannedVolume: week < 3 ? "1000m quality" : "900m quality",
+    },
+    4: {
+      dayType: "Recovery",
+      workoutTitle: "Recovery + drills",
+      workoutDetails: "20 min easy movement, sprint drills, mobility, and light general strength.",
+      workoutType: "Easy/Recovery Run",
+      energySystem: "Oxidative (Aerobic)",
+      targetSplits: "Keep relaxed. No timed pressure.",
+      plannedVolume: "Low",
+    },
+    5: {
+      dayType: "Workout",
+      workoutTitle: "Race rhythm",
+      workoutDetails: "4 x 150m race rhythm / 5-6 min recovery. Stop if mechanics fade.",
+      workoutType: "Speed Endurance I",
+      energySystem: "Glycolytic (Anaerobic)",
+      targetSplits: `88-95% of ${fitness}.`,
+      plannedVolume: "600m quality",
+    },
+    6: {
+      dayType: "Recovery",
+      workoutTitle: "Easy shakeout",
+      workoutDetails: "20-30 min easy or off, based on meet schedule and athlete readiness.",
+      workoutType: "Easy/Recovery Run",
+      energySystem: "Oxidative (Aerobic)",
+      targetSplits: "Easy effort.",
+      plannedVolume: "Low",
+    },
   };
 }
 
@@ -520,6 +607,71 @@ function normalizePlanDays(days) {
   })).filter((day) => day.date && day.workoutTitle);
 }
 
+function isDistanceEvent(event) {
+  const meters = eventDistanceMeters(event);
+  return meters >= 1500 || /mile|k|marathon/i.test(clean(event));
+}
+
+function eventDistanceMeters(event) {
+  const key = clean(event).toLowerCase().replace(/\s+/g, "");
+  const map = {
+    "400m": 400,
+    "600m": 600,
+    "800m": 800,
+    "1500m": 1500,
+    "1600m": 1600,
+    "1mile": 1609.34,
+    "3k": 3000,
+    "3200m": 3200,
+    "2mile": 3218.69,
+    "4k": 4000,
+    "5k": 5000,
+    "8k": 8000,
+    "10k": 10000,
+    "15k": 15000,
+    "halfmarathon": 21097.5,
+    "marathon": 42195,
+  };
+  return map[key] || 0;
+}
+
+function currentFitnessLabel(plan) {
+  const parts = [plan.currentFitnessDistance, plan.currentFitnessTime].filter(Boolean);
+  if (parts.length) return parts.join(" ");
+  return `each athlete's latest 1 Mile, 2 Mile, or 5K fitness set`;
+}
+
+function targetFormula({ repDistance, low, high, plan }) {
+  const fitness = currentFitnessLabel(plan);
+  const lowPct = Math.round(low * 100);
+  const highPct = Math.round(high * 100);
+  const calculated = calculatedRepRange({ repDistance, low, high, plan });
+  const prefix = `${repDistance} target: ${lowPct}-${highPct}% of ${fitness}.`;
+  if (calculated) return `${prefix} Estimated split: ${calculated}.`;
+  return `${prefix} If the current fitness distance differs, convert to pace first, then calculate the rep split for ${repDistance}.`;
+}
+
+function calculatedRepRange({ repDistance, low, high, plan }) {
+  const fitnessDistanceMeters = eventDistanceMeters(plan.currentFitnessDistance);
+  const repMeters = eventDistanceMeters(repDistance);
+  const fitnessMs = parseTimeToMs(plan.currentFitnessTime);
+  if (!fitnessDistanceMeters || !repMeters || !fitnessMs) return "";
+  const baseRepMs = (fitnessMs / fitnessDistanceMeters) * repMeters;
+  const fast = baseRepMs / high;
+  const slow = baseRepMs / low;
+  return `${formatDuration(fast)}-${formatDuration(slow)}`;
+}
+
+function formatDuration(ms) {
+  const totalTenths = Math.round(Number(ms || 0) / 100);
+  const tenths = totalTenths % 10;
+  const totalSeconds = Math.floor(totalTenths / 10);
+  const seconds = totalSeconds % 60;
+  const minutes = Math.floor(totalSeconds / 60);
+  if (minutes) return `${minutes}:${String(seconds).padStart(2, "0")}.${tenths}`;
+  return `${seconds}.${tenths}s`;
+}
+
 function normalizeQuestionnaire(value) {
   if (!value || typeof value !== "object") return {};
   const fields = [
@@ -528,6 +680,8 @@ function normalizeQuestionnaire(value) {
     "groupName",
     "athleteName",
     "primaryEvent",
+    "currentFitnessDistance",
+    "currentFitnessTime",
     "phaseFocus",
     "planStartDate",
     "planEndDate",
@@ -535,6 +689,7 @@ function normalizeQuestionnaire(value) {
     "priorityMeets",
     "noPracticeDates",
     "schoolConstraints",
+    "weeklyPracticeDays",
     "assignedGroup",
     "recentResults",
     "weeklyPracticeDays",
@@ -619,6 +774,26 @@ function trainingPlanQuestionnaire() {
         type: "select_or_text",
         required: true,
         options: standardEventOptions(),
+      },
+      {
+        key: "currentFitnessDistance",
+        label: "Current Fitness Distance",
+        type: "select",
+        required: false,
+        options: [
+          { label: "Use latest available", value: "" },
+          { label: "Latest 1 Mile / 2 Mile / 5K", value: "Latest 1 Mile / 2 Mile / 5K" },
+          { label: "1 Mile", value: "1 Mile" },
+          { label: "2 Mile", value: "2 Mile" },
+          { label: "5K", value: "5K" },
+        ],
+      },
+      {
+        key: "currentFitnessTime",
+        label: "Current Fitness Time",
+        type: "text",
+        required: false,
+        placeholder: "Example: 6:12, 12:45, 20:05",
       },
       {
         key: "planStartDate",
@@ -967,6 +1142,41 @@ function addDays(value, count) {
 
 function parseDateList(value) {
   return cleanLines(value).split(/\r?\n|,/).map(dateOnly).filter(Boolean);
+}
+
+function parsePracticeDays(value) {
+  const defaults = new Set([1, 2, 3, 4, 5, 6]);
+  const text = cleanLines(value);
+  if (!text) return defaults;
+  const dayMap = {
+    sunday: 0,
+    sun: 0,
+    monday: 1,
+    mon: 1,
+    tuesday: 2,
+    tue: 2,
+    wednesday: 3,
+    wed: 3,
+    thursday: 4,
+    thu: 4,
+    friday: 5,
+    fri: 5,
+    saturday: 6,
+    sat: 6,
+  };
+  const days = text.split(/\r?\n|,/).map((item) => dayMap[optionValue(item)]).filter((day) => typeof day === "number");
+  return days.length ? new Set(days) : defaults;
+}
+
+function parseTimeToMs(value) {
+  const text = clean(value);
+  if (!text) return null;
+  const parts = text.split(":").map((part) => Number(part));
+  if (parts.some((part) => Number.isNaN(part))) return null;
+  if (parts.length === 1) return Math.round(parts[0] * 1000);
+  if (parts.length === 2) return Math.round(((parts[0] * 60) + parts[1]) * 1000);
+  if (parts.length === 3) return Math.round(((parts[0] * 3600) + (parts[1] * 60) + parts[2]) * 1000);
+  return null;
 }
 
 function cleanLines(value) {

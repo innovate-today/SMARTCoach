@@ -17,10 +17,11 @@ Do not use AI wording in the coach-facing builder.
 1. Coach completes the Guided Plan Builder questionnaire.
 2. SMARTCoach Pro creates one `Training Plan` record.
 3. SMARTCoach Pro creates many `Training Plan Day` records.
-4. Coach reviews and edits the draft in SMARTCoach Pro or the future dashboard.
-5. Coach approves the plan.
-6. The stopwatch app selects an approved plan/day.
-7. Completed workout results sync back to the selected Training Plan Day.
+4. Each `Training Plan Day` includes the actual planned workout, such as reps, distance, recovery, target effort, and target split/pace guidance.
+5. Coach reviews and edits the draft in SMARTCoach Pro or the future dashboard.
+6. Coach approves the plan.
+7. The stopwatch app selects an approved plan/day.
+8. Completed workout results sync back to the selected Training Plan Day.
 
 ## GHL Custom Link
 
@@ -29,6 +30,8 @@ Use this page for the SMARTCoach Pro/GHL custom menu link:
 `https://app.smartcoach-pro.com/plan-builder.html`
 
 The stopwatch app should not create plans. It should only select an existing plan/day, allow the coach to choose a different upcoming workout when practice conditions change, and sync completed timing data back to the chosen Training Plan Day.
+
+When a coach reaches practice and needs to adjust, the stopwatch app shows the next five scheduled workouts and allows a different workout to be selected for that group.
 
 ## Questionnaire Endpoint
 
@@ -54,6 +57,8 @@ The submit payload can include either:
 - Season Block
 - Block Type
 - Primary Event Focus
+- Current Fitness Distance
+- Current Fitness Time
 - Plan Start Date
 - Peak / Championship Date
 - Priority Meets
@@ -76,3 +81,4 @@ The submit payload can include either:
 
 - Daily workout record.
 - Stores date, day type, workout title/details, workout type, energy system, target splits/paces, planned volume, status, and later completed Performance Record links.
+- Target splits/paces are based on the current fitness set when supplied. If no time is supplied, the day stores the formula so the app/dashboard can calculate athlete-specific targets from the latest 1 Mile, 2 Mile, or 5K result.
