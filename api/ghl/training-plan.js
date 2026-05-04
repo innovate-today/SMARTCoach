@@ -72,6 +72,10 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
+      if (req.query && req.query.kind === "questionnaire") {
+        res.status(200).json({ success: true, questionnaire: trainingPlanQuestionnaire() });
+        return;
+      }
       if (req.query && (req.query.kind === "days" || req.query.trainingPlanId || req.query.planId || req.query.date)) {
         const days = await listTrainingPlanDays({
           token,
@@ -541,6 +545,184 @@ function normalizeQuestionnaire(value) {
     if (answer) answers[key] = answer;
     return answers;
   }, {});
+}
+
+function trainingPlanQuestionnaire() {
+  return {
+    title: "Guided Plan Builder",
+    description: "Create a coach-reviewed season, mesocycle, week, group, or individual plan.",
+    fields: [
+      {
+        key: "planName",
+        label: "Plan Name",
+        type: "text",
+        required: false,
+        placeholder: "Spring 2026 400m Group",
+      },
+      {
+        key: "planScope",
+        label: "Plan Scope",
+        type: "select",
+        required: true,
+        options: [
+          { label: "Group", value: "group" },
+          { label: "Individual", value: "individual" },
+          { label: "Week", value: "team" },
+          { label: "Season", value: "season" },
+          { label: "Mesocycle", value: "mesocycle" },
+        ],
+      },
+      {
+        key: "assignedGroup",
+        label: "Assigned Group",
+        type: "text",
+        required: false,
+        placeholder: "400m Group",
+      },
+      {
+        key: "athleteName",
+        label: "Athlete",
+        type: "athlete",
+        required: false,
+        placeholder: "Select athlete for individual plan",
+      },
+      {
+        key: "seasonBlock",
+        label: "Season Block",
+        type: "select",
+        required: true,
+        options: [
+          { label: "Summer", value: "summer" },
+          { label: "Fall", value: "fall" },
+          { label: "Winter", value: "winter" },
+          { label: "Spring", value: "spring" },
+          { label: "Offseason", value: "offseason" },
+        ],
+      },
+      {
+        key: "blockType",
+        label: "Block Type",
+        type: "select",
+        required: true,
+        options: [
+          { label: "General Prep", value: "cross_country" },
+          { label: "Specific Prep", value: "track_prep" },
+          { label: "Pre-Competition", value: "track_season" },
+          { label: "Recovery", value: "recovery" },
+          { label: "Peak", value: "custom" },
+        ],
+      },
+      {
+        key: "primaryEvent",
+        label: "Primary Event Focus",
+        type: "select_or_text",
+        required: true,
+        options: standardEventOptions(),
+      },
+      {
+        key: "planStartDate",
+        label: "Plan Start Date",
+        type: "date",
+        required: true,
+      },
+      {
+        key: "peakDate",
+        label: "Peak / Championship Date",
+        type: "date",
+        required: true,
+      },
+      {
+        key: "priorityMeets",
+        label: "Priority Meets",
+        type: "textarea",
+        required: false,
+        placeholder: "District - 2026-04-03\nRegionals - 2026-04-10\nState - 2026-04-25",
+      },
+      {
+        key: "noPracticeDates",
+        label: "No-Practice Dates",
+        type: "textarea",
+        required: false,
+        placeholder: "2026-03-09 to 2026-03-13 Spring Break\n2026-04-07 Testing",
+      },
+      {
+        key: "weeklyPracticeDays",
+        label: "Normal Practice Days",
+        type: "multi_select",
+        required: true,
+        options: [
+          { label: "Monday", value: "monday" },
+          { label: "Tuesday", value: "tuesday" },
+          { label: "Wednesday", value: "wednesday" },
+          { label: "Thursday", value: "thursday" },
+          { label: "Friday", value: "friday" },
+          { label: "Saturday", value: "saturday" },
+          { label: "Sunday", value: "sunday" },
+        ],
+      },
+      {
+        key: "recentResults",
+        label: "Current Fitness / Recent Results",
+        type: "textarea",
+        required: false,
+        placeholder: "400m PR 54.8, recent 300m time trial 41.2",
+      },
+      {
+        key: "trainingLimits",
+        label: "Training Limits",
+        type: "textarea",
+        required: false,
+        placeholder: "Injuries, soreness, school schedule, limited facilities",
+      },
+      {
+        key: "coachPreferences",
+        label: "Coach Preferences",
+        type: "textarea",
+        required: false,
+        placeholder: "2 hard days per week, no hard workout within 48 hours of meet",
+      },
+      {
+        key: "planStyle",
+        label: "Plan Style",
+        type: "select",
+        required: true,
+        options: [
+          { label: "Conservative", value: "conservative" },
+          { label: "Balanced", value: "balanced" },
+          { label: "Aggressive", value: "aggressive" },
+        ],
+      },
+      {
+        key: "manualNotes",
+        label: "Manual Notes",
+        type: "textarea",
+        required: false,
+        placeholder: "Anything else the plan should account for",
+      },
+    ],
+  };
+}
+
+function standardEventOptions() {
+  return [
+    "400m",
+    "600m",
+    "800m",
+    "1500m",
+    "1600m",
+    "1 Mile",
+    "3K",
+    "3200m",
+    "2 Mile",
+    "4K",
+    "5K",
+    "8K",
+    "10K",
+    "15K",
+    "Half Marathon",
+    "Marathon",
+    "Other",
+  ].map((event) => ({ label: event, value: event }));
 }
 
 async function createObjectRecordWithOptionFallback({ token, locationId, schemaKey, properties, optionKeys }) {
