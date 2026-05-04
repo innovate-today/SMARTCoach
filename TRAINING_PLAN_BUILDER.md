@@ -15,13 +15,15 @@ Do not use AI wording in the coach-facing builder.
 ## Flow
 
 1. Coach completes the Guided Plan Builder questionnaire.
-2. SMARTCoach Pro creates one `Training Plan` record.
-3. SMARTCoach Pro creates many `Training Plan Day` records.
-4. Each `Training Plan Day` includes the actual planned workout, such as reps, distance, recovery, target effort, and target split/pace guidance.
-5. Coach reviews and edits the draft in SMARTCoach Pro or the future dashboard.
-6. Coach approves the plan.
-7. The stopwatch app selects an approved plan/day.
-8. Completed workout results sync back to the selected Training Plan Day.
+2. Coach enters the meet schedule before creating the plan.
+3. SMARTCoach Pro creates one `Training Plan` record.
+4. SMARTCoach Pro creates many `Training Plan Day` records.
+5. Meet dates are placed into the daily plan from the meet schedule.
+6. Each `Training Plan Day` includes the actual planned workout, such as reps, distance, recovery, target effort, and target split/pace guidance.
+7. Coach reviews and edits the draft in SMARTCoach Pro or the future dashboard.
+8. Coach approves the plan.
+9. The stopwatch app selects an approved plan/day.
+10. Completed workout results sync back to the selected Training Plan Day.
 
 ## GHL Custom Link
 
@@ -61,10 +63,9 @@ The submit payload can include either:
 - Current Fitness Time
 - Plan Start Date
 - Peak / Championship Date
-- Priority Meets
+- Meet Schedule
 - No-Practice Dates
 - Normal Practice Days
-- Current Fitness / Recent Results
 - Training Limits
 - Coach Preferences
 - Plan Style

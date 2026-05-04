@@ -408,7 +408,7 @@ function generateDraftPlanDays(plan) {
   while (cursor <= end && days.length < 120) {
     const date = dateOnly(cursor);
     const dow = cursor.getUTCDay();
-    if (!noPractice.has(date) && practiceDays.has(dow)) {
+    if (!noPractice.has(date) && (practiceDays.has(dow) || meetForDate(plan.priorityMeets, date))) {
       days.push(draftDayForDate({ plan, date, dow, week }));
     }
     cursor.setUTCDate(cursor.getUTCDate() + 1);
@@ -418,6 +418,25 @@ function generateDraftPlanDays(plan) {
 }
 
 function draftDayForDate({ plan, date, dow, week }) {
+  const meet = meetForDate(plan.priorityMeets, date);
+  if (meet) {
+    return {
+      date,
+      groupName: plan.assignedGroup,
+      athleteContact: plan.contactId,
+      athleteName: plan.athleteName,
+      dayType: "Meet",
+      workoutTitle: meet.name || `${plan.primaryEvent} meet`,
+      workoutDetails: `Meet day. Primary focus: ${plan.primaryEvent}. Use the stopwatch meet flow to time events and save results to SMARTCoach Pro.`,
+      workoutType: "Race / Meet",
+      energySystem: "Mixed",
+      targetSplits: "Race plan should be reviewed by event and athlete before competition.",
+      plannedVolume: "Meet schedule",
+      status: "draft",
+      linkedMeetId: meet.recordId,
+      coachNotes: "Priority meet from schedule. Coach should confirm entries, warmup timing, and race plan.",
+    };
+  }
   const templates = isDistanceEvent(plan.primaryEvent) ? distanceWorkoutTemplates(plan, week) : trackWorkoutTemplates(plan, week);
   const template = templates[dow] || templates[2];
   return {
@@ -691,8 +710,6 @@ function normalizeQuestionnaire(value) {
     "schoolConstraints",
     "weeklyPracticeDays",
     "assignedGroup",
-    "recentResults",
-    "weeklyPracticeDays",
     "trainingPreferences",
     "injuryLimitations",
   ];
@@ -809,9 +826,9 @@ function trainingPlanQuestionnaire() {
       },
       {
         key: "priorityMeets",
-        label: "Priority Meets",
+        label: "Meet Schedule",
         type: "textarea",
-        required: false,
+        required: true,
         placeholder: "District - 2026-04-03\nRegionals - 2026-04-10\nState - 2026-04-25",
       },
       {
@@ -835,13 +852,6 @@ function trainingPlanQuestionnaire() {
           { label: "Saturday", value: "saturday" },
           { label: "Sunday", value: "sunday" },
         ],
-      },
-      {
-        key: "recentResults",
-        label: "Current Fitness / Recent Results",
-        type: "textarea",
-        required: false,
-        placeholder: "400m PR 54.8, recent 300m time trial 41.2",
       },
       {
         key: "trainingLimits",
@@ -1142,6 +1152,20 @@ function addDays(value, count) {
 
 function parseDateList(value) {
   return cleanLines(value).split(/\r?\n|,/).map(dateOnly).filter(Boolean);
+}
+
+function meetForDate(value, date) {
+  return parseMeetSchedule(value).find((meet) => meet.date === date) || null;
+}
+
+function parseMeetSchedule(value) {
+  return clean(value).split(/\r?\n/).map((line) => {
+    const text = clean(line);
+    const match = text.match(/(\d{4}-\d{2}-\d{2})/);
+    if (!match) return null;
+    const name = clean(clean(text.replace(match[1], "")).replace(/[-–|]+$/g, "").replace(/^[-–|]+/g, ""));
+    return { date: match[1], name: name || "Meet", recordId: "" };
+  }).filter(Boolean);
 }
 
 function parsePracticeDays(value) {
