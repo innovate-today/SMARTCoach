@@ -181,6 +181,15 @@ GHL automations:
 - Injury flag notification and training load adjustment
 - End-of-season summary
 
+Parent email requirements:
+
+- Coach can email parents for a whole training/meet group.
+- Coach can email parents for selected athletes only.
+- Coach can email one athlete's parent/parents individually.
+- Coach should not have to look up parent emails manually; SMARTCoach Pro resolves parent/guardian emails from the athlete contact.
+- If an athlete has multiple parent/guardian emails, the send flow should include all linked parent recipients unless the coach deselects one.
+- If parent email is missing, the coach should see a clear missing-recipient warning before sending.
+
 ## Phase 8: Recruiting Engine
 
 One-tap recruiting profile generation.
@@ -199,6 +208,11 @@ Profile sections:
 - Training background
 - AI analysis
 - Coach contact
+
+Planning note:
+
+- Recruiting may need its own custom object if SMARTCoach Pro must track generated profile versions, PDF/link status, coach approval, send history, college coach recipients, and recruiting opt-in state.
+- Because GHL has a 10 custom-object limit on the current plan, decide later whether recruiting can live on Contact + Athlete Best + Season Record + Meet Result, or whether a dedicated `Recruiting Profile` object is worth one of the remaining object slots.
 
 ## Phase 9: Athlete Portal
 
@@ -258,6 +272,8 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added non-breaking `Meet` endpoint and app picker: coaches can select preloaded meets from GHL or add a meet on the fly
 - Added SMARTCoach Pro/GHL `Meet` object field mapping for `custom_objects.meets`
 - Future plan: add GHL Community integration so coaches can attach image/video when syncing a new PB/PR, then auto-post the highlight to the SMARTCoach Pro community
+- Added parent communication planning detail: parent emails must be resolved from athlete contacts so coaches can email a whole group, selected athletes, or one athlete without manually looking up parent addresses
+- Added recruiting planning detail: recruiting may need a dedicated custom object for generated profile versions, approval, links/PDFs, send history, college recipients, and opt-in tracking, but this must be weighed against the GHL custom-object limit
 - Passed selected GHL Meet record IDs through meet timing groups and Meet Result saves for clean meet schedule linking
 - Verified `index.html` in the in-app browser:
   - App loads

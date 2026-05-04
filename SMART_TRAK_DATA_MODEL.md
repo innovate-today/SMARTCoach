@@ -752,7 +752,58 @@ These are not new custom objects, but they should exist on the GHL contact for e
 | SMARTCoach Athlete ID | `smartcoach_athlete_id` | Text | No | sca_avery_womble_2027 |
 | Parent/Guardian Name | `parent_guardian_name` | Text | No | Parent Name |
 | Parent/Guardian Email | `parent_guardian_email` | Email | No | parent@example.com |
+| Parent/Guardian 2 Name | `parent_guardian_2_name` | Text | No | Parent Name |
+| Parent/Guardian 2 Email | `parent_guardian_2_email` | Email | No | parent2@example.com |
+| Parent Communication Opt In | `parent_communication_opt_in` | Checkbox/Radio | No | true |
 | Recruiting Opt In | `recruiting_opt_in` | Checkbox | No | true |
+
+## Parent Communication Requirements
+
+Parent communication should be powered by athlete contact fields, not by coach lookup.
+
+Send targets:
+
+- Whole group: send to every parent/guardian email for athletes in a selected training group or meet group.
+- Selected athletes: send only to parent/guardian emails for checked athletes.
+- Individual athlete: send to one athlete's parent/parents from the athlete profile or group entry view.
+
+Recipient rules:
+
+- Resolve parent recipients from `parent_guardian_email` and `parent_guardian_2_email` on the athlete contact.
+- If parent contact relationships are added later in GHL, prefer those relationships, but keep the email fields as a simple fallback.
+- Dedupe email addresses before sending.
+- Show missing parent email warnings before sending.
+- Respect `parent_communication_opt_in` before automated sends.
+- Coach approval should be required before AI-written parent summaries are sent.
+
+Future parent endpoints:
+
+- `GET /api/smart-trak/parent-recipients?groupId=...`
+- `POST /api/smart-trak/parent-message/preview`
+- `POST /api/smart-trak/parent-message/send`
+
+## Recruiting Profile Object Planning
+
+Recruiting is already supported by the underlying data model through Contact, Athlete Best, Season Record, Meet Result, Performance Record, and Records. A separate object may still be useful later.
+
+Potential custom object:
+
+- Display name: `Recruiting Profile`
+- Internal name: `custom_objects.recruiting_profiles`
+
+Use this object only if SMARTCoach Pro needs structured tracking for:
+
+- Generated profile version
+- PDF URL
+- Shareable profile URL
+- Approval status
+- Recruiting summary text
+- College coach recipient list
+- Sent date/history
+- Recruiting opt-in snapshot
+- Source athlete/contact ID
+
+Because the current GHL account has a 10 custom-object limit, do not create this object until the dashboard/recruiting workflow proves it is necessary.
 
 ## Athlete Roster Resolution
 
