@@ -316,7 +316,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GPQ=null, GV='training';
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GV='training';
 
 function productPlan(){
   return localStorage.getItem('sc_plan')||'pro';
@@ -1055,35 +1055,50 @@ function showSelectedTrainingPlan(){
 function renderTrainingPlanDetail(plan,days,loading){
   var dates=[plan.startDate,plan.endDate].filter(Boolean).join(' to ');
   var meta=[plan.calendarName,plan.season,plan.seasonYear,plan.seasonBlock,plan.blockType,plan.assignedGroup].filter(Boolean).join(' · ');
-  var todayHtml='';
+  var scheduleHtml='';
   if(loading){
-    todayHtml='<div class="profile-row"><small>Loading today&apos;s workout...</small></div>';
+    scheduleHtml='<div class="profile-row"><small>Loading upcoming workouts...</small></div>';
   }else if(days&&days.length){
-    todayHtml=days.map(function(d){
+    var upcoming=upcomingPlanDays(days,5);
+    if(!plan.selectedDay&&upcoming.length)plan.selectedDay=upcoming[0];
+    scheduleHtml=upcoming.map(function(d,di){
       var detail=[d.dayType,d.workoutType,d.energySystem,d.plannedVolume].filter(Boolean).join(' · ');
       var body=[d.details,d.targetSplits,d.coachNotes].filter(Boolean).join('\n\n');
-      return '<div class="profile-row"><b>'+ex(d.title||'Workout')+'</b><small>'+ex(detail)+'</small>'+(body?'<small style="white-space:pre-wrap">'+ex(body)+'</small>':'')+'</div>';
+      var active=plan.selectedDay&&plan.selectedDay.id===d.id;
+      return '<div class="profile-row" style="'+(active?'border-left:3px solid #2B4FCC;padding-left:8px':'')+'"><b>'+ex((d.date?d.date+' - ':'')+(d.title||'Workout'))+'</b><small>'+ex(detail)+'</small>'+(body?'<small style="white-space:pre-wrap">'+ex(body)+'</small>':'')+'<button style="margin-top:6px;border:1px solid #2B4FCC;background:'+(active?'#2B4FCC':'#fff')+';color:'+(active?'#fff':'#2B4FCC')+';border-radius:8px;padding:6px 10px;font-weight:700" onclick="selectTrainingPlanDay('+TP.indexOf(plan)+','+di+')">'+(active?'Selected':'Use this workout')+'</button></div>';
     }).join('');
+    if(!upcoming.length)scheduleHtml='<div class="profile-row"><small>No workouts scheduled in the next 5 days.</small></div>';
   }else{
-    todayHtml='<div class="profile-row"><small>No workout scheduled for today.</small></div>';
+    scheduleHtml='<div class="profile-row"><small>No workouts found for this plan.</small></div>';
   }
-  document.getElementById('tp-detail').innerHTML='<div class="profile-sec"><h4>'+ex(plan.approvalStatus||'Plan')+'</h4><div class="profile-row"><b>'+ex(plan.title)+'</b><small>'+ex(meta)+'</small>'+(dates?'<small>'+ex(dates)+'</small>':'')+(plan.peakDate?'<small>Peak date: '+ex(plan.peakDate)+'</small>':'')+'</div><div class="profile-row"><small style="white-space:pre-wrap">'+ex(plan.description||'No plan details entered yet.')+'</small></div></div><div class="profile-sec"><h4>Today</h4>'+todayHtml+'</div>';
+  document.getElementById('tp-detail').innerHTML='<div class="profile-sec"><h4>'+ex(plan.approvalStatus||'Plan')+'</h4><div class="profile-row"><b>'+ex(plan.title)+'</b><small>'+ex(meta)+'</small>'+(dates?'<small>'+ex(dates)+'</small>':'')+(plan.peakDate?'<small>Peak date: '+ex(plan.peakDate)+'</small>':'')+'</div><div class="profile-row"><small style="white-space:pre-wrap">'+ex(plan.description||'No plan details entered yet.')+'</small></div></div><div class="profile-sec"><h4>Next 5 Days</h4>'+scheduleHtml+'</div>';
 }
 function loadTrainingPlanDays(plan){
-  var key=(plan.id||'')+'|'+(plan.sourceRecordId||'')+'|'+todayISO();
-  if(TPD[key]){plan.todayDays=TPD[key];renderTrainingPlanDetail(plan,TPD[key],false);return;}
-  var url='/api/smart-trak/training-plan?kind=days&date='+encodeURIComponent(todayISO())+'&trainingPlanId='+encodeURIComponent(plan.id||'')+'&planSourceId='+encodeURIComponent(plan.sourceRecordId||'');
+  var key=(plan.id||'')+'|'+(plan.sourceRecordId||'')+'|all';
+  if(TPD[key]){plan.planDays=TPD[key];renderTrainingPlanDetail(plan,TPD[key],false);return;}
+  var url='/api/smart-trak/training-plan?kind=days&trainingPlanId='+encodeURIComponent(plan.id||'')+'&planSourceId='+encodeURIComponent(plan.sourceRecordId||'');
   fetch(url).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Plan days unavailable');
     TPD[key]=(result.data&&result.data.days)||[];
-    plan.todayDays=TPD[key];
+    plan.planDays=TPD[key];
     var selected=TP[parseInt(document.getElementById('tp-plan').value)]||null;
     if(selected&&selected.id===plan.id)renderTrainingPlanDetail(plan,TPD[key],false);
   }).catch(function(){
     renderTrainingPlanDetail(plan,[],false);
   });
+}
+function upcomingPlanDays(days,count){
+  var today=todayISO();
+  return (days||[]).filter(function(d){return !d.date||d.date>=today;}).slice(0,count||5);
+}
+function selectTrainingPlanDay(planIndex,dayIndex){
+  var plan=TP[planIndex];
+  if(!plan)return;
+  var days=upcomingPlanDays(plan.planDays||[],5);
+  plan.selectedDay=days[dayIndex]||null;
+  renderTrainingPlanDetail(plan,plan.planDays||[],false);
 }
 function useSelectedTrainingPlan(){
   var sel=document.getElementById('tp-plan');
@@ -1094,7 +1109,7 @@ function useSelectedTrainingPlan(){
     TPA.trainingPlanSourceId=plan.sourceRecordId||'';
     TPA.trainingPlanTitle=plan.title||'';
     TPA.trainingPlanDescription=plan.description||'';
-    var day=(plan.todayDays&&plan.todayDays[0])||null;
+    var day=plan.selectedDay||(upcomingPlanDays(plan.planDays||[],5)[0])||null;
     TPA.trainingPlanDayId=day&&day.id||'';
     TPA.trainingPlanDaySourceId=day&&day.sourceRecordId||'';
     TPA.trainingPlanDayTitle=day&&day.title||'';
@@ -1105,116 +1120,6 @@ function useSelectedTrainingPlan(){
   document.getElementById('tp-status').textContent=TPA?'Plan selected for this group.':'Open a group first, then choose Plan.';
   document.getElementById('tp-status').style.color='#0a7a44';
   document.getElementById('tp-status').style.fontWeight='700';
-}
-function openPlanBuilder(){
-  if(!isProPlan())return;
-  document.getElementById('gpb-status').textContent='Loading builder...';
-  document.getElementById('gpb-status').style.color='#555';
-  document.getElementById('gpb-form').innerHTML='';
-  sm('m-plan-builder');
-  fetch('/api/smart-trak/training-plan?kind=questionnaire').then(function(r){
-    return r.json().then(function(data){return{ok:r.ok,data:data};});
-  }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Builder unavailable');
-    GPQ=result.data&&result.data.questionnaire||null;
-    renderPlanBuilder();
-  }).catch(function(e){
-    document.getElementById('gpb-status').textContent='Error: '+e.message;
-    document.getElementById('gpb-status').style.color='#c00';
-  });
-}
-function renderPlanBuilder(){
-  var box=document.getElementById('gpb-form');
-  if(!GPQ||!GPQ.fields){box.innerHTML='';return;}
-  box.innerHTML=GPQ.fields.map(function(f){
-    var input='';
-    if(f.type==='select'||f.type==='select_or_text'){
-      input='<select id="gpb-'+f.key+'" class="sinp">'+(f.options||[]).map(function(o){return '<option value="'+ex(o.value)+'">'+ex(o.label)+'</option>';}).join('')+'</select>';
-    }else if(f.type==='multi_select'){
-      input='<select id="gpb-'+f.key+'" class="sinp" multiple size="4">'+(f.options||[]).map(function(o){return '<option value="'+ex(o.value)+'">'+ex(o.label)+'</option>';}).join('')+'</select>';
-    }else if(f.type==='date'){
-      input='<input id="gpb-'+f.key+'" class="sinp" type="date"/>';
-    }else if(f.type==='textarea'){
-      input='<textarea id="gpb-'+f.key+'" class="sinp ta" placeholder="'+ex(f.placeholder||'')+'"></textarea>';
-    }else{
-      input='<input id="gpb-'+f.key+'" class="sinp" type="text" placeholder="'+ex(f.placeholder||'')+'" autocomplete="off"/>';
-    }
-    return '<div class="srow"><label class="slbl">'+ex(f.label)+'</label>'+input+'</div>';
-  }).join('');
-  var cs=currentSeason(), today=todayISO();
-  setBuilderValue('seasonBlock',cs.season.toLowerCase());
-  setBuilderValue('planScope','group');
-  setBuilderValue('blockType','track_season');
-  setBuilderValue('primaryEvent','400m');
-  setBuilderValue('planStartDate',today);
-  setBuilderValue('peakDate',today);
-  setBuilderValue('planStyle','balanced');
-  if(CL){
-    setBuilderValue('assignedGroup',CL.name);
-    setBuilderValue('planName',cs.season+' '+cs.year+' '+CL.name+' Plan');
-  }
-  document.getElementById('gpb-status').textContent='';
-}
-function setBuilderValue(key,value){
-  var el=document.getElementById('gpb-'+key);
-  if(el)el.value=value;
-}
-function builderValue(key){
-  var el=document.getElementById('gpb-'+key);
-  if(!el)return '';
-  if(el.multiple)return Array.prototype.slice.call(el.selectedOptions).map(function(o){return o.value;}).join(',');
-  return el.value||'';
-}
-function submitPlanBuilder(){
-  if(!GPQ||!GPQ.fields)return;
-  var status=document.getElementById('gpb-status');
-  var btn=document.getElementById('gpb-btn');
-  var payload={creationMode:'guided'};
-  GPQ.fields.forEach(function(f){payload[f.key]=builderValue(f.key);});
-  payload.groupName=payload.assignedGroup||payload.planName||'Team';
-  payload.season=labelFromOption('seasonBlock',payload.seasonBlock)||currentSeason().season;
-  payload.seasonYear=new Date((payload.planStartDate||todayISO())+'T00:00:00').getFullYear();
-  payload.phaseFocus=labelFromOption('blockType',payload.blockType)||payload.blockType||'General Prep';
-  payload.planDate=payload.planStartDate||todayISO();
-  payload.planEndDate=payload.peakDate||payload.planStartDate||todayISO();
-  payload.workoutDescription=[
-    payload.planName||'Guided plan draft',
-    payload.priorityMeets?'Priority Meets:\n'+payload.priorityMeets:'',
-    payload.noPracticeDates?'No-Practice Dates:\n'+payload.noPracticeDates:'',
-    payload.recentResults?'Current Fitness:\n'+payload.recentResults:'',
-    payload.trainingLimits?'Training Limits:\n'+payload.trainingLimits:'',
-    payload.coachPreferences?'Coach Preferences:\n'+payload.coachPreferences:'',
-    payload.manualNotes?'Notes:\n'+payload.manualNotes:''
-  ].filter(Boolean).join('\n\n');
-  if(!payload.primaryEvent||!payload.planStartDate||!payload.peakDate){
-    status.textContent='Primary event, start date, and peak date are required.';status.style.color='#c00';return;
-  }
-  btn.textContent='Creating...';btn.disabled=true;
-  status.textContent='Creating plan draft...';status.style.color='#555';status.style.fontWeight='400';
-  fetch('/api/smart-trak/training-plan',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  }).then(function(r){
-    return r.json().then(function(data){return{ok:r.ok,data:data};});
-  }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Plan creation failed');
-    var days=result.data&&result.data.days?result.data.days.length:0;
-    status.textContent='Plan draft created with '+days+' day'+(days===1?'':'s')+'.';
-    status.style.color='#0a7a44';status.style.fontWeight='700';
-    btn.textContent='Created!';btn.style.background='#0a7a44';
-    TP=[];
-    setTimeout(function(){btn.textContent='Create Plan Draft';btn.style.background='#2B4FCC';btn.disabled=false;hm('m-plan-builder');openSeasonPlan(!!CL);},1500);
-  }).catch(function(e){
-    status.textContent='Error: '+e.message;status.style.color='#c00';
-    btn.textContent='Create Plan Draft';btn.disabled=false;
-  });
-}
-function labelFromOption(key,value){
-  if(!GPQ||!GPQ.fields)return '';
-  var f=GPQ.fields.find(function(item){return item.key===key;});
-  var o=f&&f.options&&f.options.find(function(opt){return opt.value===value;});
-  return o?o.label:'';
 }
 
 function oSet(){
@@ -1805,8 +1710,7 @@ document.addEventListener('touchstart',function(e){
 <datalist id="athletes-list"></datalist>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-profile"><div class="msh"><div class="mhd"></div><div class="mttl" id="profile-title">Athlete Profile</div><div class="profile-box" id="profile-body"></div><button class="mbtn c" onclick="hm('m-profile')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><select id="tp-plan" class="sinp" onchange="showSelectedTrainingPlan()"><option>Loading...</option></select></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn" onclick="openPlanBuilder()" style="background:#555;margin-top:8px">Build New Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h pro-only" id="m-plan-builder"><div class="msh"><div class="mhd"></div><div class="mttl">Guided Plan Builder</div><div id="gpb-form" class="builder-box"></div><div id="gpb-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="gpb-btn" onclick="submitPlanBuilder()" style="background:#2B4FCC">Create Plan Draft</button><button class="mbtn c" onclick="hm('m-plan-builder')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><select id="tp-plan" class="sinp" onchange="showSelectedTrainingPlan()"><option>Loading...</option></select></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h pro-only" id="m-pace"><div class="msh"><div class="mhd"></div><div class="mttl">Training Pace</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="pc-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Best Event</label><select id="pc-anchor-event" class="sinp"><option>400m</option><option>100m</option><option>200m</option><option>600m</option><option>800m</option><option>1500m</option><option>1600m</option><option>1 Mile</option><option>3200m</option><option>5K</option></select></div><div class="srow"><label class="slbl">Best Time</label><input id="pc-anchor-time" class="sinp" type="text" placeholder="52.00" autocomplete="off"/></div><div class="srow"><label class="slbl">Phase</label><select id="pc-phase" class="sinp"><option>General Prep</option><option>Specific Prep</option><option>Pre-Competition</option><option>Competition</option><option>Transition / Recovery</option></select></div><div class="srow"><label class="slbl">Workout</label><select id="pc-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Hill Sprints</option></select></div></div><div id="pc-result" class="profile-box"></div><button class="mbtn" onclick="calcTrainingPace()" style="background:#2B4FCC">Calculate Pace</button><button class="mbtn c" onclick="hm('m-pace')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-meet"><div class="msh"><div class="mhd"></div><div class="mttl">Add Meet Result</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="mr-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Meet</label><input id="mr-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div><div class="srow"><label class="slbl">Date</label><input id="mr-date" class="sinp" type="date"/></div><div class="srow"><label class="slbl">Season</label><select id="mr-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Event</label><input id="mr-event" class="sinp" type="text" placeholder="400m" autocomplete="off"/></div><div class="srow"><label class="slbl">Result</label><input id="mr-result" class="sinp" type="text" placeholder="54.82" autocomplete="off"/></div><div class="srow"><label class="slbl">Wind</label><input id="mr-wind" class="sinp" type="text" placeholder="+1.2" autocomplete="off"/></div><div class="srow"><label class="slbl">Flags</label><div style="flex:1;display:flex;gap:12px"><label class="mcheck"><input id="mr-pr" type="checkbox">PR</label><label class="mcheck"><input id="mr-sb" type="checkbox">SB</label></div></div><div class="srow"><label class="slbl">Notes</label><input id="mr-notes" class="sinp" type="text" placeholder="Race notes" autocomplete="off"/></div></div><div id="mr-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="mr-btn" onclick="submitMeetResult()" style="background:#2B4FCC">Save Meet Result</button><button class="mbtn c" onclick="hm('m-meet')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><div class="sinp" id="ms-event" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>

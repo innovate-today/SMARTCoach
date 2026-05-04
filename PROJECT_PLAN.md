@@ -275,6 +275,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added parent communication planning detail: parent emails must be resolved from athlete contacts so coaches can email a whole group, selected athletes, or one athlete without manually looking up parent addresses
 - Added recruiting planning detail: recruiting may need a dedicated custom object for generated profile versions, approval, links/PDFs, send history, college recipients, and opt-in tracking, but this must be weighed against the GHL custom-object limit
 - Product wording decision: coach-facing Training Plan creation should be called Guided Plan Builder or Plan Builder, not AI, even if generation happens behind the scenes
+- Training Plan creation moved out of the stopwatch surface: use `https://app.smartcoach-pro.com/plan-builder.html` as a SMARTCoach Pro/GHL custom link; the stopwatch app only selects existing plans/days and can switch to another upcoming workout when practice conditions change
 - Passed selected GHL Meet record IDs through meet timing groups and Meet Result saves for clean meet schedule linking
 - Verified `index.html` in the in-app browser:
   - App loads

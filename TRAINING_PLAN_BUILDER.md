@@ -22,6 +22,14 @@ Do not use AI wording in the coach-facing builder.
 6. The stopwatch app selects an approved plan/day.
 7. Completed workout results sync back to the selected Training Plan Day.
 
+## GHL Custom Link
+
+Use this page for the SMARTCoach Pro/GHL custom menu link:
+
+`https://app.smartcoach-pro.com/plan-builder.html`
+
+The stopwatch app should not create plans. It should only select an existing plan/day, allow the coach to choose a different upcoming workout when practice conditions change, and sync completed timing data back to the chosen Training Plan Day.
+
 ## Questionnaire Endpoint
 
 `GET /api/smart-trak/training-plan?kind=questionnaire`
@@ -68,4 +76,3 @@ The submit payload can include either:
 
 - Daily workout record.
 - Stores date, day type, workout title/details, workout type, energy system, target splits/paces, planned volume, status, and later completed Performance Record links.
-
