@@ -769,12 +769,7 @@ async function ghlFetch({ token, path, method, body }) {
 }
 
 function buildTags(session) {
-  return [
-    "smartcoach-athlete",
-    slugTag(session.season, "season"),
-    slugTag(session.workoutType, "workout"),
-    slugTag(session.phase, "phase"),
-  ].filter(Boolean);
+  return ["smartcoach-athlete"];
 }
 
 function buildSeasonSourceRecordId({ contactId, session }) {
@@ -819,11 +814,6 @@ function buildNoteBody(session, athlete) {
   });
 
   return lines.join("\n");
-}
-
-function slugTag(value, suffix) {
-  const slug = slugValue(value);
-  return slug ? `smartcoach-${slug}-${suffix}` : "";
 }
 
 function slugValue(value) {
