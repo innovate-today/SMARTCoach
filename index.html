@@ -331,8 +331,8 @@ function applyPlanMode(){
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',cfg:l.cfg,runners:l.runners.map(function(r){
-        return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',saved:r.saved||[]};
+      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',cfg:l.cfg,runners:l.runners.map(function(r){
+        return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',saved:r.saved||[]};
       })};
     });
     localStorage.setItem('sc1',JSON.stringify(s));
@@ -347,9 +347,9 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
+        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
           runners:l.runners.map(function(r){
-            return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',saved:r.saved||[],
+            return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
           })};
       });
@@ -707,7 +707,7 @@ function shareAll(){
 
 function mkR(){
   return{id:rid++,name:'Runner '+((CL?CL.runners.length:0)+1),note:'',contactId:'',smartcoachAthleteId:'',
-    trainingPlanId:'',trainingPlanSourceId:'',trainingPlanTitle:'',trainingPlanDescription:'',trainingPlanDayId:'',trainingPlanDaySourceId:'',trainingPlanDayTitle:'',
+    trainingPlanId:'',trainingPlanSourceId:'',trainingPlanTitle:'',trainingPlanDescription:'',trainingPlanSeason:'',trainingPlanPhase:'',trainingPlanDayId:'',trainingPlanDaySourceId:'',trainingPlanDayTitle:'',trainingPlanDayWorkoutType:'',trainingPlanDayEnergySystem:'',
     on:false,el:0,t0:0,le:0,lt:0,laps:[],saved:[],ts:null};
 }
 function addR(){if(CL){CL.runners.push(mkR());save();rr();}}
@@ -1018,9 +1018,13 @@ function runnerPlan(r){
       trainingPlanSourceId:r.trainingPlanSourceId||'',
       trainingPlanTitle:r.trainingPlanTitle||'',
       trainingPlanDescription:r.trainingPlanDescription||'',
+      trainingPlanSeason:r.trainingPlanSeason||'',
+      trainingPlanPhase:r.trainingPlanPhase||'',
       trainingPlanDayId:r.trainingPlanDayId||'',
       trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',
-      trainingPlanDayTitle:r.trainingPlanDayTitle||''
+      trainingPlanDayTitle:r.trainingPlanDayTitle||'',
+      trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',
+      trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||''
     };
   }
   return {
@@ -1028,9 +1032,13 @@ function runnerPlan(r){
     trainingPlanSourceId:CL&&CL.trainingPlanSourceId||'',
     trainingPlanTitle:CL&&CL.trainingPlanTitle||'',
     trainingPlanDescription:CL&&CL.trainingPlanDescription||'',
+    trainingPlanSeason:CL&&CL.trainingPlanSeason||'',
+    trainingPlanPhase:CL&&CL.trainingPlanPhase||'',
     trainingPlanDayId:CL&&CL.trainingPlanDayId||'',
     trainingPlanDaySourceId:CL&&CL.trainingPlanDaySourceId||'',
-    trainingPlanDayTitle:CL&&CL.trainingPlanDayTitle||''
+    trainingPlanDayTitle:CL&&CL.trainingPlanDayTitle||'',
+    trainingPlanDayWorkoutType:CL&&CL.trainingPlanDayWorkoutType||'',
+    trainingPlanDayEnergySystem:CL&&CL.trainingPlanDayEnergySystem||''
   };
 }
 function openSeasonPlan(assignToGroup){
@@ -1140,10 +1148,14 @@ function useSelectedTrainingPlan(){
     target.trainingPlanSourceId=plan.sourceRecordId||'';
     target.trainingPlanTitle=plan.title||'';
     target.trainingPlanDescription=plan.description||'';
+    target.trainingPlanSeason=plan.season||'';
+    target.trainingPlanPhase=plan.phase||plan.blockType||'';
     var day=plan.selectedDay||(upcomingPlanDays(plan.planDays||[],5)[0])||null;
     target.trainingPlanDayId=day&&day.id||'';
     target.trainingPlanDaySourceId=day&&day.sourceRecordId||'';
     target.trainingPlanDayTitle=day&&day.title||'';
+    target.trainingPlanDayWorkoutType=day&&day.workoutType||'';
+    target.trainingPlanDayEnergySystem=day&&day.energySystem||'';
     save();
     rl();
     if(CL)rr();
@@ -1159,9 +1171,13 @@ function clearAthleteTrainingPlan(){
   CE.trainingPlanSourceId='';
   CE.trainingPlanTitle='';
   CE.trainingPlanDescription='';
+  CE.trainingPlanSeason='';
+  CE.trainingPlanPhase='';
   CE.trainingPlanDayId='';
   CE.trainingPlanDaySourceId='';
   CE.trainingPlanDayTitle='';
+  CE.trainingPlanDayWorkoutType='';
+  CE.trainingPlanDayEnergySystem='';
   save();rr();oEnt(CE.id);
   document.getElementById('tp-status').textContent='Athlete is back on the group plan.';
   document.getElementById('tp-status').style.color='#0a7a44';
@@ -1607,28 +1623,59 @@ function markMeetSavedRuns(results){
 function renderSyncAthletes(){
   var box=document.getElementById('sy-athletes');
   if(!box||!CL)return;
-  renderSyncPlanMode();
   var rs=CL.runners.filter(function(r){return r.saved&&r.saved.length;});
-  if(!rs.length){box.innerHTML='<div style="font-size:12px;color:#777;padding:8px 12px;background:#fff">No saved times yet</div>';return;}
+  if(!rs.length){box.innerHTML='<div style="font-size:12px;color:#777;padding:8px 12px;background:#fff">No saved times yet</div>';renderSyncPlanMode();return;}
   box.innerHTML=rs.map(function(r){
     var runs=r.saved.length;
     var synced=syncedRunCount(r);
     var plan=runnerPlan(r);
     var note=synced?runs+' saved run'+(runs===1?'':'s')+' · '+synced+' already synced':runs+' saved run'+(runs===1?'':'s');
     if(plan.trainingPlanTitle)note+=' · '+(r.trainingPlanTitle?'Individual':'Group')+' plan: '+plan.trainingPlanTitle;
-    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" '+(synced===runs?'':'checked')+'><span>'+ex(r.name)+'<small>'+note+'</small></span></label>';
+    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" '+(synced===runs?'':'checked')+' onchange="renderSyncPlanMode()"><span>'+ex(r.name)+'<small>'+note+'</small></span></label>';
   }).join('');
+  renderSyncPlanMode();
 }
-function selectedRunnerPlans(){
+function selectedSyncRunners(){
   if(!CL)return[];
-  return CL.runners.filter(function(r){return r.saved&&r.saved.length;}).map(function(r){return runnerPlan(r);}).filter(function(plan){return plan.trainingPlanDayId||plan.trainingPlanTitle||plan.trainingPlanDayTitle;});
+  var checked=document.querySelectorAll('.sy-runner:checked');
+  if(!checked.length)return[];
+  var selectedIds={};
+  checked.forEach(function(cb){selectedIds[parseInt(cb.value)]=true;});
+  return CL.runners.filter(function(r){return selectedIds[r.id]&&r.saved&&r.saved.length;});
+}
+function selectedRunnerPlans(runners){
+  return (runners||selectedSyncRunners()).map(function(r){return runnerPlan(r);}).filter(function(plan){return plan.trainingPlanDayId||plan.trainingPlanTitle||plan.trainingPlanDayTitle;});
+}
+function commonPlanValue(plans,key){
+  var values=(plans||[]).map(function(plan){return plan[key]||'';}).filter(Boolean);
+  if(!values.length)return'';
+  var first=values[0];
+  for(var i=1;i<values.length;i++)if(values[i]!==first)return'';
+  return first;
+}
+function syncPlanContext(runners){
+  var selected=runners||selectedSyncRunners();
+  var plans=selectedRunnerPlans(selected);
+  if(!plans.length)return{hasPlan:false,auto:false,plans:[]};
+  var workoutType=commonPlanValue(plans,'trainingPlanDayWorkoutType');
+  var energySystem=commonPlanValue(plans,'trainingPlanDayEnergySystem');
+  return{
+    hasPlan:true,
+    auto:!!(workoutType&&energySystem),
+    plans:plans,
+    season:commonPlanValue(plans,'trainingPlanSeason')||CL.season||currentSeason().season,
+    phase:commonPlanValue(plans,'trainingPlanPhase')||syncFallbackValue('sy-phase','GPP'),
+    workoutType:workoutType||syncFallbackValue('sy-wtype','Acceleration'),
+    energySystem:energySystem||syncFallbackValue('sy-esys','Mixed')
+  };
 }
 function renderSyncPlanMode(){
-  var plans=selectedRunnerPlans();
-  var hasPlan=plans.length>0;
+  var ctx=syncPlanContext();
+  var plans=ctx.plans||[];
+  var hasPlan=ctx.hasPlan;
   var manual=document.getElementById('sy-manual-fields');
   var summary=document.getElementById('sy-plan-summary');
-  if(manual)manual.style.display=hasPlan?'none':'block';
+  if(manual)manual.style.display=ctx.auto?'none':'block';
   if(!summary)return;
   if(!hasPlan){summary.style.display='none';summary.innerHTML='';return;}
   var seen={},items=[];
@@ -1637,7 +1684,7 @@ function renderSyncPlanMode(){
     if(!seen[label]){seen[label]=true;items.push(label);}
   });
   summary.style.display='block';
-  summary.innerHTML='<div class="srow" style="background:#fff;align-items:flex-start"><label class="slbl">Workout</label><div class="sinp" style="border:none;background:transparent;padding-top:4px;line-height:1.35">'+items.map(function(item){return '<div style="font-weight:700">'+ex(item)+'</div>';}).join('')+'<small style="display:block;color:#777;margin-top:4px">Season, workout type, and energy system will come from the selected plan day when available.</small></div></div>';
+  summary.innerHTML='<div class="srow" style="background:#fff;align-items:flex-start"><label class="slbl">Workout</label><div class="sinp" style="border:none;background:transparent;padding-top:4px;line-height:1.35">'+items.map(function(item){return '<div style="font-weight:700">'+ex(item)+'</div>';}).join('')+'<small style="display:block;color:#777;margin-top:4px">'+(ctx.auto?'Season, phase, workout type, and energy system will come from the selected plan day.':'Some selected plan days are missing workout details or do not match, so the workout fields stay editable.')+'</small></div></div>';
 }
 function syncFallbackValue(id,fallback){
   var el=document.getElementById(id);
@@ -1647,15 +1694,13 @@ function doSMARTTraKSync(forceDuplicateSync){
   if(!CL)return;
   var btn=document.getElementById('sy-btn');
   var status=document.getElementById('sy-status');
-  var hasPlan=selectedRunnerPlans().length>0;
-  var season=hasPlan?(CL.season||currentSeason().season):syncFallbackValue('sy-season',currentSeason().season);
-  var phase=hasPlan?'From Plan':syncFallbackValue('sy-phase','GPP');
-  var wtype=hasPlan?(CL.trainingPlanDayTitle||'Planned Workout'):syncFallbackValue('sy-wtype','Acceleration');
-  var esys=hasPlan?'From Plan':syncFallbackValue('sy-esys','Mixed');
   var surf=document.getElementById('sy-surf').value;
-  var selectedIds={};
-  document.querySelectorAll('.sy-runner:checked').forEach(function(cb){selectedIds[parseInt(cb.value)]=true;});
-  var selectedRunners=CL.runners.filter(function(r){return selectedIds[r.id]&&r.saved&&r.saved.length;});
+  var selectedRunners=selectedSyncRunners();
+  var syncPlan=syncPlanContext(selectedRunners);
+  var season=syncPlan.auto?syncPlan.season:syncFallbackValue('sy-season',currentSeason().season);
+  var phase=syncPlan.auto?syncPlan.phase:syncFallbackValue('sy-phase','GPP');
+  var wtype=syncPlan.auto?syncPlan.workoutType:syncFallbackValue('sy-wtype','Acceleration');
+  var esys=syncPlan.auto?syncPlan.energySystem:syncFallbackValue('sy-esys','Mixed');
   var localSynced=selectedRunners.filter(hasSyncedRuns);
   if(localSynced.length&&!forceDuplicateSync){
     status.textContent='One or more selected athletes were already synced.';status.style.color='#c47a00';status.style.fontWeight='700';
