@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (req.method !== "GET") {
+  if (req.method !== "GET" && req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
@@ -24,6 +24,17 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    if (req.method === "POST") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      const rows = Array.isArray(payload && payload.rows) ? payload.rows : [payload];
+      const results = [];
+      for (const row of rows) {
+        results.push(await upsertAthleteBest({ token, locationId, payload: row || {} }));
+      }
+      res.status(200).json({ success: true, results });
+      return;
+    }
+
     const contactId = clean(req.query && req.query.contactId);
     const event = clean(req.query && req.query.event);
     const season = clean(req.query && req.query.season);
@@ -47,8 +58,86 @@ module.exports = async function handler(req, res) {
 
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+async function upsertAthleteBest({ token, locationId, payload }) {
+  const contactId = clean(payload.contactId);
+  const athleteName = clean(payload.athleteName);
+  const event = clean(payload.event);
+  const display = clean(payload.resultDisplay || payload.currentFitnessTime || payload.time);
+  const resultMs = parseTimeToMs(display);
+  const date = dateOnly(payload.resultDate || payload.date || new Date());
+  const season = clean(payload.season) || currentSeason();
+  const seasonYear = Number(payload.seasonYear) || new Date(`${date}T00:00:00`).getFullYear();
+
+  if (!contactId) throw httpError(400, "Athlete contact is required.");
+  if (!event) throw httpError(400, "Fitness distance is required.");
+  if (!display || !resultMs) throw httpError(400, "Fitness time is required.");
+
+  const sourceRecordId = buildAthleteBestSourceRecordId({ contactId, event });
+  const existing = await findAthleteBest({ token, locationId, sourceRecordId });
+  const props = buildAthleteBestProperties({
+    contactId,
+    athleteName,
+    event,
+    display,
+    resultMs,
+    date,
+    season,
+    seasonYear,
+    existing,
+    sourceRecordId,
+  });
+
+  if (existing && existing.id) {
+    const updated = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}`,
+      method: "PUT",
+      body: { locationId, properties: props },
+    });
+    return { action: "updated", recordId: existing.id || updated.id || "", sourceRecordId, event, resultDisplay: display };
+  }
+
+  const created = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records`,
+    method: "POST",
+    body: { locationId, properties: props },
+  });
+  return { action: "created", recordId: created.id || (created.record && created.record.id) || "", sourceRecordId, event, resultDisplay: display };
+}
+
+function buildAthleteBestProperties({ contactId, athleteName, event, display, resultMs, date, season, seasonYear, existing, sourceRecordId }) {
+  const existingProperties = recordProperties(existing);
+  const recordName = `${athleteName || contactId} - ${event} Bests`;
+  return compactProperties({
+    athlete_best: recordName,
+    record_name: recordName,
+    athlete_contact: contactId,
+    athlete_name_snapshot: athleteName,
+    event,
+    personal_best_display: display,
+    personal_best_ms: resultMs,
+    personal_best_meet: clean(existingProperties.personal_best_meet) || "Current Fitness Setup",
+    personal_best_date: date,
+    personal_best_source_record_id: clean(existingProperties.personal_best_source_record_id) || `manual_${sourceRecordId}_${date.replace(/-/g, "")}`,
+    season: optionValue(season),
+    season_year: seasonYear,
+    season_best_display: display,
+    season_best_ms: resultMs,
+    season_best_meet: "Current Fitness Setup",
+    season_best_date: date,
+    season_best_source_record_id: `manual_${sourceRecordId}_${date.replace(/-/g, "")}`,
+    last_result_display: display,
+    last_result_date: date,
+    pb_updated_at: date,
+    sb_updated_at: date,
+    source_system: "smartcoach_pro",
+    source_record_id: sourceRecordId,
+  });
 }
 
 async function findAthleteBest({ token, locationId, sourceRecordId }) {
@@ -135,6 +224,40 @@ function buildAthleteBestSourceRecordId({ contactId, event }) {
 
 function optionValue(value) {
   return clean(value).toLowerCase().replace(/&/g, "and").replace(/\+/g, "plus").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function parseTimeToMs(value) {
+  const text = clean(value);
+  if (!text) return 0;
+  const parts = text.split(":").map((part) => part.trim());
+  let seconds = 0;
+  if (parts.length === 1) seconds = Number(parts[0]);
+  else if (parts.length === 2) seconds = Number(parts[0]) * 60 + Number(parts[1]);
+  else if (parts.length === 3) seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+  return Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds * 1000) : 0;
+}
+
+function dateOnly(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
+  return date.toISOString().slice(0, 10);
+}
+
+function currentSeason() {
+  const month = new Date().getMonth() + 1;
+  if (month === 12 || month <= 2) return "Winter";
+  if (month >= 3 && month <= 5) return "Spring";
+  if (month >= 6 && month <= 8) return "Summer";
+  return "Fall";
+}
+
+function compactProperties(properties) {
+  return Object.keys(properties).reduce((cleaned, key) => {
+    const value = properties[key];
+    if (value === "" || value === null || typeof value === "undefined") return cleaned;
+    cleaned[key] = value;
+    return cleaned;
+  }, {});
 }
 
 function slugValue(value) {

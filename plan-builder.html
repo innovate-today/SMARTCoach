@@ -34,12 +34,21 @@ select[multiple]{min-height:112px}
 .meet-meta{font-size:12px;color:var(--muted);margin-top:2px}
 .meet-priority{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:#374151}
 .meet-empty{font-size:13px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:7px;padding:10px}
+.fitness{border-bottom:1px solid var(--line);padding:16px 20px;background:#fff}
+.fitness-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.fitness-head h2{font-size:16px;letter-spacing:0}
+.fitness-head p{font-size:13px;color:var(--muted);margin-top:2px}
+.fitness-table{display:grid;gap:6px}
+.fitness-row{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr;gap:8px;align-items:center}
+.fitness-name{font-size:13px;font-weight:800;color:#374151}
+.fitness-row input,.fitness-row select{font-size:13px;padding:7px 8px}
+.mini{padding:8px 10px;font-size:13px}
 .status{min-height:22px;text-align:center;font-size:13px;color:var(--muted);padding:12px 20px 0}
 .actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px 20px}
 button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer}
 .primary{background:var(--blue);color:#fff}
 .secondary{background:#e5e7eb;color:#111827}
-@media(max-width:760px){.wrap{padding:12px}.top{display:block}.form{grid-template-columns:1fr}.field{border-right:none}.actions{display:block}.actions button{width:100%;margin-top:8px}}
+@media(max-width:760px){.wrap{padding:12px}.top{display:block}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
 </style>
 </head>
 <body>
@@ -52,6 +61,13 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
       <h1>Guided Plan Builder</h1>
       <p>Create a coach-reviewed training plan draft for a group or athlete.</p>
     </div>
+    <div class="fitness">
+      <div class="fitness-head">
+        <div><h2>Current Fitness Setup</h2><p>Set target sources in bulk before building plans.</p></div>
+        <button class="secondary mini" onclick="saveFitnessRows()">Save Fitness</button>
+      </div>
+      <div id="fitnessRows" class="fitness-table"><div class="meet-empty">Loading athletes...</div></div>
+    </div>
     <div id="form" class="form"></div>
     <div id="status" class="status">Loading builder...</div>
     <div class="actions">
@@ -62,6 +78,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 </div>
 <script>
 var questionnaire=null,athletes=[],meets=[];
+var fitnessEvents=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
 function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+day;}
 function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}
@@ -76,7 +93,39 @@ function loadBuilder(){
     questionnaire=result.data.questionnaire;
     athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
     meets=(meetResult.data&&meetResult.data.meets)||[];
+    renderFitnessRows();
     renderForm();
+  }).catch(function(e){setStatus('Error: '+e.message,'bad');});
+}
+function renderFitnessRows(){
+  var box=document.getElementById('fitnessRows');
+  if(!box)return;
+  if(!athletes.length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
+  box.innerHTML=athletes.map(function(a,i){
+    return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+'</div><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'">'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00"><input class="fit-date" type="date" value="'+todayISO()+'"></div>';
+  }).join('');
+}
+function saveFitnessRows(){
+  var rows=Array.prototype.slice.call(document.querySelectorAll('.fitness-row')).map(function(row){
+    var athlete=athletes[parseInt(row.getAttribute('data-index'))]||{};
+    return {
+      contactId:athlete.id||'',
+      athleteName:athlete.name||'',
+      event:(row.querySelector('.fit-event')||{}).value||'',
+      resultDisplay:(row.querySelector('.fit-time')||{}).value||'',
+      resultDate:(row.querySelector('.fit-date')||{}).value||todayISO(),
+      season:currentSeason(),
+      seasonYear:new Date().getFullYear()
+    };
+  }).filter(function(row){return row.contactId&&row.event&&row.resultDisplay;});
+  if(!rows.length){setStatus('Enter at least one fitness time to save.','warn');return;}
+  setStatus('Saving current fitness...',null);
+  fetch('/api/smart-trak/athlete-best',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:rows})}).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Fitness save failed');
+    var saved=(result.data&&result.data.results||[]).length;
+    setStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
   }).catch(function(e){setStatus('Error: '+e.message,'bad');});
 }
 function renderForm(){
