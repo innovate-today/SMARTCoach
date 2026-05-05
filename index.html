@@ -1728,11 +1728,21 @@ function setSyncRow(id,show){
   if(el)el.style.display=show?'flex':'none';
 }
 function renderSyncPlanMode(){
+  var selected=selectedSyncRunners();
   var ctx=syncPlanContext();
   var plans=ctx.plans||[];
   var hasPlan=ctx.hasPlan;
   var manual=document.getElementById('sy-manual-fields');
   var summary=document.getElementById('sy-plan-summary');
+  if(!selected.length){
+    if(manual)manual.style.display='none';
+    if(summary){
+      summary.style.display='block';
+      summary.innerHTML='<div class="srow" style="background:#fff;align-items:flex-start"><label class="slbl">Status</label><div class="sinp" style="border:none;background:transparent;padding-top:4px;line-height:1.35"><div style="font-weight:700">All saved runs are already synced.</div><small style="display:block;color:#777;margin-top:4px">Check athlete(s) only if you need to sync them again.</small></div></div>';
+    }
+    updateSyncButtonState();
+    return;
+  }
   if(manual)manual.style.display='block';
   setSyncRow('sy-row-season',!ctx.hasSeason);
   setSyncRow('sy-row-phase',!ctx.hasPhase);
@@ -1750,6 +1760,15 @@ function renderSyncPlanMode(){
   var message=missing.length?'Select a plan workout to fill '+missing.join(', ')+'.':'Ready to sync from the selected plan workout.';
   summary.style.display='block';
   summary.innerHTML='<div class="srow" style="background:#fff;align-items:flex-start"><label class="slbl">Plan</label><div class="sinp" style="border:none;background:transparent;padding-top:4px;line-height:1.35">'+items.map(function(item){return '<div style="font-weight:700">'+ex(item)+'</div>';}).join('')+'<small style="display:block;color:#777;margin-top:4px">'+ex(message)+'</small></div></div>';
+  updateSyncButtonState();
+}
+function updateSyncButtonState(){
+  var btn=document.getElementById('sy-btn');
+  if(!btn)return;
+  var selected=selectedSyncRunners();
+  btn.disabled=!selected.length;
+  btn.style.background=selected.length?'#2B4FCC':'#8e8e93';
+  btn.textContent=selected.length?'Sync to SMARTCoach Pro':'Select Athlete to Resync';
 }
 function syncFallbackValue(id,fallback){
   var el=document.getElementById(id);
@@ -1770,9 +1789,10 @@ function doSMARTTraKSync(forceDuplicateSync){
   if(!CL)return;
   var btn=document.getElementById('sy-btn');
   var status=document.getElementById('sy-status');
+  var selectedRunners=selectedSyncRunners();
+  if(!selectedRunners.length){status.textContent='Check athlete(s) only if you need to sync them again.';status.style.color='#c47a00';status.style.fontWeight='700';updateSyncButtonState();return;}
   var surf=visibleSyncValue('sy-surf','surface',status);
   var weather=document.getElementById('sy-weather').value;
-  var selectedRunners=selectedSyncRunners();
   var syncPlan=syncPlanContext(selectedRunners);
   var season=syncPlan.hasSeason?syncPlan.season:visibleSyncValue('sy-season','season',status);
   var phase=syncPlan.hasPhase?syncPlan.phase:visibleSyncValue('sy-phase','phase',status);
@@ -1868,7 +1888,7 @@ function doSMARTTraKSync(forceDuplicateSync){
     }
     status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
-    setTimeout(function(){btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
+    setTimeout(function(){updateSyncButtonState();},3000);
   }).catch(function(e){
     if(e.status===409&&e.data&&e.data.code==='DUPLICATE_SYNC'){
       btn.textContent='Sync to SMARTCoach Pro';btn.disabled=false;
