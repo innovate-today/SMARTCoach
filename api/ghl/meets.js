@@ -60,14 +60,20 @@ function setCorsHeaders(res) {
 }
 
 async function listMeets({ token, locationId }) {
-  const result = await ghlFetch({
-    token,
-    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/search`,
-    method: "POST",
-    body: { locationId, page: 1, pageLimit: 100 },
-  });
+  const records = [];
+  for (let page = 1; page <= 10; page += 1) {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/search`,
+      method: "POST",
+      body: { locationId, page, pageLimit: 100, limit: 100 },
+    });
+    const batch = recordsFromResult(result);
+    records.push(...batch);
+    if (batch.length < 100) break;
+  }
 
-  return recordsFromResult(result).map(normalizeMeet).filter((meet) => meet.name).sort((a, b) => {
+  return uniqueRecords(records).map(normalizeMeet).filter((meet) => meet.name).sort((a, b) => {
     return String(a.date || "").localeCompare(String(b.date || "")) || a.name.localeCompare(b.name);
   });
 }
@@ -138,9 +144,21 @@ function recordsFromResult(result) {
   return [
     ...(Array.isArray(result && result.records) ? result.records : []),
     ...(Array.isArray(result && result.items) ? result.items : []),
+    ...(Array.isArray(result && result.data) ? result.data : []),
     ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
     ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
   ];
+}
+
+function uniqueRecords(records) {
+  const seen = {};
+  return records.filter((record) => {
+    const props = recordProperties(record);
+    const key = (record && record.id) || prop(props, "source_record_id") || [prop(props, "meet"), prop(props, "meet_date")].join("|");
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 function recordProperties(record) {
