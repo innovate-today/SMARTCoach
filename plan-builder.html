@@ -106,7 +106,24 @@ function renderFitnessRows(){
   }).join('');
 }
 function saveFitnessRows(){
-  var rows=Array.prototype.slice.call(document.querySelectorAll('.fitness-row')).map(function(row){
+  var rows=collectFitnessRows();
+  if(!rows.length){
+    var single=fitnessRowFromPlanFields();
+    if(single)rows.push(single);
+  }
+  if(!rows.length){setStatus('Enter a time in the Current Fitness Setup table, or select an individual athlete and fill Current Fitness Distance/Time.','warn');return;}
+  setStatus('Saving current fitness...',null);
+  fetch('/api/smart-trak/athlete-best',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:rows})}).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Fitness save failed');
+    var saved=(result.data&&result.data.results||[]).length;
+    if(!saved)throw new Error('No fitness rows were saved.');
+    setStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
+  }).catch(function(e){setStatus('Error: '+e.message,'bad');});
+}
+function collectFitnessRows(){
+  return Array.prototype.slice.call(document.querySelectorAll('.fitness-row')).map(function(row){
     var athlete=athletes[parseInt(row.getAttribute('data-index'))]||{};
     return {
       contactId:athlete.id||'',
@@ -118,15 +135,23 @@ function saveFitnessRows(){
       seasonYear:new Date().getFullYear()
     };
   }).filter(function(row){return row.contactId&&row.event&&row.resultDisplay;});
-  if(!rows.length){setStatus('Enter at least one fitness time to save.','warn');return;}
-  setStatus('Saving current fitness...',null);
-  fetch('/api/smart-trak/athlete-best',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:rows})}).then(function(r){
-    return r.json().then(function(data){return{ok:r.ok,data:data};});
-  }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Fitness save failed');
-    var saved=(result.data&&result.data.results||[]).length;
-    setStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
-  }).catch(function(e){setStatus('Error: '+e.message,'bad');});
+}
+function fitnessRowFromPlanFields(){
+  var athleteEl=document.getElementById('field-athleteName');
+  var opt=athleteEl&&athleteEl.options[athleteEl.selectedIndex];
+  var contactId=athleteEl&&athleteEl.value||'';
+  var event=value('currentFitnessDistance');
+  var time=value('currentFitnessTime');
+  if(!contactId||!event||!time)return null;
+  return {
+    contactId:contactId,
+    athleteName:opt?opt.getAttribute('data-name')||'':'',
+    event:event,
+    resultDisplay:time,
+    resultDate:todayISO(),
+    season:currentSeason(),
+    seasonYear:new Date().getFullYear()
+  };
 }
 function renderForm(){
   var box=document.getElementById('form');
