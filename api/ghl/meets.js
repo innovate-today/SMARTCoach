@@ -93,10 +93,7 @@ async function listMeets({ token, locationId }) {
       uniqueRecords: unique.length,
       namedMeets: meets.length,
       unnamedRecords: normalized.filter((meet) => !meet.name).length,
-      unnamedSamples: unique.map((record) => ({ record, meet: normalizeMeet(record) }))
-        .filter((item) => !item.meet.name)
-        .slice(0, 3)
-        .map((item) => summarizeRecordShape(item.record)),
+      recordSamples: unique.slice(0, 5).map((record) => summarizeRecordShape(record)),
     },
   };
 }
