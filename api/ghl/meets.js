@@ -1,7 +1,6 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const MEET_SCHEMA_KEY = "custom_objects.meets";
-const READER_VERSION = "direct-fields-v2";
 const FIELD_IDS = {
   meet: ["L6DjPWvVI13p6C1tgUz2"],
   record_name: ["aq2AIr5tjrIOefUfJmrQ"],
@@ -33,7 +32,7 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const result = await listMeets({ token, locationId });
-      res.status(200).json({ success: true, meets: result.meets, objectAvailable: true, readerVersion: READER_VERSION, diagnostics: result.diagnostics });
+      res.status(200).json({ success: true, meets: result.meets, objectAvailable: true });
       return;
     }
 
@@ -89,23 +88,6 @@ async function listMeets({ token, locationId }) {
   });
   return {
     meets,
-    diagnostics: {
-      rawRecords: records.length,
-      uniqueRecords: unique.length,
-      namedMeets: meets.length,
-      unnamedRecords: normalized.filter((meet) => !meet.name).length,
-      recordSamples: unique.slice(0, 5).map((record) => summarizeRecordShape(record)),
-      normalizedSamples: normalized.slice(0, 5),
-      directValueSamples: unique.slice(0, 5).map((record) => {
-        const props = recordProperties(record);
-        return {
-          id: record && record.id,
-          meet: fieldValue(props.meet),
-          meetDate: fieldValue(props.meet_date),
-          season: fieldValue(props.season),
-        };
-      }),
-    },
   };
 }
 
@@ -185,32 +167,6 @@ function normalizeMeet(record, fallbackProperties) {
 
 function recordName(record) {
   return clean(record && (record.name || record.title || record.displayName || record.display_name));
-}
-
-function summarizeRecordShape(record) {
-  const props = recordProperties(record);
-  if (Array.isArray(props)) {
-    return {
-      id: record && record.id,
-      propertyShape: "array",
-      fields: props.slice(0, 12).map((field) => ({
-        id: clean(field && (field.id || field.fieldId || field.customFieldId)),
-        key: clean(field && (field.key || field.fieldKey)),
-        name: clean(field && (field.name || field.label)),
-        value: clean(field && (field.value || field.fieldValue || field.field_value)),
-      })),
-    };
-  }
-  return {
-    id: record && record.id,
-    propertyShape: props && typeof props === "object" ? "object" : typeof props,
-    keys: props && typeof props === "object" ? Object.keys(props).slice(0, 30) : [],
-    values: props && typeof props === "object" ? Object.keys(props).slice(0, 12).reduce((out, key) => {
-      out[key] = props[key];
-      return out;
-    }, {}) : {},
-    topLevelKeys: record && typeof record === "object" ? Object.keys(record).slice(0, 30) : [],
-  };
 }
 
 function recordsFromResult(result) {
