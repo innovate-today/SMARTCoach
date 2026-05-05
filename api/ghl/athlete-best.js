@@ -57,7 +57,7 @@ module.exports = async function handler(req, res) {
     if (!event) throw httpError(400, "Event is required.");
 
     const sourceRecordId = buildAthleteBestSourceRecordId({ contactId, event });
-    const record = await findAthleteBest({ token, locationId, sourceRecordId });
+    const record = await findAthleteBest({ token, locationId, contactId, event });
     const best = normalizeAthleteBest({ record, season, seasonYear, sourceRecordId });
     res.status(200).json({ success: true, best });
   } catch (error) {
@@ -90,7 +90,7 @@ async function upsertAthleteBest({ token, locationId, payload }) {
   if (!display || !resultMs) throw httpError(400, "Fitness time is required.");
 
   const sourceRecordId = buildAthleteBestSourceRecordId({ contactId, event });
-  const existing = await findAthleteBest({ token, locationId, sourceRecordId });
+  const existing = await findAthleteBest({ token, locationId, contactId, event });
   const props = buildAthleteBestProperties({
     contactId,
     athleteName,
@@ -178,11 +178,10 @@ function buildAthleteBestProperties({ contactId, athleteName, event, display, re
     [bestField("pb_updated_at")]: date,
     [bestField("sb_updated_at")]: date,
     [bestField("source_system")]: "smartcoach_pro",
-    [bestField("source_record_id")]: sourceRecordId,
   });
 }
 
-async function findAthleteBest({ token, locationId, sourceRecordId }) {
+async function findAthleteBest({ token, locationId, contactId, event }) {
   const result = await ghlFetch({
     token,
     path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/search`,
@@ -190,17 +189,14 @@ async function findAthleteBest({ token, locationId, sourceRecordId }) {
     body: {
       locationId,
       page: 1,
-      pageLimit: 1,
-      filters: [
-        {
-          field: bestField("source_record_id"),
-          operator: "eq",
-          value: sourceRecordId,
-        },
-      ],
+      pageLimit: 100,
     },
   });
-  return firstRecord(result);
+  const wantedEvent = optionValue(event);
+  return recordsFromResult(result).find((record) => {
+    const props = recordProperties(record);
+    return prop(props, "athlete_contact") === contactId && optionValue(prop(props, "event")) === wantedEvent;
+  }) || null;
 }
 
 function normalizeAthleteBest({ record, season, seasonYear, sourceRecordId }) {
