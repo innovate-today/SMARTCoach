@@ -1,9 +1,8 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
-const ATHLETE_BEST_PREFIX = "custom_objects.athlete_bests.";
 function bestField(key) {
-  return `${ATHLETE_BEST_PREFIX}${key}`;
+  return key;
 }
 
 module.exports = async function handler(req, res) {
@@ -257,7 +256,7 @@ function recordProperties(record) {
 }
 
 function prop(props, key) {
-  return clean(props && (props[key] || props[bestField(key)]));
+  return clean(props && (props[key] || props[`custom_objects.athlete_bests.${key}`]));
 }
 
 function buildAthleteBestSourceRecordId({ contactId, event }) {
