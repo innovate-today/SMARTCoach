@@ -580,6 +580,8 @@ function buildTrainingPlanDayProperties(plan, day, planRecord) {
     slugValue(day.workoutTitle || day.dayType || "day"),
   ].filter(Boolean).join("_");
   const title = clean(day.workoutTitle) || clean(day.title) || "Training Plan Day";
+  const workoutType = inferWorkoutType(day, title);
+  const energySystem = clean(day.energySystem) || energySystemForWorkoutType(workoutType);
 
   return compactProperties({
     training_plan_days: `${dateOnly(day.date)} - ${title}`,
@@ -591,8 +593,8 @@ function buildTrainingPlanDayProperties(plan, day, planRecord) {
     athlete_name_snapshot: clean(day.athleteName) || plan.athleteName,
     workout_title: title,
     workout_details: clean(day.workoutDetails || day.details),
-    workout_type: workoutTypeValue(day.workoutType),
-    energy_system: energySystemValue(day.energySystem),
+    workout_type: workoutTypeValue(workoutType),
+    energy_system: energySystemValue(energySystem),
     target_splits__paces: clean(day.targetSplits || day.targetSplitsPaces),
     planned_volume: clean(day.plannedVolume),
     status: dayStatusValue(day.status || "draft"),
@@ -602,6 +604,30 @@ function buildTrainingPlanDayProperties(plan, day, planRecord) {
     source_system: "smartcoach_pro",
     source_record_id: sourceRecordId,
   });
+}
+
+function inferWorkoutType(day, title) {
+  const explicit = clean(day && day.workoutType);
+  if (explicit) return explicit;
+
+  const text = `${clean(title)} ${clean(day && day.workoutDetails)} ${clean(day && day.dayType)}`.toLowerCase();
+  if (text.indexOf("meet") >= 0 || text.indexOf("race") >= 0) return "Race / Meet";
+  if (text.indexOf("long run") >= 0) return "Long Run";
+  if (text.indexOf("tempo") >= 0) return "Extensive Tempo";
+  if (text.indexOf("threshold") >= 0 || text.indexOf("mile interval") >= 0 || text.indexOf("1 mile") >= 0) return "Lactate Threshold";
+  if (text.indexOf("speed endurance") >= 0 || text.indexOf("race rhythm") >= 0) return "Speed Endurance I";
+  if (text.indexOf("special endurance") >= 0 || text.indexOf("300m") >= 0) return "Special Endurance I";
+  if (text.indexOf("acceleration") >= 0 || text.indexOf("mechanics") >= 0) return "Acceleration";
+  if (text.indexOf("recovery") >= 0 || text.indexOf("easy") >= 0 || text.indexOf("shakeout") >= 0) return "Easy/Recovery Run";
+  return "Easy/Recovery Run";
+}
+
+function energySystemForWorkoutType(workoutType) {
+  const normalized = optionValue(workoutType);
+  if (normalized.indexOf("acceleration") >= 0 || normalized.indexOf("max_velocity") >= 0) return "ATP-PC (Phosphagen)";
+  if (normalized.indexOf("speed_endurance") >= 0 || normalized.indexOf("special_endurance") >= 0 || normalized.indexOf("lactate") >= 0) return "Glycolytic (Anaerobic)";
+  if (normalized.indexOf("tempo") >= 0 || normalized.indexOf("recovery") >= 0 || normalized.indexOf("long_run") >= 0 || normalized.indexOf("aerobic") >= 0) return "Oxidative (Aerobic)";
+  return "Mixed";
 }
 
 function normalizePlanDays(days) {
@@ -921,15 +947,48 @@ async function createObjectRecordWithOptionFallback({ token, locationId, schemaK
     });
   } catch (error) {
     if (!optionKeys || !optionKeys.length || !/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "")) throw error;
-    const fallback = { ...properties };
-    optionKeys.forEach((key) => delete fallback[key]);
-    return ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(schemaKey)}/records`,
-      method: "POST",
-      body: { locationId, properties: fallback },
-    });
+    return createWithBestOptionSubset({ token, locationId, schemaKey, properties, optionKeys });
   }
+}
+
+async function createWithBestOptionSubset({ token, locationId, schemaKey, properties, optionKeys }) {
+  const keys = optionKeys.filter((key) => Object.prototype.hasOwnProperty.call(properties, key));
+  const subsets = optionKeySubsets(keys).sort((a, b) => b.length - a.length);
+  let lastError = null;
+
+  for (const keep of subsets) {
+    const keepSet = new Set(keep);
+    const fallback = { ...properties };
+    keys.forEach((key) => {
+      if (!keepSet.has(key)) delete fallback[key];
+    });
+    try {
+      return await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(schemaKey)}/records`,
+        method: "POST",
+        body: { locationId, properties: fallback },
+      });
+    } catch (error) {
+      lastError = error;
+      if (!/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "")) throw error;
+    }
+  }
+
+  throw lastError || httpError(502, "Could not create object record with available dropdown options.");
+}
+
+function optionKeySubsets(keys) {
+  const results = [];
+  const total = Math.pow(2, keys.length);
+  for (let mask = total - 1; mask >= 0; mask -= 1) {
+    const subset = [];
+    keys.forEach((key, index) => {
+      if (mask & (1 << index)) subset.push(key);
+    });
+    results.push(subset);
+  }
+  return results;
 }
 
 async function ghlFetch({ token, path, method, body }) {
