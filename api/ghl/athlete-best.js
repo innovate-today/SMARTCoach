@@ -1,6 +1,10 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
+const ATHLETE_BEST_PREFIX = "custom_objects.athlete_bests.";
+function bestField(key) {
+  return `${ATHLETE_BEST_PREFIX}${key}`;
+}
 
 module.exports = async function handler(req, res) {
   setCorsHeaders(res);
@@ -108,7 +112,7 @@ async function upsertAthleteBest({ token, locationId, payload }) {
       recordId: existing.id,
       method: "PUT",
       properties: props,
-      optionKeys: ["season"],
+      optionKeys: [bestField("season")],
     });
     return { action: "updated", recordId: existing.id || updated.id || "", sourceRecordId, event, resultDisplay: display };
   }
@@ -119,7 +123,7 @@ async function upsertAthleteBest({ token, locationId, payload }) {
     schemaKey: ATHLETE_BEST_SCHEMA_KEY,
     method: "POST",
     properties: props,
-    optionKeys: ["season"],
+    optionKeys: [bestField("season")],
   });
   return { action: "created", recordId: created.id || (created.record && created.record.id) || "", sourceRecordId, event, resultDisplay: display };
 }
@@ -152,29 +156,29 @@ function buildAthleteBestProperties({ contactId, athleteName, event, display, re
   const existingProperties = recordProperties(existing);
   const recordName = `${athleteName || contactId} - ${event} Bests`;
   return compactProperties({
-    athlete_best: recordName,
-    record_name: recordName,
-    athlete_contact: contactId,
-    athlete_name_snapshot: athleteName,
-    event,
-    personal_best_display: display,
-    personal_best_ms: resultMs,
-    personal_best_meet: clean(existingProperties.personal_best_meet) || "Current Fitness Setup",
-    personal_best_date: date,
-    personal_best_source_record_id: clean(existingProperties.personal_best_source_record_id) || `manual_${sourceRecordId}_${date.replace(/-/g, "")}`,
-    season: optionValue(season),
-    season_year: seasonYear,
-    season_best_display: display,
-    season_best_ms: resultMs,
-    season_best_meet: "Current Fitness Setup",
-    season_best_date: date,
-    season_best_source_record_id: `manual_${sourceRecordId}_${date.replace(/-/g, "")}`,
-    last_result_display: display,
-    last_result_date: date,
-    pb_updated_at: date,
-    sb_updated_at: date,
-    source_system: "smartcoach_pro",
-    source_record_id: sourceRecordId,
+    [bestField("athlete_best")]: recordName,
+    [bestField("record_name")]: recordName,
+    [bestField("athlete_contact")]: contactId,
+    [bestField("athlete_name_snapshot")]: athleteName,
+    [bestField("event")]: event,
+    [bestField("personal_best_display")]: display,
+    [bestField("personal_best_ms")]: resultMs,
+    [bestField("personal_best_meet")]: prop(existingProperties, "personal_best_meet") || "Current Fitness Setup",
+    [bestField("personal_best_date")]: date,
+    [bestField("personal_best_source_record_id")]: prop(existingProperties, "personal_best_source_record_id") || `manual_${sourceRecordId}_${date.replace(/-/g, "")}`,
+    [bestField("season")]: optionValue(season),
+    [bestField("season_year")]: seasonYear,
+    [bestField("season_best_display")]: display,
+    [bestField("season_best_ms")]: resultMs,
+    [bestField("season_best_meet")]: "Current Fitness Setup",
+    [bestField("season_best_date")]: date,
+    [bestField("season_best_source_record_id")]: `manual_${sourceRecordId}_${date.replace(/-/g, "")}`,
+    [bestField("last_result_display")]: display,
+    [bestField("last_result_date")]: date,
+    [bestField("pb_updated_at")]: date,
+    [bestField("sb_updated_at")]: date,
+    [bestField("source_system")]: "smartcoach_pro",
+    [bestField("source_record_id")]: sourceRecordId,
   });
 }
 
@@ -189,7 +193,7 @@ async function findAthleteBest({ token, locationId, sourceRecordId }) {
       pageLimit: 1,
       filters: [
         {
-          field: "source_record_id",
+          field: bestField("source_record_id"),
           operator: "eq",
           value: sourceRecordId,
         },
@@ -205,19 +209,19 @@ function normalizeAthleteBest({ record, season, seasonYear, sourceRecordId }) {
   }
 
   const props = recordProperties(record);
-  const sameSeason = optionValue(props.season) === optionValue(season) && Number(props.season_year) === Number(seasonYear);
+  const sameSeason = optionValue(prop(props, "season")) === optionValue(season) && Number(prop(props, "season_year")) === Number(seasonYear);
   return {
     exists: true,
     recordId: record.id || "",
     sourceRecordId,
-    personalBestDisplay: clean(props.personal_best_display),
-    personalBestMs: numberValue(props.personal_best_ms),
-    personalBestMeet: clean(props.personal_best_meet),
-    personalBestDate: clean(props.personal_best_date),
-    seasonBestDisplay: sameSeason ? clean(props.season_best_display) : "",
-    seasonBestMs: sameSeason ? numberValue(props.season_best_ms) : 0,
-    seasonBestMeet: sameSeason ? clean(props.season_best_meet) : "",
-    seasonBestDate: sameSeason ? clean(props.season_best_date) : "",
+    personalBestDisplay: prop(props, "personal_best_display"),
+    personalBestMs: numberValue(prop(props, "personal_best_ms")),
+    personalBestMeet: prop(props, "personal_best_meet"),
+    personalBestDate: prop(props, "personal_best_date"),
+    seasonBestDisplay: sameSeason ? prop(props, "season_best_display") : "",
+    seasonBestMs: sameSeason ? numberValue(prop(props, "season_best_ms")) : 0,
+    seasonBestMeet: sameSeason ? prop(props, "season_best_meet") : "",
+    seasonBestDate: sameSeason ? prop(props, "season_best_date") : "",
   };
 }
 
@@ -254,6 +258,10 @@ function recordsFromResult(result) {
 
 function recordProperties(record) {
   return (record && (record.properties || record.fields || record.customFields)) || {};
+}
+
+function prop(props, key) {
+  return clean(props && (props[key] || props[bestField(key)]));
 }
 
 function buildAthleteBestSourceRecordId({ contactId, event }) {
