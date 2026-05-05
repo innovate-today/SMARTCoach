@@ -27,6 +27,13 @@ select[multiple]{min-height:112px}
 .choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .choice{display:flex;align-items:center;gap:8px;border:1px solid #cfd6e0;border-radius:7px;padding:9px 10px;background:#fff;font-size:14px;font-weight:600}
 .choice input{width:18px;height:18px;accent-color:var(--blue)}
+.meet-list{display:grid;gap:8px}
+.meet-item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;border:1px solid #cfd6e0;border-radius:7px;padding:9px 10px;background:#fff}
+.meet-item input{width:18px;height:18px;accent-color:var(--blue)}
+.meet-name{font-size:14px;font-weight:800}
+.meet-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.meet-priority{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:#374151}
+.meet-empty{font-size:13px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:7px;padding:10px}
 .status{min-height:22px;text-align:center;font-size:13px;color:var(--muted);padding:12px 20px 0}
 .actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px 20px}
 button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer}
@@ -54,19 +61,21 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   </div>
 </div>
 <script>
-var questionnaire=null,athletes=[];
+var questionnaire=null,athletes=[],meets=[];
 function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+day;}
 function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}
 function loadBuilder(){
   Promise.all([
     fetch('/api/smart-trak/training-plan?kind=questionnaire').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}),
-    fetch('/api/smart-trak/athletes').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{athletes:[]}};})
+    fetch('/api/smart-trak/athletes').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{athletes:[]}};}),
+    fetch('/api/smart-trak/meets').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};})
   ]).then(function(results){
-    var result=results[0],athleteResult=results[1];
+    var result=results[0],athleteResult=results[1],meetResult=results[2];
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Builder unavailable');
     questionnaire=result.data.questionnaire;
     athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
+    meets=(meetResult.data&&meetResult.data.meets)||[];
     renderForm();
   }).catch(function(e){setStatus('Error: '+e.message,'bad');});
 }
@@ -74,7 +83,9 @@ function renderForm(){
   var box=document.getElementById('form');
   box.innerHTML=questionnaire.fields.map(function(f){
     var input='',wide=f.type==='textarea'||f.type==='multi_select';
-    if(f.type==='athlete'){
+    if(f.key==='priorityMeets'){
+      input=meetScheduleControl();
+    }else if(f.type==='athlete'){
       input='<select id="field-'+f.key+'"><option value="">Whole group / no individual athlete</option>'+athletes.map(function(a){return'<option value="'+esc(a.id)+'" data-name="'+esc(a.name)+'" data-athlete-id="'+esc(a.smartcoachAthleteId||'')+'">'+esc(a.name)+'</option>';}).join('')+'</select>';
     }else if(f.type==='select'||f.type==='select_or_text'){
       input='<select id="field-'+f.key+'">'+(f.options||[]).map(function(o){return'<option value="'+esc(o.value)+'">'+esc(o.label)+'</option>';}).join('')+'</select>';
@@ -104,9 +115,27 @@ function renderForm(){
 }
 function setValue(key,value){var el=document.getElementById('field-'+key);if(el)el.value=value;}
 function setMultiValue(key,value,checked){var box=document.getElementById('field-'+key);if(!box)return;Array.prototype.slice.call(box.querySelectorAll('input')).forEach(function(input){if(input.value===value)input.checked=checked;});}
-function value(key){var el=document.getElementById('field-'+key);if(!el)return'';if(el.classList&&el.classList.contains('choice-grid'))return Array.prototype.slice.call(el.querySelectorAll('input:checked')).map(function(input){return input.value;}).join(',');if(el.multiple)return Array.prototype.slice.call(el.selectedOptions).map(function(o){return o.value;}).join(',');return el.value||'';}
+function value(key){var el=document.getElementById('field-'+key);if(!el)return'';if(key==='priorityMeets')return selectedMeetScheduleText();if(el.classList&&el.classList.contains('choice-grid'))return Array.prototype.slice.call(el.querySelectorAll('input:checked')).map(function(input){return input.value;}).join(',');if(el.multiple)return Array.prototype.slice.call(el.selectedOptions).map(function(o){return o.value;}).join(',');return el.value||'';}
 function labelFor(key,val){var f=questionnaire.fields.find(function(item){return item.key===key;});var o=f&&f.options&&f.options.find(function(opt){return opt.value===val;});return o?o.label:'';}
 function setStatus(text,type){var s=document.getElementById('status');s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';s.style.fontWeight=type?'800':'400';}
+function meetScheduleControl(){
+  var active=meets.map(function(m,i){return{meet:m,index:i};}).filter(function(item){var m=item.meet;return m&&m.name&&m.date&&String(m.status||'').toLowerCase()!=='cancelled';});
+  if(!active.length)return '<div id="field-priorityMeets" class="meet-list"><div class="meet-empty">No scheduled meets found in SMARTCoach Pro.</div></div>';
+  return '<div id="field-priorityMeets" class="meet-list">'+active.map(function(item,i){
+    var m=item.meet;
+    var priority=/priority/i.test(m.status||'');
+    return '<div class="meet-item"><input class="meet-pick" id="meet-pick-'+i+'" type="checkbox" value="'+esc(item.index)+'" checked><label for="meet-pick-'+i+'"><div class="meet-name">'+esc(m.name)+'</div><div class="meet-meta">'+esc([m.date,m.season,m.seasonYear,m.status].filter(Boolean).join(' · '))+'</div></label><label class="meet-priority"><input class="meet-priority-pick" type="checkbox" data-index="'+esc(item.index)+'" '+(priority?'checked':'')+'>Priority</label></div>';
+  }).join('')+'</div>';
+}
+function selectedMeetScheduleText(){
+  var box=document.getElementById('field-priorityMeets');
+  if(!box)return'';
+  return Array.prototype.slice.call(box.querySelectorAll('.meet-pick:checked')).map(function(input){
+    var meet=meets[parseInt(input.value)]||{};
+    var priority=box.querySelector('.meet-priority-pick[data-index="'+input.value+'"]');
+    return [meet.name,meet.date,priority&&priority.checked?'Priority':''].filter(Boolean).join(' - ');
+  }).filter(Boolean).join('\n');
+}
 function updateScopeState(){
   var scope=value('planScope'),athlete=document.getElementById('field-athleteName');
   if(!athlete)return;

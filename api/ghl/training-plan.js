@@ -1163,7 +1163,11 @@ function parseMeetSchedule(value) {
     const text = clean(line);
     const match = text.match(/(\d{4}-\d{2}-\d{2})/);
     if (!match) return null;
-    const name = clean(clean(text.replace(match[1], "")).replace(/[-–|]+$/g, "").replace(/^[-–|]+/g, ""));
+    const name = clean(text
+      .replace(match[1], "")
+      .replace(/\bpriority\b/ig, "")
+      .replace(/[-–|]+/g, " ")
+      .replace(/\s+/g, " "));
     return { date: match[1], name: name || "Meet", recordId: "" };
   }).filter(Boolean);
 }

@@ -1,6 +1,17 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const MEET_SCHEMA_KEY = "custom_objects.meets";
+const FIELD_IDS = {
+  meet: ["L6DjPWvVI13p6C1tgUz2"],
+  record_name: ["aq2AIr5tjrIOefUfJmrQ"],
+  meet_name: ["xYzq7SSQkqe1NnvzfHtJ"],
+  meet_date: ["8dcV6Nl25E96qicqRWUg"],
+  season: ["hn7WBWhxhzmC0s0jX0L3"],
+  season_year: ["80OM54D71FEC7hTA9hYU"],
+  status: ["pUNXAtbGgzxDJMRFMxL5"],
+  source_system: ["1Gex3TInpKsIRyWgo7X1"],
+  source_record_id: ["izSDCpgddfd0b8G9BPvls"],
+};
 
 module.exports = async function handler(req, res) {
   setCorsHeaders(res);
@@ -111,15 +122,15 @@ async function ghlFetch({ token, path, method, body }) {
 
 function normalizeMeet(record, fallbackProperties) {
   const props = fallbackProperties || recordProperties(record);
-  const date = clean(props.meet_date || props.date);
+  const date = clean(prop(props, "meet_date") || prop(props, "date"));
   return {
-    id: record && record.id ? record.id : clean(props.source_record_id),
-    name: clean(props.meet_name || props.meet || props.record_name),
+    id: record && record.id ? record.id : clean(prop(props, "source_record_id")),
+    name: clean(prop(props, "meet") || prop(props, "meet_name") || prop(props, "record_name")),
     date,
-    season: labelValue(props.season) || (date ? seasonForDate(date).season : ""),
-    seasonYear: Number(props.season_year) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null),
-    location: clean(props.location),
-    status: clean(props.status) || "scheduled",
+    season: labelValue(prop(props, "season")) || (date ? seasonForDate(date).season : ""),
+    seasonYear: Number(prop(props, "season_year")) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null),
+    location: clean(prop(props, "location")),
+    status: labelValue(prop(props, "status")) || "Scheduled",
   };
 }
 
@@ -134,6 +145,24 @@ function recordsFromResult(result) {
 
 function recordProperties(record) {
   return (record && (record.properties || record.fields || record.customFields)) || {};
+}
+
+function prop(props, key) {
+  const keys = [key, `custom_objects.meets.${key}`].concat(FIELD_IDS[key] || []);
+  for (const item of keys) {
+    const value = readPropValue(props, item);
+    if (value) return value;
+  }
+  return "";
+}
+
+function readPropValue(props, key) {
+  if (!props) return "";
+  if (Array.isArray(props)) {
+    const field = props.find((item) => item && (item.key === key || item.id === key || item.fieldKey === key || item.fieldId === key || item.customFieldId === key));
+    return field ? clean(field.value || field.fieldValue || field.field_value) : "";
+  }
+  return clean(props[key]);
 }
 
 function currentSeason() {
