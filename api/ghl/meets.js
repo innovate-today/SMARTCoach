@@ -157,15 +157,19 @@ async function optionalGhlFetch(args) {
 
 function normalizeMeet(record, fallbackProperties) {
   const props = fallbackProperties || recordProperties(record);
-  const date = clean(prop(props, "meet_date") || prop(props, "date"));
+  const meetName = fieldValue(props.meet) || fieldValue(props.meet_name) || fieldValue(props.record_name) || prop(props, "meet") || prop(props, "meet_name") || prop(props, "record_name") || recordName(record);
+  const date = fieldValue(props.meet_date) || fieldValue(props.date) || prop(props, "meet_date") || prop(props, "date");
+  const season = fieldValue(props.season) || prop(props, "season");
+  const seasonYear = fieldValue(props.season_year) || prop(props, "season_year");
+  const status = fieldValue(props.status) || prop(props, "status");
   return {
     id: record && record.id ? record.id : clean(prop(props, "source_record_id")),
-    name: clean(prop(props, "meet") || prop(props, "meet_name") || prop(props, "record_name") || recordName(record)),
+    name: clean(meetName),
     date,
-    season: labelValue(prop(props, "season")) || (date ? seasonForDate(date).season : ""),
-    seasonYear: Number(prop(props, "season_year")) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null),
+    season: labelValue(season) || (date ? seasonForDate(date).season : ""),
+    seasonYear: Number(seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null),
     location: clean(prop(props, "location")),
-    status: labelValue(prop(props, "status")) || "Scheduled",
+    status: labelValue(status) || "Scheduled",
   };
 }
 
