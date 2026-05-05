@@ -96,6 +96,15 @@ async function listMeets({ token, locationId }) {
       unnamedRecords: normalized.filter((meet) => !meet.name).length,
       recordSamples: unique.slice(0, 5).map((record) => summarizeRecordShape(record)),
       normalizedSamples: normalized.slice(0, 5),
+      directValueSamples: unique.slice(0, 5).map((record) => {
+        const props = recordProperties(record);
+        return {
+          id: record && record.id,
+          meet: fieldValue(props.meet),
+          meetDate: fieldValue(props.meet_date),
+          season: fieldValue(props.season),
+        };
+      }),
     },
   };
 }
