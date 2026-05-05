@@ -29,7 +29,16 @@ module.exports = async function handler(req, res) {
       const rows = Array.isArray(payload && payload.rows) ? payload.rows : [payload];
       const results = [];
       for (const row of rows) {
-        results.push(await upsertAthleteBest({ token, locationId, payload: row || {} }));
+        try {
+          results.push(await upsertAthleteBest({ token, locationId, payload: row || {} }));
+        } catch (error) {
+          results.push({
+            action: "skipped",
+            athleteName: clean(row && row.athleteName),
+            event: clean(row && row.event),
+            reason: error.message || "Could not save current fitness.",
+          });
+        }
       }
       res.status(200).json({ success: true, results });
       return;
@@ -48,7 +57,7 @@ module.exports = async function handler(req, res) {
     const best = normalizeAthleteBest({ record, season, seasonYear, sourceRecordId });
     res.status(200).json({ success: true, best });
   } catch (error) {
-    if (error.statusCode && error.statusCode < 500) {
+    if (req.method === "GET" && error.statusCode && error.statusCode < 500) {
       res.status(200).json({ success: true, best: null, warning: error.message });
       return;
     }
@@ -92,22 +101,51 @@ async function upsertAthleteBest({ token, locationId, payload }) {
   });
 
   if (existing && existing.id) {
-    const updated = await ghlFetch({
+    const updated = await saveObjectRecordWithOptionFallback({
       token,
-      path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}`,
+      locationId,
+      schemaKey: ATHLETE_BEST_SCHEMA_KEY,
+      recordId: existing.id,
       method: "PUT",
-      body: { locationId, properties: props },
+      properties: props,
+      optionKeys: ["season"],
     });
     return { action: "updated", recordId: existing.id || updated.id || "", sourceRecordId, event, resultDisplay: display };
   }
 
-  const created = await ghlFetch({
+  const created = await saveObjectRecordWithOptionFallback({
     token,
-    path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records`,
+    locationId,
+    schemaKey: ATHLETE_BEST_SCHEMA_KEY,
     method: "POST",
-    body: { locationId, properties: props },
+    properties: props,
+    optionKeys: ["season"],
   });
   return { action: "created", recordId: created.id || (created.record && created.record.id) || "", sourceRecordId, event, resultDisplay: display };
+}
+
+async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey, recordId, method, properties, optionKeys }) {
+  const path = recordId
+    ? `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}`
+    : `/objects/${encodeURIComponent(schemaKey)}/records`;
+  try {
+    return await ghlFetch({
+      token,
+      path,
+      method,
+      body: { locationId, properties },
+    });
+  } catch (error) {
+    if (!/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "")) throw error;
+    const fallback = { ...properties };
+    (optionKeys || []).forEach((key) => delete fallback[key]);
+    return ghlFetch({
+      token,
+      path,
+      method,
+      body: { locationId, properties: fallback },
+    });
+  }
 }
 
 function buildAthleteBestProperties({ contactId, athleteName, event, display, resultMs, date, season, seasonYear, existing, sourceRecordId }) {

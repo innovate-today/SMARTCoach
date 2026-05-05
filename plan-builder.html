@@ -35,13 +35,14 @@ select[multiple]{min-height:112px}
 .meet-priority{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:#374151}
 .meet-empty{font-size:13px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:7px;padding:10px}
 .fitness{border-bottom:1px solid var(--line);padding:16px 20px;background:#fff}
-.fitness-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.fitness-head{margin-bottom:10px}
 .fitness-head h2{font-size:16px;letter-spacing:0}
 .fitness-head p{font-size:13px;color:var(--muted);margin-top:2px}
 .fitness-table{display:grid;gap:6px}
 .fitness-row{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr;gap:8px;align-items:center}
 .fitness-name{font-size:13px;font-weight:800;color:#374151}
 .fitness-row input,.fitness-row select{font-size:13px;padding:7px 8px}
+.fitness-actions{display:flex;justify-content:flex-end;margin-top:10px}
 .mini{padding:8px 10px;font-size:13px}
 .status{min-height:22px;text-align:center;font-size:13px;color:var(--muted);padding:12px 20px 0}
 .actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px 20px}
@@ -63,10 +64,10 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     </div>
     <div class="fitness">
       <div class="fitness-head">
-        <div><h2>Current Fitness Setup</h2><p>Set target sources in bulk before building plans.</p></div>
-        <button class="secondary mini" onclick="saveFitnessRows()">Save Fitness</button>
+        <h2>Current Fitness Setup</h2><p>Set target sources in bulk before building plans.</p>
       </div>
       <div id="fitnessRows" class="fitness-table"><div class="meet-empty">Loading athletes...</div></div>
+      <div class="fitness-actions"><button class="secondary mini" onclick="saveFitnessRows()">Save Fitness</button></div>
     </div>
     <div id="form" class="form"></div>
     <div id="status" class="status">Loading builder...</div>
@@ -117,8 +118,13 @@ function saveFitnessRows(){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Fitness save failed');
-    var saved=(result.data&&result.data.results||[]).length;
-    if(!saved)throw new Error('No fitness rows were saved.');
+    var results=result.data&&result.data.results||[];
+    var saved=results.filter(function(item){return item&&item.action!=='skipped';}).length;
+    var skipped=results.filter(function(item){return item&&item.action==='skipped';});
+    if(!saved){
+      var reason=skipped[0]&&skipped[0].reason?skipped[0].reason:'No fitness rows were saved.';
+      throw new Error(reason);
+    }
     setStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
   }).catch(function(e){setStatus('Error: '+e.message,'bad');});
 }
