@@ -117,8 +117,9 @@ function normalizeSession(payload) {
     season: clean(payload.season) || "Unspecified",
     phase: clean(payload.phase) || "Unspecified",
     workoutType: clean(payload.workoutType) || "Unspecified",
-    energySystem: clean(payload.energySystem) || "Unspecified",
+    energySystem: clean(payload.energySystem),
     surface: clean(payload.surface) || "Unspecified",
+    weather: clean(payload.weather),
     sessionDate: payload.sessionDate ? new Date(payload.sessionDate) : new Date(),
     forceDuplicateSync: payload.forceDuplicateSync === true,
     trainingPlanId: clean(payload.trainingPlanId),
@@ -505,7 +506,7 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     season: optionValue(session.season),
     phase: optionValue(session.phase),
     workout_type: workoutTypeValue(session.workoutType),
-    energy_system: energySystemValue(session.energySystem),
+    ...(session.energySystem ? { energy_system: energySystemValue(session.energySystem) } : {}),
     surface: optionValue(session.surface),
     rep_number: run.runNumber,
     total_time_display: run.total,
@@ -600,8 +601,8 @@ function updateSeasonBests({ existingValue, existingProperties, athlete, session
     groupName: session.groupName,
     workoutType: session.workoutType,
     phase: session.phase,
-    energySystem: session.energySystem,
     surface: session.surface,
+    weather: session.weather,
   };
   summary.performanceRecordCount = previousPerformanceCount + performanceRecordCount;
   summary.practiceSessionCount = isNewSession ? previousPracticeSessionCount + 1 : previousPracticeSessionCount || sessions.length || 1;
@@ -797,7 +798,7 @@ function buildNoteBody(session, athlete) {
     `SMARTCoach Session - ${dateLabel}`,
     `Group: ${session.groupName} | Season: ${session.season}`,
     `Phase: ${session.phase} | Type: ${session.workoutType}`,
-    `Energy System: ${session.energySystem} | Surface: ${session.surface}`,
+    `Surface: ${session.surface}${session.weather ? ` | Weather: ${session.weather}` : ""}`,
   ];
 
   const planTitle = athlete.trainingPlanTitle || session.trainingPlanTitle;
