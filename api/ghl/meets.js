@@ -93,6 +93,10 @@ async function listMeets({ token, locationId }) {
       uniqueRecords: unique.length,
       namedMeets: meets.length,
       unnamedRecords: normalized.filter((meet) => !meet.name).length,
+      unnamedSamples: unique.map((record) => ({ record, meet: normalizeMeet(record) }))
+        .filter((item) => !item.meet.name)
+        .slice(0, 3)
+        .map((item) => summarizeRecordShape(item.record)),
     },
   };
 }
@@ -169,6 +173,28 @@ function normalizeMeet(record, fallbackProperties) {
 
 function recordName(record) {
   return clean(record && (record.name || record.title || record.displayName || record.display_name));
+}
+
+function summarizeRecordShape(record) {
+  const props = recordProperties(record);
+  if (Array.isArray(props)) {
+    return {
+      id: record && record.id,
+      propertyShape: "array",
+      fields: props.slice(0, 12).map((field) => ({
+        id: clean(field && (field.id || field.fieldId || field.customFieldId)),
+        key: clean(field && (field.key || field.fieldKey)),
+        name: clean(field && (field.name || field.label)),
+        value: clean(field && (field.value || field.fieldValue || field.field_value)),
+      })),
+    };
+  }
+  return {
+    id: record && record.id,
+    propertyShape: props && typeof props === "object" ? "object" : typeof props,
+    keys: props && typeof props === "object" ? Object.keys(props).slice(0, 30) : [],
+    topLevelKeys: record && typeof record === "object" ? Object.keys(record).slice(0, 30) : [],
+  };
 }
 
 function recordsFromResult(result) {
