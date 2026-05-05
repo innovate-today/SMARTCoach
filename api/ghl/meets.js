@@ -62,16 +62,24 @@ function setCorsHeaders(res) {
 async function listMeets({ token, locationId }) {
   const records = [];
   for (let page = 1; page <= 10; page += 1) {
-    const result = await ghlFetch({
+    const result = await optionalGhlFetch({
       token,
       path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/search`,
       method: "POST",
-      body: { locationId, page, pageLimit: 100, limit: 100 },
+      body: { locationId, page, pageLimit: 100 },
     });
+    if (!result) break;
     const batch = recordsFromResult(result);
     records.push(...batch);
     if (batch.length < 100) break;
   }
+
+  const direct = await optionalGhlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records?locationId=${encodeURIComponent(locationId)}&page=1&pageLimit=100`,
+    method: "GET",
+  });
+  if (direct) records.push(...recordsFromResult(direct));
 
   return uniqueRecords(records).map(normalizeMeet).filter((meet) => meet.name).sort((a, b) => {
     return String(a.date || "").localeCompare(String(b.date || "")) || a.name.localeCompare(b.name);
@@ -124,6 +132,14 @@ async function ghlFetch({ token, path, method, body }) {
   const data = text ? safeJson(text) : {};
   if (!response.ok) throw httpError(response.status, data.message || data.error || `GHL request failed with ${response.status}.`);
   return data;
+}
+
+async function optionalGhlFetch(args) {
+  try {
+    return await ghlFetch(args);
+  } catch (error) {
+    return null;
+  }
 }
 
 function normalizeMeet(record, fallbackProperties) {
