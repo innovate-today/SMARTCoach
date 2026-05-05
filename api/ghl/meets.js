@@ -94,6 +94,7 @@ async function listMeets({ token, locationId }) {
       namedMeets: meets.length,
       unnamedRecords: normalized.filter((meet) => !meet.name).length,
       recordSamples: unique.slice(0, 5).map((record) => summarizeRecordShape(record)),
+      normalizedSamples: normalized.slice(0, 5),
     },
   };
 }
