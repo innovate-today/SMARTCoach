@@ -190,6 +190,10 @@ function summarizeRecordShape(record) {
     id: record && record.id,
     propertyShape: props && typeof props === "object" ? "object" : typeof props,
     keys: props && typeof props === "object" ? Object.keys(props).slice(0, 30) : [],
+    values: props && typeof props === "object" ? Object.keys(props).slice(0, 12).reduce((out, key) => {
+      out[key] = props[key];
+      return out;
+    }, {}) : {},
     topLevelKeys: record && typeof record === "object" ? Object.keys(record).slice(0, 30) : [],
   };
 }
