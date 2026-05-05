@@ -31,8 +31,8 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      const meets = await listMeets({ token, locationId });
-      res.status(200).json({ success: true, meets, objectAvailable: true });
+      const result = await listMeets({ token, locationId });
+      res.status(200).json({ success: true, meets: result.meets, objectAvailable: true, diagnostics: result.diagnostics });
       return;
     }
 
@@ -81,9 +81,20 @@ async function listMeets({ token, locationId }) {
   });
   if (direct) records.push(...recordsFromResult(direct));
 
-  return uniqueRecords(records).map(normalizeMeet).filter((meet) => meet.name).sort((a, b) => {
+  const unique = uniqueRecords(records);
+  const normalized = unique.map(normalizeMeet);
+  const meets = normalized.filter((meet) => meet.name).sort((a, b) => {
     return String(a.date || "").localeCompare(String(b.date || "")) || a.name.localeCompare(b.name);
   });
+  return {
+    meets,
+    diagnostics: {
+      rawRecords: records.length,
+      uniqueRecords: unique.length,
+      namedMeets: meets.length,
+      unnamedRecords: normalized.filter((meet) => !meet.name).length,
+    },
+  };
 }
 
 async function createMeet({ token, locationId, payload }) {
@@ -147,13 +158,17 @@ function normalizeMeet(record, fallbackProperties) {
   const date = clean(prop(props, "meet_date") || prop(props, "date"));
   return {
     id: record && record.id ? record.id : clean(prop(props, "source_record_id")),
-    name: clean(prop(props, "meet") || prop(props, "meet_name") || prop(props, "record_name")),
+    name: clean(prop(props, "meet") || prop(props, "meet_name") || prop(props, "record_name") || recordName(record)),
     date,
     season: labelValue(prop(props, "season")) || (date ? seasonForDate(date).season : ""),
     seasonYear: Number(prop(props, "season_year")) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null),
     location: clean(prop(props, "location")),
     status: labelValue(prop(props, "status")) || "Scheduled",
   };
+}
+
+function recordName(record) {
+  return clean(record && (record.name || record.title || record.displayName || record.display_name));
 }
 
 function recordsFromResult(result) {
