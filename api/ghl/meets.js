@@ -1,6 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const MEET_SCHEMA_KEY = "custom_objects.meets";
+const READER_VERSION = "direct-fields-v2";
 const FIELD_IDS = {
   meet: ["L6DjPWvVI13p6C1tgUz2"],
   record_name: ["aq2AIr5tjrIOefUfJmrQ"],
@@ -32,7 +33,7 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const result = await listMeets({ token, locationId });
-      res.status(200).json({ success: true, meets: result.meets, objectAvailable: true, diagnostics: result.diagnostics });
+      res.status(200).json({ success: true, meets: result.meets, objectAvailable: true, readerVersion: READER_VERSION, diagnostics: result.diagnostics });
       return;
     }
 
