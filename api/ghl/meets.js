@@ -232,9 +232,9 @@ function readPropValue(props, key) {
   if (!props) return "";
   if (Array.isArray(props)) {
     const field = props.find((item) => item && (item.key === key || item.id === key || item.fieldKey === key || item.fieldId === key || item.customFieldId === key));
-    return field ? clean(field.value || field.fieldValue || field.field_value) : "";
+    return field ? fieldValue(field.value || field.fieldValue || field.field_value) : "";
   }
-  return clean(props[key]);
+  return fieldValue(props[key]);
 }
 
 function currentSeason() {
@@ -255,6 +255,14 @@ function labelValue(value) {
   const text = clean(value);
   if (!text) return "";
   return text.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+
+function fieldValue(value) {
+  if (Array.isArray(value)) return value.map(fieldValue).filter(Boolean).join(", ");
+  if (value && typeof value === "object") {
+    return clean(value.value || value.fieldValue || value.field_value || value.label || value.name || value.text || value.displayValue || value.display_value);
+  }
+  return clean(value);
 }
 
 function optionValue(value) {
