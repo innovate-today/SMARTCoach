@@ -83,7 +83,7 @@ async function listMeets({ token, locationId }) {
   if (direct) records.push(...recordsFromResult(direct));
 
   const unique = uniqueRecords(records);
-  const normalized = unique.map(normalizeMeet);
+  const normalized = unique.map((record) => normalizeMeet(record));
   const meets = normalized.filter((meet) => meet.name).sort((a, b) => {
     return String(a.date || "").localeCompare(String(b.date || "")) || a.name.localeCompare(b.name);
   });
