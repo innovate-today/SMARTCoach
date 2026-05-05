@@ -119,7 +119,7 @@ function value(key){var el=document.getElementById('field-'+key);if(!el)return''
 function labelFor(key,val){var f=questionnaire.fields.find(function(item){return item.key===key;});var o=f&&f.options&&f.options.find(function(opt){return opt.value===val;});return o?o.label:'';}
 function setStatus(text,type){var s=document.getElementById('status');s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';s.style.fontWeight=type?'800':'400';}
 function meetScheduleControl(){
-  var active=meets.map(function(m,i){return{meet:m,index:i};}).filter(function(item){var m=item.meet;return m&&m.name&&m.date&&String(m.status||'').toLowerCase()!=='cancelled';});
+  var active=meets.map(function(m,i){return{meet:m,index:i};}).filter(function(item){var m=item.meet;return m&&m.name&&m.date&&String(m.status||'').toLowerCase()==='scheduled';});
   if(!active.length)return '<div id="field-priorityMeets" class="meet-list"><div class="meet-empty">No scheduled meets found in SMARTCoach Pro.</div></div>';
   return '<div id="field-priorityMeets" class="meet-list">'+active.map(function(item,i){
     var m=item.meet;
