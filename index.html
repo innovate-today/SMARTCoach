@@ -1127,6 +1127,21 @@ function loadTrainingPlanDays(plan){
     renderTrainingPlanDetail(plan,[],false);
   });
 }
+function trainingPlanDaysKey(planId,planSourceId){
+  return (planId||'')+'|'+(planSourceId||'')+'|all';
+}
+function fetchTrainingPlanDays(planId,planSourceId){
+  var key=trainingPlanDaysKey(planId,planSourceId);
+  if(TPD[key])return Promise.resolve(TPD[key]);
+  var url='/api/smart-trak/training-plan?kind=days&trainingPlanId='+encodeURIComponent(planId||'')+'&planSourceId='+encodeURIComponent(planSourceId||'');
+  return fetch(url).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Plan days unavailable');
+    TPD[key]=(result.data&&result.data.days)||[];
+    return TPD[key];
+  });
+}
 function upcomingPlanDays(days,count){
   var today=todayISO();
   return (days||[]).filter(function(d){return !d.date||d.date>=today;}).slice(0,count||5);
@@ -1164,6 +1179,37 @@ function useSelectedTrainingPlan(){
   document.getElementById('tp-status').textContent=TPA&&TPA.kind==='athlete'?'Plan selected for this athlete.':'Plan selected for this group.';
   document.getElementById('tp-status').style.color='#0a7a44';
   document.getElementById('tp-status').style.fontWeight='700';
+}
+function targetNeedsPlanDay(target){
+  return target&&(target.trainingPlanId||target.trainingPlanSourceId)&&(!target.trainingPlanDayId||!target.trainingPlanDayWorkoutType||!target.trainingPlanDayEnergySystem);
+}
+function applyPlanDayToTarget(target,day){
+  if(!target||!day)return false;
+  target.trainingPlanDayId=day.id||'';
+  target.trainingPlanDaySourceId=day.sourceRecordId||'';
+  target.trainingPlanDayTitle=day.title||'';
+  target.trainingPlanDayWorkoutType=day.workoutType||'';
+  target.trainingPlanDayEnergySystem=day.energySystem||'';
+  return true;
+}
+function hydrateAssignedPlanWorkouts(){
+  if(!CL)return Promise.resolve(false);
+  var targets=[];
+  if(targetNeedsPlanDay(CL))targets.push(CL);
+  CL.runners.forEach(function(r){if(targetNeedsPlanDay(r))targets.push(r);});
+  if(!targets.length)return Promise.resolve(false);
+  var status=document.getElementById('sy-status');
+  if(status){status.textContent='Loading assigned workout from plan...';status.style.color='#555';status.style.fontWeight='400';}
+  var changed=false;
+  return Promise.all(targets.map(function(target){
+    return fetchTrainingPlanDays(target.trainingPlanId,target.trainingPlanSourceId).then(function(days){
+      var day=upcomingPlanDays(days,1)[0]||null;
+      if(day)changed=applyPlanDayToTarget(target,day)||changed;
+    }).catch(function(){});
+  })).then(function(){
+    if(changed){save();rr();}
+    return changed;
+  });
 }
 function clearAthleteTrainingPlan(){
   if(!CE)return;
@@ -1346,10 +1392,15 @@ function openSync(){
   if(!isProPlan())return;
   hm('msh');
   loadAthletes();
-  renderSyncAthletes();
   document.getElementById('sy-status').textContent='';
   var btn=document.getElementById('sy-btn');
   btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;
+  renderSyncAthletes();
+  hydrateAssignedPlanWorkouts().then(function(changed){
+    if(changed)renderSyncAthletes();
+    var st=document.getElementById('sy-status');
+    if(st&&st.textContent==='Loading assigned workout from plan...')st.textContent='';
+  });
   sm('m-sync');
 }
 function openSMARTCoachSave(){
