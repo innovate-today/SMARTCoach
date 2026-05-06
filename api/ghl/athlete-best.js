@@ -157,7 +157,6 @@ function buildAthleteBestProperties({ contactId, athleteName, event, display, re
   const recordName = `${athleteName || contactId} - ${event} Bests`;
   return compactProperties({
     [bestField("athlete_best")]: recordName,
-    [bestField("record_name")]: recordName,
     [bestField("athlete_contact")]: contactId,
     [bestField("athlete_name_snapshot")]: athleteName,
     [bestField("event")]: event,

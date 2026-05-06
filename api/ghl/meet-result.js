@@ -552,7 +552,6 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
 
   const properties = {
     athlete_best: recordName,
-    record_name: recordName,
     athlete_contact: contactId,
     athlete_name_snapshot: meetResult.athleteName,
     sport: sportValue(meetResult.sport),
