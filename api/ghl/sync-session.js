@@ -146,6 +146,13 @@ function normalizeAthlete(raw) {
     trainingPlanDayTitle: clean(raw && raw.trainingPlanDayTitle),
     trainingPlanPhase: clean(raw && raw.trainingPlanPhase),
     trainingPlanDayWorkoutType: clean(raw && raw.trainingPlanDayWorkoutType),
+    plannedTargetRange: clean(raw && raw.plannedTargetRange),
+    plannedTargetMinMs: Number(raw && raw.plannedTargetMinMs) || null,
+    plannedTargetMaxMs: Number(raw && raw.plannedTargetMaxMs) || null,
+    plannedTargetRep: clean(raw && raw.plannedTargetRep),
+    currentFitnessEvent: clean(raw && raw.currentFitnessEvent),
+    currentFitnessDisplay: clean(raw && raw.currentFitnessDisplay),
+    plannedEffortPercent: clean(raw && raw.plannedEffortPercent),
     runs: Array.isArray(raw && raw.runs)
       ? raw.runs.map(normalizeRun).filter((run) => run.total)
       : [],
@@ -515,16 +522,50 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     total_time_display: run.total,
     total_time_ms: run.totalMs,
     splits_json: formatLapSplits(splits).join("\n"),
-    coach_note: formatCoachNote({ run, session }),
+    coach_note: formatCoachNote({ run, session, athlete }),
     synced_at: dateOnly(syncedAt),
   };
 }
 
-function formatCoachNote({ run, session }) {
+function formatCoachNote({ run, session, athlete }) {
+  const targetLines = plannedActualLines({ run, athlete });
   return [
     session.weather ? `Weather: ${session.weather}` : "",
+    ...targetLines,
     run.note,
   ].filter(Boolean).join("\n");
+}
+
+function plannedActualLines({ run, athlete }) {
+  if (!athlete || !athlete.plannedTargetRange) return [];
+  const lines = [
+    `Planned target: ${athlete.plannedTargetRange}`,
+    `Actual: ${run.total}`,
+  ];
+  const diff = plannedActualDifference(run.totalMs, athlete.plannedTargetMinMs, athlete.plannedTargetMaxMs);
+  if (diff) lines.push(`Difference: ${diff}`);
+  if (athlete.currentFitnessEvent || athlete.currentFitnessDisplay) {
+    lines.push(`Current fitness: ${[athlete.currentFitnessEvent, athlete.currentFitnessDisplay].filter(Boolean).join(" ")}`);
+  }
+  if (athlete.plannedEffortPercent) lines.push(`Planned effort: ${athlete.plannedEffortPercent}`);
+  return lines;
+}
+
+function plannedActualDifference(actualMs, minMs, maxMs) {
+  if (!actualMs || !minMs || !maxMs) return "";
+  if (actualMs < minMs) return `${formatSignedDuration(actualMs - minMs)} faster than target`;
+  if (actualMs > maxMs) return `${formatSignedDuration(actualMs - maxMs)} slower than target`;
+  return "within target";
+}
+
+function formatSignedDuration(ms) {
+  const sign = ms > 0 ? "+" : "-";
+  const absolute = Math.abs(ms);
+  const seconds = absolute / 1000;
+  if (seconds < 60) return `${sign}${seconds.toFixed(1)} sec`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = (seconds - minutes * 60).toFixed(1).padStart(4, "0");
+  return `${sign}${minutes}:${remainder}`;
 }
 
 function preparePerformanceRecordProperties(properties, forceSuffix) {
@@ -819,6 +860,8 @@ function buildNoteBody(session, athlete) {
       : "";
     const noteText = run.note ? ` | ${run.note}` : "";
     lines.push(`  Run ${run.runNumber}: ${run.total}${lapText}${noteText}`);
+    const targetLines = plannedActualLines({ run, athlete });
+    targetLines.forEach((line) => lines.push(`    ${line}`));
   });
 
   return lines.join("\n");

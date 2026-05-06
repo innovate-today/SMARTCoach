@@ -841,8 +841,31 @@ function compactRunnerTarget(plan,profile){
   if(!rule)return'';
   var fitness=chooseFitness(profile,rule);
   if(!fitness)return'';
-  var range=targetRangeFromFitness(rule,fitness);
-  return range?'Target: '+range:'';
+  var range=targetRangeDataFromFitness(rule,fitness);
+  return range?'Target: '+range.display:'';
+}
+function runnerPlannedTarget(r){
+  var plan=runnerPlan(r);
+  if(!plan.trainingPlanDayTitle&&!plan.trainingPlanDayTargetSplits&&!plan.trainingPlanDayDetails)return Promise.resolve({});
+  var matched=findAthleteByName(r.name)||{};
+  var contactId=r.contactId||matched.id||'';
+  if(!contactId)return Promise.resolve({});
+  return athleteProfile(contactId,r.name).then(function(profile){
+    var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
+    var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
+    var fitness=chooseFitness(profile,rule);
+    var range=targetRangeDataFromFitness(rule,fitness);
+    if(!rule||!fitness||!range)return{};
+    return{
+      plannedTargetRange:range.display,
+      plannedTargetMinMs:range.fast,
+      plannedTargetMaxMs:range.slow,
+      plannedTargetRep:workoutPrescription(plan,rule),
+      currentFitnessEvent:fitness.event,
+      currentFitnessDisplay:fitness.display,
+      plannedEffortPercent:Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%'
+    };
+  }).catch(function(){return{};});
 }
 function uN(id,v){var r=find(id);if(r){r.name=v;applyAthleteMatch(r);}}
 function uNote(id,v){var r=find(id);if(r)r.note=v;}
@@ -1095,11 +1118,15 @@ function chooseFitness(profile,rule){
   return bests.sort(function(a,b){return String(b.date).localeCompare(String(a.date));})[0];
 }
 function targetRangeFromFitness(rule,fitness){
+  var data=targetRangeDataFromFitness(rule,fitness);
+  return data?data.display:'';
+}
+function targetRangeDataFromFitness(rule,fitness){
   if(!rule||!fitness||!rule.repMeters||!fitness.meters||!fitness.ms)return'';
   var base=fitness.ms/fitness.meters*rule.repMeters;
   var fast=Math.round(base/rule.high);
   var slow=Math.round(base/rule.low);
-  return fmt(fast)+'-'+fmt(slow);
+  return{fast:fast,slow:slow,display:fmt(fast)+'-'+fmt(slow)};
 }
 function recoveryText(text,range){
   var source=String(text||'').toLowerCase();
@@ -2123,7 +2150,11 @@ function doSMARTTraKSync(forceDuplicateSync){
   btn.textContent='Syncing...';btn.disabled=true;
   status.textContent='Sending session securely...';status.style.color='#555';status.style.fontWeight='400';
 
-  fetch('/api/smart-trak/sync-session',{
+  Promise.all(selectedRunners.map(function(r){return runnerPlannedTarget(r);})).then(function(targets){
+    targets.forEach(function(target,i){
+      Object.assign(athletes[i],target||{});
+    });
+    return fetch('/api/smart-trak/sync-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -2144,6 +2175,7 @@ function doSMARTTraKSync(forceDuplicateSync){
       trainingPlanDayTitle:CL.trainingPlanDayTitle||'',
       athletes:athletes
     })
+    });
   }).then(function(r){
     return r.json().then(function(data){return {ok:r.ok,status:r.status,data:data};});
   }).then(function(result){
