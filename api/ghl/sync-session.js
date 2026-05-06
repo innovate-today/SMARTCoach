@@ -515,9 +515,16 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     total_time_display: run.total,
     total_time_ms: run.totalMs,
     splits_json: formatLapSplits(splits).join("\n"),
-    coach_note: run.note,
+    coach_note: formatCoachNote({ run, session }),
     synced_at: dateOnly(syncedAt),
   };
+}
+
+function formatCoachNote({ run, session }) {
+  return [
+    session.weather ? `Weather: ${session.weather}` : "",
+    run.note,
+  ].filter(Boolean).join("\n");
 }
 
 function preparePerformanceRecordProperties(properties, forceSuffix) {
