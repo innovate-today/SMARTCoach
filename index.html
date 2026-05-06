@@ -1828,7 +1828,7 @@ function syncPlanContext(runners){
   if(!plans.length)return{hasPlan:false,auto:false,plans:[]};
   var season=commonPlanValue(plans,'trainingPlanSeason')||CL.season||currentSeason().season;
   var phase=commonPlanValue(plans,'trainingPlanPhase');
-  var workoutType=commonPlanValue(plans,'trainingPlanDayWorkoutType');
+  var workoutType=commonPlanValue(plans,'trainingPlanDayWorkoutType')||inferWorkoutTypeFromPlans(plans);
   return{
     hasPlan:true,
     auto:!!workoutType,
@@ -1861,10 +1861,10 @@ function renderSyncPlanMode(){
     updateSyncButtonState();
     return;
   }
-  if(manual)manual.style.display='block';
-  setSyncRow('sy-row-season',!ctx.hasSeason);
-  setSyncRow('sy-row-phase',!ctx.hasPhase);
-  setSyncRow('sy-row-wtype',!ctx.hasWorkoutType);
+  if(manual)manual.style.display=hasPlan?'none':'block';
+  setSyncRow('sy-row-season',!hasPlan&&!ctx.hasSeason);
+  setSyncRow('sy-row-phase',!hasPlan&&!ctx.hasPhase);
+  setSyncRow('sy-row-wtype',!hasPlan&&!ctx.hasWorkoutType);
   if(!summary)return;
   if(!hasPlan){summary.style.display='none';summary.innerHTML='';setSyncRow('sy-row-season',true);setSyncRow('sy-row-phase',true);setSyncRow('sy-row-wtype',true);return;}
   var seen={},items=[];
@@ -1872,13 +1872,36 @@ function renderSyncPlanMode(){
     var label=[plan.trainingPlanTitle,plan.trainingPlanDayTitle].filter(Boolean).join(' · ')||'Selected plan';
     if(!seen[label]){seen[label]=true;items.push(label);}
   });
-  var missing=[];
-  if(!ctx.hasPhase)missing.push('phase');
-  if(!ctx.hasWorkoutType)missing.push('workout type');
-  var message=missing.length?'Select a plan workout to fill '+missing.join(', ')+'.':'Ready to sync from the selected plan workout.';
+  var message='Ready to sync from the selected plan workout. Add surface and optional weather.';
   summary.style.display='block';
   summary.innerHTML='<div class="srow" style="background:#fff;align-items:flex-start"><label class="slbl">Plan</label><div class="sinp" style="border:none;background:transparent;padding-top:4px;line-height:1.35">'+items.map(function(item){return '<div style="font-weight:700">'+ex(item)+'</div>';}).join('')+'<small style="display:block;color:#777;margin-top:4px">'+ex(message)+'</small></div></div>';
   updateSyncButtonState();
+}
+function inferWorkoutTypeFromPlans(plans){
+  for(var i=0;i<(plans||[]).length;i++){
+    var inferred=inferWorkoutTypeFromPlan(plans[i]);
+    if(inferred)return inferred;
+  }
+  return'';
+}
+function inferWorkoutTypeFromPlan(plan){
+  if(!plan)return'';
+  if(plan.trainingPlanDayWorkoutType)return plan.trainingPlanDayWorkoutType;
+  var text=[plan.trainingPlanDayTitle,plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits,plan.trainingPlanTitle].join(' ').toLowerCase();
+  if(!text.trim())return'';
+  if(text.indexOf('long run')>=0)return'Long Run';
+  if(text.indexOf('easy')>=0||text.indexOf('recovery')>=0)return'Easy/Recovery Run';
+  if(text.indexOf('tempo')>=0)return'Intensive Tempo';
+  if(text.indexOf('threshold')>=0)return'Lactate Threshold';
+  if(text.indexOf('mile interval')>=0||text.indexOf('1 mile')>=0||text.indexOf('interval')>=0)return'Aerobic Power';
+  if(text.indexOf('hill')>=0)return'Hill Sprints';
+  if(text.indexOf('acceleration')>=0)return'Acceleration';
+  if(text.indexOf('max velocity')>=0)return'Max Velocity';
+  if(text.indexOf('speed endurance')>=0)return'Speed Endurance I';
+  if(text.indexOf('special endurance ii')>=0)return'Special Endurance II';
+  if(text.indexOf('special endurance')>=0)return'Special Endurance I';
+  if(text.indexOf('lactate')>=0)return'Lactate Tolerance';
+  return'';
 }
 function updateSyncButtonState(){
   var btn=document.getElementById('sy-btn');
@@ -1913,8 +1936,8 @@ function doSMARTTraKSync(forceDuplicateSync){
   var weather=document.getElementById('sy-weather').value;
   var syncPlan=syncPlanContext(selectedRunners);
   var season=syncPlan.hasSeason?syncPlan.season:visibleSyncValue('sy-season','season',status);
-  var phase=syncPlan.hasPhase?syncPlan.phase:visibleSyncValue('sy-phase','phase',status);
-  var wtype=syncPlan.hasWorkoutType?syncPlan.workoutType:visibleSyncValue('sy-wtype','workout type',status);
+  var phase=syncPlan.hasPlan?(syncPlan.phase||'GPP'):visibleSyncValue('sy-phase','phase',status);
+  var wtype=syncPlan.hasPlan?(syncPlan.workoutType||'Aerobic Power'):visibleSyncValue('sy-wtype','workout type',status);
   if(season===null||phase===null||wtype===null||surf===null)return;
   var localSynced=selectedRunners.filter(hasSyncedRuns);
   if(localSynced.length&&!forceDuplicateSync){
@@ -1940,6 +1963,8 @@ function doSMARTTraKSync(forceDuplicateSync){
       trainingPlanDayId:plan.trainingPlanDayId,
       trainingPlanDaySourceId:plan.trainingPlanDaySourceId,
       trainingPlanDayTitle:plan.trainingPlanDayTitle,
+      trainingPlanPhase:plan.trainingPlanPhase,
+      trainingPlanDayWorkoutType:plan.trainingPlanDayWorkoutType||inferWorkoutTypeFromPlan(plan),
       runs:r.saved.map(function(s,i){
         return {
           runNumber:i+1,

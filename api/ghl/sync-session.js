@@ -144,6 +144,8 @@ function normalizeAthlete(raw) {
     trainingPlanDayId: clean(raw && raw.trainingPlanDayId),
     trainingPlanDaySourceId: clean(raw && raw.trainingPlanDaySourceId),
     trainingPlanDayTitle: clean(raw && raw.trainingPlanDayTitle),
+    trainingPlanPhase: clean(raw && raw.trainingPlanPhase),
+    trainingPlanDayWorkoutType: clean(raw && raw.trainingPlanDayWorkoutType),
     runs: Array.isArray(raw && raw.runs)
       ? raw.runs.map(normalizeRun).filter((run) => run.total)
       : [],
@@ -487,7 +489,9 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
   const athleteSlug = slugValue(athlete.name);
   const sourceSessionId = buildSourceSessionId(session, sessionDate);
   const sourceRecordId = `${sourceSessionId}_${athleteSlug}_run_${run.runNumber}`;
-  const recordName = `${athlete.name} - ${session.workoutType} - Run ${run.runNumber}`;
+  const workoutType = athlete.trainingPlanDayWorkoutType || session.workoutType;
+  const phase = athlete.trainingPlanPhase || session.phase;
+  const recordName = `${athlete.name} - ${workoutType} - Run ${run.runNumber}`;
   const splits = run.laps.map((lap, index) => ({
     lap: index + 1,
     ms: lap.ms,
@@ -503,8 +507,8 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     group_name: session.groupName,
     session_date: dateOnly(sessionDate),
     season: optionValue(session.season),
-    phase: optionValue(session.phase),
-    workout_type: workoutTypeValue(session.workoutType),
+    phase: phaseValue(phase),
+    workout_type: workoutTypeValue(workoutType),
     ...(session.energySystem ? { energy_system: energySystemValue(session.energySystem) } : {}),
     surface: optionValue(session.surface),
     rep_number: run.runNumber,
@@ -901,6 +905,23 @@ function energySystemValue(value) {
   if (normalized.indexOf("oxidative") === 0) return "oxidative_aerobic";
   if (normalized.indexOf("mixed") === 0) return "mixed";
   return normalized;
+}
+
+function phaseValue(value) {
+  const normalized = optionValue(value);
+  const aliases = {
+    general_prep: "gpp",
+    gpp: "gpp",
+    specific_prep: "spp",
+    track_prep: "spp",
+    spp: "spp",
+    pre_competition: "pre_competition",
+    competition: "competition",
+    track_season: "competition",
+    recovery: "transition",
+    transition: "transition",
+  };
+  return aliases[normalized] || "gpp";
 }
 
 function workoutTypeValue(value) {
