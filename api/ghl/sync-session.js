@@ -541,7 +541,6 @@ function buildSeasonRecordProperties({ contactId, athlete, session, performanceR
 
   return {
     season_record: recordName,
-    record_name: recordName,
     athlete_contact: contactId,
     athlete_name_snapshot: athlete.name,
     source_record_id: sourceRecordId,

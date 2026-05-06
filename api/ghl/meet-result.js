@@ -220,7 +220,6 @@ function buildMeetResultProperties({ contactId, meetResult }) {
 
   const properties = {
     meet_result: recordName,
-    record_name: recordName,
     athlete_contact: contactId,
     athlete_name_snapshot: meetResult.athleteName,
     meet_name: meetResult.meetName,
@@ -348,7 +347,6 @@ function buildSeasonRecordProperties({ contactId, meetResult, existing, sourceRe
 
   return {
     season_record: recordName,
-    record_name: recordName,
     athlete_contact: contactId,
     athlete_name_snapshot: meetResult.athleteName,
     source_record_id: sourceRecordId,
@@ -647,7 +645,6 @@ function buildRecordProperties({ contactId, meetResult, type, meetResultRecordId
   const recordName = `${meetResult.athleteName} - ${type} - ${meetResult.event} - ${meetResult.resultDisplay}`;
   return compactProperties({
     record: recordName,
-    record_name: recordName,
     record_type: optionValue(type),
     record_scope: "athlete",
     sport: sportValue(meetResult.sport),

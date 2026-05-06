@@ -101,7 +101,6 @@ async function createMeet({ token, locationId, payload }) {
 
   const properties = {
     meet: name,
-    record_name: name,
     meet_name: name,
     meet_date: date || "",
     season: optionValue(season),

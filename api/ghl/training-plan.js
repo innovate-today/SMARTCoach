@@ -319,7 +319,6 @@ function buildTrainingPlanProperties(plan) {
 
   return compactProperties({
     training_plan: title,
-    record_name: title,
     athlete_contact: plan.contactId,
     athlete_name_snapshot: plan.athleteName,
     plan_scope: planScopeValue("Season"),
