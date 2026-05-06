@@ -2205,14 +2205,8 @@ function doSMARTTraKSync(forceDuplicateSync){
     }
     var count=result.data&&result.data.synced?result.data.synced.length:athletes.length;
     markSyncedRuns(result.data&&result.data.synced);
-    var planUpdate=result.data&&result.data.planDayUpdate;
-    if(planUpdate&&(planUpdate.action==='skipped'||planUpdate.action==='partial')){
-      status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+'. Plan day update needs review.';
-      status.style.color='#c47a00';
-    }else{
-      status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' to SMARTCoach Pro!';
-      status.style.color='#0a7a44';
-    }
+    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+'. Workout saved to athlete records.';
+    status.style.color='#0a7a44';
     status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
     setTimeout(function(){updateSyncButtonState();},3000);
