@@ -131,12 +131,13 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
   const path = recordId
     ? `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`
     : `/objects/${encodeURIComponent(schemaKey)}/records`;
+  const requestBody = recordId ? { properties } : { locationId, properties };
   try {
     return await ghlFetch({
       token,
       path,
       method,
-      body: { locationId, properties },
+      body: requestBody,
     });
   } catch (error) {
     if (!/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "")) throw error;
@@ -146,7 +147,7 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
       token,
       path,
       method,
-      body: { locationId, properties: fallback },
+      body: recordId ? { properties: fallback } : { locationId, properties: fallback },
     });
   }
 }

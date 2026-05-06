@@ -512,7 +512,7 @@ async function upsertAthleteBest({ token, locationId, contactId, meetResult, exi
         token,
         path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}?locationId=${encodeURIComponent(locationId)}`,
         method: "PUT",
-        body: { locationId, properties },
+        body: { properties },
       });
       return {
         action: "updated",
