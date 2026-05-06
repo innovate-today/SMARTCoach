@@ -44,6 +44,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rnotes:focus{border-color:var(--G3)}
 .rnotes::placeholder{color:#ccc}
 .rlabel{font-size:12px;color:var(--G3);min-height:14px}
+.rtarget{display:none;font-size:12px;color:#333;font-weight:700;margin-top:2px;line-height:1.25}
+.rtarget.on{display:block}
 .rlaps{font-size:13px;color:#333;white-space:normal;word-break:break-word;min-height:16px;margin-top:3px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.6}.rlapslbl{font-size:11px;color:var(--G3);font-weight:400;text-transform:uppercase;letter-spacing:.3px}
 .row-bot{display:flex;align-items:flex-end;gap:0px;margin-top:0;margin-bottom:0;padding-bottom:3px}
 .rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum"}.rlaptime{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";color:#2B4FCC;align-self:flex-end;padding-bottom:3px;padding-left:10px;min-width:70px}
@@ -764,6 +766,7 @@ function rr(){
     el.innerHTML=planHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
   }
   updMB();
+  renderRunnerTargets();
 }
 function rHTML(r){
   var lapsHtml='';
@@ -797,9 +800,49 @@ function rHTML(r){
       '<div class="rlaptime" id="rt-'+r.id+'">'+(r.on?fmt(gle(r)):'')+'</div>'+
     '</div>'+
     planHtml+
+    '<div class="rtarget" id="rta-'+r.id+'"></div>'+
     lapsHtml+
   '</div>'+
   '</div>';
+}
+function renderRunnerTargets(){
+  if(!isProPlan()||!CL)return;
+  CL.runners.forEach(function(r){renderRunnerTarget(r);});
+}
+function renderRunnerTarget(r){
+  var el=document.getElementById('rta-'+r.id);
+  if(!el)return;
+  el.classList.remove('on');
+  el.textContent='';
+  var plan=runnerPlan(r);
+  if((plan.trainingPlanId||plan.trainingPlanSourceId)&&!plan.trainingPlanDayTitle&&!plan.trainingPlanDayDetails&&!plan.trainingPlanDayTargetSplits){
+    var target=r.trainingPlanId?r:CL;
+    fetchTrainingPlanDays(target.trainingPlanId,target.trainingPlanSourceId).then(function(days){
+      var day=upcomingPlanDays(days,1)[0]||null;
+      if(day&&applyPlanDayToTarget(target,day)){save();if(CL)rr();}
+    }).catch(function(){});
+    return;
+  }
+  if(!plan.trainingPlanDayTitle&&!plan.trainingPlanDayTargetSplits&&!plan.trainingPlanDayDetails)return;
+  var matched=findAthleteByName(r.name)||{};
+  var contactId=r.contactId||matched.id||'';
+  if(!contactId)return;
+  athleteProfile(contactId,r.name).then(function(profile){
+    if(!CL||!document.getElementById('rta-'+r.id))return;
+    var compact=compactRunnerTarget(plan,profile);
+    if(!compact)return;
+    el.textContent=compact;
+    el.classList.add('on');
+  }).catch(function(){});
+}
+function compactRunnerTarget(plan,profile){
+  var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
+  var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
+  if(!rule)return'';
+  var fitness=chooseFitness(profile,rule);
+  if(!fitness)return'';
+  var range=targetRangeFromFitness(rule,fitness);
+  return range?'Target: '+range:'';
 }
 function uN(id,v){var r=find(id);if(r){r.name=v;applyAthleteMatch(r);}}
 function uNote(id,v){var r=find(id);if(r)r.note=v;}
@@ -955,7 +998,7 @@ function renderEntryTargets(r){
   if(!el)return;
   if(!isProPlan()){el.textContent='';return;}
   var plan=runnerPlan(r);
-  if((plan.trainingPlanId||plan.trainingPlanSourceId)&&!plan.trainingPlanDayTargetSplits){
+  if((plan.trainingPlanId||plan.trainingPlanSourceId)&&!plan.trainingPlanDayTitle&&!plan.trainingPlanDayDetails&&!plan.trainingPlanDayTargetSplits){
     var target=r.trainingPlanId?r:CL;
     fetchTrainingPlanDays(target.trainingPlanId,target.trainingPlanSourceId).then(function(days){
       var day=upcomingPlanDays(days,1)[0]||null;
