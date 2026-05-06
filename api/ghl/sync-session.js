@@ -496,7 +496,6 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
 
   return {
     performance_record: recordName,
-    record_name: recordName,
     athlete_contact: contactId,
     athlete_name_snapshot: athlete.name,
     source_session_id: sourceSessionId,
@@ -522,7 +521,6 @@ function preparePerformanceRecordProperties(properties, forceSuffix) {
   return {
     ...properties,
     performance_record: `${properties.performance_record} (Resync)`,
-    record_name: `${properties.record_name} (Resync)`,
     source_record_id: `${properties.source_record_id}_${forceSuffix}`,
   };
 }
