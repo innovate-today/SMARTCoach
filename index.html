@@ -220,8 +220,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="erow"><span class="elbl" id="et" style="font-size:23px;font-weight:600;font-variant-numeric:tabular-nums"></span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow"><span class="elbl" id="ed"></span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow"><span class="elbl" id="en" style="color:#555;font-weight:600"></span></div>
-      <div class="erow pro-only" onclick="openSeasonPlan(false)"><span class="elbl"><b>Athlete Plan</b><br><small id="eplan" style="color:#777"></small></span><span style="color:#bbb">&rsaquo;</span></div>
-      <div class="erow pro-only"><span class="elbl"><b>Targets</b><br><small id="etarget" style="color:#777">Loading...</small></span></div>
+      <div class="erow pro-only" onclick="openSeasonPlan(false)"><span class="elbl"><b>Today</b><br><small id="eplan" style="color:#777"></small></span><span style="color:#bbb">&rsaquo;</span></div>
+      <div class="erow pro-only"><span class="elbl"><b>Target</b><br><small id="etarget" style="color:#777">Loading...</small></span></div>
       <div class="erow pro-only" onclick="openAthleteProfile()"><span class="elbl" style="color:var(--R);font-weight:600">SMARTCoach Pro Profile</span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow" id="enote-row" style="display:none"><span class="elbl" id="enotes" style="color:#666;font-size:15px"></span></div>
     </div>
@@ -902,7 +902,7 @@ function oEnt(rid2){
   document.getElementById('et').textContent=last?fmt(last.ms):'00:00.0';
   document.getElementById('ed').textContent=last?tstr(last.ts):'-';
   document.getElementById('en').textContent=r.name;
-  document.getElementById('eplan').textContent=r.trainingPlanTitle?[r.trainingPlanTitle,r.trainingPlanDayTitle].filter(Boolean).join(' · '):'Use group plan';
+  document.getElementById('eplan').textContent=entryWorkoutLabel(r);
   renderEntryTargets(r);
   var nr=document.getElementById('enote-row'),ne=document.getElementById('enotes');
   if(r.note){ne.textContent='Note: '+r.note;nr.style.display='flex';}else{nr.style.display='none';}
@@ -955,6 +955,11 @@ function athleteProfile(contactId,name){
     APC[key]=profile;
     return profile;
   });
+}
+function entryWorkoutLabel(r){
+  var plan=runnerPlan(r);
+  var label=[plan.trainingPlanDayTitle,plan.trainingPlanTitle].filter(Boolean).join(' · ');
+  return label||'Select a training plan workout';
 }
 function entryTargetHtml(plan,profile){
   var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
@@ -1048,14 +1053,12 @@ function openAthleteProfile(){
 function renderAthleteProfile(p){
   var body=document.getElementById('profile-body');
   var html='';
-  html+=profileSection('Current Bests',(p.bests||[]).map(function(b){
+  html+=profileSection('Today',athleteTodayRows(CE,p));
+  html+=profileSection('Current Fitness',(p.bests||[]).map(function(b){
     var lines=[];
     if(b.personalBestDisplay)lines.push('PB '+b.personalBestDisplay+(b.personalBestMeet?' - '+b.personalBestMeet:'')+(b.personalBestDate?' ('+b.personalBestDate+')':''));
     if(b.seasonBestDisplay)lines.push('SB '+b.seasonBestDisplay+(b.seasonBestMeet?' - '+b.seasonBestMeet:'')+(b.seasonBestDate?' ('+b.seasonBestDate+')':''));
     return '<div class="profile-row"><b>'+ex(b.event)+'</b><small>'+ex(lines.join(' · ')||'No bests yet')+'</small></div>';
-  }));
-  html+=profileSection('Records',(p.records||[]).map(function(r){
-    return '<div class="profile-row"><b>'+ex(r.recordType||'Record')+'</b> '+ex(r.event||'')+' '+ex(r.resultDisplay||'')+'<small>'+ex((r.meetName||'')+(r.recordDate?' · '+r.recordDate:''))+'</small></div>';
   }));
   html+=profileSection('Recent Meet Results',(p.meetResults||[]).map(function(r){
     var flags=[r.isPr?'PB':'',r.isSeasonBest?'SB':''].filter(Boolean).join(' / ');
@@ -1064,7 +1067,26 @@ function renderAthleteProfile(p){
   html+=profileSection('Recent Training',(p.training||[]).map(function(r){
     return '<div class="profile-row"><b>'+ex(r.totalTimeDisplay||'Time')+'</b> '+ex(r.workoutType||'')+'<small>'+ex((r.groupName||'')+(r.sessionDate?' · '+r.sessionDate:''))+'</small></div>';
   }));
+  html+=profileSection('Records',(p.records||[]).map(function(r){
+    return '<div class="profile-row"><b>'+ex(r.recordType||'Record')+'</b> '+ex(r.event||'')+' '+ex(r.resultDisplay||'')+'<small>'+ex((r.meetName||'')+(r.recordDate?' · '+r.recordDate:''))+'</small></div>';
+  }));
   body.innerHTML=html||'<div class="profile-sec"><div class="profile-row">No SMARTCoach Pro data yet.</div></div>';
+}
+function athleteTodayRows(r,profile){
+  if(!r)return[];
+  var plan=runnerPlan(r);
+  if(!plan.trainingPlanTitle&&!plan.trainingPlanDayTitle&&!plan.trainingPlanDayTargetSplits&&!plan.trainingPlanDayDetails){
+    return ['<div class="profile-row">No workout selected.</div>'];
+  }
+  var meta=[plan.trainingPlanTitle,plan.trainingPlanPhase,plan.trainingPlanDayWorkoutType].filter(Boolean).join(' · ');
+  var details=[plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].filter(Boolean).join('\n\n');
+  var target=entryTargetHtml(plan,profile);
+  var rows=[
+    '<div class="profile-row"><b>'+ex(plan.trainingPlanDayTitle||'Selected Workout')+'</b><small>'+ex(meta||'Assigned plan workout')+'</small></div>',
+  ];
+  if(target)rows.push('<div class="profile-row"><b>Target</b><small>'+target+'</small></div>');
+  if(details)rows.push('<div class="profile-row"><b>Workout Notes</b><small style="white-space:pre-wrap">'+ex(details)+'</small></div>');
+  return rows;
 }
 function profileSection(title,rows){
   if(!rows||!rows.length)return '<div class="profile-sec"><h4>'+ex(title)+'</h4><div class="profile-row">No data yet</div></div>';
