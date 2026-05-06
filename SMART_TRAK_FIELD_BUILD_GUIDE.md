@@ -39,7 +39,7 @@ Minimum fields to create first:
 |---|---|---|---|
 | Record Name | `record_name` | Text | Yes |
 | Athlete Contact | `athlete_contact_id` | Contact relation or Text | Yes |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes |
 | Source Session ID | `source_session_id` | Text | Yes |
 | Source Record ID | `source_record_id` | Text | Yes |
 | Group Name | `group_name` | Text | Yes |
@@ -72,7 +72,7 @@ Minimum fields to create first:
 |---|---|---|---|
 | Record Name | `record_name` | Text | Yes |
 | Athlete Contact | `athlete_contact_id` | Contact relation or Text | Yes |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes |
 | Season | `season` | Dropdown | Yes |
 | Season Year | `season_year` | Number | Yes |
 | Sport | `sport` | Dropdown or Text | Yes |
@@ -102,7 +102,7 @@ Minimum fields to create first:
 |---|---|---|---|
 | Record Name | `record_name` | Text | Yes |
 | Athlete Contact | `athlete_contact_id` | Contact relation or Text | Yes |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes |
 | Meet Name | `meet_name` | Text | Yes |
 | Meet Date | `meet_date` | Date | Yes |
 | Season | `season` | Dropdown | Yes |
@@ -135,7 +135,7 @@ Minimum fields to create first:
 |---|---|---|---|
 | Record Name | `record_name` | Text | Yes |
 | Athlete Contact | `athlete_contact_id` | Contact relation or Text | Yes |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes |
 | Plan Scope | `plan_scope` | Dropdown | Yes |
 | Plan Date | `plan_date` | Date | Yes |
 | Season | `season` | Dropdown | Yes |

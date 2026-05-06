@@ -199,7 +199,7 @@ Avery Womble - Special Endurance I - 300m - 00:52.4 - Apr 26, 2026
 |---|---|---:|---:|---|---|
 | Record Name | `record_name` | Text | Yes | Avery Womble - Special Endurance I - Run 1 | Human-readable CRM title. |
 | Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. Use relation if available, otherwise text. |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Keeps display stable if contact name changes. |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Keeps display stable if contact name changes. |
 | Source System | `source_system` | Dropdown | Yes | smartcoach | Default `smartcoach`. |
 | Source Session ID | `source_session_id` | Text | Yes | sc_20260426_speed_work | Dedupe key for session. |
 | Source Record ID | `source_record_id` | Text | Yes | sc_20260426_speed_work_avery_run_1 | Unique per athlete run. |
@@ -292,7 +292,7 @@ Avery Womble - Spring 2026 - Track
 |---|---|---:|---:|---|---|
 | Record Name | `record_name` | Text | Yes | Avery Womble - Spring 2026 | Human-readable CRM title. |
 | Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
 | Season Year | `season_year` | Number | Yes | 2026 | Calendar year. |
 | Sport | `sport` | Dropdown/Text | Yes | track | Track, cross country, etc. |
@@ -422,7 +422,7 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 |---|---|---:|---:|---|---|
 | Record Name | `record_name` | Text | Yes | Avery Womble - 400m - 54.8 | Human-readable CRM title. |
 | Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Meet Record ID | `meet_record_id` | Text | No | rec123 | GHL Meet object record ID selected in the app. |
 | Meet Name | `meet_name` | Text | Yes | District Meet | Official meet name. |
 | Meet Date | `meet_date` | Date | Yes | 2026-03-28 | Competition date. |
@@ -518,7 +518,7 @@ Avery Womble - 400m Bests
 | Athlete Best | `athlete_best` | Text | Yes | Avery Womble - 400m Bests | Primary display field. |
 | Record Name | `record_name` | Text | Yes | Avery Womble - 400m Bests | Human-readable title. |
 | Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact association. |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Sport | `sport` | Dropdown/Text | Yes | track | Track or cross country. |
 | Event | `event` | Text | Yes | 400m | Event this best record tracks. |
 | Personal Best Display | `personal_best_display` | Text | No | 54.82 | Lifetime PB. |
@@ -669,7 +669,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 |---|---|---:|---:|---|---|
 | Record Name | `record_name` | Text | Yes | Avery Womble - 6x200m SE I | Human-readable CRM title. |
 | Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
-| Athlete Name Snapshot | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
+| Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Plan Scope | `plan_scope` | Dropdown | Yes | individual | individual, group, team. |
 | Group Name | `group_name` | Text | No | 400m Group | For group/team prescriptions. |
 | Plan Date | `plan_date` | Date | Yes | 2026-04-07 | Scheduled date. |
