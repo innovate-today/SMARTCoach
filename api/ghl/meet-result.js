@@ -40,11 +40,11 @@ module.exports = async function handler(req, res) {
       sourceRecordId: seasonSourceRecordId,
     });
     const athleteBestSourceRecordId = buildAthleteBestSourceRecordId({ contactId: contact.id, meetResult });
-    const athleteBestLookup = await findOptionalObjectRecord({
+    const athleteBestLookup = await findAthleteBestRecord({
       token,
       locationId,
-      schemaKey: ATHLETE_BEST_SCHEMA_KEY,
-      sourceRecordId: athleteBestSourceRecordId,
+      contactId: contact.id,
+      event: meetResult.event,
     });
     const autoFlags = calculateMeetResultFlags({ existingSeasonRecord, athleteBestLookup, meetResult });
     meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
@@ -455,6 +455,31 @@ async function findOptionalObjectRecord({ token, locationId, schemaKey, sourceRe
   }
 }
 
+async function findAthleteBestRecord({ token, locationId, contactId, event }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/search`,
+      method: "POST",
+      body: {
+        locationId,
+        page: 1,
+        pageLimit: 100,
+      },
+    });
+    const wantedEvent = optionValue(event);
+    const record = recordsFromResult(result).find((item) => {
+      const props = recordProperties(item);
+      return recordValue(props, "athlete_contact") === contactId
+        && optionValue(recordValue(props, "event")) === wantedEvent;
+    }) || null;
+    return { available: true, record };
+  } catch (error) {
+    if (error.statusCode && error.statusCode >= 500) throw error;
+    return { available: true, record: null, lookupWarning: error.message || "Athlete Best lookup failed; create will be attempted." };
+  }
+}
+
 function buildSeasonSourceRecordId({ contactId, meetResult }) {
   return `sr_${slugValue(contactId)}_${meetResult.meetDate.getFullYear()}_${optionValue(meetResult.season) || "season"}`;
 }
@@ -467,7 +492,7 @@ function calculateMeetResultFlags({ existingSeasonRecord, athleteBestLookup, mee
   const currentBest = summary && summary.meetBestsByEvent ? summary.meetBestsByEvent[eventKey] : null;
   const isSeasonBest = !!meetResult.resultMs && !!currentBest && !!Number(currentBest.ms) && meetResult.resultMs < Number(currentBest.ms);
   const bestProperties = recordProperties(athleteBestLookup && athleteBestLookup.record);
-  const existingPbMs = numberValue(bestProperties.personal_best_ms);
+  const existingPbMs = numberValue(recordValue(bestProperties, "personal_best_ms"));
   const isPr = !!(athleteBestLookup && athleteBestLookup.available) && !!meetResult.resultMs && !!existingPbMs && meetResult.resultMs < existingPbMs;
   return { isSeasonBest, isPr };
 }
@@ -518,8 +543,9 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
   const seasonYear = meetResult.meetDate.getFullYear();
   const event = meetResult.event;
   const recordName = `${meetResult.athleteName} - ${event} Bests`;
-  const existingPbMs = numberValue(existingProperties.personal_best_ms);
-  const existingSbMs = sameSeason(existingProperties, meetResult) ? numberValue(existingProperties.season_best_ms) : 0;
+  const existingValue = (key) => recordValue(existingProperties, key);
+  const existingPbMs = numberValue(existingValue("personal_best_ms"));
+  const existingSbMs = sameSeason(existingProperties, meetResult) ? numberValue(existingValue("season_best_ms")) : 0;
   const isPb = meetResult.isPr === true;
   const isSb = meetResult.isSeasonBest === true;
   const today = dateOnly(new Date());
@@ -531,24 +557,23 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
     athlete_name_snapshot: meetResult.athleteName,
     sport: sportValue(meetResult.sport),
     event,
-    personal_best_display: isPb ? meetResult.resultDisplay : existingProperties.personal_best_display || "",
+    personal_best_display: isPb ? meetResult.resultDisplay : existingValue("personal_best_display"),
     personal_best_ms: isPb ? meetResult.resultMs : existingPbMs || null,
-    personal_best_meet: isPb ? meetResult.meetName : existingProperties.personal_best_meet || "",
-    personal_best_date: isPb ? dateOnly(meetResult.meetDate) : existingProperties.personal_best_date || "",
-    personal_best_source_record_id: isPb ? meetResultSourceRecordId : existingProperties.personal_best_source_record_id || "",
+    personal_best_meet: isPb ? meetResult.meetName : existingValue("personal_best_meet"),
+    personal_best_date: isPb ? dateOnly(meetResult.meetDate) : existingValue("personal_best_date"),
+    personal_best_source_record_id: isPb ? meetResultSourceRecordId : existingValue("personal_best_source_record_id"),
     season: optionValue(meetResult.season),
     season_year: seasonYear,
-    season_best_display: isSb ? meetResult.resultDisplay : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_display || "" : "",
+    season_best_display: isSb ? meetResult.resultDisplay : sameSeason(existingProperties, meetResult) ? existingValue("season_best_display") : "",
     season_best_ms: isSb ? meetResult.resultMs : sameSeason(existingProperties, meetResult) ? existingSbMs || null : null,
-    season_best_meet: isSb ? meetResult.meetName : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_meet || "" : "",
-    season_best_date: isSb ? dateOnly(meetResult.meetDate) : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_date || "" : "",
-    season_best_source_record_id: isSb ? meetResultSourceRecordId : sameSeason(existingProperties, meetResult) ? existingProperties.season_best_source_record_id || "" : "",
+    season_best_meet: isSb ? meetResult.meetName : sameSeason(existingProperties, meetResult) ? existingValue("season_best_meet") : "",
+    season_best_date: isSb ? dateOnly(meetResult.meetDate) : sameSeason(existingProperties, meetResult) ? existingValue("season_best_date") : "",
+    season_best_source_record_id: isSb ? meetResultSourceRecordId : sameSeason(existingProperties, meetResult) ? existingValue("season_best_source_record_id") : "",
     last_result_display: meetResult.resultDisplay,
     last_result_date: dateOnly(meetResult.meetDate),
-    pb_updated_at: isPb ? today : existingProperties.pb_updated_at || "",
-    sb_updated_at: isSb ? today : existingProperties.sb_updated_at || "",
+    pb_updated_at: isPb ? today : existingValue("pb_updated_at"),
+    sb_updated_at: isSb ? today : existingValue("sb_updated_at"),
     source_system: "smartcoach_pro",
-    source_record_id: sourceRecordId,
   };
   return compactProperties(properties);
 }
@@ -558,8 +583,8 @@ function buildAthleteBestSourceRecordId({ contactId, meetResult }) {
 }
 
 function sameSeason(existingProperties, meetResult) {
-  return optionValue(existingProperties.season) === optionValue(meetResult.season)
-    && Number(existingProperties.season_year) === meetResult.meetDate.getFullYear();
+  return optionValue(recordValue(existingProperties, "season")) === optionValue(meetResult.season)
+    && Number(recordValue(existingProperties, "season_year")) === meetResult.meetDate.getFullYear();
 }
 
 function compactProperties(properties) {
@@ -879,9 +904,40 @@ function firstRecord(result) {
   return candidates.find(Boolean) || null;
 }
 
+function recordsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.records) ? result.records : []),
+    ...(Array.isArray(result && result.items) ? result.items : []),
+    ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
+    ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
+  ];
+}
+
 function recordProperties(record) {
   if (!record) return {};
   return record.properties || record.fields || record.customFields || {};
+}
+
+function recordValue(props, key) {
+  const keys = [key, `custom_objects.athlete_bests.${key}`];
+  if (Array.isArray(props)) {
+    for (const candidate of keys) {
+      const field = props.find((item) => item && (item.key === candidate || item.fieldKey === candidate || item.id === candidate || item.fieldId === candidate || item.customFieldId === candidate));
+      if (field) return cleanValue(field.value || field.fieldValue || field.field_value);
+    }
+    return "";
+  }
+  for (const candidate of keys) {
+    const value = cleanValue(props && props[candidate]);
+    if (value) return value;
+  }
+  return "";
+}
+
+function cleanValue(value) {
+  if (Array.isArray(value)) return value.map(cleanValue).filter(Boolean).join(", ");
+  if (value && typeof value === "object") return cleanValue(value.value || value.name || value.label || value.id);
+  return String(value || "").trim();
 }
 
 function parseJsonObject(value) {
