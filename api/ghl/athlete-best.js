@@ -129,7 +129,7 @@ async function upsertAthleteBest({ token, locationId, payload }) {
 
 async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey, recordId, method, properties, optionKeys }) {
   const path = recordId
-    ? `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}`
+    ? `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`
     : `/objects/${encodeURIComponent(schemaKey)}/records`;
   try {
     return await ghlFetch({

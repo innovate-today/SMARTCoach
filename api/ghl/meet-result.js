@@ -510,7 +510,7 @@ async function upsertAthleteBest({ token, locationId, contactId, meetResult, exi
     if (existing && existing.id) {
       const updated = await ghlFetch({
         token,
-        path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}`,
+        path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}?locationId=${encodeURIComponent(locationId)}`,
         method: "PUT",
         body: { locationId, properties },
       });
