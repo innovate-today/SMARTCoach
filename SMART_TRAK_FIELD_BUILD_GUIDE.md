@@ -37,7 +37,6 @@ Minimum fields to create first:
 
 | Field | API Key | Type | Required |
 |---|---|---|---|
-| Record Name | `record_name` | Text | Yes |
 | Athlete Contact | `athlete_contact_id` | Contact relation or Text | Yes |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes |
 | Source Session ID | `source_session_id` | Text | Yes |
@@ -70,7 +69,6 @@ Minimum fields to create first:
 
 | Field | API Key | Type | Required |
 |---|---|---|---|
-| Record Name | `record_name` | Text | Yes |
 | Athlete Contact | `athlete_contact_id` | Contact relation or Text | Yes |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes |
 | Season | `season` | Dropdown | Yes |
@@ -100,7 +98,6 @@ Minimum fields to create first:
 
 | Field | API Key | Type | Required |
 |---|---|---|---|
-| Record Name | `record_name` | Text | Yes |
 | Athlete Contact | `athlete_contact_id` | Contact relation or Text | Yes |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes |
 | Meet Name | `meet_name` | Text | Yes |
@@ -133,7 +130,6 @@ Minimum fields to create first:
 
 | Field | API Key | Type | Required |
 |---|---|---|---|
-| Record Name | `record_name` | Text | Yes |
 | Athlete Contact | `athlete_contact_id` | Contact relation or Text | Yes |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes |
 | Plan Scope | `plan_scope` | Dropdown | Yes |

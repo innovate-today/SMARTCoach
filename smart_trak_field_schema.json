@@ -5,7 +5,6 @@
       "apiKey": "performance_record",
       "priority": 1,
       "minimumFields": [
-        { "displayName": "Record Name", "apiKey": "record_name", "type": "text", "required": true },
         { "displayName": "Athlete Contact", "apiKey": "athlete_contact_id", "type": "contact_relation_or_text", "required": true },
         { "displayName": "Athlete Name", "apiKey": "athlete_name_snapshot", "type": "text", "required": true },
         { "displayName": "Source Session ID", "apiKey": "source_session_id", "type": "text", "required": true },
@@ -30,7 +29,6 @@
       "apiKey": "season_record",
       "priority": 2,
       "minimumFields": [
-        { "displayName": "Record Name", "apiKey": "record_name", "type": "text", "required": true },
         { "displayName": "Athlete Contact", "apiKey": "athlete_contact_id", "type": "contact_relation_or_text", "required": true },
         { "displayName": "Athlete Name", "apiKey": "athlete_name_snapshot", "type": "text", "required": true },
         { "displayName": "Season", "apiKey": "season", "type": "dropdown", "required": true, "optionsRef": "season" },
@@ -52,7 +50,6 @@
       "apiKey": "meet_result",
       "priority": 3,
       "minimumFields": [
-        { "displayName": "Record Name", "apiKey": "record_name", "type": "text", "required": true },
         { "displayName": "Athlete Contact", "apiKey": "athlete_contact_id", "type": "contact_relation_or_text", "required": true },
         { "displayName": "Athlete Name", "apiKey": "athlete_name_snapshot", "type": "text", "required": true },
         { "displayName": "Meet Name", "apiKey": "meet_name", "type": "text", "required": true },
@@ -77,7 +74,6 @@
       "apiKey": "training_plan",
       "priority": 4,
       "minimumFields": [
-        { "displayName": "Record Name", "apiKey": "record_name", "type": "text", "required": true },
         { "displayName": "Athlete Contact", "apiKey": "athlete_contact_id", "type": "contact_relation_or_text", "required": true },
         { "displayName": "Athlete Name", "apiKey": "athlete_name_snapshot", "type": "text", "required": true },
         { "displayName": "Plan Scope", "apiKey": "plan_scope", "type": "dropdown", "required": true, "optionsRef": "plan_scope" },

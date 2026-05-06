@@ -23,7 +23,6 @@
       "primaryDisplayFieldKey": "performance_record",
       "fields": {
         "performance_record": { "id": "RCn9Xux9gRK3otwS1QzX", "type": "TEXT", "name": "Performance Record" },
-        "record_name": { "id": "tpUgCWOmjb37n6nnRDim", "type": "TEXT", "name": "Record Name" },
         "athlete_contact": { "id": "q9xmnPdCBRL1NuomFuOo", "type": "TEXT", "name": "Athlete Contact" },
         "athlete_name_snapshot": { "id": "0lX15xSvQP77xhNH45q1", "type": "TEXT", "name": "Athlete Name" },
         "source_session_id": { "id": "3Mfs6tIpL4KXx8UeNGBU", "type": "TEXT", "name": "Source Session ID" },
@@ -52,7 +51,6 @@
       "primaryDisplayFieldKey": "season_record",
       "fields": {
         "season_record": { "id": "OIOW21KxXUUhXMv5x2WO", "type": "TEXT", "name": "Season Record" },
-        "record_name": { "id": "Fr9BJC8t3YKGzxbAOmpU", "type": "TEXT", "name": "Record Name" },
         "athlete_contact": { "id": "Pkf9oC0EsxVNbQ4fW7Mw", "type": "TEXT", "name": "Athlete Contact" },
         "athlete_name_snapshot": { "id": "4N1BcDDpCiWwzEhyWIkJ", "type": "TEXT", "name": "Athlete Name" },
         "source_record_id": { "id": "KGFsXRmbjmJvJkcgx0md", "type": "TEXT", "name": "Source Record ID" },
@@ -76,7 +74,6 @@
       "primaryDisplayFieldKey": "meet",
       "fields": {
         "meet": { "id": "L6DjPWvVI13p6C1tgUz2", "type": "TEXT", "name": "Meet" },
-        "record_name": { "id": "aq2AIr5tjrIOefUfJmrQ", "type": "TEXT", "name": "Record Name" },
         "meet_name": { "id": "xYzq7SSQkqe1NnvzfHtJ", "type": "TEXT", "name": "Meet Name" },
         "meet_date": { "id": "8dcV6Nl25E96qicqRWUg", "type": "DATE", "name": "Meet Date" },
         "season": { "id": "hn7WBWhxhzmC0s0jX0L3", "type": "SINGLE_OPTIONS", "name": "Season" },
@@ -95,7 +92,6 @@
       "primaryDisplayFieldKey": "meet_result",
       "fields": {
         "meet_result": { "id": "Khq47asHEk0tRieDVUBg", "type": "TEXT", "name": "Meet Result" },
-        "record_name": { "id": "4whG34DTVmEZyGqGf2vu", "type": "TEXT", "name": "Record Name" },
         "athlete_contact": { "id": "ZBi4Oj4pmCQs8ekqaNr2", "type": "TEXT", "name": "Athlete Contact" },
         "athlete_name_snapshot": { "id": "NxKoU2l9QohpmzRt2gin", "type": "TEXT", "name": "Athlete Name" },
         "meet_name": { "id": "bCOXXRAtRqmCJnMZFLvB", "type": "TEXT", "name": "Meet Name" },
@@ -124,7 +120,6 @@
       "primaryDisplayFieldKey": "athlete_best",
       "fields": {
         "athlete_best": { "id": "jn5nc7qSiYSQtt94Ca1Y", "type": "TEXT", "name": "Athlete Best" },
-        "record_name": { "id": "7tgi7a8kIRxZ5rM74wLc", "type": "TEXT", "name": "Record Name" },
         "athlete_contact": { "id": "JNGhbB93E0xRao1jAm47", "type": "TEXT", "name": "Athlete Contact" },
         "athlete_name_snapshot": { "id": "m20bSENWaEB4jBMtXgMD", "type": "TEXT", "name": "Athlete Name" },
         "sport": { "id": "MgJOkv8vDZ2LXjKKa9Fy", "type": "SINGLE_OPTIONS", "name": "Sport" },
@@ -157,7 +152,6 @@
       "primaryDisplayFieldKey": "record",
       "fields": {
         "record": { "id": "ftIsXzZszu3s0cfJ55MU", "type": "TEXT", "name": "Record" },
-        "record_name": { "id": "Ala2zAEATtHjj37Cn6f6", "type": "TEXT", "name": "Record Name" },
         "record_type": { "id": "kFI5EuUMaWNNr1MWCRCC", "type": "SINGLE_OPTIONS", "name": "Record Type" },
         "record_scope": { "id": "csicg5cTEMH2il824CdN", "type": "SINGLE_OPTIONS", "name": "Record Scope" },
         "sport": { "id": "NFlleoMtJlvlB1KAOqpR", "type": "SINGLE_OPTIONS", "name": "Sport" },
@@ -190,7 +184,6 @@
       "primaryDisplayFieldKey": "training_plan",
       "fields": {
         "training_plan": { "id": "TZbFrs7XAmFTbCUR7Bht", "type": "TEXT", "name": "Training Plan" },
-        "record_name": { "id": "OvqHfsUnX102D7iK41rN", "type": "TEXT", "name": "Record Name" },
         "athlete_contact": { "id": "YMBapmRRsxxPa4PnDUvP", "type": "TEXT", "name": "Athlete Contact" },
         "athlete_name_snapshot": { "id": "nqVp4dTUMuxj1rhffuPh", "type": "TEXT", "name": "Athlete Name" },
         "plan_scope": { "id": "kAcRWNKWu5ZqVbCqxAfG", "type": "SINGLE_OPTIONS", "name": "Plan Scope" },
