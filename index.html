@@ -1002,18 +1002,26 @@ function entryTargetHtml(plan,profile){
   var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
   var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
   var fitness=chooseFitness(profile,rule);
+  var prescription=workoutPrescription(plan,rule);
   if(!rule){
-    return ex((plan.trainingPlanDayTitle||'Workout')+(text?' · '+text:''));
+    return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||plan.trainingPlanDayTitle||'Workout')+'</span>'+(text?'<br><span>'+ex(text)+'</span>':'');
   }
   if(!fitness){
-    return ex(rule.repLabel+' target: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%')+'<br><span style="color:#c47a00">No current fitness found for this athlete.</span>';
+    return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%</span><br><span style="color:#c47a00">No current fitness found for this athlete.</span>';
   }
   var range=targetRangeFromFitness(rule,fitness);
   if(!range){
-    return ex(rule.repLabel+' target: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'% of '+fitness.event+' '+fitness.display);
+    return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'% of '+ex(fitness.event+' '+fitness.display)+'</span>';
   }
   var recovery=recoveryText(text,range);
-  return '<span style="font-weight:700;color:#333">'+ex(rule.repLabel+' '+range)+'</span><br><span>Based on '+ex(fitness.event+' '+fitness.display)+' at '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%</span>'+(recovery?'<br><span>'+ex(recovery)+'</span>':'');
+  return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+ex(range)+'</span><br><span>Current fitness: '+ex(fitness.event+' '+fitness.display)+'</span><br><span>Effort: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%</span>'+(recovery?'<br><span>'+ex(recovery)+'</span>':'');
+}
+function workoutPrescription(plan,rule){
+  var source=[plan.trainingPlanDayTitle,plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].join(' ');
+  var m=source.match(/(\d+)\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:m|k)|1\s*mile|2\s*mile|half marathon|marathon)/i);
+  if(m)return m[1]+' x '+normalizeEventLabel(m[2]);
+  if(rule&&rule.repLabel)return rule.repLabel;
+  return plan.trainingPlanDayTitle||'Workout';
 }
 function parseTargetRule(text,workoutType){
   var source=String(text||'');
