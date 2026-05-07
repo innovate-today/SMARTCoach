@@ -1783,8 +1783,23 @@ function renderMeetSaveAthletes(){
     var runs=r.saved.length;
     var synced=meetSavedRunCount(r);
     var note=synced?runs+' result'+(runs===1?'':'s')+' · '+synced+' already saved':runs+' result'+(runs===1?'':'s');
-    return '<div class="sync-athlete"><input type="checkbox" class="ms-runner" value="'+r.id+'" '+(synced===runs?'':'checked')+' onchange="updateMeetBestHints()"><span class="sync-athlete-main">'+ex(r.name)+'<small>'+note+'</small><small id="best-hint-'+r.id+'" class="best-hint"></small></span><span class="best-flags"><label class="best-flag"><input type="checkbox" class="ms-pb" data-runner-id="'+r.id+'">PB</label><label class="best-flag"><input type="checkbox" class="ms-sb" data-runner-id="'+r.id+'">SB</label></span></div>';
+    return '<div class="sync-athlete"><input type="checkbox" class="ms-runner" value="'+r.id+'" data-resave="'+(synced===runs?'1':'0')+'" '+(synced===runs?'':'checked')+' onchange="handleMeetRunnerToggle(this)"><span class="sync-athlete-main">'+ex(r.name)+'<small>'+note+'</small><small id="best-hint-'+r.id+'" class="best-hint"></small></span><span class="best-flags"><label class="best-flag"><input type="checkbox" class="ms-pb" data-runner-id="'+r.id+'">PB</label><label class="best-flag"><input type="checkbox" class="ms-sb" data-runner-id="'+r.id+'">SB</label></span></div>';
   }).join('');
+}
+function handleMeetRunnerToggle(cb){
+  var status=document.getElementById('ms-status');
+  if(cb&&cb.checked&&cb.getAttribute('data-resave')==='1'){
+    var ok=confirm('This meet result already exists. Save again only if you intentionally want another copy.');
+    if(!ok){
+      cb.checked=false;
+      if(status){status.textContent='Resave canceled. No duplicate will be created.';status.style.color='#555';status.style.fontWeight='400';}
+    }else if(status){
+      status.textContent='Resave selected. This will create another copy for the checked result.';
+      status.style.color='#c47a00';
+      status.style.fontWeight='700';
+    }
+  }
+  updateMeetBestHints();
 }
 function openMeetSave(){
   hm('msh');
@@ -1860,8 +1875,8 @@ function submitCapturedMeetResults(forceDuplicateSync){
   if(!selected.length){status.textContent='Select at least one athlete with a saved time.';status.style.color='#c00';return;}
   var localSynced=selected.filter(hasMeetSyncedRuns);
   if(localSynced.length&&!forceDuplicateSync){
-    status.textContent='One or more selected results were already saved.';status.style.color='#c47a00';status.style.fontWeight='700';
-    if(confirm('One or more selected meet results were already saved. Save them again anyway?')){
+    status.textContent='One or more selected meet results already exist.';status.style.color='#c47a00';status.style.fontWeight='700';
+    if(confirm('One or more selected meet results already exist. Save again only if you intentionally want another copy.')){
       submitCapturedMeetResults(true);
     }
     return;
@@ -1931,9 +1946,9 @@ function submitCapturedMeetResults(forceDuplicateSync){
     setTimeout(function(){btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
   }).catch(function(e){
     if(e.status===409){
-      status.textContent='This meet result was already saved.';status.style.color='#c47a00';status.style.fontWeight='700';
+      status.textContent='This meet result already exists.';status.style.color='#c47a00';status.style.fontWeight='700';
       btn.textContent='Save Meet Results';btn.disabled=false;
-      if(confirm('This meet result appears to have already been saved. Save it again anyway?')){
+      if(confirm('This meet result already exists. Save again only if you intentionally want another copy.')){
         submitCapturedMeetResults(true);
       }
       return;
