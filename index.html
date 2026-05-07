@@ -228,6 +228,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="erow pro-only" onclick="openAthleteProfile()"><span class="elbl" style="color:var(--R);font-weight:600">SMARTCoach Pro Profile</span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow" id="enote-row" style="display:none"><span class="elbl" id="enotes" style="color:#666;font-size:15px"></span></div>
     </div>
+    <div class="lhdr">SAVED RUNS</div>
+    <div class="lsec" style="margin-top:0" id="eruns"></div>
     <div class="lhdr">LAPS</div>
     <div class="lsec" style="margin-top:0" id="elaps"></div>
   </div>
@@ -1007,6 +1009,7 @@ function oEnt(rid2){
   document.getElementById('en').textContent=r.name;
   document.getElementById('eplan').textContent=entryWorkoutLabel(r);
   renderEntryTargets(r);
+  renderEntryRunHistory(r);
   var nr=document.getElementById('enote-row'),ne=document.getElementById('enotes');
   var note=last&&last.note||r.note||'';
   if(note){ne.textContent='Note: '+note;nr.style.display='flex';}else{nr.style.display='none';}
@@ -1016,6 +1019,47 @@ function oEnt(rid2){
   }).join(''):'<div style="padding:14px 16px;color:#8e8e93;background:#fff;font-size:15px">No laps recorded</div>';
   lp.innerHTML=h;
   go('s-ent');
+}
+function renderEntryRunHistory(r){
+  var box=document.getElementById('eruns');
+  if(!box)return;
+  var runs=r.saved||[];
+  if(!runs.length){
+    box.innerHTML='<div style="padding:14px 16px;color:#8e8e93;background:#fff;font-size:15px">No saved runs yet</div>';
+    return;
+  }
+  box.innerHTML=runs.map(function(run,i){
+    return entryRunRow(run,i,null);
+  }).join('');
+  if(!isProPlan())return;
+  var matched=findAthleteByName(r.name)||{};
+  var contactId=r.contactId||matched.id||'';
+  if(!contactId)return;
+  var plan=runnerPlan(r);
+  if(!plan.trainingPlanDayTitle&&!plan.trainingPlanDayTargetSplits&&!plan.trainingPlanDayDetails)return;
+  athleteProfile(contactId,r.name).then(function(profile){
+    if(CE&&CE.id!==r.id)return;
+    var target=entryRunTarget(plan,profile);
+    box.innerHTML=runs.map(function(run,i){
+      return entryRunRow(run,i,target);
+    }).join('');
+  }).catch(function(){});
+}
+function entryRunTarget(plan,profile){
+  var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
+  var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
+  var fitness=chooseFitness(profile,rule);
+  var range=targetRangeDataFromFitness(rule,fitness);
+  return range?{display:range.display,fast:range.fast,slow:range.slow}:null;
+}
+function entryRunRow(run,index,target){
+  var targetHtml='';
+  if(target){
+    var diff=plannedActualDiffText(run.ms,target.fast,target.slow);
+    targetHtml='<div class="lapsub">Target: '+ex(target.display)+'</div>'+(diff?'<div class="lapsub">Difference: '+ex(diff)+'</div>':'');
+  }
+  var note=run.note?'<div class="lapsub">Note: '+ex(run.note)+'</div>':'';
+  return'<div class="laprow"><div style="flex:1"><div class="laptm">Run '+(index+1)+': '+fmt(run.ms)+'</div>'+targetHtml+note+'</div><span style="color:#bbb">&rsaquo;</span></div>';
 }
 function renderEntryTargets(r){
   var el=document.getElementById('etarget');
