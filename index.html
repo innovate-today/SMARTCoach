@@ -1979,8 +1979,23 @@ function renderSyncAthletes(){
     var plan=runnerPlan(r);
     var note=synced?runs+' saved run'+(runs===1?'':'s')+' · '+synced+' already synced':runs+' saved run'+(runs===1?'':'s');
     if(plan.trainingPlanTitle)note+=' · '+(r.trainingPlanTitle?'Individual':'Group')+' plan: '+plan.trainingPlanTitle;
-    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" '+(synced===runs?'':'checked')+' onchange="renderSyncPlanMode()"><span>'+ex(r.name)+'<small>'+note+'</small></span></label>';
+    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" data-resync="'+(synced===runs?'1':'0')+'" '+(synced===runs?'':'checked')+' onchange="handleSyncRunnerToggle(this)"><span>'+ex(r.name)+'<small>'+note+'</small></span></label>';
   }).join('');
+  renderSyncPlanMode();
+}
+function handleSyncRunnerToggle(cb){
+  var status=document.getElementById('sy-status');
+  if(cb&&cb.checked&&cb.getAttribute('data-resync')==='1'){
+    var ok=confirm('This athlete already has this workout saved. Resync only if you intentionally want another copy.');
+    if(!ok){
+      cb.checked=false;
+      if(status){status.textContent='Resync canceled. No duplicate will be created.';status.style.color='#555';status.style.fontWeight='400';}
+    }else if(status){
+      status.textContent='Resync selected. This will create another copy for the checked athlete.';
+      status.style.color='#c47a00';
+      status.style.fontWeight='700';
+    }
+  }
   renderSyncPlanMode();
 }
 function selectedSyncRunners(){
