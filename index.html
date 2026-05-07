@@ -2008,9 +2008,21 @@ function renderSyncAthletes(){
     var plan=runnerPlan(r);
     var note=synced?runs+' saved run'+(runs===1?'':'s')+' · '+synced+' already synced':runs+' saved run'+(runs===1?'':'s');
     if(plan.trainingPlanTitle)note+=' · '+(r.trainingPlanTitle?'Individual':'Group')+' plan: '+plan.trainingPlanTitle;
-    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" data-resync="'+(synced===runs?'1':'0')+'" '+(synced===runs?'':'checked')+' onchange="handleSyncRunnerToggle(this)"><span>'+ex(r.name)+'<small>'+note+'</small></span></label>';
+    return '<label class="sync-athlete"><input type="checkbox" class="sy-runner" value="'+r.id+'" data-resync="'+(synced===runs?'1':'0')+'" '+(synced===runs?'':'checked')+' onchange="handleSyncRunnerToggle(this)"><span class="sync-athlete-main">'+ex(r.name)+'<small>'+note+'</small><small id="sync-state-'+r.id+'" class="save-state"></small></span></label>';
   }).join('');
+  updateSyncSaveStates();
   renderSyncPlanMode();
+}
+function updateSyncSaveStates(){
+  document.querySelectorAll('.sy-runner').forEach(function(cb){
+    var el=document.getElementById('sync-state-'+cb.value);
+    if(!el)return;
+    var resync=cb.getAttribute('data-resync')==='1';
+    if(resync&&cb.checked){el.textContent='Selected to resync';el.className='save-state resave';}
+    else if(resync){el.textContent='Already synced';el.className='save-state saved';}
+    else if(cb.checked){el.textContent='Ready to sync';el.className='save-state ready';}
+    else{el.textContent='Not selected';el.className='save-state off';}
+  });
 }
 function handleSyncRunnerToggle(cb){
   var status=document.getElementById('sy-status');
@@ -2025,6 +2037,7 @@ function handleSyncRunnerToggle(cb){
       status.style.fontWeight='700';
     }
   }
+  updateSyncSaveStates();
   renderSyncPlanMode();
 }
 function selectedSyncRunners(){
