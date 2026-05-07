@@ -1008,7 +1008,8 @@ function oEnt(rid2){
   document.getElementById('eplan').textContent=entryWorkoutLabel(r);
   renderEntryTargets(r);
   var nr=document.getElementById('enote-row'),ne=document.getElementById('enotes');
-  if(r.note){ne.textContent='Note: '+r.note;nr.style.display='flex';}else{nr.style.display='none';}
+  var note=last&&last.note||r.note||'';
+  if(note){ne.textContent='Note: '+note;nr.style.display='flex';}else{nr.style.display='none';}
   var lp=document.getElementById('elaps'),laps=last?last.laps:[],h='';
   h+=laps.length?laps.map(function(x,i){
     return'<div class="laprow"><div style="flex:1"><div class="laptm">'+fmt(x)+'</div><div class="lapsub">Lap '+(i+1)+'</div></div><span style="color:#bbb">&rsaquo;</span></div>';
@@ -1041,7 +1042,8 @@ function renderEntryTargets(r){
   el.textContent='Loading target...';
   athleteProfile(contactId,r.name).then(function(profile){
     if(CE&&CE.id!==r.id)return;
-    el.innerHTML=entryTargetHtml(plan,profile);
+    var last=r.saved.length?r.saved[r.saved.length-1]:null;
+    el.innerHTML=entryTargetHtml(plan,profile,last);
   }).catch(function(){
     if(CE&&CE.id!==r.id)return;
     el.textContent='Target unavailable right now.';
@@ -1064,7 +1066,7 @@ function entryWorkoutLabel(r){
   var label=[plan.trainingPlanDayTitle,plan.trainingPlanTitle].filter(Boolean).join(' · ');
   return label||'Select a training plan workout';
 }
-function entryTargetHtml(plan,profile){
+function entryTargetHtml(plan,profile,run){
   var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
   var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
   var fitness=chooseFitness(profile,rule);
@@ -1075,12 +1077,15 @@ function entryTargetHtml(plan,profile){
   if(!fitness){
     return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%</span><br><span style="color:#c47a00">No current fitness found for this athlete.</span>';
   }
-  var range=targetRangeFromFitness(rule,fitness);
-  if(!range){
+  var rangeData=targetRangeDataFromFitness(rule,fitness);
+  if(!rangeData){
     return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'% of '+ex(fitness.event+' '+fitness.display)+'</span>';
   }
+  var range=rangeData.display;
   var recovery=recoveryText(text,range);
-  return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+ex(range)+'</span><br><span>Current fitness: '+ex(fitness.event+' '+fitness.display)+'</span><br><span>Effort: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%</span>'+(recovery?'<br><span>'+ex(recovery)+'</span>':'');
+  var actual=run&&run.ms?'<br><span>Actual: '+ex(fmt(run.ms))+'</span>':'';
+  var diff=run&&run.ms?plannedActualDiffText(run.ms,rangeData.fast,rangeData.slow):'';
+  return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+ex(range)+'</span>'+actual+(diff?'<br><span>Difference: '+ex(diff)+'</span>':'')+'<br><span>Current fitness: '+ex(fitness.event+' '+fitness.display)+'</span><br><span>Effort: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%</span>'+(recovery?'<br><span>'+ex(recovery)+'</span>':'');
 }
 function workoutPrescription(plan,rule){
   var source=[plan.trainingPlanDayTitle,plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].join(' ');
@@ -1127,6 +1132,21 @@ function targetRangeDataFromFitness(rule,fitness){
   var fast=Math.round(base/rule.high);
   var slow=Math.round(base/rule.low);
   return{fast:fast,slow:slow,display:fmt(fast)+'-'+fmt(slow)};
+}
+function plannedActualDiffText(actualMs,minMs,maxMs){
+  if(!actualMs||!minMs||!maxMs)return'';
+  if(actualMs<minMs)return formatSignedDelta(actualMs-minMs)+' faster than target';
+  if(actualMs>maxMs)return formatSignedDelta(actualMs-maxMs)+' slower than target';
+  return'within target';
+}
+function formatSignedDelta(ms){
+  var sign=ms>0?'+':'-';
+  var abs=Math.abs(ms);
+  if(abs<60000)return sign+(abs/1000).toFixed(1)+' sec';
+  var mins=Math.floor(abs/60000);
+  var secs=((abs-mins*60000)/1000).toFixed(1);
+  if(Number(secs)<10)secs='0'+secs;
+  return sign+mins+':'+secs;
 }
 function recoveryText(text,range){
   var source=String(text||'').toLowerCase();
