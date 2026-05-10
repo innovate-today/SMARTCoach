@@ -83,6 +83,7 @@ async function upsertAthleteBest({ token, locationId, payload }) {
   const date = dateOnly(payload.resultDate || payload.date || new Date());
   const season = clean(payload.season) || currentSeason();
   const seasonYear = Number(payload.seasonYear) || new Date(`${date}T00:00:00`).getFullYear();
+  const sport = clean(payload.sport) || sportForEvent(event);
 
   if (!contactId) throw httpError(400, "Athlete contact is required.");
   if (!event) throw httpError(400, "Fitness distance is required.");
@@ -99,6 +100,7 @@ async function upsertAthleteBest({ token, locationId, payload }) {
     date,
     season,
     seasonYear,
+    sport,
     existing,
     sourceRecordId,
   });
@@ -152,13 +154,14 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
   }
 }
 
-function buildAthleteBestProperties({ contactId, athleteName, event, display, resultMs, date, season, seasonYear, existing, sourceRecordId }) {
+function buildAthleteBestProperties({ contactId, athleteName, event, display, resultMs, date, season, seasonYear, sport, existing, sourceRecordId }) {
   const existingProperties = recordProperties(existing);
   const recordName = `${athleteName || contactId} - ${event} Bests`;
   return compactProperties({
     [bestField("athlete_best")]: recordName,
     [bestField("athlete_contact")]: contactId,
     [bestField("athlete_name_snapshot")]: athleteName,
+    [bestField("sport")]: sportValue(sport),
     [bestField("event")]: event,
     [bestField("personal_best_display")]: display,
     [bestField("personal_best_ms")]: resultMs,
@@ -265,6 +268,18 @@ function buildAthleteBestSourceRecordId({ contactId, event }) {
 
 function optionValue(value) {
   return clean(value).toLowerCase().replace(/&/g, "and").replace(/\+/g, "plus").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function sportValue(value) {
+  const normalized = optionValue(value);
+  if (normalized.indexOf("track") === 0) return "track";
+  if (normalized.indexOf("cross") === 0) return "cross_country";
+  return normalized || "track";
+}
+
+function sportForEvent(event) {
+  const normalized = optionValue(event);
+  return ["4k", "5k", "8k", "10k", "15k", "half_marathon", "marathon"].includes(normalized) ? "cross_country" : "track";
 }
 
 function parseTimeToMs(value) {
