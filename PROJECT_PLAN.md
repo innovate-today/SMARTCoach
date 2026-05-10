@@ -2,11 +2,11 @@
 
 ## Project Identity
 
-SMARTCoach is a coaching platform that connects practice timing directly to a long-term athlete career database powered by AI.
+SMARTCoach is a coaching platform that connects practice timing directly to a long-term athlete career database and guided coaching tools.
 
 Core vision:
 
-SMARTCoach is the only platform that connects the stopwatch at practice to a 4-year athlete career database powered by AI. MaxPreps tracks results. V.O2 tracks mileage. SMARTCoach tracks the actual training in real time.
+SMARTCoach is the only platform that connects the stopwatch at practice to a 4-year athlete career database with guided training insight. MaxPreps tracks results. V.O2 tracks mileage. SMARTCoach tracks the actual training in real time.
 
 ## Current App
 
@@ -76,7 +76,7 @@ Reason:
 
 - Vercel deploys quickly
 - Vercel supports server-side functions
-- Vercel enables subscriptions, auth, and server-side AI calls
+- Vercel enables subscriptions, auth, and server-side coaching logic
 - Vercel is the active deployment environment for `app.smartcoach-pro.com`
 
 Changes:
@@ -84,15 +84,15 @@ Changes:
 - Same app
 - Same URL: `app.smartcoach-pro.com`
 - Zero disruption for current users
-- Enables subscription gating, auth, and server-side AI calls
+- Enables subscription gating, auth, and server-side coaching logic
 - Enables server-side support where needed
 
-## Phase 3: AI Training Pace Calculator
+## Phase 3: Training Pace Calculator
 
 Goal:
 
-- Coach enters athlete anchor performance, for example `400m: 52.0s`
-- AI calculates training zones as percentages by energy system
+- Coach enters or selects the athlete's current fitness source, for example `400m: 52.0s`
+- SMARTCoach calculates training zones as percentages by energy system
 - Adjusts for current training phase, fatigue index, days since last hard session, and temperature
 - Displays target splits before each workout
 - Updates automatically as new performance data comes in
@@ -139,12 +139,12 @@ Dashboard views:
 
 - Roster: all athletes with current phase, status, trend arrows
 - Individual Athlete: full career timeline, sessions, PRs
-- Workout Builder: AI suggests next session based on data
+- Workout Builder: SMARTCoach suggests the next session based on data
 - Training Calendar: week view with planned vs completed
 - Meet Results: season bests, PRs, qualifying standards
 - Team Analytics: group trends, training load, compliance
 
-## Phase 6: AI Coaching Brain
+## Phase 6: Coaching Engine
 
 Capabilities:
 
@@ -171,7 +171,7 @@ Possible overtraining. Recommend easy day before next quality session.
 
 GHL automations:
 
-- Weekly progress email, AI drafted and coach approved
+- Weekly progress email, drafted for coach review and approval
 - PR alert
 - SB alert
 - School/team record alert
@@ -206,7 +206,7 @@ Profile sections:
 - Personal bests
 - Progression
 - Training background
-- AI analysis
+- Coaching analysis
 - Coach contact
 
 Planning note:
@@ -220,7 +220,7 @@ Athlete login includes:
 
 - Personal career timeline
 - Current training zones and target paces
-- AI coaching messages and goal projections
+- Coaching messages and goal projections
 - Season bests and PR history
 - Pre-meet preparation notes from coach
 
@@ -229,7 +229,7 @@ Athlete login includes:
 Tiers:
 
 - Free, $0: basic timing, 3 athletes, no sync
-- Coach Pro, $19.99/mo: full team, GHL sync, AI paces, dashboard
+- Coach Pro, $19.99/mo: full team, GHL sync, training targets, dashboard
 - Club/School, $99/mo: unlimited athletes, parent portal, recruiting
 - Enterprise, custom: multi-team, district-wide, white label
 
@@ -237,7 +237,7 @@ Tiers:
 
 1. Test Season Record creation/update in the live SMARTCoach Pro sync flow.
 2. Meet Result entry: add official race results separate from practice timing.
-3. AI pace calculator: first AI feature and highest immediate coaching value.
+3. Training pace calculator: first generated target feature and highest immediate coaching value.
 4. Coach dashboard: desktop web app for reviewing all data.
 5. Subscription/auth foundation: use Vercel server-side support for gating and plans.
 6. Parent/recruiting/athlete portals after the data model and dashboard are stable.
@@ -274,7 +274,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Future plan: add GHL Community integration so coaches can attach image/video when syncing a new PB/PR, then auto-post the highlight to the SMARTCoach Pro community
 - Added parent communication planning detail: parent emails must be resolved from athlete contacts so coaches can email a whole group, selected athletes, or one athlete without manually looking up parent addresses
 - Added recruiting planning detail: recruiting may need a dedicated custom object for generated profile versions, approval, links/PDFs, send history, college recipients, and opt-in tracking, but this must be weighed against the GHL custom-object limit
-- Product wording decision: coach-facing Training Plan creation should be called Guided Plan Builder or Plan Builder, not AI, even if generation happens behind the scenes
+- Product wording decision: coach-facing Training Plan creation should be called Guided Plan Builder or Plan Builder.
 - Training Plan creation moved out of the stopwatch surface: use `https://app.smartcoach-pro.com/plan-builder.html` as a SMARTCoach Pro/GHL custom link; the stopwatch app only selects existing plans/days and can switch to another upcoming workout when practice conditions change
 - Training Plan days now need actual workout prescriptions, not generic themes: examples include `3 x 1 mile / recovery equals completed rep time`, with target split guidance based on each athlete's latest 1 Mile, 2 Mile, or 5K fitness set
 - Plan Builder refinement: coaches must enter the meet schedule before creating a plan; meet dates should be inserted into the daily plan first, then workouts are built around that schedule
@@ -298,5 +298,5 @@ When picking this project back up:
 2. Inspect current git status in this repo.
 3. Treat Vercel as the active deployment environment.
 4. Treat SMARTCoach Pro/GHL sync as confirmed working unless new evidence says otherwise.
-5. Continue with GHL custom objects, AI pace calculator, and dashboard work.
+5. Continue with GHL custom objects, training targets, and dashboard work.
 6. Keep changes scoped and record major decisions in this file.

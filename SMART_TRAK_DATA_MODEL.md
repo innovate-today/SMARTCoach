@@ -16,7 +16,7 @@ The model starts from what the app already syncs successfully today:
 - Lap splits
 - Runner notes
 
-The first production goal is to keep the existing contact note sync working, then add structured records beside those notes. Notes remain useful for human review; custom objects become the source for dashboards, AI, analytics, parent reports, recruiting profiles, and athlete portals.
+The first production goal is to keep the existing contact note sync working, then add structured records beside those notes. Notes remain useful for human review; custom objects become the source for dashboards, analytics, parent reports, recruiting profiles, and athlete portals.
 
 ## Naming Rules
 
@@ -227,15 +227,15 @@ Avery Womble - Special Endurance I - 300m - 00:52.4 - Apr 26, 2026
 | Lap 5 MS | `lap_5_ms` | Number | No | 20000 | Numeric split. |
 | Splits JSON | `splits_json` | Long Text | No | `[{"lap":1,"ms":26100}]` | Full split list for any number of laps. |
 | Coach Note | `coach_note` | Long Text | No | Back half looked smooth | From runner note. |
-| Target Time Display | `target_time_display` | Text | No | 00:53.0 | Added by AI pace calculator later. |
+| Target Time Display | `target_time_display` | Text | No | 00:53.0 | Added by training target calculation later. |
 | Target Time MS | `target_time_ms` | Number | No | 53000 | Numeric target. |
 | Target Delta MS | `target_delta_ms` | Number | No | -600 | Actual minus target. Negative means faster than target. |
 | Target Delta Percent | `target_delta_percent` | Number | No | -1.13 | Useful for trend analysis. |
 | Temperature F | `temperature_f` | Number | No | 82 | Phase 3 adjustment input. |
 | Wind | `wind` | Text | No | +0.4 | Optional for timed reps/time trials. |
 | Conditions | `conditions` | Long Text | No | Warm, slight tailwind | Freeform environment. |
-| Fatigue Index | `fatigue_index` | Number | No | 0.18 | Future AI input. |
-| Days Since Hard Session | `days_since_hard_session` | Number | No | 3 | Future AI input. |
+| Fatigue Index | `fatigue_index` | Number | No | 0.18 | Future coaching input. |
+| Days Since Hard Session | `days_since_hard_session` | Number | No | 3 | Future coaching input. |
 | Is PR | `is_pr` | Checkbox | No | true | Calculated later. |
 | Is Season Best | `is_season_best` | Checkbox | No | true | Calculated later. |
 | Season Record ID | `season_record_id` | Relation/Text | No | sr_2026_spring_avery | Link to Season Record. |
@@ -271,7 +271,7 @@ API key: `season_record`
 
 Purpose:
 
-Stores one athlete's seasonal summary. This powers the career timeline, parent summaries, recruiting progression, and AI long-range analysis.
+Stores one athlete's seasonal summary. This powers the career timeline, parent summaries, recruiting progression, and long-range coaching analysis.
 
 Creation trigger:
 
@@ -314,10 +314,10 @@ Avery Womble - Spring 2026 - Track
 | Season Bests JSON | `season_bests_json` | Long Text | No | `{"400m":{"ms":54800}}` | Flexible event summary. |
 | PR Count | `pr_count` | Number | No | 3 | Season PR count. |
 | Improvement Percent | `improvement_percent` | Number | No | 3.2 | From season start to peak. |
-| Injury Flag | `injury_flag` | Checkbox | No | false | Parent portal and AI load control. |
+| Injury Flag | `injury_flag` | Checkbox | No | false | Parent portal and training load control. |
 | Injury Notes | `injury_notes` | Long Text | No | Hamstring tightness in week 4 | Coach-entered or flagged. |
 | Peak Window Notes | `peak_window_notes` | Long Text | No | Peaks 18 days after last hard session | Phase 6. |
-| AI Season Summary | `ai_season_summary` | Long Text | No | Avery improved back-half maintenance... | Generated report. |
+| Season Summary | `ai_season_summary` | Long Text | No | Avery improved back-half maintenance... | Generated report. Internal field key remains unchanged for compatibility. |
 | Coach Season Notes | `coach_season_notes` | Long Text | No | Needs more SE II before district | Manual notes. |
 | Parent Summary Approved | `parent_summary_approved` | Checkbox | No | false | Phase 7. |
 | Recruiting Summary Approved | `recruiting_summary_approved` | Checkbox | No | false | Phase 8. |
@@ -448,7 +448,7 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 | Video URL | `video_url` | URL | No | https://... | Race video. |
 | Results URL | `results_url` | URL | No | https://... | Official results page. |
 | Coach Race Notes | `coach_race_notes` | Long Text | No | Went out too hard | Manual notes. |
-| AI Race Analysis | `ai_race_analysis` | Long Text | No | Back half slowed 17.3%... | Phase 6. |
+| Race Analysis | `ai_race_analysis` | Long Text | No | Back half slowed 17.3%... | Phase 6. Internal field key remains unchanged for compatibility. |
 | Season Record ID | `season_record_id` | Relation/Text | No | sr_2026_spring_avery | Link to Season Record. |
 | Source System | `source_system` | Dropdown/Text | Yes | manual | manual, smartcoach, athletic_net, milesplit, csv. |
 | Source Record ID | `source_record_id` | Text | Yes | mr_avery_20260328_400m | Dedupe key. |
@@ -676,11 +676,11 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 | Target Time Display | `target_time_display` | Text | No | 25.8-26.2 | Human-readable target. |
 | Target Time Min MS | `target_time_min_ms` | Number | No | 25800 | Faster/lower bound for target range. |
 | Target Time Max MS | `target_time_max_ms` | Number | No | 26200 | Slower/upper bound for target range. |
-| Target Percent Min | `target_percent_min` | Number | No | 88 | Percent of anchor/race pace. |
-| Target Percent Max | `target_percent_max` | Number | No | 92 | Percent of anchor/race pace. |
-| Anchor Event | `anchor_event` | Text | No | 400m | Athlete anchor event. |
-| Anchor Performance Display | `anchor_performance_display` | Text | No | 52.0 | Human-readable anchor. |
-| Anchor Performance MS | `anchor_performance_ms` | Number | No | 52000 | Numeric anchor. |
+| Target Percent Min | `target_percent_min` | Number | No | 88 | Percent of current fitness/race pace. |
+| Target Percent Max | `target_percent_max` | Number | No | 92 | Percent of current fitness/race pace. |
+| Current Fitness Event | `anchor_event` | Text | No | 400m | Current fitness source event. |
+| Current Fitness Display | `anchor_performance_display` | Text | No | 52.0 | Human-readable current fitness source. |
+| Current Fitness MS | `anchor_performance_ms` | Number | No | 52000 | Numeric current fitness source. |
 | Adjustment Factors JSON | `adjustment_factors_json` | Long Text | No | `{"temperature_f":82}` | Phase, fatigue, temp, days since hard session. |
 | Plan Rationale | `ai_rationale` | Long Text | No | Built backward from championship date... | Why this plan was suggested. Internal field key remains `ai_rationale` for compatibility. |
 | Coach Notes | `coach_notes` | Long Text | No | Keep full recovery honest | Manual notes. |
@@ -712,9 +712,9 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 - `target_time_display`
 - `target_time_min_ms`
 - `target_time_max_ms`
-- `anchor_event`
-- `anchor_performance_display`
-- `anchor_performance_ms`
+- `anchor_event` (current fitness event)
+- `anchor_performance_display` (current fitness display)
+- `anchor_performance_ms` (current fitness milliseconds)
 - `ai_rationale`
 - `approval_status`
 - `source_system`
@@ -760,7 +760,7 @@ Recipient rules:
 - Dedupe email addresses before sending.
 - Show missing parent email warnings before sending.
 - Respect `parent_communication_opt_in` before automated sends.
-- Coach approval should be required before AI-written parent summaries are sent.
+- Coach approval should be required before generated parent summaries are sent.
 
 Future parent endpoints:
 
@@ -845,10 +845,10 @@ Sync rule:
 3. Update `/api/ghl/sync-session.js` to create Performance Records after contact note sync.
 4. Add athlete roster lookup and active/inactive contact management to prevent duplicate athlete contacts.
 5. Add Season Record creation/update once Performance Records are being created reliably. Done in the sync function; live test pending.
-6. Add Meet Result manual entry/import workflow.
+6. Add Meet Result import workflow and stopwatch-captured meet save flow.
 7. Add Athlete Best records for automatic PB/SB detection.
 8. Add Records records for school/team/club record detection and school-record alert workflows.
-9. Add Training Plan records with the first AI pace calculator.
+9. Add Training Plan records with the first training target calculator.
 
 ## Dedupe Strategy
 

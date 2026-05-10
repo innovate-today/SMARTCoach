@@ -144,10 +144,10 @@ Minimum fields to create first:
 | Target Time Display | `target_time_display` | Text | No |
 | Target Time Min MS | `target_time_min_ms` | Number | No |
 | Target Time Max MS | `target_time_max_ms` | Number | No |
-| Anchor Event | `anchor_event` | Text | No |
-| Anchor Performance Display | `anchor_performance_display` | Text | No |
-| Anchor Performance MS | `anchor_performance_ms` | Number | No |
-| AI Rationale | `ai_rationale` | Long Text | No |
+| Current Fitness Event | `anchor_event` | Text | No |
+| Current Fitness Display | `anchor_performance_display` | Text | No |
+| Current Fitness MS | `anchor_performance_ms` | Number | No |
+| Plan Rationale | `ai_rationale` | Long Text | No |
 | Approval Status | `approval_status` | Dropdown | Yes |
 | Source System | `source_system` | Dropdown or Text | Yes |
 | Source Record ID | `source_record_id` | Text | Yes |

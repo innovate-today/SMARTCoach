@@ -10,7 +10,7 @@ Coach-facing wording:
 - Coach review
 - Coach approval
 
-Do not use AI wording in the coach-facing builder.
+Use coach-facing wording such as Guided Plan Builder, Plan Builder, generated draft, and coach review.
 
 ## Flow
 
