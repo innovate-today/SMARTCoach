@@ -252,6 +252,8 @@ function normalizePlan(payload) {
   const seasonYear = Number(payload.seasonYear) || currentSeason().year;
   const groupName = clean(payload.groupName) || "Team";
   const athleteName = clean(payload.athleteName);
+  const contactId = clean(payload.contactId);
+  const planScope = clean(payload.planScope) || (contactId ? "individual" : "group");
   const primaryEvent = clean(payload.primaryEvent) || "400m";
   const phaseFocus = clean(payload.phaseFocus) || "Balanced";
   const planDate = clean(payload.planDate) || new Date().toISOString().slice(0, 10);
@@ -275,7 +277,8 @@ function normalizePlan(payload) {
   return {
     mode,
     planName: clean(payload.planName),
-    contactId: clean(payload.contactId),
+    contactId,
+    planScope,
     athleteName,
     smartcoachAthleteId: clean(payload.smartcoachAthleteId),
     groupName,
@@ -322,7 +325,7 @@ function buildTrainingPlanProperties(plan) {
     training_plan: title,
     athlete_contact: plan.contactId,
     athlete_name_snapshot: plan.athleteName,
-    plan_scope: planScopeValue("Season"),
+    plan_scope: planScopeValue(plan.planScope),
     plan_date: plan.planDate,
     season: optionValue(plan.season),
     season_year: plan.seasonYear,
