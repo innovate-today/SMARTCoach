@@ -194,7 +194,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       </svg>
       <span id="ltit" style="color:#fff">Group</span>
     </div>
-    <div class="nav-btn r" onclick="shareGroup()">Share</div>
+    <div class="nav-btn r" id="group-action" onclick="groupPrimaryAction()">Share</div>
   </div>
   <div class="scroll" id="rs"></div>
   <div class="bigbtns">
@@ -316,8 +316,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="shbox" id="shtxt"></div>
     <button class="mbtn" onclick="copyShare()">Copy / Share</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
-    <button class="mbtn pro-only" onclick="openMeetResult()" style="background:#555;margin-top:8px">Add Meet Result</button>
-    <button class="mbtn pro-only" onclick="openSMARTCoachSave()" style="background:#2B4FCC;margin-top:8px">Save to SMARTCoach Pro</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
 </div>
@@ -774,12 +772,13 @@ function rr(){
   }else{
     el.innerHTML=planHtml+summaryHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
   }
+  updateGroupPrimaryAction();
   updMB();
   renderRunnerTargets();
 }
-function groupSyncSummaryHtml(){
-  if(!isProPlan()||!CL)return'';
+function groupSavedRunCounts(){
   var ready=0,done=0,total=0;
+  if(!CL)return{ready:0,done:0,total:0};
   CL.runners.forEach(function(r){
     (r.saved||[]).forEach(function(run){
       total++;
@@ -790,6 +789,27 @@ function groupSyncSummaryHtml(){
       }
     });
   });
+  return{ready:ready,done:done,total:total};
+}
+function groupReadyRunCount(){
+  return groupSavedRunCounts().ready;
+}
+function updateGroupPrimaryAction(){
+  var btn=document.getElementById('group-action');
+  if(!btn||!CL)return;
+  var ready=groupReadyRunCount();
+  btn.textContent=(isProPlan()&&ready)?(CL.type==='meet'?'Save':'Sync'):'Share';
+}
+function groupPrimaryAction(){
+  if(isProPlan()&&groupReadyRunCount()){
+    openSMARTCoachSave();
+    return;
+  }
+  shareGroup();
+}
+function groupSyncSummaryHtml(){
+  if(!isProPlan()||!CL)return'';
+  var counts=groupSavedRunCounts(),ready=counts.ready,done=counts.done,total=counts.total;
   if(!total)return'';
   var readyLabel=CL.type==='meet'?'ready to save':'ready to sync';
   var doneLabel=CL.type==='meet'?'already saved':'already synced';
@@ -2172,6 +2192,7 @@ function markMeetSavedRuns(results){
     if(result.data&&result.data.sourceRecordId)r.saved[item.runIndex].meetSourceRecordId=result.data.sourceRecordId;
   });
   save();
+  rr();
   renderMeetSaveAthletes();
 }
 function renderSyncAthletes(){
@@ -2475,6 +2496,7 @@ function markSyncedRuns(synced){
     });
   });
   save();
+  rr();
   renderSyncAthletes();
 }
 
