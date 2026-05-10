@@ -802,7 +802,7 @@ function rHTML(r){
   var plan=runnerPlan(r);
   var planHtml=r.trainingPlanTitle?'<div style="font-size:11px;color:#2B4FCC;font-weight:700;margin-top:2px">Individual Plan: '+ex([r.trainingPlanTitle,r.trainingPlanDayTitle].filter(Boolean).join(' · '))+'</div>':'';
   var status=runnerRowStatus(r);
-  var statusHtml=status?'<div class="rtarget on save-state '+status.cls+'" onclick="openRunnerStatusAction('+r.id+')" style="display:block;cursor:pointer">'+ex(status.label)+'</div>':'';
+  var statusHtml=status?'<div class="rtarget on save-state '+status.cls+'" '+(status.action?'onclick="openRunnerStatusAction('+r.id+')"':'')+' style="display:block'+(status.action?';cursor:pointer':'')+'">'+ex(status.label)+'</div>':'';
   if(CL.cfg.laps&&r.laps.length){
     var lines=[],chunk=[];
     r.laps.forEach(function(x){
@@ -843,9 +843,9 @@ function runnerRowStatus(r){
   var done=saved.filter(function(run){return CL&&CL.type==='meet'?run.meetSynced:run.synced;}).length;
   var ready=saved.length-done;
   if(ready>0){
-    return{label:ready+' '+(CL&&CL.type==='meet'?'ready to save':'ready to sync'),cls:'ready'};
+    return{label:ready+' '+(CL&&CL.type==='meet'?'ready to save':'ready to sync'),cls:'ready',action:true};
   }
-  return{label:CL&&CL.type==='meet'?'Already saved':'Already synced',cls:'saved'};
+  return{label:CL&&CL.type==='meet'?'Already saved':'Already synced',cls:'saved',action:false};
 }
 function openRunnerStatusAction(runnerId){
   var r=find(runnerId);
