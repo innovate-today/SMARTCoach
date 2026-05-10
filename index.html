@@ -235,6 +235,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
   <div class="bact">
     <span class="blnk" onclick="clrLaps()">Clear Laps</span>
+    <span class="blnk pro-only" id="eaction" onclick="entrySaveCurrent()">Sync Athlete</span>
     <span class="blnk pro-only" onclick="openAthleteProfile()">Profile</span>
     <span class="blnk" onclick="go('s-group')">Done</span>
   </div>
@@ -1007,6 +1008,11 @@ function oEnt(rid2){
   document.getElementById('et').textContent=last?fmt(last.ms):'00:00.0';
   document.getElementById('ed').textContent=last?tstr(last.ts):'-';
   document.getElementById('en').textContent=r.name;
+  var action=document.getElementById('eaction');
+  if(action){
+    action.textContent=CL&&CL.type==='meet'?'Save Result':'Sync Athlete';
+    action.style.display=r.saved&&r.saved.length?'inline':'none';
+  }
   document.getElementById('eplan').textContent=entryWorkoutLabel(r);
   renderEntryTargets(r);
   renderEntryRunHistory(r);
@@ -1067,6 +1073,11 @@ function entryRunSyncStatus(run){
     return run&&run.meetSynced?{label:'Already saved',cls:'saved'}:{label:'Ready to save',cls:'ready'};
   }
   return run&&run.synced?{label:'Already synced',cls:'saved'}:{label:'Ready to sync',cls:'ready'};
+}
+function entrySaveCurrent(){
+  if(!CE||!CE.saved||!CE.saved.length)return;
+  if(CL&&CL.type==='meet')openMeetSave(CE.id);
+  else openSync(CE.id);
 }
 function renderEntryTargets(r){
   var el=document.getElementById('etarget');
@@ -1756,7 +1767,7 @@ function _fallbackCopy(txt){
   if(btn){btn.textContent='Copied! Paste into Sheets';setTimeout(function(){btn.textContent='Export for Google Sheets';},2500);}
 }
 
-function openSync(){
+function openSync(preselectRunnerId){
   if(!isProPlan())return;
   hm('msh');
   loadAthletes();
@@ -1764,12 +1775,21 @@ function openSync(){
   var btn=document.getElementById('sy-btn');
   btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;
   renderSyncAthletes();
+  if(preselectRunnerId)selectOnlySyncRunner(preselectRunnerId);
   hydrateAssignedPlanWorkouts().then(function(changed){
     if(changed)renderSyncAthletes();
+    if(preselectRunnerId)selectOnlySyncRunner(preselectRunnerId);
     var st=document.getElementById('sy-status');
     if(st&&st.textContent==='Loading assigned workout from plan...')st.textContent='';
   });
   sm('m-sync');
+}
+function selectOnlySyncRunner(runnerId){
+  document.querySelectorAll('.sy-runner').forEach(function(cb){
+    cb.checked=parseInt(cb.value)===runnerId;
+  });
+  updateSyncSaveStates();
+  renderSyncPlanMode();
 }
 function openSMARTCoachSave(){
   if(!isProPlan())return;
@@ -1885,10 +1905,11 @@ function handleMeetRunnerToggle(cb){
   updateMeetSaveStates();
   updateMeetBestHints();
 }
-function openMeetSave(){
+function openMeetSave(preselectRunnerId){
   hm('msh');
   loadAthletes();
   renderMeetSaveAthletes();
+  if(preselectRunnerId)selectOnlyMeetRunner(preselectRunnerId);
   document.getElementById('ms-meet').textContent=CL.meetName||'Meet';
   document.getElementById('ms-event').textContent=CL.eventName||CL.name||'Event';
   document.getElementById('ms-date').textContent=CL.meetDate||new Date().toISOString().slice(0,10);
@@ -1898,6 +1919,13 @@ function openMeetSave(){
   var btn=document.getElementById('ms-btn');
   btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;
   sm('m-meet-save');
+  updateMeetSaveStates();
+  updateMeetBestHints();
+}
+function selectOnlyMeetRunner(runnerId){
+  document.querySelectorAll('.ms-runner').forEach(function(cb){
+    cb.checked=parseInt(cb.value)===runnerId;
+  });
   updateMeetSaveStates();
   updateMeetBestHints();
 }
