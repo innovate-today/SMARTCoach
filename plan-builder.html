@@ -39,7 +39,7 @@ select[multiple]{min-height:112px}
 .fitness-head h2{font-size:16px;letter-spacing:0}
 .fitness-head p{font-size:13px;color:var(--muted);margin-top:2px}
 .fitness-table{display:grid;gap:6px}
-.fitness-row{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr;gap:8px;align-items:center}
+.fitness-row{display:grid;grid-template-columns:1.2fr .75fr .75fr .75fr .75fr;gap:8px;align-items:center}
 .fitness-name{font-size:13px;font-weight:800;color:#374151}
 .fitness-row input,.fitness-row select{font-size:13px;padding:7px 8px}
 .fitness-actions{display:flex;justify-content:flex-end;margin-top:10px}
@@ -80,6 +80,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 <script>
 var questionnaire=null,athletes=[],meets=[];
 var fitnessEvents=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
+var fitnessSports=[{label:'Track',value:'track'},{label:'Cross Country',value:'cross_country'}];
 function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+day;}
 function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}
@@ -103,7 +104,7 @@ function renderFitnessRows(){
   if(!box)return;
   if(!athletes.length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
   box.innerHTML=athletes.map(function(a,i){
-    return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+'</div><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'">'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00"><input class="fit-date" type="date" value="'+todayISO()+'"></div>';
+    return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+'</div><select class="fit-sport">'+fitnessSports.map(function(s){return '<option value="'+esc(s.value)+'">'+esc(s.label)+'</option>';}).join('')+'</select><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'">'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00"><input class="fit-date" type="date" value="'+todayISO()+'"></div>';
   }).join('');
 }
 function saveFitnessRows(){
@@ -134,6 +135,7 @@ function collectFitnessRows(){
     return {
       contactId:athlete.id||'',
       athleteName:athlete.name||'',
+      sport:(row.querySelector('.fit-sport')||{}).value||'track',
       event:(row.querySelector('.fit-event')||{}).value||'',
       resultDisplay:(row.querySelector('.fit-time')||{}).value||'',
       resultDate:(row.querySelector('.fit-date')||{}).value||todayISO(),
@@ -152,12 +154,17 @@ function fitnessRowFromPlanFields(){
   return {
     contactId:contactId,
     athleteName:opt?opt.getAttribute('data-name')||'':'',
+    sport:sportForEvent(event),
     event:event,
     resultDisplay:time,
     resultDate:todayISO(),
     season:currentSeason(),
     seasonYear:new Date().getFullYear()
   };
+}
+function sportForEvent(event){
+  var normalized=String(event||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  return ['4k','5k','8k','10k','15k','half_marathon','marathon'].indexOf(normalized)>=0?'cross_country':'track';
 }
 function renderForm(){
   var box=document.getElementById('form');
