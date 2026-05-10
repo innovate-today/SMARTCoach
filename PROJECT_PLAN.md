@@ -309,6 +309,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
   - Sheets export renders tabular text
   - SMARTCoach Pro sync modal opens
   - No console errors
+- Added first desktop dashboard surface at `/dashboard.html` with `/api/smart-trak/dashboard` for active roster, current fitness, latest meet result, latest training sync, and current/previous week synced run counts
 
 ## Resume Checklist
 

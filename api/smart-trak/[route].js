@@ -2,6 +2,7 @@ const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
   "athlete-profile": require("../ghl/athlete-profile"),
   athletes: require("../ghl/athletes"),
+  dashboard: require("../ghl/dashboard"),
   "meet-result": require("../ghl/meet-result"),
   meets: require("../ghl/meets"),
   "sync-session": require("../ghl/sync-session"),
