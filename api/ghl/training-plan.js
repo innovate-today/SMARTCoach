@@ -4,7 +4,6 @@ const TRAINING_PLAN_SCHEMA_KEY = "custom_objects.training_plans";
 const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const FIELD_IDS = {
   training_plan: ["TZbFrs7XAmFTbCUR7Bht"],
-  record_name: ["OvqHfsUnX102D7iK41rN"],
   athlete_name_snapshot: ["nqVp4dTUMuxj1rhffuPh"],
   plan_scope: ["kAcRWNKWu5ZqVbCqxAfG"],
   plan_date: ["572QXhX7AZQl2Sv1yvxE"],
@@ -176,7 +175,7 @@ function normalizeTrainingPlanRecord(record) {
   return {
     id: record && record.id ? record.id : prop(props, "source_record_id"),
     sourceRecordId: prop(props, "source_record_id"),
-    title: prop(props, "workout_title") || prop(props, "record_name") || prop(props, "training_plan"),
+    title: prop(props, "workout_title") || prop(props, "training_plan"),
     scope: labelValue(prop(props, "plan_scope")),
     season: labelValue(prop(props, "season")),
     seasonYear: Number(prop(props, "season_year")) || null,

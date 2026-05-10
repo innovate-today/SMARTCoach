@@ -3,7 +3,6 @@ const GHL_VERSION = "2021-07-28";
 const MEET_SCHEMA_KEY = "custom_objects.meets";
 const FIELD_IDS = {
   meet: ["L6DjPWvVI13p6C1tgUz2"],
-  record_name: ["aq2AIr5tjrIOefUfJmrQ"],
   meet_name: ["xYzq7SSQkqe1NnvzfHtJ"],
   meet_date: ["8dcV6Nl25E96qicqRWUg"],
   season: ["hn7WBWhxhzmC0s0jX0L3"],
@@ -148,7 +147,7 @@ async function optionalGhlFetch(args) {
 
 function normalizeMeet(record, fallbackProperties) {
   const props = fallbackProperties || recordProperties(record);
-  const meetName = fieldValue(props.meet) || fieldValue(props.meet_name) || fieldValue(props.record_name) || prop(props, "meet") || prop(props, "meet_name") || prop(props, "record_name") || recordName(record);
+  const meetName = fieldValue(props.meet) || fieldValue(props.meet_name) || prop(props, "meet") || prop(props, "meet_name") || recordName(record);
   const date = fieldValue(props.meet_date) || fieldValue(props.date) || prop(props, "meet_date") || prop(props, "date");
   const season = fieldValue(props.season) || prop(props, "season");
   const seasonYear = fieldValue(props.season_year) || prop(props, "season_year");
