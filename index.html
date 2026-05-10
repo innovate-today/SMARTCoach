@@ -420,6 +420,12 @@ function tstr(ts){
   var d=new Date(ts);
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' at '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'});
 }
+function shortDateTime(ts){
+  if(!ts)return'';
+  var d=new Date(ts);
+  if(isNaN(d.getTime()))return'';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
 function now(){return Date.now();}
 function beep(){
   try{
@@ -1075,9 +1081,9 @@ function entryRunRow(run,index,target){
 }
 function entryRunSyncStatus(run){
   if(CL&&CL.type==='meet'){
-    return run&&run.meetSynced?{label:'Already saved',cls:'saved'}:{label:'Ready to save',cls:'ready'};
+    return run&&run.meetSynced?{label:'Already saved'+(shortDateTime(run.meetSyncedAt)?' · '+shortDateTime(run.meetSyncedAt):''),cls:'saved'}:{label:'Ready to save',cls:'ready'};
   }
-  return run&&run.synced?{label:'Already synced',cls:'saved'}:{label:'Ready to sync',cls:'ready'};
+  return run&&run.synced?{label:'Already synced'+(shortDateTime(run.syncedAt)?' · '+shortDateTime(run.syncedAt):''),cls:'saved'}:{label:'Ready to sync',cls:'ready'};
 }
 function entrySaveCurrent(){
   if(!CE||!CE.saved||!CE.saved.length)return;
