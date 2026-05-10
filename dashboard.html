@@ -25,6 +25,7 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 .search{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:15px inherit;min-width:180px}
 .status{font-size:13px;color:var(--muted);min-width:160px;text-align:right}
 .tablewrap{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:auto}
+.section-title{font-size:16px;font-weight:800;margin:18px 0 8px}
 table{width:100%;border-collapse:collapse;min-width:1060px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
@@ -92,13 +93,35 @@ tr:last-child td{border-bottom:0}
     </table>
     <div id="empty" class="empty" hidden>No matching athletes.</div>
   </section>
+
+  <div class="section-title">Recent Meet Syncs</div>
+  <section class="tablewrap recentwrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Athlete</th>
+          <th>Meet</th>
+          <th>Event</th>
+          <th>Result</th>
+          <th>Flags</th>
+          <th>Meet Date</th>
+          <th>Synced</th>
+        </tr>
+      </thead>
+      <tbody id="recentMeetRows"></tbody>
+    </table>
+    <div id="recentMeetEmpty" class="empty" hidden>No recent meet syncs.</div>
+  </section>
 </main>
 <script>
 var dashboardRows=[];
+var recentMeetRows=[];
 var lastLoadedAt='';
 var els={
   rows:document.getElementById('rows'),
+  recentMeetRows:document.getElementById('recentMeetRows'),
   empty:document.getElementById('empty'),
+  recentMeetEmpty:document.getElementById('recentMeetEmpty'),
   status:document.getElementById('status'),
   search:document.getElementById('search'),
   refreshBtn:document.getElementById('refreshBtn'),
@@ -118,6 +141,7 @@ function loadDashboard(){
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Dashboard failed to load.');
     dashboardRows=result.data.athletes||[];
+    recentMeetRows=result.data.recentMeetResults||[];
     lastLoadedAt=result.data.generatedAt||new Date().toISOString();
     els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
     els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
@@ -125,8 +149,11 @@ function loadDashboard(){
     renderRows();
   }).catch(function(error){
     dashboardRows=[];
+    recentMeetRows=[];
     els.rows.innerHTML='';
+    els.recentMeetRows.innerHTML='';
     els.empty.hidden=false;
+    els.recentMeetEmpty.hidden=false;
     els.empty.textContent=error.message||'Dashboard failed to load.';
     els.status.textContent='Needs attention';
   }).finally(function(){
@@ -137,10 +164,14 @@ function loadDashboard(){
 function renderRows(){
   var query=els.search.value.trim().toLowerCase();
   var rows=dashboardRows.filter(function(row){return !query||searchText(row).indexOf(query)>=0;});
+  var meetRows=recentMeetRows.filter(function(row){return !query||recentMeetSearchText(row).indexOf(query)>=0;});
   els.rows.innerHTML=rows.map(rowHtml).join('');
+  els.recentMeetRows.innerHTML=meetRows.map(recentMeetHtml).join('');
   els.empty.hidden=rows.length>0;
+  els.recentMeetEmpty.hidden=meetRows.length>0;
   if(rows.length===0)els.empty.textContent='No matching athletes.';
-  els.status.textContent=rows.length+' shown' + (lastLoadedAt?' · Updated '+formatDateTime(lastLoadedAt):'');
+  if(meetRows.length===0)els.recentMeetEmpty.textContent='No matching meet syncs.';
+  els.status.textContent=rows.length+' athletes · '+meetRows.length+' meet syncs' + (lastLoadedAt?' · Updated '+formatDateTime(lastLoadedAt):'');
 }
 
 function rowHtml(row){
@@ -158,6 +189,18 @@ function rowHtml(row){
   '</tr>';
 }
 
+function recentMeetHtml(row){
+  return '<tr>'+
+    '<td><div class="name">'+esc(row.athleteName||'Unnamed')+'</div></td>'+
+    '<td>'+mainLine(row.meetName||'No meet')+'</td>'+
+    '<td>'+mainLine(row.event||'')+'</td>'+
+    '<td>'+mainLine(row.resultDisplay||'')+'</td>'+
+    '<td>'+mainLine(flagText(row)||'')+'</td>'+
+    '<td>'+mainLine(formatDate(row.meetDate)||'')+'</td>'+
+    '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
+  '</tr>';
+}
+
 function searchText(row){
   return [
     row.name,row.smartcoachAthleteId,row.status,
@@ -165,6 +208,10 @@ function searchText(row){
     row.latestMeet&&row.latestMeet.meetName,row.latestMeet&&row.latestMeet.event,row.latestMeet&&row.latestMeet.resultDisplay,
     row.latestTraining&&row.latestTraining.groupName,row.latestTraining&&row.latestTraining.workoutType
   ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function recentMeetSearchText(row){
+  return [row.athleteName,row.meetName,row.event,row.resultDisplay,flagText(row),row.meetDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
 }
 
 function mainLine(text){return '<div>'+esc(text)+'</div>';}

@@ -64,6 +64,7 @@ module.exports = async function handler(req, res) {
       meetRecords,
       performanceRecords,
     }));
+    const recentMeetResults = buildRecentMeetResults({ athletes, meetRecords }).slice(0, 12);
 
     res.status(200).json({
       success: true,
@@ -74,6 +75,7 @@ module.exports = async function handler(req, res) {
         previousWeekRuns: rows.reduce((sum, row) => sum + row.previousWeekRuns, 0),
       },
       athletes: rows,
+      recentMeetResults,
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Dashboard lookup failed." });
@@ -112,6 +114,23 @@ async function searchObjectRecords({ token, locationId, schemaKey }) {
     if (error.statusCode && error.statusCode >= 500) throw error;
     return [];
   }
+}
+
+function buildRecentMeetResults({ athletes, meetRecords }) {
+  const rows = [];
+  athletes.forEach((athlete) => {
+    meetRecords.forEach((record) => {
+      if (!recordMatchesAthlete(record, athlete)) return;
+      const result = normalizeMeetResult(record);
+      if (!result.event && !result.resultDisplay) return;
+      rows.push({
+        athleteName: athlete.name,
+        contactId: athlete.id,
+        ...result,
+      });
+    });
+  });
+  return rows.sort(sortMeetSyncDesc);
 }
 
 function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords }) {
@@ -185,6 +204,7 @@ function normalizeMeetResult(record) {
     meetDate: prop(props, "meet_date"),
     isPr: yes(prop(props, "is_pr")),
     isSeasonBest: yes(prop(props, "is_season_best")),
+    syncedAt: recordTimestamp(record),
   };
 }
 
@@ -239,6 +259,16 @@ function sortByDateDesc(a, b) {
   const ad = a.meetDate || a.sessionDate || a.lastResultDate || a.seasonBestDate || a.personalBestDate || "";
   const bd = b.meetDate || b.sessionDate || b.lastResultDate || b.seasonBestDate || b.personalBestDate || "";
   return String(bd).localeCompare(String(ad));
+}
+
+function sortMeetSyncDesc(a, b) {
+  const ad = a.syncedAt || a.meetDate || "";
+  const bd = b.syncedAt || b.meetDate || "";
+  return String(bd).localeCompare(String(ad));
+}
+
+function recordTimestamp(record) {
+  return clean(record && (record.createdAt || record.dateAdded || record.dateCreated || record.updatedAt || record.dateUpdated));
 }
 
 async function ghlFetch({ token, path, method, body }) {
