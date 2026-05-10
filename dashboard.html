@@ -60,7 +60,6 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="actions">
       <a class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
-      <a class="linkbtn secondary" href="/index.html">Stopwatch</a>
       <button id="refreshBtn" type="button">Refresh</button>
     </div>
   </section>
@@ -149,7 +148,7 @@ function rowHtml(row){
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
   return '<tr>'+
-    '<td><div class="name">'+esc(row.name||'Unnamed')+'</div><div class="muted">'+esc(row.smartcoachAthleteId||row.contactId||'')+'</div></td>'+
+    '<td><div class="name">'+esc(row.name||'Unnamed')+'</div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate)].filter(Boolean).join(' · '))+'</td>'+
