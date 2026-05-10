@@ -268,6 +268,7 @@ function normalizePlan(payload) {
   const schoolConstraints = cleanLines(payload.schoolConstraints);
   const weeklyPracticeDays = cleanLines(payload.weeklyPracticeDays);
   const mode = optionValue(payload.mode || payload.creationMode || (Array.isArray(payload.days) ? "manual" : "guided"));
+  const currentFitnessSport = clean(payload.currentFitnessSport || payload.fitnessSport || payload.sport);
   const currentFitnessDistance = clean(payload.currentFitnessDistance || payload.recentRaceDistance) || "Latest 1 Mile / 2 Mile / 5K";
   const currentFitnessTime = clean(payload.currentFitnessTime || payload.recentRaceTime);
 
@@ -294,6 +295,7 @@ function normalizePlan(payload) {
     schoolConstraints,
     weeklyPracticeDays,
     assignedGroup,
+    currentFitnessSport,
     currentFitnessDistance,
     currentFitnessTime,
     workoutDescription,
@@ -384,7 +386,7 @@ function buildPlanRationale(plan) {
   if (plan.noPracticeDates) lines.push(`No-practice dates: ${plan.noPracticeDates}`);
   if (plan.schoolConstraints) lines.push(`School constraints: ${plan.schoolConstraints}`);
   if (plan.weeklyPracticeDays) lines.push(`Normal practice days: ${plan.weeklyPracticeDays}`);
-  if (plan.currentFitnessDistance || plan.currentFitnessTime) lines.push(`Current fitness set: ${[plan.currentFitnessDistance, plan.currentFitnessTime].filter(Boolean).join(" - ")}`);
+  if (plan.currentFitnessDistance || plan.currentFitnessTime) lines.push(`Current fitness set: ${[currentFitnessSportLabel(plan.currentFitnessSport), plan.currentFitnessDistance, plan.currentFitnessTime].filter(Boolean).join(" - ")}`);
   return lines.join("\n");
 }
 
@@ -817,6 +819,16 @@ function trainingPlanQuestionnaire() {
         options: standardEventOptions(),
       },
       {
+        key: "currentFitnessSport",
+        label: "Current Fitness Sport",
+        type: "select",
+        required: false,
+        options: [
+          { label: "Track", value: "track" },
+          { label: "Cross Country", value: "cross_country" },
+        ],
+      },
+      {
         key: "currentFitnessDistance",
         label: "Current Fitness Distance",
         type: "select",
@@ -1080,6 +1092,13 @@ function dayStatusValue(value) {
     needs_review: "draft",
   };
   return aliases[normalized] || "draft";
+}
+
+function currentFitnessSportLabel(value) {
+  const normalized = optionValue(value);
+  if (normalized === "cross_country") return "Cross Country";
+  if (normalized === "track") return "Track";
+  return clean(value);
 }
 
 function blockTypeValue(value) {

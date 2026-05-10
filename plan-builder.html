@@ -154,7 +154,7 @@ function fitnessRowFromPlanFields(){
   return {
     contactId:contactId,
     athleteName:opt?opt.getAttribute('data-name')||'':'',
-    sport:sportForEvent(event),
+    sport:value('currentFitnessSport')||sportForEvent(event),
     event:event,
     resultDisplay:time,
     resultDate:todayISO(),
@@ -247,7 +247,7 @@ function payloadFromForm(){
     payload.planName||'Guided plan draft',
     payload.priorityMeets?'Meet Schedule:\n'+payload.priorityMeets:'',
     payload.noPracticeDates?'No-Practice Dates:\n'+payload.noPracticeDates:'',
-    payload.currentFitnessDistance||payload.currentFitnessTime?'Current Fitness Set:\n'+[payload.currentFitnessDistance,payload.currentFitnessTime].filter(Boolean).join(' - '):'',
+    payload.currentFitnessDistance||payload.currentFitnessTime?'Current Fitness Set:\n'+[labelFor('currentFitnessSport',payload.currentFitnessSport),payload.currentFitnessDistance,payload.currentFitnessTime].filter(Boolean).join(' - '):'',
     payload.trainingLimits?'Training Limits:\n'+payload.trainingLimits:'',
     payload.coachPreferences?'Coach Preferences:\n'+payload.coachPreferences:'',
     payload.manualNotes?'Notes:\n'+payload.manualNotes:''
