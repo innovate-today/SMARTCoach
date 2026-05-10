@@ -1886,60 +1886,6 @@ function athleteOptions(selectedName){
   });
   return opts.join('');
 }
-function openMeetResult(){
-  if(!isProPlan())return;
-  hm('msh');
-  loadAthletes();
-  var first=(CL&&CL.runners&&CL.runners.length)?CL.runners[0].name:'';
-  var dateInput=document.getElementById('mr-date');
-  if(dateInput&&!dateInput.value)dateInput.value=new Date().toISOString().slice(0,10);
-  document.getElementById('mr-athlete').innerHTML=athleteOptions(first);
-  document.getElementById('mr-status').textContent='';
-  var btn=document.getElementById('mr-btn');
-  btn.textContent='Save Meet Result';btn.style.background='#2B4FCC';btn.disabled=false;
-  sm('m-meet');
-}
-function submitMeetResult(){
-  var btn=document.getElementById('mr-btn');
-  var status=document.getElementById('mr-status');
-  var athleteEl=document.getElementById('mr-athlete');
-  var opt=athleteEl.options[athleteEl.selectedIndex];
-  var payload={
-    contactId:athleteEl.value,
-    athleteName:opt?opt.getAttribute('data-name'):'',
-    smartcoachAthleteId:opt?opt.getAttribute('data-athlete-id'):'',
-    meetName:document.getElementById('mr-meet').value.trim(),
-    meetDate:document.getElementById('mr-date').value,
-    season:document.getElementById('mr-season').value,
-    sport:'track',
-    event:document.getElementById('mr-event').value.trim(),
-    resultDisplay:document.getElementById('mr-result').value.trim(),
-    wind:document.getElementById('mr-wind').value.trim(),
-    isPr:document.getElementById('mr-pr').checked,
-    isSeasonBest:document.getElementById('mr-sb').checked,
-    coachRaceNotes:document.getElementById('mr-notes').value.trim()
-  };
-  if(!payload.contactId){status.textContent='Select an athlete.';status.style.color='#c00';return;}
-  if(!payload.meetName||!payload.event||!payload.resultDisplay){status.textContent='Meet, event, and result are required.';status.style.color='#c00';return;}
-  btn.textContent='Saving...';btn.disabled=true;
-  status.textContent='Saving meet result...';status.style.color='#555';status.style.fontWeight='400';
-  fetch('/api/smart-trak/meet-result',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  }).then(function(r){
-    return r.json().then(function(data){return {ok:r.ok,data:data};});
-  }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Meet result save failed');
-    status.textContent='Meet result saved to SMARTCoach Pro!';
-    status.style.color='#0a7a44';status.style.fontWeight='700';
-    btn.textContent='Saved!';btn.style.background='#0a7a44';
-    setTimeout(function(){btn.textContent='Save Meet Result';btn.style.background='#2B4FCC';btn.disabled=false;},2500);
-  }).catch(function(e){
-    status.textContent='Error: '+e.message;status.style.color='#c00';
-    btn.textContent='Save Meet Result';btn.disabled=false;
-  });
-}
 function meetSavedRunCount(r){
   return (r.saved||[]).filter(function(s){return s&&s.meetSynced;}).length;
 }
@@ -2515,7 +2461,6 @@ document.addEventListener('touchstart',function(e){
 <div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="clearAthleteTrainingPlan()" style="display:none;margin-top:8px">Use Group Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h pro-only" id="m-pace"><div class="msh"><div class="mhd"></div><div class="mttl">Training Pace</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="pc-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Best Event</label><select id="pc-anchor-event" class="sinp"><option>400m</option><option>100m</option><option>200m</option><option>600m</option><option>800m</option><option>1500m</option><option>1600m</option><option>1 Mile</option><option>3200m</option><option>5K</option></select></div><div class="srow"><label class="slbl">Best Time</label><input id="pc-anchor-time" class="sinp" type="text" placeholder="52.00" autocomplete="off"/></div><div class="srow"><label class="slbl">Phase</label><select id="pc-phase" class="sinp"><option>General Prep</option><option>Specific Prep</option><option>Pre-Competition</option><option>Competition</option><option>Transition / Recovery</option></select></div><div class="srow"><label class="slbl">Workout</label><select id="pc-wtype" class="sinp"><option>Acceleration</option><option>Max Velocity</option><option>Speed Endurance I</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Lactate Tolerance</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Aerobic Power</option><option>Hill Sprints</option></select></div></div><div id="pc-result" class="profile-box"></div><button class="mbtn" onclick="calcTrainingPace()" style="background:#2B4FCC">Calculate Pace</button><button class="mbtn c" onclick="hm('m-pace')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h" id="m-meet"><div class="msh"><div class="mhd"></div><div class="mttl">Add Meet Result</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><select id="mr-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Meet</label><input id="mr-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div><div class="srow"><label class="slbl">Date</label><input id="mr-date" class="sinp" type="date"/></div><div class="srow"><label class="slbl">Season</label><select id="mr-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div><div class="srow"><label class="slbl">Event</label><input id="mr-event" class="sinp" type="text" placeholder="400m" autocomplete="off"/></div><div class="srow"><label class="slbl">Result</label><input id="mr-result" class="sinp" type="text" placeholder="54.82" autocomplete="off"/></div><div class="srow"><label class="slbl">Wind</label><input id="mr-wind" class="sinp" type="text" placeholder="+1.2" autocomplete="off"/></div><div class="srow"><label class="slbl">Flags</label><div style="flex:1;display:flex;gap:12px"><label class="mcheck"><input id="mr-pr" type="checkbox">PR</label><label class="mcheck"><input id="mr-sb" type="checkbox">SB</label></div></div><div class="srow"><label class="slbl">Notes</label><input id="mr-notes" class="sinp" type="text" placeholder="Race notes" autocomplete="off"/></div></div><div id="mr-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="mr-btn" onclick="submitMeetResult()" style="background:#2B4FCC">Save Meet Result</button><button class="mbtn c" onclick="hm('m-meet')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><div class="sinp" id="ms-event" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMARTCoach Pro</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div id="sy-plan-summary"></div><div id="sy-manual-fields"><div class="srow" id="sy-row-season"><label class="slbl">Season</label><input id="sy-season" type="hidden" value="Spring"/><button type="button" id="sy-season-display" class="sinp picker-control" onclick="openSeasonPicker()">Spring</button></div><div class="srow" id="sy-row-phase"><label class="slbl">Phase</label><input id="sy-phase" type="hidden" value="GPP"/><button type="button" id="sy-phase-display" class="sinp picker-control" onclick="openPhasePicker()">GPP</button></div><div class="srow" id="sy-row-wtype"><label class="slbl">Workout Type</label><input id="sy-wtype" type="hidden" value=""/><button type="button" id="sy-wtype-display" class="sinp picker-control" onclick="openWorkoutTypePicker()">Select Workout Type</button></div></div><div class="srow"><label class="slbl">Surface</label><input id="sy-surf" type="hidden" value=""/><button type="button" id="sy-surf-display" class="sinp picker-control" onclick="openSurfacePicker()">Select Surface</button></div><div class="srow"><label class="slbl">Weather</label><input id="sy-weather" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMARTCoach Pro</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
