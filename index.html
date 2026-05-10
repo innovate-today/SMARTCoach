@@ -768,13 +768,32 @@ function rr(){
   var el=document.getElementById('rs');
   var planSub=[CL.trainingPlanTitle,CL.trainingPlanDayTitle].filter(Boolean).join(' · ');
   var planHtml=planSub?'<div class="lsec" style="margin-top:8px"><div class="erow pro-only" onclick="openSeasonPlan(true)"><span class="elbl"><b>Plan</b><br><small style="color:#777">'+ex(planSub)+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>':'';
+  var summaryHtml=groupSyncSummaryHtml();
   if(!CL.runners.length){
-    el.innerHTML=planHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
+    el.innerHTML=planHtml+summaryHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else{
-    el.innerHTML=planHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=planHtml+summaryHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
   }
   updMB();
   renderRunnerTargets();
+}
+function groupSyncSummaryHtml(){
+  if(!isProPlan()||!CL)return'';
+  var ready=0,done=0,total=0;
+  CL.runners.forEach(function(r){
+    (r.saved||[]).forEach(function(run){
+      total++;
+      if(CL.type==='meet'){
+        if(run.meetSynced)done++;else ready++;
+      }else{
+        if(run.synced)done++;else ready++;
+      }
+    });
+  });
+  if(!total)return'';
+  var readyLabel=CL.type==='meet'?'ready to save':'ready to sync';
+  var doneLabel=CL.type==='meet'?'already saved':'already synced';
+  return '<div class="lsec pro-only" style="margin-top:8px"><div class="erow" style="min-height:42px"><span class="elbl"><b>Status</b><br><small style="color:#777">'+ready+' '+readyLabel+' · '+done+' '+doneLabel+'</small></span></div></div>';
 }
 function rHTML(r){
   var lapsHtml='';
