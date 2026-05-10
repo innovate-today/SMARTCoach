@@ -686,7 +686,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 | Current Fitness Event | `anchor_event` | Text | No | 400m | Current fitness source event. |
 | Current Fitness Display | `anchor_performance_display` | Text | No | 52.0 | Human-readable current fitness source. |
 | Current Fitness MS | `anchor_performance_ms` | Number | No | 52000 | Numeric current fitness source. |
-| Adjustment Factors JSON | `adjustment_factors_json` | Long Text | No | `{"temperature_f":82}` | Phase, fatigue, temp, days since hard session. |
+| Adjustment Factors | `adjustment_factors_json` | Long Text | No | Temperature: 82 F | Phase, fatigue, temp, days since hard session. |
 | Plan Rationale | `ai_rationale` | Long Text | No | Built backward from championship date... | Why this plan was suggested. Internal field key remains `ai_rationale` for compatibility. |
 | Coach Notes | `coach_notes` | Long Text | No | Keep full recovery honest | Manual notes. |
 | Approval Status | `approval_status` | Dropdown | Yes | draft | draft, approved, rejected, completed, skipped. |

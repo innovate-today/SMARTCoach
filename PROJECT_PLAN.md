@@ -278,7 +278,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Added active athlete roster lookup from SMARTCoach Pro/GHL using `SMARTCoach Active = Yes`
 - Updated sync payloads to include GHL contact IDs when an active athlete is selected, reducing duplicate contacts
 - Standardized visible product wording to SMARTCoach Pro while leaving stable internal API routes unchanged
-- Added Season Record upsert to sync: one Season Record per athlete, season, and year, with practice session count, performance record count, latest session summary, and practice bests JSON
+- Added Season Record upsert to sync: one Season Record per athlete, season, and year, with practice session count, performance record count, latest session summary, and readable practice bests
 - Verified Season Record create/update behavior with a local mocked API run; live Season Record test still pending
 - Added duplicate sync protection: existing Performance Records are detected by `source_record_id`; the app asks before intentionally syncing the same workout again
 - Added first Meet Result entry path: app modal plus `/api/smart-trak/meet-result` endpoint to create GHL Meet Result custom object records
