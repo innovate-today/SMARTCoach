@@ -53,7 +53,7 @@ Goal:
 - App calls GHL API directly or through server function, avoiding webhooks and per-execution charges
 - Creates athlete as a GHL Contact if new
 - Adds workout session as a Note to that contact
-- Tags contact with `smartcoach-athlete`, season, sport
+- Uses the `smartcoach-athlete` tag only for broad athlete identification. Season, workout type, phase, surface, and weather belong in custom object records and notes, not as contact tags.
 
 Example session note:
 

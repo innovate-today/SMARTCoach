@@ -23,10 +23,20 @@ Create objects in this order:
 
 1. `Performance Record`
 2. `Season Record`
-3. `Meet Result`
-4. `Training Plan`
+3. `Meet`
+4. `Meet Result`
+5. `Athlete Best`
+6. `Record`
+7. `Training Plan`
+8. `Training Plan Day`
 
-Create `Performance Record` first because the existing SMARTCoach sync can be extended to create one structured record per athlete run.
+Create `Performance Record` first because the SMARTCoach sync creates one structured record per athlete run. Create `Meet` before `Meet Result` so meet results can link back to the meet schedule. Create `Training Plan` before `Training Plan Day` so daily workouts can link back to the parent plan.
+
+Current custom object budget:
+
+- GHL limit currently being planned around: 10 custom objects.
+- SMARTCoach Pro currently uses 8 custom objects.
+- Remaining planned room: 2 custom objects, reserved for future high-value needs such as field-event attempts or recruiting profiles.
 
 ## Object 1: Performance Record
 
