@@ -802,7 +802,7 @@ function rHTML(r){
   var plan=runnerPlan(r);
   var planHtml=r.trainingPlanTitle?'<div style="font-size:11px;color:#2B4FCC;font-weight:700;margin-top:2px">Individual Plan: '+ex([r.trainingPlanTitle,r.trainingPlanDayTitle].filter(Boolean).join(' · '))+'</div>':'';
   var status=runnerRowStatus(r);
-  var statusHtml=status?'<div class="rtarget on save-state '+status.cls+'" style="display:block">'+ex(status.label)+'</div>':'';
+  var statusHtml=status?'<div class="rtarget on save-state '+status.cls+'" onclick="openRunnerStatusAction('+r.id+')" style="display:block;cursor:pointer">'+ex(status.label)+'</div>':'';
   if(CL.cfg.laps&&r.laps.length){
     var lines=[],chunk=[];
     r.laps.forEach(function(x){
@@ -846,6 +846,12 @@ function runnerRowStatus(r){
     return{label:ready+' '+(CL&&CL.type==='meet'?'ready to save':'ready to sync'),cls:'ready'};
   }
   return{label:CL&&CL.type==='meet'?'Already saved':'Already synced',cls:'saved'};
+}
+function openRunnerStatusAction(runnerId){
+  var r=find(runnerId);
+  if(!r||!r.saved||!r.saved.length)return;
+  if(CL&&CL.type==='meet')openMeetSave(runnerId);
+  else openSync(runnerId);
 }
 function renderRunnerTargets(){
   if(!isProPlan()||!CL)return;
