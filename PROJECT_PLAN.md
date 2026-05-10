@@ -233,6 +233,26 @@ Tiers:
 - Club/School, $99/mo: unlimited athletes, parent portal, recruiting
 - Enterprise, custom: multi-team, district-wide, white label
 
+## Phase 11: Coach Help Assistant
+
+Coach Pro and higher should include an in-app help button for questions about how SMARTCoach Pro works.
+
+Examples:
+
+- How do I sync a workout?
+- What is included in my subscription plan?
+- How do I create or select a training plan?
+- Why is an athlete missing from the roster dropdown?
+- How do I set current fitness?
+
+Requirements:
+
+- Answers should come from SMARTCoach Pro help content, project docs, subscription-plan rules, and approved product instructions.
+- The assistant should answer inside the app or dashboard without making the coach search through settings.
+- It should be available only on paid/pro surfaces unless a limited public help version is added later.
+- It should not expose private API keys, internal tokens, or another customer's data.
+- Later, it can escalate to support or open the right SMARTCoach Pro screen when the answer requires an action.
+
 ## Current Priority Order
 
 1. Test Season Record creation/update in the live SMARTCoach Pro sync flow.
@@ -280,6 +300,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Plan Builder refinement: coaches must enter the meet schedule before creating a plan; meet dates should be inserted into the daily plan first, then workouts are built around that schedule
 - Stopwatch plan assignment model: a training group has a default group plan, and individual athletes can carry an athlete-level plan override while still being timed inside the same group
 - Future dashboard planning note: add a planning table with Athlete, Group, Recent Race distance/time, Previous Week Mileage, and Current Week Mileage so plans can account for current fitness and training load
+- Future Coach Pro support note: add an in-app help button where coaches can ask product, instruction, and subscription questions and get answers from approved SMARTCoach Pro help content.
 - Passed selected GHL Meet record IDs through meet timing groups and Meet Result saves for clean meet schedule linking
 - Verified `index.html` in the in-app browser:
   - App loads

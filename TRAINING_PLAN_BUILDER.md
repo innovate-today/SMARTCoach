@@ -61,6 +61,7 @@ The submit payload can include either:
 - Season Block
 - Block Type
 - Primary Event Focus
+- Current Fitness Sport
 - Current Fitness Distance
 - Current Fitness Time
 - Plan Start Date
