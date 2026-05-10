@@ -1053,13 +1053,20 @@ function entryRunTarget(plan,profile){
   return range?{display:range.display,fast:range.fast,slow:range.slow}:null;
 }
 function entryRunRow(run,index,target){
+  var status=entryRunSyncStatus(run);
   var targetHtml='';
   if(target){
     var diff=plannedActualDiffText(run.ms,target.fast,target.slow);
     targetHtml='<div class="lapsub">Target: '+ex(target.display)+'</div>'+(diff?'<div class="lapsub">Difference: '+ex(diff)+'</div>':'');
   }
   var note=run.note?'<div class="lapsub">Note: '+ex(run.note)+'</div>':'';
-  return'<div class="laprow"><div style="flex:1"><div class="laptm">Run '+(index+1)+': '+fmt(run.ms)+'</div>'+targetHtml+note+'</div><span style="color:#bbb">&rsaquo;</span></div>';
+  return'<div class="laprow"><div style="flex:1"><div class="laptm">Run '+(index+1)+': '+fmt(run.ms)+'</div><div class="lapsub save-state '+status.cls+'">'+ex(status.label)+'</div>'+targetHtml+note+'</div><span style="color:#bbb">&rsaquo;</span></div>';
+}
+function entryRunSyncStatus(run){
+  if(CL&&CL.type==='meet'){
+    return run&&run.meetSynced?{label:'Already saved',cls:'saved'}:{label:'Ready to save',cls:'ready'};
+  }
+  return run&&run.synced?{label:'Already synced',cls:'saved'}:{label:'Ready to sync',cls:'ready'};
 }
 function renderEntryTargets(r){
   var el=document.getElementById('etarget');
