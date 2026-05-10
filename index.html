@@ -230,11 +230,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     </div>
     <div class="lhdr">SAVED RUNS</div>
     <div class="lsec" style="margin-top:0" id="eruns"></div>
-    <div class="lhdr">LAPS</div>
+    <div class="lhdr" style="display:flex;align-items:center;justify-content:space-between"><span>LAPS</span><button id="clear-laps-btn" onclick="clrLaps()" style="border:0;background:none;color:var(--R);font:inherit;font-size:13px;font-weight:700;display:none">Clear Laps</button></div>
     <div class="lsec" style="margin-top:0" id="elaps"></div>
   </div>
   <div class="bact">
-    <span class="blnk" onclick="clrLaps()">Clear Laps</span>
     <span class="blnk pro-only" id="eaction" onclick="entrySaveCurrent()">Sync Athlete</span>
     <span class="blnk pro-only" onclick="openAthleteProfile()">Profile</span>
     <span class="blnk" onclick="go('s-group')">Done</span>
@@ -1020,6 +1019,8 @@ function oEnt(rid2){
   var note=last&&last.note||r.note||'';
   if(note){ne.textContent='Note: '+note;nr.style.display='flex';}else{nr.style.display='none';}
   var lp=document.getElementById('elaps'),laps=last?last.laps:[],h='';
+  var clearBtn=document.getElementById('clear-laps-btn');
+  if(clearBtn)clearBtn.style.display=laps.length?'inline':'none';
   h+=laps.length?laps.map(function(x,i){
     return'<div class="laprow"><div style="flex:1"><div class="laptm">'+fmt(x)+'</div><div class="lapsub">Lap '+(i+1)+'</div></div><span style="color:#bbb">&rsaquo;</span></div>';
   }).join(''):'<div style="padding:14px 16px;color:#8e8e93;background:#fff;font-size:15px">No laps recorded</div>';
