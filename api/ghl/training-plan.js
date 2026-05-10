@@ -269,7 +269,7 @@ function normalizePlan(payload) {
   const weeklyPracticeDays = cleanLines(payload.weeklyPracticeDays);
   const mode = optionValue(payload.mode || payload.creationMode || (Array.isArray(payload.days) ? "manual" : "guided"));
   const currentFitnessSport = clean(payload.currentFitnessSport || payload.fitnessSport || payload.sport);
-  const currentFitnessDistance = clean(payload.currentFitnessDistance || payload.recentRaceDistance) || "Latest 1 Mile / 2 Mile / 5K";
+  const currentFitnessDistance = clean(payload.currentFitnessDistance || payload.recentRaceDistance) || "Latest matching fitness set";
   const currentFitnessTime = clean(payload.currentFitnessTime || payload.recentRaceTime);
 
   return {
@@ -681,9 +681,9 @@ function eventDistanceMeters(event) {
 }
 
 function currentFitnessLabel(plan) {
-  const parts = [plan.currentFitnessDistance, plan.currentFitnessTime].filter(Boolean);
+  const parts = [currentFitnessSportLabel(plan.currentFitnessSport), plan.currentFitnessDistance, plan.currentFitnessTime].filter(Boolean);
   if (parts.length) return parts.join(" ");
-  return `each athlete's latest 1 Mile, 2 Mile, or 5K fitness set`;
+  return `each athlete's latest matching fitness set`;
 }
 
 function targetFormula({ repDistance, low, high, plan }) {
@@ -835,7 +835,7 @@ function trainingPlanQuestionnaire() {
         required: false,
         options: [
           { label: "Use latest available", value: "" },
-          { label: "Latest 1 Mile / 2 Mile / 5K", value: "Latest 1 Mile / 2 Mile / 5K" },
+          { label: "Latest matching fitness set", value: "Latest matching fitness set" },
           { label: "1 Mile", value: "1 Mile" },
           { label: "2 Mile", value: "2 Mile" },
           { label: "5K", value: "5K" },

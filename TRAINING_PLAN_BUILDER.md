@@ -85,4 +85,4 @@ The submit payload can include either:
 
 - Daily workout record.
 - Stores date, day type, workout title/details, workout type, energy system, target splits/paces, planned volume, status, and later completed Performance Record links.
-- Target splits/paces are based on the current fitness set when supplied. If no time is supplied, the day stores the formula so the app/dashboard can calculate athlete-specific targets from the latest 1 Mile, 2 Mile, or 5K result.
+- Target splits/paces are based on the current fitness set when supplied. If no time is supplied, the day stores the formula so the app/dashboard can calculate athlete-specific targets from the athlete's latest matching fitness set.
