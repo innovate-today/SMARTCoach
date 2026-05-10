@@ -793,7 +793,7 @@ function groupSyncSummaryHtml(){
   if(!total)return'';
   var readyLabel=CL.type==='meet'?'ready to save':'ready to sync';
   var doneLabel=CL.type==='meet'?'already saved':'already synced';
-  return '<div class="lsec pro-only" style="margin-top:8px"><div class="erow" style="min-height:42px"><span class="elbl"><b>Status</b><br><small style="color:#777">'+ready+' '+readyLabel+' · '+done+' '+doneLabel+'</small></span></div></div>';
+  return '<div class="lsec pro-only" style="margin-top:8px"><div class="erow" onclick="openSMARTCoachSave()" style="min-height:42px"><span class="elbl"><b>Status</b><br><small style="color:#777">'+ready+' '+readyLabel+' · '+done+' '+doneLabel+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>';
 }
 function rHTML(r){
   var lapsHtml='';
