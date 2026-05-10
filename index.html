@@ -215,7 +215,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <div class="screen" id="s-ent">
   <div class="nav">
     <div class="nav-btn" onclick="go('s-group')">&#8249; Back</div>
-    <div class="nav-title" style="color:#fff">Group Entry</div>
+    <div class="nav-title" id="entry-title" style="color:#fff">Athlete</div>
     <div style="min-width:60px"></div>
   </div>
   <div class="scroll">
@@ -1004,6 +1004,10 @@ function tick(){
 function oEnt(rid2){
   var r=find(rid2);CE=r;
   var last=r.saved.length?r.saved[r.saved.length-1]:null;
+  var entryTitle=document.getElementById('entry-title');
+  if(entryTitle){
+    entryTitle.textContent=CL&&CL.type==='meet'?[r.name,CL.eventName||CL.name].filter(Boolean).join(' · '):(r.name||'Athlete');
+  }
   document.getElementById('et').textContent=last?fmt(last.ms):'00:00.0';
   document.getElementById('ed').textContent=last?tstr(last.ts):'-';
   document.getElementById('en').textContent=r.name;
