@@ -12,6 +12,11 @@ The Codex in-app browser is not able to complete the GoHighLevel login flow in t
 
 If API access is available later, the same object and field names can be automated from `smart_trak_field_schema.json`.
 
+Field naming note:
+
+- Use each object's primary display field instead of adding a duplicate `Record Name` custom field.
+- If a field key still contains `_json`, keep the API key for compatibility, but use a readable GHL label such as `Splits` or `Season Bests`.
+
 ## Build Order
 
 Create objects in this order:
@@ -51,7 +56,7 @@ Minimum fields to create first:
 | Rep Number | `rep_number` | Number | Yes |
 | Total Time Display | `total_time_display` | Text | Yes |
 | Total Time MS | `total_time_ms` | Number | Yes |
-| Splits JSON | `splits_json` | Long Text | No |
+| Splits | `splits_json` | Long Text | No |
 | Coach Note | `coach_note` | Long Text | No |
 | Synced At | `synced_at` | DateTime | Yes |
 
@@ -78,7 +83,7 @@ Minimum fields to create first:
 | Practice Session Count | `practice_session_count` | Number | No |
 | Performance Record Count | `performance_record_count` | Number | No |
 | Meet Count | `meet_count` | Number | No |
-| Season Bests JSON | `season_bests_json` | Long Text | No |
+| Season Bests | `season_bests_json` | Long Text | No |
 | Injury Flag | `injury_flag` | Checkbox | No |
 | Coach Season Notes | `coach_season_notes` | Long Text | No |
 | Source Record ID | `source_record_id` | Text | Yes |
@@ -109,7 +114,7 @@ Minimum fields to create first:
 | Result Display | `result_display` | Text | Yes |
 | Result MS | `result_ms` | Number | No |
 | Wind | `wind` | Text | No |
-| Splits JSON | `splits_json` | Long Text | No |
+| Splits | `splits_json` | Long Text | No |
 | Is PR | `is_pr` | Checkbox | No |
 | Is Season Best | `is_season_best` | Checkbox | No |
 | Coach Race Notes | `coach_race_notes` | Long Text | No |

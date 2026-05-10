@@ -166,10 +166,15 @@ Relationships:
 Recommended relationship fields:
 
 - `athlete_contact`: GHL contact ID for reliable linking.
-- `athlete_name_snapshot`: athlete name at the time of record creation.
+- `athlete_name_snapshot`: labeled `Athlete Name` in GHL; stores the athlete name at the time of record creation.
 - `season_record_id`: optional parent season summary link.
 - `source_session_id`: SMARTCoach session/group sync ID where available.
 - `source_record_id`: SMARTCoach-generated unique ID for dedupe/update.
+
+Field naming note:
+
+- Do not create a separate `Record Name` custom field unless GHL requires it for a specific object. Each object already has its own primary display field, such as `performance_record`, `meet_result`, `athlete_best`, `training_plan`, or `record`.
+- Fields previously labeled with `JSON` should remain long-text fields, but their coach-facing labels should be readable: `Splits`, `Season Bests`, and similar.
 
 ## Object 1: Performance Record
 
@@ -225,7 +230,7 @@ Avery Womble - Special Endurance I - 300m - 00:52.4 - Apr 26, 2026
 | Lap 4 MS | `lap_4_ms` | Number | No | 19200 | Numeric split. |
 | Lap 5 Display | `lap_5_display` | Text | No | 00:20.0 | Fifth common split. |
 | Lap 5 MS | `lap_5_ms` | Number | No | 20000 | Numeric split. |
-| Splits JSON | `splits_json` | Long Text | No | `[{"lap":1,"ms":26100}]` | Full split list for any number of laps. |
+| Splits | `splits_json` | Long Text | No | Lap 1: 00:26.1 | Readable split list for any number of laps. |
 | Coach Note | `coach_note` | Long Text | No | Back half looked smooth | From runner note. |
 | Target Time Display | `target_time_display` | Text | No | 00:53.0 | Added by training target calculation later. |
 | Target Time MS | `target_time_ms` | Number | No | 53000 | Numeric target. |
@@ -311,7 +316,7 @@ Avery Womble - Spring 2026 - Track
 | Best Primary Event Display | `best_primary_event_display` | Text | No | 400m - 54.8 | Human-readable. |
 | Best Primary Event MS | `best_primary_event_ms` | Number | No | 54800 | Numeric if timed. |
 | Best Primary Event Date | `best_primary_event_date` | Date | No | 2026-03-28 | From Meet Result or time trial. |
-| Season Bests JSON | `season_bests_json` | Long Text | No | `{"400m":{"ms":54800}}` | Flexible event summary. |
+| Season Bests | `season_bests_json` | Long Text | No | 400m: 54.8 - District Meet | Readable event summary. |
 | PR Count | `pr_count` | Number | No | 3 | Season PR count. |
 | Improvement Percent | `improvement_percent` | Number | No | 3.2 | From season start to peak. |
 | Injury Flag | `injury_flag` | Checkbox | No | false | Parent portal and training load control. |
