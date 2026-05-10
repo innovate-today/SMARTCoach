@@ -845,15 +845,13 @@ Sync rule:
 
 ## Implementation Order
 
-1. Create the first four custom objects in SMARTCoach Pro/GHL.
-2. Add the minimum viable fields for Performance Record first.
-3. Update `/api/ghl/sync-session.js` to create Performance Records after contact note sync.
-4. Add athlete roster lookup and active/inactive contact management to prevent duplicate athlete contacts.
-5. Add Season Record creation/update once Performance Records are being created reliably. Done in the sync function; live test pending.
-6. Add Meet Result import workflow and stopwatch-captured meet save flow.
-7. Add Athlete Best records for automatic PB/SB detection.
-8. Add Records records for school/team/club record detection and school-record alert workflows.
-9. Add Training Plan records with the first training target calculator.
+1. Performance Records: live sync confirmed.
+2. Season Records: live create/update confirmed.
+3. Meet schedule and Meet Results: meet timing groups can save captured results to SMARTCoach Pro/GHL.
+4. Athlete Bests: PB/SB records can be created/updated from meet results and current-fitness setup.
+5. Records: school/team/club record detection is planned on top of Meet Results and Athlete Bests.
+6. Training Plans and Training Plan Days: active build area for group plans, athlete overrides, daily workouts, and stopwatch targets.
+7. Dashboard: next major surface for roster, training volume, meet comparisons, and sync review.
 
 ## Dedupe Strategy
 

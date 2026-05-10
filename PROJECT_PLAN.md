@@ -255,12 +255,12 @@ Requirements:
 
 ## Current Priority Order
 
-1. Test Season Record creation/update in the live SMARTCoach Pro sync flow.
-2. Meet Result entry: add official race results separate from practice timing.
-3. Training pace calculator: first generated target feature and highest immediate coaching value.
-4. Coach dashboard: desktop web app for reviewing all data.
-5. Subscription/auth foundation: use Vercel server-side support for gating and plans.
-6. Parent/recruiting/athlete portals after the data model and dashboard are stable.
+1. Stabilize the Training Plan Day to stopwatch flow: group plans, athlete overrides, next 5 days, changed-workout handling, current-fitness targets, surface, and weather notes.
+2. Build the first desktop dashboard view: roster/training list with athlete, group, current fitness, recent result, previous week volume, current week volume, and recent sync status.
+3. Add meet performance comparison views: athlete vs athlete, athlete vs previous results, same course/event history, PB/SB/record indicators.
+4. Finalize subscription/auth foundation: separate Essential stopwatch-only accounts from SMARTCoach Pro stopwatch plus CRM accounts.
+5. Plan remaining object budget carefully: only add new objects for high-value needs such as field-event attempts or recruiting profiles.
+6. Parent/recruiting/athlete portals after the dashboard and account separation are stable.
 
 ## Latest Continuation Notes
 
@@ -272,19 +272,18 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Updated project truth: Vercel is active, SMARTCoach Pro/GHL sync is confirmed working
 - Added SMARTCoach Pro object/field mapping files for Performance Records, Season Records, Meet Results, and Training Plans
 - Updated `/api/ghl/sync-session.js` so sync now keeps the existing contact note and also attempts to create a structured Performance Record for each saved run
-- Verified the updated sync flow with a local mocked API run; live SMARTCoach Pro test still pending
 - Live test confirmed: contact note and structured Performance Record are both created successfully
 - Identified duplicate-contact risk from free-typed athlete names; next design priority is active athlete roster lookup from SMARTCoach Pro/GHL
 - Added active athlete roster lookup from SMARTCoach Pro/GHL using `SMARTCoach Active = Yes`
 - Updated sync payloads to include GHL contact IDs when an active athlete is selected, reducing duplicate contacts
 - Standardized visible product wording to SMARTCoach Pro while leaving stable internal API routes unchanged
 - Added Season Record upsert to sync: one Season Record per athlete, season, and year, with practice session count, performance record count, latest session summary, and readable practice bests
-- Verified Season Record create/update behavior with a local mocked API run; live Season Record test still pending
+- Live test confirmed: Season Record create/update works in SMARTCoach Pro/GHL
 - Added duplicate sync protection: existing Performance Records are detected by `source_record_id`; the app asks before intentionally syncing the same workout again
-- Added first Meet Result entry path: app modal plus `/api/smart-trak/meet-result` endpoint to create GHL Meet Result custom object records
+- Added Meet Result creation from meet timing groups through `/api/smart-trak/meet-result`; manual meet-result form was removed from the stopwatch flow because race results should come from captured timing data
 - Added the first Training/Meets/Archive group separation layer: current-season Training keeps the existing simple group creation flow, Meets can create meet/event timing groups, and Archive hides past-season groups by default while keeping them viewable
 - Added Meet Result saves from meet timing groups, readable split/season summary fields, and Season Record updates from Meet Results
-- Next PB/SB data step: create an `Athlete Best` parent custom object associated with the athlete contact, then use it to auto-detect lifetime PBs and current-season SBs and trigger later parent/athlete notification workflows
+- Live test confirmed: Athlete Best records are created/updated and PB/SB fields can be driven by meet results and current-fitness setup
 - Added `Records` custom object concept for school/team/club records so SMARTCoach can detect and later notify when an athlete ties or breaks a school record
 - Added non-breaking backend support for `Athlete Best`: once the custom object exists in SMARTCoach Pro/GHL, Meet Result saves can update PB/SB records and auto-mark PRs
 - Added coach confirmation for PB/SB in the meet-save flow so empty or incomplete GHL history does not falsely mark first-time results as records
