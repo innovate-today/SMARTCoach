@@ -324,7 +324,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null;
 
 function productPlan(){
   return localStorage.getItem('sc_plan')||'pro';
@@ -1076,8 +1076,18 @@ function entryRunSyncStatus(run){
 }
 function entrySaveCurrent(){
   if(!CE||!CE.saved||!CE.saved.length)return;
+  EQA=CE.id;
   if(CL&&CL.type==='meet')openMeetSave(CE.id);
   else openSync(CE.id);
+}
+function finishEntryQuickAction(modalId){
+  if(!EQA)return;
+  var id=EQA;
+  EQA=null;
+  setTimeout(function(){
+    hm(modalId);
+    if(CL&&find(id))oEnt(id);
+  },700);
 }
 function renderEntryTargets(r){
   var el=document.getElementById('etarget');
@@ -2056,6 +2066,7 @@ function submitCapturedMeetResults(forceDuplicateSync){
     }
     status.style.fontWeight='700';
     btn.textContent='Saved!';btn.style.background='#0a7a44';
+    finishEntryQuickAction('m-meet-save');
     setTimeout(function(){btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
   }).catch(function(e){
     if(e.status===409){
@@ -2365,6 +2376,7 @@ function doSMARTTraKSync(forceDuplicateSync){
     status.style.color='#0a7a44';
     status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
+    finishEntryQuickAction('m-sync');
     setTimeout(function(){updateSyncButtonState();},3000);
   }).catch(function(e){
     if(e.status===409&&e.data&&e.data.code==='DUPLICATE_SYNC'){
