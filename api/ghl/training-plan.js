@@ -723,11 +723,16 @@ function formatDuration(ms) {
 function normalizeQuestionnaire(value) {
   if (!value || typeof value !== "object") return {};
   const fields = [
+    "planName",
+    "planScope",
     "season",
     "seasonYear",
     "groupName",
     "athleteName",
+    "seasonBlock",
+    "blockType",
     "primaryEvent",
+    "currentFitnessSport",
     "currentFitnessDistance",
     "currentFitnessTime",
     "phaseFocus",
@@ -739,6 +744,10 @@ function normalizeQuestionnaire(value) {
     "schoolConstraints",
     "weeklyPracticeDays",
     "assignedGroup",
+    "trainingLimits",
+    "coachPreferences",
+    "planStyle",
+    "manualNotes",
     "trainingPreferences",
     "injuryLimitations",
   ];
