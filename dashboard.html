@@ -144,6 +144,7 @@ tr:last-child td{border-bottom:0}
       <option value="sb">Recent new SBs</option>
     </select>
     <button id="resetViewBtn" class="ghost" type="button">Reset View</button>
+    <button id="exportRosterBtn" class="ghost" type="button">Export Roster</button>
     <div id="status" class="status">Loading dashboard...</div>
   </section>
 
@@ -216,6 +217,7 @@ tr:last-child td{border-bottom:0}
 var dashboardRows=[];
 var recentMeetRows=[];
 var recentTrainingRows=[];
+var visibleRosterRows=[];
 var lastLoadedAt='';
 var dashboardViewKey='smartcoachDashboardView';
 var tableSorts={
@@ -239,6 +241,7 @@ var els={
   search:document.getElementById('search'),
   quickFilter:document.getElementById('quickFilter'),
   resetViewBtn:document.getElementById('resetViewBtn'),
+  exportRosterBtn:document.getElementById('exportRosterBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   athleteCount:document.getElementById('athleteCount'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
@@ -256,6 +259,7 @@ var els={
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.search.addEventListener('input',renderRows);
 els.quickFilter.addEventListener('change',renderRows);
+els.exportRosterBtn.addEventListener('click',exportRosterCsv);
 els.rows.addEventListener('click',function(event){
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
   if(!button)return;
@@ -353,6 +357,7 @@ function renderRows(){
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
   var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
   var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
+  visibleRosterRows=rows;
   els.rows.innerHTML=rows.map(rowHtml).join('');
   els.recentMeetRows.innerHTML=meetRows.map(recentMeetHtml).join('');
   els.recentTrainingRows.innerHTML=trainingRows.map(recentTrainingHtml).join('');
@@ -366,6 +371,34 @@ function renderRows(){
   updateActiveMetric(filter);
   updateSortHeaders();
   saveView();
+}
+
+function exportRosterCsv(){
+  var rows=visibleRosterRows.length?visibleRosterRows:dashboardRows;
+  var headers=['Athlete','Current Fitness','Fitness Date','Latest Meet Result','Meet Name','Meet Date','Best Status','Latest Training','Training Group','Training Date','This Week Syncs','Previous Week Syncs','Status','Training Records','Meet Results'];
+  var csv=[headers].concat(rows.map(function(row){
+    var fitness=row.currentFitness||{};
+    var latestMeet=row.latestMeet||{};
+    var latestTraining=row.latestTraining||{};
+    return [
+      row.name||'',
+      fitness.label||'',
+      fitness.date||'',
+      [latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' '),
+      latestMeet.meetName||'',
+      latestMeet.meetDate||'',
+      flagText(latestMeet),
+      [latestTraining.totalTimeDisplay,latestTraining.workoutType].filter(Boolean).join(' '),
+      latestTraining.groupName||'',
+      latestTraining.sessionDate||'',
+      num(row.currentWeekRuns),
+      num(row.previousWeekRuns),
+      row.status||'',
+      num(row.trainingRecordCount),
+      num(row.meetResultCount)
+    ];
+  })).map(csvRow).join('\n');
+  downloadText('smartcoach-roster-'+dateStamp()+'.csv',csv);
 }
 
 function defaultTableSorts(){
@@ -588,6 +621,28 @@ function formatDateTime(value){
   return date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 }
 function num(value){return Number(value)||0;}
+function csvRow(values){
+  return values.map(function(value){
+    var text=String(value==null?'':value);
+    return /[",\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;
+  }).join(',');
+}
+function downloadText(filename,text){
+  var blob=new Blob([text],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var link=document.createElement('a');
+  link.href=url;
+  link.download=filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(function(){URL.revokeObjectURL(url);},500);
+}
+function dateStamp(){
+  var date=new Date();
+  return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate());
+}
+function pad(value){return String(value).padStart(2,'0');}
 function esc(value){
   return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
