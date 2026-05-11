@@ -49,12 +49,27 @@ th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;lett
 td{font-size:14px}
 tr:last-child td{border-bottom:0}
 .name{font-weight:800;color:#102a70}
+.namebtn{border:0;background:transparent;color:#102a70;font:inherit;font-weight:800;padding:0;text-align:left;cursor:pointer}
+.namebtn:hover{text-decoration:underline}
 .muted{color:var(--muted);font-size:12px;margin-top:2px}
 .pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:800;background:#e8eefc;color:#173891}
 .pill.good{background:#dcfce7;color:var(--good)}
 .pill.warn{background:#ffedd5;color:var(--warn)}
 .empty{padding:26px;text-align:center;color:var(--muted);font-size:14px}
 .small{font-size:12px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:48px 18px;z-index:20;overflow:auto}
+.modal[hidden]{display:none}
+.modalpanel{width:min(720px,100%);background:#fff;border-radius:10px;border:1px solid var(--line);box-shadow:0 18px 45px rgba(15,23,42,.2);overflow:hidden}
+.modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.modalhead h2{font-size:20px;margin:0}
+.modalbody{padding:16px 18px 20px}
+.detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
+.detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
+.detailcard b{display:block;font-size:18px;line-height:1.2}
+.detaillist{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:10px}
+.detailitem{padding:11px 12px;border-bottom:1px solid var(--line)}
+.detailitem:last-child{border-bottom:0}
 @media(max-width:760px){
   .page{padding:18px 12px 32px}
   .top{align-items:flex-start;flex-direction:column}
@@ -64,6 +79,8 @@ tr:last-child td{border-bottom:0}
   .breakgrid{grid-template-columns:1fr 1fr 1fr}
   .bar{align-items:stretch;flex-direction:column}
   .status{text-align:left}
+  .detailgrid{grid-template-columns:1fr}
+  .modal{padding:20px 10px}
 }
 </style>
 </head>
@@ -186,6 +203,15 @@ tr:last-child td{border-bottom:0}
     <div id="recentTrainingEmpty" class="empty" hidden>No recent training syncs.</div>
   </section>
 </main>
+<div id="athleteModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="athleteModalTitle">
+    <div class="modalhead">
+      <h2 id="athleteModalTitle">Athlete Details</h2>
+      <button id="athleteModalClose" class="ghost" type="button">Close</button>
+    </div>
+    <div id="athleteModalBody" class="modalbody"></div>
+  </section>
+</div>
 <script>
 var dashboardRows=[];
 var recentMeetRows=[];
@@ -204,6 +230,10 @@ var els={
   empty:document.getElementById('empty'),
   recentMeetEmpty:document.getElementById('recentMeetEmpty'),
   recentTrainingEmpty:document.getElementById('recentTrainingEmpty'),
+  athleteModal:document.getElementById('athleteModal'),
+  athleteModalTitle:document.getElementById('athleteModalTitle'),
+  athleteModalBody:document.getElementById('athleteModalBody'),
+  athleteModalClose:document.getElementById('athleteModalClose'),
   status:document.getElementById('status'),
   lastUpdated:document.getElementById('lastUpdated'),
   search:document.getElementById('search'),
@@ -226,6 +256,20 @@ var els={
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.search.addEventListener('input',renderRows);
 els.quickFilter.addEventListener('change',renderRows);
+els.rows.addEventListener('click',function(event){
+  var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
+  if(!button)return;
+  var contactId=button.getAttribute('data-contact-id')||'';
+  var athlete=dashboardRows.find(function(row){return String(row.contactId||'')===contactId;});
+  if(athlete)openAthleteDetail(athlete);
+});
+els.athleteModalClose.addEventListener('click',closeAthleteDetail);
+els.athleteModal.addEventListener('click',function(event){
+  if(event.target===els.athleteModal)closeAthleteDetail();
+});
+document.addEventListener('keydown',function(event){
+  if(event.key==='Escape'&&!els.athleteModal.hidden)closeAthleteDetail();
+});
 els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
   els.quickFilter.value='all';
@@ -432,7 +476,7 @@ function rowHtml(row){
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
   return '<tr>'+
-    '<td><div class="name">'+esc(row.name||'Unnamed')+'</div></td>'+
+    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="muted">View details</div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate)].filter(Boolean).join(' · '))+'</td>'+
@@ -440,6 +484,48 @@ function rowHtml(row){
     '<td><span class="pill">'+num(row.previousWeekRuns)+'</span></td>'+
     '<td><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span><div class="muted">'+num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet</div></td>'+
   '</tr>';
+}
+
+function openAthleteDetail(row){
+  var latestMeet=row.latestMeet||{};
+  var latestTraining=row.latestTraining||{};
+  var fitness=row.currentFitness||{};
+  var meets=recentMeetRows.filter(function(item){return sameAthlete(item,row);}).slice(0,5);
+  var training=recentTrainingRows.filter(function(item){return sameAthlete(item,row);}).slice(0,5);
+  els.athleteModalTitle.textContent=row.name||'Athlete Details';
+  els.athleteModalBody.innerHTML=
+    '<div class="detailgrid">'+
+      detailCard('Current Fitness',fitness.label||'Not set',fitness.date?formatDate(fitness.date):'')+
+      detailCard('Latest Meet Result',[latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result',[latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+
+      detailCard('Latest Training',[latestTraining.totalTimeDisplay,latestTraining.workoutType].filter(Boolean).join(' ')||'No sync',[latestTraining.groupName,formatDate(latestTraining.sessionDate)].filter(Boolean).join(' · '))+
+      detailCard('Sync Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet')+
+    '</div>'+
+    '<h3 class="section-title">Recent Meet Results</h3>'+
+    detailList(meets.map(function(item){
+      return mainLine([item.event,item.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([item.meetName,formatDate(item.meetDate),flagText(item)].filter(Boolean).join(' · '));
+    }),'No recent meet results.')+
+    '<h3 class="section-title">Recent Training</h3>'+
+    detailList(training.map(function(item){
+      return mainLine([item.totalTimeDisplay,item.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([item.groupName,formatDate(item.sessionDate)].filter(Boolean).join(' · '));
+    }),'No recent training syncs.');
+  els.athleteModal.hidden=false;
+}
+
+function closeAthleteDetail(){
+  els.athleteModal.hidden=true;
+}
+
+function sameAthlete(item,row){
+  return String(item.contactId||'')===String(row.contactId||'') || String(item.athleteName||'').toLowerCase()===String(row.name||'').toLowerCase();
+}
+
+function detailCard(title,value,sub){
+  return '<section class="detailcard"><h3>'+esc(title)+'</h3><b>'+esc(value||'--')+'</b>'+subLine(sub||'')+'</section>';
+}
+
+function detailList(items,emptyText){
+  if(!items.length)return '<div class="detaillist"><div class="detailitem muted">'+esc(emptyText)+'</div></div>';
+  return '<div class="detaillist">'+items.map(function(item){return '<div class="detailitem">'+item+'</div>';}).join('')+'</div>';
 }
 
 function recentMeetHtml(row){
