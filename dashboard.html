@@ -328,7 +328,10 @@ els.clearSearchBtn.addEventListener('click',function(){
   renderRows();
   els.search.focus();
 });
-els.quickFilter.addEventListener('change',renderRows);
+els.quickFilter.addEventListener('change',function(){
+  setActiveTab(tabForFilter(els.quickFilter.value));
+  renderRows();
+});
 els.activityRange.addEventListener('change',renderRows);
 els.exportRosterBtn.addEventListener('click',exportRosterCsv);
 els.exportMeetBtn.addEventListener('click',exportMeetCsv);
