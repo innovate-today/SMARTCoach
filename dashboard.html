@@ -430,13 +430,15 @@ function updateBreakdowns(){
   var active=dashboardRows.length;
   var withFitness=dashboardRows.filter(function(row){return row.currentFitness&&row.currentFitness.label;}).length;
   var currentWeekAthletes=dashboardRows.filter(function(row){return num(row.currentWeekRuns)>0;}).length;
+  var rangedMeetRows=recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet');});
+  var rangedTrainingRows=recentTrainingRows.filter(function(row){return matchesActivityRange(row,'training');});
   els.rosterActive.textContent=active;
   els.rosterFitness.textContent=withFitness;
   els.rosterMissingFitness.textContent=Math.max(0,active-withFitness);
-  els.meetSyncCount.textContent=recentMeetRows.length;
-  els.meetPbCount.textContent=recentMeetRows.filter(function(row){return row.isPr;}).length;
-  els.meetSbCount.textContent=recentMeetRows.filter(function(row){return row.isSeasonBest;}).length;
-  els.trainingSyncCount.textContent=recentTrainingRows.length;
+  els.meetSyncCount.textContent=rangedMeetRows.length;
+  els.meetPbCount.textContent=rangedMeetRows.filter(function(row){return row.isPr;}).length;
+  els.meetSbCount.textContent=rangedMeetRows.filter(function(row){return row.isSeasonBest;}).length;
+  els.trainingSyncCount.textContent=rangedTrainingRows.length;
   els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
   els.trainingMissingThisWeek.textContent=Math.max(0,active-currentWeekAthletes);
 }
@@ -453,6 +455,7 @@ function updateWeekRanges(){
 function renderRows(){
   var query=els.search.value.trim().toLowerCase();
   var filter=els.quickFilter.value||'all';
+  updateBreakdowns();
   var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&(!query||searchText(row).indexOf(query)>=0);}),tableSorts.roster,rosterSortValue);
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
   var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
