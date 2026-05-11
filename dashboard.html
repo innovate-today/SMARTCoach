@@ -27,7 +27,8 @@ button.ghost{background:#eef2f7;color:#172033}
 .breakdown{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .breakdown[data-tab-target]{cursor:pointer}
 .breakdown[data-tab-target]:hover{border-color:#b9c7dc}
-.breakdown h2{font-size:15px;line-height:1.2;margin:0 0 10px}
+.breakdown h2{font-size:15px;line-height:1.2;margin:0}
+.breakrange{color:var(--muted);font-size:12px;margin:3px 0 10px}
 .breakgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .metric{border:1px solid #edf1f7;border-radius:8px;padding:9px 10px;background:#fbfdff}
 .metric[data-filter]{cursor:pointer}
@@ -138,6 +139,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="breakdown" data-tab-target="meet">
       <h2>Meet Sync Summary</h2>
+      <div id="meetRangeLabel" class="breakrange">Last 30 days</div>
       <div class="breakgrid">
         <div class="metric"><b id="meetSyncCount">--</b><span>Recent syncs</span></div>
         <div class="metric" data-filter="pb"><b id="meetPbCount">--</b><span>New PBs</span></div>
@@ -146,6 +148,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="breakdown" data-tab-target="training">
       <h2>Training Sync Summary</h2>
+      <div id="trainingRangeLabel" class="breakrange">Last 30 days</div>
       <div class="breakgrid">
         <div class="metric"><b id="trainingSyncCount">--</b><span>Recent syncs</span></div>
         <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Synced this week</span></div>
@@ -314,9 +317,11 @@ var els={
   rosterActive:document.getElementById('rosterActive'),
   rosterFitness:document.getElementById('rosterFitness'),
   rosterMissingFitness:document.getElementById('rosterMissingFitness'),
+  meetRangeLabel:document.getElementById('meetRangeLabel'),
   meetSyncCount:document.getElementById('meetSyncCount'),
   meetPbCount:document.getElementById('meetPbCount'),
   meetSbCount:document.getElementById('meetSbCount'),
+  trainingRangeLabel:document.getElementById('trainingRangeLabel'),
   trainingSyncCount:document.getElementById('trainingSyncCount'),
   trainingAthletesThisWeek:document.getElementById('trainingAthletesThisWeek'),
   trainingMissingThisWeek:document.getElementById('trainingMissingThisWeek')
@@ -435,12 +440,15 @@ function updateBreakdowns(){
   var currentWeekAthletes=dashboardRows.filter(function(row){return num(row.currentWeekRuns)>0;}).length;
   var rangedMeetRows=recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet');});
   var rangedTrainingRows=recentTrainingRows.filter(function(row){return matchesActivityRange(row,'training');});
+  var rangeText=capitalize(activityRangeLabel());
   els.rosterActive.textContent=active;
   els.rosterFitness.textContent=withFitness;
   els.rosterMissingFitness.textContent=Math.max(0,active-withFitness);
+  els.meetRangeLabel.textContent=rangeText;
   els.meetSyncCount.textContent=rangedMeetRows.length;
   els.meetPbCount.textContent=rangedMeetRows.filter(function(row){return row.isPr;}).length;
   els.meetSbCount.textContent=rangedMeetRows.filter(function(row){return row.isSeasonBest;}).length;
+  els.trainingRangeLabel.textContent=rangeText;
   els.trainingSyncCount.textContent=rangedTrainingRows.length;
   els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
   els.trainingMissingThisWeek.textContent=Math.max(0,active-currentWeekAthletes);
@@ -678,6 +686,9 @@ function matchesActivityRange(row,type){
 function activityRangeLabel(){
   var value=els.activityRange.value||'30';
   return value==='all'?'all activity':'last '+value+' days';
+}
+function capitalize(text){
+  return String(text||'').charAt(0).toUpperCase()+String(text||'').slice(1);
 }
 function filterStateText(query,filter){
   var parts=['View: '+selectedText(els.quickFilter)];
