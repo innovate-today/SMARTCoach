@@ -189,6 +189,7 @@ var dashboardRows=[];
 var recentMeetRows=[];
 var recentTrainingRows=[];
 var lastLoadedAt='';
+var dashboardViewKey='smartcoachDashboardView';
 var tableSorts={
   roster:{key:'name',dir:'asc'},
   meet:{key:'syncedAt',dir:'desc'},
@@ -225,6 +226,7 @@ els.quickFilter.addEventListener('change',renderRows);
 els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
   els.quickFilter.value='all';
+  tableSorts=defaultTableSorts();
   renderRows();
 });
 Array.prototype.forEach.call(document.querySelectorAll('.metric[data-filter]'),function(metric){
@@ -242,6 +244,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.sortbtn'),function(butt
     renderRows();
   });
 });
+restoreView();
 loadDashboard();
 
 function loadDashboard(){
@@ -312,6 +315,34 @@ function renderRows(){
   els.status.textContent=rows.length+' athletes · '+meetRows.length+' meet syncs · '+trainingRows.length+' training syncs' + (lastLoadedAt?' · Updated '+formatDateTime(lastLoadedAt):'');
   updateActiveMetric(filter);
   updateSortHeaders();
+  saveView();
+}
+
+function defaultTableSorts(){
+  return {
+    roster:{key:'name',dir:'asc'},
+    meet:{key:'syncedAt',dir:'desc'},
+    training:{key:'syncedAt',dir:'desc'}
+  };
+}
+function saveView(){
+  try{
+    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,sorts:tableSorts}));
+  }catch(e){}
+}
+function restoreView(){
+  try{
+    var raw=JSON.parse(localStorage.getItem(dashboardViewKey)||'{}');
+    if(raw.search)els.search.value=raw.search;
+    if(raw.filter)els.quickFilter.value=raw.filter;
+    if(raw.sorts&&typeof raw.sorts==='object')tableSorts=mergeSorts(defaultTableSorts(),raw.sorts);
+  }catch(e){}
+}
+function mergeSorts(base,saved){
+  Object.keys(base).forEach(function(key){
+    if(saved[key]&&saved[key].key&&saved[key].dir)base[key]={key:String(saved[key].key),dir:saved[key].dir==='desc'?'desc':'asc'};
+  });
+  return base;
 }
 
 function sortRows(rows,sort,reader){
