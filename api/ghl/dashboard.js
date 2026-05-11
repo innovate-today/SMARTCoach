@@ -65,6 +65,7 @@ module.exports = async function handler(req, res) {
       performanceRecords,
     }));
     const recentMeetResults = buildRecentMeetResults({ athletes, meetRecords }).slice(0, 12);
+    const recentTrainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords }).slice(0, 12);
 
     res.status(200).json({
       success: true,
@@ -76,6 +77,7 @@ module.exports = async function handler(req, res) {
       },
       athletes: rows,
       recentMeetResults,
+      recentTrainingSyncs,
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Dashboard lookup failed." });
@@ -114,6 +116,23 @@ async function searchObjectRecords({ token, locationId, schemaKey }) {
     if (error.statusCode && error.statusCode >= 500) throw error;
     return [];
   }
+}
+
+function buildRecentTrainingSyncs({ athletes, performanceRecords }) {
+  const rows = [];
+  athletes.forEach((athlete) => {
+    performanceRecords.forEach((record) => {
+      if (!recordMatchesAthlete(record, athlete)) return;
+      const training = normalizePerformanceRecord(record);
+      if (!training.groupName && !training.totalTimeDisplay) return;
+      rows.push({
+        athleteName: athlete.name,
+        contactId: athlete.id,
+        ...training,
+      });
+    });
+  });
+  return rows.sort(sortTrainingSyncDesc);
 }
 
 function buildRecentMeetResults({ athletes, meetRecords }) {
@@ -215,6 +234,7 @@ function normalizePerformanceRecord(record) {
     workoutType: labelValue(prop(props, "workout_type")),
     totalTimeDisplay: prop(props, "total_time_display"),
     sessionDate: prop(props, "session_date"),
+    syncedAt: recordTimestamp(record),
   };
 }
 
@@ -264,6 +284,12 @@ function sortByDateDesc(a, b) {
 function sortMeetSyncDesc(a, b) {
   const ad = a.syncedAt || a.meetDate || "";
   const bd = b.syncedAt || b.meetDate || "";
+  return String(bd).localeCompare(String(ad));
+}
+
+function sortTrainingSyncDesc(a, b) {
+  const ad = a.syncedAt || a.sessionDate || "";
+  const bd = b.syncedAt || b.sessionDate || "";
   return String(bd).localeCompare(String(ad));
 }
 
