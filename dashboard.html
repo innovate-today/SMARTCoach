@@ -148,6 +148,12 @@ tr:last-child td{border-bottom:0}
       <option value="pb">Recent new PBs</option>
       <option value="sb">Recent new SBs</option>
     </select>
+    <select id="activityRange" class="filter">
+      <option value="30">Last 30 days</option>
+      <option value="7">Last 7 days</option>
+      <option value="90">Last 90 days</option>
+      <option value="all">All activity</option>
+    </select>
     <button id="resetViewBtn" class="ghost" type="button">Reset View</button>
     <button id="exportRosterBtn" class="ghost" type="button">Export Roster</button>
     <div id="status" class="status">Loading dashboard...</div>
@@ -253,6 +259,7 @@ var els={
   lastUpdated:document.getElementById('lastUpdated'),
   search:document.getElementById('search'),
   quickFilter:document.getElementById('quickFilter'),
+  activityRange:document.getElementById('activityRange'),
   resetViewBtn:document.getElementById('resetViewBtn'),
   exportRosterBtn:document.getElementById('exportRosterBtn'),
   exportMeetBtn:document.getElementById('exportMeetBtn'),
@@ -279,6 +286,7 @@ var els={
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.search.addEventListener('input',renderRows);
 els.quickFilter.addEventListener('change',renderRows);
+els.activityRange.addEventListener('change',renderRows);
 els.exportRosterBtn.addEventListener('click',exportRosterCsv);
 els.exportMeetBtn.addEventListener('click',exportMeetCsv);
 els.exportTrainingBtn.addEventListener('click',exportTrainingCsv);
@@ -301,6 +309,7 @@ document.addEventListener('keydown',function(event){
 els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
   els.quickFilter.value='all';
+  els.activityRange.value='30';
   tableSorts=defaultTableSorts();
   renderRows();
 });
@@ -389,8 +398,8 @@ function renderRows(){
   var filter=els.quickFilter.value||'all';
   var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&(!query||searchText(row).indexOf(query)>=0);}),tableSorts.roster,rosterSortValue);
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
-  var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
-  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
+  var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
+  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
   visibleRosterRows=rows;
   visibleMeetRows=meetRows;
   visibleTrainingRows=trainingRows;
@@ -406,7 +415,7 @@ function renderRows(){
   els.rosterViewCount.textContent=rows.length;
   els.meetViewCount.textContent=meetRows.length;
   els.trainingViewCount.textContent=trainingRows.length;
-  els.status.textContent=rows.length+' athletes · '+meetRows.length+' meet syncs · '+trainingRows.length+' training syncs';
+  els.status.textContent=rows.length+' athletes · '+meetRows.length+' meet syncs · '+trainingRows.length+' training syncs · '+activityRangeLabel();
   updateActiveMetric(filter);
   updateSortHeaders();
   saveView();
@@ -482,7 +491,7 @@ function defaultTableSorts(){
 }
 function saveView(){
   try{
-    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,sorts:tableSorts}));
+    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,sorts:tableSorts}));
   }catch(e){}
 }
 function restoreView(){
@@ -490,6 +499,7 @@ function restoreView(){
     var raw=JSON.parse(localStorage.getItem(dashboardViewKey)||'{}');
     if(raw.search)els.search.value=raw.search;
     if(raw.filter)els.quickFilter.value=raw.filter;
+    if(raw.activityRange)els.activityRange.value=raw.activityRange;
     if(raw.sorts&&typeof raw.sorts==='object')tableSorts=mergeSorts(defaultTableSorts(),raw.sorts);
   }catch(e){}
 }
@@ -568,6 +578,21 @@ function matchesMeetFilter(row,filter,visibleNames){
 function matchesTrainingFilter(row,filter,visibleNames){
   if(filter==='missing_fitness'||filter==='no_training_this_week'||filter==='pb'||filter==='sb')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   return true;
+}
+function matchesActivityRange(row,type){
+  var value=els.activityRange.value||'30';
+  if(value==='all')return true;
+  var days=Number(value)||30;
+  var date=parseActivityDate(type==='meet'?row.meetDate||row.syncedAt:row.sessionDate||row.syncedAt);
+  if(!date)return false;
+  var start=new Date();
+  start.setHours(0,0,0,0);
+  start.setDate(start.getDate()-days+1);
+  return date>=start;
+}
+function activityRangeLabel(){
+  var value=els.activityRange.value||'30';
+  return value==='all'?'all activity':'last '+value+' days';
 }
 function hasRecentFlag(name,type){
   var normalized=String(name||'').toLowerCase();
@@ -713,6 +738,13 @@ function addDashboardDays(date,days){
 }
 function rangeLabel(start,end){
   return formatShortDate(start)+' - '+formatShortDate(end);
+}
+function parseActivityDate(value){
+  if(!value)return null;
+  var date=new Date(value);
+  if(isNaN(date.getTime()))return null;
+  date.setHours(0,0,0,0);
+  return date;
 }
 function csvRow(values){
   return values.map(function(value){
