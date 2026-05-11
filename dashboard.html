@@ -34,6 +34,7 @@ button.ghost{background:#eef2f7;color:#172033}
 .metric b{display:block;font-size:20px;line-height:1.1}
 .metric span{display:block;color:var(--muted);font-size:11px;margin-top:4px}
 .bar{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
+.searchwrap{display:flex;align-items:center;gap:8px;flex:1;min-width:250px}
 .search{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:15px inherit;min-width:180px}
 .filter{border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:700 14px inherit;padding:10px 12px;min-width:210px}
 .status{font-size:13px;color:var(--muted);min-width:160px;text-align:right}
@@ -85,6 +86,7 @@ tr:last-child td{border-bottom:0}
   .stats,.breakdowns{grid-template-columns:1fr}
   .breakgrid{grid-template-columns:1fr 1fr 1fr}
   .bar{align-items:stretch;flex-direction:column}
+  .searchwrap{min-width:0;width:100%}
   .sectionbar{align-items:flex-start;flex-direction:column}
   .status{text-align:left}
   .detailgrid{grid-template-columns:1fr}
@@ -143,7 +145,10 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <section class="bar">
-    <input id="search" class="search" placeholder="Search athletes, groups, events, or meets" autocomplete="off">
+    <div class="searchwrap">
+      <input id="search" class="search" placeholder="Search athletes, groups, events, or meets" autocomplete="off">
+      <button id="clearSearchBtn" class="ghost" type="button" hidden>Clear</button>
+    </div>
     <select id="quickFilter" class="filter">
       <option value="all">All athletes</option>
       <option value="missing_fitness">Missing current fitness</option>
@@ -261,6 +266,7 @@ var els={
   status:document.getElementById('status'),
   lastUpdated:document.getElementById('lastUpdated'),
   search:document.getElementById('search'),
+  clearSearchBtn:document.getElementById('clearSearchBtn'),
   quickFilter:document.getElementById('quickFilter'),
   activityRange:document.getElementById('activityRange'),
   resetViewBtn:document.getElementById('resetViewBtn'),
@@ -288,6 +294,11 @@ var els={
 };
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.search.addEventListener('input',renderRows);
+els.clearSearchBtn.addEventListener('click',function(){
+  els.search.value='';
+  renderRows();
+  els.search.focus();
+});
 els.quickFilter.addEventListener('change',renderRows);
 els.activityRange.addEventListener('change',renderRows);
 els.exportRosterBtn.addEventListener('click',exportRosterCsv);
@@ -415,6 +426,7 @@ function renderRows(){
   if(rows.length===0)els.empty.textContent='No matching athletes.';
   if(meetRows.length===0)els.recentMeetEmpty.textContent='No matching meet syncs.';
   if(trainingRows.length===0)els.recentTrainingEmpty.textContent='No matching training syncs.';
+  els.clearSearchBtn.hidden=!query;
   els.rosterViewCount.textContent=rows.length;
   els.meetViewCount.textContent=meetRows.length;
   els.trainingViewCount.textContent=trainingRows.length;
