@@ -278,7 +278,7 @@ function updateBreakdowns(){
 function renderRows(){
   var query=els.search.value.trim().toLowerCase();
   var filter=els.quickFilter.value||'all';
-  var rows=dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&(!query||searchText(row).indexOf(query)>=0);});
+  var rows=dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&(!query||searchText(row).indexOf(query)>=0);}).sort(attentionSort);
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
   var meetRows=recentMeetRows.filter(function(row){return matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);});
   var trainingRows=recentTrainingRows.filter(function(row){return matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);});
@@ -293,6 +293,17 @@ function renderRows(){
   if(trainingRows.length===0)els.recentTrainingEmpty.textContent='No matching training syncs.';
   els.status.textContent=rows.length+' athletes · '+meetRows.length+' meet syncs · '+trainingRows.length+' training syncs' + (lastLoadedAt?' · Updated '+formatDateTime(lastLoadedAt):'');
   updateActiveMetric(filter);
+}
+
+function attentionSort(a,b){
+  var ap=attentionPriority(a),bp=attentionPriority(b);
+  if(ap!==bp)return ap-bp;
+  return String(a.name||'').localeCompare(String(b.name||''));
+}
+function attentionPriority(row){
+  if(!(row.currentFitness&&row.currentFitness.label))return 0;
+  if(num(row.currentWeekRuns)===0)return 1;
+  return 2;
 }
 
 function updateActiveMetric(filter){
