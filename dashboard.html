@@ -597,7 +597,7 @@ function activityRangeLabel(){
 function hasRecentFlag(name,type){
   var normalized=String(name||'').toLowerCase();
   return recentMeetRows.some(function(row){
-    return String(row.athleteName||'').toLowerCase()===normalized && (type==='pb'?row.isPr:row.isSeasonBest);
+    return matchesActivityRange(row,'meet') && String(row.athleteName||'').toLowerCase()===normalized && (type==='pb'?row.isPr:row.isSeasonBest);
   });
 }
 
