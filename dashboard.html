@@ -506,7 +506,7 @@ function tabForFilter(filter){
 }
 
 function exportRosterCsv(){
-  var rows=visibleRosterRows.length?visibleRosterRows:dashboardRows;
+  var rows=visibleRosterRows;
   var headers=['Athlete','Current Fitness','Fitness Date','Latest Meet Result','Meet Name','Meet Date','Best Status','Latest Training','Training Group','Training Date','This Week Syncs','Previous Week Syncs','Status','Training Records','Meet Results'];
   var csv=[headers].concat(rows.map(function(row){
     var fitness=row.currentFitness||{};
@@ -534,7 +534,7 @@ function exportRosterCsv(){
 }
 
 function exportMeetCsv(){
-  var rows=visibleMeetRows.length?visibleMeetRows:recentMeetRows;
+  var rows=visibleMeetRows;
   var headers=['Athlete','Meet','Event','Result','Best Status','Meet Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
     return [
@@ -551,7 +551,7 @@ function exportMeetCsv(){
 }
 
 function exportTrainingCsv(){
-  var rows=visibleTrainingRows.length?visibleTrainingRows:recentTrainingRows;
+  var rows=visibleTrainingRows;
   var headers=['Athlete','Group','Workout','Time','Session Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
     return [
