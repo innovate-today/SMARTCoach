@@ -139,7 +139,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="breakdown" data-tab-target="meet">
       <h2>Meet Sync Summary</h2>
-      <div id="meetRangeLabel" class="breakrange">Last 30 days</div>
+      <div id="meetRangeLabel" class="breakrange">Showing last 30 days</div>
       <div class="breakgrid">
         <div class="metric"><b id="meetSyncCount">--</b><span>Recent syncs</span></div>
         <div class="metric" data-filter="pb"><b id="meetPbCount">--</b><span>New PBs</span></div>
@@ -148,7 +148,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="breakdown" data-tab-target="training">
       <h2>Training Sync Summary</h2>
-      <div id="trainingRangeLabel" class="breakrange">Last 30 days</div>
+      <div id="trainingRangeLabel" class="breakrange">Showing last 30 days</div>
       <div class="breakgrid">
         <div class="metric"><b id="trainingSyncCount">--</b><span>Recent syncs</span></div>
         <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Synced this week</span></div>
@@ -440,7 +440,7 @@ function updateBreakdowns(){
   var currentWeekAthletes=dashboardRows.filter(function(row){return num(row.currentWeekRuns)>0;}).length;
   var rangedMeetRows=recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet');});
   var rangedTrainingRows=recentTrainingRows.filter(function(row){return matchesActivityRange(row,'training');});
-  var rangeText=capitalize(activityRangeLabel());
+  var rangeText='Showing '+activityRangeLabel();
   els.rosterActive.textContent=active;
   els.rosterFitness.textContent=withFitness;
   els.rosterMissingFitness.textContent=Math.max(0,active-withFitness);
