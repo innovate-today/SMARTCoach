@@ -107,8 +107,8 @@ tr:last-child td{border-bottom:0}
 
   <section class="stats">
     <div class="stat"><b id="athleteCount">--</b><span>Active athletes</span></div>
-    <div class="stat"><b id="currentWeekRuns">--</b><span>This week synced runs</span></div>
-    <div class="stat"><b id="previousWeekRuns">--</b><span>Previous week synced runs</span></div>
+    <div class="stat"><b id="currentWeekRuns">--</b><span>This week synced runs</span><span id="currentWeekRange" class="small">--</span></div>
+    <div class="stat"><b id="previousWeekRuns">--</b><span>Previous week synced runs</span><span id="previousWeekRange" class="small">--</span></div>
   </section>
 
   <section class="breakdowns">
@@ -260,6 +260,8 @@ var els={
   athleteCount:document.getElementById('athleteCount'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
   previousWeekRuns:document.getElementById('previousWeekRuns'),
+  currentWeekRange:document.getElementById('currentWeekRange'),
+  previousWeekRange:document.getElementById('previousWeekRange'),
   rosterActive:document.getElementById('rosterActive'),
   rosterFitness:document.getElementById('rosterFitness'),
   rosterMissingFitness:document.getElementById('rosterMissingFitness'),
@@ -330,6 +332,7 @@ function loadDashboard(){
     els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
     els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
     els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
+    updateWeekRanges();
     updateBreakdowns();
     renderRows();
   }).catch(function(error){
@@ -364,6 +367,15 @@ function updateBreakdowns(){
   els.trainingSyncCount.textContent=recentTrainingRows.length;
   els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
   els.trainingMissingThisWeek.textContent=Math.max(0,active-currentWeekAthletes);
+}
+
+function updateWeekRanges(){
+  var currentStart=startOfDashboardWeek(new Date());
+  var currentEnd=addDashboardDays(currentStart,6);
+  var previousStart=addDashboardDays(currentStart,-7);
+  var previousEnd=addDashboardDays(currentStart,-1);
+  els.currentWeekRange.textContent=rangeLabel(currentStart,currentEnd);
+  els.previousWeekRange.textContent=rangeLabel(previousStart,previousEnd);
 }
 
 function renderRows(){
@@ -666,12 +678,30 @@ function formatDate(value){
   if(isNaN(date.getTime()))return value;
   return date.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
 }
+function formatShortDate(date){
+  return date.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
 function formatDateTime(value){
   var date=new Date(value);
   if(isNaN(date.getTime()))return '';
   return date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 }
 function num(value){return Number(value)||0;}
+function startOfDashboardWeek(date){
+  var day=date.getDay();
+  var diff=day===0?-6:1-day;
+  var start=new Date(date.getFullYear(),date.getMonth(),date.getDate()+diff);
+  start.setHours(0,0,0,0);
+  return start;
+}
+function addDashboardDays(date,days){
+  var next=new Date(date);
+  next.setDate(next.getDate()+days);
+  return next;
+}
+function rangeLabel(start,end){
+  return formatShortDate(start)+' - '+formatShortDate(end);
+}
 function csvRow(values){
   return values.map(function(value){
     var text=String(value==null?'':value);
