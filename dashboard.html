@@ -282,11 +282,13 @@ els.quickFilter.addEventListener('change',renderRows);
 els.exportRosterBtn.addEventListener('click',exportRosterCsv);
 els.exportMeetBtn.addEventListener('click',exportMeetCsv);
 els.exportTrainingBtn.addEventListener('click',exportTrainingCsv);
-els.rows.addEventListener('click',function(event){
+document.addEventListener('click',function(event){
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
   if(!button)return;
   var contactId=button.getAttribute('data-contact-id')||'';
-  var athlete=dashboardRows.find(function(row){return String(row.contactId||'')===contactId;});
+  var athlete=dashboardRows.find(function(row){
+    return String(row.contactId||'')===contactId || String(row.name||'').toLowerCase()===String(button.getAttribute('data-athlete-name')||'').toLowerCase();
+  });
   if(athlete)openAthleteDetail(athlete);
 });
 els.athleteModalClose.addEventListener('click',closeAthleteDetail);
@@ -633,7 +635,7 @@ function detailList(items,emptyText){
 
 function recentMeetHtml(row){
   return '<tr>'+
-    '<td><div class="name">'+esc(row.athleteName||'Unnamed')+'</div></td>'+
+    '<td>'+athleteDetailButton(row)+'</td>'+
     '<td>'+mainLine(row.meetName||'No meet')+'</td>'+
     '<td>'+mainLine(row.event||'')+'</td>'+
     '<td>'+mainLine(row.resultDisplay||'')+'</td>'+
@@ -645,7 +647,7 @@ function recentMeetHtml(row){
 
 function recentTrainingHtml(row){
   return '<tr>'+
-    '<td><div class="name">'+esc(row.athleteName||'Unnamed')+'</div></td>'+
+    '<td>'+athleteDetailButton(row)+'</td>'+
     '<td>'+mainLine(row.groupName||'')+'</td>'+
     '<td>'+mainLine(row.workoutType||'')+'</td>'+
     '<td>'+mainLine(row.totalTimeDisplay||'')+'</td>'+
@@ -671,6 +673,9 @@ function recentTrainingSearchText(row){
   return [row.athleteName,row.groupName,row.workoutType,row.totalTimeDisplay,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
 }
 
+function athleteDetailButton(row){
+  return '<button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||row.name||'')+'" type="button">'+esc(row.athleteName||row.name||'Unnamed')+'</button><div class="muted">View details</div>';
+}
 function mainLine(text){return '<div>'+esc(text)+'</div>';}
 function subLine(text){return text?'<div class="muted">'+esc(text)+'</div>':'';}
 function flagText(meet){
