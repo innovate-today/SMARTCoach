@@ -39,6 +39,9 @@ button.ghost{background:#eef2f7;color:#172033}
 .status{font-size:13px;color:var(--muted);min-width:160px;text-align:right}
 .tablewrap{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:auto}
 .section-title{font-size:16px;font-weight:800;margin:18px 0 8px}
+.sectionbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 8px}
+.sectionbar .section-title{margin:0}
+.sectionbar button{padding:8px 12px}
 table{width:100%;border-collapse:collapse;min-width:1060px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
@@ -78,6 +81,7 @@ tr:last-child td{border-bottom:0}
   .stats,.breakdowns{grid-template-columns:1fr}
   .breakgrid{grid-template-columns:1fr 1fr 1fr}
   .bar{align-items:stretch;flex-direction:column}
+  .sectionbar{align-items:flex-start;flex-direction:column}
   .status{text-align:left}
   .detailgrid{grid-template-columns:1fr}
   .modal{padding:20px 10px}
@@ -167,7 +171,10 @@ tr:last-child td{border-bottom:0}
     <div id="empty" class="empty" hidden>No matching athletes.</div>
   </section>
 
-  <div class="section-title">Recent Meet Syncs</div>
+  <div class="sectionbar">
+    <div class="section-title">Recent Meet Syncs</div>
+    <button id="exportMeetBtn" class="ghost" type="button">Export Meets</button>
+  </div>
   <section class="tablewrap recentwrap">
     <table>
       <thead>
@@ -186,7 +193,10 @@ tr:last-child td{border-bottom:0}
     <div id="recentMeetEmpty" class="empty" hidden>No recent meet syncs.</div>
   </section>
 
-  <div class="section-title">Recent Training Syncs</div>
+  <div class="sectionbar">
+    <div class="section-title">Recent Training Syncs</div>
+    <button id="exportTrainingBtn" class="ghost" type="button">Export Training</button>
+  </div>
   <section class="tablewrap recentwrap">
     <table>
       <thead>
@@ -218,6 +228,8 @@ var dashboardRows=[];
 var recentMeetRows=[];
 var recentTrainingRows=[];
 var visibleRosterRows=[];
+var visibleMeetRows=[];
+var visibleTrainingRows=[];
 var lastLoadedAt='';
 var dashboardViewKey='smartcoachDashboardView';
 var tableSorts={
@@ -242,6 +254,8 @@ var els={
   quickFilter:document.getElementById('quickFilter'),
   resetViewBtn:document.getElementById('resetViewBtn'),
   exportRosterBtn:document.getElementById('exportRosterBtn'),
+  exportMeetBtn:document.getElementById('exportMeetBtn'),
+  exportTrainingBtn:document.getElementById('exportTrainingBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   athleteCount:document.getElementById('athleteCount'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
@@ -260,6 +274,8 @@ els.refreshBtn.addEventListener('click',loadDashboard);
 els.search.addEventListener('input',renderRows);
 els.quickFilter.addEventListener('change',renderRows);
 els.exportRosterBtn.addEventListener('click',exportRosterCsv);
+els.exportMeetBtn.addEventListener('click',exportMeetCsv);
+els.exportTrainingBtn.addEventListener('click',exportTrainingCsv);
 els.rows.addEventListener('click',function(event){
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
   if(!button)return;
@@ -358,6 +374,8 @@ function renderRows(){
   var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
   var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
   visibleRosterRows=rows;
+  visibleMeetRows=meetRows;
+  visibleTrainingRows=trainingRows;
   els.rows.innerHTML=rows.map(rowHtml).join('');
   els.recentMeetRows.innerHTML=meetRows.map(recentMeetHtml).join('');
   els.recentTrainingRows.innerHTML=trainingRows.map(recentTrainingHtml).join('');
@@ -399,6 +417,39 @@ function exportRosterCsv(){
     ];
   })).map(csvRow).join('\n');
   downloadText('smartcoach-roster-'+dateStamp()+'.csv',csv);
+}
+
+function exportMeetCsv(){
+  var rows=visibleMeetRows.length?visibleMeetRows:recentMeetRows;
+  var headers=['Athlete','Meet','Event','Result','Best Status','Meet Date','Synced'];
+  var csv=[headers].concat(rows.map(function(row){
+    return [
+      row.athleteName||'',
+      row.meetName||'',
+      row.event||'',
+      row.resultDisplay||'',
+      flagText(row),
+      row.meetDate||'',
+      row.syncedAt||''
+    ];
+  })).map(csvRow).join('\n');
+  downloadText('smartcoach-meet-syncs-'+dateStamp()+'.csv',csv);
+}
+
+function exportTrainingCsv(){
+  var rows=visibleTrainingRows.length?visibleTrainingRows:recentTrainingRows;
+  var headers=['Athlete','Group','Workout','Time','Session Date','Synced'];
+  var csv=[headers].concat(rows.map(function(row){
+    return [
+      row.athleteName||'',
+      row.groupName||'',
+      row.workoutType||'',
+      row.totalTimeDisplay||'',
+      row.sessionDate||'',
+      row.syncedAt||''
+    ];
+  })).map(csvRow).join('\n');
+  downloadText('smartcoach-training-syncs-'+dateStamp()+'.csv',csv);
 }
 
 function defaultTableSorts(){
