@@ -39,6 +39,7 @@ button.ghost{background:#eef2f7;color:#172033}
 .status{font-size:13px;color:var(--muted);min-width:160px;text-align:right}
 .tablewrap{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:auto}
 .section-title{font-size:16px;font-weight:800;margin:18px 0 8px}
+.section-title .count{margin-left:8px}
 .sectionbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 8px}
 .sectionbar .section-title{margin:0}
 .sectionbar button{padding:8px 12px}
@@ -152,7 +153,7 @@ tr:last-child td{border-bottom:0}
     <div id="status" class="status">Loading dashboard...</div>
   </section>
 
-  <div class="section-title">Roster Overview</div>
+  <div class="section-title">Roster Overview <span id="rosterViewCount" class="pill count">--</span></div>
   <section class="tablewrap">
     <table>
       <thead>
@@ -172,7 +173,7 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <div class="sectionbar">
-    <div class="section-title">Recent Meet Syncs</div>
+    <div class="section-title">Recent Meet Syncs <span id="meetViewCount" class="pill count">--</span></div>
     <button id="exportMeetBtn" class="ghost" type="button">Export Meets</button>
   </div>
   <section class="tablewrap recentwrap">
@@ -194,7 +195,7 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <div class="sectionbar">
-    <div class="section-title">Recent Training Syncs</div>
+    <div class="section-title">Recent Training Syncs <span id="trainingViewCount" class="pill count">--</span></div>
     <button id="exportTrainingBtn" class="ghost" type="button">Export Training</button>
   </div>
   <section class="tablewrap recentwrap">
@@ -262,6 +263,9 @@ var els={
   previousWeekRuns:document.getElementById('previousWeekRuns'),
   currentWeekRange:document.getElementById('currentWeekRange'),
   previousWeekRange:document.getElementById('previousWeekRange'),
+  rosterViewCount:document.getElementById('rosterViewCount'),
+  meetViewCount:document.getElementById('meetViewCount'),
+  trainingViewCount:document.getElementById('trainingViewCount'),
   rosterActive:document.getElementById('rosterActive'),
   rosterFitness:document.getElementById('rosterFitness'),
   rosterMissingFitness:document.getElementById('rosterMissingFitness'),
@@ -397,6 +401,9 @@ function renderRows(){
   if(rows.length===0)els.empty.textContent='No matching athletes.';
   if(meetRows.length===0)els.recentMeetEmpty.textContent='No matching meet syncs.';
   if(trainingRows.length===0)els.recentTrainingEmpty.textContent='No matching training syncs.';
+  els.rosterViewCount.textContent=rows.length;
+  els.meetViewCount.textContent=meetRows.length;
+  els.trainingViewCount.textContent=trainingRows.length;
   els.status.textContent=rows.length+' athletes · '+meetRows.length+' meet syncs · '+trainingRows.length+' training syncs';
   updateActiveMetric(filter);
   updateSortHeaders();
