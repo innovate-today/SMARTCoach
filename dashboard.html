@@ -17,6 +17,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .actions{display:flex;align-items:center;gap:10px}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:10px 14px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
+button.ghost{background:#eef2f7;color:#172033}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .stat b{display:block;font-size:24px;line-height:1.1}
@@ -119,6 +120,7 @@ tr:last-child td{border-bottom:0}
       <option value="pb">Recent new PBs</option>
       <option value="sb">Recent new SBs</option>
     </select>
+    <button id="resetViewBtn" class="ghost" type="button">Reset View</button>
     <div id="status" class="status">Loading dashboard...</div>
   </section>
 
@@ -192,6 +194,7 @@ var els={
   status:document.getElementById('status'),
   search:document.getElementById('search'),
   quickFilter:document.getElementById('quickFilter'),
+  resetViewBtn:document.getElementById('resetViewBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   athleteCount:document.getElementById('athleteCount'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
@@ -209,6 +212,11 @@ var els={
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.search.addEventListener('input',renderRows);
 els.quickFilter.addEventListener('change',renderRows);
+els.resetViewBtn.addEventListener('click',function(){
+  els.search.value='';
+  els.quickFilter.value='all';
+  renderRows();
+});
 Array.prototype.forEach.call(document.querySelectorAll('.metric[data-filter]'),function(metric){
   metric.addEventListener('click',function(){
     els.quickFilter.value=metric.getAttribute('data-filter')||'all';
