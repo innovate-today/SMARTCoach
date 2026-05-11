@@ -21,6 +21,13 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .stat b{display:block;font-size:24px;line-height:1.1}
 .stat span{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+.breakdowns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.breakdown{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.breakdown h2{font-size:15px;line-height:1.2;margin:0 0 10px}
+.breakgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.metric{border:1px solid #edf1f7;border-radius:8px;padding:9px 10px;background:#fbfdff}
+.metric b{display:block;font-size:20px;line-height:1.1}
+.metric span{display:block;color:var(--muted);font-size:11px;margin-top:4px}
 .bar{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 .search{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:15px inherit;min-width:180px}
 .status{font-size:13px;color:var(--muted);min-width:160px;text-align:right}
@@ -43,7 +50,8 @@ tr:last-child td{border-bottom:0}
   .top{align-items:flex-start;flex-direction:column}
   .actions{width:100%}
   .actions button,.actions .linkbtn{flex:1;text-align:center}
-  .stats{grid-template-columns:1fr}
+  .stats,.breakdowns{grid-template-columns:1fr}
+  .breakgrid{grid-template-columns:1fr 1fr 1fr}
   .bar{align-items:stretch;flex-direction:column}
   .status{text-align:left}
 }
@@ -69,6 +77,33 @@ tr:last-child td{border-bottom:0}
     <div class="stat"><b id="athleteCount">--</b><span>Active athletes</span></div>
     <div class="stat"><b id="currentWeekRuns">--</b><span>This week synced runs</span></div>
     <div class="stat"><b id="previousWeekRuns">--</b><span>Previous week synced runs</span></div>
+  </section>
+
+  <section class="breakdowns">
+    <div class="breakdown">
+      <h2>Roster Summary</h2>
+      <div class="breakgrid">
+        <div class="metric"><b id="rosterActive">--</b><span>Active</span></div>
+        <div class="metric"><b id="rosterFitness">--</b><span>With fitness</span></div>
+        <div class="metric"><b id="rosterMissingFitness">--</b><span>Missing fitness</span></div>
+      </div>
+    </div>
+    <div class="breakdown">
+      <h2>Meet Sync Summary</h2>
+      <div class="breakgrid">
+        <div class="metric"><b id="meetSyncCount">--</b><span>Recent syncs</span></div>
+        <div class="metric"><b id="meetPbCount">--</b><span>PB flags</span></div>
+        <div class="metric"><b id="meetSbCount">--</b><span>SB flags</span></div>
+      </div>
+    </div>
+    <div class="breakdown">
+      <h2>Training Sync Summary</h2>
+      <div class="breakgrid">
+        <div class="metric"><b id="trainingSyncCount">--</b><span>Recent syncs</span></div>
+        <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Synced this week</span></div>
+        <div class="metric"><b id="trainingMissingThisWeek">--</b><span>No sync this week</span></div>
+      </div>
+    </div>
   </section>
 
   <section class="bar">
@@ -148,7 +183,16 @@ var els={
   refreshBtn:document.getElementById('refreshBtn'),
   athleteCount:document.getElementById('athleteCount'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
-  previousWeekRuns:document.getElementById('previousWeekRuns')
+  previousWeekRuns:document.getElementById('previousWeekRuns'),
+  rosterActive:document.getElementById('rosterActive'),
+  rosterFitness:document.getElementById('rosterFitness'),
+  rosterMissingFitness:document.getElementById('rosterMissingFitness'),
+  meetSyncCount:document.getElementById('meetSyncCount'),
+  meetPbCount:document.getElementById('meetPbCount'),
+  meetSbCount:document.getElementById('meetSbCount'),
+  trainingSyncCount:document.getElementById('trainingSyncCount'),
+  trainingAthletesThisWeek:document.getElementById('trainingAthletesThisWeek'),
+  trainingMissingThisWeek:document.getElementById('trainingMissingThisWeek')
 };
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.search.addEventListener('input',renderRows);
@@ -168,6 +212,7 @@ function loadDashboard(){
     els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
     els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
     els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
+    updateBreakdowns();
     renderRows();
   }).catch(function(error){
     dashboardRows=[];
@@ -181,9 +226,25 @@ function loadDashboard(){
     els.recentTrainingEmpty.hidden=false;
     els.empty.textContent=error.message||'Dashboard failed to load.';
     els.status.textContent='Needs attention';
+    updateBreakdowns();
   }).finally(function(){
     els.refreshBtn.disabled=false;
   });
+}
+
+function updateBreakdowns(){
+  var active=dashboardRows.length;
+  var withFitness=dashboardRows.filter(function(row){return row.currentFitness&&row.currentFitness.label;}).length;
+  var currentWeekAthletes=dashboardRows.filter(function(row){return num(row.currentWeekRuns)>0;}).length;
+  els.rosterActive.textContent=active;
+  els.rosterFitness.textContent=withFitness;
+  els.rosterMissingFitness.textContent=Math.max(0,active-withFitness);
+  els.meetSyncCount.textContent=recentMeetRows.length;
+  els.meetPbCount.textContent=recentMeetRows.filter(function(row){return row.isPr;}).length;
+  els.meetSbCount.textContent=recentMeetRows.filter(function(row){return row.isSeasonBest;}).length;
+  els.trainingSyncCount.textContent=recentTrainingRows.length;
+  els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
+  els.trainingMissingThisWeek.textContent=Math.max(0,active-currentWeekAthletes);
 }
 
 function renderRows(){
