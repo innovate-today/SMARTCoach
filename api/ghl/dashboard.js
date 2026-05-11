@@ -64,8 +64,8 @@ module.exports = async function handler(req, res) {
       meetRecords,
       performanceRecords,
     }));
-    const recentMeetResults = buildRecentMeetResults({ athletes, meetRecords }).slice(0, 12);
-    const recentTrainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords }).slice(0, 12);
+    const recentMeetResults = buildRecentMeetResults({ athletes, meetRecords }).slice(0, 100);
+    const recentTrainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords }).slice(0, 100);
 
     res.status(200).json({
       success: true,
