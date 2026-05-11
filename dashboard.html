@@ -59,6 +59,9 @@ tr:last-child td{border-bottom:0}
 .pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:800;background:#e8eefc;color:#173891}
 .pill.good{background:#dcfce7;color:var(--good)}
 .pill.warn{background:#ffedd5;color:var(--warn)}
+.pill.pb{background:#dbeafe;color:#1d4ed8}
+.pill.sb{background:#fef3c7;color:#92400e}
+.pill+.pill{margin-left:5px}
 .empty{padding:26px;text-align:center;color:var(--muted);font-size:14px}
 .small{font-size:12px;color:var(--muted)}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:48px 18px;z-index:20;overflow:auto}
@@ -664,7 +667,7 @@ function recentMeetHtml(row){
     '<td>'+mainLine(row.meetName||'No meet')+'</td>'+
     '<td>'+mainLine(row.event||'')+'</td>'+
     '<td>'+mainLine(row.resultDisplay||'')+'</td>'+
-    '<td>'+mainLine(flagText(row)||'')+'</td>'+
+    '<td>'+flagPills(row)+'</td>'+
     '<td>'+mainLine(formatDate(row.meetDate)||'')+'</td>'+
     '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
   '</tr>';
@@ -708,6 +711,12 @@ function flagText(meet){
   if(meet.isPr)flags.push('PB');
   if(meet.isSeasonBest)flags.push('SB');
   return flags.join(' · ');
+}
+function flagPills(meet){
+  var pills=[];
+  if(meet.isPr)pills.push('<span class="pill pb">PB</span>');
+  if(meet.isSeasonBest)pills.push('<span class="pill sb">SB</span>');
+  return pills.length?pills.join(''):'<span class="muted">No new best</span>';
 }
 function formatDate(value){
   if(!value)return '';
