@@ -39,6 +39,11 @@ button.ghost{background:#eef2f7;color:#172033}
 .filter{border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:700 14px inherit;padding:10px 12px;min-width:210px}
 .status{font-size:13px;color:var(--muted);min-width:160px;text-align:right}
 .filterstate{font-size:13px;color:#475569;margin:-4px 0 14px;padding:0 2px}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.tab{background:#fff;color:#172033;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:8px}
+.tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.tab.active .pill{background:rgba(255,255,255,.18);color:#fff}
+.tabpanel[hidden]{display:none}
 .tablewrap{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:auto}
 .section-title{font-size:16px;font-weight:800;margin:18px 0 8px}
 .section-title .count{margin-left:8px}
@@ -88,6 +93,7 @@ tr:last-child td{border-bottom:0}
   .breakgrid{grid-template-columns:1fr 1fr 1fr}
   .bar{align-items:stretch;flex-direction:column}
   .searchwrap{min-width:0;width:100%}
+  .tabs{grid-template-columns:1fr}
   .sectionbar{align-items:flex-start;flex-direction:column}
   .status{text-align:left}
   .filterstate{margin-top:-2px}
@@ -165,71 +171,85 @@ tr:last-child td{border-bottom:0}
       <option value="all">All activity</option>
     </select>
     <button id="resetViewBtn" class="ghost" type="button">Reset View</button>
-    <button id="exportRosterBtn" class="ghost" type="button">Export Roster</button>
     <div id="status" class="status">Loading dashboard...</div>
   </section>
   <div id="filterState" class="filterstate" hidden>View: all athletes · last 30 days</div>
 
-  <div class="section-title">Roster Overview <span id="rosterViewCount" class="pill count">--</span></div>
-  <section class="tablewrap">
-    <table>
-      <thead>
-        <tr>
-          <th><button class="sortbtn" data-table="roster" data-sort="name" type="button">Athlete</button></th>
-          <th><button class="sortbtn" data-table="roster" data-sort="currentFitness" type="button">Current Fitness</button></th>
-          <th><button class="sortbtn" data-table="roster" data-sort="latestMeet" type="button">Latest Meet Result</button></th>
-          <th><button class="sortbtn" data-table="roster" data-sort="latestTraining" type="button">Latest Training</button></th>
-          <th><button class="sortbtn" data-table="roster" data-sort="currentWeekRuns" type="button">This Week Syncs</button></th>
-          <th><button class="sortbtn" data-table="roster" data-sort="previousWeekRuns" type="button">Previous Week Syncs</button></th>
-          <th><button class="sortbtn" data-table="roster" data-sort="status" type="button">Status</button></th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-    <div id="empty" class="empty" hidden>No matching athletes.</div>
+  <nav class="tabs" aria-label="Dashboard sections">
+    <button class="tab active" data-tab="roster" type="button">Roster Overview <span id="rosterViewCount" class="pill count">--</span></button>
+    <button class="tab" data-tab="meet" type="button">Recent Meet Syncs <span id="meetViewCount" class="pill count">--</span></button>
+    <button class="tab" data-tab="training" type="button">Recent Training Syncs <span id="trainingViewCount" class="pill count">--</span></button>
+  </nav>
+
+  <section id="rosterPanel" class="tabpanel" data-panel="roster">
+    <div class="sectionbar">
+      <div class="section-title">Roster Overview</div>
+      <button id="exportRosterBtn" class="ghost" type="button">Export Roster</button>
+    </div>
+    <section class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th><button class="sortbtn" data-table="roster" data-sort="name" type="button">Athlete</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="currentFitness" type="button">Current Fitness</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="latestMeet" type="button">Latest Meet Result</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="latestTraining" type="button">Latest Training</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="currentWeekRuns" type="button">This Week Syncs</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="previousWeekRuns" type="button">Previous Week Syncs</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="status" type="button">Status</button></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="empty" class="empty" hidden>No matching athletes.</div>
+    </section>
   </section>
 
-  <div class="sectionbar">
-    <div class="section-title">Recent Meet Syncs <span id="meetViewCount" class="pill count">--</span></div>
-    <button id="exportMeetBtn" class="ghost" type="button">Export Meets</button>
-  </div>
-  <section class="tablewrap recentwrap">
-    <table>
-      <thead>
-        <tr>
-          <th><button class="sortbtn" data-table="meet" data-sort="athleteName" type="button">Athlete</button></th>
-          <th><button class="sortbtn" data-table="meet" data-sort="meetName" type="button">Meet</button></th>
-          <th><button class="sortbtn" data-table="meet" data-sort="event" type="button">Event</button></th>
-          <th><button class="sortbtn" data-table="meet" data-sort="resultDisplay" type="button">Result</button></th>
-          <th><button class="sortbtn" data-table="meet" data-sort="bestStatus" type="button">Best Status</button></th>
-          <th><button class="sortbtn" data-table="meet" data-sort="meetDate" type="button">Meet Date</button></th>
-          <th><button class="sortbtn" data-table="meet" data-sort="syncedAt" type="button">Synced</button></th>
-        </tr>
-      </thead>
-      <tbody id="recentMeetRows"></tbody>
-    </table>
-    <div id="recentMeetEmpty" class="empty" hidden>No recent meet syncs.</div>
+  <section id="meetPanel" class="tabpanel" data-panel="meet" hidden>
+    <div class="sectionbar">
+      <div class="section-title">Recent Meet Syncs</div>
+      <button id="exportMeetBtn" class="ghost" type="button">Export Meets</button>
+    </div>
+    <section class="tablewrap recentwrap">
+      <table>
+        <thead>
+          <tr>
+            <th><button class="sortbtn" data-table="meet" data-sort="athleteName" type="button">Athlete</button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="meetName" type="button">Meet</button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="event" type="button">Event</button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="resultDisplay" type="button">Result</button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="bestStatus" type="button">Best Status</button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="meetDate" type="button">Meet Date</button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="syncedAt" type="button">Synced</button></th>
+          </tr>
+        </thead>
+        <tbody id="recentMeetRows"></tbody>
+      </table>
+      <div id="recentMeetEmpty" class="empty" hidden>No recent meet syncs.</div>
+    </section>
   </section>
 
-  <div class="sectionbar">
-    <div class="section-title">Recent Training Syncs <span id="trainingViewCount" class="pill count">--</span></div>
-    <button id="exportTrainingBtn" class="ghost" type="button">Export Training</button>
-  </div>
-  <section class="tablewrap recentwrap">
-    <table>
-      <thead>
-        <tr>
-          <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete</button></th>
-          <th><button class="sortbtn" data-table="training" data-sort="groupName" type="button">Group</button></th>
-          <th><button class="sortbtn" data-table="training" data-sort="workoutType" type="button">Workout</button></th>
-          <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Time</button></th>
-          <th><button class="sortbtn" data-table="training" data-sort="sessionDate" type="button">Session Date</button></th>
-          <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Synced</button></th>
-        </tr>
-      </thead>
-      <tbody id="recentTrainingRows"></tbody>
-    </table>
-    <div id="recentTrainingEmpty" class="empty" hidden>No recent training syncs.</div>
+  <section id="trainingPanel" class="tabpanel" data-panel="training" hidden>
+    <div class="sectionbar">
+      <div class="section-title">Recent Training Syncs</div>
+      <button id="exportTrainingBtn" class="ghost" type="button">Export Training</button>
+    </div>
+    <section class="tablewrap recentwrap">
+      <table>
+        <thead>
+          <tr>
+            <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="groupName" type="button">Group</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="workoutType" type="button">Workout</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Time</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="sessionDate" type="button">Session Date</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Synced</button></th>
+          </tr>
+        </thead>
+        <tbody id="recentTrainingRows"></tbody>
+      </table>
+      <div id="recentTrainingEmpty" class="empty" hidden>No recent training syncs.</div>
+    </section>
   </section>
 </main>
 <div id="athleteModal" class="modal" hidden>
@@ -249,6 +269,7 @@ var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
 var lastLoadedAt='';
+var activeTab='roster';
 var dashboardViewKey='smartcoachDashboardView';
 var tableSorts={
   roster:{key:'name',dir:'asc'},
@@ -259,6 +280,8 @@ var els={
   rows:document.getElementById('rows'),
   recentMeetRows:document.getElementById('recentMeetRows'),
   recentTrainingRows:document.getElementById('recentTrainingRows'),
+  tabs:Array.prototype.slice.call(document.querySelectorAll('.tab')),
+  panels:Array.prototype.slice.call(document.querySelectorAll('.tabpanel')),
   empty:document.getElementById('empty'),
   recentMeetEmpty:document.getElementById('recentMeetEmpty'),
   recentTrainingEmpty:document.getElementById('recentTrainingEmpty'),
@@ -308,6 +331,11 @@ els.activityRange.addEventListener('change',renderRows);
 els.exportRosterBtn.addEventListener('click',exportRosterCsv);
 els.exportMeetBtn.addEventListener('click',exportMeetCsv);
 els.exportTrainingBtn.addEventListener('click',exportTrainingCsv);
+els.tabs.forEach(function(tab){
+  tab.addEventListener('click',function(){
+    setActiveTab(tab.getAttribute('data-tab')||'roster');
+  });
+});
 document.addEventListener('click',function(event){
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
   if(!button)return;
@@ -328,12 +356,15 @@ els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
   els.quickFilter.value='all';
   els.activityRange.value='30';
+  activeTab='roster';
+  setActiveTab(activeTab);
   tableSorts=defaultTableSorts();
   renderRows();
 });
 Array.prototype.forEach.call(document.querySelectorAll('.metric[data-filter]'),function(metric){
   metric.addEventListener('click',function(){
     els.quickFilter.value=metric.getAttribute('data-filter')||'all';
+    setActiveTab(tabForFilter(els.quickFilter.value));
     renderRows();
   });
 });
@@ -439,7 +470,25 @@ function renderRows(){
   els.filterState.hidden=isDefaultView(query,filter);
   updateActiveMetric(filter);
   updateSortHeaders();
+  setActiveTab(activeTab);
   saveView();
+}
+
+function setActiveTab(tabName){
+  activeTab=['roster','meet','training'].indexOf(tabName)>=0?tabName:'roster';
+  els.tabs.forEach(function(tab){
+    tab.classList.toggle('active',tab.getAttribute('data-tab')===activeTab);
+  });
+  els.panels.forEach(function(panel){
+    panel.hidden=panel.getAttribute('data-panel')!==activeTab;
+  });
+  saveView();
+}
+
+function tabForFilter(filter){
+  if(filter==='pb'||filter==='sb')return 'meet';
+  if(filter==='no_training_this_week')return 'training';
+  return 'roster';
 }
 
 function exportRosterCsv(){
@@ -512,7 +561,7 @@ function defaultTableSorts(){
 }
 function saveView(){
   try{
-    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,sorts:tableSorts}));
+    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,activeTab:activeTab,sorts:tableSorts}));
   }catch(e){}
 }
 function restoreView(){
@@ -521,6 +570,7 @@ function restoreView(){
     if(raw.search)els.search.value=raw.search;
     if(raw.filter)els.quickFilter.value=raw.filter;
     if(raw.activityRange)els.activityRange.value=raw.activityRange;
+    if(raw.activeTab)activeTab=raw.activeTab;
     if(raw.sorts&&typeof raw.sorts==='object')tableSorts=mergeSorts(defaultTableSorts(),raw.sorts);
   }catch(e){}
 }
