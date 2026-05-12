@@ -564,6 +564,7 @@ function openAthletePicker(id){
     if(athleteSelectedInGroup(a.name,id))return;
     items.push({
       label:a.name,
+      sub:'',
       selected:String(a.name||'').trim().toLowerCase()===String(r.name||'').trim().toLowerCase()
     });
   });
@@ -653,7 +654,8 @@ function openPicker(title,items,onSelect){
   if(titleEl)titleEl.textContent=title||'Select';
   if(!list)return;
   list.innerHTML=(PICK.items.length?PICK.items:[{label:'No options available',disabled:true}]).map(function(item,i){
-    return '<button type="button" class="picker-row'+(item.selected?' on':'')+'" '+(item.disabled?'disabled':'onclick="choosePicker('+i+')"')+'><b>'+ex(item.label||'')+'</b>'+(item.sub?'<small>'+ex(item.sub)+'</small>':'')+'</button>';
+    var sub=/^smartcoach id:/i.test(String(item.sub||'').trim())?'':item.sub;
+    return '<button type="button" class="picker-row'+(item.selected?' on':'')+'" '+(item.disabled?'disabled':'onclick="choosePicker('+i+')"')+'><b>'+ex(item.label||'')+'</b>'+(sub?'<small>'+ex(sub)+'</small>':'')+'</button>';
   }).join('');
   sm('m-picker');
 }
