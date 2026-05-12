@@ -46,13 +46,22 @@ select[multiple]{min-height:112px}
 .fitness-row input,.fitness-row select{font-size:13px;padding:7px 8px}
 .fitness-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:10px}
 .fitness-status{min-height:18px;font-size:13px;color:var(--muted);font-weight:800;text-align:right}
+.assignments{border-bottom:1px solid var(--line);padding:16px 20px;background:#fff}
+.assignment-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.assignment-head h2{font-size:16px;letter-spacing:0}
+.assignment-head p{font-size:13px;color:var(--muted);margin-top:2px}
+.assignment-grid{display:grid;grid-template-columns:1fr 220px;gap:8px;margin-bottom:10px}
+.assignment-athletes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.assignment-athletes label{display:flex;align-items:center;gap:8px;border:1px solid #cfd6e0;border-radius:7px;padding:8px 10px;font-size:13px;font-weight:800;color:#374151}
+.assignment-athletes input{width:18px;height:18px;accent-color:var(--blue)}
+.assignment-status{font-size:13px;color:var(--muted);font-weight:800;text-align:right}
 .mini{padding:8px 10px;font-size:13px}
 .status{min-height:22px;text-align:center;font-size:13px;color:var(--muted);padding:12px 20px 0}
 .actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px 20px}
 button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer}
 .primary{background:var(--blue);color:#fff}
 .secondary{background:#e5e7eb;color:#111827}
-@media(max-width:760px){.wrap{padding:12px}.top{display:block}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions{align-items:stretch;flex-direction:column}.fitness-status{text-align:left}.actions{display:block}.actions button{width:100%;margin-top:8px}}
+@media(max-width:760px){.wrap{padding:12px}.top{display:block}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions,.assignment-head{align-items:stretch;flex-direction:column}.fitness-status,.assignment-status{text-align:left}.assignment-grid,.assignment-athletes{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
 </style>
 </head>
 <body>
@@ -73,6 +82,18 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
       <div id="fitnessRows" class="fitness-table"><div class="meet-empty">Loading athletes...</div></div>
       <div class="fitness-actions"><div id="fitnessStatus" class="fitness-status"></div><button class="secondary mini" onclick="saveFitnessRows()">Save Fitness</button></div>
     </div>
+    <div class="assignments">
+      <div class="assignment-head">
+        <div><h2>Plan Assignments</h2><p>Attach a plan to selected athletes before practice.</p></div>
+        <div id="assignmentStatus" class="assignment-status"></div>
+      </div>
+      <div class="assignment-grid">
+        <select id="assignmentPlan" onchange="renderAssignmentAthletes()"><option value="">Loading plans...</option></select>
+        <input id="assignmentGroup" type="text" placeholder="Group label e.g. Girls CC">
+      </div>
+      <div id="assignmentAthletes" class="assignment-athletes"><div class="meet-empty">Loading athletes...</div></div>
+      <div class="fitness-actions"><button class="secondary mini" onclick="toggleAssignmentAthletes(true)">Select All</button><button class="secondary mini" onclick="toggleAssignmentAthletes(false)">Clear</button><button class="primary mini" onclick="savePlanAssignments()">Save Assignments</button></div>
+    </div>
     <div id="form" class="form"></div>
     <div id="status" class="status">Loading builder...</div>
     <div class="actions">
@@ -82,7 +103,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   </div>
 </div>
 <script>
-var questionnaire=null,athletes=[],meets=[];
+var questionnaire=null,athletes=[],meets=[],plans=[];
 var fitnessEvents=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
 var fitnessSports=[{label:'Track',value:'track'},{label:'Cross Country',value:'cross_country'}];
 function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -92,14 +113,18 @@ function loadBuilder(){
   Promise.all([
     fetch('/api/smart-trak/training-plan?kind=questionnaire').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}),
     fetch('/api/smart-trak/athletes').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{athletes:[]}};}),
-    fetch('/api/smart-trak/meets').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};})
+    fetch('/api/smart-trak/meets').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};}),
+    fetch('/api/smart-trak/training-plan?kind=assignments').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{plans:[]}};})
   ]).then(function(results){
-    var result=results[0],athleteResult=results[1],meetResult=results[2];
+    var result=results[0],athleteResult=results[1],meetResult=results[2],planResult=results[3];
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Builder unavailable');
     questionnaire=result.data.questionnaire;
     athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
     meets=(meetResult.data&&meetResult.data.meets)||[];
+    plans=(planResult.data&&planResult.data.plans)||[];
     renderFitnessRows();
+    renderAssignmentPlans();
+    renderAssignmentAthletes();
     renderForm();
   }).catch(function(e){setStatus('Error: '+e.message,'bad');});
 }
@@ -211,6 +236,56 @@ function value(key){var el=document.getElementById('field-'+key);if(!el)return''
 function labelFor(key,val){var f=questionnaire.fields.find(function(item){return item.key===key;});var o=f&&f.options&&f.options.find(function(opt){return opt.value===val;});return o?o.label:'';}
 function setStatus(text,type){var s=document.getElementById('status');s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';s.style.fontWeight=type?'800':'400';}
 function setFitnessStatus(text,type){var s=document.getElementById('fitnessStatus');if(!s)return;s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';}
+function setAssignmentStatus(text,type){var s=document.getElementById('assignmentStatus');if(!s)return;s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';}
+function planLabel(plan){return plan?plan.title+([plan.assignedGroup,plan.season,plan.seasonYear].filter(Boolean).length?' - '+[plan.assignedGroup,plan.season,plan.seasonYear].filter(Boolean).join(' · '):''):'Select plan';}
+function renderAssignmentPlans(){
+  var select=document.getElementById('assignmentPlan');
+  if(!select)return;
+  if(!plans.length){select.innerHTML='<option value="">No plans found</option>';return;}
+  var previous=select.value;
+  select.innerHTML=plans.map(function(plan,i){return '<option value="'+i+'">'+esc(planLabel(plan))+'</option>';}).join('');
+  if(previous&&plans[parseInt(previous)])select.value=previous;
+  renderAssignmentAthletes();
+}
+function selectedAssignmentPlan(){
+  var select=document.getElementById('assignmentPlan');
+  return plans[parseInt(select&&select.value)]||null;
+}
+function renderAssignmentAthletes(){
+  var box=document.getElementById('assignmentAthletes');
+  var group=document.getElementById('assignmentGroup');
+  if(!box)return;
+  var plan=selectedAssignmentPlan();
+  if(group&&plan)group.value=plan.assignedGroup||'';
+  if(!athletes.length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
+  var assigned=(plan&&plan.assignedAthleteIds||[]).map(function(id){return String(id);});
+  box.innerHTML=athletes.map(function(a){
+    var checked=assigned.indexOf(String(a.id))>=0?' checked':'';
+    return '<label><input class="assignment-athlete" type="checkbox" value="'+esc(a.id)+'" data-name="'+esc(a.name)+'"'+checked+'> '+esc(a.name)+'</label>';
+  }).join('');
+}
+function toggleAssignmentAthletes(checked){
+  Array.prototype.slice.call(document.querySelectorAll('.assignment-athlete')).forEach(function(input){input.checked=checked;});
+}
+function savePlanAssignments(){
+  var plan=selectedAssignmentPlan();
+  if(!plan){setAssignmentStatus('Select a plan first.','warn');return;}
+  var selected=Array.prototype.slice.call(document.querySelectorAll('.assignment-athlete:checked'));
+  var athleteIds=selected.map(function(input){return input.value;});
+  var athleteNames=selected.map(function(input){return input.getAttribute('data-name')||'';}).filter(Boolean);
+  var assignedGroup=(document.getElementById('assignmentGroup')||{}).value||plan.assignedGroup||'';
+  setAssignmentStatus('Saving assignments...',null);
+  fetch('/api/smart-trak/training-plan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'assignAthletes',planId:plan.id,assignedGroup:assignedGroup,athleteIds:athleteIds,athleteNames:athleteNames,schoolConstraints:plan.schoolConstraints||''})}).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Assignments failed');
+    plan.assignedGroup=assignedGroup;
+    plan.assignedAthleteIds=athleteIds;
+    plan.assignedAthleteNames=athleteNames;
+    setAssignmentStatus('Saved '+athleteIds.length+' assignment'+(athleteIds.length===1?'':'s')+'.','ok');
+    renderAssignmentPlans();
+  }).catch(function(e){setAssignmentStatus('Error: '+e.message,'bad');});
+}
 function meetScheduleControl(){
   var active=meets.map(function(m,i){return{meet:m,index:i};}).filter(function(item){var m=item.meet;return m&&m.name&&m.date&&String(m.status||'').toLowerCase()==='scheduled';});
   if(!active.length)return '<div id="field-priorityMeets" class="meet-list"><div class="meet-empty">No scheduled meets found in SMARTCoach Pro.</div></div>';

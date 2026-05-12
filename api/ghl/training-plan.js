@@ -4,6 +4,7 @@ const TRAINING_PLAN_SCHEMA_KEY = "custom_objects.training_plans";
 const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const FIELD_IDS = {
   training_plan: ["TZbFrs7XAmFTbCUR7Bht"],
+  athlete_contact: ["YMBapmRRsxxPa4PnDUvP"],
   athlete_name_snapshot: ["nqVp4dTUMuxj1rhffuPh"],
   plan_scope: ["kAcRWNKWu5ZqVbCqxAfG"],
   plan_date: ["572QXhX7AZQl2Sv1yvxE"],
@@ -79,6 +80,11 @@ module.exports = async function handler(req, res) {
         res.status(200).json({ success: true, questionnaire: trainingPlanQuestionnaire() });
         return;
       }
+      if (req.query && req.query.kind === "assignments") {
+        const plans = await listTrainingPlans({ token, locationId });
+        res.status(200).json({ success: true, plans });
+        return;
+      }
       if (req.query && (req.query.kind === "days" || req.query.trainingPlanId || req.query.planId || req.query.date)) {
         const days = await listTrainingPlanDays({
           token,
@@ -97,6 +103,11 @@ module.exports = async function handler(req, res) {
     }
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    if (payload && payload.action === "assignAthletes") {
+      const assignment = await assignAthletesToPlan({ token, locationId, payload });
+      res.status(200).json({ success: true, assignment });
+      return;
+    }
     const plan = normalizePlan(payload);
     const properties = buildTrainingPlanProperties(plan);
 
@@ -181,6 +192,7 @@ function normalizeTrainingPlanRecord(record) {
     seasonYear: Number(prop(props, "season_year")) || null,
     phase: labelValue(prop(props, "phase")),
     event: prop(props, "anchor_event"),
+    contactId: prop(props, "athlete_contact"),
     athleteName: prop(props, "athlete_name_snapshot"),
     planDate: prop(props, "plan_date"),
     startDate: prop(props, "plan_start_date"),
@@ -190,12 +202,60 @@ function normalizeTrainingPlanRecord(record) {
     seasonBlock: labelValue(prop(props, "season_block")),
     blockType: labelValue(prop(props, "block_type")),
     assignedGroup: prop(props, "assigned_group"),
+    assignedAthleteIds: parseAssignedAthleteIds(prop(props, "school_constraints")),
+    assignedAthleteNames: parseAssignedAthleteNames(prop(props, "school_constraints")),
     priorityMeets: prop(props, "priority_meets"),
     noPracticeDates: prop(props, "no_practice_dates"),
     schoolConstraints: prop(props, "school_constraints"),
     approvalStatus: labelValue(prop(props, "approval_status")),
     description: prop(props, "workout_description"),
   };
+}
+
+async function assignAthletesToPlan({ token, locationId, payload }) {
+  const planId = clean(payload && payload.planId);
+  const assignedGroup = clean(payload && payload.assignedGroup);
+  const athleteIds = Array.isArray(payload && payload.athleteIds) ? payload.athleteIds.map(clean).filter(Boolean) : [];
+  const athleteNames = Array.isArray(payload && payload.athleteNames) ? payload.athleteNames.map(clean).filter(Boolean) : [];
+  const existingSchoolConstraints = clean(payload && payload.schoolConstraints);
+
+  if (!planId) throw httpError(400, "Select a training plan first.");
+
+  const properties = compactProperties({
+    assigned_group: assignedGroup,
+    school_constraints: assignmentBlockText(existingSchoolConstraints, { assignedGroup, athleteIds, athleteNames }),
+  });
+
+  await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(TRAINING_PLAN_SCHEMA_KEY)}/records/${encodeURIComponent(planId)}?locationId=${encodeURIComponent(locationId)}`,
+    method: "PUT",
+    body: { properties },
+  });
+
+  return { planId, assignedGroup, athleteIds, athleteNames };
+}
+
+function assignmentBlockText(existingText, assignment) {
+  const base = clean(existingText).replace(/\n?\[SMARTCoach Assignments\][\s\S]*?\[\/SMARTCoach Assignments\]\n?/g, "").trim();
+  const block = [
+    "[SMARTCoach Assignments]",
+    `Group: ${clean(assignment.assignedGroup)}`,
+    `Athlete IDs: ${(assignment.athleteIds || []).map(clean).filter(Boolean).join(",")}`,
+    `Athletes: ${(assignment.athleteNames || []).map(clean).filter(Boolean).join(", ")}`,
+    "[/SMARTCoach Assignments]",
+  ].join("\n");
+  return [base, block].filter(Boolean).join("\n\n");
+}
+
+function parseAssignedAthleteIds(text) {
+  const match = clean(text).match(/Athlete IDs:\s*([^\n]+)/i);
+  return match ? match[1].split(",").map(clean).filter(Boolean) : [];
+}
+
+function parseAssignedAthleteNames(text) {
+  const match = clean(text).match(/Athletes:\s*([^\n]+)/i);
+  return match ? match[1].split(",").map(clean).filter(Boolean) : [];
 }
 
 async function listTrainingPlanDays({ token, locationId, trainingPlanId, planSourceId, date, groupName }) {

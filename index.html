@@ -475,7 +475,71 @@ function applyAthleteMatch(r){
   var a=findAthleteByName(r.name);
   r.contactId=a?a.id:'';
   r.smartcoachAthleteId=a?(a.smartcoachAthleteId||''):'';
+  applyAssignedPlanForRunner(r,a);
   return a;
+}
+function loadTrainingPlans(){
+  if(!isProPlan()){TP=[];return;}
+  fetch('/api/smart-trak/training-plan?kind=assignments').then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Training plans unavailable');
+    TP=(result.data&&result.data.plans)||[];
+    applyAutoPlansToCurrentGroup();
+  }).catch(function(){TP=[];});
+}
+function applyAutoPlansToCurrentGroup(){
+  if(!CL||!TP.length)return;
+  var changed=false;
+  var groupPlan=findAssignedPlanForGroup();
+  if(groupPlan&&(!CL.trainingPlanId||CL.trainingPlanAuto)){
+    applyTrainingPlanRecordToTarget(CL,groupPlan,true);
+    changed=true;
+  }
+  CL.runners.forEach(function(r){
+    var athlete=findAthleteByName(r.name);
+    if(applyAssignedPlanForRunner(r,athlete))changed=true;
+  });
+  if(changed){save();rr();}
+}
+function applyAssignedPlanForRunner(r,athlete){
+  if(!r||!athlete||!TP.length)return false;
+  if(r.trainingPlanId&&!r.trainingPlanAuto)return false;
+  var plan=findAssignedPlanForAthlete(athlete)||findAssignedPlanForGroup();
+  if(!plan)return false;
+  applyTrainingPlanRecordToTarget(r,plan,true);
+  return true;
+}
+function findAssignedPlanForAthlete(athlete){
+  if(!athlete)return null;
+  var id=String(athlete.id||'');
+  var name=String(athlete.name||'').trim().toLowerCase();
+  return TP.find(function(plan){
+    if(String(plan.contactId||'')===id)return true;
+    var ids=(plan.assignedAthleteIds||[]).map(String);
+    if(id&&ids.indexOf(id)>=0)return true;
+    return (plan.assignedAthleteNames||[]).some(function(item){return String(item||'').trim().toLowerCase()===name;});
+  })||null;
+}
+function findAssignedPlanForGroup(){
+  if(!CL)return null;
+  var groupName=String(CL.name||'').trim().toLowerCase();
+  if(!groupName)return null;
+  return TP.find(function(plan){return String(plan.assignedGroup||'').trim().toLowerCase()===groupName;})||null;
+}
+function applyTrainingPlanRecordToTarget(target,plan,auto){
+  if(!target||!plan)return;
+  target.trainingPlanId=plan.id||'';
+  target.trainingPlanSourceId=plan.sourceRecordId||'';
+  target.trainingPlanTitle=plan.title||'';
+  target.trainingPlanDescription=plan.description||'';
+  target.trainingPlanSeason=plan.season||'';
+  target.trainingPlanPhase=plan.phase||plan.blockType||'';
+  target.trainingPlanAuto=auto?'1':'';
+  fetchTrainingPlanDays(target.trainingPlanId,target.trainingPlanSourceId).then(function(days){
+    var day=upcomingPlanDays(days,1)[0]||null;
+    if(day&&applyPlanDayToTarget(target,day)){save();if(CL)rr();}
+  }).catch(function(){});
 }
 function athleteSelectedInGroup(name, runnerId){
   if(!CL)return false;
@@ -525,6 +589,7 @@ function loadAthletes(){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Roster unavailable');
     AR=(result.data&&result.data.athletes)||[];
     renderAthleteList();
+    applyAutoPlansToCurrentGroup();
     if(CL)rr();
     if(CL&&CL.type==='meet'){
       var meetSave=document.getElementById('m-meet-save');
@@ -576,7 +641,7 @@ function go(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
   if(id==='s-groups')rl();
-  else if(id==='s-group')rr();
+  else if(id==='s-group'){applyAutoPlansToCurrentGroup();rr();}
   else if(id==='s-sort')rSort();
   else if(id==='s-set')oSet();
 }
@@ -1706,6 +1771,7 @@ function useSelectedTrainingPlan(){
     target.trainingPlanDescription=plan.description||'';
     target.trainingPlanSeason=plan.season||'';
     target.trainingPlanPhase=plan.phase||plan.blockType||'';
+    target.trainingPlanAuto='';
     var day=plan.selectedDay||(upcomingPlanDays(plan.planDays||[],5)[0])||null;
     target.trainingPlanDayId=day&&day.id||'';
     target.trainingPlanDaySourceId=day&&day.sourceRecordId||'';
@@ -1774,6 +1840,7 @@ function clearAthleteTrainingPlan(){
   CE.trainingPlanDayTargetSplits='';
   CE.trainingPlanDayDetails='';
   CE.trainingPlanDayPlannedVolume='';
+  CE.trainingPlanAuto='';
   save();rr();oEnt(CE.id);
   document.getElementById('tp-status').textContent='Athlete is back on the group plan.';
   document.getElementById('tp-status').style.color='#0a7a44';
@@ -2587,7 +2654,7 @@ function markSyncedRuns(synced){
   renderSyncAthletes();
 }
 
-applyPlanMode();load();rl();loadAthletes();
+applyPlanMode();load();rl();loadAthletes();loadTrainingPlans();
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
   var t=e.target;
