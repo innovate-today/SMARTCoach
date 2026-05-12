@@ -27,6 +27,7 @@ const FIELD_IDS = {
   workout_type: ["jX0YLlpt08vxNKV3JyM5"],
   total_time_display: ["z9eZIcIL1B7yaeR5jXHI"],
   session_date: ["pl69ao2Pu76zeUKMEWpm"],
+  coach_note: ["Afy8b8lAbUoti9cCqa1m"],
 };
 
 module.exports = async function handler(req, res) {
@@ -229,13 +230,26 @@ function normalizeMeetResult(record) {
 
 function normalizePerformanceRecord(record) {
   const props = recordProperties(record);
+  const coachNote = prop(props, "coach_note");
   return {
     groupName: prop(props, "group_name"),
     workoutType: labelValue(prop(props, "workout_type")),
     totalTimeDisplay: prop(props, "total_time_display"),
     sessionDate: prop(props, "session_date"),
+    coachNote,
+    plannedTarget: noteValue(coachNote, "Planned target"),
+    targetDifference: noteValue(coachNote, "Difference"),
+    plannedEffort: noteValue(coachNote, "Planned effort"),
+    currentFitnessSnapshot: noteValue(coachNote, "Current fitness"),
+    weather: noteValue(coachNote, "Weather"),
     syncedAt: recordTimestamp(record),
   };
+}
+
+function noteValue(note, label) {
+  const prefix = `${label}:`;
+  const line = clean(note).split(/\r?\n/).find((item) => item.trim().toLowerCase().startsWith(prefix.toLowerCase()));
+  return line ? clean(line.slice(prefix.length)) : "";
 }
 
 function recordMatchesAthlete(record, athlete) {

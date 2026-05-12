@@ -245,6 +245,7 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="training" data-sort="groupName" type="button">Group</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="workoutType" type="button">Workout</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Time</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="sessionDate" type="button">Session Date</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Synced</button></th>
@@ -561,7 +562,7 @@ function exportMeetCsv(){
 
 function exportTrainingCsv(){
   var rows=visibleTrainingRows;
-  var headers=['Athlete','Group','Workout','Current Fitness','Fitness Date','Time','Session Date','Synced'];
+  var headers=['Athlete','Group','Workout','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Time','Session Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
     var athlete=findDashboardAthleteForTraining(row)||{};
     var fitness=athlete.currentFitness||{};
@@ -571,6 +572,10 @@ function exportTrainingCsv(){
       row.workoutType||'',
       fitness.label||'',
       fitness.date||'',
+      row.plannedTarget||'',
+      row.targetDifference||'',
+      row.plannedEffort||'',
+      row.weather||'',
       row.totalTimeDisplay||'',
       row.sessionDate||'',
       row.syncedAt||''
@@ -630,6 +635,7 @@ function trainingSortValue(row,key){
     var athlete=findDashboardAthleteForTraining(row)||{};
     return athlete.currentFitness&&athlete.currentFitness.label;
   }
+  if(key==='targetReview')return [row.targetDifference,row.plannedTarget].filter(Boolean).join(' ');
   return row[key];
 }
 function compareValues(a,b){
@@ -771,7 +777,7 @@ function openAthleteDetail(row){
     }),'No recent meet results.')+
     '<h3 class="section-title">Recent Training</h3>'+
     detailList(training.map(function(item){
-      return mainLine([item.totalTimeDisplay,item.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([item.groupName,formatDate(item.sessionDate)].filter(Boolean).join(' · '));
+      return mainLine([item.totalTimeDisplay,item.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([item.groupName,formatDate(item.sessionDate),targetReviewText(item)].filter(Boolean).join(' · '));
     }),'No recent training syncs.');
   els.athleteModal.hidden=false;
 }
@@ -813,10 +819,21 @@ function recentTrainingHtml(row){
     '<td>'+mainLine(row.groupName||'')+'</td>'+
     '<td>'+mainLine(row.workoutType||'')+'</td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
+    '<td>'+targetReviewHtml(row)+'</td>'+
     '<td>'+mainLine(row.totalTimeDisplay||'')+'</td>'+
     '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
     '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
   '</tr>';
+}
+
+function targetReviewHtml(row){
+  if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort)return '<span class="muted">No target saved</span>';
+  return mainLine(row.plannedTarget||'Target saved')+
+    subLine([row.targetDifference,row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
+}
+
+function targetReviewText(row){
+  return [row.plannedTarget,row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
 }
 
 function findDashboardAthleteForTraining(row){
@@ -840,7 +857,7 @@ function recentMeetSearchText(row){
 }
 
 function recentTrainingSearchText(row){
-  return [row.athleteName,row.groupName,row.workoutType,row.totalTimeDisplay,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
+  return [row.athleteName,row.groupName,row.workoutType,row.totalTimeDisplay,row.plannedTarget,row.targetDifference,row.plannedEffort,row.currentFitnessSnapshot,row.weather,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
 }
 
 function athleteDetailButton(row){
