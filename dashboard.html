@@ -47,6 +47,8 @@ button.ghost{background:#eef2f7;color:#172033}
 .tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
 .tab.active .pill{background:rgba(255,255,255,.18);color:#fff}
 .tabpanel[hidden]{display:none}
+.table-scroll-top{height:16px;overflow-x:auto;overflow-y:hidden;margin:0 0 4px;border:1px solid var(--line);border-radius:8px;background:#f8fafc}
+.table-scroll-top div{height:1px}
 .tablewrap{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:auto}
 .section-title{font-size:16px;font-weight:800;margin:18px 0 8px}
 .section-title .count{margin-left:8px}
@@ -363,6 +365,7 @@ var els={
   trainingAthletesThisWeek:document.getElementById('trainingAthletesThisWeek'),
   trainingMissingThisWeek:document.getElementById('trainingMissingThisWeek')
 };
+setupTableScrollbars();
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.search.addEventListener('input',renderRows);
 els.clearSearchBtn.addEventListener('click',function(){
@@ -466,6 +469,7 @@ function loadDashboard(){
     els.status.textContent='Needs attention';
     els.lastUpdated.textContent='Update failed';
     updateBreakdowns();
+    refreshTableScrollbars();
   }).finally(function(){
     els.refreshBtn.disabled=false;
   });
@@ -539,6 +543,7 @@ function renderRows(){
   updateActiveMetric(filter);
   updateSortHeaders();
   setActiveTab(activeTab);
+  refreshTableScrollbars();
   saveView();
 }
 
@@ -550,7 +555,50 @@ function setActiveTab(tabName){
   els.panels.forEach(function(panel){
     panel.hidden=panel.getAttribute('data-panel')!==activeTab;
   });
+  refreshTableScrollbars();
   saveView();
+}
+
+function setupTableScrollbars(){
+  Array.prototype.forEach.call(document.querySelectorAll('.tablewrap'),function(wrap){
+    if(wrap.previousElementSibling&&wrap.previousElementSibling.classList&&wrap.previousElementSibling.classList.contains('table-scroll-top'))return;
+    var top=document.createElement('div');
+    var inner=document.createElement('div');
+    top.className='table-scroll-top';
+    top.setAttribute('aria-hidden','true');
+    top.appendChild(inner);
+    wrap.parentNode.insertBefore(top,wrap);
+    var syncing=false;
+    top.addEventListener('scroll',function(){
+      if(syncing)return;
+      syncing=true;
+      wrap.scrollLeft=top.scrollLeft;
+      syncing=false;
+    });
+    wrap.addEventListener('scroll',function(){
+      if(syncing)return;
+      syncing=true;
+      top.scrollLeft=wrap.scrollLeft;
+      syncing=false;
+    });
+  });
+  refreshTableScrollbars();
+  window.addEventListener('resize',refreshTableScrollbars);
+}
+
+function refreshTableScrollbars(){
+  requestAnimationFrame(function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.tablewrap'),function(wrap){
+      var top=wrap.previousElementSibling;
+      if(!top||!top.classList||!top.classList.contains('table-scroll-top'))return;
+      var inner=top.firstElementChild;
+      var table=wrap.querySelector('table');
+      var width=table?Math.max(table.scrollWidth,wrap.scrollWidth):wrap.scrollWidth;
+      inner.style.width=width+'px';
+      top.scrollLeft=wrap.scrollLeft;
+      top.hidden=width<=wrap.clientWidth+1;
+    });
+  });
 }
 
 function tabForFilter(filter){
@@ -648,7 +696,8 @@ function defaultTableSorts(){
   return {
     roster:{key:'name',dir:'asc'},
     meet:{key:'syncedAt',dir:'desc'},
-    training:{key:'syncedAt',dir:'desc'}
+    training:{key:'syncedAt',dir:'desc'},
+    volume:{key:'volumeMiles',dir:'desc'}
   };
 }
 function saveView(){
