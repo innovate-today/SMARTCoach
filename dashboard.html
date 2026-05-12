@@ -176,6 +176,7 @@ tr:last-child td{border-bottom:0}
       <option value="all">All activity</option>
     </select>
     <button id="resetViewBtn" class="ghost" type="button">Reset View</button>
+    <button id="exportCurrentBtn" class="ghost" type="button">Export Current View</button>
     <div id="status" class="status">Loading dashboard...</div>
   </section>
   <div id="filterState" class="filterstate" hidden>View: all athletes · last 30 days</div>
@@ -189,7 +190,6 @@ tr:last-child td{border-bottom:0}
   <section id="rosterPanel" class="tabpanel" data-panel="roster">
     <div class="sectionbar">
       <div class="section-title">Roster Overview</div>
-      <button id="exportRosterBtn" class="ghost" type="button">Export Roster</button>
     </div>
     <section class="tablewrap">
       <table>
@@ -213,7 +213,6 @@ tr:last-child td{border-bottom:0}
   <section id="meetPanel" class="tabpanel" data-panel="meet" hidden>
     <div class="sectionbar">
       <div class="section-title">Recent Meet Syncs</div>
-      <button id="exportMeetBtn" class="ghost" type="button">Export Meets</button>
     </div>
     <section class="tablewrap recentwrap">
       <table>
@@ -237,7 +236,6 @@ tr:last-child td{border-bottom:0}
   <section id="trainingPanel" class="tabpanel" data-panel="training" hidden>
     <div class="sectionbar">
       <div class="section-title">Recent Training Syncs</div>
-      <button id="exportTrainingBtn" class="ghost" type="button">Export Training</button>
     </div>
     <section class="tablewrap recentwrap">
       <table>
@@ -302,9 +300,7 @@ var els={
   quickFilter:document.getElementById('quickFilter'),
   activityRange:document.getElementById('activityRange'),
   resetViewBtn:document.getElementById('resetViewBtn'),
-  exportRosterBtn:document.getElementById('exportRosterBtn'),
-  exportMeetBtn:document.getElementById('exportMeetBtn'),
-  exportTrainingBtn:document.getElementById('exportTrainingBtn'),
+  exportCurrentBtn:document.getElementById('exportCurrentBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   athleteCount:document.getElementById('athleteCount'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
@@ -338,9 +334,7 @@ els.quickFilter.addEventListener('change',function(){
   renderRows();
 });
 els.activityRange.addEventListener('change',renderRows);
-els.exportRosterBtn.addEventListener('click',exportRosterCsv);
-els.exportMeetBtn.addEventListener('click',exportMeetCsv);
-els.exportTrainingBtn.addEventListener('click',exportTrainingCsv);
+els.exportCurrentBtn.addEventListener('click',exportCurrentViewCsv);
 els.tabs.forEach(function(tab){
   tab.addEventListener('click',function(){
     setActiveTab(tab.getAttribute('data-tab')||'roster');
@@ -511,6 +505,12 @@ function tabForFilter(filter){
   if(filter==='pb'||filter==='sb')return 'meet';
   if(filter==='no_training_this_week')return 'training';
   return 'roster';
+}
+
+function exportCurrentViewCsv(){
+  if(activeTab==='meet')return exportMeetCsv();
+  if(activeTab==='training')return exportTrainingCsv();
+  return exportRosterCsv();
 }
 
 function exportRosterCsv(){
