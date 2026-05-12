@@ -257,6 +257,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <input class="ni" id="sn" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Workout 1"/>
       </div>
       <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('laps')">Laps &#9432;</span><div class="tog on" id="tl" onclick="tg('laps')"></div></div>
+      <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('repRest')">Rep/Rest Splits &#9432;</span><div class="tog" id="trr" onclick="tg('repRest')"></div></div>
       <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('multiple')">Multiple &#9432;</span><div class="tog on" id="tm" onclick="tg('multiple')"></div></div>
       <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('notes')">Notes on Detail Line &#9432;</span><div class="tog on" id="tn" onclick="tg('notes')"></div></div>
       <div class="trow" style="border-bottom:none"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('beep')">Beep on Start &#9432;</span><div class="tog on" id="tb" onclick="tg('beep')"></div></div>
@@ -347,6 +348,16 @@ function save(){
     localStorage.setItem('sc1_rid',String(rid));
   }catch(e){}
 }
+function defaultCfg(){
+  return{laps:1,repRest:0,multiple:1,notes:1,beep:1};
+}
+function normalizeCfg(cfg){
+  var base=defaultCfg(),source=cfg||{};
+  Object.keys(base).forEach(function(key){
+    if(source[key]!==undefined)base[key]=source[key]?1:0;
+  });
+  return base;
+}
 function load(){
   try{
     var d=localStorage.getItem('sc1');
@@ -354,7 +365,7 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
+        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',cfg:normalizeCfg(l.cfg),
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -367,9 +378,9 @@ function load(){
   if(!logs.length){
     var cs=currentSeason();
     logs=[
-      {id:lid++,name:'Workout 1',type:'training',season:cs.season,seasonYear:cs.year,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
-      {id:lid++,name:'Workout 2',type:'training',season:cs.season,seasonYear:cs.year,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]},
-      {id:lid++,name:'Workout 3',type:'training',season:cs.season,seasonYear:cs.year,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]}
+      {id:lid++,name:'Workout 1',type:'training',season:cs.season,seasonYear:cs.year,cfg:defaultCfg(),runners:[]},
+      {id:lid++,name:'Workout 2',type:'training',season:cs.season,seasonYear:cs.year,cfg:defaultCfg(),runners:[]},
+      {id:lid++,name:'Workout 3',type:'training',season:cs.season,seasonYear:cs.year,cfg:defaultCfg(),runners:[]}
     ];
     save();
   }
@@ -680,7 +691,7 @@ function oGroup(id){
 function createGroup(){
   var name=document.getElementById('mln').value.trim()||'New Group';
   var cs=currentSeason();
-  logs.unshift({id:lid++,name:name,type:'training',season:cs.season,seasonYear:cs.year,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
+  logs.unshift({id:lid++,name:name,type:'training',season:cs.season,seasonYear:cs.year,cfg:defaultCfg(),runners:[]});
   hm('ml');document.getElementById('mln').value='';save();rl();
 }
 function createMeetGroup(){
@@ -696,7 +707,7 @@ function createMeetGroup(){
   maybeCreateMeetRecord({meetName:meet,meetDate:date,season:season,seasonYear:year});
 }
 function createMeetGroupFromValues(data){
-  logs.unshift({id:lid++,name:data.eventName,type:'meet',season:data.season,seasonYear:data.seasonYear,meetName:data.meetName,meetDate:data.meetDate,meetRecordId:data.meetRecordId||'',eventName:data.eventName,cfg:{laps:1,multiple:1,notes:1,beep:1},runners:[]});
+  logs.unshift({id:lid++,name:data.eventName,type:'meet',season:data.season,seasonYear:data.seasonYear,meetName:data.meetName,meetDate:data.meetDate,meetRecordId:data.meetRecordId||'',eventName:data.eventName,cfg:defaultCfg(),runners:[]});
   hm('mmg');
   document.getElementById('mg-meet').value='';
   document.getElementById('mg-event').value='400m';
@@ -1066,6 +1077,7 @@ function splitMeta(plan,index){
 }
 
 function planHasRecovery(plan){
+  if(CL&&CL.cfg&&CL.cfg.repRest)return true;
   var text=[
     plan&&plan.trainingPlanDayTitle,
     plan&&plan.trainingPlanDayDetails,
@@ -1752,16 +1764,17 @@ function clearAthleteTrainingPlan(){
 
 function oSet(){
   if(!CL)return;
-  TC={laps:CL.cfg.laps,multiple:CL.cfg.multiple,notes:CL.cfg.notes,beep:CL.cfg.beep};
+  CL.cfg=normalizeCfg(CL.cfg);
+  TC={laps:CL.cfg.laps,repRest:CL.cfg.repRest,multiple:CL.cfg.multiple,notes:CL.cfg.notes,beep:CL.cfg.beep};
   document.getElementById('sn').value=CL.name;
-  [{k:'laps',e:'tl'},{k:'multiple',e:'tm'},{k:'notes',e:'tn'},{k:'beep',e:'tb'}].forEach(function(x){
+  [{k:'laps',e:'tl'},{k:'repRest',e:'trr'},{k:'multiple',e:'tm'},{k:'notes',e:'tn'},{k:'beep',e:'tb'}].forEach(function(x){
     document.getElementById(x.e).className='tog'+(TC[x.k]?' on':'');
   });
 }
-function tg(k){TC[k]=TC[k]?0:1;var map={laps:'tl',multiple:'tm',notes:'tn',beep:'tb'};document.getElementById(map[k]).className='tog'+(TC[k]?' on':'');}
+function tg(k){TC[k]=TC[k]?0:1;var map={laps:'tl',repRest:'trr',multiple:'tm',notes:'tn',beep:'tb'};document.getElementById(map[k]).className='tog'+(TC[k]?' on':'');}
 function saveSets(){
   if(!CL)return;var n=document.getElementById('sn').value.trim();if(n)CL.name=n;
-  CL.cfg={laps:TC.laps,multiple:TC.multiple,notes:TC.notes,beep:TC.beep};
+  CL.cfg={laps:TC.laps,repRest:TC.repRest,multiple:TC.multiple,notes:TC.notes,beep:TC.beep};
   document.getElementById('ltit').textContent=CL.name;save();go('s-group');
 }
 
@@ -1801,6 +1814,7 @@ function copyShare(){
 
 var _info={
   laps:{t:'Laps',b:'Shows laps. Tap the Lap button during a run to record each lap split time. All lap times appear on the runner row separated by a slash.'},
+  repRest:{t:'Rep/Rest Splits',b:'Labels alternating splits as Rep and Rest. Use this for continuous-watch interval workouts where the stopwatch keeps running through recovery.'},
   multiple:{t:'Multiple',b:'Allows multiple stopwatches to run at once. When off, starting one runner automatically stops any other runner that is currently running.'},
   notes:{t:'Notes on Detail Line',b:'Instead of showing the date and time in the stopwatch log, the notes are shown on the detail line of each entry.'},
   beep:{t:'Beep on Start',b:'Beeps when the start, stop, or lap button is tapped. Useful for eyes-free coaching on the track.'}
