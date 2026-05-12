@@ -453,7 +453,7 @@ function updateBreakdowns(){
   els.trainingRangeLabel.textContent=rangeText;
   els.trainingSyncCount.textContent=rangedTrainingRows.length;
   els.trainingOnTargetCount.textContent=rangedTrainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
-  els.trainingReviewCount.textContent=rangedTrainingRows.filter(function(row){return targetStatus(row)==='review';}).length;
+  els.trainingReviewCount.textContent=rangedTrainingRows.filter(isOutsideTarget).length;
   els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
   els.trainingMissingThisWeek.textContent=Math.max(0,active-currentWeekAthletes);
 }
@@ -699,7 +699,7 @@ function matchesMeetFilter(row,filter,visibleNames){
 }
 function matchesTrainingFilter(row,filter,visibleNames){
   if(filter==='training_on_target')return targetStatus(row)==='on';
-  if(filter==='training_needs_review')return targetStatus(row)==='review';
+  if(filter==='training_needs_review')return isOutsideTarget(row);
   if(filter==='missing_fitness'||filter==='no_training_this_week'||filter==='pb'||filter==='sb')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   return true;
 }
@@ -761,8 +761,13 @@ function hasRecentFlag(name,type){
 function hasTrainingTargetStatus(name,status){
   var normalized=String(name||'').toLowerCase();
   return recentTrainingRows.some(function(row){
-    return matchesActivityRange(row,'training') && String(row.athleteName||'').toLowerCase()===normalized && targetStatus(row)===status;
+    return matchesActivityRange(row,'training') && String(row.athleteName||'').toLowerCase()===normalized && (status==='review'?isOutsideTarget(row):targetStatus(row)===status);
   });
+}
+
+function isOutsideTarget(row){
+  var status=targetStatus(row);
+  return status==='review'||status==='fast'||status==='slow';
 }
 
 function targetStatus(row){
@@ -770,7 +775,8 @@ function targetStatus(row){
   if(splitStatus)return splitStatus;
   var diff=String(row&&row.targetDifference||'').toLowerCase();
   if(diff.indexOf('within target')>=0)return 'on';
-  if(diff.indexOf('faster than target')>=0||diff.indexOf('slower than target')>=0)return 'review';
+  if(diff.indexOf('faster than target')>=0)return 'fast';
+  if(diff.indexOf('slower than target')>=0)return 'slow';
   return 'none';
 }
 
@@ -869,6 +875,8 @@ function targetReviewText(row){
 function targetStatusPill(row){
   var status=targetStatus(row);
   if(status==='on')return '<span class="pill good">On target</span>';
+  if(status==='fast')return '<span class="pill warn">Too fast</span>';
+  if(status==='slow')return '<span class="pill warn">Too slow</span>';
   if(status==='review')return '<span class="pill warn">Outside target</span>';
   return '';
 }
@@ -995,7 +1003,11 @@ function splitTargetStatus(row){
     return splitTargetDiff(parseDurationMs(split.time),target.fast,target.slow);
   }).filter(Boolean);
   if(!statuses.length)return '';
-  if(statuses.some(function(status){return /faster than target|slower than target/i.test(status);}))return 'review';
+  var fast=statuses.some(function(status){return /faster than target/i.test(status);});
+  var slow=statuses.some(function(status){return /slower than target/i.test(status);});
+  if(fast&&slow)return 'review';
+  if(fast)return 'fast';
+  if(slow)return 'slow';
   if(statuses.every(function(status){return /within target/i.test(status);}))return 'on';
   return '';
 }
