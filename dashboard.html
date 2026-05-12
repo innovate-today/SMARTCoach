@@ -67,6 +67,15 @@ tr:last-child td{border-bottom:0}
 .name{font-weight:800;color:#102a70}
 .namebtn{border:0;background:transparent;color:#102a70;font:inherit;font-weight:800;padding:0;text-align:left;cursor:pointer}
 .namebtn:hover{text-decoration:underline}
+.expandbtn{border:0;background:transparent;color:#102a70;font:inherit;font-weight:800;padding:0;text-align:left;cursor:pointer}
+.expandbtn:before{content:"▸";display:inline-block;width:16px;color:#64748b}
+.expandbtn.open:before{content:"▾"}
+.training-summary-row{cursor:pointer}
+.training-summary-row:hover td{background:#f8fbff}
+.training-detail-row td{background:#fbfdff;padding:0}
+.training-detail{padding:10px 12px 14px;border-left:4px solid #dbeafe}
+.training-detail table{min-width:980px;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.training-detail th{position:static}
 .muted{color:var(--muted);font-size:12px;margin-top:2px}
 .pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:800;background:#e8eefc;color:#173891}
 .pill.good{background:#dcfce7;color:var(--good)}
@@ -272,14 +281,12 @@ tr:last-child td{border-bottom:0}
         <thead>
           <tr>
             <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="groupName" type="button">Group</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="workoutType" type="button">Workout</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="volume" type="button">Volume</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="workouts" type="button">Workouts</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="latestWorkout" type="button">Most Recent Workout</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Total / Splits</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="sessionDate" type="button">Session Date</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Saved</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Last Completed</button></th>
           </tr>
         </thead>
         <tbody id="recentTrainingRows"></tbody>
@@ -305,6 +312,7 @@ var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
 var visibleVolumeRows=[];
+var expandedTrainingAthletes={};
 var lastLoadedAt='';
 var activeTab='roster';
 var dashboardViewKey='smartcoachDashboardView';
@@ -391,6 +399,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.breakdown[data-tab-targ
   });
 });
 document.addEventListener('click',function(event){
+  var toggle=event.target.closest&&event.target.closest('[data-training-toggle]');
+  if(toggle){
+    event.preventDefault();
+    var key=toggle.getAttribute('data-training-toggle')||'';
+    expandedTrainingAthletes[key]=!expandedTrainingAthletes[key];
+    renderRows();
+    return;
+  }
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
   if(!button)return;
   var contactId=button.getAttribute('data-contact-id')||'';
@@ -517,6 +533,7 @@ function renderRows(){
   var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
   var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
   var volumeRows=sortRows(groupVolumeByAthlete(trainingRows),tableSorts.volume,volumeSortValue);
+  var trainingGroups=sortRows(groupTrainingByAthlete(trainingRows),tableSorts.training,trainingGroupSortValue);
   visibleRosterRows=rows;
   visibleMeetRows=meetRows;
   visibleTrainingRows=trainingRows;
@@ -524,15 +541,15 @@ function renderRows(){
   els.rows.innerHTML=rows.map(rowHtml).join('');
   els.recentMeetRows.innerHTML=meetRows.map(recentMeetHtml).join('');
   els.volumeRows.innerHTML=volumeRows.map(volumeRowHtml).join('');
-  els.recentTrainingRows.innerHTML=trainingRows.map(recentTrainingHtml).join('');
+  els.recentTrainingRows.innerHTML=trainingGroups.map(trainingGroupHtml).join('');
   els.empty.hidden=rows.length>0;
   els.recentMeetEmpty.hidden=meetRows.length>0;
   els.volumeEmpty.hidden=volumeRows.length>0;
-  els.recentTrainingEmpty.hidden=trainingRows.length>0;
+  els.recentTrainingEmpty.hidden=trainingGroups.length>0;
   if(rows.length===0)els.empty.textContent='No matching athletes.';
   if(meetRows.length===0)els.recentMeetEmpty.textContent='No matching meet results.';
   if(volumeRows.length===0)els.volumeEmpty.textContent='No completed volume in this view yet.';
-  if(trainingRows.length===0)els.recentTrainingEmpty.textContent='No matching completed workouts.';
+  if(trainingGroups.length===0)els.recentTrainingEmpty.textContent='No matching completed workouts.';
   els.clearSearchBtn.hidden=!query;
   els.rosterViewCount.textContent=rows.length;
   els.meetViewCount.textContent=meetRows.length;
@@ -717,7 +734,9 @@ function restoreView(){
 }
 function mergeSorts(base,saved){
   Object.keys(base).forEach(function(key){
-    if(saved[key]&&saved[key].key&&saved[key].dir)base[key]={key:String(saved[key].key),dir:saved[key].dir==='desc'?'desc':'asc'};
+    if(saved[key]&&saved[key].key&&saved[key].dir&&document.querySelector('.sortbtn[data-table="'+key+'"][data-sort="'+String(saved[key].key)+'"]')){
+      base[key]={key:String(saved[key].key),dir:saved[key].dir==='desc'?'desc':'asc'};
+    }
   });
   return base;
 }
@@ -749,6 +768,19 @@ function trainingSortValue(row,key){
   if(key==='workoutType')return [row.workoutPrescription,row.workoutType].filter(Boolean).join(' ');
   if(key==='volume')return num(row.completedVolumeMiles)||num(row.plannedVolumeMiles)||row.completedVolume||row.plannedVolume||'';
   if(key==='targetReview')return [row.targetDifference,row.plannedTarget].filter(Boolean).join(' ');
+  return row[key];
+}
+function trainingGroupSortValue(row,key){
+  if(key==='athleteName')return row.athleteName;
+  if(key==='volume')return num(row.volumeMiles);
+  if(key==='workouts')return num(row.workouts);
+  if(key==='latestWorkout'){
+    var latest=row.latestWorkout||{};
+    return [latest.workoutPrescription,latest.workoutType,latest.groupName].filter(Boolean).join(' ');
+  }
+  if(key==='currentFitness')return row.fitness&&row.fitness.label;
+  if(key==='targetReview')return row.targetSummary&&row.targetSummary.label;
+  if(key==='syncedAt'||key==='sessionDate')return row.latestDate;
   return row[key];
 }
 function volumeSortValue(row,key){
@@ -986,6 +1018,98 @@ function recentMeetHtml(row){
     '<td>'+mainLine(formatDate(row.meetDate)||'')+'</td>'+
     '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
   '</tr>';
+}
+
+function groupTrainingByAthlete(rows){
+  var groups={};
+  (rows||[]).forEach(function(row){
+    var key=trainingGroupKey(row);
+    if(!groups[key]){
+      var athlete=findDashboardAthleteForTraining(row)||{};
+      groups[key]={
+        key:key,
+        athleteName:row.athleteName||'Unnamed',
+        contactId:row.contactId||'',
+        rows:[],
+        volumeMiles:0,
+        workouts:0,
+        latestDate:'',
+        latestWorkout:{},
+        fitness:athlete.currentFitness||{}
+      };
+    }
+    groups[key].rows.push(row);
+    groups[key].volumeMiles+=num(row.completedVolumeMiles);
+    groups[key].workouts+=1;
+    var date=row.sessionDate||row.syncedAt||'';
+    if(compareValues(date,groups[key].latestDate)>0){
+      groups[key].latestDate=date;
+      groups[key].latestWorkout=row;
+    }
+  });
+  return Object.keys(groups).map(function(key){
+    var group=groups[key];
+    group.volumeMiles=Math.round(group.volumeMiles*10)/10;
+    group.rows=group.rows.sort(function(a,b){return compareValues(b.sessionDate||b.syncedAt,a.sessionDate||a.syncedAt);});
+    group.targetSummary=trainingTargetSummary(group.rows);
+    return group;
+  });
+}
+
+function trainingGroupKey(row){
+  return String(row.contactId||row.athleteName||'unnamed').toLowerCase().replace(/[^a-z0-9_-]+/g,'_');
+}
+
+function trainingTargetSummary(rows){
+  var counts={on:0,fast:0,slow:0,none:0};
+  (rows||[]).forEach(function(row){
+    counts[targetStatus(row) || 'none']=(counts[targetStatus(row) || 'none']||0)+1;
+  });
+  if(counts.fast||counts.slow)return {status:'review',label:(counts.fast+counts.slow)+' outside target',counts:counts};
+  if(counts.on)return {status:'on',label:counts.on+' on target',counts:counts};
+  return {status:'none',label:'No target saved',counts:counts};
+}
+
+function trainingGroupHtml(group){
+  var latest=group.latestWorkout||{};
+  var fitness=group.fitness||{};
+  var open=!!expandedTrainingAthletes[group.key];
+  var html='<tr class="training-summary-row" data-training-toggle="'+esc(group.key)+'">'+
+    '<td><button class="expandbtn '+(open?'open':'')+'" data-training-toggle="'+esc(group.key)+'" type="button">'+esc(group.athleteName||'Unnamed')+'</button><div class="muted">'+(open?'Hide workouts':'Show workouts')+'</div></td>'+
+    '<td>'+mainLine(formatMiles(group.volumeMiles))+'</td>'+
+    '<td><span class="pill">'+num(group.workouts)+'</span></td>'+
+    '<td>'+mainLine([latest.workoutPrescription||latest.workoutType,latest.groupName].filter(Boolean).join(' · ')||'No workout')+subLine(formatDate(latest.sessionDate)||'')+'</td>'+
+    '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
+    '<td>'+trainingTargetSummaryHtml(group.targetSummary)+'</td>'+
+    '<td>'+mainLine(group.latestDate?formatDate(group.latestDate):'')+'</td>'+
+  '</tr>';
+  if(open){
+    html+='<tr class="training-detail-row"><td colspan="7"><div class="training-detail">'+trainingWorkoutDetailTable(group.rows)+'</div></td></tr>';
+  }
+  return html;
+}
+
+function trainingTargetSummaryHtml(summary){
+  if(!summary||summary.status==='none')return '<span class="muted">No target saved</span>';
+  var cls=summary.status==='on'?'good':'warn';
+  return '<span class="pill '+cls+'">'+esc(summary.label)+'</span>';
+}
+
+function trainingWorkoutDetailTable(rows){
+  if(!rows.length)return '<div class="muted">No completed workouts.</div>';
+  return '<table><thead><tr>'+
+    '<th>Group</th><th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Saved</th>'+
+    '</tr></thead><tbody>'+rows.map(function(row){
+      return '<tr>'+
+        '<td>'+mainLine(row.groupName||'')+'</td>'+
+        '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
+        '<td>'+mainLine(volumeDisplay(row))+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'')+'</td>'+
+        '<td>'+targetReviewHtml(row)+'</td>'+
+        '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
+        '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
+        '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
+      '</tr>';
+    }).join('')+'</tbody></table>';
 }
 
 function recentTrainingHtml(row){
