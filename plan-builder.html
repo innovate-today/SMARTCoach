@@ -44,14 +44,15 @@ select[multiple]{min-height:112px}
 .fitness-row{display:grid;grid-template-columns:1.2fr .75fr .75fr .75fr .75fr;gap:8px;align-items:center}
 .fitness-name{font-size:13px;font-weight:800;color:#374151}
 .fitness-row input,.fitness-row select{font-size:13px;padding:7px 8px}
-.fitness-actions{display:flex;justify-content:flex-end;margin-top:10px}
+.fitness-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:10px}
+.fitness-status{min-height:18px;font-size:13px;color:var(--muted);font-weight:800;text-align:right}
 .mini{padding:8px 10px;font-size:13px}
 .status{min-height:22px;text-align:center;font-size:13px;color:var(--muted);padding:12px 20px 0}
 .actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px 20px}
 button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer}
 .primary{background:var(--blue);color:#fff}
 .secondary{background:#e5e7eb;color:#111827}
-@media(max-width:760px){.wrap{padding:12px}.top{display:block}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
+@media(max-width:760px){.wrap{padding:12px}.top{display:block}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions{align-items:stretch;flex-direction:column}.fitness-status{text-align:left}.actions{display:block}.actions button{width:100%;margin-top:8px}}
 </style>
 </head>
 <body>
@@ -70,7 +71,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
         <h2>Current Fitness Setup</h2><p>Set target sources in bulk before building plans.</p>
       </div>
       <div id="fitnessRows" class="fitness-table"><div class="meet-empty">Loading athletes...</div></div>
-      <div class="fitness-actions"><button class="secondary mini" onclick="saveFitnessRows()">Save Fitness</button></div>
+      <div class="fitness-actions"><div id="fitnessStatus" class="fitness-status"></div><button class="secondary mini" onclick="saveFitnessRows()">Save Fitness</button></div>
     </div>
     <div id="form" class="form"></div>
     <div id="status" class="status">Loading builder...</div>
@@ -105,6 +106,7 @@ function loadBuilder(){
 function renderFitnessRows(){
   var box=document.getElementById('fitnessRows');
   if(!box)return;
+  setFitnessStatus('',null);
   if(!athletes.length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
   box.innerHTML=athletes.map(function(a,i){
     return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+'</div><select class="fit-sport">'+fitnessSports.map(function(s){return '<option value="'+esc(s.value)+'">'+esc(s.label)+'</option>';}).join('')+'</select><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'">'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00"><input class="fit-date" type="date" value="'+todayISO()+'"></div>';
@@ -116,8 +118,8 @@ function saveFitnessRows(){
     var single=fitnessRowFromPlanFields();
     if(single)rows.push(single);
   }
-  if(!rows.length){setStatus('Enter a time in the Current Fitness Setup table, or select an individual athlete and fill Current Fitness Distance/Time.','warn');return;}
-  setStatus('Saving current fitness...',null);
+  if(!rows.length){setFitnessStatus('Enter at least one current fitness time.','warn');return;}
+  setFitnessStatus('Saving current fitness...',null);
   fetch('/api/smart-trak/athlete-best',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:rows})}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
@@ -129,8 +131,8 @@ function saveFitnessRows(){
       var reason=skipped[0]&&skipped[0].reason?skipped[0].reason:'No fitness rows were saved.';
       throw new Error(reason);
     }
-    setStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
-  }).catch(function(e){setStatus('Error: '+e.message,'bad');});
+    setFitnessStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
+  }).catch(function(e){setFitnessStatus('Error: '+e.message,'bad');});
 }
 function collectFitnessRows(){
   return Array.prototype.slice.call(document.querySelectorAll('.fitness-row')).map(function(row){
@@ -208,6 +210,7 @@ function setMultiValue(key,value,checked){var box=document.getElementById('field
 function value(key){var el=document.getElementById('field-'+key);if(!el)return'';if(key==='priorityMeets')return selectedMeetScheduleText();if(el.classList&&el.classList.contains('choice-grid'))return Array.prototype.slice.call(el.querySelectorAll('input:checked')).map(function(input){return input.value;}).join(',');if(el.multiple)return Array.prototype.slice.call(el.selectedOptions).map(function(o){return o.value;}).join(',');return el.value||'';}
 function labelFor(key,val){var f=questionnaire.fields.find(function(item){return item.key===key;});var o=f&&f.options&&f.options.find(function(opt){return opt.value===val;});return o?o.label:'';}
 function setStatus(text,type){var s=document.getElementById('status');s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';s.style.fontWeight=type?'800':'400';}
+function setFitnessStatus(text,type){var s=document.getElementById('fitnessStatus');if(!s)return;s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';}
 function meetScheduleControl(){
   var active=meets.map(function(m,i){return{meet:m,index:i};}).filter(function(item){var m=item.meet;return m&&m.name&&m.date&&String(m.status||'').toLowerCase()==='scheduled';});
   if(!active.length)return '<div id="field-priorityMeets" class="meet-list"><div class="meet-empty">No scheduled meets found in SMARTCoach Pro.</div></div>';
