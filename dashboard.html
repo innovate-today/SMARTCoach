@@ -248,6 +248,7 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="groupName" type="button">Group</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="workoutType" type="button">Workout</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="volume" type="button">Volume</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Total / Splits</button></th>
@@ -570,7 +571,7 @@ function exportMeetCsv(){
 
 function exportTrainingCsv(){
   var rows=visibleTrainingRows;
-  var headers=['Athlete','Group','Workout','Workout Details','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Rep','Total Time','Splits','Session Date','Synced'];
+  var headers=['Athlete','Group','Workout','Workout Details','Completed Volume','Planned Volume','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Rep','Total Time','Splits','Session Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
     var athlete=findDashboardAthleteForTraining(row)||{};
     var fitness=athlete.currentFitness||{};
@@ -579,6 +580,8 @@ function exportTrainingCsv(){
       row.groupName||'',
       row.workoutType||'',
       row.workoutPrescription||'',
+      row.completedVolume||'',
+      row.plannedVolume||'',
       fitness.label||'',
       fitness.date||'',
       row.plannedTarget||'',
@@ -647,6 +650,7 @@ function trainingSortValue(row,key){
     return athlete.currentFitness&&athlete.currentFitness.label;
   }
   if(key==='workoutType')return [row.workoutPrescription,row.workoutType].filter(Boolean).join(' ');
+  if(key==='volume')return row.completedVolume||row.plannedVolume||'';
   if(key==='targetReview')return [row.targetDifference,row.plannedTarget].filter(Boolean).join(' ');
   return row[key];
 }
@@ -854,6 +858,7 @@ function recentTrainingHtml(row){
     '<td>'+athleteDetailButton(row)+'</td>'+
     '<td>'+mainLine(row.groupName||'')+'</td>'+
     '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
+    '<td>'+mainLine(row.completedVolume||'')+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'')+'</td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+targetReviewHtml(row)+'</td>'+
     '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
@@ -1046,7 +1051,7 @@ function recentMeetSearchText(row){
 }
 
 function recentTrainingSearchText(row){
-  return [row.athleteName,row.groupName,row.workoutType,row.workoutPrescription,row.totalTimeDisplay,row.plannedTarget,row.targetDifference,row.plannedEffort,row.currentFitnessSnapshot,row.weather,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
+  return [row.athleteName,row.groupName,row.workoutType,row.workoutPrescription,row.completedVolume,row.plannedVolume,row.totalTimeDisplay,row.plannedTarget,row.targetDifference,row.plannedEffort,row.currentFitnessSnapshot,row.weather,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
 }
 
 function athleteDetailButton(row){

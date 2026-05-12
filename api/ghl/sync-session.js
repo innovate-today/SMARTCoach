@@ -120,6 +120,7 @@ function normalizeSession(payload) {
     energySystem: clean(payload.energySystem),
     surface: clean(payload.surface) || "Unspecified",
     weather: clean(payload.weather),
+    completedVolume: clean(payload.completedVolume),
     sessionDate: payload.sessionDate ? new Date(payload.sessionDate) : new Date(),
     forceDuplicateSync: payload.forceDuplicateSync === true,
     trainingPlanId: clean(payload.trainingPlanId),
@@ -150,6 +151,7 @@ function normalizeAthlete(raw) {
     plannedTargetMinMs: Number(raw && raw.plannedTargetMinMs) || null,
     plannedTargetMaxMs: Number(raw && raw.plannedTargetMaxMs) || null,
     plannedTargetRep: clean(raw && raw.plannedTargetRep),
+    plannedVolume: clean(raw && raw.plannedVolume),
     currentFitnessEvent: clean(raw && raw.currentFitnessEvent),
     currentFitnessDisplay: clean(raw && raw.currentFitnessDisplay),
     plannedEffortPercent: clean(raw && raw.plannedEffortPercent),
@@ -536,6 +538,8 @@ function formatCoachNote({ run, session, athlete }) {
   const targetLines = plannedActualLines({ run, athlete });
   return [
     session.weather ? `Weather: ${session.weather}` : "",
+    session.completedVolume ? `Completed volume: ${session.completedVolume}` : "",
+    athlete && athlete.plannedVolume ? `Planned volume: ${athlete.plannedVolume}` : "",
     workout ? `Workout: ${workout}` : "",
     ...targetLines,
     run.note,
@@ -858,6 +862,8 @@ function buildNoteBody(session, athlete) {
     lines.push(`Plan: ${planTitle || "Selected Training Plan"}`);
     if (planDayTitle) lines.push(`Scheduled Workout: ${planDayTitle}`);
   }
+  if (session.completedVolume) lines.push(`Completed volume: ${session.completedVolume}`);
+  if (athlete.plannedVolume) lines.push(`Planned volume: ${athlete.plannedVolume}`);
 
   lines.push("", `Athlete: ${athlete.name}`);
 

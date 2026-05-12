@@ -250,6 +250,8 @@ function normalizePerformanceRecord(record) {
     actual: noteValue(coachNote, "Actual"),
     targetDifference: noteValue(coachNote, "Difference"),
     plannedEffort: noteValue(coachNote, "Planned effort"),
+    plannedVolume: noteValue(coachNote, "Planned volume"),
+    completedVolume: noteValue(coachNote, "Completed volume"),
     currentFitnessSnapshot: noteValue(coachNote, "Current fitness"),
     weather: noteValue(coachNote, "Weather"),
     syncedAt: recordTimestamp(record),
