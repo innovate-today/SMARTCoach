@@ -758,7 +758,7 @@ function shareAll(){
   logs.forEach(function(l){
     t+=l.name+'\n';
     l.runners.forEach(function(r){
-      if(r.saved.length){t+='  '+r.name+':\n';r.saved.forEach(function(s,i){t+='    Run '+(i+1)+': '+fmt(s.ms)+'\n';});}
+      if(r.saved.length){t+='  '+r.name+':\n';r.saved.forEach(function(s,i){t+='    Run '+(i+1)+': '+fmt(s.ms)+shareSplitText(l,r,s)+'\n';});}
     });
     t+='\n';
   });
@@ -1796,7 +1796,25 @@ function setSort(m){SM=m;rSort();}
 
 function shareGroup(){
   if(!CL)return;var t='SMARTCoach - '+CL.name+'\n'+new Date().toLocaleDateString()+'\n\n';
-  CL.runners.forEach(function(r){t+=r.name+':\n';if(!r.saved.length){t+='  (no times)\n';return;}r.saved.forEach(function(s,i){t+='  Run '+(i+1)+': '+fmt(s.ms);if(s.laps&&s.laps.length)t+='  [Laps: '+s.laps.map(function(x){return fmt(x);}).join(' / ')+']';if(s.note)t+='  ('+s.note+')';t+='\n';});});oShare(t);
+  CL.runners.forEach(function(r){t+=r.name+':\n';if(!r.saved.length){t+='  (no times)\n';return;}r.saved.forEach(function(s,i){t+='  Run '+(i+1)+': '+fmt(s.ms)+shareSplitText(CL,r,s);if(s.note)t+='  ('+s.note+')';t+='\n';});});oShare(t);
+}
+
+function shareSplitText(group,r,s){
+  if(!s.laps||!s.laps.length)return'';
+  var labels=splitLabelsForRun(group,r,s);
+  return ' ['+labels.map(function(item){return item.label+': '+fmt(item.ms);}).join(' / ')+']';
+}
+
+function splitLabelsForRun(group,r,s){
+  var oldCL=CL;
+  CL=group||CL;
+  var plan=runnerPlan(r);
+  var list=(s.laps||[]).map(function(ms,index){
+    var meta=splitMeta(plan,index);
+    return{label:meta.label,ms:ms};
+  });
+  CL=oldCL;
+  return list;
 }
 function sums(){
   if(!CL)return;var t='SMARTCoach - '+CL.name+' Summary\n'+new Date().toLocaleDateString()+'\n\n';
@@ -1886,12 +1904,13 @@ function deleteRunner(id){
 
 function exportSheets(){
   if(!CL)return;
-  var rows=[['Group','Runner','Run#','Total','Lap1','Lap2','Lap3','Lap4','Lap5','Notes'].join('\t')];
+  var rows=[['Group','Runner','Run#','Total','Split 1','Split 2','Split 3','Split 4','Split 5','Notes'].join('\t')];
   CL.runners.forEach(function(r){
     if(!r.saved.length){rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));}
     else{r.saved.forEach(function(s,i){
       var c=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
-      for(var j=0;j<5;j++)c.push(s.laps&&s.laps[j]?fmt(s.laps[j]):'');
+      var splits=splitLabelsForRun(CL,r,s);
+      for(var j=0;j<5;j++)c.push(splits[j]?splits[j].label+' '+fmt(splits[j].ms):'');
       c.push(s.note||'');rows.push(c.join('\t'));
     });}
   });
