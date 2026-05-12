@@ -152,7 +152,7 @@ tr:last-child td{border-bottom:0}
       <div class="breakgrid">
         <div class="metric"><b id="trainingSyncCount">--</b><span>Recent syncs</span></div>
         <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
-        <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Needs review</span></div>
+        <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
         <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Synced this week</span></div>
         <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>No sync this week</span></div>
       </div>
@@ -169,7 +169,7 @@ tr:last-child td{border-bottom:0}
       <option value="missing_fitness">Missing current fitness</option>
       <option value="no_training_this_week">No training sync this week</option>
       <option value="training_on_target">Training on target</option>
-      <option value="training_needs_review">Training needs review</option>
+      <option value="training_needs_review">Training outside target</option>
       <option value="pb">Recent new PBs</option>
       <option value="sb">Recent new SBs</option>
     </select>
@@ -869,7 +869,7 @@ function targetReviewText(row){
 function targetStatusPill(row){
   var status=targetStatus(row);
   if(status==='on')return '<span class="pill good">On target</span>';
-  if(status==='review')return '<span class="pill warn">Review</span>';
+  if(status==='review')return '<span class="pill warn">Outside target</span>';
   return '';
 }
 
