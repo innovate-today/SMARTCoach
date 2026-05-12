@@ -250,7 +250,7 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="training" data-sort="workoutType" type="button">Workout</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Time</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Total / Splits</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="sessionDate" type="button">Session Date</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Synced</button></th>
           </tr>
@@ -570,7 +570,7 @@ function exportMeetCsv(){
 
 function exportTrainingCsv(){
   var rows=visibleTrainingRows;
-  var headers=['Athlete','Group','Workout','Workout Details','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Rep','Time','Session Date','Synced'];
+  var headers=['Athlete','Group','Workout','Workout Details','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Rep','Total Time','Splits','Session Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
     var athlete=findDashboardAthleteForTraining(row)||{};
     var fitness=athlete.currentFitness||{};
@@ -587,6 +587,7 @@ function exportTrainingCsv(){
       row.weather||'',
       row.repNumber||'',
       row.totalTimeDisplay||'',
+      splitSummaryText(row),
       row.sessionDate||'',
       row.syncedAt||''
     ];
@@ -765,6 +766,8 @@ function hasTrainingTargetStatus(name,status){
 }
 
 function targetStatus(row){
+  var splitStatus=splitTargetStatus(row);
+  if(splitStatus)return splitStatus;
   var diff=String(row&&row.targetDifference||'').toLowerCase();
   if(diff.indexOf('within target')>=0)return 'on';
   if(diff.indexOf('faster than target')>=0||diff.indexOf('slower than target')>=0)return 'review';
@@ -847,7 +850,7 @@ function recentTrainingHtml(row){
     '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+targetReviewHtml(row)+'</td>'+
-    '<td>'+mainLine(row.totalTimeDisplay||'')+'</td>'+
+    '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
     '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
     '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
   '</tr>';
@@ -890,11 +893,120 @@ function trainingSessionDetailHtml(group){
   var title=group.workoutPrescription||group.workoutType||'Workout';
   var subtitle=[group.groupName,formatDate(group.date),group.workoutPrescription?group.workoutType:''].filter(Boolean).join(' · ');
   var reps=group.rows.map(function(row,index){
-    var label='Rep '+(row.repNumber||index+1)+': '+(row.totalTimeDisplay||row.actual||'');
+    var splitLines=splitReviewLines(row);
+    if(splitLines.length)return '<div class="muted"><b>'+esc('Run '+(row.repNumber||index+1))+'</b> total '+esc(row.totalTimeDisplay||row.actual||'')+'</div>'+splitLines.map(function(line){return '<div class="muted">'+esc(line)+'</div>';}).join('');
+    var label='Run '+(row.repNumber||index+1)+': '+(row.totalTimeDisplay||row.actual||'');
     var detail=[row.plannedTarget?'Target '+row.plannedTarget:'',row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
     return '<div class="muted">'+esc(label)+(detail?' · '+esc(detail):'')+'</div>';
   }).join('');
   return mainLine(title)+subLine(subtitle)+reps;
+}
+
+function splitCountText(row){
+  var splits=parseSplitLines(row.splitsText);
+  if(!splits.length)return '';
+  var work=workSplitCount(row,splits);
+  return work&&work<splits.length ? work+' work reps · '+(splits.length-work)+' recoveries' : splits.length+' splits';
+}
+
+function splitSummaryText(row){
+  return splitReviewLines(row).join('\n') || parseSplitLines(row.splitsText).map(function(split){return split.label+': '+split.time;}).join('\n');
+}
+
+function splitReviewLines(row){
+  var splits=parseSplitLines(row.splitsText);
+  if(!splits.length)return [];
+  var target=parseTargetRange(row.plannedTarget);
+  return splits.map(function(split,index){
+    var kind=splitKind(row,index,splits);
+    var label=kind==='recovery'?'Recovery '+Math.ceil((index+1)/2):'Rep '+(kind==='work'?Math.ceil((index+1)/2):split.lap);
+    var detail=label+': '+split.time;
+    if(kind!=='recovery'&&target){
+      var ms=parseDurationMs(split.time);
+      var diff=splitTargetDiff(ms,target.fast,target.slow);
+      if(diff)detail+=' · '+diff;
+    }
+    return detail;
+  });
+}
+
+function workSplitCount(row,splits){
+  if(!hasRecoveryPattern(row))return splits.length;
+  return splits.filter(function(split,index){return splitKind(row,index,splits)==='work';}).length;
+}
+
+function splitKind(row,index,splits){
+  if(!hasRecoveryPattern(row)||splits.length<2)return 'lap';
+  return index%2===0?'work':'recovery';
+}
+
+function hasRecoveryPattern(row){
+  var text=[row.workoutPrescription,row.coachNote,row.plannedTarget,row.workoutType].filter(Boolean).join(' ').toLowerCase();
+  return /(recover|recovery|rest|jog|walk)/.test(text);
+}
+
+function parseSplitLines(text){
+  return String(text||'').split(/\r?\n/).map(function(line,index){
+    var match=line.match(/^\s*(?:Lap\s*)?(\d+)\s*:\s*(.+?)\s*$/i);
+    if(!match)return null;
+    return {lap:Number(match[1])||index+1,label:'Lap '+(Number(match[1])||index+1),time:match[2]};
+  }).filter(Boolean);
+}
+
+function parseTargetRange(text){
+  var parts=String(text||'').match(/(\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?|\d+(?:\.\d+)?/g);
+  if(!parts||!parts.length)return null;
+  var first=parseDurationMs(parts[0]);
+  var second=parseDurationMs(parts[1]||parts[0]);
+  if(!first||!second)return null;
+  return {fast:Math.min(first,second),slow:Math.max(first,second)};
+}
+
+function parseDurationMs(text){
+  var raw=String(text||'').trim();
+  if(!raw)return 0;
+  var parts=raw.split(':').map(Number);
+  if(parts.some(function(part){return isNaN(part);}))return 0;
+  var seconds=0;
+  if(parts.length===1)seconds=parts[0];
+  if(parts.length===2)seconds=parts[0]*60+parts[1];
+  if(parts.length===3)seconds=parts[0]*3600+parts[1]*60+parts[2];
+  return Math.round(seconds*1000);
+}
+
+function splitTargetDiff(actualMs,minMs,maxMs){
+  if(!actualMs||!minMs||!maxMs)return '';
+  if(actualMs<minMs)return formatSignedMs(actualMs-minMs)+' faster than target';
+  if(actualMs>maxMs)return formatSignedMs(actualMs-maxMs)+' slower than target';
+  return 'within target';
+}
+
+function splitTargetStatus(row){
+  var splits=parseSplitLines(row&&row.splitsText);
+  var target=parseTargetRange(row&&row.plannedTarget);
+  if(!splits.length||!target)return '';
+  var statuses=splits.filter(function(split,index){
+    return splitKind(row,index,splits)!=='recovery';
+  }).map(function(split){
+    return splitTargetDiff(parseDurationMs(split.time),target.fast,target.slow);
+  }).filter(Boolean);
+  if(!statuses.length)return '';
+  if(statuses.some(function(status){return /faster than target|slower than target/i.test(status);}))return 'review';
+  if(statuses.every(function(status){return /within target/i.test(status);}))return 'on';
+  return '';
+}
+
+function formatSignedMs(ms){
+  var sign=ms<0?'-':'+';
+  return sign+fmtMs(Math.abs(ms));
+}
+
+function fmtMs(ms){
+  var tenths=Math.round(ms/100);
+  var minutes=Math.floor(tenths/600);
+  var seconds=Math.floor((tenths%600)/10);
+  var decimal=tenths%10;
+  return (minutes?minutes+':':'')+pad(seconds)+'.'+decimal;
 }
 
 function findDashboardAthleteForTraining(row){

@@ -30,6 +30,7 @@ const FIELD_IDS = {
   total_time_display: ["z9eZIcIL1B7yaeR5jXHI"],
   session_date: ["pl69ao2Pu76zeUKMEWpm"],
   rep_number: ["J0SJxcm3yeraYzoYgjXe"],
+  splits_json: ["bIjfXwW7mDCkkjGS4LL5"],
   coach_note: ["Afy8b8lAbUoti9cCqa1m"],
 };
 
@@ -242,6 +243,7 @@ function normalizePerformanceRecord(record) {
     repNumber: Number(prop(props, "rep_number")) || null,
     totalTimeDisplay: prop(props, "total_time_display"),
     sessionDate: prop(props, "session_date"),
+    splitsText: prop(props, "splits_json"),
     coachNote,
     workoutPrescription: noteValue(coachNote, "Workout"),
     plannedTarget: noteValue(coachNote, "Planned target"),
