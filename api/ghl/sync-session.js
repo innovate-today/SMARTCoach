@@ -528,9 +528,11 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
 }
 
 function formatCoachNote({ run, session, athlete }) {
+  const workout = clean(athlete && (athlete.plannedTargetRep || athlete.trainingPlanDayTitle) || session.trainingPlanDayTitle);
   const targetLines = plannedActualLines({ run, athlete });
   return [
     session.weather ? `Weather: ${session.weather}` : "",
+    workout ? `Workout: ${workout}` : "",
     ...targetLines,
     run.note,
   ].filter(Boolean).join("\n");

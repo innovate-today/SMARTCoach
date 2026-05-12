@@ -9,6 +9,8 @@ const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
   athlete_name_snapshot: ["m20bSENWaEB4jBMtXgMD", "NxKoU2l9QohpmzRt2gin", "0lX15xSvQP77xhNH45q1"],
+  source_session_id: ["3Mfs6tIpL4KXx8UeNGBU"],
+  source_record_id: ["9YD4n4y4aqf3VnkrwLL1"],
   event: ["0zkuDc0aDTpw5hPOKADa", "Qtvff2zJpE2nu8qV6kAU"],
   personal_best_display: ["h1rwv5B4JSLfNnsTL7qJ"],
   personal_best_meet: ["mRbdhzawlZ0Q386Zv3X2"],
@@ -27,6 +29,7 @@ const FIELD_IDS = {
   workout_type: ["jX0YLlpt08vxNKV3JyM5"],
   total_time_display: ["z9eZIcIL1B7yaeR5jXHI"],
   session_date: ["pl69ao2Pu76zeUKMEWpm"],
+  rep_number: ["J0SJxcm3yeraYzoYgjXe"],
   coach_note: ["Afy8b8lAbUoti9cCqa1m"],
 };
 
@@ -232,12 +235,17 @@ function normalizePerformanceRecord(record) {
   const props = recordProperties(record);
   const coachNote = prop(props, "coach_note");
   return {
+    sourceSessionId: prop(props, "source_session_id"),
+    sourceRecordId: prop(props, "source_record_id"),
     groupName: prop(props, "group_name"),
     workoutType: labelValue(prop(props, "workout_type")),
+    repNumber: Number(prop(props, "rep_number")) || null,
     totalTimeDisplay: prop(props, "total_time_display"),
     sessionDate: prop(props, "session_date"),
     coachNote,
+    workoutPrescription: noteValue(coachNote, "Workout"),
     plannedTarget: noteValue(coachNote, "Planned target"),
+    actual: noteValue(coachNote, "Actual"),
     targetDifference: noteValue(coachNote, "Difference"),
     plannedEffort: noteValue(coachNote, "Planned effort"),
     currentFitnessSnapshot: noteValue(coachNote, "Current fitness"),

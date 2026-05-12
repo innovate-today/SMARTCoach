@@ -562,7 +562,7 @@ function exportMeetCsv(){
 
 function exportTrainingCsv(){
   var rows=visibleTrainingRows;
-  var headers=['Athlete','Group','Workout','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Time','Session Date','Synced'];
+  var headers=['Athlete','Group','Workout','Workout Details','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Rep','Time','Session Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
     var athlete=findDashboardAthleteForTraining(row)||{};
     var fitness=athlete.currentFitness||{};
@@ -570,12 +570,14 @@ function exportTrainingCsv(){
       row.athleteName||'',
       row.groupName||'',
       row.workoutType||'',
+      row.workoutPrescription||'',
       fitness.label||'',
       fitness.date||'',
       row.plannedTarget||'',
       row.targetDifference||'',
       row.plannedEffort||'',
       row.weather||'',
+      row.repNumber||'',
       row.totalTimeDisplay||'',
       row.sessionDate||'',
       row.syncedAt||''
@@ -635,6 +637,7 @@ function trainingSortValue(row,key){
     var athlete=findDashboardAthleteForTraining(row)||{};
     return athlete.currentFitness&&athlete.currentFitness.label;
   }
+  if(key==='workoutType')return [row.workoutPrescription,row.workoutType].filter(Boolean).join(' ');
   if(key==='targetReview')return [row.targetDifference,row.plannedTarget].filter(Boolean).join(' ');
   return row[key];
 }
@@ -750,7 +753,7 @@ function rowHtml(row){
     '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="muted">View details</div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
-    '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate)].filter(Boolean).join(' · '))+'</td>'+
+    '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
     '<td><span class="pill">'+num(row.currentWeekRuns)+'</span></td>'+
     '<td><span class="pill">'+num(row.previousWeekRuns)+'</span></td>'+
     '<td><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span><div class="muted">'+num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet</div></td>'+
@@ -762,13 +765,13 @@ function openAthleteDetail(row){
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
   var meets=recentMeetRows.filter(function(item){return sameAthlete(item,row);}).slice(0,5);
-  var training=recentTrainingRows.filter(function(item){return sameAthlete(item,row);}).slice(0,5);
+  var trainingGroups=groupTrainingSessions(recentTrainingRows.filter(function(item){return sameAthlete(item,row);}),5);
   els.athleteModalTitle.textContent=row.name||'Athlete Details';
   els.athleteModalBody.innerHTML=
     '<div class="detailgrid">'+
       detailCard('Current Fitness',fitness.label||'Not set',fitness.date?formatDate(fitness.date):'')+
       detailCard('Latest Meet Result',[latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result',[latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+
-      detailCard('Latest Training',[latestTraining.totalTimeDisplay,latestTraining.workoutType].filter(Boolean).join(' ')||'No sync',[latestTraining.groupName,formatDate(latestTraining.sessionDate)].filter(Boolean).join(' · '))+
+      detailCard('Latest Training',[latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No sync',[latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+
       detailCard('Sync Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet')+
     '</div>'+
     '<h3 class="section-title">Recent Meet Results</h3>'+
@@ -776,9 +779,7 @@ function openAthleteDetail(row){
       return mainLine([item.event,item.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([item.meetName,formatDate(item.meetDate),flagText(item)].filter(Boolean).join(' · '));
     }),'No recent meet results.')+
     '<h3 class="section-title">Recent Training</h3>'+
-    detailList(training.map(function(item){
-      return mainLine([item.totalTimeDisplay,item.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([item.groupName,formatDate(item.sessionDate),targetReviewText(item)].filter(Boolean).join(' · '));
-    }),'No recent training syncs.');
+    detailList(trainingGroups.map(trainingSessionDetailHtml),'No recent training syncs.');
   els.athleteModal.hidden=false;
 }
 
@@ -817,7 +818,7 @@ function recentTrainingHtml(row){
   return '<tr>'+
     '<td>'+athleteDetailButton(row)+'</td>'+
     '<td>'+mainLine(row.groupName||'')+'</td>'+
-    '<td>'+mainLine(row.workoutType||'')+'</td>'+
+    '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+targetReviewHtml(row)+'</td>'+
     '<td>'+mainLine(row.totalTimeDisplay||'')+'</td>'+
@@ -836,6 +837,33 @@ function targetReviewText(row){
   return [row.plannedTarget,row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
 }
 
+function groupTrainingSessions(rows,limit){
+  var groups={};
+  rows.slice().sort(function(a,b){return compareValues(b.syncedAt||b.sessionDate,a.syncedAt||a.sessionDate);}).forEach(function(row){
+    var key=row.sourceSessionId || [row.groupName,row.sessionDate,row.workoutPrescription||row.workoutType].join('|');
+    if(!groups[key])groups[key]={key:key,rows:[],date:row.sessionDate||'',syncedAt:row.syncedAt||'',groupName:row.groupName||'',workoutType:row.workoutType||'',workoutPrescription:row.workoutPrescription||''};
+    groups[key].rows.push(row);
+    if(row.workoutPrescription)groups[key].workoutPrescription=row.workoutPrescription;
+    if(row.workoutType)groups[key].workoutType=row.workoutType;
+  });
+  return Object.keys(groups).map(function(key){
+    var group=groups[key];
+    group.rows=group.rows.sort(function(a,b){return num(a.repNumber)-num(b.repNumber) || compareValues(a.syncedAt,b.syncedAt);});
+    return group;
+  }).sort(function(a,b){return compareValues(b.syncedAt||b.date,a.syncedAt||a.date);}).slice(0,limit);
+}
+
+function trainingSessionDetailHtml(group){
+  var title=group.workoutPrescription||group.workoutType||'Workout';
+  var subtitle=[group.groupName,formatDate(group.date),group.workoutPrescription?group.workoutType:''].filter(Boolean).join(' · ');
+  var reps=group.rows.map(function(row,index){
+    var label='Rep '+(row.repNumber||index+1)+': '+(row.totalTimeDisplay||row.actual||'');
+    var detail=[row.plannedTarget?'Target '+row.plannedTarget:'',row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
+    return '<div class="muted">'+esc(label)+(detail?' · '+esc(detail):'')+'</div>';
+  }).join('');
+  return mainLine(title)+subLine(subtitle)+reps;
+}
+
 function findDashboardAthleteForTraining(row){
   return dashboardRows.find(function(athlete){
     return String(athlete.contactId||'')===String(row.contactId||'') ||
@@ -848,7 +876,7 @@ function searchText(row){
     row.name,row.smartcoachAthleteId,row.status,
     row.currentFitness&&row.currentFitness.label,
     row.latestMeet&&row.latestMeet.meetName,row.latestMeet&&row.latestMeet.event,row.latestMeet&&row.latestMeet.resultDisplay,
-    row.latestTraining&&row.latestTraining.groupName,row.latestTraining&&row.latestTraining.workoutType
+    row.latestTraining&&row.latestTraining.groupName,row.latestTraining&&row.latestTraining.workoutType,row.latestTraining&&row.latestTraining.workoutPrescription
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
@@ -857,7 +885,7 @@ function recentMeetSearchText(row){
 }
 
 function recentTrainingSearchText(row){
-  return [row.athleteName,row.groupName,row.workoutType,row.totalTimeDisplay,row.plannedTarget,row.targetDifference,row.plannedEffort,row.currentFitnessSnapshot,row.weather,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
+  return [row.athleteName,row.groupName,row.workoutType,row.workoutPrescription,row.totalTimeDisplay,row.plannedTarget,row.targetDifference,row.plannedEffort,row.currentFitnessSnapshot,row.weather,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
 }
 
 function athleteDetailButton(row){
