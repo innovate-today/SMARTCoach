@@ -244,6 +244,7 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="groupName" type="button">Group</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="workoutType" type="button">Workout</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Time</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="sessionDate" type="button">Session Date</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Synced</button></th>
@@ -560,12 +561,16 @@ function exportMeetCsv(){
 
 function exportTrainingCsv(){
   var rows=visibleTrainingRows;
-  var headers=['Athlete','Group','Workout','Time','Session Date','Synced'];
+  var headers=['Athlete','Group','Workout','Current Fitness','Fitness Date','Time','Session Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
+    var athlete=findDashboardAthleteForTraining(row)||{};
+    var fitness=athlete.currentFitness||{};
     return [
       row.athleteName||'',
       row.groupName||'',
       row.workoutType||'',
+      fitness.label||'',
+      fitness.date||'',
       row.totalTimeDisplay||'',
       row.sessionDate||'',
       row.syncedAt||''
@@ -621,6 +626,10 @@ function meetSortValue(row,key){
   return row[key];
 }
 function trainingSortValue(row,key){
+  if(key==='currentFitness'){
+    var athlete=findDashboardAthleteForTraining(row)||{};
+    return athlete.currentFitness&&athlete.currentFitness.label;
+  }
   return row[key];
 }
 function compareValues(a,b){
@@ -797,14 +806,24 @@ function recentMeetHtml(row){
 }
 
 function recentTrainingHtml(row){
+  var athlete=findDashboardAthleteForTraining(row)||{};
+  var fitness=athlete.currentFitness||{};
   return '<tr>'+
     '<td>'+athleteDetailButton(row)+'</td>'+
     '<td>'+mainLine(row.groupName||'')+'</td>'+
     '<td>'+mainLine(row.workoutType||'')+'</td>'+
+    '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine(row.totalTimeDisplay||'')+'</td>'+
     '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
     '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
   '</tr>';
+}
+
+function findDashboardAthleteForTraining(row){
+  return dashboardRows.find(function(athlete){
+    return String(athlete.contactId||'')===String(row.contactId||'') ||
+      String(athlete.name||'').toLowerCase()===String(row.athleteName||'').toLowerCase();
+  });
 }
 
 function searchText(row){

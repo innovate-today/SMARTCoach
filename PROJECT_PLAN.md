@@ -300,6 +300,7 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Stopwatch plan assignment model: a training group has a default group plan, and individual athletes can carry an athlete-level plan override while still being timed inside the same group
 - Future dashboard planning note: add a planning table with Athlete, Group, Recent Race distance/time, Previous Week Mileage, and Current Week Mileage so plans can account for current fitness and training load
 - Future Coach Pro support note: add an in-app help button where coaches can ask product, instruction, and subscription questions and get answers from approved SMARTCoach Pro help content.
+- Dashboard personalization note: allow each coach/account to upload their own logo to replace the default `SC` mark on the desktop dashboard and future branded views.
 - Passed selected GHL Meet record IDs through meet timing groups and Meet Result saves for clean meet schedule linking
 - Verified `index.html` in the in-app browser:
   - App loads
