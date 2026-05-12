@@ -187,16 +187,30 @@ function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords
 }
 
 function chooseCurrentFitness(bests) {
-  const sorted = bests.slice().sort((a, b) => String(b.lastResultDate || b.seasonBestDate || b.personalBestDate || "").localeCompare(String(a.lastResultDate || a.seasonBestDate || a.personalBestDate || "")));
+  const usable = bests.filter((item) => !isFutureDate(bestDate(item)));
+  const source = usable.length ? usable : bests;
+  const sorted = source.slice().sort((a, b) => String(bestDate(b)).localeCompare(String(bestDate(a))));
   const best = sorted[0] || {};
   const display = best.lastResultDisplay || best.seasonBestDisplay || best.personalBestDisplay || "";
-  const date = best.lastResultDate || best.seasonBestDate || best.personalBestDate || "";
+  const date = bestDate(best);
   return {
     event: best.event || "",
     display,
     date,
     label: [best.event, display].filter(Boolean).join(" "),
   };
+}
+
+function bestDate(best) {
+  return best.lastResultDate || best.seasonBestDate || best.personalBestDate || "";
+}
+
+function isFutureDate(value) {
+  const date = parseDate(value);
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  return date > today;
 }
 
 function normalizeContact(contact) {

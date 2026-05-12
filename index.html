@@ -1433,12 +1433,22 @@ function chooseFitness(profile,rule){
     return{event:normalizeEventLabel(b.event),display:display,ms:parseMs(display),meters:eventDistance(b.event),date:b.seasonBestDate||b.personalBestDate||b.lastResultDate||''};
   }).filter(function(b){return b.event&&b.display&&b.ms&&b.meters;});
   if(!bests.length)return null;
+  var current=bests.filter(function(b){return !isFutureDateText(b.date);});
+  bests=current.length?current:bests;
   var preferred=(rule&&rule.preferred||[]).map(normalizeEventLabel);
   for(var i=0;i<preferred.length;i++){
     var match=bests.filter(function(b){return b.event.toLowerCase()===preferred[i].toLowerCase();}).sort(function(a,b){return String(b.date).localeCompare(String(a.date));})[0];
     if(match)return match;
   }
   return bests.sort(function(a,b){return String(b.date).localeCompare(String(a.date));})[0];
+}
+function isFutureDateText(value){
+  if(!value)return false;
+  var d=new Date(value);
+  if(isNaN(d.getTime()))return false;
+  var today=new Date();
+  today.setHours(23,59,59,999);
+  return d>today;
 }
 function targetRangeFromFitness(rule,fitness){
   var data=targetRangeDataFromFitness(rule,fitness);
