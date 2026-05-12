@@ -29,7 +29,7 @@ button.ghost{background:#eef2f7;color:#172033}
 .breakdown[data-tab-target]:hover{border-color:#b9c7dc}
 .breakdown h2{font-size:15px;line-height:1.2;margin:0}
 .breakrange{color:var(--muted);font-size:12px;margin:3px 0 10px}
-.breakgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.breakgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px}
 .metric{border:1px solid #edf1f7;border-radius:8px;padding:9px 10px;background:#fbfdff}
 .metric[data-filter]{cursor:pointer}
 .metric[data-filter]:hover{border-color:#b9c7dc;background:#f4f7fc}
@@ -93,7 +93,7 @@ tr:last-child td{border-bottom:0}
   .actions{width:100%}
   .actions button,.actions .linkbtn{flex:1;text-align:center}
   .stats,.breakdowns{grid-template-columns:1fr}
-  .breakgrid{grid-template-columns:1fr 1fr 1fr}
+  .breakgrid{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
   .bar{align-items:stretch;flex-direction:column}
   .searchwrap{min-width:0;width:100%}
   .tabs{grid-template-columns:1fr}
@@ -151,6 +151,8 @@ tr:last-child td{border-bottom:0}
       <div id="trainingRangeLabel" class="breakrange">Showing last 30 days</div>
       <div class="breakgrid">
         <div class="metric"><b id="trainingSyncCount">--</b><span>Recent syncs</span></div>
+        <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
+        <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Needs review</span></div>
         <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Synced this week</span></div>
         <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>No sync this week</span></div>
       </div>
@@ -166,6 +168,8 @@ tr:last-child td{border-bottom:0}
       <option value="all">All athletes</option>
       <option value="missing_fitness">Missing current fitness</option>
       <option value="no_training_this_week">No training sync this week</option>
+      <option value="training_on_target">Training on target</option>
+      <option value="training_needs_review">Training needs review</option>
       <option value="pb">Recent new PBs</option>
       <option value="sb">Recent new SBs</option>
     </select>
@@ -321,6 +325,8 @@ var els={
   meetSbCount:document.getElementById('meetSbCount'),
   trainingRangeLabel:document.getElementById('trainingRangeLabel'),
   trainingSyncCount:document.getElementById('trainingSyncCount'),
+  trainingOnTargetCount:document.getElementById('trainingOnTargetCount'),
+  trainingReviewCount:document.getElementById('trainingReviewCount'),
   trainingAthletesThisWeek:document.getElementById('trainingAthletesThisWeek'),
   trainingMissingThisWeek:document.getElementById('trainingMissingThisWeek')
 };
@@ -446,6 +452,8 @@ function updateBreakdowns(){
   els.meetSbCount.textContent=rangedMeetRows.filter(function(row){return row.isSeasonBest;}).length;
   els.trainingRangeLabel.textContent=rangeText;
   els.trainingSyncCount.textContent=rangedTrainingRows.length;
+  els.trainingOnTargetCount.textContent=rangedTrainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
+  els.trainingReviewCount.textContent=rangedTrainingRows.filter(function(row){return targetStatus(row)==='review';}).length;
   els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
   els.trainingMissingThisWeek.textContent=Math.max(0,active-currentWeekAthletes);
 }
@@ -505,7 +513,7 @@ function setActiveTab(tabName){
 
 function tabForFilter(filter){
   if(filter==='pb'||filter==='sb')return 'meet';
-  if(filter==='no_training_this_week')return 'training';
+  if(filter==='no_training_this_week'||filter==='training_on_target'||filter==='training_needs_review')return 'training';
   return 'roster';
 }
 
@@ -676,6 +684,8 @@ function updateActiveMetric(filter){
 function matchesAthleteFilter(row,filter){
   if(filter==='missing_fitness')return !(row.currentFitness&&row.currentFitness.label);
   if(filter==='no_training_this_week')return num(row.currentWeekRuns)===0;
+  if(filter==='training_on_target')return hasTrainingTargetStatus(row.name,'on');
+  if(filter==='training_needs_review')return hasTrainingTargetStatus(row.name,'review');
   if(filter==='pb')return hasRecentFlag(row.name,'pb');
   if(filter==='sb')return hasRecentFlag(row.name,'sb');
   return true;
@@ -687,6 +697,8 @@ function matchesMeetFilter(row,filter,visibleNames){
   return true;
 }
 function matchesTrainingFilter(row,filter,visibleNames){
+  if(filter==='training_on_target')return targetStatus(row)==='on';
+  if(filter==='training_needs_review')return targetStatus(row)==='review';
   if(filter==='missing_fitness'||filter==='no_training_this_week'||filter==='pb'||filter==='sb')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   return true;
 }
@@ -743,6 +755,20 @@ function hasRecentFlag(name,type){
   return recentMeetRows.some(function(row){
     return matchesActivityRange(row,'meet') && String(row.athleteName||'').toLowerCase()===normalized && (type==='pb'?row.isPr:row.isSeasonBest);
   });
+}
+
+function hasTrainingTargetStatus(name,status){
+  var normalized=String(name||'').toLowerCase();
+  return recentTrainingRows.some(function(row){
+    return matchesActivityRange(row,'training') && String(row.athleteName||'').toLowerCase()===normalized && targetStatus(row)===status;
+  });
+}
+
+function targetStatus(row){
+  var diff=String(row&&row.targetDifference||'').toLowerCase();
+  if(diff.indexOf('within target')>=0)return 'on';
+  if(diff.indexOf('faster than target')>=0||diff.indexOf('slower than target')>=0)return 'review';
+  return 'none';
 }
 
 function rowHtml(row){
@@ -829,12 +855,19 @@ function recentTrainingHtml(row){
 
 function targetReviewHtml(row){
   if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort)return '<span class="muted">No target saved</span>';
-  return mainLine(row.plannedTarget||'Target saved')+
+  return targetStatusPill(row)+mainLine(row.plannedTarget||'Target saved')+
     subLine([row.targetDifference,row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
 }
 
 function targetReviewText(row){
   return [row.plannedTarget,row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
+}
+
+function targetStatusPill(row){
+  var status=targetStatus(row);
+  if(status==='on')return '<span class="pill good">On target</span>';
+  if(status==='review')return '<span class="pill warn">Review</span>';
+  return '';
 }
 
 function groupTrainingSessions(rows,limit){
