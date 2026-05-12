@@ -564,7 +564,6 @@ function openAthletePicker(id){
     if(athleteSelectedInGroup(a.name,id))return;
     items.push({
       label:a.name,
-      sub:a.smartcoachAthleteId?'SMARTCoach ID: '+a.smartcoachAthleteId:'',
       selected:String(a.name||'').trim().toLowerCase()===String(r.name||'').trim().toLowerCase()
     });
   });
