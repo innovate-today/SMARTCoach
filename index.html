@@ -1300,13 +1300,14 @@ function renderEntryTargets(r){
 }
 function athleteProfile(contactId,name){
   var key=contactId+'|'+String(name||'').toLowerCase();
-  if(APC[key])return Promise.resolve(APC[key]);
-  return fetch('/api/smart-trak/athlete-profile?contactId='+encodeURIComponent(contactId)+'&athleteName='+encodeURIComponent(name||'')).then(function(r){
+  var cached=APC[key];
+  if(cached&&cached.ts&&Date.now()-cached.ts<30000)return Promise.resolve(cached.profile);
+  return fetch('/api/smart-trak/athlete-profile?contactId='+encodeURIComponent(contactId)+'&athleteName='+encodeURIComponent(name||'')+'&t='+Date.now(),{cache:'no-store'}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Profile unavailable');
     var profile=result.data&&result.data.profile||{};
-    APC[key]=profile;
+    APC[key]={ts:Date.now(),profile:profile};
     return profile;
   });
 }
@@ -1353,10 +1354,14 @@ function parseTargetRule(text,workoutType){
 }
 function preferredFitnessEvents(text){
   var found=[],source=String(text||'').toLowerCase();
-  ['5K','2 Mile','3200m','1 Mile','1600m','800m','400m'].forEach(function(event){
+  var fallback=['5K','2 Mile','3200m','1 Mile','1600m','800m','400m'];
+  fallback.forEach(function(event){
     if(source.indexOf(event.toLowerCase())>=0)found.push(event);
   });
-  return found.length?found:['5K','2 Mile','3200m','1 Mile','1600m','800m','400m'];
+  fallback.forEach(function(event){
+    if(found.map(function(item){return item.toLowerCase();}).indexOf(event.toLowerCase())<0)found.push(event);
+  });
+  return found;
 }
 function chooseFitness(profile,rule){
   var bests=(profile&&profile.bests||[]).map(function(b){
