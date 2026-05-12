@@ -62,7 +62,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .bigbtns{display:flex;gap:10px;padding:10px 12px;flex-shrink:0;background:var(--B)}
 .bb{flex:1;padding:18px;border-radius:14px;font-size:23px;font-weight:800;cursor:pointer;border:none;font-family:inherit;user-select:none;-webkit-appearance:none}
 .bb.bl{background:var(--R);color:var(--W)}
+.bb.lapall{background:#fff;color:#102a70}
 .bb.gy{background:#555;color:var(--W)}
+.bb[hidden]{display:none}
 .bb:active{opacity:.8}
 
 /* TOOLBAR */
@@ -199,6 +201,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="scroll" id="rs"></div>
   <div class="bigbtns">
     <button class="bb bl" id="mb" onclick="masterToggle()">Start</button>
+    <button class="bb lapall" id="mlb" onclick="masterLap()" hidden>Lap All</button>
     <button class="bb gy" onclick="masterReset()">Reset</button>
   </div>
   <div class="tbar">
@@ -935,6 +938,24 @@ function updMB(){
   var any=CL&&CL.runners.some(function(r){return r.on;});
   var b=document.getElementById('mb');
   if(b){b.textContent=any?'Stop':'Start';b.style.background=any?'#555':'#2B4FCC';}
+  updateMasterLapButton();
+}
+
+function updateMasterLapButton(){
+  var b=document.getElementById('mlb');
+  if(!b)return;
+  var running=CL&&CL.cfg&&CL.cfg.laps?CL.runners.filter(function(r){return r.on;}):[];
+  b.hidden=!running||!running.length;
+  if(!b.hidden)b.textContent=masterLapLabel(running);
+}
+
+function masterLapLabel(running){
+  if(!running||!running.length)return'Lap All';
+  var first=running[0];
+  var label=lapButtonLabel(first);
+  if(label==='End Rep')return'End Rep All';
+  if(label==='End Rest')return'End Rest All';
+  return'Lap All';
 }
 
 /* Stop a runner: freeze el at current total, freeze le, clear running state */
@@ -990,6 +1011,20 @@ function togR(id){
 function doLap(id){
   var r=find(id);if(!r||!r.on)return;
   var n=now();
+  recordRunnerLap(r,n);
+}
+
+function masterLap(){
+  if(!CL||!CL.cfg.laps)return;
+  var running=CL.runners.filter(function(r){return r.on;});
+  if(!running.length)return;
+  var n=now();
+  running.forEach(function(r){recordRunnerLap(r,n);});
+  updateMasterLapButton();
+}
+
+function recordRunnerLap(r,n){
+  if(!r||!r.on)return;
   var lapTime=r.le+(n-r.lt);  /* time for THIS lap only */
   r.laps.push(lapTime);
   r.le=0;r.lt=n;               /* reset lap timer, keep total running */
@@ -998,6 +1033,7 @@ function doLap(id){
   if(lapEl&&CL.cfg.laps)lapEl.innerHTML=lapSummaryHtml(r);
   var lapBtn=document.getElementById('lapb-'+r.id);
   if(lapBtn)lapBtn.textContent=lapButtonLabel(r);
+  updateMasterLapButton();
 }
 
 function lapSummaryHtml(r){
