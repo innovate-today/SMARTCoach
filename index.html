@@ -985,7 +985,15 @@ function stopRunner(r){
   r.el+=n-r.t0;   /* freeze total time */
   r.le+=n-r.lt;   /* freeze current lap time */
   r.on=false;
-  r.saved.push({ms:r.el,ts:r.ts,laps:r.laps.slice(),note:r.note});
+  r.saved.push({ms:r.el,ts:r.ts,laps:r.laps.slice(),splitLabels:savedSplitLabels(r),note:r.note});
+}
+
+function savedSplitLabels(r){
+  var plan=runnerPlan(r);
+  return (r.laps||[]).map(function(ms,index){
+    var meta=splitMeta(plan,index);
+    return{label:meta.label,kind:meta.kind,ms:ms};
+  });
 }
 
 /* Individual start/stop toggle */
@@ -1806,6 +1814,11 @@ function shareSplitText(group,r,s){
 }
 
 function splitLabelsForRun(group,r,s){
+  if(s.splitLabels&&s.splitLabels.length){
+    return s.splitLabels.map(function(item,index){
+      return{label:item.label||('Lap '+(index+1)),kind:item.kind||'',ms:item.ms||((s.laps||[])[index]||0)};
+    });
+  }
   var oldCL=CL;
   CL=group||CL;
   var plan=runnerPlan(r);
@@ -2163,7 +2176,7 @@ function submitCapturedMeetResults(forceDuplicateSync){
           resultDisplay:fmt(s.ms),
           resultMs:s.ms,
           wind:wind,
-          splitsJson:JSON.stringify((s.laps||[]).map(function(l,li){return{lap:li+1,ms:l,time:fmt(l)};})),
+          splitsJson:JSON.stringify(splitLabelsForRun(CL,r,s).map(function(split,li){return{lap:li+1,ms:split.ms,time:fmt(split.ms),kind:split.kind,label:split.label};})),
           isPr:isPr,
           isSeasonBest:isSeasonBest,
           coachRaceNotes:notes||s.note||'',
@@ -2451,7 +2464,7 @@ function doSMARTTraKSync(forceDuplicateSync){
           runNumber:i+1,
           totalMs:s.ms,
           total:fmt(s.ms),
-          laps:(s.laps||[]).map(function(l,li){var meta=splitMeta(plan,li);return {ms:l,time:fmt(l),kind:meta.kind,label:meta.label};}),
+          laps:splitLabelsForRun(CL,r,s).map(function(split){return {ms:split.ms,time:fmt(split.ms),kind:split.kind,label:split.label};}),
           note:s.note||'',
           timestamp:s.ts||null
         };
