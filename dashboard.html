@@ -919,7 +919,7 @@ function splitReviewLines(row){
   var target=parseTargetRange(row.plannedTarget);
   return splits.map(function(split,index){
     var kind=splitKind(row,index,splits);
-    var label=kind==='recovery'?'Recovery '+Math.ceil((index+1)/2):'Rep '+(kind==='work'?Math.ceil((index+1)/2):split.lap);
+    var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap);
     var detail=label+': '+split.time;
     if(kind!=='recovery'&&target){
       var ms=parseDurationMs(split.time);
@@ -936,6 +936,7 @@ function workSplitCount(row,splits){
 }
 
 function splitKind(row,index,splits){
+  if(splits[index]&&splits[index].kind)return splits[index].kind;
   if(!hasRecoveryPattern(row)||splits.length<2)return 'lap';
   return index%2===0?'work':'recovery';
 }
@@ -947,9 +948,12 @@ function hasRecoveryPattern(row){
 
 function parseSplitLines(text){
   return String(text||'').split(/\r?\n/).map(function(line,index){
-    var match=line.match(/^\s*(?:Lap\s*)?(\d+)\s*:\s*(.+?)\s*$/i);
+    var match=line.match(/^\s*(?:(Lap|Rep|Rest|Recovery)\s*)?(\d+)\s*:\s*(.+?)\s*$/i);
     if(!match)return null;
-    return {lap:Number(match[1])||index+1,label:'Lap '+(Number(match[1])||index+1),time:match[2]};
+    var word=match[1]||'Lap';
+    var number=Number(match[2])||index+1;
+    var kind=/^(rest|recovery)$/i.test(word)?'recovery':(/rep/i.test(word)?'work':'');
+    return {lap:number,label:word+' '+number,kind:kind,time:match[3]};
   }).filter(Boolean);
 }
 

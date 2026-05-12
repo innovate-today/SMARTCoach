@@ -168,6 +168,8 @@ function normalizeRun(raw, index) {
       ? raw.laps.map((lap) => ({
           time: clean(lap && lap.time),
           ms: Number(lap && lap.ms) || null,
+          kind: clean(lap && lap.kind),
+          label: clean(lap && lap.label),
         })).filter((lap) => lap.time)
       : [],
     note: clean(raw && raw.note),
@@ -503,6 +505,8 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     lap: index + 1,
     ms: lap.ms,
     time: lap.time,
+    kind: lap.kind,
+    label: lap.label,
   }));
 
   return {
@@ -672,7 +676,8 @@ function formatLapSplits(splits) {
       const time = clean(split && split.time);
       if (!time) return "";
       const lap = Number(split && split.lap) || index + 1;
-      return `Lap ${lap}: ${time}`;
+      const label = clean(split && split.label) || `Lap ${lap}`;
+      return `${label}: ${time}`;
     })
     .filter(Boolean);
 }

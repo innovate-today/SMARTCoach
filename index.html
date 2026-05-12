@@ -46,7 +46,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rlabel{font-size:12px;color:var(--G3);min-height:14px}
 .rtarget{display:none;font-size:12px;color:#333;font-weight:700;margin-top:2px;line-height:1.25}
 .rtarget.on{display:block}
-.rlaps{font-size:13px;color:#333;white-space:normal;word-break:break-word;min-height:16px;margin-top:3px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.6}.rlapslbl{font-size:11px;color:var(--G3);font-weight:400;text-transform:uppercase;letter-spacing:.3px}
+.rlaps{font-size:13px;color:#333;white-space:normal;word-break:break-word;min-height:16px;margin-top:3px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.6}.rlapslbl{font-size:11px;color:var(--G3);font-weight:400;text-transform:uppercase;letter-spacing:.3px}.splitchip{display:inline-flex;align-items:center;gap:3px;margin:1px 3px 1px 0;padding:1px 5px;border-radius:6px;background:#eef3ff;color:#102a70;font-size:12px;font-weight:800}.splitchip.rest{background:#ffe9e9;color:#c1121f}.splitchip .splittm{color:#111;font-weight:800}
 .row-bot{display:flex;align-items:flex-end;gap:0px;margin-top:0;margin-bottom:0;padding-bottom:3px}
 .rtotal{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--B);font-feature-settings:"tnum"}.rlaptime{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";color:#2B4FCC;align-self:flex-end;padding-bottom:3px;padding-left:10px;min-width:70px}
 .rtime{font-size:14px;color:#444;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";margin-top:2px}.rlaplist{margin-top:6px;display:flex;flex-direction:column;gap:3px}.rlapitem{display:flex;justify-content:space-between;align-items:center;padding:2px 0}.rlapnum{font-size:12px;color:var(--G3)}.rlaptm{font-size:14px;font-weight:700;color:#222;font-variant-numeric:tabular-nums}
@@ -87,7 +87,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .laprow{display:flex;align-items:center;padding:12px 16px;border-bottom:0.5px solid #e5e5ea;background:var(--W)}
 .laprow:last-child{border-bottom:none}
 .laptm{font-size:21px;font-weight:500;flex:1;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
-.lapsub{font-size:14px;color:var(--G3)}
+.lapsub{font-size:14px;color:var(--G3)}.lapsub.rest{color:var(--R);font-weight:700}.lapsub.rep{color:#102a70;font-weight:700}
 .bact{display:flex;justify-content:space-between;padding:14px 16px;border-top:0.5px solid var(--G2);background:var(--B);flex-shrink:0;padding-bottom:max(14px,env(safe-area-inset-bottom))}
 .blnk{color:var(--R);font-size:17px;cursor:pointer;font-weight:500;user-select:none;padding:4px 0}
 
@@ -824,13 +824,7 @@ function rHTML(r){
   var status=runnerRowStatus(r);
   var statusHtml=status?'<div class="rtarget on save-state '+status.cls+'" '+(status.action?'onclick="openRunnerStatusAction('+r.id+')"':'')+' style="display:block'+(status.action?';cursor:pointer':'')+'">'+ex(status.label)+'</div>':'';
   if(CL.cfg.laps&&r.laps.length){
-    var lines=[],chunk=[];
-    r.laps.forEach(function(x){
-      chunk.push(fmt(x));
-      if(chunk.length===5){lines.push(chunk.join(' / '));chunk=[];}
-    });
-    if(chunk.length)lines.push(chunk.join(' / '));
-    lapsHtml='<div class="rlaps" id="rl-'+r.id+'"><span class="rlapslbl">Laps: </span>'+lines.join(' /<br>')+'</div>';
+    lapsHtml='<div class="rlaps" id="rl-'+r.id+'">'+lapSummaryHtml(r)+'</div>';
   }else{
     lapsHtml='<div class="rlaps" id="rl-'+r.id+'"></div>';
   }
@@ -840,7 +834,7 @@ function rHTML(r){
     '<div class="row-top">'+
       athleteNameControl(r)+
       '<div class="row-btns" style="gap:6px">'+
-        '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">Lap</button>'+
+        '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">'+ex(lapButtonLabel(r))+'</button>'+
         '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>'+
       '</div>'+
       '<div class="ibtn" onclick="oEnt('+r.id+')">i</div>'+
@@ -985,7 +979,7 @@ function togR(id){
     var row=document.getElementById('rr-'+r.id);
     if(row){
       var sb=row.querySelector('.sbtn');if(sb){sb.textContent='Stop';sb.classList.add('on');}
-      if(CL.cfg.laps){var lb=row.querySelector('.lapbtn');if(lb)lb.classList.add('vis');}
+      if(CL.cfg.laps){var lb=row.querySelector('.lapbtn');if(lb){lb.classList.add('vis');lb.textContent=lapButtonLabel(r);}}
     }
     updMB();
     tick();
@@ -1001,15 +995,43 @@ function doLap(id){
   r.le=0;r.lt=n;               /* reset lap timer, keep total running */
   /* update lap list display */
   var lapEl=document.getElementById('rl-'+r.id);
-  if(lapEl&&CL.cfg.laps){
-    var lines=[],chunk=[];
-    r.laps.forEach(function(x){
-      chunk.push(fmt(x));
-      if(chunk.length===5){lines.push(chunk.join(' / '));chunk=[];}
-    });
-    if(chunk.length)lines.push(chunk.join(' / '));
-    lapEl.innerHTML='<span class="rlapslbl">Laps: </span>'+lines.join(' /<br>');
+  if(lapEl&&CL.cfg.laps)lapEl.innerHTML=lapSummaryHtml(r);
+  var lapBtn=document.getElementById('lapb-'+r.id);
+  if(lapBtn)lapBtn.textContent=lapButtonLabel(r);
+}
+
+function lapSummaryHtml(r){
+  if(!r||!r.laps||!r.laps.length)return'';
+  var plan=runnerPlan(r);
+  return '<span class="rlapslbl">Splits: </span>'+r.laps.map(function(ms,index){
+    var meta=splitMeta(plan,index);
+    return '<span class="splitchip '+(meta.kind==='rest'?'rest':'rep')+'">'+ex(meta.label)+' <span class="splittm">'+ex(fmt(ms))+'</span></span>';
+  }).join('');
+}
+
+function splitMeta(plan,index){
+  if(planHasRecovery(plan)){
+    var count=Math.floor(index/2)+1;
+    return index%2===0?{kind:'rep',label:'Rep '+count}:{kind:'rest',label:'Rest '+count};
   }
+  return{kind:'lap',label:'Lap '+(index+1)};
+}
+
+function planHasRecovery(plan){
+  var text=[
+    plan&&plan.trainingPlanDayTitle,
+    plan&&plan.trainingPlanDayDetails,
+    plan&&plan.trainingPlanDayTargetSplits,
+    plan&&plan.trainingPlanTitle
+  ].filter(Boolean).join(' ').toLowerCase();
+  return /(recover|recovery|rest|walk|jog)/.test(text);
+}
+
+function lapButtonLabel(r){
+  var plan=runnerPlan(r);
+  if(!planHasRecovery(plan))return'Lap';
+  var meta=splitMeta(plan,(r&&r.laps?r.laps.length:0));
+  return meta.kind==='rest'?'End Rest':'End Rep';
 }
 
 /* Master Start/Stop: controls ALL runners */
@@ -1091,8 +1113,10 @@ function oEnt(rid2){
   var lp=document.getElementById('elaps'),laps=last?last.laps:[],h='';
   var clearBtn=document.getElementById('clear-laps-btn');
   if(clearBtn)clearBtn.style.display=laps.length?'inline':'none';
+  var plan=runnerPlan(CE);
   h+=laps.length?laps.map(function(x,i){
-    return'<div class="laprow"><div style="flex:1"><div class="laptm">'+fmt(x)+'</div><div class="lapsub">Lap '+(i+1)+'</div></div><span style="color:#bbb">&rsaquo;</span></div>';
+    var meta=splitMeta(plan,i);
+    return'<div class="laprow"><div style="flex:1"><div class="laptm">'+fmt(x)+'</div><div class="lapsub '+(meta.kind==='rest'?'rest':'rep')+'">'+ex(meta.label)+'</div></div><span style="color:#bbb">&rsaquo;</span></div>';
   }).join(''):'<div style="padding:14px 16px;color:#8e8e93;background:#fff;font-size:15px">No laps recorded</div>';
   lp.innerHTML=h;
   go('s-ent');
@@ -2324,7 +2348,7 @@ function doSMARTTraKSync(forceDuplicateSync){
           runNumber:i+1,
           totalMs:s.ms,
           total:fmt(s.ms),
-          laps:(s.laps||[]).map(function(l){return {ms:l,time:fmt(l)};}),
+          laps:(s.laps||[]).map(function(l,li){var meta=splitMeta(plan,li);return {ms:l,time:fmt(l),kind:meta.kind,label:meta.label};}),
           note:s.note||'',
           timestamp:s.ts||null
         };
