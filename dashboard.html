@@ -112,7 +112,7 @@ tr:last-child td{border-bottom:0}
       <div class="mark">SC</div>
       <div>
         <h1>SMARTCoach Pro Dashboard</h1>
-        <div class="sub">Roster, current fitness, recent results, and training sync review.</div>
+        <div class="sub">Roster, training volume, current fitness, and recent results.</div>
         <div id="lastUpdated" class="updated">Last updated --</div>
       </div>
     </div>
@@ -123,10 +123,11 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <section class="stats">
-    <div class="stat"><b id="athleteCount">--</b><span>Active athletes</span></div>
-    <div class="stat"><b id="currentWeekRuns">--</b><span>This week synced runs</span><span id="currentWeekRange" class="small">--</span></div>
-    <div class="stat"><b id="previousWeekRuns">--</b><span>Previous week synced runs</span><span id="previousWeekRange" class="small">--</span></div>
     <div class="stat"><b id="currentWeekVolume">--</b><span>This week volume</span><span class="small">completed miles</span></div>
+    <div class="stat"><b id="previousWeekVolume">--</b><span>Previous week volume</span><span class="small">completed miles</span></div>
+    <div class="stat"><b id="athleteCount">--</b><span>Active athletes</span></div>
+    <div class="stat"><b id="currentWeekRuns">--</b><span>Completed workouts</span><span id="currentWeekRange" class="small">--</span></div>
+    <span id="previousWeekRange" class="small" hidden>--</span>
   </section>
 
   <section class="breakdowns">
@@ -139,25 +140,25 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
     <div class="breakdown" data-tab-target="meet">
-      <h2>Meet Sync Summary</h2>
+      <h2>Meet Results Summary</h2>
       <div id="meetRangeLabel" class="breakrange">Showing last 30 days</div>
       <div class="breakgrid">
-        <div class="metric"><b id="meetSyncCount">--</b><span>Recent syncs</span></div>
+        <div class="metric"><b id="meetSyncCount">--</b><span>Recent results</span></div>
         <div class="metric" data-filter="pb"><b id="meetPbCount">--</b><span>New PBs</span></div>
         <div class="metric" data-filter="sb"><b id="meetSbCount">--</b><span>New SBs</span></div>
       </div>
     </div>
     <div class="breakdown" data-tab-target="training">
-      <h2>Training Sync Summary</h2>
+      <h2>Training Load Summary</h2>
       <div id="trainingRangeLabel" class="breakrange">Showing last 30 days</div>
       <div class="breakgrid">
-        <div class="metric"><b id="trainingSyncCount">--</b><span>Recent syncs</span></div>
         <div class="metric"><b id="trainingVolumeCount">--</b><span>Volume miles</span></div>
         <div class="metric"><b id="trainingMonthVolume">--</b><span>This month miles</span></div>
+        <div class="metric"><b id="trainingSyncCount">--</b><span>Completed workouts</span></div>
         <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
         <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
-        <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Synced this week</span></div>
-        <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>No sync this week</span></div>
+        <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Active this week</span></div>
+        <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>No workout this week</span></div>
       </div>
     </div>
   </section>
@@ -170,7 +171,7 @@ tr:last-child td{border-bottom:0}
     <select id="quickFilter" class="filter">
       <option value="all">All athletes</option>
       <option value="missing_fitness">Missing current fitness</option>
-      <option value="no_training_this_week">No training sync this week</option>
+      <option value="no_training_this_week">No workout this week</option>
       <option value="training_on_target">Training on target</option>
       <option value="training_needs_review">Training outside target</option>
       <option value="pb">Recent new PBs</option>
@@ -190,8 +191,8 @@ tr:last-child td{border-bottom:0}
 
   <nav class="tabs" aria-label="Dashboard sections">
     <button class="tab active" data-tab="roster" type="button">Roster Overview <span id="rosterViewCount" class="pill count">--</span></button>
-    <button class="tab" data-tab="meet" type="button">Recent Meet Syncs <span id="meetViewCount" class="pill count">--</span></button>
-    <button class="tab" data-tab="training" type="button">Recent Training Syncs <span id="trainingViewCount" class="pill count">--</span></button>
+    <button class="tab" data-tab="meet" type="button">Recent Meet Results <span id="meetViewCount" class="pill count">--</span></button>
+    <button class="tab" data-tab="training" type="button">Training Load <span id="trainingViewCount" class="pill count">--</span></button>
   </nav>
 
   <section id="rosterPanel" class="tabpanel" data-panel="roster">
@@ -206,10 +207,10 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="roster" data-sort="currentFitness" type="button">Current Fitness</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="latestMeet" type="button">Latest Meet Result</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="latestTraining" type="button">Latest Training</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="currentWeekRuns" type="button">This Week Syncs</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="currentWeekVolume" type="button">This Week Volume</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="previousWeekRuns" type="button">Previous Week Syncs</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="previousWeekVolume" type="button">Previous Week Volume</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="currentWeekRuns" type="button">This Week Workouts</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="previousWeekRuns" type="button">Previous Week Workouts</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="status" type="button">Status</button></th>
           </tr>
         </thead>
@@ -221,7 +222,7 @@ tr:last-child td{border-bottom:0}
 
   <section id="meetPanel" class="tabpanel" data-panel="meet" hidden>
     <div class="sectionbar">
-      <div class="section-title">Recent Meet Syncs</div>
+      <div class="section-title">Recent Meet Results</div>
     </div>
     <section class="tablewrap recentwrap">
       <table>
@@ -238,7 +239,7 @@ tr:last-child td{border-bottom:0}
         </thead>
         <tbody id="recentMeetRows"></tbody>
       </table>
-      <div id="recentMeetEmpty" class="empty" hidden>No recent meet syncs.</div>
+      <div id="recentMeetEmpty" class="empty" hidden>No recent meet results.</div>
     </section>
   </section>
 
@@ -252,9 +253,9 @@ tr:last-child td{border-bottom:0}
           <tr>
             <th><button class="sortbtn" data-table="volume" data-sort="athleteName" type="button">Athlete</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Volume</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Syncs</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Workouts</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="groups" type="button">Groups</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Sync</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Completed</button></th>
           </tr>
         </thead>
         <tbody id="volumeRows"></tbody>
@@ -262,7 +263,7 @@ tr:last-child td{border-bottom:0}
       <div id="volumeEmpty" class="empty" hidden>No completed volume in this view yet.</div>
     </section>
     <div class="sectionbar">
-      <div class="section-title">Recent Training Syncs</div>
+      <div class="section-title">Recent Completed Workouts</div>
     </div>
     <section class="tablewrap recentwrap">
       <table>
@@ -276,12 +277,12 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="totalTimeDisplay" type="button">Total / Splits</button></th>
             <th><button class="sortbtn" data-table="training" data-sort="sessionDate" type="button">Session Date</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Synced</button></th>
+            <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Saved</button></th>
           </tr>
         </thead>
         <tbody id="recentTrainingRows"></tbody>
       </table>
-      <div id="recentTrainingEmpty" class="empty" hidden>No recent training syncs.</div>
+      <div id="recentTrainingEmpty" class="empty" hidden>No recent completed workouts.</div>
     </section>
   </section>
 </main>
@@ -340,6 +341,7 @@ var els={
   currentWeekRuns:document.getElementById('currentWeekRuns'),
   previousWeekRuns:document.getElementById('previousWeekRuns'),
   currentWeekVolume:document.getElementById('currentWeekVolume'),
+  previousWeekVolume:document.getElementById('previousWeekVolume'),
   currentWeekRange:document.getElementById('currentWeekRange'),
   previousWeekRange:document.getElementById('previousWeekRange'),
   rosterViewCount:document.getElementById('rosterViewCount'),
@@ -444,8 +446,9 @@ function loadDashboard(){
     els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
     els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
     els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
-    els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
+    if(els.previousWeekRuns)els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
     els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
+    els.previousWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.previousWeekVolumeMiles);
     updateWeekRanges();
     updateBreakdowns();
     renderRows();
@@ -523,14 +526,14 @@ function renderRows(){
   els.volumeEmpty.hidden=volumeRows.length>0;
   els.recentTrainingEmpty.hidden=trainingRows.length>0;
   if(rows.length===0)els.empty.textContent='No matching athletes.';
-  if(meetRows.length===0)els.recentMeetEmpty.textContent='No matching meet syncs.';
+  if(meetRows.length===0)els.recentMeetEmpty.textContent='No matching meet results.';
   if(volumeRows.length===0)els.volumeEmpty.textContent='No completed volume in this view yet.';
-  if(trainingRows.length===0)els.recentTrainingEmpty.textContent='No matching training syncs.';
+  if(trainingRows.length===0)els.recentTrainingEmpty.textContent='No matching completed workouts.';
   els.clearSearchBtn.hidden=!query;
   els.rosterViewCount.textContent=rows.length;
   els.meetViewCount.textContent=meetRows.length;
   els.trainingViewCount.textContent=trainingRows.length;
-  els.status.textContent=rows.length+' athletes · '+meetRows.length+' meet syncs · '+trainingRows.length+' training syncs · '+activityRangeLabel();
+  els.status.textContent=formatMiles(sumTrainingVolume(trainingRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+activityRangeLabel();
   els.filterState.textContent=filterStateText(query,filter);
   els.filterState.hidden=isDefaultView(query,filter);
   updateActiveMetric(filter);
@@ -564,7 +567,7 @@ function exportCurrentViewCsv(){
 
 function exportRosterCsv(){
   var rows=visibleRosterRows;
-  var headers=['Athlete','Current Fitness','Fitness Date','Latest Meet Result','Meet Name','Meet Date','Best Status','Latest Training','Training Group','Training Date','This Week Syncs','This Week Volume Miles','Previous Week Syncs','Previous Week Volume Miles','Current Month Volume Miles','Status','Training Records','Meet Results'];
+  var headers=['Athlete','Current Fitness','Fitness Date','Latest Meet Result','Meet Name','Meet Date','Best Status','Latest Training','Training Group','Training Date','This Week Volume Miles','Previous Week Volume Miles','Current Month Volume Miles','This Week Workouts','Previous Week Workouts','Status','Training Records','Meet Results'];
   var csv=[headers].concat(rows.map(function(row){
     var fitness=row.currentFitness||{};
     var latestMeet=row.latestMeet||{};
@@ -580,11 +583,11 @@ function exportRosterCsv(){
       [latestTraining.totalTimeDisplay,latestTraining.workoutType].filter(Boolean).join(' '),
       latestTraining.groupName||'',
       latestTraining.sessionDate||'',
-      num(row.currentWeekRuns),
       num(row.currentWeekVolumeMiles),
-      num(row.previousWeekRuns),
       num(row.previousWeekVolumeMiles),
       num(row.currentMonthVolumeMiles),
+      num(row.currentWeekRuns),
+      num(row.previousWeekRuns),
       row.status||'',
       num(row.trainingRecordCount),
       num(row.meetResultCount)
@@ -793,7 +796,8 @@ function isDefaultView(query,filter){
     (els.activityRange.value||'30')==='30' &&
     sameSort(tableSorts.roster,defaults.roster) &&
     sameSort(tableSorts.meet,defaults.meet) &&
-    sameSort(tableSorts.training,defaults.training);
+    sameSort(tableSorts.training,defaults.training) &&
+    sameSort(tableSorts.volume,defaults.volume);
 }
 function sameSort(a,b){
   return !!a && !!b && a.key===b.key && a.dir===b.dir;
@@ -844,11 +848,11 @@ function rowHtml(row){
     '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="muted">View details</div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
-    '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
-    '<td><span class="pill">'+num(row.currentWeekRuns)+'</span></td>'+
+    '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine(formatMiles(row.currentWeekVolumeMiles))+'</td>'+
-    '<td><span class="pill">'+num(row.previousWeekRuns)+'</span></td>'+
     '<td>'+mainLine(formatMiles(row.previousWeekVolumeMiles))+'</td>'+
+    '<td><span class="pill">'+num(row.currentWeekRuns)+'</span></td>'+
+    '<td><span class="pill">'+num(row.previousWeekRuns)+'</span></td>'+
     '<td><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span><div class="muted">'+num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet</div></td>'+
   '</tr>';
 }
@@ -864,16 +868,16 @@ function openAthleteDetail(row){
     '<div class="detailgrid">'+
       detailCard('Current Fitness',fitness.label||'Not set',fitness.date?formatDate(fitness.date):'')+
       detailCard('Latest Meet Result',[latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result',[latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+
-      detailCard('Latest Training',[latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No sync',[latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+
+      detailCard('Latest Training',[latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout',[latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+
       detailCard('Training Volume',formatMiles(row.currentWeekVolumeMiles)+' this week · '+formatMiles(row.previousWeekVolumeMiles)+' previous week',formatMiles(row.currentMonthVolumeMiles)+' this month')+
-      detailCard('Sync Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet')+
+      detailCard('Workout Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training records · '+num(row.meetResultCount)+' meet results')+
     '</div>'+
     '<h3 class="section-title">Recent Meet Results</h3>'+
     detailList(meets.map(function(item){
       return mainLine([item.event,item.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([item.meetName,formatDate(item.meetDate),flagText(item)].filter(Boolean).join(' · '));
     }),'No recent meet results.')+
     '<h3 class="section-title">Recent Training</h3>'+
-    detailList(trainingGroups.map(trainingSessionDetailHtml),'No recent training syncs.');
+    detailList(trainingGroups.map(trainingSessionDetailHtml),'No recent completed workouts.');
   els.athleteModal.hidden=false;
 }
 
