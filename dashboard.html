@@ -244,6 +244,24 @@ tr:last-child td{border-bottom:0}
 
   <section id="trainingPanel" class="tabpanel" data-panel="training" hidden>
     <div class="sectionbar">
+      <div class="section-title">Volume By Athlete</div>
+    </div>
+    <section class="tablewrap recentwrap">
+      <table>
+        <thead>
+          <tr>
+            <th><button class="sortbtn" data-table="volume" data-sort="athleteName" type="button">Athlete</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Volume</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Syncs</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="groups" type="button">Groups</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Sync</button></th>
+          </tr>
+        </thead>
+        <tbody id="volumeRows"></tbody>
+      </table>
+      <div id="volumeEmpty" class="empty" hidden>No completed volume in this view yet.</div>
+    </section>
+    <div class="sectionbar">
       <div class="section-title">Recent Training Syncs</div>
     </div>
     <section class="tablewrap recentwrap">
@@ -283,23 +301,27 @@ var recentTrainingRows=[];
 var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
+var visibleVolumeRows=[];
 var lastLoadedAt='';
 var activeTab='roster';
 var dashboardViewKey='smartcoachDashboardView';
 var tableSorts={
   roster:{key:'name',dir:'asc'},
   meet:{key:'syncedAt',dir:'desc'},
-  training:{key:'syncedAt',dir:'desc'}
+  training:{key:'syncedAt',dir:'desc'},
+  volume:{key:'volumeMiles',dir:'desc'}
 };
 var els={
   rows:document.getElementById('rows'),
   recentMeetRows:document.getElementById('recentMeetRows'),
   recentTrainingRows:document.getElementById('recentTrainingRows'),
+  volumeRows:document.getElementById('volumeRows'),
   tabs:Array.prototype.slice.call(document.querySelectorAll('.tab')),
   panels:Array.prototype.slice.call(document.querySelectorAll('.tabpanel')),
   empty:document.getElementById('empty'),
   recentMeetEmpty:document.getElementById('recentMeetEmpty'),
   recentTrainingEmpty:document.getElementById('recentTrainingEmpty'),
+  volumeEmpty:document.getElementById('volumeEmpty'),
   athleteModal:document.getElementById('athleteModal'),
   athleteModalTitle:document.getElementById('athleteModalTitle'),
   athleteModalBody:document.getElementById('athleteModalBody'),
@@ -487,17 +509,22 @@ function renderRows(){
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
   var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
   var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
+  var volumeRows=sortRows(groupVolumeByAthlete(trainingRows),tableSorts.volume,volumeSortValue);
   visibleRosterRows=rows;
   visibleMeetRows=meetRows;
   visibleTrainingRows=trainingRows;
+  visibleVolumeRows=volumeRows;
   els.rows.innerHTML=rows.map(rowHtml).join('');
   els.recentMeetRows.innerHTML=meetRows.map(recentMeetHtml).join('');
+  els.volumeRows.innerHTML=volumeRows.map(volumeRowHtml).join('');
   els.recentTrainingRows.innerHTML=trainingRows.map(recentTrainingHtml).join('');
   els.empty.hidden=rows.length>0;
   els.recentMeetEmpty.hidden=meetRows.length>0;
+  els.volumeEmpty.hidden=volumeRows.length>0;
   els.recentTrainingEmpty.hidden=trainingRows.length>0;
   if(rows.length===0)els.empty.textContent='No matching athletes.';
   if(meetRows.length===0)els.recentMeetEmpty.textContent='No matching meet syncs.';
+  if(volumeRows.length===0)els.volumeEmpty.textContent='No completed volume in this view yet.';
   if(trainingRows.length===0)els.recentTrainingEmpty.textContent='No matching training syncs.';
   els.clearSearchBtn.hidden=!query;
   els.rosterViewCount.textContent=rows.length;
@@ -672,6 +699,12 @@ function trainingSortValue(row,key){
   if(key==='targetReview')return [row.targetDifference,row.plannedTarget].filter(Boolean).join(' ');
   return row[key];
 }
+function volumeSortValue(row,key){
+  if(key==='volumeMiles')return num(row.volumeMiles);
+  if(key==='syncs')return num(row.syncs);
+  if(key==='groups')return row.groups.join(' ');
+  return row[key];
+}
 function compareValues(a,b){
   var av=normalizeSortValue(a),bv=normalizeSortValue(b);
   if(typeof av==='number'&&typeof bv==='number')return av-bv;
@@ -750,6 +783,7 @@ function filterStateText(query,filter){
   parts.push('roster sorted by '+sortLabel('roster'));
   parts.push('meets sorted by '+sortLabel('meet'));
   parts.push('training sorted by '+sortLabel('training'));
+  parts.push('volume sorted by '+sortLabel('volume'));
   return parts.join(' · ');
 }
 function isDefaultView(query,filter){
@@ -858,6 +892,35 @@ function detailCard(title,value,sub){
 function detailList(items,emptyText){
   if(!items.length)return '<div class="detaillist"><div class="detailitem muted">'+esc(emptyText)+'</div></div>';
   return '<div class="detaillist">'+items.map(function(item){return '<div class="detailitem">'+item+'</div>';}).join('')+'</div>';
+}
+
+function groupVolumeByAthlete(rows){
+  var groups={};
+  (rows||[]).forEach(function(row){
+    var miles=num(row.completedVolumeMiles);
+    if(!miles)return;
+    var key=String(row.contactId||row.athleteName||'').toLowerCase();
+    if(!groups[key])groups[key]={athleteName:row.athleteName||'Unnamed',contactId:row.contactId||'',volumeMiles:0,syncs:0,groups:[],lastDate:''};
+    groups[key].volumeMiles+=miles;
+    groups[key].syncs+=1;
+    if(row.groupName&&groups[key].groups.indexOf(row.groupName)<0)groups[key].groups.push(row.groupName);
+    var date=row.syncedAt||row.sessionDate||'';
+    if(compareValues(date,groups[key].lastDate)>0)groups[key].lastDate=date;
+  });
+  return Object.keys(groups).map(function(key){
+    groups[key].volumeMiles=Math.round(groups[key].volumeMiles*10)/10;
+    return groups[key];
+  });
+}
+
+function volumeRowHtml(row){
+  return '<tr>'+
+    '<td>'+athleteDetailButton(row)+'</td>'+
+    '<td>'+mainLine(formatMiles(row.volumeMiles))+'</td>'+
+    '<td><span class="pill">'+num(row.syncs)+'</span></td>'+
+    '<td>'+mainLine(row.groups.join(', ')||'')+'</td>'+
+    '<td>'+mainLine(row.lastDate?formatDateTime(row.lastDate):'')+'</td>'+
+  '</tr>';
 }
 
 function recentMeetHtml(row){
