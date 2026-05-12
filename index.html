@@ -1904,13 +1904,21 @@ function deleteRunner(id){
 
 function exportSheets(){
   if(!CL)return;
-  var rows=[['Group','Runner','Run#','Total','Split 1','Split 2','Split 3','Split 4','Split 5','Notes'].join('\t')];
+  var maxSplits=0;
   CL.runners.forEach(function(r){
-    if(!r.saved.length){rows.push([CL.name,r.name,'','','','','','','',''].join('\t'));}
+    (r.saved||[]).forEach(function(s){
+      maxSplits=Math.max(maxSplits,(s.laps||[]).length);
+    });
+  });
+  var splitHeaders=[];
+  for(var h=0;h<maxSplits;h++)splitHeaders.push('Split '+(h+1));
+  var rows=[['Group','Runner','Run#','Total'].concat(splitHeaders).concat(['Notes']).join('\t')];
+  CL.runners.forEach(function(r){
+    if(!r.saved.length){rows.push([CL.name,r.name,'',''].concat(splitHeaders.map(function(){return'';})).concat(['']).join('\t'));}
     else{r.saved.forEach(function(s,i){
       var c=[CL.name,r.name,'Run '+(i+1),fmt(s.ms)];
       var splits=splitLabelsForRun(CL,r,s);
-      for(var j=0;j<5;j++)c.push(splits[j]?splits[j].label+' '+fmt(splits[j].ms):'');
+      for(var j=0;j<maxSplits;j++)c.push(splits[j]?splits[j].label+' '+fmt(splits[j].ms):'');
       c.push(s.note||'');rows.push(c.join('\t'));
     });}
   });
