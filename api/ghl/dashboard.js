@@ -79,6 +79,9 @@ module.exports = async function handler(req, res) {
         athletes: rows.length,
         currentWeekRuns: rows.reduce((sum, row) => sum + row.currentWeekRuns, 0),
         previousWeekRuns: rows.reduce((sum, row) => sum + row.previousWeekRuns, 0),
+        currentWeekVolumeMiles: roundVolume(rows.reduce((sum, row) => sum + row.currentWeekVolumeMiles, 0)),
+        previousWeekVolumeMiles: roundVolume(rows.reduce((sum, row) => sum + row.previousWeekVolumeMiles, 0)),
+        currentMonthVolumeMiles: roundVolume(rows.reduce((sum, row) => sum + row.currentMonthVolumeMiles, 0)),
       },
       athletes: rows,
       recentMeetResults,
@@ -174,6 +177,9 @@ function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords
     latestTraining,
     currentWeekRuns: countRunsBetween(training, startOfCurrentWeek(), addDays(startOfCurrentWeek(), 7)),
     previousWeekRuns: countRunsBetween(training, addDays(startOfCurrentWeek(), -7), startOfCurrentWeek()),
+    currentWeekVolumeMiles: sumVolumeBetween(training, startOfCurrentWeek(), addDays(startOfCurrentWeek(), 7)),
+    previousWeekVolumeMiles: sumVolumeBetween(training, addDays(startOfCurrentWeek(), -7), startOfCurrentWeek()),
+    currentMonthVolumeMiles: sumVolumeBetween(training, startOfCurrentMonth(), addDays(startOfNextMonth(), 0)),
     meetResultCount: meets.length,
     trainingRecordCount: training.length,
     status: athlete.smartcoachActive ? "Active" : "Tagged",
@@ -235,6 +241,8 @@ function normalizeMeetResult(record) {
 function normalizePerformanceRecord(record) {
   const props = recordProperties(record);
   const coachNote = prop(props, "coach_note");
+  const completedVolume = noteValue(coachNote, "Completed volume");
+  const plannedVolume = noteValue(coachNote, "Planned volume");
   return {
     sourceSessionId: prop(props, "source_session_id"),
     sourceRecordId: prop(props, "source_record_id"),
@@ -250,8 +258,10 @@ function normalizePerformanceRecord(record) {
     actual: noteValue(coachNote, "Actual"),
     targetDifference: noteValue(coachNote, "Difference"),
     plannedEffort: noteValue(coachNote, "Planned effort"),
-    plannedVolume: noteValue(coachNote, "Planned volume"),
-    completedVolume: noteValue(coachNote, "Completed volume"),
+    plannedVolume,
+    completedVolume,
+    completedVolumeMiles: parseVolumeToMiles(completedVolume),
+    plannedVolumeMiles: parseVolumeToMiles(plannedVolume),
     currentFitnessSnapshot: noteValue(coachNote, "Current fitness"),
     weather: noteValue(coachNote, "Weather"),
     syncedAt: recordTimestamp(record),
@@ -277,6 +287,47 @@ function countRunsBetween(training, start, end) {
     const date = parseDate(item.sessionDate);
     return date && date >= start && date < end;
   }).length;
+}
+
+function sumVolumeBetween(training, start, end) {
+  return roundVolume(training.reduce((sum, item) => {
+    const date = parseDate(item.sessionDate);
+    if (!date || date < start || date >= end) return sum;
+    return sum + (Number(item.completedVolumeMiles) || 0);
+  }, 0));
+}
+
+function startOfCurrentMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function startOfNextMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+}
+
+function parseVolumeToMiles(value) {
+  const text = clean(value).toLowerCase();
+  if (!text) return 0;
+  const rangeMatch = text.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  if (rangeMatch) return convertVolumeToMiles((Number(rangeMatch[1]) + Number(rangeMatch[2])) / 2, rangeMatch[3]);
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  if (!match) return 0;
+  return convertVolumeToMiles(Number(match[1]), match[2]);
+}
+
+function convertVolumeToMiles(amount, unit) {
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  const normalized = clean(unit).toLowerCase();
+  if (normalized === "mi" || normalized === "mile" || normalized === "miles") return roundVolume(amount);
+  if (normalized === "km" || normalized === "k") return roundVolume(amount * 0.621371);
+  if (normalized === "m" || normalized === "meter" || normalized === "meters") return roundVolume(amount / 1609.344);
+  return 0;
+}
+
+function roundVolume(value) {
+  return Math.round((Number(value) || 0) * 10) / 10;
 }
 
 function startOfCurrentWeek() {

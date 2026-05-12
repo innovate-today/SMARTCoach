@@ -19,7 +19,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:10px 14px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .stat b{display:block;font-size:24px;line-height:1.1}
 .stat span{display:block;color:var(--muted);font-size:13px;margin-top:4px}
@@ -53,7 +53,7 @@ button.ghost{background:#eef2f7;color:#172033}
 .sectionbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 8px}
 .sectionbar .section-title{margin:0}
 .sectionbar button{padding:8px 12px}
-table{width:100%;border-collapse:collapse;min-width:1060px}
+table{width:100%;border-collapse:collapse;min-width:1260px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
 .sortbtn{border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer;text-align:left}
@@ -126,6 +126,7 @@ tr:last-child td{border-bottom:0}
     <div class="stat"><b id="athleteCount">--</b><span>Active athletes</span></div>
     <div class="stat"><b id="currentWeekRuns">--</b><span>This week synced runs</span><span id="currentWeekRange" class="small">--</span></div>
     <div class="stat"><b id="previousWeekRuns">--</b><span>Previous week synced runs</span><span id="previousWeekRange" class="small">--</span></div>
+    <div class="stat"><b id="currentWeekVolume">--</b><span>This week volume</span><span class="small">completed miles</span></div>
   </section>
 
   <section class="breakdowns">
@@ -151,6 +152,8 @@ tr:last-child td{border-bottom:0}
       <div id="trainingRangeLabel" class="breakrange">Showing last 30 days</div>
       <div class="breakgrid">
         <div class="metric"><b id="trainingSyncCount">--</b><span>Recent syncs</span></div>
+        <div class="metric"><b id="trainingVolumeCount">--</b><span>Volume miles</span></div>
+        <div class="metric"><b id="trainingMonthVolume">--</b><span>This month miles</span></div>
         <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
         <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
         <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Synced this week</span></div>
@@ -204,7 +207,9 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="roster" data-sort="latestMeet" type="button">Latest Meet Result</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="latestTraining" type="button">Latest Training</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="currentWeekRuns" type="button">This Week Syncs</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="currentWeekVolume" type="button">This Week Volume</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="previousWeekRuns" type="button">Previous Week Syncs</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="previousWeekVolume" type="button">Previous Week Volume</button></th>
             <th><button class="sortbtn" data-table="roster" data-sort="status" type="button">Status</button></th>
           </tr>
         </thead>
@@ -312,6 +317,7 @@ var els={
   athleteCount:document.getElementById('athleteCount'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
   previousWeekRuns:document.getElementById('previousWeekRuns'),
+  currentWeekVolume:document.getElementById('currentWeekVolume'),
   currentWeekRange:document.getElementById('currentWeekRange'),
   previousWeekRange:document.getElementById('previousWeekRange'),
   rosterViewCount:document.getElementById('rosterViewCount'),
@@ -326,6 +332,8 @@ var els={
   meetSbCount:document.getElementById('meetSbCount'),
   trainingRangeLabel:document.getElementById('trainingRangeLabel'),
   trainingSyncCount:document.getElementById('trainingSyncCount'),
+  trainingVolumeCount:document.getElementById('trainingVolumeCount'),
+  trainingMonthVolume:document.getElementById('trainingMonthVolume'),
   trainingOnTargetCount:document.getElementById('trainingOnTargetCount'),
   trainingReviewCount:document.getElementById('trainingReviewCount'),
   trainingAthletesThisWeek:document.getElementById('trainingAthletesThisWeek'),
@@ -415,6 +423,7 @@ function loadDashboard(){
     els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
     els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
     els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
+    els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
     updateWeekRanges();
     updateBreakdowns();
     renderRows();
@@ -453,6 +462,8 @@ function updateBreakdowns(){
   els.meetSbCount.textContent=rangedMeetRows.filter(function(row){return row.isSeasonBest;}).length;
   els.trainingRangeLabel.textContent=rangeText;
   els.trainingSyncCount.textContent=rangedTrainingRows.length;
+  els.trainingVolumeCount.textContent=formatMiles(sumTrainingVolume(rangedTrainingRows));
+  els.trainingMonthVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.currentMonthVolumeMiles);},0));
   els.trainingOnTargetCount.textContent=rangedTrainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
   els.trainingReviewCount.textContent=rangedTrainingRows.filter(isOutsideTarget).length;
   els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
@@ -526,7 +537,7 @@ function exportCurrentViewCsv(){
 
 function exportRosterCsv(){
   var rows=visibleRosterRows;
-  var headers=['Athlete','Current Fitness','Fitness Date','Latest Meet Result','Meet Name','Meet Date','Best Status','Latest Training','Training Group','Training Date','This Week Syncs','Previous Week Syncs','Status','Training Records','Meet Results'];
+  var headers=['Athlete','Current Fitness','Fitness Date','Latest Meet Result','Meet Name','Meet Date','Best Status','Latest Training','Training Group','Training Date','This Week Syncs','This Week Volume Miles','Previous Week Syncs','Previous Week Volume Miles','Current Month Volume Miles','Status','Training Records','Meet Results'];
   var csv=[headers].concat(rows.map(function(row){
     var fitness=row.currentFitness||{};
     var latestMeet=row.latestMeet||{};
@@ -543,7 +554,10 @@ function exportRosterCsv(){
       latestTraining.groupName||'',
       latestTraining.sessionDate||'',
       num(row.currentWeekRuns),
+      num(row.currentWeekVolumeMiles),
       num(row.previousWeekRuns),
+      num(row.previousWeekVolumeMiles),
+      num(row.currentMonthVolumeMiles),
       row.status||'',
       num(row.trainingRecordCount),
       num(row.meetResultCount)
@@ -571,7 +585,7 @@ function exportMeetCsv(){
 
 function exportTrainingCsv(){
   var rows=visibleTrainingRows;
-  var headers=['Athlete','Group','Workout','Workout Details','Completed Volume','Planned Volume','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Rep','Total Time','Splits','Session Date','Synced'];
+  var headers=['Athlete','Group','Workout','Workout Details','Completed Volume','Completed Miles','Planned Volume','Planned Miles','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Rep','Total Time','Splits','Session Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
     var athlete=findDashboardAthleteForTraining(row)||{};
     var fitness=athlete.currentFitness||{};
@@ -581,7 +595,9 @@ function exportTrainingCsv(){
       row.workoutType||'',
       row.workoutPrescription||'',
       row.completedVolume||'',
+      num(row.completedVolumeMiles),
       row.plannedVolume||'',
+      num(row.plannedVolumeMiles),
       fitness.label||'',
       fitness.date||'',
       row.plannedTarget||'',
@@ -638,6 +654,8 @@ function rosterSortValue(row,key){
   if(key==='currentFitness')return row.currentFitness&&row.currentFitness.label;
   if(key==='latestMeet')return [row.latestMeet&&row.latestMeet.event,row.latestMeet&&row.latestMeet.resultDisplay].filter(Boolean).join(' ');
   if(key==='latestTraining')return [row.latestTraining&&row.latestTraining.totalTimeDisplay,row.latestTraining&&row.latestTraining.workoutType].filter(Boolean).join(' ');
+  if(key==='currentWeekVolume')return num(row.currentWeekVolumeMiles);
+  if(key==='previousWeekVolume')return num(row.previousWeekVolumeMiles);
   return row[key];
 }
 function meetSortValue(row,key){
@@ -650,7 +668,7 @@ function trainingSortValue(row,key){
     return athlete.currentFitness&&athlete.currentFitness.label;
   }
   if(key==='workoutType')return [row.workoutPrescription,row.workoutType].filter(Boolean).join(' ');
-  if(key==='volume')return row.completedVolume||row.plannedVolume||'';
+  if(key==='volume')return num(row.completedVolumeMiles)||num(row.plannedVolumeMiles)||row.completedVolume||row.plannedVolume||'';
   if(key==='targetReview')return [row.targetDifference,row.plannedTarget].filter(Boolean).join(' ');
   return row[key];
 }
@@ -794,7 +812,9 @@ function rowHtml(row){
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No sync')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
     '<td><span class="pill">'+num(row.currentWeekRuns)+'</span></td>'+
+    '<td>'+mainLine(formatMiles(row.currentWeekVolumeMiles))+'</td>'+
     '<td><span class="pill">'+num(row.previousWeekRuns)+'</span></td>'+
+    '<td>'+mainLine(formatMiles(row.previousWeekVolumeMiles))+'</td>'+
     '<td><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span><div class="muted">'+num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet</div></td>'+
   '</tr>';
 }
@@ -811,6 +831,7 @@ function openAthleteDetail(row){
       detailCard('Current Fitness',fitness.label||'Not set',fitness.date?formatDate(fitness.date):'')+
       detailCard('Latest Meet Result',[latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result',[latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+
       detailCard('Latest Training',[latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No sync',[latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+
+      detailCard('Training Volume',formatMiles(row.currentWeekVolumeMiles)+' this week · '+formatMiles(row.previousWeekVolumeMiles)+' previous week',formatMiles(row.currentMonthVolumeMiles)+' this month')+
       detailCard('Sync Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet')+
     '</div>'+
     '<h3 class="section-title">Recent Meet Results</h3>'+
@@ -858,7 +879,7 @@ function recentTrainingHtml(row){
     '<td>'+athleteDetailButton(row)+'</td>'+
     '<td>'+mainLine(row.groupName||'')+'</td>'+
     '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
-    '<td>'+mainLine(row.completedVolume||'')+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'')+'</td>'+
+    '<td>'+mainLine(volumeDisplay(row))+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'')+'</td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+targetReviewHtml(row)+'</td>'+
     '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
@@ -875,6 +896,21 @@ function targetReviewHtml(row){
 
 function targetReviewText(row){
   return [row.plannedTarget,row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
+}
+
+function volumeDisplay(row){
+  if(row.completedVolume)return row.completedVolume+(num(row.completedVolumeMiles)?' · '+formatMiles(row.completedVolumeMiles):'');
+  if(row.plannedVolume)return 'Planned: '+row.plannedVolume;
+  return '';
+}
+
+function sumTrainingVolume(rows){
+  return (rows||[]).reduce(function(sum,row){return sum+num(row.completedVolumeMiles);},0);
+}
+
+function formatMiles(value){
+  var miles=Math.round(num(value)*10)/10;
+  return miles?miles.toFixed(miles%1?1:0)+' mi':'0 mi';
 }
 
 function targetStatusPill(row){
