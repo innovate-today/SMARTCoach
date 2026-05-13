@@ -58,6 +58,10 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
 .tab.active .pill{background:rgba(255,255,255,.18);color:#fff}
 .tabpanel[hidden]{display:none}
+.subtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.subtab{background:#fff;color:#172033;border:1px solid var(--line)}
+.subtab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.trainsubpanel[hidden]{display:none}
 .table-scroll-top{height:16px;overflow-x:auto;overflow-y:hidden;margin:0 0 4px;border:1px solid var(--line);border-radius:8px;background:#f8fafc}
 .table-scroll-top div{height:1px}
 .tablewrap{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:auto}
@@ -132,7 +136,7 @@ tr:last-child td{border-bottom:0}
   .breakgrid{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
   .bar{align-items:stretch;flex-direction:column}
   .searchwrap{min-width:0;width:100%}
-  .tabs{grid-template-columns:1fr}
+  .tabs,.subtabs{grid-template-columns:1fr}
   .volume-summary{grid-template-columns:1fr}
   .sectionbar{align-items:flex-start;flex-direction:column}
   .status{text-align:left}
@@ -290,48 +294,50 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <section id="trainingPanel" class="tabpanel" data-panel="training" hidden>
-    <div class="sectionbar">
-      <div class="section-title">Volume By Athlete</div>
-    </div>
-    <section id="volumeSummary" class="volume-summary" aria-label="Volume summary"></section>
-    <section class="tablewrap recentwrap">
-      <table>
-        <thead>
-          <tr>
-            <th><button class="sortbtn" data-table="volume" data-sort="athleteName" type="button">Athlete</button></th>
-            <th><button id="volumeRangeLabel" class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Volume</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="currentWeekVolume" type="button">This Week</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="previousWeekVolume" type="button">Previous Week</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="currentMonthVolume" type="button">This Month</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="weeklyChange" type="button">Week Change</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Workouts</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="groups" type="button">Groups</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Completed</button></th>
-          </tr>
-        </thead>
-        <tbody id="volumeRows"></tbody>
-      </table>
-      <div id="volumeEmpty" class="empty" hidden>No completed volume in this view yet.</div>
+    <nav class="subtabs" aria-label="Training load sections">
+      <button class="subtab active" data-training-subtab="volume" type="button">Volume by Athlete <span id="volumeSubtabCount" class="pill count">--</span></button>
+      <button class="subtab" data-training-subtab="workouts" type="button">Completed Workouts <span id="workoutsSubtabCount" class="pill count">--</span></button>
+    </nav>
+    <section class="trainsubpanel" data-training-subpanel="volume">
+      <section id="volumeSummary" class="volume-summary" aria-label="Volume summary"></section>
+      <section class="tablewrap recentwrap">
+        <table>
+          <thead>
+            <tr>
+              <th><button class="sortbtn" data-table="volume" data-sort="athleteName" type="button">Athlete</button></th>
+              <th><button id="volumeRangeLabel" class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Volume</button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="currentWeekVolume" type="button">This Week</button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="previousWeekVolume" type="button">Previous Week</button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="currentMonthVolume" type="button">This Month</button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="weeklyChange" type="button">Week Change</button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Workouts</button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="groups" type="button">Groups</button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Completed</button></th>
+            </tr>
+          </thead>
+          <tbody id="volumeRows"></tbody>
+        </table>
+        <div id="volumeEmpty" class="empty" hidden>No completed volume in this view yet.</div>
+      </section>
     </section>
-    <div class="sectionbar">
-      <div class="section-title">Recent Completed Workouts</div>
-    </div>
-    <section class="tablewrap recentwrap">
-      <table>
-        <thead>
-          <tr>
-            <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="volume" type="button">Volume</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="workouts" type="button">Workouts</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="latestWorkout" type="button">Most Recent Workout</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review</button></th>
-            <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Last Completed</button></th>
-          </tr>
-        </thead>
-        <tbody id="recentTrainingRows"></tbody>
-      </table>
-      <div id="recentTrainingEmpty" class="empty" hidden>No recent completed workouts.</div>
+    <section class="trainsubpanel" data-training-subpanel="workouts" hidden>
+      <section class="tablewrap recentwrap">
+        <table>
+          <thead>
+            <tr>
+              <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete</button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="volume" type="button">Volume</button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="workouts" type="button">Workouts</button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="latestWorkout" type="button">Most Recent Workout</button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness</button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review</button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Last Completed</button></th>
+            </tr>
+          </thead>
+          <tbody id="recentTrainingRows"></tbody>
+        </table>
+        <div id="recentTrainingEmpty" class="empty" hidden>No recent completed workouts.</div>
+      </section>
     </section>
   </section>
 </main>
@@ -499,6 +505,7 @@ var expandedTrainingAthletes={};
 var correctionRow=null;
 var lastLoadedAt='';
 var activeTab='roster';
+var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
 var tableSorts={
   roster:{key:'name',dir:'asc'},
@@ -513,6 +520,8 @@ var els={
   volumeRows:document.getElementById('volumeRows'),
   tabs:Array.prototype.slice.call(document.querySelectorAll('.tab')),
   panels:Array.prototype.slice.call(document.querySelectorAll('.tabpanel')),
+  trainingSubtabs:Array.prototype.slice.call(document.querySelectorAll('.subtab')),
+  trainingSubpanels:Array.prototype.slice.call(document.querySelectorAll('.trainsubpanel')),
   empty:document.getElementById('empty'),
   recentMeetEmpty:document.getElementById('recentMeetEmpty'),
   recentTrainingEmpty:document.getElementById('recentTrainingEmpty'),
@@ -557,6 +566,8 @@ var els={
   quickFilter:document.getElementById('quickFilter'),
   activityRange:document.getElementById('activityRange'),
   volumeRangeLabel:document.getElementById('volumeRangeLabel'),
+  volumeSubtabCount:document.getElementById('volumeSubtabCount'),
+  workoutsSubtabCount:document.getElementById('workoutsSubtabCount'),
   resetViewBtn:document.getElementById('resetViewBtn'),
   exportCurrentBtn:document.getElementById('exportCurrentBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
@@ -603,6 +614,11 @@ els.exportCurrentBtn.addEventListener('click',exportCurrentViewCsv);
 els.tabs.forEach(function(tab){
   tab.addEventListener('click',function(){
     setActiveTab(tab.getAttribute('data-tab')||'roster');
+  });
+});
+els.trainingSubtabs.forEach(function(tab){
+  tab.addEventListener('click',function(){
+    setTrainingSubtab(tab.getAttribute('data-training-subtab')||'volume');
   });
 });
 Array.prototype.forEach.call(document.querySelectorAll('[data-tab-target]'),function(card){
@@ -782,6 +798,8 @@ function renderRows(){
   els.rosterViewCount.textContent=rows.length;
   els.meetViewCount.textContent=meetRows.length;
   els.trainingViewCount.textContent=trainingRows.length;
+  els.volumeSubtabCount.textContent=volumeRows.length;
+  els.workoutsSubtabCount.textContent=trainingRows.length;
   els.status.textContent=formatMiles(sumTrainingVolume(trainingRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+activityRangeLabel();
   els.filterState.textContent=filterStateText(query,filter);
   els.filterState.hidden=isDefaultView(query,filter);
@@ -789,6 +807,7 @@ function renderRows(){
   updateVolumeRangeLabel();
   updateSortHeaders();
   setActiveTab(activeTab);
+  setTrainingSubtab(activeTrainingSubtab);
   refreshTableScrollbars();
   saveView();
 }
@@ -800,6 +819,18 @@ function setActiveTab(tabName){
   });
   els.panels.forEach(function(panel){
     panel.hidden=panel.getAttribute('data-panel')!==activeTab;
+  });
+  refreshTableScrollbars();
+  saveView();
+}
+
+function setTrainingSubtab(tabName){
+  activeTrainingSubtab=['volume','workouts'].indexOf(tabName)>=0?tabName:'volume';
+  els.trainingSubtabs.forEach(function(tab){
+    tab.classList.toggle('active',tab.getAttribute('data-training-subtab')===activeTrainingSubtab);
+  });
+  els.trainingSubpanels.forEach(function(panel){
+    panel.hidden=panel.getAttribute('data-training-subpanel')!==activeTrainingSubtab;
   });
   refreshTableScrollbars();
   saveView();
@@ -948,7 +979,7 @@ function defaultTableSorts(){
 }
 function saveView(){
   try{
-    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,activeTab:activeTab,sorts:tableSorts}));
+    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,activeTab:activeTab,activeTrainingSubtab:activeTrainingSubtab,sorts:tableSorts}));
   }catch(e){}
 }
 function restoreView(){
@@ -958,6 +989,7 @@ function restoreView(){
     if(raw.filter)els.quickFilter.value=raw.filter;
     if(raw.activityRange)els.activityRange.value=raw.activityRange;
     if(raw.activeTab)activeTab=raw.activeTab;
+    if(raw.activeTrainingSubtab)activeTrainingSubtab=raw.activeTrainingSubtab;
     if(raw.sorts&&typeof raw.sorts==='object')tableSorts=mergeSorts(defaultTableSorts(),raw.sorts);
   }catch(e){}
 }
