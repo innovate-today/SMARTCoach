@@ -416,6 +416,68 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<div id="correctionModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="correctionTitle">
+    <div class="modalhead">
+      <h2 id="correctionTitle">Correct Training Entry</h2>
+      <button id="correctionClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field">
+          <label for="correctionDate">Date</label>
+          <input id="correctionDate" type="date">
+        </div>
+        <div class="field">
+          <label for="correctionWorkout">Workout Type</label>
+          <select id="correctionWorkout">
+            <option>Easy/Recovery Run</option>
+            <option>Long Run</option>
+            <option>Extensive Tempo</option>
+            <option>Intensive Tempo</option>
+            <option>Lactate Threshold</option>
+            <option>Aerobic Power</option>
+            <option>Acceleration</option>
+            <option>Max Velocity</option>
+            <option>Speed Endurance I</option>
+            <option>Special Endurance I</option>
+            <option>Special Endurance II</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="correctionSurface">Surface</label>
+          <select id="correctionSurface">
+            <option>Road</option>
+            <option>Trail</option>
+            <option>Grass</option>
+            <option>Track</option>
+            <option>Indoor</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="correctionVolume">Completed Volume</label>
+          <input id="correctionVolume" type="text" placeholder="Example: 4 miles">
+        </div>
+        <div class="field">
+          <label for="correctionWeather">Weather</label>
+          <input id="correctionWeather" type="text" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label for="correctionReason">Reason</label>
+          <input id="correctionReason" type="text" placeholder="Required">
+        </div>
+        <div class="field full">
+          <label for="correctionNotes">Notes</label>
+          <textarea id="correctionNotes" placeholder="Optional"></textarea>
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="correctionStatus" class="modalstatus">Corrections are saved to GHL notes.</div>
+        <button id="correctionSave" type="button">Save Correction</button>
+      </div>
+    </div>
+  </section>
+</div>
 <script>
 var dashboardRows=[];
 var recentMeetRows=[];
@@ -425,6 +487,7 @@ var visibleMeetRows=[];
 var visibleTrainingRows=[];
 var visibleVolumeRows=[];
 var expandedTrainingAthletes={};
+var correctionRow=null;
 var lastLoadedAt='';
 var activeTab='roster';
 var dashboardViewKey='smartcoachDashboardView';
@@ -464,6 +527,17 @@ var els={
   manualMileageNotes:document.getElementById('manualMileageNotes'),
   manualMileageStatus:document.getElementById('manualMileageStatus'),
   manualMileageSave:document.getElementById('manualMileageSave'),
+  correctionModal:document.getElementById('correctionModal'),
+  correctionClose:document.getElementById('correctionClose'),
+  correctionDate:document.getElementById('correctionDate'),
+  correctionWorkout:document.getElementById('correctionWorkout'),
+  correctionSurface:document.getElementById('correctionSurface'),
+  correctionVolume:document.getElementById('correctionVolume'),
+  correctionWeather:document.getElementById('correctionWeather'),
+  correctionReason:document.getElementById('correctionReason'),
+  correctionNotes:document.getElementById('correctionNotes'),
+  correctionStatus:document.getElementById('correctionStatus'),
+  correctionSave:document.getElementById('correctionSave'),
   status:document.getElementById('status'),
   filterState:document.getElementById('filterState'),
   lastUpdated:document.getElementById('lastUpdated'),
@@ -541,6 +615,12 @@ document.addEventListener('click',function(event){
     voidTrainingRecord(voidButton);
     return;
   }
+  var editButton=event.target.closest&&event.target.closest('[data-edit-training]');
+  if(editButton){
+    event.preventDefault();
+    openCorrectionModal(editButton);
+    return;
+  }
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
   if(!button)return;
   var contactId=button.getAttribute('data-contact-id')||'';
@@ -560,9 +640,15 @@ els.manualMileageSave.addEventListener('click',saveManualMileage);
 els.manualMileageModal.addEventListener('click',function(event){
   if(event.target===els.manualMileageModal)closeManualMileage();
 });
+els.correctionClose.addEventListener('click',closeCorrectionModal);
+els.correctionSave.addEventListener('click',saveCorrection);
+els.correctionModal.addEventListener('click',function(event){
+  if(event.target===els.correctionModal)closeCorrectionModal();
+});
 document.addEventListener('keydown',function(event){
   if(event.key==='Escape'&&!els.athleteModal.hidden)closeAthleteDetail();
   if(event.key==='Escape'&&!els.manualMileageModal.hidden)closeManualMileage();
+  if(event.key==='Escape'&&!els.correctionModal.hidden)closeCorrectionModal();
 });
 els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
@@ -1138,12 +1224,94 @@ function closeManualMileage(){
   els.manualMileageModal.hidden=true;
 }
 
-function voidTrainingRecord(button){
+function openCorrectionModal(button){
+  correctionRow=findTrainingRow(button)||null;
+  if(!correctionRow){
+    alert('Could not find this training entry.');
+    return;
+  }
+  els.correctionDate.value=dateInputValue(correctionRow.sessionDate);
+  setSelectValue(els.correctionWorkout,correctionRow.workoutType||'Easy/Recovery Run');
+  setSelectValue(els.correctionSurface,correctionRow.surface||'Road');
+  els.correctionVolume.value=correctionRow.completedVolume||'';
+  els.correctionWeather.value=correctionRow.weather||'';
+  els.correctionReason.value='';
+  els.correctionNotes.value=correctionNotesFromRow(correctionRow);
+  setCorrectionStatus('Corrections are saved to GHL notes.','');
+  els.correctionModal.hidden=false;
+}
+
+function closeCorrectionModal(){
+  els.correctionModal.hidden=true;
+  correctionRow=null;
+}
+
+function saveCorrection(){
+  if(!correctionRow)return;
+  var reason=els.correctionReason.value.trim();
+  if(!reason){
+    setCorrectionStatus('Reason is required so GHL has a useful audit note.','error');
+    return;
+  }
+  els.correctionSave.disabled=true;
+  setCorrectionStatus('Saving correction...','');
+  fetch('/api/smart-trak/correction',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      action:'edit',
+      recordId:correctionRow.recordId||'',
+      sourceRecordId:correctionRow.sourceRecordId||'',
+      contactId:correctionRow.contactId||'',
+      athleteName:correctionRow.athleteName||'',
+      reason:reason,
+      updates:{
+        sessionDate:els.correctionDate.value,
+        workoutType:els.correctionWorkout.value,
+        surface:els.correctionSurface.value,
+        completedVolume:els.correctionVolume.value,
+        weather:els.correctionWeather.value,
+        notes:els.correctionNotes.value
+      }
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Correction failed.');
+    setCorrectionStatus('Correction saved. Refreshing dashboard...','success');
+    return loadDashboard();
+  }).then(function(){
+    closeCorrectionModal();
+  }).catch(function(error){
+    setCorrectionStatus(error.message||'Could not save correction.','error');
+  }).finally(function(){
+    els.correctionSave.disabled=false;
+  });
+}
+
+function findTrainingRow(button){
   var recordId=button.getAttribute('data-record-id')||'';
   var sourceRecordId=button.getAttribute('data-source-record-id')||'';
-  var row=recentTrainingRows.find(function(item){
+  return recentTrainingRows.find(function(item){
     return (recordId&&item.recordId===recordId) || (sourceRecordId&&item.sourceRecordId===sourceRecordId);
-  })||{};
+  });
+}
+
+function correctionNotesFromRow(row){
+  return String(row.coachNote||'').split(/\r?\n/).filter(function(line){
+    return !/^(Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+  }).join('\n');
+}
+
+function setCorrectionStatus(text,type){
+  els.correctionStatus.textContent=text||'';
+  els.correctionStatus.style.color=type==='error'?'#b00000':type==='success'?'#08783c':'';
+}
+
+function voidTrainingRecord(button){
+  var row=findTrainingRow(button)||{};
+  var recordId=button.getAttribute('data-record-id')||row.recordId||'';
+  var sourceRecordId=button.getAttribute('data-source-record-id')||row.sourceRecordId||'';
   var label=[row.athleteName,row.workoutPrescription||row.workoutType,formatDate(row.sessionDate)].filter(Boolean).join(' - ')||'this training entry';
   var reason=window.prompt('Why should SMARTCoach Pro void '+label+'?');
   if(reason===null)return;
@@ -1286,6 +1454,21 @@ function todayInputValue(){
   var month=String(date.getMonth()+1).padStart(2,'0');
   var day=String(date.getDate()).padStart(2,'0');
   return date.getFullYear()+'-'+month+'-'+day;
+}
+
+function dateInputValue(value){
+  var date=new Date(value);
+  if(Number.isNaN(date.getTime()))return todayInputValue();
+  return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+}
+
+function setSelectValue(select,value){
+  if(!select)return;
+  var wanted=String(value||'').toLowerCase();
+  var found=Array.prototype.slice.call(select.options).find(function(option){
+    return option.value.toLowerCase()===wanted || option.text.toLowerCase()===wanted;
+  });
+  if(found)select.value=found.value;
 }
 
 function sameAthlete(item,row){
@@ -1492,7 +1675,8 @@ function trainingWorkoutDetailTable(rows){
 
 function trainingActionButtons(row){
   if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
-  return '<button class="danger" data-void-training="1" data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'" type="button">Void</button>';
+  var attrs=' data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'"';
+  return '<button class="ghost" data-edit-training="1"'+attrs+' type="button">Edit</button> <button class="danger" data-void-training="1"'+attrs+' type="button">Void</button>';
 }
 
 function recentTrainingHtml(row){
