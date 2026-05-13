@@ -339,6 +339,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div style="padding:0 4px 4px">
       <div class="srow"><label class="slbl">Account</label><input id="account-key" class="sinp" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use <b>default</b> for the current SMARTCoach Pro account. Future customer accounts will use their own account key.</div>
+      <div id="app-version" style="font-size:11px;color:#777;text-align:center;padding:7px 0 0;min-height:16px"></div>
       <div id="account-status" style="font-size:12px;color:#555;text-align:center;padding:8px 0 0;min-height:18px"></div>
     </div>
     <button class="mbtn" onclick="saveAccountSettings()">Save Account</button>
@@ -373,9 +374,15 @@ function setSmartCoachAccountKey(value){
 function openAccountSettings(){
   var input=document.getElementById('account-key');
   var status=document.getElementById('account-status');
+  var version=document.getElementById('app-version');
   if(input)input.value=smartCoachAccountKey();
   if(status){status.textContent='';status.style.color='#555';}
+  if(version)version.textContent='App version '+appVersion();
   sm('m-account');
+}
+function appVersion(){
+  var meta=document.querySelector('meta[name="app-version"]');
+  return meta&&meta.content?meta.content:'unknown';
 }
 function saveAccountSettings(){
   var input=document.getElementById('account-key');

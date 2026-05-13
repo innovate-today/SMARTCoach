@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store">
+<meta name="app-version" content="dashboard-1777173146407">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SMARTCoach Pro Dashboard</title>
 <style>
@@ -517,6 +518,7 @@ tr:last-child td{border-bottom:0}
         <input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
       </div>
       <div class="small" style="margin-top:8px">Use <b>default</b> for the current SMARTCoach Pro account.</div>
+      <div id="appVersion" class="small" style="margin-top:6px;text-align:center"></div>
       <div class="modalactions">
         <div id="accountStatus" class="modalstatus"></div>
         <button class="ghost" id="accountRefresh" type="button">Refresh App</button>
@@ -601,6 +603,7 @@ var els={
   accountModal:document.getElementById('accountModal'),
   accountClose:document.getElementById('accountClose'),
   accountKey:document.getElementById('accountKey'),
+  appVersion:document.getElementById('appVersion'),
   accountStatus:document.getElementById('accountStatus'),
   accountRefresh:document.getElementById('accountRefresh'),
   accountSave:document.getElementById('accountSave'),
@@ -819,9 +822,15 @@ function loadDashboard(){
 
 function openAccountSettings(){
   els.accountKey.value=smartCoachAccountKey();
+  els.appVersion.textContent='App version '+appVersion();
   els.accountStatus.textContent='';
   els.accountStatus.style.color='';
   els.accountModal.hidden=false;
+}
+
+function appVersion(){
+  var meta=document.querySelector('meta[name="app-version"]');
+  return meta&&meta.content?meta.content:'dashboard';
 }
 
 function closeAccountSettings(){

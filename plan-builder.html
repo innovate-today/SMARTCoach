@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-store">
+<meta name="app-version" content="builder-1777173146407">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SMARTCoach Pro Plan Builder</title>
 <style>
@@ -74,7 +75,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   <div class="top">
     <div class="brand"><div class="mark">SC</div><span>SMARTCoach Pro</span></div>
     <div class="top-actions">
-      <div class="account-control"><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button></div>
+      <div class="account-control"><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button><span id="appVersion" style="font-size:12px;color:#6b7280"></span></div>
       <a class="linkbtn" href="/dashboard.html">Dashboard</a>
     </div>
   </div>
@@ -174,6 +175,8 @@ function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Wi
 function loadBuilder(){
   var accountInput=document.getElementById('accountKey');
   if(accountInput)accountInput.value=smartCoachAccountKey();
+  var version=document.getElementById('appVersion');
+  if(version)version.textContent='v '+appVersion();
   Promise.all([
     fetch('/api/smart-trak/training-plan?kind=questionnaire').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}),
     fetch('/api/smart-trak/athletes').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{athletes:[]}};}),
@@ -191,6 +194,10 @@ function loadBuilder(){
     renderAssignmentAthletes();
     renderForm();
   }).catch(function(e){setStatus('Error: '+e.message,'bad');});
+}
+function appVersion(){
+  var meta=document.querySelector('meta[name="app-version"]');
+  return meta&&meta.content?meta.content:'builder';
 }
 function renderFitnessRows(){
   var box=document.getElementById('fitnessRows');
