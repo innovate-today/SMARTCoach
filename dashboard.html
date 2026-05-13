@@ -31,6 +31,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .breakdown[data-tab-target],.loadstrip[data-tab-target]{cursor:pointer}
 .breakdown[data-tab-target]:hover,.loadstrip[data-tab-target]:hover{border-color:#b9c7dc}
 .breakdown h2{font-size:15px;line-height:1.2;margin:0}
+.summary-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.summary-head .breakrange{margin:0;text-align:right}
 .breakrange{color:var(--muted);font-size:12px;margin:3px 0 10px}
 .breakgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px}
 .loadstrip{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:14px}
@@ -193,8 +195,10 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
     <div class="breakdown" data-tab-target="meet">
-      <h2>Meet Results Summary</h2>
-      <div id="meetRangeLabel" class="breakrange">Showing last 30 days</div>
+      <div class="summary-head">
+        <h2>Meet Results Summary</h2>
+        <div id="meetRangeLabel" class="breakrange">Showing last 30 days</div>
+      </div>
       <div class="breakgrid">
         <div class="metric"><b id="meetSyncCount">--</b><span>Recent results</span></div>
         <div class="metric" data-filter="pb"><b id="meetPbCount">--</b><span>New PBs</span></div>
