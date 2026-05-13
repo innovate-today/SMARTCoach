@@ -19,6 +19,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:10px 14px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
+button:disabled{opacity:.55;cursor:not-allowed}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .stat b{display:block;font-size:24px;line-height:1.1}
@@ -95,6 +96,14 @@ tr:last-child td{border-bottom:0}
 .modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .modalhead h2{font-size:20px;margin:0}
 .modalbody{padding:16px 18px 20px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:grid;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:12px;font-weight:800;color:#475569}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
+.field textarea{min-height:78px;resize:vertical}
+.modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
+.modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
 .detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
@@ -117,6 +126,9 @@ tr:last-child td{border-bottom:0}
   .status{text-align:left}
   .filterstate{margin-top:-2px}
   .detailgrid{grid-template-columns:1fr}
+  .formgrid{grid-template-columns:1fr}
+  .modalactions{align-items:stretch;flex-direction:column}
+  .modalstatus{margin-right:0}
   .modal{padding:20px 10px}
 }
 </style>
@@ -134,6 +146,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="actions">
       <a class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
       <button id="refreshBtn" type="button">Refresh</button>
     </div>
   </section>
@@ -314,6 +327,65 @@ tr:last-child td{border-bottom:0}
     <div id="athleteModalBody" class="modalbody"></div>
   </section>
 </div>
+<div id="manualMileageModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="manualMileageTitle">
+    <div class="modalhead">
+      <h2 id="manualMileageTitle">Log Mileage</h2>
+      <button id="manualMileageClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field">
+          <label for="manualMileageDate">Date</label>
+          <input id="manualMileageDate" type="date">
+        </div>
+        <div class="field">
+          <label for="manualMileageScope">Apply To</label>
+          <select id="manualMileageScope">
+            <option value="athlete">One athlete</option>
+            <option value="group">Group</option>
+            <option value="team">Team</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="manualMileageAthlete">Athlete</label>
+          <select id="manualMileageAthlete"></select>
+        </div>
+        <div class="field">
+          <label for="manualMileageWorkout">Workout Type</label>
+          <select id="manualMileageWorkout">
+            <option>Easy Run</option>
+            <option>Long Run</option>
+            <option>Recovery Run</option>
+            <option>Tempo Run</option>
+            <option>Warmup / Cooldown</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="manualMileageDistance">Distance</label>
+          <input id="manualMileageDistance" type="text" placeholder="Example: 4 miles">
+        </div>
+        <div class="field">
+          <label for="manualMileageSource">Source</label>
+          <select id="manualMileageSource">
+            <option>Athlete reported</option>
+            <option>Coach entered</option>
+            <option>Watch upload</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="manualMileageNotes">Notes</label>
+          <textarea id="manualMileageNotes" placeholder="Optional"></textarea>
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="manualMileageStatus" class="modalstatus">Manual mileage saving is next.</div>
+        <button type="button" disabled>Save Mileage</button>
+      </div>
+    </div>
+  </section>
+</div>
 <script>
 var dashboardRows=[];
 var recentMeetRows=[];
@@ -348,6 +420,11 @@ var els={
   athleteModalTitle:document.getElementById('athleteModalTitle'),
   athleteModalBody:document.getElementById('athleteModalBody'),
   athleteModalClose:document.getElementById('athleteModalClose'),
+  manualMileageBtn:document.getElementById('manualMileageBtn'),
+  manualMileageModal:document.getElementById('manualMileageModal'),
+  manualMileageClose:document.getElementById('manualMileageClose'),
+  manualMileageDate:document.getElementById('manualMileageDate'),
+  manualMileageAthlete:document.getElementById('manualMileageAthlete'),
   status:document.getElementById('status'),
   filterState:document.getElementById('filterState'),
   lastUpdated:document.getElementById('lastUpdated'),
@@ -431,8 +508,14 @@ els.athleteModalClose.addEventListener('click',closeAthleteDetail);
 els.athleteModal.addEventListener('click',function(event){
   if(event.target===els.athleteModal)closeAthleteDetail();
 });
+els.manualMileageBtn.addEventListener('click',openManualMileage);
+els.manualMileageClose.addEventListener('click',closeManualMileage);
+els.manualMileageModal.addEventListener('click',function(event){
+  if(event.target===els.manualMileageModal)closeManualMileage();
+});
 document.addEventListener('keydown',function(event){
   if(event.key==='Escape'&&!els.athleteModal.hidden)closeAthleteDetail();
+  if(event.key==='Escape'&&!els.manualMileageModal.hidden)closeManualMileage();
 });
 els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
@@ -480,6 +563,7 @@ function loadDashboard(){
     if(els.previousWeekRuns)els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
     els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
     els.previousWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.previousWeekVolumeMiles);
+    renderManualMileageAthletes();
     updateWeekRanges();
     updateBreakdowns();
     renderRows();
@@ -991,6 +1075,33 @@ function openAthleteDetail(row){
 
 function closeAthleteDetail(){
   els.athleteModal.hidden=true;
+}
+
+function openManualMileage(){
+  if(els.manualMileageDate&&!els.manualMileageDate.value)els.manualMileageDate.value=todayInputValue();
+  renderManualMileageAthletes();
+  els.manualMileageModal.hidden=false;
+}
+
+function closeManualMileage(){
+  els.manualMileageModal.hidden=true;
+}
+
+function renderManualMileageAthletes(){
+  if(!els.manualMileageAthlete)return;
+  var current=els.manualMileageAthlete.value;
+  els.manualMileageAthlete.innerHTML=(dashboardRows.length?dashboardRows:[{contactId:'',name:'No athletes loaded'}]).map(function(row){
+    var value=row.contactId||row.name||'';
+    return '<option value="'+esc(value)+'">'+esc(row.name||'Unnamed')+'</option>';
+  }).join('');
+  if(current)els.manualMileageAthlete.value=current;
+}
+
+function todayInputValue(){
+  var date=new Date();
+  var month=String(date.getMonth()+1).padStart(2,'0');
+  var day=String(date.getDate()).padStart(2,'0');
+  return date.getFullYear()+'-'+month+'-'+day;
 }
 
 function sameAthlete(item,row){
