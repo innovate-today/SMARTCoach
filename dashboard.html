@@ -116,6 +116,8 @@ tr:last-child td{border-bottom:0}
 .field label{font-size:12px;font-weight:800;color:#475569}
 .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .field textarea{min-height:78px;resize:vertical}
+.originalbox{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 12px;margin-bottom:12px;color:#475569;font-size:12px;line-height:1.4}
+.originalbox b{display:block;color:#111827;font-size:13px;margin-bottom:4px}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
 .modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
@@ -357,6 +359,7 @@ tr:last-child td{border-bottom:0}
       <button id="manualMileageClose" class="ghost" type="button">Close</button>
     </div>
     <div class="modalbody">
+      <div id="correctionOriginal" class="originalbox"></div>
       <div class="formgrid">
         <div class="field">
           <label for="manualMileageDate">Date</label>
@@ -547,6 +550,7 @@ var els={
   manualMileageStatus:document.getElementById('manualMileageStatus'),
   manualMileageSave:document.getElementById('manualMileageSave'),
   correctionModal:document.getElementById('correctionModal'),
+  correctionOriginal:document.getElementById('correctionOriginal'),
   correctionClose:document.getElementById('correctionClose'),
   correctionDate:document.getElementById('correctionDate'),
   correctionWorkout:document.getElementById('correctionWorkout'),
@@ -1271,8 +1275,21 @@ function openCorrectionModal(button){
   els.correctionWeather.value=correctionRow.weather||'';
   els.correctionReason.value='';
   els.correctionNotes.value=correctionNotesFromRow(correctionRow);
+  els.correctionOriginal.innerHTML=correctionOriginalHtml(correctionRow);
   setCorrectionStatus('Corrections are saved to GHL notes.','');
   els.correctionModal.hidden=false;
+}
+
+function correctionOriginalHtml(row){
+  var values=[
+    ['Workout',row.workoutPrescription||row.workoutType],
+    ['Date',formatDate(row.sessionDate)],
+    ['Volume',row.completedVolume],
+    ['Time',row.totalTimeDisplay],
+    ['Surface',row.surface],
+    ['Weather',row.weather]
+  ].filter(function(pair){return pair[1];}).map(function(pair){return esc(pair[0])+': '+esc(pair[1]);}).join(' · ');
+  return '<b>Original saved values</b>'+(values||'No saved values found.');
 }
 
 function closeCorrectionModal(){
