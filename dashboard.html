@@ -20,6 +20,7 @@ button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;fon
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
 button.danger{background:#fee2e2;color:#991b1b}
+button.compact{padding:6px 8px;font-size:12px;border-radius:7px}
 button:disabled{opacity:.55;cursor:not-allowed}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
@@ -1662,16 +1663,18 @@ function trainingTargetSummaryHtml(summary){
 function trainingWorkoutDetailTable(rows){
   if(!rows.length)return '<div class="muted">No completed workouts.</div>';
   return '<table><thead><tr>'+
-    '<th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Status</th><th>Saved</th>'+
+    '<th>Group</th><th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Status</th><th>Saved</th><th>Actions</th>'+
     '</tr></thead><tbody>'+rows.map(function(row){
       return '<tr>'+
-        '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine([row.groupName,row.workoutPrescription?row.workoutType:''].filter(Boolean).join(' · '))+trainingActionButtons(row)+'</td>'+
+        '<td>'+mainLine(row.groupName||'')+'</td>'+
+        '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
         '<td>'+mainLine(volumeDisplay(row))+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'')+'</td>'+
         '<td>'+targetReviewHtml(row)+'</td>'+
         '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
         '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
         '<td>'+correctionStatusHtml(row)+'</td>'+
         '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
+        '<td>'+trainingActionButtons(row)+'</td>'+
       '</tr>';
     }).join('')+'</tbody></table>';
 }
@@ -1679,7 +1682,7 @@ function trainingWorkoutDetailTable(rows){
 function trainingActionButtons(row){
   if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
   var attrs=' data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'"';
-  return '<button class="ghost" data-edit-training="1"'+attrs+' type="button">Edit</button> <button class="danger" data-void-training="1"'+attrs+' type="button">Void</button>';
+  return '<button class="ghost compact" data-edit-training="1"'+attrs+' type="button">Edit</button> <button class="danger compact" data-void-training="1"'+attrs+' type="button">Void</button>';
 }
 
 function correctionStatusHtml(row){
