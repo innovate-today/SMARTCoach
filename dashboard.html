@@ -24,13 +24,17 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .stat b{display:block;font-size:24px;line-height:1.1}
 .stat span{display:block;color:var(--muted);font-size:13px;margin-top:4px}
-.breakdowns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.breakdowns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .breakdown{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
-.breakdown[data-tab-target]{cursor:pointer}
-.breakdown[data-tab-target]:hover{border-color:#b9c7dc}
+.breakdown[data-tab-target],.loadstrip[data-tab-target]{cursor:pointer}
+.breakdown[data-tab-target]:hover,.loadstrip[data-tab-target]:hover{border-color:#b9c7dc}
 .breakdown h2{font-size:15px;line-height:1.2;margin:0}
 .breakrange{color:var(--muted);font-size:12px;margin:3px 0 10px}
 .breakgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px}
+.loadstrip{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:14px}
+.loadstrip h2{font-size:15px;line-height:1.2;margin:0}
+.loadstrip .breakrange{margin:3px 0 0}
+.loadstrip .breakgrid{grid-template-columns:repeat(7,minmax(92px,1fr))}
 .metric{border:1px solid #edf1f7;border-radius:8px;padding:9px 10px;background:#fbfdff}
 .metric[data-filter]{cursor:pointer}
 .metric[data-filter]:hover{border-color:#b9c7dc;background:#f4f7fc}
@@ -117,6 +121,8 @@ tr:last-child td{border-bottom:0}
   .actions{width:100%}
   .actions button,.actions .linkbtn{flex:1;text-align:center}
   .stats,.breakdowns{grid-template-columns:1fr}
+  .loadstrip{grid-template-columns:1fr}
+  .loadstrip .breakgrid{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
   .breakgrid{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
   .bar{align-items:stretch;flex-direction:column}
   .searchwrap{min-width:0;width:100%}
@@ -159,6 +165,22 @@ tr:last-child td{border-bottom:0}
     <span id="previousWeekRange" class="small" hidden>--</span>
   </section>
 
+  <section class="loadstrip" data-tab-target="training">
+    <div>
+      <h2>Training Load Summary</h2>
+      <div id="trainingRangeLabel" class="breakrange">Showing last 30 days</div>
+    </div>
+    <div class="breakgrid">
+      <div class="metric"><b id="trainingVolumeCount">--</b><span>Volume miles</span></div>
+      <div class="metric"><b id="trainingMonthVolume">--</b><span>This month miles</span></div>
+      <div class="metric"><b id="trainingSyncCount">--</b><span>Completed workouts</span></div>
+      <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
+      <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
+      <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Active this week</span></div>
+      <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>No workout this week</span></div>
+    </div>
+  </section>
+
   <section class="breakdowns">
     <div class="breakdown" data-tab-target="roster">
       <h2>Roster Summary</h2>
@@ -175,19 +197,6 @@ tr:last-child td{border-bottom:0}
         <div class="metric"><b id="meetSyncCount">--</b><span>Recent results</span></div>
         <div class="metric" data-filter="pb"><b id="meetPbCount">--</b><span>New PBs</span></div>
         <div class="metric" data-filter="sb"><b id="meetSbCount">--</b><span>New SBs</span></div>
-      </div>
-    </div>
-    <div class="breakdown" data-tab-target="training">
-      <h2>Training Load Summary</h2>
-      <div id="trainingRangeLabel" class="breakrange">Showing last 30 days</div>
-      <div class="breakgrid">
-        <div class="metric"><b id="trainingVolumeCount">--</b><span>Volume miles</span></div>
-        <div class="metric"><b id="trainingMonthVolume">--</b><span>This month miles</span></div>
-        <div class="metric"><b id="trainingSyncCount">--</b><span>Completed workouts</span></div>
-        <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
-        <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
-        <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Active this week</span></div>
-        <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>No workout this week</span></div>
       </div>
     </div>
   </section>
@@ -504,7 +513,7 @@ els.tabs.forEach(function(tab){
     setActiveTab(tab.getAttribute('data-tab')||'roster');
   });
 });
-Array.prototype.forEach.call(document.querySelectorAll('.breakdown[data-tab-target]'),function(card){
+Array.prototype.forEach.call(document.querySelectorAll('[data-tab-target]'),function(card){
   card.addEventListener('click',function(event){
     if(event.target.closest&&event.target.closest('[data-filter]'))return;
     setActiveTab(card.getAttribute('data-tab-target')||'roster');
