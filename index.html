@@ -175,6 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="tbar">
     <button class="tbtn pro-only" onclick="openSeasonPlan(false)"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Plan</span></button>
     <button class="tbtn" onclick="addGroupForView()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
+    <button class="tbtn pro-only" onclick="openAccountSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Account</span></button>
     <button class="tbtn" onclick="delGroup()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
   </div>
 </div>
@@ -329,6 +330,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
 </div>
 
+<!-- ACCOUNT MODAL -->
+<div class="mover h pro-only" id="m-account">
+  <div class="msh">
+    <div class="mhd"></div>
+    <div class="mttl">SMARTCoach Account</div>
+    <div style="padding:0 4px 4px">
+      <div class="srow"><label class="slbl">Account</label><input id="account-key" class="sinp" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
+      <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use <b>default</b> for the current SMARTCoach Pro account. Future customer accounts will use their own account key.</div>
+      <div id="account-status" style="font-size:12px;color:#555;text-align:center;padding:8px 0 0;min-height:18px"></div>
+    </div>
+    <button class="mbtn" onclick="saveAccountSettings()">Save Account</button>
+    <button class="mbtn c" onclick="hm('m-account')" style="margin-top:8px">Close</button>
+  </div>
+</div>
+
 <script>
 var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null;
 
@@ -337,13 +353,37 @@ function smartCoachAccountKey(){
     var params=new URLSearchParams(window.location.search||'');
     var fromUrl=(params.get('account')||params.get('tenant')||'').trim();
     if(fromUrl){
-      localStorage.setItem('sc_account',fromUrl);
-      return fromUrl;
+      return setSmartCoachAccountKey(fromUrl);
     }
     return localStorage.getItem('sc_account')||'default';
   }catch(e){
     return 'default';
   }
+}
+function cleanAccountKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';
+}
+function setSmartCoachAccountKey(value){
+  var key=cleanAccountKey(value);
+  try{localStorage.setItem('sc_account',key);}catch(e){}
+  return key;
+}
+function openAccountSettings(){
+  var input=document.getElementById('account-key');
+  var status=document.getElementById('account-status');
+  if(input)input.value=smartCoachAccountKey();
+  if(status){status.textContent='';status.style.color='#555';}
+  sm('m-account');
+}
+function saveAccountSettings(){
+  var input=document.getElementById('account-key');
+  var status=document.getElementById('account-status');
+  var key=setSmartCoachAccountKey(input&&input.value);
+  if(input)input.value=key;
+  if(status){status.textContent='Account set to '+key+'.';status.style.color='#0a7a44';status.style.fontWeight='700';}
+  loadAthletes();
+  loadTrainingPlans();
+  loadMeets();
 }
 (function(){
   var nativeFetch=window.fetch.bind(window);

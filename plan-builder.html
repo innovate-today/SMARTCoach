@@ -14,6 +14,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue"
 .mark{width:32px;height:32px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:12px;letter-spacing:1px}
 .top-actions{display:flex;align-items:center;gap:10px}
 .linkbtn{border:0;border-radius:8px;background:#e5e7eb;color:#111827;font-size:14px;font-weight:800;padding:10px 14px;text-decoration:none}
+.account-control{display:flex;align-items:center;gap:8px}
+.account-control label{margin:0;font-size:12px;color:#6b7280}
+.account-control input{width:130px;padding:8px 10px;font-size:13px}
+.account-control button{padding:8px 10px;font-size:13px}
 .panel{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .head{padding:18px 20px;border-bottom:1px solid var(--line)}
 .head h1{font-size:22px;letter-spacing:0;margin-bottom:4px}
@@ -61,14 +65,17 @@ select[multiple]{min-height:112px}
 button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer}
 .primary{background:var(--blue);color:#fff}
 .secondary{background:#e5e7eb;color:#111827}
-@media(max-width:760px){.wrap{padding:12px}.top{display:block}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions,.assignment-head{align-items:stretch;flex-direction:column}.fitness-status,.assignment-status{text-align:left}.assignment-grid,.assignment-athletes{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
+@media(max-width:760px){.wrap{padding:12px}.top{display:block}.top-actions{margin-top:10px;align-items:stretch;flex-direction:column}.account-control{align-items:stretch}.account-control input{width:100%}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions,.assignment-head{align-items:stretch;flex-direction:column}.fitness-status,.assignment-status{text-align:left}.assignment-grid,.assignment-athletes{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
     <div class="brand"><div class="mark">SC</div><span>SMARTCoach Pro</span></div>
-    <div class="top-actions"><a class="linkbtn" href="/dashboard.html">Dashboard</a></div>
+    <div class="top-actions">
+      <div class="account-control"><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button></div>
+      <a class="linkbtn" href="/dashboard.html">Dashboard</a>
+    </div>
   </div>
   <div class="panel">
     <div class="head">
@@ -111,13 +118,26 @@ function smartCoachAccountKey(){
     var params=new URLSearchParams(window.location.search||'');
     var fromUrl=(params.get('account')||params.get('tenant')||'').trim();
     if(fromUrl){
-      localStorage.setItem('sc_account',fromUrl);
-      return fromUrl;
+      return setSmartCoachAccountKey(fromUrl);
     }
     return localStorage.getItem('sc_account')||'default';
   }catch(e){
     return 'default';
   }
+}
+function cleanAccountKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';
+}
+function setSmartCoachAccountKey(value){
+  var key=cleanAccountKey(value);
+  try{localStorage.setItem('sc_account',key);}catch(e){}
+  return key;
+}
+function saveAccountSettings(){
+  var input=document.getElementById('accountKey');
+  var key=setSmartCoachAccountKey(input&&input.value);
+  if(input)input.value=key;
+  loadBuilder();
 }
 (function(){
   var nativeFetch=window.fetch.bind(window);
@@ -136,6 +156,8 @@ function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){retu
 function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+day;}
 function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}
 function loadBuilder(){
+  var accountInput=document.getElementById('accountKey');
+  if(accountInput)accountInput.value=smartCoachAccountKey();
   Promise.all([
     fetch('/api/smart-trak/training-plan?kind=questionnaire').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}),
     fetch('/api/smart-trak/athletes').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{athletes:[]}};}),

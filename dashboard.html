@@ -167,6 +167,7 @@ tr:last-child td{border-bottom:0}
     <div class="actions">
       <a class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
+      <button id="accountBtn" class="secondary" type="button">Account</button>
       <button id="refreshBtn" type="button">Refresh</button>
     </div>
   </section>
@@ -503,6 +504,25 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<div id="accountModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+    <div class="modalhead">
+      <h2 id="accountTitle">SMARTCoach Account</h2>
+      <button id="accountClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="field">
+        <label for="accountKey">Account</label>
+        <input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      </div>
+      <div class="small" style="margin-top:8px">Use <b>default</b> for the current SMARTCoach Pro account.</div>
+      <div class="modalactions">
+        <div id="accountStatus" class="modalstatus"></div>
+        <button id="accountSave" type="button">Save Account</button>
+      </div>
+    </div>
+  </section>
+</div>
 <script>
 var dashboardRows=[];
 var recentMeetRows=[];
@@ -522,13 +542,20 @@ function smartCoachAccountKey(){
     var params=new URLSearchParams(window.location.search||'');
     var fromUrl=(params.get('account')||params.get('tenant')||'').trim();
     if(fromUrl){
-      localStorage.setItem('sc_account',fromUrl);
-      return fromUrl;
+      return setSmartCoachAccountKey(fromUrl);
     }
     return localStorage.getItem('sc_account')||'default';
   }catch(e){
     return 'default';
   }
+}
+function cleanAccountKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';
+}
+function setSmartCoachAccountKey(value){
+  var key=cleanAccountKey(value);
+  try{localStorage.setItem('sc_account',key);}catch(e){}
+  return key;
 }
 (function(){
   var nativeFetch=window.fetch.bind(window);
@@ -568,6 +595,12 @@ var els={
   athleteModalBody:document.getElementById('athleteModalBody'),
   athleteModalClose:document.getElementById('athleteModalClose'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
+  accountBtn:document.getElementById('accountBtn'),
+  accountModal:document.getElementById('accountModal'),
+  accountClose:document.getElementById('accountClose'),
+  accountKey:document.getElementById('accountKey'),
+  accountStatus:document.getElementById('accountStatus'),
+  accountSave:document.getElementById('accountSave'),
   manualMileageModal:document.getElementById('manualMileageModal'),
   manualMileageClose:document.getElementById('manualMileageClose'),
   manualMileageDate:document.getElementById('manualMileageDate'),
@@ -698,6 +731,9 @@ document.addEventListener('click',function(event){
 });
 els.athleteModalClose.addEventListener('click',closeAthleteDetail);
 els.manualMileageBtn.addEventListener('click',openManualMileage);
+els.accountBtn.addEventListener('click',openAccountSettings);
+els.accountClose.addEventListener('click',closeAccountSettings);
+els.accountSave.addEventListener('click',saveAccountSettings);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
 els.manualMileageScope.addEventListener('change',updateManualMileageScope);
 els.manualMileageSave.addEventListener('click',saveManualMileage);
@@ -737,7 +773,7 @@ function loadDashboard(){
   els.status.textContent='Loading dashboard...';
   els.lastUpdated.textContent='Updating...';
   els.refreshBtn.disabled=true;
-  fetch('/api/smart-trak/dashboard').then(function(res){
+  return fetch('/api/smart-trak/dashboard').then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Dashboard failed to load.');
@@ -775,6 +811,27 @@ function loadDashboard(){
   }).finally(function(){
     els.refreshBtn.disabled=false;
   });
+}
+
+function openAccountSettings(){
+  els.accountKey.value=smartCoachAccountKey();
+  els.accountStatus.textContent='';
+  els.accountStatus.style.color='';
+  els.accountModal.hidden=false;
+}
+
+function closeAccountSettings(){
+  els.accountModal.hidden=true;
+}
+
+function saveAccountSettings(){
+  var key=setSmartCoachAccountKey(els.accountKey.value);
+  els.accountKey.value=key;
+  els.accountStatus.textContent='Account set to '+key+'. Refreshing dashboard...';
+  els.accountStatus.style.color='#08783c';
+  loadDashboard().then(function(){
+    els.accountStatus.textContent='Account set to '+key+'.';
+  }).catch(function(){});
 }
 
 function updateBreakdowns(){
