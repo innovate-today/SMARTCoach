@@ -263,7 +263,10 @@ tr:last-child td{border-bottom:0}
         <thead>
           <tr>
             <th><button class="sortbtn" data-table="volume" data-sort="athleteName" type="button">Athlete</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Volume</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Selected Range</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="currentWeekVolume" type="button">This Week</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="previousWeekVolume" type="button">Previous Week</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="currentMonthVolume" type="button">This Month</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Workouts</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="groups" type="button">Groups</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Completed</button></th>
@@ -785,6 +788,9 @@ function trainingGroupSortValue(row,key){
 }
 function volumeSortValue(row,key){
   if(key==='volumeMiles')return num(row.volumeMiles);
+  if(key==='currentWeekVolume')return num(row.currentWeekVolumeMiles);
+  if(key==='previousWeekVolume')return num(row.previousWeekVolumeMiles);
+  if(key==='currentMonthVolume')return num(row.currentMonthVolumeMiles);
   if(key==='syncs')return num(row.syncs);
   if(key==='groups')return row.groups.join(' ');
   return row[key];
@@ -985,7 +991,20 @@ function groupVolumeByAthlete(rows){
     var miles=num(row.completedVolumeMiles);
     if(!miles)return;
     var key=String(row.contactId||row.athleteName||'').toLowerCase();
-    if(!groups[key])groups[key]={athleteName:row.athleteName||'Unnamed',contactId:row.contactId||'',volumeMiles:0,syncs:0,groups:[],lastDate:''};
+    if(!groups[key]){
+      var athlete=findDashboardAthleteForTraining(row)||{};
+      groups[key]={
+        athleteName:row.athleteName||'Unnamed',
+        contactId:row.contactId||'',
+        volumeMiles:0,
+        currentWeekVolumeMiles:num(athlete.currentWeekVolumeMiles),
+        previousWeekVolumeMiles:num(athlete.previousWeekVolumeMiles),
+        currentMonthVolumeMiles:num(athlete.currentMonthVolumeMiles),
+        syncs:0,
+        groups:[],
+        lastDate:''
+      };
+    }
     groups[key].volumeMiles+=miles;
     groups[key].syncs+=1;
     if(row.groupName&&groups[key].groups.indexOf(row.groupName)<0)groups[key].groups.push(row.groupName);
@@ -1002,6 +1021,9 @@ function volumeRowHtml(row){
   return '<tr>'+
     '<td>'+athleteDetailButton(row)+'</td>'+
     '<td>'+mainLine(formatMiles(row.volumeMiles))+'</td>'+
+    '<td>'+mainLine(formatMiles(row.currentWeekVolumeMiles))+'</td>'+
+    '<td>'+mainLine(formatMiles(row.previousWeekVolumeMiles))+'</td>'+
+    '<td>'+mainLine(formatMiles(row.currentMonthVolumeMiles))+'</td>'+
     '<td><span class="pill">'+num(row.syncs)+'</span></td>'+
     '<td>'+mainLine(row.groups.join(', ')||'')+'</td>'+
     '<td>'+mainLine(row.lastDate?formatDateTime(row.lastDate):'')+'</td>'+
