@@ -1662,18 +1662,16 @@ function trainingTargetSummaryHtml(summary){
 function trainingWorkoutDetailTable(rows){
   if(!rows.length)return '<div class="muted">No completed workouts.</div>';
   return '<table><thead><tr>'+
-    '<th>Group</th><th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Status</th><th>Saved</th><th>Actions</th>'+
+    '<th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Status</th><th>Saved</th>'+
     '</tr></thead><tbody>'+rows.map(function(row){
       return '<tr>'+
-        '<td>'+mainLine(row.groupName||'')+'</td>'+
-        '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
+        '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine([row.groupName,row.workoutPrescription?row.workoutType:''].filter(Boolean).join(' · '))+trainingActionButtons(row)+'</td>'+
         '<td>'+mainLine(volumeDisplay(row))+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'')+'</td>'+
         '<td>'+targetReviewHtml(row)+'</td>'+
         '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
         '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
         '<td>'+correctionStatusHtml(row)+'</td>'+
         '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
-        '<td>'+trainingActionButtons(row)+'</td>'+
       '</tr>';
     }).join('')+'</tbody></table>';
 }
