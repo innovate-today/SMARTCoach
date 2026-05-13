@@ -19,6 +19,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:10px 14px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
+button.danger{background:#fee2e2;color:#991b1b}
 button:disabled{opacity:.55;cursor:not-allowed}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
@@ -532,6 +533,12 @@ document.addEventListener('click',function(event){
     var key=toggle.getAttribute('data-training-toggle')||'';
     expandedTrainingAthletes[key]=!expandedTrainingAthletes[key];
     renderRows();
+    return;
+  }
+  var voidButton=event.target.closest&&event.target.closest('[data-void-training]');
+  if(voidButton){
+    event.preventDefault();
+    voidTrainingRecord(voidButton);
     return;
   }
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
@@ -1131,6 +1138,44 @@ function closeManualMileage(){
   els.manualMileageModal.hidden=true;
 }
 
+function voidTrainingRecord(button){
+  var recordId=button.getAttribute('data-record-id')||'';
+  var sourceRecordId=button.getAttribute('data-source-record-id')||'';
+  var row=recentTrainingRows.find(function(item){
+    return (recordId&&item.recordId===recordId) || (sourceRecordId&&item.sourceRecordId===sourceRecordId);
+  })||{};
+  var label=[row.athleteName,row.workoutPrescription||row.workoutType,formatDate(row.sessionDate)].filter(Boolean).join(' - ')||'this training entry';
+  var reason=window.prompt('Why should SMARTCoach Pro void '+label+'?');
+  if(reason===null)return;
+  reason=reason.trim();
+  if(!reason){
+    alert('Please enter a short reason so the GHL audit note is useful.');
+    return;
+  }
+  button.disabled=true;
+  fetch('/api/smart-trak/correction',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      action:'void',
+      recordId:recordId,
+      sourceRecordId:sourceRecordId,
+      contactId:button.getAttribute('data-contact-id')||row.contactId||'',
+      athleteName:button.getAttribute('data-athlete-name')||row.athleteName||'',
+      reason:reason
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Void failed.');
+    els.status.textContent='Entry voided. Refreshing dashboard...';
+    return loadDashboard();
+  }).catch(function(error){
+    alert(error.message||'Could not void entry.');
+    button.disabled=false;
+  });
+}
+
 function renderManualMileageAthletes(){
   if(!els.manualMileageAthlete)return;
   var current=els.manualMileageAthlete.value;
@@ -1430,7 +1475,7 @@ function trainingTargetSummaryHtml(summary){
 function trainingWorkoutDetailTable(rows){
   if(!rows.length)return '<div class="muted">No completed workouts.</div>';
   return '<table><thead><tr>'+
-    '<th>Group</th><th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Saved</th>'+
+    '<th>Group</th><th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Saved</th><th>Actions</th>'+
     '</tr></thead><tbody>'+rows.map(function(row){
       return '<tr>'+
         '<td>'+mainLine(row.groupName||'')+'</td>'+
@@ -1440,8 +1485,14 @@ function trainingWorkoutDetailTable(rows){
         '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
         '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
         '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
+        '<td>'+trainingActionButtons(row)+'</td>'+
       '</tr>';
     }).join('')+'</tbody></table>';
+}
+
+function trainingActionButtons(row){
+  if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
+  return '<button class="danger" data-void-training="1" data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'" type="button">Void</button>';
 }
 
 function recentTrainingHtml(row){

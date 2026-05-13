@@ -131,6 +131,7 @@ function buildRecentTrainingSyncs({ athletes, performanceRecords }) {
   athletes.forEach((athlete) => {
     performanceRecords.forEach((record) => {
       if (!recordMatchesAthlete(record, athlete)) return;
+      if (isVoidedPerformanceRecord(record)) return;
       const training = normalizePerformanceRecord(record);
       if (!training.groupName && !training.totalTimeDisplay) return;
       rows.push({
@@ -163,7 +164,7 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
 function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords }) {
   const bests = bestRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeBest).filter((item) => item.event);
   const meets = meetRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeMeetResult).filter((item) => item.event || item.resultDisplay).sort(sortByDateDesc);
-  const training = performanceRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizePerformanceRecord).filter((item) => item.groupName || item.totalTimeDisplay).sort(sortByDateDesc);
+  const training = performanceRecords.filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record)).map(normalizePerformanceRecord).filter((item) => item.groupName || item.totalTimeDisplay).sort(sortByDateDesc);
   const currentFitness = chooseCurrentFitness(bests);
   const latestMeet = meets[0] || {};
   const latestTraining = training[0] || {};
@@ -258,6 +259,7 @@ function normalizePerformanceRecord(record) {
   const completedVolume = noteValue(coachNote, "Completed volume");
   const plannedVolume = noteValue(coachNote, "Planned volume");
   return {
+    recordId: record && record.id ? record.id : "",
     sourceSessionId: prop(props, "source_session_id"),
     sourceRecordId: prop(props, "source_record_id"),
     groupName: prop(props, "group_name"),
@@ -280,6 +282,11 @@ function normalizePerformanceRecord(record) {
     weather: noteValue(coachNote, "Weather"),
     syncedAt: recordTimestamp(record),
   };
+}
+
+function isVoidedPerformanceRecord(record) {
+  const note = prop(recordProperties(record), "coach_note").toLowerCase();
+  return note.indexOf("smartcoach status: voided") >= 0;
 }
 
 function noteValue(note, label) {
