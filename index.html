@@ -262,6 +262,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="trow"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('notes')">Notes on Detail Line &#9432;</span><div class="tog on" id="tn" onclick="tg('notes')"></div></div>
       <div class="trow" style="border-bottom:none"><span style="font-size:17px;color:var(--R);cursor:pointer" onclick="showInfo('beep')">Beep on Start &#9432;</span><div class="tog on" id="tb" onclick="tg('beep')"></div></div>
     </div>
+    <div class="lsec">
+      <div class="trow" id="archive-row" onclick="toggleArchiveGroup()" style="cursor:pointer">
+        <span style="font-size:17px;color:var(--R)"><b id="archive-title">Archive Group</b><br><small id="archive-sub" style="color:#777;font-size:13px;font-weight:400">Move this group out of the active list.</small></span>
+        <span style="color:#bbb">&rsaquo;</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -339,7 +345,7 @@ function applyPlanMode(){
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',cfg:l.cfg,runners:l.runners.map(function(r){
+      return{id:l.id,name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',cfg:l.cfg,runners:l.runners.map(function(r){
         return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',saved:r.saved||[]};
       })};
     });
@@ -365,7 +371,7 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',cfg:normalizeCfg(l.cfg),
+        return{id:l.id,name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',cfg:normalizeCfg(l.cfg),
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -729,8 +735,8 @@ function handleMeetSelect(){
 function visibleGroups(){
   return logs.filter(function(l){
     var type=l.type||'training';
-    if(GV==='archive')return !isCurrentGroup(l);
-    if(!isCurrentGroup(l))return false;
+    if(GV==='archive')return !!l.archived||!isCurrentGroup(l);
+    if(l.archived||!isCurrentGroup(l))return false;
     if(GV==='meets')return type==='meet';
     return type!=='meet';
   });
@@ -742,7 +748,8 @@ function rl(){
   el.innerHTML=shown.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
     var title=l.type==='meet'?ex(l.eventName||l.name||'Meet Event'):ex(l.name);
-    var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(l.meetName||'Meet')+' · '+ex(l.season||'')+' '+(l.seasonYear||'')+'</div>':(l.trainingPlanTitle?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(l.trainingPlanTitle)+'</div>':'');
+    var archiveLabel=GV==='archive'&&l.archived?'Archived · ':'';
+    var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+(l.meetName||'Meet'))+' · '+ex(l.season||'')+' '+(l.seasonYear||'')+'</div>':(l.trainingPlanTitle?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+l.trainingPlanTitle)+'</div>':(archiveLabel?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+(l.season||'')+' '+(l.seasonYear||''))+'</div>':''));
     return'<div class="lrow" onclick="oGroup('+l.id+')">'+
       '<span class="ltxt">'+title+sub+'</span>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
@@ -1866,8 +1873,37 @@ function oSet(){
   [{k:'laps',e:'tl'},{k:'repRest',e:'trr'},{k:'multiple',e:'tm'},{k:'notes',e:'tn'},{k:'beep',e:'tb'}].forEach(function(x){
     document.getElementById(x.e).className='tog'+(TC[x.k]?' on':'');
   });
+  updateArchiveSetting();
 }
 function tg(k){TC[k]=TC[k]?0:1;var map={laps:'tl',repRest:'trr',multiple:'tm',notes:'tn',beep:'tb'};document.getElementById(map[k]).className='tog'+(TC[k]?' on':'');}
+function updateArchiveSetting(){
+  var title=document.getElementById('archive-title'),sub=document.getElementById('archive-sub');
+  if(!title||!sub||!CL)return;
+  if(CL.archived){
+    title.textContent='Restore Group';
+    sub.textContent='Move this group back to the active '+((CL.type||'training')==='meet'?'Meets':'Training')+' list.';
+  }else{
+    title.textContent='Archive Group';
+    sub.textContent='Move this group out of the active list without deleting it.';
+  }
+}
+function toggleArchiveGroup(){
+  if(!CL)return;
+  if(CL.archived){
+    CL.archived=0;
+    CL.archivedAt='';
+    save();
+    setGroupView((CL.type||'training')==='meet'?'meets':'training');
+    go('s-groups');
+    return;
+  }
+  if(!confirm('Archive "'+CL.name+'"? You can restore it from the Archive tab later.'))return;
+  CL.archived=1;
+  CL.archivedAt=new Date().toISOString();
+  save();
+  setGroupView('archive');
+  go('s-groups');
+}
 function saveSets(){
   if(!CL)return;var n=document.getElementById('sn').value.trim();if(n)CL.name=n;
   CL.cfg={laps:TC.laps,repRest:TC.repRest,multiple:TC.multiple,notes:TC.notes,beep:TC.beep};
