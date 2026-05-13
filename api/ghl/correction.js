@@ -49,12 +49,12 @@ module.exports = async function handler(req, res) {
     if (!recordId && !sourceRecordId) throw httpError(400, "Missing performance record.");
 
     const record = recordId
-      ? await getObjectRecord({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, recordId })
+      ? { id: recordId }
       : await findObjectRecord({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, sourceRecordId });
 
     if (!record || !record.id) throw httpError(404, "Performance record was not found.");
 
-    const props = recordProperties(record);
+    const props = recordId ? previousProps(payload.previous) : recordProperties(record);
     if (action === "edit") {
       const result = await editPerformanceRecord({ token, locationId, contactId, athleteName, reason, record, props, payload });
       res.status(200).json(result);
@@ -179,6 +179,20 @@ async function addCorrectionNote({ token, contactId, body }) {
     method: "POST",
     body: { body },
   });
+}
+
+function previousProps(previous) {
+  const data = previous && typeof previous === "object" ? previous : {};
+  return {
+    performance_record: clean(data.performanceRecord) || [clean(data.athleteName), clean(data.workoutType)].filter(Boolean).join(" - "),
+    source_record_id: clean(data.sourceRecordId),
+    group_name: clean(data.groupName),
+    session_date: clean(data.sessionDate),
+    workout_type: clean(data.workoutType),
+    surface: clean(data.surface),
+    total_time_display: clean(data.time),
+    coach_note: clean(data.coachNote || data.notes),
+  };
 }
 
 function buildVoidNote({ athleteName, reason, correctionTime, record, props, sourceRecordId }) {

@@ -1299,6 +1299,7 @@ function saveCorrection(){
       contactId:correctionRow.contactId||'',
       athleteName:correctionRow.athleteName||'',
       reason:reason,
+      previous:correctionPreviousPayload(correctionRow),
       updates:{
         sessionDate:els.correctionDate.value,
         workoutType:els.correctionWorkout.value,
@@ -1322,6 +1323,22 @@ function saveCorrection(){
   }).finally(function(){
     els.correctionSave.disabled=false;
   });
+}
+
+function correctionPreviousPayload(row){
+  return {
+    athleteName:row.athleteName||'',
+    sourceRecordId:row.sourceRecordId||'',
+    groupName:row.groupName||'',
+    sessionDate:row.sessionDate||'',
+    workoutType:row.workoutType||'',
+    surface:row.surface||'',
+    time:row.totalTimeDisplay||'',
+    completedVolume:row.completedVolume||'',
+    weather:row.weather||'',
+    notes:correctionNotesFromRow(row),
+    coachNote:row.coachNote||''
+  };
 }
 
 function findTrainingRow(button){
@@ -1365,6 +1382,7 @@ function voidTrainingRecord(button){
       sourceRecordId:sourceRecordId,
       contactId:button.getAttribute('data-contact-id')||row.contactId||'',
       athleteName:button.getAttribute('data-athlete-name')||row.athleteName||'',
+      previous:correctionPreviousPayload(row),
       reason:reason
     })
   }).then(function(res){
