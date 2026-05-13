@@ -55,6 +55,10 @@ button.ghost{background:#eef2f7;color:#172033}
 .sectionbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 8px}
 .sectionbar .section-title{margin:0}
 .sectionbar button{padding:8px 12px}
+.volume-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 10px}
+.volume-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.volume-card b{display:block;font-size:18px;line-height:1.2}
+.volume-card span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
 table{width:100%;border-collapse:collapse;min-width:1260px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
@@ -108,6 +112,7 @@ tr:last-child td{border-bottom:0}
   .bar{align-items:stretch;flex-direction:column}
   .searchwrap{min-width:0;width:100%}
   .tabs{grid-template-columns:1fr}
+  .volume-summary{grid-template-columns:1fr}
   .sectionbar{align-items:flex-start;flex-direction:column}
   .status{text-align:left}
   .filterstate{margin-top:-2px}
@@ -258,6 +263,7 @@ tr:last-child td{border-bottom:0}
     <div class="sectionbar">
       <div class="section-title">Volume By Athlete</div>
     </div>
+    <section id="volumeSummary" class="volume-summary" aria-label="Volume summary"></section>
     <section class="tablewrap recentwrap">
       <table>
         <thead>
@@ -336,6 +342,7 @@ var els={
   recentMeetEmpty:document.getElementById('recentMeetEmpty'),
   recentTrainingEmpty:document.getElementById('recentTrainingEmpty'),
   volumeEmpty:document.getElementById('volumeEmpty'),
+  volumeSummary:document.getElementById('volumeSummary'),
   athleteModal:document.getElementById('athleteModal'),
   athleteModalTitle:document.getElementById('athleteModalTitle'),
   athleteModalBody:document.getElementById('athleteModalBody'),
@@ -544,6 +551,7 @@ function renderRows(){
   els.rows.innerHTML=rows.map(rowHtml).join('');
   els.recentMeetRows.innerHTML=meetRows.map(recentMeetHtml).join('');
   els.volumeRows.innerHTML=volumeRows.map(volumeRowHtml).join('');
+  els.volumeSummary.innerHTML=volumeSummaryHtml(volumeRows);
   els.recentTrainingRows.innerHTML=trainingGroups.map(trainingGroupHtml).join('');
   els.empty.hidden=rows.length>0;
   els.recentMeetEmpty.hidden=meetRows.length>0;
@@ -1028,6 +1036,28 @@ function volumeRowHtml(row){
     '<td>'+mainLine(row.groups.join(', ')||'')+'</td>'+
     '<td>'+mainLine(row.lastDate?formatDateTime(row.lastDate):'')+'</td>'+
   '</tr>';
+}
+
+function volumeSummaryHtml(rows){
+  var active=(rows||[]).filter(function(row){return num(row.volumeMiles)>0;});
+  var total=sumVolumeRows(active,'volumeMiles');
+  var average=active.length?total/active.length:0;
+  var high=active.slice().sort(function(a,b){return num(b.volumeMiles)-num(a.volumeMiles);})[0]||{};
+  var low=active.slice().sort(function(a,b){return num(a.volumeMiles)-num(b.volumeMiles);})[0]||{};
+  return [
+    volumeCard('Team volume',formatMiles(total),active.length+' athlete'+(active.length===1?'':'s')+' in view'),
+    volumeCard('Average per athlete',formatMiles(average),activityRangeLabel()),
+    volumeCard('Highest volume',high.athleteName?formatMiles(high.volumeMiles):'0 mi',high.athleteName||'No athlete yet'),
+    volumeCard('Lowest volume',low.athleteName?formatMiles(low.volumeMiles):'0 mi',low.athleteName||'No athlete yet')
+  ].join('');
+}
+
+function volumeCard(label,value,sub){
+  return '<div class="volume-card"><b>'+esc(value||'--')+'</b><span>'+esc(label)+'</span>'+subLine(sub||'')+'</div>';
+}
+
+function sumVolumeRows(rows,key){
+  return (rows||[]).reduce(function(sum,row){return sum+num(row[key]);},0);
 }
 
 function recentMeetHtml(row){
