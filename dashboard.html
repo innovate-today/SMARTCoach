@@ -21,9 +21,11 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
 button:disabled{opacity:.55;cursor:not-allowed}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
-.stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
-.stat b{display:block;font-size:24px;line-height:1.1}
-.stat span{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+.stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+.statline{display:flex;align-items:baseline;gap:10px;min-height:28px}
+.stat b{display:block;font-size:24px;line-height:1.1;white-space:nowrap}
+.stat span{display:block;color:var(--muted);font-size:13px;margin-top:0}
+.stat .small{margin-top:4px}
 .breakdowns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .breakdown{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .breakdown[data-tab-target],.loadstrip[data-tab-target]{cursor:pointer}
@@ -158,10 +160,10 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <section class="stats">
-    <div class="stat"><b id="currentWeekVolume">--</b><span>This week volume</span><span class="small">completed miles</span></div>
-    <div class="stat"><b id="previousWeekVolume">--</b><span>Previous week volume</span><span class="small">completed miles</span></div>
-    <div class="stat"><b id="athleteCount">--</b><span>Active athletes</span></div>
-    <div class="stat"><b id="currentWeekRuns">--</b><span>Completed workouts</span><span id="currentWeekRange" class="small">--</span></div>
+    <div class="stat"><div class="statline"><b id="currentWeekVolume">--</b><span>This week volume</span></div><span class="small">completed miles</span></div>
+    <div class="stat"><div class="statline"><b id="previousWeekVolume">--</b><span>Previous week volume</span></div><span class="small">completed miles</span></div>
+    <div class="stat"><div class="statline"><b id="athleteCount">--</b><span>Active athletes</span></div></div>
+    <div class="stat"><div class="statline"><b id="currentWeekRuns">--</b><span>Completed workouts</span></div><span id="currentWeekRange" class="small">--</span></div>
     <span id="previousWeekRange" class="small" hidden>--</span>
   </section>
 
