@@ -106,6 +106,32 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 var questionnaire=null,athletes=[],meets=[],plans=[];
 var fitnessEvents=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
 var fitnessSports=[{label:'Track',value:'track'},{label:'Cross Country',value:'cross_country'}];
+function smartCoachAccountKey(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    var fromUrl=(params.get('account')||params.get('tenant')||'').trim();
+    if(fromUrl){
+      localStorage.setItem('sc_account',fromUrl);
+      return fromUrl;
+    }
+    return localStorage.getItem('sc_account')||'default';
+  }catch(e){
+    return 'default';
+  }
+}
+(function(){
+  var nativeFetch=window.fetch.bind(window);
+  window.fetch=function(input,init){
+    var url=typeof input==='string'?input:(input&&input.url)||'';
+    if(/^\/api\/smart-trak/.test(url)||/^\/api\/ghl/.test(url)){
+      init=init||{};
+      var headers=new Headers(init.headers||{});
+      headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      init.headers=headers;
+    }
+    return nativeFetch(input,init);
+  };
+})();
 function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+day;}
 function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}

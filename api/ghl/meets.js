@@ -54,7 +54,7 @@ module.exports = async function handler(req, res) {
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
 }
 
 async function listMeets({ token, locationId }) {

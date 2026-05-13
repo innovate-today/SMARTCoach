@@ -332,6 +332,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <script>
 var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null;
 
+function smartCoachAccountKey(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    var fromUrl=(params.get('account')||params.get('tenant')||'').trim();
+    if(fromUrl){
+      localStorage.setItem('sc_account',fromUrl);
+      return fromUrl;
+    }
+    return localStorage.getItem('sc_account')||'default';
+  }catch(e){
+    return 'default';
+  }
+}
+(function(){
+  var nativeFetch=window.fetch.bind(window);
+  window.fetch=function(input,init){
+    var url=typeof input==='string'?input:(input&&input.url)||'';
+    if(/^\/api\/smart-trak/.test(url)||/^\/api\/ghl/.test(url)){
+      init=init||{};
+      var headers=new Headers(init.headers||{});
+      headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      init.headers=headers;
+    }
+    return nativeFetch(input,init);
+  };
+})();
+
 function productPlan(){
   return localStorage.getItem('sc_plan')||'pro';
 }

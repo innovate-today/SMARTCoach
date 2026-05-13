@@ -517,6 +517,32 @@ var lastLoadedAt='';
 var activeTab='roster';
 var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
+function smartCoachAccountKey(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    var fromUrl=(params.get('account')||params.get('tenant')||'').trim();
+    if(fromUrl){
+      localStorage.setItem('sc_account',fromUrl);
+      return fromUrl;
+    }
+    return localStorage.getItem('sc_account')||'default';
+  }catch(e){
+    return 'default';
+  }
+}
+(function(){
+  var nativeFetch=window.fetch.bind(window);
+  window.fetch=function(input,init){
+    var url=typeof input==='string'?input:(input&&input.url)||'';
+    if(/^\/api\/smart-trak/.test(url)||/^\/api\/ghl/.test(url)){
+      init=init||{};
+      var headers=new Headers(init.headers||{});
+      headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      init.headers=headers;
+    }
+    return nativeFetch(input,init);
+  };
+})();
 var tableSorts={
   roster:{key:'name',dir:'asc'},
   meet:{key:'syncedAt',dir:'desc'},
