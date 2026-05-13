@@ -269,7 +269,7 @@ tr:last-child td{border-bottom:0}
         <thead>
           <tr>
             <th><button class="sortbtn" data-table="volume" data-sort="athleteName" type="button">Athlete</button></th>
-            <th><button class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Selected Range</button></th>
+            <th><button id="volumeRangeLabel" class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Volume</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="currentWeekVolume" type="button">This Week</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="previousWeekVolume" type="button">Previous Week</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="currentMonthVolume" type="button">This Month</button></th>
@@ -355,6 +355,7 @@ var els={
   clearSearchBtn:document.getElementById('clearSearchBtn'),
   quickFilter:document.getElementById('quickFilter'),
   activityRange:document.getElementById('activityRange'),
+  volumeRangeLabel:document.getElementById('volumeRangeLabel'),
   resetViewBtn:document.getElementById('resetViewBtn'),
   exportCurrentBtn:document.getElementById('exportCurrentBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
@@ -570,6 +571,7 @@ function renderRows(){
   els.filterState.textContent=filterStateText(query,filter);
   els.filterState.hidden=isDefaultView(query,filter);
   updateActiveMetric(filter);
+  updateVolumeRangeLabel();
   updateSortHeaders();
   setActiveTab(activeTab);
   refreshTableScrollbars();
@@ -829,6 +831,11 @@ function updateSortHeaders(){
     button.classList.toggle('asc',active.key===key&&active.dir==='asc');
     button.classList.toggle('desc',active.key===key&&active.dir==='desc');
   });
+}
+
+function updateVolumeRangeLabel(){
+  if(!els.volumeRangeLabel)return;
+  els.volumeRangeLabel.textContent=(els.activityRange.value||'30')==='all'?'Volume':'Filtered Volume';
 }
 
 function updateActiveMetric(filter){
