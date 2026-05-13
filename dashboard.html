@@ -1167,6 +1167,10 @@ function isOutsideTarget(row){
 }
 
 function targetStatus(row){
+  var totalDiff=targetDifferenceText(row).toLowerCase();
+  if(totalDiff.indexOf('within target')>=0)return 'on';
+  if(totalDiff.indexOf('faster than target')>=0)return 'fast';
+  if(totalDiff.indexOf('slower than target')>=0)return 'slow';
   var splitStatus=splitTargetStatus(row);
   if(splitStatus)return splitStatus;
   var diff=String(row&&row.targetDifference||'').toLowerCase();
@@ -1717,12 +1721,13 @@ function recentTrainingHtml(row){
 
 function targetReviewHtml(row){
   if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort)return '<span class="muted">No target saved</span>';
+  var diff=targetDifferenceText(row)||row.targetDifference;
   return targetStatusPill(row)+mainLine(row.plannedTarget||'Target saved')+
-    subLine([row.targetDifference,row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
+    subLine([diff,row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
 }
 
 function targetReviewText(row){
-  return [row.plannedTarget,row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
+  return [row.plannedTarget,targetDifferenceText(row)||row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
 }
 
 function volumeDisplay(row){
@@ -1878,6 +1883,13 @@ function splitTargetStatus(row){
   if(slow)return 'slow';
   if(statuses.every(function(status){return /within target/i.test(status);}))return 'on';
   return '';
+}
+
+function targetDifferenceText(row){
+  if(!row||!row.totalTimeMs)return '';
+  var target=parseTargetRange(row.plannedTarget);
+  if(!target)return '';
+  return splitTargetDiff(num(row.totalTimeMs),target.fast,target.slow);
 }
 
 function formatSignedMs(ms){
