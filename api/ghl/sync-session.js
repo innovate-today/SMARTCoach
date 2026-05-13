@@ -990,6 +990,11 @@ function phaseValue(value) {
 function workoutTypeValue(value) {
   const normalized = optionValue(value);
   const aliases = {
+    easy_run: "easy_recovery_run",
+    recovery_run: "easy_recovery_run",
+    tempo_run: "extensive_tempo",
+    warmup_cooldown: "easy_recovery_run",
+    warm_up_cool_down: "easy_recovery_run",
     speed_endurance_i: "speed_endurance_1",
     speed_endurance_ii: "speed_endurance_2",
     special_endurance_i: "special_endurance_1",

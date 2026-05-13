@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
 function buildSyncPayload(payload) {
   const athletes = Array.isArray(payload.athletes) ? payload.athletes.map(normalizeAthlete).filter((athlete) => athlete.name) : [];
   const distance = clean(payload.distance || payload.completedVolume);
-  const workoutType = clean(payload.workoutType) || "Easy Run";
+  const workoutType = manualWorkoutType(clean(payload.workoutType)) || "Easy/Recovery Run";
   const date = clean(payload.date) || new Date().toISOString();
 
   if (!athletes.length) throw httpError(400, "Select at least one athlete.");
@@ -77,6 +77,20 @@ function seasonForDate(value) {
 
 function clean(value) {
   return String(value || "").trim();
+}
+
+function manualWorkoutType(value) {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const aliases = {
+    easy_run: "Easy/Recovery Run",
+    recovery_run: "Easy/Recovery Run",
+    easy_recovery_run: "Easy/Recovery Run",
+    tempo_run: "Extensive Tempo",
+    warmup_cooldown: "Easy/Recovery Run",
+    warm_up_cool_down: "Easy/Recovery Run",
+    other: "Easy/Recovery Run",
+  };
+  return aliases[normalized] || value;
 }
 
 function httpError(statusCode, message) {
