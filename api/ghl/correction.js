@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
     if (!recordId && !sourceRecordId) throw httpError(400, "Missing performance record.");
 
     const record = recordId
-      ? await getObjectRecord({ token, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, recordId })
+      ? await getObjectRecord({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, recordId })
       : await findObjectRecord({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, sourceRecordId });
 
     if (!record || !record.id) throw httpError(404, "Performance record was not found.");
@@ -293,10 +293,10 @@ function parseTimeToMs(value) {
   return Math.round(seconds * 1000);
 }
 
-async function getObjectRecord({ token, schemaKey, recordId }) {
+async function getObjectRecord({ token, locationId, schemaKey, recordId }) {
   const result = await ghlFetch({
     token,
-    path: `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}`,
+    path: `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`,
     method: "GET",
   });
   return result.record || result;
