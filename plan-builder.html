@@ -137,7 +137,17 @@ function saveAccountSettings(){
   var input=document.getElementById('accountKey');
   var key=setSmartCoachAccountKey(input&&input.value);
   if(input)input.value=key;
-  loadBuilder();
+  checkSmartCoachAccount().then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+    loadBuilder();
+  }).catch(function(error){
+    setStatus('Account set to '+key+', but not connected: '+error.message,'bad');
+  });
+}
+function checkSmartCoachAccount(){
+  return fetch('/api/smart-trak/account-status',{cache:'no-store'}).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  });
 }
 (function(){
   var nativeFetch=window.fetch.bind(window);

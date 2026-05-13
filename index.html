@@ -380,10 +380,21 @@ function saveAccountSettings(){
   var status=document.getElementById('account-status');
   var key=setSmartCoachAccountKey(input&&input.value);
   if(input)input.value=key;
-  if(status){status.textContent='Account set to '+key+'.';status.style.color='#0a7a44';status.style.fontWeight='700';}
-  loadAthletes();
-  loadTrainingPlans();
-  loadMeets();
+  if(status){status.textContent='Checking '+key+'...';status.style.color='#555';status.style.fontWeight='700';}
+  checkSmartCoachAccount().then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+    if(status){status.textContent='Account set to '+key+' and connected.';status.style.color='#0a7a44';}
+    loadAthletes();
+    loadTrainingPlans();
+    loadMeets();
+  }).catch(function(error){
+    if(status){status.textContent='Account set to '+key+', but not connected: '+error.message;status.style.color='#c00';}
+  });
+}
+function checkSmartCoachAccount(){
+  return fetch('/api/smart-trak/account-status',{cache:'no-store'}).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  });
 }
 (function(){
   var nativeFetch=window.fetch.bind(window);

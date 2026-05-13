@@ -3,15 +3,20 @@ function getGhlContext(req) {
     headerValue(req, "x-smartcoach-account") ||
     queryValue(req, "account") ||
     queryValue(req, "tenant")
-  );
-  const account = accountKey ? accountFromKey(accountKey) : null;
-  const token = account && account.token ? account.token : process.env.GHL_PRIVATE_INTEGRATION_TOKEN;
-  const locationId = account && account.locationId ? account.locationId : process.env.GHL_LOCATION_ID;
+  ) || "default";
+  const account = accountKey === "default" ? defaultAccount() : accountFromKey(accountKey);
 
   return {
-    accountKey: accountKey || "default",
-    token,
-    locationId,
+    accountKey,
+    token: account && account.token,
+    locationId: account && account.locationId,
+  };
+}
+
+function defaultAccount() {
+  return {
+    token: process.env.GHL_PRIVATE_INTEGRATION_TOKEN,
+    locationId: process.env.GHL_LOCATION_ID,
   };
 }
 

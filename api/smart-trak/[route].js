@@ -1,4 +1,5 @@
 const handlers = {
+  "account-status": require("../ghl/account-status"),
   "athlete-best": require("../ghl/athlete-best"),
   "athlete-profile": require("../ghl/athlete-profile"),
   athletes: require("../ghl/athletes"),

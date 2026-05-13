@@ -827,11 +827,25 @@ function closeAccountSettings(){
 function saveAccountSettings(){
   var key=setSmartCoachAccountKey(els.accountKey.value);
   els.accountKey.value=key;
-  els.accountStatus.textContent='Account set to '+key+'. Refreshing dashboard...';
-  els.accountStatus.style.color='#08783c';
-  loadDashboard().then(function(){
-    els.accountStatus.textContent='Account set to '+key+'.';
-  }).catch(function(){});
+  els.accountStatus.textContent='Checking '+key+'...';
+  els.accountStatus.style.color='';
+  checkSmartCoachAccount().then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+    els.accountStatus.textContent='Account set to '+key+' and connected. Refreshing dashboard...';
+    els.accountStatus.style.color='#08783c';
+    return loadDashboard();
+  }).then(function(){
+    els.accountStatus.textContent='Account set to '+key+' and connected.';
+  }).catch(function(error){
+    els.accountStatus.textContent='Account set to '+key+', but not connected: '+(error.message||'Account is not configured.');
+    els.accountStatus.style.color='#b00000';
+  });
+}
+
+function checkSmartCoachAccount(){
+  return fetch('/api/smart-trak/account-status',{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  });
 }
 
 function updateBreakdowns(){
