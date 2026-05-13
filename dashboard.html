@@ -352,6 +352,10 @@ tr:last-child td{border-bottom:0}
           <select id="manualMileageAthlete"></select>
         </div>
         <div class="field">
+          <label for="manualMileageGroup">Group</label>
+          <select id="manualMileageGroup"></select>
+        </div>
+        <div class="field">
           <label for="manualMileageWorkout">Workout Type</label>
           <select id="manualMileageWorkout">
             <option>Easy Run</option>
@@ -374,6 +378,16 @@ tr:last-child td{border-bottom:0}
             <option>Watch upload</option>
           </select>
         </div>
+        <div class="field">
+          <label for="manualMileageSurface">Surface</label>
+          <select id="manualMileageSurface">
+            <option>Road</option>
+            <option>Trail</option>
+            <option>Grass</option>
+            <option>Track</option>
+            <option>Indoor</option>
+          </select>
+        </div>
         <div class="field full">
           <label for="manualMileageNotes">Notes</label>
           <textarea id="manualMileageNotes" placeholder="Optional"></textarea>
@@ -381,7 +395,7 @@ tr:last-child td{border-bottom:0}
       </div>
       <div class="modalactions">
         <div id="manualMileageStatus" class="modalstatus">Manual mileage saving is next.</div>
-        <button type="button" disabled>Save Mileage</button>
+        <button id="manualMileageSave" type="button">Save Mileage</button>
       </div>
     </div>
   </section>
@@ -424,7 +438,16 @@ var els={
   manualMileageModal:document.getElementById('manualMileageModal'),
   manualMileageClose:document.getElementById('manualMileageClose'),
   manualMileageDate:document.getElementById('manualMileageDate'),
+  manualMileageScope:document.getElementById('manualMileageScope'),
   manualMileageAthlete:document.getElementById('manualMileageAthlete'),
+  manualMileageGroup:document.getElementById('manualMileageGroup'),
+  manualMileageWorkout:document.getElementById('manualMileageWorkout'),
+  manualMileageDistance:document.getElementById('manualMileageDistance'),
+  manualMileageSource:document.getElementById('manualMileageSource'),
+  manualMileageSurface:document.getElementById('manualMileageSurface'),
+  manualMileageNotes:document.getElementById('manualMileageNotes'),
+  manualMileageStatus:document.getElementById('manualMileageStatus'),
+  manualMileageSave:document.getElementById('manualMileageSave'),
   status:document.getElementById('status'),
   filterState:document.getElementById('filterState'),
   lastUpdated:document.getElementById('lastUpdated'),
@@ -510,6 +533,8 @@ els.athleteModal.addEventListener('click',function(event){
 });
 els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
+els.manualMileageScope.addEventListener('change',updateManualMileageScope);
+els.manualMileageSave.addEventListener('click',saveManualMileage);
 els.manualMileageModal.addEventListener('click',function(event){
   if(event.target===els.manualMileageModal)closeManualMileage();
 });
@@ -564,6 +589,7 @@ function loadDashboard(){
     els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
     els.previousWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.previousWeekVolumeMiles);
     renderManualMileageAthletes();
+    renderManualMileageGroups();
     updateWeekRanges();
     updateBreakdowns();
     renderRows();
@@ -1080,6 +1106,9 @@ function closeAthleteDetail(){
 function openManualMileage(){
   if(els.manualMileageDate&&!els.manualMileageDate.value)els.manualMileageDate.value=todayInputValue();
   renderManualMileageAthletes();
+  renderManualMileageGroups();
+  updateManualMileageScope();
+  setManualMileageStatus('', '');
   els.manualMileageModal.hidden=false;
 }
 
@@ -1095,6 +1124,101 @@ function renderManualMileageAthletes(){
     return '<option value="'+esc(value)+'">'+esc(row.name||'Unnamed')+'</option>';
   }).join('');
   if(current)els.manualMileageAthlete.value=current;
+}
+
+function renderManualMileageGroups(){
+  if(!els.manualMileageGroup)return;
+  var current=els.manualMileageGroup.value;
+  var groups={};
+  dashboardRows.forEach(function(row){
+    var latest=row.latestTraining||{};
+    if(latest.groupName)groups[latest.groupName]=true;
+  });
+  recentTrainingRows.forEach(function(row){
+    if(row.groupName)groups[row.groupName]=true;
+  });
+  var names=Object.keys(groups).sort(function(a,b){return a.localeCompare(b);});
+  els.manualMileageGroup.innerHTML=(names.length?names:['No groups loaded']).map(function(name){
+    return '<option value="'+esc(name)+'">'+esc(name)+'</option>';
+  }).join('');
+  if(current)els.manualMileageGroup.value=current;
+}
+
+function updateManualMileageScope(){
+  var scope=els.manualMileageScope.value||'athlete';
+  els.manualMileageAthlete.disabled=scope!=='athlete';
+  els.manualMileageGroup.disabled=scope!=='group';
+}
+
+function manualMileageAthletes(){
+  var scope=els.manualMileageScope.value||'athlete';
+  if(scope==='team')return dashboardRows.map(manualAthletePayload).filter(function(athlete){return athlete.name;});
+  if(scope==='group'){
+    var group=els.manualMileageGroup.value||'';
+    var names={};
+    recentTrainingRows.forEach(function(row){
+      if(row.groupName===group&&row.athleteName)names[String(row.athleteName).toLowerCase()]=true;
+    });
+    dashboardRows.forEach(function(row){
+      var latest=row.latestTraining||{};
+      if(latest.groupName===group&&row.name)names[String(row.name).toLowerCase()]=true;
+    });
+    return dashboardRows.filter(function(row){return names[String(row.name||'').toLowerCase()];}).map(manualAthletePayload);
+  }
+  var selected=els.manualMileageAthlete.value||'';
+  return dashboardRows.filter(function(row){return String(row.contactId||row.name||'')===selected;}).map(manualAthletePayload);
+}
+
+function manualAthletePayload(row){
+  return {name:row.name||'',contactId:row.contactId||'',smartcoachAthleteId:row.smartcoachAthleteId||''};
+}
+
+function saveManualMileage(){
+  var athletes=manualMileageAthletes();
+  var distance=(els.manualMileageDistance.value||'').trim();
+  if(!athletes.length){setManualMileageStatus('Select at least one athlete.', 'bad');return;}
+  if(!distance){setManualMileageStatus('Distance is required.', 'bad');return;}
+  els.manualMileageSave.disabled=true;
+  setManualMileageStatus('Saving mileage...', '');
+  fetch('/api/smart-trak/manual-mileage',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      date:els.manualMileageDate.value,
+      groupName:manualMileageGroupName(),
+      workoutType:els.manualMileageWorkout.value,
+      distance:distance,
+      source:els.manualMileageSource.value,
+      surface:els.manualMileageSurface.value,
+      notes:els.manualMileageNotes.value,
+      athletes:athletes
+    })
+  }).then(function(resp){
+    return resp.json().then(function(data){return{ok:resp.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Mileage could not be saved.');
+    setManualMileageStatus('Saved mileage for '+athletes.length+' athlete'+(athletes.length===1?'':'s')+'.', 'ok');
+    els.manualMileageDistance.value='';
+    els.manualMileageNotes.value='';
+    loadDashboard();
+  }).catch(function(error){
+    setManualMileageStatus(error.message||'Mileage could not be saved.', 'bad');
+  }).finally(function(){
+    els.manualMileageSave.disabled=false;
+  });
+}
+
+function manualMileageGroupName(){
+  var scope=els.manualMileageScope.value||'athlete';
+  if(scope==='group')return els.manualMileageGroup.value||'Manual Mileage';
+  if(scope==='team')return 'Team Manual Mileage';
+  return 'Manual Mileage';
+}
+
+function setManualMileageStatus(text,type){
+  if(!els.manualMileageStatus)return;
+  els.manualMileageStatus.textContent=text||'';
+  els.manualMileageStatus.style.color=type==='bad'?'#b91c1c':type==='ok'?'var(--good)':'var(--muted)';
 }
 
 function todayInputValue(){

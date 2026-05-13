@@ -526,7 +526,7 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     surface: optionValue(session.surface),
     rep_number: run.runNumber,
     total_time_display: run.total,
-    total_time_ms: run.totalMs,
+    ...(run.totalMs ? { total_time_ms: run.totalMs } : {}),
     splits_json: formatLapSplits(splits).join("\n"),
     coach_note: formatCoachNote({ run, session, athlete }),
     synced_at: dateOnly(syncedAt),
