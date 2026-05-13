@@ -835,7 +835,11 @@ function updateSortHeaders(){
 
 function updateVolumeRangeLabel(){
   if(!els.volumeRangeLabel)return;
-  els.volumeRangeLabel.textContent=(els.activityRange.value||'30')==='all'?'Volume':'Filtered Volume';
+  els.volumeRangeLabel.textContent=volumeRangeText();
+}
+
+function volumeRangeText(){
+  return (els.activityRange.value||'30')==='all'?'Volume':'Filtered Volume';
 }
 
 function updateActiveMetric(filter){
@@ -1069,11 +1073,12 @@ function volumeSummaryHtml(rows){
   var average=active.length?total/active.length:0;
   var high=active.slice().sort(function(a,b){return num(b.volumeMiles)-num(a.volumeMiles);})[0]||{};
   var low=active.slice().sort(function(a,b){return num(a.volumeMiles)-num(b.volumeMiles);})[0]||{};
+  var label=volumeRangeText().toLowerCase();
   return [
-    volumeCard('Team volume',formatMiles(total),active.length+' athlete'+(active.length===1?'':'s')+' in view'),
+    volumeCard('Team '+label,formatMiles(total),active.length+' athlete'+(active.length===1?'':'s')+' in view'),
     volumeCard('Average per athlete',formatMiles(average),activityRangeLabel()),
-    volumeCard('Highest volume',high.athleteName?formatMiles(high.volumeMiles):'0 mi',high.athleteName||'No athlete yet'),
-    volumeCard('Lowest volume',low.athleteName?formatMiles(low.volumeMiles):'0 mi',low.athleteName||'No athlete yet')
+    volumeCard('Highest '+label,high.athleteName?formatMiles(high.volumeMiles):'0 mi',high.athleteName||'No athlete yet'),
+    volumeCard('Lowest '+label,low.athleteName?formatMiles(low.volumeMiles):'0 mi',low.athleteName||'No athlete yet')
   ].join('');
 }
 
