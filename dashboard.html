@@ -463,6 +463,10 @@ tr:last-child td{border-bottom:0}
           <input id="correctionVolume" type="text" placeholder="Example: 4 miles">
         </div>
         <div class="field">
+          <label for="correctionTime">Time</label>
+          <input id="correctionTime" type="text" placeholder="Optional, e.g. 36:20">
+        </div>
+        <div class="field">
           <label for="correctionWeather">Weather</label>
           <input id="correctionWeather" type="text" placeholder="Optional">
         </div>
@@ -538,6 +542,7 @@ var els={
   correctionWorkout:document.getElementById('correctionWorkout'),
   correctionSurface:document.getElementById('correctionSurface'),
   correctionVolume:document.getElementById('correctionVolume'),
+  correctionTime:document.getElementById('correctionTime'),
   correctionWeather:document.getElementById('correctionWeather'),
   correctionReason:document.getElementById('correctionReason'),
   correctionNotes:document.getElementById('correctionNotes'),
@@ -1239,6 +1244,7 @@ function openCorrectionModal(button){
   setSelectValue(els.correctionWorkout,correctionRow.workoutType||'Easy/Recovery Run');
   setSelectValue(els.correctionSurface,correctionRow.surface||'Road');
   els.correctionVolume.value=correctionRow.completedVolume||'';
+  els.correctionTime.value=correctionRow.totalTimeDisplay||'';
   els.correctionWeather.value=correctionRow.weather||'';
   els.correctionReason.value='';
   els.correctionNotes.value=correctionNotesFromRow(correctionRow);
@@ -1275,6 +1281,7 @@ function saveCorrection(){
         workoutType:els.correctionWorkout.value,
         surface:els.correctionSurface.value,
         completedVolume:els.correctionVolume.value,
+        time:els.correctionTime.value,
         weather:els.correctionWeather.value,
         notes:els.correctionNotes.value
       }

@@ -9,6 +9,7 @@ const FIELD_IDS = {
   workout_type: ["jX0YLlpt08vxNKV3JyM5"],
   surface: ["ZMzx2xPdO3XxuzAvj84"],
   total_time_display: ["z9eZIcIL1B7yaeR5jXHI"],
+  total_time_ms: ["tzmjjgk4FwJLfJDZ1KAc"],
   coach_note: ["Afy8b8lAbUoti9cCqa1m"],
 };
 
@@ -110,6 +111,7 @@ async function editPerformanceRecord({ token, locationId, contactId, athleteName
     sessionDate: prop(props, "session_date"),
     workoutType: labelValue(prop(props, "workout_type")),
     surface: labelValue(prop(props, "surface")),
+    time: prop(props, "total_time_display"),
     completedVolume: noteValue(previousNote, "Completed volume"),
     weather: noteValue(previousNote, "Weather"),
     notes: stripSystemNoteLines(previousNote),
@@ -118,12 +120,17 @@ async function editPerformanceRecord({ token, locationId, contactId, athleteName
     sessionDate: clean(updates.sessionDate) || previousValues.sessionDate,
     workoutType: clean(updates.workoutType) || previousValues.workoutType,
     surface: clean(updates.surface) || previousValues.surface,
+    time: clean(updates.time) || previousValues.time,
     completedVolume: clean(updates.completedVolume) || previousValues.completedVolume,
     weather: clean(updates.weather),
     notes: clean(updates.notes),
   };
   const changes = changedValues(previousValues, nextValues);
   if (!changes.length) throw httpError(400, "No correction changes were provided.");
+  const totalMs = nextValues.time && nextValues.time.toLowerCase() !== "untimed" ? parseTimeToMs(nextValues.time) : null;
+  if (nextValues.time && nextValues.time.toLowerCase() !== "untimed" && !totalMs) {
+    throw httpError(400, "Enter time like 36:20, 1:02:15, or 18:04.5.");
+  }
 
   const correctionTime = new Date().toISOString();
   const nextNote = replaceNoteLines(previousNote, {
@@ -141,6 +148,8 @@ async function editPerformanceRecord({ token, locationId, contactId, athleteName
         session_date: nextValues.sessionDate,
         workout_type: workoutTypeValue(nextValues.workoutType),
         surface: optionValue(nextValues.surface),
+        total_time_display: nextValues.time,
+        ...(totalMs ? { total_time_ms: totalMs } : {}),
         coach_note: nextNote,
       },
     },
@@ -215,6 +224,7 @@ function changedValues(previousValues, nextValues) {
     sessionDate: "Date",
     workoutType: "Workout Type",
     surface: "Surface",
+    time: "Time",
     completedVolume: "Completed Volume",
     weather: "Weather",
     notes: "Notes",
@@ -263,6 +273,19 @@ function noteValue(note, label) {
   const prefix = `${label}:`;
   const line = clean(note).split(/\r?\n/).find((item) => item.trim().toLowerCase().startsWith(prefix.toLowerCase()));
   return line ? clean(line.slice(prefix.length)) : "";
+}
+
+function parseTimeToMs(value) {
+  const text = clean(value).toLowerCase().replace(/s$/, "");
+  const parts = text.split(":").map((part) => part.trim());
+  if (!parts.length || parts.length > 3) return null;
+  if (parts.some((part) => part === "" || Number.isNaN(Number(part)))) return null;
+  let seconds = 0;
+  if (parts.length === 1) seconds = Number(parts[0]);
+  if (parts.length === 2) seconds = Number(parts[0]) * 60 + Number(parts[1]);
+  if (parts.length === 3) seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+  if (!Number.isFinite(seconds) || seconds <= 0) return null;
+  return Math.round(seconds * 1000);
 }
 
 async function getObjectRecord({ token, schemaKey, recordId }) {
