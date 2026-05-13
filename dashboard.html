@@ -236,6 +236,10 @@ tr:last-child td{border-bottom:0}
       <option value="90">Last 90 days</option>
       <option value="all">All activity</option>
     </select>
+    <select id="seasonFilter" class="filter">
+      <option value="current" selected>Current season</option>
+      <option value="all">All seasons</option>
+    </select>
     <button id="resetViewBtn" class="ghost" type="button">Reset View</button>
     <button id="exportCurrentBtn" class="ghost" type="button">Export Current View</button>
     <div id="status" class="status">Loading dashboard...</div>
@@ -570,6 +574,7 @@ var els={
   clearSearchBtn:document.getElementById('clearSearchBtn'),
   quickFilter:document.getElementById('quickFilter'),
   activityRange:document.getElementById('activityRange'),
+  seasonFilter:document.getElementById('seasonFilter'),
   volumeRangeLabel:document.getElementById('volumeRangeLabel'),
   volumeSubtabCount:document.getElementById('volumeSubtabCount'),
   workoutsSubtabCount:document.getElementById('workoutsSubtabCount'),
@@ -616,6 +621,7 @@ els.quickFilter.addEventListener('change',function(){
   renderRows();
 });
 els.activityRange.addEventListener('change',renderRows);
+els.seasonFilter.addEventListener('change',renderRows);
 els.exportCurrentBtn.addEventListener('click',exportCurrentViewCsv);
 els.tabs.forEach(function(tab){
   tab.addEventListener('click',function(){
@@ -673,6 +679,7 @@ els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
   els.quickFilter.value='all';
   els.activityRange.value='30';
+  els.seasonFilter.value='current';
   activeTab='roster';
   setActiveTab(activeTab);
   tableSorts=defaultTableSorts();
@@ -718,6 +725,7 @@ function loadDashboard(){
     els.previousWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.previousWeekVolumeMiles);
     renderManualMileageAthletes();
     renderManualMileageGroups();
+    renderSeasonFilterOptions();
     updateWeekRanges();
     updateBreakdowns();
     renderRows();
@@ -745,9 +753,9 @@ function updateBreakdowns(){
   var active=dashboardRows.length;
   var withFitness=dashboardRows.filter(function(row){return row.currentFitness&&row.currentFitness.label;}).length;
   var currentWeekAthletes=dashboardRows.filter(function(row){return num(row.currentWeekRuns)>0;}).length;
-  var rangedMeetRows=recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet');});
-  var rangedTrainingRows=recentTrainingRows.filter(function(row){return matchesActivityRange(row,'training');});
-  var rangeText='Showing '+activityRangeLabel();
+  var rangedMeetRows=recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet');});
+  var rangedTrainingRows=recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training');});
+  var rangeText='Showing '+seasonRangeLabel()+' · '+activityRangeLabel();
   els.rosterActive.textContent=active;
   els.rosterFitness.textContent=withFitness;
   els.rosterMissingFitness.textContent=Math.max(0,active-withFitness);
@@ -774,14 +782,35 @@ function updateWeekRanges(){
   els.previousWeekRange.textContent=rangeLabel(previousStart,previousEnd);
 }
 
+function renderSeasonFilterOptions(){
+  var current=els.seasonFilter.value||'current';
+  var keys={};
+  recentMeetRows.forEach(function(row){
+    var date=parseActivityDate(row.meetDate||row.syncedAt);
+    if(date)keys[seasonKeyForDate(date)]=true;
+  });
+  recentTrainingRows.forEach(function(row){
+    var date=parseActivityDate(row.sessionDate||row.syncedAt);
+    if(date)keys[seasonKeyForDate(date)]=true;
+  });
+  var options=[
+    '<option value="current">Current season</option>',
+    '<option value="all">All seasons</option>'
+  ].concat(Object.keys(keys).sort().reverse().map(function(key){
+    return '<option value="'+esc(key)+'">'+esc(seasonLabelForKey(key))+'</option>';
+  }));
+  els.seasonFilter.innerHTML=options.join('');
+  els.seasonFilter.value=Array.prototype.some.call(els.seasonFilter.options,function(option){return option.value===current;})?current:'current';
+}
+
 function renderRows(){
   var query=els.search.value.trim().toLowerCase();
   var filter=els.quickFilter.value||'all';
   updateBreakdowns();
   var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&(!query||searchText(row).indexOf(query)>=0);}),tableSorts.roster,rosterSortValue);
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
-  var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
-  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
+  var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
+  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
   var volumeRows=sortRows(groupVolumeByAthlete(trainingRows),tableSorts.volume,volumeSortValue);
   var trainingGroups=sortRows(groupTrainingByAthlete(trainingRows),tableSorts.training,trainingGroupSortValue);
   visibleRosterRows=rows;
@@ -807,7 +836,7 @@ function renderRows(){
   els.trainingViewCount.textContent=trainingRows.length;
   els.volumeSubtabCount.textContent=volumeRows.length;
   els.workoutsSubtabCount.textContent=trainingRows.length;
-  els.status.textContent=formatMiles(sumTrainingVolume(trainingRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+activityRangeLabel();
+  els.status.textContent=formatMiles(sumTrainingVolume(trainingRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+seasonRangeLabel()+' · '+activityRangeLabel();
   els.filterState.textContent=filterStateText(query,filter);
   els.filterState.hidden=isDefaultView(query,filter);
   updateActiveMetric(filter);
@@ -986,7 +1015,7 @@ function defaultTableSorts(){
 }
 function saveView(){
   try{
-    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,activeTab:activeTab,activeTrainingSubtab:activeTrainingSubtab,sorts:tableSorts}));
+    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,seasonFilter:els.seasonFilter.value,activeTab:activeTab,activeTrainingSubtab:activeTrainingSubtab,sorts:tableSorts}));
   }catch(e){}
 }
 function restoreView(){
@@ -995,6 +1024,7 @@ function restoreView(){
     if(raw.search)els.search.value=raw.search;
     if(raw.filter)els.quickFilter.value=raw.filter;
     if(raw.activityRange)els.activityRange.value=raw.activityRange;
+    if(raw.seasonFilter)els.seasonFilter.value=raw.seasonFilter;
     if(raw.activeTab)activeTab=raw.activeTab;
     if(raw.activeTrainingSubtab)activeTrainingSubtab=raw.activeTrainingSubtab;
     if(raw.sorts&&typeof raw.sorts==='object')tableSorts=mergeSorts(defaultTableSorts(),raw.sorts);
@@ -1136,9 +1166,39 @@ function matchesActivityRange(row,type){
   start.setDate(start.getDate()-days+1);
   return date>=start;
 }
+
+function matchesSeasonFilter(row,type){
+  var value=els.seasonFilter.value||'current';
+  if(value==='all')return true;
+  var date=parseActivityDate(type==='meet'?row.meetDate||row.syncedAt:row.sessionDate||row.syncedAt);
+  if(!date)return false;
+  return seasonKeyForDate(date)===seasonFilterValue(value);
+}
+
 function activityRangeLabel(){
   var value=els.activityRange.value||'30';
   return value==='all'?'all activity':'last '+value+' days';
+}
+function seasonRangeLabel(){
+  var value=els.seasonFilter.value||'current';
+  if(value==='all')return 'all seasons';
+  if(value==='current')return 'current season';
+  return seasonLabelForKey(value);
+}
+function seasonFilterValue(value){
+  return value==='current'?seasonKeyForDate(new Date()):value;
+}
+function seasonKeyForDate(date){
+  var month=date.getMonth()+1;
+  var year=date.getFullYear();
+  var season=month<=2||month===12?'Winter':month<=5?'Spring':month<=8?'Summer':'Fall';
+  if(month===12)year+=1;
+  return year+'-'+season.toLowerCase();
+}
+function seasonLabelForKey(key){
+  var parts=String(key||'').split('-');
+  if(parts.length<2)return key;
+  return capitalize(parts[1])+' '+parts[0];
 }
 function capitalize(text){
   return String(text||'').charAt(0).toUpperCase()+String(text||'').slice(1);
@@ -1146,6 +1206,7 @@ function capitalize(text){
 function filterStateText(query,filter){
   var parts=['View: '+selectedText(els.quickFilter)];
   if(query)parts.push('search "'+query+'"');
+  parts.push(seasonRangeLabel());
   parts.push(activityRangeLabel());
   parts.push('roster sorted by '+sortLabel('roster'));
   parts.push('meets sorted by '+sortLabel('meet'));
@@ -1158,6 +1219,7 @@ function isDefaultView(query,filter){
   return !query &&
     filter==='all' &&
     (els.activityRange.value||'30')==='30' &&
+    (els.seasonFilter.value||'current')==='current' &&
     sameSort(tableSorts.roster,defaults.roster) &&
     sameSort(tableSorts.meet,defaults.meet) &&
     sameSort(tableSorts.training,defaults.training) &&
