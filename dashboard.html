@@ -226,6 +226,7 @@ tr:last-child td{border-bottom:0}
       <option value="no_training_this_week">No workout this week</option>
       <option value="training_on_target">Training on target</option>
       <option value="training_needs_review">Training outside target</option>
+      <option value="corrected_training">Corrected workouts</option>
       <option value="pb">Recent new PBs</option>
       <option value="sb">Recent new SBs</option>
     </select>
@@ -611,6 +612,7 @@ els.clearSearchBtn.addEventListener('click',function(){
 });
 els.quickFilter.addEventListener('change',function(){
   setActiveTab(tabForFilter(els.quickFilter.value));
+  if(els.quickFilter.value==='corrected_training')setTrainingSubtab('workouts');
   renderRows();
 });
 els.activityRange.addEventListener('change',renderRows);
@@ -680,6 +682,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.metric[data-filter]'),f
   metric.addEventListener('click',function(){
     els.quickFilter.value=metric.getAttribute('data-filter')||'all';
     setActiveTab(tabForFilter(els.quickFilter.value));
+    if(els.quickFilter.value==='corrected_training')setTrainingSubtab('workouts');
     renderRows();
   });
 });
@@ -884,7 +887,7 @@ function refreshTableScrollbars(){
 
 function tabForFilter(filter){
   if(filter==='pb'||filter==='sb')return 'meet';
-  if(filter==='no_training_this_week'||filter==='training_on_target'||filter==='training_needs_review')return 'training';
+  if(filter==='no_training_this_week'||filter==='training_on_target'||filter==='training_needs_review'||filter==='corrected_training')return 'training';
   return 'roster';
 }
 
@@ -1104,6 +1107,7 @@ function matchesAthleteFilter(row,filter){
   if(filter==='no_training_this_week')return num(row.currentWeekRuns)===0;
   if(filter==='training_on_target')return hasTrainingTargetStatus(row.name,'on');
   if(filter==='training_needs_review')return hasTrainingTargetStatus(row.name,'review');
+  if(filter==='corrected_training')return hasCorrectedTraining(row.name);
   if(filter==='pb')return hasRecentFlag(row.name,'pb');
   if(filter==='sb')return hasRecentFlag(row.name,'sb');
   return true;
@@ -1117,6 +1121,7 @@ function matchesMeetFilter(row,filter,visibleNames){
 function matchesTrainingFilter(row,filter,visibleNames){
   if(filter==='training_on_target')return targetStatus(row)==='on';
   if(filter==='training_needs_review')return isOutsideTarget(row);
+  if(filter==='corrected_training')return !!row.corrected;
   if(filter==='missing_fitness'||filter==='no_training_this_week'||filter==='pb'||filter==='sb')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   return true;
 }
@@ -1181,6 +1186,13 @@ function hasTrainingTargetStatus(name,status){
   var normalized=String(name||'').toLowerCase();
   return recentTrainingRows.some(function(row){
     return matchesActivityRange(row,'training') && String(row.athleteName||'').toLowerCase()===normalized && (status==='review'?isOutsideTarget(row):targetStatus(row)===status);
+  });
+}
+
+function hasCorrectedTraining(name){
+  var normalized=String(name||'').toLowerCase();
+  return recentTrainingRows.some(function(row){
+    return matchesActivityRange(row,'training') && String(row.athleteName||'').toLowerCase()===normalized && row.corrected;
   });
 }
 
