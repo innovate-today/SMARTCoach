@@ -852,7 +852,7 @@ function buildNoteBody(session, athlete) {
   const lines = [
     `SMARTCoach Session - ${dateLabel}`,
     `Group: ${session.groupName} | Season: ${session.season}`,
-    `Phase: ${session.phase} | Type: ${session.workoutType}`,
+    `Type: ${session.workoutType}`,
     `Surface: ${session.surface}${session.weather ? ` | Weather: ${session.weather}` : ""}`,
   ];
 
