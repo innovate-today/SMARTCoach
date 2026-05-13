@@ -24,9 +24,12 @@ function buildSyncPayload(payload) {
   const distance = clean(payload.distance || payload.completedVolume);
   const workoutType = manualWorkoutType(clean(payload.workoutType)) || "Easy/Recovery Run";
   const date = clean(payload.date) || new Date().toISOString();
+  const timeDisplay = clean(payload.time || payload.totalTime);
+  const totalMs = timeDisplay ? parseTimeToMs(timeDisplay) : null;
 
   if (!athletes.length) throw httpError(400, "Select at least one athlete.");
   if (!distance) throw httpError(400, "Distance is required.");
+  if (timeDisplay && !totalMs) throw httpError(400, "Enter time like 36:20, 1:02:15, or 18:04.5.");
 
   return {
     groupName: clean(payload.groupName) || "Manual Mileage",
@@ -43,11 +46,12 @@ function buildSyncPayload(payload) {
       runs: [
         {
           runNumber: 1,
-          total: "Untimed",
-          totalMs: null,
+          total: timeDisplay || "Untimed",
+          totalMs,
           laps: [],
           note: [
             "Manual mileage entry",
+            timeDisplay ? `Manual time: ${timeDisplay}` : "",
             clean(payload.source) ? `Source: ${clean(payload.source)}` : "",
             clean(payload.notes),
           ].filter(Boolean).join("\n"),
@@ -91,6 +95,19 @@ function manualWorkoutType(value) {
     other: "Easy/Recovery Run",
   };
   return aliases[normalized] || value;
+}
+
+function parseTimeToMs(value) {
+  const text = clean(value).toLowerCase().replace(/s$/, "");
+  const parts = text.split(":").map((part) => part.trim());
+  if (!parts.length || parts.length > 3) return null;
+  if (parts.some((part) => part === "" || Number.isNaN(Number(part)))) return null;
+  let seconds = 0;
+  if (parts.length === 1) seconds = Number(parts[0]);
+  if (parts.length === 2) seconds = Number(parts[0]) * 60 + Number(parts[1]);
+  if (parts.length === 3) seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+  if (!Number.isFinite(seconds) || seconds <= 0) return null;
+  return Math.round(seconds * 1000);
 }
 
 function httpError(statusCode, message) {

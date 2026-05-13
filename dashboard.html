@@ -387,6 +387,10 @@ tr:last-child td{border-bottom:0}
           <input id="manualMileageDistance" type="text" placeholder="Example: 4 miles">
         </div>
         <div class="field">
+          <label for="manualMileageTime">Time</label>
+          <input id="manualMileageTime" type="text" placeholder="Optional, e.g. 36:20">
+        </div>
+        <div class="field">
           <label for="manualMileageSource">Source</label>
           <select id="manualMileageSource">
             <option>Athlete reported</option>
@@ -522,6 +526,7 @@ var els={
   manualMileageGroup:document.getElementById('manualMileageGroup'),
   manualMileageWorkout:document.getElementById('manualMileageWorkout'),
   manualMileageDistance:document.getElementById('manualMileageDistance'),
+  manualMileageTime:document.getElementById('manualMileageTime'),
   manualMileageSource:document.getElementById('manualMileageSource'),
   manualMileageSurface:document.getElementById('manualMileageSurface'),
   manualMileageNotes:document.getElementById('manualMileageNotes'),
@@ -1416,6 +1421,7 @@ function saveManualMileage(){
       groupName:manualMileageGroupName(),
       workoutType:els.manualMileageWorkout.value,
       distance:distance,
+      time:els.manualMileageTime.value,
       source:els.manualMileageSource.value,
       surface:els.manualMileageSurface.value,
       notes:els.manualMileageNotes.value,
@@ -1427,6 +1433,7 @@ function saveManualMileage(){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Mileage could not be saved.');
     setManualMileageStatus('Saved mileage for '+athletes.length+' athlete'+(athletes.length===1?'':'s')+'.', 'ok');
     els.manualMileageDistance.value='';
+    els.manualMileageTime.value='';
     els.manualMileageNotes.value='';
     loadDashboard();
   }).catch(function(error){
