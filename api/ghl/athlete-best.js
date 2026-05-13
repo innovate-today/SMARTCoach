@@ -1,7 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
-const { getGhlContext } = require("./account");
+const { getGhlContext } = require("../../lib/ghl-account");
 function bestField(key) {
   return key;
 }

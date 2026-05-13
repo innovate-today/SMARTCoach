@@ -1,7 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const MEET_SCHEMA_KEY = "custom_objects.meets";
-const { getGhlContext } = require("./account");
+const { getGhlContext } = require("../../lib/ghl-account");
 const FIELD_IDS = {
   meet: ["L6DjPWvVI13p6C1tgUz2"],
   meet_date: ["8dcV6Nl25E96qicqRWUg"],

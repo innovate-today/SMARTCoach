@@ -1,7 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
-const { getGhlContext } = require("./account");
+const { getGhlContext } = require("../../lib/ghl-account");
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
   source_record_id: ["9YD4n4y4aqf3VnkrwLL1"],

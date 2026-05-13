@@ -5,7 +5,7 @@ const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
-const { getGhlContext } = require("./account");
+const { getGhlContext } = require("../../lib/ghl-account");
 
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],

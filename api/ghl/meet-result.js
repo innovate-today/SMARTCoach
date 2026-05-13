@@ -6,7 +6,7 @@ const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
-const { getGhlContext } = require("./account");
+const { getGhlContext } = require("../../lib/ghl-account");
 
 module.exports = async function handler(req, res) {
   setCorsHeaders(res);
