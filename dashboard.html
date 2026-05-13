@@ -1665,7 +1665,7 @@ function trainingTargetSummaryHtml(summary){
 function trainingWorkoutDetailTable(rows){
   if(!rows.length)return '<div class="muted">No completed workouts.</div>';
   return '<table><thead><tr>'+
-    '<th>Group</th><th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Saved</th><th>Actions</th>'+
+    '<th>Group</th><th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Status</th><th>Saved</th><th>Actions</th>'+
     '</tr></thead><tbody>'+rows.map(function(row){
       return '<tr>'+
         '<td>'+mainLine(row.groupName||'')+'</td>'+
@@ -1674,6 +1674,7 @@ function trainingWorkoutDetailTable(rows){
         '<td>'+targetReviewHtml(row)+'</td>'+
         '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
         '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
+        '<td>'+correctionStatusHtml(row)+'</td>'+
         '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
         '<td>'+trainingActionButtons(row)+'</td>'+
       '</tr>';
@@ -1684,6 +1685,11 @@ function trainingActionButtons(row){
   if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
   var attrs=' data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'"';
   return '<button class="ghost" data-edit-training="1"'+attrs+' type="button">Edit</button> <button class="danger" data-void-training="1"'+attrs+' type="button">Void</button>';
+}
+
+function correctionStatusHtml(row){
+  if(!row.corrected)return '<span class="muted">Original</span>';
+  return '<span class="pill warn">Corrected</span>'+subLine([formatDate(row.correctionDate),row.correctionReason].filter(Boolean).join(' · '));
 }
 
 function recentTrainingHtml(row){

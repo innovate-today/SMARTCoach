@@ -282,6 +282,9 @@ function normalizePerformanceRecord(record) {
     plannedVolumeMiles: parseVolumeToMiles(plannedVolume),
     currentFitnessSnapshot: noteValue(coachNote, "Current fitness"),
     weather: noteValue(coachNote, "Weather"),
+    correctionDate: noteValue(coachNote, "Correction Date"),
+    correctionReason: noteValue(coachNote, "Correction Reason"),
+    corrected: !!noteValue(coachNote, "Correction Date"),
     syncedAt: recordTimestamp(record),
   };
 }
