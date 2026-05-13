@@ -273,6 +273,7 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="volume" data-sort="currentWeekVolume" type="button">This Week</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="previousWeekVolume" type="button">Previous Week</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="currentMonthVolume" type="button">This Month</button></th>
+            <th><button class="sortbtn" data-table="volume" data-sort="weeklyChange" type="button">Week Change</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Workouts</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="groups" type="button">Groups</button></th>
             <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Completed</button></th>
@@ -799,6 +800,7 @@ function volumeSortValue(row,key){
   if(key==='currentWeekVolume')return num(row.currentWeekVolumeMiles);
   if(key==='previousWeekVolume')return num(row.previousWeekVolumeMiles);
   if(key==='currentMonthVolume')return num(row.currentMonthVolumeMiles);
+  if(key==='weeklyChange')return num(row.currentWeekVolumeMiles)-num(row.previousWeekVolumeMiles);
   if(key==='syncs')return num(row.syncs);
   if(key==='groups')return row.groups.join(' ');
   return row[key];
@@ -1032,10 +1034,26 @@ function volumeRowHtml(row){
     '<td>'+mainLine(formatMiles(row.currentWeekVolumeMiles))+'</td>'+
     '<td>'+mainLine(formatMiles(row.previousWeekVolumeMiles))+'</td>'+
     '<td>'+mainLine(formatMiles(row.currentMonthVolumeMiles))+'</td>'+
+    '<td>'+volumeChangeHtml(row)+'</td>'+
     '<td><span class="pill">'+num(row.syncs)+'</span></td>'+
     '<td>'+mainLine(row.groups.join(', ')||'')+'</td>'+
     '<td>'+mainLine(row.lastDate?formatDateTime(row.lastDate):'')+'</td>'+
   '</tr>';
+}
+
+function volumeChangeHtml(row){
+  var current=num(row.currentWeekVolumeMiles);
+  var previous=num(row.previousWeekVolumeMiles);
+  var diff=Math.round((current-previous)*10)/10;
+  var label=(diff>0?'+':'')+formatMiles(diff);
+  var pct=previous?Math.round((diff/previous)*100):null;
+  var status='';
+  if(current===0&&previous>0)status='<span class="pill warn">No volume</span>';
+  else if(previous>0&&pct>=30)status='<span class="pill warn">Big jump</span>';
+  else if(previous>0&&pct<=-30)status='<span class="pill warn">Big drop</span>';
+  else if(diff!==0)status='<span class="pill good">Changed</span>';
+  else status='<span class="pill">Same</span>';
+  return mainLine(label)+subLine(pct===null?'No prior week':pct+'% vs previous')+status;
 }
 
 function volumeSummaryHtml(rows){
