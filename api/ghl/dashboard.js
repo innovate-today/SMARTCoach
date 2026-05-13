@@ -5,6 +5,7 @@ const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
+const { getGhlContext } = require("./account");
 
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
@@ -49,8 +50,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const token = process.env.GHL_PRIVATE_INTEGRATION_TOKEN;
-  const locationId = process.env.GHL_LOCATION_ID;
+  const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMARTCoach Pro dashboard is not configured on the server." });

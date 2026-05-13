@@ -4,6 +4,7 @@ const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
+const { getGhlContext } = require("./account");
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo", "lgSfedW35TT44Nxgl7tY"],
   athlete_name_snapshot: ["m20bSENWaEB4jBMtXgMD", "NxKoU2l9QohpmzRt2gin", "0lX15xSvQP77xhNH45q1", "OjTWebwJU389MGpccJ2b"],
@@ -42,8 +43,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const token = process.env.GHL_PRIVATE_INTEGRATION_TOKEN;
-  const locationId = process.env.GHL_LOCATION_ID;
+  const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "GHL athlete profile is not configured on the server." });

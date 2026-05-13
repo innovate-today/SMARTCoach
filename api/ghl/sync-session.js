@@ -5,6 +5,7 @@ const SEASON_RECORD_SCHEMA_KEY = "custom_objects.season_records";
 const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
+const { getGhlContext } = require("./account");
 
 module.exports = async function handler(req, res) {
   setCorsHeaders(res);
@@ -19,8 +20,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const token = process.env.GHL_PRIVATE_INTEGRATION_TOKEN;
-  const locationId = process.env.GHL_LOCATION_ID;
+  const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "GHL sync is not configured on the server." });

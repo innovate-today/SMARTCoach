@@ -1,6 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
+const { getGhlContext } = require("./account");
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
   source_record_id: ["9YD4n4y4aqf3VnkrwLL1"],
@@ -26,8 +27,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const token = process.env.GHL_PRIVATE_INTEGRATION_TOKEN;
-  const locationId = process.env.GHL_LOCATION_ID;
+  const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMARTCoach Pro corrections are not configured on the server." });

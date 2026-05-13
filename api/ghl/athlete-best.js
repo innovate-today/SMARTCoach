@@ -1,6 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
+const { getGhlContext } = require("./account");
 function bestField(key) {
   return key;
 }
@@ -18,8 +19,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const token = process.env.GHL_PRIVATE_INTEGRATION_TOKEN;
-  const locationId = process.env.GHL_LOCATION_ID;
+  const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "GHL athlete bests are not configured on the server." });
