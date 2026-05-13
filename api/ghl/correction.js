@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
 
     await ghlFetch({
       token,
-      path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(record.id)}`,
+      path: objectRecordPath(PERFORMANCE_RECORD_SCHEMA_KEY, record.id, locationId),
       method: "PUT",
       body: {
         locationId,
@@ -140,7 +140,7 @@ async function editPerformanceRecord({ token, locationId, contactId, athleteName
 
   await ghlFetch({
     token,
-    path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(record.id)}`,
+    path: objectRecordPath(PERFORMANCE_RECORD_SCHEMA_KEY, record.id, locationId),
     method: "PUT",
     body: {
       locationId,
@@ -296,10 +296,14 @@ function parseTimeToMs(value) {
 async function getObjectRecord({ token, locationId, schemaKey, recordId }) {
   const result = await ghlFetch({
     token,
-    path: `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`,
+    path: objectRecordPath(schemaKey, recordId, locationId),
     method: "GET",
   });
   return result.record || result;
+}
+
+function objectRecordPath(schemaKey, recordId, locationId) {
+  return `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`;
 }
 
 async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }) {
