@@ -78,7 +78,6 @@ module.exports = async function handler(req, res) {
       path: objectRecordPath(PERFORMANCE_RECORD_SCHEMA_KEY, record.id, locationId),
       method: "PUT",
       body: {
-        locationId,
         properties: {
           coach_note: nextNote,
         },
@@ -143,7 +142,6 @@ async function editPerformanceRecord({ token, locationId, contactId, athleteName
     path: objectRecordPath(PERFORMANCE_RECORD_SCHEMA_KEY, record.id, locationId),
     method: "PUT",
     body: {
-      locationId,
       properties: {
         session_date: nextValues.sessionDate,
         workout_type: workoutTypeValue(nextValues.workoutType),
