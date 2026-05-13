@@ -48,9 +48,9 @@ module.exports = async function handler(req, res) {
     if (!contactId) throw httpError(400, "Missing athlete contact.");
     if (!recordId && !sourceRecordId) throw httpError(400, "Missing performance record.");
 
-    const record = sourceRecordId
-      ? await findObjectRecord({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, sourceRecordId })
-      : await getObjectRecord({ token, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, recordId });
+    const record = recordId
+      ? await getObjectRecord({ token, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, recordId })
+      : await findObjectRecord({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, sourceRecordId });
 
     if (!record || !record.id) throw httpError(404, "Performance record was not found.");
 
@@ -277,6 +277,11 @@ function noteValue(note, label) {
 
 function parseTimeToMs(value) {
   const text = clean(value).toLowerCase().replace(/s$/, "");
+  const wordMatch = text.match(/(?:(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|hr|h))?\s*(?:(\d+(?:\.\d+)?)\s*(?:minutes?|mins?|min|m))?\s*(?:(\d+(?:\.\d+)?)\s*(?:seconds?|secs?|sec|s))?/);
+  if (wordMatch && (wordMatch[1] || wordMatch[2] || wordMatch[3])) {
+    const seconds = (Number(wordMatch[1]) || 0) * 3600 + (Number(wordMatch[2]) || 0) * 60 + (Number(wordMatch[3]) || 0);
+    return seconds > 0 ? Math.round(seconds * 1000) : null;
+  }
   const parts = text.split(":").map((part) => part.trim());
   if (!parts.length || parts.length > 3) return null;
   if (parts.some((part) => part === "" || Number.isNaN(Number(part)))) return null;
@@ -298,24 +303,33 @@ async function getObjectRecord({ token, schemaKey, recordId }) {
 }
 
 async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }) {
-  const result = await ghlFetch({
-    token,
-    path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
-    method: "POST",
-    body: {
-      locationId,
-      page: 1,
-      pageLimit: 1,
-      filters: [
-        {
-          field: "source_record_id",
-          operator: "eq",
-          value: sourceRecordId,
+  const fields = ["9YD4n4y4aqf3VnkrwLL1", "custom_objects.performance_records.source_record_id", "source_record_id"];
+  for (const field of fields) {
+    try {
+      const result = await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
+        method: "POST",
+        body: {
+          locationId,
+          page: 1,
+          pageLimit: 1,
+          filters: [
+            {
+              field,
+              operator: "eq",
+              value: sourceRecordId,
+            },
+          ],
         },
-      ],
-    },
-  });
-  return firstRecord(result);
+      });
+      const record = firstRecord(result);
+      if (record) return record;
+    } catch (error) {
+      if (error.statusCode && error.statusCode >= 500) throw error;
+    }
+  }
+  return null;
 }
 
 async function ghlFetch({ token, path, method, body }) {

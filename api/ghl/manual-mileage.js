@@ -99,6 +99,11 @@ function manualWorkoutType(value) {
 
 function parseTimeToMs(value) {
   const text = clean(value).toLowerCase().replace(/s$/, "");
+  const wordMatch = text.match(/(?:(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|hr|h))?\s*(?:(\d+(?:\.\d+)?)\s*(?:minutes?|mins?|min|m))?\s*(?:(\d+(?:\.\d+)?)\s*(?:seconds?|secs?|sec|s))?/);
+  if (wordMatch && (wordMatch[1] || wordMatch[2] || wordMatch[3])) {
+    const seconds = (Number(wordMatch[1]) || 0) * 3600 + (Number(wordMatch[2]) || 0) * 60 + (Number(wordMatch[3]) || 0);
+    return seconds > 0 ? Math.round(seconds * 1000) : null;
+  }
   const parts = text.split(":").map((part) => part.trim());
   if (!parts.length || parts.length > 3) return null;
   if (parts.some((part) => part === "" || Number.isNaN(Number(part)))) return null;
