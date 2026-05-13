@@ -75,7 +75,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   <div class="top">
     <div class="brand"><div class="mark">SC</div><span>SMARTCoach Pro</span></div>
     <div class="top-actions">
-      <div class="account-control"><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button><span id="appVersion" style="font-size:12px;color:#6b7280"></span></div>
+      <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button><span id="appVersion" style="font-size:12px;color:#6b7280"></span></div>
       <a class="linkbtn" href="/dashboard.html">Dashboard</a>
     </div>
   </div>
@@ -135,6 +135,20 @@ function setSmartCoachAccountKey(value){
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
 }
+function adminToolsVisible(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    if(params.get('admin')==='1'){localStorage.setItem('sc_admin_tools','1');return true;}
+    if(params.get('admin')==='0'){localStorage.removeItem('sc_admin_tools');return false;}
+    return localStorage.getItem('sc_admin_tools')==='1';
+  }catch(e){
+    return false;
+  }
+}
+function applyAdminTools(){
+  var show=adminToolsVisible();
+  document.querySelectorAll('.admin-only').forEach(function(el){el.hidden=!show;});
+}
 function saveAccountSettings(){
   var input=document.getElementById('accountKey');
   var key=setSmartCoachAccountKey(input&&input.value);
@@ -173,6 +187,7 @@ function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){retu
 function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+day;}
 function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}
 function loadBuilder(){
+  applyAdminTools();
   var accountInput=document.getElementById('accountKey');
   if(accountInput)accountInput.value=smartCoachAccountKey();
   var version=document.getElementById('appVersion');

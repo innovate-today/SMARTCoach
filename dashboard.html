@@ -169,7 +169,7 @@ tr:last-child td{border-bottom:0}
     <div class="actions">
       <a class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
-      <button id="accountBtn" class="secondary" type="button">Account</button>
+      <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
       <button id="refreshBtn" type="button">Refresh</button>
     </div>
   </section>
@@ -561,6 +561,20 @@ function setSmartCoachAccountKey(value){
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
 }
+function adminToolsVisible(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    if(params.get('admin')==='1'){localStorage.setItem('sc_admin_tools','1');return true;}
+    if(params.get('admin')==='0'){localStorage.removeItem('sc_admin_tools');return false;}
+    return localStorage.getItem('sc_admin_tools')==='1';
+  }catch(e){
+    return false;
+  }
+}
+function applyAdminTools(){
+  var show=adminToolsVisible();
+  document.querySelectorAll('.admin-only').forEach(function(el){el.hidden=!show;});
+}
 (function(){
   var nativeFetch=window.fetch.bind(window);
   window.fetch=function(input,init){
@@ -773,6 +787,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.sortbtn'),function(butt
     renderRows();
   });
 });
+applyAdminTools();
 restoreView();
 loadDashboard();
 
