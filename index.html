@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="app-version" content="1777173146407"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
@@ -341,6 +342,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div id="account-status" style="font-size:12px;color:#555;text-align:center;padding:8px 0 0;min-height:18px"></div>
     </div>
     <button class="mbtn" onclick="saveAccountSettings()">Save Account</button>
+    <button class="mbtn c" onclick="refreshAppVersion()" style="margin-top:8px">Refresh App</button>
     <button class="mbtn c" onclick="hm('m-account')" style="margin-top:8px">Close</button>
   </div>
 </div>
@@ -390,6 +392,11 @@ function saveAccountSettings(){
   }).catch(function(error){
     if(status){status.textContent='Account set to '+key+', but not connected: '+error.message;status.style.color='#c00';}
   });
+}
+function refreshAppVersion(){
+  var url=new URL(window.location.href);
+  url.searchParams.set('v',Date.now());
+  window.location.replace(url.toString());
 }
 function checkSmartCoachAccount(){
   return fetch('/api/smart-trak/account-status',{cache:'no-store'}).then(function(r){

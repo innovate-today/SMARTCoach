@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-store">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SMARTCoach Pro Plan Builder</title>
 <style>
@@ -73,7 +74,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   <div class="top">
     <div class="brand"><div class="mark">SC</div><span>SMARTCoach Pro</span></div>
     <div class="top-actions">
-      <div class="account-control"><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button></div>
+      <div class="account-control"><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button></div>
       <a class="linkbtn" href="/dashboard.html">Dashboard</a>
     </div>
   </div>
@@ -143,6 +144,11 @@ function saveAccountSettings(){
   }).catch(function(error){
     setStatus('Account set to '+key+', but not connected: '+error.message,'bad');
   });
+}
+function refreshAppVersion(){
+  var url=new URL(window.location.href);
+  url.searchParams.set('v',Date.now());
+  window.location.replace(url.toString());
 }
 function checkSmartCoachAccount(){
   return fetch('/api/smart-trak/account-status',{cache:'no-store'}).then(function(r){

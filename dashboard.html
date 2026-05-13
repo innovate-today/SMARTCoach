@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SMARTCoach Pro Dashboard</title>
 <style>
@@ -518,6 +519,7 @@ tr:last-child td{border-bottom:0}
       <div class="small" style="margin-top:8px">Use <b>default</b> for the current SMARTCoach Pro account.</div>
       <div class="modalactions">
         <div id="accountStatus" class="modalstatus"></div>
+        <button class="ghost" id="accountRefresh" type="button">Refresh App</button>
         <button id="accountSave" type="button">Save Account</button>
       </div>
     </div>
@@ -600,6 +602,7 @@ var els={
   accountClose:document.getElementById('accountClose'),
   accountKey:document.getElementById('accountKey'),
   accountStatus:document.getElementById('accountStatus'),
+  accountRefresh:document.getElementById('accountRefresh'),
   accountSave:document.getElementById('accountSave'),
   manualMileageModal:document.getElementById('manualMileageModal'),
   manualMileageClose:document.getElementById('manualMileageClose'),
@@ -733,6 +736,7 @@ els.athleteModalClose.addEventListener('click',closeAthleteDetail);
 els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
+els.accountRefresh.addEventListener('click',refreshAppVersion);
 els.accountSave.addEventListener('click',saveAccountSettings);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
 els.manualMileageScope.addEventListener('change',updateManualMileageScope);
@@ -840,6 +844,12 @@ function saveAccountSettings(){
     els.accountStatus.textContent='Account set to '+key+', but not connected: '+(error.message||'Account is not configured.');
     els.accountStatus.style.color='#b00000';
   });
+}
+
+function refreshAppVersion(){
+  var url=new URL(window.location.href);
+  url.searchParams.set('v',Date.now());
+  window.location.replace(url.toString());
 }
 
 function checkSmartCoachAccount(){
