@@ -132,6 +132,10 @@ tr:last-child td{border-bottom:0}
 .detaillist{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:10px}
 .detailitem{padding:11px 12px;border-bottom:1px solid var(--line)}
 .detailitem:last-child{border-bottom:0}
+.plan-essential .pro-page-only{display:none!important}
+.essential-message{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
+.essential-message h1{font-size:24px;margin-bottom:8px}
+.essential-message p{color:var(--muted);line-height:1.45}
 @media(max-width:760px){
   .page{padding:14px 10px 24px}
   .top{align-items:flex-start;flex-direction:column}
@@ -157,7 +161,7 @@ tr:last-child td{border-bottom:0}
 </style>
 </head>
 <body>
-<main class="page">
+<main class="page pro-page-only">
   <section class="top">
     <div class="brand">
       <div class="mark">SC</div>
@@ -354,6 +358,10 @@ tr:last-child td{border-bottom:0}
     </section>
   </section>
 </main>
+<section id="essentialMessage" class="essential-message" hidden>
+  <h1>SMARTCoach Essential</h1>
+  <p>The dashboard is included with SMARTCoach Pro. Essential accounts keep the stopwatch clean and focused.</p>
+</section>
 <div id="athleteModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="athleteModalTitle">
     <div class="modalhead">
@@ -518,6 +526,13 @@ tr:last-child td{border-bottom:0}
         <label for="accountKey">Account</label>
         <input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
       </div>
+      <div class="field" style="margin-top:10px">
+        <label for="productPlan">Product</label>
+        <select id="productPlan">
+          <option value="pro">SMARTCoach Pro</option>
+          <option value="essential">SMARTCoach Essential</option>
+        </select>
+      </div>
       <div class="small" style="margin-top:8px">Use <b>default</b> for the current SMARTCoach Pro account.</div>
       <div id="appVersion" class="small" style="margin-top:6px;text-align:center"></div>
       <div class="modalactions">
@@ -561,6 +576,31 @@ function setSmartCoachAccountKey(value){
   var key=cleanAccountKey(value);
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
+}
+function productPlan(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    var fromUrl=(params.get('plan')||params.get('product')||'').trim();
+    if(fromUrl)return setProductPlan(fromUrl);
+    return localStorage.getItem('sc_plan')||'pro';
+  }catch(e){
+    return 'pro';
+  }
+}
+function setProductPlan(value){
+  var plan=String(value||'').trim().toLowerCase();
+  plan=plan==='essential'?'essential':'pro';
+  try{localStorage.setItem('sc_plan',plan);}catch(e){}
+  return plan;
+}
+function isProPlan(){
+  return productPlan()!=='essential';
+}
+function applyPlanMode(){
+  var pro=isProPlan();
+  document.body.classList.toggle('plan-essential',!pro);
+  var message=document.getElementById('essentialMessage');
+  if(message)message.hidden=pro;
 }
 function adminToolsVisible(){
   try{
@@ -622,6 +662,7 @@ var els={
   accountModal:document.getElementById('accountModal'),
   accountClose:document.getElementById('accountClose'),
   accountKey:document.getElementById('accountKey'),
+  productPlan:document.getElementById('productPlan'),
   appVersion:document.getElementById('appVersion'),
   accountStatus:document.getElementById('accountStatus'),
   accountRefresh:document.getElementById('accountRefresh'),
@@ -792,11 +833,17 @@ Array.prototype.forEach.call(document.querySelectorAll('.sortbtn'),function(butt
     renderRows();
   });
 });
+applyPlanMode();
 applyAdminTools();
 restoreView();
 loadDashboard();
 
 function loadDashboard(){
+  applyPlanMode();
+  if(!isProPlan()){
+    if(els.refreshBtn)els.refreshBtn.disabled=false;
+    return Promise.resolve();
+  }
   els.status.textContent='Loading dashboard...';
   els.lastUpdated.textContent='Updating...';
   els.refreshBtn.disabled=true;
@@ -842,6 +889,7 @@ function loadDashboard(){
 
 function openAccountSettings(){
   els.accountKey.value=smartCoachAccountKey();
+  if(els.productPlan)els.productPlan.value=productPlan();
   els.appVersion.textContent='App version '+appVersion();
   els.accountStatus.textContent='';
   els.accountStatus.style.color='';
@@ -859,16 +907,18 @@ function closeAccountSettings(){
 
 function saveAccountSettings(){
   var key=setSmartCoachAccountKey(els.accountKey.value);
+  var plan=setProductPlan(els.productPlan&&els.productPlan.value);
   els.accountKey.value=key;
+  applyPlanMode();
   els.accountStatus.textContent='Checking '+key+'...';
   els.accountStatus.style.color='';
   checkSmartCoachAccount().then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
-    els.accountStatus.textContent='Account set to '+key+' and connected. Refreshing dashboard...';
+    els.accountStatus.textContent='Account set to '+key+' and '+(plan==='essential'?'SMARTCoach Essential':'SMARTCoach Pro')+' is active.';
     els.accountStatus.style.color='#08783c';
-    return loadDashboard();
+    return isProPlan()?loadDashboard():Promise.resolve();
   }).then(function(){
-    els.accountStatus.textContent='Account set to '+key+' and connected.';
+    if(isProPlan())els.accountStatus.textContent='Account set to '+key+' and SMARTCoach Pro is active.';
   }).catch(function(error){
     els.accountStatus.textContent='Account set to '+key+', but not connected: '+(error.message||'Account is not configured.');
     els.accountStatus.style.color='#b00000';

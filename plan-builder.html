@@ -68,11 +68,15 @@ select[multiple]{min-height:112px}
 button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer}
 .primary{background:var(--blue);color:#fff}
 .secondary{background:#e5e7eb;color:#111827}
+.plan-essential .pro-page-only{display:none!important}
+.essential-message{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center}
+.essential-message h1{font-size:24px;margin-bottom:8px}
+.essential-message p{color:var(--muted);line-height:1.45}
 @media(max-width:760px){.wrap{padding:12px}.top{display:block}.top-actions{margin-top:10px;align-items:stretch;flex-direction:column}.account-control{align-items:stretch}.account-control input{width:100%}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions,.assignment-head{align-items:stretch;flex-direction:column}.fitness-status,.assignment-status{text-align:left}.assignment-grid,.assignment-athletes{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap pro-page-only">
   <div class="top">
     <div class="brand"><div class="mark">SC</div><span>SMARTCoach Pro</span></div>
     <div class="top-actions">
@@ -112,6 +116,10 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     </div>
   </div>
 </div>
+<section id="essentialMessage" class="essential-message" hidden>
+  <h1>SMARTCoach Essential</h1>
+  <p>The plan builder is included with SMARTCoach Pro. Essential accounts keep the stopwatch clean and focused.</p>
+</section>
 <script>
 var questionnaire=null,athletes=[],meets=[],plans=[];
 var fitnessEvents=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
@@ -135,6 +143,31 @@ function setSmartCoachAccountKey(value){
   var key=cleanAccountKey(value);
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
+}
+function productPlan(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    var fromUrl=(params.get('plan')||params.get('product')||'').trim();
+    if(fromUrl)return setProductPlan(fromUrl);
+    return localStorage.getItem('sc_plan')||'pro';
+  }catch(e){
+    return 'pro';
+  }
+}
+function setProductPlan(value){
+  var plan=String(value||'').trim().toLowerCase();
+  plan=plan==='essential'?'essential':'pro';
+  try{localStorage.setItem('sc_plan',plan);}catch(e){}
+  return plan;
+}
+function isProPlan(){
+  return productPlan()!=='essential';
+}
+function applyPlanMode(){
+  var pro=isProPlan();
+  document.body.classList.toggle('plan-essential',!pro);
+  var message=document.getElementById('essentialMessage');
+  if(message)message.hidden=pro;
 }
 function adminToolsVisible(){
   try{
@@ -192,6 +225,8 @@ function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){retu
 function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+day;}
 function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}
 function loadBuilder(){
+  applyPlanMode();
+  if(!isProPlan())return;
   applyAdminTools();
   var accountInput=document.getElementById('accountKey');
   if(accountInput)accountInput.value=smartCoachAccountKey();

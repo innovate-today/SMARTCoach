@@ -177,7 +177,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="tbar">
     <button class="tbtn pro-only" onclick="openSeasonPlan(false)"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Plan</span></button>
     <button class="tbtn" onclick="addGroupForView()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
-    <button class="tbtn pro-only admin-only" hidden onclick="openAccountSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Account</span></button>
+    <button class="tbtn admin-only" hidden onclick="openAccountSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Account</span></button>
     <button class="tbtn" onclick="delGroup()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
   </div>
 </div>
@@ -333,12 +333,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <!-- ACCOUNT MODAL -->
-<div class="mover h pro-only" id="m-account">
+<div class="mover h" id="m-account">
   <div class="msh">
     <div class="mhd"></div>
     <div class="mttl">SMARTCoach Account</div>
     <div style="padding:0 4px 4px">
       <div class="srow"><label class="slbl">Account</label><input id="account-key" class="sinp" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
+      <div class="srow"><label class="slbl">Product</label><input id="product-plan" type="hidden" value="pro"/><button type="button" id="product-plan-display" class="sinp picker-control" onclick="openProductPlanPicker()">SMARTCoach Pro</button></div>
       <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use <b>default</b> for the current SMARTCoach Pro account. Future customer accounts will use their own account key.</div>
       <div id="app-version" style="font-size:11px;color:#777;text-align:center;padding:7px 0 0;min-height:16px"></div>
       <div id="account-status" style="font-size:12px;color:#555;text-align:center;padding:8px 0 0;min-height:18px"></div>
@@ -392,9 +393,13 @@ function applyAdminTools(){
 }
 function openAccountSettings(){
   var input=document.getElementById('account-key');
+  var planInput=document.getElementById('product-plan');
+  var planDisplay=document.getElementById('product-plan-display');
   var status=document.getElementById('account-status');
   var version=document.getElementById('app-version');
   if(input)input.value=smartCoachAccountKey();
+  if(planInput)planInput.value=productPlan();
+  if(planDisplay)planDisplay.textContent=productPlanLabel(productPlan());
   if(status){status.textContent='';status.style.color='#555';}
   if(version)version.textContent='App version '+appVersion();
   sm('m-account');
@@ -405,13 +410,23 @@ function appVersion(){
 }
 function saveAccountSettings(){
   var input=document.getElementById('account-key');
+  var planInput=document.getElementById('product-plan');
   var status=document.getElementById('account-status');
   var key=setSmartCoachAccountKey(input&&input.value);
+  var plan=setProductPlan(planInput&&planInput.value);
   if(input)input.value=key;
+  applyPlanMode();
+  if(plan==='essential'){
+    if(status){status.textContent='SMARTCoach Essential is active.';status.style.color='#0a7a44';}
+    loadAthletes();
+    loadTrainingPlans();
+    loadMeets();
+    return;
+  }
   if(status){status.textContent='Checking '+key+'...';status.style.color='#555';status.style.fontWeight='700';}
   checkSmartCoachAccount().then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
-    if(status){status.textContent='Account set to '+key+' and connected.';status.style.color='#0a7a44';}
+    if(status){status.textContent='Account set to '+key+' and '+productPlanLabel(plan)+' is active.';status.style.color='#0a7a44';}
     loadAthletes();
     loadTrainingPlans();
     loadMeets();
@@ -444,7 +459,23 @@ function checkSmartCoachAccount(){
 })();
 
 function productPlan(){
-  return localStorage.getItem('sc_plan')||'pro';
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    var fromUrl=(params.get('plan')||params.get('product')||'').trim();
+    if(fromUrl)return setProductPlan(fromUrl);
+    return localStorage.getItem('sc_plan')||'pro';
+  }catch(e){
+    return 'pro';
+  }
+}
+function setProductPlan(value){
+  var plan=String(value||'').trim().toLowerCase();
+  plan=plan==='essential'?'essential':'pro';
+  try{localStorage.setItem('sc_plan',plan);}catch(e){}
+  return plan;
+}
+function productPlanLabel(plan){
+  return plan==='essential'?'SMARTCoach Essential':'SMARTCoach Pro';
 }
 function isProPlan(){
   return productPlan()!=='essential';
@@ -784,6 +815,22 @@ function choosePicker(index){
   if(item&&cb)cb(item,index);
 }
 function closePicker(){hm('m-picker');PICK=null;}
+function openProductPlanPicker(){
+  var current=productPlan();
+  openPicker('Select Product',[
+    {label:'SMARTCoach Pro',sub:'Stopwatch, CRM sync, dashboard, plans, profiles',value:'pro',selected:current==='pro'},
+    {label:'SMARTCoach Essential',sub:'Stopwatch only',value:'essential',selected:current==='essential'}
+  ],function(item){
+    var plan=setProductPlan(item.value);
+    var input=document.getElementById('product-plan');
+    var display=document.getElementById('product-plan-display');
+    if(input)input.value=plan;
+    if(display)display.textContent=productPlanLabel(plan);
+    applyPlanMode();
+    rl();
+    if(CL)rr();
+  });
+}
 
 function setGroupView(view){
   GV=view;
