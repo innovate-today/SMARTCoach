@@ -594,6 +594,7 @@ function productPlan(){
   }
 }
 function productPlanOverride(){
+  if(!adminToolsVisible())return '';
   var params=new URLSearchParams(window.location.search||'');
   return (params.get('plan')||params.get('product')||'').trim();
 }
@@ -632,7 +633,7 @@ function syncProductPlanFromAccount(){
 }
 function smartCoachPageUrl(path,planOverride){
   var url=new URL(path,window.location.origin);
-  url.searchParams.set('plan',planOverride||productPlan());
+  if(adminToolsVisible()||planOverride)url.searchParams.set('plan',planOverride||productPlan());
   var account=smartCoachAccountKey();
   if(account&&account!=='default')url.searchParams.set('account',account);
   if(adminToolsVisible())url.searchParams.set('admin','1');
