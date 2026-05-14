@@ -10,7 +10,7 @@ const handlers = {
   "sync-session": require("../ghl/sync-session"),
   "training-plan": require("../ghl/training-plan"),
 };
-const { getGhlContext } = require("../../lib/ghl-account");
+const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 
 module.exports = async function handler(req, res) {
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
@@ -25,14 +25,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { productPlan } = getGhlContext(req);
-  if (productPlan === "essential") {
-    res.status(403).json({
-      error: "SMARTCoach Pro is required for this feature.",
-      productPlan,
-    });
-    return;
-  }
+  if (!requireProPlan(req, res)) return;
 
   return selected(req, res);
 };

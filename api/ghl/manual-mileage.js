@@ -1,9 +1,12 @@
 const syncSession = require("./sync-session");
+const { requireProPlan } = require("../../lib/ghl-account");
 
 module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") {
     return syncSession(req, res);
   }
+
+  if (!requireProPlan(req, res)) return;
 
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });

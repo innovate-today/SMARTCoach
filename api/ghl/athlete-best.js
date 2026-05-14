@@ -1,7 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
-const { getGhlContext } = require("../../lib/ghl-account");
+const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 function bestField(key) {
   return key;
 }
@@ -13,6 +13,8 @@ module.exports = async function handler(req, res) {
     res.status(204).end();
     return;
   }
+
+  if (!requireProPlan(req, res)) return;
 
   if (req.method !== "GET" && req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });

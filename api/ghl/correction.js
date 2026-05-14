@@ -1,7 +1,7 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
-const { getGhlContext } = require("../../lib/ghl-account");
+const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
   source_record_id: ["9YD4n4y4aqf3VnkrwLL1"],
@@ -21,6 +21,8 @@ module.exports = async function handler(req, res) {
     res.status(204).end();
     return;
   }
+
+  if (!requireProPlan(req, res)) return;
 
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });

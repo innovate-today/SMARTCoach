@@ -2,7 +2,7 @@ const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
-const { getGhlContext } = require("../../lib/ghl-account");
+const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 
 module.exports = async function handler(req, res) {
   setCorsHeaders(res);
@@ -11,6 +11,8 @@ module.exports = async function handler(req, res) {
     res.status(204).end();
     return;
   }
+
+  if (!requireProPlan(req, res)) return;
 
   const { token, locationId } = getGhlContext(req);
 

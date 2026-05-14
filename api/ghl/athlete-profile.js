@@ -4,7 +4,7 @@ const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
-const { getGhlContext } = require("../../lib/ghl-account");
+const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo", "lgSfedW35TT44Nxgl7tY"],
   athlete_name_snapshot: ["m20bSENWaEB4jBMtXgMD", "NxKoU2l9QohpmzRt2gin", "0lX15xSvQP77xhNH45q1", "OjTWebwJU389MGpccJ2b"],
@@ -37,6 +37,8 @@ module.exports = async function handler(req, res) {
     res.status(204).end();
     return;
   }
+
+  if (!requireProPlan(req, res)) return;
 
   if (req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
