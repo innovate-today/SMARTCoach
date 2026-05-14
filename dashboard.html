@@ -172,7 +172,7 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
     <div class="actions">
-      <a class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
       <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
       <button id="refreshBtn" type="button">Refresh</button>
@@ -602,6 +602,18 @@ function applyPlanMode(){
   var message=document.getElementById('essentialMessage');
   if(message)message.hidden=pro;
 }
+function smartCoachPageUrl(path){
+  var url=new URL(path,window.location.origin);
+  url.searchParams.set('plan',productPlan());
+  var account=smartCoachAccountKey();
+  if(account&&account!=='default')url.searchParams.set('account',account);
+  if(adminToolsVisible())url.searchParams.set('admin','1');
+  return url.pathname+url.search;
+}
+function applySmartCoachLinks(){
+  var planBuilder=document.getElementById('planBuilderLink');
+  if(planBuilder)planBuilder.href=smartCoachPageUrl('/plan-builder.html');
+}
 function adminToolsVisible(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -619,6 +631,7 @@ function adminToolsVisible(){
 function applyAdminTools(){
   var show=adminToolsVisible();
   document.querySelectorAll('.admin-only').forEach(function(el){el.hidden=!show;});
+  applySmartCoachLinks();
 }
 (function(){
   var nativeFetch=window.fetch.bind(window);
@@ -840,6 +853,7 @@ loadDashboard();
 
 function loadDashboard(){
   applyPlanMode();
+  applySmartCoachLinks();
   if(!isProPlan()){
     if(els.refreshBtn)els.refreshBtn.disabled=false;
     return Promise.resolve();
@@ -910,6 +924,7 @@ function saveAccountSettings(){
   var plan=setProductPlan(els.productPlan&&els.productPlan.value);
   els.accountKey.value=key;
   applyPlanMode();
+  applySmartCoachLinks();
   els.accountStatus.textContent='Checking '+key+'...';
   els.accountStatus.style.color='';
   checkSmartCoachAccount().then(function(result){

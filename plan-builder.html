@@ -81,7 +81,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     <div class="brand"><div class="mark">SC</div><span>SMARTCoach Pro</span></div>
     <div class="top-actions">
       <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button><span id="appVersion" style="font-size:12px;color:#6b7280"></span></div>
-      <a class="linkbtn" href="/dashboard.html">Dashboard</a>
+      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
     </div>
   </div>
   <div class="panel">
@@ -169,6 +169,18 @@ function applyPlanMode(){
   var message=document.getElementById('essentialMessage');
   if(message)message.hidden=pro;
 }
+function smartCoachPageUrl(path){
+  var url=new URL(path,window.location.origin);
+  url.searchParams.set('plan',productPlan());
+  var account=smartCoachAccountKey();
+  if(account&&account!=='default')url.searchParams.set('account',account);
+  if(adminToolsVisible())url.searchParams.set('admin','1');
+  return url.pathname+url.search;
+}
+function applySmartCoachLinks(){
+  var dashboard=document.getElementById('dashboardLink');
+  if(dashboard)dashboard.href=smartCoachPageUrl('/dashboard.html');
+}
 function adminToolsVisible(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -186,6 +198,7 @@ function adminToolsVisible(){
 function applyAdminTools(){
   var show=adminToolsVisible();
   document.querySelectorAll('.admin-only').forEach(function(el){el.hidden=!show;});
+  applySmartCoachLinks();
 }
 function saveAccountSettings(){
   var input=document.getElementById('accountKey');
@@ -226,6 +239,7 @@ function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),da
 function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}
 function loadBuilder(){
   applyPlanMode();
+  applySmartCoachLinks();
   if(!isProPlan())return;
   applyAdminTools();
   var accountInput=document.getElementById('accountKey');
