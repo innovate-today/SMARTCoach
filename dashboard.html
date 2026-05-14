@@ -136,6 +136,7 @@ tr:last-child td{border-bottom:0}
 .essential-message{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
 .essential-message h1{font-size:24px;margin-bottom:8px}
 .essential-message p{color:var(--muted);line-height:1.45}
+.essential-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
 .admin-mode-badge{position:fixed;right:14px;bottom:14px;z-index:30;background:#111827;color:#fff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;box-shadow:0 10px 24px rgba(15,23,42,.18)}
 @media(max-width:760px){
   .page{padding:14px 10px 24px}
@@ -363,6 +364,10 @@ tr:last-child td{border-bottom:0}
 <section id="essentialMessage" class="essential-message" hidden>
   <h1>SMARTCoach Essential</h1>
   <p>The dashboard is included with SMARTCoach Pro. Essential accounts keep the stopwatch clean and focused.</p>
+  <div class="essential-actions">
+    <a id="essentialStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
+    <a id="essentialProLink" class="linkbtn secondary" href="/dashboard.html?plan=pro">Switch to Pro</a>
+  </div>
 </section>
 <div id="athleteModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="athleteModalTitle">
@@ -609,9 +614,9 @@ function applyPlanMode(){
   var badge=document.getElementById('productModeBadge');
   if(badge)badge.textContent=productPlanLabel(productPlan());
 }
-function smartCoachPageUrl(path){
+function smartCoachPageUrl(path,planOverride){
   var url=new URL(path,window.location.origin);
-  url.searchParams.set('plan',productPlan());
+  url.searchParams.set('plan',planOverride||productPlan());
   var account=smartCoachAccountKey();
   if(account&&account!=='default')url.searchParams.set('account',account);
   if(adminToolsVisible())url.searchParams.set('admin','1');
@@ -620,6 +625,10 @@ function smartCoachPageUrl(path){
 function applySmartCoachLinks(){
   var planBuilder=document.getElementById('planBuilderLink');
   if(planBuilder)planBuilder.href=smartCoachPageUrl('/plan-builder.html');
+  var stopwatch=document.getElementById('essentialStopwatchLink');
+  if(stopwatch)stopwatch.href=smartCoachPageUrl('/');
+  var pro=document.getElementById('essentialProLink');
+  if(pro)pro.href=smartCoachPageUrl('/dashboard.html','pro');
 }
 function adminToolsVisible(){
   try{

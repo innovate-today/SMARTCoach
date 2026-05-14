@@ -72,6 +72,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 .essential-message{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center}
 .essential-message h1{font-size:24px;margin-bottom:8px}
 .essential-message p{color:var(--muted);line-height:1.45}
+.essential-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
 .admin-mode-badge{position:fixed;right:14px;bottom:14px;z-index:30;background:#111827;color:#fff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;box-shadow:0 10px 24px rgba(15,23,42,.18)}
 @media(max-width:760px){.wrap{padding:12px}.top{display:block}.top-actions{margin-top:10px;align-items:stretch;flex-direction:column}.account-control{align-items:stretch}.account-control input{width:100%}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions,.assignment-head{align-items:stretch;flex-direction:column}.fitness-status,.assignment-status{text-align:left}.assignment-grid,.assignment-athletes{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
 </style>
@@ -121,6 +122,10 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 <section id="essentialMessage" class="essential-message" hidden>
   <h1>SMARTCoach Essential</h1>
   <p>The plan builder is included with SMARTCoach Pro. Essential accounts keep the stopwatch clean and focused.</p>
+  <div class="essential-actions">
+    <a id="essentialStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
+    <a id="essentialProLink" class="linkbtn" href="/plan-builder.html?plan=pro">Switch to Pro</a>
+  </div>
 </section>
 <script>
 var questionnaire=null,athletes=[],meets=[],plans=[];
@@ -176,9 +181,9 @@ function applyPlanMode(){
   var badge=document.getElementById('productModeBadge');
   if(badge)badge.textContent=productPlanLabel(productPlan());
 }
-function smartCoachPageUrl(path){
+function smartCoachPageUrl(path,planOverride){
   var url=new URL(path,window.location.origin);
-  url.searchParams.set('plan',productPlan());
+  url.searchParams.set('plan',planOverride||productPlan());
   var account=smartCoachAccountKey();
   if(account&&account!=='default')url.searchParams.set('account',account);
   if(adminToolsVisible())url.searchParams.set('admin','1');
@@ -187,6 +192,10 @@ function smartCoachPageUrl(path){
 function applySmartCoachLinks(){
   var dashboard=document.getElementById('dashboardLink');
   if(dashboard)dashboard.href=smartCoachPageUrl('/dashboard.html');
+  var stopwatch=document.getElementById('essentialStopwatchLink');
+  if(stopwatch)stopwatch.href=smartCoachPageUrl('/');
+  var pro=document.getElementById('essentialProLink');
+  if(pro)pro.href=smartCoachPageUrl('/plan-builder.html','pro');
 }
 function adminToolsVisible(){
   try{
