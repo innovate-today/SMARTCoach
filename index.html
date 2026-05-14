@@ -376,7 +376,11 @@ function adminToolsVisible(){
   try{
     var params=new URLSearchParams(window.location.search||'');
     if(params.get('admin')==='1'){localStorage.setItem('sc_admin_tools','1');return true;}
-    if(params.get('admin')==='0'){localStorage.removeItem('sc_admin_tools');return false;}
+    if(params.get('admin')==='0'){
+      localStorage.removeItem('sc_admin_tools');
+      localStorage.setItem('sc_account','default');
+      return false;
+    }
     return localStorage.getItem('sc_admin_tools')==='1';
   }catch(e){
     return false;
