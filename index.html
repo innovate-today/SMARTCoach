@@ -418,18 +418,14 @@ function saveAccountSettings(){
   applyPlanMode();
   if(plan==='essential'){
     if(status){status.textContent='SMARTCoach Essential is active.';status.style.color='#0a7a44';}
-    loadAthletes();
-    loadTrainingPlans();
-    loadMeets();
+    loadProData();
     return;
   }
   if(status){status.textContent='Checking '+key+'...';status.style.color='#555';status.style.fontWeight='700';}
   checkSmartCoachAccount().then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
     if(status){status.textContent='Account set to '+key+' and '+productPlanLabel(plan)+' is active.';status.style.color='#0a7a44';}
-    loadAthletes();
-    loadTrainingPlans();
-    loadMeets();
+    loadProData();
   }).catch(function(error){
     if(status){status.textContent='Account set to '+key+', but not connected: '+error.message;status.style.color='#c00';}
   });
@@ -635,6 +631,17 @@ function loadTrainingPlans(){
     applyAutoPlansToCurrentGroup();
   }).catch(function(){TP=[];});
 }
+function loadProData(){
+  if(!isProPlan()){
+    AR=[];TP=[];MT=[];TPD={};
+    renderAthleteList();
+    renderMeetOptions();
+    return;
+  }
+  loadAthletes();
+  loadTrainingPlans();
+  loadMeets();
+}
 function applyAutoPlansToCurrentGroup(){
   if(!CL||!TP.length)return;
   var changed=false;
@@ -827,6 +834,7 @@ function openProductPlanPicker(){
     if(input)input.value=plan;
     if(display)display.textContent=productPlanLabel(plan);
     applyPlanMode();
+    loadProData();
     rl();
     if(CL)rr();
   });
@@ -855,6 +863,7 @@ function addGroupForView(){
   }
 }
 function loadMeets(){
+  if(!isProPlan()){MT=[];renderMeetOptions();return;}
   fetch('/api/smart-trak/meets').then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
@@ -2851,7 +2860,7 @@ function markSyncedRuns(synced){
   renderSyncAthletes();
 }
 
-applyPlanMode();applyAdminTools();load();rl();loadAthletes();loadTrainingPlans();
+applyPlanMode();applyAdminTools();load();rl();loadProData();
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
   var t=e.target;
