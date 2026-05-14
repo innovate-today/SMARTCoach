@@ -39,11 +39,12 @@ function accountStatus(req, res) {
     return;
   }
 
-  const { accountKey, token, locationId } = getGhlContext(req);
+  const { accountKey, token, locationId, productPlan } = getGhlContext(req);
   const configured = !!(token && locationId);
   res.status(configured ? 200 : 404).json({
     success: configured,
     accountKey,
+    productPlan,
     configured,
     error: configured ? undefined : `SMARTCoach account "${accountKey}" is not configured.`,
   });

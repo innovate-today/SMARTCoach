@@ -586,13 +586,16 @@ function setSmartCoachAccountKey(value){
 }
 function productPlan(){
   try{
-    var params=new URLSearchParams(window.location.search||'');
-    var fromUrl=(params.get('plan')||params.get('product')||'').trim();
+    var fromUrl=productPlanOverride();
     if(fromUrl)return setProductPlan(fromUrl);
     return localStorage.getItem('sc_plan')||'pro';
   }catch(e){
     return 'pro';
   }
+}
+function productPlanOverride(){
+  var params=new URLSearchParams(window.location.search||'');
+  return (params.get('plan')||params.get('product')||'').trim();
 }
 function setProductPlan(value){
   var plan=String(value||'').trim().toLowerCase();
@@ -613,6 +616,19 @@ function applyPlanMode(){
   if(message)message.hidden=pro;
   var badge=document.getElementById('productModeBadge');
   if(badge)badge.textContent=productPlanLabel(productPlan());
+}
+function syncProductPlanFromAccount(){
+  if(productPlanOverride())return Promise.resolve(productPlan());
+  return checkSmartCoachAccount().then(function(result){
+    if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
+    applyPlanMode();
+    applySmartCoachLinks();
+    return productPlan();
+  }).catch(function(){
+    applyPlanMode();
+    applySmartCoachLinks();
+    return productPlan();
+  });
 }
 function smartCoachPageUrl(path,planOverride){
   var url=new URL(path,window.location.origin);
@@ -865,7 +881,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.sortbtn'),function(butt
 applyPlanMode();
 applyAdminTools();
 restoreView();
-loadDashboard();
+syncProductPlanFromAccount().then(loadDashboard);
 
 function loadDashboard(){
   applyPlanMode();

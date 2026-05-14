@@ -455,13 +455,16 @@ function checkSmartCoachAccount(){
 
 function productPlan(){
   try{
-    var params=new URLSearchParams(window.location.search||'');
-    var fromUrl=(params.get('plan')||params.get('product')||'').trim();
+    var fromUrl=productPlanOverride();
     if(fromUrl)return setProductPlan(fromUrl);
     return localStorage.getItem('sc_plan')||'pro';
   }catch(e){
     return 'pro';
   }
+}
+function productPlanOverride(){
+  var params=new URLSearchParams(window.location.search||'');
+  return (params.get('plan')||params.get('product')||'').trim();
 }
 function setProductPlan(value){
   var plan=String(value||'').trim().toLowerCase();
@@ -477,6 +480,17 @@ function isProPlan(){
 }
 function applyPlanMode(){
   document.body.classList.toggle('plan-essential',!isProPlan());
+}
+function syncProductPlanFromAccount(){
+  if(productPlanOverride())return Promise.resolve(productPlan());
+  return checkSmartCoachAccount().then(function(result){
+    if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
+    applyPlanMode();
+    return productPlan();
+  }).catch(function(){
+    applyPlanMode();
+    return productPlan();
+  });
 }
 function save(){
   try{
@@ -2859,7 +2873,8 @@ function markSyncedRuns(synced){
   renderSyncAthletes();
 }
 
-applyPlanMode();applyAdminTools();load();rl();loadProData();
+applyPlanMode();applyAdminTools();load();rl();
+syncProductPlanFromAccount().then(function(){rl();loadProData();});
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
   var t=e.target;
