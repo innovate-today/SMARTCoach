@@ -136,6 +136,7 @@ tr:last-child td{border-bottom:0}
 .essential-message{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
 .essential-message h1{font-size:24px;margin-bottom:8px}
 .essential-message p{color:var(--muted);line-height:1.45}
+.admin-mode-badge{position:fixed;right:14px;bottom:14px;z-index:30;background:#111827;color:#fff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;box-shadow:0 10px 24px rgba(15,23,42,.18)}
 @media(max-width:760px){
   .page{padding:14px 10px 24px}
   .top{align-items:flex-start;flex-direction:column}
@@ -161,6 +162,7 @@ tr:last-child td{border-bottom:0}
 </style>
 </head>
 <body>
+<div id="productModeBadge" class="admin-mode-badge admin-only" hidden></div>
 <main class="page pro-page-only">
   <section class="top">
     <div class="brand">
@@ -596,11 +598,16 @@ function setProductPlan(value){
 function isProPlan(){
   return productPlan()!=='essential';
 }
+function productPlanLabel(plan){
+  return plan==='essential'?'SMARTCoach Essential':'SMARTCoach Pro';
+}
 function applyPlanMode(){
   var pro=isProPlan();
   document.body.classList.toggle('plan-essential',!pro);
   var message=document.getElementById('essentialMessage');
   if(message)message.hidden=pro;
+  var badge=document.getElementById('productModeBadge');
+  if(badge)badge.textContent=productPlanLabel(productPlan());
 }
 function smartCoachPageUrl(path){
   var url=new URL(path,window.location.origin);
