@@ -127,8 +127,16 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     <a id="essentialProLink" class="linkbtn admin-only" hidden href="/plan-builder.html?plan=pro">Preview Pro</a>
   </div>
 </section>
+<section id="setupMessage" class="essential-message" hidden>
+  <h1>SMARTCoach Pro Setup Needed</h1>
+  <p>This account is on SMARTCoach Pro, but the CRM connection is not finished yet. The stopwatch can still be opened while setup is completed.</p>
+  <div class="essential-actions">
+    <a id="setupStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
+    <a id="setupPreviewLink" class="linkbtn admin-only" hidden href="/plan-builder.html?admin=1&plan=pro">Admin Preview</a>
+  </div>
+</section>
 <script>
-var questionnaire=null,athletes=[],meets=[],plans=[];
+var questionnaire=null,athletes=[],meets=[],plans=[],accountStatus=null;
 var fitnessEvents=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
 var fitnessSports=[{label:'Track',value:'track'},{label:'Cross Country',value:'cross_country'}];
 function smartCoachAccountKey(){
@@ -179,20 +187,25 @@ function productPlanLabel(plan){
 }
 function applyPlanMode(){
   var pro=isProPlan();
-  document.body.classList.toggle('plan-essential',!pro);
+  var setupNeeded=pro&&accountStatus&&accountStatus.configured===false;
+  document.body.classList.toggle('plan-essential',!pro||setupNeeded);
   var message=document.getElementById('essentialMessage');
-  if(message)message.hidden=pro;
+  if(message)message.hidden=pro||setupNeeded;
+  var setup=document.getElementById('setupMessage');
+  if(setup)setup.hidden=!setupNeeded;
   var badge=document.getElementById('productModeBadge');
   if(badge)badge.textContent=productPlanLabel(productPlan());
 }
 function syncProductPlanFromAccount(){
   if(productPlanOverride())return Promise.resolve(productPlan());
   return checkSmartCoachAccount().then(function(result){
+    accountStatus=result.data||null;
     if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
     applyPlanMode();
     applySmartCoachLinks();
     return productPlan();
   }).catch(function(){
+    accountStatus=null;
     applyPlanMode();
     applySmartCoachLinks();
     return productPlan();
@@ -211,8 +224,12 @@ function applySmartCoachLinks(){
   if(dashboard)dashboard.href=smartCoachPageUrl('/dashboard.html');
   var stopwatch=document.getElementById('essentialStopwatchLink');
   if(stopwatch)stopwatch.href=smartCoachPageUrl('/');
+  var setupStopwatch=document.getElementById('setupStopwatchLink');
+  if(setupStopwatch)setupStopwatch.href=smartCoachPageUrl('/');
   var pro=document.getElementById('essentialProLink');
   if(pro)pro.href=smartCoachPageUrl('/plan-builder.html','pro');
+  var setupPreview=document.getElementById('setupPreviewLink');
+  if(setupPreview)setupPreview.href=smartCoachPageUrl('/plan-builder.html','pro');
 }
 function adminToolsVisible(){
   try{
@@ -274,6 +291,7 @@ function loadBuilder(){
   applyPlanMode();
   applySmartCoachLinks();
   if(!isProPlan())return;
+  if(accountStatus&&accountStatus.configured===false)return;
   applyAdminTools();
   var accountInput=document.getElementById('accountKey');
   if(accountInput)accountInput.value=smartCoachAccountKey();
