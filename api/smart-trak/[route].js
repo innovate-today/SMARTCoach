@@ -25,6 +25,15 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  const { productPlan } = getGhlContext(req);
+  if (productPlan === "essential") {
+    res.status(403).json({
+      error: "SMARTCoach Pro is required for this feature.",
+      productPlan,
+    });
+    return;
+  }
+
   return selected(req, res);
 };
 
