@@ -594,8 +594,8 @@ function productPlan(){
   }
 }
 function productPlanOverride(){
-  if(!adminToolsVisible())return '';
   var params=new URLSearchParams(window.location.search||'');
+  if(params.get('admin')!=='1')return '';
   return (params.get('plan')||params.get('product')||'').trim();
 }
 function setProductPlan(value){
