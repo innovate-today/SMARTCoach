@@ -372,6 +372,12 @@ function setSmartCoachAccountKey(value){
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
 }
+function accessCodeStorageKey(){
+  return 'sc_access_'+smartCoachAccountKey();
+}
+function smartCoachAccessCode(){
+  try{return sessionStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
+}
 function adminToolsVisible(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -447,6 +453,8 @@ function checkSmartCoachAccount(){
       init=init||{};
       var headers=new Headers(init.headers||{});
       headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      var accessCode=smartCoachAccessCode();
+      if(accessCode)headers.set('X-SMARTCoach-Access-Code',accessCode);
       init.headers=headers;
     }
     return nativeFetch(input,init);

@@ -41,6 +41,12 @@ Pro accounts need all three:
 - `GHL_PRIVATE_INTEGRATION_TOKEN_LINCOLNTRACK=...`
 - `GHL_LOCATION_ID_LINCOLNTRACK=...`
 
+Recommended before customer launch:
+
+- `SMARTCOACH_ACCESS_CODE_LINCOLNTRACK=...`
+
+When this access code is set, SMARTCoach Pro API data for that account requires the browser session to provide the code. This is an early protection layer, not the final subscription/auth system.
+
 Use the setup helper endpoint to generate the exact variables for a new account:
 
 - `/api/smart-trak/account-setup?account=lincolntrack&plan=essential`

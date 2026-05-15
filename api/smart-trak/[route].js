@@ -45,13 +45,14 @@ function accountStatus(req, res) {
     return;
   }
 
-  const { accountKey, token, locationId, productPlan } = getGhlContext(req);
+  const { accountKey, token, locationId, productPlan, accessCode } = getGhlContext(req);
   const configured = !!(token && locationId);
   res.status(configured ? 200 : 404).json({
     success: configured,
     accountKey,
     productPlan,
     configured,
+    accessCodeRequired: !!accessCode,
     error: configured ? undefined : `SMARTCoach account "${accountKey}" is not configured.`,
   });
 }
@@ -97,6 +98,12 @@ function accountSetup(req, res) {
         value: "paste_customer_location_id",
         required: true,
         description: "Customer SMARTCoach Pro sub-account location ID.",
+      },
+      {
+        key: `SMARTCOACH_ACCESS_CODE_${suffix}`,
+        value: "choose_customer_dashboard_access_code",
+        required: false,
+        description: "Optional now, but recommended before launch. Protects this customer's Pro dashboard/API data if the dashboard link is copied.",
       }
     );
   }

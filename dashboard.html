@@ -598,6 +598,15 @@ function setSmartCoachAccountKey(value){
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
 }
+function accessCodeStorageKey(){
+  return 'sc_access_'+smartCoachAccountKey();
+}
+function smartCoachAccessCode(){
+  try{return sessionStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
+}
+function setSmartCoachAccessCode(value){
+  try{sessionStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
+}
 function productPlan(){
   try{
     var fromUrl=productPlanOverride();
@@ -709,6 +718,8 @@ function applyAdminTools(){
       init=init||{};
       var headers=new Headers(init.headers||{});
       headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      var accessCode=smartCoachAccessCode();
+      if(accessCode)headers.set('X-SMARTCoach-Access-Code',accessCode);
       init.headers=headers;
     }
     return nativeFetch(input,init);
@@ -937,6 +948,12 @@ function loadDashboard(){
   return fetch('/api/smart-trak/dashboard').then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){
+      return requestDashboardAccessCode(result.data).then(function(entered){
+        if(!entered)throw new Error('Dashboard access code is required.');
+        return loadDashboard();
+      });
+    }
     if(!result.ok)throw new Error(result.data&&result.data.error||'Dashboard failed to load.');
     dashboardRows=result.data.athletes||[];
     recentMeetRows=result.data.recentMeetResults||[];
@@ -971,6 +988,15 @@ function loadDashboard(){
     refreshTableScrollbars();
   }).finally(function(){
     els.refreshBtn.disabled=false;
+  });
+}
+function requestDashboardAccessCode(data){
+  return Promise.resolve().then(function(){
+    var promptText='Enter SMARTCoach Pro access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';
+    var code=window.prompt(promptText,'');
+    if(!code)return false;
+    setSmartCoachAccessCode(code);
+    return true;
   });
 }
 

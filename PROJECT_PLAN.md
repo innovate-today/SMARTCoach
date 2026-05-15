@@ -273,6 +273,7 @@ Required production direction:
 - Gate Pro dashboard/API routes with auth, signed customer sessions, GHL app context, or another server-verified access layer.
 - Keep the GHL custom link inside the customer's sub-account as the normal entry point, but still treat copied links as potentially shareable.
 - Essential stopwatch can stay much lighter, but Pro roster/results/training data must be protected.
+- Interim protection added/planned: optional per-account `SMARTCOACH_ACCESS_CODE_{ACCOUNT}` can block Pro API data unless the browser session provides the access code. This helps now, but should later be replaced or backed by proper account auth/subscription login.
 
 ## Latest Continuation Notes
 
