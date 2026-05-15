@@ -382,6 +382,24 @@ tr:last-child td{border-bottom:0}
     <a id="setupPreviewLink" class="linkbtn secondary admin-only" hidden href="/dashboard.html?admin=1&plan=pro">Admin Preview</a>
   </div>
 </section>
+<div id="accessModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
+    <div class="modalhead">
+      <h2 id="accessTitle">SMARTCoach Pro Access</h2>
+    </div>
+    <div class="modalbody">
+      <div class="field">
+        <label for="accessCodeInput">Access Code</label>
+        <input id="accessCodeInput" type="password" placeholder="Enter access code" autocomplete="off">
+      </div>
+      <div class="small" style="margin-top:8px">This protects roster, training, and meet data if a dashboard link is copied outside SMARTCoach Pro.</div>
+      <div class="modalactions">
+        <div id="accessStatus" class="modalstatus"></div>
+        <button id="accessSubmit" type="button">Unlock Dashboard</button>
+      </div>
+    </div>
+  </section>
+</div>
 <div id="athleteModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="athleteModalTitle">
     <div class="modalhead">
@@ -749,6 +767,10 @@ var els={
   athleteModalTitle:document.getElementById('athleteModalTitle'),
   athleteModalBody:document.getElementById('athleteModalBody'),
   athleteModalClose:document.getElementById('athleteModalClose'),
+  accessModal:document.getElementById('accessModal'),
+  accessCodeInput:document.getElementById('accessCodeInput'),
+  accessStatus:document.getElementById('accessStatus'),
+  accessSubmit:document.getElementById('accessSubmit'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
   accountBtn:document.getElementById('accountBtn'),
   accountModal:document.getElementById('accountModal'),
@@ -828,6 +850,10 @@ var els={
 };
 setupTableScrollbars();
 els.refreshBtn.addEventListener('click',loadDashboard);
+els.accessSubmit.addEventListener('click',submitDashboardAccessCode);
+els.accessCodeInput.addEventListener('keydown',function(event){
+  if(event.key==='Enter')submitDashboardAccessCode();
+});
 els.search.addEventListener('input',renderRows);
 els.clearSearchBtn.addEventListener('click',function(){
   els.search.value='';
@@ -949,10 +975,8 @@ function loadDashboard(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
-      return requestDashboardAccessCode(result.data).then(function(entered){
-        if(!entered)throw new Error('Dashboard access code is required.');
-        return loadDashboard();
-      });
+      showDashboardAccessCode(result.data);
+      return Promise.resolve();
     }
     if(!result.ok)throw new Error(result.data&&result.data.error||'Dashboard failed to load.');
     dashboardRows=result.data.athletes||[];
@@ -987,17 +1011,30 @@ function loadDashboard(){
     updateBreakdowns();
     refreshTableScrollbars();
   }).finally(function(){
-    els.refreshBtn.disabled=false;
+    if(els.refreshBtn)els.refreshBtn.disabled=false;
   });
 }
-function requestDashboardAccessCode(data){
-  return Promise.resolve().then(function(){
-    var promptText='Enter SMARTCoach Pro access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';
-    var code=window.prompt(promptText,'');
-    if(!code)return false;
-    setSmartCoachAccessCode(code);
-    return true;
-  });
+function showDashboardAccessCode(data){
+  els.lastUpdated.textContent='Access required';
+  els.status.textContent='Access required';
+  els.accessStatus.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';
+  els.accessStatus.style.color='#64748b';
+  els.accessCodeInput.value='';
+  els.accessModal.hidden=false;
+  setTimeout(function(){els.accessCodeInput.focus();},50);
+}
+function submitDashboardAccessCode(){
+  var code=els.accessCodeInput.value.trim();
+  if(!code){
+    els.accessStatus.textContent='Enter the access code to continue.';
+    els.accessStatus.style.color='#b00000';
+    return;
+  }
+  setSmartCoachAccessCode(code);
+  els.accessStatus.textContent='Checking access...';
+  els.accessStatus.style.color='#64748b';
+  els.accessModal.hidden=true;
+  loadDashboard();
 }
 
 function openAccountSettings(){
