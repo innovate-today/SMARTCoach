@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-store">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SMARTCoach Account Setup</title>
+<title>SMART Trak Account Setup</title>
 <style>
 :root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b00000}
 *{box-sizing:border-box}
@@ -13,7 +13,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .page{max-width:980px;margin:0 auto;padding:24px 18px 36px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
 .brand{display:flex;align-items:center;gap:12px}
-.mark{width:34px;height:34px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+.mark{width:48px;height:48px;display:grid;place-items:center;flex:0 0 48px}
+.mark img{max-width:48px;max-height:48px;object-fit:contain}
 h1{font-size:24px;line-height:1.15;margin:0}
 .sub{color:var(--muted);font-size:14px;margin-top:4px}
 .actions{display:flex;align-items:center;gap:10px}
@@ -80,10 +81,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 <main class="page">
   <section class="top">
     <div class="brand">
-      <div class="mark">SC</div>
+      <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
-        <h1>SMARTCoach Account Setup</h1>
-        <div class="sub">Generate setup fields and the dashboard link for a customer account.</div>
+        <h1>SMART Trak Account Setup</h1>
+        <div class="sub">Generate setup fields and the SMART Trak dashboard link for a customer account.</div>
       </div>
     </div>
     <div class="actions">
@@ -251,19 +252,18 @@ function renderReadiness(data){
   var detail=document.getElementById('readyDetail');
   var plan=data.productPlan||'pro';
   var configured=!!data.configured;
-  var logoText=data.logoUrl?'Logo: Custom':'Logo: Default SMART Trak';
   readyBar.className='readybar'+(configured||plan==='essential'?' good':' bad');
   if(plan==='essential'){
     title.textContent='Essential account ready';
-    detail.textContent='This account is set for stopwatch-only use. '+logoText+'.';
+    detail.textContent='This account is set for stopwatch-only use.';
     return;
   }
   if(configured){
     title.textContent='SMART Trak account ready';
-    detail.textContent='The SMART Trak connection is configured and the dashboard can load customer data. '+logoText+'.';
+    detail.textContent='The SMART Trak connection is configured and the dashboard can load customer data.';
   }else{
     title.textContent='SMART Trak setup needed';
-    detail.textContent='Add the private integration token and location ID in Vercel Production, then redeploy and check again. '+logoText+'.';
+    detail.textContent='Add the private integration token and location ID in Vercel Production, then redeploy and check again.';
   }
 }
 function checkSetupStatus(){

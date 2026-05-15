@@ -90,7 +90,7 @@ function accountSetup(req, res) {
   const requestedPlan = firstQueryValue(req.query && (req.query.plan || req.query.productPlan)) || "pro";
   const productPlan = normalizeSetupProductPlan(requestedPlan);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
-  const { token, locationId, logoUrl } = getGhlContext({ ...req, query: { ...req.query, account: accountKey } });
+  const { token, locationId } = getGhlContext({ ...req, query: { ...req.query, account: accountKey } });
   const configured = !!(token && locationId);
 
   const env = [
@@ -102,14 +102,6 @@ function accountSetup(req, res) {
       description: "Controls whether this account is Essential or Pro.",
     },
   ];
-  env.push({
-    key: `SMARTCOACH_LOGO_URL_${suffix}`,
-    value: "optional_customer_logo_url",
-    required: false,
-    label: "Logo URL",
-    description: "Optional. Replaces the default SMART Trak logo on desktop views.",
-  });
-
   if (productPlan === "pro") {
     env.push(
       {
@@ -141,7 +133,6 @@ function accountSetup(req, res) {
     accountKey,
     productPlan,
     configured,
-    logoUrl: logoUrl || "",
     setupState: productPlan === "essential" ? "essential-ready" : configured ? "pro-ready" : "pro-setup-needed",
     environment: env,
     accountUrl: `/?account=${encodeURIComponent(accountKey)}`,
