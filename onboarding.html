@@ -38,6 +38,12 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .envrow{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
 .envrow code{display:block;font-size:13px;white-space:normal;word-break:break-word;color:#102a70;font-family:"SFMono-Regular",Consolas,monospace}
 .envrow small{display:block;color:var(--muted);font-size:12px;margin-top:5px}
+.varlist{display:grid;gap:10px}
+.varrow{display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:end;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
+.varfield{display:grid;gap:5px;min-width:0}
+.varfield span{font-size:11px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
+.varfield code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:9px 10px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.copyhint{font-size:12px;color:var(--muted);line-height:1.35;margin-bottom:10px}
 .links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .checklist{display:grid;gap:10px}
 .checkrow{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
@@ -47,7 +53,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checkrow a{color:#102a70;font-weight:800;text-decoration:none}
 .checkrow a:hover{text-decoration:underline}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
-@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links{grid-template-columns:1fr}}
+@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links,.varrow{grid-template-columns:1fr}.varrow button{width:100%}}
 </style>
 </head>
 <body>
@@ -102,10 +108,8 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   <section id="copyPanel" class="panel" hidden>
     <div class="panelhead"><h2>Vercel Variables</h2></div>
     <div class="panelbody">
-      <textarea id="copyText" readonly></textarea>
-      <div class="actions" style="margin-top:12px">
-        <button type="button" onclick="copyVariables()">Copy Variables</button>
-      </div>
+      <div class="copyhint">Add each row in Vercel as its own Environment Variable. Copy the Name into Vercel's Name field and the Value into Vercel's Value field.</div>
+      <div id="varList" class="varlist"></div>
     </div>
   </section>
 
@@ -128,6 +132,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   </section>
 </main>
 <script>
+var currentEnvironment=[];
 function generateSetup(){
   var account=document.getElementById('accountKey').value.trim();
   var plan=document.getElementById('plan').value;
@@ -159,10 +164,11 @@ function renderSetup(data){
   document.getElementById('resultPlan').textContent=planLabel(data.productPlan);
   document.getElementById('resultState').textContent=stateLabel(data.setupState);
   var env=data.environment||[];
+  currentEnvironment=env;
   document.getElementById('envList').innerHTML=env.length?env.map(function(row){
     return '<div class="envrow"><code>'+esc(row.key)+'='+esc(row.value)+'</code><small>'+esc(row.description||'')+'</small></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
-  document.getElementById('copyText').value=env.map(function(row){return row.key+'='+row.value;}).join('\n');
+  renderVariableRows(env);
   setLink('accountLink',data.accountUrl);
   setLink('dashboardLink',data.dashboardUrl);
   setLink('builderLink',data.planBuilderUrl);
@@ -172,16 +178,39 @@ function setLink(id,path){
   var el=document.getElementById(id);
   el.href=path||'/';
 }
-function copyVariables(){
-  var text=document.getElementById('copyText');
-  text.focus();
-  text.select();
+function renderVariableRows(env){
+  var box=document.getElementById('varList');
+  if(!box)return;
+  box.innerHTML=env.length?env.map(function(row,index){
+    return '<div class="varrow"><div class="varfield"><span>Name</span><code title="'+esc(row.key)+'">'+esc(row.key)+'</code></div><div class="varfield"><span>Value</span><code title="'+esc(row.value)+'">'+esc(row.value)+'</code></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Name</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
+  }).join(''):'<div class="empty">No variables needed.</div>';
+}
+function copyVariablePart(index,part){
+  var row=currentEnvironment[index];
+  if(!row)return;
+  var text=part==='key'?row.key:row.value;
+  copyText(text,part==='key'?'Variable name copied.':'Variable value copied.');
+}
+function copyText(text,message){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){setStatus(message,'good');}).catch(function(){fallbackCopy(text,message);});
+    return;
+  }
+  fallbackCopy(text,message);
+}
+function fallbackCopy(text,message){
+  var area=document.createElement('textarea');
+  area.value=text;
+  document.body.appendChild(area);
+  area.focus();
+  area.select();
   try{
     document.execCommand('copy');
-    setStatus('Variables copied.','good');
+    setStatus(message,'good');
   }catch(e){
-    setStatus('Select the text and copy it manually.','bad');
+    setStatus('Copy failed. Select and copy the value manually.','bad');
   }
+  document.body.removeChild(area);
 }
 function renderChecklist(data){
   var account=data.accountKey||'customer';
