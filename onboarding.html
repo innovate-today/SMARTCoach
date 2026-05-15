@@ -39,6 +39,13 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .envrow code{display:block;font-size:13px;white-space:normal;word-break:break-word;color:#102a70;font-family:"SFMono-Regular",Consolas,monospace}
 .envrow small{display:block;color:var(--muted);font-size:12px;margin-top:5px}
 .links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.checklist{display:grid;gap:10px}
+.checkrow{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
+.checkrow input{width:18px;height:18px;accent-color:var(--blue);margin-top:1px}
+.checkrow b{display:block;font-size:14px;line-height:1.25}
+.checkrow span{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.35}
+.checkrow a{color:#102a70;font-weight:800;text-decoration:none}
+.checkrow a:hover{text-decoration:underline}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
 @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links{grid-template-columns:1fr}}
 </style>
@@ -102,6 +109,13 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     </div>
   </section>
 
+  <section id="checklistPanel" class="panel" hidden>
+    <div class="panelhead"><h2>Setup Checklist</h2></div>
+    <div class="panelbody">
+      <div id="checklist" class="checklist"></div>
+    </div>
+  </section>
+
   <section id="linksPanel" class="panel" hidden>
     <div class="panelhead"><h2>Test Links</h2></div>
     <div class="panelbody">
@@ -139,6 +153,7 @@ function generateSetup(){
 function renderSetup(data){
   document.getElementById('resultPanel').hidden=false;
   document.getElementById('copyPanel').hidden=false;
+  document.getElementById('checklistPanel').hidden=false;
   document.getElementById('linksPanel').hidden=false;
   document.getElementById('resultAccount').textContent=data.accountKey||'--';
   document.getElementById('resultPlan').textContent=planLabel(data.productPlan);
@@ -151,6 +166,7 @@ function renderSetup(data){
   setLink('accountLink',data.accountUrl);
   setLink('dashboardLink',data.dashboardUrl);
   setLink('builderLink',data.planBuilderUrl);
+  renderChecklist(data);
 }
 function setLink(id,path){
   var el=document.getElementById(id);
@@ -166,6 +182,38 @@ function copyVariables(){
   }catch(e){
     setStatus('Select the text and copy it manually.','bad');
   }
+}
+function renderChecklist(data){
+  var account=data.accountKey||'customer';
+  var plan=data.productPlan||'pro';
+  var statusUrl='/api/smart-trak/account-status?account='+encodeURIComponent(account);
+  var dashboardUrl=data.dashboardUrl||('/dashboard.html?account='+encodeURIComponent(account));
+  var rows=[
+    {
+      title:'Add variables in Vercel Production',
+      body:'Paste the generated variables into the smart-coach project Environment Variables section.'
+    },
+    {
+      title:'Redeploy the project',
+      body:'Use the latest production deployment so the new variables are active.'
+    },
+    {
+      title:'Check account status',
+      body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the CRM fields are added.'
+    },
+    {
+      title:plan==='essential'?'Confirm Essential stopwatch':'Confirm customer dashboard',
+      body:plan==='essential'
+        ?'Open '+linkHtml(data.accountUrl||('/?account='+encodeURIComponent(account)),'customer stopwatch')+' and confirm Pro-only tabs and actions are hidden.'
+        :'Open '+linkHtml(dashboardUrl,'customer dashboard')+'. If CRM is not connected yet, it should show SMARTCoach Pro Setup Needed.'
+    }
+  ];
+  document.getElementById('checklist').innerHTML=rows.map(function(row,i){
+    return '<label class="checkrow"><input type="checkbox"><span><b>'+esc((i+1)+'. '+row.title)+'</b><span>'+row.body+'</span></span></label>';
+  }).join('');
+}
+function linkHtml(path,label){
+  return '<a href="'+esc(path)+'" target="_blank" rel="noopener">'+esc(label)+'</a>';
 }
 function setStatus(text,type){
   var el=document.getElementById('status');
