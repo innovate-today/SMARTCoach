@@ -110,7 +110,7 @@ function accountSetup(req, res) {
       },
       {
         key: `SMARTCOACH_ACCESS_CODE_${suffix}`,
-        value: "choose_customer_dashboard_access_code",
+        value: suggestedAccessCode(accountKey),
         required: false,
         label: "Dashboard access code",
         description: "Optional now, but recommended before launch. Protects this customer's Pro dashboard/API data if the dashboard link is copied.",
@@ -142,4 +142,14 @@ function normalizeSetupAccountKey(value) {
 
 function normalizeSetupProductPlan(value) {
   return String(value || "").trim().toLowerCase() === "essential" ? "essential" : "pro";
+}
+
+function suggestedAccessCode(accountKey) {
+  const seed = `${accountKey || "customer"}-${Date.now()}-${Math.random()}`;
+  let hash = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash ^= seed.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `sc-${String(hash >>> 0).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
