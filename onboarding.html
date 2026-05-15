@@ -47,6 +47,8 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .linkcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;display:grid;gap:10px}
 .linkcard strong{font-size:15px}
 .linkcard span{color:var(--muted);font-size:12px;line-height:1.35}
+.setupnote{border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#1e3a8a;padding:10px 12px;font-size:12px;line-height:1.45}
+.setupnote b{display:block;color:#102a70;font-size:13px;margin-bottom:3px}
 .linkline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .linkline code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:10px 12px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .links{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -131,6 +133,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="linkcard" style="margin-bottom:10px">
         <strong>GHL Dashboard Custom Link</strong>
         <span>Add this one link inside the customer sub-account. Plan Builder stays available from the dashboard button.</span>
+        <div class="setupnote"><b>Where it goes in GHL</b>Add it as a custom sidebar/menu link in the customer sub-account. Use iframe/open inside app when available so coaches stay inside SMARTCoach Pro.</div>
         <div class="linkline">
           <code id="customLinkText">--</code>
           <button type="button" onclick="copyCustomLink()">Copy Link</button>
@@ -263,7 +266,7 @@ function renderChecklist(data){
       title:plan==='essential'?'Confirm Essential stopwatch':'Add the GHL dashboard custom link',
       body:plan==='essential'
         ?'Open '+linkHtml(data.accountUrl||('/?account='+encodeURIComponent(account)),'customer stopwatch')+' and confirm Pro-only tabs and actions are hidden.'
-        :'Add '+linkHtml(dashboardUrl,'the customer dashboard')+' as the one GHL custom link. If CRM is not connected yet, it should show SMARTCoach Pro Setup Needed.'
+        :'Add '+linkHtml(data.ghlCustomLinkUrl||dashboardUrl,'the customer dashboard')+' as the one GHL custom sidebar/menu link, preferably opened in an iframe. If CRM is not connected yet, it should show SMARTCoach Pro Setup Needed.'
     }
   ];
   document.getElementById('checklist').innerHTML=rows.map(function(row,i){
