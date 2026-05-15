@@ -150,6 +150,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 </main>
 <script>
 var currentEnvironment=[];
+prefillFromUrl();
 function generateSetup(){
   var account=document.getElementById('accountKey').value.trim();
   var plan=document.getElementById('plan').value;
@@ -299,6 +300,15 @@ function stateLabel(value){
 }
 function esc(value){
   return String(value||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
+function prefillFromUrl(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    var account=(params.get('account')||params.get('tenant')||'').trim();
+    var plan=(params.get('plan')||params.get('productPlan')||'').trim().toLowerCase();
+    if(account)document.getElementById('accountKey').value=account;
+    if(plan)document.getElementById('plan').value=plan==='essential'?'essential':'pro';
+  }catch(e){}
 }
 </script>
 </body>

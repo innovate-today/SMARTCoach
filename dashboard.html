@@ -380,6 +380,7 @@ tr:last-child td{border-bottom:0}
   <p id="setupDetails" class="small"></p>
   <div class="essential-actions">
     <a id="setupStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
+    <a id="setupOnboardingLink" class="linkbtn secondary admin-only" hidden href="/onboarding.html">Open Setup Helper</a>
     <a id="setupPreviewLink" class="linkbtn secondary admin-only" hidden href="/dashboard.html?admin=1&plan=pro">Admin Preview</a>
   </div>
 </section>
@@ -714,6 +715,8 @@ function applySmartCoachLinks(){
   if(pro)pro.href=smartCoachPageUrl('/dashboard.html','pro');
   var setupPreview=document.getElementById('setupPreviewLink');
   if(setupPreview)setupPreview.href=smartCoachPageUrl('/dashboard.html','pro');
+  var setupOnboarding=document.getElementById('setupOnboardingLink');
+  if(setupOnboarding)setupOnboarding.href='/onboarding.html?account='+encodeURIComponent(smartCoachAccountKey())+'&plan=pro';
 }
 function adminToolsVisible(){
   try{
