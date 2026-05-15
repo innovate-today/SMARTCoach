@@ -88,7 +88,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
     </div>
     <div class="actions">
-      <a class="linkbtn secondary" href="/dashboard.html">Dashboard</a>
+      <a class="linkbtn secondary" href="/dashboard.html">SMART Trak</a>
       <a class="linkbtn secondary" href="/">Stopwatch</a>
     </div>
   </section>
@@ -135,9 +135,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   </section>
 
   <section id="copyPanel" class="panel" hidden>
-    <div class="panelhead"><h2>Vercel Variables</h2></div>
+    <div class="panelhead"><h2>Production Setup Fields</h2></div>
     <div class="panelbody">
-      <div class="copyhint">Add each required row in Vercel Production as its own Environment Variable. Optional rows can be added now or later. Copy Setup Field into Vercel's Name box and Copy Value into Vercel's Value box.</div>
+      <div class="copyhint">Add each required row in Vercel Production. Copy Setup Field into the Name box and Copy Value into the Value box.</div>
       <div id="varList" class="varlist"></div>
     </div>
   </section>
@@ -202,7 +202,7 @@ function generateSetup(){
       throw err;
     }
     renderSetup(result.data);
-    setStatus('Setup fields generated. Add these in Vercel Production, then redeploy.','good');
+    setStatus('Setup fields generated. Add them in Vercel Production, then redeploy.','good');
   }).catch(function(error){
     if(error&&error.data&&error.data.adminSetupCodeRequired){
       setStatus('Enter the setup code to generate customer setup fields.','bad');
@@ -340,7 +340,7 @@ function copyVariablePart(index,part){
   var row=currentEnvironment[index];
   if(!row)return;
   var text=part==='key'?row.key:row.value;
-  copyText(text,part==='key'?'Variable name copied.':'Variable value copied.');
+  copyText(text,part==='key'?'Setup field copied.':'Setup value copied.');
 }
 function copyText(text,message){
   if(navigator.clipboard&&navigator.clipboard.writeText){
@@ -370,8 +370,8 @@ function renderChecklist(data){
   var dashboardUrl=data.dashboardUrl||('/dashboard.html?account='+encodeURIComponent(account));
   var rows=[
     {
-      title:'Add variables in Vercel Production',
-      body:'Paste the required setup fields into the smart-coach project Environment Variables section. Optional fields can be added now or later.'
+      title:'Add setup fields in Vercel Production',
+      body:'Paste the required setup fields into the smart-coach project Environment Variables section.'
     },
     {
       title:'Redeploy the project',
