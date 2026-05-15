@@ -74,6 +74,14 @@ function accountSetup(req, res) {
     return;
   }
 
+  if (!setupAdminAllowed(req)) {
+    res.status(401).json({
+      error: "Setup code is required.",
+      adminSetupCodeRequired: true,
+    });
+    return;
+  }
+
   const requestedKey = firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key)) || "customer";
   const accountKey = normalizeSetupAccountKey(requestedKey) || "customer";
   const requestedPlan = firstQueryValue(req.query && (req.query.plan || req.query.productPlan)) || "pro";
@@ -142,6 +150,22 @@ function normalizeSetupAccountKey(value) {
 
 function normalizeSetupProductPlan(value) {
   return String(value || "").trim().toLowerCase() === "essential" ? "essential" : "pro";
+}
+
+function setupAdminAllowed(req) {
+  const expected = String(process.env.SMARTCOACH_ADMIN_SETUP_CODE || "").trim();
+  if (!expected) return true;
+  const provided = String((req.headers && (req.headers["x-smartcoach-setup-code"] || req.headers["X-SMARTCoach-Setup-Code"])) || firstQueryValue(req.query && req.query.setupCode) || "").trim();
+  return provided && safeEqual(provided, expected);
+}
+
+function safeEqual(a, b) {
+  const left = String(a || "");
+  const right = String(b || "");
+  if (left.length !== right.length) return false;
+  let diff = 0;
+  for (let i = 0; i < left.length; i += 1) diff |= left.charCodeAt(i) ^ right.charCodeAt(i);
+  return diff === 0;
 }
 
 function suggestedAccessCode(accountKey) {

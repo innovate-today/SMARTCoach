@@ -24,7 +24,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .panelhead{padding:16px 18px;border-bottom:1px solid var(--line)}
 .panelhead h2{font-size:18px;margin:0}
 .panelbody{padding:16px 18px}
-.grid{display:grid;grid-template-columns:1fr 220px auto;gap:12px;align-items:end}
+.grid{display:grid;grid-template-columns:1fr 190px 190px auto;gap:12px;align-items:end}
 .field{display:grid;gap:6px}
 label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:15px inherit;padding:10px 12px}
@@ -95,6 +95,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
             <option value="essential">SMARTCoach Essential</option>
           </select>
         </div>
+        <div class="field">
+          <label for="setupCode">Setup Code</label>
+          <input id="setupCode" type="password" placeholder="If required" autocomplete="off">
+        </div>
         <button id="generateBtn" type="button" onclick="generateSetup()">Generate</button>
       </div>
       <div id="status" class="status"></div>
@@ -154,6 +158,7 @@ prefillFromUrl();
 function generateSetup(){
   var account=document.getElementById('accountKey').value.trim();
   var plan=document.getElementById('plan').value;
+  var setupCode=document.getElementById('setupCode').value.trim();
   var status=document.getElementById('status');
   if(!account){
     setStatus('Enter an account key first. Example: lincolntrack','bad');
@@ -161,13 +166,26 @@ function generateSetup(){
   }
   setStatus('Generating setup...',null);
   document.getElementById('generateBtn').disabled=true;
-  fetch('/api/smart-trak/account-setup?account='+encodeURIComponent(account)+'&plan='+encodeURIComponent(plan),{cache:'no-store'}).then(function(res){
+  var fetchOptions={cache:'no-store'};
+  if(setupCode){
+    rememberSetupCode(setupCode);
+    fetchOptions.headers={'X-SMARTCoach-Setup-Code':setupCode};
+  }
+  fetch('/api/smart-trak/account-setup?account='+encodeURIComponent(account)+'&plan='+encodeURIComponent(plan),fetchOptions).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not generate setup.');
+    if(!result.ok){
+      var err=new Error(result.data&&result.data.error||'Could not generate setup.');
+      err.data=result.data;
+      throw err;
+    }
     renderSetup(result.data);
     setStatus('Setup fields generated. Add these in Vercel Production, then redeploy.','good');
   }).catch(function(error){
+    if(error&&error.data&&error.data.adminSetupCodeRequired){
+      setStatus('Enter the setup code to generate customer setup fields.','bad');
+      return;
+    }
     setStatus(error.message||'Could not generate setup.','bad');
   }).finally(function(){
     document.getElementById('generateBtn').disabled=false;
@@ -308,6 +326,13 @@ function prefillFromUrl(){
     var plan=(params.get('plan')||params.get('productPlan')||'').trim().toLowerCase();
     if(account)document.getElementById('accountKey').value=account;
     if(plan)document.getElementById('plan').value=plan==='essential'?'essential':'pro';
+    var remembered=sessionStorage.getItem('smartcoach_setup_code')||'';
+    if(remembered)document.getElementById('setupCode').value=remembered;
+  }catch(e){}
+}
+function rememberSetupCode(value){
+  try{
+    sessionStorage.setItem('smartcoach_setup_code',value);
   }catch(e){}
 }
 </script>

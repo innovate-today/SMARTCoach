@@ -274,6 +274,7 @@ Required production direction:
 - Keep the GHL custom link inside the customer's sub-account as the normal entry point, but still treat copied links as potentially shareable.
 - Essential stopwatch can stay much lighter, but Pro roster/results/training data must be protected.
 - Interim protection added/planned: optional per-account `SMARTCOACH_ACCESS_CODE_{ACCOUNT}` can block Pro API data unless the browser session provides the access code. This helps now, but should later be replaced or backed by proper account auth/subscription login.
+- Internal setup protection: optional `SMARTCOACH_ADMIN_SETUP_CODE` can block the onboarding/setup helper unless the internal setup code is entered. This keeps customer setup generation private while the full auth/subscription system is still being built.
 
 ## Latest Continuation Notes
 

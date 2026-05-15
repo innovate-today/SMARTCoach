@@ -60,6 +60,12 @@ The same setup helper is available as a simple internal page:
 
 The setup helper shows the Vercel variables as separate Name and Value fields, plus the one dashboard link that should be added to the customer GHL sub-account as a custom link or iframe.
 
+Optional internal setup protection:
+
+- `SMARTCOACH_ADMIN_SETUP_CODE`
+
+When this is set, `/onboarding.html` and `/api/smart-trak/account-setup` require the setup code before generating customer setup fields. This keeps customer setup links out of casual view while still allowing the helper to be used internally.
+
 ## Deploy Order
 
 1. Import this GitHub repo into Vercel.
