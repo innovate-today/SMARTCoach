@@ -248,18 +248,19 @@ function renderReadiness(data){
   var detail=document.getElementById('readyDetail');
   var plan=data.productPlan||'pro';
   var configured=!!data.configured;
+  var logoText=data.logoUrl?'Logo: Custom':'Logo: Default SMART Trak';
   readyBar.className='readybar'+(configured||plan==='essential'?' good':' bad');
   if(plan==='essential'){
     title.textContent='Essential account ready';
-    detail.textContent='This account is set for stopwatch-only use.';
+    detail.textContent='This account is set for stopwatch-only use. '+logoText+'.';
     return;
   }
   if(configured){
     title.textContent='SMART Trak account ready';
-    detail.textContent='The SMART Trak connection is configured and the dashboard can load customer data.';
+    detail.textContent='The SMART Trak connection is configured and the dashboard can load customer data. '+logoText+'.';
   }else{
     title.textContent='SMART Trak setup needed';
-    detail.textContent='Add the private integration token and location ID in Vercel Production, then redeploy and check again.';
+    detail.textContent='Add the private integration token and location ID in Vercel Production, then redeploy and check again. '+logoText+'.';
   }
 }
 function checkSetupStatus(){

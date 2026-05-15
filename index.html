@@ -451,12 +451,13 @@ function renderAccountSummary(data,fallbackPlan){
   var pro=plan!=='essential';
   var configured=!pro || !!(data&&data.configured);
   var access=!!(data&&data.accessCodeRequired);
+  var logoText=data&&data.logoUrl?'Logo: Custom':'Logo: Default SMART Trak';
   var title=pro?(configured?'SMARTCoach Pro ready':'SMARTCoach Pro setup needed'):'SMARTCoach Essential ready';
   var detail=pro?(configured?'SMART Trak connection is ready.':'SMART Trak connection is not finished yet.'):'Stopwatch-only account. SMART Trak tools are hidden.';
   var accessText=pro?'Dashboard access code: '+(access?'On':'Off'):'Dashboard access code: Not needed';
   box.style.borderColor=configured?'#bbf7d0':'#fecaca';
   box.style.background=configured?'#f0fdf4':'#fef2f2';
-  box.innerHTML='<b style="display:block;color:'+(configured?'#0a7a44':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span>';
+  box.innerHTML='<b style="display:block;color:'+(configured?'#0a7a44':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span><span style="display:block;margin-top:3px">'+logoText+'</span>';
 }
 function refreshAppVersion(){
   var url=new URL(window.location.href);
