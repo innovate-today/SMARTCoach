@@ -69,6 +69,12 @@ tr:last-child td{border-bottom:0}
 .leadercard{border:1px solid #edf1f7;border-radius:8px;background:#fbfdff;padding:9px 10px;min-width:178px;max-width:220px;flex:0 0 auto}
 .leadercard b{display:block;font-size:14px}
 .leadercard span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.progression{display:grid;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fff}
+.progression h3{font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#475569;margin:0}
+.progressiongrid{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-gutter:stable}
+.progressioncard{border:1px solid #edf1f7;border-radius:8px;background:#fbfdff;padding:9px 10px;min-width:230px;max-width:280px;flex:0 0 auto}
+.progressioncard b{display:block;font-size:14px}
+.progressioncard span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
 .empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
 .access{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
 .access h1{font-size:24px;margin-bottom:8px}
@@ -138,6 +144,7 @@ tr:last-child td{border-bottom:0}
       </div>
       <div id="meetSummary" class="meet-summary"></div>
       <div id="eventLeaders" class="eventleaders" hidden></div>
+      <div id="progressionPanel" class="progression" hidden></div>
       <div class="tablewrap">
         <table>
           <thead>
@@ -200,6 +207,7 @@ var els={
   resultListCount:document.getElementById('resultListCount'),
   meetSummary:document.getElementById('meetSummary'),
   eventLeaders:document.getElementById('eventLeaders'),
+  progressionPanel:document.getElementById('progressionPanel'),
   resultRows:document.getElementById('resultRows'),
   resultEmpty:document.getElementById('resultEmpty')
 };
@@ -405,6 +413,44 @@ function renderEventLeaders(results){
     return '<div class="leadercard"><b>'+esc(item.event)+' '+esc(item.resultDisplay)+'</b><span>'+esc(item.athleteName||'Unnamed')+'</span></div>';
   }).join('')+'</div>':'';
 }
+function renderProgressions(results){
+  var groups={};
+  results.forEach(function(row){
+    if(!row.athleteName||!row.event||!row.resultDisplay||!row.meetDate)return;
+    var key=row.athleteName.toLowerCase()+'|'+row.event.toLowerCase();
+    if(!groups[key])groups[key]={athleteName:row.athleteName,event:row.event,items:[]};
+    groups[key].items.push(row);
+  });
+  var progressions=Object.keys(groups).map(function(key){return groups[key];}).filter(function(group){
+    return group.items.length>1;
+  }).map(function(group){
+    group.items=group.items.slice().sort(function(a,b){return String(a.meetDate||'').localeCompare(String(b.meetDate||''));});
+    var first=group.items[0];
+    var last=group.items[group.items.length-1];
+    var firstMs=parseResultMs(first.resultDisplay);
+    var lastMs=parseResultMs(last.resultDisplay);
+    var change='';
+    if(firstMs&&lastMs&&firstMs!==lastMs){
+      change=(lastMs<firstMs?'-':'+')+formatSeconds(Math.abs(lastMs-firstMs))+(lastMs<firstMs?' faster':' slower');
+    }
+    group.change=change;
+    group.first=first;
+    group.last=last;
+    return group;
+  }).filter(function(group){return group.change;}).sort(function(a,b){
+    return parseResultMs(a.last.resultDisplay)-parseResultMs(b.last.resultDisplay);
+  }).slice(0,20);
+  els.progressionPanel.hidden=!progressions.length;
+  els.progressionPanel.innerHTML=progressions.length?'<h3>Athlete Progression</h3><div class="progressiongrid">'+progressions.map(function(group){
+    return '<div class="progressioncard"><b>'+esc(group.athleteName)+' · '+esc(group.event)+'</b><span>'+esc(formatDate(group.first.meetDate))+' '+esc(group.first.resultDisplay)+' → '+esc(formatDate(group.last.meetDate))+' '+esc(group.last.resultDisplay)+'</span><span>'+esc(group.change)+'</span></div>';
+  }).join('')+'</div>':'';
+}
+function formatSeconds(ms){
+  var tenths=Math.round(ms/100);
+  var seconds=Math.floor(tenths/10);
+  var decimal=tenths%10;
+  return seconds+'.'+decimal+' sec';
+}
 function render(){
   var groups=filteredGroups();
   if(selectedGroupKey!=='all'){
@@ -430,6 +476,7 @@ function render(){
   els.resultListCount.textContent=results.length+' results';
   els.resultsTitle.textContent=selectedGroupKey==='all'?'Results':selectedGroupKey.indexOf('series:')===0?'Meet Comparison':'Results for selected meet';
   renderMeetSummary(results);
+  renderProgressions(results);
   var series=meetSeries(groups);
   var seriesHtml=series.map(function(item){
     var active=selectedGroupKey==='series:'+item.key?' active':'';
