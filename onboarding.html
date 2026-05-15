@@ -50,6 +50,11 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .linkcard span{color:var(--muted);font-size:12px;line-height:1.35}
 .setupnote{border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#1e3a8a;padding:10px 12px;font-size:12px;line-height:1.45}
 .setupnote b{display:block;color:#102a70;font-size:13px;margin-bottom:3px}
+.readybar{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;margin-top:14px}
+.readybar b{display:block;font-size:14px}
+.readybar span{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.35}
+.readybar.good{border-color:#bbf7d0;background:#f0fdf4}.readybar.good b{color:var(--good)}
+.readybar.bad{border-color:#fecaca;background:#fef2f2}.readybar.bad b{color:var(--bad)}
 .linkline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .linkline code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:10px 12px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .links{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -114,6 +119,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <div class="card"><b id="resultState">--</b><span>Setup state</span></div>
       </div>
       <div id="envList" class="envlist"></div>
+      <div id="readyBar" class="readybar">
+        <div><b id="readyTitle">Setup not checked</b><span id="readyDetail">After adding variables and redeploying, check whether this account is ready.</span></div>
+        <button id="checkStatusBtn" type="button" class="secondary" onclick="checkSetupStatus()">Check Setup Status</button>
+      </div>
     </div>
   </section>
 
@@ -154,6 +163,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 </main>
 <script>
 var currentEnvironment=[];
+var currentSetup=null;
 prefillFromUrl();
 function generateSetup(){
   var account=document.getElementById('accountKey').value.trim();
@@ -192,6 +202,7 @@ function generateSetup(){
   });
 }
 function renderSetup(data){
+  currentSetup=data;
   document.getElementById('resultPanel').hidden=false;
   document.getElementById('copyPanel').hidden=false;
   document.getElementById('checklistPanel').hidden=false;
@@ -199,6 +210,7 @@ function renderSetup(data){
   document.getElementById('resultAccount').textContent=data.accountKey||'--';
   document.getElementById('resultPlan').textContent=planLabel(data.productPlan);
   document.getElementById('resultState').textContent=stateLabel(data.setupState);
+  renderReadiness(data);
   var env=data.environment||[];
   currentEnvironment=env;
   document.getElementById('envList').innerHTML=env.length?env.map(function(row){
@@ -210,6 +222,63 @@ function renderSetup(data){
   setLink('statusLink','/api/smart-trak/account-status?account='+encodeURIComponent(data.accountKey||'customer'));
   setCustomLinkText(data.ghlCustomLinkUrl||data.dashboardUrl);
   renderChecklist(data);
+}
+function renderReadiness(data){
+  var readyBar=document.getElementById('readyBar');
+  var title=document.getElementById('readyTitle');
+  var detail=document.getElementById('readyDetail');
+  var plan=data.productPlan||'pro';
+  var configured=!!data.configured;
+  readyBar.className='readybar'+(configured||plan==='essential'?' good':' bad');
+  if(plan==='essential'){
+    title.textContent='Essential account ready';
+    detail.textContent='This account is set for stopwatch-only use.';
+    return;
+  }
+  if(configured){
+    title.textContent='SMARTCoach Pro account ready';
+    detail.textContent='The CRM connection is configured and the dashboard can load customer data.';
+  }else{
+    title.textContent='SMARTCoach Pro setup needed';
+    detail.textContent='Add the private integration token and location ID in Vercel Production, then redeploy and check again.';
+  }
+}
+function checkSetupStatus(){
+  var account=(currentSetup&&currentSetup.accountKey)||document.getElementById('accountKey').value.trim();
+  var readyBar=document.getElementById('readyBar');
+  var title=document.getElementById('readyTitle');
+  var detail=document.getElementById('readyDetail');
+  if(!account){
+    setStatus('Enter an account key first.','bad');
+    return;
+  }
+  title.textContent='Checking setup...';
+  detail.textContent='Looking for the customer account settings now.';
+  readyBar.className='readybar';
+  document.getElementById('checkStatusBtn').disabled=true;
+  fetch('/api/smart-trak/account-status?account='+encodeURIComponent(account),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    var data=result.data||{};
+    currentSetup=Object.assign({},currentSetup||{},data,{accountKey:data.accountKey||account});
+    document.getElementById('resultState').textContent=data.productPlan==='essential'?'Essential ready':data.configured?'Pro ready':'Pro setup needed';
+    renderReadiness(currentSetup);
+    if(data.configured){
+      setStatus('Account is ready.','good');
+    }else if(data.productPlan==='essential'){
+      setStatus('Essential account is ready.','good');
+    }else{
+      var missing=(data.missingSetupFields||[]).map(function(item){return item.label;}).join(', ');
+      setStatus(missing?'Still missing: '+missing+'.':'Setup is not complete yet.','bad');
+    }
+  }).catch(function(){
+    readyBar.className='readybar bad';
+    title.textContent='Could not check setup';
+    detail.textContent='Try again after the latest Vercel deployment is ready.';
+    setStatus('Could not check setup status.','bad');
+  }).finally(function(){
+    document.getElementById('checkStatusBtn').disabled=false;
+  });
 }
 function setLink(id,path){
   var el=document.getElementById(id);
