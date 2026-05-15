@@ -359,7 +359,7 @@ function smartCoachAccountKey(){
     if(fromUrl){
       return setSmartCoachAccountKey(fromUrl);
     }
-    return localStorage.getItem('sc_account')||'default';
+    return 'default';
   }catch(e){
     return 'default';
   }
