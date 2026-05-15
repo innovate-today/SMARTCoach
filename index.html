@@ -340,6 +340,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="srow"><label class="slbl">Account</label><input id="account-key" class="sinp" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <div class="srow"><label class="slbl">Product</label><input id="product-plan" type="hidden" value="pro"/><button type="button" id="product-plan-display" class="sinp picker-control" onclick="openProductPlanPicker()">SMARTCoach Pro</button></div>
       <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use <b>default</b> for the current SMARTCoach Pro account. Future customer accounts will use their own account key.</div>
+      <div id="account-summary" style="margin:8px 16px 0;border:1px solid #e5e5ea;border-radius:8px;background:#fff;padding:9px 10px;text-align:left;font-size:12px;line-height:1.35;color:#555"></div>
       <div id="app-version" style="font-size:11px;color:#777;text-align:center;padding:7px 0 0;min-height:16px"></div>
       <div id="account-status" style="font-size:12px;color:#555;text-align:center;padding:8px 0 0;min-height:18px"></div>
     </div>
@@ -406,6 +407,7 @@ function openAccountSettings(){
   if(planInput)planInput.value=productPlan();
   if(planDisplay)planDisplay.textContent=productPlanLabel(productPlan());
   if(status){status.textContent='';status.style.color='#555';}
+  renderAccountSummary(null,productPlan());
   if(version)version.textContent='App version '+appVersion();
   sm('m-account');
 }
@@ -422,18 +424,39 @@ function saveAccountSettings(){
   if(input)input.value=key;
   applyPlanMode();
   if(plan==='essential'){
+    renderAccountSummary({productPlan:'essential',configured:true,accessCodeRequired:false},plan);
     if(status){status.textContent='SMARTCoach Essential is active.';status.style.color='#0a7a44';}
     loadProData();
     return;
   }
   if(status){status.textContent='Checking '+key+'...';status.style.color='#555';status.style.fontWeight='700';}
   checkSmartCoachAccount().then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+    if(!result.ok){
+      var err=new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+      err.data=result.data;
+      throw err;
+    }
+    renderAccountSummary(result.data,plan);
     if(status){status.textContent='Account set to '+key+' and '+productPlanLabel(plan)+' is active.';status.style.color='#0a7a44';}
     loadProData();
   }).catch(function(error){
+    renderAccountSummary(error&&error.data?error.data:{productPlan:plan,configured:false},plan);
     if(status){status.textContent='Account set to '+key+', but not connected: '+error.message;status.style.color='#c00';}
   });
+}
+function renderAccountSummary(data,fallbackPlan){
+  var box=document.getElementById('account-summary');
+  if(!box)return;
+  var plan=(data&&data.productPlan)||fallbackPlan||productPlan();
+  var pro=plan!=='essential';
+  var configured=!pro || !!(data&&data.configured);
+  var access=!!(data&&data.accessCodeRequired);
+  var title=pro?(configured?'SMARTCoach Pro ready':'SMARTCoach Pro setup needed'):'SMARTCoach Essential ready';
+  var detail=pro?(configured?'CRM connection is ready.':'CRM connection is not finished yet.'):'Stopwatch-only account. CRM tools are hidden.';
+  var accessText=pro?'Dashboard access code: '+(access?'On':'Off'):'Dashboard access code: Not needed';
+  box.style.borderColor=configured?'#bbf7d0':'#fecaca';
+  box.style.background=configured?'#f0fdf4':'#fef2f2';
+  box.innerHTML='<b style="display:block;color:'+(configured?'#0a7a44':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span>';
 }
 function refreshAppVersion(){
   var url=new URL(window.location.href);

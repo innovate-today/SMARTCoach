@@ -130,6 +130,10 @@ tr:last-child td{border-bottom:0}
 .originalbox b{display:block;color:#111827;font-size:13px;margin-bottom:4px}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
 .modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
+.accountsummary{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 11px;margin-top:10px;color:var(--muted);font-size:13px;line-height:1.35}
+.accountsummary b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
+.accountsummary.good{border-color:#bbf7d0;background:#f0fdf4}.accountsummary.good b{color:#08783c}
+.accountsummary.bad{border-color:#fecaca;background:#fef2f2}.accountsummary.bad b{color:#b00000}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
 .detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
@@ -574,6 +578,7 @@ tr:last-child td{border-bottom:0}
         </select>
       </div>
       <div class="small" style="margin-top:8px">Use <b>default</b> for the current SMARTCoach Pro account.</div>
+      <div id="accountSummary" class="accountsummary"></div>
       <div id="appVersion" class="small" style="margin-top:6px;text-align:center"></div>
       <div class="modalactions">
         <div id="accountStatus" class="modalstatus"></div>
@@ -787,6 +792,7 @@ var els={
   accountKey:document.getElementById('accountKey'),
   productPlan:document.getElementById('productPlan'),
   appVersion:document.getElementById('appVersion'),
+  accountSummary:document.getElementById('accountSummary'),
   accountStatus:document.getElementById('accountStatus'),
   accountRefresh:document.getElementById('accountRefresh'),
   accountSave:document.getElementById('accountSave'),
@@ -1050,6 +1056,7 @@ function openAccountSettings(){
   els.accountKey.value=smartCoachAccountKey();
   if(els.productPlan)els.productPlan.value=productPlan();
   els.appVersion.textContent='App version '+appVersion();
+  renderAccountSummary(null,productPlan());
   els.accountStatus.textContent='';
   els.accountStatus.style.color='';
   els.accountModal.hidden=false;
@@ -1073,16 +1080,34 @@ function saveAccountSettings(){
   els.accountStatus.textContent='Checking '+key+'...';
   els.accountStatus.style.color='';
   checkSmartCoachAccount().then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+    if(!result.ok){
+      var err=new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+      err.data=result.data;
+      throw err;
+    }
+    renderAccountSummary(result.data,plan);
     els.accountStatus.textContent='Account set to '+key+' and '+(plan==='essential'?'SMARTCoach Essential':'SMARTCoach Pro')+' is active.';
     els.accountStatus.style.color='#08783c';
     return isProPlan()?loadDashboard():Promise.resolve();
   }).then(function(){
     if(isProPlan())els.accountStatus.textContent='Account set to '+key+' and SMARTCoach Pro is active.';
   }).catch(function(error){
+    renderAccountSummary(error&&error.data?error.data:{productPlan:plan,configured:false},plan);
     els.accountStatus.textContent='Account set to '+key+', but not connected: '+(error.message||'Account is not configured.');
     els.accountStatus.style.color='#b00000';
   });
+}
+function renderAccountSummary(data,fallbackPlan){
+  if(!els.accountSummary)return;
+  var plan=(data&&data.productPlan)||fallbackPlan||productPlan();
+  var pro=plan!=='essential';
+  var configured=!pro || !!(data&&data.configured);
+  var access=!!(data&&data.accessCodeRequired);
+  var title=pro?(configured?'SMARTCoach Pro ready':'SMARTCoach Pro setup needed'):'SMARTCoach Essential ready';
+  var detail=pro?(configured?'CRM connection is ready.':'CRM connection is not finished yet.'):'Stopwatch-only account. CRM tools are hidden.';
+  var accessText=pro?'Dashboard access code: '+(access?'On':'Off'):'Dashboard access code: Not needed';
+  els.accountSummary.className='accountsummary '+(configured?'good':'bad');
+  els.accountSummary.innerHTML='<b>'+esc(title)+'</b><span>'+esc(detail)+'</span><br><span>'+esc(accessText)+'</span>';
 }
 
 function refreshAppVersion(){
