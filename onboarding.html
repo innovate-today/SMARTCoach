@@ -48,6 +48,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .linkcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;display:grid;gap:10px}
 .linkcard strong{font-size:15px}
 .linkcard span{color:var(--muted);font-size:12px;line-height:1.35}
+.linkdetails{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.linkdetail{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 11px}
+.linkdetail b{display:block;font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+.linkdetail span{display:block;color:var(--ink);font-size:14px;font-weight:800}
 .setupnote{border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#1e3a8a;padding:10px 12px;font-size:12px;line-height:1.45}
 .setupnote b{display:block;color:#102a70;font-size:13px;margin-bottom:3px}
 .readybar{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;margin-top:14px}
@@ -66,7 +70,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checkrow a{color:#102a70;font-weight:800;text-decoration:none}
 .checkrow a:hover{text-decoration:underline}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
-@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links,.varrow,.linkline{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
+@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
 </style>
 </head>
 <body>
@@ -147,6 +151,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="linkcard" style="margin-bottom:10px">
         <strong>Customer Dashboard Link</strong>
         <span>Add this one link inside the customer account after setup is ready. The full URL is hidden here to reduce accidental sharing.</span>
+        <div class="linkdetails">
+          <div class="linkdetail"><b>Link Name</b><span id="customerLinkName">Dashboard</span></div>
+          <div class="linkdetail"><b>Open As</b><span id="customerLinkMode">Sidebar iframe</span></div>
+        </div>
         <div class="setupnote"><b>Where it goes</b>Add it as a custom sidebar/menu link in the customer account. Use iframe/open inside app when available so coaches stay inside SMARTCoach Pro.</div>
         <div class="linkline">
           <code id="customLinkText" data-url="">Dashboard link hidden</code>
@@ -217,11 +225,22 @@ function renderSetup(data){
     return '<div class="envrow"><code>'+esc(row.label||row.key)+'</code><small>'+esc(row.description||'')+'</small></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
   renderVariableRows(env);
+  var customerLink=customerMainLink(data);
   setLink('accountLink',data.accountUrl);
-  setLink('customLink',data.ghlCustomLinkUrl||data.dashboardUrl);
+  setLink('customLink',customerLink);
   setLink('statusLink','/api/smart-trak/account-status?account='+encodeURIComponent(data.accountKey||'customer'));
-  setCustomLinkText(data.ghlCustomLinkUrl||data.dashboardUrl);
+  setCustomLinkText(customerLink);
+  renderCustomerLinkDetails(data);
   renderChecklist(data);
+}
+function customerMainLink(data){
+  if((data.productPlan||'pro')==='essential')return data.accountUrl||('/?account='+encodeURIComponent(data.accountKey||'customer'));
+  return data.ghlCustomLinkUrl||data.dashboardUrl||('/dashboard.html?account='+encodeURIComponent(data.accountKey||'customer')+'&embed=1');
+}
+function renderCustomerLinkDetails(data){
+  var plan=data.productPlan||'pro';
+  document.getElementById('customerLinkName').textContent=plan==='essential'?'Stopwatch':'Dashboard';
+  document.getElementById('customerLinkMode').textContent=plan==='essential'?'Mobile/web link':'Sidebar iframe';
 }
 function renderReadiness(data){
   var readyBar=document.getElementById('readyBar');
