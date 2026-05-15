@@ -17,8 +17,8 @@ Live app:
 Deployment/source of truth:
 
 - The active app is deployed through Vercel.
-- The CRM integration is GoHighLevel, branded in the product as SMARTCoach Pro.
-- SMARTCoach has been confirmed to sync successfully with SMARTCoach Pro/GHL.
+- The underlying CRM integration is GoHighLevel, but the coach-facing desktop product is branded as SMART Trak.
+- SMARTCoach has been confirmed to sync successfully with SMART Trak.
 
 Current consolidated repo:
 
@@ -229,7 +229,7 @@ Athlete login includes:
 Tiers:
 
 - Free, $0: basic timing, 3 athletes, no sync
-- Coach Pro, $19.99/mo: full team, GHL sync, training targets, dashboard
+- Coach Pro, $19.99/mo: full team, SMART Trak sync, training targets, dashboard
 - Club/School, $99/mo: unlimited athletes, parent portal, recruiting
 - Enterprise, custom: multi-team, district-wide, white label
 
@@ -258,7 +258,7 @@ Requirements:
 1. Stabilize the Training Plan Day to stopwatch flow: group plans, athlete overrides, next 5 days, changed-workout handling, current-fitness targets, surface, and weather notes.
 2. Build the first desktop dashboard view: roster/training list with athlete, group, current fitness, recent result, previous week volume, current week volume, and recent sync status.
 3. Add meet performance comparison views: athlete vs athlete, athlete vs previous results, same course/event history, PB/SB/record indicators.
-4. Finalize subscription/auth foundation: separate Essential stopwatch-only accounts from SMARTCoach Pro stopwatch plus CRM accounts.
+4. Finalize subscription/auth foundation: separate Essential stopwatch-only accounts from SMARTCoach Pro accounts that include SMART Trak.
 5. Plan remaining object budget carefully: only add new objects for high-value needs such as field-event attempts or recruiting profiles.
 6. Parent/recruiting/athlete portals after the dashboard and account separation are stable.
 

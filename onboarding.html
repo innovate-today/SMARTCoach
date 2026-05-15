@@ -256,7 +256,7 @@ function renderReadiness(data){
   }
   if(configured){
     title.textContent='SMARTCoach Pro account ready';
-    detail.textContent='The CRM connection is configured and the dashboard can load customer data.';
+    detail.textContent='The SMART Trak connection is configured and the dashboard can load customer data.';
   }else{
     title.textContent='SMARTCoach Pro setup needed';
     detail.textContent='Add the private integration token and location ID in Vercel Production, then redeploy and check again.';
@@ -372,7 +372,7 @@ function renderChecklist(data){
     },
     {
       title:'Check account status',
-      body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the CRM fields are added.'
+      body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the SMART Trak fields are added.'
     },
     {
       title:plan==='essential'?'Confirm Essential stopwatch':'Add the dashboard custom link',

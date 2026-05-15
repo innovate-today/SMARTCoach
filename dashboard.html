@@ -380,7 +380,7 @@ tr:last-child td{border-bottom:0}
 </section>
 <section id="setupMessage" class="essential-message" hidden>
   <h1>SMARTCoach Pro Setup Needed</h1>
-  <p>This account is on SMARTCoach Pro, but the CRM connection is not finished yet. The stopwatch can still be opened while setup is completed.</p>
+  <p>This account is on SMARTCoach Pro, but the SMART Trak connection is not finished yet. The stopwatch can still be opened while setup is completed.</p>
   <p id="setupDetails" class="small"></p>
   <div class="essential-actions">
     <a id="setupStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
@@ -553,7 +553,7 @@ tr:last-child td{border-bottom:0}
         </div>
       </div>
       <div class="modalactions">
-        <div id="correctionStatus" class="modalstatus">Corrections are saved to GHL notes.</div>
+        <div id="correctionStatus" class="modalstatus">Corrections are saved to SMART Trak notes.</div>
         <button id="correctionSave" type="button">Save Correction</button>
       </div>
     </div>
@@ -1104,7 +1104,7 @@ function renderAccountSummary(data,fallbackPlan){
   var configured=!pro || !!(data&&data.configured);
   var access=!!(data&&data.accessCodeRequired);
   var title=pro?(configured?'SMARTCoach Pro ready':'SMARTCoach Pro setup needed'):'SMARTCoach Essential ready';
-  var detail=pro?(configured?'CRM connection is ready.':'CRM connection is not finished yet.'):'Stopwatch-only account. CRM tools are hidden.';
+  var detail=pro?(configured?'SMART Trak connection is ready.':'SMART Trak connection is not finished yet.'):'Stopwatch-only account. SMART Trak tools are hidden.';
   var accessText=pro?'Dashboard access code: '+(access?'On':'Off'):'Dashboard access code: Not needed';
   els.accountSummary.className='accountsummary '+(configured?'good':'bad');
   els.accountSummary.innerHTML='<b>'+esc(title)+'</b><span>'+esc(detail)+'</span><br><span>'+esc(accessText)+'</span>';
@@ -1723,7 +1723,7 @@ function openCorrectionModal(button){
   els.correctionReason.value='';
   els.correctionNotes.value=correctionNotesFromRow(correctionRow);
   els.correctionOriginal.innerHTML=correctionOriginalHtml(correctionRow);
-  setCorrectionStatus('Corrections are saved to GHL notes.','');
+  setCorrectionStatus('Corrections are saved to SMART Trak notes.','');
   els.correctionModal.hidden=false;
 }
 
@@ -1748,7 +1748,7 @@ function saveCorrection(){
   if(!correctionRow)return;
   var reason=els.correctionReason.value.trim();
   if(!reason){
-    setCorrectionStatus('Reason is required so GHL has a useful audit note.','error');
+    setCorrectionStatus('Reason is required so SMART Trak has a useful audit note.','error');
     return;
   }
   els.correctionSave.disabled=true;
@@ -1833,7 +1833,7 @@ function voidTrainingRecord(button){
   if(reason===null)return;
   reason=reason.trim();
   if(!reason){
-    alert('Please enter a short reason so the GHL audit note is useful.');
+    alert('Please enter a short reason so the SMART Trak audit note is useful.');
     return;
   }
   button.disabled=true;
