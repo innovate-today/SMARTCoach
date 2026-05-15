@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="app-version" content="builder-1777173146407">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SMARTCoach Pro Plan Builder</title>
+<title>SMART Trak Plan Builder</title>
 <style>
 :root{--blue:#2B4FCC;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f3f6fb;--white:#fff;--ok:#0a7a44;--warn:#c47a00;--bad:#c00}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -15,7 +15,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue"
 .wrap{max-width:980px;margin:0 auto;padding:24px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
-.mark{width:32px;height:32px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:12px;letter-spacing:1px}
+.mark{width:38px;height:38px;display:grid;place-items:center}
+.mark img{display:block;width:38px;height:38px;object-fit:contain}
 .top-actions{display:flex;align-items:center;gap:10px}
 .linkbtn{border:0;border-radius:8px;background:#e5e7eb;color:#111827;font-size:14px;font-weight:800;padding:10px 14px;text-decoration:none}
 .account-control{display:flex;align-items:center;gap:8px}
@@ -82,10 +83,10 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 <div id="productModeBadge" class="admin-mode-badge admin-only" hidden></div>
 <div class="wrap pro-page-only">
   <div class="top">
-    <div class="brand"><div class="mark">SC</div><span>SMARTCoach Pro</span></div>
+    <div class="brand"><div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div><span>SMART Trak</span></div>
     <div class="top-actions">
       <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button><span id="appVersion" style="font-size:12px;color:#6b7280"></span></div>
-      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
+      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">SMART Trak</a>
     </div>
   </div>
   <div class="panel">
@@ -122,14 +123,14 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 </div>
 <section id="essentialMessage" class="essential-message" hidden>
   <h1>SMARTCoach Essential</h1>
-  <p>The plan builder is included with SMARTCoach Pro. Essential accounts keep the stopwatch clean and focused.</p>
+  <p>The plan builder is included with SMARTCoach Pro through SMART Trak. Essential accounts keep the stopwatch clean and focused.</p>
   <div class="essential-actions">
     <a id="essentialStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
     <a id="essentialProLink" class="linkbtn admin-only" hidden href="/plan-builder.html?plan=pro">Preview Pro</a>
   </div>
 </section>
 <section id="setupMessage" class="essential-message" hidden>
-  <h1>SMARTCoach Pro Setup Needed</h1>
+  <h1>SMART Trak Setup Needed</h1>
   <p>This account is on SMARTCoach Pro, but the SMART Trak connection is not finished yet. The stopwatch can still be opened while setup is completed.</p>
   <div class="essential-actions">
     <a id="setupStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
@@ -488,7 +489,7 @@ function savePlanAssignments(){
 }
 function meetScheduleControl(){
   var active=meets.map(function(m,i){return{meet:m,index:i};}).filter(function(item){var m=item.meet;return m&&m.name&&m.date&&String(m.status||'').toLowerCase()==='scheduled';});
-  if(!active.length)return '<div id="field-priorityMeets" class="meet-list"><div class="meet-empty">No scheduled meets found in SMARTCoach Pro.</div></div>';
+  if(!active.length)return '<div id="field-priorityMeets" class="meet-list"><div class="meet-empty">No scheduled meets found in SMART Trak.</div></div>';
   return '<div id="field-priorityMeets" class="meet-list">'+active.map(function(item,i){
     var m=item.meet;
     var priority=/priority/i.test(m.status||'');
