@@ -38,6 +38,10 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .panelhead{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .panelhead h2{font-size:16px;margin:0}
 .panelhead span{font-size:12px;color:var(--muted)}
+.meet-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fbfdff}
+.meet-summary-card{border:1px solid #edf1f7;border-radius:8px;background:#fff;padding:9px 10px}
+.meet-summary-card b{display:block;font-size:18px;line-height:1.15}
+.meet-summary-card span{display:block;color:var(--muted);font-size:11px;margin-top:3px}
 .meetlist{max-height:680px;overflow:auto}
 .meetitem{width:100%;display:block;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;background:#fff;color:var(--ink);padding:12px 14px;cursor:pointer}
 .meetitem:hover{background:#f8fbff}
@@ -58,6 +62,12 @@ td{font-size:14px}
 tr:last-child td{border-bottom:0}
 .name{font-weight:900;color:#102a70}
 .muted{color:var(--muted);font-size:12px;margin-top:2px}
+.eventleaders{display:grid;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fff}
+.eventleaders h3{font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#475569;margin:0}
+.leadergrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.leadercard{border:1px solid #edf1f7;border-radius:8px;background:#fbfdff;padding:9px 10px}
+.leadercard b{display:block;font-size:14px}
+.leadercard span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
 .empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
 .access{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
 .access h1{font-size:24px;margin-bottom:8px}
@@ -71,6 +81,7 @@ tr:last-child td{border-bottom:0}
   .cards{grid-template-columns:1fr 1fr}
   .bar{grid-template-columns:1fr}
   .split{grid-template-columns:1fr}
+  .meet-summary{grid-template-columns:1fr 1fr}
   .status{text-align:left}
 }
 </style>
@@ -124,6 +135,8 @@ tr:last-child td{border-bottom:0}
         <h2 id="resultsTitle">Results</h2>
         <span id="resultListCount">--</span>
       </div>
+      <div id="meetSummary" class="meet-summary"></div>
+      <div id="eventLeaders" class="eventleaders" hidden></div>
       <div class="tablewrap">
         <table>
           <thead>
@@ -184,6 +197,8 @@ var els={
   meetEmpty:document.getElementById('meetEmpty'),
   resultsTitle:document.getElementById('resultsTitle'),
   resultListCount:document.getElementById('resultListCount'),
+  meetSummary:document.getElementById('meetSummary'),
+  eventLeaders:document.getElementById('eventLeaders'),
   resultRows:document.getElementById('resultRows'),
   resultEmpty:document.getElementById('resultEmpty')
 };
@@ -237,6 +252,17 @@ function formatDateTime(value){
   var date=new Date(value);
   if(isNaN(date.getTime()))return '';
   return date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function parseResultMs(value){
+  var text=String(value||'').trim();
+  if(!text)return 0;
+  var parts=text.split(':').map(Number);
+  if(parts.some(function(part){return isNaN(part);}))return Number(text)||0;
+  var seconds=0;
+  if(parts.length===1)seconds=parts[0];
+  if(parts.length===2)seconds=parts[0]*60+parts[1];
+  if(parts.length===3)seconds=parts[0]*3600+parts[1]*60+parts[2];
+  return Math.round(seconds*1000);
 }
 function meetKey(name,date){
   return [String(name||'').trim().toLowerCase(),String(date||'').slice(0,10)].join('|');
@@ -320,6 +346,42 @@ function fillSelect(select,label,values){
   select.innerHTML='<option value="all">'+esc(label)+'</option>'+values.map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
   select.value=values.indexOf(previous)>=0?previous:'all';
 }
+function renderMeetSummary(results){
+  var events={};
+  var athletes={};
+  var bests=0;
+  results.forEach(function(row){
+    if(row.event)events[row.event]=true;
+    if(row.athleteName)athletes[row.athleteName]=true;
+    if(row.isPr||row.isSeasonBest)bests+=1;
+  });
+  els.meetSummary.innerHTML=[
+    summaryCard(results.length,'Results'),
+    summaryCard(Object.keys(events).length,'Events'),
+    summaryCard(Object.keys(athletes).length,'Athletes'),
+    summaryCard(bests,'New PB/SB')
+  ].join('');
+  renderEventLeaders(results);
+}
+function summaryCard(value,label){
+  return '<div class="meet-summary-card"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>';
+}
+function renderEventLeaders(results){
+  var leaders={};
+  results.forEach(function(row){
+    if(!row.event||!row.resultDisplay)return;
+    var ms=parseResultMs(row.resultDisplay);
+    if(!ms)return;
+    if(!leaders[row.event]||ms<leaders[row.event].ms){
+      leaders[row.event]={event:row.event,ms:ms,athleteName:row.athleteName,resultDisplay:row.resultDisplay};
+    }
+  });
+  var values=Object.keys(leaders).sort().map(function(event){return leaders[event];});
+  els.eventLeaders.hidden=!values.length;
+  els.eventLeaders.innerHTML=values.length?'<h3>Fastest by Event</h3><div class="leadergrid">'+values.map(function(item){
+    return '<div class="leadercard"><b>'+esc(item.event)+' '+esc(item.resultDisplay)+'</b><span>'+esc(item.athleteName||'Unnamed')+'</span></div>';
+  }).join('')+'</div>':'';
+}
 function render(){
   var groups=filteredGroups();
   if(selectedMeetKey!=='all'&&!groups.some(function(group){return group.key===selectedMeetKey;}))selectedMeetKey='all';
@@ -337,6 +399,7 @@ function render(){
   els.meetListCount.textContent=groups.length+' meets';
   els.resultListCount.textContent=results.length+' results';
   els.resultsTitle.textContent=selectedMeetKey==='all'?'Results':'Results for selected meet';
+  renderMeetSummary(results);
   els.meetList.innerHTML=groups.map(function(group){
     var active=group.key===selectedMeetKey?' active':'';
     var meta=[formatDate(group.date),seasonText(group),group.status].filter(Boolean).join(' · ');
