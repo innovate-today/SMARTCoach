@@ -185,7 +185,7 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
     <div class="actions">
-      <a id="athletesLink" class="linkbtn secondary" href="/athletes.html">Athletes</a>
+      <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
       <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
@@ -723,8 +723,8 @@ function smartCoachPageUrl(path,planOverride){
   return url.pathname+url.search;
 }
 function applySmartCoachLinks(){
-  var athletes=document.getElementById('athletesLink');
-  if(athletes)athletes.href=smartCoachPageUrl('/athletes.html');
+  var meetHistory=document.getElementById('meetHistoryLink');
+  if(meetHistory)meetHistory.href=smartCoachPageUrl('/meet-history.html');
   var planBuilder=document.getElementById('planBuilderLink');
   if(planBuilder)planBuilder.href=smartCoachPageUrl('/plan-builder.html');
   var stopwatch=document.getElementById('essentialStopwatchLink');

@@ -73,8 +73,10 @@ module.exports = async function handler(req, res) {
       meetRecords,
       performanceRecords,
     }));
-    const recentMeetResults = buildRecentMeetResults({ athletes, meetRecords }).slice(0, 100);
-    const recentTrainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords }).slice(0, 100);
+    const meetResults = buildRecentMeetResults({ athletes, meetRecords });
+    const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords });
+    const recentMeetResults = meetResults.slice(0, 100);
+    const recentTrainingSyncs = trainingSyncs.slice(0, 100);
 
     res.status(200).json({
       success: true,
@@ -88,6 +90,8 @@ module.exports = async function handler(req, res) {
         currentMonthVolumeMiles: roundVolume(rows.reduce((sum, row) => sum + row.currentMonthVolumeMiles, 0)),
       },
       athletes: rows,
+      meetResults,
+      trainingSyncs,
       recentMeetResults,
       recentTrainingSyncs,
     });
@@ -117,13 +121,19 @@ async function listActiveAthletes({ token, locationId }) {
 
 async function searchObjectRecords({ token, locationId, schemaKey }) {
   try {
-    const result = await ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
-      method: "POST",
-      body: { locationId, page: 1, pageLimit: 100 },
-    });
-    return recordsFromResult(result);
+    const records = [];
+    for (let page = 1; page <= 10; page += 1) {
+      const result = await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
+        method: "POST",
+        body: { locationId, page, pageLimit: 100 },
+      });
+      const batch = recordsFromResult(result);
+      records.push(...batch);
+      if (batch.length < 100) break;
+    }
+    return uniqueRecords(records);
   } catch (error) {
     if (error.statusCode && error.statusCode >= 500) throw error;
     return [];
@@ -429,6 +439,17 @@ function recordsFromResult(result) {
     ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
     ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
   ];
+}
+
+function uniqueRecords(records) {
+  const seen = {};
+  return records.filter((record) => {
+    const props = recordProperties(record);
+    const key = (record && record.id) || prop(props, "source_record_id") || JSON.stringify(props);
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 function recordProperties(record) {

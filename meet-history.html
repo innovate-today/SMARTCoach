@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak Meet History</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b00000}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1480px;margin:0 auto;padding:22px 18px 32px}
+body.embedded .page{max-width:none;padding:16px 18px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:64px;height:64px;display:grid;place-items:center;flex:0 0 64px}
+.mark img{display:block;max-width:64px;max-height:64px;object-fit:contain}
+h1{font-size:24px;line-height:1.15;margin:0}
+.sub{font-size:14px;color:var(--muted);margin-top:4px}
+.updated{display:inline-flex;align-items:center;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:800;padding:7px 10px}
+.actions{display:flex;align-items:center;gap:10px}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
+button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
+button.ghost{background:#eef2f7;color:#172033}
+button:disabled{opacity:.55;cursor:not-allowed}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.card:hover{box-shadow:0 10px 24px rgba(15,23,42,.14);transform:translateY(-1px)}
+.card b{display:block;font-size:24px;line-height:1.1}
+.card span{display:block;color:var(--muted);font-size:13px;margin-top:5px}
+.bar{display:grid;grid-template-columns:1fr 210px 190px 190px auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
+input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
+.status{color:var(--muted);font-size:13px;text-align:right;min-width:150px}
+.split{display:grid;grid-template-columns:minmax(320px,.42fr) minmax(620px,1fr);gap:14px;align-items:start}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.panelhead{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.panelhead h2{font-size:16px;margin:0}
+.panelhead span{font-size:12px;color:var(--muted)}
+.meetlist{max-height:680px;overflow:auto}
+.meetitem{width:100%;display:block;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;background:#fff;color:var(--ink);padding:12px 14px;cursor:pointer}
+.meetitem:hover{background:#f8fbff}
+.meetitem.active{background:#eef3ff;border-left:4px solid var(--blue);padding-left:10px}
+.meetitem b{display:block;font-size:15px}
+.meetitem span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.meetitem .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#e8eefc;color:#173891}
+.pill.good{background:#dcfce7;color:var(--good)}
+.pill.warn{background:#ffedd5;color:var(--warn)}
+.pill.pb{background:#dbeafe;color:#1d4ed8}
+.pill.sb{background:#fef3c7;color:#92400e}
+.tablewrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:900px}
+th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
+th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
+td{font-size:14px}
+tr:last-child td{border-bottom:0}
+.name{font-weight:900;color:#102a70}
+.muted{color:var(--muted);font-size:12px;margin-top:2px}
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
+.access{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
+.access h1{font-size:24px;margin-bottom:8px}
+.access p{color:var(--muted);line-height:1.45}
+.accessrow{display:flex;justify-content:center;gap:10px;margin-top:18px}
+.accessrow input{max-width:280px}
+@media(max-width:980px){
+  .top{align-items:flex-start;flex-direction:column}
+  .actions{width:100%;flex-wrap:wrap}
+  .actions a,.actions button{flex:1;text-align:center}
+  .cards{grid-template-columns:1fr 1fr}
+  .bar{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}
+  .status{text-align:left}
+}
+</style>
+</head>
+<body>
+<main id="mainPage" class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img id="brandLogo" src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>SMART Trak Meet History</h1>
+        <div class="sub">Compare meets, events, athletes, and results across seasons.</div>
+        <div id="lastUpdated" class="updated">Last updated --</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">Dashboard</a>
+      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      <button id="refreshBtn" type="button">Refresh</button>
+    </div>
+  </section>
+
+  <section class="cards">
+    <div class="card"><b id="meetCount">--</b><span>Meets in view</span></div>
+    <div class="card"><b id="resultCount">--</b><span>Results in view</span></div>
+    <div class="card"><b id="athleteCount">--</b><span>Athletes with results</span></div>
+    <div class="card"><b id="bestCount">--</b><span>New PB/SB results</span></div>
+  </section>
+
+  <section class="bar">
+    <input id="search" type="search" placeholder="Search meets, athletes, events, or results" autocomplete="off">
+    <select id="seasonFilter"><option value="all">All seasons</option></select>
+    <select id="eventFilter"><option value="all">All events</option></select>
+    <select id="athleteFilter"><option value="all">All athletes</option></select>
+    <button id="clearBtn" class="ghost" type="button">Reset View</button>
+    <div id="status" class="status">Loading meet history...</div>
+  </section>
+
+  <section class="split">
+    <section class="panel">
+      <div class="panelhead">
+        <h2>Meets</h2>
+        <span id="meetListCount">--</span>
+      </div>
+      <div id="meetList" class="meetlist"></div>
+      <div id="meetEmpty" class="empty" hidden>No meets in this view.</div>
+    </section>
+
+    <section class="panel">
+      <div class="panelhead">
+        <h2 id="resultsTitle">Results</h2>
+        <span id="resultListCount">--</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Athlete</th>
+              <th>Meet</th>
+              <th>Event</th>
+              <th>Result</th>
+              <th>Best</th>
+              <th>Date</th>
+              <th>Synced</th>
+            </tr>
+          </thead>
+          <tbody id="resultRows"></tbody>
+        </table>
+        <div id="resultEmpty" class="empty" hidden>No results in this view.</div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<section id="accessPanel" class="access" hidden>
+  <h1>SMART Trak Access Required</h1>
+  <p>Enter the access code for this account to view meet history.</p>
+  <div class="accessrow">
+    <input id="accessCode" type="password" placeholder="Access code" autocomplete="off">
+    <button id="accessSubmit" type="button">Continue</button>
+  </div>
+  <p id="accessStatus" class="muted"></p>
+</section>
+
+<script>
+var scheduledMeets=[];
+var meetResults=[];
+var selectedMeetKey='all';
+var els={
+  mainPage:document.getElementById('mainPage'),
+  accessPanel:document.getElementById('accessPanel'),
+  accessCode:document.getElementById('accessCode'),
+  accessSubmit:document.getElementById('accessSubmit'),
+  accessStatus:document.getElementById('accessStatus'),
+  dashboardLink:document.getElementById('dashboardLink'),
+  planBuilderLink:document.getElementById('planBuilderLink'),
+  refreshBtn:document.getElementById('refreshBtn'),
+  lastUpdated:document.getElementById('lastUpdated'),
+  meetCount:document.getElementById('meetCount'),
+  resultCount:document.getElementById('resultCount'),
+  athleteCount:document.getElementById('athleteCount'),
+  bestCount:document.getElementById('bestCount'),
+  search:document.getElementById('search'),
+  seasonFilter:document.getElementById('seasonFilter'),
+  eventFilter:document.getElementById('eventFilter'),
+  athleteFilter:document.getElementById('athleteFilter'),
+  clearBtn:document.getElementById('clearBtn'),
+  status:document.getElementById('status'),
+  meetList:document.getElementById('meetList'),
+  meetListCount:document.getElementById('meetListCount'),
+  meetEmpty:document.getElementById('meetEmpty'),
+  resultsTitle:document.getElementById('resultsTitle'),
+  resultListCount:document.getElementById('resultListCount'),
+  resultRows:document.getElementById('resultRows'),
+  resultEmpty:document.getElementById('resultEmpty')
+};
+function accountKey(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    return cleanKey(params.get('account')||params.get('tenant')||localStorage.getItem('sc_account')||'default');
+  }catch(e){return 'default';}
+}
+function cleanKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';
+}
+function embeddedMode(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    return params.get('embed')==='1'||params.get('iframe')==='1'||params.get('embedded')==='1';
+  }catch(e){return false;}
+}
+function pageUrl(path){
+  var url=new URL(path,window.location.origin);
+  var key=accountKey();
+  if(key&&key!=='default')url.searchParams.set('account',key);
+  if(embeddedMode())url.searchParams.set('embed','1');
+  return url.pathname+url.search;
+}
+function accessStorageKey(){return 'sc_access_'+accountKey();}
+function accessCode(){
+  try{return sessionStorage.getItem(accessStorageKey())||'';}catch(e){return '';}
+}
+function setAccessCode(value){
+  try{sessionStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}
+}
+function apiHeaders(){
+  var headers={'X-SMARTCoach-Account':accountKey()};
+  var code=accessCode();
+  if(code)headers['X-SMARTCoach-Access-Code']=code;
+  return headers;
+}
+function esc(value){
+  return String(value==null?'':value).replace(/[&<>"']/g,function(char){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char];
+  });
+}
+function formatDate(value){
+  if(!value)return '';
+  var date=new Date(value);
+  if(isNaN(date.getTime()))return value;
+  return date.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+}
+function formatDateTime(value){
+  var date=new Date(value);
+  if(isNaN(date.getTime()))return '';
+  return date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function meetKey(name,date){
+  return [String(name||'').trim().toLowerCase(),String(date||'').slice(0,10)].join('|');
+}
+function resultMeetKey(row){
+  return meetKey(row.meetName,row.meetDate);
+}
+function seasonText(row){
+  if(row.season&&row.seasonYear)return row.season+' '+row.seasonYear;
+  if(row.meetDate){
+    var d=new Date(row.meetDate);
+    if(!isNaN(d.getTime()))return String(d.getFullYear());
+  }
+  return 'Unlisted';
+}
+function searchText(row){
+  return [row.name,row.meetName,row.athleteName,row.event,row.resultDisplay,row.season,row.seasonYear,row.status].filter(Boolean).join(' ').toLowerCase();
+}
+function allMeetGroups(){
+  var groups={};
+  scheduledMeets.forEach(function(meet){
+    var key=meetKey(meet.name,meet.date);
+    if(!groups[key])groups[key]={key:key,name:meet.name,date:meet.date,season:meet.season,seasonYear:meet.seasonYear,status:meet.status,results:[]};
+  });
+  meetResults.forEach(function(result){
+    var key=resultMeetKey(result);
+    if(!groups[key])groups[key]={key:key,name:result.meetName||'Unlisted meet',date:result.meetDate,season:'',seasonYear:'',status:'Completed',results:[]};
+    groups[key].results.push(result);
+  });
+  return Object.keys(groups).map(function(key){return groups[key];}).sort(function(a,b){
+    return String(b.date||'').localeCompare(String(a.date||'')) || String(a.name||'').localeCompare(String(b.name||''));
+  });
+}
+function filteredGroups(){
+  var query=String(els.search.value||'').trim().toLowerCase();
+  var season=els.seasonFilter.value;
+  var event=els.eventFilter.value;
+  var athlete=els.athleteFilter.value;
+  return allMeetGroups().map(function(group){
+    var results=group.results.filter(function(row){
+      if(event!=='all'&&row.event!==event)return false;
+      if(athlete!=='all'&&row.athleteName!==athlete)return false;
+      if(query&&searchText(row).indexOf(query)===-1&&searchText(group).indexOf(query)===-1)return false;
+      return true;
+    });
+    var groupSeason=seasonText(group);
+    var matchesSeason=season==='all'||groupSeason===season||String(group.seasonYear||'')===season;
+    var groupMatchesQuery=!query||searchText(group).indexOf(query)>=0;
+    var keep=matchesSeason&&(results.length||groupMatchesQuery);
+    return keep?Object.assign({},group,{results:results}):null;
+  }).filter(Boolean);
+}
+function selectedResults(groups){
+  var list=[];
+  groups.forEach(function(group){
+    if(selectedMeetKey!=='all'&&group.key!==selectedMeetKey)return;
+    list=list.concat(group.results);
+  });
+  return list.sort(function(a,b){
+    return String(b.meetDate||b.syncedAt||'').localeCompare(String(a.meetDate||a.syncedAt||'')) ||
+      String(a.athleteName||'').localeCompare(String(b.athleteName||'')) ||
+      String(a.event||'').localeCompare(String(b.event||''));
+  });
+}
+function renderOptions(){
+  var seasons={};
+  var events={};
+  var athletes={};
+  allMeetGroups().forEach(function(group){seasons[seasonText(group)]=true;});
+  meetResults.forEach(function(row){
+    if(row.event)events[row.event]=true;
+    if(row.athleteName)athletes[row.athleteName]=true;
+    seasons[seasonText(row)]=true;
+  });
+  fillSelect(els.seasonFilter,'All seasons',Object.keys(seasons).sort().reverse());
+  fillSelect(els.eventFilter,'All events',Object.keys(events).sort());
+  fillSelect(els.athleteFilter,'All athletes',Object.keys(athletes).sort());
+}
+function fillSelect(select,label,values){
+  var previous=select.value||'all';
+  select.innerHTML='<option value="all">'+esc(label)+'</option>'+values.map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
+  select.value=values.indexOf(previous)>=0?previous:'all';
+}
+function render(){
+  var groups=filteredGroups();
+  if(selectedMeetKey!=='all'&&!groups.some(function(group){return group.key===selectedMeetKey;}))selectedMeetKey='all';
+  var results=selectedResults(groups);
+  var resultAthletes={};
+  var bestCount=0;
+  results.forEach(function(row){
+    if(row.athleteName)resultAthletes[row.athleteName]=true;
+    if(row.isPr||row.isSeasonBest)bestCount+=1;
+  });
+  els.meetCount.textContent=groups.length;
+  els.resultCount.textContent=results.length;
+  els.athleteCount.textContent=Object.keys(resultAthletes).length;
+  els.bestCount.textContent=bestCount;
+  els.meetListCount.textContent=groups.length+' meets';
+  els.resultListCount.textContent=results.length+' results';
+  els.resultsTitle.textContent=selectedMeetKey==='all'?'Results':'Results for selected meet';
+  els.meetList.innerHTML=groups.map(function(group){
+    var active=group.key===selectedMeetKey?' active':'';
+    var meta=[formatDate(group.date),seasonText(group),group.status].filter(Boolean).join(' · ');
+    return '<button class="meetitem'+active+'" type="button" data-meet-key="'+esc(group.key)+'">'+
+      '<div class="row"><b>'+esc(group.name||'Unlisted meet')+'</b><span class="pill">'+group.results.length+' results</span></div>'+
+      '<span>'+esc(meta)+'</span>'+
+    '</button>';
+  }).join('');
+  els.meetEmpty.hidden=!!groups.length;
+  els.resultRows.innerHTML=results.map(function(row){
+    var flags=[];
+    if(row.isPr)flags.push('<span class="pill pb">PB</span>');
+    if(row.isSeasonBest)flags.push('<span class="pill sb">SB</span>');
+    return '<tr>'+
+      '<td><div class="name">'+esc(row.athleteName||'Unnamed')+'</div></td>'+
+      '<td>'+esc(row.meetName||'Unlisted meet')+'<div class="muted">'+esc(seasonText(row))+'</div></td>'+
+      '<td>'+esc(row.event||'')+'</td>'+
+      '<td><b>'+esc(row.resultDisplay||'')+'</b></td>'+
+      '<td>'+(flags.join('')||'<span class="muted">No new best</span>')+'</td>'+
+      '<td>'+esc(formatDate(row.meetDate))+'</td>'+
+      '<td>'+esc(formatDateTime(row.syncedAt))+'</td>'+
+    '</tr>';
+  }).join('');
+  els.resultEmpty.hidden=!!results.length;
+  els.status.textContent=results.length+' results · '+groups.length+' meets';
+}
+function loadMeetHistory(){
+  els.refreshBtn.disabled=true;
+  els.status.textContent='Loading meet history...';
+  return Promise.all([
+    fetch('/api/smart-trak/dashboard',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
+    fetch('/api/ghl/meets',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};})
+  ]).then(function(results){
+    var dashboard=results[0];
+    if(!dashboard.ok&&dashboard.data&&dashboard.data.accessCodeRequired){
+      showAccess(dashboard.data);
+      return;
+    }
+    if(!dashboard.ok)throw new Error(dashboard.data&&dashboard.data.error||'Meet history failed to load.');
+    meetResults=dashboard.data.meetResults||dashboard.data.recentMeetResults||[];
+    scheduledMeets=(results[1].data&&results[1].data.meets)||[];
+    els.lastUpdated.textContent='Last updated '+formatDateTime(dashboard.data.generatedAt||new Date().toISOString());
+    renderOptions();
+    render();
+  }).catch(function(error){
+    meetResults=[];
+    scheduledMeets=[];
+    els.meetList.innerHTML='';
+    els.resultRows.innerHTML='';
+    els.meetEmpty.hidden=false;
+    els.resultEmpty.hidden=false;
+    els.resultEmpty.textContent=error.message||'Meet history failed to load.';
+    els.status.textContent='Needs attention';
+    els.lastUpdated.textContent='Update failed';
+  }).finally(function(){
+    els.refreshBtn.disabled=false;
+  });
+}
+function showAccess(data){
+  els.mainPage.hidden=true;
+  els.accessPanel.hidden=false;
+  els.accessStatus.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';
+  setTimeout(function(){els.accessCode.focus();},50);
+}
+function submitAccess(){
+  if(!els.accessCode.value.trim()){
+    els.accessStatus.textContent='Enter the access code to continue.';
+    els.accessStatus.style.color='var(--bad)';
+    return;
+  }
+  setAccessCode(els.accessCode.value);
+  els.accessPanel.hidden=true;
+  els.mainPage.hidden=false;
+  loadMeetHistory();
+}
+function init(){
+  document.body.classList.toggle('embedded',embeddedMode());
+  try{localStorage.setItem('sc_account',accountKey());}catch(e){}
+  els.dashboardLink.href=pageUrl('/dashboard.html');
+  els.planBuilderLink.href=pageUrl('/plan-builder.html');
+  els.refreshBtn.addEventListener('click',loadMeetHistory);
+  els.search.addEventListener('input',render);
+  els.seasonFilter.addEventListener('change',render);
+  els.eventFilter.addEventListener('change',render);
+  els.athleteFilter.addEventListener('change',render);
+  els.clearBtn.addEventListener('click',function(){
+    els.search.value='';
+    els.seasonFilter.value='all';
+    els.eventFilter.value='all';
+    els.athleteFilter.value='all';
+    selectedMeetKey='all';
+    render();
+  });
+  els.meetList.addEventListener('click',function(event){
+    var item=event.target.closest&&event.target.closest('[data-meet-key]');
+    if(!item)return;
+    var key=item.getAttribute('data-meet-key');
+    selectedMeetKey=selectedMeetKey===key?'all':key;
+    render();
+  });
+  els.accessSubmit.addEventListener('click',submitAccess);
+  els.accessCode.addEventListener('keydown',function(event){
+    if(event.key==='Enter')submitAccess();
+  });
+  loadMeetHistory();
+}
+init();
+</script>
+</body>
+</html>
