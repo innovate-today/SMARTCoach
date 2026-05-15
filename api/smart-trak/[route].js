@@ -49,15 +49,16 @@ function accountStatus(req, res) {
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const configured = !!(token && locationId);
   const missing = [];
-  if (!token) missing.push(`GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`);
-  if (!locationId) missing.push(`GHL_LOCATION_ID_${suffix}`);
+  if (!token) missing.push({ label: "Private integration token", key: `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}` });
+  if (!locationId) missing.push({ label: "Location ID", key: `GHL_LOCATION_ID_${suffix}` });
   res.status(configured ? 200 : 404).json({
     success: configured,
     accountKey,
     productPlan,
     configured,
     accessCodeRequired: !!accessCode,
-    missingVariables: configured ? [] : missing,
+    missingVariables: configured ? [] : missing.map((item) => item.key),
+    missingSetupFields: configured ? [] : missing,
     error: configured ? undefined : `SMARTCoach account "${accountKey}" is not configured.`,
   });
 }
@@ -86,6 +87,7 @@ function accountSetup(req, res) {
       key: `SMARTCOACH_PRODUCT_PLAN_${suffix}`,
       value: productPlan,
       required: true,
+      label: "Product plan",
       description: "Controls whether this account is Essential or Pro.",
     },
   ];
@@ -96,18 +98,21 @@ function accountSetup(req, res) {
         key: `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`,
         value: "paste_customer_private_integration_token",
         required: true,
+        label: "Private integration token",
         description: "Customer SMARTCoach Pro private integration token.",
       },
       {
         key: `GHL_LOCATION_ID_${suffix}`,
         value: "paste_customer_location_id",
         required: true,
+        label: "Location ID",
         description: "Customer SMARTCoach Pro sub-account location ID.",
       },
       {
         key: `SMARTCOACH_ACCESS_CODE_${suffix}`,
         value: "choose_customer_dashboard_access_code",
         required: false,
+        label: "Dashboard access code",
         description: "Optional now, but recommended before launch. Protects this customer's Pro dashboard/API data if the dashboard link is copied.",
       }
     );

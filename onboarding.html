@@ -71,7 +71,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="mark">SC</div>
       <div>
         <h1>SMARTCoach Account Setup</h1>
-        <div class="sub">Generate the Vercel variables and GHL dashboard link for a customer account.</div>
+        <div class="sub">Generate setup fields and the dashboard link for a customer account.</div>
       </div>
     </div>
     <div class="actions">
@@ -132,9 +132,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelhead"><h2>Customer Links</h2></div>
     <div class="panelbody">
       <div class="linkcard" style="margin-bottom:10px">
-        <strong>GHL Dashboard Custom Link</strong>
+        <strong>Dashboard Custom Link</strong>
         <span>Add this one link inside the customer sub-account. The full URL is hidden here to reduce accidental sharing.</span>
-        <div class="setupnote"><b>Where it goes in GHL</b>Add it as a custom sidebar/menu link in the customer sub-account. Use iframe/open inside app when available so coaches stay inside SMARTCoach Pro.</div>
+        <div class="setupnote"><b>Where it goes</b>Add it as a custom sidebar/menu link in the customer account. Use iframe/open inside app when available so coaches stay inside SMARTCoach Pro.</div>
         <div class="linkline">
           <code id="customLinkText" data-url="">Dashboard link hidden</code>
           <button type="button" onclick="copyCustomLink()">Copy Link</button>
@@ -184,7 +184,7 @@ function renderSetup(data){
   var env=data.environment||[];
   currentEnvironment=env;
   document.getElementById('envList').innerHTML=env.length?env.map(function(row){
-    return '<div class="envrow"><code>'+esc(row.key)+'='+esc(row.value)+'</code><small>'+esc(row.description||'')+'</small></div>';
+    return '<div class="envrow"><code>'+esc(row.label||row.key)+'</code><small>'+esc(row.description||'')+'</small></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
   renderVariableRows(env);
   setLink('accountLink',data.accountUrl);
@@ -220,7 +220,7 @@ function renderVariableRows(env){
   var box=document.getElementById('varList');
   if(!box)return;
   box.innerHTML=env.length?env.map(function(row,index){
-    return '<div class="varrow"><div class="varfield"><span>Name</span><code title="'+esc(row.key)+'">'+esc(row.key)+'</code></div><div class="varfield"><span>Value</span><code title="'+esc(row.value)+'">'+esc(row.value)+'</code></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Name</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
+    return '<div class="varrow"><div class="varfield"><span>Setup Field</span><code title="'+esc(row.key)+'">'+esc(row.label||row.key)+'</code></div><div class="varfield"><span>Value</span><code title="'+esc(row.value)+'">'+esc(row.value)+'</code></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Name</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
 }
 function copyVariablePart(index,part){
@@ -269,10 +269,10 @@ function renderChecklist(data){
       body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the CRM fields are added.'
     },
     {
-      title:plan==='essential'?'Confirm Essential stopwatch':'Add the GHL dashboard custom link',
+      title:plan==='essential'?'Confirm Essential stopwatch':'Add the dashboard custom link',
       body:plan==='essential'
         ?'Open '+linkHtml(data.accountUrl||('/?account='+encodeURIComponent(account)),'customer stopwatch')+' and confirm Pro-only tabs and actions are hidden.'
-        :'Add '+linkHtml(data.ghlCustomLinkUrl||dashboardUrl,'the customer dashboard')+' as the one GHL custom sidebar/menu link, preferably opened in an iframe. If CRM is not connected yet, it should show SMARTCoach Pro Setup Needed.'
+        :'Add '+linkHtml(data.ghlCustomLinkUrl||dashboardUrl,'the customer dashboard')+' as the one custom sidebar/menu link, preferably opened in an iframe. If the account is not connected yet, it should show SMARTCoach Pro Setup Needed.'
     }
   ];
   document.getElementById('checklist').innerHTML=rows.map(function(row,i){

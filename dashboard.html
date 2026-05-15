@@ -674,8 +674,8 @@ function applyPlanMode(){
   if(setup)setup.hidden=!setupNeeded;
   var details=document.getElementById('setupDetails');
   if(details&&setupNeeded){
-    var missing=accountStatus&&Array.isArray(accountStatus.missingVariables)?accountStatus.missingVariables:[];
-    details.textContent=missing.length?'Missing Vercel variables: '+missing.join(', '):'Open onboarding to generate the Vercel variables for this account.';
+    var missing=accountStatus&&Array.isArray(accountStatus.missingSetupFields)?accountStatus.missingSetupFields:[];
+    details.textContent=missing.length?'Missing setup fields: '+missing.map(function(item){return item.label||item.key;}).join(', '):'Open onboarding to generate the setup fields for this account.';
   }
   var badge=document.getElementById('productModeBadge');
   if(badge)badge.textContent=productPlanLabel(productPlan());
