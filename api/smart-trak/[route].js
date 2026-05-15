@@ -122,8 +122,9 @@ function accountSetup(req, res) {
         key: `SMARTCOACH_ACCESS_CODE_${suffix}`,
         value: suggestedAccessCode(accountKey),
         required: false,
+        recommended: true,
         label: "SMART Trak access code",
-        description: "Optional now, but recommended before launch. Protects this customer's Pro dashboard/API data if the dashboard link is copied.",
+        description: "Recommended before launch. Protects this customer's Pro dashboard/API data if the dashboard link is copied.",
       }
     );
   }

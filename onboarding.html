@@ -47,6 +47,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .varlabel span{font-size:11px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 .varmeta{border-radius:999px;background:#e8eefc;color:#173891;padding:2px 7px;font-size:10px;font-weight:900;font-style:normal;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
 .varmeta.optional{background:#f1f5f9;color:#475569}
+.varmeta.recommended{background:#fff7ed;color:#9a3412}
 .varfield code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:9px 10px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .copyhint{font-size:12px;color:var(--muted);line-height:1.35;margin-bottom:10px}
 .linkcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;display:grid;gap:10px}
@@ -137,7 +138,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   <section id="copyPanel" class="panel" hidden>
     <div class="panelhead"><h2>Production Setup Fields</h2></div>
     <div class="panelbody">
-      <div class="copyhint">Add each required row in Vercel Production. Copy Setup Field into the Name box and Copy Value into the Value box.</div>
+      <div class="copyhint">Add required rows in Vercel Production. Recommended rows protect customer data before launch. Copy Setup Field into the Name box and Copy Value into the Value box.</div>
       <div id="varList" class="varlist"></div>
     </div>
   </section>
@@ -331,8 +332,8 @@ function renderVariableRows(env){
   if(!box)return;
   box.innerHTML=env.length?env.map(function(row,index){
     var required=row.required!==false;
-    var status=required?'Required':'Optional';
-    var statusClass=required?'':' optional';
+    var status=required?'Required':row.recommended?'Recommended':'Optional';
+    var statusClass=required?'':row.recommended?' recommended':' optional';
     return '<div class="varrow"><div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta'+statusClass+'">'+status+'</em></div><code title="'+esc(row.key)+'">'+esc(row.label||row.key)+'</code></div><div class="varfield"><div class="varlabel"><span>Value</span></div><code title="'+esc(row.value)+'">'+esc(row.value)+'</code></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Setup Field</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
 }
