@@ -46,13 +46,18 @@ function accountStatus(req, res) {
   }
 
   const { accountKey, token, locationId, productPlan, accessCode } = getGhlContext(req);
+  const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const configured = !!(token && locationId);
+  const missing = [];
+  if (!token) missing.push(`GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`);
+  if (!locationId) missing.push(`GHL_LOCATION_ID_${suffix}`);
   res.status(configured ? 200 : 404).json({
     success: configured,
     accountKey,
     productPlan,
     configured,
     accessCodeRequired: !!accessCode,
+    missingVariables: configured ? [] : missing,
     error: configured ? undefined : `SMARTCoach account "${accountKey}" is not configured.`,
   });
 }

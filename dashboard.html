@@ -377,6 +377,7 @@ tr:last-child td{border-bottom:0}
 <section id="setupMessage" class="essential-message" hidden>
   <h1>SMARTCoach Pro Setup Needed</h1>
   <p>This account is on SMARTCoach Pro, but the CRM connection is not finished yet. The stopwatch can still be opened while setup is completed.</p>
+  <p id="setupDetails" class="small"></p>
   <div class="essential-actions">
     <a id="setupStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
     <a id="setupPreviewLink" class="linkbtn secondary admin-only" hidden href="/dashboard.html?admin=1&plan=pro">Admin Preview</a>
@@ -670,6 +671,11 @@ function applyPlanMode(){
   if(message)message.hidden=pro||setupNeeded;
   var setup=document.getElementById('setupMessage');
   if(setup)setup.hidden=!setupNeeded;
+  var details=document.getElementById('setupDetails');
+  if(details&&setupNeeded){
+    var missing=accountStatus&&Array.isArray(accountStatus.missingVariables)?accountStatus.missingVariables:[];
+    details.textContent=missing.length?'Missing Vercel variables: '+missing.join(', '):'Open onboarding to generate the Vercel variables for this account.';
+  }
   var badge=document.getElementById('productModeBadge');
   if(badge)badge.textContent=productPlanLabel(productPlan());
 }
