@@ -1,6 +1,6 @@
-# SMARTCoach Pro Field Build Guide
+# SMART Trak Field Build Guide
 
-Use this when creating SMARTCoach Pro objects and fields directly in GoHighLevel outside the Codex in-app browser.
+Use this when creating SMART Trak objects and fields directly in the underlying GoHighLevel account outside the Codex in-app browser.
 
 Source model:
 
@@ -8,14 +8,14 @@ Source model:
 
 ## Current Constraint
 
-The Codex in-app browser is not able to complete the GoHighLevel login flow in this session. You can still create the fields by logging into GoHighLevel/SMARTCoach Pro in your normal browser and following this guide.
+The Codex in-app browser is not always able to complete the GoHighLevel login flow. You can still create the fields by logging into SMART Trak in your normal browser and following this guide.
 
 If API access is available later, the same object and field names can be automated from `smart_trak_field_schema.json`.
 
 Field naming note:
 
 - Use each object's primary display field instead of adding a duplicate `Record Name` custom field.
-- If a field key still contains `_json`, keep the API key for compatibility, but use a readable GHL label such as `Splits` or `Season Bests`.
+- If a field key still contains `_json`, keep the API key for compatibility, but use a readable SMART Trak label such as `Splits` or `Season Bests`.
 
 ## Build Order
 
@@ -34,8 +34,8 @@ Create `Performance Record` first because the SMARTCoach sync creates one struct
 
 Current custom object budget:
 
-- GHL limit currently being planned around: 10 custom objects.
-- SMARTCoach Pro currently uses 8 custom objects.
+- SMART Trak limit currently being planned around: 10 custom objects.
+- SMART Trak currently uses 8 custom objects.
 - Remaining planned room: 2 custom objects, reserved for future high-value needs such as field-event attempts or recruiting profiles.
 
 ## Object 1: Performance Record

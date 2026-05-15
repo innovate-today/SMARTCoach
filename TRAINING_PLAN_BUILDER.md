@@ -1,6 +1,6 @@
-# SMARTCoach Pro Plan Builder
+# SMART Trak Plan Builder
 
-The Plan Builder creates coach-reviewed training plans in SMARTCoach Pro.
+The Plan Builder creates coach-reviewed training plans in SMART Trak.
 
 Coach-facing wording:
 
@@ -16,22 +16,22 @@ Use coach-facing wording such as Guided Plan Builder, Plan Builder, generated dr
 
 1. Coach completes the Guided Plan Builder questionnaire.
 2. Coach enters the meet schedule before creating the plan.
-3. SMARTCoach Pro creates one `Training Plan` record.
-4. SMARTCoach Pro creates many `Training Plan Day` records.
+3. SMART Trak creates one `Training Plan` record.
+4. SMART Trak creates many `Training Plan Day` records.
 5. Meet dates are placed into the daily plan from the meet schedule.
 6. Each `Training Plan Day` includes the actual planned workout, such as reps, distance, recovery, target effort, and target split/pace guidance.
-7. Coach reviews and edits the draft in SMARTCoach Pro or the future dashboard.
+7. Coach reviews and edits the draft in SMART Trak.
 8. Coach approves the plan.
 9. The stopwatch app selects an approved plan/day.
 10. Completed workout results sync back to the selected Training Plan Day.
 
-## GHL Custom Link
+## SMART Trak Custom Link
 
-Use this page for the SMARTCoach Pro/GHL custom menu link:
+Use this page only when testing the builder directly:
 
 `https://app.smartcoach-pro.com/plan-builder.html`
 
-The stopwatch app should not create plans. It should only select an existing plan/day, allow the coach to choose a different upcoming workout when practice conditions change, and sync completed timing data back to the chosen Training Plan Day.
+In production, the dashboard is the one SMART Trak custom/sidebar link. The dashboard opens Plan Builder from its button. The stopwatch app should not create plans. It should only select an existing plan/day, allow the coach to choose a different upcoming workout when practice conditions change, and sync completed timing data back to the chosen Training Plan Day.
 
 When a coach reaches practice and needs to adjust, the stopwatch app shows the next five scheduled workouts and allows a different workout to be selected for that group.
 

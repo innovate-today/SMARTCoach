@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
   const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
-    res.status(500).json({ error: "GHL meets are not configured on the server." });
+    res.status(500).json({ error: "SMART Trak meets are not configured on the server." });
     return;
   }
 

@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
   const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
-    res.status(500).json({ error: "GHL athlete roster is not configured on the server." });
+    res.status(500).json({ error: "SMART Trak athlete roster is not configured on the server." });
     return;
   }
 
@@ -101,7 +101,7 @@ async function findOrCreateContact({ token, locationId, athleteName }) {
 
   const contact = created.contact || created;
   if (!contact || !contact.id) {
-    throw httpError(502, `GHL did not return a contact for ${athleteName}.`);
+    throw httpError(502, `SMART Trak did not return a contact for ${athleteName}.`);
   }
   return contact;
 }

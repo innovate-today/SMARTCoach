@@ -48,7 +48,7 @@ module.exports = async function handler(req, res) {
   const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
-    res.status(500).json({ error: "GHL athlete profile is not configured on the server." });
+    res.status(500).json({ error: "SMART Trak athlete profile is not configured on the server." });
     return;
   }
 

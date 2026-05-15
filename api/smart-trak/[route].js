@@ -98,7 +98,7 @@ function accountSetup(req, res) {
       key: `SMARTCOACH_PRODUCT_PLAN_${suffix}`,
       value: productPlan,
       required: true,
-      label: "Product plan",
+      label: "Plan",
       description: "Controls whether this account is Essential or Pro.",
     },
   ];

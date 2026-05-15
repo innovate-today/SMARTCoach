@@ -72,7 +72,7 @@ module.exports = async function handler(req, res) {
   const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
-    res.status(500).json({ error: "GHL training plans are not configured on the server." });
+    res.status(500).json({ error: "SMART Trak training plans are not configured on the server." });
     return;
   }
 

@@ -1,6 +1,6 @@
-# SMARTCoach Pro Data Model
+# SMART Trak Data Model
 
-This document defines the first structured GoHighLevel/SMARTCoach Pro data model for SMARTCoach.
+This document defines the first structured SMART Trak data model for SMARTCoach. SMART Trak is backed by GoHighLevel, so some internal API keys, IDs, and implementation notes still use GHL terminology.
 
 The model starts from what the app already syncs successfully today:
 
@@ -20,13 +20,13 @@ The first production goal is to keep the existing contact note sync working, the
 
 ## Naming Rules
 
-Use these naming conventions in GHL/SMARTCoach Pro:
+Use these naming conventions in SMART Trak:
 
 - Object names are singular display names.
 - API keys are lowercase snake case.
 - Field display names use title case.
 - Field API keys use lowercase snake case.
-- Store milliseconds for all calculated times and a human-readable display field for easy CRM review.
+- Store milliseconds for all calculated times and a human-readable display field for easy SMART Trak review.
 - Store source IDs from SMARTCoach wherever possible so repeat syncs can update or dedupe records.
 
 ## Shared Picklists
@@ -149,7 +149,7 @@ Options:
 
 ## Relationship Model
 
-GHL Contact remains the athlete identity record.
+SMART Trak Contact remains the athlete identity record.
 
 Relationships:
 
@@ -165,15 +165,15 @@ Relationships:
 
 Recommended relationship fields:
 
-- `athlete_contact`: GHL contact ID for reliable linking.
-- `athlete_name_snapshot`: labeled `Athlete Name` in GHL; stores the athlete name at the time of record creation.
+- `athlete_contact`: contact ID for reliable linking.
+- `athlete_name_snapshot`: labeled `Athlete Name` in SMART Trak; stores the athlete name at the time of record creation.
 - `season_record_id`: optional parent season summary link.
 - `source_session_id`: SMARTCoach session/group sync ID where available.
 - `source_record_id`: SMARTCoach-generated unique ID for dedupe/update.
 
 Field naming note:
 
-- Do not create a separate `Record Name` custom field unless GHL requires it for a specific object. Each object already has its own primary display field, such as `performance_record`, `meet_result`, `athlete_best`, `training_plan`, or `record`.
+- Do not create a separate `Record Name` custom field unless SMART Trak requires it for a specific object. Each object already has its own primary display field, such as `performance_record`, `meet_result`, `athlete_best`, `training_plan`, or `record`.
 - Fields previously labeled with `JSON` should remain long-text fields, but their coach-facing labels should be readable: `Splits`, `Season Bests`, and similar.
 
 ## Object 1: Performance Record
@@ -202,7 +202,7 @@ Avery Womble - Special Endurance I - 300m - 00:52.4 - Apr 26, 2026
 
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
-| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. Use relation if available, otherwise text. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | SMART Trak contact ID. Use relation if available, otherwise text. |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Keeps display stable if contact name changes. |
 | Source System | `source_system` | Dropdown | Yes | smartcoach | Default `smartcoach`. |
 | Source Session ID | `source_session_id` | Text | Yes | sc_20260426_speed_work | Dedupe key for session. |
@@ -248,7 +248,7 @@ Avery Womble - Special Endurance I - 300m - 00:52.4 - Apr 26, 2026
 
 ### Minimum Viable Fields For First Implementation
 
-Start with these fields if GHL setup needs to be lean:
+Start with these fields if setup needs to be lean:
 
 - `athlete_contact`
 - `athlete_name_snapshot`
@@ -293,7 +293,7 @@ Avery Womble - Spring 2026 - Track
 
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
-| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | SMART Trak contact ID. |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
 | Season Year | `season_year` | Number | Yes | 2026 | Calendar year. |
@@ -358,7 +358,7 @@ Stores the season meet schedule so coaches can select a meet in the app instead 
 
 Creation trigger:
 
-- Coach or admin enters the season schedule in SMARTCoach Pro/GHL.
+- Coach or admin enters the season schedule in SMART Trak.
 - Coach can also add a meet from the app if it is missing.
 
 Primary display format:
@@ -407,7 +407,7 @@ Stores official competition results. This separates practice performance from ra
 Creation trigger:
 
 - Manual coach entry first.
-- Later: import from athletic.net, MileSplit, CSV, or GHL form.
+- Later: import from athletic.net, MileSplit, CSV, or SMART Trak form.
 
 Primary display format:
 
@@ -419,9 +419,9 @@ Avery Womble - 400m - 54.8 - District Meet - Mar 28, 2026
 
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
-| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | SMART Trak contact ID. |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
-| Meet Record ID | `meet_record_id` | Text | No | rec123 | GHL Meet object record ID selected in the app. |
+| Meet Record ID | `meet_record_id` | Text | No | rec123 | SMART Trak Meet object record ID selected in the app. |
 | Meet Name | `meet_name` | Text | Yes | District Meet | Official meet name. |
 | Meet Date | `meet_date` | Date | Yes | 2026-03-28 | Competition date. |
 | Season | `season` | Dropdown | Yes | spring | Shared picklist. |
@@ -484,7 +484,7 @@ PB/SB confirmation rule:
 
 - If a stored Athlete Best or Season Record already exists, SMARTCoach can auto-detect a new PB/SB when the saved result beats the stored mark.
 - If the database has no prior mark for that athlete/event, the coach must confirm PB and/or SB during the meet-save flow before the result is flagged as a record.
-- This prevents an empty CRM database from treating every first synced result as a confirmed PB/SB.
+- This prevents an empty SMART Trak database from treating every first synced result as a confirmed PB/SB.
 
 ## Object 5: Athlete Best
 
@@ -513,7 +513,7 @@ Avery Womble - 400m Bests
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
 | Athlete Best | `athlete_best` | Text | Yes | Avery Womble - 400m Bests | Primary display field. |
-| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact association. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | SMART Trak contact association. |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Sport | `sport` | Dropdown/Text | Yes | track | Track or cross country. |
 | Event | `event` | Text | Yes | 400m | Event this best record tracks. |
@@ -596,7 +596,7 @@ Trinity Christian - Girls 400m School Record
 | Record MS | `record_ms` | Number | No | 54820 | Timed events; lower is better. |
 | Record Value Numeric | `record_value_numeric` | Number | No | 5.82 | Jumps/throws/points later. |
 | Record Unit | `record_unit` | Text | No | seconds | seconds, meters, feet_inches, points. |
-| Record Holder Contact | `record_holder_contact_id` | Contact relation/Text | No | abc123 | Current holder if in CRM. |
+| Record Holder Contact | `record_holder_contact_id` | Contact relation/Text | No | abc123 | Current holder if in SMART Trak. |
 | Record Holder Name | `record_holder_name` | Text | Yes | Avery Womble | Current holder display. |
 | Record Meet | `record_meet` | Text | No | State Championship | Meet where set. |
 | Record Date | `record_date` | Date | No | 2026-05-03 | Date set. |
@@ -660,7 +660,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 
 | Field | API Key | Type | Required | Example | Notes |
 |---|---|---:|---:|---|---|
-| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | GHL contact ID. |
+| Athlete Contact | `athlete_contact` | Contact relation/Text | Yes | abc123 | SMART Trak contact ID. |
 | Athlete Name | `athlete_name_snapshot` | Text | Yes | Avery Womble | Stable display. |
 | Plan Scope | `plan_scope` | Dropdown | Yes | individual | individual, group, team. |
 | Group Name | `group_name` | Text | No | 400m Group | For group/team prescriptions. |
@@ -727,7 +727,7 @@ Avery Womble - Week 2 SPP - 6x200m SE I - Apr 7, 2026
 
 ## Athlete Contact Fields
 
-These are not new custom objects, but they should exist on the GHL contact for every athlete.
+These are not new custom objects, but they should exist on the SMART Trak contact for every athlete.
 
 | Field | API Key | Type | Required | Example |
 |---|---|---:|---:|---|
@@ -761,7 +761,7 @@ Send targets:
 Recipient rules:
 
 - Resolve parent recipients from `parent_guardian_email` and `parent_guardian_2_email` on the athlete contact.
-- If parent contact relationships are added later in GHL, prefer those relationships, but keep the email fields as a simple fallback.
+- If parent contact relationships are added later in SMART Trak, prefer those relationships, but keep the email fields as a simple fallback.
 - Dedupe email addresses before sending.
 - Show missing parent email warnings before sending.
 - Respect `parent_communication_opt_in` before automated sends.
@@ -782,7 +782,7 @@ Potential custom object:
 - Display name: `Recruiting Profile`
 - Internal name: `custom_objects.recruiting_profiles`
 
-Use this object only if SMARTCoach Pro needs structured tracking for:
+Use this object only if SMART Trak needs structured tracking for:
 
 - Generated profile version
 - PDF URL
@@ -794,19 +794,19 @@ Use this object only if SMARTCoach Pro needs structured tracking for:
 - Recruiting opt-in snapshot
 - Source athlete/contact ID
 
-Because the current GHL account has a 10 custom-object limit, do not create this object until the dashboard/recruiting workflow proves it is necessary.
+Because the current SMART Trak account has a 10 custom-object limit, do not create this object until the dashboard/recruiting workflow proves it is necessary.
 
 ## Athlete Roster Resolution
 
-To avoid duplicate contacts once SMARTCoach is live, the app should prefer a controlled SMARTCoach Pro athlete roster instead of free-typed names.
+To avoid duplicate contacts once SMARTCoach is live, the app should prefer a controlled SMART Trak athlete roster instead of free-typed names.
 
 Recommended workflow:
 
-1. SMARTCoach Pro/GHL remains the source of truth for athlete contacts.
-2. SMARTCoach loads active athletes from GHL through a Vercel API endpoint.
-3. The runner name input becomes a searchable dropdown backed by active GHL contacts.
-4. The selected athlete stores both display name and GHL contact ID locally.
-5. Sync uses the selected GHL contact ID first, then name fallback only when needed.
+1. SMART Trak remains the source of truth for athlete contacts.
+2. SMARTCoach loads active athletes from SMART Trak through a Vercel API endpoint.
+3. The runner name input becomes a searchable dropdown backed by active SMART Trak contacts.
+4. The selected athlete stores both display name and contact ID locally.
+5. Sync uses the selected contact ID first, then name fallback only when needed.
 
 Roster filter:
 
@@ -817,7 +817,7 @@ Coach field workflow:
 
 - If an athlete is missing, the app should offer `Add Athlete`.
 - If an athlete exists but is inactive, the app should offer `Set Active`.
-- Both actions should call Vercel server endpoints so the GHL private token stays server-side.
+- Both actions should call Vercel server endpoints so the private integration token stays server-side.
 
 Recommended endpoints:
 
@@ -831,7 +831,7 @@ Recommended local runner shape:
 {
   "id": 1,
   "name": "Avery Womble",
-  "contactId": "GHL_CONTACT_ID",
+  "contactId": "SMART_TRAK_CONTACT_ID",
   "smartcoachAthleteId": "sca_avery_womble_2027"
 }
 ```
@@ -847,7 +847,7 @@ Sync rule:
 
 1. Performance Records: live sync confirmed.
 2. Season Records: live create/update confirmed.
-3. Meet schedule and Meet Results: meet timing groups can save captured results to SMARTCoach Pro/GHL.
+3. Meet schedule and Meet Results: meet timing groups can save captured results to SMART Trak.
 4. Athlete Bests: PB/SB records can be created/updated from meet results and current-fitness setup.
 5. Records: school/team/club record detection is planned on top of Meet Results and Athlete Bests.
 6. Training Plans and Training Plan Days: active build area for group plans, athlete overrides, daily workouts, and stopwatch targets.
@@ -866,7 +866,7 @@ Recommended IDs:
 - Records: `rec_{recordScope}_{organizationSlug}_{divisionSlug}_{eventSlug}`
 - Training Plan: `tp_{contactId}_{planDate}_{workoutType}_{shortHash}`
 
-If GHL custom objects do not enforce uniqueness directly, the sync function should search by `source_record_id` before creating a new record.
+If SMART Trak custom objects do not enforce uniqueness directly, the sync function should search by `source_record_id` before creating a new record.
 
 ## Dashboard Queries Needed Later
 

@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
   const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
-    res.status(500).json({ error: "GHL sync is not configured on the server." });
+    res.status(500).json({ error: "SMART Trak sync is not configured on the server." });
     return;
   }
 
@@ -86,7 +86,7 @@ module.exports = async function handler(req, res) {
 
     res.status(200).json({ success: true, synced, planDayUpdate });
   } catch (error) {
-    const body = { error: error.message || "GHL sync failed." };
+    const body = { error: error.message || "SMART Trak sync failed." };
     if (error.code) body.code = error.code;
     if (error.duplicates) body.duplicates = error.duplicates;
     res.status(error.statusCode || 500).json(body);
@@ -217,7 +217,7 @@ async function findOrCreateContact({ token, locationId, athlete, session }) {
 
   const contact = created.contact || created;
   if (!contact || !contact.id) {
-    throw httpError(502, `GHL did not return a contact for ${athlete.name}.`);
+    throw httpError(502, `SMART Trak did not return a contact for ${athlete.name}.`);
   }
   await markContactAsSmartCoachAthlete({ token, contact, athlete });
   return contact;

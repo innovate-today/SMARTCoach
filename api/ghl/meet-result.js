@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
   const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
-    res.status(500).json({ error: "GHL meet result sync is not configured on the server." });
+    res.status(500).json({ error: "SMART Trak meet result sync is not configured on the server." });
     return;
   }
 
@@ -172,7 +172,7 @@ async function findOrCreateContact({ token, locationId, meetResult }) {
   });
 
   const contact = created.contact || created;
-  if (!contact || !contact.id) throw httpError(502, `GHL did not return a contact for ${meetResult.athleteName}.`);
+  if (!contact || !contact.id) throw httpError(502, `SMART Trak did not return a contact for ${meetResult.athleteName}.`);
 
   await markContactAsSmartCoachAthlete({ token, contact, meetResult });
   return contact;
