@@ -46,6 +46,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .meetitem{width:100%;display:block;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;background:#fff;color:var(--ink);padding:12px 14px;cursor:pointer}
 .meetitem:hover{background:#f8fbff}
 .meetitem.active{background:#eef3ff;border-left:4px solid var(--blue);padding-left:10px}
+.meetitem.compare{background:#f8fafc}
 .meetitem b{display:block;font-size:15px}
 .meetitem span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
 .meetitem .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -171,7 +172,7 @@ tr:last-child td{border-bottom:0}
 <script>
 var scheduledMeets=[];
 var meetResults=[];
-var selectedMeetKey='all';
+var selectedGroupKey='all';
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -267,6 +268,9 @@ function parseResultMs(value){
 function meetKey(name,date){
   return [String(name||'').trim().toLowerCase(),String(date||'').slice(0,10)].join('|');
 }
+function meetNameKey(name){
+  return String(name||'Unlisted meet').trim().toLowerCase();
+}
 function resultMeetKey(row){
   return meetKey(row.meetName,row.meetDate);
 }
@@ -318,7 +322,10 @@ function filteredGroups(){
 function selectedResults(groups){
   var list=[];
   groups.forEach(function(group){
-    if(selectedMeetKey!=='all'&&group.key!==selectedMeetKey)return;
+    if(selectedGroupKey!=='all'){
+      if(selectedGroupKey.indexOf('meet:')===0&&group.key!==selectedGroupKey.slice(5))return;
+      if(selectedGroupKey.indexOf('series:')===0&&meetNameKey(group.name)!==selectedGroupKey.slice(7))return;
+    }
     list=list.concat(group.results);
   });
   return list.sort(function(a,b){
@@ -345,6 +352,22 @@ function fillSelect(select,label,values){
   var previous=select.value||'all';
   select.innerHTML='<option value="all">'+esc(label)+'</option>'+values.map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
   select.value=values.indexOf(previous)>=0?previous:'all';
+}
+function meetSeries(groups){
+  var series={};
+  groups.forEach(function(group){
+    var key=meetNameKey(group.name);
+    if(!series[key])series[key]={key:key,name:group.name||'Unlisted meet',dates:{},results:0};
+    if(group.date)series[key].dates[group.date]=true;
+    series[key].results+=group.results.length;
+  });
+  return Object.keys(series).map(function(key){
+    var item=series[key];
+    item.dateCount=Object.keys(item.dates).length;
+    return item;
+  }).filter(function(item){return item.dateCount>1;}).sort(function(a,b){
+    return a.name.localeCompare(b.name);
+  });
 }
 function renderMeetSummary(results){
   var events={};
@@ -384,7 +407,14 @@ function renderEventLeaders(results){
 }
 function render(){
   var groups=filteredGroups();
-  if(selectedMeetKey!=='all'&&!groups.some(function(group){return group.key===selectedMeetKey;}))selectedMeetKey='all';
+  if(selectedGroupKey!=='all'){
+    var selectedStillExists=groups.some(function(group){
+      if(selectedGroupKey.indexOf('meet:')===0)return group.key===selectedGroupKey.slice(5);
+      if(selectedGroupKey.indexOf('series:')===0)return meetNameKey(group.name)===selectedGroupKey.slice(7);
+      return false;
+    });
+    if(!selectedStillExists)selectedGroupKey='all';
+  }
   var results=selectedResults(groups);
   var resultAthletes={};
   var bestCount=0;
@@ -398,12 +428,20 @@ function render(){
   els.bestCount.textContent=bestCount;
   els.meetListCount.textContent=groups.length+' meets';
   els.resultListCount.textContent=results.length+' results';
-  els.resultsTitle.textContent=selectedMeetKey==='all'?'Results':'Results for selected meet';
+  els.resultsTitle.textContent=selectedGroupKey==='all'?'Results':selectedGroupKey.indexOf('series:')===0?'Meet Comparison':'Results for selected meet';
   renderMeetSummary(results);
-  els.meetList.innerHTML=groups.map(function(group){
-    var active=group.key===selectedMeetKey?' active':'';
+  var series=meetSeries(groups);
+  var seriesHtml=series.map(function(item){
+    var active=selectedGroupKey==='series:'+item.key?' active':'';
+    return '<button class="meetitem compare'+active+'" type="button" data-group-key="series:'+esc(item.key)+'">'+
+      '<div class="row"><b>'+esc(item.name)+'</b><span class="pill">'+item.dateCount+' dates</span></div>'+
+      '<span>Compare same meet/course · '+esc(item.results)+' results</span>'+
+    '</button>';
+  }).join('');
+  els.meetList.innerHTML=seriesHtml+groups.map(function(group){
+    var active=selectedGroupKey==='meet:'+group.key?' active':'';
     var meta=[formatDate(group.date),seasonText(group),group.status].filter(Boolean).join(' · ');
-    return '<button class="meetitem'+active+'" type="button" data-meet-key="'+esc(group.key)+'">'+
+    return '<button class="meetitem'+active+'" type="button" data-group-key="meet:'+esc(group.key)+'">'+
       '<div class="row"><b>'+esc(group.name||'Unlisted meet')+'</b><span class="pill">'+group.results.length+' results</span></div>'+
       '<span>'+esc(meta)+'</span>'+
     '</button>';
@@ -490,14 +528,14 @@ function init(){
     els.seasonFilter.value='all';
     els.eventFilter.value='all';
     els.athleteFilter.value='all';
-    selectedMeetKey='all';
+    selectedGroupKey='all';
     render();
   });
   els.meetList.addEventListener('click',function(event){
-    var item=event.target.closest&&event.target.closest('[data-meet-key]');
+    var item=event.target.closest&&event.target.closest('[data-group-key]');
     if(!item)return;
-    var key=item.getAttribute('data-meet-key');
-    selectedMeetKey=selectedMeetKey===key?'all':key;
+    var key=item.getAttribute('data-group-key');
+    selectedGroupKey=selectedGroupKey===key?'all':key;
     render();
   });
   els.accessSubmit.addEventListener('click',submitAccess);
