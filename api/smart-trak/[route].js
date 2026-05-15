@@ -110,7 +110,7 @@ function accountSetup(req, res) {
     environment: env,
     accountUrl: `/?account=${encodeURIComponent(accountKey)}`,
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(accountKey)}`,
-    ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(accountKey)}`,
+    ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(accountKey)}&embed=1`,
     planBuilderUrl: `/plan-builder.html?account=${encodeURIComponent(accountKey)}`,
   });
 }

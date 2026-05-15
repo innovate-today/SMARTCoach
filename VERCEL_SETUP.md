@@ -21,7 +21,7 @@ Every customer account uses an account key in the URL, for example:
 
 For SMARTCoach Pro accounts, the GHL custom link should point to the dashboard:
 
-- `/dashboard.html?account=lincolntrack`
+- `/dashboard.html?account=lincolntrack&embed=1`
 
 Only one GHL custom link is needed because the dashboard contains the Plan Builder button. The stopwatch link is mainly for mobile practice/meet timing.
 
