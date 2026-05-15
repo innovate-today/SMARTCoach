@@ -262,6 +262,18 @@ Requirements:
 5. Plan remaining object budget carefully: only add new objects for high-value needs such as field-event attempts or recruiting profiles.
 6. Parent/recruiting/athlete portals after the dashboard and account separation are stable.
 
+## Production Security Note
+
+Account-specific URLs are routing, not security. Before SMARTCoach Pro is sold to outside customers, Pro dashboard/API access needs real access protection so a copied dashboard URL cannot expose athlete data.
+
+Required production direction:
+
+- Do not rely on hidden or hard-to-guess account links.
+- Keep customer dashboard links out of public onboarding screens where possible.
+- Gate Pro dashboard/API routes with auth, signed customer sessions, GHL app context, or another server-verified access layer.
+- Keep the GHL custom link inside the customer's sub-account as the normal entry point, but still treat copied links as potentially shareable.
+- Essential stopwatch can stay much lighter, but Pro roster/results/training data must be protected.
+
 ## Latest Continuation Notes
 
 On April 30, 2026, the local continuation cleaned up visible encoding damage in the SmartCoach HTML files:

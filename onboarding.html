@@ -132,10 +132,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelbody">
       <div class="linkcard" style="margin-bottom:10px">
         <strong>GHL Dashboard Custom Link</strong>
-        <span>Add this one link inside the customer sub-account. Plan Builder stays available from the dashboard button.</span>
+        <span>Add this one link inside the customer sub-account. The full URL is hidden here to reduce accidental sharing.</span>
         <div class="setupnote"><b>Where it goes in GHL</b>Add it as a custom sidebar/menu link in the customer sub-account. Use iframe/open inside app when available so coaches stay inside SMARTCoach Pro.</div>
         <div class="linkline">
-          <code id="customLinkText">--</code>
+          <code id="customLinkText" data-url="">Dashboard link hidden</code>
           <button type="button" onclick="copyCustomLink()">Copy Link</button>
         </div>
         <a id="customLink" class="linkbtn" href="/dashboard.html">Open Dashboard</a>
@@ -197,11 +197,15 @@ function setLink(id,path){
 }
 function setCustomLinkText(path){
   var el=document.getElementById('customLinkText');
-  if(el)el.textContent=absoluteUrl(path||'/dashboard.html');
+  if(el){
+    el.dataset.url=absoluteUrl(path||'/dashboard.html');
+    el.textContent='Dashboard link hidden';
+    el.title='Use Copy Link instead of sharing this screen.';
+  }
 }
 function copyCustomLink(){
   var el=document.getElementById('customLinkText');
-  copyText(el&&el.textContent?el.textContent:'','Dashboard custom link copied.');
+  copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'','Dashboard custom link copied.');
 }
 function absoluteUrl(path){
   try{
