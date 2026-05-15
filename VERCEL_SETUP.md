@@ -45,6 +45,12 @@ Recommended before customer launch:
 
 - `SMARTCOACH_ACCESS_CODE_LINCOLNTRACK=...`
 
+Optional account branding:
+
+- `SMARTCOACH_LOGO_URL_LINCOLNTRACK=https://...`
+
+When set, SMART Trak desktop pages use this logo instead of the default SMART Trak placeholder logo.
+
 The setup helper generates a suggested access code value. When this access code is set, SMARTCoach Pro API data for that account requires the browser session to provide the code. This is an early protection layer, not the final subscription/auth system.
 
 Use the setup helper endpoint to generate the exact variables for a new account:

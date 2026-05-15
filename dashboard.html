@@ -177,7 +177,7 @@ tr:last-child td{border-bottom:0}
 <main class="page pro-page-only">
   <section class="top">
     <div class="brand">
-      <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
         <h1>SMART Trak Dashboard</h1>
         <div class="sub">Roster, training volume, current fitness, and recent results.</div>
@@ -691,14 +691,25 @@ function syncProductPlanFromAccount(){
   return checkSmartCoachAccount().then(function(result){
     accountStatus=result.data||null;
     if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
+    applyBrandLogo(result.data&&result.data.logoUrl);
     applyPlanMode();
     applySmartCoachLinks();
     return productPlan();
   }).catch(function(){
     accountStatus=null;
+    applyBrandLogo('');
     applyPlanMode();
     applySmartCoachLinks();
     return productPlan();
+  });
+}
+function defaultBrandLogo(){
+  return '/assets/smart-logo.png';
+}
+function applyBrandLogo(logoUrl){
+  var src=String(logoUrl||'').trim()||defaultBrandLogo();
+  document.querySelectorAll('[data-brand-logo]').forEach(function(img){
+    img.src=src;
   });
 }
 function smartCoachPageUrl(path,planOverride){

@@ -83,7 +83,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 <div id="productModeBadge" class="admin-mode-badge admin-only" hidden></div>
 <div class="wrap pro-page-only">
   <div class="top">
-    <div class="brand"><div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div><span>SMART Trak</span></div>
+    <div class="brand"><div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div><span>SMART Trak</span></div>
     <div class="top-actions">
       <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button><span id="appVersion" style="font-size:12px;color:#6b7280"></span></div>
       <a id="dashboardLink" class="linkbtn" href="/dashboard.html">SMART Trak</a>
@@ -209,14 +209,25 @@ function syncProductPlanFromAccount(){
   return checkSmartCoachAccount().then(function(result){
     accountStatus=result.data||null;
     if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
+    applyBrandLogo(result.data&&result.data.logoUrl);
     applyPlanMode();
     applySmartCoachLinks();
     return productPlan();
   }).catch(function(){
     accountStatus=null;
+    applyBrandLogo('');
     applyPlanMode();
     applySmartCoachLinks();
     return productPlan();
+  });
+}
+function defaultBrandLogo(){
+  return '/assets/smart-logo.png';
+}
+function applyBrandLogo(logoUrl){
+  var src=String(logoUrl||'').trim()||defaultBrandLogo();
+  document.querySelectorAll('[data-brand-logo]').forEach(function(img){
+    img.src=src;
   });
 }
 function smartCoachPageUrl(path,planOverride){
