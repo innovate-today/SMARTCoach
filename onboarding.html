@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMARTCoach Account Setup</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b00000}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:980px;margin:0 auto;padding:24px 18px 36px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:34px;height:34px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+h1{font-size:24px;line-height:1.15;margin:0}
+.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.actions{display:flex;align-items:center;gap:10px}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
+button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
+button:disabled{opacity:.55;cursor:not-allowed}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.panelhead{padding:16px 18px;border-bottom:1px solid var(--line)}
+.panelhead h2{font-size:18px;margin:0}
+.panelbody{padding:16px 18px}
+.grid{display:grid;grid-template-columns:1fr 220px auto;gap:12px;align-items:end}
+.field{display:grid;gap:6px}
+label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:15px inherit;padding:10px 12px}
+textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,monospace;font-size:13px;line-height:1.45}
+.status{min-height:20px;font-size:13px;font-weight:800;color:var(--muted);margin-top:12px}
+.status.good{color:var(--good)}.status.bad{color:var(--bad)}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.card{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
+.card b{display:block;font-size:18px;line-height:1.2}
+.card span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.envlist{display:grid;gap:8px}
+.envrow{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
+.envrow code{display:block;font-size:13px;white-space:normal;word-break:break-word;color:#102a70;font-family:"SFMono-Regular",Consolas,monospace}
+.envrow small{display:block;color:var(--muted);font-size:12px;margin-top:5px}
+.links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
+@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark">SC</div>
+      <div>
+        <h1>SMARTCoach Account Setup</h1>
+        <div class="sub">Generate the Vercel variables and test links for a customer account.</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="linkbtn secondary" href="/dashboard.html">Dashboard</a>
+      <a class="linkbtn secondary" href="/">Stopwatch</a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Customer Account</h2></div>
+    <div class="panelbody">
+      <div class="grid">
+        <div class="field">
+          <label for="accountKey">Account Key</label>
+          <input id="accountKey" type="text" placeholder="lincolntrack" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="plan">Plan</label>
+          <select id="plan">
+            <option value="pro">SMARTCoach Pro</option>
+            <option value="essential">SMARTCoach Essential</option>
+          </select>
+        </div>
+        <button id="generateBtn" type="button" onclick="generateSetup()">Generate</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+  </section>
+
+  <section id="resultPanel" class="panel" hidden>
+    <div class="panelhead"><h2>Setup Result</h2></div>
+    <div class="panelbody">
+      <div class="cards">
+        <div class="card"><b id="resultAccount">--</b><span>Account key</span></div>
+        <div class="card"><b id="resultPlan">--</b><span>Product plan</span></div>
+        <div class="card"><b id="resultState">--</b><span>Setup state</span></div>
+      </div>
+      <div id="envList" class="envlist"></div>
+    </div>
+  </section>
+
+  <section id="copyPanel" class="panel" hidden>
+    <div class="panelhead"><h2>Vercel Variables</h2></div>
+    <div class="panelbody">
+      <textarea id="copyText" readonly></textarea>
+      <div class="actions" style="margin-top:12px">
+        <button type="button" onclick="copyVariables()">Copy Variables</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="linksPanel" class="panel" hidden>
+    <div class="panelhead"><h2>Test Links</h2></div>
+    <div class="panelbody">
+      <div class="links">
+        <a id="accountLink" class="linkbtn secondary" href="/">Stopwatch</a>
+        <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">Dashboard</a>
+        <a id="builderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+function generateSetup(){
+  var account=document.getElementById('accountKey').value.trim();
+  var plan=document.getElementById('plan').value;
+  var status=document.getElementById('status');
+  if(!account){
+    setStatus('Enter an account key first. Example: lincolntrack','bad');
+    return;
+  }
+  setStatus('Generating setup...',null);
+  document.getElementById('generateBtn').disabled=true;
+  fetch('/api/smart-trak/account-setup?account='+encodeURIComponent(account)+'&plan='+encodeURIComponent(plan),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not generate setup.');
+    renderSetup(result.data);
+    setStatus('Setup fields generated. Add these in Vercel Production, then redeploy.','good');
+  }).catch(function(error){
+    setStatus(error.message||'Could not generate setup.','bad');
+  }).finally(function(){
+    document.getElementById('generateBtn').disabled=false;
+  });
+}
+function renderSetup(data){
+  document.getElementById('resultPanel').hidden=false;
+  document.getElementById('copyPanel').hidden=false;
+  document.getElementById('linksPanel').hidden=false;
+  document.getElementById('resultAccount').textContent=data.accountKey||'--';
+  document.getElementById('resultPlan').textContent=planLabel(data.productPlan);
+  document.getElementById('resultState').textContent=stateLabel(data.setupState);
+  var env=data.environment||[];
+  document.getElementById('envList').innerHTML=env.length?env.map(function(row){
+    return '<div class="envrow"><code>'+esc(row.key)+'='+esc(row.value)+'</code><small>'+esc(row.description||'')+'</small></div>';
+  }).join(''):'<div class="empty">No variables needed.</div>';
+  document.getElementById('copyText').value=env.map(function(row){return row.key+'='+row.value;}).join('\n');
+  setLink('accountLink',data.accountUrl);
+  setLink('dashboardLink',data.dashboardUrl);
+  setLink('builderLink',data.planBuilderUrl);
+}
+function setLink(id,path){
+  var el=document.getElementById(id);
+  el.href=path||'/';
+}
+function copyVariables(){
+  var text=document.getElementById('copyText');
+  text.focus();
+  text.select();
+  try{
+    document.execCommand('copy');
+    setStatus('Variables copied.','good');
+  }catch(e){
+    setStatus('Select the text and copy it manually.','bad');
+  }
+}
+function setStatus(text,type){
+  var el=document.getElementById('status');
+  el.textContent=text||'';
+  el.className='status'+(type?' '+type:'');
+}
+function planLabel(value){
+  return value==='essential'?'Essential':'Pro';
+}
+function stateLabel(value){
+  var map={
+    'essential-ready':'Essential ready',
+    'pro-ready':'Pro ready',
+    'pro-setup-needed':'Pro setup needed'
+  };
+  return map[value]||value||'--';
+}
+function esc(value){
+  return String(value||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
+</script>
+</body>
+</html>

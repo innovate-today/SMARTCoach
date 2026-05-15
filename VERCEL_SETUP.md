@@ -42,6 +42,10 @@ Use the setup helper endpoint to generate the exact variables for a new account:
 
 The helper does not expose secrets. It only returns the variable names that need to be added in Vercel.
 
+The same setup helper is available as a simple internal page:
+
+- `/onboarding.html`
+
 ## Deploy Order
 
 1. Import this GitHub repo into Vercel.
