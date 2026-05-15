@@ -59,6 +59,10 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 table{width:100%;border-collapse:collapse;min-width:900px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
+.sortbtn{border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer;text-align:left}
+.sortbtn:after{content:"";display:inline-block;margin-left:5px;color:var(--blue)}
+.sortbtn.active.asc:after{content:"▲"}
+.sortbtn.active.desc:after{content:"▼"}
 td{font-size:14px}
 tr:last-child td{border-bottom:0}
 .name{font-weight:900;color:#102a70}
@@ -149,13 +153,13 @@ tr:last-child td{border-bottom:0}
         <table>
           <thead>
             <tr>
-              <th>Athlete</th>
-              <th>Meet</th>
-              <th>Event</th>
-              <th>Result</th>
-              <th>Best</th>
-              <th>Date</th>
-              <th>Synced</th>
+              <th><button class="sortbtn active asc" data-sort="athlete" type="button">Athlete</button></th>
+              <th><button class="sortbtn" data-sort="meet" type="button">Meet</button></th>
+              <th><button class="sortbtn" data-sort="event" type="button">Event</button></th>
+              <th><button class="sortbtn" data-sort="result" type="button">Result</button></th>
+              <th><button class="sortbtn" data-sort="best" type="button">Best</button></th>
+              <th><button class="sortbtn" data-sort="date" type="button">Date</button></th>
+              <th><button class="sortbtn" data-sort="synced" type="button">Synced</button></th>
             </tr>
           </thead>
           <tbody id="resultRows"></tbody>
@@ -180,6 +184,7 @@ tr:last-child td{border-bottom:0}
 var scheduledMeets=[];
 var meetResults=[];
 var selectedGroupKey='all';
+var resultSort={key:'athlete',dir:'asc'};
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -336,10 +341,35 @@ function selectedResults(groups){
     }
     list=list.concat(group.results);
   });
-  return list.sort(function(a,b){
-    return String(b.meetDate||b.syncedAt||'').localeCompare(String(a.meetDate||a.syncedAt||'')) ||
+  return sortResults(list);
+}
+function sortResults(list){
+  var key=resultSort.key;
+  var dir=resultSort.dir==='desc'?-1:1;
+  return list.slice().sort(function(a,b){
+    return dir*compareResultValue(a,b,key) ||
       String(a.athleteName||'').localeCompare(String(b.athleteName||'')) ||
       String(a.event||'').localeCompare(String(b.event||''));
+  });
+}
+function compareResultValue(a,b,key){
+  if(key==='result')return parseResultMs(a.resultDisplay)-parseResultMs(b.resultDisplay);
+  if(key==='best')return bestScore(b)-bestScore(a);
+  if(key==='date')return String(a.meetDate||'').localeCompare(String(b.meetDate||''));
+  if(key==='synced')return String(a.syncedAt||'').localeCompare(String(b.syncedAt||''));
+  if(key==='meet')return String(a.meetName||'').localeCompare(String(b.meetName||''));
+  if(key==='event')return String(a.event||'').localeCompare(String(b.event||''));
+  return String(a.athleteName||'').localeCompare(String(b.athleteName||''));
+}
+function bestScore(row){
+  return (row.isPr?2:0)+(row.isSeasonBest?1:0);
+}
+function updateSortButtons(){
+  document.querySelectorAll('.sortbtn[data-sort]').forEach(function(button){
+    var active=button.getAttribute('data-sort')===resultSort.key;
+    button.classList.toggle('active',active);
+    button.classList.toggle('asc',active&&resultSort.dir==='asc');
+    button.classList.toggle('desc',active&&resultSort.dir==='desc');
   });
 }
 function renderOptions(){
@@ -475,6 +505,7 @@ function render(){
   els.meetListCount.textContent=groups.length+' meets';
   els.resultListCount.textContent=results.length+' results';
   els.resultsTitle.textContent=selectedGroupKey==='all'?'Results':selectedGroupKey.indexOf('series:')===0?'Meet Comparison':'Results for selected meet';
+  updateSortButtons();
   renderMeetSummary(results);
   renderProgressions(results);
   var series=meetSeries(groups);
@@ -570,12 +601,20 @@ function init(){
   els.seasonFilter.addEventListener('change',render);
   els.eventFilter.addEventListener('change',render);
   els.athleteFilter.addEventListener('change',render);
+  document.querySelectorAll('.sortbtn[data-sort]').forEach(function(button){
+    button.addEventListener('click',function(){
+      var key=button.getAttribute('data-sort')||'athlete';
+      resultSort={key:key,dir:resultSort.key===key&&resultSort.dir==='asc'?'desc':'asc'};
+      render();
+    });
+  });
   els.clearBtn.addEventListener('click',function(){
     els.search.value='';
     els.seasonFilter.value='all';
     els.eventFilter.value='all';
     els.athleteFilter.value='all';
     selectedGroupKey='all';
+    resultSort={key:'athlete',dir:'asc'};
     render();
   });
   els.meetList.addEventListener('click',function(event){
