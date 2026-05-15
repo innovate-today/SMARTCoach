@@ -19,11 +19,11 @@ Every customer account uses an account key in the URL, for example:
 - `/dashboard.html?account=lincolntrack`
 - `/?account=lincolntrack`
 
-For SMARTCoach Pro accounts, the GHL custom link should point to the dashboard:
+For SMARTCoach Pro accounts, the SMART Trak custom link should point to the dashboard:
 
 - `/dashboard.html?account=lincolntrack&embed=1`
 
-Only one GHL custom link is needed because the dashboard contains the Plan Builder button. The stopwatch link is mainly for mobile practice/meet timing.
+Only one SMART Trak custom link is needed because the dashboard contains the Plan Builder button. The stopwatch link is mainly for mobile practice/meet timing.
 
 The app reads account-specific Vercel variables by converting the account key to uppercase:
 
@@ -58,7 +58,7 @@ The same setup helper is available as a simple internal page:
 
 - `/onboarding.html`
 
-The setup helper shows the Vercel variables as separate Name and Value fields, plus the one dashboard link that should be added to the customer GHL sub-account as a custom link or iframe.
+The setup helper shows the Vercel variables as separate Name and Value fields, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe.
 
 Optional internal setup protection:
 

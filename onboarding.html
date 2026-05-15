@@ -149,18 +149,18 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelhead"><h2>Customer Links</h2></div>
     <div class="panelbody">
       <div class="linkcard" style="margin-bottom:10px">
-        <strong>Customer Dashboard Link</strong>
+        <strong>Customer SMART Trak Link</strong>
         <span>Add this one link inside the customer account after setup is ready. The full URL is hidden here to reduce accidental sharing.</span>
         <div class="linkdetails">
-          <div class="linkdetail"><b>Link Name</b><span id="customerLinkName">Dashboard</span></div>
+          <div class="linkdetail"><b>Link Name</b><span id="customerLinkName">SMART Trak</span></div>
           <div class="linkdetail"><b>Open As</b><span id="customerLinkMode">Sidebar iframe</span></div>
         </div>
         <div class="setupnote"><b>Where it goes</b>Add it as a custom sidebar/menu link in the customer account. Use iframe/open inside app when available so coaches stay inside SMARTCoach Pro.</div>
         <div class="linkline">
           <code id="customLinkText" data-url="">Dashboard link hidden</code>
-          <button type="button" onclick="copyCustomLink()">Copy Dashboard Link</button>
+          <button type="button" onclick="copyCustomLink()">Copy SMART Trak Link</button>
         </div>
-        <a id="customLink" class="linkbtn" href="/dashboard.html">Open Dashboard</a>
+        <a id="customLink" class="linkbtn" href="/dashboard.html">Open SMART Trak</a>
       </div>
       <div class="links">
         <a id="accountLink" class="linkbtn secondary" href="/">Stopwatch</a>
@@ -239,7 +239,7 @@ function customerMainLink(data){
 }
 function renderCustomerLinkDetails(data){
   var plan=data.productPlan||'pro';
-  document.getElementById('customerLinkName').textContent=plan==='essential'?'Stopwatch':'Dashboard';
+  document.getElementById('customerLinkName').textContent=plan==='essential'?'Stopwatch':'SMART Trak';
   document.getElementById('customerLinkMode').textContent=plan==='essential'?'Mobile/web link':'Sidebar iframe';
 }
 function renderReadiness(data){
@@ -255,10 +255,10 @@ function renderReadiness(data){
     return;
   }
   if(configured){
-    title.textContent='SMARTCoach Pro account ready';
+    title.textContent='SMART Trak account ready';
     detail.textContent='The SMART Trak connection is configured and the dashboard can load customer data.';
   }else{
-    title.textContent='SMARTCoach Pro setup needed';
+    title.textContent='SMART Trak setup needed';
     detail.textContent='Add the private integration token and location ID in Vercel Production, then redeploy and check again.';
   }
 }
@@ -307,13 +307,13 @@ function setCustomLinkText(path){
   var el=document.getElementById('customLinkText');
   if(el){
     el.dataset.url=absoluteUrl(path||'/dashboard.html');
-    el.textContent='Dashboard link hidden';
-    el.title='Use Copy Dashboard Link instead of sharing this screen.';
+    el.textContent='SMART Trak link hidden';
+    el.title='Use Copy SMART Trak Link instead of sharing this screen.';
   }
 }
 function copyCustomLink(){
   var el=document.getElementById('customLinkText');
-  copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'','Dashboard custom link copied.');
+  copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'','SMART Trak link copied.');
 }
 function absoluteUrl(path){
   try{
@@ -378,7 +378,7 @@ function renderChecklist(data){
       title:plan==='essential'?'Confirm Essential stopwatch':'Add the dashboard custom link',
       body:plan==='essential'
         ?'Open '+linkHtml(data.accountUrl||('/?account='+encodeURIComponent(account)),'customer stopwatch')+' and confirm Pro-only tabs and actions are hidden.'
-        :'Add '+linkHtml(data.ghlCustomLinkUrl||dashboardUrl,'the customer dashboard')+' as the one custom sidebar/menu link, preferably opened in an iframe. If the account is not connected yet, it should show SMARTCoach Pro Setup Needed.'
+        :'Add '+linkHtml(data.ghlCustomLinkUrl||dashboardUrl,'the customer SMART Trak link')+' as the one custom sidebar/menu link, preferably opened in an iframe. If the account is not connected yet, it should show SMART Trak Setup Needed.'
     }
   ];
   document.getElementById('checklist').innerHTML=rows.map(function(row,i){
