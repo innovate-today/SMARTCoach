@@ -70,6 +70,7 @@ select[multiple]{min-height:112px}
 button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer}
 .primary{background:var(--blue);color:#fff}
 .secondary{background:#e5e7eb;color:#111827}
+.version-foot{padding:10px 2px 0;text-align:right;font-size:11px;color:#94a3b8}
 .plan-essential .pro-page-only{display:none!important}
 .essential-message{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center}
 .essential-message h1{font-size:24px;margin-bottom:8px}
@@ -85,7 +86,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   <div class="top">
     <div class="brand"><div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div><span>SMART Trak</span></div>
     <div class="top-actions">
-      <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button><span id="appVersion" style="font-size:12px;color:#6b7280"></span></div>
+      <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button></div>
       <a id="dashboardLink" class="linkbtn" href="/dashboard.html">SMART Trak</a>
     </div>
   </div>
@@ -120,6 +121,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
       <button class="primary" id="submit" onclick="submitPlan()">Create Plan Draft</button>
     </div>
   </div>
+  <div id="appVersion" class="version-foot"></div>
 </div>
 <section id="essentialMessage" class="essential-message" hidden>
   <h1>SMARTCoach Essential</h1>
