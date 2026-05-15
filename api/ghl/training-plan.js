@@ -492,7 +492,7 @@ function draftDayForDate({ plan, date, dow, week }) {
       athleteName: plan.athleteName,
       dayType: "Meet",
       workoutTitle: meet.name || `${plan.primaryEvent} meet`,
-      workoutDetails: `Meet day. Primary focus: ${plan.primaryEvent}. Use the stopwatch meet flow to time events and save results to SMARTCoach Pro.`,
+      workoutDetails: `Meet day. Primary focus: ${plan.primaryEvent}. Use the stopwatch meet flow to time events and save results to SMART Trak.`,
       workoutType: "Race / Meet",
       energySystem: "Mixed",
       targetSplits: "Race plan should be reviewed by event and athlete before competition.",

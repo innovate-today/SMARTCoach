@@ -1841,7 +1841,7 @@ function voidTrainingRecord(button){
   var recordId=button.getAttribute('data-record-id')||row.recordId||'';
   var sourceRecordId=button.getAttribute('data-source-record-id')||row.sourceRecordId||'';
   var label=[row.athleteName,row.workoutPrescription||row.workoutType,formatDate(row.sessionDate)].filter(Boolean).join(' - ')||'this training entry';
-  var reason=window.prompt('Why should SMARTCoach Pro void '+label+'?');
+  var reason=window.prompt('Why should SMART Trak void '+label+'?');
   if(reason===null)return;
   reason=reason.trim();
   if(!reason){

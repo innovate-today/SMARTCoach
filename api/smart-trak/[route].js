@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (!selected) {
-    res.status(404).json({ error: "SMARTCoach Pro endpoint not found." });
+    res.status(404).json({ error: "SMART Trak endpoint not found." });
     return;
   }
 
@@ -109,20 +109,20 @@ function accountSetup(req, res) {
         value: "paste_customer_private_integration_token",
         required: true,
         label: "Private integration token",
-        description: "Customer SMARTCoach Pro private integration token.",
+        description: "Customer SMART Trak private integration token.",
       },
       {
         key: `GHL_LOCATION_ID_${suffix}`,
         value: "paste_customer_location_id",
         required: true,
         label: "Location ID",
-        description: "Customer SMARTCoach Pro sub-account location ID.",
+        description: "Customer SMART Trak sub-account location ID.",
       },
       {
         key: `SMARTCOACH_ACCESS_CODE_${suffix}`,
         value: suggestedAccessCode(accountKey),
         required: false,
-        label: "Dashboard access code",
+        label: "SMART Trak access code",
         description: "Optional now, but recommended before launch. Protects this customer's Pro dashboard/API data if the dashboard link is copied.",
       }
     );

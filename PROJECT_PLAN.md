@@ -39,19 +39,19 @@ Existing features:
 - Swipe to delete runners
 - Selective start: tap circle to choose which runners start
 - Share results modal
-- SMARTCoach Pro/GHL Sync button
+- SMART Trak Sync button
 - Hosted/deployed through Vercel
 
-## Phase 1: GHL Sync
+## Phase 1: SMART Trak Sync
 
 Status: Done and confirmed working
 
 Goal:
 
-- Tap Share, then Sync to GHL/SMARTCoach Pro
+- Tap Share, then Sync to SMART Trak
 - Tag the session with Season, Phase, Workout Type, Energy System, Surface
-- App calls GHL API directly or through server function, avoiding webhooks and per-execution charges
-- Creates athlete as a GHL Contact if new
+- App calls the SMART Trak backend directly through server functions, avoiding webhooks and per-execution charges
+- Creates athlete as a SMART Trak contact if new
 - Adds workout session as a Note to that contact
 - Uses the `smartcoach-athlete` tag only for broad athlete identification. Season, workout type, phase, surface, and weather belong in custom object records and notes, not as contact tags.
 
@@ -107,13 +107,13 @@ Initial training categories:
 - Intensive Tempo, Aerobic: 400m at 75-82%
 - Extensive Tempo, Aerobic: 400m at 65-75%
 
-## Phase 4: Athlete Career Database In GHL
+## Phase 4: Athlete Career Database In SMART Trak
 
 Detailed data model:
 
 - `SMART_TRAK_DATA_MODEL.md`
 
-GHL custom objects:
+SMART Trak custom objects:
 
 - Athlete Contact: name, sport, primary event, grad year, gender, school
 - Performance Record: every timed session, splits, phase, workout type, energy system
@@ -198,7 +198,7 @@ Formats:
 
 - PDF
 - Shareable link
-- Email through GHL
+- Email through SMART Trak automations
 
 Profile sections:
 
@@ -212,7 +212,7 @@ Profile sections:
 Planning note:
 
 - Recruiting may need its own custom object if SMARTCoach Pro must track generated profile versions, PDF/link status, coach approval, send history, college coach recipients, and recruiting opt-in state.
-- Because GHL has a 10 custom-object limit on the current plan, decide later whether recruiting can live on Contact + Athlete Best + Season Record + Meet Result, or whether a dedicated `Recruiting Profile` object is worth one of the remaining object slots.
+- Because the current SMART Trak custom-object limit is 10, decide later whether recruiting can live on Contact + Athlete Best + Season Record + Meet Result, or whether a dedicated `Recruiting Profile` object is worth one of the remaining object slots.
 
 ## Phase 9: Athlete Portal
 
@@ -270,8 +270,8 @@ Required production direction:
 
 - Do not rely on hidden or hard-to-guess account links.
 - Keep customer dashboard links out of public onboarding screens where possible.
-- Gate Pro dashboard/API routes with auth, signed customer sessions, GHL app context, or another server-verified access layer.
-- Keep the GHL custom link inside the customer's sub-account as the normal entry point, but still treat copied links as potentially shareable.
+- Gate Pro dashboard/API routes with auth, signed customer sessions, SMART Trak app context, or another server-verified access layer.
+- Keep the SMART Trak custom link inside the customer's sub-account as the normal entry point, but still treat copied links as potentially shareable.
 - Essential stopwatch can stay much lighter, but Pro roster/results/training data must be protected.
 - Interim protection added/planned: optional per-account `SMARTCOACH_ACCESS_CODE_{ACCOUNT}` can block Pro API data unless the browser session provides the access code. This helps now, but should later be replaced or backed by proper account auth/subscription login.
 - Internal setup protection: optional `SMARTCOACH_ADMIN_SETUP_CODE` can block the onboarding/setup helper unless the internal setup code is entered. This keeps customer setup generation private while the full auth/subscription system is still being built.
@@ -283,47 +283,47 @@ On April 30, 2026, the local continuation cleaned up visible encoding damage in 
 - Fixed broken back/forward glyphs in `index.html` and `app.html`
 - Fixed damaged `RUNNER ROW` CSS comments
 - Fixed `white-space:nowraw` to `white-space:nowrap`
-- Updated project truth: Vercel is active, SMARTCoach Pro/GHL sync is confirmed working
-- Added SMARTCoach Pro object/field mapping files for Performance Records, Season Records, Meet Results, and Training Plans
+- Updated project truth: Vercel is active, SMART Trak sync is confirmed working
+- Added SMART Trak object/field mapping files for Performance Records, Season Records, Meet Results, and Training Plans
 - Updated `/api/ghl/sync-session.js` so sync now keeps the existing contact note and also attempts to create a structured Performance Record for each saved run
 - Live test confirmed: contact note and structured Performance Record are both created successfully
-- Identified duplicate-contact risk from free-typed athlete names; next design priority is active athlete roster lookup from SMARTCoach Pro/GHL
-- Added active athlete roster lookup from SMARTCoach Pro/GHL using `SMARTCoach Active = Yes`
-- Updated sync payloads to include GHL contact IDs when an active athlete is selected, reducing duplicate contacts
-- Standardized visible product wording to SMARTCoach Pro while leaving stable internal API routes unchanged
+- Identified duplicate-contact risk from free-typed athlete names; next design priority is active athlete roster lookup from SMART Trak
+- Added active athlete roster lookup from SMART Trak using `SMARTCoach Active = Yes`
+- Updated sync payloads to include SMART Trak contact IDs when an active athlete is selected, reducing duplicate contacts
+- Standardized visible product wording: SMARTCoach for the stopwatch, SMART Trak for desktop/data, and SMARTCoach Pro for the bundled subscription tier, while leaving stable internal API routes unchanged
 - Added Season Record upsert to sync: one Season Record per athlete, season, and year, with practice session count, performance record count, latest session summary, and readable practice bests
-- Live test confirmed: Season Record create/update works in SMARTCoach Pro/GHL
+- Live test confirmed: Season Record create/update works in SMART Trak
 - Added duplicate sync protection: existing Performance Records are detected by `source_record_id`; the app asks before intentionally syncing the same workout again
 - Added Meet Result creation from meet timing groups through `/api/smart-trak/meet-result`; manual meet-result form was removed from the stopwatch flow because race results should come from captured timing data
 - Added the first Training/Meets/Archive group separation layer: current-season Training keeps the existing simple group creation flow, Meets can create meet/event timing groups, and Archive hides past-season groups by default while keeping them viewable
 - Added Meet Result saves from meet timing groups, readable split/season summary fields, and Season Record updates from Meet Results
 - Live test confirmed: Athlete Best records are created/updated and PB/SB fields can be driven by meet results and current-fitness setup
 - Added `Records` custom object concept for school/team/club records so SMARTCoach can detect and later notify when an athlete ties or breaks a school record
-- Added non-breaking backend support for `Athlete Best`: once the custom object exists in SMARTCoach Pro/GHL, Meet Result saves can update PB/SB records and auto-mark PRs
-- Added coach confirmation for PB/SB in the meet-save flow so empty or incomplete GHL history does not falsely mark first-time results as records
+- Added non-breaking backend support for `Athlete Best`: once the custom object exists in SMART Trak, Meet Result saves can update PB/SB records and auto-mark PRs
+- Added coach confirmation for PB/SB in the meet-save flow so empty or incomplete SMART Trak history does not falsely mark first-time results as records
 - Changed new Meet Event entry to use a standard event dropdown, with `Other` available for unusual distances
-- Added non-breaking `Meet` endpoint and app picker: coaches can select preloaded meets from GHL or add a meet on the fly
-- Added SMARTCoach Pro/GHL `Meet` object field mapping for `custom_objects.meets`
-- Future plan: add GHL Community integration so coaches can attach image/video when syncing a new PB/PR, then auto-post the highlight to the SMARTCoach Pro community
+- Added non-breaking `Meet` endpoint and app picker: coaches can select preloaded meets from SMART Trak or add a meet on the fly
+- Added SMART Trak `Meet` object field mapping for `custom_objects.meets`
+- Future plan: add SMART Trak Community integration so coaches can attach image/video when syncing a new PB/PR, then auto-post the highlight to the SMARTCoach Pro community
 - Added parent communication planning detail: parent emails must be resolved from athlete contacts so coaches can email a whole group, selected athletes, or one athlete without manually looking up parent addresses
-- Added recruiting planning detail: recruiting may need a dedicated custom object for generated profile versions, approval, links/PDFs, send history, college recipients, and opt-in tracking, but this must be weighed against the GHL custom-object limit
+- Added recruiting planning detail: recruiting may need a dedicated custom object for generated profile versions, approval, links/PDFs, send history, college recipients, and opt-in tracking, but this must be weighed against the SMART Trak custom-object limit
 - Product wording decision: coach-facing Training Plan creation should be called Guided Plan Builder or Plan Builder.
-- Training Plan creation moved out of the stopwatch surface: use the dashboard as the one SMARTCoach Pro/GHL custom link, with Plan Builder opened from the dashboard button; the stopwatch app only selects existing plans/days and can switch to another upcoming workout when practice conditions change
+- Training Plan creation moved out of the stopwatch surface: use the dashboard as the one SMART Trak custom link, with Plan Builder opened from the dashboard button; the stopwatch app only selects existing plans/days and can switch to another upcoming workout when practice conditions change
 - Training Plan days now need actual workout prescriptions, not generic themes: examples include `3 x 1 mile / recovery equals completed rep time`, with target split guidance based on each athlete's latest matching fitness set
 - Plan Builder refinement: coaches must enter the meet schedule before creating a plan; meet dates should be inserted into the daily plan first, then workouts are built around that schedule
 - Stopwatch plan assignment model: a training group has a default group plan, and individual athletes can carry an athlete-level plan override while still being timed inside the same group
 - Future dashboard planning note: add a planning table with Athlete, Group, Recent Race distance/time, Previous Week Mileage, and Current Week Mileage so plans can account for current fitness and training load
 - Future Coach Pro support note: add an in-app help button where coaches can ask product, instruction, and subscription questions and get answers from approved SMARTCoach Pro help content.
 - Dashboard personalization note: allow each coach/account to upload their own logo to replace the default SMART Trak logo on the desktop dashboard and future branded views. The header should reserve a stable logo slot so school/club logos do not shift the layout. Interim support: an optional per-account `SMARTCOACH_LOGO_URL_{ACCOUNT}` value can provide a logo URL until upload storage is built.
-- Coach-facing data experience note: keep GHL custom objects as the structured database, but avoid making coaches live inside raw object tables. Use dashboard/custom HTML iframe views for roster, training volume, meet results, athlete profiles, plan editing, and manual data entry wherever that creates a cleaner workflow.
-- Passed selected GHL Meet record IDs through meet timing groups and Meet Result saves for clean meet schedule linking
+- Coach-facing data experience note: keep SMART Trak custom objects as the structured database, but avoid making coaches live inside raw object tables. Use dashboard/custom HTML iframe views for roster, training volume, meet results, athlete profiles, plan editing, and manual data entry wherever that creates a cleaner workflow.
+- Passed selected SMART Trak Meet record IDs through meet timing groups and Meet Result saves for clean meet schedule linking
 - Verified `index.html` in the in-app browser:
   - App loads
   - Group/runner flow works
   - Start/lap/stop works
   - Share opens
   - Sheets export renders tabular text
-  - SMARTCoach Pro sync modal opens
+  - SMART Trak sync modal opens
   - No console errors
 - Added first desktop dashboard surface at `/dashboard.html` with `/api/smart-trak/dashboard` for active roster, current fitness, latest meet result, latest training sync, and current/previous week synced run counts. These are sync counts, not mileage volume; true weekly/monthly volume comes later after completed distance/mileage is captured reliably.
 
@@ -334,6 +334,6 @@ When picking this project back up:
 1. Open this file first.
 2. Inspect current git status in this repo.
 3. Treat Vercel as the active deployment environment.
-4. Treat SMARTCoach Pro/GHL sync as confirmed working unless new evidence says otherwise.
-5. Continue with GHL custom objects, training targets, and dashboard work.
+4. Treat SMART Trak sync as confirmed working unless new evidence says otherwise.
+5. Continue with SMART Trak custom objects, training targets, and dashboard work.
 6. Keep changes scoped and record major decisions in this file.

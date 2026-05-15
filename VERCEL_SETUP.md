@@ -1,4 +1,4 @@
-# SMARTCoach Vercel + GHL Setup
+# SMARTCoach + SMART Trak Vercel Setup
 
 ## Required Environment Variables
 
@@ -8,7 +8,7 @@ Set these in Vercel Project Settings -> Environment Variables:
 - `GHL_LOCATION_ID`
 - `SMARTCOACH_PRODUCT_PLAN`
 
-The browser app calls `/api/ghl/sync-session`. That serverless function calls HighLevel with the private token, so the token is no longer exposed in `index.html`.
+The browser app calls serverless SMART Trak endpoints. Those functions use the private token, so the token is not exposed in `index.html`.
 
 Use `SMARTCOACH_PRODUCT_PLAN=pro` for the default SMARTCoach Pro account.
 
@@ -45,12 +45,6 @@ Recommended before customer launch:
 
 - `SMARTCOACH_ACCESS_CODE_LINCOLNTRACK=...`
 
-Optional account branding:
-
-- `SMARTCOACH_LOGO_URL_LINCOLNTRACK=https://...`
-
-When set, SMART Trak desktop pages use this logo instead of the default SMART Trak placeholder logo.
-
 The setup helper generates a suggested access code value. When this access code is set, SMARTCoach Pro API data for that account requires the browser session to provide the code. This is an early protection layer, not the final subscription/auth system.
 
 Use the setup helper endpoint to generate the exact variables for a new account:
@@ -64,7 +58,7 @@ The same setup helper is available as a simple internal page:
 
 - `/onboarding.html`
 
-The setup helper shows the Vercel variables as separate Name and Value fields, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe.
+The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe.
 
 Optional internal setup protection:
 
@@ -77,4 +71,4 @@ When this is set, `/onboarding.html` and `/api/smart-trak/account-setup` require
 1. Import this GitHub repo into Vercel.
 2. Add the default account environment variables above.
 3. Point `app.smartcoach-pro.com` to the Vercel project.
-4. Test Share -> SMARTCoach Pro Sync with one athlete who has saved times.
+4. Test Share -> Sync to SMART Trak with one athlete who has saved times.

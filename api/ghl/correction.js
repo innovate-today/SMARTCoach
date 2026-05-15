@@ -32,7 +32,7 @@ module.exports = async function handler(req, res) {
   const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
-    res.status(500).json({ error: "SMARTCoach Pro corrections are not configured on the server." });
+    res.status(500).json({ error: "SMART Trak corrections are not configured on the server." });
     return;
   }
 
@@ -197,7 +197,7 @@ function previousProps(previous) {
 
 function buildVoidNote({ athleteName, reason, correctionTime, record, props, sourceRecordId }) {
   return [
-    `SMARTCoach Pro Correction - ${dateLabel(correctionTime)}`,
+    `SMART Trak Correction - ${dateLabel(correctionTime)}`,
     "",
     `Athlete: ${athleteName}`,
     `Record: ${prop(props, "performance_record") || prop(props, "group_name") || record.id}`,
@@ -215,7 +215,7 @@ function buildVoidNote({ athleteName, reason, correctionTime, record, props, sou
 
 function buildEditNote({ athleteName, reason, correctionTime, record, props, sourceRecordId, changes }) {
   const lines = [
-    `SMARTCoach Pro Correction - ${dateLabel(correctionTime)}`,
+    `SMART Trak Correction - ${dateLabel(correctionTime)}`,
     "",
     `Athlete: ${athleteName}`,
     `Record: ${prop(props, "performance_record") || prop(props, "group_name") || record.id}`,

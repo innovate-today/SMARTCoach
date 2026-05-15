@@ -444,7 +444,7 @@ async function updateLinkedTrainingPlanDay({ token, locationId, session, linkedP
             status: "completed",
             linked_performance_record_ids: linkedText,
             coach_notes: [
-              `Completed from SMARTCoach Pro on ${dateOnly(validDate(session.sessionDate) || new Date())}.`,
+              `Completed from SMARTCoach on ${dateOnly(validDate(session.sessionDate) || new Date())}.`,
               (first.trainingPlanTitle || session.trainingPlanTitle) ? `Plan: ${first.trainingPlanTitle || session.trainingPlanTitle}` : "",
               (first.trainingPlanDayTitle || session.trainingPlanDayTitle) ? `Workout: ${first.trainingPlanDayTitle || session.trainingPlanDayTitle}` : "",
             ].filter(Boolean).join("\n"),

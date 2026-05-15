@@ -1835,7 +1835,7 @@ function runnerPlan(r){
 function openSeasonPlan(assignToGroup){
   if(!isProPlan())return;
   TPA=assignToGroup&&CL?{kind:'group',target:CL}:{kind:'athlete',target:CE};
-  document.getElementById('tp-status').textContent='Loading plans from SMARTCoach Pro...';
+  document.getElementById('tp-status').textContent='Loading plans from SMART Trak...';
   document.getElementById('tp-status').style.color='#555';
   document.getElementById('tp-plan').value='';
   updateTrainingPlanDisplay('Loading...');
@@ -1872,8 +1872,8 @@ function renderTrainingPlanOptions(){
   if(!TP.length){
     input.value='';
     updateTrainingPlanDisplay('No plans available');
-    document.getElementById('tp-detail').innerHTML='<div class="profile-sec"><div class="profile-row">Create and approve plans in SMARTCoach Pro first.</div></div>';
-    status.textContent='No training plans found in SMARTCoach Pro.';status.style.color='#c47a00';
+    document.getElementById('tp-detail').innerHTML='<div class="profile-sec"><div class="profile-row">Create and approve plans in SMART Trak first.</div></div>';
+    status.textContent='No training plans found in SMART Trak.';status.style.color='#c47a00';
     document.getElementById('tp-btn').disabled=true;
     return;
   }

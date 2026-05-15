@@ -55,7 +55,7 @@ module.exports = async function handler(req, res) {
   const { token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
-    res.status(500).json({ error: "SMARTCoach Pro dashboard is not configured on the server." });
+    res.status(500).json({ error: "SMART Trak dashboard is not configured on the server." });
     return;
   }
 
