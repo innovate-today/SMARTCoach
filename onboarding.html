@@ -129,7 +129,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   <section id="copyPanel" class="panel" hidden>
     <div class="panelhead"><h2>Vercel Variables</h2></div>
     <div class="panelbody">
-      <div class="copyhint">Add each row in Vercel as its own Environment Variable. Copy the Name into Vercel's Name field and the Value into Vercel's Value field.</div>
+      <div class="copyhint">Add each row in Vercel Production as its own Environment Variable. Copy Field Name into Vercel's Name box and Field Value into Vercel's Value box.</div>
       <div id="varList" class="varlist"></div>
     </div>
   </section>
@@ -145,12 +145,12 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelhead"><h2>Customer Links</h2></div>
     <div class="panelbody">
       <div class="linkcard" style="margin-bottom:10px">
-        <strong>Dashboard Custom Link</strong>
-        <span>Add this one link inside the customer sub-account. The full URL is hidden here to reduce accidental sharing.</span>
+        <strong>Customer Dashboard Link</strong>
+        <span>Add this one link inside the customer account after setup is ready. The full URL is hidden here to reduce accidental sharing.</span>
         <div class="setupnote"><b>Where it goes</b>Add it as a custom sidebar/menu link in the customer account. Use iframe/open inside app when available so coaches stay inside SMARTCoach Pro.</div>
         <div class="linkline">
           <code id="customLinkText" data-url="">Dashboard link hidden</code>
-          <button type="button" onclick="copyCustomLink()">Copy Link</button>
+          <button type="button" onclick="copyCustomLink()">Copy Dashboard Link</button>
         </div>
         <a id="customLink" class="linkbtn" href="/dashboard.html">Open Dashboard</a>
       </div>
@@ -289,7 +289,7 @@ function setCustomLinkText(path){
   if(el){
     el.dataset.url=absoluteUrl(path||'/dashboard.html');
     el.textContent='Dashboard link hidden';
-    el.title='Use Copy Link instead of sharing this screen.';
+    el.title='Use Copy Dashboard Link instead of sharing this screen.';
   }
 }
 function copyCustomLink(){
@@ -307,7 +307,7 @@ function renderVariableRows(env){
   var box=document.getElementById('varList');
   if(!box)return;
   box.innerHTML=env.length?env.map(function(row,index){
-    return '<div class="varrow"><div class="varfield"><span>Setup Field</span><code title="'+esc(row.key)+'">'+esc(row.label||row.key)+'</code></div><div class="varfield"><span>Value</span><code title="'+esc(row.value)+'">'+esc(row.value)+'</code></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Name</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
+    return '<div class="varrow"><div class="varfield"><span>Field Name</span><code title="'+esc(row.key)+'">'+esc(row.label||row.key)+'</code></div><div class="varfield"><span>Field Value</span><code title="'+esc(row.value)+'">'+esc(row.value)+'</code></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Field Name</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Field Value</button></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
 }
 function copyVariablePart(index,part){
