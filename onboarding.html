@@ -44,7 +44,12 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .varfield span{font-size:11px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 .varfield code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:9px 10px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .copyhint{font-size:12px;color:var(--muted);line-height:1.35;margin-bottom:10px}
-.links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.linkcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;display:grid;gap:10px}
+.linkcard strong{font-size:15px}
+.linkcard span{color:var(--muted);font-size:12px;line-height:1.35}
+.linkline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.linkline code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:10px 12px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .checklist{display:grid;gap:10px}
 .checkrow{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
 .checkrow input{width:18px;height:18px;accent-color:var(--blue);margin-top:1px}
@@ -53,7 +58,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checkrow a{color:#102a70;font-weight:800;text-decoration:none}
 .checkrow a:hover{text-decoration:underline}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
-@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links,.varrow{grid-template-columns:1fr}.varrow button{width:100%}}
+@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links,.varrow,.linkline{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
 </style>
 </head>
 <body>
@@ -63,7 +68,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="mark">SC</div>
       <div>
         <h1>SMARTCoach Account Setup</h1>
-        <div class="sub">Generate the Vercel variables and test links for a customer account.</div>
+        <div class="sub">Generate the Vercel variables and GHL dashboard link for a customer account.</div>
       </div>
     </div>
     <div class="actions">
@@ -121,12 +126,20 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   </section>
 
   <section id="linksPanel" class="panel" hidden>
-    <div class="panelhead"><h2>Test Links</h2></div>
+    <div class="panelhead"><h2>Customer Links</h2></div>
     <div class="panelbody">
+      <div class="linkcard" style="margin-bottom:10px">
+        <strong>GHL Dashboard Custom Link</strong>
+        <span>Add this one link inside the customer sub-account. Plan Builder stays available from the dashboard button.</span>
+        <div class="linkline">
+          <code id="customLinkText">--</code>
+          <button type="button" onclick="copyCustomLink()">Copy Link</button>
+        </div>
+        <a id="customLink" class="linkbtn" href="/dashboard.html">Open Dashboard</a>
+      </div>
       <div class="links">
         <a id="accountLink" class="linkbtn secondary" href="/">Stopwatch</a>
-        <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">Dashboard</a>
-        <a id="builderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+        <a id="statusLink" class="linkbtn secondary" href="/api/smart-trak/account-status">Account Status</a>
       </div>
     </div>
   </section>
@@ -170,13 +183,29 @@ function renderSetup(data){
   }).join(''):'<div class="empty">No variables needed.</div>';
   renderVariableRows(env);
   setLink('accountLink',data.accountUrl);
-  setLink('dashboardLink',data.dashboardUrl);
-  setLink('builderLink',data.planBuilderUrl);
+  setLink('customLink',data.ghlCustomLinkUrl||data.dashboardUrl);
+  setLink('statusLink','/api/smart-trak/account-status?account='+encodeURIComponent(data.accountKey||'customer'));
+  setCustomLinkText(data.ghlCustomLinkUrl||data.dashboardUrl);
   renderChecklist(data);
 }
 function setLink(id,path){
   var el=document.getElementById(id);
   el.href=path||'/';
+}
+function setCustomLinkText(path){
+  var el=document.getElementById('customLinkText');
+  if(el)el.textContent=absoluteUrl(path||'/dashboard.html');
+}
+function copyCustomLink(){
+  var el=document.getElementById('customLinkText');
+  copyText(el&&el.textContent?el.textContent:'','Dashboard custom link copied.');
+}
+function absoluteUrl(path){
+  try{
+    return new URL(path,window.location.origin).href;
+  }catch(e){
+    return path;
+  }
 }
 function renderVariableRows(env){
   var box=document.getElementById('varList');
@@ -231,10 +260,10 @@ function renderChecklist(data){
       body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the CRM fields are added.'
     },
     {
-      title:plan==='essential'?'Confirm Essential stopwatch':'Confirm customer dashboard',
+      title:plan==='essential'?'Confirm Essential stopwatch':'Add the GHL dashboard custom link',
       body:plan==='essential'
         ?'Open '+linkHtml(data.accountUrl||('/?account='+encodeURIComponent(account)),'customer stopwatch')+' and confirm Pro-only tabs and actions are hidden.'
-        :'Open '+linkHtml(dashboardUrl,'customer dashboard')+'. If CRM is not connected yet, it should show SMARTCoach Pro Setup Needed.'
+        :'Add '+linkHtml(dashboardUrl,'the customer dashboard')+' as the one GHL custom link. If CRM is not connected yet, it should show SMARTCoach Pro Setup Needed.'
     }
   ];
   document.getElementById('checklist').innerHTML=rows.map(function(row,i){
