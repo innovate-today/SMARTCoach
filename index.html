@@ -229,7 +229,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="erow"><span class="elbl" id="en" style="color:#555;font-weight:600"></span></div>
       <div class="erow pro-only" onclick="openSeasonPlan(false)"><span class="elbl"><b>Today</b><br><small id="eplan" style="color:#777"></small></span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow pro-only"><span class="elbl"><b>Target</b><br><small id="etarget" style="color:#777">Loading...</small></span></div>
-      <div class="erow pro-only" onclick="openAthleteProfile()"><span class="elbl" style="color:var(--R);font-weight:600">SMARTCoach Pro Profile</span><span style="color:#bbb">&rsaquo;</span></div>
+      <div class="erow pro-only" onclick="openAthleteProfile()"><span class="elbl" style="color:var(--R);font-weight:600">SMART Trak Profile</span><span style="color:#bbb">&rsaquo;</span></div>
       <div class="erow" id="enote-row" style="display:none"><span class="elbl" id="enotes" style="color:#666;font-size:15px"></span></div>
     </div>
     <div class="lhdr">SAVED RUNS</div>
@@ -771,7 +771,7 @@ function openAthletePicker(id){
   if(r.name&&!findAthleteByName(r.name)){
     items.unshift({label:r.name,sub:'Current typed name',selected:true});
   }
-  items.push({label:'+ Add Athlete',sub:'Create active athlete in SMARTCoach Pro',action:'add'});
+  items.push({label:'+ Add Athlete',sub:'Create active athlete in SMART Trak',action:'add'});
   openPicker('Select Athlete',items,function(item){
     if(item.action==='add'){addAthleteForRunner(id);return;}
     if(athleteSelectedInGroup(item.label,id)){
@@ -870,7 +870,7 @@ function choosePicker(index){
 function closePicker(){hm('m-picker');PICK=null;}
 function openProductPlanPicker(){
   var current=productPlan();
-  openPicker('Select Product',[
+  openPicker('Select Plan',[
     {label:'SMARTCoach Pro',sub:'Stopwatch, SMART Trak sync, dashboard, plans, profiles',value:'pro',selected:current==='pro'},
     {label:'SMARTCoach Essential',sub:'Stopwatch only',value:'essential',selected:current==='essential'}
   ],function(item){
@@ -1567,7 +1567,7 @@ function renderEntryTargets(r){
   var matched=findAthleteByName(r.name)||{};
   var contactId=r.contactId||matched.id||'';
   if(!contactId){
-    el.textContent='Select this athlete from the SMARTCoach Pro roster first.';
+    el.textContent='Select this athlete from the SMART Trak roster first.';
     return;
   }
   el.textContent='Loading target...';
@@ -1716,10 +1716,10 @@ function openAthleteProfile(){
   var contactId=CE.contactId||matched.id||'';
   var body=document.getElementById('profile-body');
   document.getElementById('profile-title').textContent=CE.name||'Athlete Profile';
-  body.innerHTML='<div class="profile-sec"><div class="profile-row">Loading SMARTCoach Pro profile...</div></div>';
+  body.innerHTML='<div class="profile-sec"><div class="profile-row">Loading SMART Trak profile...</div></div>';
   sm('m-profile');
   if(!contactId){
-    body.innerHTML='<div class="profile-sec"><div class="profile-row">Select this athlete from the SMARTCoach Pro roster first.</div></div>';
+    body.innerHTML='<div class="profile-sec"><div class="profile-row">Select this athlete from the SMART Trak roster first.</div></div>';
     return;
   }
   fetch('/api/smart-trak/athlete-profile?contactId='+encodeURIComponent(contactId)+'&athleteName='+encodeURIComponent(CE.name||'')).then(function(r){
@@ -1751,7 +1751,7 @@ function renderAthleteProfile(p){
   html+=profileSection('Records',(p.records||[]).map(function(r){
     return '<div class="profile-row"><b>'+ex(r.recordType||'Record')+'</b> '+ex(r.event||'')+' '+ex(r.resultDisplay||'')+'<small>'+ex((r.meetName||'')+(r.recordDate?' · '+r.recordDate:''))+'</small></div>';
   }));
-  body.innerHTML=html||'<div class="profile-sec"><div class="profile-row">No SMARTCoach Pro data yet.</div></div>';
+  body.innerHTML=html||'<div class="profile-sec"><div class="profile-row">No SMART Trak data yet.</div></div>';
 }
 function athleteTodayRows(r,profile){
   if(!r)return[];
@@ -2301,7 +2301,7 @@ function openSync(preselectRunnerId){
   loadAthletes();
   document.getElementById('sy-status').textContent='';
   var btn=document.getElementById('sy-btn');
-  btn.textContent='Sync to SMARTCoach Pro';btn.style.background='#2B4FCC';btn.disabled=false;
+  btn.textContent='Sync to SMART Trak';btn.style.background='#2B4FCC';btn.disabled=false;
   renderSyncAthletes();
   if(preselectRunnerId)selectOnlySyncRunner(preselectRunnerId);
   hydrateAssignedPlanWorkouts().then(function(changed){
@@ -2538,10 +2538,10 @@ function submitCapturedMeetResults(forceDuplicateSync){
       return result.data&&result.data.athleteBest&&result.data.athleteBest.action==='skipped';
     });
     if(skippedBest){
-      status.textContent='Meet result saved. Athlete Best skipped: '+(skippedBest.data.athleteBest.reason||'Needs review in SMARTCoach Pro.');
+      status.textContent='Meet result saved. Athlete Best skipped: '+(skippedBest.data.athleteBest.reason||'Needs review in SMART Trak.');
       status.style.color='#c47a00';
     }else{
-      status.textContent='Saved '+results.length+' meet result'+(results.length===1?'':'s')+' to SMARTCoach Pro!';
+      status.textContent='Saved '+results.length+' meet result'+(results.length===1?'':'s')+' to SMART Trak!';
       status.style.color='#0a7a44';
     }
     status.style.fontWeight='700';
@@ -2750,7 +2750,7 @@ function updateSyncButtonState(){
   var selected=selectedSyncRunners();
   btn.disabled=!selected.length;
   btn.style.background=selected.length?'#2B4FCC':'#8e8e93';
-  btn.textContent=selected.length?'Sync to SMARTCoach Pro':'Select Athlete to Resync';
+  btn.textContent=selected.length?'Sync to SMART Trak':'Select Athlete to Resync';
 }
 function syncFallbackValue(id,fallback){
   var el=document.getElementById(id);
@@ -2878,7 +2878,7 @@ function doSMARTTraKSync(forceDuplicateSync){
     setTimeout(function(){updateSyncButtonState();},3000);
   }).catch(function(e){
     if(e.status===409&&e.data&&e.data.code==='DUPLICATE_SYNC'){
-      btn.textContent='Sync to SMARTCoach Pro';btn.disabled=false;
+      btn.textContent='Sync to SMART Trak';btn.disabled=false;
       status.textContent='This workout was already synced.';status.style.color='#c47a00';status.style.fontWeight='700';
       if(confirm('This workout appears to have already been synced. Sync it again anyway?')){
         doSMARTTraKSync(true);
@@ -2886,7 +2886,7 @@ function doSMARTTraKSync(forceDuplicateSync){
       return;
     }
     status.textContent='Error: '+e.message;status.style.color='#c00';
-    btn.textContent='Sync to SMARTCoach Pro';btn.disabled=false;
+    btn.textContent='Sync to SMART Trak';btn.disabled=false;
   });
 }
 function markSyncedRuns(synced){
@@ -2926,6 +2926,6 @@ document.addEventListener('touchstart',function(e){
 <div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="clearAthleteTrainingPlan()" style="display:none;margin-top:8px">Use Group Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><div class="sinp" id="ms-event" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
-<div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMARTCoach Pro</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div id="sy-plan-summary"></div><div id="sy-manual-fields"><div class="srow" id="sy-row-season"><label class="slbl">Season</label><input id="sy-season" type="hidden" value="Spring"/><button type="button" id="sy-season-display" class="sinp picker-control" onclick="openSeasonPicker()">Spring</button></div><div class="srow" id="sy-row-phase"><label class="slbl">Phase</label><input id="sy-phase" type="hidden" value="GPP"/><button type="button" id="sy-phase-display" class="sinp picker-control" onclick="openPhasePicker()">GPP</button></div><div class="srow" id="sy-row-wtype"><label class="slbl">Workout Type</label><input id="sy-wtype" type="hidden" value=""/><button type="button" id="sy-wtype-display" class="sinp picker-control" onclick="openWorkoutTypePicker()">Select Workout Type</button></div></div><div class="srow"><label class="slbl">Surface</label><input id="sy-surf" type="hidden" value=""/><button type="button" id="sy-surf-display" class="sinp picker-control" onclick="openSurfacePicker()">Select Surface</button></div><div class="srow"><label class="slbl">Weather</label><input id="sy-weather" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Volume</label><input id="sy-volume" class="sinp" type="text" placeholder="Optional completed volume" autocomplete="off"/></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMARTCoach Pro</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMART Trak</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div id="sy-plan-summary"></div><div id="sy-manual-fields"><div class="srow" id="sy-row-season"><label class="slbl">Season</label><input id="sy-season" type="hidden" value="Spring"/><button type="button" id="sy-season-display" class="sinp picker-control" onclick="openSeasonPicker()">Spring</button></div><div class="srow" id="sy-row-phase"><label class="slbl">Phase</label><input id="sy-phase" type="hidden" value="GPP"/><button type="button" id="sy-phase-display" class="sinp picker-control" onclick="openPhasePicker()">GPP</button></div><div class="srow" id="sy-row-wtype"><label class="slbl">Workout Type</label><input id="sy-wtype" type="hidden" value=""/><button type="button" id="sy-wtype-display" class="sinp picker-control" onclick="openWorkoutTypePicker()">Select Workout Type</button></div></div><div class="srow"><label class="slbl">Surface</label><input id="sy-surf" type="hidden" value=""/><button type="button" id="sy-surf-display" class="sinp picker-control" onclick="openSurfacePicker()">Select Surface</button></div><div class="srow"><label class="slbl">Weather</label><input id="sy-weather" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Volume</label><input id="sy-volume" class="sinp" type="text" placeholder="Optional completed volume" autocomplete="off"/></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMART Trak</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
 </html>

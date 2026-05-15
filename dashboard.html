@@ -572,19 +572,19 @@ tr:last-child td{border-bottom:0}
         <input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
       </div>
       <div class="field" style="margin-top:10px">
-        <label for="productPlan">Product</label>
+        <label for="productPlan">Plan</label>
         <select id="productPlan">
           <option value="pro">SMARTCoach Pro</option>
           <option value="essential">SMARTCoach Essential</option>
         </select>
       </div>
-      <div class="small" style="margin-top:8px">Use <b>default</b> for the current SMARTCoach Pro account.</div>
+      <div class="small" style="margin-top:8px">Use <b>default</b> for this SMART Trak account. Customer accounts use the account key created during setup.</div>
       <div id="accountSummary" class="accountsummary"></div>
       <div id="appVersion" class="small" style="margin-top:6px;text-align:center"></div>
       <div class="modalactions">
         <div id="accountStatus" class="modalstatus"></div>
         <button class="ghost" id="accountRefresh" type="button">Refresh App</button>
-        <button id="accountSave" type="button">Save Account</button>
+        <button id="accountSave" type="button">Save Settings</button>
       </div>
     </div>
   </section>
@@ -1115,12 +1115,11 @@ function renderAccountSummary(data,fallbackPlan){
   var pro=plan!=='essential';
   var configured=!pro || !!(data&&data.configured);
   var access=!!(data&&data.accessCodeRequired);
-  var logoText=data&&data.logoUrl?'Logo: Custom':'Logo: Default SMART Trak';
   var title=pro?(configured?'SMART Trak ready':'SMART Trak setup needed'):'SMARTCoach Essential ready';
   var detail=pro?(configured?'SMART Trak connection is ready.':'SMART Trak connection is not finished yet.'):'Stopwatch-only account. SMART Trak tools are hidden.';
-  var accessText=pro?'Dashboard access code: '+(access?'On':'Off'):'Dashboard access code: Not needed';
+  var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
   els.accountSummary.className='accountsummary '+(configured?'good':'bad');
-  els.accountSummary.innerHTML='<b>'+esc(title)+'</b><span>'+esc(detail)+'</span><br><span>'+esc(accessText)+'</span><br><span>'+esc(logoText)+'</span>';
+  els.accountSummary.innerHTML='<b>'+esc(title)+'</b><span>'+esc(detail)+'</span><br><span>'+esc(accessText)+'</span>';
 }
 
 function refreshAppVersion(){
