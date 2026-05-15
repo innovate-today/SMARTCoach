@@ -110,6 +110,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="actions">
       <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">SMART Trak</a>
+      <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="refreshBtn" type="button">Refresh</button>
     </div>
@@ -595,6 +596,8 @@ function init(){
   document.body.classList.toggle('embedded',embeddedMode());
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
   els.dashboardLink.href=pageUrl('/dashboard.html');
+  var recordsLink=document.getElementById('recordsLink');
+  if(recordsLink)recordsLink.href=pageUrl('/records.html');
   els.planBuilderLink.href=pageUrl('/plan-builder.html');
   els.refreshBtn.addEventListener('click',loadMeetHistory);
   els.search.addEventListener('input',render);

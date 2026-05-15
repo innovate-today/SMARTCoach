@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak Records</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1480px;margin:0 auto;padding:22px 18px 32px}
+body.embedded .page{max-width:none;padding:16px 18px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:64px;height:64px;display:grid;place-items:center;flex:0 0 64px}
+.mark img{display:block;max-width:64px;max-height:64px;object-fit:contain}
+h1{font-size:24px;line-height:1.15;margin:0}
+.sub{font-size:14px;color:var(--muted);margin-top:4px}
+.updated{display:inline-flex;align-items:center;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:800;padding:7px 10px}
+.actions{display:flex;align-items:center;gap:10px}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
+button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
+button.ghost{background:#eef2f7;color:#172033}
+button:disabled{opacity:.55;cursor:not-allowed}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.card:hover{box-shadow:0 10px 24px rgba(15,23,42,.14);transform:translateY(-1px)}
+.card b{display:block;font-size:24px;line-height:1.1}
+.card span{display:block;color:var(--muted);font-size:13px;margin-top:5px}
+.bar{display:grid;grid-template-columns:1fr 210px 210px 190px auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
+input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
+.status{color:var(--muted);font-size:13px;text-align:right;min-width:150px}
+.tablewrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:1180px}
+th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
+th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
+.sortbtn{border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer;text-align:left}
+.sortbtn:after{content:"";display:inline-block;margin-left:5px;color:var(--blue)}
+.sortbtn.active.asc:after{content:"▲"}
+.sortbtn.active.desc:after{content:"▼"}
+td{font-size:14px}
+tr:last-child td{border-bottom:0}
+.name{font-weight:900;color:#102a70}
+.muted{color:var(--muted);font-size:12px;margin-top:2px}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#e8eefc;color:#173891}
+.pill.good{background:#dcfce7;color:var(--good)}
+.pill.warn{background:#ffedd5;color:var(--warn)}
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
+.access{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
+.access h1{font-size:24px;margin-bottom:8px}
+.access p{color:var(--muted);line-height:1.45}
+.accessrow{display:flex;justify-content:center;gap:10px;margin-top:18px}
+.accessrow input{max-width:280px}
+@media(max-width:980px){
+  .top{align-items:flex-start;flex-direction:column}
+  .actions{width:100%;flex-wrap:wrap}
+  .actions a,.actions button{flex:1;text-align:center}
+  .cards{grid-template-columns:1fr 1fr}
+  .bar{grid-template-columns:1fr}
+  .status{text-align:left}
+}
+</style>
+</head>
+<body>
+<main id="mainPage" class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>SMART Trak Records</h1>
+        <div class="sub">School, team, season, meet, and athlete records in one view.</div>
+        <div id="lastUpdated" class="updated">Last updated --</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">SMART Trak</a>
+      <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
+      <button id="refreshBtn" type="button">Refresh</button>
+    </div>
+  </section>
+
+  <section class="cards">
+    <div class="card"><b id="recordCount">--</b><span>Records in view</span></div>
+    <div class="card"><b id="currentCount">--</b><span>Current records</span></div>
+    <div class="card"><b id="eventCount">--</b><span>Events represented</span></div>
+    <div class="card"><b id="athleteCount">--</b><span>Athletes listed</span></div>
+  </section>
+
+  <section class="bar">
+    <input id="search" type="search" placeholder="Search athlete, event, meet, scope, or result" autocomplete="off">
+    <select id="scopeFilter"><option value="all">All scopes</option></select>
+    <select id="typeFilter"><option value="all">All record types</option></select>
+    <select id="eventFilter"><option value="all">All events</option></select>
+    <button id="clearBtn" class="ghost" type="button">Reset View</button>
+    <div id="status" class="status">Loading records...</div>
+  </section>
+
+  <section class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th><button class="sortbtn active asc" data-sort="event" type="button">Event</button></th>
+          <th><button class="sortbtn" data-sort="scope" type="button">Scope</button></th>
+          <th><button class="sortbtn" data-sort="type" type="button">Type</button></th>
+          <th><button class="sortbtn" data-sort="result" type="button">Record</button></th>
+          <th><button class="sortbtn" data-sort="athlete" type="button">Athlete</button></th>
+          <th><button class="sortbtn" data-sort="meet" type="button">Meet</button></th>
+          <th><button class="sortbtn" data-sort="date" type="button">Date</button></th>
+          <th>Status</th>
+          <th>Previous</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty" hidden>No records in this view.</div>
+  </section>
+</main>
+
+<section id="accessPanel" class="access" hidden>
+  <h1>SMART Trak Access Required</h1>
+  <p>Enter the access code for this account to view records.</p>
+  <div class="accessrow">
+    <input id="accessCode" type="password" placeholder="Access code" autocomplete="off">
+    <button id="accessSubmit" type="button">Continue</button>
+  </div>
+  <p id="accessStatus" class="muted"></p>
+</section>
+
+<script>
+var records=[];
+var recordSort={key:'event',dir:'asc'};
+var els={
+  mainPage:document.getElementById('mainPage'),
+  accessPanel:document.getElementById('accessPanel'),
+  accessCode:document.getElementById('accessCode'),
+  accessSubmit:document.getElementById('accessSubmit'),
+  accessStatus:document.getElementById('accessStatus'),
+  dashboardLink:document.getElementById('dashboardLink'),
+  meetHistoryLink:document.getElementById('meetHistoryLink'),
+  refreshBtn:document.getElementById('refreshBtn'),
+  lastUpdated:document.getElementById('lastUpdated'),
+  recordCount:document.getElementById('recordCount'),
+  currentCount:document.getElementById('currentCount'),
+  eventCount:document.getElementById('eventCount'),
+  athleteCount:document.getElementById('athleteCount'),
+  search:document.getElementById('search'),
+  scopeFilter:document.getElementById('scopeFilter'),
+  typeFilter:document.getElementById('typeFilter'),
+  eventFilter:document.getElementById('eventFilter'),
+  clearBtn:document.getElementById('clearBtn'),
+  status:document.getElementById('status'),
+  rows:document.getElementById('rows'),
+  empty:document.getElementById('empty')
+};
+function accountKey(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    return cleanKey(params.get('account')||params.get('tenant')||localStorage.getItem('sc_account')||'default');
+  }catch(e){return 'default';}
+}
+function cleanKey(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';}
+function embeddedMode(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    return params.get('embed')==='1'||params.get('iframe')==='1'||params.get('embedded')==='1';
+  }catch(e){return false;}
+}
+function pageUrl(path){
+  var url=new URL(path,window.location.origin);
+  var key=accountKey();
+  if(key&&key!=='default')url.searchParams.set('account',key);
+  if(embeddedMode())url.searchParams.set('embed','1');
+  return url.pathname+url.search;
+}
+function accessStorageKey(){return 'sc_access_'+accountKey();}
+function accessCode(){try{return sessionStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
+function setAccessCode(value){try{sessionStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
+function apiHeaders(){
+  var headers={'X-SMARTCoach-Account':accountKey()};
+  var code=accessCode();
+  if(code)headers['X-SMARTCoach-Access-Code']=code;
+  return headers;
+}
+function esc(value){
+  return String(value==null?'':value).replace(/[&<>"']/g,function(char){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char];
+  });
+}
+function formatDate(value){
+  if(!value)return '';
+  var date=new Date(value);
+  if(isNaN(date.getTime()))return value;
+  return date.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+}
+function formatDateTime(value){
+  var date=new Date(value);
+  if(isNaN(date.getTime()))return '';
+  return date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function parseResultMs(value){
+  var text=String(value||'').trim();
+  if(!text)return 0;
+  var parts=text.split(':').map(Number);
+  if(parts.some(function(part){return isNaN(part);}))return Number(text)||0;
+  var seconds=0;
+  if(parts.length===1)seconds=parts[0];
+  if(parts.length===2)seconds=parts[0]*60+parts[1];
+  if(parts.length===3)seconds=parts[0]*3600+parts[1]*60+parts[2];
+  return Math.round(seconds*1000);
+}
+function searchText(row){
+  return [row.recordName,row.recordType,row.recordScope,row.sport,row.event,row.resultDisplay,row.resultMark,row.athleteName,row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
+}
+function fillSelect(select,label,values){
+  var previous=select.value||'all';
+  select.innerHTML='<option value="all">'+esc(label)+'</option>'+values.map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
+  select.value=values.indexOf(previous)>=0?previous:'all';
+}
+function renderOptions(){
+  var scopes={};
+  var types={};
+  var events={};
+  records.forEach(function(row){
+    if(row.recordScope)scopes[row.recordScope]=true;
+    if(row.recordType)types[row.recordType]=true;
+    if(row.event)events[row.event]=true;
+  });
+  fillSelect(els.scopeFilter,'All scopes',Object.keys(scopes).sort());
+  fillSelect(els.typeFilter,'All record types',Object.keys(types).sort());
+  fillSelect(els.eventFilter,'All events',Object.keys(events).sort());
+}
+function filteredRecords(){
+  var query=String(els.search.value||'').trim().toLowerCase();
+  var scope=els.scopeFilter.value;
+  var type=els.typeFilter.value;
+  var event=els.eventFilter.value;
+  return sortRecords(records.filter(function(row){
+    if(query&&searchText(row).indexOf(query)===-1)return false;
+    if(scope!=='all'&&row.recordScope!==scope)return false;
+    if(type!=='all'&&row.recordType!==type)return false;
+    if(event!=='all'&&row.event!==event)return false;
+    return true;
+  }));
+}
+function sortRecords(list){
+  var key=recordSort.key;
+  var dir=recordSort.dir==='desc'?-1:1;
+  return list.slice().sort(function(a,b){
+    return dir*compareRecordValue(a,b,key) ||
+      String(a.event||'').localeCompare(String(b.event||'')) ||
+      String(a.recordScope||'').localeCompare(String(b.recordScope||''));
+  });
+}
+function compareRecordValue(a,b,key){
+  if(key==='result')return (a.resultMs||parseResultMs(a.resultDisplay))-(b.resultMs||parseResultMs(b.resultDisplay));
+  if(key==='date')return String(a.recordDate||'').localeCompare(String(b.recordDate||''));
+  if(key==='scope')return String(a.recordScope||'').localeCompare(String(b.recordScope||''));
+  if(key==='type')return String(a.recordType||'').localeCompare(String(b.recordType||''));
+  if(key==='athlete')return String(a.athleteName||'').localeCompare(String(b.athleteName||''));
+  if(key==='meet')return String(a.meetName||'').localeCompare(String(b.meetName||''));
+  return String(a.event||'').localeCompare(String(b.event||''));
+}
+function updateSortButtons(){
+  document.querySelectorAll('.sortbtn[data-sort]').forEach(function(button){
+    var active=button.getAttribute('data-sort')===recordSort.key;
+    button.classList.toggle('active',active);
+    button.classList.toggle('asc',active&&recordSort.dir==='asc');
+    button.classList.toggle('desc',active&&recordSort.dir==='desc');
+  });
+}
+function render(){
+  var list=filteredRecords();
+  var events={};
+  var athletes={};
+  var current=0;
+  list.forEach(function(row){
+    if(row.event)events[row.event]=true;
+    if(row.athleteName)athletes[row.athleteName]=true;
+    if(row.isCurrent)current+=1;
+  });
+  els.recordCount.textContent=list.length;
+  els.currentCount.textContent=current;
+  els.eventCount.textContent=Object.keys(events).length;
+  els.athleteCount.textContent=Object.keys(athletes).length;
+  els.status.textContent=list.length+' records';
+  updateSortButtons();
+  els.rows.innerHTML=list.map(function(row){
+    var recordValue=row.resultDisplay||row.resultMark||'';
+    var status=row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
+    return '<tr>'+
+      '<td><div class="name">'+esc(row.event||'Unlisted')+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
+      '<td>'+esc(row.recordScope||'')+'</td>'+
+      '<td>'+esc(row.recordType||'')+'</td>'+
+      '<td><b>'+esc(recordValue)+'</b></td>'+
+      '<td>'+esc(row.athleteName||'')+'</td>'+
+      '<td>'+esc(row.meetName||'')+'</td>'+
+      '<td>'+esc(formatDate(row.recordDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
+      '<td>'+status+'</td>'+
+      '<td>'+esc(row.previousRecordDisplay||'')+'<div class="muted">'+esc(row.previousRecordHolder||'')+'</div></td>'+
+    '</tr>';
+  }).join('');
+  els.empty.hidden=!!list.length;
+}
+function loadRecords(){
+  els.refreshBtn.disabled=true;
+  els.status.textContent='Loading records...';
+  return fetch('/api/ghl/records',{headers:apiHeaders()}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){
+      showAccess(result.data);
+      return;
+    }
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Records failed to load.');
+    records=result.data.records||[];
+    els.lastUpdated.textContent='Last updated '+formatDateTime(result.data.generatedAt||new Date().toISOString());
+    renderOptions();
+    render();
+  }).catch(function(error){
+    records=[];
+    els.rows.innerHTML='';
+    els.empty.hidden=false;
+    els.empty.textContent=error.message||'Records failed to load.';
+    els.status.textContent='Needs attention';
+    els.lastUpdated.textContent='Update failed';
+  }).finally(function(){
+    els.refreshBtn.disabled=false;
+  });
+}
+function showAccess(data){
+  els.mainPage.hidden=true;
+  els.accessPanel.hidden=false;
+  els.accessStatus.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';
+  setTimeout(function(){els.accessCode.focus();},50);
+}
+function submitAccess(){
+  if(!els.accessCode.value.trim()){
+    els.accessStatus.textContent='Enter the access code to continue.';
+    els.accessStatus.style.color='var(--warn)';
+    return;
+  }
+  setAccessCode(els.accessCode.value);
+  els.accessPanel.hidden=true;
+  els.mainPage.hidden=false;
+  loadRecords();
+}
+function init(){
+  document.body.classList.toggle('embedded',embeddedMode());
+  try{localStorage.setItem('sc_account',accountKey());}catch(e){}
+  els.dashboardLink.href=pageUrl('/dashboard.html');
+  els.meetHistoryLink.href=pageUrl('/meet-history.html');
+  els.refreshBtn.addEventListener('click',loadRecords);
+  els.search.addEventListener('input',render);
+  els.scopeFilter.addEventListener('change',render);
+  els.typeFilter.addEventListener('change',render);
+  els.eventFilter.addEventListener('change',render);
+  document.querySelectorAll('.sortbtn[data-sort]').forEach(function(button){
+    button.addEventListener('click',function(){
+      var key=button.getAttribute('data-sort')||'event';
+      recordSort={key:key,dir:recordSort.key===key&&recordSort.dir==='asc'?'desc':'asc'};
+      render();
+    });
+  });
+  els.clearBtn.addEventListener('click',function(){
+    els.search.value='';
+    els.scopeFilter.value='all';
+    els.typeFilter.value='all';
+    els.eventFilter.value='all';
+    recordSort={key:'event',dir:'asc'};
+    render();
+  });
+  els.accessSubmit.addEventListener('click',submitAccess);
+  els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});
+  loadRecords();
+}
+init();
+</script>
+</body>
+</html>
