@@ -691,9 +691,16 @@ function quickUpdateActiveDayStatus(statusLabel){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update plan day.');
-    return loadCalendar();
-  }).then(function(){
+    activeDay.status=statusLabel;
+    activeDay.coachNotes=[activeDay.coachNotes,'Status changed to '+statusLabel+': '+reason].filter(Boolean).join('\n');
+    days=days.map(function(day){
+      return day.id===activeDay.id||day.sourceRecordId===activeDay.sourceRecordId ? activeDay : day;
+    });
     closeDayModal();
+    renderOptions();
+    render();
+    els.status.textContent='Plan day marked '+statusLabel+'.';
+    loadCalendar();
   }).catch(function(error){
     alert(error.message||'Could not update plan day.');
     render();
