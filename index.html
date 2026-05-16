@@ -944,7 +944,7 @@ function loadMeets(){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Meets unavailable');
-    MT=(result.data&&result.data.meets)||[];
+    MT=((result.data&&result.data.meets)||[]).filter(function(meet){return !/archived/i.test(meet.status||'');});
     renderMeetOptions();
   }).catch(function(){MT=[];renderMeetOptions();});
 }

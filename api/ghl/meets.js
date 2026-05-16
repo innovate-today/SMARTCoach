@@ -43,9 +43,23 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    if (req.method === "PATCH") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      const meet = await updateMeet({ token, locationId, payload });
+      res.status(200).json({ success: true, meet });
+      return;
+    }
+
+    if (req.method === "DELETE") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      await deleteMeet({ token, payload });
+      res.status(200).json({ success: true });
+      return;
+    }
+
     res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    if (error.statusCode && error.statusCode < 500) {
+    if (req.method === "GET" && error.statusCode && error.statusCode < 500) {
       res.status(200).json({ success: true, meets: [], objectAvailable: false, warning: error.message });
       return;
     }
@@ -55,8 +69,8 @@ module.exports = async function handler(req, res) {
 
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code");
 }
 
 async function listMeets({ token, locationId }) {
@@ -117,6 +131,45 @@ async function createMeet({ token, locationId, payload }) {
   });
 
   return normalizeMeet(record.record || record, properties);
+}
+
+async function updateMeet({ token, locationId, payload }) {
+  const recordId = clean(payload && payload.recordId);
+  if (!recordId) throw httpError(400, "Meet record ID is required.");
+
+  const name = clean(payload && payload.meetName);
+  const date = clean(payload && payload.meetDate);
+  const season = clean(payload && payload.season);
+  const seasonYear = Number(payload && payload.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : undefined);
+  const status = clean(payload && payload.status);
+
+  const properties = {};
+  if (name) properties.meet = name;
+  if (date) properties.meet_date = date;
+  if (season) properties.season = optionValue(season);
+  if (seasonYear) properties.season_year = seasonYear;
+  if (status) properties.status = optionValue(status);
+
+  if (!Object.keys(properties).length) throw httpError(400, "No meet changes were provided.");
+
+  const record = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
+    method: "PUT",
+    body: { locationId, properties },
+  });
+
+  return normalizeMeet(record.record || record, properties);
+}
+
+async function deleteMeet({ token, payload }) {
+  const recordId = clean(payload && payload.recordId);
+  if (!recordId) throw httpError(400, "Meet record ID is required.");
+  await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
+    method: "DELETE",
+  });
 }
 
 async function ghlFetch({ token, path, method, body }) {

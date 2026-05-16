@@ -129,6 +129,12 @@ tr:last-child td{border-bottom:0}
 .field textarea{min-height:78px;resize:vertical}
 .originalbox{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 12px;margin-bottom:12px;color:#475569;font-size:12px;line-height:1.4}
 .originalbox b{display:block;color:#111827;font-size:13px;margin-bottom:4px}
+.meet-manager{display:grid;gap:10px;margin-top:14px;max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}
+.meet-card{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 11px}
+.meet-card.archived{opacity:.65}
+.meet-card b{display:block;font-size:14px}
+.meet-card span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.meet-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
 .modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
 .accountsummary{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 11px;margin-top:10px;color:var(--muted);font-size:13px;line-height:1.35}
@@ -190,6 +196,7 @@ tr:last-child td{border-bottom:0}
       <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
       <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      <button id="manageMeetsBtn" class="secondary" type="button">Manage Meets</button>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
       <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
       <button id="refreshBtn" type="button">Refresh</button>
@@ -308,6 +315,7 @@ tr:last-child td{border-bottom:0}
   <section id="meetPanel" class="tabpanel" data-panel="meet" hidden>
     <div class="sectionbar">
       <div class="section-title">Recent Meet Results</div>
+      <button id="manageMeetsSectionBtn" class="secondary" type="button">Manage Meets</button>
     </div>
     <section class="tablewrap recentwrap">
       <table>
@@ -619,6 +627,53 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<div id="meetManagerModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="meetManagerTitle">
+    <div class="modalhead">
+      <h2 id="meetManagerTitle">Manage Meets</h2>
+      <button id="meetManagerClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field">
+          <label for="meetManagerName">Meet</label>
+          <input id="meetManagerName" type="text" placeholder="Meet name">
+        </div>
+        <div class="field">
+          <label for="meetManagerDate">Date</label>
+          <input id="meetManagerDate" type="date">
+        </div>
+        <div class="field">
+          <label for="meetManagerSeason">Season</label>
+          <select id="meetManagerSeason">
+            <option>Spring</option>
+            <option>Summer</option>
+            <option>Fall</option>
+            <option>Winter</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="meetManagerYear">Season Year</label>
+          <input id="meetManagerYear" type="number" placeholder="2026">
+        </div>
+        <div class="field">
+          <label for="meetManagerStatusSelect">Status</label>
+          <select id="meetManagerStatusSelect">
+            <option>Scheduled</option>
+            <option>Completed</option>
+            <option>Archived</option>
+          </select>
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="meetManagerStatus" class="modalstatus">Create or update meets for the stopwatch and meet results.</div>
+        <button id="meetManagerClear" class="ghost" type="button">New Meet</button>
+        <button id="meetManagerSave" type="button">Save Meet</button>
+      </div>
+      <div id="meetManagerList" class="meet-manager"></div>
+    </div>
+  </section>
+</div>
 <div id="accountModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
     <div class="modalhead">
@@ -653,6 +708,7 @@ var dashboardRows=[];
 var accountStatus=null;
 var recentMeetRows=[];
 var recentTrainingRows=[];
+var meetManagerRows=[];
 var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
@@ -660,6 +716,7 @@ var visibleVolumeRows=[];
 var expandedTrainingAthletes={};
 var correctionRow=null;
 var meetCorrectionRow=null;
+var meetManagerEditingId='';
 var lastLoadedAt='';
 var activeTab='roster';
 var activeTrainingSubtab='volume';
@@ -865,6 +922,8 @@ var els={
   accessCodeInput:document.getElementById('accessCodeInput'),
   accessStatus:document.getElementById('accessStatus'),
   accessSubmit:document.getElementById('accessSubmit'),
+  manageMeetsBtn:document.getElementById('manageMeetsBtn'),
+  manageMeetsSectionBtn:document.getElementById('manageMeetsSectionBtn'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
   accountBtn:document.getElementById('accountBtn'),
   accountModal:document.getElementById('accountModal'),
@@ -915,6 +974,17 @@ var els={
   meetCorrectionNotes:document.getElementById('meetCorrectionNotes'),
   meetCorrectionStatus:document.getElementById('meetCorrectionStatus'),
   meetCorrectionSave:document.getElementById('meetCorrectionSave'),
+  meetManagerModal:document.getElementById('meetManagerModal'),
+  meetManagerClose:document.getElementById('meetManagerClose'),
+  meetManagerName:document.getElementById('meetManagerName'),
+  meetManagerDate:document.getElementById('meetManagerDate'),
+  meetManagerSeason:document.getElementById('meetManagerSeason'),
+  meetManagerYear:document.getElementById('meetManagerYear'),
+  meetManagerStatusSelect:document.getElementById('meetManagerStatusSelect'),
+  meetManagerStatus:document.getElementById('meetManagerStatus'),
+  meetManagerClear:document.getElementById('meetManagerClear'),
+  meetManagerSave:document.getElementById('meetManagerSave'),
+  meetManagerList:document.getElementById('meetManagerList'),
   status:document.getElementById('status'),
   filterState:document.getElementById('filterState'),
   lastUpdated:document.getElementById('lastUpdated'),
@@ -1024,6 +1094,30 @@ document.addEventListener('click',function(event){
     openMeetCorrectionModal(editMeetButton);
     return;
   }
+  var editManagedMeet=event.target.closest&&event.target.closest('[data-edit-managed-meet]');
+  if(editManagedMeet){
+    event.preventDefault();
+    editManagedMeetForm(editManagedMeet.getAttribute('data-edit-managed-meet')||'');
+    return;
+  }
+  var archiveManagedMeet=event.target.closest&&event.target.closest('[data-archive-managed-meet]');
+  if(archiveManagedMeet){
+    event.preventDefault();
+    updateManagedMeetStatus(archiveManagedMeet.getAttribute('data-archive-managed-meet')||'','Archived');
+    return;
+  }
+  var restoreManagedMeet=event.target.closest&&event.target.closest('[data-restore-managed-meet]');
+  if(restoreManagedMeet){
+    event.preventDefault();
+    updateManagedMeetStatus(restoreManagedMeet.getAttribute('data-restore-managed-meet')||'','Scheduled');
+    return;
+  }
+  var deleteManagedMeet=event.target.closest&&event.target.closest('[data-delete-managed-meet]');
+  if(deleteManagedMeet){
+    event.preventDefault();
+    deleteManagedMeetRecord(deleteManagedMeet.getAttribute('data-delete-managed-meet')||'');
+    return;
+  }
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
   if(!button)return;
   var contactId=button.getAttribute('data-contact-id')||'';
@@ -1033,6 +1127,8 @@ document.addEventListener('click',function(event){
   if(athlete)openAthleteDetail(athlete);
 });
 els.athleteModalClose.addEventListener('click',closeAthleteDetail);
+els.manageMeetsBtn.addEventListener('click',openMeetManager);
+els.manageMeetsSectionBtn.addEventListener('click',openMeetManager);
 els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
@@ -1045,6 +1141,9 @@ els.correctionClose.addEventListener('click',closeCorrectionModal);
 els.correctionSave.addEventListener('click',saveCorrection);
 els.meetCorrectionClose.addEventListener('click',closeMeetCorrectionModal);
 els.meetCorrectionSave.addEventListener('click',saveMeetCorrection);
+els.meetManagerClose.addEventListener('click',closeMeetManager);
+els.meetManagerClear.addEventListener('click',clearMeetManagerForm);
+els.meetManagerSave.addEventListener('click',saveManagedMeet);
 els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
   els.quickFilter.value='all';
@@ -2118,6 +2217,166 @@ function meetCorrectionNotesFromRow(row){
 function setMeetCorrectionStatus(text,type){
   els.meetCorrectionStatus.textContent=text||'';
   els.meetCorrectionStatus.style.color=type==='error'?'#b00000':type==='success'?'#08783c':'';
+}
+
+function openMeetManager(){
+  clearMeetManagerForm();
+  els.meetManagerModal.hidden=false;
+  loadManagedMeets();
+}
+
+function closeMeetManager(){
+  els.meetManagerModal.hidden=true;
+  meetManagerEditingId='';
+}
+
+function clearMeetManagerForm(){
+  meetManagerEditingId='';
+  els.meetManagerName.value='';
+  els.meetManagerDate.value=todayInputValue();
+  var key=seasonKeyForDate(new Date());
+  var parts=key.split('-');
+  setSelectValue(els.meetManagerSeason,capitalize(parts[1]||'Spring'));
+  els.meetManagerYear.value=parts[0]||new Date().getFullYear();
+  setSelectValue(els.meetManagerStatusSelect,'Scheduled');
+  els.meetManagerSave.textContent='Save Meet';
+  setMeetManagerStatus('Create or update meets for the stopwatch and meet results.','');
+}
+
+function loadManagedMeets(){
+  setMeetManagerStatus('Loading meets...','');
+  fetch('/api/smart-trak/meets',{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not load meets.');
+    meetManagerRows=result.data.meets||[];
+    renderManagedMeets();
+    setMeetManagerStatus(meetManagerRows.length+' meet'+(meetManagerRows.length===1?'':'s')+' loaded.','success');
+  }).catch(function(error){
+    meetManagerRows=[];
+    renderManagedMeets();
+    setMeetManagerStatus(error.message||'Could not load meets.','error');
+  });
+}
+
+function renderManagedMeets(){
+  if(!els.meetManagerList)return;
+  if(!meetManagerRows.length){
+    els.meetManagerList.innerHTML='<div class="empty">No meets found yet.</div>';
+    return;
+  }
+  els.meetManagerList.innerHTML=meetManagerRows.slice().sort(function(a,b){
+    return String(a.date||'').localeCompare(String(b.date||'')) || String(a.name||'').localeCompare(String(b.name||''));
+  }).map(function(meet){
+    var archived=/archived/i.test(meet.status||'');
+    return '<div class="meet-card'+(archived?' archived':'')+'">'+
+      '<div><b>'+esc(meet.name||'Unnamed meet')+'</b><span>'+esc([formatDate(meet.date),meet.season,meet.seasonYear,meet.status||'Scheduled'].filter(Boolean).join(' · '))+'</span></div>'+
+      '<div class="meet-actions">'+
+        '<button class="ghost compact" data-edit-managed-meet="'+esc(meet.id||'')+'" type="button">Edit</button>'+
+        (archived?'<button class="ghost compact" data-restore-managed-meet="'+esc(meet.id||'')+'" type="button">Restore</button>':'<button class="ghost compact" data-archive-managed-meet="'+esc(meet.id||'')+'" type="button">Archive</button>')+
+        '<button class="danger compact" data-delete-managed-meet="'+esc(meet.id||'')+'" type="button">Delete</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function editManagedMeetForm(id){
+  var meet=meetManagerRows.find(function(item){return String(item.id||'')===String(id||'');});
+  if(!meet){
+    setMeetManagerStatus('Could not find that meet.','error');
+    return;
+  }
+  meetManagerEditingId=meet.id||'';
+  els.meetManagerName.value=meet.name||'';
+  els.meetManagerDate.value=meet.date?dateInputValue(meet.date):todayInputValue();
+  setSelectValue(els.meetManagerSeason,meet.season||'Spring');
+  els.meetManagerYear.value=meet.seasonYear||new Date().getFullYear();
+  setSelectValue(els.meetManagerStatusSelect,meet.status||'Scheduled');
+  els.meetManagerSave.textContent='Update Meet';
+  setMeetManagerStatus('Editing '+(meet.name||'meet')+'.','');
+}
+
+function saveManagedMeet(){
+  var name=els.meetManagerName.value.trim();
+  if(!name){
+    setMeetManagerStatus('Meet name is required.','error');
+    return;
+  }
+  var payload={
+    recordId:meetManagerEditingId,
+    meetName:name,
+    meetDate:els.meetManagerDate.value,
+    season:els.meetManagerSeason.value,
+    seasonYear:els.meetManagerYear.value,
+    status:els.meetManagerStatusSelect.value
+  };
+  els.meetManagerSave.disabled=true;
+  setMeetManagerStatus(meetManagerEditingId?'Updating meet...':'Creating meet...','');
+  fetch('/api/smart-trak/meets',{
+    method:meetManagerEditingId?'PATCH':'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet save failed.');
+    clearMeetManagerForm();
+    return loadManagedMeets();
+  }).catch(function(error){
+    setMeetManagerStatus(error.message||'Meet save failed.','error');
+  }).finally(function(){
+    els.meetManagerSave.disabled=false;
+  });
+}
+
+function updateManagedMeetStatus(id,status){
+  var meet=meetManagerRows.find(function(item){return String(item.id||'')===String(id||'');});
+  if(!meet)return;
+  setMeetManagerStatus((status==='Archived'?'Archiving':'Restoring')+' meet...','');
+  fetch('/api/smart-trak/meets',{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      recordId:id,
+      meetName:meet.name,
+      meetDate:meet.date,
+      season:meet.season,
+      seasonYear:meet.seasonYear,
+      status:status
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet update failed.');
+    return loadManagedMeets();
+  }).catch(function(error){
+    setMeetManagerStatus(error.message||'Meet update failed.','error');
+  });
+}
+
+function deleteManagedMeetRecord(id){
+  var meet=meetManagerRows.find(function(item){return String(item.id||'')===String(id||'');});
+  if(!meet)return;
+  if(!window.confirm('Delete '+(meet.name||'this meet')+' from SMART Trak? This does not delete existing meet results.'))return;
+  setMeetManagerStatus('Deleting meet...','');
+  fetch('/api/smart-trak/meets',{
+    method:'DELETE',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({recordId:id})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet delete failed.');
+    return loadManagedMeets();
+  }).catch(function(error){
+    setMeetManagerStatus(error.message||'Meet delete failed.','error');
+  });
+}
+
+function setMeetManagerStatus(text,type){
+  if(!els.meetManagerStatus)return;
+  els.meetManagerStatus.textContent=text||'';
+  els.meetManagerStatus.style.color=type==='error'?'#b00000':type==='success'?'#08783c':'';
 }
 
 function renderManualMileageAthletes(){
