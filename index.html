@@ -2018,7 +2018,11 @@ function useSelectedTrainingPlan(){
   document.getElementById('tp-status').style.fontWeight='700';
 }
 function targetNeedsPlanDay(target){
-  return target&&(target.trainingPlanId||target.trainingPlanSourceId)&&(!target.trainingPlanDayId||!target.trainingPlanDayWorkoutType||!target.trainingPlanDayEnergySystem);
+  return target&&(target.trainingPlanId||target.trainingPlanSourceId)&&
+    !target.trainingPlanDayId&&
+    !target.trainingPlanDayTitle&&
+    !target.trainingPlanDayDetails&&
+    !target.trainingPlanDayTargetSplits;
 }
 function applyPlanDayToTarget(target,day){
   if(!target||!day)return false;
