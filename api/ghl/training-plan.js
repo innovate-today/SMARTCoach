@@ -110,6 +110,11 @@ module.exports = async function handler(req, res) {
       res.status(200).json({ success: true, assignment });
       return;
     }
+    if (payload && payload.action === "updateDay") {
+      const day = await updateTrainingPlanDay({ token, locationId, payload });
+      res.status(200).json({ success: true, day });
+      return;
+    }
     const plan = normalizePlan(payload);
     const properties = buildTrainingPlanProperties(plan);
 
@@ -167,7 +172,7 @@ module.exports = async function handler(req, res) {
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code");
 }
 
 async function listTrainingPlans({ token, locationId }) {
@@ -236,6 +241,55 @@ async function assignAthletesToPlan({ token, locationId, payload }) {
   });
 
   return { planId, assignedGroup, athleteIds, athleteNames };
+}
+
+async function updateTrainingPlanDay({ token, locationId, payload }) {
+  const dayId = clean(payload && payload.dayId);
+  const reason = clean(payload && payload.reason);
+  const updates = payload && payload.updates && typeof payload.updates === "object" ? payload.updates : {};
+  if (!dayId) throw httpError(400, "Select a plan day first.");
+  if (!reason) throw httpError(400, "Reason is required.");
+
+  const properties = compactProperties({
+    training_plan_days: [dateOnly(updates.date), clean(updates.title)].filter(Boolean).join(" - "),
+    date: dateOnly(updates.date),
+    day_type: updates.dayType ? dayTypeValue(updates.dayType) : "",
+    group_name: clean(updates.groupName),
+    athlete_name_snapshot: clean(updates.athleteName),
+    workout_title: clean(updates.title),
+    workout_details: clean(updates.details),
+    workout_type: updates.workoutType ? workoutTypeValue(updates.workoutType) : "",
+    energy_system: updates.energySystem ? energySystemValue(updates.energySystem) : "",
+    target_splits__paces: clean(updates.targetSplits),
+    planned_volume: clean(updates.plannedVolume),
+    status: updates.status ? dayStatusValue(updates.status) : "",
+    linked_meet_id: clean(updates.linkedMeetId),
+    linked_performance_record_ids: clean(updates.linkedPerformanceRecordIds),
+    coach_notes: appendPlanDayAudit(clean(updates.coachNotes), reason),
+  });
+
+  if (!Object.keys(properties).length) throw httpError(400, "No plan day updates were provided.");
+
+  await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/${encodeURIComponent(dayId)}?locationId=${encodeURIComponent(locationId)}`,
+    method: "PUT",
+    body: { properties },
+  });
+
+  return {
+    id: dayId,
+    updatedAt: new Date().toISOString(),
+    changedFields: Object.keys(properties),
+  };
+}
+
+function appendPlanDayAudit(notes, reason) {
+  const lines = [];
+  if (notes) lines.push(notes);
+  lines.push(`Adjustment Date: ${new Date().toISOString()}`);
+  if (reason) lines.push(`Adjustment Reason: ${reason}`);
+  return lines.join("\n");
 }
 
 function assignmentBlockText(existingText, assignment) {

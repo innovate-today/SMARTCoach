@@ -55,6 +55,13 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .modalhead h2{font-size:20px;margin:0}
 .modalbody{padding:16px 18px}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.field{display:grid;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
+textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;resize:vertical}
+.modalactions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:14px}
+.modalstatus{margin-right:auto;color:var(--muted);font-size:13px;font-weight:800}
 .detailcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .detailcard b{display:block;font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
 .detailcard span{display:block;font-size:15px;font-weight:800;line-height:1.35}
@@ -129,15 +136,100 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="dayModalTitle">
     <div class="modalhead">
       <h2 id="dayModalTitle">Plan Day</h2>
-      <button id="dayModalClose" class="ghost" type="button">Close</button>
+      <div class="actions">
+        <button id="dayEditBtn" class="secondary" type="button">Edit</button>
+        <button id="dayModalClose" class="ghost" type="button">Close</button>
+      </div>
     </div>
     <div id="dayModalBody" class="modalbody"></div>
+  </section>
+</div>
+
+<div id="dayEditModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="dayEditTitle">
+    <div class="modalhead">
+      <h2 id="dayEditTitle">Adjust Plan Day</h2>
+      <button id="dayEditClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field">
+          <label for="editDate">Date</label>
+          <input id="editDate" type="date">
+        </div>
+        <div class="field">
+          <label for="editDayType">Day Type</label>
+          <select id="editDayType">
+            <option>Workout</option>
+            <option>Meet</option>
+            <option>Recovery</option>
+            <option>No Practice</option>
+            <option>Travel</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editTitle">Workout Title</label>
+          <input id="editTitle" type="text" placeholder="Workout title">
+        </div>
+        <div class="field">
+          <label for="editWorkoutType">Workout Type</label>
+          <input id="editWorkoutType" type="text" placeholder="Example: Lactate Threshold">
+        </div>
+        <div class="field">
+          <label for="editEnergy">Energy System</label>
+          <input id="editEnergy" type="text" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label for="editStatus">Status</label>
+          <select id="editStatus">
+            <option>Draft</option>
+            <option>Approved</option>
+            <option>Scheduled</option>
+            <option>Completed</option>
+            <option>Skipped</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editGroup">Group</label>
+          <input id="editGroup" type="text" placeholder="Group">
+        </div>
+        <div class="field">
+          <label for="editAthlete">Athlete</label>
+          <input id="editAthlete" type="text" placeholder="Optional athlete">
+        </div>
+        <div class="field">
+          <label for="editVolume">Planned Volume</label>
+          <input id="editVolume" type="text" placeholder="Example: 3 miles quality">
+        </div>
+        <div class="field">
+          <label for="editTarget">Target Splits / Paces</label>
+          <input id="editTarget" type="text" placeholder="Example: 6:00-6:10">
+        </div>
+        <div class="field full">
+          <label for="editDetails">Workout Details</label>
+          <textarea id="editDetails" placeholder="Workout details"></textarea>
+        </div>
+        <div class="field full">
+          <label for="editNotes">Coach Notes</label>
+          <textarea id="editNotes" placeholder="Coach notes"></textarea>
+        </div>
+        <div class="field full">
+          <label for="editReason">Reason</label>
+          <input id="editReason" type="text" placeholder="Required">
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="dayEditStatus" class="modalstatus">Adjustments are saved to SMART Trak.</div>
+        <button id="dayEditSave" type="button">Save Adjustment</button>
+      </div>
+    </div>
   </section>
 </div>
 
 <script>
 var plans=[];
 var days=[];
+var activeDay=null;
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -163,7 +255,25 @@ var els={
   dayModal:document.getElementById('dayModal'),
   dayModalTitle:document.getElementById('dayModalTitle'),
   dayModalBody:document.getElementById('dayModalBody'),
-  dayModalClose:document.getElementById('dayModalClose')
+  dayModalClose:document.getElementById('dayModalClose'),
+  dayEditBtn:document.getElementById('dayEditBtn'),
+  dayEditModal:document.getElementById('dayEditModal'),
+  dayEditClose:document.getElementById('dayEditClose'),
+  editDate:document.getElementById('editDate'),
+  editDayType:document.getElementById('editDayType'),
+  editTitle:document.getElementById('editTitle'),
+  editWorkoutType:document.getElementById('editWorkoutType'),
+  editEnergy:document.getElementById('editEnergy'),
+  editStatus:document.getElementById('editStatus'),
+  editGroup:document.getElementById('editGroup'),
+  editAthlete:document.getElementById('editAthlete'),
+  editVolume:document.getElementById('editVolume'),
+  editTarget:document.getElementById('editTarget'),
+  editDetails:document.getElementById('editDetails'),
+  editNotes:document.getElementById('editNotes'),
+  editReason:document.getElementById('editReason'),
+  dayEditStatus:document.getElementById('dayEditStatus'),
+  dayEditSave:document.getElementById('dayEditSave')
 };
 function accountKey(){
   try{
@@ -336,6 +446,7 @@ function dayItem(day){
 }
 function openDayModal(day){
   if(!day)return;
+  activeDay=day;
   var plan=plans.find(function(item){return item.id===day.trainingPlanId||item.sourceRecordId===day.trainingPlanId;})||{};
   els.dayModalTitle.textContent=day.title||day.dayType||'Plan Day';
   els.dayModalBody.innerHTML=
@@ -358,6 +469,7 @@ function openDayModal(day){
 }
 function closeDayModal(){
   els.dayModal.hidden=true;
+  activeDay=null;
 }
 function detailCard(label,value,sub){
   return '<div class="detailcard"><b>'+esc(label)+'</b><span>'+esc(value||'--')+'</span>'+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>';
@@ -365,6 +477,91 @@ function detailCard(label,value,sub){
 function fullText(label,value){
   if(!value)return '';
   return '<div class="fulltext"><b>'+esc(label)+'</b>\n'+esc(value)+'</div>';
+}
+function openEditModal(){
+  if(!activeDay)return;
+  els.editDate.value=String(activeDay.date||'').slice(0,10);
+  setSelectValue(els.editDayType,activeDay.dayType||'Workout');
+  els.editTitle.value=activeDay.title||'';
+  els.editWorkoutType.value=activeDay.workoutType||'';
+  els.editEnergy.value=activeDay.energySystem||'';
+  setSelectValue(els.editStatus,activeDay.status||'Draft');
+  els.editGroup.value=activeDay.groupName||'';
+  els.editAthlete.value=activeDay.athleteName||'';
+  els.editVolume.value=activeDay.plannedVolume||'';
+  els.editTarget.value=activeDay.targetSplits||'';
+  els.editDetails.value=activeDay.details||'';
+  els.editNotes.value=stripAdjustmentLines(activeDay.coachNotes||'');
+  els.editReason.value='';
+  setDayEditStatus('Adjustments are saved to SMART Trak.','');
+  els.dayEditModal.hidden=false;
+}
+function closeEditModal(){
+  els.dayEditModal.hidden=true;
+}
+function saveDayEdit(){
+  if(!activeDay)return;
+  var reason=els.editReason.value.trim();
+  if(!reason){
+    setDayEditStatus('Reason is required so the adjustment has context.','error');
+    return;
+  }
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.dayEditSave.disabled=true;
+  setDayEditStatus('Saving adjustment...','');
+  fetch('/api/smart-trak/training-plan',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'updateDay',
+      dayId:activeDay.id||'',
+      reason:reason,
+      updates:{
+        date:els.editDate.value,
+        dayType:els.editDayType.value,
+        title:els.editTitle.value,
+        workoutType:els.editWorkoutType.value,
+        energySystem:els.editEnergy.value,
+        status:els.editStatus.value,
+        groupName:els.editGroup.value,
+        athleteName:els.editAthlete.value,
+        plannedVolume:els.editVolume.value,
+        targetSplits:els.editTarget.value,
+        details:els.editDetails.value,
+        coachNotes:els.editNotes.value
+      }
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save adjustment.');
+    setDayEditStatus('Adjustment saved. Refreshing calendar...','success');
+    return loadCalendar();
+  }).then(function(){
+    closeEditModal();
+    closeDayModal();
+  }).catch(function(error){
+    setDayEditStatus(error.message||'Could not save adjustment.','error');
+  }).finally(function(){
+    els.dayEditSave.disabled=false;
+  });
+}
+function stripAdjustmentLines(value){
+  return String(value||'').split(/\r?\n/).filter(function(line){
+    return !/^(Adjustment Date|Adjustment Reason):/i.test(line.trim());
+  }).join('\n');
+}
+function setDayEditStatus(text,type){
+  els.dayEditStatus.textContent=text||'';
+  els.dayEditStatus.style.color=type==='error'?'var(--bad)':type==='success'?'var(--good)':'';
+}
+function setSelectValue(select,value){
+  var wanted=String(value||'').toLowerCase();
+  var option=Array.prototype.slice.call(select.options).find(function(item){
+    return item.value.toLowerCase()===wanted||item.text.toLowerCase()===wanted;
+  });
+  if(option)select.value=option.value;
 }
 function showAccess(data){
   els.mainPage.hidden=true;
@@ -430,6 +627,9 @@ function init(){
     openDayModal(days.find(function(day){return day.id===id||day.sourceRecordId===id;}));
   });
   els.dayModalClose.addEventListener('click',closeDayModal);
+  els.dayEditBtn.addEventListener('click',openEditModal);
+  els.dayEditClose.addEventListener('click',closeEditModal);
+  els.dayEditSave.addEventListener('click',saveDayEdit);
   els.accessSubmit.addEventListener('click',submitAccess);
   els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});
   loadCalendar();
