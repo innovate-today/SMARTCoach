@@ -34,13 +34,17 @@ button:disabled{opacity:.55;cursor:not-allowed}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .status{color:var(--muted);font-size:13px;text-align:right;min-width:150px}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
-.panelhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
-.panelhead h2{font-size:18px;margin:0}
+.bulkpanel{background:#f8fbff}
+.panelhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.panelhead h2{font-size:15px;margin:0}
 .panelbody{padding:14px 16px}
 .bulkgrid{display:grid;grid-template-columns:1fr;gap:10px}
+.bulkintro{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px}
+.bulkintro b{display:block;color:#111827;font-size:14px}
 .bulkhelp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .bulkhelp div{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:9px 10px;color:#334155;font-size:13px;line-height:1.35}
 .bulkhelp b{display:block;color:#111827;margin-bottom:2px}
+.bulkfile{display:grid;grid-template-columns:auto minmax(240px,1fr);gap:10px;align-items:center}
 textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;min-height:130px;resize:vertical;line-height:1.45}
 .bulkactions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .bulkactions .left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -76,7 +80,7 @@ tr:last-child td{border-bottom:0}
   .actions a,.actions button{flex:1;text-align:center}
   .cards{grid-template-columns:1fr 1fr}
   .bar{grid-template-columns:1fr}
-  .bulkhelp{grid-template-columns:1fr}
+  .bulkhelp,.bulkfile{grid-template-columns:1fr}
   .status{text-align:left}
 }
 </style>
@@ -115,16 +119,23 @@ tr:last-child td{border-bottom:0}
     <div id="status" class="status">Loading records...</div>
   </section>
 
-  <section class="panel">
+  <section class="panel bulkpanel">
     <div class="panelhead">
-      <h2>Bulk Record Entry</h2>
+      <div class="bulkintro">
+        <div><b>Bulk Record Entry</b><span>Occasional setup tool for importing existing school, season, or athlete records.</span></div>
+      </div>
       <div id="bulkStatus" class="bulkstatus">Paste records, preview, then save.</div>
+      <button id="toggleBulkBtn" class="ghost" type="button">Show bulk tools</button>
     </div>
-    <div class="panelbody bulkgrid">
+    <div id="bulkBody" class="panelbody bulkgrid" hidden>
       <div class="bulkhelp">
-        <div><b>1. Paste rows</b>Use the header row below or paste from a spreadsheet.</div>
+        <div><b>1. Download template</b>Fill it in from your current spreadsheet.</div>
         <div><b>2. Preview</b>Check that each value stayed in the correct column.</div>
         <div><b>3. Save</b>Records are saved to SMART Trak and then the page refreshes.</div>
+      </div>
+      <div class="bulkfile">
+        <button id="downloadBulkTemplateBtn" class="secondary" type="button">Download Template</button>
+        <input id="bulkFile" type="file" accept=".csv,.tsv,.txt">
       </div>
       <textarea id="bulkText" placeholder="Record Type,Record Scope,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;School Record,Varsity,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
       <div class="bulkactions">
@@ -194,7 +205,11 @@ var els={
   eventFilter:document.getElementById('eventFilter'),
   clearBtn:document.getElementById('clearBtn'),
   status:document.getElementById('status'),
+  toggleBulkBtn:document.getElementById('toggleBulkBtn'),
+  bulkBody:document.getElementById('bulkBody'),
   bulkStatus:document.getElementById('bulkStatus'),
+  downloadBulkTemplateBtn:document.getElementById('downloadBulkTemplateBtn'),
+  bulkFile:document.getElementById('bulkFile'),
   bulkText:document.getElementById('bulkText'),
   previewBulkBtn:document.getElementById('previewBulkBtn'),
   saveBulkBtn:document.getElementById('saveBulkBtn'),
@@ -316,6 +331,22 @@ function parseBulkRecords(text){
     }
     return normalizeBulkRecord({recordType:cols[0],recordScope:cols[1],sport:cols[2],event:cols[3],resultDisplay:cols[4],athleteName:cols[5],meetName:cols[6],recordDate:cols[7],season:cols[8],seasonYear:cols[9],previousRecordDisplay:cols[10],previousRecordHolder:cols[11],recordNotes:cols[12]},index);
   }).filter(function(row){return row.recordType||row.event||row.resultDisplay||row.athleteName;});
+}
+function downloadBulkTemplate(){
+  var csv=[
+    'Record Type,Record Scope,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
+    'School Record,Varsity,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
+    'Season Best,Team,Cross Country,5K,18:22.1,Marcus Moore,State,2026-10-31,Fall,2026,,,'
+  ].join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='smart-trak-records-template.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){URL.revokeObjectURL(url);},500);
 }
 function bulkIssues(rows){
   return rows.filter(function(row){return !row.recordType||!row.recordScope||!row.event||(!row.resultDisplay&&!row.resultMark)||!row.recordDate;}).map(function(row){return row.rowNumber;});
@@ -512,6 +543,27 @@ function init(){
     els.eventFilter.value='all';
     recordSort={key:'event',dir:'asc'};
     render();
+  });
+  els.toggleBulkBtn.addEventListener('click',function(){
+    var open=els.bulkBody.hidden;
+    els.bulkBody.hidden=!open;
+    els.toggleBulkBtn.textContent=open?'Hide bulk tools':'Show bulk tools';
+    setBulkStatus(open?'Download a template, upload it, or paste rows manually.':'Bulk tools hidden.','');
+  });
+  els.downloadBulkTemplateBtn.addEventListener('click',downloadBulkTemplate);
+  els.bulkFile.addEventListener('change',function(){
+    var file=els.bulkFile.files&&els.bulkFile.files[0];
+    if(!file)return;
+    setBulkStatus('Reading '+file.name+'...','');
+    file.text().then(function(text){
+      els.bulkText.value=text;
+      bulkRows=parseBulkRecords(text);
+      renderBulkPreview();
+    }).catch(function(){
+      bulkRows=[];
+      renderBulkPreview();
+      setBulkStatus('File could not be read. Try CSV, TSV, or text export.','bad');
+    });
   });
   els.previewBulkBtn.addEventListener('click',function(){
     bulkRows=parseBulkRecords(els.bulkText.value);
