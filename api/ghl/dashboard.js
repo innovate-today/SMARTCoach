@@ -11,7 +11,7 @@ const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
   athlete_name_snapshot: ["m20bSENWaEB4jBMtXgMD", "NxKoU2l9QohpmzRt2gin", "0lX15xSvQP77xhNH45q1"],
   source_session_id: ["3Mfs6tIpL4KXx8UeNGBU"],
-  source_record_id: ["9YD4n4y4aqf3VnkrwLL1"],
+  source_record_id: ["9YD4n4y4aqf3VnkrwLL1", "3HVSAaItyvtLXYNasRAJ"],
   event: ["0zkuDc0aDTpw5hPOKADa", "Qtvff2zJpE2nu8qV6kAU"],
   personal_best_display: ["h1rwv5B4JSLfNnsTL7qJ"],
   personal_best_meet: ["mRbdhzawlZ0Q386Zv3X2"],
@@ -23,9 +23,12 @@ const FIELD_IDS = {
   last_result_date: ["LLzkfQDCtloVaUzEWQxE"],
   meet_name: ["bCOXXRAtRqmCJnMZFLvB"],
   result_display: ["Cu9h6mq2X6uPSQG6IraM"],
+  result_ms: ["tqdu89hWLwfdiylZzxqj"],
   meet_date: ["rYZUhun2ynmK8MNsYgph"],
+  wind: ["sYR9reCyygQaHH3x88DR"],
   is_pr: ["XMvKfEECN6PCcA0TKwzN"],
   is_season_best: ["zO57s50B9sf62EPdoq7J"],
+  coach_race_notes: ["84pkqVasLVDNye0XCVaH"],
   group_name: ["ochf7LkGhgAh5ySys5dA"],
   workout_type: ["jX0YLlpt08vxNKV3JyM5"],
   surface: ["ZMzx2xPdO3XxuzAvj84"],
@@ -163,6 +166,7 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
   athletes.forEach((athlete) => {
     meetRecords.forEach((record) => {
       if (!recordMatchesAthlete(record, athlete)) return;
+      if (isVoidedMeetResult(record)) return;
       const result = normalizeMeetResult(record);
       if (!result.event && !result.resultDisplay) return;
       rows.push({
@@ -256,15 +260,29 @@ function normalizeBest(record) {
 
 function normalizeMeetResult(record) {
   const props = recordProperties(record);
+  const coachRaceNotes = prop(props, "coach_race_notes");
   return {
+    recordId: record && record.id ? record.id : "",
+    sourceRecordId: prop(props, "source_record_id"),
     meetName: prop(props, "meet_name"),
     event: prop(props, "event"),
     resultDisplay: prop(props, "result_display"),
+    resultMs: Number(prop(props, "result_ms")) || 0,
     meetDate: prop(props, "meet_date"),
+    wind: prop(props, "wind"),
     isPr: yes(prop(props, "is_pr")),
     isSeasonBest: yes(prop(props, "is_season_best")),
+    coachRaceNotes,
+    correctionDate: noteValue(coachRaceNotes, "Correction Date"),
+    correctionReason: noteValue(coachRaceNotes, "Correction Reason"),
+    corrected: !!noteValue(coachRaceNotes, "Correction Date"),
     syncedAt: recordTimestamp(record),
   };
+}
+
+function isVoidedMeetResult(record) {
+  const note = prop(recordProperties(record), "coach_race_notes").toLowerCase();
+  return note.indexOf("smartcoach status: voided") >= 0;
 }
 
 function normalizePerformanceRecord(record) {

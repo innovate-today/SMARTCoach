@@ -317,6 +317,7 @@ tr:last-child td{border-bottom:0}
             <th><button class="sortbtn" data-table="meet" data-sort="bestStatus" type="button">Best Status</button></th>
             <th><button class="sortbtn" data-table="meet" data-sort="meetDate" type="button">Meet Date</button></th>
             <th><button class="sortbtn" data-table="meet" data-sort="syncedAt" type="button">Synced</button></th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="recentMeetRows"></tbody>
@@ -562,6 +563,59 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<div id="meetCorrectionModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="meetCorrectionTitle">
+    <div class="modalhead">
+      <h2 id="meetCorrectionTitle">Correct Meet Result</h2>
+      <button id="meetCorrectionClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field">
+          <label for="meetCorrectionDate">Date</label>
+          <input id="meetCorrectionDate" type="date">
+        </div>
+        <div class="field">
+          <label for="meetCorrectionName">Meet</label>
+          <input id="meetCorrectionName" type="text" placeholder="Meet name">
+        </div>
+        <div class="field">
+          <label for="meetCorrectionEvent">Event</label>
+          <input id="meetCorrectionEvent" type="text" placeholder="Example: 3200m">
+        </div>
+        <div class="field">
+          <label for="meetCorrectionResult">Result</label>
+          <input id="meetCorrectionResult" type="text" placeholder="Example: 10:52.4">
+        </div>
+        <div class="field">
+          <label for="meetCorrectionWind">Wind</label>
+          <input id="meetCorrectionWind" type="text" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label for="meetCorrectionBest">New Best</label>
+          <select id="meetCorrectionBest">
+            <option value="none">No PB/SB</option>
+            <option value="pb">PB only</option>
+            <option value="sb">SB only</option>
+            <option value="both">PB and SB</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="meetCorrectionReason">Reason</label>
+          <input id="meetCorrectionReason" type="text" placeholder="Required">
+        </div>
+        <div class="field full">
+          <label for="meetCorrectionNotes">Notes</label>
+          <textarea id="meetCorrectionNotes" placeholder="Optional race notes"></textarea>
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="meetCorrectionStatus" class="modalstatus">Corrections are saved to SMART Trak notes.</div>
+        <button id="meetCorrectionSave" type="button">Save Correction</button>
+      </div>
+    </div>
+  </section>
+</div>
 <div id="accountModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
     <div class="modalhead">
@@ -602,6 +656,7 @@ var visibleTrainingRows=[];
 var visibleVolumeRows=[];
 var expandedTrainingAthletes={};
 var correctionRow=null;
+var meetCorrectionRow=null;
 var lastLoadedAt='';
 var activeTab='roster';
 var activeTrainingSubtab='volume';
@@ -841,6 +896,18 @@ var els={
   correctionNotes:document.getElementById('correctionNotes'),
   correctionStatus:document.getElementById('correctionStatus'),
   correctionSave:document.getElementById('correctionSave'),
+  meetCorrectionModal:document.getElementById('meetCorrectionModal'),
+  meetCorrectionClose:document.getElementById('meetCorrectionClose'),
+  meetCorrectionDate:document.getElementById('meetCorrectionDate'),
+  meetCorrectionName:document.getElementById('meetCorrectionName'),
+  meetCorrectionEvent:document.getElementById('meetCorrectionEvent'),
+  meetCorrectionResult:document.getElementById('meetCorrectionResult'),
+  meetCorrectionWind:document.getElementById('meetCorrectionWind'),
+  meetCorrectionBest:document.getElementById('meetCorrectionBest'),
+  meetCorrectionReason:document.getElementById('meetCorrectionReason'),
+  meetCorrectionNotes:document.getElementById('meetCorrectionNotes'),
+  meetCorrectionStatus:document.getElementById('meetCorrectionStatus'),
+  meetCorrectionSave:document.getElementById('meetCorrectionSave'),
   status:document.getElementById('status'),
   filterState:document.getElementById('filterState'),
   lastUpdated:document.getElementById('lastUpdated'),
@@ -938,6 +1005,18 @@ document.addEventListener('click',function(event){
     openCorrectionModal(editButton);
     return;
   }
+  var voidMeetButton=event.target.closest&&event.target.closest('[data-void-meet]');
+  if(voidMeetButton){
+    event.preventDefault();
+    voidMeetRecord(voidMeetButton);
+    return;
+  }
+  var editMeetButton=event.target.closest&&event.target.closest('[data-edit-meet]');
+  if(editMeetButton){
+    event.preventDefault();
+    openMeetCorrectionModal(editMeetButton);
+    return;
+  }
   var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
   if(!button)return;
   var contactId=button.getAttribute('data-contact-id')||'';
@@ -957,6 +1036,8 @@ els.manualMileageScope.addEventListener('change',updateManualMileageScope);
 els.manualMileageSave.addEventListener('click',saveManualMileage);
 els.correctionClose.addEventListener('click',closeCorrectionModal);
 els.correctionSave.addEventListener('click',saveCorrection);
+els.meetCorrectionClose.addEventListener('click',closeMeetCorrectionModal);
+els.meetCorrectionSave.addEventListener('click',saveMeetCorrection);
 els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
   els.quickFilter.value='all';
@@ -1879,6 +1960,150 @@ function voidTrainingRecord(button){
   });
 }
 
+function openMeetCorrectionModal(button){
+  meetCorrectionRow=findMeetRow(button)||null;
+  if(!meetCorrectionRow){
+    alert('Could not find this meet result.');
+    return;
+  }
+  els.meetCorrectionDate.value=dateInputValue(meetCorrectionRow.meetDate);
+  els.meetCorrectionName.value=meetCorrectionRow.meetName||'';
+  els.meetCorrectionEvent.value=meetCorrectionRow.event||'';
+  els.meetCorrectionResult.value=meetCorrectionRow.resultDisplay||'';
+  els.meetCorrectionWind.value=meetCorrectionRow.wind||'';
+  els.meetCorrectionBest.value=meetCorrectionRow.isPr&&meetCorrectionRow.isSeasonBest?'both':meetCorrectionRow.isPr?'pb':meetCorrectionRow.isSeasonBest?'sb':'none';
+  els.meetCorrectionReason.value='';
+  els.meetCorrectionNotes.value=meetCorrectionNotesFromRow(meetCorrectionRow);
+  setMeetCorrectionStatus('Corrections are saved to SMART Trak notes.','');
+  els.meetCorrectionModal.hidden=false;
+}
+
+function closeMeetCorrectionModal(){
+  els.meetCorrectionModal.hidden=true;
+  meetCorrectionRow=null;
+}
+
+function saveMeetCorrection(){
+  if(!meetCorrectionRow)return;
+  var reason=els.meetCorrectionReason.value.trim();
+  if(!reason){
+    setMeetCorrectionStatus('Reason is required so SMART Trak has a useful audit note.','error');
+    return;
+  }
+  var best=els.meetCorrectionBest.value||'none';
+  els.meetCorrectionSave.disabled=true;
+  setMeetCorrectionStatus('Saving correction...','');
+  fetch('/api/smart-trak/correction',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      action:'edit',
+      recordType:'meet',
+      recordId:meetCorrectionRow.recordId||'',
+      sourceRecordId:meetCorrectionRow.sourceRecordId||'',
+      contactId:meetCorrectionRow.contactId||'',
+      athleteName:meetCorrectionRow.athleteName||'',
+      reason:reason,
+      previous:meetCorrectionPreviousPayload(meetCorrectionRow),
+      updates:{
+        meetDate:els.meetCorrectionDate.value,
+        meetName:els.meetCorrectionName.value,
+        event:els.meetCorrectionEvent.value,
+        resultDisplay:els.meetCorrectionResult.value,
+        wind:els.meetCorrectionWind.value,
+        isPr:best==='pb'||best==='both'?'yes':'no',
+        isSeasonBest:best==='sb'||best==='both'?'yes':'no',
+        notes:els.meetCorrectionNotes.value
+      }
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Correction failed.');
+    setMeetCorrectionStatus('Correction saved. Refreshing dashboard...','success');
+    return loadDashboard();
+  }).then(function(){
+    closeMeetCorrectionModal();
+  }).catch(function(error){
+    setMeetCorrectionStatus(error.message||'Could not save correction.','error');
+  }).finally(function(){
+    els.meetCorrectionSave.disabled=false;
+  });
+}
+
+function voidMeetRecord(button){
+  var row=findMeetRow(button)||{};
+  var recordId=button.getAttribute('data-record-id')||row.recordId||'';
+  var sourceRecordId=button.getAttribute('data-source-record-id')||row.sourceRecordId||'';
+  var label=[row.athleteName,row.event,row.resultDisplay,row.meetName].filter(Boolean).join(' - ')||'this meet result';
+  var reason=window.prompt('Why should SMART Trak void '+label+'?');
+  if(reason===null)return;
+  reason=reason.trim();
+  if(!reason){
+    alert('Please enter a short reason so the SMART Trak audit note is useful.');
+    return;
+  }
+  button.disabled=true;
+  fetch('/api/smart-trak/correction',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      action:'void',
+      recordType:'meet',
+      recordId:recordId,
+      sourceRecordId:sourceRecordId,
+      contactId:button.getAttribute('data-contact-id')||row.contactId||'',
+      athleteName:button.getAttribute('data-athlete-name')||row.athleteName||'',
+      previous:meetCorrectionPreviousPayload(row),
+      reason:reason
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Void failed.');
+    els.status.textContent='Meet result voided. Refreshing dashboard...';
+    return loadDashboard();
+  }).catch(function(error){
+    alert(error.message||'Could not void meet result.');
+    button.disabled=false;
+  });
+}
+
+function findMeetRow(button){
+  var recordId=button.getAttribute('data-record-id')||'';
+  var sourceRecordId=button.getAttribute('data-source-record-id')||'';
+  return recentMeetRows.find(function(item){
+    return (recordId&&item.recordId===recordId) || (sourceRecordId&&item.sourceRecordId===sourceRecordId);
+  });
+}
+
+function meetCorrectionPreviousPayload(row){
+  return {
+    athleteName:row.athleteName||'',
+    sourceRecordId:row.sourceRecordId||'',
+    meetName:row.meetName||'',
+    meetDate:row.meetDate||'',
+    event:row.event||'',
+    resultDisplay:row.resultDisplay||'',
+    wind:row.wind||'',
+    isPr:row.isPr?'yes':'no',
+    isSeasonBest:row.isSeasonBest?'yes':'no',
+    notes:meetCorrectionNotesFromRow(row),
+    coachRaceNotes:row.coachRaceNotes||''
+  };
+}
+
+function meetCorrectionNotesFromRow(row){
+  return String(row.coachRaceNotes||'').split(/\r?\n/).filter(function(line){
+    return !/^(Wind|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+  }).join('\n');
+}
+
+function setMeetCorrectionStatus(text,type){
+  els.meetCorrectionStatus.textContent=text||'';
+  els.meetCorrectionStatus.style.color=type==='error'?'#b00000':type==='success'?'#08783c':'';
+}
+
 function renderManualMileageAthletes(){
   if(!els.manualMileageAthlete)return;
   var current=els.manualMileageAthlete.value;
@@ -2114,7 +2339,14 @@ function recentMeetHtml(row){
     '<td>'+flagPills(row)+'</td>'+
     '<td>'+mainLine(formatDate(row.meetDate)||'')+'</td>'+
     '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
+    '<td>'+meetActionButtons(row)+'</td>'+
   '</tr>';
+}
+
+function meetActionButtons(row){
+  if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
+  var attrs=' data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'"';
+  return '<button class="ghost compact" data-edit-meet="1"'+attrs+' type="button">Edit</button> <button class="danger compact" data-void-meet="1"'+attrs+' type="button">Void</button>';
 }
 
 function groupTrainingByAthlete(rows){

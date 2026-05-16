@@ -1,12 +1,23 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
+const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
-  source_record_id: ["9YD4n4y4aqf3VnkrwLL1"],
+  meet_result: ["Khq47asHEk0tRieDVUBg"],
+  source_record_id: ["9YD4n4y4aqf3VnkrwLL1", "3HVSAaItyvtLXYNasRAJ"],
   group_name: ["ochf7LkGhgAh5ySys5dA"],
   session_date: ["pl69ao2Pu76zeUKMEWpm"],
+  meet_name: ["bCOXXRAtRqmCJnMZFLvB"],
+  meet_date: ["rYZUhun2ynmK8MNsYgph"],
+  event: ["Qtvff2zJpE2nu8qV6kAU"],
+  result_display: ["Cu9h6mq2X6uPSQG6IraM"],
+  result_ms: ["tqdu89hWLwfdiylZzxqj"],
+  wind: ["sYR9reCyygQaHH3x88DR"],
+  is_pr: ["XMvKfEECN6PCcA0TKwzN"],
+  is_season_best: ["zO57s50B9sf62EPdoq7J"],
+  coach_race_notes: ["84pkqVasLVDNye0XCVaH"],
   workout_type: ["jX0YLlpt08vxNKV3JyM5"],
   surface: ["ZMzx2xPdO3XxuzAvj84"],
   total_time_display: ["z9eZIcIL1B7yaeR5jXHI"],
@@ -46,24 +57,32 @@ module.exports = async function handler(req, res) {
     const sourceRecordId = clean(payload.sourceRecordId);
     const athleteName = clean(payload.athleteName) || "Athlete";
     const reason = clean(payload.reason) || "No reason provided.";
+    const recordType = clean(payload.recordType || payload.objectType).toLowerCase();
+    const isMeetResult = recordType === "meet" || recordType === "meet_result";
+    const schemaKey = isMeetResult ? MEET_RESULT_SCHEMA_KEY : PERFORMANCE_RECORD_SCHEMA_KEY;
 
     if (!contactId) throw httpError(400, "Missing athlete contact.");
-    if (!recordId && !sourceRecordId) throw httpError(400, "Missing performance record.");
+    if (!recordId && !sourceRecordId) throw httpError(400, isMeetResult ? "Missing meet result." : "Missing performance record.");
 
     const record = recordId
       ? { id: recordId }
-      : await findObjectRecord({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, sourceRecordId });
+      : await findObjectRecord({ token, locationId, schemaKey, sourceRecordId });
 
-    if (!record || !record.id) throw httpError(404, "Performance record was not found.");
+    if (!record || !record.id) throw httpError(404, isMeetResult ? "Meet result was not found." : "Performance record was not found.");
 
-    const props = recordId ? previousProps(payload.previous) : recordProperties(record);
+    const props = recordId ? previousProps(payload.previous, isMeetResult ? "meet" : "training") : recordProperties(record);
     if (action === "edit") {
+      if (isMeetResult) {
+        const result = await editMeetResult({ token, locationId, contactId, athleteName, reason, record, props, payload });
+        res.status(200).json(result);
+        return;
+      }
       const result = await editPerformanceRecord({ token, locationId, contactId, athleteName, reason, record, props, payload });
       res.status(200).json(result);
       return;
     }
 
-    const previousNote = prop(props, "coach_note");
+    const previousNote = prop(props, isMeetResult ? "coach_race_notes" : "coach_note");
     const correctionTime = new Date().toISOString();
     const correctionBlock = [
       "",
@@ -77,19 +96,24 @@ module.exports = async function handler(req, res) {
 
     await ghlFetch({
       token,
-      path: objectRecordPath(PERFORMANCE_RECORD_SCHEMA_KEY, record.id, locationId),
+      path: objectRecordPath(schemaKey, record.id, locationId),
       method: "PUT",
       body: {
-        properties: {
-          coach_note: nextNote,
-        },
+        properties: isMeetResult ? { coach_race_notes: nextNote } : { coach_note: nextNote },
       },
     });
 
     await addCorrectionNote({
       token,
       contactId,
-      body: buildVoidNote({
+      body: isMeetResult ? buildMeetVoidNote({
+        athleteName,
+        reason,
+        correctionTime,
+        record,
+        props,
+        sourceRecordId: sourceRecordId || prop(props, "source_record_id"),
+      }) : buildVoidNote({
         athleteName,
         reason,
         correctionTime,
@@ -99,11 +123,90 @@ module.exports = async function handler(req, res) {
       }),
     });
 
-    res.status(200).json({ success: true, action: "voided", recordId: record.id });
+    res.status(200).json({ success: true, action: "voided", recordId: record.id, recordType: isMeetResult ? "meet" : "training" });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Correction failed." });
   }
 };
+
+async function editMeetResult({ token, locationId, contactId, athleteName, reason, record, props, payload }) {
+  const updates = payload.updates && typeof payload.updates === "object" ? payload.updates : {};
+  const previousNote = prop(props, "coach_race_notes");
+  const previousValues = {
+    meetName: prop(props, "meet_name"),
+    meetDate: prop(props, "meet_date"),
+    event: prop(props, "event"),
+    resultDisplay: prop(props, "result_display"),
+    wind: prop(props, "wind"),
+    isPr: yesText(prop(props, "is_pr")) ? "Yes" : "No",
+    isSeasonBest: yesText(prop(props, "is_season_best")) ? "Yes" : "No",
+    notes: stripMeetSystemNoteLines(previousNote),
+  };
+  const nextValues = {
+    meetName: clean(updates.meetName) || previousValues.meetName,
+    meetDate: clean(updates.meetDate) || previousValues.meetDate,
+    event: clean(updates.event) || previousValues.event,
+    resultDisplay: clean(updates.resultDisplay) || previousValues.resultDisplay,
+    wind: clean(updates.wind),
+    isPr: clean(updates.isPr) ? yesText(updates.isPr) ? "Yes" : "No" : previousValues.isPr,
+    isSeasonBest: clean(updates.isSeasonBest) ? yesText(updates.isSeasonBest) ? "Yes" : "No" : previousValues.isSeasonBest,
+    notes: clean(updates.notes),
+  };
+  const changes = changedValues(previousValues, nextValues, {
+    meetName: "Meet",
+    meetDate: "Date",
+    event: "Event",
+    resultDisplay: "Result",
+    wind: "Wind",
+    isPr: "PB",
+    isSeasonBest: "SB",
+    notes: "Notes",
+  });
+  if (!changes.length) throw httpError(400, "No correction changes were provided.");
+
+  const resultMs = nextValues.resultDisplay ? parseTimeToMs(nextValues.resultDisplay) : null;
+  if (nextValues.resultDisplay && !resultMs) throw httpError(400, "Enter result like 58.2, 4:52.3, or 18:04.5.");
+
+  const correctionTime = new Date().toISOString();
+  const nextNote = replaceMeetNoteLines(previousNote, {
+    Wind: nextValues.wind,
+  }, nextValues.notes, correctionTime, reason);
+
+  await ghlFetch({
+    token,
+    path: objectRecordPath(MEET_RESULT_SCHEMA_KEY, record.id, locationId),
+    method: "PUT",
+    body: {
+      properties: {
+        meet_name: nextValues.meetName,
+        meet_date: nextValues.meetDate,
+        event: nextValues.event,
+        result_display: nextValues.resultDisplay,
+        ...(resultMs ? { result_ms: resultMs } : {}),
+        wind: nextValues.wind,
+        is_pr: nextValues.isPr,
+        is_season_best: nextValues.isSeasonBest,
+        coach_race_notes: nextNote,
+      },
+    },
+  });
+
+  await addCorrectionNote({
+    token,
+    contactId,
+    body: buildMeetEditNote({
+      athleteName,
+      reason,
+      correctionTime,
+      record,
+      props,
+      sourceRecordId: clean(payload.sourceRecordId) || prop(props, "source_record_id"),
+      changes,
+    }),
+  });
+
+  return { success: true, action: "edited", recordType: "meet", recordId: record.id, changes };
+}
 
 async function editPerformanceRecord({ token, locationId, contactId, athleteName, reason, record, props, payload }) {
   const updates = payload.updates && typeof payload.updates === "object" ? payload.updates : {};
@@ -181,8 +284,22 @@ async function addCorrectionNote({ token, contactId, body }) {
   });
 }
 
-function previousProps(previous) {
+function previousProps(previous, recordType) {
   const data = previous && typeof previous === "object" ? previous : {};
+  if (recordType === "meet") {
+    return {
+      meet_result: clean(data.meetResult) || [clean(data.athleteName), clean(data.event), clean(data.resultDisplay)].filter(Boolean).join(" - "),
+      source_record_id: clean(data.sourceRecordId),
+      meet_name: clean(data.meetName),
+      meet_date: clean(data.meetDate),
+      event: clean(data.event),
+      result_display: clean(data.resultDisplay),
+      wind: clean(data.wind),
+      is_pr: clean(data.isPr),
+      is_season_best: clean(data.isSeasonBest),
+      coach_race_notes: clean(data.coachRaceNotes || data.notes),
+    };
+  }
   return {
     performance_record: clean(data.performanceRecord) || [clean(data.athleteName), clean(data.workoutType)].filter(Boolean).join(" - "),
     source_record_id: clean(data.sourceRecordId),
@@ -213,6 +330,25 @@ function buildVoidNote({ athleteName, reason, correctionTime, record, props, sou
   ].filter((line) => line !== "").join("\n");
 }
 
+function buildMeetVoidNote({ athleteName, reason, correctionTime, record, props, sourceRecordId }) {
+  return [
+    `SMART Trak Correction - ${dateLabel(correctionTime)}`,
+    "",
+    `Athlete: ${athleteName}`,
+    `Record: ${prop(props, "meet_result") || prop(props, "meet_name") || record.id}`,
+    "Action: Voided",
+    "",
+    `Meet: ${prop(props, "meet_name") || ""}`,
+    `Event: ${prop(props, "event") || ""}`,
+    `Result: ${prop(props, "result_display") || ""}`,
+    `Date: ${prop(props, "meet_date") || ""}`,
+    sourceRecordId ? `Source Record ID: ${sourceRecordId}` : "",
+    "",
+    "Reason:",
+    reason,
+  ].filter((line) => line !== "").join("\n");
+}
+
 function buildEditNote({ athleteName, reason, correctionTime, record, props, sourceRecordId, changes }) {
   const lines = [
     `SMART Trak Correction - ${dateLabel(correctionTime)}`,
@@ -233,8 +369,28 @@ function buildEditNote({ athleteName, reason, correctionTime, record, props, sou
   return lines.filter((line) => line !== "").join("\n");
 }
 
-function changedValues(previousValues, nextValues) {
-  const labels = {
+function buildMeetEditNote({ athleteName, reason, correctionTime, record, props, sourceRecordId, changes }) {
+  const lines = [
+    `SMART Trak Correction - ${dateLabel(correctionTime)}`,
+    "",
+    `Athlete: ${athleteName}`,
+    `Record: ${prop(props, "meet_result") || prop(props, "meet_name") || record.id}`,
+    "Action: Corrected",
+    sourceRecordId ? `Source Record ID: ${sourceRecordId}` : "",
+    "",
+    "Changes:",
+  ];
+  changes.forEach((change) => {
+    lines.push(`${change.label}:`);
+    lines.push(`Previous: ${change.from || "blank"}`);
+    lines.push(`New: ${change.to || "blank"}`);
+  });
+  lines.push("", "Reason:", reason);
+  return lines.filter((line) => line !== "").join("\n");
+}
+
+function changedValues(previousValues, nextValues, customLabels) {
+  const labels = customLabels || {
     sessionDate: "Date",
     workoutType: "Workout Type",
     surface: "Surface",
@@ -272,10 +428,31 @@ function replaceNoteLines(note, labeledValues, notes, correctionTime, reason) {
   return nextLines.join("\n");
 }
 
+function replaceMeetNoteLines(note, labeledValues, notes, correctionTime, reason) {
+  const nextLines = clean(note).split(/\r?\n/).filter((line) => {
+    if (isCorrectionLine(line)) return false;
+    return !/^Wind:/i.test(line.trim());
+  });
+  Object.keys(labeledValues).forEach((label) => {
+    if (labeledValues[label]) nextLines.unshift(`${label}: ${labeledValues[label]}`);
+  });
+  if (notes) nextLines.push(notes);
+  nextLines.push(`Correction Date: ${correctionTime}`);
+  nextLines.push(`Correction Reason: ${reason}`);
+  return nextLines.filter(Boolean).join("\n");
+}
+
 function stripSystemNoteLines(note) {
   return clean(note).split(/\r?\n/).filter((line) => {
     if (isCorrectionLine(line)) return false;
     return !/^(Completed volume|Weather):/i.test(line.trim());
+  }).join("\n");
+}
+
+function stripMeetSystemNoteLines(note) {
+  return clean(note).split(/\r?\n/).filter((line) => {
+    if (isCorrectionLine(line)) return false;
+    return !/^Wind:/i.test(line.trim());
   }).join("\n");
 }
 
@@ -321,7 +498,9 @@ function objectRecordPath(schemaKey, recordId, locationId) {
 }
 
 async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }) {
-  const fields = ["9YD4n4y4aqf3VnkrwLL1", "custom_objects.performance_records.source_record_id", "source_record_id"];
+  const fields = schemaKey === MEET_RESULT_SCHEMA_KEY
+    ? ["3HVSAaItyvtLXYNasRAJ", "custom_objects.meet_results.source_record_id", "source_record_id"]
+    : ["9YD4n4y4aqf3VnkrwLL1", "custom_objects.performance_records.source_record_id", "source_record_id"];
   for (const field of fields) {
     try {
       const result = await ghlFetch({
@@ -383,7 +562,7 @@ function recordProperties(record) {
 }
 
 function prop(props, key) {
-  const keys = [key, `custom_objects.performance_records.${key}`].concat(FIELD_IDS[key] || []);
+  const keys = [key, `custom_objects.performance_records.${key}`, `custom_objects.meet_results.${key}`].concat(FIELD_IDS[key] || []);
   for (const item of keys) {
     const value = readPropValue(props, item);
     if (value !== "") return value;
@@ -403,7 +582,7 @@ function readPropValue(props, key) {
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code");
 }
 
 function dateLabel(value) {
@@ -439,6 +618,10 @@ function workoutTypeValue(value) {
 function labelValue(value) {
   if (!value || typeof value !== "object") return clean(value);
   return clean(value.label || value.name || value.value || value.fieldValue || value.field_value);
+}
+
+function yesText(value) {
+  return /^(yes|true|1|on|pb|sb)$/i.test(clean(value));
 }
 
 function safeJson(text) {
