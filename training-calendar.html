@@ -78,6 +78,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .listtable{width:100%;min-width:1180px;border-collapse:collapse}
 .listtable th,.listtable td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;font-size:13px}
 .listtable th{background:#f8fafc;color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:12px}
+.sorthead{border:0;background:transparent;color:inherit;font:inherit;font-weight:900;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer}
+.sorthead:hover{color:#173891;text-decoration:underline}
 .listrow{cursor:pointer}
 .listrow:hover{background:#f8fafc}
 .listtitle{font-weight:900;color:#0f2f86}
@@ -255,6 +257,7 @@ var plans=[];
 var days=[];
 var activeDay=null;
 var viewMode='week';
+var listSort={key:'date',dir:'asc'};
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -473,8 +476,9 @@ function renderWeekView(list){
 }
 function renderListView(list){
   if(!list.length)return '';
-  return '<div class="listwrap"><table class="listtable"><thead><tr><th>Date</th><th>Plan Day</th><th>Group / Athlete</th><th>Type</th><th>Volume / Target</th><th>Status</th><th>Plan</th></tr></thead><tbody>'+
-    list.map(function(day){
+  var sorted=list.slice().sort(compareListDays);
+  return '<div class="listwrap"><table class="listtable"><thead><tr><th>'+sortButton('date','Date')+'</th><th>'+sortButton('title','Plan Day')+'</th><th>'+sortButton('group','Group / Athlete')+'</th><th>'+sortButton('type','Type')+'</th><th>'+sortButton('volume','Volume / Target')+'</th><th>'+sortButton('status','Status')+'</th><th>'+sortButton('plan','Plan')+'</th></tr></thead><tbody>'+
+    sorted.map(function(day){
       var status=String(day.status||'Scheduled').toLowerCase();
       var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
       return '<tr class="listrow" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'">'+
@@ -488,6 +492,27 @@ function renderListView(list){
       '</tr>';
     }).join('')+
   '</tbody></table></div>';
+}
+function sortButton(key,label){
+  var arrow=listSort.key===key?(listSort.dir==='asc'?' ▲':' ▼'):'';
+  return '<button class="sorthead" data-sort-key="'+esc(key)+'" type="button">'+esc(label+arrow)+'</button>';
+}
+function compareListDays(a,b){
+  var av=listSortValue(a,listSort.key);
+  var bv=listSortValue(b,listSort.key);
+  var result=av.localeCompare(bv,undefined,{numeric:true,sensitivity:'base'});
+  if(!result)result=String(a.date||'').localeCompare(String(b.date||''));
+  return listSort.dir==='desc'?-result:result;
+}
+function listSortValue(day,key){
+  if(key==='date')return String(day.date||'');
+  if(key==='title')return String(day.title||day.dayType||'');
+  if(key==='group')return [day.groupName,day.athleteName].filter(Boolean).join(' ');
+  if(key==='type')return [day.dayType,day.workoutType].filter(Boolean).join(' ');
+  if(key==='volume')return [day.plannedVolume,day.targetSplits].filter(Boolean).join(' ');
+  if(key==='status')return String(day.status||'');
+  if(key==='plan')return planName(day.trainingPlanId);
+  return '';
 }
 function weekSection(key,weekDays){
   return '<section class="week"><div class="weekhead"><b>'+esc(weekTitle(key))+'</b><span>'+weekDays.length+' plan days</span></div><div class="days"><div class="day">'+weekDays.map(dayItem).join('')+'</div></div></section>';
@@ -791,6 +816,14 @@ function init(){
     render();
   });
   els.calendar.addEventListener('click',function(event){
+    var sortButton=event.target.closest&&event.target.closest('[data-sort-key]');
+    if(sortButton){
+      var key=sortButton.getAttribute('data-sort-key')||'date';
+      if(listSort.key===key)listSort.dir=listSort.dir==='asc'?'desc':'asc';
+      else listSort={key:key,dir:'asc'};
+      render();
+      return;
+    }
     var button=event.target.closest&&event.target.closest('[data-day-id]');
     if(!button)return;
     var id=button.getAttribute('data-day-id')||'';
