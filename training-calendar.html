@@ -78,6 +78,8 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .item{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff}
 .item.meet{border-left-color:#7c3aed}.item.recovery{border-left-color:#0a7a44}.item.off{border-left-color:#94a3b8}.item.skipped{opacity:.68}
 .item b{display:block;font-size:14px;line-height:1.25}
+.bulkcheck{display:flex;align-items:center;gap:6px;color:#475569;font-size:12px;font-weight:900;margin-bottom:6px}
+.bulkcheck input{width:auto;margin:0}
 .meta{color:var(--muted);font-size:12px;line-height:1.35;margin-top:4px}
 .pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:900;background:#e8eefc;color:#173891;margin-top:6px}
 .pill.good{background:#dcfce7;color:var(--good)}.pill.warn{background:#ffedd5;color:var(--warn)}.pill.neutral{background:#f1f5f9;color:#475569}
@@ -107,6 +109,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .listwrap{overflow:auto;max-height:70vh;background:#fff;border:1px solid var(--line);border-radius:8px}
 .listtable{width:100%;min-width:1180px;border-collapse:collapse}
 .listtable th,.listtable td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;font-size:13px}
+.listtable input[type="checkbox"]{width:auto}
 .listtable th{position:sticky;top:0;z-index:3;background:#f8fafc;color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:12px;box-shadow:0 1px 0 var(--line)}
 .sorthead{border:0;background:transparent;color:inherit;font:inherit;font-weight:900;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer}
 .sorthead:hover{color:#173891;text-decoration:underline}
@@ -147,8 +150,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
       <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
-      <button id="approveDraftsBtn" class="secondary" type="button">Approve Drafts</button>
-      <button id="scheduleApprovedBtn" class="secondary" type="button">Schedule Approved</button>
+      <button id="approveDraftsBtn" class="secondary" type="button" hidden>Approve Drafts</button>
+      <button id="scheduleApprovedBtn" class="secondary" type="button" hidden>Schedule Approved</button>
       <button id="refreshBtn" type="button">Refresh</button>
     </div>
   </section>
@@ -179,7 +182,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <select id="typeFilter"><option value="all">All day types</option></select>
     <select id="statusFilter"><option value="all">All statuses</option></select>
     <select id="dateFilter"><option value="all">All dates</option><option value="current_week">Current week</option><option value="next_7">Next 7 days</option><option value="next_30">Next 30 days</option><option value="past_due">Past due</option></select>
-    <select id="bulkStatus"><option value="">Set visible days</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select>
+    <select id="bulkStatus"><option value="">Bulk selection</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select>
     <button id="bulkStatusBtn" class="secondary" type="button">Apply</button>
     <input id="search" type="search" placeholder="Search calendar" autocomplete="off">
     <button id="mixShowBtn" class="mixshow" type="button" hidden>Show Mix</button>
@@ -339,6 +342,7 @@ var listSort={key:'date',dir:'asc'};
 var pendingStatusUpdates={};
 var mixHidden=false;
 var selectedPlanIds=[];
+var selectedBulkDayIds=[];
 var includePastPlans=false;
 var els={
   mainPage:document.getElementById('mainPage'),
@@ -780,11 +784,13 @@ function renderWeekView(list){
 function renderListView(list){
   if(!list.length)return '';
   var sorted=list.slice().sort(compareListDays);
-  return '<div class="listwrap"><table class="listtable"><thead><tr><th>'+sortButton('date','Date')+'</th><th>'+sortButton('title','Plan Day')+'</th><th>'+sortButton('group','Group / Athlete')+'</th><th>'+sortButton('type','Type')+'</th><th>'+sortButton('volume','Volume / Target')+'</th><th>'+sortButton('status','Status')+'</th><th>'+sortButton('plan','Plan')+'</th></tr></thead><tbody>'+
+  return '<div class="listwrap"><table class="listtable"><thead><tr><th>Select</th><th>'+sortButton('date','Date')+'</th><th>'+sortButton('title','Plan Day')+'</th><th>'+sortButton('group','Group / Athlete')+'</th><th>'+sortButton('type','Type')+'</th><th>'+sortButton('volume','Volume / Target')+'</th><th>'+sortButton('status','Status')+'</th><th>'+sortButton('plan','Plan')+'</th></tr></thead><tbody>'+
     sorted.map(function(day){
       var status=String(day.status||'Scheduled').toLowerCase();
       var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
+      var id=day.id||day.sourceRecordId||'';
       return '<tr class="listrow" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'">'+
+        '<td><input data-bulk-check="'+esc(id)+'" type="checkbox" '+(selectedBulkDayIds.indexOf(id)>=0?'checked':'')+'></td>'+
         '<td><b>'+esc(formatDate(day.date)||'Not set')+'</b><div class="listmeta">'+esc(day.dayType||'')+'</div></td>'+
         '<td><div class="listtitle">'+esc(day.title||day.dayType||'Plan day')+'</div><div class="listmeta">'+esc(day.details||'')+'</div></td>'+
         '<td>'+esc([day.groupName,day.athleteName].filter(Boolean).join(' · ')||'Team')+'</td>'+
@@ -830,7 +836,8 @@ function dayItem(day){
   var cls=type.indexOf('meet')>=0?' meet':type.indexOf('recovery')>=0?' recovery':type.indexOf('practice')>=0||type.indexOf('travel')>=0?' off':'';
   if(status.indexOf('skipped')>=0)cls+=' skipped';
   var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
-  return '<article class="item'+cls+'"><button class="itembtn" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+
+  var id=day.id||day.sourceRecordId||'';
+  return '<article class="item'+cls+'"><label class="bulkcheck"><input data-bulk-check="'+esc(id)+'" type="checkbox" '+(selectedBulkDayIds.indexOf(id)>=0?'checked':'')+'> Select</label><button class="itembtn" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+
     '<b>'+esc(day.title||day.dayType||'Plan day')+'</b>'+
     '<div class="meta">'+esc([day.groupName,day.athleteName,day.workoutType].filter(Boolean).join(' · '))+'</div>'+
     '<div class="meta">'+esc(day.details||'')+'</div>'+
@@ -1032,6 +1039,7 @@ function updateVisibleDayStatus(statusLabel,predicate,reason){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update plan days.');
+    selectedBulkDayIds=[];
     els.status.textContent='Updated '+(result.data&&result.data.updatedCount||items.length)+' plan days.';
     return loadCalendar();
   }).catch(function(error){
@@ -1047,23 +1055,32 @@ function updateVisibleDayStatus(statusLabel,predicate,reason){
 function bulkUpdateVisibleStatus(){
   var statusLabel=els.bulkStatus.value;
   if(!statusLabel){
-    els.status.textContent='Choose Scheduled, Completed, or Skipped first.';
+    els.status.textContent='Choose a bulk selection first.';
     return;
   }
-  var visible=filteredDays().filter(function(day){
-    return !isRemovedDay(day)&&String(day.status||'').toLowerCase()!==String(statusLabel).toLowerCase();
+  var selectedMap={};
+  selectedBulkDayIds.forEach(function(id){selectedMap[id]=true;});
+  var selected=filteredDays().filter(function(day){
+    var id=day.id||day.sourceRecordId||'';
+    return selectedMap[id]&&!isRemovedDay(day)&&String(day.status||'').toLowerCase()!==String(statusLabel).toLowerCase();
   });
-  if(!visible.length){
-    els.status.textContent='No visible plan days need that status.';
+  if(!selected.length){
+    els.status.textContent='Check at least one day that needs '+statusLabel+'.';
     return;
   }
-  var reason=window.prompt('Why mark '+visible.length+' visible plan day'+(visible.length===1?'':'s')+' '+statusLabel+'?','Bulk status update from SMART Trak Training Calendar.');
-  if(reason===null)return;
-  reason=String(reason||'Bulk status update from SMART Trak Training Calendar.').trim();
-  if(!window.confirm('Set '+visible.length+' visible plan day'+(visible.length===1?'':'s')+' to '+statusLabel+'?'))return;
+  var reason='Bulk selection changed to '+statusLabel+' from SMART Trak Training Calendar.';
   updateVisibleDayStatus(statusLabel,function(day){
-    return visible.some(function(item){return item.id===day.id||item.sourceRecordId===day.sourceRecordId;});
+    return selected.some(function(item){return item.id===day.id||item.sourceRecordId===day.sourceRecordId;});
   },reason);
+}
+function updateBulkSelection(id,checked){
+  if(!id)return;
+  if(checked){
+    if(selectedBulkDayIds.indexOf(id)===-1)selectedBulkDayIds.push(id);
+  }else{
+    selectedBulkDayIds=selectedBulkDayIds.filter(function(item){return item!==id;});
+  }
+  els.status.textContent=selectedBulkDayIds.length?selectedBulkDayIds.length+' day'+(selectedBulkDayIds.length===1?'':'s')+' selected.':'No days selected.';
 }
 function isDraftDay(day){
   return String(day&&day.status||'').toLowerCase().indexOf('draft')>=0;
@@ -1435,6 +1452,7 @@ function init(){
   });
   els.todayBtn.addEventListener('click',jumpToToday);
   els.calendar.addEventListener('click',function(event){
+    if(event.target.closest&&event.target.closest('[data-bulk-check]'))return;
     var sortButton=event.target.closest&&event.target.closest('[data-sort-key]');
     if(sortButton){
       var key=sortButton.getAttribute('data-sort-key')||'date';
@@ -1447,6 +1465,11 @@ function init(){
     if(!button)return;
     var id=button.getAttribute('data-day-id')||'';
     openDayModal(days.find(function(day){return day.id===id||day.sourceRecordId===id;}));
+  });
+  els.calendar.addEventListener('change',function(event){
+    var input=event.target.closest&&event.target.closest('[data-bulk-check]');
+    if(!input)return;
+    updateBulkSelection(input.getAttribute('data-bulk-check')||'',input.checked);
   });
   els.dayModalBody.addEventListener('click',function(event){
     var button=event.target.closest&&event.target.closest('[data-quick-status]');
