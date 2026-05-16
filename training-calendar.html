@@ -348,7 +348,7 @@ function esc(value){
   });
 }
 function formatDate(value){
-  var date=new Date(value);
+  var date=parseCalendarDate(value);
   if(isNaN(date.getTime()))return value||'';
   return date.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
 }
@@ -359,6 +359,13 @@ function formatDateTime(value){
 }
 function isoDate(date){
   return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+}
+function parseCalendarDate(value){
+  var text=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(text)){
+    return new Date(text.slice(0,10)+'T00:00:00');
+  }
+  return new Date(value);
 }
 function startOfWeek(date){
   var d=new Date(date);
@@ -417,7 +424,7 @@ function isRemovedDay(day){
   return status.indexOf('skipped')>=0&&notes.indexOf('removed from calendar')>=0;
 }
 function weekKeyForDay(day){
-  var date=new Date(day.date);
+  var date=parseCalendarDate(day.date);
   if(isNaN(date.getTime()))return 'unscheduled';
   return isoDate(startOfWeek(date));
 }
@@ -700,7 +707,7 @@ function quickUpdateActiveDayStatus(statusLabel){
     renderOptions();
     render();
     els.status.textContent='Plan day marked '+statusLabel+'.';
-    loadCalendar();
+    setTimeout(loadCalendar,1500);
   }).catch(function(error){
     alert(error.message||'Could not update plan day.');
     render();
