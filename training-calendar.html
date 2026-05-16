@@ -38,6 +38,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .mixbar b{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin-right:4px}
 .mixitem{display:inline-flex;align-items:center;border-radius:999px;background:#f1f5f9;color:#334155;font-size:12px;font-weight:900;padding:5px 9px}
 .mixitem.workout{background:#e8eefc;color:#173891}.mixitem.meet{background:#ede9fe;color:#5b21b6}.mixitem.recovery{background:#dcfce7;color:#0a7a44}.mixitem.off{background:#f1f5f9;color:#475569}.mixitem.other{background:#ffedd5;color:#b45309}
+.mixhide{margin-left:auto;background:#eef2f7;color:#172033;font-size:12px;padding:6px 10px}
+.mixshow{width:100%;background:#fff;border:1px solid var(--line);border-radius:8px;color:#172033;margin:0 0 14px;padding:10px 12px;text-align:left}
 .bar{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .status{color:var(--muted);font-size:13px;text-align:right}
@@ -141,6 +143,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   </section>
 
   <section id="mixBar" class="mixbar" aria-label="Visible plan mix"></section>
+  <button id="mixShowBtn" class="mixshow" type="button" hidden>Show Visible Mix</button>
 
   <section class="bar">
     <select id="planFilter"><option value="all">All plans</option></select>
@@ -273,6 +276,7 @@ var activeDay=null;
 var viewMode='week';
 var listSort={key:'date',dir:'asc'};
 var pendingStatusUpdates={};
+var mixHidden=false;
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -292,6 +296,7 @@ var els={
   completedCount:document.getElementById('completedCount'),
   needsReviewCount:document.getElementById('needsReviewCount'),
   mixBar:document.getElementById('mixBar'),
+  mixShowBtn:document.getElementById('mixShowBtn'),
   planFilter:document.getElementById('planFilter'),
   typeFilter:document.getElementById('typeFilter'),
   statusFilter:document.getElementById('statusFilter'),
@@ -332,6 +337,15 @@ function accountKey(){
     var params=new URLSearchParams(window.location.search||'');
     return cleanKey(params.get('account')||params.get('tenant')||localStorage.getItem('sc_account')||'default');
   }catch(e){return 'default';}
+}
+function mixStorageKey(){
+  return 'sc_training_calendar_mix_hidden_'+accountKey();
+}
+function loadMixPreference(){
+  try{mixHidden=localStorage.getItem(mixStorageKey())==='1';}catch(e){mixHidden=false;}
+}
+function saveMixPreference(){
+  try{localStorage.setItem(mixStorageKey(),mixHidden?'1':'0');}catch(e){}
 }
 function cleanKey(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';}
 function embeddedMode(){
@@ -536,12 +550,22 @@ function render(){
   els.empty.hidden=!!list.length;
 }
 function renderMixBar(counts){
+  els.mixBar.hidden=mixHidden;
+  els.mixShowBtn.hidden=!mixHidden;
+  if(mixHidden)return;
   els.mixBar.innerHTML='<b>Visible mix</b>'+
     '<span class="mixitem workout">'+counts.workouts+' workouts</span>'+
     '<span class="mixitem meet">'+counts.meets+' meets</span>'+
     '<span class="mixitem recovery">'+counts.recovery+' recovery</span>'+
     '<span class="mixitem off">'+counts.off+' off/travel</span>'+
-    '<span class="mixitem other">'+counts.other+' other</span>';
+    '<span class="mixitem other">'+counts.other+' other</span>'+
+    '<button id="mixHideBtn" class="mixhide" type="button">Hide mix</button>';
+  var hideBtn=document.getElementById('mixHideBtn');
+  if(hideBtn)hideBtn.addEventListener('click',function(){
+    mixHidden=true;
+    saveMixPreference();
+    render();
+  });
 }
 function jumpToToday(){
   els.dateFilter.value='current_week';
@@ -956,6 +980,7 @@ function loadCalendar(){
 function init(){
   document.body.classList.toggle('embedded',embeddedMode());
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
+  loadMixPreference();
   els.dashboardLink.href=pageUrl('/dashboard.html');
   els.planImportLink.href=pageUrl('/plan-import.html');
   els.planBuilderLink.href=pageUrl('/plan-builder.html');
@@ -971,6 +996,11 @@ function init(){
   els.statusFilter.addEventListener('change',render);
   els.dateFilter.addEventListener('change',render);
   els.search.addEventListener('input',render);
+  els.mixShowBtn.addEventListener('click',function(){
+    mixHidden=false;
+    saveMixPreference();
+    render();
+  });
   els.weekViewBtn.addEventListener('click',function(){
     viewMode='week';
     render();
