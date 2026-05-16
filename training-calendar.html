@@ -37,7 +37,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .bar{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .status{color:var(--muted);font-size:13px;text-align:right}
-.viewtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.viewtabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .viewtab{background:#fff;color:#172033;border:1px solid var(--line)}
 .viewtab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 .calendar{display:grid;gap:12px}
@@ -146,6 +146,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   <section class="viewtabs" aria-label="Calendar view">
     <button id="weekViewBtn" class="viewtab active" type="button">Week View</button>
     <button id="listViewBtn" class="viewtab" type="button">List View</button>
+    <button id="todayBtn" class="viewtab" type="button">Today</button>
   </section>
 
   <section id="calendar" class="calendar"></section>
@@ -290,6 +291,7 @@ var els={
   status:document.getElementById('status'),
   weekViewBtn:document.getElementById('weekViewBtn'),
   listViewBtn:document.getElementById('listViewBtn'),
+  todayBtn:document.getElementById('todayBtn'),
   calendar:document.getElementById('calendar'),
   empty:document.getElementById('empty'),
   dayModal:document.getElementById('dayModal'),
@@ -513,6 +515,15 @@ function render(){
   els.calendar.innerHTML=viewMode==='list'?renderListView(list):renderWeekView(list);
   els.empty.hidden=!!list.length;
 }
+function jumpToToday(){
+  els.dateFilter.value='current_week';
+  viewMode='week';
+  render();
+  setTimeout(function(){
+    var current=els.calendar.querySelector('[data-current-week="1"]')||els.calendar.firstElementChild;
+    if(current)current.scrollIntoView({behavior:'smooth',block:'start'});
+  },50);
+}
 function renderWeekView(list){
   var weeks={};
   list.forEach(function(day){
@@ -530,7 +541,7 @@ function renderWeekView(list){
       var dateKey=isoDate(date);
       columns.push(dayColumn(date,weekDays.filter(function(day){return String(day.date||'').slice(0,10)===dateKey;})));
     }
-    return '<section class="week"><div class="weekhead"><b>'+esc(weekTitle(key))+'</b><span>'+weekDays.length+' plan days</span></div><div class="days">'+columns.join('')+'</div></section>';
+    return '<section class="week" data-current-week="'+(key===isoDate(startOfWeek(new Date()))?'1':'0')+'"><div class="weekhead"><b>'+esc(weekTitle(key))+'</b><span>'+weekDays.length+' plan days</span></div><div class="days">'+columns.join('')+'</div></section>';
   }).join('');
 }
 function renderListView(list){
@@ -939,6 +950,7 @@ function init(){
     viewMode='list';
     render();
   });
+  els.todayBtn.addEventListener('click',jumpToToday);
   els.calendar.addEventListener('click',function(event){
     var sortButton=event.target.closest&&event.target.closest('[data-sort-key]');
     if(sortButton){
