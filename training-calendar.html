@@ -34,6 +34,10 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .card:hover,.week:hover{box-shadow:0 10px 24px rgba(15,23,42,.14);transform:translateY(-1px)}
 .card b{display:block;font-size:24px;line-height:1.1}
 .card span{display:block;color:var(--muted);font-size:13px;margin-top:5px}
+.mixbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+.mixbar b{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin-right:4px}
+.mixitem{display:inline-flex;align-items:center;border-radius:999px;background:#f1f5f9;color:#334155;font-size:12px;font-weight:900;padding:5px 9px}
+.mixitem.workout{background:#e8eefc;color:#173891}.mixitem.meet{background:#ede9fe;color:#5b21b6}.mixitem.recovery{background:#dcfce7;color:#0a7a44}.mixitem.off{background:#f1f5f9;color:#475569}.mixitem.other{background:#ffedd5;color:#b45309}
 .bar{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .status{color:var(--muted);font-size:13px;text-align:right}
@@ -135,6 +139,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <div class="card"><b id="completedCount">--</b><span>Completed</span></div>
     <div class="card"><b id="needsReviewCount">--</b><span>Needs review</span></div>
   </section>
+
+  <section id="mixBar" class="mixbar" aria-label="Visible plan mix"></section>
 
   <section class="bar">
     <select id="planFilter"><option value="all">All plans</option></select>
@@ -285,6 +291,7 @@ var els={
   meetCount:document.getElementById('meetCount'),
   completedCount:document.getElementById('completedCount'),
   needsReviewCount:document.getElementById('needsReviewCount'),
+  mixBar:document.getElementById('mixBar'),
   planFilter:document.getElementById('planFilter'),
   typeFilter:document.getElementById('typeFilter'),
   statusFilter:document.getElementById('statusFilter'),
@@ -492,11 +499,21 @@ function render(){
   var meetCount=0;
   var completedCount=0;
   var reviewCount=0;
+  var recoveryCount=0;
+  var offCount=0;
+  var otherCount=0;
   list.forEach(function(day){
     var type=String(day.dayType||'').toLowerCase();
     var status=String(day.status||'').toLowerCase();
     if(type.indexOf('workout')>=0)workoutCount+=1;
     if(type.indexOf('meet')>=0)meetCount+=1;
+    if(type.indexOf('recovery')>=0){
+      recoveryCount+=1;
+    }else if(type.indexOf('practice')>=0||type.indexOf('travel')>=0||type.indexOf('off')>=0){
+      offCount+=1;
+    }else if(type.indexOf('workout')<0&&type.indexOf('meet')<0){
+      otherCount+=1;
+    }
     if(status.indexOf('completed')>=0)completedCount+=1;
     if(status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0)reviewCount+=1;
   });
@@ -505,6 +522,7 @@ function render(){
   els.meetCount.textContent=meetCount;
   els.completedCount.textContent=completedCount;
   els.needsReviewCount.textContent=reviewCount;
+  renderMixBar({workouts:workoutCount,meets:meetCount,recovery:recoveryCount,off:offCount,other:otherCount});
   els.status.textContent=list.length+' days';
   var draftCount=list.filter(isDraftDay).length;
   var approvedCount=list.filter(isApprovedDay).length;
@@ -516,6 +534,14 @@ function render(){
   els.listViewBtn.classList.toggle('active',viewMode==='list');
   els.calendar.innerHTML=viewMode==='list'?renderListView(list):renderWeekView(list);
   els.empty.hidden=!!list.length;
+}
+function renderMixBar(counts){
+  els.mixBar.innerHTML='<b>Visible mix</b>'+
+    '<span class="mixitem workout">'+counts.workouts+' workouts</span>'+
+    '<span class="mixitem meet">'+counts.meets+' meets</span>'+
+    '<span class="mixitem recovery">'+counts.recovery+' recovery</span>'+
+    '<span class="mixitem off">'+counts.off+' off/travel</span>'+
+    '<span class="mixitem other">'+counts.other+' other</span>';
 }
 function jumpToToday(){
   els.dateFilter.value='current_week';
