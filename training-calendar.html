@@ -24,6 +24,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
+button.danger{background:#fee2e2;color:#991b1b}
 button:disabled{opacity:.55;cursor:not-allowed}
 .top .linkbtn,.top button{font-size:13px;padding:9px 13px;min-height:38px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
 .top #dashboardLink{background:#2B4FCC;color:#fff}
@@ -143,6 +144,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
       <h2 id="dayModalTitle">Plan Day</h2>
       <div class="actions">
         <button id="dayEditBtn" class="secondary" type="button">Edit</button>
+        <button id="dayRemoveBtn" class="danger" type="button">Remove from Calendar</button>
         <button id="dayModalClose" class="ghost" type="button">Close</button>
       </div>
     </div>
@@ -265,6 +267,7 @@ var els={
   dayModalBody:document.getElementById('dayModalBody'),
   dayModalClose:document.getElementById('dayModalClose'),
   dayEditBtn:document.getElementById('dayEditBtn'),
+  dayRemoveBtn:document.getElementById('dayRemoveBtn'),
   dayEditModal:document.getElementById('dayEditModal'),
   dayEditClose:document.getElementById('dayEditClose'),
   editDate:document.getElementById('editDate'),
@@ -373,12 +376,18 @@ function filteredDays(){
   var type=els.typeFilter.value||'all';
   var status=els.statusFilter.value||'all';
   return days.filter(function(day){
+    if(status==='all'&&isRemovedDay(day))return false;
     if(selectedPlan!=='all'&&day.trainingPlanId!==selectedPlan)return false;
     if(type!=='all'&&day.dayType!==type)return false;
     if(status!=='all'&&day.status!==status)return false;
     if(query&&searchText(day).indexOf(query)===-1)return false;
     return true;
   }).sort(function(a,b){return String(a.date||'').localeCompare(String(b.date||''));});
+}
+function isRemovedDay(day){
+  var status=String(day&&day.status||'').toLowerCase();
+  var notes=String(day&&day.coachNotes||'').toLowerCase();
+  return status.indexOf('skipped')>=0&&notes.indexOf('removed from calendar')>=0;
 }
 function weekKeyForDay(day){
   var date=new Date(day.date);
@@ -461,6 +470,7 @@ function dayItem(day){
 function openDayModal(day){
   if(!day)return;
   activeDay=day;
+  els.dayRemoveBtn.hidden=isRemovedDay(day);
   var plan=plans.find(function(item){return item.id===day.trainingPlanId||item.sourceRecordId===day.trainingPlanId;})||{};
   els.dayModalTitle.textContent=day.title||day.dayType||'Plan Day';
   els.dayModalBody.innerHTML=
@@ -483,6 +493,7 @@ function openDayModal(day){
 }
 function closeDayModal(){
   els.dayModal.hidden=true;
+  els.dayRemoveBtn.hidden=false;
   activeDay=null;
 }
 function detailCard(label,value,sub){
@@ -512,6 +523,54 @@ function openEditModal(){
 }
 function closeEditModal(){
   els.dayEditModal.hidden=true;
+}
+function removeActiveDay(){
+  if(!activeDay)return;
+  var title=activeDay.title||activeDay.dayType||'this plan day';
+  var reason=window.prompt('Why remove "'+title+'" from the calendar?','Removed from calendar by coach.');
+  if(reason===null)return;
+  reason=String(reason||'').trim();
+  if(!reason){
+    alert('Please enter a short reason so SMART Trak keeps a useful note.');
+    return;
+  }
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.dayRemoveBtn.disabled=true;
+  fetch('/api/smart-trak/training-plan',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'updateDay',
+      dayId:activeDay.id||'',
+      reason:reason,
+      updates:{
+        date:activeDay.date,
+        dayType:activeDay.dayType,
+        title:activeDay.title,
+        workoutType:activeDay.workoutType,
+        energySystem:activeDay.energySystem,
+        status:'Skipped',
+        groupName:activeDay.groupName,
+        athleteName:activeDay.athleteName,
+        plannedVolume:activeDay.plannedVolume,
+        targetSplits:activeDay.targetSplits,
+        details:activeDay.details,
+        coachNotes:[activeDay.coachNotes,'Removed from calendar: '+reason].filter(Boolean).join('\n')
+      }
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not remove plan day.');
+    return loadCalendar();
+  }).then(function(){
+    closeDayModal();
+  }).catch(function(error){
+    alert(error.message||'Could not remove plan day.');
+  }).finally(function(){
+    els.dayRemoveBtn.disabled=false;
+  });
 }
 function updateVisibleDayStatus(statusLabel,predicate,reason){
   var items=filteredDays().filter(predicate).map(function(day){
@@ -689,6 +748,7 @@ function init(){
   });
   els.dayModalClose.addEventListener('click',closeDayModal);
   els.dayEditBtn.addEventListener('click',openEditModal);
+  els.dayRemoveBtn.addEventListener('click',removeActiveDay);
   els.dayEditClose.addEventListener('click',closeEditModal);
   els.dayEditSave.addEventListener('click',saveDayEdit);
   els.accessSubmit.addEventListener('click',submitAccess);
