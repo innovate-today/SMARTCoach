@@ -12,17 +12,18 @@
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
 body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.35}
-.wrap{max-width:980px;margin:0 auto;padding:24px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
-.mark{width:64px;height:64px;display:grid;place-items:center;flex:0 0 64px}
-.mark img{display:block;max-width:64px;max-height:64px;object-fit:contain}
-.top-actions{display:flex;align-items:center;gap:10px}
-.linkbtn{border:0;border-radius:8px;background:#e5e7eb;color:#111827;font-size:14px;font-weight:800;padding:10px 14px;text-decoration:none}
-.account-control{display:flex;align-items:center;gap:8px}
-.account-control label{margin:0;font-size:12px;color:#6b7280}
-.account-control input{width:130px;padding:8px 10px;font-size:13px}
-.account-control button{padding:8px 10px;font-size:13px}
+.wrap{max-width:1180px;margin:0 auto;padding:24px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:0 8px 20px rgba(15,23,42,.04)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:900;font-size:22px;white-space:nowrap}
+.mark{width:58px;height:58px;display:grid;place-items:center;flex:0 0 58px}
+.mark img{display:block;max-width:58px;max-height:58px;object-fit:contain}
+.top-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;min-width:0}
+.linkbtn{border:0;border-radius:8px;background:#e5e7eb;color:#111827;font-size:13px;font-weight:850;padding:9px 13px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:38px;white-space:nowrap}
+.top-actions .linkbtn:last-child{background:#2B4FCC;color:#fff}
+.account-control{order:2;flex:1 0 100%;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:8px;margin-top:2px;border-top:1px solid #edf1f7}
+.account-control label{margin:0;font-size:12px;color:#64748b;font-weight:850;text-transform:uppercase;letter-spacing:.02em}
+.account-control input{width:150px;padding:8px 10px;font-size:13px}
+.account-control button{padding:8px 10px;font-size:13px;min-height:36px}
 .panel{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .head{padding:18px 20px;border-bottom:1px solid var(--line)}
 .head h1{font-size:22px;letter-spacing:0;margin-bottom:4px}
@@ -77,7 +78,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 .essential-message p{color:var(--muted);line-height:1.45}
 .essential-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
 .admin-mode-badge{position:fixed;right:14px;bottom:14px;z-index:30;background:#111827;color:#fff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;box-shadow:0 10px 24px rgba(15,23,42,.18)}
-@media(max-width:760px){.wrap{padding:12px}.top{display:block}.top-actions{margin-top:10px;align-items:stretch;flex-direction:column}.account-control{align-items:stretch}.account-control input{width:100%}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions,.assignment-head{align-items:stretch;flex-direction:column}.fitness-status,.assignment-status{text-align:left}.assignment-grid,.assignment-athletes{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
+@media(max-width:760px){.wrap{padding:12px}.top{display:block}.brand{font-size:20px}.top-actions{margin-top:10px;align-items:stretch;flex-direction:column}.account-control{align-items:stretch;justify-content:stretch}.account-control input{width:100%}.form{grid-template-columns:1fr}.field{border-right:none}.fitness-row{grid-template-columns:1fr}.fitness-actions,.assignment-head{align-items:stretch;flex-direction:column}.fitness-status,.assignment-status{text-align:left}.assignment-grid,.assignment-athletes{grid-template-columns:1fr}.actions{display:block}.actions button{width:100%;margin-top:8px}}
 </style>
 </head>
 <body>
