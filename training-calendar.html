@@ -75,10 +75,10 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .detailcard small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:4px;white-space:pre-wrap}
 .fulltext{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;margin-top:10px;white-space:pre-wrap;font-size:14px;line-height:1.45}
 .itembtn{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;font:inherit;padding:0;cursor:pointer}
-.listwrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px}
+.listwrap{overflow:auto;max-height:70vh;background:#fff;border:1px solid var(--line);border-radius:8px}
 .listtable{width:100%;min-width:1180px;border-collapse:collapse}
 .listtable th,.listtable td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;font-size:13px}
-.listtable th{background:#f8fafc;color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:12px}
+.listtable th{position:sticky;top:0;z-index:3;background:#f8fafc;color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:12px;box-shadow:0 1px 0 var(--line)}
 .sorthead{border:0;background:transparent;color:inherit;font:inherit;font-weight:900;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer}
 .sorthead:hover{color:#173891;text-decoration:underline}
 .listrow{cursor:pointer}
