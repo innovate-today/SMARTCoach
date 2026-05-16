@@ -1,6 +1,6 @@
 # SMART Trak Plan Builder
 
-The Plan Builder creates coach-reviewed training plans in SMART Trak.
+The Plan Builder creates coach-reviewed training plans in SMART Trak. The coach-facing explanation should make it clear that this is a built-for-you plan from start to finish for any chosen length of time. The plan is generated as a draft, then the coach reviews, adjusts, approves, and schedules it.
 
 Coach-facing wording:
 
@@ -73,6 +73,56 @@ The submit payload can include either:
 - Coach Preferences
 - Plan Style
 - Manual Notes
+
+## Future Builder Improvements
+
+The Plan Builder page needs a clearer explanation before the form:
+
+- Explain that it builds a full start-to-finish training plan for the selected dates, event focus, athletes, schedule, and constraints.
+- Explain that the coach is still in control: the draft can be reviewed, edited, and adjusted before it becomes the final plan.
+- Avoid coach-facing wording that says AI. Use terms such as Guided Plan Builder, built-for-you draft, coach-reviewed plan, and draft plan.
+
+Current Fitness Setup should become easier for full rosters:
+
+- Sort and filter athletes by girls, boys, group, and active status.
+- Keep the setup fast enough for bulk entry before a season starts.
+- Make it clear that the current fitness source is used to create athlete-specific targets.
+
+The questionnaire should capture enough coaching context to build a useful plan, not just dates and mileage:
+
+- Goal event or race distance: 800m, 1600m, 5K cross country, half marathon, marathon, or other event.
+- Training age: years consistently training, years of structured workouts, and accumulated mileage history.
+- Current fitness profile: recent race times, aerobic fitness, speed reserve, threshold fitness, and whether the athlete is more speed-based or aerobic-based.
+- Injury history: shin splints, stress reactions, Achilles, hamstring, hip, plantar fascia, low iron/fatigue patterns, and other recurring issues.
+- Weekly volume capacity: actual sustainable mileage, not ideal or desired mileage.
+- Speed vs aerobic profile: explosive/high-end speed athlete, rhythm runner, durable aerobic runner, or mixed profile.
+- Recovery ability: sleep, stress, school/work load, nutrition, heat adaptation, and how many hard days per week the athlete usually absorbs.
+- Time of season: base, preseason, competition, championship, recovery, or transition timing.
+- Available training time: days per week, doubles, access to track/hills/weight room, travel schedule, school restrictions, other sports, holidays, testing, spring break, dead weeks, and no-practice periods.
+- Adaptation rate: how quickly the athlete responds to mileage increases, workout intensity, long-run progression, lifting, and speed exposure.
+
+Additional optional variables that may improve future plans:
+
+- Biomechanics and running form.
+- Race tactics and mental profile.
+- Heat tolerance.
+- Strength, mobility, cadence, and ground-contact quality.
+- Nutrition quality.
+- Iron/ferritin concerns.
+- Event doubling demands.
+- Terrain and surface specificity: track, road, trail, grass, hills, cross country course, or indoor.
+
+For distance runners, the plan should balance the major systems year-round while shifting emphasis by season:
+
+- Aerobic development for the engine.
+- Threshold work to sustain speed.
+- VO2 max work for aerobic power.
+- Neuromuscular speed for mechanics and efficiency.
+- Strength training for durability and force.
+- Mobility for movement quality.
+- Recovery so the training actually adapts.
+
+The planning logic should account for more than mileage and pace. Better plans should also manage nervous system stress, aerobic load, mechanical load, emotional load, recovery timing, and adaptation sequencing.
 
 ## Records Created
 
