@@ -1099,12 +1099,29 @@ function archivePlanFromPicker(planIdValue, restore){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update plan.');
-    selectedPlanIds=selectedPlanIds.filter(function(id){return id!==planIdValue;});
+    plan.archived=!restore;
+    plan.schoolConstraints=localPlanArchiveText(plan.schoolConstraints||'',!restore,reason);
+    if(!includePastPlans||!restore){
+      selectedPlanIds=selectedPlanIds.filter(function(id){return id!==planIdValue;});
+    }
     els.status.textContent=restore?'Plan restored.':'Plan archived.';
-    return loadCalendar();
+    renderOptions();
+    render();
   }).catch(function(error){
     els.status.textContent=error.message||'Could not update plan.';
   });
+}
+function localPlanArchiveText(existingText,archived,reason){
+  var base=String(existingText||'').replace(/\n?\[SMARTCoach Plan Archive\][\s\S]*?\[\/SMARTCoach Plan Archive\]\n?/g,'').trim();
+  if(!archived)return base;
+  var block=[
+    '[SMARTCoach Plan Archive]',
+    'Archived: Yes',
+    'Archived At: '+new Date().toISOString(),
+    'Archive Reason: '+String(reason||'Coach archived plan.').trim(),
+    '[/SMARTCoach Plan Archive]'
+  ].join('\n');
+  return [base,block].filter(Boolean).join('\n\n');
 }
 function stripAdjustmentLines(value){
   return String(value||'').split(/\r?\n/).filter(function(line){
