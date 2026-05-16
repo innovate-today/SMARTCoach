@@ -36,6 +36,9 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .bar{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .status{color:var(--muted);font-size:13px;text-align:right}
+.viewtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.viewtab{background:#fff;color:#172033;border:1px solid var(--line)}
+.viewtab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 .calendar{display:grid;gap:12px}
 .week{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
 .weekhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--line)}
@@ -71,6 +74,14 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .detailcard small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:4px;white-space:pre-wrap}
 .fulltext{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;margin-top:10px;white-space:pre-wrap;font-size:14px;line-height:1.45}
 .itembtn{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;font:inherit;padding:0;cursor:pointer}
+.listwrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px}
+.listtable{width:100%;min-width:1180px;border-collapse:collapse}
+.listtable th,.listtable td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;font-size:13px}
+.listtable th{background:#f8fafc;color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:12px}
+.listrow{cursor:pointer}
+.listrow:hover{background:#f8fafc}
+.listtitle{font-weight:900;color:#0f2f86}
+.listmeta{color:var(--muted);font-size:12px;line-height:1.35;margin-top:3px}
 .access{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
 .access h1{font-size:24px;margin-bottom:8px}
 .access p{color:var(--muted);line-height:1.45}
@@ -82,6 +93,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   .actions a,.actions button{flex:1;text-align:center}
   .cards{grid-template-columns:1fr 1fr}
   .bar{grid-template-columns:1fr}
+  .viewtabs{grid-template-columns:1fr}
   .detailgrid{grid-template-columns:1fr}
   .status{text-align:left}
 }
@@ -122,6 +134,11 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <select id="statusFilter"><option value="all">All statuses</option></select>
     <input id="search" type="search" placeholder="Search workout, group, athlete, meet, or notes" autocomplete="off">
     <div id="status" class="status">Loading calendar...</div>
+  </section>
+
+  <section class="viewtabs" aria-label="Calendar view">
+    <button id="weekViewBtn" class="viewtab active" type="button">Week View</button>
+    <button id="listViewBtn" class="viewtab" type="button">List View</button>
   </section>
 
   <section id="calendar" class="calendar"></section>
@@ -237,6 +254,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 var plans=[];
 var days=[];
 var activeDay=null;
+var viewMode='week';
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -260,6 +278,8 @@ var els={
   statusFilter:document.getElementById('statusFilter'),
   search:document.getElementById('search'),
   status:document.getElementById('status'),
+  weekViewBtn:document.getElementById('weekViewBtn'),
+  listViewBtn:document.getElementById('listViewBtn'),
   calendar:document.getElementById('calendar'),
   empty:document.getElementById('empty'),
   dayModal:document.getElementById('dayModal'),
@@ -426,13 +446,19 @@ function render(){
   els.scheduleApprovedBtn.disabled=!approvedCount;
   els.approveDraftsBtn.textContent=draftCount?'Approve Drafts ('+draftCount+')':'Approve Drafts';
   els.scheduleApprovedBtn.textContent=approvedCount?'Schedule Approved ('+approvedCount+')':'Schedule Approved';
+  els.weekViewBtn.classList.toggle('active',viewMode==='week');
+  els.listViewBtn.classList.toggle('active',viewMode==='list');
+  els.calendar.innerHTML=viewMode==='list'?renderListView(list):renderWeekView(list);
+  els.empty.hidden=!!list.length;
+}
+function renderWeekView(list){
   var weeks={};
   list.forEach(function(day){
     var key=weekKeyForDay(day);
     if(!weeks[key])weeks[key]=[];
     weeks[key].push(day);
   });
-  var html=Object.keys(weeks).sort().map(function(key){
+  return Object.keys(weeks).sort().map(function(key){
     var weekDays=weeks[key];
     if(key==='unscheduled')return weekSection(key,weekDays);
     var start=new Date(key+'T00:00:00');
@@ -444,8 +470,24 @@ function render(){
     }
     return '<section class="week"><div class="weekhead"><b>'+esc(weekTitle(key))+'</b><span>'+weekDays.length+' plan days</span></div><div class="days">'+columns.join('')+'</div></section>';
   }).join('');
-  els.calendar.innerHTML=html;
-  els.empty.hidden=!!list.length;
+}
+function renderListView(list){
+  if(!list.length)return '';
+  return '<div class="listwrap"><table class="listtable"><thead><tr><th>Date</th><th>Plan Day</th><th>Group / Athlete</th><th>Type</th><th>Volume / Target</th><th>Status</th><th>Plan</th></tr></thead><tbody>'+
+    list.map(function(day){
+      var status=String(day.status||'Scheduled').toLowerCase();
+      var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
+      return '<tr class="listrow" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'">'+
+        '<td><b>'+esc(formatDate(day.date)||'Not set')+'</b><div class="listmeta">'+esc(day.dayType||'')+'</div></td>'+
+        '<td><div class="listtitle">'+esc(day.title||day.dayType||'Plan day')+'</div><div class="listmeta">'+esc(day.details||'')+'</div></td>'+
+        '<td>'+esc([day.groupName,day.athleteName].filter(Boolean).join(' · ')||'Team')+'</td>'+
+        '<td>'+esc(day.workoutType||'')+'<div class="listmeta">'+esc(day.energySystem||'')+'</div></td>'+
+        '<td>'+esc(day.plannedVolume||'')+'<div class="listmeta">'+esc(day.targetSplits||'')+'</div></td>'+
+        '<td><span class="pill '+statusClass+'">'+esc(day.status||'Scheduled')+'</span></td>'+
+        '<td>'+esc(planName(day.trainingPlanId)||'')+'</td>'+
+      '</tr>';
+    }).join('')+
+  '</tbody></table></div>';
 }
 function weekSection(key,weekDays){
   return '<section class="week"><div class="weekhead"><b>'+esc(weekTitle(key))+'</b><span>'+weekDays.length+' plan days</span></div><div class="days"><div class="day">'+weekDays.map(dayItem).join('')+'</div></div></section>';
@@ -740,6 +782,14 @@ function init(){
   els.typeFilter.addEventListener('change',render);
   els.statusFilter.addEventListener('change',render);
   els.search.addEventListener('input',render);
+  els.weekViewBtn.addEventListener('click',function(){
+    viewMode='week';
+    render();
+  });
+  els.listViewBtn.addEventListener('click',function(){
+    viewMode='list';
+    render();
+  });
   els.calendar.addEventListener('click',function(event){
     var button=event.target.closest&&event.target.closest('[data-day-id]');
     if(!button)return;
