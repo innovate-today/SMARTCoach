@@ -45,8 +45,10 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .planpicker{position:relative;min-width:0}
 .pickerbutton{width:100%;background:#fff;color:#111827;border:1px solid var(--line);font-weight:400;text-align:left;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .planmenu{position:absolute;z-index:15;top:calc(100% + 6px);left:0;width:min(420px,90vw);max-height:420px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 16px 36px rgba(15,23,42,.22);padding:10px}
+.plansearch{margin-bottom:8px;font-size:13px;padding:9px 10px}
 .planquick{display:flex;gap:8px;margin:8px 0}
 .planquick button{flex:1;background:#eef2f7;color:#172033;font-size:12px;padding:8px 10px}
+.plansection{font-size:11px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin:10px 8px 4px}
 .checkline{display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:7px;font-size:13px;line-height:1.25;cursor:pointer}
 .checkline:hover{background:#f8fafc}
 .checkline input{width:auto;margin-top:2px}
@@ -165,6 +167,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <div id="planPicker" class="planpicker">
       <button id="planPickerBtn" class="pickerbutton" type="button">All current plans</button>
       <div id="planPickerMenu" class="planmenu" hidden>
+        <input id="planSearch" class="plansearch" type="search" placeholder="Search plans" autocomplete="off">
         <label class="checkline"><input id="includePastPlans" type="checkbox"> Include past plans</label>
         <div class="planquick">
           <button id="selectAllPlansBtn" type="button">All visible</button>
@@ -359,6 +362,7 @@ var els={
   planPicker:document.getElementById('planPicker'),
   planPickerBtn:document.getElementById('planPickerBtn'),
   planPickerMenu:document.getElementById('planPickerMenu'),
+  planSearch:document.getElementById('planSearch'),
   includePastPlans:document.getElementById('includePastPlans'),
   selectAllPlansBtn:document.getElementById('selectAllPlansBtn'),
   clearPlansBtn:document.getElementById('clearPlansBtn'),
@@ -580,7 +584,11 @@ function renderOptions(){
   renderPlanPicker();
 }
 function renderPlanPicker(){
-  var visible=visiblePlans();
+  var query=String(els.planSearch.value||'').trim().toLowerCase();
+  var visible=visiblePlans().filter(function(plan){
+    if(!query)return true;
+    return [plan.title,planSubtitle(plan),plan.approvalStatus,plan.description].filter(Boolean).join(' ').toLowerCase().indexOf(query)>=0;
+  });
   var selected=selectedPlanSet();
   els.includePastPlans.checked=includePastPlans;
   if(selectedPlanIds.length===0){
@@ -591,10 +599,17 @@ function renderPlanPicker(){
     els.planPickerBtn.textContent=selectedPlanIds.length+' selected plans';
   }
   if(!visible.length){
-    els.planChoiceList.innerHTML='<div class="planempty">No current plans. Turn on past plans to review older seasons.</div>';
+    els.planChoiceList.innerHTML='<div class="planempty">'+(query?'No plans match this search.':'No current plans. Turn on past plans to review older seasons.')+'</div>';
     return;
   }
-  els.planChoiceList.innerHTML=visible.map(function(plan){
+  var current=visible.filter(function(plan){return !isPastPlan(plan);});
+  var archived=visible.filter(isPastPlan);
+  var sections=[];
+  if(current.length)sections.push('<div class="plansection">Current Plans</div>'+current.map(planChoiceHtml).join(''));
+  if(archived.length)sections.push('<div class="plansection">Archived / Past Plans</div>'+archived.map(planChoiceHtml).join(''));
+  els.planChoiceList.innerHTML=sections.join('');
+
+  function planChoiceHtml(plan){
     var id=planId(plan);
     var subtitle=planSubtitle(plan);
     var archived=isPastPlan(plan);
@@ -606,7 +621,7 @@ function renderPlanPicker(){
         '</span></label>'+
       '<button class="planarchive '+(archived?'restore':'')+'" data-plan-archive="'+esc(id)+'" data-plan-restore="'+(archived?'1':'0')+'" type="button">'+(archived?'Restore':'Archive')+'</button>'+
     '</div>';
-  }).join('');
+  }
 }
 function searchText(day){
   return [day.title,day.details,day.dayType,day.status,day.workoutType,day.energySystem,day.groupName,day.athleteName,day.targetSplits,day.plannedVolume,day.coachNotes,planName(day.trainingPlanId)].filter(Boolean).join(' ').toLowerCase();
@@ -1334,6 +1349,9 @@ function init(){
     }
     renderOptions();
     render();
+  });
+  els.planSearch.addEventListener('input',function(){
+    renderPlanPicker();
   });
   els.selectAllPlansBtn.addEventListener('click',function(){
     selectedPlanIds=[];
