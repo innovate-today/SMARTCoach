@@ -441,7 +441,7 @@ function saveAccountSettings(){
     return;
   }
   if(status){status.textContent='Checking '+key+'...';status.style.color='#555';status.style.fontWeight='700';}
-  checkSmartCoachAccount().then(function(result){
+  checkSmartCoachAccount(key).then(function(result){
     if(!result.ok){
       var err=new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
       err.data=result.data;
@@ -474,9 +474,10 @@ function refreshAppVersion(){
   url.searchParams.set('v',Date.now());
   window.location.replace(url.toString());
 }
-function checkSmartCoachAccount(){
-  var url='/api/smart-trak/account-status?account='+encodeURIComponent(smartCoachAccountKey())+'&v='+Date.now();
-  return fetch(url,{cache:'no-store'}).then(function(r){
+function checkSmartCoachAccount(accountKey){
+  var key=cleanAccountKey(accountKey||smartCoachAccountKey());
+  var url='/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now();
+  return fetch(url,{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   });
 }
@@ -487,7 +488,7 @@ function checkSmartCoachAccount(){
     if(/^\/api\/smart-trak/.test(url)||/^\/api\/ghl/.test(url)){
       init=init||{};
       var headers=new Headers(init.headers||{});
-      headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      if(!headers.has('X-SMARTCoach-Account'))headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
       var accessCode=smartCoachAccessCode();
       if(accessCode)headers.set('X-SMARTCoach-Access-Code',accessCode);
       init.headers=headers;
