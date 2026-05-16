@@ -40,7 +40,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .mixitem.workout{background:#e8eefc;color:#173891}.mixitem.meet{background:#ede9fe;color:#5b21b6}.mixitem.recovery{background:#dcfce7;color:#0a7a44}.mixitem.off{background:#f1f5f9;color:#475569}.mixitem.other{background:#ffedd5;color:#b45309}
 .mixhide{margin-left:auto;background:#eef2f7;color:#172033;font-size:12px;padding:6px 10px}
 .mixshow{background:#eef2f7;color:#172033;font-size:13px;padding:10px 12px}
-.bar{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1fr auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
+.bar{display:grid;grid-template-columns:1.25fr .9fr .9fr .9fr .95fr auto 1fr auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .planpicker{position:relative;min-width:0}
 .pickerbutton{width:100%;background:#fff;color:#111827;border:1px solid var(--line);font-weight:400;text-align:left;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -179,6 +179,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <select id="typeFilter"><option value="all">All day types</option></select>
     <select id="statusFilter"><option value="all">All statuses</option></select>
     <select id="dateFilter"><option value="all">All dates</option><option value="current_week">Current week</option><option value="next_7">Next 7 days</option><option value="next_30">Next 30 days</option><option value="past_due">Past due</option></select>
+    <select id="bulkStatus"><option value="">Set visible days</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select>
+    <button id="bulkStatusBtn" class="secondary" type="button">Apply</button>
     <input id="search" type="search" placeholder="Search calendar" autocomplete="off">
     <button id="mixShowBtn" class="mixshow" type="button" hidden>Show Mix</button>
     <div id="status" class="status">Loading calendar...</div>
@@ -370,6 +372,8 @@ var els={
   typeFilter:document.getElementById('typeFilter'),
   statusFilter:document.getElementById('statusFilter'),
   dateFilter:document.getElementById('dateFilter'),
+  bulkStatus:document.getElementById('bulkStatus'),
+  bulkStatusBtn:document.getElementById('bulkStatusBtn'),
   search:document.getElementById('search'),
   status:document.getElementById('status'),
   weekViewBtn:document.getElementById('weekViewBtn'),
@@ -1012,6 +1016,7 @@ function updateVisibleDayStatus(statusLabel,predicate,reason){
   headers['Content-Type']='application/json';
   els.approveDraftsBtn.disabled=true;
   els.scheduleApprovedBtn.disabled=true;
+  els.bulkStatusBtn.disabled=true;
   els.refreshBtn.disabled=true;
   els.status.textContent='Updating '+items.length+' plan days...';
   fetch('/api/smart-trak/training-plan',{
@@ -1034,7 +1039,31 @@ function updateVisibleDayStatus(statusLabel,predicate,reason){
     render();
   }).finally(function(){
     els.refreshBtn.disabled=false;
+    els.approveDraftsBtn.disabled=false;
+    els.scheduleApprovedBtn.disabled=false;
+    els.bulkStatusBtn.disabled=false;
   });
+}
+function bulkUpdateVisibleStatus(){
+  var statusLabel=els.bulkStatus.value;
+  if(!statusLabel){
+    els.status.textContent='Choose Scheduled, Completed, or Skipped first.';
+    return;
+  }
+  var visible=filteredDays().filter(function(day){
+    return !isRemovedDay(day)&&String(day.status||'').toLowerCase()!==String(statusLabel).toLowerCase();
+  });
+  if(!visible.length){
+    els.status.textContent='No visible plan days need that status.';
+    return;
+  }
+  var reason=window.prompt('Why mark '+visible.length+' visible plan day'+(visible.length===1?'':'s')+' '+statusLabel+'?','Bulk status update from SMART Trak Training Calendar.');
+  if(reason===null)return;
+  reason=String(reason||'Bulk status update from SMART Trak Training Calendar.').trim();
+  if(!window.confirm('Set '+visible.length+' visible plan day'+(visible.length===1?'':'s')+' to '+statusLabel+'?'))return;
+  updateVisibleDayStatus(statusLabel,function(day){
+    return visible.some(function(item){return item.id===day.id||item.sourceRecordId===day.sourceRecordId;});
+  },reason);
 }
 function isDraftDay(day){
   return String(day&&day.status||'').toLowerCase().indexOf('draft')>=0;
@@ -1389,6 +1418,7 @@ function init(){
   els.typeFilter.addEventListener('change',render);
   els.statusFilter.addEventListener('change',render);
   els.dateFilter.addEventListener('change',render);
+  els.bulkStatusBtn.addEventListener('click',bulkUpdateVisibleStatus);
   els.search.addEventListener('input',render);
   els.mixShowBtn.addEventListener('click',function(){
     mixHidden=false;
