@@ -125,6 +125,11 @@ module.exports = async function handler(req, res) {
       res.status(200).json({ success: true, ...result });
       return;
     }
+    if (payload && payload.action === "appendDays") {
+      const result = await appendTrainingPlanDays({ token, locationId, payload });
+      res.status(200).json({ success: true, ...result });
+      return;
+    }
     const plan = normalizePlan(payload);
     const properties = buildTrainingPlanProperties(plan);
 
@@ -354,6 +359,53 @@ async function updateTrainingPlanDayStatuses({ token, locationId, payload }) {
   };
 }
 
+async function appendTrainingPlanDays({ token, locationId, payload }) {
+  const planId = clean(payload && payload.planId);
+  if (!planId) throw httpError(400, "Select an existing training plan first.");
+  const plan = normalizePlan({
+    ...payload,
+    days: Array.isArray(payload && payload.days) ? payload.days : [],
+  });
+  if (!plan.days.length) throw httpError(400, "Add at least one workout day first.");
+
+  const createdDays = [];
+  for (const day of plan.days) {
+    const dayProperties = buildTrainingPlanDayProperties(plan, day, {
+      planRecordId: planId,
+      planSourceRecordId: clean(payload && payload.planSourceRecordId),
+    });
+    const dayRecord = await createObjectRecordWithOptionFallback({
+      token,
+      locationId,
+      schemaKey: TRAINING_PLAN_DAY_SCHEMA_KEY,
+      properties: dayProperties,
+      optionKeys: ["day_type", "workout_type", "energy_system", "status"],
+    });
+    createdDays.push({
+      recordId: dayRecord.id || (dayRecord.record && dayRecord.record.id) || null,
+      sourceRecordId: dayProperties.source_record_id,
+      date: dayProperties.date,
+      title: dayProperties.workout_title,
+    });
+  }
+
+  const endDate = latestDate(plan.days.map((day) => day.date).concat([payload && payload.planEndDate]));
+  if (endDate) {
+    await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(TRAINING_PLAN_SCHEMA_KEY)}/records/${encodeURIComponent(planId)}?locationId=${encodeURIComponent(locationId)}`,
+      method: "PUT",
+      body: { properties: { plan_end_date: endDate } },
+    });
+  }
+
+  return {
+    planId,
+    appendedCount: createdDays.length,
+    days: createdDays,
+  };
+}
+
 function appendPlanDayAudit(notes, reason) {
   const lines = [];
   if (notes) lines.push(notes);
@@ -408,6 +460,10 @@ function parseAssignedAthleteIds(text) {
 function parseAssignedAthleteNames(text) {
   const match = clean(text).match(/Athletes:\s*([^\n]+)/i);
   return match ? match[1].split(",").map(clean).filter(Boolean) : [];
+}
+
+function latestDate(values) {
+  return values.map(dateOnly).filter(Boolean).sort().pop() || "";
 }
 
 async function listTrainingPlanDays({ token, locationId, trainingPlanId, planSourceId, date, groupName }) {
