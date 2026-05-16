@@ -105,6 +105,11 @@ module.exports = async function handler(req, res) {
     }
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    if (payload && payload.action === "archivePlan") {
+      const result = await updateTrainingPlanArchive({ token, locationId, payload });
+      res.status(200).json({ success: true, ...result });
+      return;
+    }
     if (payload && payload.action === "assignAthletes") {
       const assignment = await assignAthletesToPlan({ token, locationId, payload });
       res.status(200).json({ success: true, assignment });
@@ -219,8 +224,33 @@ function normalizeTrainingPlanRecord(record) {
     priorityMeets: prop(props, "priority_meets"),
     noPracticeDates: prop(props, "no_practice_dates"),
     schoolConstraints: prop(props, "school_constraints"),
+    archived: planArchiveState(prop(props, "school_constraints")),
     approvalStatus: labelValue(prop(props, "approval_status")),
     description: prop(props, "workout_description"),
+  };
+}
+
+async function updateTrainingPlanArchive({ token, locationId, payload }) {
+  const planId = clean(payload && payload.planId);
+  const archived = payload && payload.archived !== false;
+  const reason = clean(payload && payload.reason) || (archived ? "Coach archived plan." : "Coach restored plan.");
+  const existingSchoolConstraints = clean(payload && payload.schoolConstraints);
+
+  if (!planId) throw httpError(400, "Select a training plan first.");
+
+  const schoolConstraints = planArchiveBlockText(existingSchoolConstraints, { archived, reason });
+
+  await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(TRAINING_PLAN_SCHEMA_KEY)}/records/${encodeURIComponent(planId)}?locationId=${encodeURIComponent(locationId)}`,
+    method: "PUT",
+    body: { properties: { school_constraints: schoolConstraints || " " } },
+  });
+
+  return {
+    planId,
+    archived,
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -351,6 +381,23 @@ function assignmentBlockText(existingText, assignment) {
     "[/SMARTCoach Assignments]",
   ].join("\n");
   return [base, block].filter(Boolean).join("\n\n");
+}
+
+function planArchiveBlockText(existingText, archive) {
+  const base = clean(existingText).replace(/\n?\[SMARTCoach Plan Archive\][\s\S]*?\[\/SMARTCoach Plan Archive\]\n?/g, "").trim();
+  if (!archive.archived) return base;
+  const block = [
+    "[SMARTCoach Plan Archive]",
+    "Archived: Yes",
+    `Archived At: ${new Date().toISOString()}`,
+    `Archive Reason: ${clean(archive.reason)}`,
+    "[/SMARTCoach Plan Archive]",
+  ].join("\n");
+  return [base, block].filter(Boolean).join("\n\n");
+}
+
+function planArchiveState(text) {
+  return /\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(clean(text));
 }
 
 function parseAssignedAthleteIds(text) {

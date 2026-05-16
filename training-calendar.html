@@ -51,6 +51,12 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .checkline:hover{background:#f8fafc}
 .checkline input{width:auto;margin-top:2px}
 .checkline small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.planrow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;border-radius:7px}
+.planrow:hover{background:#f8fafc}
+.planrow .checkline{min-width:0}
+.planrow .checkline:hover{background:transparent}
+.planarchive{background:#eef2f7;color:#172033;font-size:12px;padding:7px 9px;white-space:nowrap}
+.planarchive.restore{background:#dcfce7;color:var(--good)}
 .planempty{padding:10px;color:var(--muted);font-size:13px}
 .status{color:var(--muted);font-size:13px;text-align:right}
 .viewtabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
@@ -507,6 +513,8 @@ function planEffectiveEndDate(plan){
 }
 function isPastPlan(plan){
   var approval=String(plan&&plan.approvalStatus||'').toLowerCase();
+  if(plan&&plan.archived)return true;
+  if(/\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(String(plan&&plan.schoolConstraints||'')))return true;
   if(approval.indexOf('archiv')>=0||approval.indexOf('inactive')>=0)return true;
   var end=planEffectiveEndDate(plan);
   if(isNaN(end.getTime()))return false;
@@ -589,11 +597,15 @@ function renderPlanPicker(){
   els.planChoiceList.innerHTML=visible.map(function(plan){
     var id=planId(plan);
     var subtitle=planSubtitle(plan);
-    return '<label class="checkline">'+
-      '<input type="checkbox" data-plan-choice="'+esc(id)+'" '+(selected[id]?'checked':'')+'>'+
-      '<span>'+esc(plan.title||'Untitled plan')+(isPastPlan(plan)?' <small>Archived / past</small>':'')+
-        (subtitle?'<small>'+esc(subtitle)+'</small>':'')+
-      '</span></label>';
+    var archived=isPastPlan(plan);
+    return '<div class="planrow">'+
+      '<label class="checkline">'+
+        '<input type="checkbox" data-plan-choice="'+esc(id)+'" '+(selected[id]?'checked':'')+'>'+
+        '<span>'+esc(plan.title||'Untitled plan')+(archived?' <small>Archived / past</small>':'')+
+          (subtitle?'<small>'+esc(subtitle)+'</small>':'')+
+        '</span></label>'+
+      '<button class="planarchive '+(archived?'restore':'')+'" data-plan-archive="'+esc(id)+'" data-plan-restore="'+(archived?'1':'0')+'" type="button">'+(archived?'Restore':'Archive')+'</button>'+
+    '</div>';
   }).join('');
 }
 function searchText(day){
@@ -1064,6 +1076,36 @@ function saveDayEdit(){
     els.dayEditSave.disabled=false;
   });
 }
+function archivePlanFromPicker(planIdValue, restore){
+  var plan=plans.find(function(item){return planId(item)===planIdValue;});
+  if(!plan)return;
+  var action=restore?'restore':'archive';
+  var reason=window.prompt('Why '+action+' this plan?',restore?'Coach restored plan to current list.':'Coach archived completed or old plan.');
+  if(reason===null)return;
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.status.textContent=(restore?'Restoring':'Archiving')+' plan...';
+  fetch('/api/smart-trak/training-plan',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'archivePlan',
+      planId:plan.id||plan.sourceRecordId||planIdValue,
+      archived:!restore,
+      reason:reason,
+      schoolConstraints:plan.schoolConstraints||''
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update plan.');
+    selectedPlanIds=selectedPlanIds.filter(function(id){return id!==planIdValue;});
+    els.status.textContent=restore?'Plan restored.':'Plan archived.';
+    return loadCalendar();
+  }).catch(function(error){
+    els.status.textContent=error.message||'Could not update plan.';
+  });
+}
 function stripAdjustmentLines(value){
   return String(value||'').split(/\r?\n/).filter(function(line){
     return !/^(Adjustment Date|Adjustment Reason):/i.test(line.trim());
@@ -1297,6 +1339,13 @@ function init(){
     }
     renderOptions();
     render();
+  });
+  els.planChoiceList.addEventListener('click',function(event){
+    var button=event.target.closest&&event.target.closest('[data-plan-archive]');
+    if(!button)return;
+    event.preventDefault();
+    event.stopPropagation();
+    archivePlanFromPicker(button.getAttribute('data-plan-archive')||'',button.getAttribute('data-plan-restore')==='1');
   });
   document.addEventListener('click',function(event){
     if(els.planPicker.contains(event.target))return;
