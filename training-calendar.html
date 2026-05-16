@@ -1039,9 +1039,22 @@ function updateVisibleDayStatus(statusLabel,predicate,reason){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update plan days.');
+    var updatedIds={};
+    items.forEach(function(item){updatedIds[item.id]=true;});
+    days=days.map(function(day){
+      var key=dayKey(day);
+      if(!updatedIds[key])return day;
+      var next=Object.assign({},day);
+      next.status=statusLabel;
+      next.coachNotes=[next.coachNotes,'Status changed to '+statusLabel+': '+reason].filter(Boolean).join('\n');
+      pendingStatusUpdates[key]={status:statusLabel,coachNotes:next.coachNotes,expiresAt:Date.now()+15000};
+      return next;
+    });
     selectedBulkDayIds=[];
     els.status.textContent='Updated '+(result.data&&result.data.updatedCount||items.length)+' plan days.';
-    return loadCalendar();
+    renderOptions();
+    render();
+    setTimeout(loadCalendar,1500);
   }).catch(function(error){
     els.status.textContent=error.message||'Could not update plan days.';
     render();
