@@ -115,6 +115,11 @@ module.exports = async function handler(req, res) {
       res.status(200).json({ success: true, day });
       return;
     }
+    if (payload && payload.action === "updateDayStatuses") {
+      const result = await updateTrainingPlanDayStatuses({ token, locationId, payload });
+      res.status(200).json({ success: true, ...result });
+      return;
+    }
     const plan = normalizePlan(payload);
     const properties = buildTrainingPlanProperties(plan);
 
@@ -284,11 +289,55 @@ async function updateTrainingPlanDay({ token, locationId, payload }) {
   };
 }
 
+async function updateTrainingPlanDayStatuses({ token, locationId, payload }) {
+  const status = clean(payload && payload.status);
+  const reason = clean(payload && payload.reason) || `Status changed to ${status}`;
+  const items = Array.isArray(payload && payload.items) ? payload.items : [];
+  const normalizedItems = items.map((item) => ({
+    id: clean(item && item.id),
+    coachNotes: clean(item && item.coachNotes),
+  })).filter((item) => item.id);
+
+  if (!status) throw httpError(400, "Select a status first.");
+  if (!normalizedItems.length) throw httpError(400, "No plan days were selected.");
+
+  let updatedCount = 0;
+  for (const item of normalizedItems) {
+    await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/${encodeURIComponent(item.id)}?locationId=${encodeURIComponent(locationId)}`,
+      method: "PUT",
+      body: {
+        properties: {
+          status: dayStatusValue(status),
+          coach_notes: appendPlanDayStatusAudit(item.coachNotes, status, reason),
+        },
+      },
+    });
+    updatedCount += 1;
+  }
+
+  return {
+    status,
+    updatedCount,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 function appendPlanDayAudit(notes, reason) {
   const lines = [];
   if (notes) lines.push(notes);
   lines.push(`Adjustment Date: ${new Date().toISOString()}`);
   if (reason) lines.push(`Adjustment Reason: ${reason}`);
+  return lines.join("\n");
+}
+
+function appendPlanDayStatusAudit(notes, status, reason) {
+  const lines = [];
+  if (notes) lines.push(notes);
+  lines.push(`Status Update Date: ${new Date().toISOString()}`);
+  lines.push(`Status Updated To: ${clean(status)}`);
+  if (reason) lines.push(`Status Update Reason: ${reason}`);
   return lines.join("\n");
 }
 

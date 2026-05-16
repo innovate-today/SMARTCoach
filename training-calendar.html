@@ -98,6 +98,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <div class="actions">
       <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">SMART Trak</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      <button id="approveDraftsBtn" class="secondary" type="button">Approve Drafts</button>
+      <button id="scheduleApprovedBtn" class="secondary" type="button">Schedule Approved</button>
       <button id="refreshBtn" type="button">Refresh</button>
     </div>
   </section>
@@ -238,6 +240,8 @@ var els={
   accessStatus:document.getElementById('accessStatus'),
   dashboardLink:document.getElementById('dashboardLink'),
   planBuilderLink:document.getElementById('planBuilderLink'),
+  approveDraftsBtn:document.getElementById('approveDraftsBtn'),
+  scheduleApprovedBtn:document.getElementById('scheduleApprovedBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   lastUpdated:document.getElementById('lastUpdated'),
   dayCount:document.getElementById('dayCount'),
@@ -403,6 +407,12 @@ function render(){
   els.completedCount.textContent=completedCount;
   els.needsReviewCount.textContent=reviewCount;
   els.status.textContent=list.length+' days';
+  var draftCount=list.filter(isDraftDay).length;
+  var approvedCount=list.filter(isApprovedDay).length;
+  els.approveDraftsBtn.disabled=!draftCount;
+  els.scheduleApprovedBtn.disabled=!approvedCount;
+  els.approveDraftsBtn.textContent=draftCount?'Approve Drafts ('+draftCount+')':'Approve Drafts';
+  els.scheduleApprovedBtn.textContent=approvedCount?'Schedule Approved ('+approvedCount+')':'Schedule Approved';
   var weeks={};
   list.forEach(function(day){
     var key=weekKeyForDay(day);
@@ -498,6 +508,46 @@ function openEditModal(){
 }
 function closeEditModal(){
   els.dayEditModal.hidden=true;
+}
+function updateVisibleDayStatus(statusLabel,predicate,reason){
+  var items=filteredDays().filter(predicate).map(function(day){
+    return {id:day.id||'', coachNotes:day.coachNotes||''};
+  }).filter(function(item){return item.id;});
+  if(!items.length)return;
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.approveDraftsBtn.disabled=true;
+  els.scheduleApprovedBtn.disabled=true;
+  els.refreshBtn.disabled=true;
+  els.status.textContent='Updating '+items.length+' plan days...';
+  fetch('/api/smart-trak/training-plan',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'updateDayStatuses',
+      status:statusLabel,
+      reason:reason,
+      items:items
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update plan days.');
+    els.status.textContent='Updated '+(result.data&&result.data.updatedCount||items.length)+' plan days.';
+    return loadCalendar();
+  }).catch(function(error){
+    els.status.textContent=error.message||'Could not update plan days.';
+    render();
+  }).finally(function(){
+    els.refreshBtn.disabled=false;
+  });
+}
+function isDraftDay(day){
+  return String(day&&day.status||'').toLowerCase().indexOf('draft')>=0;
+}
+function isApprovedDay(day){
+  var status=String(day&&day.status||'').toLowerCase();
+  return status.indexOf('approved')>=0||status.indexOf('adjusted')>=0;
 }
 function saveDayEdit(){
   if(!activeDay)return;
@@ -616,6 +666,12 @@ function init(){
   els.dashboardLink.href=pageUrl('/dashboard.html');
   els.planBuilderLink.href=pageUrl('/plan-builder.html');
   els.refreshBtn.addEventListener('click',loadCalendar);
+  els.approveDraftsBtn.addEventListener('click',function(){
+    updateVisibleDayStatus('Approved',isDraftDay,'Coach approved visible draft plan days from SMART Trak Training Calendar.');
+  });
+  els.scheduleApprovedBtn.addEventListener('click',function(){
+    updateVisibleDayStatus('Scheduled',isApprovedDay,'Coach scheduled visible approved plan days from SMART Trak Training Calendar.');
+  });
   els.planFilter.addEventListener('change',render);
   els.typeFilter.addEventListener('change',render);
   els.statusFilter.addEventListener('change',render);
