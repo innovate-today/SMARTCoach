@@ -335,7 +335,7 @@ function renderVariableRows(env){
     var required=row.required!==false;
     var status=required?'Required':row.recommended?'Recommended':'Optional';
     var statusClass=required?'':row.recommended?' recommended':' optional';
-    return '<div class="varrow"><div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta'+statusClass+'">'+status+'</em></div><code title="'+esc(row.key)+'">'+esc(row.label||row.key)+'</code></div><div class="varfield"><div class="varlabel"><span>Value</span></div><input value="'+esc(row.value)+'" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" oninput="updateVariableValue('+index+',this.value)"></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Setup Field</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
+    return '<div class="varrow"><div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta'+statusClass+'">'+status+'</em></div><code title="'+esc(row.label||row.key)+'">'+esc(row.key)+'</code></div><div class="varfield"><div class="varlabel"><span>Value</span></div><input value="'+esc(row.value)+'" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" oninput="updateVariableValue('+index+',this.value)"></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Setup Field</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
 }
 function updateVariableValue(index,value){

@@ -92,7 +92,7 @@ function accountSetup(req, res) {
   const requestedPlan = firstQueryValue(req.query && (req.query.plan || req.query.productPlan)) || "pro";
   const productPlan = normalizeSetupProductPlan(requestedPlan);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
-  const { token, locationId } = getGhlContext({ ...req, query: { ...req.query, account: accountKey } });
+  const { token, locationId } = getGhlContext({ query: { account: accountKey }, headers: {} });
   const configured = !!(token && locationId);
 
   const env = [
