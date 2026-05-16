@@ -13,7 +13,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .page{max-width:1480px;margin:0 auto;padding:22px 18px 32px}
 body.embedded .page{max-width:none;padding:16px 18px 28px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.top{position:sticky;top:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:0 14px 32px rgba(15,23,42,.14)}
 .brand{display:flex;align-items:center;gap:12px}
 .mark{width:64px;height:64px;display:grid;place-items:center;flex:0 0 64px}
 .mark img{display:block;max-width:64px;max-height:64px;object-fit:contain}
@@ -35,6 +35,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .status{color:var(--muted);font-size:13px;text-align:right;min-width:150px}
 .split{display:grid;grid-template-columns:minmax(320px,.42fr) minmax(620px,1fr);gap:14px;align-items:start}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.results-panel{max-height:72vh;display:flex;flex-direction:column;min-height:520px}
 .panelhead{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .panelhead h2{font-size:16px;margin:0}
 .panelhead span{font-size:12px;color:var(--muted)}
@@ -56,6 +57,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .pill.pb{background:#dbeafe;color:#1d4ed8}
 .pill.sb{background:#fef3c7;color:#92400e}
 .tablewrap{overflow:auto}
+.results-panel .tablewrap{flex:1;min-height:320px;scrollbar-gutter:stable}
 table{width:100%;border-collapse:collapse;min-width:900px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
@@ -142,7 +144,7 @@ tr:last-child td{border-bottom:0}
       <div id="meetEmpty" class="empty" hidden>No meets in this view.</div>
     </section>
 
-    <section class="panel">
+    <section class="panel results-panel">
       <div class="panelhead">
         <h2 id="resultsTitle">Results</h2>
         <span id="resultListCount">--</span>

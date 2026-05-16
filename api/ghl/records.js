@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
 
   if (!requireProPlan(req, res)) return;
 
-  if (req.method !== "GET") {
+  if (req.method !== "GET" && req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
@@ -51,6 +51,33 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    if (req.method === "POST") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      const rows = Array.isArray(payload && payload.records) ? payload.records : [];
+      if (!rows.length) throw httpError(400, "Add at least one record before saving.");
+      const created = [];
+      for (const row of rows) {
+        const properties = buildRecordProperties(row);
+        const result = await ghlFetch({
+          token,
+          path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records`,
+          method: "POST",
+          body: { locationId, properties },
+        });
+        created.push({
+          recordId: result.id || (result.record && result.record.id) || "",
+          sourceRecordId: properties.source_record_id,
+          recordName: properties.record,
+        });
+      }
+      res.status(200).json({
+        success: true,
+        createdCount: created.length,
+        created,
+      });
+      return;
+    }
+
     const records = await listRecords({ token, locationId });
     res.status(200).json({
       success: true,
@@ -64,8 +91,71 @@ module.exports = async function handler(req, res) {
 
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code");
+}
+
+function buildRecordProperties(row) {
+  const normalized = normalizeRecordPayload(row);
+  const recordName = normalized.recordName || [
+    normalized.athleteName,
+    normalized.recordType,
+    normalized.event,
+    normalized.resultDisplay || normalized.resultMark,
+  ].filter(Boolean).join(" - ");
+
+  if (!normalized.recordType) throw httpError(400, "Record type is required.");
+  if (!normalized.recordScope) throw httpError(400, "Record scope is required.");
+  if (!normalized.event) throw httpError(400, "Event is required.");
+  if (!normalized.resultDisplay && !normalized.resultMark) throw httpError(400, "Result is required.");
+  if (!normalized.recordDate) throw httpError(400, "Date is required.");
+
+  return compactProperties({
+    record: recordName,
+    record_type: optionValue(normalized.recordType),
+    record_scope: optionValue(normalized.recordScope),
+    sport: optionValue(normalized.sport),
+    event: normalized.event,
+    result_display: normalized.resultDisplay,
+    result_ms: normalized.resultMs,
+    result_mark: normalized.resultMark,
+    athlete_name_snapshot: normalized.athleteName,
+    meet_name: normalized.meetName,
+    record_date: normalized.recordDate,
+    season: optionValue(normalized.season),
+    season_year: normalized.seasonYear,
+    is_current: normalized.isCurrent ? "Yes" : "No",
+    previous_record_display: normalized.previousRecordDisplay,
+    previous_record_holder: normalized.previousRecordHolder,
+    record_notes: normalized.recordNotes,
+    source_system: "SMART Trak Manual Record Entry",
+    source_record_id: normalized.sourceRecordId || buildManualSourceRecordId(normalized),
+  });
+}
+
+function normalizeRecordPayload(row) {
+  const recordDate = dateOnly(row && (row.recordDate || row.date));
+  const resultDisplay = clean(row && (row.resultDisplay || row.result));
+  return {
+    recordName: clean(row && row.recordName),
+    recordType: clean(row && row.recordType),
+    recordScope: clean(row && row.recordScope),
+    sport: clean(row && row.sport) || "Track",
+    event: clean(row && row.event),
+    resultDisplay,
+    resultMs: Number(row && row.resultMs) || parseTimeToMs(resultDisplay) || null,
+    resultMark: clean(row && row.resultMark),
+    athleteName: clean(row && row.athleteName),
+    meetName: clean(row && row.meetName),
+    recordDate,
+    season: clean(row && row.season),
+    seasonYear: Number(row && row.seasonYear) || (recordDate ? Number(recordDate.slice(0, 4)) : null),
+    isCurrent: row && typeof row.isCurrent !== "undefined" ? yes(row.isCurrent) : true,
+    previousRecordDisplay: clean(row && row.previousRecordDisplay),
+    previousRecordHolder: clean(row && row.previousRecordHolder),
+    recordNotes: clean(row && row.recordNotes),
+    sourceRecordId: clean(row && row.sourceRecordId),
+  };
 }
 
 async function listRecords({ token, locationId }) {
@@ -199,6 +289,53 @@ function labelValue(value) {
 
 function yes(value) {
   return /^(yes|true|1|on|current)$/i.test(clean(value));
+}
+
+function optionValue(value) {
+  return clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function dateOnly(value) {
+  const text = clean(value);
+  if (!text) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+}
+
+function parseTimeToMs(value) {
+  const text = clean(value).toLowerCase().replace(/s$/, "");
+  const parts = text.split(":").map((part) => part.trim());
+  if (!parts.length || parts.some((part) => part === "" || Number.isNaN(Number(part)))) return null;
+  if (parts.length === 1) return Math.round(Number(parts[0]) * 1000);
+  if (parts.length === 2) return Math.round((Number(parts[0]) * 60 + Number(parts[1])) * 1000);
+  if (parts.length === 3) return Math.round((Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2])) * 1000);
+  return null;
+}
+
+function compactProperties(properties) {
+  return Object.keys(properties).reduce((cleaned, key) => {
+    const value = properties[key];
+    if (value === "" || value === null || typeof value === "undefined") return cleaned;
+    cleaned[key] = value;
+    return cleaned;
+  }, {});
+}
+
+function slugValue(value) {
+  return clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function buildManualSourceRecordId(row) {
+  return [
+    "manual_record",
+    slugValue(row.recordScope),
+    slugValue(row.recordType),
+    slugValue(row.event),
+    slugValue(row.athleteName || row.meetName || "team"),
+    slugValue(row.recordDate),
+    Date.now().toString(36),
+  ].filter(Boolean).join("_");
 }
 
 function sortRecords(a, b) {

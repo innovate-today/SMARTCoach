@@ -13,7 +13,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .page{max-width:1480px;margin:0 auto;padding:22px 18px 32px}
 body.embedded .page{max-width:none;padding:16px 18px 28px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.top{position:sticky;top:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:0 14px 32px rgba(15,23,42,.14)}
 .brand{display:flex;align-items:center;gap:12px}
 .mark{width:64px;height:64px;display:grid;place-items:center;flex:0 0 64px}
 .mark img{display:block;max-width:64px;max-height:64px;object-fit:contain}
@@ -33,6 +33,22 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .bar{display:grid;grid-template-columns:1fr 210px 210px 190px auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .status{color:var(--muted);font-size:13px;text-align:right;min-width:150px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.panelhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panelhead h2{font-size:18px;margin:0}
+.panelbody{padding:14px 16px}
+.bulkgrid{display:grid;grid-template-columns:1fr;gap:10px}
+.bulkhelp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.bulkhelp div{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:9px 10px;color:#334155;font-size:13px;line-height:1.35}
+.bulkhelp b{display:block;color:#111827;margin-bottom:2px}
+textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;min-height:130px;resize:vertical;line-height:1.45}
+.bulkactions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bulkactions .left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bulkstatus{color:var(--muted);font-size:13px;font-weight:800}
+.hint{color:var(--muted);font-size:13px;line-height:1.45}
+.bulkpreview{border:1px solid var(--line);border-radius:8px;overflow:auto;background:#fff;max-height:280px}
+.bulkpreview table{min-width:980px}
+.bulkpreview th{position:sticky;top:0}
 .tablewrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto}
 table{width:100%;border-collapse:collapse;min-width:1180px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
@@ -60,6 +76,7 @@ tr:last-child td{border-bottom:0}
   .actions a,.actions button{flex:1;text-align:center}
   .cards{grid-template-columns:1fr 1fr}
   .bar{grid-template-columns:1fr}
+  .bulkhelp{grid-template-columns:1fr}
   .status{text-align:left}
 }
 </style>
@@ -98,6 +115,30 @@ tr:last-child td{border-bottom:0}
     <div id="status" class="status">Loading records...</div>
   </section>
 
+  <section class="panel">
+    <div class="panelhead">
+      <h2>Bulk Record Entry</h2>
+      <div id="bulkStatus" class="bulkstatus">Paste records, preview, then save.</div>
+    </div>
+    <div class="panelbody bulkgrid">
+      <div class="bulkhelp">
+        <div><b>1. Paste rows</b>Use the header row below or paste from a spreadsheet.</div>
+        <div><b>2. Preview</b>Check that each value stayed in the correct column.</div>
+        <div><b>3. Save</b>Records are saved to SMART Trak and then the page refreshes.</div>
+      </div>
+      <textarea id="bulkText" placeholder="Record Type,Record Scope,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;School Record,Varsity,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
+      <div class="bulkactions">
+        <div class="left">
+          <button id="previewBulkBtn" type="button">Preview Records</button>
+          <button id="saveBulkBtn" class="secondary" type="button" disabled>Save Records</button>
+          <button id="clearBulkBtn" class="ghost" type="button">Clear</button>
+        </div>
+        <span class="hint">Required: type, scope, event, result, date.</span>
+      </div>
+      <div id="bulkPreview" class="bulkpreview" hidden></div>
+    </div>
+  </section>
+
   <section class="tablewrap">
     <table>
       <thead>
@@ -131,6 +172,7 @@ tr:last-child td{border-bottom:0}
 
 <script>
 var records=[];
+var bulkRows=[];
 var recordSort={key:'event',dir:'asc'};
 var els={
   mainPage:document.getElementById('mainPage'),
@@ -152,6 +194,12 @@ var els={
   eventFilter:document.getElementById('eventFilter'),
   clearBtn:document.getElementById('clearBtn'),
   status:document.getElementById('status'),
+  bulkStatus:document.getElementById('bulkStatus'),
+  bulkText:document.getElementById('bulkText'),
+  previewBulkBtn:document.getElementById('previewBulkBtn'),
+  saveBulkBtn:document.getElementById('saveBulkBtn'),
+  clearBulkBtn:document.getElementById('clearBulkBtn'),
+  bulkPreview:document.getElementById('bulkPreview'),
   rows:document.getElementById('rows'),
   empty:document.getElementById('empty')
 };
@@ -195,6 +243,14 @@ function formatDate(value){
   if(isNaN(date.getTime()))return value;
   return date.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
 }
+function dateOnly(value){
+  var text=String(value||'').trim();
+  if(!text)return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(text))return text;
+  var date=new Date(text);
+  if(isNaN(date.getTime()))return text;
+  return date.toISOString().slice(0,10);
+}
 function formatDateTime(value){
   var date=new Date(value);
   if(isNaN(date.getTime()))return '';
@@ -213,6 +269,91 @@ function parseResultMs(value){
 }
 function searchText(row){
   return [row.recordName,row.recordType,row.recordScope,row.sport,row.event,row.resultDisplay,row.resultMark,row.athleteName,row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
+}
+function setBulkStatus(text,type){
+  els.bulkStatus.textContent=text||'';
+  els.bulkStatus.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':type==='warn'?'var(--warn)':'var(--muted)';
+}
+function parseCsvLine(line){
+  var out=[],cur='',quoted=false;
+  for(var i=0;i<line.length;i+=1){
+    var ch=line[i];
+    if(ch==='"'&&line[i+1]==='"'){cur+='"';i+=1;continue;}
+    if(ch==='"'){quoted=!quoted;continue;}
+    if(ch===','&&!quoted){out.push(cur.trim());cur='';continue;}
+    cur+=ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
+function splitRecordLine(line){return String(line||'').indexOf('\t')>=0?String(line||'').split(/\t/).map(function(col){return col.trim();}):parseCsvLine(line);}
+function recordHeaderMap(cols){
+  var map={};
+  cols.forEach(function(col,index){
+    var key=String(col||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
+    if(normalized)map[normalized]=index;
+  });
+  return map.recordType!=null||map.event!=null?map:{};
+}
+function normalizeBulkRecord(values,index){
+  var row={recordType:values.recordType||'',recordScope:values.recordScope||'',sport:values.sport||'Track',event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
+  if(!row.seasonYear&&row.recordDate)row.seasonYear=row.recordDate.slice(0,4);
+  row.rowNumber=index+1;
+  return row;
+}
+function parseBulkRecords(text){
+  var lines=String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
+  if(!lines.length)return[];
+  var first=splitRecordLine(lines[0]);
+  var headers=recordHeaderMap(first);
+  if(Object.keys(headers).length)lines.shift();
+  return lines.map(function(line,index){
+    var cols=splitRecordLine(line);
+    if(Object.keys(headers).length){
+      var value=function(key){return headers[key]!=null?cols[headers[key]]||'':'';};
+      return normalizeBulkRecord({recordType:value('recordType'),recordScope:value('recordScope'),sport:value('sport'),event:value('event'),resultDisplay:value('resultDisplay'),resultMark:value('resultMark'),athleteName:value('athleteName'),meetName:value('meetName'),recordDate:value('recordDate'),season:value('season'),seasonYear:value('seasonYear'),previousRecordDisplay:value('previousRecordDisplay'),previousRecordHolder:value('previousRecordHolder'),recordNotes:value('recordNotes')},index);
+    }
+    return normalizeBulkRecord({recordType:cols[0],recordScope:cols[1],sport:cols[2],event:cols[3],resultDisplay:cols[4],athleteName:cols[5],meetName:cols[6],recordDate:cols[7],season:cols[8],seasonYear:cols[9],previousRecordDisplay:cols[10],previousRecordHolder:cols[11],recordNotes:cols[12]},index);
+  }).filter(function(row){return row.recordType||row.event||row.resultDisplay||row.athleteName;});
+}
+function bulkIssues(rows){
+  return rows.filter(function(row){return !row.recordType||!row.recordScope||!row.event||(!row.resultDisplay&&!row.resultMark)||!row.recordDate;}).map(function(row){return row.rowNumber;});
+}
+function renderBulkPreview(){
+  var issues=bulkIssues(bulkRows);
+  els.saveBulkBtn.disabled=!bulkRows.length||!!issues.length;
+  if(!bulkRows.length){
+    els.bulkPreview.hidden=true;
+    els.bulkPreview.innerHTML='';
+    setBulkStatus('No records loaded yet.','');
+    return;
+  }
+  els.bulkPreview.hidden=false;
+  els.bulkPreview.innerHTML='<table><thead><tr><th>Type</th><th>Scope</th><th>Event</th><th>Result</th><th>Athlete</th><th>Meet</th><th>Date</th><th>Season</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.recordType)+'</td><td>'+esc(row.recordScope)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
+  setBulkStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):bulkRows.length+' records ready to save.',issues.length?'bad':'good');
+}
+function saveBulkRecords(){
+  var issues=bulkIssues(bulkRows);
+  if(!bulkRows.length||issues.length){setBulkStatus(issues.length?'Fix required fields first.':'Preview records before saving.','bad');return;}
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.saveBulkBtn.disabled=true;
+  setBulkStatus('Saving records...','');
+  fetch('/api/ghl/records',{method:'POST',headers:headers,body:JSON.stringify({records:bulkRows})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Records could not be saved.');
+    setBulkStatus('Saved '+(result.data.createdCount||bulkRows.length)+' records. Refreshing list...','good');
+    bulkRows=[];
+    els.bulkText.value='';
+    renderBulkPreview();
+    return loadRecords();
+  }).catch(function(error){
+    els.saveBulkBtn.disabled=false;
+    setBulkStatus(error.message||'Records could not be saved.','bad');
+  });
 }
 function fillSelect(select,label,values){
   var previous=select.value||'all';
@@ -372,6 +513,22 @@ function init(){
     recordSort={key:'event',dir:'asc'};
     render();
   });
+  els.previewBulkBtn.addEventListener('click',function(){
+    bulkRows=parseBulkRecords(els.bulkText.value);
+    renderBulkPreview();
+  });
+  els.bulkText.addEventListener('input',function(){
+    bulkRows=[];
+    els.saveBulkBtn.disabled=true;
+    els.bulkPreview.hidden=true;
+    setBulkStatus('Paste records, preview, then save.','');
+  });
+  els.clearBulkBtn.addEventListener('click',function(){
+    bulkRows=[];
+    els.bulkText.value='';
+    renderBulkPreview();
+  });
+  els.saveBulkBtn.addEventListener('click',saveBulkRecords);
   els.accessSubmit.addEventListener('click',submitAccess);
   els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});
   loadRecords();
