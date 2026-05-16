@@ -27,6 +27,13 @@
       ]
     },
     {
+      "source": "/plan-import.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
+    },
+    {
       "source": "/onboarding.html",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },

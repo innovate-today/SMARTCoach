@@ -188,6 +188,7 @@ tr:last-child td{border-bottom:0}
       <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
       <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
       <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
+      <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Import</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
       <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
@@ -786,6 +787,8 @@ function applySmartCoachLinks(){
   if(records)records.href=smartCoachPageUrl('/records.html');
   var trainingCalendar=document.getElementById('trainingCalendarLink');
   if(trainingCalendar)trainingCalendar.href=smartCoachPageUrl('/training-calendar.html');
+  var planImport=document.getElementById('planImportLink');
+  if(planImport)planImport.href=smartCoachPageUrl('/plan-import.html');
   var planBuilder=document.getElementById('planBuilderLink');
   if(planBuilder)planBuilder.href=smartCoachPageUrl('/plan-builder.html');
   var stopwatch=document.getElementById('essentialStopwatchLink');
