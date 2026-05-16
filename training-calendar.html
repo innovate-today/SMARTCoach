@@ -262,6 +262,7 @@ var days=[];
 var activeDay=null;
 var viewMode='week';
 var listSort={key:'date',dir:'asc'};
+var pendingStatusUpdates={};
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -381,6 +382,23 @@ function addDays(date,daysToAdd){
 function planName(id){
   var plan=plans.find(function(item){return item.id===id||item.sourceRecordId===id;});
   return plan ? plan.title : '';
+}
+function dayKey(day){
+  return String(day&&day.id||day&&day.sourceRecordId||'');
+}
+function applyPendingDayUpdates(list){
+  var now=Date.now();
+  Object.keys(pendingStatusUpdates).forEach(function(key){
+    if(pendingStatusUpdates[key].expiresAt<now)delete pendingStatusUpdates[key];
+  });
+  return list.map(function(day){
+    var pending=pendingStatusUpdates[dayKey(day)];
+    if(!pending)return day;
+    var next=Object.assign({},day);
+    next.status=pending.status;
+    if(pending.coachNotes)next.coachNotes=pending.coachNotes;
+    return next;
+  });
 }
 function renderOptions(){
   var currentPlan=els.planFilter.value||'all';
@@ -700,6 +718,7 @@ function quickUpdateActiveDayStatus(statusLabel){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update plan day.');
     activeDay.status=statusLabel;
     activeDay.coachNotes=[activeDay.coachNotes,'Status changed to '+statusLabel+': '+reason].filter(Boolean).join('\n');
+    pendingStatusUpdates[dayKey(activeDay)]={status:statusLabel,coachNotes:activeDay.coachNotes,expiresAt:Date.now()+15000};
     days=days.map(function(day){
       return day.id===activeDay.id||day.sourceRecordId===activeDay.sourceRecordId ? activeDay : day;
     });
@@ -848,7 +867,7 @@ function loadCalendar(){
     if(!results[0].ok)throw new Error(results[0].data&&results[0].data.error||'Plans failed to load.');
     if(!results[1].ok)throw new Error(results[1].data&&results[1].data.error||'Plan days failed to load.');
     plans=results[0].data.plans||[];
-    days=results[1].data.days||[];
+    days=applyPendingDayUpdates(results[1].data.days||[]);
     els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
     renderOptions();
     render();
