@@ -47,11 +47,13 @@ function accountStatus(req, res) {
 
   const { accountKey, token, locationId, productPlan, accessCode, logoUrl } = getGhlContext(req);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  const tokenKey = accountKey === "default" ? "GHL_PRIVATE_INTEGRATION_TOKEN" : `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`;
+  const locationKey = accountKey === "default" ? "GHL_LOCATION_ID" : `GHL_LOCATION_ID_${suffix}`;
   const crmConfigured = !!(token && locationId);
   const configured = productPlan === "essential" || crmConfigured;
   const missing = [];
-  if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}` });
-  if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: `GHL_LOCATION_ID_${suffix}` });
+  if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: tokenKey });
+  if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
   res.status(configured ? 200 : 404).json({
     success: configured,
     accountKey,

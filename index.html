@@ -373,6 +373,16 @@ function setSmartCoachAccountKey(value){
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
 }
+function clearAccountUrlOverride(){
+  try{
+    var url=new URL(window.location.href);
+    var changed=false;
+    ['account','tenant'].forEach(function(key){
+      if(url.searchParams.has(key)){url.searchParams.delete(key);changed=true;}
+    });
+    if(changed)window.history.replaceState(null,'',url.pathname+(url.search||'')+(url.hash||''));
+  }catch(e){}
+}
 function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();
 }
@@ -421,6 +431,7 @@ function saveAccountSettings(){
   var status=document.getElementById('account-status');
   var key=setSmartCoachAccountKey(input&&input.value);
   var plan=setProductPlan(planInput&&planInput.value);
+  clearAccountUrlOverride();
   if(input)input.value=key;
   applyPlanMode();
   if(plan==='essential'){
@@ -464,7 +475,8 @@ function refreshAppVersion(){
   window.location.replace(url.toString());
 }
 function checkSmartCoachAccount(){
-  return fetch('/api/smart-trak/account-status',{cache:'no-store'}).then(function(r){
+  var url='/api/smart-trak/account-status?account='+encodeURIComponent(smartCoachAccountKey())+'&v='+Date.now();
+  return fetch(url,{cache:'no-store'}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   });
 }
