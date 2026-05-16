@@ -42,6 +42,16 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .mixshow{background:#eef2f7;color:#172033;font-size:13px;padding:10px 12px}
 .bar{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1fr auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
+.planpicker{position:relative;min-width:0}
+.pickerbutton{width:100%;background:#fff;color:#111827;border:1px solid var(--line);font-weight:400;text-align:left;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.planmenu{position:absolute;z-index:15;top:calc(100% + 6px);left:0;width:min(420px,90vw);max-height:420px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 16px 36px rgba(15,23,42,.22);padding:10px}
+.planquick{display:flex;gap:8px;margin:8px 0}
+.planquick button{flex:1;background:#eef2f7;color:#172033;font-size:12px;padding:8px 10px}
+.checkline{display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:7px;font-size:13px;line-height:1.25;cursor:pointer}
+.checkline:hover{background:#f8fafc}
+.checkline input{width:auto;margin-top:2px}
+.checkline small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.planempty{padding:10px;color:var(--muted);font-size:13px}
 .status{color:var(--muted);font-size:13px;text-align:right}
 .viewtabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .viewtab{background:#fff;color:#172033;border:1px solid var(--line)}
@@ -145,7 +155,17 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   <section id="mixBar" class="mixbar" aria-label="Visible plan mix"></section>
 
   <section class="bar">
-    <select id="planFilter"><option value="all">All plans</option></select>
+    <div id="planPicker" class="planpicker">
+      <button id="planPickerBtn" class="pickerbutton" type="button">All current plans</button>
+      <div id="planPickerMenu" class="planmenu" hidden>
+        <label class="checkline"><input id="includePastPlans" type="checkbox"> Include past plans</label>
+        <div class="planquick">
+          <button id="selectAllPlansBtn" type="button">All visible</button>
+          <button id="clearPlansBtn" type="button">Clear selected</button>
+        </div>
+        <div id="planChoiceList"></div>
+      </div>
+    </div>
     <select id="typeFilter"><option value="all">All day types</option></select>
     <select id="statusFilter"><option value="all">All statuses</option></select>
     <select id="dateFilter"><option value="all">All dates</option><option value="current_week">Current week</option><option value="next_7">Next 7 days</option><option value="next_30">Next 30 days</option><option value="past_due">Past due</option></select>
@@ -277,6 +297,8 @@ var viewMode='week';
 var listSort={key:'date',dir:'asc'};
 var pendingStatusUpdates={};
 var mixHidden=false;
+var selectedPlanIds=[];
+var includePastPlans=false;
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -297,7 +319,13 @@ var els={
   needsReviewCount:document.getElementById('needsReviewCount'),
   mixBar:document.getElementById('mixBar'),
   mixShowBtn:document.getElementById('mixShowBtn'),
-  planFilter:document.getElementById('planFilter'),
+  planPicker:document.getElementById('planPicker'),
+  planPickerBtn:document.getElementById('planPickerBtn'),
+  planPickerMenu:document.getElementById('planPickerMenu'),
+  includePastPlans:document.getElementById('includePastPlans'),
+  selectAllPlansBtn:document.getElementById('selectAllPlansBtn'),
+  clearPlansBtn:document.getElementById('clearPlansBtn'),
+  planChoiceList:document.getElementById('planChoiceList'),
   typeFilter:document.getElementById('typeFilter'),
   statusFilter:document.getElementById('statusFilter'),
   dateFilter:document.getElementById('dateFilter'),
@@ -410,6 +438,59 @@ function planName(id){
   var plan=plans.find(function(item){return item.id===id||item.sourceRecordId===id;});
   return plan ? plan.title : '';
 }
+function planId(plan){
+  return String(plan&&plan.id||plan&&plan.sourceRecordId||'');
+}
+function planAliases(plan){
+  return [plan&&plan.id,plan&&plan.sourceRecordId].filter(Boolean).map(function(id){return String(id);});
+}
+function planSubtitle(plan){
+  return [plan.season,plan.seasonYear,plan.assignedGroup||plan.athleteName,plan.startDate&&plan.endDate?plan.startDate+' to '+plan.endDate:''].filter(Boolean).join(' · ');
+}
+function planEffectiveEndDate(plan){
+  var end=parseCalendarDate(plan&&plan.endDate);
+  if(!isNaN(end.getTime()))return end;
+  var ids=[plan&&plan.id,plan&&plan.sourceRecordId].filter(Boolean).map(function(id){return String(id).toLowerCase();});
+  var latest=null;
+  days.forEach(function(day){
+    if(ids.indexOf(String(day.trainingPlanId||'').toLowerCase())===-1)return;
+    var date=parseCalendarDate(day.date);
+    if(isNaN(date.getTime()))return;
+    if(!latest||date>latest)latest=date;
+  });
+  return latest||end;
+}
+function isPastPlan(plan){
+  var approval=String(plan&&plan.approvalStatus||'').toLowerCase();
+  if(approval.indexOf('archiv')>=0||approval.indexOf('inactive')>=0)return true;
+  var end=planEffectiveEndDate(plan);
+  if(isNaN(end.getTime()))return false;
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  return end<today;
+}
+function visiblePlans(){
+  return plans.filter(function(plan){return includePastPlans||!isPastPlan(plan);});
+}
+function selectedPlanSet(){
+  var set={};
+  selectedPlanIds.forEach(function(id){set[id]=true;});
+  return set;
+}
+function allowedPlanSet(){
+  var visible=visiblePlans();
+  var set={};
+  if(selectedPlanIds.length){
+    selectedPlanIds.forEach(function(id){
+      set[id]=true;
+      var plan=plans.find(function(item){return planId(item)===id;});
+      if(plan)planAliases(plan).forEach(function(alias){set[alias]=true;});
+    });
+  }else{
+    visible.forEach(function(plan){planAliases(plan).forEach(function(alias){set[alias]=true;});});
+  }
+  return set;
+}
 function dayKey(day){
   return String(day&&day.id||day&&day.sourceRecordId||'');
 }
@@ -428,12 +509,11 @@ function applyPendingDayUpdates(list){
   });
 }
 function renderOptions(){
-  var currentPlan=els.planFilter.value||'all';
   var type=els.typeFilter.value||'all';
   var status=els.statusFilter.value||'all';
-  els.planFilter.innerHTML='<option value="all">All plans</option>'+plans.map(function(plan){
-    return '<option value="'+esc(plan.id||plan.sourceRecordId)+'">'+esc(plan.title||'Untitled plan')+'</option>';
-  }).join('');
+  var allPlanIds={};
+  plans.forEach(function(plan){allPlanIds[planId(plan)]=true;});
+  selectedPlanIds=selectedPlanIds.filter(function(id){return allPlanIds[id];});
   var types={};
   var statuses={};
   days.forEach(function(day){
@@ -442,22 +522,47 @@ function renderOptions(){
   });
   els.typeFilter.innerHTML='<option value="all">All day types</option>'+Object.keys(types).sort().map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
   els.statusFilter.innerHTML='<option value="all">All statuses</option>'+Object.keys(statuses).sort().map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
-  els.planFilter.value=Array.prototype.some.call(els.planFilter.options,function(option){return option.value===currentPlan;})?currentPlan:'all';
   els.typeFilter.value=Object.prototype.hasOwnProperty.call(types,type)?type:'all';
   els.statusFilter.value=Object.prototype.hasOwnProperty.call(statuses,status)?status:'all';
+  renderPlanPicker();
+}
+function renderPlanPicker(){
+  var visible=visiblePlans();
+  var selected=selectedPlanSet();
+  els.includePastPlans.checked=includePastPlans;
+  if(selectedPlanIds.length===0){
+    els.planPickerBtn.textContent=includePastPlans?'All plans':'All current plans';
+  }else if(selectedPlanIds.length===1){
+    els.planPickerBtn.textContent=planName(selectedPlanIds[0])||'1 selected plan';
+  }else{
+    els.planPickerBtn.textContent=selectedPlanIds.length+' selected plans';
+  }
+  if(!visible.length){
+    els.planChoiceList.innerHTML='<div class="planempty">No current plans. Turn on past plans to review older seasons.</div>';
+    return;
+  }
+  els.planChoiceList.innerHTML=visible.map(function(plan){
+    var id=planId(plan);
+    var subtitle=planSubtitle(plan);
+    return '<label class="checkline">'+
+      '<input type="checkbox" data-plan-choice="'+esc(id)+'" '+(selected[id]?'checked':'')+'>'+
+      '<span>'+esc(plan.title||'Untitled plan')+(isPastPlan(plan)?' <small>Archived / past</small>':'')+
+        (subtitle?'<small>'+esc(subtitle)+'</small>':'')+
+      '</span></label>';
+  }).join('');
 }
 function searchText(day){
   return [day.title,day.details,day.dayType,day.status,day.workoutType,day.energySystem,day.groupName,day.athleteName,day.targetSplits,day.plannedVolume,day.coachNotes,planName(day.trainingPlanId)].filter(Boolean).join(' ').toLowerCase();
 }
 function filteredDays(){
   var query=String(els.search.value||'').trim().toLowerCase();
-  var selectedPlan=els.planFilter.value||'all';
+  var planSet=allowedPlanSet();
   var type=els.typeFilter.value||'all';
   var status=els.statusFilter.value||'all';
   var dateRange=els.dateFilter.value||'all';
   return days.filter(function(day){
     if(status==='all'&&isRemovedDay(day))return false;
-    if(selectedPlan!=='all'&&day.trainingPlanId!==selectedPlan)return false;
+    if(!planSet[String(day.trainingPlanId||'')])return false;
     if(type!=='all'&&day.dayType!==type)return false;
     if(status!=='all'&&day.status!==status)return false;
     if(!matchesDateRange(day,dateRange))return false;
@@ -991,7 +1096,45 @@ function init(){
   els.scheduleApprovedBtn.addEventListener('click',function(){
     updateVisibleDayStatus('Scheduled',isApprovedDay,'Coach scheduled visible approved plan days from SMART Trak Training Calendar.');
   });
-  els.planFilter.addEventListener('change',render);
+  els.planPickerBtn.addEventListener('click',function(){
+    els.planPickerMenu.hidden=!els.planPickerMenu.hidden;
+  });
+  els.includePastPlans.addEventListener('change',function(){
+    includePastPlans=els.includePastPlans.checked;
+    if(!includePastPlans){
+      var visibleIds={};
+      visiblePlans().forEach(function(plan){visibleIds[planId(plan)]=true;});
+      selectedPlanIds=selectedPlanIds.filter(function(id){return visibleIds[id];});
+    }
+    renderOptions();
+    render();
+  });
+  els.selectAllPlansBtn.addEventListener('click',function(){
+    selectedPlanIds=[];
+    renderOptions();
+    render();
+  });
+  els.clearPlansBtn.addEventListener('click',function(){
+    selectedPlanIds=[];
+    renderOptions();
+    render();
+  });
+  els.planChoiceList.addEventListener('change',function(event){
+    var input=event.target.closest&&event.target.closest('[data-plan-choice]');
+    if(!input)return;
+    var id=input.getAttribute('data-plan-choice')||'';
+    if(input.checked){
+      if(selectedPlanIds.indexOf(id)===-1)selectedPlanIds.push(id);
+    }else{
+      selectedPlanIds=selectedPlanIds.filter(function(item){return item!==id;});
+    }
+    renderOptions();
+    render();
+  });
+  document.addEventListener('click',function(event){
+    if(els.planPicker.contains(event.target))return;
+    els.planPickerMenu.hidden=true;
+  });
   els.typeFilter.addEventListener('change',render);
   els.statusFilter.addEventListener('change',render);
   els.dateFilter.addEventListener('change',render);
