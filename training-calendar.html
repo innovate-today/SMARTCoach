@@ -65,6 +65,9 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .viewtab{background:#fff;color:#172033;border:1px solid var(--line)}
 .viewtab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 .calendar{display:grid;gap:12px}
+.calendar.weekscroll{max-height:calc(100vh - 360px);min-height:360px;overflow:auto;padding-right:4px;scrollbar-gutter:stable}
+.calendar.weekscroll .weekhead{position:sticky;top:0;z-index:4}
+.calendar.weekscroll .week{overflow:visible}
 .week{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
 .weekhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--line)}
 .weekhead b{font-size:15px}
@@ -131,6 +134,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   .viewtabs{grid-template-columns:1fr}
   .detailgrid{grid-template-columns:1fr}
   .status{text-align:left}
+  .calendar.weekscroll{max-height:65vh;min-height:320px}
 }
 </style>
 </head>
@@ -731,6 +735,8 @@ function render(){
   els.scheduleApprovedBtn.textContent=approvedCount?'Schedule Approved ('+approvedCount+')':'Schedule Approved';
   els.weekViewBtn.classList.toggle('active',viewMode==='week');
   els.listViewBtn.classList.toggle('active',viewMode==='list');
+  els.calendar.classList.toggle('weekscroll',viewMode==='week');
+  els.calendar.classList.toggle('listscroll',viewMode==='list');
   els.calendar.innerHTML=viewMode==='list'?renderListView(list):renderWeekView(list);
   els.empty.hidden=!!list.length;
 }
