@@ -339,6 +339,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div style="padding:0 4px 4px">
       <div class="srow"><label class="slbl">Account</label><input id="account-key" class="sinp" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <div class="srow"><label class="slbl">Plan</label><input id="product-plan" type="hidden" value="pro"/><button type="button" id="product-plan-display" class="sinp picker-control" onclick="openProductPlanPicker()">SMARTCoach Pro</button></div>
+      <div class="srow h" id="access-code-row"><label class="slbl">Access Code</label><input id="access-code" class="sinp" type="password" placeholder="Required for SMART Trak" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use <b>default</b> for this SMARTCoach account. Customer accounts use the account key created during SMART Trak setup.</div>
       <div id="account-summary" style="margin:8px 16px 0;border:1px solid #e5e5ea;border-radius:8px;background:#fff;padding:9px 10px;text-align:left;font-size:12px;line-height:1.35;color:#555"></div>
       <div id="app-version" style="font-size:11px;color:#777;text-align:center;padding:7px 0 0;min-height:16px"></div>
@@ -389,6 +390,13 @@ function accessCodeStorageKey(){
 function smartCoachAccessCode(){
   try{return sessionStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
 }
+function setSmartCoachAccessCode(value){
+  try{sessionStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
+}
+function showAccessCodeRow(show){
+  var row=document.getElementById('access-code-row');
+  if(row)row.classList.toggle('h',!show);
+}
 function adminToolsVisible(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -411,11 +419,14 @@ function openAccountSettings(){
   var input=document.getElementById('account-key');
   var planInput=document.getElementById('product-plan');
   var planDisplay=document.getElementById('product-plan-display');
+  var accessInput=document.getElementById('access-code');
   var status=document.getElementById('account-status');
   var version=document.getElementById('app-version');
   if(input)input.value=smartCoachAccountKey();
   if(planInput)planInput.value=productPlan();
   if(planDisplay)planDisplay.textContent=productPlanLabel(productPlan());
+  if(accessInput)accessInput.value=smartCoachAccessCode();
+  showAccessCodeRow(false);
   if(status){status.textContent='';status.style.color='#555';}
   renderAccountSummary(null,productPlan());
   if(version)version.textContent='App version '+appVersion();
@@ -428,13 +439,16 @@ function appVersion(){
 function saveAccountSettings(){
   var input=document.getElementById('account-key');
   var planInput=document.getElementById('product-plan');
+  var accessInput=document.getElementById('access-code');
   var status=document.getElementById('account-status');
   var key=setSmartCoachAccountKey(input&&input.value);
   var plan=setProductPlan(planInput&&planInput.value);
   clearAccountUrlOverride();
+  if(accessInput)setSmartCoachAccessCode(accessInput.value);
   if(input)input.value=key;
   applyPlanMode();
   if(plan==='essential'){
+    showAccessCodeRow(false);
     renderAccountSummary({productPlan:'essential',configured:true,accessCodeRequired:false},plan);
     if(status){status.textContent='SMARTCoach Essential is active.';status.style.color='#0a7a44';}
     loadProData();
@@ -465,6 +479,7 @@ function renderAccountSummary(data,fallbackPlan){
   var title=pro?(configured?'SMARTCoach Pro ready':'SMARTCoach Pro setup needed'):'SMARTCoach Essential ready';
   var detail=pro?(configured?'SMART Trak connection is ready.':'SMART Trak connection is not finished yet.'):'Stopwatch-only account. SMART Trak tools are hidden.';
   var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
+  showAccessCodeRow(pro&&access);
   box.style.borderColor=configured?'#bbf7d0':'#fecaca';
   box.style.background=configured?'#f0fdf4':'#fef2f2';
   box.innerHTML='<b style="display:block;color:'+(configured?'#0a7a44':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span>';
