@@ -254,6 +254,7 @@ tr:last-child td{border-bottom:0}
       <option value="training_on_target">Training on target</option>
       <option value="training_needs_review">Training outside target</option>
       <option value="corrected_training">Corrected workouts</option>
+      <option value="corrected_meets">Corrected meet results</option>
       <option value="pb">Recent new PBs</option>
       <option value="sb">Recent new SBs</option>
     </select>
@@ -1393,7 +1394,7 @@ function refreshTableScrollbars(){
 }
 
 function tabForFilter(filter){
-  if(filter==='pb'||filter==='sb')return 'meet';
+  if(filter==='pb'||filter==='sb'||filter==='corrected_meets')return 'meet';
   if(filter==='no_training_this_week'||filter==='training_on_target'||filter==='training_needs_review'||filter==='corrected_training')return 'training';
   return 'roster';
 }
@@ -1616,6 +1617,7 @@ function matchesAthleteFilter(row,filter){
   if(filter==='training_on_target')return hasTrainingTargetStatus(row.name,'on');
   if(filter==='training_needs_review')return hasTrainingTargetStatus(row.name,'review');
   if(filter==='corrected_training')return hasCorrectedTraining(row.name);
+  if(filter==='corrected_meets')return hasCorrectedMeet(row.name);
   if(filter==='pb')return hasRecentFlag(row.name,'pb');
   if(filter==='sb')return hasRecentFlag(row.name,'sb');
   return true;
@@ -1623,6 +1625,7 @@ function matchesAthleteFilter(row,filter){
 function matchesMeetFilter(row,filter,visibleNames){
   if(filter==='pb')return !!row.isPr;
   if(filter==='sb')return !!row.isSeasonBest;
+  if(filter==='corrected_meets')return !!row.corrected;
   if(filter==='missing_fitness'||filter==='no_training_this_week')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   return true;
 }
@@ -1630,7 +1633,7 @@ function matchesTrainingFilter(row,filter,visibleNames){
   if(filter==='training_on_target')return targetStatus(row)==='on';
   if(filter==='training_needs_review')return isOutsideTarget(row);
   if(filter==='corrected_training')return !!row.corrected;
-  if(filter==='missing_fitness'||filter==='no_training_this_week'||filter==='pb'||filter==='sb')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
+  if(filter==='missing_fitness'||filter==='no_training_this_week'||filter==='pb'||filter==='sb'||filter==='corrected_meets')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   return true;
 }
 function matchesActivityRange(row,type){
@@ -1733,6 +1736,13 @@ function hasCorrectedTraining(name){
   var normalized=String(name||'').toLowerCase();
   return recentTrainingRows.some(function(row){
     return matchesActivityRange(row,'training') && String(row.athleteName||'').toLowerCase()===normalized && row.corrected;
+  });
+}
+
+function hasCorrectedMeet(name){
+  var normalized=String(name||'').toLowerCase();
+  return recentMeetRows.some(function(row){
+    return matchesActivityRange(row,'meet') && String(row.athleteName||'').toLowerCase()===normalized && row.corrected;
   });
 }
 
@@ -2701,6 +2711,7 @@ function flagPills(meet){
   var pills=[];
   if(meet.isPr)pills.push('<span class="pill pb">PB</span>');
   if(meet.isSeasonBest)pills.push('<span class="pill sb">SB</span>');
+  if(meet.corrected)pills.push('<span class="pill warn">Corrected</span>');
   return pills.length?pills.join(''):'<span class="muted">No new best</span>';
 }
 function formatDate(value){

@@ -28,6 +28,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue"
 .head{padding:18px 20px;border-bottom:1px solid var(--line)}
 .head h1{font-size:22px;letter-spacing:0;margin-bottom:4px}
 .head p{font-size:14px;color:var(--muted)}
+.builder-note{margin-top:12px;border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc;padding:12px 14px;color:#334155;font-size:13px;line-height:1.45}
+.builder-note b{display:block;color:#111827;font-size:14px;margin-bottom:3px}
 .form{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--line)}
 .field{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
 .field:nth-child(2n){border-right:none}
@@ -96,7 +98,8 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   <div class="panel">
     <div class="head">
       <h1>Guided Plan Builder</h1>
-      <p>Create a coach-reviewed training plan draft for a group or athlete.</p>
+      <p>Build a start-to-finish draft plan for a group or individual, then review and adjust it before it becomes the working calendar.</p>
+      <div class="builder-note"><b>Coach remains in control</b>SMART Trak uses the dates, meet schedule, current fitness, training history, injuries, volume capacity, and practice limits you enter here to create a draft. Review the full plan in Training Calendar or Plan Entry before using it with the stopwatch.</div>
     </div>
     <div class="fitness">
       <div class="fitness-head">
@@ -550,6 +553,12 @@ function payloadFromForm(){
     payload.priorityMeets?'Meet Schedule:\n'+payload.priorityMeets:'',
     payload.noPracticeDates?'No-Practice Dates:\n'+payload.noPracticeDates:'',
     payload.currentFitnessDistance||payload.currentFitnessTime?'Current Fitness Set:\n'+[labelFor('currentFitnessSport',payload.currentFitnessSport),payload.currentFitnessDistance,payload.currentFitnessTime].filter(Boolean).join(' - '):'',
+    payload.trainingAge?'Training Age:\n'+payload.trainingAge:'',
+    payload.weeklyVolumeCapacity?'Weekly Volume Capacity:\n'+payload.weeklyVolumeCapacity:'',
+    payload.athleteProfile?'Athlete Profile:\n'+payload.athleteProfile:'',
+    payload.recoveryAbility?'Recovery Ability:\n'+payload.recoveryAbility:'',
+    payload.availableTrainingTime?'Available Training Time:\n'+payload.availableTrainingTime:'',
+    payload.adaptationRate?'Adaptation Rate:\n'+payload.adaptationRate:'',
     payload.trainingLimits?'Training Limits:\n'+payload.trainingLimits:'',
     payload.coachPreferences?'Coach Preferences:\n'+payload.coachPreferences:'',
     payload.manualNotes?'Notes:\n'+payload.manualNotes:''
