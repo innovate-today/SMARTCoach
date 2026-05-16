@@ -49,6 +49,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .varmeta.optional{background:#f1f5f9;color:#475569}
 .varmeta.recommended{background:#fff7ed;color:#9a3412}
 .varfield code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:9px 10px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.varfield input{font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;color:#102a70;padding:9px 10px}
 .copyhint{font-size:12px;color:var(--muted);line-height:1.35;margin-bottom:10px}
 .linkcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;display:grid;gap:10px}
 .linkcard strong{font-size:15px}
@@ -334,8 +335,11 @@ function renderVariableRows(env){
     var required=row.required!==false;
     var status=required?'Required':row.recommended?'Recommended':'Optional';
     var statusClass=required?'':row.recommended?' recommended':' optional';
-    return '<div class="varrow"><div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta'+statusClass+'">'+status+'</em></div><code title="'+esc(row.key)+'">'+esc(row.label||row.key)+'</code></div><div class="varfield"><div class="varlabel"><span>Value</span></div><code title="'+esc(row.value)+'">'+esc(row.value)+'</code></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Setup Field</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
+    return '<div class="varrow"><div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta'+statusClass+'">'+status+'</em></div><code title="'+esc(row.key)+'">'+esc(row.label||row.key)+'</code></div><div class="varfield"><div class="varlabel"><span>Value</span></div><input value="'+esc(row.value)+'" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" oninput="updateVariableValue('+index+',this.value)"></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Setup Field</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
+}
+function updateVariableValue(index,value){
+  if(currentEnvironment[index])currentEnvironment[index].value=value;
 }
 function copyVariablePart(index,part){
   var row=currentEnvironment[index];
