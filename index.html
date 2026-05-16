@@ -360,7 +360,7 @@ function smartCoachAccountKey(){
     if(fromUrl){
       return setSmartCoachAccountKey(fromUrl);
     }
-    return 'default';
+    return cleanAccountKey(localStorage.getItem('sc_account')||'default');
   }catch(e){
     return 'default';
   }
