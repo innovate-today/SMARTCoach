@@ -34,7 +34,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .card:hover,.week:hover{box-shadow:0 10px 24px rgba(15,23,42,.14);transform:translateY(-1px)}
 .card b{display:block;font-size:24px;line-height:1.1}
 .card span{display:block;color:var(--muted);font-size:13px;margin-top:5px}
-.bar{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
+.bar{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .status{color:var(--muted);font-size:13px;text-align:right}
 .viewtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
@@ -138,6 +138,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <select id="planFilter"><option value="all">All plans</option></select>
     <select id="typeFilter"><option value="all">All day types</option></select>
     <select id="statusFilter"><option value="all">All statuses</option></select>
+    <select id="dateFilter"><option value="all">All dates</option><option value="current_week">Current week</option><option value="next_7">Next 7 days</option><option value="next_30">Next 30 days</option><option value="past_due">Past due</option></select>
     <input id="search" type="search" placeholder="Search calendar" autocomplete="off">
     <div id="status" class="status">Loading calendar...</div>
   </section>
@@ -284,6 +285,7 @@ var els={
   planFilter:document.getElementById('planFilter'),
   typeFilter:document.getElementById('typeFilter'),
   statusFilter:document.getElementById('statusFilter'),
+  dateFilter:document.getElementById('dateFilter'),
   search:document.getElementById('search'),
   status:document.getElementById('status'),
   weekViewBtn:document.getElementById('weekViewBtn'),
@@ -427,14 +429,42 @@ function filteredDays(){
   var selectedPlan=els.planFilter.value||'all';
   var type=els.typeFilter.value||'all';
   var status=els.statusFilter.value||'all';
+  var dateRange=els.dateFilter.value||'all';
   return days.filter(function(day){
     if(status==='all'&&isRemovedDay(day))return false;
     if(selectedPlan!=='all'&&day.trainingPlanId!==selectedPlan)return false;
     if(type!=='all'&&day.dayType!==type)return false;
     if(status!=='all'&&day.status!==status)return false;
+    if(!matchesDateRange(day,dateRange))return false;
     if(query&&searchText(day).indexOf(query)===-1)return false;
     return true;
-  }).sort(function(a,b){return String(a.date||'').localeCompare(String(b.date||''));});
+  }).sort(compareByCurrentWeekFirst);
+}
+function matchesDateRange(day,range){
+  if(range==='all')return true;
+  var date=parseCalendarDate(day.date);
+  if(isNaN(date.getTime()))return range==='all';
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  var weekStart=startOfWeek(today);
+  var weekEnd=addDays(weekStart,6);
+  var next7=addDays(today,7);
+  var next30=addDays(today,30);
+  if(range==='current_week')return date>=weekStart&&date<=weekEnd;
+  if(range==='next_7')return date>=today&&date<=next7;
+  if(range==='next_30')return date>=today&&date<=next30;
+  if(range==='past_due')return date<today&&String(day.status||'').toLowerCase().indexOf('completed')<0;
+  return true;
+}
+function compareByCurrentWeekFirst(a,b){
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  var currentWeekKey=isoDate(startOfWeek(today));
+  var aKey=weekKeyForDay(a);
+  var bKey=weekKeyForDay(b);
+  if(aKey===currentWeekKey&&bKey!==currentWeekKey)return -1;
+  if(bKey===currentWeekKey&&aKey!==currentWeekKey)return 1;
+  return String(a.date||'').localeCompare(String(b.date||''));
 }
 function isRemovedDay(day){
   var status=String(day&&day.status||'').toLowerCase();
@@ -899,6 +929,7 @@ function init(){
   els.planFilter.addEventListener('change',render);
   els.typeFilter.addEventListener('change',render);
   els.statusFilter.addEventListener('change',render);
+  els.dateFilter.addEventListener('change',render);
   els.search.addEventListener('input',render);
   els.weekViewBtn.addEventListener('click',function(){
     viewMode='week';
