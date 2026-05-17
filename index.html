@@ -1379,7 +1379,7 @@ function compactRunnerTarget(plan,profile){
 }
 function plannedTargetData(plan,profile){
   if(isMeetTrainingPlanDay(plan))return null;
-  var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
+  var text=[plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].filter(Boolean).join('\n');
   var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
   if(!rule)return null;
   var fitness=chooseFitness(profile,rule);
@@ -1812,7 +1812,7 @@ function entryWorkoutLabel(r){
   return label||'Select a training plan workout';
 }
 function entryTargetHtml(plan,profile,run){
-  var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
+  var text=[plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].filter(Boolean).join('\n');
   var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
   var fitness=chooseFitness(profile,rule);
   var prescription=workoutPrescription(plan,rule);
@@ -1843,6 +1843,9 @@ function parseTargetRule(text,workoutType){
   var source=String(text||'');
   var m=source.match(/([0-9]+(?:\.[0-9]+)?\s*(?:m|k)|1\s*mile|2\s*mile|half marathon|marathon)\s+target:\s*([0-9]+)\s*-\s*([0-9]+)%/i);
   if(m)return{repLabel:normalizeEventLabel(m[1]),repMeters:eventDistance(m[1]),low:Number(m[2])/100,high:Number(m[3])/100,preferred:preferredFitnessEvents(source)};
+  var rep=source.match(/\b\d+\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:m|k)|1\s*mile|2\s*mile|half marathon|marathon)\b/i);
+  var pct=source.match(/([0-9]+)\s*-\s*([0-9]+)%/);
+  if(rep&&pct)return{repLabel:normalizeEventLabel(rep[1]),repMeters:eventDistance(rep[1]),low:Number(pct[1])/100,high:Number(pct[2])/100,preferred:preferredFitnessEvents(source)};
   var rule=paceRule(workoutType||'');
   if(!rule||!rule.distance)return null;
   return{repLabel:rule.distance+'m',repMeters:rule.distance,low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source)};
