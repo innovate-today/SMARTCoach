@@ -307,11 +307,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl">New Meet Event</div>
     <div style="padding:0 4px 4px">
-      <div class="srow"><label class="slbl">Meet</label><select id="mg-meet-select" class="sinp" onchange="handleMeetSelect()"><option value="__new__">+ Add Meet</option></select></div>
+      <div class="srow"><label class="slbl">Meet</label><input id="mg-meet-select" type="hidden" value="__new__"/><button type="button" id="mg-meet-display" class="sinp picker-control" onclick="openMeetPicker()">+ Add Meet</button></div>
       <div class="srow" id="mg-meet-name-row"><label class="slbl">Name</label><input id="mg-meet" class="sinp" type="text" placeholder="District Meet" autocomplete="off"/></div>
       <div class="srow"><label class="slbl">Date</label><input id="mg-date" class="sinp" type="date"/></div>
       <div class="srow"><label class="slbl">Season</label><select id="mg-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div>
-      <div class="srow"><label class="slbl">Event</label><select id="mg-event" class="sinp" onchange="toggleMeetEventOther()"><option>400m</option><option>600m</option><option>800m</option><option>1500m</option><option>1600m</option><option>1 Mile</option><option>3K</option><option>3200m</option><option>2 Mile</option><option>4K</option><option>5K</option><option>8K</option><option>10K</option><option>15K</option><option>Half Marathon</option><option>Marathon</option><option>Other</option></select></div>
+      <div class="srow"><label class="slbl">Event</label><input id="mg-event" type="hidden" value="400m"/><button type="button" id="mg-event-display" class="sinp picker-control" onclick="openMeetEventPicker()">400m</button></div>
       <div class="srow h" id="mg-event-other-row"><label class="slbl">Specify</label><input id="mg-event-other" class="sinp" type="text" placeholder="Event name" autocomplete="off"/></div>
     </div>
     <button class="mbtn" onclick="createMeetGroup()">Create</button>
@@ -951,27 +951,41 @@ function loadMeets(){
 function renderMeetOptions(){
   var sel=document.getElementById('mg-meet-select');
   if(!sel)return;
-  var opts=MT.map(function(m,i){
-    var label=m.name+(m.date?' - '+m.date:'');
-    return '<option value="'+i+'">'+ex(label)+'</option>';
-  });
-  opts.push('<option value="__new__">+ Add Meet</option>');
-  sel.innerHTML=opts.join('');
   sel.value=MT.length?'0':'__new__';
   handleMeetSelect();
+}
+function openMeetPicker(){
+  var sel=document.getElementById('mg-meet-select');
+  var selected=sel?sel.value:'__new__';
+  var items=MT.map(function(m,i){
+    return{
+      label:m.name||'Meet',
+      sub:[m.date,m.season,m.seasonYear].filter(Boolean).join(' · '),
+      value:String(i),
+      selected:String(selected)===String(i)
+    };
+  });
+  items.push({label:'+ Add Meet',sub:'Create a meet in SMART Trak',value:'__new__',selected:selected==='__new__'});
+  openPicker('Select Meet',items,function(item){
+    if(sel)sel.value=item.value||'__new__';
+    handleMeetSelect();
+  });
 }
 function handleMeetSelect(){
   var sel=document.getElementById('mg-meet-select');
   if(!sel)return;
   var isNew=sel.value==='__new__';
+  var display=document.getElementById('mg-meet-display');
   var nameRow=document.getElementById('mg-meet-name-row');
   if(nameRow)nameRow.classList.toggle('h',!isNew);
+  if(display)display.textContent=isNew?'+ Add Meet':'Select Meet';
   if(!isNew){
     var meet=MT[parseInt(sel.value)];
     if(!meet)return;
     document.getElementById('mg-meet').value=meet.name||'';
     if(meet.date)document.getElementById('mg-date').value=meet.date;
     if(meet.season)document.getElementById('mg-season').value=meet.season;
+    if(display)display.textContent=(meet.name||'Meet')+(meet.date?' - '+meet.date:'');
   }
 }
 function visibleGroups(){
@@ -1027,6 +1041,8 @@ function createMeetGroupFromValues(data){
   hm('mmg');
   document.getElementById('mg-meet').value='';
   document.getElementById('mg-event').value='400m';
+  var eventDisplay=document.getElementById('mg-event-display');
+  if(eventDisplay)eventDisplay.textContent='400m';
   document.getElementById('mg-event-other').value='';
   toggleMeetEventOther();
   save();rl();
@@ -1060,6 +1076,20 @@ function toggleMeetEventOther(){
   var row=document.getElementById('mg-event-other-row');
   var sel=document.getElementById('mg-event');
   if(row&&sel)row.classList.toggle('h',sel.value!=='Other');
+}
+function openMeetEventPicker(){
+  var input=document.getElementById('mg-event');
+  var display=document.getElementById('mg-event-display');
+  if(!input||!display)return;
+  var events=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
+  var items=events.map(function(label){
+    return{label:label,value:label,selected:input.value===label};
+  });
+  openPicker('Select Event',items,function(item){
+    input.value=item.value||'400m';
+    display.textContent=item.label||input.value;
+    toggleMeetEventOther();
+  });
 }
 function delGroup(){
   var shown=visibleGroups();
