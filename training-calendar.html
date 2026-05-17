@@ -1160,9 +1160,29 @@ function saveDayEdit(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save adjustment.');
-    setDayEditStatus('Adjustment saved. Refreshing calendar...','success');
-    return loadCalendar();
-  }).then(function(){
+    var updated=Object.assign({},activeDay,{
+      date:els.editDate.value,
+      dayType:els.editDayType.value,
+      title:els.editTitle.value,
+      workoutType:els.editWorkoutType.value,
+      energySystem:els.editEnergy.value,
+      status:els.editStatus.value,
+      groupName:els.editGroup.value,
+      athleteName:els.editAthlete.value,
+      plannedVolume:els.editVolume.value,
+      targetSplits:els.editTarget.value,
+      details:els.editDetails.value,
+      coachNotes:[els.editNotes.value,'Adjusted in SMART Trak: '+reason].filter(Boolean).join('\n')
+    });
+    days=days.map(function(day){
+      return day.id===activeDay.id||day.sourceRecordId===activeDay.sourceRecordId ? updated : day;
+    });
+    activeDay=updated;
+    selectedBulkDayIds=selectedBulkDayIds.filter(function(id){return id!==dayKey(updated);});
+    setDayEditStatus('Adjustment saved.','success');
+    renderOptions();
+    render();
+    els.status.textContent='Plan day updated.';
     closeEditModal();
     closeDayModal();
   }).catch(function(error){
