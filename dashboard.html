@@ -628,6 +628,25 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<div id="voidModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="voidTitle">
+    <div class="modalhead">
+      <h2 id="voidTitle">Void Entry</h2>
+      <button id="voidClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div id="voidSummary" class="originalbox"></div>
+      <div class="field full">
+        <label for="voidReason">Reason</label>
+        <input id="voidReason" type="text" placeholder="Required">
+      </div>
+      <div class="modalactions">
+        <div id="voidStatus" class="modalstatus">Voiding keeps an audit note in SMART Trak.</div>
+        <button id="voidSave" class="danger" type="button">Void Entry</button>
+      </div>
+    </div>
+  </section>
+</div>
 <div id="meetManagerModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="meetManagerTitle">
     <div class="modalhead">
@@ -717,6 +736,7 @@ var visibleVolumeRows=[];
 var expandedTrainingAthletes={};
 var correctionRow=null;
 var meetCorrectionRow=null;
+var voidRequest=null;
 var meetManagerEditingId='';
 var lastLoadedAt='';
 var activeTab='roster';
@@ -975,6 +995,13 @@ var els={
   meetCorrectionNotes:document.getElementById('meetCorrectionNotes'),
   meetCorrectionStatus:document.getElementById('meetCorrectionStatus'),
   meetCorrectionSave:document.getElementById('meetCorrectionSave'),
+  voidModal:document.getElementById('voidModal'),
+  voidTitle:document.getElementById('voidTitle'),
+  voidClose:document.getElementById('voidClose'),
+  voidSummary:document.getElementById('voidSummary'),
+  voidReason:document.getElementById('voidReason'),
+  voidStatus:document.getElementById('voidStatus'),
+  voidSave:document.getElementById('voidSave'),
   meetManagerModal:document.getElementById('meetManagerModal'),
   meetManagerClose:document.getElementById('meetManagerClose'),
   meetManagerName:document.getElementById('meetManagerName'),
@@ -1142,6 +1169,8 @@ els.correctionClose.addEventListener('click',closeCorrectionModal);
 els.correctionSave.addEventListener('click',saveCorrection);
 els.meetCorrectionClose.addEventListener('click',closeMeetCorrectionModal);
 els.meetCorrectionSave.addEventListener('click',saveMeetCorrection);
+els.voidClose.addEventListener('click',closeVoidModal);
+els.voidSave.addEventListener('click',saveVoidRecord);
 els.meetManagerClose.addEventListener('click',closeMeetManager);
 els.meetManagerClear.addEventListener('click',clearMeetManagerForm);
 els.meetManagerSave.addEventListener('click',saveManagedMeet);
@@ -2044,35 +2073,78 @@ function voidTrainingRecord(button){
   var recordId=button.getAttribute('data-record-id')||row.recordId||'';
   var sourceRecordId=button.getAttribute('data-source-record-id')||row.sourceRecordId||'';
   var label=[row.athleteName,row.workoutPrescription||row.workoutType,formatDate(row.sessionDate)].filter(Boolean).join(' - ')||'this training entry';
-  var reason=window.prompt('Why should SMART Trak void '+label+'?');
-  if(reason===null)return;
-  reason=reason.trim();
-  if(!reason){
-    alert('Please enter a short reason so the SMART Trak audit note is useful.');
+  openVoidModal({
+    kind:'training',
+    title:'Void Training Entry',
+    label:label,
+    row:row,
+    recordId:recordId,
+    sourceRecordId:sourceRecordId,
+    contactId:button.getAttribute('data-contact-id')||row.contactId||'',
+    athleteName:button.getAttribute('data-athlete-name')||row.athleteName||''
+  });
+}
+
+function openVoidModal(request){
+  voidRequest=request||null;
+  if(!voidRequest){
+    alert('Could not find this entry.');
     return;
   }
-  button.disabled=true;
+  els.voidTitle.textContent=voidRequest.title||'Void Entry';
+  els.voidSummary.innerHTML='<b>'+esc(voidRequest.label||'Selected entry')+'</b><br><span class="muted">This will mark the entry voided and leave an audit note in SMART Trak.</span>';
+  els.voidReason.value='';
+  setVoidStatus('Voiding keeps an audit note in SMART Trak.','');
+  els.voidSave.disabled=false;
+  els.voidModal.hidden=false;
+  setTimeout(function(){els.voidReason.focus();},30);
+}
+
+function closeVoidModal(){
+  els.voidModal.hidden=true;
+  voidRequest=null;
+}
+
+function setVoidStatus(text,type){
+  els.voidStatus.textContent=text||'';
+  els.voidStatus.style.color=type==='error'?'#b00000':type==='success'?'#08783c':'';
+}
+
+function saveVoidRecord(){
+  if(!voidRequest)return;
+  var reason=els.voidReason.value.trim();
+  if(!reason){
+    setVoidStatus('Reason is required so SMART Trak has a useful audit note.','error');
+    return;
+  }
+  var isMeet=voidRequest.kind==='meet';
+  els.voidSave.disabled=true;
+  setVoidStatus('Voiding entry...','');
   fetch('/api/smart-trak/correction',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       action:'void',
-      recordId:recordId,
-      sourceRecordId:sourceRecordId,
-      contactId:button.getAttribute('data-contact-id')||row.contactId||'',
-      athleteName:button.getAttribute('data-athlete-name')||row.athleteName||'',
-      previous:correctionPreviousPayload(row),
+      recordType:isMeet?'meet':'training',
+      recordId:voidRequest.recordId||'',
+      sourceRecordId:voidRequest.sourceRecordId||'',
+      contactId:voidRequest.contactId||'',
+      athleteName:voidRequest.athleteName||'',
+      previous:isMeet?meetCorrectionPreviousPayload(voidRequest.row||{}):correctionPreviousPayload(voidRequest.row||{}),
       reason:reason
     })
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Void failed.');
-    els.status.textContent='Entry voided. Refreshing dashboard...';
+    setVoidStatus('Entry voided. Refreshing dashboard...','success');
+    els.status.textContent=(isMeet?'Meet result':'Entry')+' voided. Refreshing dashboard...';
     return loadDashboard();
+  }).then(function(){
+    closeVoidModal();
   }).catch(function(error){
-    alert(error.message||'Could not void entry.');
-    button.disabled=false;
+    setVoidStatus(error.message||'Could not void entry.','error');
+    els.voidSave.disabled=false;
   });
 }
 
@@ -2152,36 +2224,15 @@ function voidMeetRecord(button){
   var recordId=button.getAttribute('data-record-id')||row.recordId||'';
   var sourceRecordId=button.getAttribute('data-source-record-id')||row.sourceRecordId||'';
   var label=[row.athleteName,row.event,row.resultDisplay,row.meetName].filter(Boolean).join(' - ')||'this meet result';
-  var reason=window.prompt('Why should SMART Trak void '+label+'?');
-  if(reason===null)return;
-  reason=reason.trim();
-  if(!reason){
-    alert('Please enter a short reason so the SMART Trak audit note is useful.');
-    return;
-  }
-  button.disabled=true;
-  fetch('/api/smart-trak/correction',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      action:'void',
-      recordType:'meet',
-      recordId:recordId,
-      sourceRecordId:sourceRecordId,
-      contactId:button.getAttribute('data-contact-id')||row.contactId||'',
-      athleteName:button.getAttribute('data-athlete-name')||row.athleteName||'',
-      previous:meetCorrectionPreviousPayload(row),
-      reason:reason
-    })
-  }).then(function(res){
-    return res.json().then(function(data){return{ok:res.ok,data:data};});
-  }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error||'Void failed.');
-    els.status.textContent='Meet result voided. Refreshing dashboard...';
-    return loadDashboard();
-  }).catch(function(error){
-    alert(error.message||'Could not void meet result.');
-    button.disabled=false;
+  openVoidModal({
+    kind:'meet',
+    title:'Void Meet Result',
+    label:label,
+    row:row,
+    recordId:recordId,
+    sourceRecordId:sourceRecordId,
+    contactId:button.getAttribute('data-contact-id')||row.contactId||'',
+    athleteName:button.getAttribute('data-athlete-name')||row.athleteName||''
   });
 }
 
