@@ -1881,12 +1881,12 @@ function isOutsideTarget(row){
 }
 
 function targetStatus(row){
+  var splitStatus=splitTargetStatus(row);
+  if(splitStatus)return splitStatus;
   var totalDiff=targetDifferenceText(row).toLowerCase();
   if(totalDiff.indexOf('within target')>=0)return 'on';
   if(totalDiff.indexOf('faster than target')>=0)return 'fast';
   if(totalDiff.indexOf('slower than target')>=0)return 'slow';
-  var splitStatus=splitTargetStatus(row);
-  if(splitStatus)return splitStatus;
   var diff=String(row&&row.targetDifference||'').toLowerCase();
   if(diff.indexOf('within target')>=0)return 'on';
   if(diff.indexOf('faster than target')>=0)return 'fast';
@@ -2995,10 +2995,33 @@ function splitTargetStatus(row){
 }
 
 function targetDifferenceText(row){
+  var splitDiff=splitTargetDifferenceText(row);
+  if(splitDiff)return splitDiff;
   if(!row||!row.totalTimeMs)return '';
   var target=parseTargetRange(row.plannedTarget);
   if(!target)return '';
   return splitTargetDiff(num(row.totalTimeMs),target.fast,target.slow);
+}
+
+function splitTargetDifferenceText(row){
+  var splits=parseSplitLines(row&&row.splitsText);
+  var target=parseTargetRange(row&&row.plannedTarget);
+  if(!splits.length||!target)return '';
+  var workSplits=splits.filter(function(split,index){return splitKind(row,index,splits)!=='recovery';});
+  if(!workSplits.length)return '';
+  var counts={fast:0,slow:0,on:0};
+  workSplits.forEach(function(split){
+    var diff=splitTargetDiff(parseDurationMs(split.time),target.fast,target.slow);
+    if(/faster than target/i.test(diff))counts.fast+=1;
+    else if(/slower than target/i.test(diff))counts.slow+=1;
+    else if(/within target/i.test(diff))counts.on+=1;
+  });
+  var label=/\b\d+\s*(?:x|×)\b/i.test([row&&row.workoutPrescription,row&&row.coachNote].filter(Boolean).join(' '))?'reps':'splits';
+  var parts=[];
+  if(counts.fast)parts.push(counts.fast+' '+label+' faster than target');
+  if(counts.slow)parts.push(counts.slow+' '+label+' slower than target');
+  if(counts.on)parts.push(counts.on+' '+label+' within target');
+  return parts.join(' · ');
 }
 
 function formatSignedMs(ms){
