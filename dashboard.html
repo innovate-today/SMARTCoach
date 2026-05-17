@@ -89,6 +89,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 table{width:100%;border-collapse:collapse;min-width:1260px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
+.headinfo{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:5px;border:1px solid #b8c4d8;border-radius:999px;color:#475569;background:#fff;font-size:10px;font-weight:900;line-height:1;text-transform:none;letter-spacing:0;vertical-align:middle;cursor:help}
 .sortbtn{border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer;text-align:left}
 .sortbtn:after{content:"";display:inline-block;margin-left:5px;color:var(--blue)}
 .sortbtn.active.asc:after{content:"▲"}
@@ -301,15 +302,15 @@ tr:last-child td{border-bottom:0}
       <table>
         <thead>
           <tr>
-            <th><button class="sortbtn" data-table="roster" data-sort="name" type="button">Athlete</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="currentFitness" type="button">Current Fitness</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="latestMeet" type="button">Latest Meet Result</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="latestTraining" type="button">Latest Training</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="currentWeekVolume" type="button">This Week Volume</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="previousWeekVolume" type="button">Previous Week Volume</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="currentWeekRuns" type="button">This Week Workouts</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="previousWeekRuns" type="button">Previous Week Workouts</button></th>
-            <th><button class="sortbtn" data-table="roster" data-sort="status" type="button">Status</button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="name" type="button">Athlete <span class="headinfo" title="Athlete name. Click the athlete name in the row to view details.">i</span></button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="currentFitness" type="button">Current Fitness <span class="headinfo" title="The current race or time trial mark used to calculate workout targets.">i</span></button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="latestMeet" type="button">Latest Meet Result <span class="headinfo" title="Most recent saved meet result for this athlete in the current view.">i</span></button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="latestTraining" type="button">Latest Training <span class="headinfo" title="Most recent completed training entry for this athlete in the current view.">i</span></button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="currentWeekVolume" type="button">This Week Volume <span class="headinfo" title="Completed mileage for the current week.">i</span></button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="previousWeekVolume" type="button">Previous Week Volume <span class="headinfo" title="Completed mileage from the previous week.">i</span></button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="currentWeekRuns" type="button">This Week Workouts <span class="headinfo" title="Number of completed training entries this week.">i</span></button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="previousWeekRuns" type="button">Previous Week Workouts <span class="headinfo" title="Number of completed training entries from the previous week.">i</span></button></th>
+            <th><button class="sortbtn" data-table="roster" data-sort="status" type="button">Status <span class="headinfo" title="Athlete status based on SMARTCoach active settings and available data.">i</span></button></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -327,14 +328,14 @@ tr:last-child td{border-bottom:0}
       <table>
         <thead>
           <tr>
-            <th><button class="sortbtn" data-table="meet" data-sort="athleteName" type="button">Athlete</button></th>
-            <th><button class="sortbtn" data-table="meet" data-sort="meetName" type="button">Meet</button></th>
-            <th><button class="sortbtn" data-table="meet" data-sort="event" type="button">Event</button></th>
-            <th><button class="sortbtn" data-table="meet" data-sort="resultDisplay" type="button">Result</button></th>
-            <th><button class="sortbtn" data-table="meet" data-sort="bestStatus" type="button">Best Status</button></th>
-            <th><button class="sortbtn" data-table="meet" data-sort="meetDate" type="button">Meet Date</button></th>
-            <th><button class="sortbtn" data-table="meet" data-sort="syncedAt" type="button">Synced</button></th>
-            <th>Actions</th>
+            <th><button class="sortbtn" data-table="meet" data-sort="athleteName" type="button">Athlete <span class="headinfo" title="Athlete attached to this meet result.">i</span></button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="meetName" type="button">Meet <span class="headinfo" title="Meet where the result was recorded.">i</span></button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="event" type="button">Event <span class="headinfo" title="Race event or distance.">i</span></button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="resultDisplay" type="button">Result <span class="headinfo" title="Official or saved result time/mark.">i</span></button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="bestStatus" type="button">Best Status <span class="headinfo" title="Shows whether the result is a new personal best or season best.">i</span></button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="meetDate" type="button">Meet Date <span class="headinfo" title="Date of the meet.">i</span></button></th>
+            <th><button class="sortbtn" data-table="meet" data-sort="syncedAt" type="button">Synced <span class="headinfo" title="When this result was saved into SMART Trak.">i</span></button></th>
+            <th>Actions <span class="headinfo" title="Edit or void saved meet results when corrections are needed.">i</span></th>
           </tr>
         </thead>
         <tbody id="recentMeetRows"></tbody>
@@ -354,15 +355,15 @@ tr:last-child td{border-bottom:0}
         <table>
           <thead>
             <tr>
-              <th><button class="sortbtn" data-table="volume" data-sort="athleteName" type="button">Athlete</button></th>
-              <th><button id="volumeRangeLabel" class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Volume</button></th>
-              <th><button class="sortbtn" data-table="volume" data-sort="currentWeekVolume" type="button">This Week</button></th>
-              <th><button class="sortbtn" data-table="volume" data-sort="previousWeekVolume" type="button">Previous Week</button></th>
-              <th><button class="sortbtn" data-table="volume" data-sort="currentMonthVolume" type="button">This Month</button></th>
-              <th><button class="sortbtn" data-table="volume" data-sort="weeklyChange" type="button">Week Change</button></th>
-              <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Workouts</button></th>
-              <th><button class="sortbtn" data-table="volume" data-sort="groups" type="button">Groups</button></th>
-              <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Completed</button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="athleteName" type="button">Athlete <span class="headinfo" title="Athlete name. Expand the row to see completed workouts.">i</span></button></th>
+              <th><button id="volumeRangeLabel" class="sortbtn" data-table="volume" data-sort="volumeMiles" type="button">Volume <span class="headinfo" title="Completed mileage for the selected date/activity filter.">i</span></button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="currentWeekVolume" type="button">This Week <span class="headinfo" title="Completed mileage for the current week.">i</span></button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="previousWeekVolume" type="button">Previous Week <span class="headinfo" title="Completed mileage from the previous week.">i</span></button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="currentMonthVolume" type="button">This Month <span class="headinfo" title="Completed mileage for the current month.">i</span></button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="weeklyChange" type="button">Week Change <span class="headinfo" title="Difference between this week and previous week mileage.">i</span></button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="syncs" type="button">Workouts <span class="headinfo" title="Number of completed training entries in this view.">i</span></button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="groups" type="button">Groups <span class="headinfo" title="Groups connected to this athlete's completed training entries.">i</span></button></th>
+              <th><button class="sortbtn" data-table="volume" data-sort="lastDate" type="button">Last Completed <span class="headinfo" title="Most recent completed training date in this view.">i</span></button></th>
             </tr>
           </thead>
           <tbody id="volumeRows"></tbody>
@@ -375,13 +376,13 @@ tr:last-child td{border-bottom:0}
         <table>
           <thead>
             <tr>
-              <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete</button></th>
-              <th><button class="sortbtn" data-table="training" data-sort="volume" type="button">Volume</button></th>
-              <th><button class="sortbtn" data-table="training" data-sort="workouts" type="button">Workouts</button></th>
-              <th><button class="sortbtn" data-table="training" data-sort="latestWorkout" type="button">Most Recent Workout</button></th>
-              <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness</button></th>
-              <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review</button></th>
-              <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Last Completed</button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="athleteName" type="button">Athlete <span class="headinfo" title="Athlete name. Expand the row to see each completed workout.">i</span></button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="volume" type="button">Volume <span class="headinfo" title="Completed mileage for this athlete in the selected view.">i</span></button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="workouts" type="button">Workouts <span class="headinfo" title="Number of completed training entries in this view.">i</span></button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="latestWorkout" type="button">Most Recent Workout <span class="headinfo" title="Most recent completed workout for this athlete.">i</span></button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="currentFitness" type="button">Current Fitness <span class="headinfo" title="Current fitness mark used to calculate targets.">i</span></button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="targetReview" type="button">Target Review <span class="headinfo" title="Rep/rest review against the saved target. Rep chips: red = faster than target, green = on target, yellow = slower than target. Rest chips are neutral.">i</span></button></th>
+              <th><button class="sortbtn" data-table="training" data-sort="syncedAt" type="button">Last Completed <span class="headinfo" title="Most recent date this athlete completed training in this view.">i</span></button></th>
             </tr>
           </thead>
           <tbody id="recentTrainingRows"></tbody>
@@ -2790,7 +2791,7 @@ function trainingTargetSummaryHtml(summary){
 function trainingWorkoutDetailTable(rows){
   if(!rows.length)return '<div class="muted">No completed workouts.</div>';
   return '<table><thead><tr>'+
-    '<th>Group</th><th>Workout</th><th>Volume</th><th>Target Review</th><th>Total / Splits</th><th>Date</th><th>Status</th><th>Saved</th><th>Actions</th>'+
+    '<th>Group '+headerInfo('Group where this workout was recorded.')+'</th><th>Workout '+headerInfo('Workout name and workout type.')+'</th><th>Volume '+headerInfo('Completed and planned volume for this entry.')+'</th><th>Target Review '+headerInfo('Rep/rest review against the saved target. Rep chips: red = faster than target, green = on target, yellow = slower than target. Rest chips are neutral.')+'</th><th>Total / Splits '+headerInfo('Total elapsed time plus split count. For rep/rest workouts, target review uses work reps instead of total time.')+'</th><th>Date '+headerInfo('Workout date.')+'</th><th>Status '+headerInfo('Original, corrected, or voided status.')+'</th><th>Saved '+headerInfo('Date this entry was saved into SMART Trak.')+'</th><th>Actions '+headerInfo('Edit or void saved training entries when corrections are needed.')+'</th>'+
     '</tr></thead><tbody>'+rows.map(function(row){
       return '<tr>'+
         '<td>'+mainLine(row.groupName||'')+'</td>'+
@@ -3095,6 +3096,7 @@ function athleteDetailButton(row){
 }
 function mainLine(text){return '<div>'+esc(text)+'</div>';}
 function subLine(text){return text?'<div class="muted">'+esc(text)+'</div>':'';}
+function headerInfo(text){return '<span class="headinfo" title="'+esc(text)+'">i</span>';}
 function flagText(meet){
   var flags=[];
   if(meet.isPr)flags.push('PB');
