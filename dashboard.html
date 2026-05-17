@@ -2638,7 +2638,7 @@ function recentMeetHtml(row){
 function meetActionButtons(row){
   if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
   var attrs=' data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'"';
-  return '<button class="ghost compact" data-edit-meet="1"'+attrs+' type="button">Edit</button> <button class="danger compact" data-void-meet="1"'+attrs+' type="button">Void</button>';
+  return '<button class="ghost compact" data-edit-meet="1"'+attrs+' type="button" onclick="event.stopPropagation();event.preventDefault();openMeetCorrectionModal(this);return false;">Edit</button> <button class="danger compact" data-void-meet="1"'+attrs+' type="button" onclick="event.stopPropagation();event.preventDefault();voidMeetRecord(this);return false;">Void</button>';
 }
 
 function groupTrainingByAthlete(rows){
@@ -2738,7 +2738,7 @@ function trainingWorkoutDetailTable(rows){
 function trainingActionButtons(row){
   if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
   var attrs=' data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'"';
-  return '<button class="ghost compact" data-edit-training="1"'+attrs+' type="button">Edit</button> <button class="danger compact" data-void-training="1"'+attrs+' type="button">Void</button>';
+  return '<button class="ghost compact" data-edit-training="1"'+attrs+' type="button" onclick="event.stopPropagation();event.preventDefault();openCorrectionModal(this);return false;">Edit</button> <button class="danger compact" data-void-training="1"'+attrs+' type="button" onclick="event.stopPropagation();event.preventDefault();voidTrainingRecord(this);return false;">Void</button>';
 }
 
 function correctionStatusHtml(row){
