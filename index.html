@@ -116,6 +116,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .sortbtn{flex:1;padding:10px 4px;background:var(--W);border:none;color:var(--R);font-size:14px;font-weight:600;cursor:pointer;border-right:1px solid var(--R);font-family:inherit;user-select:none;-webkit-appearance:none}
 .sortbtn:last-child{border-right:none}
 .sortbtn.on{background:var(--R);color:var(--W)}
+.bulk-list{padding:0 12px 8px;max-height:56vh;overflow:auto}.bulk-row{display:flex;align-items:center;gap:10px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:12px;font-size:14px;color:#222}.bulk-row input{width:20px;height:20px;accent-color:var(--R);flex-shrink:0}.bulk-row b{display:block;font-size:16px;line-height:1.2}.bulk-row small{display:block;color:#777;font-size:12px;margin-top:2px}.bulk-actions{display:flex;gap:8px;padding:0 16px}.bulk-actions .mbtn{margin:10px 0 0;width:auto;flex:1}.bulk-status{font-size:12px;color:#555;text-align:center;padding:5px 16px;min-height:20px;font-weight:700}
 
 /* MODAL */
 .mover{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;z-index:100}
@@ -177,6 +178,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <button class="tbtn pro-only" onclick="openSeasonPlan(false)"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Plan</span></button>
     <button class="tbtn" onclick="addGroupForView()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn admin-only" hidden onclick="openAccountSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Account</span></button>
+    <button class="tbtn" onclick="openBulkArchive()"><svg viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M5 7l1 13h12l1-13"/><path d="M9 11h6"/><path d="M8 4h8l1 3H7z"/></svg><span>Archive</span></button>
     <button class="tbtn" onclick="delGroup()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
   </div>
 </div>
@@ -301,6 +303,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
 </div>
 
+<!-- BULK ARCHIVE MODAL -->
+<div class="mover h" id="m-bulk-archive">
+  <div class="msh">
+    <div class="mhd"></div>
+    <div class="mttl" id="bulk-archive-title">Bulk Archive</div>
+    <div id="bulk-archive-list" class="bulk-list"></div>
+    <div class="bulk-actions">
+      <button class="mbtn c" onclick="toggleBulkArchiveAll()">Select All</button>
+      <button class="mbtn" onclick="archiveSelectedGroups()">Archive Selected</button>
+    </div>
+    <div id="bulk-archive-status" class="bulk-status"></div>
+    <button class="mbtn c" onclick="hm('m-bulk-archive')" style="margin-top:8px">Cancel</button>
+    <div style="height:8px"></div>
+  </div>
+</div>
+
 <!-- ADD MEET GROUP MODAL -->
 <div class="mover h" id="mmg">
   <div class="msh">
@@ -352,7 +370,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null, BA={ids:{},allSelected:false};
 
 function smartCoachAccountKey(){
   try{
@@ -1118,6 +1136,62 @@ function delGroup(){
     logs=logs.filter(function(l){return l.id!==target.id;});
     save();rl();
   }
+}
+function openBulkArchive(){
+  if(GV==='archive'){
+    alert('Switch to Training or Meets first, then choose what to archive.');
+    return;
+  }
+  BA={ids:{},allSelected:false};
+  renderBulkArchive();
+  sm('m-bulk-archive');
+}
+function renderBulkArchive(){
+  var title=document.getElementById('bulk-archive-title');
+  var list=document.getElementById('bulk-archive-list');
+  var status=document.getElementById('bulk-archive-status');
+  if(title)title.textContent=GV==='meets'?'Archive Meet Groups':'Archive Training Groups';
+  var shown=visibleGroups().filter(function(l){return GV==='meets'?(l.type||'training')==='meet':(l.type||'training')!=='meet';});
+  if(!shown.length){
+    if(list)list.innerHTML='<div style="padding:18px;color:#777;text-align:center;background:#fff">No visible groups to archive.</div>';
+    if(status)status.textContent='';
+    return;
+  }
+  if(list)list.innerHTML=shown.map(function(l){
+    var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
+    var title=l.type==='meet'?(l.eventName||l.name||'Meet Event'):l.name;
+    var sub=l.type==='meet'?[l.meetName||'Meet',l.season,l.seasonYear].filter(Boolean).join(' · '):(l.trainingPlanTitle||[l.season,l.seasonYear].filter(Boolean).join(' '));
+    if(c)sub+=(sub?' · ':'')+c+' saved '+(c===1?'athlete':'athletes');
+    return '<label class="bulk-row"><input type="checkbox" '+(BA.ids[l.id]?'checked':'')+' onchange="setBulkArchiveChoice('+l.id+',this.checked)"><span><b>'+ex(title)+'</b><small>'+ex(sub||'No details')+'</small></span></label>';
+  }).join('');
+  var selected=Object.keys(BA.ids).filter(function(id){return BA.ids[id];}).length;
+  if(status)status.textContent=selected+' selected';
+}
+function setBulkArchiveChoice(id,checked){
+  BA.ids[id]=!!checked;
+  renderBulkArchive();
+}
+function toggleBulkArchiveAll(){
+  var shown=visibleGroups().filter(function(l){return GV==='meets'?(l.type||'training')==='meet':(l.type||'training')!=='meet';});
+  BA.allSelected=!BA.allSelected;
+  shown.forEach(function(l){BA.ids[l.id]=BA.allSelected;});
+  renderBulkArchive();
+}
+function archiveSelectedGroups(){
+  var ids=Object.keys(BA.ids).filter(function(id){return BA.ids[id];}).map(function(id){return parseInt(id,10);});
+  if(!ids.length){document.getElementById('bulk-archive-status').textContent='Select at least one group.';return;}
+  var count=0,now=new Date().toISOString();
+  logs.forEach(function(l){
+    if(ids.indexOf(l.id)>=0&&!l.archived){
+      l.archived=1;
+      l.archivedAt=now;
+      count++;
+    }
+  });
+  save();
+  hm('m-bulk-archive');
+  rl();
+  alert('Archived '+count+' '+(count===1?'group':'groups')+'.');
 }
 function shareAll(){
   var t='SMARTCoach - All Groups\n'+new Date().toLocaleDateString()+'\n\n';
