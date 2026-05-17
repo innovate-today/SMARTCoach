@@ -1159,9 +1159,7 @@ function saveDayEdit(){
 function archivePlanFromPicker(planIdValue, restore){
   var plan=plans.find(function(item){return planId(item)===planIdValue;});
   if(!plan)return;
-  var action=restore?'restore':'archive';
-  var reason=window.prompt('Why '+action+' this plan?',restore?'Coach restored plan to current list.':'Coach archived completed or old plan.');
-  if(reason===null)return;
+  var reason=restore?'Coach restored plan to current list.':'Coach archived completed or old plan.';
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
   els.status.textContent=(restore?'Restoring':'Archiving')+' plan...';
