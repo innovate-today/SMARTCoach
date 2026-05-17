@@ -610,6 +610,16 @@ function currentSeason(){
   else s='Fall';
   return{season:s,year:y};
 }
+function seasonForDate(dateText){
+  var d=dateText?new Date(dateText+'T00:00:00'):new Date();
+  if(isNaN(d.getTime()))return currentSeason();
+  var m=d.getMonth()+1,y=d.getFullYear(),s='Spring';
+  if(m===12||m<=2)s='Winter';
+  else if(m>=3&&m<=5)s='Spring';
+  else if(m>=6&&m<=8)s='Summer';
+  else s='Fall';
+  return{season:s,year:y};
+}
 function todayISO(){
   var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
   return d.getFullYear()+'-'+m+'-'+day;
@@ -958,9 +968,10 @@ function openMeetPicker(){
   var sel=document.getElementById('mg-meet-select');
   var selected=sel?sel.value:'__new__';
   var items=MT.map(function(m,i){
+    var dateSeason=seasonForDate(m.date);
     return{
       label:m.name||'Meet',
-      sub:[m.date,m.season,m.seasonYear].filter(Boolean).join(' · '),
+      sub:[m.date,dateSeason.season,dateSeason.year].filter(Boolean).join(' · '),
       value:String(i),
       selected:String(selected)===String(i)
     };
@@ -984,7 +995,8 @@ function handleMeetSelect(){
     if(!meet)return;
     document.getElementById('mg-meet').value=meet.name||'';
     if(meet.date)document.getElementById('mg-date').value=meet.date;
-    if(meet.season)document.getElementById('mg-season').value=meet.season;
+    var dateSeason=seasonForDate(meet.date);
+    document.getElementById('mg-season').value=dateSeason.season;
     if(display)display.textContent=(meet.name||'Meet')+(meet.date?' - '+meet.date:'');
   }
 }
