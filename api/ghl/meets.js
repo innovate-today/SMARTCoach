@@ -52,7 +52,7 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "DELETE") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-      await deleteMeet({ token, payload });
+      await deleteMeet({ token, locationId, payload });
       res.status(200).json({ success: true });
       return;
     }
@@ -154,20 +154,20 @@ async function updateMeet({ token, locationId, payload }) {
 
   const record = await ghlFetch({
     token,
-    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
+    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`,
     method: "PUT",
-    body: { locationId, properties },
+    body: { properties },
   });
 
   return normalizeMeet(record.record || record, properties);
 }
 
-async function deleteMeet({ token, payload }) {
+async function deleteMeet({ token, locationId, payload }) {
   const recordId = clean(payload && payload.recordId);
   if (!recordId) throw httpError(400, "Meet record ID is required.");
   await ghlFetch({
     token,
-    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
+    path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`,
     method: "DELETE",
   });
 }
