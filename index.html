@@ -798,6 +798,7 @@ function findAssignedPlanForGroup(){
 }
 function applyTrainingPlanRecordToTarget(target,plan,auto){
   if(!target||!plan)return;
+  clearCachedPlanTarget(target);
   target.trainingPlanId=plan.id||'';
   target.trainingPlanSourceId=plan.sourceRecordId||'';
   target.trainingPlanTitle=plan.title||'';
@@ -1362,7 +1363,10 @@ function renderRunnerTarget(r){
   athleteProfile(contactId,r.name).then(function(profile){
     if(!CL||!document.getElementById('rta-'+r.id))return;
     var target=plannedTargetData(plan,profile);
-    if(!target||!target.plannedTargetRange)return;
+    if(!target||!target.plannedTargetRange){
+      clearCachedPlanTarget(r);
+      return;
+    }
     r.cachedPlannedTarget=target;
     el.textContent='Target: '+target.plannedTargetRange;
     el.classList.add('on');
@@ -1381,6 +1385,7 @@ function plannedTargetData(plan,profile){
   var range=targetRangeDataFromFitness(rule,fitness);
   if(!range)return null;
   return{
+    cacheKey:targetPlanCacheKey(plan),
     plannedTargetRange:range.display,
     plannedTargetMinMs:range.fast,
     plannedTargetMaxMs:range.slow,
@@ -1390,12 +1395,32 @@ function plannedTargetData(plan,profile){
     plannedEffortPercent:Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%'
   };
 }
+function targetPlanCacheKey(plan){
+  plan=plan||{};
+  return [
+    plan.trainingPlanId||'',
+    plan.trainingPlanSourceId||'',
+    plan.trainingPlanDayId||'',
+    plan.trainingPlanDaySourceId||'',
+    plan.trainingPlanDayTitle||'',
+    plan.trainingPlanDayWorkoutType||'',
+    plan.trainingPlanDayTargetSplits||'',
+    plan.trainingPlanDayDetails||''
+  ].join('|');
+}
+function cachedTargetMatchesPlan(target,plan){
+  return target&&target.plannedTargetRange&&target.cacheKey===targetPlanCacheKey(plan);
+}
+function clearCachedPlanTarget(target){
+  if(target)target.cachedPlannedTarget=null;
+}
 function runnerPlannedTarget(r){
   var plan=runnerPlan(r);
   if(!plan.trainingPlanDayTitle&&!plan.trainingPlanDayTargetSplits&&!plan.trainingPlanDayDetails)return Promise.resolve({});
   var matched=findAthleteByName(r.name)||{};
   var contactId=r.contactId||matched.id||'';
-  if(r.cachedPlannedTarget&&r.cachedPlannedTarget.plannedTargetRange)return Promise.resolve(r.cachedPlannedTarget);
+  if(cachedTargetMatchesPlan(r.cachedPlannedTarget,plan))return Promise.resolve(r.cachedPlannedTarget);
+  clearCachedPlanTarget(r);
   if(!contactId)return Promise.resolve(targetFromVisibleRunnerRow(r));
   return athleteProfile(contactId,r.name).then(function(profile){
     var target=plannedTargetData(plan,profile);
@@ -2169,6 +2194,7 @@ function useSelectedTrainingPlan(){
   if(!plan)return;
   if(TPA&&TPA.target){
     var target=TPA.target;
+    clearCachedPlanTarget(target);
     target.trainingPlanId=plan.id||'';
     target.trainingPlanSourceId=plan.sourceRecordId||'';
     target.trainingPlanTitle=plan.title||'';
@@ -2203,6 +2229,7 @@ function targetNeedsPlanDay(target){
 }
 function applyPlanDayToTarget(target,day){
   if(!target||!day)return false;
+  clearCachedPlanTarget(target);
   target.trainingPlanDayId=day.id||'';
   target.trainingPlanDaySourceId=day.sourceRecordId||'';
   target.trainingPlanDayTitle=day.title||'';
@@ -2234,6 +2261,7 @@ function hydrateAssignedPlanWorkouts(){
 }
 function clearAthleteTrainingPlan(){
   if(!CE)return;
+  clearCachedPlanTarget(CE);
   CE.trainingPlanId='';
   CE.trainingPlanSourceId='';
   CE.trainingPlanTitle='';
