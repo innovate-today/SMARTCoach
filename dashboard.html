@@ -2137,15 +2137,30 @@ function saveVoidRecord(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Void failed.');
-    setVoidStatus('Entry voided. Refreshing dashboard...','success');
-    els.status.textContent=(isMeet?'Meet result':'Entry')+' voided. Refreshing dashboard...';
-    return loadDashboard();
-  }).then(function(){
+    applyVoidedEntryLocally(voidRequest);
+    setVoidStatus('Entry voided.','success');
+    els.status.textContent=(isMeet?'Meet result':'Entry')+' voided.';
     closeVoidModal();
+    setTimeout(loadDashboard,250);
   }).catch(function(error){
     setVoidStatus(error.message||'Could not void entry.','error');
     els.voidSave.disabled=false;
   });
+}
+
+function applyVoidedEntryLocally(request){
+  request=request||{};
+  var recordId=request.recordId||'';
+  var sourceRecordId=request.sourceRecordId||'';
+  function keep(row){
+    return !((recordId&&row.recordId===recordId)||(sourceRecordId&&row.sourceRecordId===sourceRecordId));
+  }
+  if(request.kind==='meet'){
+    recentMeetRows=recentMeetRows.filter(keep);
+  }else{
+    recentTrainingRows=recentTrainingRows.filter(keep);
+  }
+  renderRows();
 }
 
 function openMeetCorrectionModal(button){
