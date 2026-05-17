@@ -490,10 +490,13 @@ function calculateMeetResultFlags({ existingSeasonRecord, athleteBestLookup, mee
   const summary = Object.keys(parsedSummary).length ? parsedSummary : parseReadableSeasonBests(existingProperties.season_bests_json);
   const eventKey = optionValue(meetResult.event) || "event";
   const currentBest = summary && summary.meetBestsByEvent ? summary.meetBestsByEvent[eventKey] : null;
-  const isSeasonBest = !!meetResult.resultMs && !!currentBest && !!Number(currentBest.ms) && meetResult.resultMs < Number(currentBest.ms);
   const bestProperties = recordProperties(athleteBestLookup && athleteBestLookup.record);
   const existingPbMs = numberValue(recordValue(bestProperties, "personal_best_ms"));
-  const isPr = !!(athleteBestLookup && athleteBestLookup.available) && !!meetResult.resultMs && !!existingPbMs && meetResult.resultMs < existingPbMs;
+  const existingSbMs = sameSeason(bestProperties, meetResult) ? numberValue(recordValue(bestProperties, "season_best_ms")) : 0;
+  const seasonBestMs = numberValue(currentBest && currentBest.ms) || existingSbMs;
+  const hasResult = !!meetResult.resultMs;
+  const isSeasonBest = hasResult && (!seasonBestMs || meetResult.resultMs < seasonBestMs);
+  const isPr = !!(athleteBestLookup && athleteBestLookup.available) && hasResult && (!existingPbMs || meetResult.resultMs < existingPbMs);
   return { isSeasonBest, isPr };
 }
 
