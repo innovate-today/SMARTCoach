@@ -1440,7 +1440,7 @@ function init(){
     renderOptions();
     render();
   });
-  els.planChoiceList.addEventListener('click',function(event){
+  els.planChoiceList.addEventListener('pointerdown',function(event){
     var button=event.target.closest&&event.target.closest('[data-plan-archive]');
     if(!button)return;
     event.preventDefault();
