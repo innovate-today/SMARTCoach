@@ -89,7 +89,12 @@ button:disabled{opacity:.55;cursor:not-allowed}
 table{width:100%;border-collapse:collapse;min-width:1260px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
-.headinfo{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:5px;border:1px solid #b8c4d8;border-radius:999px;color:#475569;background:#fff;font-size:10px;font-weight:900;line-height:1;text-transform:none;letter-spacing:0;vertical-align:middle;cursor:help}
+.headinfo{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;border:1px solid #bfd0ef;border-radius:999px;color:#1d4ed8;background:#eef4ff;box-shadow:0 1px 3px rgba(15,23,42,.12);font-size:11px;font-weight:900;line-height:1;text-transform:none;letter-spacing:0;vertical-align:middle;cursor:help}
+.headinfo:hover,.headinfo:focus{background:#dbeafe;border-color:#8fb1ff;color:#102a70;outline:none;box-shadow:0 3px 10px rgba(29,78,216,.20)}
+.smart-tooltip{position:fixed;z-index:2000;max-width:320px;padding:12px 14px;border:1px solid #bed0ec;border-radius:10px;background:#fff;color:#172033;box-shadow:0 16px 36px rgba(15,23,42,.22);font-size:13px;font-weight:750;line-height:1.4;text-transform:none;letter-spacing:0;pointer-events:none;opacity:0;transform:translateY(5px);transition:opacity .12s ease,transform .12s ease}
+.smart-tooltip.show{opacity:1;transform:translateY(0)}
+.smart-tooltip:before{content:"";position:absolute;top:-6px;left:18px;width:10px;height:10px;background:#fff;border-left:1px solid #bed0ec;border-top:1px solid #bed0ec;transform:rotate(45deg)}
+.smart-tooltip.flipped:before{top:auto;bottom:-6px;border:0;border-right:1px solid #bed0ec;border-bottom:1px solid #bed0ec}
 .sortbtn{border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer;text-align:left}
 .sortbtn:after{content:"";display:inline-block;margin-left:5px;color:var(--blue)}
 .sortbtn.active.asc:after{content:"▲"}
@@ -1060,6 +1065,7 @@ var els={
   trainingMissingThisWeek:document.getElementById('trainingMissingThisWeek')
 };
 setupTableScrollbars();
+initHeaderTooltips();
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.accessSubmit.addEventListener('click',submitDashboardAccessCode);
 els.accessCodeInput.addEventListener('keydown',function(event){
@@ -1212,6 +1218,73 @@ applyPlanMode();
 applyAdminTools();
 restoreView();
 syncProductPlanFromAccount().then(loadDashboard);
+
+function initHeaderTooltips(){
+  if(window.smartHeaderTooltipReady)return;
+  window.smartHeaderTooltipReady=true;
+  var tooltip=document.createElement('div');
+  tooltip.id='smartHeaderTooltip';
+  tooltip.className='smart-tooltip';
+  document.body.appendChild(tooltip);
+
+  function normalizeInfo(el){
+    if(!el)return '';
+    var text=el.getAttribute('data-tip')||el.getAttribute('title')||el.getAttribute('aria-label')||'';
+    if(text){
+      el.setAttribute('data-tip',text);
+      el.setAttribute('aria-label',text);
+      el.removeAttribute('title');
+    }
+    return text;
+  }
+
+  function showTooltip(el){
+    var text=normalizeInfo(el);
+    if(!text)return;
+    tooltip.textContent=text;
+    tooltip.classList.add('show');
+    tooltip.classList.remove('flipped');
+    tooltip.style.left='0px';
+    tooltip.style.top='0px';
+
+    var rect=el.getBoundingClientRect();
+    var margin=12;
+    var width=tooltip.offsetWidth||300;
+    var height=tooltip.offsetHeight||48;
+    var left=rect.left + (rect.width/2) - 24;
+    left=Math.max(margin,Math.min(left,window.innerWidth-width-margin));
+    var top=rect.bottom+10;
+    if(top+height+margin>window.innerHeight){
+      top=rect.top-height-10;
+      tooltip.classList.add('flipped');
+    }
+    tooltip.style.left=left+'px';
+    tooltip.style.top=Math.max(margin,top)+'px';
+  }
+
+  function hideTooltip(){
+    tooltip.classList.remove('show');
+  }
+
+  document.addEventListener('mouseover',function(event){
+    var el=event.target.closest&&event.target.closest('.headinfo');
+    if(el)showTooltip(el);
+  });
+  document.addEventListener('mouseout',function(event){
+    var el=event.target.closest&&event.target.closest('.headinfo');
+    if(el)hideTooltip();
+  });
+  document.addEventListener('focusin',function(event){
+    var el=event.target.closest&&event.target.closest('.headinfo');
+    if(el)showTooltip(el);
+  });
+  document.addEventListener('focusout',function(event){
+    var el=event.target.closest&&event.target.closest('.headinfo');
+    if(el)hideTooltip();
+  });
+  window.addEventListener('scroll',hideTooltip,true);
+  window.addEventListener('resize',hideTooltip);
+}
 
 function loadDashboard(){
   applyPlanMode();
@@ -3096,7 +3169,7 @@ function athleteDetailButton(row){
 }
 function mainLine(text){return '<div>'+esc(text)+'</div>';}
 function subLine(text){return text?'<div class="muted">'+esc(text)+'</div>':'';}
-function headerInfo(text){return '<span class="headinfo" title="'+esc(text)+'">i</span>';}
+function headerInfo(text){return '<span class="headinfo" data-tip="'+esc(text)+'" aria-label="'+esc(text)+'">i</span>';}
 function flagText(meet){
   var flags=[];
   if(meet.isPr)flags.push('PB');
