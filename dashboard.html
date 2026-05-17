@@ -114,6 +114,11 @@ tr:last-child td{border-bottom:0}
 .pill.pb{background:#dbeafe;color:#1d4ed8}
 .pill.sb{background:#fef3c7;color:#92400e}
 .pill+.pill{margin-left:5px}
+.splitchips{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:5px}
+.splitchip{display:inline-flex;align-items:center;border-radius:6px;padding:2px 6px;font-size:12px;font-weight:800;background:#eef2f7;color:#475569}
+.splitchip.fast{background:#fee2e2;color:#b91c1c}
+.splitchip.on{background:#dcfce7;color:#08783c}
+.splitchip.slow{background:#fef3c7;color:#92400e}
 .empty{padding:26px;text-align:center;color:var(--muted);font-size:14px}
 .small{font-size:12px;color:var(--muted)}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;z-index:20;overflow:auto}
@@ -2830,6 +2835,11 @@ function recentTrainingHtml(row){
 
 function targetReviewHtml(row){
   if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort)return '<span class="muted">No target saved</span>';
+  var chips=splitTargetChipsHtml(row);
+  if(chips){
+    return mainLine(row.plannedTarget||'Target saved')+chips+
+      subLine([row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
+  }
   var diff=targetDifferenceText(row)||row.targetDifference;
   return targetStatusPill(row)+mainLine(row.plannedTarget||'Target saved')+
     subLine([diff,row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
@@ -2918,6 +2928,25 @@ function splitReviewLines(row){
     }
     return detail;
   });
+}
+
+function splitTargetChipsHtml(row){
+  var splits=parseSplitLines(row&&row.splitsText);
+  if(!splits.length)return '';
+  var target=parseTargetRange(row&&row.plannedTarget);
+  var chips=splits.map(function(split,index){
+    var kind=splitKind(row,index,splits);
+    var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap);
+    var status='';
+    if(kind!=='recovery'&&target){
+      var diff=splitTargetDiff(parseDurationMs(split.time),target.fast,target.slow);
+      if(/faster than target/i.test(diff))status='fast';
+      else if(/slower than target/i.test(diff))status='slow';
+      else if(/within target/i.test(diff))status='on';
+    }
+    return '<span class="splitchip '+esc(status)+'">'+esc(label+' '+split.time)+'</span>';
+  });
+  return chips.length?'<div class="splitchips">'+chips.join('')+'</div>':'';
 }
 
 function workSplitCount(row,splits){
