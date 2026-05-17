@@ -113,6 +113,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .listtable{width:100%;min-width:1180px;border-collapse:collapse}
 .listtable th,.listtable td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;font-size:13px}
 .listtable input[type="checkbox"]{width:auto}
+.selectall{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer}
 .listtable th{position:sticky;top:0;z-index:3;background:#f8fafc;color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:12px;box-shadow:0 1px 0 var(--line)}
 .sorthead{border:0;background:transparent;color:inherit;font:inherit;font-weight:900;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer}
 .sorthead:hover{color:#173891;text-decoration:underline}
@@ -790,7 +791,9 @@ function renderWeekView(list){
 function renderListView(list){
   if(!list.length)return '';
   var sorted=list.slice().sort(compareListDays);
-  return '<div class="listwrap"><table class="listtable"><thead><tr><th>Select</th><th>'+sortButton('date','Date')+'</th><th>'+sortButton('title','Plan Day')+'</th><th>'+sortButton('group','Group / Athlete')+'</th><th>'+sortButton('type','Type')+'</th><th>'+sortButton('volume','Volume / Target')+'</th><th>'+sortButton('status','Status')+'</th><th>'+sortButton('plan','Plan')+'</th></tr></thead><tbody>'+
+  var selectableIds=sorted.map(function(day){return day.id||day.sourceRecordId||'';}).filter(Boolean);
+  var allSelected=selectableIds.length&&selectableIds.every(function(id){return selectedBulkDayIds.indexOf(id)>=0;});
+  return '<div class="listwrap"><table class="listtable"><thead><tr><th><label class="selectall"><input data-bulk-check-all type="checkbox" '+(allSelected?'checked':'')+'> Select all</label></th><th>'+sortButton('date','Date')+'</th><th>'+sortButton('title','Plan Day')+'</th><th>'+sortButton('group','Group / Athlete')+'</th><th>'+sortButton('type','Type')+'</th><th>'+sortButton('volume','Volume / Target')+'</th><th>'+sortButton('status','Status')+'</th><th>'+sortButton('plan','Plan')+'</th></tr></thead><tbody>'+
     sorted.map(function(day){
       var status=String(day.status||'Scheduled').toLowerCase();
       var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
@@ -1100,6 +1103,18 @@ function updateBulkSelection(id,checked){
     selectedBulkDayIds=selectedBulkDayIds.filter(function(item){return item!==id;});
   }
   els.status.textContent=selectedBulkDayIds.length?selectedBulkDayIds.length+' day'+(selectedBulkDayIds.length===1?'':'s')+' selected.':'No days selected.';
+}
+function updateVisibleBulkSelection(checked){
+  var ids=filteredDays().map(function(day){return day.id||day.sourceRecordId||'';}).filter(Boolean);
+  if(checked){
+    ids.forEach(function(id){if(selectedBulkDayIds.indexOf(id)===-1)selectedBulkDayIds.push(id);});
+  }else{
+    var visible={};
+    ids.forEach(function(id){visible[id]=true;});
+    selectedBulkDayIds=selectedBulkDayIds.filter(function(id){return !visible[id];});
+  }
+  els.status.textContent=selectedBulkDayIds.length?selectedBulkDayIds.length+' day'+(selectedBulkDayIds.length===1?'':'s')+' selected.':'No days selected.';
+  render();
 }
 function isDraftDay(day){
   return String(day&&day.status||'').toLowerCase().indexOf('draft')>=0;
@@ -1469,6 +1484,7 @@ function init(){
   });
   els.todayBtn.addEventListener('click',jumpToToday);
   els.calendar.addEventListener('click',function(event){
+    if(event.target.closest&&event.target.closest('[data-bulk-check-all]'))return;
     if(event.target.closest&&event.target.closest('[data-bulk-check]'))return;
     var sortButton=event.target.closest&&event.target.closest('[data-sort-key]');
     if(sortButton){
@@ -1484,6 +1500,11 @@ function init(){
     openDayModal(days.find(function(day){return day.id===id||day.sourceRecordId===id;}));
   });
   els.calendar.addEventListener('change',function(event){
+    var all=event.target.closest&&event.target.closest('[data-bulk-check-all]');
+    if(all){
+      updateVisibleBulkSelection(all.checked);
+      return;
+    }
     var input=event.target.closest&&event.target.closest('[data-bulk-check]');
     if(!input)return;
     updateBulkSelection(input.getAttribute('data-bulk-check')||'',input.checked);
