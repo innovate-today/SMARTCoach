@@ -1354,43 +1354,54 @@ function renderRunnerTarget(r){
   if(!contactId)return;
   athleteProfile(contactId,r.name).then(function(profile){
     if(!CL||!document.getElementById('rta-'+r.id))return;
-    var compact=compactRunnerTarget(plan,profile);
-    if(!compact)return;
-    el.textContent=compact;
+    var target=plannedTargetData(plan,profile);
+    if(!target||!target.plannedTargetRange)return;
+    r.cachedPlannedTarget=target;
+    el.textContent='Target: '+target.plannedTargetRange;
     el.classList.add('on');
   }).catch(function(){});
 }
 function compactRunnerTarget(plan,profile){
+  var target=plannedTargetData(plan,profile);
+  return target&&target.plannedTargetRange?'Target: '+target.plannedTargetRange:'';
+}
+function plannedTargetData(plan,profile){
   var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
   var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
-  if(!rule)return'';
+  if(!rule)return null;
   var fitness=chooseFitness(profile,rule);
-  if(!fitness)return'';
+  if(!fitness)return null;
   var range=targetRangeDataFromFitness(rule,fitness);
-  return range?'Target: '+range.display:'';
+  if(!range)return null;
+  return{
+    plannedTargetRange:range.display,
+    plannedTargetMinMs:range.fast,
+    plannedTargetMaxMs:range.slow,
+    plannedTargetRep:workoutPrescription(plan,rule),
+    currentFitnessEvent:fitness.event,
+    currentFitnessDisplay:fitness.display,
+    plannedEffortPercent:Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%'
+  };
 }
 function runnerPlannedTarget(r){
   var plan=runnerPlan(r);
   if(!plan.trainingPlanDayTitle&&!plan.trainingPlanDayTargetSplits&&!plan.trainingPlanDayDetails)return Promise.resolve({});
   var matched=findAthleteByName(r.name)||{};
   var contactId=r.contactId||matched.id||'';
-  if(!contactId)return Promise.resolve({});
+  if(r.cachedPlannedTarget&&r.cachedPlannedTarget.plannedTargetRange)return Promise.resolve(r.cachedPlannedTarget);
+  if(!contactId)return Promise.resolve(targetFromVisibleRunnerRow(r));
   return athleteProfile(contactId,r.name).then(function(profile){
-    var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
-    var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
-    var fitness=chooseFitness(profile,rule);
-    var range=targetRangeDataFromFitness(rule,fitness);
-    if(!rule||!fitness||!range)return{};
-    return{
-      plannedTargetRange:range.display,
-      plannedTargetMinMs:range.fast,
-      plannedTargetMaxMs:range.slow,
-      plannedTargetRep:workoutPrescription(plan,rule),
-      currentFitnessEvent:fitness.event,
-      currentFitnessDisplay:fitness.display,
-      plannedEffortPercent:Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%'
-    };
-  }).catch(function(){return{};});
+    var target=plannedTargetData(plan,profile);
+    if(target&&target.plannedTargetRange)r.cachedPlannedTarget=target;
+    return target||targetFromVisibleRunnerRow(r);
+  }).catch(function(){return targetFromVisibleRunnerRow(r);});
+}
+function targetFromVisibleRunnerRow(r){
+  var el=document.getElementById('rta-'+(r&&r.id));
+  var text=el?String(el.textContent||''):'';
+  var m=text.match(/Target:\s*(.+)$/i);
+  if(!m)return{};
+  return{plannedTargetRange:m[1].trim()};
 }
 function uN(id,v){var r=find(id);if(r){r.name=v;applyAthleteMatch(r);}}
 function uNote(id,v){var r=find(id);if(r)r.note=v;}
