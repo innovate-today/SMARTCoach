@@ -734,9 +734,17 @@ function loadTrainingPlans(){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Training plans unavailable');
-    TP=(result.data&&result.data.plans)||[];
+    TP=activeTrainingPlans((result.data&&result.data.plans)||[]);
     applyAutoPlansToCurrentGroup();
   }).catch(function(){TP=[];});
+}
+function activeTrainingPlans(plans){
+  return (plans||[]).filter(function(plan){
+    if(plan&&plan.archived)return false;
+    if(/\barchived\b/i.test(String(plan&&plan.approvalStatus||'')))return false;
+    if(/\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(String(plan&&plan.schoolConstraints||'')))return false;
+    return true;
+  });
 }
 function loadProData(){
   if(!isProPlan()){
@@ -2000,7 +2008,7 @@ function openSeasonPlan(assignToGroup){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Training plans unavailable');
-    TP=(result.data&&result.data.plans)||[];
+    TP=activeTrainingPlans((result.data&&result.data.plans)||[]);
     renderTrainingPlanOptions();
   }).catch(function(e){
     document.getElementById('tp-status').textContent='Error: '+e.message;

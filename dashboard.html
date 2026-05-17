@@ -2321,13 +2321,23 @@ function saveManagedMeet(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Meet save failed.');
+    var wasEditing=!!meetManagerEditingId;
+    if(result.data&&result.data.meet)upsertManagedMeet(result.data.meet);
+    renderManagedMeets();
     clearMeetManagerForm();
-    return loadManagedMeets();
+    setMeetManagerStatus((wasEditing?'Updated ':'Saved ')+(result.data&&result.data.meet&&result.data.meet.name||name)+'.','success');
   }).catch(function(error){
     setMeetManagerStatus(error.message||'Meet save failed.','error');
   }).finally(function(){
     els.meetManagerSave.disabled=false;
   });
+}
+
+function upsertManagedMeet(meet){
+  if(!meet)return;
+  var index=meetManagerRows.findIndex(function(item){return String(item.id||'')===String(meet.id||'');});
+  if(index>=0)meetManagerRows[index]=Object.assign({},meetManagerRows[index],meet);
+  else meetManagerRows.push(meet);
 }
 
 function updateManagedMeetStatus(id,status){
@@ -2349,7 +2359,10 @@ function updateManagedMeetStatus(id,status){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Meet update failed.');
-    return loadManagedMeets();
+    meet.status=status;
+    if(result.data&&result.data.meet)Object.assign(meet,result.data.meet);
+    renderManagedMeets();
+    setMeetManagerStatus((status==='Archived'?'Archived ':'Restored ')+(meet.name||'meet')+'.','success');
   }).catch(function(error){
     setMeetManagerStatus(error.message||'Meet update failed.','error');
   });
@@ -2368,7 +2381,10 @@ function deleteManagedMeetRecord(id){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Meet delete failed.');
-    return loadManagedMeets();
+    meetManagerRows=meetManagerRows.filter(function(item){return String(item.id||'')!==String(id||'');});
+    renderManagedMeets();
+    clearMeetManagerForm();
+    setMeetManagerStatus('Deleted '+(meet.name||'meet')+'.','success');
   }).catch(function(error){
     setMeetManagerStatus(error.message||'Meet delete failed.','error');
   });
