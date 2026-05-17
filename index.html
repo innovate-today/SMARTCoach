@@ -632,6 +632,11 @@ function isCurrentGroup(l){
   var cs=currentSeason();
   return String(l.season||cs.season)===cs.season&&Number(l.seasonYear||cs.year)===cs.year;
 }
+function isUpcomingMeetGroup(l){
+  if((l.type||'training')!=='meet')return false;
+  if(!l.meetDate)return false;
+  return String(l.meetDate)>=todayISO();
+}
 function syncedRunCount(r){
   return (r.saved||[]).filter(function(s){return s&&s.synced;}).length;
 }
@@ -1003,9 +1008,11 @@ function handleMeetSelect(){
 function visibleGroups(){
   return logs.filter(function(l){
     var type=l.type||'training';
-    if(GV==='archive')return !!l.archived||!isCurrentGroup(l);
-    if(l.archived||!isCurrentGroup(l))return false;
-    if(GV==='meets')return type==='meet';
+    var currentOrUpcomingMeet=type==='meet'&&(isCurrentGroup(l)||isUpcomingMeetGroup(l));
+    if(GV==='archive')return !!l.archived||(!isCurrentGroup(l)&&!isUpcomingMeetGroup(l));
+    if(l.archived)return false;
+    if(GV==='meets')return currentOrUpcomingMeet;
+    if(!isCurrentGroup(l))return false;
     return type!=='meet';
   });
 }
