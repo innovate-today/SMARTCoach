@@ -2,6 +2,7 @@ const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
+const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
@@ -23,6 +24,23 @@ const FIELD_IDS = {
   total_time_display: ["z9eZIcIL1B7yaeR5jXHI"],
   total_time_ms: ["tzmjjgk4FwJLfJDZ1KAc"],
   coach_note: ["Afy8b8lAbUoti9cCqa1m"],
+};
+const RECORD_FIELD_IDS = {
+  record: ["ftIsXzZszu3s0cfJ55MU"],
+  record_type: ["kFI5EuUMaWNNr1MWCRCC"],
+  record_scope: ["csicg5cTEMH2il824CdN"],
+  sport: ["NFlleoMtJlvlB1KAOqpR"],
+  event: ["tCE1zz6sODLctaBJaBZD"],
+  result_display: ["oECaYRLL3M0uczHeLVYC"],
+  result_ms: ["WgDubsuUq1Ws9MqXAP4f"],
+  athlete_contact: ["lgSfedW35TT44Nxgl7tY"],
+  athlete_name_snapshot: ["OjTWebwJU389MGpccJ2b"],
+  meet_name: ["8sjv8sNmaTJiCQIIJ952"],
+  meet_result_id: ["2oFmwcjJZLPtIqJ5Nf9z"],
+  record_date: ["lXHnJHTLrt0njYh0wIRX"],
+  season_year: ["VasiHyN6NJt5Q28z15Oq"],
+  is_current: ["Lxh59hEN9aOEBgOQCo7A"],
+  record_notes: ["nn0km6vLhgz6K7V7lUe"],
 };
 
 module.exports = async function handler(req, res) {
@@ -191,6 +209,19 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     },
   });
 
+  const linkedRecords = await updateLinkedMeetRecords({
+    token,
+    locationId,
+    contactId,
+    athleteName,
+    record,
+    props,
+    nextValues,
+    resultMs,
+    correctionTime,
+    reason,
+  });
+
   await addCorrectionNote({
     token,
     contactId,
@@ -205,7 +236,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     }),
   });
 
-  return { success: true, action: "edited", recordType: "meet", recordId: record.id, changes };
+  return { success: true, action: "edited", recordType: "meet", recordId: record.id, changes, linkedRecords };
 }
 
 async function editPerformanceRecord({ token, locationId, contactId, athleteName, reason, record, props, payload }) {
@@ -282,6 +313,122 @@ async function addCorrectionNote({ token, contactId, body }) {
     method: "POST",
     body: { body },
   });
+}
+
+async function updateLinkedMeetRecords({ token, locationId, contactId, athleteName, record, props, nextValues, resultMs, correctionTime, reason }) {
+  const linked = await findLinkedRecordEntries({
+    token,
+    locationId,
+    contactId,
+    meetResultId: record.id,
+    previous: props,
+    nextValues,
+  });
+  if (!linked.length) return { updated: 0, skipped: true };
+
+  let updated = 0;
+  for (const item of linked) {
+    const recordProps = recordProperties(item);
+    const type = labelValue(recordProp(recordProps, "record_type"));
+    const normalizedType = optionValue(type);
+    const isPersonalBest = normalizedType === "personal_best";
+    const isSeasonBest = normalizedType === "season_best";
+    const shouldRemainCurrent = isPersonalBest ? nextValues.isPr === "Yes" : isSeasonBest ? nextValues.isSeasonBest === "Yes" : yesText(recordProp(recordProps, "is_current"));
+    const recordName = [athleteName, type || "Record", nextValues.event, nextValues.resultDisplay].filter(Boolean).join(" - ");
+    const note = appendRecordCorrectionNote(recordProp(recordProps, "record_notes"), correctionTime, reason);
+
+    await ghlFetch({
+      token,
+      path: objectRecordPath(RECORD_SCHEMA_KEY, item.id, locationId),
+      method: "PUT",
+      body: {
+        properties: compactProperties({
+          record: recordName,
+          event: nextValues.event,
+          result_display: nextValues.resultDisplay,
+          ...(resultMs ? { result_ms: resultMs } : {}),
+          athlete_contact: contactId,
+          athlete_name_snapshot: athleteName,
+          meet_name: nextValues.meetName,
+          record_date: nextValues.meetDate,
+          season_year: nextValues.meetDate ? Number(String(nextValues.meetDate).slice(0, 4)) || "" : "",
+          is_current: shouldRemainCurrent ? "Yes" : "No",
+          record_notes: note,
+        }),
+      },
+    });
+    updated += 1;
+  }
+  return { updated, skipped: false };
+}
+
+async function findLinkedRecordEntries({ token, locationId, contactId, meetResultId, previous, nextValues }) {
+  const linked = [];
+  for (const field of ["meet_result_id", "custom_objects.records.meet_result_id"].concat(RECORD_FIELD_IDS.meet_result_id || [])) {
+    try {
+      const result = await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/search`,
+        method: "POST",
+        body: {
+          locationId,
+          page: 1,
+          pageLimit: 100,
+          filters: [{ field, operator: "eq", value: meetResultId }],
+        },
+      });
+      linked.push(...recordsFromResult(result));
+    } catch (error) {
+      if (error.statusCode && error.statusCode >= 500) throw error;
+    }
+  }
+
+  if (!linked.length) {
+    const all = await listRecordEntries({ token, locationId });
+    linked.push(...all.filter((item) => recordMatchesMeetCorrection(item, { contactId, previous, nextValues })));
+  }
+
+  return uniqueRecords(linked).filter((item) => item && item.id);
+}
+
+async function listRecordEntries({ token, locationId }) {
+  const records = [];
+  for (let page = 1; page <= 5; page += 1) {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/search`,
+      method: "POST",
+      body: { locationId, page, pageLimit: 100 },
+    });
+    const batch = recordsFromResult(result);
+    records.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return records;
+}
+
+function recordMatchesMeetCorrection(record, { contactId, previous, nextValues }) {
+  const props = recordProperties(record);
+  const athleteMatches = recordProp(props, "athlete_contact") === contactId;
+  const meet = optionValue(recordProp(props, "meet_name"));
+  const previousMeet = optionValue(prop(previous, "meet_name"));
+  const nextMeet = optionValue(nextValues.meetName);
+  const event = optionValue(recordProp(props, "event"));
+  const previousEvent = optionValue(prop(previous, "event"));
+  const nextEvent = optionValue(nextValues.event);
+  const result = clean(recordProp(props, "result_display"));
+  const previousResult = clean(prop(previous, "result_display"));
+  const nextResult = clean(nextValues.resultDisplay);
+  return athleteMatches
+    && (!meet || meet === previousMeet || meet === nextMeet)
+    && (!event || event === previousEvent || event === nextEvent)
+    && (!result || result === previousResult || result === nextResult);
+}
+
+function appendRecordCorrectionNote(note, correctionTime, reason) {
+  const base = clean(note);
+  const line = `Correction Date: ${correctionTime}\nCorrection Reason: ${reason}`;
+  return base.indexOf(line) >= 0 ? base : [base, line].filter(Boolean).join("\n");
 }
 
 function previousProps(previous, recordType) {
@@ -557,8 +704,48 @@ function firstRecord(result) {
   ].find(Boolean) || null;
 }
 
+function recordsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.records) ? result.records : []),
+    ...(Array.isArray(result && result.items) ? result.items : []),
+    ...(Array.isArray(result && result.data) ? result.data : []),
+    ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
+    ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
+  ];
+}
+
+function uniqueRecords(records) {
+  const seen = {};
+  return records.filter((record) => {
+    const props = recordProperties(record);
+    const key = (record && record.id) || recordProp(props, "source_record_id") || JSON.stringify(props);
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+}
+
 function recordProperties(record) {
   return (record && (record.properties || record.fields || record.customFields)) || {};
+}
+
+function recordProp(props, key) {
+  const keys = [key, `custom_objects.records.${key}`].concat(RECORD_FIELD_IDS[key] || []);
+  if (Array.isArray(props)) {
+    for (const item of keys) {
+      const field = props.find((fieldItem) => fieldItem && (fieldItem.key === item || fieldItem.id === item || fieldItem.fieldKey === item || fieldItem.fieldId === item || fieldItem.customFieldId === item));
+      if (field) {
+        const value = readRecordPropValue(field.value || field.fieldValue || field.field_value);
+        if (value !== "") return value;
+      }
+    }
+    return "";
+  }
+  for (const item of keys) {
+    const value = readRecordPropValue(props && props[item]);
+    if (value !== "") return value;
+  }
+  return "";
 }
 
 function prop(props, key) {
@@ -577,6 +764,22 @@ function readPropValue(props, key) {
     return clean(raw.value || raw.fieldValue || raw.field_value || raw.name || raw.label);
   }
   return clean(raw);
+}
+
+function readRecordPropValue(raw) {
+  if (raw === undefined || raw === null) return "";
+  if (Array.isArray(raw)) return raw.map(readRecordPropValue).filter(Boolean).join(", ");
+  if (typeof raw === "object") return clean(raw.value || raw.fieldValue || raw.field_value || raw.name || raw.label || raw.text || raw.displayValue || raw.display_value);
+  return clean(raw);
+}
+
+function compactProperties(properties) {
+  return Object.keys(properties).reduce((cleaned, key) => {
+    const value = properties[key];
+    if (value === "" || value === null || typeof value === "undefined") return cleaned;
+    cleaned[key] = value;
+    return cleaned;
+  }, {});
 }
 
 function setCorsHeaders(res) {
