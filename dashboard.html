@@ -2101,15 +2101,50 @@ function saveCorrection(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Correction failed.');
-    setCorrectionStatus('Correction saved. Refreshing dashboard...','success');
-    return loadDashboard();
-  }).then(function(){
+    applyTrainingCorrectionLocally(correctionRow,{
+      sessionDate:els.correctionDate.value,
+      workoutType:els.correctionWorkout.value,
+      surface:els.correctionSurface.value,
+      completedVolume:els.correctionVolume.value,
+      time:els.correctionTime.value,
+      weather:els.correctionWeather.value,
+      notes:els.correctionNotes.value
+    },reason);
+    setCorrectionStatus('Correction saved.','success');
     closeCorrectionModal();
+    setTimeout(loadDashboard,250);
   }).catch(function(error){
     setCorrectionStatus(error.message||'Could not save correction.','error');
   }).finally(function(){
     els.correctionSave.disabled=false;
   });
+}
+
+function applyTrainingCorrectionLocally(row,updates,reason){
+  if(!row)return;
+  var correctedAt=new Date().toISOString();
+  var updatedRow=null;
+  recentTrainingRows=recentTrainingRows.map(function(item){
+    if(!sameSavedEntry(item,row))return item;
+    updatedRow=Object.assign({},item,{
+      sessionDate:updates.sessionDate||item.sessionDate,
+      workoutType:updates.workoutType||item.workoutType,
+      surface:updates.surface||item.surface,
+      completedVolume:updates.completedVolume||item.completedVolume,
+      completedVolumeMiles:parseCompletedMiles(updates.completedVolume,item.completedVolumeMiles),
+      totalTimeDisplay:updates.time||item.totalTimeDisplay,
+      weather:updates.weather||'',
+      coachNote:updates.notes||'',
+      corrected:true,
+      correctionDate:correctedAt,
+      correctionReason:reason
+    });
+    return updatedRow;
+  });
+  if(updatedRow){
+    updateAthleteLatestTraining(updatedRow,row);
+    renderRows();
+  }
 }
 
 function correctionPreviousPayload(row){
@@ -2302,15 +2337,51 @@ function saveMeetCorrection(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Correction failed.');
-    setMeetCorrectionStatus('Correction saved. Refreshing dashboard...','success');
-    return loadDashboard();
-  }).then(function(){
+    applyMeetCorrectionLocally(meetCorrectionRow,{
+      meetDate:els.meetCorrectionDate.value,
+      meetName:els.meetCorrectionName.value,
+      event:els.meetCorrectionEvent.value,
+      resultDisplay:els.meetCorrectionResult.value,
+      wind:els.meetCorrectionWind.value,
+      isPr:best==='pb'||best==='both',
+      isSeasonBest:best==='sb'||best==='both',
+      notes:els.meetCorrectionNotes.value
+    },reason);
+    setMeetCorrectionStatus('Correction saved.','success');
     closeMeetCorrectionModal();
+    setTimeout(loadDashboard,250);
   }).catch(function(error){
     setMeetCorrectionStatus(error.message||'Could not save correction.','error');
   }).finally(function(){
     els.meetCorrectionSave.disabled=false;
   });
+}
+
+function applyMeetCorrectionLocally(row,updates,reason){
+  if(!row)return;
+  var correctedAt=new Date().toISOString();
+  var updatedRow=null;
+  recentMeetRows=recentMeetRows.map(function(item){
+    if(!sameSavedEntry(item,row))return item;
+    updatedRow=Object.assign({},item,{
+      meetDate:updates.meetDate||item.meetDate,
+      meetName:updates.meetName||item.meetName,
+      event:updates.event||item.event,
+      resultDisplay:updates.resultDisplay||item.resultDisplay,
+      wind:updates.wind||'',
+      isPr:!!updates.isPr,
+      isSeasonBest:!!updates.isSeasonBest,
+      coachRaceNotes:updates.notes||'',
+      corrected:true,
+      correctionDate:correctedAt,
+      correctionReason:reason
+    });
+    return updatedRow;
+  });
+  if(updatedRow){
+    updateAthleteLatestMeet(updatedRow,row);
+    renderRows();
+  }
 }
 
 function voidMeetRecord(button){
@@ -2674,6 +2745,51 @@ function sameAthlete(item,row){
   return String(item.contactId||'')===String(row.contactId||'') || String(item.athleteName||'').toLowerCase()===String(row.name||'').toLowerCase();
 }
 
+function sameSavedEntry(item,row){
+  if(!item||!row)return false;
+  if(row.recordId&&item.recordId===row.recordId)return true;
+  if(row.sourceRecordId&&item.sourceRecordId===row.sourceRecordId)return true;
+  return String(item.contactId||'')===String(row.contactId||'') &&
+    String(item.athleteName||'').toLowerCase()===String(row.athleteName||'').toLowerCase() &&
+    String(item.syncedAt||'')===String(row.syncedAt||'');
+}
+
+function sameLatestMeet(latest,row){
+  if(!latest||!row)return false;
+  if(row.recordId&&latest.recordId===row.recordId)return true;
+  if(row.sourceRecordId&&latest.sourceRecordId===row.sourceRecordId)return true;
+  return String(latest.meetName||'')===String(row.meetName||'') &&
+    String(latest.meetDate||'')===String(row.meetDate||'') &&
+    String(latest.event||'')===String(row.event||'') &&
+    String(latest.resultDisplay||'')===String(row.resultDisplay||'');
+}
+
+function sameLatestTraining(latest,row){
+  if(!latest||!row)return false;
+  if(row.recordId&&latest.recordId===row.recordId)return true;
+  if(row.sourceRecordId&&latest.sourceRecordId===row.sourceRecordId)return true;
+  return String(latest.groupName||'')===String(row.groupName||'') &&
+    String(latest.sessionDate||'')===String(row.sessionDate||'') &&
+    String(latest.totalTimeDisplay||'')===String(row.totalTimeDisplay||'') &&
+    String(latest.workoutPrescription||latest.workoutType||'')===String(row.workoutPrescription||row.workoutType||'');
+}
+
+function updateAthleteLatestMeet(updatedRow,originalRow){
+  dashboardRows=dashboardRows.map(function(athlete){
+    if(!sameAthlete(updatedRow,athlete))return athlete;
+    if(!sameLatestMeet(athlete.latestMeet,originalRow))return athlete;
+    return Object.assign({},athlete,{latestMeet:Object.assign({},athlete.latestMeet||{},updatedRow)});
+  });
+}
+
+function updateAthleteLatestTraining(updatedRow,originalRow){
+  dashboardRows=dashboardRows.map(function(athlete){
+    if(!sameAthlete(updatedRow,athlete))return athlete;
+    if(!sameLatestTraining(athlete.latestTraining,originalRow))return athlete;
+    return Object.assign({},athlete,{latestTraining:Object.assign({},athlete.latestTraining||{},updatedRow)});
+  });
+}
+
 function detailCard(title,value,sub){
   return '<section class="detailcard"><h3>'+esc(title)+'</h3><b>'+esc(value||'--')+'</b>'+subLine(sub||'')+'</section>';
 }
@@ -2936,6 +3052,12 @@ function sumTrainingVolume(rows){
 function formatMiles(value){
   var miles=Math.round(num(value)*10)/10;
   return miles?miles.toFixed(miles%1?1:0)+' mi':'0 mi';
+}
+
+function parseCompletedMiles(value,fallback){
+  var text=String(value||'').toLowerCase();
+  var match=text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles)\b/);
+  return match?Number(match[1]):num(fallback);
 }
 
 function targetStatusPill(row){
