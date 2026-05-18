@@ -110,6 +110,7 @@ function setCorsHeaders(res) {
 }
 
 async function listActiveAthletes({ token, locationId }) {
+  const genderFieldIds = await listContactFieldIds({ token, locationId, names: ["gender", "sex", "division"] });
   const result = await ghlFetch({
     token,
     path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=100`,
@@ -117,9 +118,39 @@ async function listActiveAthletes({ token, locationId }) {
   });
 
   return (result.contacts || [])
-    .map(normalizeContact)
+    .map((contact) => normalizeContact(contact, { genderFieldIds }))
     .filter((athlete) => athlete.smartcoachActive || (athlete.smartcoachAthleteId && athlete.tags.indexOf("smartcoach-athlete") >= 0))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function listContactFieldIds({ token, locationId, names }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/locations/${encodeURIComponent(locationId)}/customFields`,
+      method: "GET",
+    });
+    const wanted = names.map((name) => clean(name).toLowerCase()).filter(Boolean);
+    return customFieldsFromResult(result).filter((field) => {
+      const labels = [
+        field.id,
+        field.key,
+        field.fieldKey,
+        field.field_key,
+        field.name,
+        field.fieldName,
+        field.field_name,
+        field.label,
+      ].map((value) => clean(value).toLowerCase());
+      return labels.some((label) => {
+        if (wanted.includes(label)) return true;
+        const simple = label.split(".").pop().split("_").pop();
+        return wanted.includes(simple);
+      });
+    }).map((field) => clean(field.id || field.fieldId || field.customFieldId)).filter(Boolean);
+  } catch (error) {
+    return [];
+  }
 }
 
 async function searchObjectRecords({ token, locationId, schemaKey }) {
@@ -235,22 +266,23 @@ function isFutureDate(value) {
   return date > today;
 }
 
-function normalizeContact(contact) {
+function normalizeContact(contact, options = {}) {
   const smartcoachActiveValue = existingCustomFieldValue(contact, SMARTCOACH_ACTIVE_FIELD_ID);
   return {
     id: contact.id,
     name: contactName(contact),
-    gender: contactGender(contact),
+    gender: contactGender(contact, options.genderFieldIds),
     smartcoachActive: isActiveValue(smartcoachActiveValue),
     smartcoachAthleteId: existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID),
     tags: Array.isArray(contact.tags) ? contact.tags : [],
   };
 }
 
-function contactGender(contact) {
+function contactGender(contact, genderFieldIds = []) {
+  const fieldValue = genderFieldIds.map((fieldId) => existingCustomFieldValue(contact, fieldId)).find(Boolean);
   return clean(
     contact && (contact.gender || contact.sex || contact.genderIdentity)
-  ) || existingCustomFieldValueByName(contact, ["gender", "sex", "division"]);
+  ) || fieldValue || existingCustomFieldValueByName(contact, ["gender", "sex", "division"]);
 }
 
 function normalizeBest(record) {
@@ -466,6 +498,15 @@ function recordsFromResult(result) {
     ...(Array.isArray(result && result.items) ? result.items : []),
     ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
     ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
+  ];
+}
+
+function customFieldsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.customFields) ? result.customFields : []),
+    ...(Array.isArray(result && result.fields) ? result.fields : []),
+    ...(Array.isArray(result && result.data && result.data.customFields) ? result.data.customFields : []),
+    ...(Array.isArray(result && result.data && result.data.fields) ? result.data.fields : []),
   ];
 }
 

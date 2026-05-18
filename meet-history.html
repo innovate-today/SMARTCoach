@@ -35,7 +35,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .status{color:var(--muted);font-size:13px;text-align:right;min-width:150px}
 .split{display:grid;grid-template-columns:minmax(320px,.42fr) minmax(620px,1fr);gap:14px;align-items:start}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.results-panel{max-height:72vh;display:flex;flex-direction:column;min-height:520px}
+.results-panel{height:72vh;display:flex;flex-direction:column;min-height:520px}
 .panelhead{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .panelhead h2{font-size:16px;margin:0}
 .panelhead span{font-size:12px;color:var(--muted)}
@@ -62,7 +62,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .comparechip.warn{background:#ffedd5;color:var(--warn)}
 .comparechip.blue{background:#dbeafe;color:#1d4ed8}
 .tablewrap{overflow:auto}
-.results-panel .tablewrap{flex:1;min-height:320px;scrollbar-gutter:stable}
+.results-panel .tablewrap{flex:1;min-height:0;scrollbar-gutter:stable}
 table{width:100%;border-collapse:collapse;min-width:1040px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
@@ -154,10 +154,10 @@ tr:last-child td{border-bottom:0}
         <h2 id="resultsTitle">Results</h2>
         <span id="resultListCount">--</span>
       </div>
-      <div id="meetSummary" class="meet-summary"></div>
-      <div id="eventLeaders" class="eventleaders" hidden></div>
-      <div id="progressionPanel" class="progression" hidden></div>
       <div class="tablewrap">
+        <div id="meetSummary" class="meet-summary"></div>
+        <div id="eventLeaders" class="eventleaders" hidden></div>
+        <div id="progressionPanel" class="progression" hidden></div>
         <table>
           <thead>
             <tr>
