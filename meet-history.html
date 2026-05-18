@@ -56,9 +56,14 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .pill.warn{background:#ffedd5;color:var(--warn)}
 .pill.pb{background:#dbeafe;color:#1d4ed8}
 .pill.sb{background:#fef3c7;color:#92400e}
+.comparebits{display:flex;flex-wrap:wrap;gap:5px;max-width:280px}
+.comparechip{display:inline-flex;align-items:center;border-radius:999px;background:#eef2f7;color:#334155;font-size:11px;font-weight:900;padding:4px 7px}
+.comparechip.good{background:#dcfce7;color:var(--good)}
+.comparechip.warn{background:#ffedd5;color:var(--warn)}
+.comparechip.blue{background:#dbeafe;color:#1d4ed8}
 .tablewrap{overflow:auto}
 .results-panel .tablewrap{flex:1;min-height:320px;scrollbar-gutter:stable}
-table{width:100%;border-collapse:collapse;min-width:900px}
+table{width:100%;border-collapse:collapse;min-width:1040px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
 .sortbtn{border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer;text-align:left}
@@ -160,6 +165,7 @@ tr:last-child td{border-bottom:0}
               <th><button class="sortbtn" data-sort="meet" type="button">Meet</button></th>
               <th><button class="sortbtn" data-sort="event" type="button">Event</button></th>
               <th><button class="sortbtn" data-sort="result" type="button">Result</button></th>
+              <th>Comparison</th>
               <th><button class="sortbtn" data-sort="best" type="button">Best</button></th>
               <th><button class="sortbtn" data-sort="date" type="button">Date</button></th>
               <th><button class="sortbtn" data-sort="synced" type="button">Synced</button></th>
@@ -367,6 +373,67 @@ function compareResultValue(a,b,key){
 function bestScore(row){
   return (row.isPr?2:0)+(row.isSeasonBest?1:0);
 }
+function resultIdentity(row){
+  return String(row.sourceRecordId||row.recordId||row.id||'') || [
+    row.athleteName,row.meetName,row.meetDate,row.event,row.resultDisplay,row.syncedAt
+  ].join('|');
+}
+function sameResult(a,b){
+  return resultIdentity(a)===resultIdentity(b);
+}
+function selectedEventRankMap(results){
+  var groups={};
+  results.forEach(function(row){
+    if(!row.event||!row.resultDisplay)return;
+    var ms=parseResultMs(row.resultDisplay);
+    if(!ms)return;
+    var key=String(row.event||'').toLowerCase();
+    if(!groups[key])groups[key]=[];
+    groups[key].push({row:row,ms:ms});
+  });
+  var map={};
+  Object.keys(groups).forEach(function(key){
+    var sorted=groups[key].sort(function(a,b){return a.ms-b.ms;});
+    sorted.forEach(function(item,index){
+      var leader=sorted[0];
+      map[resultIdentity(item.row)]={place:index+1,total:sorted.length,gap:item.ms-leader.ms};
+    });
+  });
+  return map;
+}
+function priorResultFor(row){
+  if(!row.athleteName||!row.event||!row.meetDate)return null;
+  var rowDate=String(row.meetDate||'');
+  return meetResults.filter(function(candidate){
+    if(sameResult(candidate,row))return false;
+    if(String(candidate.athleteName||'').toLowerCase()!==String(row.athleteName||'').toLowerCase())return false;
+    if(String(candidate.event||'').toLowerCase()!==String(row.event||'').toLowerCase())return false;
+    if(!candidate.resultDisplay||!candidate.meetDate)return false;
+    return String(candidate.meetDate||'')<rowDate;
+  }).sort(function(a,b){
+    return String(b.meetDate||'').localeCompare(String(a.meetDate||''));
+  })[0]||null;
+}
+function comparisonHtml(row,rankMap){
+  var parts=[];
+  var rank=rankMap[resultIdentity(row)];
+  if(rank&&rank.total>1){
+    parts.push('<span class="comparechip blue">#'+esc(rank.place)+' of '+esc(rank.total)+'</span>');
+    if(rank.gap>0)parts.push('<span class="comparechip warn">+'+esc(formatSeconds(rank.gap))+' behind leader</span>');
+    else parts.push('<span class="comparechip good">Event leader</span>');
+  }
+  var prior=priorResultFor(row);
+  if(prior){
+    var currentMs=parseResultMs(row.resultDisplay);
+    var priorMs=parseResultMs(prior.resultDisplay);
+    var delta=currentMs&&priorMs?currentMs-priorMs:0;
+    var cls=delta<0?'good':delta>0?'warn':'blue';
+    var text=delta?((delta<0?'-':'+')+formatSeconds(Math.abs(delta))+(delta<0?' vs previous':' vs previous')):'Matches previous';
+    parts.push('<span class="comparechip '+cls+'">'+esc(text)+'</span>');
+    parts.push('<span class="muted">Previous: '+esc(prior.resultDisplay)+' · '+esc(formatDate(prior.meetDate))+'</span>');
+  }
+  return parts.length?'<div class="comparebits">'+parts.join('')+'</div>':'<span class="muted">No comparison yet</span>';
+}
 function updateSortButtons(){
   document.querySelectorAll('.sortbtn[data-sort]').forEach(function(button){
     var active=button.getAttribute('data-sort')===resultSort.key;
@@ -511,6 +578,7 @@ function render(){
   updateSortButtons();
   renderMeetSummary(results);
   renderProgressions(results);
+  var rankMap=selectedEventRankMap(results);
   var series=meetSeries(groups);
   var seriesHtml=series.map(function(item){
     var active=selectedGroupKey==='series:'+item.key?' active':'';
@@ -537,6 +605,7 @@ function render(){
       '<td>'+esc(row.meetName||'Unlisted meet')+'<div class="muted">'+esc(seasonText(row))+'</div></td>'+
       '<td>'+esc(row.event||'')+'</td>'+
       '<td><b>'+esc(row.resultDisplay||'')+'</b></td>'+
+      '<td>'+comparisonHtml(row,rankMap)+'</td>'+
       '<td>'+(flags.join('')||'<span class="muted">No new best</span>')+'</td>'+
       '<td>'+esc(formatDate(row.meetDate))+'</td>'+
       '<td>'+esc(formatDateTime(row.syncedAt))+'</td>'+
