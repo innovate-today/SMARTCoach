@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
 
   if (!requireProPlan(req, res)) return;
 
-  if (req.method !== "GET" && req.method !== "POST") {
+  if (req.method !== "GET" && req.method !== "POST" && req.method !== "PATCH" && req.method !== "DELETE") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
@@ -78,6 +78,20 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    if (req.method === "PATCH") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      const record = await updateRecord({ token, locationId, payload });
+      res.status(200).json({ success: true, record });
+      return;
+    }
+
+    if (req.method === "DELETE") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      await deleteRecord({ token, payload });
+      res.status(200).json({ success: true });
+      return;
+    }
+
     const records = await listRecords({ token, locationId });
     res.status(200).json({
       success: true,
@@ -91,8 +105,31 @@ module.exports = async function handler(req, res) {
 
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code");
+}
+
+async function updateRecord({ token, locationId, payload }) {
+  const recordId = clean(payload && payload.recordId);
+  if (!recordId) throw httpError(400, "Record ID is required.");
+  const properties = buildRecordProperties(payload || {});
+  const record = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`,
+    method: "PUT",
+    body: { properties },
+  });
+  return normalizeRecord(record.record || record, properties);
+}
+
+async function deleteRecord({ token, payload }) {
+  const recordId = clean(payload && payload.recordId);
+  if (!recordId) throw httpError(400, "Record ID is required.");
+  await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
+    method: "DELETE",
+  });
 }
 
 function buildRecordProperties(row) {
@@ -174,8 +211,8 @@ async function listRecords({ token, locationId }) {
   return uniqueRecords(records).map(normalizeRecord).sort(sortRecords);
 }
 
-function normalizeRecord(record) {
-  const props = recordProperties(record);
+function normalizeRecord(record, fallbackProperties) {
+  const props = fallbackProperties || recordProperties(record);
   return {
     recordId: record && record.id ? record.id : "",
     recordName: prop(props, "record") || recordName(record),

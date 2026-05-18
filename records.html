@@ -24,6 +24,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
+button.danger{background:#fee2e2;color:#b91c1c}
 button:disabled{opacity:.55;cursor:not-allowed}
 .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
@@ -39,6 +40,12 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .panelhead h2{font-size:15px;margin:0}
 .panelbody{padding:14px 16px}
 .bulkgrid{display:grid;grid-template-columns:1fr;gap:10px}
+.recordform{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:12px}
+.recordform .wide{grid-column:span 2}
+.recordform label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+.recordform .checkrow{display:flex;align-items:center;gap:8px;color:#172033;text-transform:none;letter-spacing:0;font-size:14px}
+.recordform input[type=checkbox]{width:auto}
+.recordformactions{display:flex;align-items:center;justify-content:flex-end;gap:8px;grid-column:1/-1}
 .bulkintro{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px}
 .bulkintro b{display:block;color:#111827;font-size:14px}
 .bulkhelp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
@@ -74,6 +81,14 @@ tr:last-child td{border-bottom:0}
 .access p{color:var(--muted);line-height:1.45}
 .accessrow{display:flex;justify-content:center;gap:10px;margin-top:18px}
 .accessrow input{max-width:280px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px}
+.modalpanel{width:min(940px,100%);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 20px 48px rgba(15,23,42,.25)}
+.modalhead{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);background:#fff}
+.modalhead h2{font-size:20px;margin:0}
+.modalbody{padding:14px 16px}
+.modalstatus{font-size:13px;font-weight:900;color:var(--muted)}
+.compact{padding:7px 9px;font-size:13px}
+.headinfo{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#e8eefc;color:#173891;font-size:12px;font-weight:900;margin-left:4px;text-transform:none;letter-spacing:0}
 @media(max-width:980px){
   .top{align-items:flex-start;flex-direction:column}
   .actions{width:100%;flex-wrap:wrap}
@@ -81,6 +96,8 @@ tr:last-child td{border-bottom:0}
   .cards{grid-template-columns:1fr 1fr}
   .bar{grid-template-columns:1fr}
   .bulkhelp,.bulkfile{grid-template-columns:1fr}
+  .recordform{grid-template-columns:1fr}
+  .recordform .wide{grid-column:auto}
   .status{text-align:left}
 }
 </style>
@@ -122,10 +139,58 @@ tr:last-child td{border-bottom:0}
   <section class="panel bulkpanel">
     <div class="panelhead">
       <div class="bulkintro">
-        <div><b>Bulk Record Entry</b><span>Occasional setup tool for importing existing school, season, or athlete records.</span></div>
+        <div><b>Add / Edit Records</b><span>Add one record, edit table rows, or import existing records from a spreadsheet.</span></div>
       </div>
       <div id="bulkStatus" class="bulkstatus">Paste records, preview, then save.</div>
       <button id="toggleBulkBtn" class="ghost" type="button">Show bulk tools</button>
+    </div>
+    <div class="panelbody bulkgrid">
+      <div class="recordform" id="singleRecordForm">
+        <label>Record Type
+          <select id="singleRecordType"></select>
+        </label>
+        <label>Record Level
+          <select id="singleRecordScope"></select>
+        </label>
+        <label>Sport
+          <select id="singleSport"></select>
+        </label>
+        <label>Event
+          <select id="singleEvent"></select>
+        </label>
+        <label>Result
+          <input id="singleResult" type="text" placeholder="Example: 10:52.4">
+        </label>
+        <label>Athlete
+          <input id="singleAthlete" type="text" placeholder="Athlete name">
+        </label>
+        <label>Meet
+          <input id="singleMeet" type="text" placeholder="Meet name">
+        </label>
+        <label>Date
+          <input id="singleDate" type="date">
+        </label>
+        <label>Season
+          <select id="singleSeason"></select>
+        </label>
+        <label>Year
+          <input id="singleYear" type="number" min="2000" max="2100">
+        </label>
+        <label>Previous Record
+          <input id="singlePreviousRecord" type="text" placeholder="Optional">
+        </label>
+        <label>Previous Holder
+          <input id="singlePreviousHolder" type="text" placeholder="Optional">
+        </label>
+        <label class="wide">Notes
+          <input id="singleNotes" type="text" placeholder="Optional record notes">
+        </label>
+        <label class="checkrow"><input id="singleCurrent" type="checkbox" checked> Current record</label>
+        <div class="recordformactions">
+          <button id="clearSingleBtn" class="ghost" type="button">Clear</button>
+          <button id="saveSingleBtn" type="button">Save Record</button>
+        </div>
+      </div>
     </div>
     <div id="bulkBody" class="panelbody bulkgrid" hidden>
       <div class="bulkhelp">
@@ -155,14 +220,15 @@ tr:last-child td{border-bottom:0}
       <thead>
         <tr>
           <th><button class="sortbtn active asc" data-sort="event" type="button">Event</button></th>
-          <th><button class="sortbtn" data-sort="scope" type="button">Scope</button></th>
-          <th><button class="sortbtn" data-sort="type" type="button">Type</button></th>
+          <th><button class="sortbtn" data-sort="scope" type="button">Record Level</button><span class="headinfo" title="Who this record belongs to, such as athlete, team, school, varsity, or middle school.">i</span></th>
+          <th><button class="sortbtn" data-sort="type" type="button">Record Type</button><span class="headinfo" title="What kind of record it is, such as personal best, season best, school record, or course record.">i</span></th>
           <th><button class="sortbtn" data-sort="result" type="button">Record</button></th>
           <th><button class="sortbtn" data-sort="athlete" type="button">Athlete</button></th>
           <th><button class="sortbtn" data-sort="meet" type="button">Meet</button></th>
           <th><button class="sortbtn" data-sort="date" type="button">Date</button></th>
           <th>Status</th>
           <th>Previous</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
@@ -181,10 +247,74 @@ tr:last-child td{border-bottom:0}
   <p id="accessStatus" class="muted"></p>
 </section>
 
+<div id="recordEditModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="recordEditTitle">
+    <div class="modalhead">
+      <h2 id="recordEditTitle">Edit Record</h2>
+      <button id="recordEditClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="recordform">
+        <label>Record Type
+          <select id="editRecordType"></select>
+        </label>
+        <label>Record Level
+          <select id="editRecordScope"></select>
+        </label>
+        <label>Sport
+          <select id="editSport"></select>
+        </label>
+        <label>Event
+          <select id="editEvent"></select>
+        </label>
+        <label>Result
+          <input id="editResult" type="text">
+        </label>
+        <label>Athlete
+          <input id="editAthlete" type="text">
+        </label>
+        <label>Meet
+          <input id="editMeet" type="text">
+        </label>
+        <label>Date
+          <input id="editDate" type="date">
+        </label>
+        <label>Season
+          <select id="editSeason"></select>
+        </label>
+        <label>Year
+          <input id="editYear" type="number" min="2000" max="2100">
+        </label>
+        <label>Previous Record
+          <input id="editPreviousRecord" type="text">
+        </label>
+        <label>Previous Holder
+          <input id="editPreviousHolder" type="text">
+        </label>
+        <label class="wide">Notes
+          <input id="editNotes" type="text">
+        </label>
+        <label class="checkrow"><input id="editCurrent" type="checkbox"> Current record</label>
+        <div class="recordformactions">
+          <div id="recordEditStatus" class="modalstatus">Changes save to SMART Trak immediately.</div>
+          <button id="recordDeleteBtn" class="danger" type="button">Delete Record</button>
+          <button id="recordEditSave" type="button">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
 <script>
 var records=[];
 var bulkRows=[];
 var recordSort={key:'event',dir:'asc'};
+var editingRecord=null;
+var RECORD_TYPES=['Personal Best','Season Best','School Record','Team Record','Course Record','Meet Record'];
+var RECORD_SCOPES=['Athlete','Team','School','Varsity','JV','Middle School','Club'];
+var SPORTS=['Track','Cross Country','Road'];
+var EVENTS=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
+var SEASONS=['Spring','Summer','Fall','Winter','Offseason'];
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -215,6 +345,41 @@ var els={
   saveBulkBtn:document.getElementById('saveBulkBtn'),
   clearBulkBtn:document.getElementById('clearBulkBtn'),
   bulkPreview:document.getElementById('bulkPreview'),
+  singleRecordType:document.getElementById('singleRecordType'),
+  singleRecordScope:document.getElementById('singleRecordScope'),
+  singleSport:document.getElementById('singleSport'),
+  singleEvent:document.getElementById('singleEvent'),
+  singleResult:document.getElementById('singleResult'),
+  singleAthlete:document.getElementById('singleAthlete'),
+  singleMeet:document.getElementById('singleMeet'),
+  singleDate:document.getElementById('singleDate'),
+  singleSeason:document.getElementById('singleSeason'),
+  singleYear:document.getElementById('singleYear'),
+  singlePreviousRecord:document.getElementById('singlePreviousRecord'),
+  singlePreviousHolder:document.getElementById('singlePreviousHolder'),
+  singleNotes:document.getElementById('singleNotes'),
+  singleCurrent:document.getElementById('singleCurrent'),
+  saveSingleBtn:document.getElementById('saveSingleBtn'),
+  clearSingleBtn:document.getElementById('clearSingleBtn'),
+  recordEditModal:document.getElementById('recordEditModal'),
+  recordEditClose:document.getElementById('recordEditClose'),
+  recordEditStatus:document.getElementById('recordEditStatus'),
+  recordDeleteBtn:document.getElementById('recordDeleteBtn'),
+  recordEditSave:document.getElementById('recordEditSave'),
+  editRecordType:document.getElementById('editRecordType'),
+  editRecordScope:document.getElementById('editRecordScope'),
+  editSport:document.getElementById('editSport'),
+  editEvent:document.getElementById('editEvent'),
+  editResult:document.getElementById('editResult'),
+  editAthlete:document.getElementById('editAthlete'),
+  editMeet:document.getElementById('editMeet'),
+  editDate:document.getElementById('editDate'),
+  editSeason:document.getElementById('editSeason'),
+  editYear:document.getElementById('editYear'),
+  editPreviousRecord:document.getElementById('editPreviousRecord'),
+  editPreviousHolder:document.getElementById('editPreviousHolder'),
+  editNotes:document.getElementById('editNotes'),
+  editCurrent:document.getElementById('editCurrent'),
   rows:document.getElementById('rows'),
   empty:document.getElementById('empty')
 };
@@ -281,6 +446,195 @@ function parseResultMs(value){
   if(parts.length===2)seconds=parts[0]*60+parts[1];
   if(parts.length===3)seconds=parts[0]*3600+parts[1]*60+parts[2];
   return Math.round(seconds*1000);
+}
+function optionList(values,selected){
+  return values.map(function(value){
+    return '<option value="'+esc(value)+'"'+(value===selected?' selected':'')+'>'+esc(value)+'</option>';
+  }).join('');
+}
+function fillStaticSelects(){
+  els.singleRecordType.innerHTML=optionList(RECORD_TYPES,'Personal Best');
+  els.singleRecordScope.innerHTML=optionList(RECORD_SCOPES,'Athlete');
+  els.singleSport.innerHTML=optionList(SPORTS,'Track');
+  els.singleEvent.innerHTML=optionList(EVENTS,'400m');
+  els.singleSeason.innerHTML=optionList(SEASONS,'Spring');
+  els.editRecordType.innerHTML=optionList(RECORD_TYPES,'Personal Best');
+  els.editRecordScope.innerHTML=optionList(RECORD_SCOPES,'Athlete');
+  els.editSport.innerHTML=optionList(SPORTS,'Track');
+  els.editEvent.innerHTML=optionList(EVENTS,'400m');
+  els.editSeason.innerHTML=optionList(SEASONS,'Spring');
+}
+function todayValue(){return new Date().toISOString().slice(0,10);}
+function setSelect(select,value,options){
+  var text=String(value||'').trim();
+  if(text&&options.indexOf(text)<0)select.insertAdjacentHTML('afterbegin','<option value="'+esc(text)+'">'+esc(text)+'</option>');
+  if(text)select.value=text;
+}
+function clearSingleRecordForm(){
+  els.singleRecordType.value='Personal Best';
+  els.singleRecordScope.value='Athlete';
+  els.singleSport.value='Track';
+  els.singleEvent.value='400m';
+  els.singleResult.value='';
+  els.singleAthlete.value='';
+  els.singleMeet.value='';
+  els.singleDate.value=todayValue();
+  els.singleSeason.value='Spring';
+  els.singleYear.value=new Date().getFullYear();
+  els.singlePreviousRecord.value='';
+  els.singlePreviousHolder.value='';
+  els.singleNotes.value='';
+  els.singleCurrent.checked=true;
+}
+function recordPayload(prefix){
+  var isEdit=prefix==='edit';
+  return {
+    recordId:isEdit&&editingRecord?editingRecord.recordId:'',
+    sourceRecordId:isEdit&&editingRecord?editingRecord.sourceRecordId:'',
+    recordType:els[prefix+'RecordType'].value,
+    recordScope:els[prefix+'RecordScope'].value,
+    sport:els[prefix+'Sport'].value,
+    event:els[prefix+'Event'].value,
+    resultDisplay:els[prefix+'Result'].value.trim(),
+    athleteName:els[prefix+'Athlete'].value.trim(),
+    meetName:els[prefix+'Meet'].value.trim(),
+    recordDate:els[prefix+'Date'].value,
+    season:els[prefix+'Season'].value,
+    seasonYear:els[prefix+'Year'].value,
+    previousRecordDisplay:els[prefix+'PreviousRecord'].value.trim(),
+    previousRecordHolder:els[prefix+'PreviousHolder'].value.trim(),
+    recordNotes:els[prefix+'Notes'].value.trim(),
+    isCurrent:els[prefix+'Current'].checked
+  };
+}
+function normalizedRecordFromPayload(payload,existing){
+  return Object.assign({},existing||{},{
+    recordId:payload.recordId||(existing&&existing.recordId)||'',
+    sourceRecordId:payload.sourceRecordId||(existing&&existing.sourceRecordId)||'',
+    recordType:payload.recordType,
+    recordScope:payload.recordScope,
+    sport:payload.sport,
+    event:payload.event,
+    resultDisplay:payload.resultDisplay,
+    resultMs:parseResultMs(payload.resultDisplay),
+    athleteName:payload.athleteName,
+    meetName:payload.meetName,
+    recordDate:payload.recordDate,
+    season:payload.season,
+    seasonYear:Number(payload.seasonYear)||null,
+    previousRecordDisplay:payload.previousRecordDisplay,
+    previousRecordHolder:payload.previousRecordHolder,
+    recordNotes:payload.recordNotes,
+    isCurrent:!!payload.isCurrent
+  });
+}
+function saveSingleRecord(){
+  var payload=recordPayload('single');
+  if(!payload.recordType||!payload.recordScope||!payload.event||!payload.resultDisplay||!payload.recordDate){
+    setBulkStatus('Record type, level, event, result, and date are required.','bad');
+    return;
+  }
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.saveSingleBtn.disabled=true;
+  setBulkStatus('Saving record...','');
+  fetch('/api/ghl/records',{method:'POST',headers:headers,body:JSON.stringify({records:[payload]})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be saved.');
+    var created=result.data&&result.data.created&&result.data.created[0]||{};
+    var local=normalizedRecordFromPayload(Object.assign({},payload,{recordId:created.recordId||'',sourceRecordId:created.sourceRecordId||payload.sourceRecordId}));
+    records.unshift(local);
+    renderOptions();
+    render();
+    clearSingleRecordForm();
+    setBulkStatus('Record saved.','good');
+  }).catch(function(error){
+    setBulkStatus(error.message||'Record could not be saved.','bad');
+  }).finally(function(){
+    els.saveSingleBtn.disabled=false;
+  });
+}
+function openRecordEdit(id){
+  editingRecord=records.find(function(row){return String(row.recordId||'')===String(id||'');})||null;
+  if(!editingRecord){setBulkStatus('Could not find that record.','bad');return;}
+  setSelect(els.editRecordType,editingRecord.recordType,RECORD_TYPES);
+  setSelect(els.editRecordScope,editingRecord.recordScope,RECORD_SCOPES);
+  setSelect(els.editSport,editingRecord.sport,SPORTS);
+  setSelect(els.editEvent,editingRecord.event,EVENTS);
+  els.editResult.value=editingRecord.resultDisplay||editingRecord.resultMark||'';
+  els.editAthlete.value=editingRecord.athleteName||'';
+  els.editMeet.value=editingRecord.meetName||'';
+  els.editDate.value=dateOnly(editingRecord.recordDate)||todayValue();
+  setSelect(els.editSeason,editingRecord.season,SEASONS);
+  els.editYear.value=editingRecord.seasonYear||new Date().getFullYear();
+  els.editPreviousRecord.value=editingRecord.previousRecordDisplay||'';
+  els.editPreviousHolder.value=editingRecord.previousRecordHolder||'';
+  els.editNotes.value=editingRecord.recordNotes||'';
+  els.editCurrent.checked=!!editingRecord.isCurrent;
+  setRecordEditStatus('Changes save to SMART Trak immediately.','');
+  els.recordEditModal.hidden=false;
+}
+function closeRecordEdit(){
+  els.recordEditModal.hidden=true;
+  editingRecord=null;
+}
+function setRecordEditStatus(text,type){
+  els.recordEditStatus.textContent=text||'';
+  els.recordEditStatus.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';
+}
+function saveRecordEdit(){
+  if(!editingRecord)return;
+  var payload=recordPayload('edit');
+  if(!payload.recordType||!payload.recordScope||!payload.event||!payload.resultDisplay||!payload.recordDate){
+    setRecordEditStatus('Record type, level, event, result, and date are required.','bad');
+    return;
+  }
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.recordEditSave.disabled=true;
+  setRecordEditStatus('Saving changes...','');
+  fetch('/api/ghl/records',{method:'PATCH',headers:headers,body:JSON.stringify(payload)}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be updated.');
+    var updated=normalizedRecordFromPayload(payload,editingRecord);
+    records=records.map(function(row){return row.recordId===editingRecord.recordId?updated:row;});
+    renderOptions();
+    render();
+    setRecordEditStatus('Record updated.','good');
+    closeRecordEdit();
+  }).catch(function(error){
+    setRecordEditStatus(error.message||'Record could not be updated.','bad');
+  }).finally(function(){
+    els.recordEditSave.disabled=false;
+  });
+}
+function deleteRecord(){
+  if(!editingRecord||!editingRecord.recordId)return;
+  if(!window.confirm('Delete this record from SMART Trak?'))return;
+  var id=editingRecord.recordId;
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.recordDeleteBtn.disabled=true;
+  setRecordEditStatus('Deleting record...','');
+  fetch('/api/ghl/records',{method:'DELETE',headers:headers,body:JSON.stringify({recordId:id})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be deleted.');
+    records=records.filter(function(row){return row.recordId!==id;});
+    renderOptions();
+    render();
+    closeRecordEdit();
+    setBulkStatus('Record deleted.','good');
+  }).catch(function(error){
+    setRecordEditStatus(error.message||'Record could not be deleted.','bad');
+  }).finally(function(){
+    els.recordDeleteBtn.disabled=false;
+  });
 }
 function searchText(row){
   return [row.recordName,row.recordType,row.recordScope,row.sport,row.event,row.resultDisplay,row.resultMark,row.athleteName,row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
@@ -472,6 +826,7 @@ function render(){
       '<td>'+esc(formatDate(row.recordDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
       '<td>'+status+'</td>'+
       '<td>'+esc(row.previousRecordDisplay||'')+'<div class="muted">'+esc(row.previousRecordHolder||'')+'</div></td>'+
+      '<td><button class="ghost compact" data-edit-record="'+esc(row.recordId||'')+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(row.recordId||'')+'" type="button">Delete</button></td>'+
     '</tr>';
   }).join('');
   els.empty.hidden=!!list.length;
@@ -522,9 +877,30 @@ function submitAccess(){
 function init(){
   document.body.classList.toggle('embedded',embeddedMode());
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
+  fillStaticSelects();
+  clearSingleRecordForm();
   els.dashboardLink.href=pageUrl('/dashboard.html');
   els.meetHistoryLink.href=pageUrl('/meet-history.html');
   els.refreshBtn.addEventListener('click',loadRecords);
+  els.saveSingleBtn.addEventListener('click',saveSingleRecord);
+  els.clearSingleBtn.addEventListener('click',clearSingleRecordForm);
+  els.recordEditClose.addEventListener('click',closeRecordEdit);
+  els.recordEditSave.addEventListener('click',saveRecordEdit);
+  els.recordDeleteBtn.addEventListener('click',deleteRecord);
+  els.rows.addEventListener('click',function(event){
+    var edit=event.target.closest&&event.target.closest('[data-edit-record]');
+    if(edit){
+      event.preventDefault();
+      openRecordEdit(edit.getAttribute('data-edit-record')||'');
+      return;
+    }
+    var del=event.target.closest&&event.target.closest('[data-delete-record]');
+    if(del){
+      event.preventDefault();
+      editingRecord=records.find(function(row){return String(row.recordId||'')===String(del.getAttribute('data-delete-record')||'');})||null;
+      deleteRecord();
+    }
+  });
   els.search.addEventListener('input',render);
   els.scopeFilter.addEventListener('change',render);
   els.typeFilter.addEventListener('change',render);
