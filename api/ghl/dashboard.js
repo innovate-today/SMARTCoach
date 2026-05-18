@@ -517,8 +517,24 @@ function existingCustomFieldValueByName(contact, names) {
   const wanted = names.map((name) => clean(name).toLowerCase()).filter(Boolean);
   const field = customFieldList(contact).find((item) => {
     if (!item) return false;
-    const labels = [item.key, item.fieldKey, item.field_key, item.name, item.fieldName, item.field_name, item.label].map((value) => clean(value).toLowerCase());
-    return labels.some((label) => wanted.includes(label));
+    const labels = [
+      item.id,
+      item.fieldId,
+      item.field_id,
+      item.customFieldId,
+      item.key,
+      item.fieldKey,
+      item.field_key,
+      item.name,
+      item.fieldName,
+      item.field_name,
+      item.label,
+    ].map((value) => clean(value).toLowerCase());
+    return labels.some((label) => {
+      if (wanted.includes(label)) return true;
+      const simple = label.split(".").pop().split("_").pop();
+      return wanted.includes(simple);
+    });
   });
   return field ? fieldValue(field) : "";
 }
