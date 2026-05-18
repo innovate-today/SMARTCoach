@@ -305,7 +305,7 @@ function seasonText(row){
   return 'Unlisted';
 }
 function searchText(row){
-  return [row.name,row.meetName,row.athleteName,row.event,row.resultDisplay,row.season,row.seasonYear,row.status].filter(Boolean).join(' ').toLowerCase();
+  return [row.name,row.meetName,row.athleteName,row.athleteGender,row.event,row.resultDisplay,row.season,row.seasonYear,row.status].filter(Boolean).join(' ').toLowerCase();
 }
 function allMeetGroups(){
   var groups={};
@@ -387,7 +387,7 @@ function selectedEventRankMap(results){
     if(!row.event||!row.resultDisplay)return;
     var ms=parseResultMs(row.resultDisplay);
     if(!ms)return;
-    var key=String(row.event||'').toLowerCase();
+    var key=rankingKey(row);
     if(!groups[key])groups[key]=[];
     groups[key].push({row:row,ms:ms});
   });
@@ -400,6 +400,22 @@ function selectedEventRankMap(results){
     });
   });
   return map;
+}
+function rankingKey(row){
+  return String(row.event||'').toLowerCase()+'|'+genderKey(row.athleteGender);
+}
+function genderKey(value){
+  var text=String(value||'').trim().toLowerCase();
+  if(['female','f','girl','girls','women','woman'].indexOf(text)>=0)return 'girls';
+  if(['male','m','boy','boys','men','man'].indexOf(text)>=0)return 'boys';
+  return text||'open';
+}
+function genderLabel(value){
+  var key=genderKey(value);
+  if(key==='girls')return 'girls';
+  if(key==='boys')return 'boys';
+  if(key==='open')return '';
+  return key;
 }
 function priorResultFor(row){
   if(!row.athleteName||!row.event||!row.meetDate)return null;
@@ -418,7 +434,8 @@ function comparisonHtml(row,rankMap){
   var parts=[];
   var rank=rankMap[resultIdentity(row)];
   if(rank&&rank.total>1){
-    parts.push('<span class="comparechip blue">#'+esc(rank.place)+' of '+esc(rank.total)+'</span>');
+    var division=genderLabel(row.athleteGender);
+    parts.push('<span class="comparechip blue">#'+esc(rank.place)+' of '+esc(rank.total)+(division?' '+esc(division):'')+'</span>');
     if(rank.gap>0)parts.push('<span class="comparechip warn">+'+esc(formatSeconds(rank.gap))+' behind leader</span>');
     else parts.push('<span class="comparechip good">Event leader</span>');
   }

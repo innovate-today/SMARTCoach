@@ -154,6 +154,7 @@ function buildRecentTrainingSyncs({ athletes, performanceRecords }) {
       rows.push({
         athleteName: athlete.name,
         contactId: athlete.id,
+        athleteGender: athlete.gender,
         ...training,
       });
     });
@@ -172,6 +173,7 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
       rows.push({
         athleteName: athlete.name,
         contactId: athlete.id,
+        athleteGender: athlete.gender,
         ...result,
       });
     });
@@ -190,6 +192,7 @@ function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords
   return {
     contactId: athlete.id,
     name: athlete.name,
+    gender: athlete.gender,
     smartcoachAthleteId: athlete.smartcoachAthleteId,
     currentFitness,
     latestMeet,
@@ -237,10 +240,17 @@ function normalizeContact(contact) {
   return {
     id: contact.id,
     name: contactName(contact),
+    gender: contactGender(contact),
     smartcoachActive: isActiveValue(smartcoachActiveValue),
     smartcoachAthleteId: existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID),
     tags: Array.isArray(contact.tags) ? contact.tags : [],
   };
+}
+
+function contactGender(contact) {
+  return clean(
+    contact && (contact.gender || contact.sex || contact.genderIdentity)
+  ) || existingCustomFieldValueByName(contact, ["gender", "sex", "division"]);
 }
 
 function normalizeBest(record) {
@@ -501,6 +511,16 @@ function existingCustomFieldValue(contact, fieldId) {
   const field = customFieldList(contact).find((item) => item && (item.id === fieldId || item.fieldId === fieldId || item.field_id === fieldId || item.customFieldId === fieldId));
   if (!field) return "";
   return fieldValue(field);
+}
+
+function existingCustomFieldValueByName(contact, names) {
+  const wanted = names.map((name) => clean(name).toLowerCase()).filter(Boolean);
+  const field = customFieldList(contact).find((item) => {
+    if (!item) return false;
+    const labels = [item.key, item.fieldKey, item.field_key, item.name, item.fieldName, item.field_name, item.label].map((value) => clean(value).toLowerCase());
+    return labels.some((label) => wanted.includes(label));
+  });
+  return field ? fieldValue(field) : "";
 }
 
 function customFieldList(contact) {
