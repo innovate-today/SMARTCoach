@@ -566,6 +566,11 @@ function formatSeconds(ms){
   var tenths=Math.round(ms/100);
   var seconds=Math.floor(tenths/10);
   var decimal=tenths%10;
+  if(seconds>=60){
+    var minutes=Math.floor(seconds/60);
+    var remaining=String(seconds%60).padStart(2,'0');
+    return minutes+':'+remaining+'.'+decimal;
+  }
   return seconds+'.'+decimal+' sec';
 }
 function render(){

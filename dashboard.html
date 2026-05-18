@@ -604,7 +604,25 @@ tr:last-child td{border-bottom:0}
         </div>
         <div class="field">
           <label for="meetCorrectionEvent">Event</label>
-          <input id="meetCorrectionEvent" type="text" placeholder="Example: 3200m">
+          <select id="meetCorrectionEvent">
+            <option value="400m">400m</option>
+            <option value="600m">600m</option>
+            <option value="800m">800m</option>
+            <option value="1500m">1500m</option>
+            <option value="1600m">1600m</option>
+            <option value="1 Mile">1 Mile</option>
+            <option value="3K">3K</option>
+            <option value="3200m">3200m</option>
+            <option value="2 Mile">2 Mile</option>
+            <option value="4K">4K</option>
+            <option value="5K">5K</option>
+            <option value="8K">8K</option>
+            <option value="10K">10K</option>
+            <option value="15K">15K</option>
+            <option value="Half Marathon">Half Marathon</option>
+            <option value="Marathon">Marathon</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
         <div class="field">
           <label for="meetCorrectionResult">Result</label>
@@ -750,6 +768,7 @@ var meetCorrectionRow=null;
 var voidRequest=null;
 var meetManagerEditingId='';
 var lastLoadedAt='';
+var MEET_EVENT_OPTIONS=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
 var activeTab='roster';
 var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
@@ -2283,7 +2302,7 @@ function openMeetCorrectionModal(button){
   }
   els.meetCorrectionDate.value=dateInputValue(meetCorrectionRow.meetDate);
   els.meetCorrectionName.value=meetCorrectionRow.meetName||'';
-  els.meetCorrectionEvent.value=meetCorrectionRow.event||'';
+  renderMeetCorrectionEventOptions(meetCorrectionRow.event||'');
   els.meetCorrectionResult.value=meetCorrectionRow.resultDisplay||'';
   els.meetCorrectionWind.value=meetCorrectionRow.wind||'';
   els.meetCorrectionBest.value=meetCorrectionRow.isPr&&meetCorrectionRow.isSeasonBest?'both':meetCorrectionRow.isPr?'pb':meetCorrectionRow.isSeasonBest?'sb':'none';
@@ -2296,6 +2315,16 @@ function openMeetCorrectionModal(button){
 function closeMeetCorrectionModal(){
   els.meetCorrectionModal.hidden=true;
   meetCorrectionRow=null;
+}
+
+function renderMeetCorrectionEventOptions(current){
+  var value=String(current||'').trim();
+  var options=MEET_EVENT_OPTIONS.slice();
+  if(value&&options.indexOf(value)<0)options.unshift(value);
+  els.meetCorrectionEvent.innerHTML=options.map(function(eventName){
+    return '<option value="'+esc(eventName)+'">'+esc(eventName)+'</option>';
+  }).join('');
+  els.meetCorrectionEvent.value=value&&options.indexOf(value)>=0?value:'400m';
 }
 
 function saveMeetCorrection(){
