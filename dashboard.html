@@ -2112,7 +2112,6 @@ function saveCorrection(){
     },reason);
     setCorrectionStatus('Correction saved.','success');
     closeCorrectionModal();
-    setTimeout(loadDashboard,250);
   }).catch(function(error){
     setCorrectionStatus(error.message||'Could not save correction.','error');
   }).finally(function(){
@@ -2255,7 +2254,6 @@ function saveVoidRecord(){
     setVoidStatus('Entry voided.','success');
     els.status.textContent=(isMeet?'Meet result':'Entry')+' voided.';
     closeVoidModal();
-    setTimeout(loadDashboard,250);
   }).catch(function(error){
     setVoidStatus(error.message||'Could not void entry.','error');
     els.voidSave.disabled=false;
@@ -2349,7 +2347,6 @@ function saveMeetCorrection(){
     },reason);
     setMeetCorrectionStatus('Correction saved.','success');
     closeMeetCorrectionModal();
-    setTimeout(loadDashboard,250);
   }).catch(function(error){
     setMeetCorrectionStatus(error.message||'Could not save correction.','error');
   }).finally(function(){
