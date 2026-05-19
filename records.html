@@ -944,6 +944,27 @@ function recordGroupsForView(){
     var group=groups[key].slice().sort(newestRecord);
     var main=boardMainRecord(group,status);
     var history=group.filter(function(row){return row!==main;}).sort(bestRecord);
+    if(!history.length&&main&&main.previousRecordDisplay){
+      history.push({
+        recordId:'',
+        isSynthetic:true,
+        recordType:'School Record',
+        recordScope:'School',
+        gender:main.gender||'Unlisted',
+        sport:main.sport||'Track',
+        event:recordEvent(main),
+        resultDisplay:main.previousRecordDisplay,
+        resultMs:parseResultMs(main.previousRecordDisplay),
+        resultMark:'',
+        athleteName:main.previousRecordHolder||'',
+        meetName:'',
+        recordDate:main.recordDate,
+        season:main.season,
+        seasonYear:main.seasonYear,
+        isCurrent:false,
+        recordNotes:'Recovered from previous record fields.'
+      });
+    }
     return {key:key,main:main,history:history,all:group};
   }).filter(function(board){
     if(status==='current')return !!board.main;
@@ -977,13 +998,14 @@ function recordHistoryHtml(board){
   if(!expandedRecordBoards[board.key]||!board.history.length)return '';
   return '<tr class="historyrow"><td colspan="9"><div class="historybox"><div class="historytitle">Past records for '+esc(recordEvent(board.main))+' · '+esc(board.main.gender||'Unlisted')+'</div>'+
     board.history.map(function(row){
+      var actions=row.isSynthetic?'<span class="muted">Recovered history</span>':'<button class="ghost compact" data-edit-record="'+esc(row.recordId||'')+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(row.recordId||'')+'" type="button">Delete</button>';
       return '<div class="historyitem">'+
         '<div><div class="historylabel">Record</div><div class="historyvalue"><b>'+esc(recordValue(row))+'</b></div></div>'+
         '<div><div class="historylabel">Holder</div><div class="historyvalue">'+esc(row.athleteName||'')+'</div></div>'+
         '<div><div class="historylabel">Meet</div><div class="historyvalue">'+esc(row.meetName||'')+'</div></div>'+
         '<div><div class="historylabel">Date</div><div class="historyvalue">'+esc(formatDate(row.recordDate))+'</div></div>'+
         '<div><span class="pill warn">Historical</span></div>'+
-        '<div><button class="ghost compact" data-edit-record="'+esc(row.recordId||'')+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(row.recordId||'')+'" type="button">Delete</button></div>'+
+        '<div>'+actions+'</div>'+
       '</div>';
     }).join('')+'</div></td></tr>';
 }

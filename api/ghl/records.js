@@ -158,14 +158,47 @@ async function retireCurrentRecords({ token, locationId, properties, excludeReco
       path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(record.recordId)}?locationId=${encodeURIComponent(locationId)}`,
       method: "PUT",
       body: {
-        properties: compactProperties({
+        properties: Object.assign(recordPropertiesFromRecord(record), compactProperties({
           is_current: "No",
           record_notes: appendRetiredNote(record.recordNotes, properties),
-        }),
+        })),
       },
     });
   }
   return matches;
+}
+
+function recordPropertiesFromRecord(record) {
+  return compactProperties({
+    record: record.recordName || [
+      record.athleteName,
+      record.recordType || "School Record",
+      record.event,
+      record.resultDisplay || record.resultMark,
+    ].filter(Boolean).join(" - "),
+    record_type: optionValue(record.recordType || "School Record"),
+    record_scope: optionValue(record.recordScope || "School"),
+    gender: optionValue(record.gender || "Unlisted"),
+    sport: optionValue(record.sport || "Track"),
+    event: record.event,
+    result_display: record.resultDisplay,
+    result_ms: recordTimeMs(record),
+    result_mark: record.resultMark,
+    athlete_contact: record.athleteContact,
+    athlete_name_snapshot: record.athleteName,
+    meet_name: record.meetName,
+    meet_record_id: record.meetRecordId,
+    meet_result_id: record.meetResultId,
+    record_date: record.recordDate,
+    season: optionValue(record.season),
+    season_year: record.seasonYear,
+    is_current: record.isCurrent ? "Yes" : "No",
+    previous_record_display: record.previousRecordDisplay,
+    previous_record_holder: record.previousRecordHolder,
+    record_notes: record.recordNotes,
+    source_system: record.sourceSystem,
+    source_record_id: record.sourceRecordId,
+  });
 }
 
 async function deleteRecord({ token, payload }) {
