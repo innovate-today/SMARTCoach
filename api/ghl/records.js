@@ -202,7 +202,7 @@ function buildRecordProperties(row) {
     is_current: normalized.isCurrent ? "Yes" : "No",
     previous_record_display: normalized.previousRecordDisplay,
     previous_record_holder: normalized.previousRecordHolder,
-    record_notes: normalized.recordNotes,
+    record_notes: composeRecordNotes(normalized.recordNotes, normalized),
     source_system: "SMART Trak Manual Record Entry",
     source_record_id: normalized.sourceRecordId || buildManualSourceRecordId(normalized),
   });
@@ -257,7 +257,7 @@ function normalizeRecord(record, fallbackProperties) {
     recordName: prop(props, "record") || recordName(record),
     recordType: labelValue(prop(props, "record_type")),
     recordScope: labelValue(prop(props, "record_scope")),
-    gender: labelValue(prop(props, "gender")),
+    gender: labelValue(prop(props, "gender")) || extractRecordGender(prop(props, "record_notes")),
     sport: labelValue(prop(props, "sport")),
     event: prop(props, "event"),
     resultDisplay: prop(props, "result_display"),
@@ -336,7 +336,14 @@ function prop(props, key) {
 function readPropValue(props, key) {
   if (!props) return "";
   if (Array.isArray(props)) {
-    const field = props.find((item) => item && (item.key === key || item.id === key || item.fieldKey === key || item.fieldId === key || item.customFieldId === key));
+    const field = props.find((item) => item && (
+      item.key === key ||
+      item.id === key ||
+      item.fieldKey === key ||
+      item.fieldId === key ||
+      item.customFieldId === key ||
+      optionValue(item.name || item.label || item.fieldName) === optionValue(key)
+    ));
     return field ? fieldValue(field.value || field.fieldValue || field.field_value) : "";
   }
   return fieldValue(props[key]);
@@ -428,6 +435,19 @@ function recordBoardKeyFromProperties(properties) {
 function appendRetiredNote(note, newProperties) {
   const line = `Moved to historical on ${new Date().toISOString().slice(0, 10)} because a new current record was saved: ${clean(newProperties.result_display || newProperties.result_mark)}.`;
   return [clean(note), line].filter(Boolean).join("\n");
+}
+
+function composeRecordNotes(note, row) {
+  const gender = clean(row && row.gender);
+  const scope = optionValue(row && row.recordScope);
+  const lines = clean(note).split("\n").filter((line) => !/^Gender:/i.test(clean(line)));
+  if (gender && scope !== "athlete") lines.unshift(`Gender: ${gender}`);
+  return lines.join("\n").trim();
+}
+
+function extractRecordGender(note) {
+  const match = clean(note).match(/^Gender:\s*(Boys|Girls|Coed|Unlisted)\s*$/im);
+  return match ? match[1] : "";
 }
 
 function slugValue(value) {
