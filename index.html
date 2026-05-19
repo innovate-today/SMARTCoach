@@ -343,7 +343,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl">Share Results</div>
     <div class="shbox" id="shtxt"></div>
-    <button class="mbtn" onclick="copyShare()">Copy / Share</button>
+    <button class="mbtn pro-only" id="share-sync-btn" onclick="syncFromShareResults()" style="margin-top:8px;background:#2B4FCC">Sync to SMART Trak</button>
+    <button class="mbtn" onclick="copyShare()" style="margin-top:8px">Copy / Share</button>
     <button class="mbtn" style="margin-top:8px;background:#0f9d58" onclick="exportSheets()">Export for Google Sheets</button>
     <button class="mbtn c" style="margin-top:8px" onclick="hm('msh')">Close</button>
   </div>
@@ -2573,6 +2574,31 @@ function openSMARTCoachSave(){
   if(!isProPlan())return;
   if(CL&&CL.type==='meet')openMeetSave();
   else openSync();
+}
+function syncFromShareResults(){
+  if(!isProPlan())return;
+  if(CL){
+    openSMARTCoachSave();
+    return;
+  }
+  var syncable=logs.filter(function(group){
+    if(!group||group.archived)return false;
+    return (group.runners||[]).some(function(r){
+      return (r.saved||[]).some(function(run){
+        return group.type==='meet'?!run.meetSynced:!run.synced;
+      });
+    });
+  });
+  if(syncable.length===1){
+    CL=syncable[0];
+    openSMARTCoachSave();
+    return;
+  }
+  if(syncable.length>1){
+    alert('Open the training or meet group you want to sync, then tap Sync.');
+    return;
+  }
+  alert('No saved runs are ready to sync.');
 }
 function athleteOptions(selectedName){
   var opts=[];
