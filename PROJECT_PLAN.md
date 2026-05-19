@@ -233,6 +233,15 @@ Tiers:
 - Club/School, $99/mo: unlimited athletes, parent portal, recruiting
 - Enterprise, custom: multi-team, district-wide, white label
 
+Customer subscription/account requirements:
+
+- Add a place to hold customer subscription information for each SMARTCoach account.
+- Track account key, organization/school name, product plan, billing status, trial status, renewal date, cancellation status, and setup status.
+- Track whether the account is Essential, SMARTCoach Pro, Club/School, or Enterprise.
+- Track which SMART Trak account/location is connected to the subscription.
+- Surface this information in an internal admin/setup view so support can confirm whether a customer is active, past due, canceled, in trial, or still being onboarded.
+- Later, connect this to the purchase/onboarding flow so a coach who buys from the website is automatically routed into the right account setup path.
+
 ## Phase 11: Coach Help Assistant
 
 Coach Pro and higher should include an in-app help button for questions about how SMARTCoach Pro works.

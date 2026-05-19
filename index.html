@@ -406,10 +406,10 @@ function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();
 }
 function smartCoachAccessCode(){
-  try{return sessionStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
+  try{return localStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
 }
 function setSmartCoachAccessCode(value){
-  try{sessionStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
+  try{localStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
 }
 function showAccessCodeRow(show){
   var row=document.getElementById('access-code-row');
@@ -513,6 +513,18 @@ function checkSmartCoachAccount(accountKey){
   return fetch(url,{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   });
+}
+function smartCoachApiUrl(path){
+  var key=smartCoachAccountKey();
+  var sep=path.indexOf('?')>=0?'&':'?';
+  return path+sep+'account='+encodeURIComponent(key);
+}
+function smartCoachApiHeaders(extra){
+  var headers=new Headers(extra||{});
+  headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+  var accessCode=smartCoachAccessCode();
+  if(accessCode)headers.set('X-SMARTCoach-Access-Code',accessCode);
+  return headers;
 }
 (function(){
   var nativeFetch=window.fetch.bind(window);
@@ -2760,9 +2772,9 @@ function submitCapturedMeetResults(forceDuplicateSync){
   btn.textContent='Saving...';btn.disabled=true;
   status.textContent='Saving meet results...';status.style.color='#555';status.style.fontWeight='400';
   Promise.all(queue.map(function(item){
-    return fetch('/api/smart-trak/meet-result',{
+    return fetch(smartCoachApiUrl('/api/smart-trak/meet-result'),{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
       body:JSON.stringify(item.payload)
     }).then(function(r){return r.json().then(function(data){return{ok:r.ok,status:r.status,data:data,item:item};});});
   })).then(function(results){
@@ -3082,9 +3094,9 @@ function doSMARTTraKSync(forceDuplicateSync){
     targets.forEach(function(target,i){
       Object.assign(athletes[i],target||{});
     });
-    return fetch('/api/smart-trak/sync-session',{
+    return fetch(smartCoachApiUrl('/api/smart-trak/sync-session'),{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
     body:JSON.stringify({
       groupName:CL.name,
       season:season,
@@ -3197,9 +3209,9 @@ function submitPlanDayMeetResults(opts){
   if(btn){btn.textContent='Saving meet results...';btn.disabled=true;}
   if(status){status.textContent='Saving scheduled meet results...';status.style.color='#555';status.style.fontWeight='400';}
   Promise.all(queue.map(function(item){
-    return fetch('/api/smart-trak/meet-result',{
+    return fetch(smartCoachApiUrl('/api/smart-trak/meet-result'),{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
       body:JSON.stringify(item.payload)
     }).then(function(r){return r.json().then(function(data){return{ok:r.ok,status:r.status,data:data,item:item};});});
   })).then(function(results){
