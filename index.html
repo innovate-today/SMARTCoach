@@ -1018,7 +1018,7 @@ function loadMeets(){
   }).catch(function(){MT=[];renderMeetOptions();});
 }
 function activeMeets(meets){
-  return (meets||[]).filter(function(meet){return !isArchivedStatus(meet&&meet.status);});
+  return (meets||[]).filter(function(meet){return meet&&!meet.archived&&!isArchivedStatus(meet.status);});
 }
 function isArchivedStatus(status){
   var value=String(status||'').trim().toLowerCase().replace(/[^a-z]/g,'');
@@ -2962,6 +2962,10 @@ function syncPlanContext(runners){
     plannedVolume:plannedVolume
   };
 }
+function commonSyncPlanValue(ctx,key,fallback){
+  if(ctx&&ctx.hasPlan)return commonPlanValue(ctx.plans||[],key)||'';
+  return fallback||'';
+}
 function updateSyncVolumeDefault(ctx){
   var input=document.getElementById('sy-volume');
   if(!input)return;
@@ -3148,12 +3152,12 @@ function doSMARTTraKSync(forceDuplicateSync){
       completedVolume:completedVolume,
       sessionDate:new Date().toISOString(),
       forceDuplicateSync:forceDuplicateSync===true,
-      trainingPlanId:CL.trainingPlanId||'',
-      trainingPlanSourceId:CL.trainingPlanSourceId||'',
-      trainingPlanTitle:CL.trainingPlanTitle||'',
-      trainingPlanDayId:CL.trainingPlanDayId||'',
-      trainingPlanDaySourceId:CL.trainingPlanDaySourceId||'',
-      trainingPlanDayTitle:CL.trainingPlanDayTitle||'',
+      trainingPlanId:commonSyncPlanValue(syncPlan,'trainingPlanId',CL.trainingPlanId),
+      trainingPlanSourceId:commonSyncPlanValue(syncPlan,'trainingPlanSourceId',CL.trainingPlanSourceId),
+      trainingPlanTitle:commonSyncPlanValue(syncPlan,'trainingPlanTitle',CL.trainingPlanTitle),
+      trainingPlanDayId:commonSyncPlanValue(syncPlan,'trainingPlanDayId',CL.trainingPlanDayId),
+      trainingPlanDaySourceId:commonSyncPlanValue(syncPlan,'trainingPlanDaySourceId',CL.trainingPlanDaySourceId),
+      trainingPlanDayTitle:commonSyncPlanValue(syncPlan,'trainingPlanDayTitle',CL.trainingPlanDayTitle),
       athletes:athletes
     })
     });

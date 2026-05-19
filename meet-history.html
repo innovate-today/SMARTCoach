@@ -249,10 +249,10 @@ function pageUrl(path){
 }
 function accessStorageKey(){return 'sc_access_'+accountKey();}
 function accessCode(){
-  try{return sessionStorage.getItem(accessStorageKey())||'';}catch(e){return '';}
+  try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}
 }
 function setAccessCode(value){
-  try{sessionStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}
+  try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}
 }
 function apiHeaders(){
   var headers={'X-SMARTCoach-Account':accountKey()};

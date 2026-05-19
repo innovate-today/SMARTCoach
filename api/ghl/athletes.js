@@ -48,6 +48,7 @@ function setCorsHeaders(res) {
 }
 
 async function listActiveAthletes({ token, locationId }) {
+  const genderFieldIds = await listContactFieldIds({ token, locationId, names: ["gender", "sex", "division"] });
   const result = await ghlFetch({
     token,
     path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=100`,
@@ -55,9 +56,39 @@ async function listActiveAthletes({ token, locationId }) {
   });
 
   return (result.contacts || [])
-    .map(normalizeContact)
+    .map((contact) => normalizeContact(contact, { genderFieldIds }))
     .filter((athlete) => athlete.smartcoachActive || (athlete.smartcoachAthleteId && athlete.tags.indexOf("smartcoach-athlete") >= 0))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function listContactFieldIds({ token, locationId, names }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/locations/${encodeURIComponent(locationId)}/customFields`,
+      method: "GET",
+    });
+    const wanted = names.map((name) => clean(name).toLowerCase()).filter(Boolean);
+    return customFieldsFromResult(result).filter((field) => {
+      const labels = [
+        field.id,
+        field.key,
+        field.fieldKey,
+        field.field_key,
+        field.name,
+        field.fieldName,
+        field.field_name,
+        field.label,
+      ].map((value) => clean(value).toLowerCase());
+      return labels.some((label) => {
+        if (wanted.includes(label)) return true;
+        const simple = label.split(".").pop().split("_").pop();
+        return wanted.includes(simple);
+      });
+    }).map((field) => clean(field.id || field.fieldId || field.customFieldId)).filter(Boolean);
+  } catch (error) {
+    return [];
+  }
 }
 
 async function createOrActivateAthlete({ token, locationId, payload }) {
@@ -178,18 +209,26 @@ async function ghlFetch({ token, path, method, body }) {
   return data;
 }
 
-function normalizeContact(contact) {
+function normalizeContact(contact, options = {}) {
   const smartcoachActiveValue = existingCustomFieldValue(contact, SMARTCOACH_ACTIVE_FIELD_ID);
   return {
     id: contact.id,
     name: contactName(contact),
     firstName: clean(contact.firstName),
     lastName: clean(contact.lastName),
+    gender: contactGender(contact, options.genderFieldIds),
     smartcoachActive: isActiveValue(smartcoachActiveValue),
     smartcoachActiveValue,
     smartcoachAthleteId: existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID),
     tags: Array.isArray(contact.tags) ? contact.tags : [],
   };
+}
+
+function contactGender(contact, genderFieldIds = []) {
+  const fieldValue = genderFieldIds.map((fieldId) => existingCustomFieldValue(contact, fieldId)).find(Boolean);
+  return clean(
+    contact && (contact.gender || contact.sex || contact.genderIdentity)
+  ) || fieldValue || existingCustomFieldValueByName(contact, ["gender", "sex", "division"]);
 }
 
 function contactName(contact) {
@@ -204,6 +243,32 @@ function existingCustomFieldValue(contact, fieldId) {
   });
   if (!field) return "";
   return fieldValue(field);
+}
+
+function existingCustomFieldValueByName(contact, names) {
+  const wanted = names.map((name) => clean(name).toLowerCase()).filter(Boolean);
+  const field = customFieldList(contact).find((item) => {
+    if (!item) return false;
+    const labels = [
+      item.id,
+      item.fieldId,
+      item.field_id,
+      item.customFieldId,
+      item.key,
+      item.fieldKey,
+      item.field_key,
+      item.name,
+      item.fieldName,
+      item.field_name,
+      item.label,
+    ].map((value) => clean(value).toLowerCase());
+    return labels.some((label) => {
+      if (wanted.includes(label)) return true;
+      const simple = label.split(".").pop().split("_").pop();
+      return wanted.includes(simple);
+    });
+  });
+  return field ? fieldValue(field) : "";
 }
 
 function isActiveValue(value) {
@@ -222,6 +287,15 @@ function customFieldList(contact) {
     }));
   }
   return [];
+}
+
+function customFieldsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.customFields) ? result.customFields : []),
+    ...(Array.isArray(result && result.fields) ? result.fields : []),
+    ...(Array.isArray(result && result.data && result.data.customFields) ? result.data.customFields : []),
+    ...(Array.isArray(result && result.data && result.data.fields) ? result.data.fields : []),
+  ];
 }
 
 function fieldValue(field) {

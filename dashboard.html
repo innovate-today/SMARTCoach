@@ -207,6 +207,7 @@ tr:last-child td{border-bottom:0}
       <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
       <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
       <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
+      <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="manageMeetsBtn" class="secondary" type="button">Manage Meets</button>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
@@ -796,10 +797,10 @@ function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();
 }
 function smartCoachAccessCode(){
-  try{return sessionStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
+  try{return localStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
 }
 function setSmartCoachAccessCode(value){
-  try{sessionStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
+  try{localStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
 }
 function productPlan(){
   try{
@@ -898,6 +899,8 @@ function applySmartCoachLinks(){
   if(trainingCalendar)trainingCalendar.href=smartCoachPageUrl('/training-calendar.html');
   var planImport=document.getElementById('planImportLink');
   if(planImport)planImport.href=smartCoachPageUrl('/plan-import.html');
+  var planSetup=document.getElementById('planSetupLink');
+  if(planSetup)planSetup.href=smartCoachPageUrl('/plan-setup.html');
   var planBuilder=document.getElementById('planBuilderLink');
   if(planBuilder)planBuilder.href=smartCoachPageUrl('/plan-builder.html');
   var stopwatch=document.getElementById('essentialStopwatchLink');
@@ -2283,6 +2286,7 @@ function applyVoidedEntryLocally(request){
   request=request||{};
   var recordId=request.recordId||'';
   var sourceRecordId=request.sourceRecordId||'';
+  var originalRow=request.row||{};
   function keep(row){
     return !((recordId&&row.recordId===recordId)||(sourceRecordId&&row.sourceRecordId===sourceRecordId));
   }
@@ -2291,6 +2295,7 @@ function applyVoidedEntryLocally(request){
   }else{
     recentTrainingRows=recentTrainingRows.filter(keep);
   }
+  refreshRosterAfterVoid(request.kind,originalRow);
   renderRows();
 }
 
@@ -2814,6 +2819,57 @@ function updateAthleteLatestTraining(updatedRow,originalRow){
     if(!sameLatestTraining(athlete.latestTraining,originalRow))return athlete;
     return Object.assign({},athlete,{latestTraining:Object.assign({},athlete.latestTraining||{},updatedRow)});
   });
+}
+
+function refreshRosterAfterVoid(kind,originalRow){
+  if(!originalRow)return;
+  dashboardRows=dashboardRows.map(function(athlete){
+    if(!sameAthlete(originalRow,athlete))return athlete;
+    var next=Object.assign({},athlete);
+    if(kind==='meet'){
+      if(sameLatestMeet(athlete.latestMeet,originalRow))next.latestMeet=latestMeetForAthlete(athlete);
+      next.meetResultCount=Math.max(0,num(athlete.meetResultCount)-1);
+      return next;
+    }
+    if(sameLatestTraining(athlete.latestTraining,originalRow))next.latestTraining=latestTrainingForAthlete(athlete);
+    next.trainingRecordCount=Math.max(0,num(athlete.trainingRecordCount)-1);
+    adjustTrainingTotalsAfterVoid(next,originalRow);
+    return next;
+  });
+}
+
+function latestMeetForAthlete(athlete){
+  return recentMeetRows.filter(function(row){return sameAthlete(row,athlete);}).sort(function(a,b){
+    return compareValues(b.meetDate||b.syncedAt,a.meetDate||a.syncedAt);
+  })[0]||{};
+}
+
+function latestTrainingForAthlete(athlete){
+  return recentTrainingRows.filter(function(row){return sameAthlete(row,athlete);}).sort(function(a,b){
+    return compareValues(b.sessionDate||b.syncedAt,a.sessionDate||a.syncedAt);
+  })[0]||{};
+}
+
+function adjustTrainingTotalsAfterVoid(athlete,row){
+  var date=parseActivityDate(row.sessionDate||row.syncedAt);
+  var miles=parseCompletedMiles(row.completedVolume,row.completedVolumeMiles);
+  if(!date)return;
+  var currentStart=startOfDashboardWeek(new Date());
+  var currentEnd=addDashboardDays(currentStart,6);
+  var previousStart=addDashboardDays(currentStart,-7);
+  var previousEnd=addDashboardDays(currentStart,-1);
+  if(date>=currentStart&&date<=currentEnd){
+    athlete.currentWeekRuns=Math.max(0,num(athlete.currentWeekRuns)-1);
+    athlete.currentWeekVolumeMiles=Math.max(0,num(athlete.currentWeekVolumeMiles)-miles);
+  }
+  if(date>=previousStart&&date<=previousEnd){
+    athlete.previousWeekRuns=Math.max(0,num(athlete.previousWeekRuns)-1);
+    athlete.previousWeekVolumeMiles=Math.max(0,num(athlete.previousWeekVolumeMiles)-miles);
+  }
+  var today=new Date();
+  if(date.getFullYear()===today.getFullYear()&&date.getMonth()===today.getMonth()){
+    athlete.currentMonthVolumeMiles=Math.max(0,num(athlete.currentMonthVolumeMiles)-miles);
+  }
 }
 
 function detailCard(title,value,sub){

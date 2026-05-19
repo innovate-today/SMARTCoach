@@ -153,6 +153,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <div class="actions">
       <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">SMART Trak</a>
       <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
+      <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
       <button id="approveDraftsBtn" class="secondary" type="button" hidden>Approve Drafts</button>
@@ -355,9 +356,10 @@ var els={
   accessCode:document.getElementById('accessCode'),
   accessSubmit:document.getElementById('accessSubmit'),
   accessStatus:document.getElementById('accessStatus'),
-  dashboardLink:document.getElementById('dashboardLink'),
-  planImportLink:document.getElementById('planImportLink'),
-  planBuilderLink:document.getElementById('planBuilderLink'),
+	  dashboardLink:document.getElementById('dashboardLink'),
+	  planImportLink:document.getElementById('planImportLink'),
+	  planSetupLink:document.getElementById('planSetupLink'),
+	  planBuilderLink:document.getElementById('planBuilderLink'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
   approveDraftsBtn:document.getElementById('approveDraftsBtn'),
   scheduleApprovedBtn:document.getElementById('scheduleApprovedBtn'),
@@ -458,8 +460,8 @@ function pageUrl(path){
   return url.pathname+url.search;
 }
 function accessStorageKey(){return 'sc_access_'+accountKey();}
-function accessCode(){try{return sessionStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
-function setAccessCode(value){try{sessionStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
+function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
+function setAccessCode(value){try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
 function apiHeaders(){
   var headers={'X-SMARTCoach-Account':accountKey()};
   var code=accessCode();
@@ -955,9 +957,20 @@ function removeActiveDay(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not remove plan day.');
-    return loadCalendar();
-  }).then(function(){
+    var removed=Object.assign({},activeDay,{
+      status:'Skipped',
+      coachNotes:[activeDay.coachNotes,'Removed from calendar: '+reason].filter(Boolean).join('\n')
+    });
+    var removedKey=dayKey(removed);
+    pendingStatusUpdates[removedKey]={status:'Skipped',coachNotes:removed.coachNotes,expiresAt:Date.now()+15000};
+    days=days.map(function(day){
+      return dayKey(day)===removedKey ? removed : day;
+    });
     closeDayModal();
+    renderOptions();
+    render();
+    els.status.textContent='Plan day removed from current calendar view.';
+    setTimeout(loadCalendar,1500);
   }).catch(function(error){
     alert(error.message||'Could not remove plan day.');
   }).finally(function(){
@@ -1423,6 +1436,7 @@ function init(){
   loadMixPreference();
   els.dashboardLink.href=pageUrl('/dashboard.html');
   els.planImportLink.href=pageUrl('/plan-import.html');
+  els.planSetupLink.href=pageUrl('/plan-setup.html');
   els.planBuilderLink.href=pageUrl('/plan-builder.html');
   els.refreshBtn.addEventListener('click',loadCalendar);
   els.manualMileageBtn.addEventListener('click',openManualMileage);

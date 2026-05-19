@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-store">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="app-version" content="builder-1777173146407">
+<meta name="app-version" content="plan-setup-1777173146407">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SMART Trak Plan Builder</title>
+<title>SMART Trak Planning Setup</title>
 <style>
 :root{--blue:#2B4FCC;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f3f6fb;--white:#fff;--ok:#0a7a44;--warn:#c47a00;--bad:#c00}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -30,7 +30,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue"
 .head p{font-size:14px;color:var(--muted)}
 .builder-note{margin-top:12px;border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc;padding:12px 14px;color:#334155;font-size:13px;line-height:1.45}
 .builder-note b{display:block;color:#111827;font-size:14px;margin-bottom:3px}
-.form{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--line)}
+	.form{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--line)}
 .field{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
 .field:nth-child(2n){border-right:none}
 .field.full{grid-column:1/-1;border-right:none}
@@ -94,33 +94,52 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     <div class="top-actions">
       <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save Settings</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button></div>
       <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
-      <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
+      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
       <a id="dashboardLink" class="linkbtn" href="/dashboard.html">SMART Trak</a>
     </div>
   </div>
   <div class="panel">
     <div class="head">
-      <h1>Guided Plan Builder</h1>
-      <p>Build a start-to-finish draft plan for a group or individual, then review and adjust it before it becomes the working calendar.</p>
-      <div class="builder-note"><b>Coach remains in control</b>SMART Trak uses the dates, meet schedule, current fitness, training history, injuries, volume capacity, and practice limits you enter here to create a draft. Review the full plan in Training Calendar or Plan Entry before using it with the stopwatch.</div>
-      <div class="builder-note"><b>Need setup first?</b>Current Fitness Setup and Plan Assignments now live in <a id="planSetupInlineLink" href="/plan-setup.html">Planning Setup</a>, so this page can stay focused on building draft plans.</div>
+      <h1>Planning Setup</h1>
+      <p>Keep athlete fitness sources and plan assignments ready before building or running practice.</p>
+      <div class="builder-note"><b>Setup lives here</b>Current fitness and plan assignments are shared preparation tools. Plan Builder now stays focused on drafting plans, while this page handles the roster setup around those plans.</div>
     </div>
-    <div id="form" class="form"></div>
-    <div id="status" class="status">Loading builder...</div>
-    <div class="actions">
-      <button class="secondary" onclick="resetForm()">Reset</button>
-      <button class="primary" id="submit" onclick="submitPlan()">Create Plan Draft</button>
+    <div class="fitness">
+      <div class="fitness-head">
+        <div><h2>Current Fitness Setup</h2><p>Set target sources in bulk before building plans.</p></div>
+        <div class="fitness-controls">
+          <select id="fitnessGenderFilter" aria-label="Filter current fitness athletes" onchange="renderFitnessRows()"><option value="all">All athletes</option><option value="girls">Girls</option><option value="boys">Boys</option><option value="unlisted">Unlisted</option></select>
+          <select id="fitnessSort" aria-label="Sort current fitness athletes" onchange="renderFitnessRows()"><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option></select>
+        </div>
+      </div>
+      <div id="fitnessRows" class="fitness-table"><div class="meet-empty">Loading athletes...</div></div>
+      <div class="fitness-actions"><div id="fitnessStatus" class="fitness-status"></div><button class="secondary mini" onclick="saveFitnessRows()">Save Fitness</button></div>
     </div>
+    <div class="assignments">
+      <div class="assignment-head">
+        <div><h2>Plan Assignments</h2><p>Attach a plan to selected athletes before practice.</p></div>
+        <div id="assignmentStatus" class="assignment-status"></div>
+      </div>
+      <div class="assignment-grid">
+        <select id="assignmentPlan" onchange="renderAssignmentAthletes()"><option value="">Loading plans...</option></select>
+        <input id="assignmentGroup" type="text" placeholder="Group label e.g. Girls CC">
+        <select id="assignmentGenderFilter" aria-label="Filter assignment athletes" onchange="renderAssignmentAthletes()"><option value="all">All athletes</option><option value="girls">Girls</option><option value="boys">Boys</option><option value="unlisted">Unlisted</option></select>
+        <select id="assignmentSort" aria-label="Sort assignment athletes" onchange="renderAssignmentAthletes()"><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option></select>
+      </div>
+      <div id="assignmentAthletes" class="assignment-athletes"><div class="meet-empty">Loading athletes...</div></div>
+      <div class="fitness-actions"><button class="secondary mini" onclick="toggleAssignmentAthletes(true)">Select All</button><button class="secondary mini" onclick="toggleAssignmentAthletes(false)">Clear</button><button class="primary mini" onclick="savePlanAssignments()">Save Assignments</button></div>
+    </div>
+	    <div id="status" class="status">Loading setup...</div>
   </div>
   <div id="appVersion" class="version-foot"></div>
 </div>
 <section id="essentialMessage" class="essential-message" hidden>
   <h1>SMARTCoach Essential</h1>
-  <p>The plan builder is included with SMARTCoach Pro through SMART Trak. Essential accounts keep the stopwatch clean and focused.</p>
+  <p>Planning setup is included with SMARTCoach Pro through SMART Trak. Essential accounts keep the stopwatch clean and focused.</p>
   <div class="essential-actions">
     <a id="essentialStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
-    <a id="essentialProLink" class="linkbtn admin-only" hidden href="/plan-builder.html?plan=pro">Preview Pro</a>
+    <a id="essentialProLink" class="linkbtn admin-only" hidden href="/plan-setup.html?plan=pro">Preview Pro</a>
   </div>
 </section>
 <section id="setupMessage" class="essential-message" hidden>
@@ -128,7 +147,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   <p>This account is on SMARTCoach Pro, but the SMART Trak connection is not finished yet. The stopwatch can still be opened while setup is completed.</p>
   <div class="essential-actions">
     <a id="setupStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
-    <a id="setupPreviewLink" class="linkbtn admin-only" hidden href="/plan-builder.html?admin=1&plan=pro">Admin Preview</a>
+    <a id="setupPreviewLink" class="linkbtn admin-only" hidden href="/plan-setup.html?admin=1&plan=pro">Admin Preview</a>
   </div>
 </section>
 <script>
@@ -237,20 +256,18 @@ function applySmartCoachLinks(){
   if(dashboard)dashboard.href=smartCoachPageUrl('/dashboard.html');
   var trainingCalendar=document.getElementById('trainingCalendarLink');
   if(trainingCalendar)trainingCalendar.href=smartCoachPageUrl('/training-calendar.html');
-  var planSetup=document.getElementById('planSetupLink');
-  if(planSetup)planSetup.href=smartCoachPageUrl('/plan-setup.html');
-  var planSetupInline=document.getElementById('planSetupInlineLink');
-  if(planSetupInline)planSetupInline.href=smartCoachPageUrl('/plan-setup.html');
-	  var planImport=document.getElementById('planImportLink');
-	  if(planImport)planImport.href=smartCoachPageUrl('/plan-import.html');
+  var planBuilder=document.getElementById('planBuilderLink');
+  if(planBuilder)planBuilder.href=smartCoachPageUrl('/plan-builder.html');
+  var planImport=document.getElementById('planImportLink');
+  if(planImport)planImport.href=smartCoachPageUrl('/plan-import.html');
   var stopwatch=document.getElementById('essentialStopwatchLink');
   if(stopwatch)stopwatch.href=smartCoachPageUrl('/');
   var setupStopwatch=document.getElementById('setupStopwatchLink');
   if(setupStopwatch)setupStopwatch.href=smartCoachPageUrl('/');
   var pro=document.getElementById('essentialProLink');
-  if(pro)pro.href=smartCoachPageUrl('/plan-builder.html','pro');
+  if(pro)pro.href=smartCoachPageUrl('/plan-setup.html','pro');
   var setupPreview=document.getElementById('setupPreviewLink');
-  if(setupPreview)setupPreview.href=smartCoachPageUrl('/plan-builder.html','pro');
+  if(setupPreview)setupPreview.href=smartCoachPageUrl('/plan-setup.html','pro');
 }
 function adminToolsVisible(){
   try{
@@ -277,7 +294,7 @@ function saveAccountSettings(){
   if(input)input.value=key;
   checkSmartCoachAccount().then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
-    loadBuilder();
+	    loadBuilder();
   }).catch(function(error){
     setStatus('Account set to '+key+', but not connected: '+error.message,'bad');
   });
@@ -320,18 +337,19 @@ function loadBuilder(){
   if(accountInput)accountInput.value=smartCoachAccountKey();
   var version=document.getElementById('appVersion');
   if(version)version.textContent='v '+appVersion();
-	  Promise.all([
-	    fetch('/api/smart-trak/training-plan?kind=questionnaire').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}),
-	    fetch('/api/smart-trak/athletes').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{athletes:[]}};}),
-	    fetch('/api/smart-trak/meets').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};})
-	  ]).then(function(results){
-	    var result=results[0],athleteResult=results[1],meetResult=results[2];
-	    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Builder unavailable');
-	    questionnaire=result.data.questionnaire;
-	    athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
-	    meets=(meetResult.data&&meetResult.data.meets)||[];
-	    renderForm();
-	  }).catch(function(e){setStatus('Error: '+e.message,'bad');});
+  Promise.all([
+    fetch('/api/smart-trak/athletes').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{athletes:[]}};}),
+    fetch('/api/smart-trak/training-plan?kind=assignments').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{plans:[]}};})
+  ]).then(function(results){
+    var athleteResult=results[0],planResult=results[1];
+    if(!athleteResult.ok)throw new Error(athleteResult.data&&athleteResult.data.error?athleteResult.data.error:'Athletes unavailable');
+    athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
+    plans=(planResult.data&&planResult.data.plans)||[];
+    renderFitnessRows();
+    renderAssignmentPlans();
+    renderAssignmentAthletes();
+    setStatus('',null);
+  }).catch(function(e){setStatus('Error: '+e.message,'bad');});
 }
 function appVersion(){
   var meta=document.querySelector('meta[name="app-version"]');

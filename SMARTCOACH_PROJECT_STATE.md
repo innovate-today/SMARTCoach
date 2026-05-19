@@ -256,6 +256,21 @@ Recent direction:
   - no odd cyan header
   - black text for total/estimated total, not inverted black box.
 
+Update from 2026-05-19 continuation:
+
+- Plan Entry duplicate favorite names now show a blocking message instead of silently replacing the saved favorite.
+- Quality-session repeat/set summaries and saved preview rows now say recovery is between reps.
+- Browser-verified manual quality builder: repeat set summary, preview row details/targets, and duplicate favorite guard.
+- App sync payload now derives top-level plan/workout fields from the selected runners' current plan context, so a newly selected in-app workout is the workout sent to SMART Trak when common across selected athletes.
+- App meet selector filtering now ignores both archived statuses and explicit archived flags.
+- Dashboard void actions now update roster latest meet/latest training snapshots and visible training totals locally after successful void, avoiding stale rows until refresh.
+- Training Calendar remove-from-calendar now marks the day skipped/removed locally after the backend confirms and refreshes quietly afterward, so the day disappears from the current view without waiting on a full reload.
+- Plan Builder Current Fitness Setup now has local athlete filtering for girls/boys/unlisted when gender is available, name sorting, and draft-safe fields so typed times survive filter/sort changes.
+- Athlete roster API now includes a read-only gender display field, using the same contact gender/sex/division lookup as the dashboard, so Plan Builder filters can work without changing performance records or calculations.
+- Plan Builder Plan Assignments now has the same girls/boys/unlisted filter and name sort, with hidden checked athletes preserved so filtered assignment saves do not accidentally drop athletes.
+- Current Fitness Setup and Plan Assignments moved out of Plan Builder into a dedicated Planning Setup page (`plan-setup.html`), with navigation added from Dashboard, Training Calendar, Plan Entry, and Plan Builder.
+- Plan Builder no longer loads assignment plans during page startup; it keeps the build questionnaire focused on draft plan creation and links coaches to Planning Setup when roster setup is needed.
+
 Workout effort percentage guidance discussed:
 
 - Easy/Recovery: roughly 60-75%
@@ -282,7 +297,7 @@ Implemented:
 
 Needs improvement:
 
-- Current Fitness Setup and Plan Assignments feel out of place on the Plan Builder page.
+- Current Fitness Setup and Plan Assignments were moved off the Plan Builder page into Planning Setup.
 - Better explanation is needed:
   - The builder creates a built-for-you plan from start to finish for a chosen period.
   - Coach reviews, adjusts, and approves before use.
