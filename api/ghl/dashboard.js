@@ -332,6 +332,17 @@ function normalizePerformanceRecord(record) {
   const coachNote = prop(props, "coach_note");
   const completedVolume = noteValue(coachNote, "Completed volume");
   const plannedVolume = noteValue(coachNote, "Planned volume");
+  const splitsText = prop(props, "splits_json");
+  const workoutPrescription = noteValue(coachNote, "Workout");
+  const effectiveVolume = effectiveCompletedVolume({
+    completedVolume,
+    plannedVolume,
+    workoutPrescription,
+    coachNote,
+    splitsText,
+    workoutType: labelValue(prop(props, "workout_type")),
+    plannedEffort: noteValue(coachNote, "Planned effort"),
+  });
   return {
     recordId: record && record.id ? record.id : "",
     sourceSessionId: prop(props, "source_session_id"),
@@ -343,16 +354,16 @@ function normalizePerformanceRecord(record) {
     totalTimeDisplay: prop(props, "total_time_display"),
     totalTimeMs: Number(prop(props, "total_time_ms")) || 0,
     sessionDate: prop(props, "session_date"),
-    splitsText: prop(props, "splits_json"),
+    splitsText,
     coachNote,
-    workoutPrescription: noteValue(coachNote, "Workout"),
+    workoutPrescription,
     plannedTarget: noteValue(coachNote, "Planned target"),
     actual: noteValue(coachNote, "Actual"),
     targetDifference: noteValue(coachNote, "Difference"),
     plannedEffort: noteValue(coachNote, "Planned effort"),
     plannedVolume,
-    completedVolume,
-    completedVolumeMiles: parseVolumeToMiles(completedVolume),
+    completedVolume: effectiveVolume.label || completedVolume,
+    completedVolumeMiles: effectiveVolume.miles || parseVolumeToMiles(completedVolume),
     plannedVolumeMiles: parseVolumeToMiles(plannedVolume),
     currentFitnessSnapshot: noteValue(coachNote, "Current fitness"),
     weather: noteValue(coachNote, "Weather"),
@@ -417,6 +428,108 @@ function parseVolumeToMiles(value) {
   const match = text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
   if (!match) return 0;
   return convertVolumeToMiles(Number(match[1]), match[2]);
+}
+
+function effectiveCompletedVolume(row) {
+  const inferred = inferredCompletedRepVolume(row);
+  if (inferred) return inferred;
+  return { label: clean(row && row.completedVolume), miles: parseVolumeToMiles(row && row.completedVolume) };
+}
+
+function inferredCompletedRepVolume(row) {
+  if (!row || /\b\d+(?:\.\d+)?\s*(?:x|×)\s*\d/i.test(clean(row.completedVolume))) return null;
+  const splits = parseSplitLines(row.splitsText);
+  const reps = workSplitCount(row, splits);
+  if (!reps) return null;
+  const source = [
+    row.workoutPrescription,
+    row.coachNote,
+    row.plannedVolume,
+    row.completedVolume,
+    row.plannedEffort,
+    row.workoutType,
+  ].filter(Boolean).join(" ");
+  const distance = explicitRepDistanceFromText(source) || repDistanceFromVolumeRange(row.plannedVolume || row.completedVolume, reps, source);
+  if (!distance || !distance.meters) return null;
+  return {
+    label: `${reps} x ${distance.label} completed`,
+    miles: roundVolume((distance.meters * reps) / 1609.344),
+  };
+}
+
+function explicitRepDistanceFromText(text) {
+  const match = clean(text).match(/\b\d+(?:\s*[-–]\s*\d+)?\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:m|km|k)|1\s*mile|2\s*mile)\b/i);
+  return distanceLabelAndMeters(match && match[1]);
+}
+
+function repDistanceFromVolumeRange(value, reps, source) {
+  const range = clean(value).match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/i);
+  if (!range) return null;
+  const low = volumeAmountToMeters(Number(range[1]), range[3]);
+  const high = volumeAmountToMeters(Number(range[2]), range[3]);
+  if (!low || !high) return null;
+  const candidates = [100, 150, 200, 300, 400, 500, 600, 800, 1000, 1200, 1600].filter((distance) => (
+    Math.abs(low / distance - Math.round(low / distance)) < 0.01 &&
+    Math.abs(high / distance - Math.round(high / distance)) < 0.01 &&
+    Math.round(high / distance) >= reps
+  ));
+  if (!candidates.length) return null;
+  const meters = /tempo|stride|recovery|walk|jog/i.test(clean(source)) ? candidates[0] : candidates[candidates.length - 1];
+  return { label: distanceLabelFromMeters(meters), meters };
+}
+
+function distanceLabelAndMeters(value) {
+  const text = clean(value).toLowerCase();
+  if (!text) return null;
+  if (text === "1 mile") return { label: "1 Mile", meters: 1609.344 };
+  if (text === "2 mile") return { label: "2 Mile", meters: 3218.688 };
+  const match = text.match(/^([0-9]+(?:\.[0-9]+)?)\s*(m|km|k)$/);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  const meters = match[2] === "m" ? amount : amount * 1000;
+  return { label: distanceLabelFromMeters(meters), meters };
+}
+
+function distanceLabelFromMeters(meters) {
+  if (Math.abs(meters - 1609.344) < 1) return "1 Mile";
+  if (Math.abs(meters - 3218.688) < 1) return "2 Mile";
+  return meters >= 1000 && meters % 1000 === 0 ? `${meters / 1000}K` : `${Math.round(meters)}m`;
+}
+
+function volumeAmountToMeters(amount, unit) {
+  const normalized = clean(unit).toLowerCase();
+  if (normalized === "mi" || normalized === "mile" || normalized === "miles") return amount * 1609.344;
+  if (normalized === "km" || normalized === "k") return amount * 1000;
+  if (normalized === "m" || normalized === "meter" || normalized === "meters") return amount;
+  return 0;
+}
+
+function parseSplitLines(text) {
+  return clean(text).split(/\r?\n/).map((line, index) => {
+    const match = line.match(/^\s*(?:(Lap|Rep|Rest|Recovery)\s*)?(\d+)\s*:\s*(.+?)\s*$/i);
+    if (!match) return null;
+    const word = match[1] || "Lap";
+    const number = Number(match[2]) || index + 1;
+    const kind = /^(rest|recovery)$/i.test(word) ? "recovery" : (/rep/i.test(word) ? "work" : "");
+    return { lap: number, label: `${word} ${number}`, kind, time: match[3] };
+  }).filter(Boolean);
+}
+
+function workSplitCount(row, splits) {
+  if (!splits.length) return 0;
+  if (!hasRecoveryPattern(row)) return splits.length;
+  return splits.filter((split, index) => splitKind(row, index, splits) === "work").length;
+}
+
+function splitKind(row, index, splits) {
+  if (splits[index] && splits[index].kind) return splits[index].kind;
+  if (!hasRecoveryPattern(row) || splits.length < 2) return "lap";
+  return index % 2 === 0 ? "work" : "recovery";
+}
+
+function hasRecoveryPattern(row) {
+  const text = [row && row.workoutPrescription, row && row.coachNote, row && row.plannedVolume, row && row.completedVolume, row && row.plannedEffort, row && row.workoutType].filter(Boolean).join(" ").toLowerCase();
+  return /(recover|recovery|rest|jog|walk)/.test(text);
 }
 
 function convertVolumeToMiles(amount, unit) {

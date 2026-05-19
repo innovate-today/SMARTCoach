@@ -1700,7 +1700,7 @@ function exportTrainingCsv(){
       row.workoutType||'',
       row.workoutPrescription||'',
       row.completedVolume||'',
-      num(row.completedVolumeMiles),
+      completedVolumeMiles(row),
       row.plannedVolume||'',
       num(row.plannedVolumeMiles),
       fitness.label||'',
@@ -1778,7 +1778,7 @@ function trainingSortValue(row,key){
     return athlete.currentFitness&&athlete.currentFitness.label;
   }
   if(key==='workoutType')return [row.workoutPrescription,row.workoutType].filter(Boolean).join(' ');
-  if(key==='volume')return num(row.completedVolumeMiles)||num(row.plannedVolumeMiles)||row.completedVolume||row.plannedVolume||'';
+  if(key==='volume')return completedVolumeMiles(row)||num(row.plannedVolumeMiles)||row.completedVolume||row.plannedVolume||'';
   if(key==='targetReview')return [row.targetDifference,row.plannedTarget].filter(Boolean).join(' ');
   return row[key];
 }
@@ -2157,7 +2157,7 @@ function applyTrainingCorrectionLocally(row,updates,reason){
       workoutType:updates.workoutType||item.workoutType,
       surface:updates.surface||item.surface,
       completedVolume:updates.completedVolume||item.completedVolume,
-      completedVolumeMiles:parseCompletedMiles(updates.completedVolume,item.completedVolumeMiles),
+      completedVolumeMiles:completedVolumeMiles(Object.assign({},item,{completedVolume:updates.completedVolume})),
       totalTimeDisplay:updates.time||item.totalTimeDisplay,
       weather:updates.weather||'',
       coachNote:updates.notes||'',
@@ -2857,7 +2857,7 @@ function latestTrainingForAthlete(athlete){
 
 function adjustTrainingTotalsAfterVoid(athlete,row){
   var date=parseActivityDate(row.sessionDate||row.syncedAt);
-  var miles=parseCompletedMiles(row.completedVolume,row.completedVolumeMiles);
+  var miles=completedVolumeMiles(row);
   if(!date)return;
   var currentStart=startOfDashboardWeek(new Date());
   var currentEnd=addDashboardDays(currentStart,6);
@@ -2889,7 +2889,7 @@ function detailList(items,emptyText){
 function groupVolumeByAthlete(rows){
   var groups={};
   (rows||[]).forEach(function(row){
-    var miles=num(row.completedVolumeMiles);
+    var miles=completedVolumeMiles(row);
     if(!miles)return;
     var key=String(row.contactId||row.athleteName||'').toLowerCase();
     if(!groups[key]){
@@ -3008,7 +3008,7 @@ function groupTrainingByAthlete(rows){
       };
     }
     groups[key].rows.push(row);
-    groups[key].volumeMiles+=num(row.completedVolumeMiles);
+    groups[key].volumeMiles+=completedVolumeMiles(row);
     groups[key].workouts+=1;
     var date=row.sessionDate||row.syncedAt||'';
     if(compareValues(date,groups[key].latestDate)>0){
@@ -3127,7 +3127,8 @@ function targetReviewText(row){
 }
 
 function volumeDisplay(row){
-  if(row.completedVolume)return row.completedVolume+(num(row.completedVolumeMiles)?' · '+formatMiles(row.completedVolumeMiles):'');
+  var effective=effectiveCompletedVolume(row);
+  if(effective.label)return effective.label+(effective.miles?' · '+formatMiles(effective.miles):'');
   if(row.plannedVolume)return 'Planned: '+row.plannedVolume;
   return '';
 }
@@ -3140,7 +3141,7 @@ function volumeCellHtml(row){
 }
 
 function sumTrainingVolume(rows){
-  return (rows||[]).reduce(function(sum,row){return sum+num(row.completedVolumeMiles);},0);
+  return (rows||[]).reduce(function(sum,row){return sum+completedVolumeMiles(row);},0);
 }
 
 function formatMiles(value){
@@ -3160,6 +3161,67 @@ function volumeAmountToMiles(amount,unit){
   if(unit==='mi'||unit==='mile'||unit==='miles')return amount;
   if(unit==='km'||unit==='k')return amount*.621371;
   if(unit==='m'||unit==='meter'||unit==='meters')return amount/1609.344;
+  return 0;
+}
+function completedVolumeMiles(row){
+  return effectiveCompletedVolume(row).miles;
+}
+function effectiveCompletedVolume(row){
+  var inferred=inferredCompletedRepVolume(row);
+  if(inferred)return inferred;
+  var miles=parseCompletedMiles(row&&row.completedVolume,row&&row.completedVolumeMiles);
+  return {label:row&&row.completedVolume||'',miles:miles};
+}
+function inferredCompletedRepVolume(row){
+  if(!row||/\b\d+(?:\.\d+)?\s*(?:x|×)\s*\d/i.test(row.completedVolume||''))return null;
+  var splits=parseSplitLines(row.splitsText);
+  var reps=workSplitCount(row,splits);
+  if(!reps)return null;
+  var source=[row.workoutPrescription,row.coachNote,row.plannedVolume,row.completedVolume,row.plannedEffort,row.workoutType].filter(Boolean).join(' ');
+  var distance=explicitRepDistanceFromText(source)||repDistanceFromVolumeRange(row.plannedVolume||row.completedVolume,reps,source);
+  if(!distance||!distance.meters)return null;
+  return {label:reps+' x '+distance.label+' completed',miles:distance.meters*reps/1609.344};
+}
+function explicitRepDistanceFromText(text){
+  var match=String(text||'').match(/\b\d+(?:\s*[-–]\s*\d+)?\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:m|km|k)|1\s*mile|2\s*mile)\b/i);
+  return distanceLabelAndMeters(match&&match[1]);
+}
+function repDistanceFromVolumeRange(value,reps,source){
+  var range=String(value||'').match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/i);
+  if(!range)return null;
+  var low=volumeAmountToMeters(Number(range[1]),range[3]);
+  var high=volumeAmountToMeters(Number(range[2]),range[3]);
+  if(!low||!high)return null;
+  var candidates=[100,150,200,300,400,500,600,800,1000,1200,1600].filter(function(distance){
+    return Math.abs(low/distance-Math.round(low/distance))<.01 &&
+      Math.abs(high/distance-Math.round(high/distance))<.01 &&
+      Math.round(high/distance)>=reps;
+  });
+  if(!candidates.length)return null;
+  var meters=/tempo|stride|recovery|walk|jog/i.test(source||'')?candidates[0]:candidates[candidates.length-1];
+  return {label:distanceLabelFromMeters(meters),meters:meters};
+}
+function distanceLabelAndMeters(value){
+  var text=String(value||'').trim().toLowerCase();
+  if(!text)return null;
+  if(text==='1 mile')return {label:'1 Mile',meters:1609.344};
+  if(text==='2 mile')return {label:'2 Mile',meters:3218.688};
+  var match=text.match(/^([0-9]+(?:\.[0-9]+)?)\s*(m|km|k)$/);
+  if(!match)return null;
+  var amount=Number(match[1]);
+  var meters=match[2]==='m'?amount:amount*1000;
+  return {label:distanceLabelFromMeters(meters),meters:meters};
+}
+function distanceLabelFromMeters(meters){
+  if(Math.abs(meters-1609.344)<1)return '1 Mile';
+  if(Math.abs(meters-3218.688)<1)return '2 Mile';
+  return meters>=1000&&meters%1000===0?(meters/1000)+'K':Math.round(meters)+'m';
+}
+function volumeAmountToMeters(amount,unit){
+  unit=String(unit||'').toLowerCase();
+  if(unit==='mi'||unit==='mile'||unit==='miles')return amount*1609.344;
+  if(unit==='km'||unit==='k')return amount*1000;
+  if(unit==='m'||unit==='meter'||unit==='meters')return amount;
   return 0;
 }
 
