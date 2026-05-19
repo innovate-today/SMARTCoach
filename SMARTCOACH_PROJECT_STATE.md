@@ -276,6 +276,7 @@ Update from 2026-05-19 continuation:
 - Completed training sync now calculates per-athlete completed quality volume from explicit rep prescriptions such as `10 x 100m`, using completed work reps/laps where available and saving that value into each athlete's SMART Trak note.
 - Dashboard volume parsing now understands rep-style volume text like `8 x 100m` and plain metric distances like `800m`, so completed quality work contributes to volume totals.
 - Dashboard completed workout volume now corrects older quality records that saved the full planned range such as `800-1000m tempo`; when split data shows fewer completed work reps, the dashboard infers actual rep volume, for example `6 x 100m completed` becomes `0.4 mi`.
+- Quality workout volume counts completed work reps only. Rep/rest recoveries, including walk-back or timed recovery chips, are excluded from dashboard actual volume unless a future separate recovery-distance metric is intentionally added.
 
 Workout effort percentage guidance discussed:
 

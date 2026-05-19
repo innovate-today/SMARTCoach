@@ -3167,13 +3167,13 @@ function completedVolumeMiles(row){
   return effectiveCompletedVolume(row).miles;
 }
 function effectiveCompletedVolume(row){
-  var inferred=inferredCompletedRepVolume(row);
-  if(inferred)return inferred;
+  var splitVolume=completedRepVolumeFromSplits(row);
+  if(splitVolume)return splitVolume;
   var miles=parseCompletedMiles(row&&row.completedVolume,row&&row.completedVolumeMiles);
   return {label:row&&row.completedVolume||'',miles:miles};
 }
-function inferredCompletedRepVolume(row){
-  if(!row||/\b\d+(?:\.\d+)?\s*(?:x|×)\s*\d/i.test(row.completedVolume||''))return null;
+function completedRepVolumeFromSplits(row){
+  if(!row)return null;
   var splits=parseSplitLines(row.splitsText);
   var reps=workSplitCount(row,splits);
   if(!reps)return null;
@@ -3311,8 +3311,12 @@ function splitTargetChipsHtml(row){
 }
 
 function workSplitCount(row,splits){
-  if(!hasRecoveryPattern(row))return splits.length;
-  return splits.filter(function(split,index){return splitKind(row,index,splits)==='work';}).length;
+  var hasRecoverySplit=splits.some(function(split){return split.kind==='recovery'||split.kind==='rest';});
+  if(!hasRecoveryPattern(row)&&!hasRecoverySplit)return splits.length;
+  return splits.filter(function(split,index){
+    var kind=splitKind(row,index,splits);
+    return kind==='work'||kind==='rep';
+  }).length;
 }
 
 function splitKind(row,index,splits){

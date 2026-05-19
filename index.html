@@ -2422,7 +2422,7 @@ function splitLabelsForRun(group,r,s){
   var plan=runnerPlan(r);
   var list=(s.laps||[]).map(function(ms,index){
     var meta=splitMeta(plan,index);
-    return{label:meta.label,ms:ms};
+    return{label:meta.label,kind:meta.kind,ms:ms};
   });
   CL=oldCL;
   return list;
@@ -2979,7 +2979,7 @@ function completedRepVolumeForRunner(r){
   var reps=0;
   (r.saved||[]).forEach(function(run){
     var labels=splitLabelsForRun(CL,r,run)||[];
-    var repLabels=labels.filter(function(split){return split.kind==='rep';});
+    var repLabels=labels.filter(function(split){return split.kind==='rep'||split.kind==='work';});
     if(repLabels.length){
       reps+=repLabels.length;
       return;

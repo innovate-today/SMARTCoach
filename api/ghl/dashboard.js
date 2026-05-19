@@ -431,13 +431,13 @@ function parseVolumeToMiles(value) {
 }
 
 function effectiveCompletedVolume(row) {
-  const inferred = inferredCompletedRepVolume(row);
-  if (inferred) return inferred;
+  const splitVolume = completedRepVolumeFromSplits(row);
+  if (splitVolume) return splitVolume;
   return { label: clean(row && row.completedVolume), miles: parseVolumeToMiles(row && row.completedVolume) };
 }
 
-function inferredCompletedRepVolume(row) {
-  if (!row || /\b\d+(?:\.\d+)?\s*(?:x|×)\s*\d/i.test(clean(row.completedVolume))) return null;
+function completedRepVolumeFromSplits(row) {
+  if (!row) return null;
   const splits = parseSplitLines(row.splitsText);
   const reps = workSplitCount(row, splits);
   if (!reps) return null;
@@ -517,8 +517,12 @@ function parseSplitLines(text) {
 
 function workSplitCount(row, splits) {
   if (!splits.length) return 0;
-  if (!hasRecoveryPattern(row)) return splits.length;
-  return splits.filter((split, index) => splitKind(row, index, splits) === "work").length;
+  const hasRecoverySplit = splits.some((split) => split.kind === "recovery" || split.kind === "rest");
+  if (!hasRecoveryPattern(row) && !hasRecoverySplit) return splits.length;
+  return splits.filter((split, index) => {
+    const kind = splitKind(row, index, splits);
+    return kind === "work" || kind === "rep";
+  }).length;
 }
 
 function splitKind(row, index, splits) {
