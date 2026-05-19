@@ -58,6 +58,11 @@ module.exports = async function handler(req, res) {
       const created = [];
       for (const row of rows) {
         const properties = buildRecordProperties(row);
+        const retired = await retireCurrentRecords({ token, locationId, properties });
+        if (retired[0]) {
+          if (!properties.previous_record_display) properties.previous_record_display = retired[0].resultDisplay || retired[0].resultMark;
+          if (!properties.previous_record_holder) properties.previous_record_holder = retired[0].athleteName;
+        }
         const result = await ghlFetch({
           token,
           path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records`,
@@ -113,6 +118,11 @@ async function updateRecord({ token, locationId, payload }) {
   const recordId = clean(payload && payload.recordId);
   if (!recordId) throw httpError(400, "Record ID is required.");
   const properties = buildRecordProperties(payload || {});
+  const retired = await retireCurrentRecords({ token, locationId, properties, excludeRecordId: recordId });
+  if (retired[0]) {
+    if (!properties.previous_record_display) properties.previous_record_display = retired[0].resultDisplay || retired[0].resultMark;
+    if (!properties.previous_record_holder) properties.previous_record_holder = retired[0].athleteName;
+  }
   const record = await ghlFetch({
     token,
     path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`,
@@ -120,6 +130,32 @@ async function updateRecord({ token, locationId, payload }) {
     body: { properties },
   });
   return normalizeRecord(record.record || record, properties);
+}
+
+async function retireCurrentRecords({ token, locationId, properties, excludeRecordId }) {
+  if (!yes(properties && properties.is_current)) return [];
+  const boardKey = recordBoardKeyFromProperties(properties);
+  if (!boardKey) return [];
+  const existing = await listRecords({ token, locationId });
+  const matches = existing.filter((record) => {
+    if (!record || !record.isCurrent) return false;
+    if (excludeRecordId && record.recordId === excludeRecordId) return false;
+    return recordBoardKey(record) === boardKey;
+  });
+  for (const record of matches) {
+    await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(record.recordId)}?locationId=${encodeURIComponent(locationId)}`,
+      method: "PUT",
+      body: {
+        properties: compactProperties({
+          is_current: "No",
+          record_notes: appendRetiredNote(record.recordNotes, properties),
+        }),
+      },
+    });
+  }
+  return matches;
 }
 
 async function deleteRecord({ token, payload }) {
@@ -357,6 +393,33 @@ function compactProperties(properties) {
     cleaned[key] = value;
     return cleaned;
   }, {});
+}
+
+function recordBoardKey(record) {
+  const scope = optionValue(record && record.recordScope);
+  return [
+    optionValue(record && record.recordType),
+    scope,
+    optionValue(record && record.sport),
+    optionValue(record && record.event),
+    scope === "athlete" ? optionValue(record && record.athleteName) : "",
+  ].join("|");
+}
+
+function recordBoardKeyFromProperties(properties) {
+  const scope = optionValue(properties && properties.record_scope);
+  return [
+    optionValue(properties && properties.record_type),
+    scope,
+    optionValue(properties && properties.sport),
+    optionValue(properties && properties.event),
+    scope === "athlete" ? optionValue(properties && properties.athlete_name_snapshot) : "",
+  ].join("|");
+}
+
+function appendRetiredNote(note, newProperties) {
+  const line = `Moved to historical on ${new Date().toISOString().slice(0, 10)} because a new current record was saved: ${clean(newProperties.result_display || newProperties.result_mark)}.`;
+  return [clean(note), line].filter(Boolean).join("\n");
 }
 
 function slugValue(value) {

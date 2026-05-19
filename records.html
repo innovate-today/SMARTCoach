@@ -137,6 +137,11 @@ tr:last-child td{border-bottom:0}
     <select id="scopeFilter"><option value="all">All record owners</option></select>
     <select id="typeFilter"><option value="all">All record types</option></select>
     <select id="eventFilter"><option value="all">All events</option></select>
+    <select id="statusFilter">
+      <option value="current">Current records</option>
+      <option value="all">All records</option>
+      <option value="historical">Historical records</option>
+    </select>
     <button id="clearBtn" class="ghost" type="button">Reset View</button>
     <div id="status" class="status">Loading records...</div>
   </section>
@@ -212,7 +217,7 @@ tr:last-child td{border-bottom:0}
         <button id="downloadBulkTemplateBtn" class="secondary" type="button">Download Template</button>
         <input id="bulkFile" type="file" accept=".csv,.tsv,.txt">
       </div>
-      <textarea id="bulkText" placeholder="Record Type,Record Owner,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;School Record,Varsity,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
+      <textarea id="bulkText" placeholder="Record Type,Record Owner,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;School Record,Girls School,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
       <div class="bulkactions">
         <div class="left">
           <button id="previewBulkBtn" type="button">Preview Records</button>
@@ -322,7 +327,7 @@ var bulkRows=[];
 var recordSort={key:'event',dir:'asc'};
 var editingRecord=null;
 var RECORD_TYPES=['Personal Best','Season Best','School Record','Team Record','Course Record','Meet Record'];
-var RECORD_SCOPES=['Athlete','Team','School','Varsity','JV','Middle School','Club'];
+var RECORD_SCOPES=['Athlete','School','Boys School','Girls School','Team','Boys Team','Girls Team','Varsity','Boys Varsity','Girls Varsity','JV','Boys JV','Girls JV','Middle School','Boys Middle School','Girls Middle School','Club'];
 var SPORTS=['Track','Cross Country','Road'];
 var EVENTS=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
 var SEASONS=['Spring','Summer','Fall','Winter','Offseason'];
@@ -345,6 +350,7 @@ var els={
   scopeFilter:document.getElementById('scopeFilter'),
   typeFilter:document.getElementById('typeFilter'),
   eventFilter:document.getElementById('eventFilter'),
+  statusFilter:document.getElementById('statusFilter'),
   clearBtn:document.getElementById('clearBtn'),
   status:document.getElementById('status'),
   toggleToolsBtn:document.getElementById('toggleToolsBtn'),
@@ -418,8 +424,24 @@ function pageUrl(path){
   return url.pathname+url.search;
 }
 function accessStorageKey(){return 'sc_access_'+accountKey();}
-function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
-function setAccessCode(value){try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
+function accessCookieName(){return accessStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');}
+function getCookie(name){
+  try{
+    var match=document.cookie.match(new RegExp('(?:^|; )'+name.replace(/[.$?*|{}()\[\]\\\/\+^]/g,'\\$&')+'=([^;]*)'));
+    return match?decodeURIComponent(match[1]):'';
+  }catch(e){return '';}
+}
+function setCookie(name,value){
+  try{document.cookie=name+'='+encodeURIComponent(value||'')+'; path=/; max-age=31536000; SameSite=Lax';}catch(e){}
+}
+function accessCode(){
+  try{return localStorage.getItem(accessStorageKey())||getCookie(accessCookieName())||'';}catch(e){return getCookie(accessCookieName())||'';}
+}
+function setAccessCode(value){
+  var code=String(value||'').trim();
+  try{localStorage.setItem(accessStorageKey(),code);}catch(e){}
+  setCookie(accessCookieName(),code);
+}
 function apiHeaders(){
   var headers={'X-SMARTCoach-Account':accountKey()};
   var code=accessCode();
@@ -565,6 +587,7 @@ function saveSingleRecord(){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be saved.');
     var created=result.data&&result.data.created&&result.data.created[0]||{};
     var local=normalizedRecordFromPayload(Object.assign({},payload,{recordId:created.recordId||'',sourceRecordId:created.sourceRecordId||payload.sourceRecordId}));
+    retireLocalCurrentRecords(local,local.recordId);
     records.unshift(local);
     renderOptions();
     render();
@@ -621,6 +644,7 @@ function saveRecordEdit(){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
     if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be updated.');
     var updated=normalizedRecordFromPayload(payload,editingRecord);
+    retireLocalCurrentRecords(updated,editingRecord.recordId);
     records=records.map(function(row){return row.recordId===editingRecord.recordId?updated:row;});
     renderOptions();
     render();
@@ -709,7 +733,7 @@ function parseBulkRecords(text){
 function downloadBulkTemplate(){
   var csv=[
     'Record Type,Record Owner,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
-    'School Record,Varsity,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
+    'School Record,Girls School,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
     'Season Best,Team,Cross Country,5K,18:22.1,Marcus Moore,State,2026-10-31,Fall,2026,,,'
   ].join('\n');
   var blob=new Blob([csv],{type:'text/csv'});
@@ -755,6 +779,7 @@ function saveBulkRecords(){
       var saved=created[index]||{};
       return normalizedRecordFromPayload(Object.assign({},row,{recordId:saved.recordId||'',sourceRecordId:saved.sourceRecordId||row.sourceRecordId}));
     });
+    localRows.forEach(function(row){retireLocalCurrentRecords(row,row.recordId);});
     records=localRows.concat(records);
     renderOptions();
     render();
@@ -791,13 +816,38 @@ function filteredRecords(){
   var scope=els.scopeFilter.value;
   var type=els.typeFilter.value;
   var event=els.eventFilter.value;
+  var status=els.statusFilter.value;
   return sortRecords(records.filter(function(row){
     if(query&&searchText(row).indexOf(query)===-1)return false;
     if(scope!=='all'&&row.recordScope!==scope)return false;
     if(type!=='all'&&row.recordType!==type)return false;
     if(event!=='all'&&recordEvent(row)!==event)return false;
+    if(status==='current'&&(!recordEvent(row)||!recordValue(row)))return false;
+    if(status==='current'&&!row.isCurrent)return false;
+    if(status==='historical'&&row.isCurrent)return false;
     return true;
   }));
+}
+function recordBoardKey(row){
+  var scope=String(row&&row.recordScope||'').trim().toLowerCase();
+  return [
+    String(row&&row.recordType||'').trim().toLowerCase(),
+    scope,
+    String(row&&row.sport||'').trim().toLowerCase(),
+    String(recordEvent(row)||'').trim().toLowerCase(),
+    scope==='athlete'?String(row&&row.athleteName||'').trim().toLowerCase():''
+  ].join('|');
+}
+function retireLocalCurrentRecords(record,excludeId){
+  if(!record||!record.isCurrent)return;
+  var key=recordBoardKey(record);
+  if(!key)return;
+  records=records.map(function(row){
+    if(!row||!row.isCurrent)return row;
+    if(excludeId&&String(row.recordId||'')===String(excludeId))return row;
+    if(recordBoardKey(row)!==key)return row;
+    return Object.assign({},row,{isCurrent:false});
+  });
 }
 function sortRecords(list){
   var key=recordSort.key;
@@ -846,9 +896,9 @@ function render(){
     var eventName=recordEvent(row);
     var value=recordValue(row);
     var isIncomplete=!eventName||!value;
-    var status=isIncomplete?'<span class="pill warn">Needs info</span>':(row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>');
-    var eventLabel=eventName||'Needs event';
-    var eventNote=row.sport||(isIncomplete?'Open Edit to complete this record.':'');
+    var status=isIncomplete?'':(row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>');
+    var eventLabel=eventName||'';
+    var eventNote=eventName?row.sport:'';
     return '<tr>'+
       '<td><div class="name">'+esc(eventLabel)+'</div><div class="muted">'+esc(eventNote)+'</div></td>'+
       '<td>'+esc(row.recordScope||'')+'</td>'+
@@ -943,6 +993,7 @@ function init(){
   els.scopeFilter.addEventListener('change',render);
   els.typeFilter.addEventListener('change',render);
   els.eventFilter.addEventListener('change',render);
+  els.statusFilter.addEventListener('change',render);
   document.querySelectorAll('.sortbtn[data-sort]').forEach(function(button){
     button.addEventListener('click',function(){
       var key=button.getAttribute('data-sort')||'event';
@@ -955,6 +1006,7 @@ function init(){
     els.scopeFilter.value='all';
     els.typeFilter.value='all';
     els.eventFilter.value='all';
+    els.statusFilter.value='current';
     recordSort={key:'event',dir:'asc'};
     render();
   });

@@ -406,11 +406,25 @@ function clearAccountUrlOverride(){
 function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();
 }
+function accessCodeCookieName(){
+  return accessCodeStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');
+}
+function readSmartCoachCookie(name){
+  try{
+    var match=document.cookie.match(new RegExp('(?:^|; )'+name.replace(/[.$?*|{}()\[\]\\\/\+^]/g,'\\$&')+'=([^;]*)'));
+    return match?decodeURIComponent(match[1]):'';
+  }catch(e){return '';}
+}
+function writeSmartCoachCookie(name,value){
+  try{document.cookie=name+'='+encodeURIComponent(value||'')+'; path=/; max-age=31536000; SameSite=Lax';}catch(e){}
+}
 function smartCoachAccessCode(){
-  try{return localStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
+  try{return localStorage.getItem(accessCodeStorageKey())||readSmartCoachCookie(accessCodeCookieName())||'';}catch(e){return readSmartCoachCookie(accessCodeCookieName())||'';}
 }
 function setSmartCoachAccessCode(value){
-  try{localStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
+  var code=String(value||'').trim();
+  try{localStorage.setItem(accessCodeStorageKey(),code);}catch(e){}
+  writeSmartCoachCookie(accessCodeCookieName(),code);
 }
 function showAccessCodeRow(show){
   var row=document.getElementById('access-code-row');
