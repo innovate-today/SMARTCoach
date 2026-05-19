@@ -1,5 +1,9 @@
 # SMARTCoach Project Plan
 
+## Current Resume File
+
+For day-to-day continuation, start with `SMARTCOACH_PROJECT_STATE.md`. It captures the current build state, known issues, tested behavior, and next priorities so a new chat can resume quickly without replaying the full project history.
+
 ## Project Identity
 
 SMARTCoach is a coaching platform that connects practice timing directly to a long-term athlete career database and guided coaching tools.
