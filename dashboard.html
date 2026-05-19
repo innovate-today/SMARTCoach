@@ -3072,7 +3072,7 @@ function trainingWorkoutDetailTable(rows){
       return '<tr>'+
         '<td>'+mainLine(row.groupName||'')+'</td>'+
         '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
-        '<td>'+mainLine(volumeDisplay(row))+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'')+'</td>'+
+        '<td>'+volumeCellHtml(row)+'</td>'+
         '<td>'+targetReviewHtml(row)+'</td>'+
         '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
         '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
@@ -3101,7 +3101,7 @@ function recentTrainingHtml(row){
     '<td>'+athleteDetailButton(row)+'</td>'+
     '<td>'+mainLine(row.groupName||'')+'</td>'+
     '<td>'+mainLine(row.workoutPrescription||row.workoutType||'')+subLine(row.workoutPrescription?row.workoutType:'')+'</td>'+
-    '<td>'+mainLine(volumeDisplay(row))+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'')+'</td>'+
+    '<td>'+volumeCellHtml(row)+'</td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+targetReviewHtml(row)+'</td>'+
     '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
@@ -3130,6 +3130,13 @@ function volumeDisplay(row){
   if(row.completedVolume)return row.completedVolume+(num(row.completedVolumeMiles)?' · '+formatMiles(row.completedVolumeMiles):'');
   if(row.plannedVolume)return 'Planned: '+row.plannedVolume;
   return '';
+}
+function volumeCellHtml(row){
+  if(row.completedVolume){
+    return mainLine('Actual: '+volumeDisplay(row))+subLine(row.plannedVolume?'Planned: '+row.plannedVolume:'');
+  }
+  if(row.plannedVolume)return mainLine('Planned: '+row.plannedVolume);
+  return '<span class="muted">No volume saved</span>';
 }
 
 function sumTrainingVolume(rows){
