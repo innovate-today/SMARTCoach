@@ -213,9 +213,9 @@ function normalizeRecordPayload(row) {
   const resultDisplay = clean(row && (row.resultDisplay || row.result));
   return {
     recordName: clean(row && row.recordName),
-    recordType: clean(row && row.recordType),
-    recordScope: clean(row && row.recordScope),
-    gender: clean(row && row.gender),
+    recordType: clean(row && row.recordType) || "School Record",
+    recordScope: clean(row && row.recordScope) || "School",
+    gender: clean(row && row.gender) || "Unlisted",
     sport: clean(row && row.sport) || "Track",
     event: clean(row && row.event),
     resultDisplay,
