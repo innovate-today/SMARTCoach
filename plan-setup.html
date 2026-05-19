@@ -18,8 +18,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue"
 .mark{width:58px;height:58px;display:grid;place-items:center;flex:0 0 58px}
 .mark img{display:block;max-width:58px;max-height:58px;object-fit:contain}
 .top-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;min-width:0}
-.linkbtn{border:0;border-radius:8px;background:#e5e7eb;color:#111827;font-size:13px;font-weight:850;padding:9px 13px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:38px;white-space:nowrap}
-.top-actions .linkbtn:last-child{background:#2B4FCC;color:#fff}
+.linkbtn{border:0;border-radius:8px;background:#e5e7eb;color:#111827;font-size:13px;font-weight:850;padding:8px 11px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px;white-space:nowrap}
+.linkbtn.primary-nav{background:#2B4FCC;color:#fff}
 .account-control{order:2;flex:1 0 100%;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:8px;margin-top:2px;border-top:1px solid #edf1f7}
 .account-control label{margin:0;font-size:12px;color:#64748b;font-weight:850;text-transform:uppercase;letter-spacing:.02em}
 .account-control input{width:150px;padding:8px 10px;font-size:13px}
@@ -93,10 +93,10 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     <div class="brand"><div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div><span>SMART Trak</span></div>
     <div class="top-actions">
       <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save Settings</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button></div>
+      <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
       <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
-      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
       <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
-      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">SMART Trak</a>
+      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
     </div>
   </div>
   <div class="panel">

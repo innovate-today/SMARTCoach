@@ -270,6 +270,7 @@ Update from 2026-05-19 continuation:
 - Plan Builder Plan Assignments now has the same girls/boys/unlisted filter and name sort, with hidden checked athletes preserved so filtered assignment saves do not accidentally drop athletes.
 - Current Fitness Setup and Plan Assignments moved out of Plan Builder into a dedicated Planning Setup page (`plan-setup.html`), with navigation added from Dashboard, Training Calendar, Plan Entry, and Plan Builder.
 - Plan Builder no longer loads assignment plans during page startup; it keeps the build questionnaire focused on draft plan creation and links coaches to Planning Setup when roster setup is needed.
+- Header buttons now use Dashboard as the blue left anchor, smaller navigation padding, and a neutral separated Refresh action across the main SMART Trak pages.
 
 Workout effort percentage guidance discussed:
 

@@ -15,10 +15,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .brand{display:flex;align-items:center;gap:12px;min-width:0}
 .mark{width:58px;height:58px;display:grid;place-items:center;flex:0 0 58px}.mark img{display:block;max-width:58px;max-height:58px;object-fit:contain}
 h1{font-size:24px;line-height:1.15;margin:0}.sub{font-size:14px;color:var(--muted);margin-top:4px}
-.actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font:14px inherit;font-weight:850;padding:10px 14px;cursor:pointer;text-decoration:none}
+.actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font:14px inherit;font-weight:850;padding:8px 11px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.ghost{background:#eef2f7;color:#172033}button:disabled{opacity:.55;cursor:not-allowed}
-.top .linkbtn{font-size:13px;padding:9px 13px;min-height:38px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
-.top .linkbtn:first-child{background:#2B4FCC;color:#fff}
+.top .linkbtn{font-size:13px;padding:8px 11px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.top .primary-nav{background:#2B4FCC;color:#fff}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;overflow:hidden}.panelhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .panelhead h2{font-size:19px;margin:0}.panelbody{padding:16px 18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}
 label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
@@ -43,7 +43,7 @@ td input,td textarea,td select{font-size:13px;padding:7px 8px;border-radius:6px}
 <main id="mainPage" class="page">
   <section class="top">
     <div class="brand"><div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div><div><h1>SMART Trak Plan Entry</h1><div class="sub">Upload, paste, or manually enter workouts coaches already use.</div></div></div>
-	    <div class="actions"><a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">SMART Trak</a><a id="calendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a><a id="setupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a><a id="builderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a></div>
+    <div class="actions"><a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a><a id="calendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a><a id="setupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a><a id="builderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a></div>
   </section>
   <section class="panel"><div class="panelhead"><h2>Plan Details</h2><div id="saveStatus" class="status">Saved rows become Scheduled plan days unless changed.</div></div><div class="panelbody grid">
     <div class="field"><label for="saveMode">Save Mode</label><select id="saveMode"><option value="new">Create new plan</option><option value="append">Add to existing plan</option></select></div>

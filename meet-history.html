@@ -20,11 +20,13 @@ body.embedded .page{max-width:none;padding:16px 18px 28px}
 h1{font-size:24px;line-height:1.15;margin:0}
 .sub{font-size:14px;color:var(--muted);margin-top:4px}
 .updated{display:inline-flex;align-items:center;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:800;padding:7px 10px}
-.actions{display:flex;align-items:center;gap:10px}
-button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
 button:disabled{opacity:.55;cursor:not-allowed}
+.actions .primary-nav{background:var(--blue);color:#fff}
+.actions .utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line);margin-left:4px}
 .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
 .card:hover{box-shadow:0 10px 24px rgba(15,23,42,.14);transform:translateY(-1px)}
@@ -116,10 +118,10 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
     <div class="actions">
-      <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">SMART Trak</a>
+      <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
       <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
       <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
-      <button id="refreshBtn" type="button">Refresh</button>
+      <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
     </div>
   </section>
 
