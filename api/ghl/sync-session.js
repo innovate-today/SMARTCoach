@@ -538,9 +538,10 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
 function formatCoachNote({ run, session, athlete }) {
   const workout = clean(athlete && (athlete.plannedTargetRep || athlete.trainingPlanDayTitle) || session.trainingPlanDayTitle);
   const targetLines = plannedActualLines({ run, athlete });
+  const completedVolume = clean(athlete && athlete.completedVolume) || session.completedVolume;
   return [
     session.weather ? `Weather: ${session.weather}` : "",
-    session.completedVolume ? `Completed volume: ${session.completedVolume}` : "",
+    completedVolume ? `Completed volume: ${completedVolume}` : "",
     athlete && athlete.plannedVolume ? `Planned volume: ${athlete.plannedVolume}` : "",
     workout ? `Workout: ${workout}` : "",
     ...targetLines,
@@ -864,7 +865,8 @@ function buildNoteBody(session, athlete) {
     lines.push(`Plan: ${planTitle || "Selected Training Plan"}`);
     if (planDayTitle) lines.push(`Scheduled Workout: ${planDayTitle}`);
   }
-  if (session.completedVolume) lines.push(`Completed volume: ${session.completedVolume}`);
+  const completedVolume = clean(athlete.completedVolume) || session.completedVolume;
+  if (completedVolume) lines.push(`Completed volume: ${completedVolume}`);
   if (athlete.plannedVolume) lines.push(`Planned volume: ${athlete.plannedVolume}`);
 
   lines.push("", `Athlete: ${athlete.name}`);

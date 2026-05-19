@@ -3143,8 +3143,17 @@ function formatMiles(value){
 
 function parseCompletedMiles(value,fallback){
   var text=String(value||'').toLowerCase();
-  var match=text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles)\b/);
-  return match?Number(match[1]):num(fallback);
+  var reps=text.match(/(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  if(reps)return volumeAmountToMiles(Number(reps[1])*Number(reps[2]),reps[3]);
+  var match=text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  return match?volumeAmountToMiles(Number(match[1]),match[2]):num(fallback);
+}
+function volumeAmountToMiles(amount,unit){
+  unit=String(unit||'').toLowerCase();
+  if(unit==='mi'||unit==='mile'||unit==='miles')return amount;
+  if(unit==='km'||unit==='k')return amount*.621371;
+  if(unit==='m'||unit==='meter'||unit==='meters')return amount/1609.344;
+  return 0;
 }
 
 function targetStatusPill(row){

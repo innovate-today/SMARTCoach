@@ -410,6 +410,8 @@ function startOfNextMonth() {
 function parseVolumeToMiles(value) {
   const text = clean(value).toLowerCase();
   if (!text) return 0;
+  const repMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  if (repMatch) return convertVolumeToMiles(Number(repMatch[1]) * Number(repMatch[2]), repMatch[3]);
   const rangeMatch = text.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
   if (rangeMatch) return convertVolumeToMiles((Number(rangeMatch[1]) + Number(rangeMatch[2])) / 2, rangeMatch[3]);
   const match = text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);

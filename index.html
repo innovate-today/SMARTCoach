@@ -2966,10 +2966,50 @@ function commonSyncPlanValue(ctx,key,fallback){
   if(ctx&&ctx.hasPlan)return commonPlanValue(ctx.plans||[],key)||'';
   return fallback||'';
 }
+function explicitRepDistance(plan){
+  var source=[plan&&plan.trainingPlanDayTitle,plan&&plan.trainingPlanDayDetails,plan&&plan.trainingPlanDayTargetSplits].join(' ');
+  var match=source.match(/\b\d+\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:m|k)|1\s*mile|2\s*mile|half marathon|marathon)\b/i);
+  if(!match)return null;
+  return{label:normalizeEventLabel(match[1]),meters:eventDistance(match[1])};
+}
+function completedRepVolumeForRunner(r){
+  var plan=runnerPlan(r);
+  var repDistance=explicitRepDistance(plan);
+  if(!repDistance||!repDistance.meters)return null;
+  var reps=0;
+  (r.saved||[]).forEach(function(run){
+    var labels=splitLabelsForRun(CL,r,run)||[];
+    var repLabels=labels.filter(function(split){return split.kind==='rep';});
+    if(repLabels.length){
+      reps+=repLabels.length;
+      return;
+    }
+    if(labels.length){
+      reps+=labels.length;
+      return;
+    }
+    reps+=1;
+  });
+  if(!reps)return null;
+  var miles=repDistance.meters*reps/1609.344;
+  return reps+' x '+repDistance.label+' completed ('+formatVolumeMiles(miles)+')';
+}
+function commonCompletedRepVolume(runners){
+  var values=(runners||[]).map(completedRepVolumeForRunner).filter(Boolean);
+  if(!values.length)return '';
+  var first=values[0];
+  for(var i=1;i<values.length;i++)if(values[i]!==first)return '';
+  return first;
+}
+function formatVolumeMiles(miles){
+  var rounded=Math.round((Number(miles)||0)*100)/100;
+  if(!rounded)return'0 mi';
+  return rounded.toFixed(rounded>=10?1:2).replace(/\.0$/,'').replace(/0$/,'')+' mi';
+}
 function updateSyncVolumeDefault(ctx){
   var input=document.getElementById('sy-volume');
   if(!input)return;
-  var next=ctx&&ctx.plannedVolume||'';
+  var next=commonCompletedRepVolume(selectedSyncRunners())||(ctx&&ctx.plannedVolume)||'';
   var previous=input.getAttribute('data-default')||'';
   if(!input.value||input.value===previous){
     input.value=next;
@@ -3108,6 +3148,7 @@ function doSMARTTraKSync(forceDuplicateSync){
       trainingPlanPhase:plan.trainingPlanPhase,
       trainingPlanDayWorkoutType:plan.trainingPlanDayWorkoutType||inferWorkoutTypeFromPlan(plan),
       plannedVolume:plan.trainingPlanDayPlannedVolume||'',
+      completedVolume:completedRepVolumeForRunner(r)||completedVolume,
       runs:r.saved.map(function(s,i){
         return {
           runNumber:i+1,
