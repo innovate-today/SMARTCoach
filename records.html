@@ -39,7 +39,10 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .panelhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
 .panelhead h2{font-size:15px;margin:0}
 .panelbody{padding:14px 16px}
+.toolsbody{display:grid;gap:12px}
 .bulkgrid{display:grid;grid-template-columns:1fr;gap:10px}
+.singletools{display:grid;gap:10px}
+.toolnote{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;color:#334155;font-size:13px;line-height:1.4}
 .recordform{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:12px}
 .recordform .wide{grid-column:span 2}
 .recordform label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
@@ -88,7 +91,9 @@ tr:last-child td{border-bottom:0}
 .modalbody{padding:14px 16px}
 .modalstatus{font-size:13px;font-weight:900;color:var(--muted)}
 .compact{padding:7px 9px;font-size:13px}
-.headinfo{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#e8eefc;color:#173891;font-size:12px;font-weight:900;margin-left:4px;text-transform:none;letter-spacing:0}
+.headinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:4px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe}
+.headinfo::after{content:attr(data-tip);position:absolute;left:50%;top:24px;transform:translateX(-50%);width:250px;max-width:80vw;padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:30;white-space:normal}
+.headinfo:hover::after,.headinfo:focus::after,.headinfo.open::after{opacity:1}
 @media(max-width:980px){
   .top{align-items:flex-start;flex-direction:column}
   .actions{width:100%;flex-wrap:wrap}
@@ -128,8 +133,8 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <section class="bar">
-    <input id="search" type="search" placeholder="Search athlete, event, meet, scope, or result" autocomplete="off">
-    <select id="scopeFilter"><option value="all">All scopes</option></select>
+    <input id="search" type="search" placeholder="Search athlete, event, meet, owner, or result" autocomplete="off">
+    <select id="scopeFilter"><option value="all">All record owners</option></select>
     <select id="typeFilter"><option value="all">All record types</option></select>
     <select id="eventFilter"><option value="all">All events</option></select>
     <button id="clearBtn" class="ghost" type="button">Reset View</button>
@@ -139,17 +144,19 @@ tr:last-child td{border-bottom:0}
   <section class="panel bulkpanel">
     <div class="panelhead">
       <div class="bulkintro">
-        <div><b>Add / Edit Records</b><span>Add one record, edit table rows, or import existing records from a spreadsheet.</span></div>
+        <div><b>Records Tools</b><span>Add one record, edit table rows, or import existing records from a spreadsheet.</span></div>
       </div>
-      <div id="bulkStatus" class="bulkstatus">Paste records, preview, then save.</div>
-      <button id="toggleBulkBtn" class="ghost" type="button">Show bulk tools</button>
+      <div id="bulkStatus" class="bulkstatus">Hidden until needed.</div>
+      <button id="toggleToolsBtn" class="ghost" type="button">Open Records Tools</button>
     </div>
-    <div class="panelbody bulkgrid">
-      <div class="recordform" id="singleRecordForm">
+    <div id="toolsBody" class="panelbody toolsbody" hidden>
+      <div class="singletools">
+        <div class="toolnote"><b>Quick add:</b> Use this for one school, team, season, meet, or athlete record. Use the table buttons below to edit or delete existing records.</div>
+        <div class="recordform" id="singleRecordForm">
         <label>Record Type
           <select id="singleRecordType"></select>
         </label>
-        <label>Record Level
+        <label>Record Owner
           <select id="singleRecordScope"></select>
         </label>
         <label>Sport
@@ -190,28 +197,32 @@ tr:last-child td{border-bottom:0}
           <button id="clearSingleBtn" class="ghost" type="button">Clear</button>
           <button id="saveSingleBtn" type="button">Save Record</button>
         </div>
+        </div>
       </div>
-    </div>
-    <div id="bulkBody" class="panelbody bulkgrid" hidden>
+      <div class="recordformactions">
+        <button id="toggleBulkBtn" class="ghost" type="button">Open Bulk Import</button>
+      </div>
+    <div id="bulkBody" class="bulkgrid" hidden>
       <div class="bulkhelp">
         <div><b>1. Download template</b>Fill it in from your current spreadsheet.</div>
         <div><b>2. Preview</b>Check that each value stayed in the correct column.</div>
-        <div><b>3. Save</b>Records are saved to SMART Trak and then the page refreshes.</div>
+        <div><b>3. Save</b>Records are saved to SMART Trak and appear immediately.</div>
       </div>
       <div class="bulkfile">
         <button id="downloadBulkTemplateBtn" class="secondary" type="button">Download Template</button>
         <input id="bulkFile" type="file" accept=".csv,.tsv,.txt">
       </div>
-      <textarea id="bulkText" placeholder="Record Type,Record Scope,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;School Record,Varsity,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
+      <textarea id="bulkText" placeholder="Record Type,Record Owner,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;School Record,Varsity,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
       <div class="bulkactions">
         <div class="left">
           <button id="previewBulkBtn" type="button">Preview Records</button>
           <button id="saveBulkBtn" class="secondary" type="button" disabled>Save Records</button>
           <button id="clearBulkBtn" class="ghost" type="button">Clear</button>
         </div>
-        <span class="hint">Required: type, scope, event, result, date.</span>
+        <span class="hint">Required: type, owner, event, result, date.</span>
       </div>
       <div id="bulkPreview" class="bulkpreview" hidden></div>
+    </div>
     </div>
   </section>
 
@@ -220,8 +231,8 @@ tr:last-child td{border-bottom:0}
       <thead>
         <tr>
           <th><button class="sortbtn active asc" data-sort="event" type="button">Event</button></th>
-          <th><button class="sortbtn" data-sort="scope" type="button">Record Level</button><span class="headinfo" title="Who this record belongs to, such as athlete, team, school, varsity, or middle school.">i</span></th>
-          <th><button class="sortbtn" data-sort="type" type="button">Record Type</button><span class="headinfo" title="What kind of record it is, such as personal best, season best, school record, or course record.">i</span></th>
+          <th><button class="sortbtn" data-sort="scope" type="button">Record Owner</button><span class="headinfo" tabindex="0" data-tip="Who owns this record: athlete, team, school, varsity, middle school, or club. Example: a school record belongs to School; a personal best belongs to Athlete.">i</span></th>
+          <th><button class="sortbtn" data-sort="type" type="button">Record Type</button><span class="headinfo" tabindex="0" data-tip="What kind of record it is: Personal Best, Season Best, School Record, Team Record, Course Record, or Meet Record.">i</span></th>
           <th><button class="sortbtn" data-sort="result" type="button">Record</button></th>
           <th><button class="sortbtn" data-sort="athlete" type="button">Athlete</button></th>
           <th><button class="sortbtn" data-sort="meet" type="button">Meet</button></th>
@@ -258,7 +269,7 @@ tr:last-child td{border-bottom:0}
         <label>Record Type
           <select id="editRecordType"></select>
         </label>
-        <label>Record Level
+        <label>Record Owner
           <select id="editRecordScope"></select>
         </label>
         <label>Sport
@@ -315,6 +326,7 @@ var RECORD_SCOPES=['Athlete','Team','School','Varsity','JV','Middle School','Clu
 var SPORTS=['Track','Cross Country','Road'];
 var EVENTS=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
 var SEASONS=['Spring','Summer','Fall','Winter','Offseason'];
+var PLACEHOLDER_VALUES={unlisted:true,unknown:true,'n/a':true,na:true};
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -335,6 +347,8 @@ var els={
   eventFilter:document.getElementById('eventFilter'),
   clearBtn:document.getElementById('clearBtn'),
   status:document.getElementById('status'),
+  toggleToolsBtn:document.getElementById('toggleToolsBtn'),
+  toolsBody:document.getElementById('toolsBody'),
   toggleBulkBtn:document.getElementById('toggleBulkBtn'),
   bulkBody:document.getElementById('bulkBody'),
   bulkStatus:document.getElementById('bulkStatus'),
@@ -404,8 +418,8 @@ function pageUrl(path){
   return url.pathname+url.search;
 }
 function accessStorageKey(){return 'sc_access_'+accountKey();}
-function accessCode(){try{return sessionStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
-function setAccessCode(value){try{sessionStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
+function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
+function setAccessCode(value){try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
 function apiHeaders(){
   var headers={'X-SMARTCoach-Account':accountKey()};
   var code=accessCode();
@@ -417,6 +431,12 @@ function esc(value){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char];
   });
 }
+function cleanDisplayValue(value){
+  var text=String(value==null?'':value).trim();
+  return PLACEHOLDER_VALUES[text.toLowerCase()]?'':text;
+}
+function recordEvent(row){return cleanDisplayValue(row&&row.event);}
+function recordValue(row){return cleanDisplayValue((row&&row.resultDisplay)||(row&&row.resultMark));}
 function formatDate(value){
   if(!value)return '';
   var date=new Date(value);
@@ -531,7 +551,7 @@ function normalizedRecordFromPayload(payload,existing){
 function saveSingleRecord(){
   var payload=recordPayload('single');
   if(!payload.recordType||!payload.recordScope||!payload.event||!payload.resultDisplay||!payload.recordDate){
-    setBulkStatus('Record type, level, event, result, and date are required.','bad');
+    setBulkStatus('Record type, owner, event, result, and date are required.','bad');
     return;
   }
   var headers=apiHeaders();
@@ -562,7 +582,7 @@ function openRecordEdit(id){
   setSelect(els.editRecordType,editingRecord.recordType,RECORD_TYPES);
   setSelect(els.editRecordScope,editingRecord.recordScope,RECORD_SCOPES);
   setSelect(els.editSport,editingRecord.sport,SPORTS);
-  setSelect(els.editEvent,editingRecord.event,EVENTS);
+  setSelect(els.editEvent,recordEvent(editingRecord),EVENTS);
   els.editResult.value=editingRecord.resultDisplay||editingRecord.resultMark||'';
   els.editAthlete.value=editingRecord.athleteName||'';
   els.editMeet.value=editingRecord.meetName||'';
@@ -588,7 +608,7 @@ function saveRecordEdit(){
   if(!editingRecord)return;
   var payload=recordPayload('edit');
   if(!payload.recordType||!payload.recordScope||!payload.event||!payload.resultDisplay||!payload.recordDate){
-    setRecordEditStatus('Record type, level, event, result, and date are required.','bad');
+    setRecordEditStatus('Record type, owner, event, result, and date are required.','bad');
     return;
   }
   var headers=apiHeaders();
@@ -637,7 +657,7 @@ function deleteRecord(){
   });
 }
 function searchText(row){
-  return [row.recordName,row.recordType,row.recordScope,row.sport,row.event,row.resultDisplay,row.resultMark,row.athleteName,row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
+  return [row.recordName,row.recordType,row.recordScope,row.sport,recordEvent(row),recordValue(row),row.athleteName,row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
 }
 function setBulkStatus(text,type){
   els.bulkStatus.textContent=text||'';
@@ -660,7 +680,7 @@ function recordHeaderMap(cols){
   var map={};
   cols.forEach(function(col,index){
     var key=String(col||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
+    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',record_owner:'recordScope',owner:'recordScope',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
     if(normalized)map[normalized]=index;
   });
   return map.recordType!=null||map.event!=null?map:{};
@@ -688,7 +708,7 @@ function parseBulkRecords(text){
 }
 function downloadBulkTemplate(){
   var csv=[
-    'Record Type,Record Scope,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
+    'Record Type,Record Owner,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
     'School Record,Varsity,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
     'Season Best,Team,Cross Country,5K,18:22.1,Marcus Moore,State,2026-10-31,Fall,2026,,,'
   ].join('\n');
@@ -715,7 +735,7 @@ function renderBulkPreview(){
     return;
   }
   els.bulkPreview.hidden=false;
-  els.bulkPreview.innerHTML='<table><thead><tr><th>Type</th><th>Scope</th><th>Event</th><th>Result</th><th>Athlete</th><th>Meet</th><th>Date</th><th>Season</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.recordType)+'</td><td>'+esc(row.recordScope)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
+  els.bulkPreview.innerHTML='<table><thead><tr><th>Type</th><th>Owner</th><th>Event</th><th>Result</th><th>Athlete</th><th>Meet</th><th>Date</th><th>Season</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.recordType)+'</td><td>'+esc(row.recordScope)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
   setBulkStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):bulkRows.length+' records ready to save.',issues.length?'bad':'good');
 }
 function saveBulkRecords(){
@@ -730,11 +750,18 @@ function saveBulkRecords(){
   }).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
     if(!result.ok)throw new Error(result.data&&result.data.error||'Records could not be saved.');
-    setBulkStatus('Saved '+(result.data.createdCount||bulkRows.length)+' records. Refreshing list...','good');
+    var created=result.data&&result.data.created||[];
+    var localRows=bulkRows.map(function(row,index){
+      var saved=created[index]||{};
+      return normalizedRecordFromPayload(Object.assign({},row,{recordId:saved.recordId||'',sourceRecordId:saved.sourceRecordId||row.sourceRecordId}));
+    });
+    records=localRows.concat(records);
+    renderOptions();
+    render();
+    setBulkStatus('Saved '+(result.data.createdCount||bulkRows.length)+' records.','good');
     bulkRows=[];
     els.bulkText.value='';
     renderBulkPreview();
-    return loadRecords();
   }).catch(function(error){
     els.saveBulkBtn.disabled=false;
     setBulkStatus(error.message||'Records could not be saved.','bad');
@@ -752,9 +779,10 @@ function renderOptions(){
   records.forEach(function(row){
     if(row.recordScope)scopes[row.recordScope]=true;
     if(row.recordType)types[row.recordType]=true;
-    if(row.event)events[row.event]=true;
+    var event=recordEvent(row);
+    if(event)events[event]=true;
   });
-  fillSelect(els.scopeFilter,'All scopes',Object.keys(scopes).sort());
+  fillSelect(els.scopeFilter,'All record owners',Object.keys(scopes).sort());
   fillSelect(els.typeFilter,'All record types',Object.keys(types).sort());
   fillSelect(els.eventFilter,'All events',Object.keys(events).sort());
 }
@@ -767,7 +795,7 @@ function filteredRecords(){
     if(query&&searchText(row).indexOf(query)===-1)return false;
     if(scope!=='all'&&row.recordScope!==scope)return false;
     if(type!=='all'&&row.recordType!==type)return false;
-    if(event!=='all'&&row.event!==event)return false;
+    if(event!=='all'&&recordEvent(row)!==event)return false;
     return true;
   }));
 }
@@ -776,7 +804,7 @@ function sortRecords(list){
   var dir=recordSort.dir==='desc'?-1:1;
   return list.slice().sort(function(a,b){
     return dir*compareRecordValue(a,b,key) ||
-      String(a.event||'').localeCompare(String(b.event||'')) ||
+      String(recordEvent(a)||'').localeCompare(String(recordEvent(b)||'')) ||
       String(a.recordScope||'').localeCompare(String(b.recordScope||''));
   });
 }
@@ -787,7 +815,7 @@ function compareRecordValue(a,b,key){
   if(key==='type')return String(a.recordType||'').localeCompare(String(b.recordType||''));
   if(key==='athlete')return String(a.athleteName||'').localeCompare(String(b.athleteName||''));
   if(key==='meet')return String(a.meetName||'').localeCompare(String(b.meetName||''));
-  return String(a.event||'').localeCompare(String(b.event||''));
+  return String(recordEvent(a)||'').localeCompare(String(recordEvent(b)||''));
 }
 function updateSortButtons(){
   document.querySelectorAll('.sortbtn[data-sort]').forEach(function(button){
@@ -803,7 +831,8 @@ function render(){
   var athletes={};
   var current=0;
   list.forEach(function(row){
-    if(row.event)events[row.event]=true;
+    var event=recordEvent(row);
+    if(event)events[event]=true;
     if(row.athleteName)athletes[row.athleteName]=true;
     if(row.isCurrent)current+=1;
   });
@@ -814,13 +843,17 @@ function render(){
   els.status.textContent=list.length+' records';
   updateSortButtons();
   els.rows.innerHTML=list.map(function(row){
-    var recordValue=row.resultDisplay||row.resultMark||'';
-    var status=row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
+    var eventName=recordEvent(row);
+    var value=recordValue(row);
+    var isIncomplete=!eventName||!value;
+    var status=isIncomplete?'<span class="pill warn">Needs info</span>':(row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>');
+    var eventLabel=eventName||'Needs event';
+    var eventNote=row.sport||(isIncomplete?'Open Edit to complete this record.':'');
     return '<tr>'+
-      '<td><div class="name">'+esc(row.event||'Unlisted')+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
+      '<td><div class="name">'+esc(eventLabel)+'</div><div class="muted">'+esc(eventNote)+'</div></td>'+
       '<td>'+esc(row.recordScope||'')+'</td>'+
       '<td>'+esc(row.recordType||'')+'</td>'+
-      '<td><b>'+esc(recordValue)+'</b></td>'+
+      '<td><b>'+esc(value)+'</b></td>'+
       '<td>'+esc(row.athleteName||'')+'</td>'+
       '<td>'+esc(row.meetName||'')+'</td>'+
       '<td>'+esc(formatDate(row.recordDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
@@ -875,6 +908,11 @@ function submitAccess(){
   loadRecords();
 }
 function init(){
+  els.toolsBody.hidden=true;
+  els.bulkBody.hidden=true;
+  els.toggleToolsBtn.textContent='Open Records Tools';
+  els.toggleBulkBtn.textContent='Open Bulk Import';
+  setBulkStatus('Hidden until needed.','');
   document.body.classList.toggle('embedded',embeddedMode());
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
   fillStaticSelects();
@@ -920,11 +958,32 @@ function init(){
     recordSort={key:'event',dir:'asc'};
     render();
   });
+  els.toggleToolsBtn.addEventListener('click',function(){
+    var open=els.toolsBody.hidden;
+    els.toolsBody.hidden=!open;
+    els.toggleToolsBtn.textContent=open?'Close Records Tools':'Open Records Tools';
+    if(open){
+      els.bulkBody.hidden=true;
+      setBulkStatus('Quick add is open. Open bulk tools only when importing a spreadsheet.','');
+    }else{
+      setBulkStatus('Hidden until needed.','');
+    }
+  });
+  document.querySelectorAll('.headinfo').forEach(function(info){
+    info.addEventListener('click',function(event){
+      event.stopPropagation();
+      document.querySelectorAll('.headinfo.open').forEach(function(item){if(item!==info)item.classList.remove('open');});
+      info.classList.toggle('open');
+    });
+  });
+  document.addEventListener('click',function(){
+    document.querySelectorAll('.headinfo.open').forEach(function(item){item.classList.remove('open');});
+  });
   els.toggleBulkBtn.addEventListener('click',function(){
     var open=els.bulkBody.hidden;
     els.bulkBody.hidden=!open;
-    els.toggleBulkBtn.textContent=open?'Hide bulk tools':'Show bulk tools';
-    setBulkStatus(open?'Download a template, upload it, or paste rows manually.':'Bulk tools hidden.','');
+    els.toggleBulkBtn.textContent=open?'Hide Bulk Import':'Open Bulk Import';
+    setBulkStatus(open?'Download a template, upload it, or paste rows manually.':'Bulk import hidden.','');
   });
   els.downloadBulkTemplateBtn.addEventListener('click',downloadBulkTemplate);
   els.bulkFile.addEventListener('change',function(){
