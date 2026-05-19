@@ -271,7 +271,8 @@ Update from 2026-05-19 continuation:
 - Current Fitness Setup and Plan Assignments moved out of Plan Builder into a dedicated Planning Setup page (`plan-setup.html`), with navigation added from Dashboard, Training Calendar, Plan Entry, and Plan Builder.
 - Plan Builder no longer loads assignment plans during page startup; it keeps the build questionnaire focused on draft plan creation and links coaches to Planning Setup when roster setup is needed.
 - Header buttons now use Dashboard as the blue left anchor, smaller navigation padding, and a neutral separated Refresh action across the main SMART Trak pages.
-- Planning Setup header now carries the page title and short explanation next to the SMART Trak brand, with the extra "Setup lives here" callout removed and clearer descriptions added for Current Fitness Setup and Plan Assignments.
+- Plan Builder and Planning Setup now match the Plan Entry header pattern: "SMART Trak [Page Name]" beside the logo with a one-line description underneath.
+- Planning Setup keeps the extra "Setup lives here" callout removed and uses clearer descriptions for Current Fitness Setup and Plan Assignments.
 
 Workout effort percentage guidance discussed:
 
