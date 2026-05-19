@@ -261,19 +261,20 @@ async function listRecords({ token, locationId }) {
 
 function normalizeRecord(record, fallbackProperties) {
   const props = fallbackProperties || recordProperties(record);
+  const fallback = deriveRecordFromName(prop(props, "record") || recordName(record));
   return {
     recordId: record && record.id ? record.id : "",
     recordName: prop(props, "record") || recordName(record),
-    recordType: labelValue(prop(props, "record_type")),
-    recordScope: labelValue(prop(props, "record_scope")),
-    gender: labelValue(prop(props, "gender")) || extractRecordGender(prop(props, "record_notes")),
-    sport: labelValue(prop(props, "sport")),
-    event: prop(props, "event"),
-    resultDisplay: prop(props, "result_display"),
+    recordType: labelValue(prop(props, "record_type")) || fallback.recordType || "School Record",
+    recordScope: labelValue(prop(props, "record_scope")) || "School",
+    gender: labelValue(prop(props, "gender")) || extractRecordGender(prop(props, "record_notes")) || "Unlisted",
+    sport: labelValue(prop(props, "sport")) || "Track",
+    event: prop(props, "event") || fallback.event,
+    resultDisplay: prop(props, "result_display") || fallback.resultDisplay,
     resultMs: Number(prop(props, "result_ms")) || 0,
     resultMark: prop(props, "result_mark"),
     athleteContact: prop(props, "athlete_contact"),
-    athleteName: prop(props, "athlete_name_snapshot"),
+    athleteName: prop(props, "athlete_name_snapshot") || fallback.athleteName,
     meetName: prop(props, "meet_name"),
     meetRecordId: prop(props, "meet_record_id"),
     meetResultId: prop(props, "meet_result_id"),
@@ -287,6 +288,17 @@ function normalizeRecord(record, fallbackProperties) {
     sourceSystem: prop(props, "source_system"),
     sourceRecordId: prop(props, "source_record_id"),
     syncedAt: recordTimestamp(record),
+  };
+}
+
+function deriveRecordFromName(name) {
+  const parts = clean(name).split(" - ").map(clean).filter(Boolean);
+  if (parts.length < 4) return {};
+  return {
+    athleteName: parts[0],
+    recordType: parts[1],
+    event: parts[2],
+    resultDisplay: parts.slice(3).join(" - "),
   };
 }
 

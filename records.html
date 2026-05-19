@@ -907,7 +907,8 @@ function updateSortButtons(){
 }
 function recordIsUsable(row){
   var type=String(row&&row.recordType||'School Record').toLowerCase();
-  return !!(recordEvent(row)&&recordValue(row)&&type.indexOf('school')>=0);
+  if(!recordEvent(row)||!recordValue(row))return false;
+  return !type||type.indexOf('school')>=0;
 }
 function newestRecord(a,b){
   return String(b.recordDate||'').localeCompare(String(a.recordDate||'')) ||
