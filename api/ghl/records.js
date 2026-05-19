@@ -138,11 +138,20 @@ async function retireCurrentRecords({ token, locationId, properties, excludeReco
   const boardKey = recordBoardKeyFromProperties(properties);
   if (!boardKey) return [];
   const existing = await listRecords({ token, locationId });
-  const matches = existing.filter((record) => {
-    if (!record || !record.isCurrent) return false;
+  const boardRecords = existing.filter((record) => {
+    if (!record) return false;
     if (excludeRecordId && record.recordId === excludeRecordId) return false;
     return recordBoardKey(record) === boardKey;
   });
+  const betterExisting = boardRecords.find((record) => !newRecordIsBetter(properties, record));
+  if (betterExisting) {
+    properties.is_current = "No";
+    properties.record_notes = [clean(properties.record_notes), `Saved as historical on ${new Date().toISOString().slice(0, 10)} because the current record is faster: ${clean(betterExisting.resultDisplay || betterExisting.resultMark)} by ${clean(betterExisting.athleteName)}.`].filter(Boolean).join("\n");
+    if (!properties.previous_record_display) properties.previous_record_display = betterExisting.resultDisplay || betterExisting.resultMark;
+    if (!properties.previous_record_holder) properties.previous_record_holder = betterExisting.athleteName;
+    return [];
+  }
+  const matches = boardRecords.filter((record) => record.isCurrent);
   for (const record of matches) {
     await ghlFetch({
       token,
@@ -395,6 +404,23 @@ function parseTimeToMs(value) {
   if (parts.length === 2) return Math.round((Number(parts[0]) * 60 + Number(parts[1])) * 1000);
   if (parts.length === 3) return Math.round((Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2])) * 1000);
   return null;
+}
+
+function recordTimeMsFromProperties(properties) {
+  return Number(properties && properties.result_ms) || parseTimeToMs(properties && properties.result_display) || 0;
+}
+
+function recordTimeMs(record) {
+  return Number(record && record.resultMs) || parseTimeToMs(record && record.resultDisplay) || 0;
+}
+
+function newRecordIsBetter(properties, existingRecord) {
+  const newMs = recordTimeMsFromProperties(properties);
+  const existingMs = recordTimeMs(existingRecord);
+  if (newMs && existingMs) return newMs < existingMs;
+  if (newMs && !existingMs) return true;
+  if (!newMs && existingMs) return false;
+  return true;
 }
 
 function compactProperties(properties) {

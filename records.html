@@ -914,11 +914,22 @@ function newestRecord(a,b){
     String(b.syncedAt||'').localeCompare(String(a.syncedAt||'')) ||
     (b.resultMs||parseResultMs(b.resultDisplay))-(a.resultMs||parseResultMs(a.resultDisplay));
 }
+function recordTimeMs(row){
+  return Number(row&&row.resultMs)||parseResultMs(row&&row.resultDisplay)||0;
+}
+function bestRecord(a,b){
+  var aMs=recordTimeMs(a);
+  var bMs=recordTimeMs(b);
+  if(aMs&&bMs&&aMs!==bMs)return aMs-bMs;
+  if(aMs&&!bMs)return -1;
+  if(!aMs&&bMs)return 1;
+  return newestRecord(a,b);
+}
 function boardMainRecord(group,status){
-  var current=group.filter(function(row){return row.isCurrent;}).sort(newestRecord);
-  var historical=group.filter(function(row){return !row.isCurrent;}).sort(newestRecord);
-  if(status==='historical')return historical[0]||current[0]||group[0];
-  return current[0]||group.slice().sort(newestRecord)[0];
+  var ranked=group.slice().sort(bestRecord);
+  var historical=ranked.slice(1);
+  if(status==='historical')return historical[0]||ranked[0]||group[0];
+  return ranked[0]||group[0];
 }
 function recordGroupsForView(){
   var status=els.statusFilter.value;
@@ -931,11 +942,11 @@ function recordGroupsForView(){
   return Object.keys(groups).map(function(key){
     var group=groups[key].slice().sort(newestRecord);
     var main=boardMainRecord(group,status);
-    var history=group.filter(function(row){return row!==main;}).sort(newestRecord);
+    var history=group.filter(function(row){return row!==main;}).sort(bestRecord);
     return {key:key,main:main,history:history,all:group};
   }).filter(function(board){
-    if(status==='current')return board.main&&board.main.isCurrent;
-    if(status==='historical')return board.main&&!board.main.isCurrent;
+    if(status==='current')return !!board.main;
+    if(status==='historical')return !!(board.main&&board.history.length);
     return !!board.main;
   }).sort(function(a,b){return compareRecordValue(a.main,b.main,recordSort.key)*(recordSort.dir==='desc'?-1:1) || String(recordEvent(a.main)||'').localeCompare(String(recordEvent(b.main)||'')) || String(a.main.gender||'').localeCompare(String(b.main.gender||''));});
 }
@@ -948,7 +959,7 @@ function recordRowHtml(row,board){
   var value=recordValue(row);
   var expanded=!!expandedRecordBoards[board.key];
   var toggle=board.history.length?'<button class="rowtoggle" data-toggle-board="'+esc(board.key)+'" type="button" aria-label="Toggle record history">'+(expanded?'▾':'▸')+'</button>':'<span class="rowtoggle" aria-hidden="true"></span>';
-  var status=row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
+  var status='<span class="pill good">Current</span>';
   return '<tr>'+
     '<td><div class="name">'+toggle+esc(eventName)+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
     '<td>'+esc(row.gender||'Unlisted')+'</td>'+
@@ -980,15 +991,13 @@ function render(){
   var boards=recordGroupsForView();
   var events={};
   var athletes={};
-  var current=0;
   list.forEach(function(row){
     var event=recordEvent(row);
     if(event)events[event]=true;
     if(row.athleteName)athletes[row.athleteName]=true;
-    if(row.isCurrent)current+=1;
   });
   els.recordCount.textContent=boards.length;
-  els.currentCount.textContent=current;
+  els.currentCount.textContent=boards.length;
   els.eventCount.textContent=Object.keys(events).length;
   els.athleteCount.textContent=Object.keys(athletes).length;
   els.status.textContent=boards.length+' record board'+(boards.length===1?'':'s');
