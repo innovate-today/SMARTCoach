@@ -479,6 +479,11 @@ function recordEvent(row){return cleanDisplayValue(row&&row.event);}
 function recordValue(row){return cleanDisplayValue((row&&row.resultDisplay)||(row&&row.resultMark));}
 function formatDate(value){
   if(!value)return '';
+  var text=String(value).trim();
+  var iso=text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso){
+    return new Date(Number(iso[1]),Number(iso[2])-1,Number(iso[3])).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  }
   var date=new Date(value);
   if(isNaN(date.getTime()))return value;
   return date.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
@@ -526,7 +531,12 @@ function fillStaticSelects(){
   els.editEvent.innerHTML=optionList(EVENTS,'400m');
   els.editSeason.innerHTML=optionList(SEASONS,'Spring');
 }
-function todayValue(){return new Date().toISOString().slice(0,10);}
+function todayValue(){
+  var date=new Date();
+  var month=String(date.getMonth()+1).padStart(2,'0');
+  var day=String(date.getDate()).padStart(2,'0');
+  return date.getFullYear()+'-'+month+'-'+day;
+}
 function setSelect(select,value,options){
   var text=String(value||'').trim();
   if(text&&options.indexOf(text)<0)select.insertAdjacentHTML('afterbegin','<option value="'+esc(text)+'">'+esc(text)+'</option>');

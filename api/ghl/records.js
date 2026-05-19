@@ -152,19 +152,6 @@ async function retireCurrentRecords({ token, locationId, properties, excludeReco
     return [];
   }
   const matches = boardRecords.filter((record) => record.isCurrent);
-  for (const record of matches) {
-    await ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(record.recordId)}?locationId=${encodeURIComponent(locationId)}`,
-      method: "PUT",
-      body: {
-        properties: Object.assign(recordPropertiesFromRecord(record), compactProperties({
-          is_current: "No",
-          record_notes: appendRetiredNote(record.recordNotes, properties),
-        })),
-      },
-    });
-  }
   return matches;
 }
 
