@@ -164,6 +164,9 @@ tr:last-child td{border-bottom:0}
         <label>Record Owner
           <select id="singleRecordScope"></select>
         </label>
+        <label>Gender
+          <select id="singleGender"></select>
+        </label>
         <label>Sport
           <select id="singleSport"></select>
         </label>
@@ -217,7 +220,7 @@ tr:last-child td{border-bottom:0}
         <button id="downloadBulkTemplateBtn" class="secondary" type="button">Download Template</button>
         <input id="bulkFile" type="file" accept=".csv,.tsv,.txt">
       </div>
-      <textarea id="bulkText" placeholder="Record Type,Record Owner,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;School Record,Girls School,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
+      <textarea id="bulkText" placeholder="Record Type,Record Owner,Gender,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;School Record,School,Girls,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
       <div class="bulkactions">
         <div class="left">
           <button id="previewBulkBtn" type="button">Preview Records</button>
@@ -277,6 +280,9 @@ tr:last-child td{border-bottom:0}
         <label>Record Owner
           <select id="editRecordScope"></select>
         </label>
+        <label>Gender
+          <select id="editGender"></select>
+        </label>
         <label>Sport
           <select id="editSport"></select>
         </label>
@@ -327,7 +333,8 @@ var bulkRows=[];
 var recordSort={key:'event',dir:'asc'};
 var editingRecord=null;
 var RECORD_TYPES=['Personal Best','Season Best','School Record','Team Record','Course Record','Meet Record'];
-var RECORD_SCOPES=['Athlete','School','Boys School','Girls School','Team','Boys Team','Girls Team','Varsity','Boys Varsity','Girls Varsity','JV','Boys JV','Girls JV','Middle School','Boys Middle School','Girls Middle School','Club'];
+var RECORD_SCOPES=['Athlete','Team','School','Varsity','JV','Middle School','Club'];
+var GENDERS=['Boys','Girls','Coed','Unlisted'];
 var SPORTS=['Track','Cross Country','Road'];
 var EVENTS=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
 var SEASONS=['Spring','Summer','Fall','Winter','Offseason'];
@@ -367,6 +374,7 @@ var els={
   bulkPreview:document.getElementById('bulkPreview'),
   singleRecordType:document.getElementById('singleRecordType'),
   singleRecordScope:document.getElementById('singleRecordScope'),
+  singleGender:document.getElementById('singleGender'),
   singleSport:document.getElementById('singleSport'),
   singleEvent:document.getElementById('singleEvent'),
   singleResult:document.getElementById('singleResult'),
@@ -388,6 +396,7 @@ var els={
   recordEditSave:document.getElementById('recordEditSave'),
   editRecordType:document.getElementById('editRecordType'),
   editRecordScope:document.getElementById('editRecordScope'),
+  editGender:document.getElementById('editGender'),
   editSport:document.getElementById('editSport'),
   editEvent:document.getElementById('editEvent'),
   editResult:document.getElementById('editResult'),
@@ -497,11 +506,13 @@ function optionList(values,selected){
 function fillStaticSelects(){
   els.singleRecordType.innerHTML=optionList(RECORD_TYPES,'Personal Best');
   els.singleRecordScope.innerHTML=optionList(RECORD_SCOPES,'Athlete');
+  els.singleGender.innerHTML=optionList(GENDERS,'Unlisted');
   els.singleSport.innerHTML=optionList(SPORTS,'Track');
   els.singleEvent.innerHTML=optionList(EVENTS,'400m');
   els.singleSeason.innerHTML=optionList(SEASONS,'Spring');
   els.editRecordType.innerHTML=optionList(RECORD_TYPES,'Personal Best');
   els.editRecordScope.innerHTML=optionList(RECORD_SCOPES,'Athlete');
+  els.editGender.innerHTML=optionList(GENDERS,'Unlisted');
   els.editSport.innerHTML=optionList(SPORTS,'Track');
   els.editEvent.innerHTML=optionList(EVENTS,'400m');
   els.editSeason.innerHTML=optionList(SEASONS,'Spring');
@@ -515,6 +526,7 @@ function setSelect(select,value,options){
 function clearSingleRecordForm(){
   els.singleRecordType.value='Personal Best';
   els.singleRecordScope.value='Athlete';
+  els.singleGender.value='Unlisted';
   els.singleSport.value='Track';
   els.singleEvent.value='400m';
   els.singleResult.value='';
@@ -535,6 +547,7 @@ function recordPayload(prefix){
     sourceRecordId:isEdit&&editingRecord?editingRecord.sourceRecordId:'',
     recordType:els[prefix+'RecordType'].value,
     recordScope:els[prefix+'RecordScope'].value,
+    gender:els[prefix+'Gender'].value,
     sport:els[prefix+'Sport'].value,
     event:els[prefix+'Event'].value,
     resultDisplay:els[prefix+'Result'].value.trim(),
@@ -555,6 +568,7 @@ function normalizedRecordFromPayload(payload,existing){
     sourceRecordId:payload.sourceRecordId||(existing&&existing.sourceRecordId)||'',
     recordType:payload.recordType,
     recordScope:payload.recordScope,
+    gender:payload.gender,
     sport:payload.sport,
     event:payload.event,
     resultDisplay:payload.resultDisplay,
@@ -604,6 +618,7 @@ function openRecordEdit(id){
   if(!editingRecord){setBulkStatus('Could not find that record.','bad');return;}
   setSelect(els.editRecordType,editingRecord.recordType,RECORD_TYPES);
   setSelect(els.editRecordScope,editingRecord.recordScope,RECORD_SCOPES);
+  setSelect(els.editGender,editingRecord.gender||'Unlisted',GENDERS);
   setSelect(els.editSport,editingRecord.sport,SPORTS);
   setSelect(els.editEvent,recordEvent(editingRecord),EVENTS);
   els.editResult.value=editingRecord.resultDisplay||editingRecord.resultMark||'';
@@ -681,7 +696,7 @@ function deleteRecord(){
   });
 }
 function searchText(row){
-  return [row.recordName,row.recordType,row.recordScope,row.sport,recordEvent(row),recordValue(row),row.athleteName,row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
+  return [row.recordName,row.recordType,row.recordScope,row.gender,row.sport,recordEvent(row),recordValue(row),row.athleteName,row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
 }
 function setBulkStatus(text,type){
   els.bulkStatus.textContent=text||'';
@@ -704,13 +719,13 @@ function recordHeaderMap(cols){
   var map={};
   cols.forEach(function(col,index){
     var key=String(col||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',record_owner:'recordScope',owner:'recordScope',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
+    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',record_owner:'recordScope',owner:'recordScope',gender:'gender',division:'gender',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
     if(normalized)map[normalized]=index;
   });
   return map.recordType!=null||map.event!=null?map:{};
 }
 function normalizeBulkRecord(values,index){
-  var row={recordType:values.recordType||'',recordScope:values.recordScope||'',sport:values.sport||'Track',event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
+  var row={recordType:values.recordType||'',recordScope:values.recordScope||'',gender:values.gender||'Unlisted',sport:values.sport||'Track',event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
   if(!row.seasonYear&&row.recordDate)row.seasonYear=row.recordDate.slice(0,4);
   row.rowNumber=index+1;
   return row;
@@ -725,16 +740,16 @@ function parseBulkRecords(text){
     var cols=splitRecordLine(line);
     if(Object.keys(headers).length){
       var value=function(key){return headers[key]!=null?cols[headers[key]]||'':'';};
-      return normalizeBulkRecord({recordType:value('recordType'),recordScope:value('recordScope'),sport:value('sport'),event:value('event'),resultDisplay:value('resultDisplay'),resultMark:value('resultMark'),athleteName:value('athleteName'),meetName:value('meetName'),recordDate:value('recordDate'),season:value('season'),seasonYear:value('seasonYear'),previousRecordDisplay:value('previousRecordDisplay'),previousRecordHolder:value('previousRecordHolder'),recordNotes:value('recordNotes')},index);
+      return normalizeBulkRecord({recordType:value('recordType'),recordScope:value('recordScope'),gender:value('gender'),sport:value('sport'),event:value('event'),resultDisplay:value('resultDisplay'),resultMark:value('resultMark'),athleteName:value('athleteName'),meetName:value('meetName'),recordDate:value('recordDate'),season:value('season'),seasonYear:value('seasonYear'),previousRecordDisplay:value('previousRecordDisplay'),previousRecordHolder:value('previousRecordHolder'),recordNotes:value('recordNotes')},index);
     }
-    return normalizeBulkRecord({recordType:cols[0],recordScope:cols[1],sport:cols[2],event:cols[3],resultDisplay:cols[4],athleteName:cols[5],meetName:cols[6],recordDate:cols[7],season:cols[8],seasonYear:cols[9],previousRecordDisplay:cols[10],previousRecordHolder:cols[11],recordNotes:cols[12]},index);
+    return normalizeBulkRecord({recordType:cols[0],recordScope:cols[1],gender:cols[2],sport:cols[3],event:cols[4],resultDisplay:cols[5],athleteName:cols[6],meetName:cols[7],recordDate:cols[8],season:cols[9],seasonYear:cols[10],previousRecordDisplay:cols[11],previousRecordHolder:cols[12],recordNotes:cols[13]},index);
   }).filter(function(row){return row.recordType||row.event||row.resultDisplay||row.athleteName;});
 }
 function downloadBulkTemplate(){
   var csv=[
-    'Record Type,Record Owner,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
-    'School Record,Girls School,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
-    'Season Best,Team,Cross Country,5K,18:22.1,Marcus Moore,State,2026-10-31,Fall,2026,,,'
+    'Record Type,Record Owner,Gender,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
+    'School Record,School,Girls,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
+    'Season Best,Team,Boys,Cross Country,5K,18:22.1,Marcus Moore,State,2026-10-31,Fall,2026,,,'
   ].join('\n');
   var blob=new Blob([csv],{type:'text/csv'});
   var url=URL.createObjectURL(blob);
@@ -759,7 +774,7 @@ function renderBulkPreview(){
     return;
   }
   els.bulkPreview.hidden=false;
-  els.bulkPreview.innerHTML='<table><thead><tr><th>Type</th><th>Owner</th><th>Event</th><th>Result</th><th>Athlete</th><th>Meet</th><th>Date</th><th>Season</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.recordType)+'</td><td>'+esc(row.recordScope)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
+  els.bulkPreview.innerHTML='<table><thead><tr><th>Type</th><th>Owner</th><th>Gender</th><th>Event</th><th>Result</th><th>Athlete</th><th>Meet</th><th>Date</th><th>Season</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.recordType)+'</td><td>'+esc(row.recordScope)+'</td><td>'+esc(row.gender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
   setBulkStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):bulkRows.length+' records ready to save.',issues.length?'bad':'good');
 }
 function saveBulkRecords(){
@@ -830,12 +845,14 @@ function filteredRecords(){
 }
 function recordBoardKey(row){
   var scope=String(row&&row.recordScope||'').trim().toLowerCase();
+  var gender=scope==='athlete'?'':String(row&&row.gender||'').trim().toLowerCase();
   return [
     String(row&&row.recordType||'').trim().toLowerCase(),
     scope,
     String(row&&row.sport||'').trim().toLowerCase(),
     String(recordEvent(row)||'').trim().toLowerCase(),
-    scope==='athlete'?String(row&&row.athleteName||'').trim().toLowerCase():''
+    scope==='athlete'?String(row&&row.athleteName||'').trim().toLowerCase():'',
+    gender
   ].join('|');
 }
 function retireLocalCurrentRecords(record,excludeId){
@@ -899,9 +916,10 @@ function render(){
     var status=isIncomplete?'':(row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>');
     var eventLabel=eventName||'';
     var eventNote=eventName?row.sport:'';
+    var ownerNote=row.recordScope&&String(row.recordScope).toLowerCase()!=='athlete'?row.gender||'Unlisted':'';
     return '<tr>'+
       '<td><div class="name">'+esc(eventLabel)+'</div><div class="muted">'+esc(eventNote)+'</div></td>'+
-      '<td>'+esc(row.recordScope||'')+'</td>'+
+      '<td>'+esc(row.recordScope||'')+'<div class="muted">'+esc(ownerNote)+'</div></td>'+
       '<td>'+esc(row.recordType||'')+'</td>'+
       '<td><b>'+esc(value)+'</b></td>'+
       '<td>'+esc(row.athleteName||'')+'</td>'+

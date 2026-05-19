@@ -7,6 +7,7 @@ const FIELD_IDS = {
   record: ["ftIsXzZszu3s0cfJ55MU"],
   record_type: ["kFI5EuUMaWNNr1MWCRCC"],
   record_scope: ["csicg5cTEMH2il824CdN"],
+  gender: [],
   sport: ["NFlleoMtJlvlB1KAOqpR"],
   event: ["tCE1zz6sODLctaBJaBZD"],
   result_display: ["oECaYRLL3M0uczHeLVYC"],
@@ -187,6 +188,7 @@ function buildRecordProperties(row) {
     record: recordName,
     record_type: optionValue(normalized.recordType),
     record_scope: optionValue(normalized.recordScope),
+    gender: optionValue(normalized.gender),
     sport: optionValue(normalized.sport),
     event: normalized.event,
     result_display: normalized.resultDisplay,
@@ -213,6 +215,7 @@ function normalizeRecordPayload(row) {
     recordName: clean(row && row.recordName),
     recordType: clean(row && row.recordType),
     recordScope: clean(row && row.recordScope),
+    gender: clean(row && row.gender),
     sport: clean(row && row.sport) || "Track",
     event: clean(row && row.event),
     resultDisplay,
@@ -254,6 +257,7 @@ function normalizeRecord(record, fallbackProperties) {
     recordName: prop(props, "record") || recordName(record),
     recordType: labelValue(prop(props, "record_type")),
     recordScope: labelValue(prop(props, "record_scope")),
+    gender: labelValue(prop(props, "gender")),
     sport: labelValue(prop(props, "sport")),
     event: prop(props, "event"),
     resultDisplay: prop(props, "result_display"),
@@ -397,23 +401,27 @@ function compactProperties(properties) {
 
 function recordBoardKey(record) {
   const scope = optionValue(record && record.recordScope);
+  const gender = scope === "athlete" ? "" : optionValue(record && record.gender);
   return [
     optionValue(record && record.recordType),
     scope,
     optionValue(record && record.sport),
     optionValue(record && record.event),
     scope === "athlete" ? optionValue(record && record.athleteName) : "",
+    gender,
   ].join("|");
 }
 
 function recordBoardKeyFromProperties(properties) {
   const scope = optionValue(properties && properties.record_scope);
+  const gender = scope === "athlete" ? "" : optionValue(properties && properties.gender);
   return [
     optionValue(properties && properties.record_type),
     scope,
     optionValue(properties && properties.sport),
     optionValue(properties && properties.event),
     scope === "athlete" ? optionValue(properties && properties.athlete_name_snapshot) : "",
+    gender,
   ].join("|");
 }
 
