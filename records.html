@@ -343,6 +343,8 @@ var bulkRows=[];
 var recordSort={key:'event',dir:'asc'};
 var editingRecord=null;
 var expandedRecordBoards={};
+var RECORD_HISTORY_START='[SMARTCoach Record History]';
+var RECORD_HISTORY_END='[/SMARTCoach Record History]';
 var RECORD_TYPES=['School Record'];
 var RECORD_SCOPES=['School'];
 var GENDERS=['Boys','Girls','Coed','Unlisted'];
@@ -513,6 +515,81 @@ function parseResultMs(value){
   if(parts.length===2)seconds=parts[0]*60+parts[1];
   if(parts.length===3)seconds=parts[0]*3600+parts[1]*60+parts[2];
   return Math.round(seconds*1000);
+}
+function parseRecordHistoryBlock(note){
+  var text=String(note||'');
+  var start=text.indexOf(RECORD_HISTORY_START);
+  var end=text.indexOf(RECORD_HISTORY_END);
+  if(start<0||end<start)return[];
+  try{
+    var parsed=JSON.parse(text.slice(start+RECORD_HISTORY_START.length,end).trim());
+    return Array.isArray(parsed)?parsed.map(normalizeHistoryRecord).filter(Boolean):[];
+  }catch(error){
+    return[];
+  }
+}
+function normalizeHistoryRecord(entry){
+  if(!entry||typeof entry!=='object')return null;
+  return {
+    recordId:'',
+    isSynthetic:true,
+    recordType:entry.recordType||'School Record',
+    recordScope:entry.recordScope||'School',
+    gender:entry.gender||'Unlisted',
+    sport:entry.sport||'Track',
+    event:entry.event||'',
+    resultDisplay:entry.resultDisplay||'',
+    resultMs:entry.resultMs||parseResultMs(entry.resultDisplay),
+    resultMark:entry.resultMark||'',
+    athleteName:entry.athleteName||'',
+    meetName:entry.meetName||'',
+    recordDate:dateOnly(entry.recordDate)||'',
+    season:entry.season||'',
+    seasonYear:entry.seasonYear||'',
+    isCurrent:false,
+    recordNotes:'Recovered from record history.'
+  };
+}
+function previousRecordRow(main){
+  if(!main||!main.previousRecordDisplay)return null;
+  return {
+    recordId:'',
+    isSynthetic:true,
+    recordType:'School Record',
+    recordScope:'School',
+    gender:main.gender||'Unlisted',
+    sport:main.sport||'Track',
+    event:recordEvent(main),
+    resultDisplay:main.previousRecordDisplay,
+    resultMs:parseResultMs(main.previousRecordDisplay),
+    resultMark:'',
+    athleteName:main.previousRecordHolder||'',
+    meetName:'',
+    recordDate:main.recordDate,
+    season:main.season,
+    seasonYear:main.seasonYear,
+    isCurrent:false,
+    recordNotes:'Recovered from previous record fields.'
+  };
+}
+function historyRowKey(row){
+  return [
+    String(recordEvent(row)||'').toLowerCase(),
+    String(row&&row.gender||'').toLowerCase(),
+    recordValue(row),
+    String(row&&row.athleteName||'').toLowerCase(),
+    String(row&&row.recordDate||'')
+  ].join('|');
+}
+function mergeHistoryRows(rows){
+  var seen={};
+  return rows.filter(function(row){
+    if(!row||!recordValue(row))return false;
+    var key=historyRowKey(row);
+    if(seen[key])return false;
+    seen[key]=true;
+    return true;
+  });
 }
 function optionList(values,selected){
   return values.map(function(value){
@@ -955,28 +1032,7 @@ function recordGroupsForView(){
   return Object.keys(groups).map(function(key){
     var group=groups[key].slice().sort(newestRecord);
     var main=boardMainRecord(group,status);
-    var history=group.filter(function(row){return row!==main;}).sort(bestRecord);
-    if(!history.length&&main&&main.previousRecordDisplay){
-      history.push({
-        recordId:'',
-        isSynthetic:true,
-        recordType:'School Record',
-        recordScope:'School',
-        gender:main.gender||'Unlisted',
-        sport:main.sport||'Track',
-        event:recordEvent(main),
-        resultDisplay:main.previousRecordDisplay,
-        resultMs:parseResultMs(main.previousRecordDisplay),
-        resultMark:'',
-        athleteName:main.previousRecordHolder||'',
-        meetName:'',
-        recordDate:main.recordDate,
-        season:main.season,
-        seasonYear:main.seasonYear,
-        isCurrent:false,
-        recordNotes:'Recovered from previous record fields.'
-      });
-    }
+    var history=mergeHistoryRows(group.filter(function(row){return row!==main;}).concat(parseRecordHistoryBlock(main&&main.recordNotes),[previousRecordRow(main)])).sort(bestRecord);
     return {key:key,main:main,history:history,all:group};
   }).filter(function(board){
     if(status==='current')return !!board.main;

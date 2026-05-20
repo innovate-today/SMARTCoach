@@ -1,6 +1,8 @@
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
+const HISTORY_START = "[SMARTCoach Record History]";
+const HISTORY_END = "[/SMARTCoach Record History]";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 
 const FIELD_IDS = {
@@ -63,6 +65,7 @@ module.exports = async function handler(req, res) {
         if (retired[0]) {
           if (!properties.previous_record_display) properties.previous_record_display = retired[0].resultDisplay || retired[0].resultMark;
           if (!properties.previous_record_holder) properties.previous_record_holder = retired[0].athleteName;
+          properties.record_notes = mergeRecordHistory(properties.record_notes, retired);
         }
         const result = await ghlFetch({
           token,
@@ -123,6 +126,7 @@ async function updateRecord({ token, locationId, payload }) {
   if (retired[0]) {
     if (!properties.previous_record_display) properties.previous_record_display = retired[0].resultDisplay || retired[0].resultMark;
     if (!properties.previous_record_holder) properties.previous_record_holder = retired[0].athleteName;
+    properties.record_notes = mergeRecordHistory(properties.record_notes, retired);
   }
   const record = await ghlFetch({
     token,
@@ -493,6 +497,117 @@ function recordBoardKeyFromProperties(properties) {
 function appendRetiredNote(note, newProperties) {
   const line = `Moved to historical on ${new Date().toISOString().slice(0, 10)} because a new current record was saved: ${clean(newProperties.result_display || newProperties.result_mark)}.`;
   return [clean(note), line].filter(Boolean).join("\n");
+}
+
+function mergeRecordHistory(note, retiredRecords) {
+  const entries = retiredRecords.flatMap(recordHistoryEntries).filter((entry) => entry.resultDisplay || entry.resultMark);
+  if (!entries.length) return stripRecordHistoryBlock(note);
+  return writeRecordHistoryBlock(note, dedupeRecordHistory(entries));
+}
+
+function recordHistoryEntries(record) {
+  if (!record) return [];
+  return [
+    recordHistoryEntry(record),
+    ...parseRecordHistoryBlock(record.recordNotes),
+    previousRecordHistoryEntry(record),
+  ].filter(Boolean);
+}
+
+function recordHistoryEntry(record) {
+  return {
+    recordType: record.recordType || "School Record",
+    recordScope: record.recordScope || "School",
+    gender: record.gender || "Unlisted",
+    sport: record.sport || "Track",
+    event: record.event || "",
+    resultDisplay: record.resultDisplay || "",
+    resultMark: record.resultMark || "",
+    athleteName: record.athleteName || "",
+    meetName: record.meetName || "",
+    recordDate: record.recordDate || "",
+    season: record.season || "",
+    seasonYear: record.seasonYear || "",
+  };
+}
+
+function previousRecordHistoryEntry(record) {
+  if (!record || !record.previousRecordDisplay) return null;
+  return {
+    recordType: "School Record",
+    recordScope: "School",
+    gender: record.gender || "Unlisted",
+    sport: record.sport || "Track",
+    event: record.event || "",
+    resultDisplay: record.previousRecordDisplay || "",
+    resultMark: "",
+    athleteName: record.previousRecordHolder || "",
+    meetName: "",
+    recordDate: record.recordDate || "",
+    season: record.season || "",
+    seasonYear: record.seasonYear || "",
+  };
+}
+
+function parseRecordHistoryBlock(note) {
+  const text = clean(note);
+  const start = text.indexOf(HISTORY_START);
+  const end = text.indexOf(HISTORY_END);
+  if (start < 0 || end < start) return [];
+  const json = text.slice(start + HISTORY_START.length, end).trim();
+  const parsed = safeJson(json);
+  return Array.isArray(parsed) ? parsed.map(normalizeHistoryEntry).filter(Boolean) : [];
+}
+
+function normalizeHistoryEntry(entry) {
+  if (!entry || typeof entry !== "object") return null;
+  return {
+    recordType: clean(entry.recordType) || "School Record",
+    recordScope: clean(entry.recordScope) || "School",
+    gender: clean(entry.gender) || "Unlisted",
+    sport: clean(entry.sport) || "Track",
+    event: clean(entry.event),
+    resultDisplay: clean(entry.resultDisplay),
+    resultMark: clean(entry.resultMark),
+    athleteName: clean(entry.athleteName),
+    meetName: clean(entry.meetName),
+    recordDate: dateOnly(entry.recordDate),
+    season: clean(entry.season),
+    seasonYear: Number(entry.seasonYear) || null,
+  };
+}
+
+function dedupeRecordHistory(entries) {
+  const seen = new Set();
+  return entries.filter((entry) => {
+    const normalized = normalizeHistoryEntry(entry);
+    if (!normalized) return false;
+    const key = [
+      optionValue(normalized.event),
+      optionValue(normalized.gender),
+      normalized.resultDisplay || normalized.resultMark,
+      optionValue(normalized.athleteName),
+      normalized.recordDate,
+    ].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    Object.assign(entry, normalized);
+    return true;
+  });
+}
+
+function stripRecordHistoryBlock(note) {
+  return clean(note).replace(new RegExp(`\\n?${escapeRegExp(HISTORY_START)}[\\s\\S]*?${escapeRegExp(HISTORY_END)}`, "g"), "").trim();
+}
+
+function writeRecordHistoryBlock(note, entries) {
+  const base = stripRecordHistoryBlock(note);
+  const block = `${HISTORY_START}\n${JSON.stringify(entries)}\n${HISTORY_END}`;
+  return [base, block].filter(Boolean).join("\n");
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function composeRecordNotes(note, row) {
