@@ -41,7 +41,9 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .mixitem.workout{background:#e8eefc;color:#173891}.mixitem.meet{background:#ede9fe;color:#5b21b6}.mixitem.recovery{background:#dcfce7;color:#0a7a44}.mixitem.off{background:#f1f5f9;color:#475569}.mixitem.other{background:#ffedd5;color:#b45309}
 .mixhide{margin-left:auto;background:#eef2f7;color:#172033;font-size:12px;padding:6px 10px}
 .mixshow{background:#eef2f7;color:#172033;font-size:13px;padding:10px 12px}
-.bar{display:grid;grid-template-columns:1.25fr .9fr .9fr .9fr .95fr auto 1fr auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
+.bar{display:grid;grid-template-columns:1.25fr .9fr .9fr .9fr 1.05fr auto 1fr auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+.calendarhint{margin:0 2px 14px;color:#475569;font-size:13px;font-weight:700;line-height:1.35}
+.calendarhint b{color:#172033}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .planpicker{position:relative;min-width:0}
 .pickerbutton{width:100%;background:#fff;color:#111827;border:1px solid var(--line);font-weight:400;text-align:left;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -193,12 +195,13 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <select id="typeFilter"><option value="all">All day types</option></select>
     <select id="statusFilter"><option value="all">All statuses</option></select>
     <select id="dateFilter"><option value="all">All dates</option><option value="current_week">Current week</option><option value="next_7">Next 7 days</option><option value="next_30">Next 30 days</option><option value="past_due">Past due</option></select>
-    <select id="bulkStatus"><option value="">Bulk selection</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select>
-    <button id="bulkStatusBtn" class="secondary" type="button">Apply</button>
+    <select id="bulkStatus"><option value="">Change selected to status</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select>
+    <button id="bulkStatusBtn" class="secondary" type="button">Update Selected</button>
     <input id="search" type="search" placeholder="Search calendar" autocomplete="off">
     <button id="mixShowBtn" class="mixshow" type="button" hidden>Show Mix</button>
     <div id="status" class="status">Loading calendar...</div>
   </section>
+  <div class="calendarhint"><b>Status update:</b> check the days you want to change, choose a status, then click Update Selected.</div>
 
   <section class="viewtabs" aria-label="Calendar view">
     <button id="weekViewBtn" class="viewtab active" type="button">Week View</button>
@@ -250,10 +253,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
           <label for="editDayType">Day Type</label>
           <select id="editDayType">
             <option>Workout</option>
-            <option>Meet</option>
-            <option>Recovery</option>
-            <option>No Practice</option>
-            <option>Travel</option>
+            <option value="Meet">Race</option>
           </select>
         </div>
         <div class="field">
@@ -592,15 +592,17 @@ function renderOptions(){
   var allPlanIds={};
   plans.forEach(function(plan){allPlanIds[planId(plan)]=true;});
   selectedPlanIds=selectedPlanIds.filter(function(id){return allPlanIds[id];});
-  var types={};
   var statuses={};
   days.forEach(function(day){
-    if(day.dayType)types[day.dayType]=true;
     if(day.status)statuses[day.status]=true;
   });
-  els.typeFilter.innerHTML='<option value="all">All day types</option>'+Object.keys(types).sort().map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
+  var typeOptions=[
+    {value:'Workout',label:'Workouts'},
+    {value:'Meet',label:'Races'}
+  ];
+  els.typeFilter.innerHTML='<option value="all">All day types</option>'+typeOptions.map(function(option){return '<option value="'+esc(option.value)+'">'+esc(option.label)+'</option>';}).join('');
   els.statusFilter.innerHTML='<option value="all">All statuses</option>'+Object.keys(statuses).sort().map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
-  els.typeFilter.value=Object.prototype.hasOwnProperty.call(types,type)?type:'all';
+  els.typeFilter.value=typeOptions.some(function(option){return option.value===type;})?type:'all';
   els.statusFilter.value=Object.prototype.hasOwnProperty.call(statuses,status)?status:'all';
   renderPlanPicker();
 }
@@ -801,7 +803,7 @@ function renderListView(list){
   var sorted=list.slice().sort(compareListDays);
   var selectableIds=sorted.map(function(day){return day.id||day.sourceRecordId||'';}).filter(Boolean);
   var allSelected=selectableIds.length&&selectableIds.every(function(id){return selectedBulkDayIds.indexOf(id)>=0;});
-  return '<div class="listwrap"><table class="listtable"><thead><tr><th><label class="selectall"><input data-bulk-check-all type="checkbox" '+(allSelected?'checked':'')+'> Select all</label></th><th>'+sortButton('date','Date')+'</th><th>'+sortButton('title','Plan Day')+'</th><th>'+sortButton('group','Group / Athlete')+'</th><th>'+sortButton('type','Type')+'</th><th>'+sortButton('volume','Volume / Target')+'</th><th>'+sortButton('status','Status')+'</th><th>'+sortButton('plan','Plan')+'</th></tr></thead><tbody>'+
+  return '<div class="listwrap"><table class="listtable"><thead><tr><th><label class="selectall"><input data-bulk-check-all type="checkbox" '+(allSelected?'checked':'')+'> Select all visible</label></th><th>'+sortButton('date','Date')+'</th><th>'+sortButton('title','Plan Day')+'</th><th>'+sortButton('group','Group / Athlete')+'</th><th>'+sortButton('type','Type')+'</th><th>'+sortButton('volume','Volume / Target')+'</th><th>'+sortButton('status','Status')+'</th><th>'+sortButton('plan','Plan')+'</th></tr></thead><tbody>'+
     sorted.map(function(day){
       var status=String(day.status||'Scheduled').toLowerCase();
       var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
@@ -854,7 +856,7 @@ function dayItem(day){
   if(status.indexOf('skipped')>=0)cls+=' skipped';
   var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
   var id=day.id||day.sourceRecordId||'';
-  return '<article class="item'+cls+'"><label class="bulkcheck"><input data-bulk-check="'+esc(id)+'" type="checkbox" '+(selectedBulkDayIds.indexOf(id)>=0?'checked':'')+'> Select</label><button class="itembtn" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+
+  return '<article class="item'+cls+'"><label class="bulkcheck"><input data-bulk-check="'+esc(id)+'" type="checkbox" '+(selectedBulkDayIds.indexOf(id)>=0?'checked':'')+'> Select for status update</label><button class="itembtn" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+
     '<b>'+esc(day.title||day.dayType||'Plan day')+'</b>'+
     '<div class="meta">'+esc([day.groupName,day.athleteName,day.workoutType].filter(Boolean).join(' · '))+'</div>'+
     '<div class="meta">'+esc(day.details||'')+'</div>'+
@@ -1096,7 +1098,7 @@ function updateVisibleDayStatus(statusLabel,predicate,reason){
 function bulkUpdateVisibleStatus(){
   var statusLabel=els.bulkStatus.value;
   if(!statusLabel){
-    els.status.textContent='Choose a bulk selection first.';
+    els.status.textContent='Choose the status to apply to selected days.';
     return;
   }
   var selectedMap={};
@@ -1106,7 +1108,7 @@ function bulkUpdateVisibleStatus(){
     return selectedMap[id]&&!isRemovedDay(day)&&String(day.status||'').toLowerCase()!==String(statusLabel).toLowerCase();
   });
   if(!selected.length){
-    els.status.textContent='Check at least one day that needs '+statusLabel+'.';
+    els.status.textContent='Check at least one visible day that needs '+statusLabel+'.';
     return;
   }
   var reason='Bulk selection changed to '+statusLabel+' from SMART Trak Training Calendar.';
