@@ -462,9 +462,8 @@ tr:last-child td{border-bottom:0}
         <div class="field">
           <label for="manualMileageScope">Apply To</label>
           <select id="manualMileageScope">
-            <option value="athlete">One athlete</option>
+            <option value="athlete">Individual</option>
             <option value="group">Group</option>
-            <option value="team">Team</option>
           </select>
         </div>
         <div class="field">
@@ -476,14 +475,20 @@ tr:last-child td{border-bottom:0}
           <select id="manualMileageGroup"></select>
         </div>
         <div class="field">
-          <label for="manualMileageWorkout">Workout Type</label>
+          <label for="manualMileageWorkout">Effort</label>
           <select id="manualMileageWorkout">
-            <option>Easy/Recovery Run</option>
-            <option>Long Run</option>
-            <option>Extensive Tempo</option>
+            <option>Easy</option>
+            <option>Threshold</option>
+            <option>Interval</option>
+            <option>Repetition</option>
+            <option>Hills</option>
+            <option>Fast Reps</option>
+            <option>Speed Endurance I</option>
+            <option>Speed Endurance II</option>
+            <option>Special Endurance I</option>
+            <option>Special Endurance II</option>
             <option>Intensive Tempo</option>
-            <option>Lactate Threshold</option>
-            <option>Aerobic Power</option>
+            <option>Extensive Tempo</option>
           </select>
         </div>
         <div class="field">
@@ -518,7 +523,7 @@ tr:last-child td{border-bottom:0}
         </div>
       </div>
       <div class="modalactions">
-        <div id="manualMileageStatus" class="modalstatus">Manual mileage saving is next.</div>
+        <div id="manualMileageStatus" class="modalstatus">Select individual or group.</div>
         <button id="manualMileageSave" type="button">Save Mileage</button>
       </div>
     </div>
@@ -761,6 +766,7 @@ var dashboardRows=[];
 var accountStatus=null;
 var recentMeetRows=[];
 var recentTrainingRows=[];
+var trainingGroups=[];
 var meetManagerRows=[];
 var visibleRosterRows=[];
 var visibleMeetRows=[];
@@ -1327,9 +1333,11 @@ function loadDashboard(){
   els.status.textContent='Loading dashboard...';
   els.lastUpdated.textContent='Updating...';
   els.refreshBtn.disabled=true;
-  return fetch('/api/smart-trak/dashboard').then(function(res){
-    return res.json().then(function(data){return{ok:res.ok,data:data};});
-  }).then(function(result){
+  return Promise.all([
+    fetch('/api/smart-trak/dashboard').then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
+    fetch('/api/smart-trak/groups').then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};})
+  ]).then(function(results){
+    var result=results[0];
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
       showDashboardAccessCode(result.data);
       return Promise.resolve();
@@ -1338,6 +1346,7 @@ function loadDashboard(){
     dashboardRows=result.data.athletes||[];
     recentMeetRows=result.data.recentMeetResults||[];
     recentTrainingRows=result.data.recentTrainingSyncs||[];
+    trainingGroups=results[1].ok?(results[1].data.groups||[]):[];
     lastLoadedAt=result.data.generatedAt||new Date().toISOString();
     els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
     els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
@@ -1355,6 +1364,7 @@ function loadDashboard(){
     dashboardRows=[];
     recentMeetRows=[];
     recentTrainingRows=[];
+    trainingGroups=[];
     els.rows.innerHTML='';
     els.recentMeetRows.innerHTML='';
     els.recentTrainingRows.innerHTML='';
@@ -2661,19 +2671,24 @@ function renderManualMileageAthletes(){
 function renderManualMileageGroups(){
   if(!els.manualMileageGroup)return;
   var current=els.manualMileageGroup.value;
-  var groups={};
-  dashboardRows.forEach(function(row){
-    var latest=row.latestTraining||{};
-    if(latest.groupName)groups[latest.groupName]=true;
-  });
-  recentTrainingRows.forEach(function(row){
-    if(row.groupName)groups[row.groupName]=true;
-  });
-  var names=Object.keys(groups).sort(function(a,b){return a.localeCompare(b);});
-  els.manualMileageGroup.innerHTML=(names.length?names:['No groups loaded']).map(function(name){
-    return '<option value="'+esc(name)+'">'+esc(name)+'</option>';
-  }).join('');
+  var names=activeTrainingGroups().map(function(group){return group.name;});
+  if(!names.length){
+    els.manualMileageGroup.innerHTML='<option value="">No active groups loaded</option>';
+    return;
+  }
+  els.manualMileageGroup.innerHTML=names.map(function(name){return '<option value="'+esc(name)+'">'+esc(name)+'</option>';}).join('');
   if(current)els.manualMileageGroup.value=current;
+}
+
+function activeTrainingGroups(){
+  var seen={};
+  return trainingGroups.filter(function(group){
+    if(!group||!group.name||group.archived||group.type==='meet')return false;
+    var key=group.name.toLowerCase();
+    if(seen[key])return false;
+    seen[key]=true;
+    return true;
+  }).sort(function(a,b){return a.name.localeCompare(b.name);});
 }
 
 function updateManualMileageScope(){
@@ -2684,18 +2699,19 @@ function updateManualMileageScope(){
 
 function manualMileageAthletes(){
   var scope=els.manualMileageScope.value||'athlete';
-  if(scope==='team')return dashboardRows.map(manualAthletePayload).filter(function(athlete){return athlete.name;});
   if(scope==='group'){
     var group=els.manualMileageGroup.value||'';
     var names={};
-    recentTrainingRows.forEach(function(row){
-      if(row.groupName===group&&row.athleteName)names[String(row.athleteName).toLowerCase()]=true;
+    var ids={};
+    activeTrainingGroups().filter(function(item){return item.name===group;}).forEach(function(item){
+      (item.athletes||[]).forEach(function(athlete){
+        if(athlete.contactId)ids[String(athlete.contactId)]=true;
+        if(athlete.name)names[String(athlete.name).toLowerCase()]=true;
+      });
     });
-    dashboardRows.forEach(function(row){
-      var latest=row.latestTraining||{};
-      if(latest.groupName===group&&row.name)names[String(row.name).toLowerCase()]=true;
-    });
-    return dashboardRows.filter(function(row){return names[String(row.name||'').toLowerCase()];}).map(manualAthletePayload);
+    return dashboardRows.filter(function(row){
+      return ids[String(row.contactId||'')]||names[String(row.name||'').toLowerCase()];
+    }).map(manualAthletePayload);
   }
   var selected=els.manualMileageAthlete.value||'';
   return dashboardRows.filter(function(row){return String(row.contactId||row.name||'')===selected;}).map(manualAthletePayload);
@@ -2745,7 +2761,6 @@ function saveManualMileage(){
 function manualMileageGroupName(){
   var scope=els.manualMileageScope.value||'athlete';
   if(scope==='group')return els.manualMileageGroup.value||'Manual Mileage';
-  if(scope==='team')return 'Team Manual Mileage';
   return 'Manual Mileage';
 }
 

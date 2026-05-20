@@ -320,10 +320,10 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <div class="modalbody">
       <div class="formgrid">
         <div class="field"><label for="manualMileageDate">Date</label><input id="manualMileageDate" type="date"></div>
-        <div class="field"><label for="manualMileageScope">Apply To</label><select id="manualMileageScope"><option value="athlete">One athlete</option><option value="group">Group</option><option value="team">Team</option></select></div>
+        <div class="field"><label for="manualMileageScope">Apply To</label><select id="manualMileageScope"><option value="athlete">Individual</option><option value="group">Group</option></select></div>
         <div class="field"><label for="manualMileageAthlete">Athlete</label><select id="manualMileageAthlete"></select></div>
         <div class="field"><label for="manualMileageGroup">Group</label><select id="manualMileageGroup"></select></div>
-        <div class="field"><label for="manualMileageWorkout">Workout Type</label><select id="manualMileageWorkout"><option>Easy/Recovery Run</option><option>Long Run</option><option>Extensive Tempo</option><option>Intensive Tempo</option><option>Lactate Threshold</option><option>Aerobic Power</option></select></div>
+        <div class="field"><label for="manualMileageWorkout">Effort</label><select id="manualMileageWorkout"><option>Easy</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option></select></div>
         <div class="field"><label for="manualMileageDistance">Distance</label><input id="manualMileageDistance" type="text" placeholder="Example: 4 miles"></div>
         <div class="field"><label for="manualMileageTime">Time</label><input id="manualMileageTime" type="text" placeholder="Optional, e.g. 36:20"></div>
         <div class="field"><label for="manualMileageSource">Source</label><select id="manualMileageSource"><option>Athlete reported</option><option>Coach entered</option><option>Watch upload</option></select></div>
@@ -331,7 +331,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div class="field full"><label for="manualMileageNotes">Notes</label><textarea id="manualMileageNotes" placeholder="Optional"></textarea></div>
       </div>
       <div class="modalactions">
-        <div id="manualMileageStatus" class="modalstatus">Select athlete, group, or team.</div>
+        <div id="manualMileageStatus" class="modalstatus">Select individual or group.</div>
         <button id="manualMileageSave" type="button">Save Mileage</button>
       </div>
     </div>
@@ -343,6 +343,7 @@ var plans=[];
 var days=[];
 var mileageAthletes=[];
 var mileageTrainingRows=[];
+var trainingGroups=[];
 var activeDay=null;
 var viewMode='week';
 var listSort={key:'date',dir:'asc'};
@@ -1292,19 +1293,23 @@ function renderManualMileageAthletes(){
 }
 function renderManualMileageGroups(){
   var current=els.manualMileageGroup.value;
-  var groups={};
-  plans.forEach(function(plan){if(plan.assignedGroup)groups[plan.assignedGroup]=true;});
-  days.forEach(function(day){if(day.groupName)groups[day.groupName]=true;});
-  mileageTrainingRows.forEach(function(row){if(row.groupName)groups[row.groupName]=true;});
-  mileageAthletes.forEach(function(row){
-    var latest=row.latestTraining||{};
-    if(latest.groupName)groups[latest.groupName]=true;
-  });
-  var names=Object.keys(groups).sort(function(a,b){return a.localeCompare(b);});
-  els.manualMileageGroup.innerHTML=(names.length?names:['No groups loaded']).map(function(name){
-    return '<option value="'+esc(name)+'">'+esc(name)+'</option>';
-  }).join('');
+  var names=activeTrainingGroups().map(function(group){return group.name;});
+  if(!names.length){
+    els.manualMileageGroup.innerHTML='<option value="">No active groups loaded</option>';
+    return;
+  }
+  els.manualMileageGroup.innerHTML=names.map(function(name){return '<option value="'+esc(name)+'">'+esc(name)+'</option>';}).join('');
   if(current)els.manualMileageGroup.value=current;
+}
+function activeTrainingGroups(){
+  var seen={};
+  return trainingGroups.filter(function(group){
+    if(!group||!group.name||group.archived||group.type==='meet')return false;
+    var key=group.name.toLowerCase();
+    if(seen[key])return false;
+    seen[key]=true;
+    return true;
+  }).sort(function(a,b){return a.name.localeCompare(b.name);});
 }
 function updateManualMileageScope(){
   var scope=els.manualMileageScope.value||'athlete';
@@ -1313,17 +1318,19 @@ function updateManualMileageScope(){
 }
 function manualMileageAthletes(){
   var scope=els.manualMileageScope.value||'athlete';
-  if(scope==='team')return mileageAthletes.map(manualAthletePayload).filter(function(athlete){return athlete.name;});
   if(scope==='group'){
     var group=els.manualMileageGroup.value||'';
     var names={};
-    days.forEach(function(day){if(day.groupName===group&&day.athleteName)names[String(day.athleteName).toLowerCase()]=true;});
-    mileageTrainingRows.forEach(function(row){if(row.groupName===group&&row.athleteName)names[String(row.athleteName).toLowerCase()]=true;});
-    mileageAthletes.forEach(function(row){
-      var latest=row.latestTraining||{};
-      if(latest.groupName===group&&row.name)names[String(row.name).toLowerCase()]=true;
+    var ids={};
+    activeTrainingGroups().filter(function(item){return item.name===group;}).forEach(function(item){
+      (item.athletes||[]).forEach(function(athlete){
+        if(athlete.contactId)ids[String(athlete.contactId)]=true;
+        if(athlete.name)names[String(athlete.name).toLowerCase()]=true;
+      });
     });
-    return mileageAthletes.filter(function(row){return names[String(row.name||'').toLowerCase()];}).map(manualAthletePayload);
+    return mileageAthletes.filter(function(row){
+      return ids[String(row.contactId||'')]||names[String(row.name||'').toLowerCase()];
+    }).map(manualAthletePayload);
   }
   var selected=els.manualMileageAthlete.value||'';
   return mileageAthletes.filter(function(row){return String(row.contactId||row.name||'')===selected;}).map(manualAthletePayload);
@@ -1334,7 +1341,6 @@ function manualAthletePayload(row){
 function manualMileageGroupName(){
   var scope=els.manualMileageScope.value||'athlete';
   if(scope==='group')return els.manualMileageGroup.value||'Manual Mileage';
-  if(scope==='team')return 'Team Manual Mileage';
   return 'Manual Mileage';
 }
 function saveManualMileage(){
@@ -1402,7 +1408,8 @@ function loadCalendar(){
   return Promise.all([
     fetch('/api/smart-trak/training-plan?kind=assignments',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
     fetch('/api/smart-trak/training-plan?kind=days',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
-    fetch('/api/smart-trak/dashboard',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{athletes:[],recentTrainingSyncs:[],trainingSyncs:[]}};})
+    fetch('/api/smart-trak/dashboard',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{athletes:[],recentTrainingSyncs:[],trainingSyncs:[]}};}),
+    fetch('/api/smart-trak/groups',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};})
   ]).then(function(results){
     if(!results[0].ok&&results[0].data&&results[0].data.accessCodeRequired){
       showAccess(results[0].data);
@@ -1414,6 +1421,7 @@ function loadCalendar(){
     days=applyPendingDayUpdates(results[1].data.days||[]);
     mileageAthletes=results[2].ok?(results[2].data.athletes||[]):[];
     mileageTrainingRows=results[2].ok?(results[2].data.recentTrainingSyncs||results[2].data.trainingSyncs||[]):[];
+    trainingGroups=results[3].ok?(results[3].data.groups||[]):[];
     els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
     renderOptions();
     render();
@@ -1422,6 +1430,7 @@ function loadCalendar(){
     days=[];
     mileageAthletes=[];
     mileageTrainingRows=[];
+    trainingGroups=[];
     els.calendar.innerHTML='';
     els.empty.hidden=false;
     els.empty.textContent=error.message||'Training calendar failed to load.';
