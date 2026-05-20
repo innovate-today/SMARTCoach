@@ -229,7 +229,7 @@ function normalizeTrainingPlanRecord(record) {
     priorityMeets: prop(props, "priority_meets"),
     noPracticeDates: prop(props, "no_practice_dates"),
     schoolConstraints: prop(props, "school_constraints"),
-    archived: planArchiveState(prop(props, "school_constraints")),
+    archived: planArchiveState(prop(props, "school_constraints")) || planStatusArchiveState(prop(props, "approval_status")),
     approvalStatus: labelValue(prop(props, "approval_status")),
     description: prop(props, "workout_description"),
   };
@@ -450,6 +450,11 @@ function planArchiveBlockText(existingText, archive) {
 
 function planArchiveState(text) {
   return /\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(clean(text));
+}
+
+function planStatusArchiveState(status) {
+  const value = labelValue(status).toLowerCase().replace(/[^a-z]/g, "");
+  return value === "archive" || value === "archived" || value === "inactive";
 }
 
 function parseAssignedAthleteIds(text) {

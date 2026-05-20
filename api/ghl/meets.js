@@ -205,6 +205,7 @@ function normalizeMeet(record, fallbackProperties) {
   const season = fieldValue(props.season) || prop(props, "season");
   const seasonYear = fieldValue(props.season_year) || prop(props, "season_year");
   const status = fieldValue(props.status) || prop(props, "status");
+  const statusLabel = labelValue(status) || "Scheduled";
   return {
     id: record && record.id ? record.id : clean(prop(props, "source_record_id")),
     name: clean(meetName),
@@ -212,8 +213,14 @@ function normalizeMeet(record, fallbackProperties) {
     season: labelValue(season) || (date ? seasonForDate(date).season : ""),
     seasonYear: Number(seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null),
     location: clean(prop(props, "location")),
-    status: labelValue(status) || "Scheduled",
+    status: statusLabel,
+    archived: isArchivedStatus(statusLabel),
   };
+}
+
+function isArchivedStatus(status) {
+  const value = clean(status).toLowerCase().replace(/[^a-z]/g, "");
+  return value === "archive" || value === "archived" || value === "inactive";
 }
 
 function dateOnlyText(value) {

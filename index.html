@@ -875,6 +875,7 @@ function saveSharedGroupsNow(){
 function activeTrainingPlans(plans){
   return (plans||[]).filter(function(plan){
     if(plan&&plan.archived)return false;
+    if(isArchivedStatus(plan&&plan.approvalStatus))return false;
     if(/\barchived\b/i.test(String(plan&&plan.approvalStatus||'')))return false;
     if(/\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(String(plan&&plan.schoolConstraints||'')))return false;
     return true;
@@ -1130,7 +1131,7 @@ function activeMeets(meets){
 }
 function isArchivedStatus(status){
   var value=String(status||'').trim().toLowerCase().replace(/[^a-z]/g,'');
-  return value==='archive'||value==='archived';
+  return value==='archive'||value==='archived'||value==='inactive';
 }
 function renderMeetOptions(){
   var sel=document.getElementById('mg-meet-select');
