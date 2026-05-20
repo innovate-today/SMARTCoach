@@ -82,8 +82,10 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .day{min-height:170px;border-right:1px solid var(--line);padding:10px;background:#fff}
 .day.today{background:#f4f7ff;box-shadow:inset 0 0 0 2px rgba(43,79,204,.18)}
 .day:last-child{border-right:0}
-.daydate{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px}
+.daytop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.daydate{border:0;background:transparent;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;margin:0;padding:0;text-align:left}
 .day.today .daydate{display:inline-flex;align-items:center;border-radius:999px;background:var(--blue);color:#fff;padding:4px 8px}
+.dayadd{flex:0 0 auto;background:#eef6ff;color:#173891;border:1px solid #bfd0ef;font-size:12px;padding:5px 8px;min-height:28px}
 .item{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff}
 .item.meet{border-left-color:#7c3aed}.item.recovery{border-left-color:#0a7a44}.item.off{border-left-color:#94a3b8}.item.skipped{opacity:.68}
 .item b{display:block;font-size:14px;line-height:1.25}
@@ -327,6 +329,33 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   </section>
 </div>
 
+<div id="addDayModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="addDayTitle">
+    <div class="modalhead">
+      <h2 id="addDayTitle">Add Calendar Day</h2>
+      <button id="addDayClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field"><label for="addDayDate">Date <span class="fieldinfo" tabindex="0" data-tip="The clicked calendar date is used by default.">i</span></label><input id="addDayDate" type="date"></div>
+        <div class="field"><label for="addDayPlan">Add To Plan <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the saved plan this new calendar day belongs to.">i</span></label><select id="addDayPlan"><option value="">Select plan</option></select></div>
+        <div class="field"><label for="addDayType">Day Type <span class="fieldinfo" tabindex="0" data-tip="Use Workout for training sessions or Meets/Races for competition days.">i</span></label><select id="addDayType"><option value="Workout">Workout</option><option value="Meet">Meets/Races</option><option value="Recovery">Recovery</option><option value="Off Day">Off/Travel</option><option value="Other">Other</option></select></div>
+        <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
+        <div class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Workout effort or race type for coach reference.">i</span></label><input id="addDayWorkoutType" type="text" placeholder="Example: Extensive Tempo"></div>
+        <div class="field"><label for="addDayGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Defaults from the selected plan when available.">i</span></label><input id="addDayGroup" type="text" placeholder="Example: Girls CC"></div>
+        <div class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional volume target for the day.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles or 1000m quality"></div>
+        <div class="field"><label for="addDayTarget">Target <span class="fieldinfo info-left" tabindex="0" data-tip="Optional split, pace, or race target.">i</span></label><input id="addDayTarget" type="text" placeholder="Example: 75-82% or race plan"></div>
+        <div class="field full"><label for="addDayDetails">Details <span class="fieldinfo" tabindex="0" data-tip="Workout instructions, race notes, warmup, cooldown, or reminders.">i</span></label><textarea id="addDayDetails" placeholder="Add the session or race details"></textarea></div>
+        <div class="field full"><label for="addDayNotes">Coach Notes <span class="fieldinfo" tabindex="0" data-tip="Optional private planning context.">i</span></label><textarea id="addDayNotes" placeholder="Optional coach notes"></textarea></div>
+      </div>
+      <div class="modalactions">
+        <div id="addDayStatus" class="modalstatus">Choose a plan, then save the calendar day.</div>
+        <button id="addDaySave" type="button">Save Calendar Day</button>
+      </div>
+    </div>
+  </section>
+</div>
+
 <div id="manualMileageModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="manualMileageTitle">
     <div class="modalhead">
@@ -433,6 +462,20 @@ var els={
   editReason:document.getElementById('editReason'),
   dayEditStatus:document.getElementById('dayEditStatus'),
   dayEditSave:document.getElementById('dayEditSave'),
+  addDayModal:document.getElementById('addDayModal'),
+  addDayClose:document.getElementById('addDayClose'),
+  addDayDate:document.getElementById('addDayDate'),
+  addDayPlan:document.getElementById('addDayPlan'),
+  addDayType:document.getElementById('addDayType'),
+  addDayTitleInput:document.getElementById('addDayTitleInput'),
+  addDayWorkoutType:document.getElementById('addDayWorkoutType'),
+  addDayGroup:document.getElementById('addDayGroup'),
+  addDayVolume:document.getElementById('addDayVolume'),
+  addDayTarget:document.getElementById('addDayTarget'),
+  addDayDetails:document.getElementById('addDayDetails'),
+  addDayNotes:document.getElementById('addDayNotes'),
+  addDayStatus:document.getElementById('addDayStatus'),
+  addDaySave:document.getElementById('addDaySave'),
   manualMileageModal:document.getElementById('manualMileageModal'),
   manualMileageClose:document.getElementById('manualMileageClose'),
   manualMileageDate:document.getElementById('manualMileageDate'),
@@ -534,6 +577,9 @@ function planAliases(plan){
 }
 function planSubtitle(plan){
   return [plan.season,plan.seasonYear,plan.assignedGroup||plan.athleteName,plan.startDate&&plan.endDate?plan.startDate+' to '+plan.endDate:''].filter(Boolean).join(' · ');
+}
+function planSubject(plan){
+  return plan&&plan.assignedGroup||plan&&plan.groupName||plan&&plan.athleteName||'Team';
 }
 function planEffectiveEndDate(plan){
   var end=parseCalendarDate(plan&&plan.endDate);
@@ -778,7 +824,7 @@ function render(){
   els.calendar.classList.toggle('weekscroll',viewMode==='week');
   els.calendar.classList.toggle('listscroll',viewMode==='list');
   els.calendar.innerHTML=viewMode==='list'?renderListView(list):renderWeekView(list);
-  els.empty.hidden=!!list.length;
+  els.empty.hidden=!!list.length||viewMode==='week';
 }
 function renderMixBar(counts){
   els.mixBar.hidden=mixHidden;
@@ -814,7 +860,9 @@ function renderWeekView(list){
     if(!weeks[key])weeks[key]=[];
     weeks[key].push(day);
   });
-  return Object.keys(weeks).sort().map(function(key){
+  var keys=Object.keys(weeks).sort();
+  if(!keys.length)keys=[isoDate(startOfWeek(new Date()))];
+  return keys.map(function(key){
     var weekDays=weeks[key];
     if(key==='unscheduled')return weekSection(key,weekDays);
     var start=new Date(key+'T00:00:00');
@@ -822,9 +870,9 @@ function renderWeekView(list){
     for(var i=0;i<7;i+=1){
       var date=addDays(start,i);
       var dateKey=isoDate(date);
-      columns.push(dayColumn(date,weekDays.filter(function(day){return String(day.date||'').slice(0,10)===dateKey;})));
+      columns.push(dayColumn(date,(weekDays||[]).filter(function(day){return String(day.date||'').slice(0,10)===dateKey;})));
     }
-    return '<section class="week" data-current-week="'+(key===isoDate(startOfWeek(new Date()))?'1':'0')+'"><div class="weekhead"><b>'+esc(weekTitle(key))+'</b><span>'+weekDays.length+' plan days</span></div><div class="days">'+columns.join('')+'</div></section>';
+    return '<section class="week" data-current-week="'+(key===isoDate(startOfWeek(new Date()))?'1':'0')+'"><div class="weekhead"><b>'+esc(weekTitle(key))+'</b><span>'+((weekDays||[]).length)+' plan days</span></div><div class="days">'+columns.join('')+'</div></section>';
   }).join('');
 }
 function renderListView(list){
@@ -876,7 +924,8 @@ function weekSection(key,weekDays){
 }
 function dayColumn(date,items){
   var isToday=isoDate(date)===isoDate(new Date());
-  return '<div class="day'+(isToday?' today':'')+'"><div class="daydate">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
+  var dateKey=isoDate(date);
+  return '<div class="day'+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'"><div class="daytop"><button class="daydate" data-add-day="'+esc(dateKey)+'" type="button">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</button><button class="dayadd" data-add-day="'+esc(dateKey)+'" type="button">Add</button></div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
 }
 function dayItem(day){
   var category=dayMixCategory(day);
@@ -1295,6 +1344,141 @@ function setDayEditStatus(text,type){
   els.dayEditStatus.textContent=text||'';
   els.dayEditStatus.style.color=type==='error'?'var(--bad)':type==='success'?'var(--good)':'';
 }
+function openAddDayModal(dateValue){
+  renderAddDayPlans();
+  els.addDayDate.value=String(dateValue||todayInputValue()).slice(0,10);
+  setSelectValue(els.addDayType,'Workout');
+  els.addDayTitleInput.value='';
+  els.addDayWorkoutType.value='';
+  els.addDayVolume.value='';
+  els.addDayTarget.value='';
+  els.addDayDetails.value='';
+  els.addDayNotes.value='';
+  var currentPlans=visiblePlans().filter(function(plan){return !isPastPlan(plan);});
+  var defaultPlanId=selectedPlanIds.length===1?selectedPlanIds[0]:(currentPlans[0]?planId(currentPlans[0]):'');
+  if(defaultPlanId)els.addDayPlan.value=defaultPlanId;
+  syncAddDayPlanFields();
+  updateAddDayTypeDefaults();
+  setAddDayStatus('Choose a plan, then save the calendar day.','');
+  els.addDayModal.hidden=false;
+}
+function closeAddDayModal(){
+  els.addDayModal.hidden=true;
+}
+function renderAddDayPlans(){
+  var current=els.addDayPlan.value;
+  var available=visiblePlans().filter(function(plan){return !isPastPlan(plan);});
+  els.addDayPlan.innerHTML='<option value="">Select plan</option>'+available.map(function(plan){
+    var id=planId(plan);
+    return '<option value="'+esc(id)+'">'+esc(plan.title||'Untitled plan')+(planSubject(plan)?' · '+esc(planSubject(plan)):'')+'</option>';
+  }).join('');
+  if(current)els.addDayPlan.value=current;
+}
+function selectedAddDayPlan(){
+  var id=els.addDayPlan.value||'';
+  return plans.find(function(plan){return planId(plan)===id || planAliases(plan).indexOf(id)>=0;})||null;
+}
+function syncAddDayPlanFields(){
+  var plan=selectedAddDayPlan();
+  if(!plan)return;
+  if(!els.addDayGroup.value)els.addDayGroup.value=planSubject(plan);
+}
+function updateAddDayTypeDefaults(){
+  var type=els.addDayType.value||'Workout';
+  if(type==='Meet'){
+    if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Race day';
+    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Race / Meet';
+    if(!els.addDayTarget.value)els.addDayTarget.value='Race plan';
+  }else if(type==='Recovery'){
+    if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Recovery run';
+    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Easy';
+  }else if(type==='Off Day'){
+    if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Off day';
+    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Off Day';
+  }
+}
+function saveAddedCalendarDay(){
+  var plan=selectedAddDayPlan();
+  var title=els.addDayTitleInput.value.trim();
+  if(!plan){setAddDayStatus('Select the plan this day belongs to.','error');return;}
+  if(!els.addDayDate.value){setAddDayStatus('Select a date.','error');return;}
+  if(!title){setAddDayStatus('Add a short title for the calendar day.','error');return;}
+  var groupName=els.addDayGroup.value.trim()||planSubject(plan);
+  var day={
+    date:els.addDayDate.value,
+    dayType:els.addDayType.value,
+    groupName:groupName,
+    athleteContact:plan.contactId||'',
+    athleteName:plan.contactId?(plan.athleteName||''):'',
+    workoutTitle:title,
+    workoutDetails:els.addDayDetails.value,
+    workoutType:els.addDayWorkoutType.value,
+    targetSplits:els.addDayTarget.value,
+    plannedVolume:els.addDayVolume.value,
+    status:'Scheduled',
+    coachNotes:els.addDayNotes.value
+  };
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.addDaySave.disabled=true;
+  setAddDayStatus('Saving calendar day...','');
+  fetch('/api/smart-trak/training-plan',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'appendDays',
+      planId:plan.id||plan.sourceRecordId||planId(plan),
+      planSourceRecordId:plan.sourceRecordId||'',
+      planName:plan.title||'Training Plan',
+      planScope:plan.scope||'Group',
+      groupName:groupName,
+      assignedGroup:groupName,
+      contactId:plan.contactId||'',
+      athleteName:plan.athleteName||'',
+      season:plan.season||'',
+      seasonYear:plan.seasonYear||'',
+      primaryEvent:plan.event||'Latest matching fitness set',
+      planStartDate:plan.startDate||day.date,
+      planEndDate:plan.endDate||day.date,
+      days:[day]
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Calendar day could not be saved.');
+    var created=result.data&&result.data.days&&result.data.days[0]||{};
+    days.push({
+      id:created.recordId||'',
+      sourceRecordId:created.sourceRecordId||'',
+      trainingPlanId:plan.id||plan.sourceRecordId||planId(plan),
+      date:day.date,
+      dayType:day.dayType,
+      groupName:day.groupName,
+      athleteContact:day.athleteContact,
+      athleteName:day.athleteName,
+      title:day.workoutTitle,
+      details:day.workoutDetails,
+      workoutType:day.workoutType,
+      targetSplits:day.targetSplits,
+      plannedVolume:day.plannedVolume,
+      status:day.status,
+      coachNotes:day.coachNotes
+    });
+    closeAddDayModal();
+    renderOptions();
+    render();
+    els.status.textContent='Calendar day added.';
+    setTimeout(loadCalendar,1200);
+  }).catch(function(error){
+    setAddDayStatus(error.message||'Calendar day could not be saved.','error');
+  }).finally(function(){
+    els.addDaySave.disabled=false;
+  });
+}
+function setAddDayStatus(text,type){
+  els.addDayStatus.textContent=text||'';
+  els.addDayStatus.style.color=type==='error'?'var(--bad)':type==='success'?'var(--good)':'';
+}
 function setSelectValue(select,value){
   var wanted=String(value||'').toLowerCase();
   if(wanted==='race')wanted='meet';
@@ -1490,6 +1674,13 @@ function init(){
   els.manualMileageClose.addEventListener('click',closeManualMileage);
   els.manualMileageScope.addEventListener('change',updateManualMileageScope);
   els.manualMileageSave.addEventListener('click',saveManualMileage);
+  els.addDayClose.addEventListener('click',closeAddDayModal);
+  els.addDayPlan.addEventListener('change',function(){
+    els.addDayGroup.value='';
+    syncAddDayPlanFields();
+  });
+  els.addDayType.addEventListener('change',updateAddDayTypeDefaults);
+  els.addDaySave.addEventListener('click',saveAddedCalendarDay);
   els.approveDraftsBtn.addEventListener('click',function(){
     updateVisibleDayStatus('Approved',isDraftDay,'Coach approved visible draft plan days from SMART Trak Training Calendar.');
   });
@@ -1567,6 +1758,11 @@ function init(){
   els.calendar.addEventListener('click',function(event){
     if(event.target.closest&&event.target.closest('[data-bulk-check-all]'))return;
     if(event.target.closest&&event.target.closest('[data-bulk-check]'))return;
+    var addButton=event.target.closest&&event.target.closest('[data-add-day]');
+    if(addButton){
+      openAddDayModal(addButton.getAttribute('data-add-day')||todayInputValue());
+      return;
+    }
     var sortButton=event.target.closest&&event.target.closest('[data-sort-key]');
     if(sortButton){
       var key=sortButton.getAttribute('data-sort-key')||'date';
