@@ -201,7 +201,7 @@ async function optionalGhlFetch(args) {
 function normalizeMeet(record, fallbackProperties) {
   const props = fallbackProperties || recordProperties(record);
   const meetName = fieldValue(props.meet) || prop(props, "meet") || recordName(record);
-  const date = fieldValue(props.meet_date) || fieldValue(props.date) || prop(props, "meet_date") || prop(props, "date");
+  const date = dateOnlyText(fieldValue(props.meet_date) || fieldValue(props.date) || prop(props, "meet_date") || prop(props, "date"));
   const season = fieldValue(props.season) || prop(props, "season");
   const seasonYear = fieldValue(props.season_year) || prop(props, "season_year");
   const status = fieldValue(props.status) || prop(props, "status");
@@ -214,6 +214,14 @@ function normalizeMeet(record, fallbackProperties) {
     location: clean(prop(props, "location")),
     status: labelValue(status) || "Scheduled",
   };
+}
+
+function dateOnlyText(value) {
+  const text = clean(value);
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? text : date.toISOString().slice(0, 10);
 }
 
 function recordName(record) {
