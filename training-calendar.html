@@ -172,7 +172,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   <section class="cards">
     <div class="card"><b id="dayCount">--</b><span>Plan days in view</span></div>
     <div class="card"><b id="workoutCount">--</b><span>Workout days</span></div>
-    <div class="card"><b id="meetCount">--</b><span>Meet days</span></div>
+    <div class="card"><b id="meetCount">--</b><span>Meets/Races</span></div>
     <div class="card"><b id="completedCount">--</b><span>Completed</span></div>
     <div class="card"><b id="needsReviewCount">--</b><span>Needs review</span></div>
   </section>
@@ -253,7 +253,10 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
           <label for="editDayType">Day Type</label>
           <select id="editDayType">
             <option>Workout</option>
-            <option value="Meet">Race</option>
+            <option value="Meet">Meets/Races</option>
+            <option>Recovery</option>
+            <option value="Off Day">Off/Travel</option>
+            <option>Other</option>
           </select>
         </div>
         <div class="field">
@@ -597,8 +600,11 @@ function renderOptions(){
     if(day.status)statuses[day.status]=true;
   });
   var typeOptions=[
-    {value:'Workout',label:'Workouts'},
-    {value:'Meet',label:'Races'}
+    {value:'workout',label:'Workouts'},
+    {value:'meet',label:'Meets/Races'},
+    {value:'recovery',label:'Recovery'},
+    {value:'off',label:'Off/Travel'},
+    {value:'other',label:'Other'}
   ];
   els.typeFilter.innerHTML='<option value="all">All day types</option>'+typeOptions.map(function(option){return '<option value="'+esc(option.value)+'">'+esc(option.label)+'</option>';}).join('');
   els.statusFilter.innerHTML='<option value="all">All statuses</option>'+Object.keys(statuses).sort().map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
@@ -658,7 +664,7 @@ function filteredDays(){
   return days.filter(function(day){
     if(status==='all'&&isRemovedDay(day))return false;
     if(!planSet[String(day.trainingPlanId||'')])return false;
-    if(type!=='all'&&day.dayType!==type)return false;
+    if(type!=='all'&&dayMixCategory(day)!==type)return false;
     if(status!=='all'&&day.status!==status)return false;
     if(!matchesDateRange(day,dateRange))return false;
     if(query&&searchText(day).indexOf(query)===-1)return false;
@@ -701,6 +707,17 @@ function weekKeyForDay(day){
   if(isNaN(date.getTime()))return 'unscheduled';
   return isoDate(startOfWeek(date));
 }
+function dayMixCategory(day){
+  var type=String(day&&day.dayType||'').toLowerCase();
+  var title=String(day&&day.title||'').toLowerCase();
+  var workout=String(day&&day.workoutType||'').toLowerCase();
+  var text=[type,title,workout].join(' ');
+  if(text.indexOf('meet')>=0||text.indexOf('race')>=0)return 'meet';
+  if(text.indexOf('recovery')>=0||text.indexOf('easy')>=0)return 'recovery';
+  if(text.indexOf('off')>=0||text.indexOf('travel')>=0||text.indexOf('no practice')>=0)return 'off';
+  if(text.indexOf('workout')>=0||text.indexOf('quality')>=0||text.indexOf('session')>=0)return 'workout';
+  return 'other';
+}
 function weekTitle(key){
   if(key==='unscheduled')return 'Unscheduled';
   var start=new Date(key+'T00:00:00');
@@ -717,17 +734,13 @@ function render(){
   var offCount=0;
   var otherCount=0;
   list.forEach(function(day){
-    var type=String(day.dayType||'').toLowerCase();
+    var category=dayMixCategory(day);
     var status=String(day.status||'').toLowerCase();
-    if(type.indexOf('workout')>=0)workoutCount+=1;
-    if(type.indexOf('meet')>=0)meetCount+=1;
-    if(type.indexOf('recovery')>=0){
-      recoveryCount+=1;
-    }else if(type.indexOf('practice')>=0||type.indexOf('travel')>=0||type.indexOf('off')>=0){
-      offCount+=1;
-    }else if(type.indexOf('workout')<0&&type.indexOf('meet')<0){
-      otherCount+=1;
-    }
+    if(category==='workout')workoutCount+=1;
+    else if(category==='meet')meetCount+=1;
+    else if(category==='recovery')recoveryCount+=1;
+    else if(category==='off')offCount+=1;
+    else otherCount+=1;
     if(status.indexOf('completed')>=0)completedCount+=1;
     if(status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0)reviewCount+=1;
   });
@@ -757,7 +770,7 @@ function renderMixBar(counts){
   if(mixHidden)return;
   els.mixBar.innerHTML='<b>Visible mix</b>'+
     '<span class="mixitem workout">'+counts.workouts+' workouts</span>'+
-    '<span class="mixitem meet">'+counts.meets+' meets</span>'+
+    '<span class="mixitem meet">'+counts.meets+' meets/races</span>'+
     '<span class="mixitem recovery">'+counts.recovery+' recovery</span>'+
     '<span class="mixitem off">'+counts.off+' off/travel</span>'+
     '<span class="mixitem other">'+counts.other+' other</span>'+
@@ -850,9 +863,9 @@ function dayColumn(date,items){
   return '<div class="day'+(isToday?' today':'')+'"><div class="daydate">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
 }
 function dayItem(day){
-  var type=String(day.dayType||'').toLowerCase();
+  var category=dayMixCategory(day);
   var status=String(day.status||'').toLowerCase();
-  var cls=type.indexOf('meet')>=0?' meet':type.indexOf('recovery')>=0?' recovery':type.indexOf('practice')>=0||type.indexOf('travel')>=0?' off':'';
+  var cls=category==='meet'?' meet':category==='recovery'?' recovery':category==='off'?' off':'';
   if(status.indexOf('skipped')>=0)cls+=' skipped';
   var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
   var id=day.id||day.sourceRecordId||'';
@@ -1268,6 +1281,8 @@ function setDayEditStatus(text,type){
 }
 function setSelectValue(select,value){
   var wanted=String(value||'').toLowerCase();
+  if(wanted==='race')wanted='meet';
+  if(wanted==='travel'||wanted==='no practice')wanted='off day';
   var option=Array.prototype.slice.call(select.options).find(function(item){
     return item.value.toLowerCase()===wanted||item.text.toLowerCase()===wanted;
   });
