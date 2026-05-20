@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-store">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="app-version" content="plan-setup-groups-34061ed">
+<meta name="app-version" content="plan-setup-active-plans">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SMART Trak Planning Setup</title>
 <style>
@@ -666,13 +666,20 @@ function applySelectedGroupToAssignment(){
   renderAssignmentAthletes();
 }
 function planLabel(plan){return plan?plan.title+([plan.assignedGroup,plan.season,plan.seasonYear].filter(Boolean).length?' - '+[plan.assignedGroup,plan.season,plan.seasonYear].filter(Boolean).join(' · '):''):'Select plan';}
+function activeAssignmentPlans(){
+  return plans.filter(function(plan){return !plan.archived;});
+}
 function renderAssignmentPlans(){
   var select=document.getElementById('assignmentPlan');
   if(!select)return;
-  if(!plans.length){select.innerHTML='<option value="">No plans found</option>';return;}
+  var activePlans=activeAssignmentPlans();
+  if(!activePlans.length){select.innerHTML='<option value="">No active plans found</option>';return;}
   var previous=select.value;
-  select.innerHTML=plans.map(function(plan,i){return '<option value="'+i+'">'+esc(planLabel(plan))+'</option>';}).join('');
-  if(previous&&plans[parseInt(previous)])select.value=previous;
+  select.innerHTML=activePlans.map(function(plan){
+    var index=plans.indexOf(plan);
+    return '<option value="'+index+'">'+esc(planLabel(plan))+'</option>';
+  }).join('');
+  if(previous&&activePlans.indexOf(plans[parseInt(previous)])>=0)select.value=previous;
   renderAssignmentAthletes();
 }
 function selectedAssignmentPlan(){
