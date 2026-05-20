@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak XC Simulator</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b00000;--violet:#6d28d9}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1480px;margin:0 auto;padding:22px 18px 32px}
+body.embedded .page{max-width:none;padding:16px 18px 28px}
+.top{position:sticky;top:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:0 14px 32px rgba(15,23,42,.14)}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:64px;height:64px;display:grid;place-items:center;flex:0 0 64px}
+.mark img{display:block;max-width:64px;max-height:64px;object-fit:contain}
+h1{font-size:24px;line-height:1.15;margin:0}
+.sub{font-size:14px;color:var(--muted);margin-top:4px}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none}
+button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
+button.ghost{background:#eef2f7;color:#172033}
+button.utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line)}
+button.danger{background:#fee2e2;color:#991b1b}
+button:disabled{opacity:.55;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:minmax(360px,.45fr) minmax(620px,1fr);gap:14px;align-items:start}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:12px;background:#fbfdff}
+.panelhead h2{font-size:17px;margin:0}
+.panelhead span{font-size:12px;color:var(--muted);font-weight:800}
+.panelbody{padding:14px 16px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:grid;gap:6px}
+.field.full{grid-column:1/-1}
+label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
+textarea{min-height:280px;resize:vertical;line-height:1.45}
+.fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
+.fieldinfo:after{content:attr(data-tip);position:absolute;left:0;top:24px;width:260px;max-width:80vw;padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:50;white-space:normal}
+.fieldinfo.info-left:after{left:auto;right:0}
+.fieldinfo:hover:after,.fieldinfo:focus:after{opacity:1}
+.hint{font-size:12px;color:var(--muted);line-height:1.35}
+.actionbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
+.status{font-size:13px;color:var(--muted);font-weight:800;margin-right:auto}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.card b{display:block;font-size:24px;line-height:1.1}
+.card span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.tablewrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto;margin-bottom:14px}
+table{width:100%;border-collapse:collapse;min-width:780px}
+th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
+td{font-size:14px}
+tr:last-child td{border-bottom:0}
+.name{font-weight:900;color:#102a70}
+.muted{color:var(--muted);font-size:12px;margin-top:2px}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#e8eefc;color:#173891}
+.pill.good{background:#dcfce7;color:var(--good)}
+.pill.warn{background:#ffedd5;color:var(--warn)}
+.pill.bad{background:#fee2e2;color:#991b1b}
+.pill.violet{background:#ede9fe;color:var(--violet)}
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
+.note{border:1px solid #c7d2fe;background:#f8fbff;border-radius:8px;padding:10px 12px;color:#334155;font-size:13px;line-height:1.4;margin-bottom:12px}
+@media(max-width:980px){
+  .top{align-items:flex-start;flex-direction:column}
+  .actions{width:100%}
+  .actions a,.actions button{flex:1;text-align:center}
+  .grid{grid-template-columns:1fr}
+  .cards{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .page{padding:14px 10px 24px}
+  .formgrid,.cards{grid-template-columns:1fr}
+  .actionbar{align-items:stretch;flex-direction:column}
+  .status{margin-right:0}
+  button,.linkbtn{text-align:center}
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>SMART Trak XC Simulator</h1>
+        <div class="sub">Score hypothetical cross country results, compare teams, and test lineup changes.</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
+      <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
+      <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
+      <button id="resetBtn" class="utility-action" type="button">Reset</button>
+    </div>
+  </section>
+
+  <section class="grid">
+    <section class="panel">
+      <div class="panelhead">
+        <h2>Meet Setup</h2>
+        <span>Paste or type results</span>
+      </div>
+      <div class="panelbody">
+        <div class="note">Use one runner per line. Accepted formats: <b>Team, Athlete, Time</b>, <b>Athlete, Team, Time</b>, or tab-separated rows. Only complete teams affect the team score.</div>
+        <div class="formgrid">
+          <div class="field">
+            <label for="raceName">Race Name <span class="fieldinfo" tabindex="0" data-tip="Optional label for the simulation. It helps when copying results to a coach note.">i</span></label>
+            <input id="raceName" type="text" placeholder="Example: District Preview">
+          </div>
+          <div class="field">
+            <label for="division">Division <span class="fieldinfo info-left" tabindex="0" data-tip="Optional group name such as Varsity Girls, JV Boys, or 5K Open.">i</span></label>
+            <input id="division" type="text" placeholder="Example: Varsity Girls">
+          </div>
+          <div class="field">
+            <label for="scoreCount">Score Runners <span class="fieldinfo" tabindex="0" data-tip="Most cross country meets score the first five finishers from each complete team.">i</span></label>
+            <input id="scoreCount" type="number" min="1" max="9" value="5">
+          </div>
+          <div class="field">
+            <label for="displacerCount">Displacers <span class="fieldinfo info-left" tabindex="0" data-tip="Usually two extra runners can push other teams' scores without adding to their own team score.">i</span></label>
+            <input id="displacerCount" type="number" min="0" max="5" value="2">
+          </div>
+          <div class="field full">
+            <label for="resultInput">Runner Results <span class="fieldinfo" tabindex="0" data-tip="Include team, athlete, and finish time. Times can be 18:42, 18:42.5, or 1:02:14.">i</span></label>
+            <textarea id="resultInput" spellcheck="false" placeholder="Blue HS, Ava Moore, 19:08&#10;Red HS, Maya Hill, 19:14&#10;Blue HS, Jess King, 19:28"></textarea>
+            <div class="hint">Tip: edit times or move runners between teams to test what changes the team score.</div>
+          </div>
+        </div>
+        <div class="actionbar">
+          <div id="status" class="status">Ready to score.</div>
+          <button id="exampleBtn" class="secondary" type="button">Load Example</button>
+          <button id="scoreBtn" type="button">Score Meet</button>
+          <button id="clearBtn" class="ghost" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <section class="cards">
+        <div class="card"><b id="teamCount">0</b><span>Complete teams</span></div>
+        <div class="card"><b id="runnerCount">0</b><span>Runners scored</span></div>
+        <div class="card"><b id="winnerName">--</b><span>Projected winner</span></div>
+        <div class="card"><b id="winningScore">--</b><span>Winning score</span></div>
+      </section>
+
+      <section class="panel">
+        <div class="panelhead">
+          <h2>Team Scores</h2>
+          <span id="teamSummary">No simulation yet</span>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Place</th>
+                <th>Team</th>
+                <th>Score</th>
+                <th>Scorers</th>
+                <th>Displacers</th>
+                <th>Average / Spread</th>
+              </tr>
+            </thead>
+            <tbody id="teamRows"></tbody>
+          </table>
+          <div id="teamEmpty" class="empty">Score a meet to see team results.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panelhead">
+          <h2>Individual Results</h2>
+          <span id="runnerSummary">Overall order and team points</span>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Overall</th>
+                <th>Scoring</th>
+                <th>Athlete</th>
+                <th>Team</th>
+                <th>Time</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+            <tbody id="runnerRows"></tbody>
+          </table>
+          <div id="runnerEmpty" class="empty">No runners scored yet.</div>
+        </div>
+        <div class="actionbar">
+          <div class="status">Use this output for “what if” race planning.</div>
+          <button id="copyBtn" class="secondary" type="button">Copy Results</button>
+        </div>
+      </section>
+    </section>
+  </section>
+</main>
+
+<script>
+var lastSimulation=null;
+var els={
+  dashboardLink:document.getElementById('dashboardLink'),
+  meetHistoryLink:document.getElementById('meetHistoryLink'),
+  recordsLink:document.getElementById('recordsLink'),
+  resetBtn:document.getElementById('resetBtn'),
+  raceName:document.getElementById('raceName'),
+  division:document.getElementById('division'),
+  scoreCount:document.getElementById('scoreCount'),
+  displacerCount:document.getElementById('displacerCount'),
+  resultInput:document.getElementById('resultInput'),
+  status:document.getElementById('status'),
+  exampleBtn:document.getElementById('exampleBtn'),
+  scoreBtn:document.getElementById('scoreBtn'),
+  clearBtn:document.getElementById('clearBtn'),
+  copyBtn:document.getElementById('copyBtn'),
+  teamCount:document.getElementById('teamCount'),
+  runnerCount:document.getElementById('runnerCount'),
+  winnerName:document.getElementById('winnerName'),
+  winningScore:document.getElementById('winningScore'),
+  teamSummary:document.getElementById('teamSummary'),
+  runnerSummary:document.getElementById('runnerSummary'),
+  teamRows:document.getElementById('teamRows'),
+  runnerRows:document.getElementById('runnerRows'),
+  teamEmpty:document.getElementById('teamEmpty'),
+  runnerEmpty:document.getElementById('runnerEmpty')
+};
+function cleanKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';
+}
+function accountKey(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    return cleanKey(params.get('account')||params.get('tenant')||localStorage.getItem('sc_account')||'default');
+  }catch(e){return 'default';}
+}
+function embeddedMode(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    return params.get('embed')==='1'||params.get('iframe')==='1'||params.get('embedded')==='1';
+  }catch(e){return false;}
+}
+function pageUrl(path){
+  var url=new URL(path,window.location.origin);
+  var key=accountKey();
+  if(key&&key!=='default')url.searchParams.set('account',key);
+  if(embeddedMode())url.searchParams.set('embed','1');
+  return url.pathname+url.search;
+}
+function esc(value){
+  return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+function parseTime(value){
+  var raw=String(value||'').trim();
+  var parts=raw.split(':').map(function(part){return part.trim();});
+  if(!raw||parts.some(function(part){return part===''||isNaN(Number(part));}))return null;
+  var seconds=0;
+  if(parts.length===1)seconds=Number(parts[0]);
+  else if(parts.length===2)seconds=Number(parts[0])*60+Number(parts[1]);
+  else if(parts.length===3)seconds=Number(parts[0])*3600+Number(parts[1])*60+Number(parts[2]);
+  else return null;
+  return isFinite(seconds)&&seconds>0?seconds:null;
+}
+function formatTime(seconds){
+  if(!isFinite(seconds))return '--';
+  var whole=Math.floor(seconds);
+  var tenths=Math.round((seconds-whole)*10);
+  if(tenths===10){whole+=1;tenths=0;}
+  var h=Math.floor(whole/3600);
+  var m=Math.floor((whole%3600)/60);
+  var s=whole%60;
+  var sec=String(s).padStart(2,'0')+(tenths?'.'+tenths:'');
+  if(h)return h+':'+String(m).padStart(2,'0')+':'+sec;
+  return m+':'+sec;
+}
+function smartSplit(line){
+  var parts=line.indexOf('\t')>-1?line.split('\t'):line.split(',');
+  return parts.map(function(part){return part.trim();}).filter(Boolean);
+}
+function parseResults(text){
+  var rows=[];
+  var warnings=[];
+  String(text||'').split(/\r?\n/).forEach(function(line,index){
+    var clean=line.trim();
+    if(!clean)return;
+    var parts=smartSplit(clean);
+    if(parts.length<3){
+      warnings.push('Line '+(index+1)+' needs team, athlete, and time.');
+      return;
+    }
+    var timeIndex=-1;
+    for(var i=parts.length-1;i>=0;i--){
+      if(parseTime(parts[i])!=null){timeIndex=i;break;}
+    }
+    if(timeIndex<0){
+      warnings.push('Line '+(index+1)+' is missing a readable time.');
+      return;
+    }
+    var time=parseTime(parts[timeIndex]);
+    var before=parts.slice(0,timeIndex);
+    var after=parts.slice(timeIndex+1);
+    var labels=before.concat(after);
+    var team=labels[0]||'Unattached';
+    var athlete=labels.slice(1).join(' ')||'Runner '+(rows.length+1);
+    if(labels.length>=2&&looksLikeAthleteFirst(labels[0],labels[1])){
+      athlete=labels[0];
+      team=labels.slice(1).join(' ');
+    }
+    rows.push({team:team,athlete:athlete,time:time,rawTime:parts[timeIndex],line:index+1});
+  });
+  return {rows:rows,warnings:warnings};
+}
+function looksLikeAthleteFirst(first,second){
+  var teamWords=/\b(hs|high|school|academy|prep|xc|cc|club|team|unattached|middle)\b/i;
+  if(teamWords.test(second)&&!teamWords.test(first))return true;
+  if(first.split(/\s+/).length>=2&&second.split(/\s+/).length<=3)return true;
+  return false;
+}
+function simulate(){
+  var scoreCount=Math.max(1,Math.min(9,Number(els.scoreCount.value)||5));
+  var displacerCount=Math.max(0,Math.min(5,Number(els.displacerCount.value)||2));
+  els.scoreCount.value=scoreCount;
+  els.displacerCount.value=displacerCount;
+  var parsed=parseResults(els.resultInput.value);
+  var runners=parsed.rows.sort(function(a,b){return a.time-b.time||a.athlete.localeCompare(b.athlete);});
+  runners.forEach(function(row,index){row.overall=index+1;});
+  var teamMap={};
+  runners.forEach(function(row){
+    var key=row.team.trim().toLowerCase();
+    if(!teamMap[key])teamMap[key]={name:row.team.trim()||'Unattached',runners:[]};
+    teamMap[key].runners.push(row);
+  });
+  var completeKeys=Object.keys(teamMap).filter(function(key){return teamMap[key].runners.length>=scoreCount;});
+  var teamLimit=scoreCount+displacerCount;
+  var scoringPlace=0;
+  runners.forEach(function(row){
+    var key=row.team.trim().toLowerCase();
+    row.completeTeam=completeKeys.indexOf(key)>-1;
+    row.teamPosition=teamMap[key].runners.indexOf(row)+1;
+    row.countsInRace=row.completeTeam&&row.teamPosition<=teamLimit;
+    if(row.countsInRace){
+      scoringPlace+=1;
+      row.point=scoringPlace;
+    }else{
+      row.point=null;
+    }
+    row.role=row.completeTeam?(row.teamPosition<=scoreCount?'Scorer':(row.teamPosition<=teamLimit?'Displacer':'Extra')):'Incomplete team';
+  });
+  var teams=completeKeys.map(function(key){
+    var team=teamMap[key];
+    var scorers=team.runners.slice(0,scoreCount);
+    var displacers=team.runners.slice(scoreCount,scoreCount+displacerCount);
+    var score=scorers.reduce(function(sum,row){return sum+(row.point||0);},0);
+    var avg=scorers.reduce(function(sum,row){return sum+row.time;},0)/scorers.length;
+    var spread=scorers[scorers.length-1].time-scorers[0].time;
+    var tie=displacers.length?displacers[0].point:99999;
+    return {name:team.name,score:score,scorers:scorers,displacers:displacers,avg:avg,spread:spread,tie:tie,totalTime:scorers.reduce(function(sum,row){return sum+row.time;},0)};
+  }).sort(function(a,b){
+    return a.score-b.score||a.tie-b.tie||a.totalTime-b.totalTime||a.name.localeCompare(b.name);
+  });
+  teams.forEach(function(team,index){team.place=index+1;});
+  return {teams:teams,runners:runners,warnings:parsed.warnings,scoreCount:scoreCount,displacerCount:displacerCount};
+}
+function render(){
+  lastSimulation=simulate();
+  var sim=lastSimulation;
+  els.teamRows.innerHTML=sim.teams.map(function(team){
+    return '<tr>'+
+      '<td><span class="pill '+(team.place===1?'good':'')+'">'+team.place+'</span></td>'+
+      '<td><div class="name">'+esc(team.name)+'</div></td>'+
+      '<td><b>'+team.score+'</b><div class="muted">'+(team.tie<99999?'6th runner tie: '+team.tie:'No tie runner')+'</div></td>'+
+      '<td>'+team.scorers.map(function(row){return '<span class="pill">'+row.point+'</span> '+esc(row.athlete)+' <span class="muted">'+formatTime(row.time)+'</span>';}).join('<br>')+'</td>'+
+      '<td>'+(team.displacers.length?team.displacers.map(function(row){return '<span class="pill violet">'+row.point+'</span> '+esc(row.athlete)+' <span class="muted">'+formatTime(row.time)+'</span>';}).join('<br>'):'<span class="muted">None</span>')+'</td>'+
+      '<td><b>'+formatTime(team.avg)+'</b><div class="muted">Spread '+formatTime(team.spread)+'</div></td>'+
+    '</tr>';
+  }).join('');
+  els.runnerRows.innerHTML=sim.runners.map(function(row){
+    var roleClass=row.role==='Scorer'?'good':(row.role==='Displacer'?'violet':(row.role==='Incomplete team'?'warn':''));
+    return '<tr>'+
+      '<td>'+row.overall+'</td>'+
+      '<td>'+(row.point?row.point:'--')+'</td>'+
+      '<td><div class="name">'+esc(row.athlete)+'</div><div class="muted">'+formatTime(row.time)+'</div></td>'+
+      '<td>'+esc(row.team)+'</td>'+
+      '<td>'+formatTime(row.time)+'</td>'+
+      '<td><span class="pill '+roleClass+'">'+esc(row.role)+'</span></td>'+
+    '</tr>';
+  }).join('');
+  els.teamEmpty.hidden=!!sim.teams.length;
+  els.runnerEmpty.hidden=!!sim.runners.length;
+  els.teamCount.textContent=String(sim.teams.length);
+  els.runnerCount.textContent=String(sim.runners.length);
+  els.winnerName.textContent=sim.teams[0]?sim.teams[0].name:'--';
+  els.winningScore.textContent=sim.teams[0]?String(sim.teams[0].score):'--';
+  els.teamSummary.textContent=sim.teams.length?sim.teams.length+' complete teams · top '+sim.scoreCount+' score':'No complete teams yet';
+  els.runnerSummary.textContent=sim.runners.length+' runners · '+sim.scoreCount+' score / '+sim.displacerCount+' displace';
+  var warningText=sim.warnings.length?' · '+sim.warnings.length+' line'+(sim.warnings.length===1?'':'s')+' skipped':'';
+  els.status.textContent=sim.runners.length+' runners loaded'+warningText+'.';
+  els.status.style.color=sim.warnings.length?'var(--warn)':'var(--muted)';
+}
+function loadExample(){
+  els.raceName.value='District Preview';
+  els.division.value='Varsity Girls';
+  els.resultInput.value=[
+    'Blue HS, Ava Moore, 19:08',
+    'Red HS, Maya Hill, 19:14',
+    'Blue HS, Jess King, 19:28',
+    'Gold HS, Nia Cole, 19:35',
+    'Red HS, Erin Stone, 19:42',
+    'Blue HS, Lila Dunn, 19:55',
+    'Gold HS, Reese Lane, 20:02',
+    'Red HS, Tori Banks, 20:10',
+    'Blue HS, Kai Brooks, 20:18',
+    'Gold HS, Amara Fox, 20:24',
+    'Red HS, Zoe Clark, 20:31',
+    'Blue HS, Mia Price, 20:42',
+    'Gold HS, Hana Reed, 20:48',
+    'Red HS, Cora Bell, 20:55',
+    'Blue HS, Elle Carter, 21:02',
+    'Gold HS, Ivy Ross, 21:09',
+    'Red HS, Leah Moss, 21:15',
+    'Gold HS, Sara West, 21:27',
+    'Blue HS, Ana Park, 21:33',
+    'Red HS, Nora Diaz, 21:40',
+    'Gold HS, Mina Long, 21:58',
+    'Unattached, Taylor Gray, 20:05'
+  ].join('\n');
+  render();
+}
+function clearAll(){
+  els.raceName.value='';
+  els.division.value='';
+  els.resultInput.value='';
+  render();
+}
+function copyResults(){
+  if(!lastSimulation)render();
+  var sim=lastSimulation;
+  var lines=[];
+  var title=[els.raceName.value.trim(),els.division.value.trim()].filter(Boolean).join(' · ')||'XC Simulation';
+  lines.push(title);
+  lines.push('Team Scores');
+  sim.teams.forEach(function(team){
+    lines.push(team.place+'. '+team.name+' - '+team.score+' (avg '+formatTime(team.avg)+', spread '+formatTime(team.spread)+')');
+  });
+  lines.push('');
+  lines.push('Individual Results');
+  sim.runners.forEach(function(row){
+    lines.push(row.overall+'. '+row.athlete+' - '+row.team+' - '+formatTime(row.time)+' - '+(row.point?row.point+' pts':'no points')+' - '+row.role);
+  });
+  var text=lines.join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){els.status.textContent='Simulation copied.';});
+  }else{
+    window.prompt('Copy simulation results',text);
+  }
+}
+function init(){
+  document.body.classList.toggle('embedded',embeddedMode());
+  try{localStorage.setItem('sc_account',accountKey());}catch(e){}
+  els.dashboardLink.href=pageUrl('/dashboard.html');
+  els.meetHistoryLink.href=pageUrl('/meet-history.html');
+  els.recordsLink.href=pageUrl('/records.html');
+  els.resetBtn.addEventListener('click',clearAll);
+  els.exampleBtn.addEventListener('click',loadExample);
+  els.scoreBtn.addEventListener('click',render);
+  els.clearBtn.addEventListener('click',clearAll);
+  els.copyBtn.addEventListener('click',copyResults);
+  els.resultInput.addEventListener('input',function(){els.status.textContent='Edits ready. Click Score Meet.';els.status.style.color='var(--muted)';});
+  render();
+}
+init();
+</script>
+</body>
+</html>

@@ -219,6 +219,7 @@ tr:last-child td{border-bottom:0}
         <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
         <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
         <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
+        <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
         <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
       </div>
       <div class="modal-action-row">
@@ -921,6 +922,8 @@ function applySmartCoachLinks(){
   if(meetHistory)meetHistory.href=smartCoachPageUrl('/meet-history.html');
   var records=document.getElementById('recordsLink');
   if(records)records.href=smartCoachPageUrl('/records.html');
+  var xcSimulator=document.getElementById('xcSimulatorLink');
+  if(xcSimulator)xcSimulator.href=smartCoachPageUrl('/xc-simulator.html');
   var trainingCalendar=document.getElementById('trainingCalendarLink');
   if(trainingCalendar)trainingCalendar.href=smartCoachPageUrl('/training-calendar.html');
   var planImport=document.getElementById('planImportLink');
