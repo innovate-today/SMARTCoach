@@ -711,10 +711,14 @@ function dayMixCategory(day){
   var type=String(day&&day.dayType||'').toLowerCase();
   var title=String(day&&day.title||'').toLowerCase();
   var workout=String(day&&day.workoutType||'').toLowerCase();
-  var text=[type,title,workout].join(' ');
+  var details=String(day&&day.details||'').toLowerCase();
+  var target=String(day&&day.targetSplits||'').toLowerCase();
+  var volume=String(day&&day.plannedVolume||'').toLowerCase();
+  var text=[type,title,workout,details,target,volume].join(' ');
+  var effortText=[type,workout,title,target,volume].join(' ');
   if(text.indexOf('meet')>=0||text.indexOf('race')>=0)return 'meet';
-  if(text.indexOf('recovery')>=0||text.indexOf('easy')>=0)return 'recovery';
   if(text.indexOf('off')>=0||text.indexOf('travel')>=0||text.indexOf('no practice')>=0)return 'off';
+  if(effortText.indexOf('recovery')>=0||effortText.indexOf('easy')>=0||effortText.indexOf('conversational')>=0||/\bez\b/.test(title)||/\beasy\b/.test(details))return 'recovery';
   if(text.indexOf('workout')>=0||text.indexOf('quality')>=0||text.indexOf('session')>=0)return 'workout';
   return 'other';
 }
