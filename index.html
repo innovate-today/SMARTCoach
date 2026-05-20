@@ -2346,6 +2346,9 @@ function selectTrainingPlanDay(planIndex,dayIndex){
   plan.selectedDay=days[dayIndex]||null;
   renderTrainingPlanDetail(plan,plan.planDays||[],false);
 }
+function planDayRecordId(day){
+  return day&&(day.id||day.sourceRecordId)||'';
+}
 function useSelectedTrainingPlan(){
   var sel=document.getElementById('tp-plan');
   var plan=TP[parseInt(sel.value)]||null;
@@ -2361,7 +2364,7 @@ function useSelectedTrainingPlan(){
     target.trainingPlanPhase=plan.phase||plan.blockType||'';
     target.trainingPlanAuto='';
     var day=plan.selectedDay||(upcomingPlanDays(plan.planDays||[],5)[0])||null;
-    target.trainingPlanDayId=day&&day.id||'';
+    target.trainingPlanDayId=planDayRecordId(day);
     target.trainingPlanDaySourceId=day&&day.sourceRecordId||'';
     target.trainingPlanDayTitle=day&&day.title||'';
     target.trainingPlanDayType=day&&day.dayType||'';
@@ -2391,7 +2394,7 @@ function targetNeedsPlanDay(target){
 function applyPlanDayToTarget(target,day){
   if(!target||!day)return false;
   clearCachedPlanTarget(target);
-  target.trainingPlanDayId=day.id||'';
+  target.trainingPlanDayId=planDayRecordId(day);
   target.trainingPlanDaySourceId=day.sourceRecordId||'';
   target.trainingPlanDayTitle=day.title||'';
   target.trainingPlanDayType=day.dayType||'';
@@ -3334,7 +3337,7 @@ function doSMARTTraKSync(forceDuplicateSync){
       trainingPlanId:plan.trainingPlanId,
       trainingPlanSourceId:plan.trainingPlanSourceId,
       trainingPlanTitle:plan.trainingPlanTitle,
-      trainingPlanDayId:plan.trainingPlanDayId,
+      trainingPlanDayId:plan.trainingPlanDayId||plan.trainingPlanDaySourceId,
       trainingPlanDaySourceId:plan.trainingPlanDaySourceId,
       trainingPlanDayTitle:plan.trainingPlanDayTitle,
       trainingPlanPhase:plan.trainingPlanPhase,
@@ -3388,7 +3391,7 @@ function doSMARTTraKSync(forceDuplicateSync){
       trainingPlanId:commonSyncPlanValue(syncPlan,'trainingPlanId',CL.trainingPlanId),
       trainingPlanSourceId:commonSyncPlanValue(syncPlan,'trainingPlanSourceId',CL.trainingPlanSourceId),
       trainingPlanTitle:commonSyncPlanValue(syncPlan,'trainingPlanTitle',CL.trainingPlanTitle),
-      trainingPlanDayId:commonSyncPlanValue(syncPlan,'trainingPlanDayId',CL.trainingPlanDayId),
+      trainingPlanDayId:commonSyncPlanValue(syncPlan,'trainingPlanDayId',CL.trainingPlanDayId)||commonSyncPlanValue(syncPlan,'trainingPlanDaySourceId',CL.trainingPlanDaySourceId),
       trainingPlanDaySourceId:commonSyncPlanValue(syncPlan,'trainingPlanDaySourceId',CL.trainingPlanDaySourceId),
       trainingPlanDayTitle:commonSyncPlanValue(syncPlan,'trainingPlanDayTitle',CL.trainingPlanDayTitle),
       athletes:athletes

@@ -71,6 +71,7 @@ module.exports = async function handler(req, res) {
           trainingPlanId: athlete.trainingPlanId || session.trainingPlanId,
           trainingPlanTitle: athlete.trainingPlanTitle || session.trainingPlanTitle,
           trainingPlanDayId: athlete.trainingPlanDayId || session.trainingPlanDayId,
+          trainingPlanDaySourceId: athlete.trainingPlanDaySourceId || session.trainingPlanDaySourceId,
           trainingPlanDayTitle: athlete.trainingPlanDayTitle || session.trainingPlanDayTitle,
         });
       });
@@ -412,7 +413,7 @@ async function findSeasonRecord({ token, locationId, sourceRecordId }) {
 async function updateLinkedTrainingPlanDay({ token, locationId, session, linkedPerformanceRecords }) {
   if (!linkedPerformanceRecords.length) return null;
   const groups = linkedPerformanceRecords.reduce((grouped, record) => {
-    const dayId = clean(record.trainingPlanDayId || session.trainingPlanDayId);
+    const dayId = clean(record.trainingPlanDayId || record.trainingPlanDaySourceId || session.trainingPlanDayId || session.trainingPlanDaySourceId);
     if (!dayId) return grouped;
     if (!grouped[dayId]) grouped[dayId] = [];
     grouped[dayId].push(record);
