@@ -2741,36 +2741,130 @@ function saveManualMileage(){
   var distance=(els.manualMileageDistance.value||'').trim();
   if(!athletes.length){setManualMileageStatus('Select at least one athlete.', 'bad');return;}
   if(!distance){setManualMileageStatus('Distance is required.', 'bad');return;}
+  var payload={
+    date:els.manualMileageDate.value,
+    groupName:manualMileageGroupName(),
+    workoutType:els.manualMileageWorkout.value,
+    distance:distance,
+    time:els.manualMileageTime.value,
+    source:els.manualMileageSource.value,
+    surface:els.manualMileageSurface.value,
+    notes:els.manualMileageNotes.value,
+    athletes:athletes
+  };
   els.manualMileageSave.disabled=true;
   setManualMileageStatus('Saving mileage...', '');
   fetch('/api/smart-trak/manual-mileage',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      date:els.manualMileageDate.value,
-      groupName:manualMileageGroupName(),
-      workoutType:els.manualMileageWorkout.value,
-      distance:distance,
-      time:els.manualMileageTime.value,
-      source:els.manualMileageSource.value,
-      surface:els.manualMileageSurface.value,
-      notes:els.manualMileageNotes.value,
-      athletes:athletes
-    })
+    body:JSON.stringify(payload)
   }).then(function(resp){
     return resp.json().then(function(data){return{ok:resp.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Mileage could not be saved.');
+    applyManualMileageLocally(payload,result.data||{});
     setManualMileageStatus('Saved mileage for '+athletes.length+' athlete'+(athletes.length===1?'':'s')+'.', 'ok');
     els.manualMileageDistance.value='';
     els.manualMileageTime.value='';
     els.manualMileageNotes.value='';
-    loadDashboard();
   }).catch(function(error){
     setManualMileageStatus(error.message||'Mileage could not be saved.', 'bad');
   }).finally(function(){
     els.manualMileageSave.disabled=false;
   });
+}
+
+function applyManualMileageLocally(payload,result){
+  var synced=result&&result.synced||[];
+  var syncedAt=new Date().toISOString();
+  (payload.athletes||[]).forEach(function(athlete,index){
+    var match=synced.find(function(item){
+      return String(item.contactId||'')===String(athlete.contactId||'') ||
+        String(item.athlete||'').toLowerCase()===String(athlete.name||'').toLowerCase();
+    })||synced[index]||{};
+    var firstRecord=match.performanceRecords&&match.performanceRecords[0]||{};
+    var dashboardAthlete=dashboardRows.find(function(row){
+      return String(row.contactId||'')===String(athlete.contactId||'') ||
+        String(row.name||'').toLowerCase()===String(athlete.name||'').toLowerCase();
+    })||{};
+    var row={
+      athleteName:athlete.name||match.athlete||'',
+      contactId:athlete.contactId||match.contactId||'',
+      athleteGender:dashboardAthlete.gender||'',
+      recordId:firstRecord.recordId||'',
+      sourceRecordId:firstRecord.sourceRecordId||'',
+      groupName:payload.groupName||'Manual Mileage',
+      workoutType:payload.workoutType||'Easy/Recovery Run',
+      surface:payload.surface||'Road',
+      repNumber:1,
+      totalTimeDisplay:payload.time||'Untimed',
+      totalTimeMs:0,
+      sessionDate:payload.date||todayInputValue(),
+      splitsText:'',
+      coachNote:['Manual mileage entry','Completed volume: '+payload.distance,payload.source?'Source: '+payload.source:'',payload.notes||''].filter(Boolean).join('\n'),
+      workoutPrescription:payload.workoutType||'Manual Mileage',
+      plannedTarget:'',
+      actual:'',
+      targetDifference:'',
+      plannedEffort:'',
+      plannedVolume:'',
+      completedVolume:payload.distance||'',
+      completedVolumeMiles:parseCompletedMiles(payload.distance),
+      plannedVolumeMiles:0,
+      currentFitnessSnapshot:'',
+      weather:'',
+      corrected:false,
+      syncedAt:syncedAt
+    };
+    recentTrainingRows.unshift(row);
+    updateDashboardAthleteAfterTrainingAdd(row);
+  });
+  lastLoadedAt=syncedAt;
+  els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
+  renderSeasonFilterOptions();
+  updateWeekRanges();
+  updateDashboardTopStats();
+  renderRows();
+}
+
+function updateDashboardAthleteAfterTrainingAdd(row){
+  var date=parseActivityDate(row.sessionDate||row.syncedAt);
+  var miles=completedVolumeMiles(row);
+  dashboardRows=dashboardRows.map(function(athlete){
+    if(!sameAthlete(row,athlete))return athlete;
+    var next=Object.assign({},athlete);
+    next.trainingRecordCount=num(next.trainingRecordCount)+1;
+    if(!next.latestTraining||compareValues(row.sessionDate||row.syncedAt,next.latestTraining.sessionDate||next.latestTraining.syncedAt)>=0){
+      next.latestTraining=Object.assign({},row);
+    }
+    if(date){
+      var currentStart=startOfDashboardWeek(new Date());
+      var currentEnd=addDashboardDays(currentStart,6);
+      var previousStart=addDashboardDays(currentStart,-7);
+      var previousEnd=addDashboardDays(currentStart,-1);
+      if(date>=currentStart&&date<=currentEnd){
+        next.currentWeekRuns=num(next.currentWeekRuns)+1;
+        next.currentWeekVolumeMiles=num(next.currentWeekVolumeMiles)+miles;
+      }
+      if(date>=previousStart&&date<=previousEnd){
+        next.previousWeekRuns=num(next.previousWeekRuns)+1;
+        next.previousWeekVolumeMiles=num(next.previousWeekVolumeMiles)+miles;
+      }
+      var today=new Date();
+      if(date.getFullYear()===today.getFullYear()&&date.getMonth()===today.getMonth()){
+        next.currentMonthVolumeMiles=num(next.currentMonthVolumeMiles)+miles;
+      }
+    }
+    return next;
+  });
+}
+
+function updateDashboardTopStats(){
+  els.athleteCount.textContent=dashboardRows.length;
+  els.currentWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekRuns);},0);
+  if(els.previousWeekRuns)els.previousWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekRuns);},0);
+  els.currentWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekVolumeMiles);},0));
+  els.previousWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekVolumeMiles);},0));
 }
 
 function manualMileageGroupName(){

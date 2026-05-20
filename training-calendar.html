@@ -1050,7 +1050,6 @@ function removeActiveDay(){
     renderOptions();
     render();
     els.status.textContent='Plan day removed from current calendar view.';
-    setTimeout(loadCalendar,1500);
   }).catch(function(error){
     alert(error.message||'Could not remove plan day.');
   }).finally(function(){
@@ -1110,7 +1109,6 @@ function quickUpdateActiveDayStatus(statusLabel){
     renderOptions();
     render();
     els.status.textContent='Plan day marked '+statusLabel+'.';
-    setTimeout(loadCalendar,1500);
   }).catch(function(error){
     alert(error.message||'Could not update plan day.');
     render();
@@ -1156,7 +1154,6 @@ function updateVisibleDayStatus(statusLabel,predicate,reason){
     els.status.textContent='Updated '+(result.data&&result.data.updatedCount||items.length)+' plan days.';
     renderOptions();
     render();
-    setTimeout(loadCalendar,1500);
   }).catch(function(error){
     els.status.textContent=error.message||'Could not update plan days.';
     render();
@@ -1463,7 +1460,6 @@ function saveAddedCalendarDay(){
     renderOptions();
     render();
     els.status.textContent='Calendar day added.';
-    setTimeout(loadCalendar,1200);
   }).catch(function(error){
     setAddDayStatus(error.message||'Calendar day could not be saved.','error');
   }).finally(function(){
