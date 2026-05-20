@@ -22,14 +22,17 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .sub{font-size:14px;color:var(--muted);margin-top:4px}
 .updated{display:inline-flex;align-items:center;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#f8fafc;color:#334155;font-size:13px;font-weight:800;padding:7px 10px}
 .actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.top > .actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.top .action-row,.top .modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
+button.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
 button.ghost{background:#eef2f7;color:#172033}
 button.danger{background:#fee2e2;color:#991b1b}
 button:disabled{opacity:.55;cursor:not-allowed}
-.top .linkbtn,.top button{font-size:13px;padding:8px 11px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.top .linkbtn,.top button{font-size:13px;padding:7px 10px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
 .top #dashboardLink,.top .primary-nav{background:#2B4FCC;color:#fff}
-.top .utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line);margin-left:4px}
+.top .utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line)}
 .cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
 .card:hover,.week:hover{box-shadow:0 10px 24px rgba(15,23,42,.14);transform:translateY(-1px)}
@@ -136,7 +139,9 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 @media(max-width:980px){
   .top{align-items:flex-start;flex-direction:column}
   .actions{width:100%}
-  .actions a,.actions button{flex:1;text-align:center}
+  .top > .actions{align-items:stretch}
+  .top .action-row,.top .modal-action-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .actions a,.actions button{text-align:center}
   .cards{grid-template-columns:1fr 1fr}
   .bar{grid-template-columns:1fr}
   .viewtabs{grid-template-columns:1fr}
@@ -158,14 +163,18 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
       </div>
     </div>
     <div class="actions">
-      <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
-      <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
-      <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
-      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
-      <button id="manualMileageBtn" class="secondary" type="button">Log Mileage</button>
-      <button id="approveDraftsBtn" class="secondary" type="button" hidden>Approve Drafts</button>
-      <button id="scheduleApprovedBtn" class="secondary" type="button" hidden>Schedule Approved</button>
-      <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
+      <div class="action-row">
+        <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
+        <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
+        <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
+        <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      </div>
+      <div class="modal-action-row">
+        <button id="manualMileageBtn" class="modal-action" type="button">Log Mileage</button>
+        <button id="approveDraftsBtn" class="modal-action" type="button" hidden>Approve Drafts</button>
+        <button id="scheduleApprovedBtn" class="modal-action" type="button" hidden>Schedule Approved</button>
+        <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
+      </div>
     </div>
   </section>
 
