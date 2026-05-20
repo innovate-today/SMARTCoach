@@ -98,6 +98,10 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .field{display:grid;gap:5px}
 .field.full{grid-column:1/-1}
 .field label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
+.fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
+.fieldinfo::after{content:attr(data-tip);position:absolute;left:0;top:24px;width:260px;max-width:80vw;padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:30;white-space:normal}
+.fieldinfo.info-left::after{left:auto;right:0}
+.fieldinfo:hover::after,.fieldinfo:focus::after{opacity:1}
 textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;resize:vertical}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:14px}
 .modalstatus{margin-right:auto;color:var(--muted);font-size:13px;font-weight:800}
@@ -319,16 +323,16 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     </div>
     <div class="modalbody">
       <div class="formgrid">
-        <div class="field"><label for="manualMileageDate">Date</label><input id="manualMileageDate" type="date"></div>
-        <div class="field"><label for="manualMileageScope">Apply To</label><select id="manualMileageScope"><option value="athlete">Individual</option><option value="group">Group</option></select></div>
-        <div class="field"><label for="manualMileageAthlete">Athlete</label><select id="manualMileageAthlete"></select></div>
-        <div class="field"><label for="manualMileageGroup">Group</label><select id="manualMileageGroup"></select></div>
-        <div class="field"><label for="manualMileageWorkout">Effort</label><select id="manualMileageWorkout"><option>Easy</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option></select></div>
-        <div class="field"><label for="manualMileageDistance">Distance</label><input id="manualMileageDistance" type="text" placeholder="Example: 4 miles"></div>
-        <div class="field"><label for="manualMileageTime">Time</label><input id="manualMileageTime" type="text" placeholder="Optional, e.g. 36:20"></div>
-        <div class="field"><label for="manualMileageSource">Source</label><select id="manualMileageSource"><option>Athlete reported</option><option>Coach entered</option><option>Watch upload</option></select></div>
-        <div class="field"><label for="manualMileageSurface">Surface</label><select id="manualMileageSurface"><option>Road</option><option>Trail</option><option>Grass</option><option>Track</option><option>Indoor</option></select></div>
-        <div class="field full"><label for="manualMileageNotes">Notes</label><textarea id="manualMileageNotes" placeholder="Optional"></textarea></div>
+        <div class="field"><label for="manualMileageDate">Date <span class="fieldinfo" tabindex="0" data-tip="Choose the date the mileage was completed.">i</span></label><input id="manualMileageDate" type="date" placeholder="Select workout date"></div>
+        <div class="field"><label for="manualMileageScope">Apply To <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Individual for one athlete or Group for every athlete in an active training group.">i</span></label><select id="manualMileageScope"><option value="">Select apply to</option><option value="athlete">Individual</option><option value="group">Group</option></select></div>
+        <div class="field"><label for="manualMileageAthlete">Athlete <span class="fieldinfo" tabindex="0" data-tip="Select the athlete receiving this mileage entry when Apply To is Individual.">i</span></label><select id="manualMileageAthlete"><option value="">Select athlete</option></select></div>
+        <div class="field"><label for="manualMileageGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Select an active training group. Archived groups are hidden.">i</span></label><select id="manualMileageGroup"><option value="">Select active group</option></select></div>
+        <div class="field"><label for="manualMileageWorkout">Effort <span class="fieldinfo" tabindex="0" data-tip="Choose the effort category for this completed mileage. These match the Plan Entry effort options.">i</span></label><select id="manualMileageWorkout"><option value="">Select effort</option><option>Easy</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option></select></div>
+        <div class="field"><label for="manualMileageDistance">Distance <span class="fieldinfo info-left" tabindex="0" data-tip="Enter the completed distance. SMART Trak accepts miles or common distance wording.">i</span></label><input id="manualMileageDistance" type="text" placeholder="Example: 4 miles"></div>
+        <div class="field"><label for="manualMileageTime">Time <span class="fieldinfo" tabindex="0" data-tip="Optional total time for the completed mileage. Leave blank if only distance matters.">i</span></label><input id="manualMileageTime" type="text" placeholder="Optional, e.g. 36:20"></div>
+        <div class="field"><label for="manualMileageSource">Source <span class="fieldinfo info-left" tabindex="0" data-tip="Choose where this mileage information came from.">i</span></label><select id="manualMileageSource"><option value="">Select source</option><option>Athlete reported</option><option>Coach entered</option><option>Watch upload</option></select></div>
+        <div class="field"><label for="manualMileageSurface">Surface <span class="fieldinfo" tabindex="0" data-tip="Choose the main surface used for the mileage.">i</span></label><select id="manualMileageSurface"><option value="">Select surface</option><option>Road</option><option>Trail</option><option>Grass</option><option>Track</option><option>Indoor</option></select></div>
+        <div class="field full"><label for="manualMileageNotes">Notes <span class="fieldinfo" tabindex="0" data-tip="Optional context such as route, conditions, soreness, or coach notes.">i</span></label><textarea id="manualMileageNotes" placeholder="Optional notes"></textarea></div>
       </div>
       <div class="modalactions">
         <div id="manualMileageStatus" class="modalstatus">Select individual or group.</div>
@@ -1285,7 +1289,7 @@ function closeManualMileage(){
 }
 function renderManualMileageAthletes(){
   var current=els.manualMileageAthlete.value;
-  els.manualMileageAthlete.innerHTML=(mileageAthletes.length?mileageAthletes:[{contactId:'',name:'No athletes loaded'}]).map(function(row){
+  els.manualMileageAthlete.innerHTML='<option value="">Select athlete</option>'+(mileageAthletes.length?mileageAthletes:[{contactId:'',name:'No athletes loaded'}]).map(function(row){
     var value=row.contactId||row.name||'';
     return '<option value="'+esc(value)+'">'+esc(row.name||'Unnamed')+'</option>';
   }).join('');
@@ -1298,7 +1302,7 @@ function renderManualMileageGroups(){
     els.manualMileageGroup.innerHTML='<option value="">No active groups loaded</option>';
     return;
   }
-  els.manualMileageGroup.innerHTML=names.map(function(name){return '<option value="'+esc(name)+'">'+esc(name)+'</option>';}).join('');
+  els.manualMileageGroup.innerHTML='<option value="">Select active group</option>'+names.map(function(name){return '<option value="'+esc(name)+'">'+esc(name)+'</option>';}).join('');
   if(current)els.manualMileageGroup.value=current;
 }
 function activeTrainingGroups(){
