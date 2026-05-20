@@ -110,10 +110,12 @@ tr:last-child td{border-bottom:0}
           <div class="field">
             <label for="sbRace">SMART Trak SB Source <span class="fieldinfo" tabindex="0" data-tip="Load season-best race results from SMART Trak for the race distance you want to simulate.">i</span></label>
             <select id="sbRace">
-              <option value="girls_2mile">Girls 2 Mile</option>
-              <option value="girls_3200">Girls 3200m</option>
-              <option value="girls_5k">Girls 5K Cross Country</option>
-              <option value="boys_5k">Boys 5K Cross Country</option>
+              <option value="girls_xc_5k">Girls Cross Country 5K</option>
+              <option value="girls_xc_3200">Girls Cross Country 3200m</option>
+              <option value="girls_xc_2mile">Girls Cross Country 2 Mile</option>
+              <option value="boys_xc_5k">Boys Cross Country 5K</option>
+              <option value="boys_xc_3200">Boys Cross Country 3200m</option>
+              <option value="boys_xc_2mile">Boys Cross Country 2 Mile</option>
             </select>
           </div>
           <div class="field">
@@ -292,23 +294,37 @@ function genderKey(value){
 function normalizedEvent(value){
   return String(value||'').toLowerCase().replace(/\s+/g,' ').trim();
 }
-function eventMatchesRace(eventName,raceKey){
-  var event=normalizedEvent(eventName);
+function rowSport(row){
+  var text=[row&&row.sport,row&&row.meetName,row&&row.event,row&&row.coachRaceNotes].filter(Boolean).join(' ').toLowerCase();
+  if(text.indexOf('cross_country')>=0||text.indexOf('cross country')>=0||/\bxc\b/.test(text)||/\bcc\b/.test(text))return 'cross_country';
+  if(text.indexOf('track')>=0)return 'track';
+  return '';
+}
+function raceDistance(raceKey){
+  if(raceKey.indexOf('3200')>=0)return '3200';
+  if(raceKey.indexOf('2mile')>=0)return '2mile';
+  return '5k';
+}
+function eventMatchesRace(row,raceKey){
+  var event=normalizedEvent(row&&row.event||row);
   if(!event)return false;
-  if(raceKey==='girls_2mile')return /\b2\s*mi(le|les)?\b/.test(event)||/\btwo\s*mi(le|les)?\b/.test(event);
-  if(raceKey==='girls_3200')return /\b3200\s*m?\b/.test(event)||event.indexOf('3200m')>=0;
-  if(raceKey==='girls_5k'||raceKey==='boys_5k')return /\b5\s*k\b/.test(event)||/\b5000\s*m?\b/.test(event)||event.indexOf('cross country')>=0;
+  var distance=raceDistance(raceKey);
+  if(distance==='2mile')return /\b2\s*mi(le|les)?\b/.test(event)||/\btwo\s*mi(le|les)?\b/.test(event);
+  if(distance==='3200')return /\b3200\s*m?\b/.test(event)||event.indexOf('3200m')>=0;
+  if(distance==='5k')return /\b5\s*k\b/.test(event)||/\b5000\s*m?\b/.test(event)||event.indexOf('5000m')>=0;
   return false;
 }
 function raceGender(raceKey){
-  return raceKey.indexOf('boys_')===0?'boys':'girls';
+  return raceKey.indexOf('boys')===0?'boys':'girls';
 }
 function raceLabel(raceKey){
   return {
-    girls_2mile:'Girls 2 Mile',
-    girls_3200:'Girls 3200m',
-    girls_5k:'Girls 5K Cross Country',
-    boys_5k:'Boys 5K Cross Country'
+    girls_xc_2mile:'Girls Cross Country 2 Mile',
+    girls_xc_3200:'Girls Cross Country 3200m',
+    girls_xc_5k:'Girls Cross Country 5K',
+    boys_xc_2mile:'Boys Cross Country 2 Mile',
+    boys_xc_3200:'Boys Cross Country 3200m',
+    boys_xc_5k:'Boys Cross Country 5K'
   }[raceKey]||'Cross Country';
 }
 function defaultTeamName(raceKey){
@@ -403,7 +419,8 @@ function bestRowsForRace(rows,raceKey){
   var bestByAthlete={};
   rows.forEach(function(row){
     if(genderKey(row.athleteGender)!==targetGender)return;
-    if(!eventMatchesRace(row.event,raceKey))return;
+    if(rowSport(row)&&rowSport(row)!=='cross_country')return;
+    if(!eventMatchesRace(row,raceKey))return;
     if(!row.isSeasonBest)return;
     var seconds=parseTime(row.resultDisplay);
     if(seconds==null&&row.resultMs)seconds=Number(row.resultMs)/1000;
@@ -419,7 +436,7 @@ function bestRowsForRace(rows,raceKey){
   });
 }
 function loadSeasonBests(){
-  var raceKey=els.sbRace.value||'girls_5k';
+  var raceKey=els.sbRace.value||'girls_xc_5k';
   if(!els.teamName.value.trim())els.teamName.value=defaultTeamName(raceKey);
   var load=smartTrakMeetResults.length?Promise.resolve(smartTrakMeetResults):loadSmartTrakDashboard();
   return load.then(function(rows){
