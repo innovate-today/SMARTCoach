@@ -522,14 +522,16 @@ function renderEventLeaders(results){
     if(!row.event||!row.resultDisplay)return;
     var ms=parseResultMs(row.resultDisplay);
     if(!ms)return;
-    if(!leaders[row.event]||ms<leaders[row.event].ms){
-      leaders[row.event]={event:row.event,ms:ms,athleteName:row.athleteName,resultDisplay:row.resultDisplay};
+    var division=genderLabel(row.athleteGender);
+    var key=String(row.event||'').toLowerCase()+'|'+(division||'open');
+    if(!leaders[key]||ms<leaders[key].ms){
+      leaders[key]={event:row.event,division:division,ms:ms,athleteName:row.athleteName,resultDisplay:row.resultDisplay};
     }
   });
-  var values=Object.keys(leaders).sort().map(function(event){return leaders[event];});
+  var values=Object.keys(leaders).sort().map(function(key){return leaders[key];});
   els.eventLeaders.hidden=!values.length;
   els.eventLeaders.innerHTML=values.length?'<h3>Fastest by Event</h3><div class="leadergrid">'+values.map(function(item){
-    return '<div class="leadercard"><b>'+esc(item.event)+' '+esc(item.resultDisplay)+'</b><span>'+esc(item.athleteName||'Unnamed')+'</span></div>';
+    return '<div class="leadercard"><b>'+esc(item.event)+(item.division?' '+esc(item.division):'')+' '+esc(item.resultDisplay)+'</b><span>'+esc(item.athleteName||'Unnamed')+'</span></div>';
   }).join('')+'</div>':'';
 }
 function renderProgressions(results){
