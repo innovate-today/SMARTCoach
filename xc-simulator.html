@@ -317,7 +317,6 @@ function parseResults(text){
 function looksLikeAthleteFirst(first,second){
   var teamWords=/\b(hs|high|school|academy|prep|xc|cc|club|team|unattached|middle)\b/i;
   if(teamWords.test(second)&&!teamWords.test(first))return true;
-  if(first.split(/\s+/).length>=2&&second.split(/\s+/).length<=3)return true;
   return false;
 }
 function simulate(){
