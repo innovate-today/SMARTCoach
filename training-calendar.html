@@ -279,10 +279,6 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
           <input id="editWorkoutType" type="text" placeholder="Example: Lactate Threshold">
         </div>
         <div class="field">
-          <label for="editEnergy">Energy System</label>
-          <input id="editEnergy" type="text" placeholder="Optional">
-        </div>
-        <div class="field">
           <label for="editStatus">Status</label>
           <select id="editStatus">
             <option>Draft</option>
@@ -294,7 +290,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         </div>
         <div class="field">
           <label for="editGroup">Group</label>
-          <input id="editGroup" type="text" placeholder="Group">
+          <select id="editGroup"><option value="">Select group</option></select>
         </div>
         <div class="field">
           <label for="editAthlete">Athlete</label>
@@ -342,7 +338,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div class="field"><label for="addDayType">Day Type <span class="fieldinfo" tabindex="0" data-tip="Use Workout for training sessions or Meets/Races for competition days.">i</span></label><select id="addDayType"><option value="Workout">Workout</option><option value="Meet">Meets/Races</option><option value="Recovery">Recovery</option><option value="Off Day">Off/Travel</option><option value="Other">Other</option></select></div>
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
         <div class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Workout effort or race type for coach reference.">i</span></label><input id="addDayWorkoutType" type="text" placeholder="Example: Extensive Tempo"></div>
-        <div class="field"><label for="addDayGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Defaults from the selected plan when available.">i</span></label><input id="addDayGroup" type="text" placeholder="Example: Girls CC"></div>
+        <div class="field"><label for="addDayGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Choose an active training group.">i</span></label><select id="addDayGroup"><option value="">Select group</option></select></div>
         <div class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional volume target for the day.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles or 1000m quality"></div>
         <div class="field"><label for="addDayTarget">Target <span class="fieldinfo info-left" tabindex="0" data-tip="Optional split, pace, or race target.">i</span></label><input id="addDayTarget" type="text" placeholder="Example: 75-82% or race plan"></div>
         <div class="field full"><label for="addDayDetails">Details <span class="fieldinfo" tabindex="0" data-tip="Workout instructions, race notes, warmup, cooldown, or reminders.">i</span></label><textarea id="addDayDetails" placeholder="Add the session or race details"></textarea></div>
@@ -451,7 +447,6 @@ var els={
   editDayType:document.getElementById('editDayType'),
   editTitle:document.getElementById('editTitle'),
   editWorkoutType:document.getElementById('editWorkoutType'),
-  editEnergy:document.getElementById('editEnergy'),
   editStatus:document.getElementById('editStatus'),
   editGroup:document.getElementById('editGroup'),
   editAthlete:document.getElementById('editAthlete'),
@@ -985,13 +980,12 @@ function fullText(label,value){
 }
 function openEditModal(){
   if(!activeDay)return;
+  renderGroupSelect(els.editGroup,activeDay.groupName||'');
   els.editDate.value=String(activeDay.date||'').slice(0,10);
   setSelectValue(els.editDayType,activeDay.dayType||'Workout');
   els.editTitle.value=activeDay.title||'';
   els.editWorkoutType.value=activeDay.workoutType||'';
-  els.editEnergy.value=activeDay.energySystem||'';
   setSelectValue(els.editStatus,activeDay.status||'Draft');
-  els.editGroup.value=activeDay.groupName||'';
   els.editAthlete.value=activeDay.athleteName||'';
   els.editVolume.value=activeDay.plannedVolume||'';
   els.editTarget.value=activeDay.targetSplits||'';
@@ -1245,7 +1239,7 @@ function saveDayEdit(){
         dayType:els.editDayType.value,
         title:els.editTitle.value,
         workoutType:els.editWorkoutType.value,
-        energySystem:els.editEnergy.value,
+        energySystem:activeDay.energySystem||'',
         status:els.editStatus.value,
         groupName:els.editGroup.value,
         athleteName:els.editAthlete.value,
@@ -1264,7 +1258,7 @@ function saveDayEdit(){
       dayType:els.editDayType.value,
       title:els.editTitle.value,
       workoutType:els.editWorkoutType.value,
-      energySystem:els.editEnergy.value,
+      energySystem:activeDay.energySystem||'',
       status:els.editStatus.value,
       groupName:els.editGroup.value,
       athleteName:els.editAthlete.value,
@@ -1346,6 +1340,7 @@ function setDayEditStatus(text,type){
 }
 function openAddDayModal(dateValue){
   renderAddDayPlans();
+  renderGroupSelect(els.addDayGroup,'');
   els.addDayDate.value=String(dateValue||todayInputValue()).slice(0,10);
   setSelectValue(els.addDayType,'Workout');
   els.addDayTitleInput.value='';
@@ -1381,7 +1376,7 @@ function selectedAddDayPlan(){
 function syncAddDayPlanFields(){
   var plan=selectedAddDayPlan();
   if(!plan)return;
-  if(!els.addDayGroup.value)els.addDayGroup.value=planSubject(plan);
+  if(!els.addDayGroup.value)setSelectValue(els.addDayGroup,planSubject(plan));
 }
 function updateAddDayTypeDefaults(){
   var type=els.addDayType.value||'Workout';
@@ -1403,7 +1398,7 @@ function saveAddedCalendarDay(){
   if(!plan){setAddDayStatus('Select the plan this day belongs to.','error');return;}
   if(!els.addDayDate.value){setAddDayStatus('Select a date.','error');return;}
   if(!title){setAddDayStatus('Add a short title for the calendar day.','error');return;}
-  var groupName=els.addDayGroup.value.trim()||planSubject(plan);
+  var groupName=els.addDayGroup.value||planSubject(plan);
   var day={
     date:els.addDayDate.value,
     dayType:els.addDayType.value,
@@ -1531,6 +1526,13 @@ function activeTrainingGroups(){
     seen[key]=true;
     return true;
   }).sort(function(a,b){return a.name.localeCompare(b.name);});
+}
+function renderGroupSelect(select,currentValue){
+  var current=currentValue||select.value||'';
+  var names=activeTrainingGroups().map(function(group){return group.name;});
+  if(current&&names.indexOf(current)===-1)names.unshift(current);
+  select.innerHTML='<option value="">Select group</option>'+names.map(function(name){return '<option value="'+esc(name)+'">'+esc(name)+'</option>';}).join('');
+  if(current)setSelectValue(select,current);
 }
 function updateManualMileageScope(){
   var scope=els.manualMileageScope.value||'athlete';
@@ -1676,7 +1678,7 @@ function init(){
   els.manualMileageSave.addEventListener('click',saveManualMileage);
   els.addDayClose.addEventListener('click',closeAddDayModal);
   els.addDayPlan.addEventListener('change',function(){
-    els.addDayGroup.value='';
+    setSelectValue(els.addDayGroup,'');
     syncAddDayPlanFields();
   });
   els.addDayType.addEventListener('change',updateAddDayTypeDefaults);
