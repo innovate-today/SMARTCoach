@@ -32,6 +32,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue"
 .field:nth-child(2n){border-right:none}
 .field.full{grid-column:1/-1;border-right:none}
 label{display:block;font-size:12px;font-weight:800;color:#374151;margin-bottom:6px}
+.field-section{grid-column:1/-1;padding:16px 16px 8px;border-bottom:1px solid var(--line);background:#f8fafc}
+.field-section h2{font-size:15px;line-height:1.2;margin:0;color:#111827}
+.field-section p{font-size:13px;color:var(--muted);margin-top:3px}
+.fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
+.fieldinfo::after{content:attr(data-tip);position:absolute;left:0;top:24px;width:280px;max-width:80vw;padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:40;white-space:normal}
+.field:nth-child(2n) .fieldinfo::after,.fieldinfo.info-left::after{left:auto;right:0}
+.fieldinfo:hover::after,.fieldinfo:focus::after{opacity:1}
 input,select,textarea{width:100%;font:inherit;font-size:14px;border:1px solid #cfd6e0;border-radius:7px;padding:9px 10px;background:#fff;color:#111827;outline:none}
 textarea{min-height:94px;resize:vertical}
 select[multiple]{min-height:112px}
@@ -448,31 +455,91 @@ function sportForEvent(event){
   var normalized=String(event||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
   return ['4k','5k','8k','10k','15k','half_marathon','marathon'].indexOf(normalized)>=0?'cross_country':'track';
 }
+var hiddenBuilderFields={assignedGroup:true,blockType:true,currentFitnessSport:true,currentFitnessDistance:true,currentFitnessTime:true};
+var builderFieldSections=[
+  {before:'planName',title:'Plan Identity',body:'Name the plan, choose who it is for, and set the main event focus.'},
+  {before:'seasonBlock',title:'Season Dates',body:'Set the season label, start date, and plan end date.'},
+  {before:'priorityMeets',title:'Schedule Context',body:'Add the meets, practice rhythm, and blackout dates that should shape the plan.'},
+  {before:'trainingAge',title:'Athlete Readiness',body:'Share the training background and limits that should affect progression.'},
+  {before:'planStyle',title:'Coach Preferences',body:'Choose how bold the plan should be and add any final instructions.'}
+];
+var builderFieldCopy={
+  planName:{label:'Plan Name',placeholder:'Example: CC Girls 1',tip:'Name the plan so it is easy to find later in Plan Entry, Planning Setup, and the Training Calendar.'},
+  planScope:{label:'Plan Scope',tip:'Choose Group for a shared group plan or Individual for one athlete.'},
+  athleteName:{label:'Athlete',placeholder:'Select athlete',tip:'Only needed when Plan Scope is Individual.'},
+  seasonBlock:{label:'Season Block',tip:'Choose the season this plan belongs to for filtering and review.'},
+  primaryEvent:{label:'Primary Event Focus',tip:'Choose the event focus for the plan, or use the latest matching fitness set when targets should follow each athlete current fitness.'},
+  planStartDate:{label:'Plan Start Date',placeholder:'Select start date',tip:'Choose the first date covered by this plan.'},
+  peakDate:{label:'Plan End Date',placeholder:'Select end date',tip:'Choose the final date covered by this plan.'},
+  priorityMeets:{label:'Meets / Races',placeholder:'District - 2026-04-03\nRegionals - 2026-04-10\nState - 2026-04-25',tip:'Select or list the competitions the plan should build around. Mark priority meets when they should drive the taper.'},
+  noPracticeDates:{label:'No-Practice / Blackout Dates',placeholder:'2026-03-09 to 2026-03-13 Spring Break\n2026-04-07 Testing',tip:'Enter dates when athletes cannot train or need a lighter plan.'},
+  weeklyPracticeDays:{label:'Normal Practice Days',tip:'Check the days the group normally practices.'},
+  trainingAge:{label:'Training Background',placeholder:'Example: mostly new runners, 1-2 years consistent training, comfortable with 20-25 miles/week.',tip:'Describe training history so the plan progression fits the athletes.'},
+  weeklyVolumeCapacity:{label:'Weekly Volume Capacity',placeholder:'Example: currently 18-22 miles/week, recent high 28, long run 6-7 miles.',tip:'Give the sustainable weekly volume and recent long-run tolerance.'},
+  athleteProfile:{label:'Runner Profile',placeholder:'Example: aerobic strength group, responds well to rhythm work, needs help closing fast.',tip:'Describe strengths, weaknesses, racing style, and what tends to work.'},
+  recoveryAbility:{label:'Recovery Readiness',placeholder:'Example: good sleep overall, some school stress, avoid back-to-back hard days.',tip:'Note recovery habits or stressors that should affect hard-day spacing.'},
+  availableTrainingTime:{label:'Training Access',placeholder:'Example: 5 days/week, 75-minute practice, track Tuesday/Thursday, hills nearby.',tip:'List available days, practice length, facilities, hills, weights, travel, or other sports.'},
+  adaptationRate:{label:'Adaptation Rate',placeholder:'Example: progresses best gradually; soreness appears when volume jumps quickly.',tip:'Tell SMART Trak whether the group adapts quickly or needs a conservative ramp.'},
+  trainingLimits:{label:'Training Limits',placeholder:'Example: avoid high-impact plyos, one athlete returning from shin soreness, limited track access.',tip:'Add injuries, soreness patterns, schedule conflicts, or facility limits.'},
+  coachPreferences:{label:'Workout Preferences',placeholder:'Example: two quality days per week, long run Saturday, no hard workout within 48 hours of a race.',tip:'Add coaching preferences that should shape the weekly structure.'},
+  planStyle:{label:'Plan Style',tip:'Choose the overall risk level for volume and workout progression.'},
+  manualNotes:{label:'Additional Notes',placeholder:'Anything else the plan should account for.',tip:'Add any final context that does not fit the other questions.'}
+};
+function builderCopy(key){
+  return builderFieldCopy[key]||{};
+}
+function sectionBefore(key){
+  return builderFieldSections.filter(function(section){return section.before===key;}).map(function(section){
+    return '<div class="field-section"><h2>'+esc(section.title)+'</h2><p>'+esc(section.body)+'</p></div>';
+  }).join('');
+}
+function fieldLabel(f){
+  var copy=builderCopy(f.key);
+  var text=copy.label||f.label;
+  var tip=copy.tip||f.placeholder||'Enter the requested plan detail.';
+  return esc(text)+(f.required?' *':'')+' <span class="fieldinfo" tabindex="0" data-tip="'+esc(tip)+'">i</span>';
+}
+function fieldPlaceholder(f){
+  var copy=builderCopy(f.key);
+  return copy.placeholder!=null?copy.placeholder:(f.placeholder||'');
+}
+function builderOptions(f){
+  if(f.key==='planScope')return [{label:'Select plan scope',value:''},{label:'Group',value:'group'},{label:'Individual',value:'individual'}];
+  if(f.key==='primaryEvent')return [{label:'Select primary event focus',value:''},{label:'Latest matching fitness set',value:'Latest matching fitness set'}].concat(standardBuilderEventOptions());
+  if(f.key==='seasonBlock')return [{label:'Select season block',value:''}].concat(f.options||[]);
+  if(f.key==='planStyle')return [{label:'Select plan style',value:''}].concat(f.options||[]);
+  return f.options||[];
+}
+function standardBuilderEventOptions(){
+  return ['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].map(function(event){return{label:event,value:event};});
+}
 function renderForm(){
   var box=document.getElementById('form');
   box.innerHTML=questionnaire.fields.map(function(f){
+    if(hiddenBuilderFields[f.key])return '';
     var input='',wide=f.type==='textarea'||f.type==='multi_select';
     if(f.key==='priorityMeets'){
       input=meetScheduleControl();
     }else if(f.type==='athlete'){
-      input='<select id="field-'+f.key+'"><option value="">Whole group / no individual athlete</option>'+athletes.map(function(a){return'<option value="'+esc(a.id)+'" data-name="'+esc(a.name)+'" data-athlete-id="'+esc(a.smartcoachAthleteId||'')+'">'+esc(a.name)+'</option>';}).join('')+'</select>';
+      input='<select id="field-'+f.key+'"><option value="">Select athlete</option>'+athletes.map(function(a){return'<option value="'+esc(a.id)+'" data-name="'+esc(a.name)+'" data-athlete-id="'+esc(a.smartcoachAthleteId||'')+'">'+esc(a.name)+'</option>';}).join('')+'</select>';
     }else if(f.type==='select'||f.type==='select_or_text'){
-      input='<select id="field-'+f.key+'">'+(f.options||[]).map(function(o){return'<option value="'+esc(o.value)+'">'+esc(o.label)+'</option>';}).join('')+'</select>';
+      input='<select id="field-'+f.key+'">'+builderOptions(f).map(function(o){return'<option value="'+esc(o.value)+'">'+esc(o.label)+'</option>';}).join('')+'</select>';
     }else if(f.type==='multi_select'){
       input='<div class="choice-grid" id="field-'+f.key+'">'+(f.options||[]).map(function(o){return'<label class="choice"><input type="checkbox" value="'+esc(o.value)+'"> '+esc(o.label)+'</label>';}).join('')+'</div>';
     }else if(f.type==='date'){
-      input='<input id="field-'+f.key+'" type="date">';
+      input='<input id="field-'+f.key+'" type="date" placeholder="'+esc(fieldPlaceholder(f))+'">';
     }else if(f.type==='textarea'){
-      input='<textarea id="field-'+f.key+'" placeholder="'+esc(f.placeholder||'')+'"></textarea>';
+      input='<textarea id="field-'+f.key+'" placeholder="'+esc(fieldPlaceholder(f))+'"></textarea>';
     }else{
-      input='<input id="field-'+f.key+'" type="text" placeholder="'+esc(f.placeholder||'')+'">';
+      input='<input id="field-'+f.key+'" type="text" placeholder="'+esc(fieldPlaceholder(f))+'">';
     }
-    return'<div class="field '+(wide?'full':'')+'"><label>'+esc(f.label)+(f.required?' *':'')+'</label>'+input+'</div>';
+    return sectionBefore(f.key)+'<div class="field '+(wide?'full':'')+'"><label>'+fieldLabel(f)+'</label>'+input+'</div>';
   }).join('');
   setValue('planScope','group');
   setValue('seasonBlock',currentSeason().toLowerCase());
   setValue('blockType','track_season');
-  setValue('primaryEvent','400m');
+  setValue('primaryEvent','Latest matching fitness set');
+  setValue('currentFitnessDistance','Latest matching fitness set');
   setValue('planStartDate',todayISO());
   setValue('peakDate',todayISO());
   setValue('planStyle','balanced');
@@ -607,10 +674,16 @@ function payloadFromForm(){
   questionnaire.fields.forEach(function(f){payload[f.key]=value(f.key);});
   var athleteEl=document.getElementById('field-athleteName');
   var athleteOpt=athleteEl&&athleteEl.options[athleteEl.selectedIndex];
+  payload.planScope=payload.planScope||'group';
+  payload.blockType='track_season';
+  payload.assignedGroup=payload.planName||'Plan Builder Group';
+  payload.currentFitnessSport=sportForEvent(payload.primaryEvent);
+  payload.currentFitnessDistance='Latest matching fitness set';
+  payload.currentFitnessTime='';
   payload.contactId=payload.planScope==='individual'?payload.athleteName:'';
   payload.athleteName=payload.planScope==='individual'&&athleteOpt?athleteOpt.getAttribute('data-name')||'':'';
   payload.smartcoachAthleteId=payload.planScope==='individual'&&athleteOpt?athleteOpt.getAttribute('data-athlete-id')||'':'';
-  payload.groupName=payload.assignedGroup||payload.planName||'Team';
+  payload.groupName=payload.planName||'Team';
   payload.season=labelFor('seasonBlock',payload.seasonBlock)||currentSeason();
   payload.seasonYear=new Date((payload.planStartDate||todayISO())+'T00:00:00').getFullYear();
   payload.phaseFocus=labelFor('blockType',payload.blockType)||payload.blockType||'General Prep';
@@ -620,7 +693,7 @@ function payloadFromForm(){
     payload.planName||'Guided plan draft',
     payload.priorityMeets?'Meet Schedule:\n'+payload.priorityMeets:'',
     payload.noPracticeDates?'No-Practice Dates:\n'+payload.noPracticeDates:'',
-    payload.currentFitnessDistance||payload.currentFitnessTime?'Current Fitness Set:\n'+[labelFor('currentFitnessSport',payload.currentFitnessSport),payload.currentFitnessDistance,payload.currentFitnessTime].filter(Boolean).join(' - '):'',
+    'Current Fitness Source:\nLatest matching fitness set',
     payload.trainingAge?'Training Age:\n'+payload.trainingAge:'',
     payload.weeklyVolumeCapacity?'Weekly Volume Capacity:\n'+payload.weeklyVolumeCapacity:'',
     payload.athleteProfile?'Athlete Profile:\n'+payload.athleteProfile:'',
@@ -636,7 +709,7 @@ function payloadFromForm(){
 function submitPlan(){
   if(!questionnaire)return;
   var payload=payloadFromForm();
-  if(!payload.primaryEvent||!payload.planStartDate||!payload.peakDate){setStatus('Primary event, start date, and peak date are required.','bad');return;}
+  if(!payload.primaryEvent||!payload.planStartDate||!payload.peakDate){setStatus('Primary event focus, plan start date, and plan end date are required.','bad');return;}
   if(!payload.priorityMeets){setStatus('Enter the meet schedule before creating the plan.','bad');return;}
   if(payload.planScope==='individual'&&!payload.contactId){setStatus('Select an athlete for an individual plan.','bad');return;}
   var btn=document.getElementById('submit');
