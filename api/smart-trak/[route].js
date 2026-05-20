@@ -3,6 +3,7 @@ const handlers = {
   "athlete-profile": require("../ghl/athlete-profile"),
   athletes: require("../ghl/athletes"),
   dashboard: require("../ghl/dashboard"),
+  groups: require("../ghl/groups"),
   "manual-mileage": require("../ghl/manual-mileage"),
   correction: require("../ghl/correction"),
   "meet-result": require("../ghl/meet-result"),

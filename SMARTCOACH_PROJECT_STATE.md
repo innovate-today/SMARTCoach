@@ -277,6 +277,8 @@ Update from 2026-05-19 continuation:
 - Dashboard volume parsing now understands rep-style volume text like `8 x 100m` and plain metric distances like `800m`, so completed quality work contributes to volume totals.
 - Dashboard completed workout volume now corrects older quality records that saved the full planned range such as `800-1000m tempo`; when split data shows fewer completed work reps, the dashboard infers actual rep volume, for example `6 x 100m completed` becomes `0.4 mi`.
 - Quality workout volume counts completed work reps only. Rep/rest recoveries, including walk-back or timed recovery chips, are excluded from dashboard actual volume unless a future separate recovery-distance metric is intentionally added.
+- Planning Setup now has a Training Groups section for desktop group roster setup. Groups are stored in a hidden SMARTCoach system record inside the existing Training Plans object and are loaded by the phone app; phone-created or phone-edited training groups remain available and save back to the shared group roster.
+- Plan Assignments now uses the shared Training Groups list for its group selector, and saving a plan assignment also updates that group's athlete roster so the group label is not just a plan label.
 
 Workout effort percentage guidance discussed:
 
