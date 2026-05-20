@@ -716,8 +716,11 @@ function dayMixCategory(day){
   var volume=String(day&&day.plannedVolume||'').toLowerCase();
   var text=[type,title,workout,details,target,volume].join(' ');
   var effortText=[type,workout,title,target,volume].join(' ');
+  var qualityText=[workout,target,volume,title,details].join(' ');
+  var qualityPattern=/\b(tempo|threshold|interval|repetition|fast reps|speed endurance|special endurance|intensive|extensive|quality)\b/;
   if(text.indexOf('meet')>=0||text.indexOf('race')>=0)return 'meet';
   if(text.indexOf('off')>=0||text.indexOf('travel')>=0||text.indexOf('no practice')>=0)return 'off';
+  if(qualityPattern.test(qualityText))return 'workout';
   if(effortText.indexOf('recovery')>=0||effortText.indexOf('easy')>=0||effortText.indexOf('conversational')>=0||/\bez\b/.test(title)||/\beasy\b/.test(details))return 'recovery';
   if(text.indexOf('workout')>=0||text.indexOf('quality')>=0||text.indexOf('session')>=0)return 'workout';
   return 'other';
