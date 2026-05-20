@@ -108,6 +108,19 @@ tr:last-child td{border-bottom:0}
         <div class="note">Use one runner per line. Accepted formats: <b>Team, Athlete, Time</b>, <b>Athlete, Team, Time</b>, or tab-separated rows. Only complete teams affect the team score.</div>
         <div class="formgrid">
           <div class="field">
+            <label for="sbRace">SMART Trak SB Source <span class="fieldinfo" tabindex="0" data-tip="Load season-best race results from SMART Trak for the race distance you want to simulate.">i</span></label>
+            <select id="sbRace">
+              <option value="girls_2mile">Girls 2 Mile</option>
+              <option value="girls_3200">Girls 3200m</option>
+              <option value="girls_5k">Girls 5K Cross Country</option>
+              <option value="boys_5k">Boys 5K Cross Country</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="teamName">Your Team Name <span class="fieldinfo info-left" tabindex="0" data-tip="Season bests load under this team name. Add opponents underneath if you want to compare team scores.">i</span></label>
+            <input id="teamName" type="text" placeholder="Example: SMART Trak Girls">
+          </div>
+          <div class="field">
             <label for="raceName">Race Name <span class="fieldinfo" tabindex="0" data-tip="Optional label for the simulation. It helps when copying results to a coach note.">i</span></label>
             <input id="raceName" type="text" placeholder="Example: District Preview">
           </div>
@@ -131,6 +144,7 @@ tr:last-child td{border-bottom:0}
         </div>
         <div class="actionbar">
           <div id="status" class="status">Ready to score.</div>
+          <button id="loadSbBtn" class="secondary" type="button">Load SB</button>
           <button id="exampleBtn" class="secondary" type="button">Load Example</button>
           <button id="scoreBtn" type="button">Score Meet</button>
           <button id="clearBtn" class="ghost" type="button">Clear</button>
@@ -201,6 +215,7 @@ tr:last-child td{border-bottom:0}
 
 <script>
 var lastSimulation=null;
+var smartTrakMeetResults=[];
 var els={
   dashboardLink:document.getElementById('dashboardLink'),
   meetHistoryLink:document.getElementById('meetHistoryLink'),
@@ -208,10 +223,13 @@ var els={
   resetBtn:document.getElementById('resetBtn'),
   raceName:document.getElementById('raceName'),
   division:document.getElementById('division'),
+  sbRace:document.getElementById('sbRace'),
+  teamName:document.getElementById('teamName'),
   scoreCount:document.getElementById('scoreCount'),
   displacerCount:document.getElementById('displacerCount'),
   resultInput:document.getElementById('resultInput'),
   status:document.getElementById('status'),
+  loadSbBtn:document.getElementById('loadSbBtn'),
   exampleBtn:document.getElementById('exampleBtn'),
   scoreBtn:document.getElementById('scoreBtn'),
   clearBtn:document.getElementById('clearBtn'),
@@ -249,10 +267,60 @@ function pageUrl(path){
   if(embeddedMode())url.searchParams.set('embed','1');
   return url.pathname+url.search;
 }
+function accessStorageKey(){return 'sc_access_'+accountKey();}
+function accessCode(){
+  try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}
+}
+function apiHeaders(){
+  var headers={'X-SMARTCoach-Account':accountKey()};
+  var code=accessCode();
+  if(code)headers['X-SMARTCoach-Access-Code']=code;
+  return headers;
+}
 function esc(value){
   return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
   });
+}
+function genderKey(value){
+  var text=String(value||'').trim().toLowerCase();
+  if(!text)return '';
+  if(/^f|girl|women|female/.test(text))return 'girls';
+  if(/^m|boy|men|male/.test(text))return 'boys';
+  return text;
+}
+function normalizedEvent(value){
+  return String(value||'').toLowerCase().replace(/\s+/g,' ').trim();
+}
+function eventMatchesRace(eventName,raceKey){
+  var event=normalizedEvent(eventName);
+  if(!event)return false;
+  if(raceKey==='girls_2mile')return /\b2\s*mi(le|les)?\b/.test(event)||/\btwo\s*mi(le|les)?\b/.test(event);
+  if(raceKey==='girls_3200')return /\b3200\s*m?\b/.test(event)||event.indexOf('3200m')>=0;
+  if(raceKey==='girls_5k'||raceKey==='boys_5k')return /\b5\s*k\b/.test(event)||/\b5000\s*m?\b/.test(event)||event.indexOf('cross country')>=0;
+  return false;
+}
+function raceGender(raceKey){
+  return raceKey.indexOf('boys_')===0?'boys':'girls';
+}
+function raceLabel(raceKey){
+  return {
+    girls_2mile:'Girls 2 Mile',
+    girls_3200:'Girls 3200m',
+    girls_5k:'Girls 5K Cross Country',
+    boys_5k:'Boys 5K Cross Country'
+  }[raceKey]||'Cross Country';
+}
+function defaultTeamName(raceKey){
+  return raceGender(raceKey)==='boys'?'SMART Trak Boys':'SMART Trak Girls';
+}
+function csvCell(value){
+  var text=String(value==null?'':value);
+  return /[,"\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;
+}
+function setStatus(text,type){
+  els.status.textContent=text;
+  els.status.style.color=type==='error'?'var(--bad)':type==='warn'?'var(--warn)':'var(--muted)';
 }
 function parseTime(value){
   var raw=String(value||'').trim();
@@ -313,6 +381,64 @@ function parseResults(text){
     rows.push({team:team,athlete:athlete,time:time,rawTime:parts[timeIndex],line:index+1});
   });
   return {rows:rows,warnings:warnings};
+}
+function loadSmartTrakDashboard(){
+  els.loadSbBtn.disabled=true;
+  setStatus('Loading SMART Trak season bests...','');
+  return fetch('/api/smart-trak/dashboard',{headers:apiHeaders()}).then(function(res){
+    return res.json().then(function(data){return {ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok){
+      if(result.data&&result.data.accessCodeRequired)throw new Error('SMART Trak access code is needed. Open the Dashboard once, enter the code, then come back to the simulator.');
+      throw new Error(result.data&&result.data.error||'SMART Trak season bests failed to load.');
+    }
+    smartTrakMeetResults=result.data.meetResults||result.data.recentMeetResults||[];
+    return smartTrakMeetResults;
+  }).finally(function(){
+    els.loadSbBtn.disabled=false;
+  });
+}
+function bestRowsForRace(rows,raceKey){
+  var targetGender=raceGender(raceKey);
+  var bestByAthlete={};
+  rows.forEach(function(row){
+    if(genderKey(row.athleteGender)!==targetGender)return;
+    if(!eventMatchesRace(row.event,raceKey))return;
+    if(!row.isSeasonBest)return;
+    var seconds=parseTime(row.resultDisplay);
+    if(seconds==null&&row.resultMs)seconds=Number(row.resultMs)/1000;
+    if(seconds==null)return;
+    var key=String(row.contactId||row.athleteName||'').toLowerCase();
+    if(!key)return;
+    if(!bestByAthlete[key]||seconds<bestByAthlete[key].seconds){
+      bestByAthlete[key]={row:row,seconds:seconds};
+    }
+  });
+  return Object.keys(bestByAthlete).map(function(key){return bestByAthlete[key];}).sort(function(a,b){
+    return a.seconds-b.seconds||String(a.row.athleteName||'').localeCompare(String(b.row.athleteName||''));
+  });
+}
+function loadSeasonBests(){
+  var raceKey=els.sbRace.value||'girls_5k';
+  if(!els.teamName.value.trim())els.teamName.value=defaultTeamName(raceKey);
+  var load=smartTrakMeetResults.length?Promise.resolve(smartTrakMeetResults):loadSmartTrakDashboard();
+  return load.then(function(rows){
+    var bests=bestRowsForRace(rows,raceKey);
+    if(!bests.length){
+      setStatus('No SMART Trak SB results found for '+raceLabel(raceKey)+'.','warn');
+      return;
+    }
+    var team=els.teamName.value.trim()||defaultTeamName(raceKey);
+    els.raceName.value=raceLabel(raceKey)+' SB Simulation';
+    els.division.value=raceLabel(raceKey);
+    els.resultInput.value=bests.map(function(item){
+      return [team,item.row.athleteName||'Unnamed',formatTime(item.seconds)].map(csvCell).join(', ');
+    }).join('\n');
+    render();
+    setStatus(bests.length+' SMART Trak SB result'+(bests.length===1?'':'s')+' loaded for '+raceLabel(raceKey)+'.','');
+  }).catch(function(error){
+    setStatus(error.message||'SMART Trak season bests failed to load.','error');
+  });
 }
 function looksLikeAthleteFirst(first,second){
   var teamWords=/\b(hs|high|school|academy|prep|xc|cc|club|team|unattached|middle)\b/i;
@@ -432,6 +558,7 @@ function loadExample(){
 function clearAll(){
   els.raceName.value='';
   els.division.value='';
+  els.teamName.value='';
   els.resultInput.value='';
   render();
 }
@@ -464,11 +591,16 @@ function init(){
   els.meetHistoryLink.href=pageUrl('/meet-history.html');
   els.recordsLink.href=pageUrl('/records.html');
   els.resetBtn.addEventListener('click',clearAll);
+  els.sbRace.addEventListener('change',function(){
+    if(!els.teamName.value.trim())els.teamName.value=defaultTeamName(els.sbRace.value);
+  });
+  els.loadSbBtn.addEventListener('click',loadSeasonBests);
   els.exampleBtn.addEventListener('click',loadExample);
   els.scoreBtn.addEventListener('click',render);
   els.clearBtn.addEventListener('click',clearAll);
   els.copyBtn.addEventListener('click',copyResults);
   els.resultInput.addEventListener('input',function(){els.status.textContent='Edits ready. Click Score Meet.';els.status.style.color='var(--muted)';});
+  els.teamName.value=defaultTeamName(els.sbRace.value);
   render();
 }
 init();
