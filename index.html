@@ -835,8 +835,8 @@ function mergeSharedGroupRunners(log,athletes){
   return changed;
 }
 function loadCalendarMeetDays(){
-  if(!isProPlan())return;
-  fetch('/api/smart-trak/training-plan?kind=days').then(function(r){
+  if(!isProPlan())return Promise.resolve();
+  return fetch('/api/smart-trak/training-plan?kind=days').then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Plan days unavailable');
@@ -905,21 +905,22 @@ function mergeCalendarMeetDaysIntoLogs(days){
     var id=calendarMeetGroupId(day);
     activeIds[id]=true;
     var dateSeason=seasonForDate(day.date);
+    var linkedMeet=meetRecordForCalendarDay(day);
     var log=logs.find(function(item){return item.sharedGroupId===id;});
     if(!log){
-      log={id:lid++,sharedGroupId:id,name:day.title||'Meet',type:'meet',cfg:defaultCfg(),runners:[]};
+      log={id:lid++,sharedGroupId:id,name:linkedMeet&&linkedMeet.name||day.title||'Meet',type:'meet',cfg:defaultCfg(),runners:[]};
       logs.unshift(log);
       changed=true;
     }
     var next={
-      name:day.title||day.workoutType||'Meet',
+      name:linkedMeet&&linkedMeet.name||day.title||day.workoutType||'Meet',
       type:'meet',
-      season:dateSeason.season,
-      seasonYear:dateSeason.year,
+      season:linkedMeet&&linkedMeet.season||dateSeason.season,
+      seasonYear:linkedMeet&&linkedMeet.seasonYear||dateSeason.year,
       archived:0,
-      meetName:day.title||'Meet',
-      meetDate:day.date||'',
-      meetRecordId:day.linkedMeetId||'',
+      meetName:linkedMeet&&linkedMeet.name||day.title||'Meet',
+      meetDate:linkedMeet&&linkedMeet.date||day.date||'',
+      meetRecordId:linkedMeet&&linkedMeet.id||day.linkedMeetId||'',
       eventName:day.workoutType||day.targetSplits||'Race',
       trainingPlanDayId:day.id||day.sourceRecordId||'',
       trainingPlanDaySourceId:day.sourceRecordId||'',
@@ -950,6 +951,16 @@ function mergeCalendarMeetDaysIntoLogs(days){
     }
   });
   return changed;
+}
+
+function meetRecordForCalendarDay(day){
+  var linked=String(day&&day.linkedMeetId||'');
+  var title=String(day&&day.title||'').trim().toLowerCase();
+  var date=String(day&&day.date||'');
+  return MT.find(function(meet){
+    if(linked&&String(meet.id||'')===linked)return true;
+    return title&&String(meet.name||'').trim().toLowerCase()===title&&String(meet.date||'')===date;
+  })||null;
 }
 function sharedGroupsPayload(){
   var groups=logs.filter(function(group){return (group.type||'training')==='training'&&!group.archived;}).map(function(group){
@@ -1009,8 +1020,7 @@ function loadProData(){
   loadAthletes();
   loadTrainingPlans();
   loadSharedGroups();
-  loadMeets();
-  loadCalendarMeetDays();
+  loadMeets().then(loadCalendarMeetDays);
 }
 function applyAutoPlansToCurrentGroup(){
   if(!CL||!TP.length)return;
@@ -1236,13 +1246,15 @@ function addGroupForView(){
   }
 }
 function loadMeets(){
-  if(!isProPlan()){MT=[];renderMeetOptions();return;}
-  fetch('/api/smart-trak/meets').then(function(r){
+  if(!isProPlan()){MT=[];renderMeetOptions();return Promise.resolve();}
+  return fetch('/api/smart-trak/meets').then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Meets unavailable');
     MT=activeMeets((result.data&&result.data.meets)||[]);
+    if(reconcileSmartTrakMeetsIntoLogs())save();
     renderMeetOptions();
+    rl();
   }).catch(function(){MT=[];renderMeetOptions();});
 }
 function activeMeets(meets){
@@ -1257,6 +1269,78 @@ function renderMeetOptions(){
   if(!sel)return;
   sel.value=MT.length?'0':'__new__';
   handleMeetSelect();
+}
+
+function reconcileSmartTrakMeetsIntoLogs(){
+  var changed=false,activeMeetIds={};
+  MT.forEach(function(meet){
+    if(!meet||!meet.id||!meet.name)return;
+    activeMeetIds[String(meet.id)]=true;
+    var log=findMeetLogForRecord(meet);
+    if(!log){
+      log={id:lid++,sharedGroupId:'meetrec_'+meet.id,name:meet.name,type:'meet',cfg:defaultCfg(),runners:[]};
+      logs.unshift(log);
+      changed=true;
+    }
+    var dateSeason=seasonForDate(meet.date);
+    var next={
+      sharedGroupId:log.sharedGroupId||('meetrec_'+meet.id),
+      name:meet.name,
+      type:'meet',
+      season:meet.season||dateSeason.season,
+      seasonYear:meet.seasonYear||dateSeason.year,
+      archived:0,
+      meetName:meet.name,
+      meetDate:meet.date||'',
+      meetRecordId:meet.id,
+      eventName:log.eventName&&!isBadMeetLabel(log.eventName)?log.eventName:'Race',
+      cfg:log.cfg||defaultCfg(),
+      runners:log.runners||[]
+    };
+    Object.keys(next).forEach(function(key){
+      if(key==='cfg'||key==='runners')return;
+      if(String(log[key]||'')!==String(next[key]||'')){log[key]=next[key];changed=true;}
+    });
+    if(!log.cfg){log.cfg=defaultCfg();changed=true;}
+    if(!Array.isArray(log.runners)){log.runners=[];changed=true;}
+  });
+  logs.forEach(function(log){
+    if((log.type||'training')!=='meet'||log.archived)return;
+    var recordId=String(log.meetRecordId||'');
+    if(recordId&&activeMeetIds[recordId])return;
+    if(hasSavedMeetResults(log))return;
+    if(String(log.sharedGroupId||'').indexOf('meetrec_')===0||String(log.sharedGroupId||'').indexOf('calmeet_')===0||isBadMeetLabel(log.meetName)||isBadMeetLabel(log.name)){
+      log.archived=1;
+      log.archivedAt=new Date().toISOString();
+      changed=true;
+    }
+  });
+  return changed;
+}
+
+function findMeetLogForRecord(meet){
+  var id=String(meet&&meet.id||'');
+  var name=String(meet&&meet.name||'').trim().toLowerCase();
+  var date=String(meet&&meet.date||'');
+  return logs.find(function(log){
+    if((log.type||'training')!=='meet')return false;
+    if(id&&(String(log.meetRecordId||'')===id||String(log.sharedGroupId||'')==='meetrec_'+id))return true;
+    return name&&String(log.meetName||log.name||'').trim().toLowerCase()===name&&String(log.meetDate||'')===date;
+  })||null;
+}
+
+function smartTrakMeetForLog(log){
+  var id=String(log&&log.meetRecordId||'');
+  var name=String(log&&log.meetName||log.name||'').trim().toLowerCase();
+  var date=String(log&&log.meetDate||'');
+  return MT.find(function(meet){
+    if(id&&String(meet.id||'')===id)return true;
+    return name&&String(meet.name||'').trim().toLowerCase()===name&&String(meet.date||'')===date;
+  })||null;
+}
+
+function hasSavedMeetResults(log){
+  return !!(log&&log.runners||[]).some(function(r){return (r.saved||[]).length>0;});
 }
 function openMeetPicker(){
   var sel=document.getElementById('mg-meet-select');
