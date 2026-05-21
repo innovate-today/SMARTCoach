@@ -256,7 +256,7 @@ async function updateAthleteContact({ token, contact, athleteName, payload, rost
     body,
   });
 
-  if (!fieldId(rosterFieldIds.grade) && clean(payload && payload.grade)) {
+  if (clean(payload && payload.grade)) {
     await addTags({ token, contactId: contact.id, tags: [classYearTag(payload.grade)] });
   }
 }
@@ -304,7 +304,7 @@ function normalizeContact(contact, options = {}) {
     email: clean(contact.email),
     phone: clean(contact.phone),
     gender: contactGender(contact, rosterFieldIds.gender),
-    grade: contactFieldByIdsOrNames(contact, rosterFieldIds.grade, ATHLETE_FIELD_ALIASES.grade) || classYearFromTags(contact),
+    grade: classYearFromTags(contact) || contactFieldByIdsOrNames(contact, rosterFieldIds.grade, ATHLETE_FIELD_ALIASES.grade),
     parentGuardianName: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardianName, ATHLETE_FIELD_ALIASES.parentGuardianName),
     parentGuardianEmail: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardianEmail, ATHLETE_FIELD_ALIASES.parentGuardianEmail),
     parentGuardianPhone: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardianPhone, ATHLETE_FIELD_ALIASES.parentGuardianPhone),
@@ -323,7 +323,10 @@ function classYearFromTags(contact) {
   const tags = Array.isArray(contact && contact.tags) ? contact.tags : [];
   const matches = tags.map(clean).filter((tag) => tag.toLowerCase().indexOf(CLASS_YEAR_TAG_PREFIX) === 0);
   if (!matches.length) return "";
-  return matches[matches.length - 1].slice(CLASS_YEAR_TAG_PREFIX.length).replace(/_/g, " ");
+  const years = matches.map((tag) => tag.slice(CLASS_YEAR_TAG_PREFIX.length).replace(/_/g, " ")).filter(Boolean);
+  const numericYears = years.map((year) => Number(year)).filter((year) => Number.isFinite(year));
+  if (numericYears.length) return String(Math.max(...numericYears));
+  return years[years.length - 1] || "";
 }
 
 function classYearTag(value) {
