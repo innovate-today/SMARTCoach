@@ -880,6 +880,25 @@ function meetRunnersForGroup(groupName,existingLog){
     return r;
   });
 }
+function isBadMeetLabel(value){
+  var text=String(value||'').trim();
+  var low=text.toLowerCase();
+  return !text||text.length>42||low.indexOf('race plan should')>=0||low==='race plan'||low==='race / meet'||low==='track meet'||low==='cross country race';
+}
+function meetDisplayTitle(group){
+  if((group.type||'training')!=='meet')return group.name||'Group';
+  if(!isBadMeetLabel(group.meetName))return group.meetName;
+  if(!isBadMeetLabel(group.name))return group.name;
+  if(!isBadMeetLabel(group.eventName))return group.eventName;
+  return 'Meet';
+}
+function meetDisplaySubtitle(group,archiveLabel){
+  var parts=[];
+  var event=!isBadMeetLabel(group.eventName)&&group.eventName!==group.meetName?group.eventName:'';
+  if(event)parts.push(event);
+  parts.push([group.season,group.seasonYear].filter(Boolean).join(' '));
+  return archiveLabel+parts.filter(Boolean).join(' · ');
+}
 function mergeCalendarMeetDaysIntoLogs(days){
   var changed=false,activeIds={};
   (days||[]).filter(function(day){return isCalendarMeetDay(day)&&!isRemovedPlanDay(day);}).forEach(function(day){
@@ -901,7 +920,7 @@ function mergeCalendarMeetDaysIntoLogs(days){
       meetName:day.title||'Meet',
       meetDate:day.date||'',
       meetRecordId:day.linkedMeetId||'',
-      eventName:day.workoutType||day.targetSplits||day.title||'Race',
+      eventName:day.workoutType||day.targetSplits||'Race',
       trainingPlanDayId:day.id||day.sourceRecordId||'',
       trainingPlanDaySourceId:day.sourceRecordId||'',
       trainingPlanDayTitle:day.title||'',
@@ -1292,9 +1311,9 @@ function rl(){
   if(!shown.length){el.innerHTML='<div style="padding:20px;color:#8e8e93;text-align:center;font-size:16px">'+(GV==='archive'?'No archived seasons yet':'Tap Add to create a group')+'</div>';return;}
   el.innerHTML=shown.map(function(l){
     var c=l.runners.filter(function(r){return r.saved.length>0;}).length;
-    var title=l.type==='meet'?ex(l.eventName||l.name||'Meet Event'):ex(l.name);
+    var title=l.type==='meet'?ex(meetDisplayTitle(l)):ex(l.name);
     var archiveLabel=GV==='archive'&&l.archived?'Archived · ':'';
-    var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+(l.meetName||'Meet'))+' · '+ex(l.season||'')+' '+(l.seasonYear||'')+'</div>':(l.trainingPlanTitle?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+l.trainingPlanTitle)+'</div>':(archiveLabel?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+(l.season||'')+' '+(l.seasonYear||''))+'</div>':''));
+    var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(meetDisplaySubtitle(l,archiveLabel))+'</div>':(l.trainingPlanTitle?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+l.trainingPlanTitle)+'</div>':(archiveLabel?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+(l.season||'')+' '+(l.seasonYear||''))+'</div>':''));
     return'<div class="lrow" onclick="oGroup('+l.id+')">'+
       '<span class="ltxt">'+title+sub+'</span>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
@@ -1303,7 +1322,7 @@ function rl(){
 }
 function oGroup(id){
   for(var i=0;i<logs.length;i++){if(logs[i].id===id){CL=logs[i];break;}}
-  document.getElementById('ltit').textContent=CL.type==='meet'?(CL.meetName+' · '+(CL.eventName||CL.name)):CL.name;
+  document.getElementById('ltit').textContent=CL.type==='meet'?meetDisplayTitle(CL):CL.name;
   go('s-group');
 }
 function createGroup(){
