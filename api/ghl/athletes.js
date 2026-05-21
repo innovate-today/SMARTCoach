@@ -36,7 +36,8 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const includeContacts = /^(yes|true|1)$/i.test(clean(req.query && (req.query.includeContacts || req.query.allContacts)));
-      const athletes = await listSmartCoachAthletes({ token, locationId, includeContacts });
+      const query = clean(req.query && (req.query.query || req.query.search));
+      const athletes = await listSmartCoachAthletes({ token, locationId, includeContacts, query });
       res.status(200).json({ success: true, athletes });
       return;
     }
@@ -60,11 +61,12 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
 }
 
-async function listSmartCoachAthletes({ token, locationId, includeContacts = false }) {
+async function listSmartCoachAthletes({ token, locationId, includeContacts = false, query = "" }) {
   const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
+  const searchParam = query ? `&query=${encodeURIComponent(query)}` : "";
   const result = await ghlFetch({
     token,
-    path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=100`,
+    path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=250${searchParam}`,
     method: "GET",
   });
 
