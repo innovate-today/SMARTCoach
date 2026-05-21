@@ -383,7 +383,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div class="field" hidden><label for="addDayType">Day Type <span class="fieldinfo" tabindex="0" data-tip="Use Workout for training sessions or Meets/Races for competition days.">i</span></label><select id="addDayType"><option value="Workout">Workout</option><option value="Meet">Meets/Races</option><option value="Recovery">Recovery</option><option value="Off Day">Off/Travel</option><option value="Other">Other</option></select></div>
         <div class="field"><label for="addDaySport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country so race and workout days are labeled correctly.">i</span></label><select id="addDaySport"><option>Track</option><option>Cross Country</option></select></div>
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
-        <div class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Choose the effort or race type. Quality sessions also use the effort selected inside each set.">i</span></label><select id="addDayWorkoutType"><option value="">Select effort / type</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option><option>Track Meet</option><option>Cross Country Race</option><option>Race / Meet</option><option>Off Day</option><option>Note</option></select></div>
+        <div class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Choose the effort or race type for this activity.">i</span></label><select id="addDayWorkoutType"><option value="">Select effort / type</option></select></div>
         <div class="field"><label for="addDayGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Choose an active training group.">i</span></label><select id="addDayGroup"><option value="">Select group</option></select></div>
         <div id="addDayVolumeField" class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional override. Easy Run volume is also calculated from the distance below.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles"></div>
         <div id="addDayTargetField" class="field"><label for="addDayTarget">Target <span class="fieldinfo info-left" tabindex="0" data-tip="Optional override. Leave blank to use the standard target for this activity.">i</span></label><input id="addDayTarget" type="text" placeholder="Example: Conversational"></div>
@@ -1534,6 +1534,12 @@ function syncAddDayPlanFields(){
   if(!els.addDayGroup.value)setSelectValue(els.addDayGroup,planSubject(plan));
   setSelectValue(els.addDaySport,sportFromPlan(plan));
 }
+function setActivityTypeOptions(options,selected){
+  els.addDayWorkoutType.innerHTML='<option value="">Select effort / type</option>'+options.map(function(value){
+    return '<option>'+esc(value)+'</option>';
+  }).join('');
+  setSelectValue(els.addDayWorkoutType,selected||'');
+}
 function setAddDayMode(mode){
   addDayMode=mode||'easy';
   Array.prototype.slice.call(els.addDayChooser.querySelectorAll('[data-add-activity-mode]')).forEach(function(button){
@@ -1547,32 +1553,32 @@ function setAddDayMode(mode){
   els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='race';
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
+    setActivityTypeOptions(['Easy/Recovery Run','Long Run'],'Easy/Recovery Run');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Easy run';
-    setSelectValue(els.addDayWorkoutType,'Easy/Recovery Run');
     if(!els.addDayTarget.value)els.addDayTarget.value='Conversational';
     els.addDayVolume.placeholder='Example: 5 miles';
     els.addDayDetails.placeholder='Add the session details';
     els.addDayTitle.textContent='Add Easy Run';
   }else if(addDayMode==='quality'){
     setSelectValue(els.addDayType,'Workout');
+    setActivityTypeOptions(['Threshold','Interval','Repetition','Hills','Fast Reps','Speed Endurance I','Speed Endurance II','Special Endurance I','Special Endurance II','Intensive Tempo','Extensive Tempo'],'Threshold');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Quality session';
-    setSelectValue(els.addDayWorkoutType,'Threshold');
     els.addDayVolume.value='';
     els.addDayTarget.value='';
     els.addDayDetails.placeholder='Add workout notes, suggestions, or tips...';
     els.addDayTitle.textContent='Add Quality Session';
   }else if(addDayMode==='race'){
     setSelectValue(els.addDayType,'Meet');
+    setActivityTypeOptions(['Race / Meet'],'Race / Meet');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Race day';
-    setSelectValue(els.addDayWorkoutType,els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet');
     els.addDayVolume.value='';
     els.addDayTarget.value='';
     els.addDayDetails.placeholder='Race plan should be reviewed by event and athlete before competition.';
     els.addDayTitle.textContent='Add Race';
   }else if(addDayMode==='off'){
     setSelectValue(els.addDayType,'Off Day');
+    setActivityTypeOptions(['Off Day'],'Off Day');
     els.addDayTitleInput.value='Rest day';
-    setSelectValue(els.addDayWorkoutType,'Off Day');
     els.addDayVolume.value='0 mi';
     els.addDayTarget.value='Rest / no assigned workout';
     els.addDayDetails.value='Rest day';
@@ -1581,8 +1587,8 @@ function setAddDayMode(mode){
     els.addDayTitle.textContent='Add Rest Day';
   }else if(addDayMode==='note'){
     setSelectValue(els.addDayType,'Other');
+    setActivityTypeOptions(['Note'],'Note');
     els.addDayTitleInput.value='Coach note';
-    setSelectValue(els.addDayWorkoutType,'Note');
     els.addDayVolume.placeholder='Optional';
     els.addDayDetails.placeholder='Add note details';
     els.addDayTitle.textContent='Add Note';
@@ -1593,14 +1599,14 @@ function updateAddDayTypeDefaults(){
   var type=els.addDayType.value||'Workout';
   if(type==='Meet'){
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Race day';
-    if(!els.addDayWorkoutType.value)setSelectValue(els.addDayWorkoutType,els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet');
+    if(!els.addDayWorkoutType.value)setActivityTypeOptions(['Race / Meet'],'Race / Meet');
     if(!els.addDayTarget.value)els.addDayTarget.value='Race plan';
   }else if(type==='Recovery'){
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Recovery run';
-    if(!els.addDayWorkoutType.value)setSelectValue(els.addDayWorkoutType,'Easy/Recovery Run');
+    if(!els.addDayWorkoutType.value)setActivityTypeOptions(['Easy/Recovery Run','Long Run'],'Easy/Recovery Run');
   }else if(type==='Off Day'){
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Off day';
-    if(!els.addDayWorkoutType.value)setSelectValue(els.addDayWorkoutType,'Off Day');
+    if(!els.addDayWorkoutType.value)setActivityTypeOptions(['Off Day'],'Off Day');
   }
 }
 function distanceText(value,unit){
@@ -1748,7 +1754,7 @@ function buildAddDayActivityValues(){
     return {
       dayType:'Meet',
       title:title||'Race day',
-      workoutType:type||(els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet'),
+      workoutType:type||'Race / Meet',
       plannedVolume:volume||'Meet schedule',
       targetSplits:target||'Race plan',
       details:details||'Race plan should be reviewed by event and athlete before competition.'
@@ -2098,9 +2104,6 @@ function init(){
   });
   els.addDayType.addEventListener('change',updateAddDayTypeDefaults);
   els.addDaySport.addEventListener('change',function(){
-    if(els.addDayType.value==='Meet'&&(!els.addDayWorkoutType.value||/^(Race \/ Meet|Track Meet|Cross Country Race)$/i.test(els.addDayWorkoutType.value))){
-      setSelectValue(els.addDayWorkoutType,els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet');
-    }
     if(addDayMode==='race')setAddDayMode('race');
   });
   els.addDaySave.addEventListener('click',saveAddedCalendarDay);
