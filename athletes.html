@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="app-version" content="athletes-parent-fields-0521">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak Athletes</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b91c1c}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1480px;margin:0 auto;padding:20px 18px 32px}
+body.embedded .page{max-width:none;padding:16px 18px 28px}
+.top{position:sticky;top:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:20px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:0 12px 28px rgba(15,23,42,.08)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{width:58px;height:58px;display:grid;place-items:center;flex:0 0 58px}.mark img{display:block;max-width:58px;max-height:58px;object-fit:contain}
+h1{font-size:24px;line-height:1.15;margin:0}.sub{font-size:14px;color:var(--muted);margin-top:4px;font-weight:500}.updated{display:inline-flex;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:800;padding:7px 10px}
+.actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}.action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px;line-height:1.15}
+button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.utility,.linkbtn.utility{background:#f8fafc;color:#334155;border:1px solid var(--line)}button.danger{background:#fee2e2;color:#991b1b}button:disabled{opacity:.55;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px 16px}.stat b{display:block;font-size:26px;line-height:1}.stat span{display:block;color:var(--muted);font-size:13px;margin-top:5px}
+.bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}.search{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:15px inherit;min-width:220px}.filter{border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:700 14px inherit;padding:10px 12px;min-width:170px}.barstatus{font-size:13px;color:var(--muted);font-weight:800;margin-left:auto}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1120px}th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}td{font-size:14px}.name{font-weight:900;color:#102a70}.muted{color:var(--muted);font-size:12px;margin-top:2px}.pill{display:inline-flex;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#e8eefc;color:#173891}.pill.good{background:#dcfce7;color:var(--good)}.pill.warn{background:#ffedd5;color:var(--warn)}.pill.bad{background:#fee2e2;color:var(--bad)}.empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
+.fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
+.fieldinfo::after{content:attr(data-tip);position:absolute;left:0;top:24px;width:260px;max-width:80vw;padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:30;white-space:normal}.fieldinfo.info-left::after{left:auto;right:0}.fieldinfo:hover::after,.fieldinfo:focus::after{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;z-index:40;overflow:auto}.modalpanel{width:min(900px,100%);background:#fff;border-radius:10px;border:1px solid var(--line);box-shadow:0 18px 45px rgba(15,23,42,.2);overflow:hidden}.modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}.modalhead h2{font-size:20px;margin:0}.modalbody{padding:16px 18px 20px}
+.formsection{border:1px solid var(--line);border-radius:8px;margin-bottom:14px;overflow:hidden}.sectiontitle{background:#f8fafc;border-bottom:1px solid var(--line);padding:10px 12px;font-size:13px;font-weight:900;color:#334155;text-transform:uppercase;letter-spacing:.03em}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px}.field{display:grid;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:900;color:#475569}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}.field textarea{min-height:78px;resize:vertical}.toggleline{display:flex;align-items:center;gap:8px;font-weight:900;color:#334155}.toggleline input{width:18px;height:18px;accent-color:var(--blue)}
+.modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}.modalstatus{color:var(--muted);font-size:13px;font-weight:800;margin-right:auto}.admin-mode-badge{position:fixed;right:14px;bottom:14px;z-index:30;background:#111827;color:#fff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;box-shadow:0 10px 24px rgba(15,23,42,.18)}
+@media(max-width:760px){.page{padding:14px 10px 24px}.top{align-items:flex-start;flex-direction:column}.actions{width:100%;align-items:stretch}.action-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:1fr}.bar{align-items:stretch;flex-direction:column}.barstatus{margin-left:0}.formgrid{grid-template-columns:1fr}.modalactions{align-items:stretch;flex-direction:column}.modalstatus{margin-right:0}}
+</style>
+</head>
+<body>
+<div id="productModeBadge" class="admin-mode-badge admin-only" hidden></div>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>SMART Trak Athletes</h1>
+        <div class="sub">Coach-facing roster, athlete details, and parent contacts saved to the real GHL contact.</div>
+        <div id="lastUpdated" class="updated">Last updated --</div>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="action-row">
+        <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
+        <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
+        <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
+        <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
+        <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      </div>
+      <div class="action-row">
+        <button id="addAthleteBtn" type="button">Add Athlete</button>
+        <button id="refreshBtn" class="utility" type="button">Refresh</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><b id="activeCount">0</b><span>Active athletes</span></div>
+    <div class="stat"><b id="parentCount">0</b><span>With parent email</span></div>
+    <div class="stat"><b id="missingGenderCount">0</b><span>Missing gender</span></div>
+    <div class="stat"><b id="inactiveCount">0</b><span>Inactive athletes</span></div>
+  </section>
+
+  <section class="bar">
+    <input id="search" class="search" type="search" placeholder="Search athletes, parents, phone, or email">
+    <select id="statusFilter" class="filter" aria-label="Filter status">
+      <option value="active">Active</option>
+      <option value="all">All athletes</option>
+      <option value="inactive">Inactive</option>
+    </select>
+    <select id="genderFilter" class="filter" aria-label="Filter gender">
+      <option value="all">All genders</option>
+      <option value="girls">Girls</option>
+      <option value="boys">Boys</option>
+      <option value="missing">Missing gender</option>
+    </select>
+    <div id="barStatus" class="barstatus">Loading roster...</div>
+  </section>
+
+  <section class="panel">
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Athlete <span class="fieldinfo" data-tip="Athletes are real GHL contacts tagged for SMARTCoach.">i</span></th>
+            <th>Gender</th>
+            <th>Grade</th>
+            <th>Groups</th>
+            <th>Parent Contact <span class="fieldinfo" data-tip="Parent fields stay on the athlete contact for now, so the athlete-parent connection is always clear.">i</span></th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="athleteRows"><tr><td colspan="7" class="empty">Loading athletes...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<section id="athleteModal" class="modal" hidden>
+  <div class="modalpanel">
+    <div class="modalhead">
+      <h2 id="modalTitle">Add Athlete</h2>
+      <button id="closeModalBtn" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <input id="contactId" type="hidden">
+      <div class="formsection">
+        <div class="sectiontitle">Athlete Details</div>
+        <div class="formgrid">
+          <div class="field"><label for="firstName">First Name <span class="fieldinfo" data-tip="Saved to the GHL contact first name.">i</span></label><input id="firstName" type="text" placeholder="Example: Marcus"></div>
+          <div class="field"><label for="lastName">Last Name <span class="fieldinfo info-left" data-tip="Saved to the GHL contact last name.">i</span></label><input id="lastName" type="text" placeholder="Example: Moore"></div>
+          <div class="field"><label for="gender">Gender <span class="fieldinfo" data-tip="Used for roster filters, records, meet history, and planning.">i</span></label><select id="gender"><option value="">Select gender</option><option>Girl</option><option>Boy</option></select></div>
+          <div class="field"><label for="grade">Grade / Class <span class="fieldinfo info-left" data-tip="Optional coach-facing roster field if that custom field exists in GHL.">i</span></label><input id="grade" type="text" placeholder="Example: 10th or 2028"></div>
+          <div class="field"><label for="email">Athlete Email <span class="fieldinfo" data-tip="Optional GHL contact email for the athlete.">i</span></label><input id="email" type="email" placeholder="athlete@example.com"></div>
+          <div class="field"><label for="phone">Athlete Phone <span class="fieldinfo info-left" data-tip="Optional GHL contact phone for the athlete.">i</span></label><input id="phone" type="tel" placeholder="(555) 555-5555"></div>
+          <div class="field"><label for="smartcoachAthleteId">SMARTCoach ID <span class="fieldinfo" data-tip="Stable athlete ID used behind the scenes for syncing. Leave blank for auto-create.">i</span></label><input id="smartcoachAthleteId" type="text" placeholder="Auto-created if blank"></div>
+          <label class="toggleline"><input id="smartcoachActive" type="checkbox" checked> Active athlete</label>
+        </div>
+      </div>
+
+      <div class="formsection">
+        <div class="sectiontitle">Parent / Guardian</div>
+        <div class="formgrid">
+          <div class="field"><label for="parentGuardianName">Parent Name <span class="fieldinfo" data-tip="Saved on the athlete contact so the relationship is clear.">i</span></label><input id="parentGuardianName" type="text" placeholder="Example: Jordan Moore"></div>
+          <div class="field"><label for="parentGuardianEmail">Parent Email <span class="fieldinfo info-left" data-tip="Used later for group or individual parent communication.">i</span></label><input id="parentGuardianEmail" type="email" placeholder="parent@example.com"></div>
+          <div class="field"><label for="parentGuardianPhone">Parent Phone <span class="fieldinfo" data-tip="Optional parent/guardian phone.">i</span></label><input id="parentGuardianPhone" type="tel" placeholder="(555) 555-5555"></div>
+          <div></div>
+          <div class="field"><label for="parentGuardian2Name">Second Parent Name <span class="fieldinfo" data-tip="Optional second guardian.">i</span></label><input id="parentGuardian2Name" type="text" placeholder="Example: Taylor Moore"></div>
+          <div class="field"><label for="parentGuardian2Email">Second Parent Email <span class="fieldinfo info-left" data-tip="Optional second guardian email.">i</span></label><input id="parentGuardian2Email" type="email" placeholder="parent2@example.com"></div>
+          <div class="field"><label for="parentGuardian2Phone">Second Parent Phone <span class="fieldinfo" data-tip="Optional second guardian phone.">i</span></label><input id="parentGuardian2Phone" type="tel" placeholder="(555) 555-5555"></div>
+        </div>
+      </div>
+
+      <div class="formsection">
+        <div class="sectiontitle">Coach Notes</div>
+        <div class="formgrid">
+          <div class="field full"><label for="coachNotes">Notes <span class="fieldinfo" data-tip="Optional notes field if that custom field exists in GHL.">i</span></label><textarea id="coachNotes" placeholder="Optional"></textarea></div>
+        </div>
+      </div>
+
+      <div class="modalactions">
+        <div id="modalStatus" class="modalstatus"></div>
+        <button id="saveAthleteBtn" type="button">Save Athlete</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+var athletes=[],groups=[],lastLoadedAt=null;
+var els={
+  lastUpdated:document.getElementById('lastUpdated'),rows:document.getElementById('athleteRows'),barStatus:document.getElementById('barStatus'),
+  activeCount:document.getElementById('activeCount'),parentCount:document.getElementById('parentCount'),missingGenderCount:document.getElementById('missingGenderCount'),inactiveCount:document.getElementById('inactiveCount'),
+  search:document.getElementById('search'),statusFilter:document.getElementById('statusFilter'),genderFilter:document.getElementById('genderFilter'),modal:document.getElementById('athleteModal'),modalTitle:document.getElementById('modalTitle'),modalStatus:document.getElementById('modalStatus'),
+  contactId:document.getElementById('contactId'),firstName:document.getElementById('firstName'),lastName:document.getElementById('lastName'),gender:document.getElementById('gender'),grade:document.getElementById('grade'),email:document.getElementById('email'),phone:document.getElementById('phone'),smartcoachAthleteId:document.getElementById('smartcoachAthleteId'),smartcoachActive:document.getElementById('smartcoachActive'),
+  parentGuardianName:document.getElementById('parentGuardianName'),parentGuardianEmail:document.getElementById('parentGuardianEmail'),parentGuardianPhone:document.getElementById('parentGuardianPhone'),parentGuardian2Name:document.getElementById('parentGuardian2Name'),parentGuardian2Email:document.getElementById('parentGuardian2Email'),parentGuardian2Phone:document.getElementById('parentGuardian2Phone'),coachNotes:document.getElementById('coachNotes')
+};
+function smartCoachAccountKey(){try{var p=new URLSearchParams(location.search||'');var v=(p.get('account')||localStorage.getItem('sc_account')||'default').trim();return v||'default';}catch(e){return 'default';}}
+function smartCoachHeaders(){return {'Content-Type':'application/json','X-SMARTCoach-Account':smartCoachAccountKey()};}
+function pageUrl(path){var params=new URLSearchParams(location.search||'');params.set('account',smartCoachAccountKey());var q=params.toString();return path+(q?'?'+q:'');}
+function apiUrl(path){return path+(path.indexOf('?')>=0?'&':'?')+'account='+encodeURIComponent(smartCoachAccountKey())+'&t='+Date.now();}
+function init(){document.body.classList.toggle('embedded',new URLSearchParams(location.search||'').get('embed')==='1');['dashboardLink','trainingCalendarLink','planSetupLink','planImportLink','planBuilderLink'].forEach(function(id){var el=document.getElementById(id);if(el)el.href=pageUrl(el.getAttribute('href'));});document.getElementById('refreshBtn').addEventListener('click',loadRoster);document.getElementById('addAthleteBtn').addEventListener('click',function(){openAthleteModal(null);});document.getElementById('closeModalBtn').addEventListener('click',closeModal);document.getElementById('saveAthleteBtn').addEventListener('click',saveAthlete);els.rows.addEventListener('click',function(event){var btn=event.target.closest&&event.target.closest('[data-athlete-id]');if(btn)openAthleteModalById(btn.getAttribute('data-athlete-id'));});[els.search,els.statusFilter,els.genderFilter].forEach(function(el){el.addEventListener('input',render);el.addEventListener('change',render);});loadRoster();}
+function loadRoster(){els.barStatus.textContent='Loading roster...';Promise.all([fetch(apiUrl('/api/smart-trak/athletes'),{cache:'no-store',headers:smartCoachHeaders()}).then(jsonResult),fetch(apiUrl('/api/smart-trak/groups'),{cache:'no-store',headers:smartCoachHeaders()}).then(jsonResult).catch(function(){return{groups:[]};})]).then(function(results){athletes=(results[0].athletes||[]);groups=(results[1].groups||[]);lastLoadedAt=new Date();els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);render();}).catch(function(error){els.barStatus.textContent='Could not load roster: '+error.message;els.rows.innerHTML='<tr><td colspan="7" class="empty">Could not load athletes.</td></tr>';});}
+function jsonResult(response){return response.json().then(function(data){if(!response.ok)throw new Error(data.error||'Request failed');return data;});}
+function render(){renderStats();var list=filteredAthletes();els.barStatus.textContent=list.length+' athlete'+(list.length===1?'':'s')+' in view';if(!list.length){els.rows.innerHTML='<tr><td colspan="7" class="empty">No athletes match this view.</td></tr>';return;}els.rows.innerHTML=list.map(rowHtml).join('');}
+function renderStats(){var active=athletes.filter(function(a){return a.smartcoachActive;});els.activeCount.textContent=active.length;els.parentCount.textContent=active.filter(function(a){return a.parentGuardianEmail||a.parentGuardian2Email;}).length;els.missingGenderCount.textContent=active.filter(function(a){return !a.gender;}).length;els.inactiveCount.textContent=athletes.filter(function(a){return !a.smartcoachActive;}).length;}
+function filteredAthletes(){var q=norm(els.search.value);var status=els.statusFilter.value;var gender=els.genderFilter.value;return athletes.filter(function(a){if(status==='active'&&!a.smartcoachActive)return false;if(status==='inactive'&&a.smartcoachActive)return false;if(gender==='girls'&&!/girl|female/i.test(a.gender||''))return false;if(gender==='boys'&&!/boy|male/i.test(a.gender||''))return false;if(gender==='missing'&&a.gender)return false;if(q){var hay=[a.name,a.gender,a.grade,a.email,a.phone,a.parentGuardianName,a.parentGuardianEmail,a.parentGuardianPhone,a.parentGuardian2Name,a.parentGuardian2Email,a.parentGuardian2Phone,athleteGroups(a).join(' ')].join(' ').toLowerCase();if(hay.indexOf(q)<0)return false;}return true;});}
+function rowHtml(a){var parents=[parentLine(a.parentGuardianName,a.parentGuardianEmail,a.parentGuardianPhone),parentLine(a.parentGuardian2Name,a.parentGuardian2Email,a.parentGuardian2Phone)].filter(Boolean).join('<div class="muted"></div>')||'<span class="muted">No parent saved</span>';var groupList=athleteGroups(a);return '<tr><td><div class="name">'+esc(a.name||'Unnamed')+'</div><div class="muted">'+esc(a.email||a.phone||'')+'</div></td><td>'+esc(a.gender||'--')+'</td><td>'+esc(a.grade||'--')+'</td><td>'+(groupList.length?groupList.map(function(g){return '<span class="pill">'+esc(g)+'</span>';}).join(' '):'<span class="muted">No group</span>')+'</td><td>'+parents+'</td><td><span class="pill '+(a.smartcoachActive?'good':'warn')+'">'+(a.smartcoachActive?'Active':'Inactive')+'</span></td><td><button class="secondary" type="button" data-athlete-id="'+escAttr(a.id)+'">Edit</button></td></tr>';}
+function parentLine(name,email,phone){if(!name&&!email&&!phone)return '';return '<div><b>'+esc(name||'Parent')+'</b><div class="muted">'+esc([email,phone].filter(Boolean).join(' · '))+'</div></div>';}
+function athleteGroups(a){var id=String(a.id||'');var name=norm(a.name);return groups.filter(function(g){return (g.athletes||g.runners||[]).some(function(r){return String(r.contactId||r.id||'')===id||norm(r.name)===name;});}).map(function(g){return g.name||g.groupName||'Group';});}
+function openAthleteModalById(id){openAthleteModal(athletes.find(function(a){return a.id===id;})||null);}
+function openAthleteModal(a){els.modal.hidden=false;els.modalTitle.textContent=a?'Edit Athlete':'Add Athlete';els.modalStatus.textContent='';fill('contactId',a&&a.id);fill('firstName',a&&a.firstName);fill('lastName',a&&a.lastName);fill('gender',a&&a.gender);fill('grade',a&&a.grade);fill('email',a&&a.email);fill('phone',a&&a.phone);fill('smartcoachAthleteId',a&&a.smartcoachAthleteId);els.smartcoachActive.checked=!a||!!a.smartcoachActive;fill('parentGuardianName',a&&a.parentGuardianName);fill('parentGuardianEmail',a&&a.parentGuardianEmail);fill('parentGuardianPhone',a&&a.parentGuardianPhone);fill('parentGuardian2Name',a&&a.parentGuardian2Name);fill('parentGuardian2Email',a&&a.parentGuardian2Email);fill('parentGuardian2Phone',a&&a.parentGuardian2Phone);fill('coachNotes',a&&a.coachNotes);setTimeout(function(){els.firstName.focus();},50);}
+function closeModal(){els.modal.hidden=true;}
+function saveAthlete(){var payload={contactId:els.contactId.value,firstName:els.firstName.value,lastName:els.lastName.value,name:[els.firstName.value,els.lastName.value].filter(Boolean).join(' '),gender:els.gender.value,grade:els.grade.value,email:els.email.value,phone:els.phone.value,smartcoachAthleteId:els.smartcoachAthleteId.value,smartcoachActive:els.smartcoachActive.checked,parentGuardianName:els.parentGuardianName.value,parentGuardianEmail:els.parentGuardianEmail.value,parentGuardianPhone:els.parentGuardianPhone.value,parentGuardian2Name:els.parentGuardian2Name.value,parentGuardian2Email:els.parentGuardian2Email.value,parentGuardian2Phone:els.parentGuardian2Phone.value,coachNotes:els.coachNotes.value};if(!payload.name&&!payload.contactId){els.modalStatus.textContent='Enter an athlete name.';return;}els.modalStatus.textContent='Saving athlete...';fetch(apiUrl('/api/smart-trak/athletes'),{method:payload.contactId?'PUT':'POST',headers:smartCoachHeaders(),body:JSON.stringify(payload)}).then(jsonResult).then(function(result){var saved=result.athlete;if(saved){var index=athletes.findIndex(function(a){return a.id===saved.id;});if(index>=0)athletes[index]=saved;else athletes.push(saved);}els.modalStatus.textContent='Saved.';closeModal();render();loadRoster();}).catch(function(error){els.modalStatus.textContent='Could not save: '+error.message;});}
+function fill(id,value){els[id].value=value||'';}
+function formatDateTime(date){return date.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
+function norm(value){return String(value||'').trim().toLowerCase();}
+function esc(value){return String(value||'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
+function escAttr(value){return esc(value).replace(/\\/g,'\\\\');}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>

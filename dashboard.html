@@ -214,6 +214,7 @@ tr:last-child td{border-bottom:0}
     <div class="actions">
       <div class="action-row">
         <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
+        <a id="athletesLink" class="linkbtn secondary" href="/athletes.html">Athletes</a>
         <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
         <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
         <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
@@ -995,6 +996,8 @@ function smartCoachPageUrl(path,planOverride){
 function applySmartCoachLinks(){
   var dashboard=document.getElementById('dashboardLink');
   if(dashboard)dashboard.href=smartCoachPageUrl('/dashboard.html');
+  var athletesLink=document.getElementById('athletesLink');
+  if(athletesLink)athletesLink.href=smartCoachPageUrl('/athletes.html');
   var meetHistory=document.getElementById('meetHistoryLink');
   if(meetHistory)meetHistory.href=smartCoachPageUrl('/meet-history.html');
   var records=document.getElementById('recordsLink');
