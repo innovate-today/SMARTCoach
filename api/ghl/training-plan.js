@@ -383,22 +383,22 @@ async function updateTrainingPlanDayStatuses({ token, locationId, payload }) {
 
 async function appendTrainingPlanDays({ token, locationId, payload }) {
   const planId = clean(payload && payload.planId);
-  if (!planId) throw httpError(400, "Select an existing training plan first.");
   const plan = normalizePlan({
     ...payload,
     days: Array.isArray(payload && payload.days) ? payload.days : [],
   });
   if (!plan.days.length) throw httpError(400, "Add at least one workout day first.");
+  const standalone = !planId;
 
   const createdDays = [];
   for (const [index, day] of plan.days.entries()) {
     const dayForCreate = {
       ...day,
-      sourceRecordId: clean(day.sourceRecordId) || buildManualDaySourceRecordId({ planId, payload, day, index }),
+      sourceRecordId: clean(day.sourceRecordId) || buildManualDaySourceRecordId({ planId: planId || "standalone", payload, day, index }),
     };
     const dayProperties = buildTrainingPlanDayProperties(plan, dayForCreate, {
       planRecordId: planId,
-      planSourceRecordId: clean(payload && payload.planSourceRecordId),
+      planSourceRecordId: standalone ? "" : clean(payload && payload.planSourceRecordId),
     });
     const dayRecord = await createObjectRecordWithOptionFallback({
       token,
@@ -416,7 +416,7 @@ async function appendTrainingPlanDays({ token, locationId, payload }) {
   }
 
   const endDate = latestDate(plan.days.map((day) => day.date).concat([payload && payload.planEndDate]));
-  if (endDate) {
+  if (planId && endDate) {
     await ghlFetch({
       token,
       path: `/objects/${encodeURIComponent(TRAINING_PLAN_SCHEMA_KEY)}/records/${encodeURIComponent(planId)}?locationId=${encodeURIComponent(locationId)}`,
@@ -427,6 +427,7 @@ async function appendTrainingPlanDays({ token, locationId, payload }) {
 
   return {
     planId,
+    standalone,
     appendedCount: createdDays.length,
     days: createdDays,
   };

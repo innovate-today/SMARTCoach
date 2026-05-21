@@ -383,7 +383,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
       </div>
       <div class="formgrid">
         <div class="field"><label for="addDayDate">Date <span class="fieldinfo" tabindex="0" data-tip="The clicked calendar date is used by default.">i</span></label><input id="addDayDate" type="date"></div>
-        <div class="field"><label for="addDayPlan">Add To Plan <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the saved plan this new calendar day belongs to.">i</span></label><select id="addDayPlan"><option value="">Select plan</option></select></div>
+        <div class="field"><label for="addDayPlan">Add To Plan <span class="fieldinfo info-left" tabindex="0" data-tip="Optional. Choose a saved plan to attach this day, or leave Standalone for a one-off calendar activity.">i</span></label><select id="addDayPlan"><option value="">Standalone calendar activity</option></select></div>
         <div class="field" hidden><label for="addDayType">Day Type <span class="fieldinfo" tabindex="0" data-tip="Use Workout for training sessions or Meets/Races for competition days.">i</span></label><select id="addDayType"><option value="Workout">Workout</option><option value="Meet">Meets/Races</option><option value="Recovery">Recovery</option><option value="Off Day">Off/Travel</option><option value="Other">Other</option></select></div>
         <div class="field"><label for="addDaySport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country so race and workout days are labeled correctly.">i</span></label><select id="addDaySport"><option>Track</option><option>Cross Country</option></select></div>
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
@@ -426,7 +426,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div class="field full"><label for="addDayNotes">Coach Notes <span class="fieldinfo" tabindex="0" data-tip="Optional private planning context.">i</span></label><textarea id="addDayNotes" placeholder="Optional coach notes"></textarea></div>
       </div>
       <div class="modalactions">
-        <div id="addDayStatus" class="modalstatus">Choose a plan, then save the calendar day.</div>
+        <div id="addDayStatus" class="modalstatus">Attach to a plan if needed, or save as standalone.</div>
         <button id="addDaySave" type="button">Save Calendar Day</button>
       </div>
     </div>
@@ -764,6 +764,7 @@ function allowedPlanSet(){
     });
   }else{
     visible.forEach(function(plan){planAliases(plan).forEach(function(alias){set[alias]=true;});});
+    set.__standalone=true;
   }
   return set;
 }
@@ -858,7 +859,8 @@ function filteredDays(){
   var dateRange=els.dateFilter.value||'all';
   return days.filter(function(day){
     if(status==='all'&&isRemovedDay(day))return false;
-    if(!planSet[String(day.trainingPlanId||'')])return false;
+    if(!day.trainingPlanId&&!planSet.__standalone)return false;
+    if(day.trainingPlanId&&!planSet[String(day.trainingPlanId||'')])return false;
     if(type!=='all'&&dayMixCategory(day)!==type)return false;
     if(status!=='all'&&day.status!==status)return false;
     if(!matchesDateRange(day,dateRange))return false;
@@ -1508,12 +1510,10 @@ function openAddDayModal(dateValue,mode){
   els.addQualityCooldownValue.value='2';
   els.addQualityCooldownUnit.value='mi';
   seedQualityRows();
-  var currentPlans=visiblePlans().filter(function(plan){return !isPastPlan(plan);});
-  var defaultPlanId=selectedPlanIds.length===1?selectedPlanIds[0]:(currentPlans[0]?planId(currentPlans[0]):'');
-  if(defaultPlanId)els.addDayPlan.value=defaultPlanId;
+  els.addDayPlan.value='';
   syncAddDayPlanFields();
   setAddDayMode(addDayMode);
-  setAddDayStatus('Choose a plan, then save the calendar day.','');
+  setAddDayStatus('Attach to a plan if needed, or save as standalone.','');
   els.addDayModal.hidden=false;
 }
 function closeAddDayModal(){
@@ -1522,7 +1522,7 @@ function closeAddDayModal(){
 function renderAddDayPlans(){
   var current=els.addDayPlan.value;
   var available=visiblePlans().filter(function(plan){return !isPastPlan(plan);});
-  els.addDayPlan.innerHTML='<option value="">Select plan</option>'+available.map(function(plan){
+  els.addDayPlan.innerHTML='<option value="">Standalone calendar activity</option>'+available.map(function(plan){
     var id=planId(plan);
     return '<option value="'+esc(id)+'">'+esc(plan.title||'Untitled plan')+(planSubject(plan)?' · '+esc(planSubject(plan)):'')+'</option>';
   }).join('');
@@ -1802,8 +1802,8 @@ function createMeetForCalendarDay(plan,day){
     body:JSON.stringify({
       meetName:day.workoutTitle||day.dayType||'Meet',
       meetDate:day.date,
-      season:plan.season||'',
-      seasonYear:plan.seasonYear||'',
+      season:plan&&plan.season||seasonFromDate(day.date),
+      seasonYear:plan&&plan.seasonYear||String(new Date(day.date+'T00:00:00').getFullYear()),
       status:'Scheduled'
     })
   }).then(function(res){
@@ -1813,20 +1813,28 @@ function createMeetForCalendarDay(plan,day){
     return result.data&&result.data.meet||null;
   });
 }
+function seasonFromDate(value){
+  var date=parseCalendarDate(value);
+  if(isNaN(date.getTime()))return '';
+  var month=date.getMonth()+1;
+  if(month===6||month===7)return 'Summer';
+  if(month>=8&&month<=11)return 'Fall';
+  if(month===12||month===1)return 'Winter';
+  return 'Spring';
+}
 function saveAddedCalendarDay(){
   var plan=selectedAddDayPlan();
   var activity=buildAddDayActivityValues();
   var title=activity.title;
-  if(!plan){setAddDayStatus('Select the plan this day belongs to.','error');return;}
   if(!els.addDayDate.value){setAddDayStatus('Select a date.','error');return;}
   if(!title){setAddDayStatus('Add a short title for the calendar day.','error');return;}
-  var groupName=els.addDayGroup.value||planSubject(plan);
+  var groupName=els.addDayGroup.value||(plan?planSubject(plan):'');
   var day={
     date:els.addDayDate.value,
     dayType:activity.dayType,
     groupName:groupName,
-    athleteContact:plan.contactId||'',
-    athleteName:plan.contactId?(plan.athleteName||''):'',
+    athleteContact:plan&&plan.contactId||'',
+    athleteName:plan&&plan.contactId?(plan.athleteName||''):'',
     workoutTitle:title,
     workoutDetails:activity.details,
     workoutType:activity.workoutType,
@@ -1847,19 +1855,19 @@ function saveAddedCalendarDay(){
     headers:headers,
     body:JSON.stringify({
       action:'appendDays',
-      planId:plan.id||plan.sourceRecordId||planId(plan),
-      planSourceRecordId:plan.sourceRecordId||'',
-      planName:plan.title||'Training Plan',
-      planScope:plan.scope||'Group',
+      planId:plan?(plan.id||plan.sourceRecordId||planId(plan)):'',
+      planSourceRecordId:plan&&plan.sourceRecordId||'',
+      planName:plan&&plan.title||'Standalone Calendar Activity',
+      planScope:plan&&plan.scope||'Group',
       groupName:groupName,
       assignedGroup:groupName,
-      contactId:plan.contactId||'',
-      athleteName:plan.athleteName||'',
-      season:plan.season||'',
-      seasonYear:plan.seasonYear||'',
-      primaryEvent:plan.event||'Latest matching fitness set',
-      planStartDate:plan.startDate||day.date,
-      planEndDate:plan.endDate||day.date,
+      contactId:plan&&plan.contactId||'',
+      athleteName:plan&&plan.athleteName||'',
+      season:plan&&plan.season||seasonFromDate(day.date),
+      seasonYear:plan&&plan.seasonYear||String(new Date(day.date+'T00:00:00').getFullYear()),
+      primaryEvent:plan&&plan.event||'Latest matching fitness set',
+      planStartDate:plan&&plan.startDate||day.date,
+      planEndDate:plan&&plan.endDate||day.date,
       days:[day]
     })
     });
@@ -1871,7 +1879,7 @@ function saveAddedCalendarDay(){
     days.push({
       id:created.recordId||'',
       sourceRecordId:created.sourceRecordId||'',
-      trainingPlanId:plan.id||plan.sourceRecordId||planId(plan),
+      trainingPlanId:plan?(plan.id||plan.sourceRecordId||planId(plan)):'',
       date:day.date,
       dayType:day.dayType,
       groupName:day.groupName,
