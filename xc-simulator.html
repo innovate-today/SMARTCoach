@@ -149,6 +149,7 @@ tr:last-child td{border-bottom:0}
           <button id="loadSbBtn" class="secondary" type="button">My Season Best</button>
           <button id="saveOpponentsBtn" class="secondary" type="button">Save Opponents</button>
           <button id="loadOpponentsBtn" class="secondary" type="button">Load Opponents</button>
+          <button id="deleteOpponentsBtn" class="ghost" type="button">Delete Opponents</button>
           <button id="exampleBtn" class="secondary" type="button">Load Example</button>
           <button id="scoreBtn" type="button">Score Meet</button>
           <button id="clearBtn" class="ghost" type="button">Clear</button>
@@ -236,6 +237,7 @@ var els={
   loadSbBtn:document.getElementById('loadSbBtn'),
   saveOpponentsBtn:document.getElementById('saveOpponentsBtn'),
   loadOpponentsBtn:document.getElementById('loadOpponentsBtn'),
+  deleteOpponentsBtn:document.getElementById('deleteOpponentsBtn'),
   exampleBtn:document.getElementById('exampleBtn'),
   scoreBtn:document.getElementById('scoreBtn'),
   clearBtn:document.getElementById('clearBtn'),
@@ -342,6 +344,9 @@ function readSavedOpponentText(){
 }
 function writeSavedOpponentText(text){
   try{localStorage.setItem(opponentStorageKey(),text||'');}catch(e){}
+}
+function deleteSavedOpponentText(){
+  try{localStorage.removeItem(opponentStorageKey());}catch(e){}
 }
 function csvCell(value){
   var text=String(value==null?'':value);
@@ -523,6 +528,14 @@ function loadOpponents(){
   render();
   setStatus('Loaded saved opponent teams.','');
 }
+function deleteOpponents(){
+  if(!readSavedOpponentText()){
+    setStatus('No saved opponents to delete for '+raceLabel(els.sbRace.value||'girls_xc_5k')+'.','warn');
+    return;
+  }
+  deleteSavedOpponentText();
+  setStatus('Deleted saved opponent teams for '+raceLabel(els.sbRace.value||'girls_xc_5k')+'.','');
+}
 function looksLikeAthleteFirst(first,second){
   var teamWords=/\b(hs|high|school|academy|prep|xc|cc|club|team|unattached|middle)\b/i;
   if(teamWords.test(second)&&!teamWords.test(first))return true;
@@ -680,6 +693,7 @@ function init(){
   els.loadSbBtn.addEventListener('click',loadSeasonBests);
   els.saveOpponentsBtn.addEventListener('click',saveOpponents);
   els.loadOpponentsBtn.addEventListener('click',loadOpponents);
+  els.deleteOpponentsBtn.addEventListener('click',deleteOpponents);
   els.exampleBtn.addEventListener('click',loadExample);
   els.scoreBtn.addEventListener('click',render);
   els.clearBtn.addEventListener('click',clearAll);
