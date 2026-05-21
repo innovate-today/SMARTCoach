@@ -86,8 +86,9 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .daydate{border:0;background:transparent;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;margin:0;padding:0;text-align:left}
 .day.today .daydate{display:inline-flex;align-items:center;border-radius:999px;background:var(--blue);color:#fff;padding:4px 8px}
 .dayadd{flex:0 0 auto;background:#eef6ff;color:#173891;border:1px solid #bfd0ef;font-size:12px;padding:5px 8px;min-height:28px}
-.dayactions{display:none;gap:5px;margin:8px 0 10px;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fbfdff}
-.day:hover .dayactions,.day:focus-within .dayactions{display:grid}
+.addwrap{position:relative;display:flex;justify-content:flex-end}
+.dayactions{display:none;position:absolute;z-index:6;top:calc(100% + 6px);right:0;min-width:166px;gap:6px;padding:9px;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:0 14px 30px rgba(15,23,42,.18)}
+.addwrap:hover .dayactions,.addwrap:focus-within .dayactions{display:grid}
 .dayaction{border:0;background:transparent;color:#172033;font-size:12px;font-weight:900;padding:0;text-align:left;display:inline-flex;align-items:center;gap:6px;min-height:20px}
 .dayaction:hover{text-decoration:underline}
 .dayicon{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;color:#fff;font-size:12px;line-height:1}
@@ -123,7 +124,10 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .activitychoice b{font-size:15px}
 .activitychoice small{font-size:12px;color:var(--muted);line-height:1.3}
 .activitychoice.active{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:#f4f7ff}
-.activitychoice.easy b{color:#7c3aed}.activitychoice.quality b{color:#0a7a44}.activitychoice.race b{color:#b00000}
+.activitychoice.easy{border-color:#bae6fd;background:#f0f9ff}.activitychoice.easy b{color:#075985}
+.activitychoice.quality{border-color:#bbf7d0;background:#f0fdf4}.activitychoice.quality b{color:#166534}
+.activitychoice.race{border-color:#fed7aa;background:#fff7ed}.activitychoice.race b{color:#9a3412}
+.activitychoice.easy.active{border-color:#0284c7;background:#e0f2fe}.activitychoice.quality.active{border-color:#16a34a;background:#dcfce7}.activitychoice.race.active{border-color:#ea580c;background:#ffedd5}
 .activitysection{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .activitysection h3{font-size:15px;margin:0 0 10px}
 .compactgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -1061,12 +1065,12 @@ function weekSection(key,weekDays){
 function dayColumn(date,items){
   var isToday=isoDate(date)===isoDate(new Date());
   var dateKey=isoDate(date);
-  return '<div class="day'+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'"><div class="daytop"><button class="daydate" data-add-day="'+esc(dateKey)+'" type="button">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</button><button class="dayadd" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button">Add</button></div>'+
-    '<div class="dayactions">'+
+  return '<div class="day'+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'"><div class="daytop"><button class="daydate" data-add-day="'+esc(dateKey)+'" type="button">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</button><div class="addwrap"><button class="dayadd" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button">Add</button>'+
+    '<div class="dayactions" aria-label="Add options">'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button"><span class="dayicon activity">+</span>Add Activity</button>'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="off" type="button"><span class="dayicon rest">+</span>Add Rest Day</button>'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="note" type="button"><span class="dayicon note">+</span>Add Note</button>'+
-    '</div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
+    '</div></div></div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
 }
 function dayItem(day){
   var category=dayMixCategory(day);
@@ -1542,6 +1546,7 @@ function setActivityTypeOptions(options,selected){
 }
 function setAddDayMode(mode){
   addDayMode=mode||'easy';
+  var titleWasDefault=/^(Easy run|Quality session|Race day|Rest day|Coach note)$/i.test(els.addDayTitleInput.value||'');
   Array.prototype.slice.call(els.addDayChooser.querySelectorAll('[data-add-activity-mode]')).forEach(function(button){
     button.classList.toggle('active',button.getAttribute('data-add-activity-mode')===addDayMode);
   });
@@ -1554,7 +1559,8 @@ function setAddDayMode(mode){
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
     setActivityTypeOptions(['Easy/Recovery Run','Long Run'],'Easy/Recovery Run');
-    if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Easy run';
+    if(!els.addDayTitleInput.value||titleWasDefault)els.addDayTitleInput.value='Easy run';
+    els.addDayTitleInput.placeholder='Example: EZ 5';
     if(!els.addDayTarget.value)els.addDayTarget.value='Conversational';
     els.addDayVolume.placeholder='Example: 5 miles';
     els.addDayDetails.placeholder='Add the session details';
@@ -1562,7 +1568,8 @@ function setAddDayMode(mode){
   }else if(addDayMode==='quality'){
     setSelectValue(els.addDayType,'Workout');
     setActivityTypeOptions(['Threshold','Interval','Repetition','Hills','Fast Reps','Speed Endurance I','Speed Endurance II','Special Endurance I','Special Endurance II','Intensive Tempo','Extensive Tempo'],'Threshold');
-    if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Quality session';
+    if(!els.addDayTitleInput.value||titleWasDefault)els.addDayTitleInput.value='Quality session';
+    els.addDayTitleInput.placeholder='Example: 400m acceleration + mechanics';
     els.addDayVolume.value='';
     els.addDayTarget.value='';
     els.addDayDetails.placeholder='Add workout notes, suggestions, or tips...';
@@ -1570,7 +1577,8 @@ function setAddDayMode(mode){
   }else if(addDayMode==='race'){
     setSelectValue(els.addDayType,'Meet');
     setActivityTypeOptions(['Race / Meet'],'Race / Meet');
-    if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Race day';
+    if(!els.addDayTitleInput.value||titleWasDefault)els.addDayTitleInput.value='Race day';
+    els.addDayTitleInput.placeholder='Example: District Preview';
     els.addDayVolume.value='';
     els.addDayTarget.value='';
     els.addDayDetails.placeholder='Race plan should be reviewed by event and athlete before competition.';
@@ -1579,6 +1587,7 @@ function setAddDayMode(mode){
     setSelectValue(els.addDayType,'Off Day');
     setActivityTypeOptions(['Off Day'],'Off Day');
     els.addDayTitleInput.value='Rest day';
+    els.addDayTitleInput.placeholder='Example: Rest day';
     els.addDayVolume.value='0 mi';
     els.addDayTarget.value='Rest / no assigned workout';
     els.addDayDetails.value='Rest day';
@@ -1589,6 +1598,7 @@ function setAddDayMode(mode){
     setSelectValue(els.addDayType,'Other');
     setActivityTypeOptions(['Note'],'Note');
     els.addDayTitleInput.value='Coach note';
+    els.addDayTitleInput.placeholder='Example: Bus leaves at 3:30';
     els.addDayVolume.placeholder='Optional';
     els.addDayDetails.placeholder='Add note details';
     els.addDayTitle.textContent='Add Note';
