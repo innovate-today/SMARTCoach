@@ -2,6 +2,7 @@ const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
+const CLASS_YEAR_TAG_PREFIX = "smartcoach-class-";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 
 const ATHLETE_FIELD_ALIASES = {
@@ -254,12 +255,20 @@ async function updateAthleteContact({ token, contact, athleteName, payload, rost
     method: "PUT",
     body,
   });
+
+  if (!fieldId(rosterFieldIds.grade) && clean(payload && payload.grade)) {
+    await addTags({ token, contactId: contact.id, tags: [classYearTag(payload.grade)] });
+  }
 }
 
 function addCustomFieldValue(customFields, fieldIds, value) {
-  const id = Array.isArray(fieldIds) && fieldIds.length ? fieldIds[0] : "";
+  const id = fieldId(fieldIds);
   if (!id || typeof value === "undefined") return;
   customFields.push({ id, value: clean(value) });
+}
+
+function fieldId(fieldIds) {
+  return Array.isArray(fieldIds) && fieldIds.length ? fieldIds[0] : "";
 }
 
 async function ghlFetch({ token, path, method, body }) {
@@ -295,7 +304,7 @@ function normalizeContact(contact, options = {}) {
     email: clean(contact.email),
     phone: clean(contact.phone),
     gender: contactGender(contact, rosterFieldIds.gender),
-    grade: contactFieldByIdsOrNames(contact, rosterFieldIds.grade, ATHLETE_FIELD_ALIASES.grade),
+    grade: contactFieldByIdsOrNames(contact, rosterFieldIds.grade, ATHLETE_FIELD_ALIASES.grade) || classYearFromTags(contact),
     parentGuardianName: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardianName, ATHLETE_FIELD_ALIASES.parentGuardianName),
     parentGuardianEmail: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardianEmail, ATHLETE_FIELD_ALIASES.parentGuardianEmail),
     parentGuardianPhone: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardianPhone, ATHLETE_FIELD_ALIASES.parentGuardianPhone),
@@ -308,6 +317,17 @@ function normalizeContact(contact, options = {}) {
     smartcoachAthleteId: existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID),
     tags: Array.isArray(contact.tags) ? contact.tags : [],
   };
+}
+
+function classYearFromTags(contact) {
+  const tags = Array.isArray(contact && contact.tags) ? contact.tags : [];
+  const matches = tags.map(clean).filter((tag) => tag.toLowerCase().indexOf(CLASS_YEAR_TAG_PREFIX) === 0);
+  if (!matches.length) return "";
+  return matches[matches.length - 1].slice(CLASS_YEAR_TAG_PREFIX.length).replace(/_/g, " ");
+}
+
+function classYearTag(value) {
+  return `${CLASS_YEAR_TAG_PREFIX}${clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`;
 }
 
 function contactGender(contact, genderFieldIds = []) {
