@@ -86,11 +86,12 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .daydate{border:0;background:transparent;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;margin:0;padding:0;text-align:left}
 .day.today .daydate{display:inline-flex;align-items:center;border-radius:999px;background:var(--blue);color:#fff;padding:4px 8px}
 .dayadd{flex:0 0 auto;background:#eef6ff;color:#173891;border:1px solid #bfd0ef;font-size:12px;padding:5px 8px;min-height:28px}
-.dayactions{display:grid;gap:5px;margin:8px 0 10px}
+.dayactions{display:none;gap:5px;margin:8px 0 10px;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fbfdff}
+.day:hover .dayactions,.day:focus-within .dayactions{display:grid}
 .dayaction{border:0;background:transparent;color:#172033;font-size:12px;font-weight:900;padding:0;text-align:left;display:inline-flex;align-items:center;gap:6px;min-height:20px}
 .dayaction:hover{text-decoration:underline}
 .dayicon{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;color:#fff;font-size:12px;line-height:1}
-.dayicon.activity{background:#0ea5e9}.dayicon.rest{background:#f59e0b}.dayicon.note{background:#f472b6}
+.dayicon.activity{background:#2B4FCC}.dayicon.rest{background:#64748b}.dayicon.note{background:#94a3b8}
 .item{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff}
 .item.meet{border-left-color:#7c3aed}.item.recovery{border-left-color:#0a7a44}.item.off{border-left-color:#94a3b8}.item.skipped{opacity:.68}
 .item b{display:block;font-size:14px;line-height:1.25}
@@ -126,6 +127,11 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .activitysection{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .activitysection h3{font-size:15px;margin:0 0 10px}
 .compactgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.activitysummary{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.activitysummary-title{background:#e9eef7;color:#111827;font-weight:900;padding:10px 12px}
+.activitysummary-body{padding:12px;color:#334155;font-size:13px;line-height:1.45}
+.activitysummary-body b{display:block;color:#111827;font-size:17px;margin-bottom:4px}
+.summary-total{text-align:right;border-top:1px solid var(--line);margin-top:10px;padding-top:10px;font-weight:900;color:#111827}
 .detailcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .detailcard b{display:block;font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
 .detailcard span{display:block;font-size:15px;font-weight:800;line-height:1.35}
@@ -376,7 +382,6 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
             <div class="field"><label for="addEasyDistance">Distance</label><input id="addEasyDistance" type="number" min="0" step="0.1" placeholder="Example: 5"></div>
             <div class="field"><label for="addEasyUnit">Unit</label><select id="addEasyUnit"><option>mi</option><option>km</option><option>m</option></select></div>
             <div class="field"><label for="addEasyStrides">Strides</label><input id="addEasyStrides" type="text" placeholder="Optional, e.g. 6 x 100m"></div>
-            <div class="field"><label for="addEasyEffort">Effort</label><select id="addEasyEffort"><option>Easy</option><option>Recovery</option><option>Long Run</option></select></div>
           </div>
         </div>
         <div id="qualityActivityFields" class="activitysection" hidden>
@@ -390,7 +395,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
             <div class="field"><label for="addQualityCooldown">Cooldown</label><input id="addQualityCooldown" type="text" placeholder="Example: 1 mi"></div>
           </div>
         </div>
-        <div class="field full"><label for="addDayDetails">Details <span class="fieldinfo" tabindex="0" data-tip="Workout instructions, race notes, warmup, cooldown, or reminders.">i</span></label><textarea id="addDayDetails" placeholder="Add the session or race details"></textarea></div>
+        <div id="addActivitySummary" class="activitysummary" hidden><div class="activitysummary-title">Quality Session Summary</div><div id="addActivitySummaryBody" class="activitysummary-body"></div></div>
+        <div class="field full"><label for="addDayDetails">Details <span class="fieldinfo" tabindex="0" data-tip="Workout instructions, race notes, warmup, cooldown, or reminders.">i</span></label><textarea id="addDayDetails" placeholder="Add the session details"></textarea></div>
         <div class="field full"><label for="addDayNotes">Coach Notes <span class="fieldinfo" tabindex="0" data-tip="Optional private planning context.">i</span></label><textarea id="addDayNotes" placeholder="Optional coach notes"></textarea></div>
       </div>
       <div class="modalactions">
@@ -525,7 +531,6 @@ var els={
   addEasyDistance:document.getElementById('addEasyDistance'),
   addEasyUnit:document.getElementById('addEasyUnit'),
   addEasyStrides:document.getElementById('addEasyStrides'),
-  addEasyEffort:document.getElementById('addEasyEffort'),
   qualityActivityFields:document.getElementById('qualityActivityFields'),
   addQualityWarmup:document.getElementById('addQualityWarmup'),
   addQualityReps:document.getElementById('addQualityReps'),
@@ -533,6 +538,8 @@ var els={
   addQualityEffort:document.getElementById('addQualityEffort'),
   addQualityRecovery:document.getElementById('addQualityRecovery'),
   addQualityCooldown:document.getElementById('addQualityCooldown'),
+  addActivitySummary:document.getElementById('addActivitySummary'),
+  addActivitySummaryBody:document.getElementById('addActivitySummaryBody'),
   addDayDetails:document.getElementById('addDayDetails'),
   addDayNotes:document.getElementById('addDayNotes'),
   addDayStatus:document.getElementById('addDayStatus'),
@@ -1021,7 +1028,7 @@ function weekSection(key,weekDays){
 function dayColumn(date,items){
   var isToday=isoDate(date)===isoDate(new Date());
   var dateKey=isoDate(date);
-  return '<div class="day'+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'"><div class="daytop"><button class="daydate" data-add-day="'+esc(dateKey)+'" type="button">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</button></div>'+
+  return '<div class="day'+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'"><div class="daytop"><button class="daydate" data-add-day="'+esc(dateKey)+'" type="button">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</button><button class="dayadd" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button">Add</button></div>'+
     '<div class="dayactions">'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button"><span class="dayicon activity">+</span>Add Activity</button>'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="off" type="button"><span class="dayicon rest">+</span>Add Rest Day</button>'+
@@ -1454,7 +1461,6 @@ function openAddDayModal(dateValue,mode){
   els.addEasyDistance.value='';
   els.addEasyUnit.value='mi';
   els.addEasyStrides.value='';
-  els.addEasyEffort.value='Easy';
   els.addQualityWarmup.value='';
   els.addQualityReps.value='';
   els.addQualityDistance.value='';
@@ -1498,23 +1504,30 @@ function setAddDayMode(mode){
   });
   els.easyActivityFields.hidden=addDayMode!=='easy';
   els.qualityActivityFields.hidden=addDayMode!=='quality';
+  els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=addDayMode==='off'||addDayMode==='note';
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Easy run';
     if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Easy/Recovery Run';
     if(!els.addDayTarget.value)els.addDayTarget.value='Conversational';
+    els.addDayVolume.placeholder='Example: 5 miles';
+    els.addDayDetails.placeholder='Add the session details';
     els.addDayTitle.textContent='Add Easy Run';
   }else if(addDayMode==='quality'){
     setSelectValue(els.addDayType,'Workout');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Quality session';
     if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Threshold';
+    els.addDayVolume.placeholder='Example: 5 miles total';
+    els.addDayDetails.placeholder='Add workout notes, suggestions, or tips...';
     els.addDayTitle.textContent='Add Quality Session';
   }else if(addDayMode==='race'){
     setSelectValue(els.addDayType,'Meet');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Race day';
     if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value=els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet';
     if(!els.addDayTarget.value)els.addDayTarget.value='Race plan';
+    els.addDayVolume.placeholder='Example: 2 mile, 3200m, or 5K';
+    els.addDayDetails.placeholder='Race plan should be reviewed by event and athlete before competition.';
     els.addDayTitle.textContent='Add Race';
   }else if(addDayMode==='off'){
     setSelectValue(els.addDayType,'Off Day');
@@ -1523,13 +1536,18 @@ function setAddDayMode(mode){
     els.addDayVolume.value='0 mi';
     els.addDayTarget.value='Rest / no assigned workout';
     els.addDayDetails.value='Rest day';
+    els.addDayVolume.placeholder='0 miles';
+    els.addDayDetails.placeholder='Optional rest day note';
     els.addDayTitle.textContent='Add Rest Day';
   }else if(addDayMode==='note'){
     setSelectValue(els.addDayType,'Other');
     els.addDayTitleInput.value='Coach note';
     els.addDayWorkoutType.value='Note';
+    els.addDayVolume.placeholder='Optional';
+    els.addDayDetails.placeholder='Add note details';
     els.addDayTitle.textContent='Add Note';
   }
+  renderAddActivitySummary();
 }
 function updateAddDayTypeDefaults(){
   var type=els.addDayType.value||'Workout';
@@ -1549,6 +1567,36 @@ function distanceText(value,unit){
   var amount=String(value||'').trim();
   var suffix=String(unit||'').trim();
   return amount ? amount+(suffix?' '+suffix:'') : '';
+}
+function parseDistanceMiles(text){
+  var value=String(text||'').trim().toLowerCase();
+  var n=Number((value.match(/[\d.]+/)||[])[0]||0);
+  if(!n)return 0;
+  if(value.indexOf('km')>=0)return n*0.621371;
+  if(/\bm\b/.test(value)&&value.indexOf('mi')<0)return n/1609.34;
+  return n;
+}
+function formatMiles(value){
+  if(!value)return '';
+  var rounded=Math.round(value*100)/100;
+  return rounded.toFixed(rounded>=10?1:2).replace(/\.0$/,'').replace(/0$/,'')+' mi';
+}
+function renderAddActivitySummary(){
+  if(!els.addActivitySummaryBody||addDayMode!=='quality')return;
+  var warm=els.addQualityWarmup.value.trim()||'Warmup not set';
+  var reps=String(els.addQualityReps.value||'').trim();
+  var dist=els.addQualityDistance.value.trim();
+  var effort=els.addQualityEffort.value||'Threshold';
+  var recovery=els.addQualityRecovery.value.trim()||'Recovery not set';
+  var cool=els.addQualityCooldown.value.trim()||'Cooldown not set';
+  var setLine=(reps&&dist?reps+' x '+dist:'Set not complete')+' @ '+effort;
+  var total=parseDistanceMiles(warm)+parseDistanceMiles(cool);
+  if(reps&&dist)total+=Number(reps||0)*parseDistanceMiles(dist);
+  els.addActivitySummaryBody.innerHTML=
+    '<b>Warmup</b>'+esc(warm)+
+    '<br><br><b>Set</b>'+esc(setLine)+'<br>'+esc(recovery)+' recovery between reps'+
+    '<br><br><b>Cooldown</b>'+esc(cool)+
+    '<div class="summary-total">'+esc(formatMiles(total)||'Volume not set')+'</div>';
 }
 function buildAddDayActivityValues(){
   var details=els.addDayDetails.value.trim();
@@ -1582,11 +1630,12 @@ function buildAddDayActivityValues(){
     if(els.addQualityRecovery.value.trim())qLines.push('Recovery: '+els.addQualityRecovery.value.trim());
     if(els.addQualityCooldown.value.trim())qLines.push('Cooldown: '+els.addQualityCooldown.value.trim());
     if(details)qLines.push(details);
+    var total=parseDistanceMiles(els.addQualityWarmup.value)+parseDistanceMiles(els.addQualityCooldown.value)+(reps&&repDistance?Number(reps)*parseDistanceMiles(repDistance):0);
     return {
       dayType:'Workout',
       title:title||(mainSet||'Quality session'),
       workoutType:type||effort,
-      plannedVolume:volume||'Quality session',
+      plannedVolume:volume||(total?formatMiles(total)+' total':'Quality session'),
       targetSplits:target||[mainSet,els.addQualityRecovery.value.trim()].filter(Boolean).join(' / '),
       details:qLines.join('\n')
     };
@@ -1951,6 +2000,10 @@ function init(){
     if(addDayMode==='race')setAddDayMode('race');
   });
   els.addDaySave.addEventListener('click',saveAddedCalendarDay);
+  [els.addQualityWarmup,els.addQualityReps,els.addQualityDistance,els.addQualityEffort,els.addQualityRecovery,els.addQualityCooldown].forEach(function(input){
+    input.addEventListener('input',renderAddActivitySummary);
+    input.addEventListener('change',renderAddActivitySummary);
+  });
   els.approveDraftsBtn.addEventListener('click',function(){
     updateVisibleDayStatus('Approved',isDraftDay,'Coach approved visible draft plan days from SMART Trak Training Calendar.');
   });
