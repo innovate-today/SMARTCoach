@@ -465,6 +465,13 @@ Cross country competition simulator:
 - Keep running weekly competitor lists to see team ranking over time.
 - Need copy/paste from common result websites.
 
+Track simulator:
+
+- Future idea: page similar to the XC Simulator.
+- Compare hypothetical track meet outcomes by event, athlete, team, and projected points.
+- Should support saving competitor fields/entries so coaches can update week to week.
+- Use SMART Trak season bests for the coach's team where possible.
+
 Help assistant:
 
 - Future idea: SMARTCoach Pro help button for instructions, subscription questions, and how-to guidance.
