@@ -35,7 +35,8 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      const athletes = await listSmartCoachAthletes({ token, locationId });
+      const includeContacts = /^(yes|true|1)$/i.test(clean(req.query && (req.query.includeContacts || req.query.allContacts)));
+      const athletes = await listSmartCoachAthletes({ token, locationId, includeContacts });
       res.status(200).json({ success: true, athletes });
       return;
     }
@@ -59,7 +60,7 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
 }
 
-async function listSmartCoachAthletes({ token, locationId }) {
+async function listSmartCoachAthletes({ token, locationId, includeContacts = false }) {
   const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
   const result = await ghlFetch({
     token,
@@ -69,7 +70,7 @@ async function listSmartCoachAthletes({ token, locationId }) {
 
   return (result.contacts || [])
     .map((contact) => normalizeContact(contact, { rosterFieldIds }))
-    .filter((athlete) => athlete.smartcoachActive || (athlete.smartcoachAthleteId && athlete.tags.indexOf("smartcoach-athlete") >= 0))
+    .filter((athlete) => includeContacts || athlete.smartcoachActive || (athlete.smartcoachAthleteId && athlete.tags.indexOf("smartcoach-athlete") >= 0))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
