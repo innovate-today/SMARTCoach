@@ -146,7 +146,9 @@ tr:last-child td{border-bottom:0}
         </div>
         <div class="actionbar">
           <div id="status" class="status">Ready to score.</div>
-          <button id="loadSbBtn" class="secondary" type="button">Load SB</button>
+          <button id="loadSbBtn" class="secondary" type="button">My Season Best</button>
+          <button id="saveOpponentsBtn" class="secondary" type="button">Save Opponents</button>
+          <button id="loadOpponentsBtn" class="secondary" type="button">Load Opponents</button>
           <button id="exampleBtn" class="secondary" type="button">Load Example</button>
           <button id="scoreBtn" type="button">Score Meet</button>
           <button id="clearBtn" class="ghost" type="button">Clear</button>
@@ -232,6 +234,8 @@ var els={
   resultInput:document.getElementById('resultInput'),
   status:document.getElementById('status'),
   loadSbBtn:document.getElementById('loadSbBtn'),
+  saveOpponentsBtn:document.getElementById('saveOpponentsBtn'),
+  loadOpponentsBtn:document.getElementById('loadOpponentsBtn'),
   exampleBtn:document.getElementById('exampleBtn'),
   scoreBtn:document.getElementById('scoreBtn'),
   clearBtn:document.getElementById('clearBtn'),
@@ -330,6 +334,15 @@ function raceLabel(raceKey){
 function defaultTeamName(raceKey){
   return raceGender(raceKey)==='boys'?'SMART Trak Boys':'SMART Trak Girls';
 }
+function opponentStorageKey(){
+  return 'xc_sim_opponents_'+accountKey()+'_'+(els.sbRace&&els.sbRace.value||'xc');
+}
+function readSavedOpponentText(){
+  try{return localStorage.getItem(opponentStorageKey())||'';}catch(e){return '';}
+}
+function writeSavedOpponentText(text){
+  try{localStorage.setItem(opponentStorageKey(),text||'');}catch(e){}
+}
 function csvCell(value){
   var text=String(value==null?'':value);
   return /[,"\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;
@@ -398,6 +411,39 @@ function parseResults(text){
   });
   return {rows:rows,warnings:warnings};
 }
+function parsedLineTeam(line){
+  var clean=String(line||'').trim();
+  if(!clean)return '';
+  var parts=smartSplit(clean);
+  if(parts.length<3)return '';
+  var timeIndex=-1;
+  for(var i=parts.length-1;i>=0;i--){
+    if(parseTime(parts[i])!=null){timeIndex=i;break;}
+  }
+  if(timeIndex<0)return '';
+  var labels=parts.slice(0,timeIndex).concat(parts.slice(timeIndex+1));
+  var team=labels[0]||'Unattached';
+  if(labels.length>=2&&looksLikeAthleteFirst(labels[0],labels[1]))team=labels.slice(1).join(' ');
+  return String(team||'').trim();
+}
+function linesWithoutTeam(text,teamName){
+  var team=String(teamName||'').trim().toLowerCase();
+  return String(text||'').split(/\r?\n/).filter(function(line){
+    if(!line.trim())return false;
+    var lineTeam=parsedLineTeam(line).toLowerCase();
+    return !team || !lineTeam || lineTeam!==team;
+  }).join('\n');
+}
+function linesForTeam(text,teamName){
+  var team=String(teamName||'').trim().toLowerCase();
+  return String(text||'').split(/\r?\n/).filter(function(line){
+    if(!line.trim())return false;
+    return team && parsedLineTeam(line).toLowerCase()===team;
+  }).join('\n');
+}
+function combineResultBlocks(myTeamText,opponentText){
+  return [myTeamText,opponentText].map(function(block){return String(block||'').trim();}).filter(Boolean).join('\n');
+}
 function loadSmartTrakDashboard(){
   els.loadSbBtn.disabled=true;
   setStatus('Loading SMART Trak season bests...','');
@@ -448,14 +494,34 @@ function loadSeasonBests(){
     var team=els.teamName.value.trim()||defaultTeamName(raceKey);
     els.raceName.value=raceLabel(raceKey)+' SB Simulation';
     els.division.value=raceLabel(raceKey);
-    els.resultInput.value=bests.map(function(item){
+    var myTeamText=bests.map(function(item){
       return [team,item.row.athleteName||'Unnamed',formatTime(item.seconds)].map(csvCell).join(', ');
     }).join('\n');
+    var opponents=linesWithoutTeam(els.resultInput.value,team)||readSavedOpponentText();
+    els.resultInput.value=combineResultBlocks(myTeamText,opponents);
     render();
-    setStatus(bests.length+' SMART Trak SB result'+(bests.length===1?'':'s')+' loaded for '+raceLabel(raceKey)+'.','');
+    setStatus(bests.length+' SMART Trak SB result'+(bests.length===1?'':'s')+' loaded for '+raceLabel(raceKey)+(opponents?' with saved opponents.':'.'),'');
   }).catch(function(error){
     setStatus(error.message||'SMART Trak season bests failed to load.','error');
   });
+}
+function saveOpponents(){
+  var team=els.teamName.value.trim()||defaultTeamName(els.sbRace.value||'girls_xc_5k');
+  var opponents=linesWithoutTeam(els.resultInput.value,team);
+  writeSavedOpponentText(opponents);
+  setStatus(opponents?'Saved opponent teams for '+raceLabel(els.sbRace.value||'girls_xc_5k')+'.':'No opponent lines found to save.','');
+}
+function loadOpponents(){
+  var opponents=readSavedOpponentText();
+  if(!opponents){
+    setStatus('No saved opponents for '+raceLabel(els.sbRace.value||'girls_xc_5k')+' yet.','warn');
+    return;
+  }
+  var team=els.teamName.value.trim()||defaultTeamName(els.sbRace.value||'girls_xc_5k');
+  var myTeam=linesForTeam(els.resultInput.value,team);
+  els.resultInput.value=combineResultBlocks(myTeam,opponents);
+  render();
+  setStatus('Loaded saved opponent teams.','');
 }
 function looksLikeAthleteFirst(first,second){
   var teamWords=/\b(hs|high|school|academy|prep|xc|cc|club|team|unattached|middle)\b/i;
@@ -612,6 +678,8 @@ function init(){
     if(!els.teamName.value.trim())els.teamName.value=defaultTeamName(els.sbRace.value);
   });
   els.loadSbBtn.addEventListener('click',loadSeasonBests);
+  els.saveOpponentsBtn.addEventListener('click',saveOpponents);
+  els.loadOpponentsBtn.addEventListener('click',loadOpponents);
   els.exampleBtn.addEventListener('click',loadExample);
   els.scoreBtn.addEventListener('click',render);
   els.clearBtn.addEventListener('click',clearAll);
