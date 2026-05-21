@@ -1496,6 +1496,7 @@ function blockTypeValue(value) {
 
 function workoutTypeValue(value) {
   const normalized = optionValue(value);
+  if (normalized === "off_day" || normalized === "no_practice" || normalized === "rest") return "";
   const aliases = {
     easy_recovery_run: "easy_recovery_run",
     recovery_run: "easy_recovery_run",
