@@ -44,6 +44,11 @@ textarea{min-height:280px;resize:vertical;line-height:1.45}
 .fieldinfo:hover:after,.fieldinfo:focus:after{opacity:1}
 .hint{font-size:12px;color:var(--muted);line-height:1.35}
 .actionbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sim-actions{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;margin-top:12px}
+.saved-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.sim-actions button{padding:8px 10px;white-space:nowrap}
+.sim-actions .primary-run{min-width:112px}
+.sim-actions .compact{font-size:13px;padding:7px 9px}
 .status{font-size:13px;color:var(--muted);font-weight:800;margin-right:auto}
 .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
@@ -74,6 +79,8 @@ tr:last-child td{border-bottom:0}
 @media(max-width:620px){
   .page{padding:14px 10px 24px}
   .formgrid,.cards{grid-template-columns:1fr}
+  .sim-actions{grid-template-columns:1fr}
+  .saved-actions{display:grid;grid-template-columns:1fr 1fr}
   .actionbar{align-items:stretch;flex-direction:column}
   .status{margin-right:0}
   button,.linkbtn{text-align:center}
@@ -144,15 +151,17 @@ tr:last-child td{border-bottom:0}
             <div class="hint">Tip: edit times or move runners between teams to test what changes the team score.</div>
           </div>
         </div>
-        <div class="actionbar">
+        <div class="sim-actions">
           <div id="status" class="status">Ready to score.</div>
-          <button id="loadSbBtn" class="secondary" type="button">My Season Best</button>
-          <button id="saveOpponentsBtn" class="secondary" type="button">Save Opponents</button>
-          <button id="loadOpponentsBtn" class="secondary" type="button">Load Opponents</button>
-          <button id="deleteOpponentsBtn" class="ghost" type="button">Delete Opponents</button>
-          <button id="exampleBtn" class="secondary" type="button">Load Example</button>
-          <button id="scoreBtn" type="button">Score Meet</button>
-          <button id="clearBtn" class="ghost" type="button">Clear</button>
+          <button id="loadSbBtn" class="secondary primary-run" type="button">My Season Best</button>
+          <button id="scoreBtn" class="primary-run" type="button">Score Meet</button>
+          <div class="saved-actions">
+            <button id="saveOpponentsBtn" class="secondary compact" type="button">Save Field</button>
+            <button id="loadOpponentsBtn" class="secondary compact" type="button">Load Field</button>
+            <button id="deleteOpponentsBtn" class="ghost compact" type="button">Delete Field</button>
+            <button id="exampleBtn" class="ghost compact" type="button">Example</button>
+            <button id="clearBtn" class="ghost compact" type="button">Clear</button>
+          </div>
         </div>
       </div>
     </section>
