@@ -284,11 +284,12 @@ async function assignAthletesToPlan({ token, locationId, payload }) {
 }
 
 async function updateTrainingPlanDay({ token, locationId, payload }) {
-  const dayId = clean(payload && payload.dayId);
+  let dayId = clean(payload && payload.dayId);
   const reason = clean(payload && payload.reason);
   const updates = payload && payload.updates && typeof payload.updates === "object" ? payload.updates : {};
   if (!dayId) throw httpError(400, "Select a plan day first.");
   if (!reason) throw httpError(400, "Reason is required.");
+  dayId = await resolveTrainingPlanDayRecordId({ token, locationId, dayId });
 
   const properties = compactProperties({
     training_plan_days: [dateOnly(updates.date), clean(updates.title)].filter(Boolean).join(" - "),
@@ -322,6 +323,27 @@ async function updateTrainingPlanDay({ token, locationId, payload }) {
     updatedAt: new Date().toISOString(),
     changedFields: Object.keys(properties),
   };
+}
+
+async function resolveTrainingPlanDayRecordId({ token, locationId, dayId }) {
+  const id = clean(dayId);
+  if (!id) return "";
+  if (!/^tpd_/i.test(id)) return id;
+  for (let page = 1; page <= 10; page += 1) {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/search`,
+      method: "POST",
+      body: { locationId, page, pageLimit: 100 },
+    });
+    const match = recordsFromResult(result).find((record) => {
+      const props = recordProperties(record);
+      return clean(dayProp(props, "source_record_id")) === id;
+    });
+    if (match) return clean(match.id);
+    if (recordsFromResult(result).length < 100) break;
+  }
+  throw httpError(404, "Plan day was not found. Refresh the calendar and try again.");
 }
 
 async function updateTrainingPlanDayStatuses({ token, locationId, payload }) {

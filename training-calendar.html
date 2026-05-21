@@ -1047,22 +1047,17 @@ function closeEditModal(){
 function removeActiveDay(){
   if(!activeDay)return;
   var title=activeDay.title||activeDay.dayType||'this plan day';
-  var reason=window.prompt('Why remove "'+title+'" from the calendar?','Removed from calendar by coach.');
-  if(reason===null)return;
-  reason=String(reason||'').trim();
-  if(!reason){
-    alert('Please enter a short reason so SMART Trak keeps a useful note.');
-    return;
-  }
+  var reason='Removed from calendar by coach.';
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
   els.dayRemoveBtn.disabled=true;
+  els.dayRemoveBtn.textContent='Removing...';
   fetch('/api/smart-trak/training-plan',{
     method:'POST',
     headers:headers,
     body:JSON.stringify({
       action:'updateDay',
-      dayId:activeDay.id||'',
+      dayId:activeDay.id||activeDay.sourceRecordId||'',
       reason:reason,
       updates:{
         date:activeDay.date,
@@ -1100,6 +1095,7 @@ function removeActiveDay(){
     alert(error.message||'Could not remove plan day.');
   }).finally(function(){
     els.dayRemoveBtn.disabled=false;
+    els.dayRemoveBtn.textContent='Remove from Calendar';
   });
 }
 function quickUpdateActiveDayStatus(statusLabel){
@@ -1437,6 +1433,27 @@ function updateAddDayTypeDefaults(){
     if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Off Day';
   }
 }
+function createMeetForCalendarDay(plan,day){
+  if(day.dayType!=='Meet')return Promise.resolve(null);
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  return fetch('/api/smart-trak/meets',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      meetName:day.workoutTitle||day.dayType||'Meet',
+      meetDate:day.date,
+      season:plan.season||'',
+      seasonYear:plan.seasonYear||'',
+      status:'Scheduled'
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet could not be added to the meet list.');
+    return result.data&&result.data.meet||null;
+  });
+}
 function saveAddedCalendarDay(){
   var plan=selectedAddDayPlan();
   var title=els.addDayTitleInput.value.trim();
@@ -1463,7 +1480,9 @@ function saveAddedCalendarDay(){
   headers['Content-Type']='application/json';
   els.addDaySave.disabled=true;
   setAddDayStatus('Saving calendar day...','');
-  fetch('/api/smart-trak/training-plan',{
+  createMeetForCalendarDay(plan,day).then(function(meet){
+    if(meet&&meet.id)day.linkedMeetId=meet.id;
+    return fetch('/api/smart-trak/training-plan',{
     method:'POST',
     headers:headers,
     body:JSON.stringify({
@@ -1483,6 +1502,7 @@ function saveAddedCalendarDay(){
       planEndDate:plan.endDate||day.date,
       days:[day]
     })
+    });
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -1503,6 +1523,7 @@ function saveAddedCalendarDay(){
       targetSplits:day.targetSplits,
       plannedVolume:day.plannedVolume,
       status:day.status,
+      linkedMeetId:day.linkedMeetId||'',
       coachNotes:day.coachNotes
     });
     closeAddDayModal();
