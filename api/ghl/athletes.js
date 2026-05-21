@@ -66,14 +66,50 @@ async function listSmartCoachAthletes({ token, locationId, includeContacts = fal
   const searchParam = query ? `&query=${encodeURIComponent(query)}` : "";
   const result = await ghlFetch({
     token,
-    path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=250${searchParam}`,
+    path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=100${searchParam}`,
     method: "GET",
   });
 
-  return (result.contacts || [])
+  const contacts = contactsFromResult(result);
+  if (query && !contacts.length) {
+    const fallback = await ghlFetch({
+      token,
+      path: "/contacts/search",
+      method: "POST",
+      body: {
+        locationId,
+        page: 1,
+        pageLimit: 100,
+        query,
+      },
+    });
+    contacts.push(...contactsFromResult(fallback));
+  }
+
+  return uniqueContacts(contacts)
     .map((contact) => normalizeContact(contact, { rosterFieldIds }))
     .filter((athlete) => includeContacts || athlete.smartcoachActive || (athlete.smartcoachAthleteId && athlete.tags.indexOf("smartcoach-athlete") >= 0))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function contactsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.contacts) ? result.contacts : []),
+    ...(Array.isArray(result && result.items) ? result.items : []),
+    ...(Array.isArray(result && result.data && result.data.contacts) ? result.data.contacts : []),
+    ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
+    ...(Array.isArray(result && result.contact) ? result.contact : []),
+  ];
+}
+
+function uniqueContacts(contacts) {
+  const seen = {};
+  return contacts.filter((contact) => {
+    const key = clean(contact && contact.id) || contactName(contact).toLowerCase();
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 async function resolveRosterFieldIds({ token, locationId }) {
