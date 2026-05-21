@@ -224,6 +224,7 @@ tr:last-child td{border-bottom:0}
       </div>
       <div class="modal-action-row">
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
+        <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Mileage</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
@@ -545,6 +546,81 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<div id="raceResultModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="raceResultTitle">
+    <div class="modalhead">
+      <h2 id="raceResultTitle">Log Race Result</h2>
+      <button id="raceResultClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field">
+          <label for="raceResultDate">Date <span class="fieldinfo" tabindex="0" data-tip="Choose the date the race was completed.">i</span></label>
+          <input id="raceResultDate" type="date" placeholder="Select race date">
+        </div>
+        <div class="field">
+          <label for="raceResultSport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country so SMART Trak stores the result in the right context.">i</span></label>
+          <select id="raceResultSport">
+            <option value="">Select sport</option>
+            <option value="track">Track</option>
+            <option value="cross_country">Cross Country</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="raceResultMeet">Meet <span class="fieldinfo" tabindex="0" data-tip="Choose an existing meet, or enter a new meet name for this result.">i</span></label>
+          <select id="raceResultMeet"><option value="">Loading meets...</option></select>
+        </div>
+        <div class="field" id="raceResultMeetNameWrap" hidden>
+          <label for="raceResultMeetName">New Meet Name <span class="fieldinfo info-left" tabindex="0" data-tip="Use this when the result belongs to a meet that is not already saved.">i</span></label>
+          <input id="raceResultMeetName" type="text" placeholder="Example: District Preview">
+        </div>
+        <div class="field">
+          <label for="raceResultAthlete">Athlete <span class="fieldinfo" tabindex="0" data-tip="Select the athlete receiving this race result.">i</span></label>
+          <select id="raceResultAthlete"><option value="">Select athlete</option></select>
+        </div>
+        <div class="field">
+          <label for="raceResultEvent">Event <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the race distance or event. Cross country season bests use 2 Mile, 3200m, and 5K.">i</span></label>
+          <select id="raceResultEvent">
+            <option value="">Select event</option>
+            <option value="400m">400m</option>
+            <option value="800m">800m</option>
+            <option value="1500m">1500m</option>
+            <option value="1600m">1600m</option>
+            <option value="1 Mile">1 Mile</option>
+            <option value="2 Mile">2 Mile</option>
+            <option value="3200m">3200m</option>
+            <option value="5K">5K</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="raceResultResult">Result <span class="fieldinfo" tabindex="0" data-tip="Enter the official result time, such as 12:21.0 or 19:08.">i</span></label>
+          <input id="raceResultResult" type="text" placeholder="Example: 19:08">
+        </div>
+        <div class="field">
+          <label for="raceResultWind">Wind <span class="fieldinfo info-left" tabindex="0" data-tip="Optional wind reading for track events when it matters.">i</span></label>
+          <input id="raceResultWind" type="text" placeholder="Optional, e.g. +1.2">
+        </div>
+        <div class="field">
+          <label for="raceResultBest">Best Status <span class="fieldinfo" tabindex="0" data-tip="Mark PB or SB if the coach already knows it. SMART Trak may also detect bests automatically.">i</span></label>
+          <select id="raceResultBest">
+            <option value="none">No PB/SB</option>
+            <option value="pb">PB only</option>
+            <option value="sb">SB only</option>
+            <option value="both">PB and SB</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="raceResultNotes">Notes <span class="fieldinfo" tabindex="0" data-tip="Optional race notes, context, or coach comments.">i</span></label>
+          <textarea id="raceResultNotes" placeholder="Optional race notes"></textarea>
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="raceResultStatus" class="modalstatus">Save a result without attaching it to a plan.</div>
+        <button id="raceResultSave" type="button">Save Race Result</button>
+      </div>
+    </div>
+  </section>
+</div>
 <div id="correctionModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="correctionTitle">
     <div class="modalhead">
@@ -784,6 +860,7 @@ var recentMeetRows=[];
 var recentTrainingRows=[];
 var trainingGroups=[];
 var meetManagerRows=[];
+var raceResultMeetRows=[];
 var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
@@ -1007,6 +1084,7 @@ var els={
   accessSubmit:document.getElementById('accessSubmit'),
   manageMeetsBtn:document.getElementById('manageMeetsBtn'),
   manageMeetsSectionBtn:document.getElementById('manageMeetsSectionBtn'),
+  raceResultBtn:document.getElementById('raceResultBtn'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
   accountBtn:document.getElementById('accountBtn'),
   accountModal:document.getElementById('accountModal'),
@@ -1032,6 +1110,21 @@ var els={
   manualMileageNotes:document.getElementById('manualMileageNotes'),
   manualMileageStatus:document.getElementById('manualMileageStatus'),
   manualMileageSave:document.getElementById('manualMileageSave'),
+  raceResultModal:document.getElementById('raceResultModal'),
+  raceResultClose:document.getElementById('raceResultClose'),
+  raceResultDate:document.getElementById('raceResultDate'),
+  raceResultSport:document.getElementById('raceResultSport'),
+  raceResultMeet:document.getElementById('raceResultMeet'),
+  raceResultMeetNameWrap:document.getElementById('raceResultMeetNameWrap'),
+  raceResultMeetName:document.getElementById('raceResultMeetName'),
+  raceResultAthlete:document.getElementById('raceResultAthlete'),
+  raceResultEvent:document.getElementById('raceResultEvent'),
+  raceResultResult:document.getElementById('raceResultResult'),
+  raceResultWind:document.getElementById('raceResultWind'),
+  raceResultBest:document.getElementById('raceResultBest'),
+  raceResultNotes:document.getElementById('raceResultNotes'),
+  raceResultStatus:document.getElementById('raceResultStatus'),
+  raceResultSave:document.getElementById('raceResultSave'),
   correctionModal:document.getElementById('correctionModal'),
   correctionOriginal:document.getElementById('correctionOriginal'),
   correctionClose:document.getElementById('correctionClose'),
@@ -1220,6 +1313,7 @@ document.addEventListener('click',function(event){
 els.athleteModalClose.addEventListener('click',closeAthleteDetail);
 els.manageMeetsBtn.addEventListener('click',openMeetManager);
 els.manageMeetsSectionBtn.addEventListener('click',openMeetManager);
+els.raceResultBtn.addEventListener('click',openRaceResult);
 els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
@@ -1228,6 +1322,10 @@ els.accountSave.addEventListener('click',saveAccountSettings);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
 els.manualMileageScope.addEventListener('change',updateManualMileageScope);
 els.manualMileageSave.addEventListener('click',saveManualMileage);
+els.raceResultClose.addEventListener('click',closeRaceResult);
+els.raceResultMeet.addEventListener('change',syncRaceResultMeet);
+els.raceResultSport.addEventListener('change',syncRaceResultSport);
+els.raceResultSave.addEventListener('click',saveRaceResult);
 els.correctionClose.addEventListener('click',closeCorrectionModal);
 els.correctionSave.addEventListener('click',saveCorrection);
 els.meetCorrectionClose.addEventListener('click',closeMeetCorrectionModal);
@@ -2084,6 +2182,200 @@ function openManualMileage(){
 
 function closeManualMileage(){
   els.manualMileageModal.hidden=true;
+}
+
+function openRaceResult(){
+  if(els.raceResultDate&&!els.raceResultDate.value)els.raceResultDate.value=todayInputValue();
+  if(els.raceResultSport&&!els.raceResultSport.value)els.raceResultSport.value='track';
+  renderRaceResultAthletes();
+  renderRaceResultMeets();
+  syncRaceResultSport();
+  setRaceResultStatus('Save a result without attaching it to a plan.','');
+  els.raceResultModal.hidden=false;
+  loadRaceResultMeets();
+}
+
+function closeRaceResult(){
+  els.raceResultModal.hidden=true;
+}
+
+function renderRaceResultAthletes(){
+  if(!els.raceResultAthlete)return;
+  var current=els.raceResultAthlete.value;
+  els.raceResultAthlete.innerHTML='<option value="">Select athlete</option>'+(dashboardRows.length?dashboardRows:[{contactId:'',name:'No athletes loaded'}]).map(function(row){
+    var value=row.contactId||row.name||'';
+    return '<option value="'+esc(value)+'">'+esc(row.name||'Unnamed')+'</option>';
+  }).join('');
+  if(current)els.raceResultAthlete.value=current;
+}
+
+function loadRaceResultMeets(){
+  if(!els.raceResultMeet)return Promise.resolve();
+  setRaceResultStatus('Loading meets...','');
+  return fetch('/api/smart-trak/meets',{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not load meets.');
+    raceResultMeetRows=(result.data.meets||[]).filter(function(meet){
+      return !/archived/i.test(meet.status||'');
+    });
+    renderRaceResultMeets();
+    setRaceResultStatus('Choose a meet, athlete, event, and result.','');
+  }).catch(function(error){
+    raceResultMeetRows=[];
+    renderRaceResultMeets();
+    setRaceResultStatus(error.message||'Could not load meets. You can still enter a meet manually.','bad');
+  });
+}
+
+function renderRaceResultMeets(){
+  if(!els.raceResultMeet)return;
+  var current=els.raceResultMeet.value;
+  var options='<option value="">Select meet</option><option value="__new__">Enter meet manually</option>';
+  if(raceResultMeetRows.length){
+    options+=raceResultMeetRows.slice().sort(function(a,b){
+      return String(b.date||'').localeCompare(String(a.date||'')) || String(a.name||'').localeCompare(String(b.name||''));
+    }).map(function(meet){
+      var label=[meet.name||'Unnamed meet',formatDate(meet.date),meet.season,meet.seasonYear].filter(Boolean).join(' · ');
+      return '<option value="'+esc(meet.id||meet.name||'')+'">'+esc(label)+'</option>';
+    }).join('');
+  }
+  els.raceResultMeet.innerHTML=options;
+  if(current)els.raceResultMeet.value=current;
+  if(!els.raceResultMeet.value&&raceResultMeetRows.length===0)els.raceResultMeet.value='__new__';
+  syncRaceResultMeet();
+}
+
+function syncRaceResultMeet(){
+  if(!els.raceResultMeetNameWrap)return;
+  var manual=(els.raceResultMeet.value||'')==='__new__';
+  els.raceResultMeetNameWrap.hidden=!manual;
+  if(!manual){
+    var meet=selectedRaceResultMeet();
+    if(meet&&meet.date)els.raceResultDate.value=dateInputValue(meet.date);
+  }
+}
+
+function syncRaceResultSport(){
+  if(!els.raceResultEvent)return;
+  var current=els.raceResultEvent.value;
+  var sport=els.raceResultSport.value||'track';
+  var events=sport==='cross_country'?['','2 Mile','3200m','5K']:['','400m','800m','1500m','1600m','1 Mile','2 Mile','3200m','5K'];
+  els.raceResultEvent.innerHTML=events.map(function(eventName){
+    return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
+  }).join('');
+  if(current&&events.indexOf(current)>=0)els.raceResultEvent.value=current;
+}
+
+function selectedRaceResultMeet(){
+  var id=els.raceResultMeet.value||'';
+  return raceResultMeetRows.find(function(meet){
+    return String(meet.id||meet.name||'')===String(id);
+  })||null;
+}
+
+function selectedRaceResultAthlete(){
+  var selected=els.raceResultAthlete.value||'';
+  return dashboardRows.find(function(row){
+    return String(row.contactId||row.name||'')===String(selected);
+  })||null;
+}
+
+function raceResultSeasonFromDate(value){
+  var date=parseActivityDate(value)||new Date();
+  var key=seasonKeyForDate(date).split('-');
+  return {season:capitalize(key[1]||'Spring'),seasonYear:key[0]||String(date.getFullYear())};
+}
+
+function saveRaceResult(){
+  var athlete=selectedRaceResultAthlete();
+  var meet=selectedRaceResultMeet();
+  var manualMeet=(els.raceResultMeet.value||'')==='__new__';
+  var meetName=manualMeet?(els.raceResultMeetName.value||'').trim():(meet&&meet.name||'');
+  var date=els.raceResultDate.value||todayInputValue();
+  var eventName=els.raceResultEvent.value||'';
+  var resultDisplay=(els.raceResultResult.value||'').trim();
+  if(!athlete){setRaceResultStatus('Select an athlete.','bad');return;}
+  if(!meetName){setRaceResultStatus('Select a meet or enter a meet name.','bad');return;}
+  if(!eventName){setRaceResultStatus('Select an event.','bad');return;}
+  if(!resultDisplay){setRaceResultStatus('Enter the race result.','bad');return;}
+  var best=els.raceResultBest.value||'none';
+  var seasonParts=raceResultSeasonFromDate(date);
+  var payload={
+    athleteName:athlete.name||'',
+    contactId:athlete.contactId||'',
+    smartcoachAthleteId:athlete.smartcoachAthleteId||'',
+    meetName:meetName,
+    meetRecordId:meet&&meet.id||'',
+    meetDate:date,
+    season:meet&&meet.season||seasonParts.season,
+    sport:els.raceResultSport.value||'track',
+    event:eventName,
+    resultDisplay:resultDisplay,
+    wind:els.raceResultWind.value,
+    isPr:best==='pb'||best==='both',
+    isSeasonBest:best==='sb'||best==='both',
+    coachRaceNotes:els.raceResultNotes.value
+  };
+  els.raceResultSave.disabled=true;
+  setRaceResultStatus('Saving race result...','');
+  ensureRaceResultMeet(payload,seasonParts).then(function(updatedPayload){
+    return fetch('/api/smart-trak/meet-result',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(updatedPayload)
+    });
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Race result could not be saved.');
+    setRaceResultStatus('Saved '+(athlete.name||'athlete')+' - '+eventName+' '+resultDisplay+'.','ok');
+    els.raceResultAthlete.value='';
+    els.raceResultResult.value='';
+    els.raceResultWind.value='';
+    els.raceResultBest.value='none';
+    els.raceResultNotes.value='';
+    return loadDashboard();
+  }).catch(function(error){
+    setRaceResultStatus(error.message||'Race result could not be saved.','bad');
+  }).finally(function(){
+    els.raceResultSave.disabled=false;
+  });
+}
+
+function ensureRaceResultMeet(payload,seasonParts){
+  if(payload.meetRecordId)return Promise.resolve(payload);
+  return fetch('/api/smart-trak/meets',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      meetName:payload.meetName,
+      meetDate:payload.meetDate,
+      season:payload.season||seasonParts.season,
+      seasonYear:seasonParts.seasonYear,
+      status:'Completed'
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet could not be created.');
+    var meet=result.data&&result.data.meet||{};
+    payload.meetRecordId=meet.id||'';
+    if(meet.name)payload.meetName=meet.name;
+    if(meet.season)payload.season=meet.season;
+    upsertManagedMeet(meet);
+    raceResultMeetRows=meet.id?raceResultMeetRows.filter(function(item){return String(item.id||'')!==String(meet.id);}).concat([meet]):raceResultMeetRows;
+    renderRaceResultMeets();
+    if(meet.id)els.raceResultMeet.value=meet.id;
+    syncRaceResultMeet();
+    return payload;
+  });
+}
+
+function setRaceResultStatus(text,type){
+  if(!els.raceResultStatus)return;
+  els.raceResultStatus.textContent=text||'';
+  els.raceResultStatus.style.color=type==='bad'?'#b91c1c':type==='ok'?'var(--good)':'var(--muted)';
 }
 
 function openCorrectionModal(button){
