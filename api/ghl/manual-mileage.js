@@ -76,9 +76,9 @@ function normalizeAthlete(raw) {
 function seasonForDate(value) {
   const date = new Date(value);
   const month = Number.isNaN(date.getTime()) ? new Date().getMonth() + 1 : date.getMonth() + 1;
-  if (month === 12 || month <= 2) return "Winter";
-  if (month >= 3 && month <= 5) return "Spring";
-  if (month >= 6 && month <= 8) return "Summer";
+  if (month === 12 || month === 1) return "Winter";
+  if (month >= 2 && month <= 5) return "Spring";
+  if (month >= 6 && month <= 7) return "Summer";
   return "Fall";
 }
 

@@ -1393,9 +1393,9 @@ function currentSeason() {
   const date = new Date();
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
-  if (month === 12 || month <= 2) return { season: "Winter", year };
-  if (month >= 3 && month <= 5) return { season: "Spring", year };
-  if (month >= 6 && month <= 8) return { season: "Summer", year };
+  if (month === 12 || month === 1) return { season: "Winter", year };
+  if (month >= 2 && month <= 5) return { season: "Spring", year };
+  if (month >= 6 && month <= 7) return { season: "Summer", year };
   return { season: "Fall", year };
 }
 

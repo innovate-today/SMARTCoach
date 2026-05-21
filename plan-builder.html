@@ -307,7 +307,7 @@ function checkSmartCoachAccount(){
 })();
 function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function todayISO(){var d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+day;}
-function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m<=2)return'Winter';if(m>=3&&m<=5)return'Spring';if(m>=6&&m<=8)return'Summer';return'Fall';}
+function currentSeason(){var m=new Date().getMonth()+1;if(m===12||m===1)return'Winter';if(m>=2&&m<=5)return'Spring';if(m>=6&&m<=7)return'Summer';return'Fall';}
 function loadBuilder(){
   applyPlanMode();
   applySmartCoachLinks();

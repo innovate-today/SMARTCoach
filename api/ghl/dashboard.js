@@ -120,7 +120,7 @@ async function listActiveAthletes({ token, locationId }) {
 
   return (result.contacts || [])
     .map((contact) => normalizeContact(contact, { genderFieldIds }))
-    .filter((athlete) => athlete.smartcoachActive || (athlete.smartcoachAthleteId && athlete.tags.indexOf("smartcoach-athlete") >= 0))
+    .filter((athlete) => athlete.smartcoachActive)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

@@ -286,9 +286,9 @@ function seasonForDate(dateText) {
   const d = new Date(`${dateText}T00:00:00`);
   const m = d.getMonth() + 1;
   const y = d.getFullYear();
-  if (m === 12 || m <= 2) return { season: "Winter", year: y };
-  if (m >= 3 && m <= 5) return { season: "Spring", year: y };
-  if (m >= 6 && m <= 8) return { season: "Summer", year: y };
+  if (m === 12 || m === 1) return { season: "Winter", year: y };
+  if (m >= 2 && m <= 5) return { season: "Spring", year: y };
+  if (m >= 6 && m <= 7) return { season: "Summer", year: y };
   return { season: "Fall", year: y };
 }
 

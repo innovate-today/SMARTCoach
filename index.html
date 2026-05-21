@@ -652,9 +652,9 @@ function load(){
 }
 function currentSeason(){
   var d=new Date(),m=d.getMonth()+1,y=d.getFullYear(),s='Spring';
-  if(m===12||m<=2)s='Winter';
-  else if(m>=3&&m<=5)s='Spring';
-  else if(m>=6&&m<=8)s='Summer';
+  if(m===12||m===1)s='Winter';
+  else if(m>=2&&m<=5)s='Spring';
+  else if(m>=6&&m<=7)s='Summer';
   else s='Fall';
   return{season:s,year:y};
 }
@@ -662,9 +662,9 @@ function seasonForDate(dateText){
   var d=dateText?new Date(dateText+'T00:00:00'):new Date();
   if(isNaN(d.getTime()))return currentSeason();
   var m=d.getMonth()+1,y=d.getFullYear(),s='Spring';
-  if(m===12||m<=2)s='Winter';
-  else if(m>=3&&m<=5)s='Spring';
-  else if(m>=6&&m<=8)s='Summer';
+  if(m===12||m===1)s='Winter';
+  else if(m>=2&&m<=5)s='Spring';
+  else if(m>=6&&m<=7)s='Summer';
   else s='Fall';
   return{season:s,year:y};
 }
