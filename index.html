@@ -787,6 +787,7 @@ function loadSharedGroups(){
     save();
     rl();
     if(CL)rr();
+    loadCalendarMeetDays();
   }).catch(function(){SG=[];});
 }
 function mergeSharedGroupsIntoLogs(){
@@ -831,6 +832,104 @@ function mergeSharedGroupRunners(log,athletes){
   });
   if(next.length!==log.runners.length)changed=true;
   log.runners=next;
+  return changed;
+}
+function loadCalendarMeetDays(){
+  if(!isProPlan())return;
+  fetch('/api/smart-trak/training-plan?kind=days').then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Plan days unavailable');
+    if(mergeCalendarMeetDaysIntoLogs((result.data&&result.data.days)||[])){
+      save();
+      rl();
+      if(CL)rr();
+    }
+  }).catch(function(){});
+}
+function calendarMeetGroupId(day){
+  return 'calmeet_'+String(day&&day.sourceRecordId||day&&day.id||'day').replace(/[^a-zA-Z0-9_-]/g,'_');
+}
+function isCalendarMeetDay(day){
+  var type=String(day&&day.dayType||'').toLowerCase();
+  return type.indexOf('meet')>=0||type.indexOf('race')>=0;
+}
+function isRemovedPlanDay(day){
+  var status=String(day&&day.status||'').toLowerCase();
+  var notes=String(day&&day.coachNotes||'').toLowerCase();
+  return status.indexOf('skipped')>=0&&notes.indexOf('removed from calendar')>=0;
+}
+function findTrainingGroupByName(name){
+  var key=String(name||'').trim().toLowerCase();
+  if(!key)return null;
+  return logs.find(function(item){return (item.type||'training')==='training'&&String(item.name||'').trim().toLowerCase()===key;})||null;
+}
+function meetRunnersForGroup(groupName,existingLog){
+  var source=findTrainingGroupByName(groupName);
+  var existing={};
+  ((existingLog&&existingLog.runners)||[]).forEach(function(r){
+    var key=String(r.contactId||r.name||'').trim().toLowerCase();
+    if(key)existing[key]=r;
+  });
+  return ((source&&source.runners)||[]).map(function(src){
+    var key=String(src.contactId||src.name||'').trim().toLowerCase();
+    var r=existing[key]||mkR();
+    r.name=src.name||r.name;
+    r.contactId=src.contactId||r.contactId||'';
+    r.smartcoachAthleteId=src.smartcoachAthleteId||r.smartcoachAthleteId||'';
+    return r;
+  });
+}
+function mergeCalendarMeetDaysIntoLogs(days){
+  var changed=false,activeIds={};
+  (days||[]).filter(function(day){return isCalendarMeetDay(day)&&!isRemovedPlanDay(day);}).forEach(function(day){
+    var id=calendarMeetGroupId(day);
+    activeIds[id]=true;
+    var dateSeason=seasonForDate(day.date);
+    var log=logs.find(function(item){return item.sharedGroupId===id;});
+    if(!log){
+      log={id:lid++,sharedGroupId:id,name:day.title||'Meet',type:'meet',cfg:defaultCfg(),runners:[]};
+      logs.unshift(log);
+      changed=true;
+    }
+    var next={
+      name:day.title||day.workoutType||'Meet',
+      type:'meet',
+      season:dateSeason.season,
+      seasonYear:dateSeason.year,
+      archived:0,
+      meetName:day.title||'Meet',
+      meetDate:day.date||'',
+      meetRecordId:day.linkedMeetId||'',
+      eventName:day.workoutType||day.targetSplits||day.title||'Race',
+      trainingPlanDayId:day.id||day.sourceRecordId||'',
+      trainingPlanDaySourceId:day.sourceRecordId||'',
+      trainingPlanDayTitle:day.title||'',
+      trainingPlanDayType:day.dayType||'',
+      trainingPlanDayDate:day.date||'',
+      trainingPlanDayWorkoutType:day.workoutType||'',
+      trainingPlanDayEnergySystem:day.energySystem||'',
+      trainingPlanDayTargetSplits:day.targetSplits||'',
+      trainingPlanDayDetails:day.details||'',
+      trainingPlanDayPlannedVolume:day.plannedVolume||'',
+      trainingPlanDayLinkedMeetId:day.linkedMeetId||''
+    };
+    Object.keys(next).forEach(function(key){
+      if(String(log[key]||'')!==String(next[key]||'')){log[key]=next[key];changed=true;}
+    });
+    var runners=meetRunnersForGroup(day.groupName,log);
+    if(runners.length&&runners.length!==log.runners.length){log.runners=runners;changed=true;}
+    else if(runners.length){
+      log.runners=runners;
+    }
+  });
+  logs.forEach(function(log){
+    if(String(log.sharedGroupId||'').indexOf('calmeet_')===0&&!activeIds[log.sharedGroupId]&&!log.archived){
+      log.archived=1;
+      log.archivedAt=new Date().toISOString();
+      changed=true;
+    }
+  });
   return changed;
 }
 function sharedGroupsPayload(){
@@ -892,6 +991,7 @@ function loadProData(){
   loadTrainingPlans();
   loadSharedGroups();
   loadMeets();
+  loadCalendarMeetDays();
 }
 function applyAutoPlansToCurrentGroup(){
   if(!CL||!TP.length)return;
