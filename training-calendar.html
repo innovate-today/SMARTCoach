@@ -92,7 +92,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .dayaction{border:0;background:transparent;color:#172033;font-size:12px;font-weight:900;padding:0;text-align:left;display:inline-flex;align-items:center;gap:6px;min-height:20px}
 .dayaction:hover{text-decoration:underline}
 .dayicon{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;color:#fff;font-size:12px;line-height:1}
-.dayicon.activity{background:#2B4FCC}.dayicon.rest{background:#64748b}.dayicon.note{background:#94a3b8}
+.dayicon.activity{background:#2B4FCC}.dayicon.rest{background:#64748b}
 .item{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff}
 .item.meet{border-left-color:#7c3aed}.item.recovery{border-left-color:#0a7a44}.item.off{border-left-color:#94a3b8}.item.skipped{opacity:.68}
 .item b{display:block;font-size:14px;line-height:1.25}
@@ -127,7 +127,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .activitychoice.easy{border-color:#bae6fd;background:#f0f9ff}.activitychoice.easy b{color:#075985}
 .activitychoice.quality{border-color:#bbf7d0;background:#f0fdf4}.activitychoice.quality b{color:#166534}
 .activitychoice.race{border-color:#fed7aa;background:#fff7ed}.activitychoice.race b{color:#9a3412}
-.activitychoice.easy.active{border-color:#0284c7;background:#e0f2fe}.activitychoice.quality.active{border-color:#16a34a;background:#dcfce7}.activitychoice.race.active{border-color:#ea580c;background:#ffedd5}
+.activitychoice.rest{border-color:#cbd5e1;background:#f8fafc;min-height:62px}.activitychoice.rest b{color:#475569}
+.activitychoice.easy.active{border-color:#0284c7;background:#e0f2fe}.activitychoice.quality.active{border-color:#16a34a;background:#dcfce7}.activitychoice.race.active{border-color:#ea580c;background:#ffedd5}.activitychoice.rest.active{border-color:#64748b;background:#e2e8f0}
 .activitysection{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .activitysection h3{font-size:15px;margin:0 0 10px}
 .compactgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -380,6 +381,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <button class="activitychoice easy" data-add-activity-mode="easy" type="button"><b>Easy Run</b><small>Distance, optional notes, recovery work.</small></button>
         <button class="activitychoice quality" data-add-activity-mode="quality" type="button"><b>Quality Session</b><small>Warmup, reps, effort, recovery, cooldown.</small></button>
         <button class="activitychoice race" data-add-activity-mode="race" type="button"><b>Race</b><small>Meet or race day attached to a plan.</small></button>
+        <button class="activitychoice rest" data-add-activity-mode="off" type="button"><b>Rest / Day Off</b><small>Add an off day to the calendar.</small></button>
       </div>
       <div class="formgrid">
         <div class="field"><label for="addDayDate">Date <span class="fieldinfo" tabindex="0" data-tip="The clicked calendar date is used by default.">i</span></label><input id="addDayDate" type="date"></div>
@@ -1071,7 +1073,6 @@ function dayColumn(date,items){
     '<div class="dayactions" aria-label="Add options">'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button"><span class="dayicon activity">+</span>Add Activity</button>'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="off" type="button"><span class="dayicon rest">+</span>Add Rest Day</button>'+
-      '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="note" type="button"><span class="dayicon note">+</span>Add Note</button>'+
     '</div></div></div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
 }
 function dayItem(day){
@@ -1546,14 +1547,14 @@ function setActivityTypeOptions(options,selected){
 }
 function setAddDayMode(mode){
   addDayMode=mode||'easy';
-  var titleWasDefault=/^(Easy run|Quality session|Race day|Rest day|Coach note)$/i.test(els.addDayTitleInput.value||'');
+  var titleWasDefault=/^(Easy run|Quality session|Race day|Rest day)$/i.test(els.addDayTitleInput.value||'');
   Array.prototype.slice.call(els.addDayChooser.querySelectorAll('[data-add-activity-mode]')).forEach(function(button){
     button.classList.toggle('active',button.getAttribute('data-add-activity-mode')===addDayMode);
   });
   els.easyActivityFields.hidden=addDayMode!=='easy';
   els.qualityActivityFields.hidden=addDayMode!=='quality';
   els.addActivitySummary.hidden=addDayMode!=='quality';
-  els.addDayChooser.hidden=addDayMode==='off'||addDayMode==='note';
+  els.addDayChooser.hidden=false;
   els.addDayVolumeField.hidden=addDayMode==='quality'||addDayMode==='race';
   els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='race';
   if(addDayMode==='easy'){
@@ -1594,14 +1595,6 @@ function setAddDayMode(mode){
     els.addDayVolume.placeholder='0 miles';
     els.addDayDetails.placeholder='Optional rest day note';
     els.addDayTitle.textContent='Add Rest Day';
-  }else if(addDayMode==='note'){
-    setSelectValue(els.addDayType,'Other');
-    setActivityTypeOptions(['Note'],'Note');
-    els.addDayTitleInput.value='Coach note';
-    els.addDayTitleInput.placeholder='Example: Bus leaves at 3:30';
-    els.addDayVolume.placeholder='Optional';
-    els.addDayDetails.placeholder='Add note details';
-    els.addDayTitle.textContent='Add Note';
   }
   renderAddActivitySummary();
 }
@@ -1778,16 +1771,6 @@ function buildAddDayActivityValues(){
       plannedVolume:volume||'0 mi',
       targetSplits:target||'Rest / no assigned workout',
       details:details||'Rest day'
-    };
-  }
-  if(addDayMode==='note'){
-    return {
-      dayType:'Other',
-      title:title||'Coach note',
-      workoutType:type||'Note',
-      plannedVolume:volume,
-      targetSplits:target,
-      details:details||'Coach note'
     };
   }
   return {dayType:els.addDayType.value,title:title,workoutType:type,plannedVolume:volume,targetSplits:target,details:details};
