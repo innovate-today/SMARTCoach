@@ -127,6 +127,16 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .activitysection{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .activitysection h3{font-size:15px;margin:0 0 10px}
 .compactgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.manual-row{border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:10px;overflow:hidden}
+.manual-row-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f4f4f5;border-bottom:1px solid var(--line);padding:9px 10px}
+.manual-row-title{font-size:18px;font-weight:900;color:#64748b}
+.manual-row-grid{display:grid;grid-template-columns:76px 170px 190px 210px auto;gap:10px;align-items:end;padding:12px 10px}
+.manual-row-grid label,.compactgrid label{display:block;margin-bottom:5px}
+.inline-control{display:flex;align-items:center;gap:6px}
+.mini-input{max-width:86px;text-align:right;color:#111827;font-size:18px;font-weight:900}
+.mini-select{max-width:140px}
+.builder-links{display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px}
+.builder-link{background:transparent;color:#111827;padding:0;border-radius:0}
 .activitysummary{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
 .activitysummary-title{background:#e9eef7;color:#111827;font-weight:900;padding:10px 12px}
 .activitysummary-body{padding:12px;color:#334155;font-size:13px;line-height:1.45}
@@ -169,7 +179,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   .viewtabs{grid-template-columns:1fr}
   .detailgrid{grid-template-columns:1fr}
   .activitychooser{grid-template-columns:1fr}
-  .compactgrid{grid-template-columns:1fr 1fr}
+  .compactgrid,.manual-row-grid{grid-template-columns:1fr}
+  .mini-input,.mini-select{max-width:none}
   .status{text-align:left}
   .calendar.weekscroll{max-height:70vh;min-height:320px}
 }
@@ -379,20 +390,31 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div id="easyActivityFields" class="activitysection" hidden>
           <h3>Easy Run</h3>
           <div class="compactgrid">
-            <div class="field"><label for="addEasyDistance">Distance</label><input id="addEasyDistance" type="number" min="0" step="0.1" placeholder="Example: 5"></div>
-            <div class="field"><label for="addEasyUnit">Unit</label><select id="addEasyUnit"><option>mi</option><option>km</option><option>m</option></select></div>
-            <div class="field"><label for="addEasyStrides">Strides</label><input id="addEasyStrides" type="text" placeholder="Optional, e.g. 6 x 100m"></div>
+            <div class="field"><label for="addEasyDistance">Distance</label><input id="addEasyDistance" class="mini-input" type="number" min="0" step="0.1" placeholder="5"></div>
+            <div class="field"><label for="addEasyUnit">Unit</label><select id="addEasyUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div>
+            <div class="field"><label>&nbsp;</label><button id="addEasyStridesBtn" class="builder-link" type="button">Add Post-Run Strides</button></div>
+          </div>
+          <div id="easyStridesFields" class="activitysection" hidden style="margin-top:10px">
+            <h3>Post-Run Strides</h3>
+            <div class="compactgrid">
+              <div class="field"><label for="addEasyStridesReps">Reps</label><input id="addEasyStridesReps" class="mini-input" type="number" min="1" step="1" value="5"></div>
+              <div class="field"><label for="addEasyStridesDistance">Distance</label><div class="inline-control"><input id="addEasyStridesDistance" class="mini-input" type="number" min="0" step="1" value="100"><select id="addEasyStridesUnit" class="mini-select"><option>m</option><option>mi</option><option>km</option></select></div></div>
+              <div class="field"><label for="addEasyStridesRecovery">Recovery</label><div class="inline-control"><input id="addEasyStridesRecovery" class="mini-input" type="number" min="0" step="1" value="100"><select id="addEasyStridesRecoveryUnit" class="mini-select"><option>m walk</option><option>m jog</option><option>min jog</option><option>sec rest</option></select></div></div>
+              <div class="field"><label>&nbsp;</label><button id="removeEasyStridesBtn" class="ghost" type="button">Remove Strides</button></div>
+            </div>
           </div>
         </div>
         <div id="qualityActivityFields" class="activitysection" hidden>
           <h3>Quality Session</h3>
           <div class="compactgrid">
-            <div class="field"><label for="addQualityWarmup">Warmup</label><input id="addQualityWarmup" type="text" placeholder="Example: 1 mi"></div>
-            <div class="field"><label for="addQualityReps">Reps</label><input id="addQualityReps" type="number" min="1" step="1" placeholder="Example: 10"></div>
-            <div class="field"><label for="addQualityDistance">Rep Distance</label><input id="addQualityDistance" type="text" placeholder="Example: 100m"></div>
-            <div class="field"><label for="addQualityEffort">Effort</label><select id="addQualityEffort"><option>Easy</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option></select></div>
-            <div class="field"><label for="addQualityRecovery">Recovery</label><input id="addQualityRecovery" type="text" placeholder="Example: 100m walk or 1 min jog"></div>
-            <div class="field"><label for="addQualityCooldown">Cooldown</label><input id="addQualityCooldown" type="text" placeholder="Example: 1 mi"></div>
+            <div class="field"><label for="addQualityWarmupValue">Warmup</label><div class="inline-control"><input id="addQualityWarmupValue" class="mini-input" type="number" min="0" step="0.1" value="1"><select id="addQualityWarmupUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div></div>
+            <div class="field"><label for="addQualityCooldownValue">Cooldown</label><div class="inline-control"><input id="addQualityCooldownValue" class="mini-input" type="number" min="0" step="0.1" value="2"><select id="addQualityCooldownUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div></div>
+          </div>
+          <div id="qualityRows" style="margin-top:12px"></div>
+          <div class="builder-links">
+            <button id="addQualitySetBtn" class="builder-link" type="button">Add Set</button>
+            <button id="addQualityRepeatBtn" class="builder-link" type="button">Add Repeating Sets</button>
+            <button id="clearQualityBtn" class="builder-link" type="button">Clear</button>
           </div>
         </div>
         <div id="addActivitySummary" class="activitysummary" hidden><div class="activitysummary-title">Quality Session Summary</div><div id="addActivitySummaryBody" class="activitysummary-body"></div></div>
@@ -530,14 +552,23 @@ var els={
   easyActivityFields:document.getElementById('easyActivityFields'),
   addEasyDistance:document.getElementById('addEasyDistance'),
   addEasyUnit:document.getElementById('addEasyUnit'),
-  addEasyStrides:document.getElementById('addEasyStrides'),
+  addEasyStridesBtn:document.getElementById('addEasyStridesBtn'),
+  easyStridesFields:document.getElementById('easyStridesFields'),
+  addEasyStridesReps:document.getElementById('addEasyStridesReps'),
+  addEasyStridesDistance:document.getElementById('addEasyStridesDistance'),
+  addEasyStridesUnit:document.getElementById('addEasyStridesUnit'),
+  addEasyStridesRecovery:document.getElementById('addEasyStridesRecovery'),
+  addEasyStridesRecoveryUnit:document.getElementById('addEasyStridesRecoveryUnit'),
+  removeEasyStridesBtn:document.getElementById('removeEasyStridesBtn'),
   qualityActivityFields:document.getElementById('qualityActivityFields'),
-  addQualityWarmup:document.getElementById('addQualityWarmup'),
-  addQualityReps:document.getElementById('addQualityReps'),
-  addQualityDistance:document.getElementById('addQualityDistance'),
-  addQualityEffort:document.getElementById('addQualityEffort'),
-  addQualityRecovery:document.getElementById('addQualityRecovery'),
-  addQualityCooldown:document.getElementById('addQualityCooldown'),
+  addQualityWarmupValue:document.getElementById('addQualityWarmupValue'),
+  addQualityWarmupUnit:document.getElementById('addQualityWarmupUnit'),
+  addQualityCooldownValue:document.getElementById('addQualityCooldownValue'),
+  addQualityCooldownUnit:document.getElementById('addQualityCooldownUnit'),
+  qualityRows:document.getElementById('qualityRows'),
+  addQualitySetBtn:document.getElementById('addQualitySetBtn'),
+  addQualityRepeatBtn:document.getElementById('addQualityRepeatBtn'),
+  clearQualityBtn:document.getElementById('clearQualityBtn'),
   addActivitySummary:document.getElementById('addActivitySummary'),
   addActivitySummaryBody:document.getElementById('addActivitySummaryBody'),
   addDayDetails:document.getElementById('addDayDetails'),
@@ -1460,13 +1491,17 @@ function openAddDayModal(dateValue,mode){
   els.addDayNotes.value='';
   els.addEasyDistance.value='';
   els.addEasyUnit.value='mi';
-  els.addEasyStrides.value='';
-  els.addQualityWarmup.value='';
-  els.addQualityReps.value='';
-  els.addQualityDistance.value='';
-  els.addQualityEffort.value='Threshold';
-  els.addQualityRecovery.value='';
-  els.addQualityCooldown.value='';
+  els.easyStridesFields.hidden=true;
+  els.addEasyStridesReps.value='5';
+  els.addEasyStridesDistance.value='100';
+  els.addEasyStridesUnit.value='m';
+  els.addEasyStridesRecovery.value='100';
+  els.addEasyStridesRecoveryUnit.value='m walk';
+  els.addQualityWarmupValue.value='1';
+  els.addQualityWarmupUnit.value='mi';
+  els.addQualityCooldownValue.value='2';
+  els.addQualityCooldownUnit.value='mi';
+  seedQualityRows();
   var currentPlans=visiblePlans().filter(function(plan){return !isPastPlan(plan);});
   var defaultPlanId=selectedPlanIds.length===1?selectedPlanIds[0]:(currentPlans[0]?planId(currentPlans[0]):'');
   if(defaultPlanId)els.addDayPlan.value=defaultPlanId;
@@ -1568,12 +1603,76 @@ function distanceText(value,unit){
   var suffix=String(unit||'').trim();
   return amount ? amount+(suffix?' '+suffix:'') : '';
 }
+function distanceLabel(value,unit){
+  return distanceText(value,unit).replace(' m walk','m walk').replace(' m jog','m jog').replace(' min jog',' min jog').replace(' sec rest',' sec rest');
+}
+function effortOptions(selected){
+  return ['Easy','Threshold','Interval','Repetition','Hills','Fast Reps','Speed Endurance I','Speed Endurance II','Special Endurance I','Special Endurance II','Intensive Tempo','Extensive Tempo'].map(function(value){
+    return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';
+  }).join('');
+}
+function distanceUnitOptions(selected){
+  return ['mi','km','m'].map(function(value){return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';}).join('');
+}
+function recoveryUnitOptions(selected){
+  return ['min jog','m walk','m jog','sec rest'].map(function(value){return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';}).join('');
+}
+function addQualityRow(values){
+  values=values||{};
+  var kind=values.kind||'set';
+  var row=document.createElement('div');
+  row.className='manual-row';
+  row.setAttribute('data-quality-row',kind);
+  row.innerHTML='<div class="manual-row-head"><div class="manual-row-title">'+(kind==='repeat'?'Repeating Sets':'Set')+'</div><button class="ghost" data-remove-quality-row type="button">Remove</button></div>'+
+    (kind==='repeat'?'<div class="inline-control" style="padding:12px 10px;color:#64748b"><input data-field="repeatCount" class="mini-input" type="number" min="1" step="1" value="'+esc(values.repeatCount||3)+'"><span>x</span></div>':'')+
+    '<div class="manual-row-grid">'+
+      '<div><label>Reps</label><input data-field="reps" class="mini-input" type="number" min="1" step="1" value="'+esc(values.reps||2)+'"></div>'+
+      '<div><label>Distance</label><div class="inline-control"><input data-field="distanceValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.distanceValue||1)+'"><select data-field="distanceUnit" class="mini-select">'+distanceUnitOptions(values.distanceUnit||'mi')+'</select></div></div>'+
+      '<div><label>Effort</label><select data-field="effort">'+effortOptions(values.effort||'Threshold')+'</select></div>'+
+      '<div><label>Recovery Between Reps</label><div class="inline-control"><input data-field="recoveryValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.recoveryValue||1)+'"><select data-field="recoveryUnit" class="mini-select">'+recoveryUnitOptions(values.recoveryUnit||'min jog')+'</select></div></div>'+
+    '</div>';
+  els.qualityRows.appendChild(row);
+  renderAddActivitySummary();
+}
+function seedQualityRows(){
+  if(!els.qualityRows)return;
+  els.qualityRows.innerHTML='';
+  addQualityRow({kind:'set'});
+}
+function collectQualityRows(){
+  return Array.prototype.slice.call(els.qualityRows.querySelectorAll('[data-quality-row]')).map(function(row){
+    var item={kind:row.getAttribute('data-quality-row')||'set',repeatCount:1};
+    row.querySelectorAll('[data-field]').forEach(function(input){item[input.getAttribute('data-field')]=input.value;});
+    item.reps=Number(item.reps||0);
+    item.repeatCount=Number(item.repeatCount||1);
+    item.distanceValue=Number(item.distanceValue||0);
+    item.recoveryValue=Number(item.recoveryValue||0);
+    return item;
+  });
+}
+function qualityBlockLine(block){
+  var inner=block.reps+' x '+distanceLabel(block.distanceValue,block.distanceUnit)+' @ '+block.effort;
+  return block.kind==='repeat'?block.repeatCount+' x ('+inner+')':inner;
+}
+function qualityRecoveryLine(block){
+  return distanceLabel(block.recoveryValue,block.recoveryUnit)+' recovery between reps';
+}
 function parseDistanceMiles(text){
   var value=String(text||'').trim().toLowerCase();
   var n=Number((value.match(/[\d.]+/)||[])[0]||0);
   if(!n)return 0;
   if(value.indexOf('km')>=0)return n*0.621371;
+  if(value.indexOf('min')>=0||value.indexOf('sec')>=0)return 0;
   if(/\bm\b/.test(value)&&value.indexOf('mi')<0)return n/1609.34;
+  return n;
+}
+function unitMiles(value,unit){
+  var n=Number(value||0);
+  var text=String(unit||'').toLowerCase();
+  if(!n)return 0;
+  if(text.indexOf('km')>=0)return n*0.621371;
+  if(text.indexOf('m')>=0&&text.indexOf('mi')<0)return n/1609.34;
+  if(text.indexOf('min')>=0||text.indexOf('sec')>=0)return 0;
   return n;
 }
 function formatMiles(value){
@@ -1583,19 +1682,15 @@ function formatMiles(value){
 }
 function renderAddActivitySummary(){
   if(!els.addActivitySummaryBody||addDayMode!=='quality')return;
-  var warm=els.addQualityWarmup.value.trim()||'Warmup not set';
-  var reps=String(els.addQualityReps.value||'').trim();
-  var dist=els.addQualityDistance.value.trim();
-  var effort=els.addQualityEffort.value||'Threshold';
-  var recovery=els.addQualityRecovery.value.trim()||'Recovery not set';
-  var cool=els.addQualityCooldown.value.trim()||'Cooldown not set';
-  var setLine=(reps&&dist?reps+' x '+dist:'Set not complete')+' @ '+effort;
-  var total=parseDistanceMiles(warm)+parseDistanceMiles(cool);
-  if(reps&&dist)total+=Number(reps||0)*parseDistanceMiles(dist);
-  els.addActivitySummaryBody.innerHTML=
-    '<b>Warmup</b>'+esc(warm)+
-    '<br><br><b>Set</b>'+esc(setLine)+'<br>'+esc(recovery)+' recovery between reps'+
-    '<br><br><b>Cooldown</b>'+esc(cool)+
+  var warm=distanceLabel(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value)||'Warmup not set';
+  var cool=distanceLabel(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value)||'Cooldown not set';
+  var blocks=collectQualityRows();
+  var total=unitMiles(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value)+unitMiles(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value);
+  var blockHtml=blocks.map(function(block){
+    total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);
+    return '<br><br><b>'+(block.kind==='repeat'?'Repeat '+block.repeatCount+' times':'Set')+'</b>'+esc(qualityBlockLine(block))+'<br>'+esc(qualityRecoveryLine(block));
+  }).join('');
+  els.addActivitySummaryBody.innerHTML='<b>Warmup</b>'+esc(warm)+blockHtml+'<br><br><b>Cooldown</b>'+esc(cool)+
     '<div class="summary-total">'+esc(formatMiles(total)||'Volume not set')+'</div>';
 }
 function buildAddDayActivityValues(){
@@ -1606,37 +1701,41 @@ function buildAddDayActivityValues(){
   var target=els.addDayTarget.value.trim();
   if(addDayMode==='easy'){
     var distance=distanceText(els.addEasyDistance.value,els.addEasyUnit.value);
+    var easyMiles=unitMiles(els.addEasyDistance.value,els.addEasyUnit.value);
     var lines=[];
     if(distance)lines.push(distance+' easy');
-    if(els.addEasyStrides.value.trim())lines.push('Strides: '+els.addEasyStrides.value.trim());
+    if(!els.easyStridesFields.hidden){
+      var strideLine=els.addEasyStridesReps.value+' x '+distanceLabel(els.addEasyStridesDistance.value,els.addEasyStridesUnit.value)+' strides / '+distanceLabel(els.addEasyStridesRecovery.value,els.addEasyStridesRecoveryUnit.value)+' recovery';
+      easyMiles+=Number(els.addEasyStridesReps.value||0)*unitMiles(els.addEasyStridesDistance.value,els.addEasyStridesUnit.value);
+      lines.push(strideLine);
+    }
     if(details)lines.push(details);
     return {
       dayType:'Recovery',
-      title:title||(distance?distance+' Easy Run':'Easy run'),
+      title:title||(distance?distance+' Easy Run'+(!els.easyStridesFields.hidden?' + Strides':''):'Easy run'),
       workoutType:type||'Easy/Recovery Run',
-      plannedVolume:volume||distance,
-      targetSplits:target||'Conversational',
+      plannedVolume:volume||(easyMiles?formatMiles(easyMiles):distance),
+      targetSplits:target||('Conversational'+(!els.easyStridesFields.hidden?'; strides relaxed and fast':'')),
       details:lines.join('\n')
     };
   }
   if(addDayMode==='quality'){
-    var reps=String(els.addQualityReps.value||'').trim();
-    var repDistance=els.addQualityDistance.value.trim();
-    var effort=els.addQualityEffort.value;
-    var mainSet=[reps&&repDistance?reps+' x '+repDistance:'',effort].filter(Boolean).join(' @ ');
+    var blocks=collectQualityRows();
     var qLines=[];
-    if(els.addQualityWarmup.value.trim())qLines.push('Warmup: '+els.addQualityWarmup.value.trim());
-    if(mainSet)qLines.push('Set: '+mainSet);
-    if(els.addQualityRecovery.value.trim())qLines.push('Recovery: '+els.addQualityRecovery.value.trim());
-    if(els.addQualityCooldown.value.trim())qLines.push('Cooldown: '+els.addQualityCooldown.value.trim());
+    qLines.push('Warmup: '+distanceLabel(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value));
+    blocks.forEach(function(block){qLines.push(qualityBlockLine(block)+' / '+qualityRecoveryLine(block));});
+    qLines.push('Cooldown: '+distanceLabel(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value));
     if(details)qLines.push(details);
-    var total=parseDistanceMiles(els.addQualityWarmup.value)+parseDistanceMiles(els.addQualityCooldown.value)+(reps&&repDistance?Number(reps)*parseDistanceMiles(repDistance):0);
+    var first=blocks[0]||{effort:'Threshold'};
+    var mainSet=blocks[0]?qualityBlockLine(blocks[0]):'Quality session';
+    var total=unitMiles(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value)+unitMiles(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value);
+    blocks.forEach(function(block){total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);});
     return {
       dayType:'Workout',
       title:title||(mainSet||'Quality session'),
-      workoutType:type||effort,
+      workoutType:type||first.effort,
       plannedVolume:volume||(total?formatMiles(total)+' total':'Quality session'),
-      targetSplits:target||[mainSet,els.addQualityRecovery.value.trim()].filter(Boolean).join(' / '),
+      targetSplits:target||blocks.map(function(block){return qualityBlockLine(block)+' with '+qualityRecoveryLine(block);}).join('; '),
       details:qLines.join('\n')
     };
   }
@@ -2000,7 +2099,25 @@ function init(){
     if(addDayMode==='race')setAddDayMode('race');
   });
   els.addDaySave.addEventListener('click',saveAddedCalendarDay);
-  [els.addQualityWarmup,els.addQualityReps,els.addQualityDistance,els.addQualityEffort,els.addQualityRecovery,els.addQualityCooldown].forEach(function(input){
+  els.addEasyStridesBtn.addEventListener('click',function(){
+    els.easyStridesFields.hidden=false;
+  });
+  els.removeEasyStridesBtn.addEventListener('click',function(){
+    els.easyStridesFields.hidden=true;
+  });
+  els.addQualitySetBtn.addEventListener('click',function(){addQualityRow({kind:'set'});});
+  els.addQualityRepeatBtn.addEventListener('click',function(){addQualityRow({kind:'repeat',distanceValue:200,distanceUnit:'m',recoveryValue:5,recoveryUnit:'min jog'});});
+  els.clearQualityBtn.addEventListener('click',seedQualityRows);
+  els.qualityRows.addEventListener('input',renderAddActivitySummary);
+  els.qualityRows.addEventListener('change',renderAddActivitySummary);
+  els.qualityRows.addEventListener('click',function(event){
+    var button=event.target.closest&&event.target.closest('[data-remove-quality-row]');
+    if(!button)return;
+    button.closest('[data-quality-row]').remove();
+    if(!els.qualityRows.children.length)addQualityRow({kind:'set'});
+    renderAddActivitySummary();
+  });
+  [els.addQualityWarmupValue,els.addQualityWarmupUnit,els.addQualityCooldownValue,els.addQualityCooldownUnit].forEach(function(input){
     input.addEventListener('input',renderAddActivitySummary);
     input.addEventListener('change',renderAddActivitySummary);
   });
