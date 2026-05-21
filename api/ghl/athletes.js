@@ -6,7 +6,7 @@ const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 
 const ATHLETE_FIELD_ALIASES = {
   gender: ["gender", "sex", "division"],
-  grade: ["grade", "class", "graduation year", "graduation_year", "grad year"],
+  grade: ["graduation year", "graduation_year", "grad year", "class year", "class_year", "class", "grade"],
   parentGuardianName: ["parent_guardian_name", "parent guardian name", "parent/guardian name", "guardian name", "parent name"],
   parentGuardianEmail: ["parent_guardian_email", "parent guardian email", "parent/guardian email", "guardian email", "parent email"],
   parentGuardianPhone: ["parent_guardian_phone", "parent guardian phone", "parent/guardian phone", "guardian phone", "parent phone"],
