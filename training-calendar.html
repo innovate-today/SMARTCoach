@@ -383,10 +383,10 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div class="field" hidden><label for="addDayType">Day Type <span class="fieldinfo" tabindex="0" data-tip="Use Workout for training sessions or Meets/Races for competition days.">i</span></label><select id="addDayType"><option value="Workout">Workout</option><option value="Meet">Meets/Races</option><option value="Recovery">Recovery</option><option value="Off Day">Off/Travel</option><option value="Other">Other</option></select></div>
         <div class="field"><label for="addDaySport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country so race and workout days are labeled correctly.">i</span></label><select id="addDaySport"><option>Track</option><option>Cross Country</option></select></div>
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
-        <div class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Workout effort or race type for coach reference.">i</span></label><input id="addDayWorkoutType" type="text" placeholder="Example: Extensive Tempo"></div>
+        <div class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Choose the effort or race type. Quality sessions also use the effort selected inside each set.">i</span></label><select id="addDayWorkoutType"><option value="">Select effort / type</option><option>Easy/Recovery Run</option><option>Long Run</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option><option>Track Meet</option><option>Cross Country Race</option><option>Race / Meet</option><option>Off Day</option><option>Note</option></select></div>
         <div class="field"><label for="addDayGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Choose an active training group.">i</span></label><select id="addDayGroup"><option value="">Select group</option></select></div>
-        <div class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional volume target for the day.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles or 1000m quality"></div>
-        <div class="field"><label for="addDayTarget">Target <span class="fieldinfo info-left" tabindex="0" data-tip="Optional split, pace, or race target.">i</span></label><input id="addDayTarget" type="text" placeholder="Example: 75-82% or race plan"></div>
+        <div id="addDayVolumeField" class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional override. Easy Run volume is also calculated from the distance below.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles"></div>
+        <div id="addDayTargetField" class="field"><label for="addDayTarget">Target <span class="fieldinfo info-left" tabindex="0" data-tip="Optional override. Leave blank to use the standard target for this activity.">i</span></label><input id="addDayTarget" type="text" placeholder="Example: Conversational"></div>
         <div id="easyActivityFields" class="activitysection" hidden>
           <h3>Easy Run</h3>
           <div class="compactgrid">
@@ -547,7 +547,9 @@ var els={
   addDayTitleInput:document.getElementById('addDayTitleInput'),
   addDayWorkoutType:document.getElementById('addDayWorkoutType'),
   addDayGroup:document.getElementById('addDayGroup'),
+  addDayVolumeField:document.getElementById('addDayVolumeField'),
   addDayVolume:document.getElementById('addDayVolume'),
+  addDayTargetField:document.getElementById('addDayTargetField'),
   addDayTarget:document.getElementById('addDayTarget'),
   easyActivityFields:document.getElementById('easyActivityFields'),
   addEasyDistance:document.getElementById('addEasyDistance'),
@@ -1541,10 +1543,12 @@ function setAddDayMode(mode){
   els.qualityActivityFields.hidden=addDayMode!=='quality';
   els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=addDayMode==='off'||addDayMode==='note';
+  els.addDayVolumeField.hidden=addDayMode==='quality'||addDayMode==='race';
+  els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='race';
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Easy run';
-    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Easy/Recovery Run';
+    setSelectValue(els.addDayWorkoutType,'Easy/Recovery Run');
     if(!els.addDayTarget.value)els.addDayTarget.value='Conversational';
     els.addDayVolume.placeholder='Example: 5 miles';
     els.addDayDetails.placeholder='Add the session details';
@@ -1552,22 +1556,23 @@ function setAddDayMode(mode){
   }else if(addDayMode==='quality'){
     setSelectValue(els.addDayType,'Workout');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Quality session';
-    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Threshold';
-    els.addDayVolume.placeholder='Example: 5 miles total';
+    setSelectValue(els.addDayWorkoutType,'Threshold');
+    els.addDayVolume.value='';
+    els.addDayTarget.value='';
     els.addDayDetails.placeholder='Add workout notes, suggestions, or tips...';
     els.addDayTitle.textContent='Add Quality Session';
   }else if(addDayMode==='race'){
     setSelectValue(els.addDayType,'Meet');
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Race day';
-    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value=els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet';
-    if(!els.addDayTarget.value)els.addDayTarget.value='Race plan';
-    els.addDayVolume.placeholder='Example: 2 mile, 3200m, or 5K';
+    setSelectValue(els.addDayWorkoutType,els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet');
+    els.addDayVolume.value='';
+    els.addDayTarget.value='';
     els.addDayDetails.placeholder='Race plan should be reviewed by event and athlete before competition.';
     els.addDayTitle.textContent='Add Race';
   }else if(addDayMode==='off'){
     setSelectValue(els.addDayType,'Off Day');
     els.addDayTitleInput.value='Rest day';
-    els.addDayWorkoutType.value='Off Day';
+    setSelectValue(els.addDayWorkoutType,'Off Day');
     els.addDayVolume.value='0 mi';
     els.addDayTarget.value='Rest / no assigned workout';
     els.addDayDetails.value='Rest day';
@@ -1577,7 +1582,7 @@ function setAddDayMode(mode){
   }else if(addDayMode==='note'){
     setSelectValue(els.addDayType,'Other');
     els.addDayTitleInput.value='Coach note';
-    els.addDayWorkoutType.value='Note';
+    setSelectValue(els.addDayWorkoutType,'Note');
     els.addDayVolume.placeholder='Optional';
     els.addDayDetails.placeholder='Add note details';
     els.addDayTitle.textContent='Add Note';
@@ -1588,14 +1593,14 @@ function updateAddDayTypeDefaults(){
   var type=els.addDayType.value||'Workout';
   if(type==='Meet'){
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Race day';
-    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value=els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet';
+    if(!els.addDayWorkoutType.value)setSelectValue(els.addDayWorkoutType,els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet');
     if(!els.addDayTarget.value)els.addDayTarget.value='Race plan';
   }else if(type==='Recovery'){
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Recovery run';
-    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Easy';
+    if(!els.addDayWorkoutType.value)setSelectValue(els.addDayWorkoutType,'Easy/Recovery Run');
   }else if(type==='Off Day'){
     if(!els.addDayTitleInput.value)els.addDayTitleInput.value='Off day';
-    if(!els.addDayWorkoutType.value)els.addDayWorkoutType.value='Off Day';
+    if(!els.addDayWorkoutType.value)setSelectValue(els.addDayWorkoutType,'Off Day');
   }
 }
 function distanceText(value,unit){
@@ -1697,8 +1702,8 @@ function buildAddDayActivityValues(){
   var details=els.addDayDetails.value.trim();
   var title=els.addDayTitleInput.value.trim();
   var type=els.addDayWorkoutType.value.trim();
-  var volume=els.addDayVolume.value.trim();
-  var target=els.addDayTarget.value.trim();
+  var volume=els.addDayVolumeField.hidden?'':els.addDayVolume.value.trim();
+  var target=els.addDayTargetField.hidden?'':els.addDayTarget.value.trim();
   if(addDayMode==='easy'){
     var distance=distanceText(els.addEasyDistance.value,els.addEasyUnit.value);
     var easyMiles=unitMiles(els.addEasyDistance.value,els.addEasyUnit.value);
@@ -2094,7 +2099,7 @@ function init(){
   els.addDayType.addEventListener('change',updateAddDayTypeDefaults);
   els.addDaySport.addEventListener('change',function(){
     if(els.addDayType.value==='Meet'&&(!els.addDayWorkoutType.value||/^(Race \/ Meet|Track Meet|Cross Country Race)$/i.test(els.addDayWorkoutType.value))){
-      els.addDayWorkoutType.value=els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet';
+      setSelectValue(els.addDayWorkoutType,els.addDaySport.value==='Cross Country'?'Cross Country Race':'Track Meet');
     }
     if(addDayMode==='race')setAddDayMode('race');
   });
