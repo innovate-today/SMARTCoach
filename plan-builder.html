@@ -36,8 +36,8 @@ label{display:block;font-size:12px;font-weight:800;color:#374151;margin-bottom:6
 .field-section h2{font-size:15px;line-height:1.2;margin:0;color:#111827}
 .field-section p{font-size:13px;color:var(--muted);margin-top:3px}
 .fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
-.fieldinfo::after{content:attr(data-tip);position:absolute;left:0;top:24px;width:280px;max-width:min(80vw,280px);padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:40;white-space:normal;transform:none}
-.field:nth-child(2n) .fieldinfo::after,.fieldinfo.info-left::after{left:auto;right:0;transform:none}
+.fieldinfo::after{content:attr(data-tip);position:absolute;left:-8px;top:24px;width:280px;max-width:min(80vw,280px);padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:40;white-space:normal;transform:none}
+.field:nth-child(2n) .fieldinfo::after,.fieldinfo.info-left::after{left:auto;right:-8px;transform:none}
 .fieldinfo:hover::after,.fieldinfo:focus::after{opacity:1}
 input,select,textarea{width:100%;font:inherit;font-size:14px;border:1px solid #cfd6e0;border-radius:7px;padding:9px 10px;background:#fff;color:#111827;outline:none}
 textarea{min-height:94px;resize:vertical}

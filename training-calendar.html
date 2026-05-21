@@ -113,8 +113,8 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .field.full{grid-column:1/-1}
 .field label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 .fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
-.fieldinfo::after{content:attr(data-tip);position:absolute;left:0;top:24px;width:260px;max-width:80vw;padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:30;white-space:normal}
-.fieldinfo.info-left::after{left:auto;right:0}
+.fieldinfo::after{content:attr(data-tip);position:absolute;left:-8px;top:24px;width:260px;max-width:min(80vw,260px);padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:30;white-space:normal}
+.fieldinfo.info-left::after{left:auto;right:-8px}
 .fieldinfo:hover::after,.fieldinfo:focus::after{opacity:1}
 textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;resize:vertical}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:14px}
