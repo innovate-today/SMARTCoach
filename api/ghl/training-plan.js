@@ -369,8 +369,12 @@ async function appendTrainingPlanDays({ token, locationId, payload }) {
   if (!plan.days.length) throw httpError(400, "Add at least one workout day first.");
 
   const createdDays = [];
-  for (const day of plan.days) {
-    const dayProperties = buildTrainingPlanDayProperties(plan, day, {
+  for (const [index, day] of plan.days.entries()) {
+    const dayForCreate = {
+      ...day,
+      sourceRecordId: clean(day.sourceRecordId) || buildManualDaySourceRecordId({ planId, payload, day, index }),
+    };
+    const dayProperties = buildTrainingPlanDayProperties(plan, dayForCreate, {
       planRecordId: planId,
       planSourceRecordId: clean(payload && payload.planSourceRecordId),
     });
@@ -404,6 +408,17 @@ async function appendTrainingPlanDays({ token, locationId, payload }) {
     appendedCount: createdDays.length,
     days: createdDays,
   };
+}
+
+function buildManualDaySourceRecordId({ planId, payload, day, index }) {
+  return [
+    "tpd_manual",
+    slugValue(clean(payload && payload.planSourceRecordId) || planId || "plan"),
+    dateOnly(day && day.date).replace(/-/g, ""),
+    slugValue(day && (day.workoutTitle || day.title || day.dayType || "day")),
+    Date.now().toString(36),
+    String(index + 1),
+  ].filter(Boolean).join("_");
 }
 
 function appendPlanDayAudit(notes, reason) {

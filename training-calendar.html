@@ -612,6 +612,15 @@ function stripCalendarMetaLines(value){
 function coachNotesWithSport(notes,sport){
   return ['Sport: '+normalizeSport(sport),stripCalendarMetaLines(notes)].filter(Boolean).join('\n');
 }
+function uniqueCalendarDaySourceId(plan,day){
+  return [
+    'tpd_manual',
+    cleanKey(plan&&plan.sourceRecordId||plan&&plan.id||'plan'),
+    String(day&&day.date||'').replace(/[^0-9]/g,'')||'date',
+    Date.now().toString(36),
+    Math.random().toString(36).slice(2,8)
+  ].join('_');
+}
 function planEffectiveEndDate(plan){
   var end=parseCalendarDate(plan&&plan.endDate);
   if(!isNaN(end.getTime()))return end;
@@ -1449,6 +1458,7 @@ function saveAddedCalendarDay(){
     status:'Scheduled',
     coachNotes:coachNotesWithSport(els.addDayNotes.value,els.addDaySport.value)
   };
+  day.sourceRecordId=uniqueCalendarDaySourceId(plan,day);
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
   els.addDaySave.disabled=true;
