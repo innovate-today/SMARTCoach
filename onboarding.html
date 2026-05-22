@@ -43,6 +43,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .envrow code{display:block;font-size:13px;white-space:normal;word-break:break-word;color:#102a70;font-family:"SFMono-Regular",Consolas,monospace}
 .envrow small{display:block;color:var(--muted);font-size:12px;margin-top:5px}
 .varlist{display:grid;gap:10px}
+.automationgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .varrow{display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:end;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
 .varfield{display:grid;gap:5px;min-width:0}
 .varlabel{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -69,6 +70,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .readybar.bad{border-color:#fecaca;background:#fef2f2}.readybar.bad b{color:var(--bad)}
 .linkline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .linkline code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:10px 12px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.payloadbox{display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
+.payloadbox strong{font-size:15px}.payloadbox span{color:var(--muted);font-size:12px;line-height:1.35}
+.payloadbox pre{margin:0;border:1px solid var(--line);border-radius:8px;background:#fff;color:#102a70;padding:10px;max-height:220px;overflow:auto;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
 .links{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .checklist{display:grid;gap:10px}
 .checkrow{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
@@ -87,7 +91,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .registrycards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .registryrow{display:grid;grid-template-columns:180px 1fr;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;font-size:13px}
 .registryrow b{color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:11px}
-@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
+@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.automationgrid,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
 @media(max-width:760px){.lookupgrid,.connectiongrid,.registrycards,.registryrow{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
 </style>
 </head>
@@ -260,6 +264,26 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelbody">
       <div class="copyhint">Add required rows in Vercel Production. Recommended rows protect customer data before launch. Copy Setup Field into the Name box and Copy Value into the Value box.</div>
       <div id="varList" class="varlist"></div>
+    </div>
+  </section>
+
+  <section id="automationPanel" class="panel" hidden>
+    <div class="panelhead"><h2>Automation Payloads</h2></div>
+    <div class="panelbody">
+      <div class="automationgrid">
+        <div class="payloadbox">
+          <strong>Stripe Metadata</strong>
+          <span>Add these metadata fields to the Stripe checkout/subscription/customer when possible.</span>
+          <pre id="stripeMetadataText"></pre>
+          <button type="button" class="secondary" onclick="copyPayload('stripe')">Copy Stripe Metadata</button>
+        </div>
+        <div class="payloadbox">
+          <strong>Automation Payload</strong>
+          <span>Use this JSON body with the protected account automation endpoint.</span>
+          <pre id="automationPayloadText"></pre>
+          <button type="button" class="secondary" onclick="copyPayload('automation')">Copy Automation Payload</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -561,6 +585,7 @@ function renderSetup(data){
   currentSetup=data;
   document.getElementById('resultPanel').hidden=false;
   document.getElementById('copyPanel').hidden=false;
+  document.getElementById('automationPanel').hidden=false;
   document.getElementById('checklistPanel').hidden=false;
   document.getElementById('linksPanel').hidden=false;
   document.getElementById('resultAccount').textContent=data.accountKey||'--';
@@ -581,6 +606,7 @@ function renderSetup(data){
   setLink('statusLink','/api/smart-trak/account-status?account='+encodeURIComponent(data.accountKey||'customer'));
   setCustomLinkText(customerLink);
   renderCustomerLinkDetails(data);
+  renderAutomationPayloads(data);
   renderChecklist(data);
 }
 function customerMainLink(data){
@@ -683,6 +709,25 @@ function renderVariableRows(env){
     var statusClass=required?'':row.recommended?' recommended':' optional';
     return '<div class="varrow"><div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta'+statusClass+'">'+status+'</em></div><code title="'+esc(row.label||row.key)+'">'+esc(row.key)+'</code></div><div class="varfield"><div class="varlabel"><span>Value</span></div><input value="'+esc(row.value)+'" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" oninput="updateVariableValue('+index+',this.value)"></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Setup Field</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
+}
+function renderAutomationPayloads(data){
+  var account=data.accountKey||document.getElementById('accountKey').value.trim();
+  var metadata={
+    accountKey:account,
+    productPlan:data.productPlan||document.getElementById('plan').value,
+    coachSeats:String(data.coachSeats||document.getElementById('coachSeats').value||'1')
+  };
+  var payload=registryPayloadFromForm();
+  payload.accountKey=account;
+  payload.productPlan=metadata.productPlan;
+  payload.coachSeats=metadata.coachSeats;
+  document.getElementById('stripeMetadataText').textContent=JSON.stringify(metadata,null,2);
+  document.getElementById('automationPayloadText').textContent=JSON.stringify(payload,null,2);
+}
+function copyPayload(type){
+  var id=type==='stripe'?'stripeMetadataText':'automationPayloadText';
+  var label=type==='stripe'?'Stripe metadata copied.':'Automation payload copied.';
+  copyText(document.getElementById(id).textContent,label);
 }
 function updateVariableValue(index,value){
   if(currentEnvironment[index])currentEnvironment[index].value=value;
