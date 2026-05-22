@@ -18,6 +18,7 @@ const { registryConfigured, saveAccountRecord, loadAccountRecord } = require("..
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 
 module.exports = async function handler(req, res) {
+  setSmartTrakSecurityHeaders(res);
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
   const selected = handlers[route];
 
@@ -844,6 +845,15 @@ function setSessionHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code, X-SMARTCoach-Session");
+}
+
+function setSmartTrakSecurityHeaders(res) {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
 }
 
 function firstPayloadValue(payload, keys) {

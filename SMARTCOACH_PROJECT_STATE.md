@@ -421,6 +421,7 @@ Subscription/customer management:
 - Dashboard now exchanges a valid coach access code for a temporary session token and stops sending the raw code on each dashboard request when a session exists.
 - Added server-side throttling for coach session/access-code attempts so repeated bad codes pause before another login attempt is accepted.
 - Added optional required coach-access enforcement with `SMARTCOACH_REQUIRE_COACH_ACCESS` or account-specific `SMARTCOACH_REQUIRE_COACH_ACCESS_ACCOUNTKEY`. This blocks Pro SMART Trak access if a customer account has no coach access code configured.
+- SMART Trak API responses now send no-store/security headers so account status, coach sessions, roster data, and training data are not cached by browsers or shared proxies.
 - Added durable account registry support for Vercel KV / Upstash Redis REST.
 - `account-automation` now saves the normalized customer account record to the registry when `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` are configured.
 - When a registry record exists, SMART Trak uses it as the live account source before falling back to Vercel environment variables. Automation can now update plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL without a new Vercel variable for every customer change.

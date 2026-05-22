@@ -107,6 +107,8 @@ When this is set, SMART Trak can exchange a valid coach access code for a short-
 
 Coach access-code attempts are throttled per account and IP address. Repeated wrong codes are paused temporarily and return `429` with `Retry-After`, which helps protect customer dashboards from brute-force access-code guessing.
 
+SMART Trak API responses are sent with no-store security headers so account status, coach session responses, roster data, and training data are not cached by browsers or shared proxies.
+
 ## Automation Intake
 
 Set this secret before connecting GHL or Stripe automations:
