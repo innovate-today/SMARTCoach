@@ -22,7 +22,7 @@ const {
   coachSessionTtlSeconds,
   subscriptionAccessAllowed,
 } = require("../../lib/ghl-account");
-const { registryConfigured, saveAccountRecord, loadAccountRecord } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 
 module.exports = async function handler(req, res) {
@@ -306,7 +306,7 @@ async function accountAutomation(req, res) {
   }
 }
 
-function accountAutomationHealth(req, res) {
+async function accountAutomationHealth(req, res) {
   setAutomationHeaders(res);
 
   if (req.method === "OPTIONS") {
@@ -328,7 +328,8 @@ function accountAutomationHealth(req, res) {
   }
 
   const automationSecretConfigured = !!cleanSetupText(process.env.SMARTCOACH_AUTOMATION_SECRET);
-  const registryReady = registryConfigured();
+  const registryStatus = await registryHealth();
+  const registryReady = !!(registryStatus.configured && registryStatus.reachable);
   const stripeWebhookReady = !!cleanSetupText(process.env.SMARTCOACH_STRIPE_WEBHOOK_SECRET);
   const dedicatedSessionSecretConfigured = !!cleanSetupText(process.env.SMARTCOACH_SESSION_SECRET);
   const sessionSigningSource = coachSessionSecretSource();
@@ -341,13 +342,17 @@ function accountAutomationHealth(req, res) {
   if (!coachAccessEnforcementConfigured) {
     productionWarnings.push("Set SMARTCOACH_REQUIRE_COACH_ACCESS=true after Pro accounts have coach access codes.");
   }
-  if (!registryReady) {
+  if (!registryStatus.configured) {
     productionWarnings.push("Connect the durable account registry so Stripe and setup automation survive deployments.");
+  } else if (!registryStatus.reachable) {
+    productionWarnings.push("Fix the durable account registry connection so Stripe and setup automation can save customer updates.");
   }
   res.status(200).json({
     success: true,
     automationSecretConfigured,
-    registryConfigured: registryReady,
+    registryConfigured: !!registryStatus.configured,
+    registryReachable: !!registryStatus.reachable,
+    registryError: registryStatus.error || "",
     stripeWebhookConfigured: stripeWebhookReady,
     dedicatedSessionSecretConfigured,
     sessionSigningConfigured: sessionSigningReady,
@@ -360,7 +365,8 @@ function accountAutomationHealth(req, res) {
     readyForSignedCoachSessions: sessionSigningReady,
     checks: [
       { key: "automationSecret", label: "Automation secret", configured: automationSecretConfigured },
-      { key: "registry", label: "Durable account registry", configured: registryReady },
+      { key: "registry", label: "Durable account registry", configured: !!registryStatus.configured },
+      { key: "registryConnection", label: "Registry connection", configured: registryReady },
       { key: "stripeWebhook", label: "Stripe webhook signing secret", configured: stripeWebhookReady },
       { key: "sessionSigning", label: "Coach session signing", configured: sessionSigningReady },
       { key: "dedicatedSessionSecret", label: "Dedicated session secret", configured: dedicatedSessionSecretConfigured },
