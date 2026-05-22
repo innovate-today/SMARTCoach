@@ -393,6 +393,7 @@ async function accountAutomationHealth(req, res) {
   const sessionSigningSource = coachSessionSecretSource();
   const sessionSigningReady = !!sessionSigningSource;
   const coachAccessEnforcementConfigured = normalizeSetupBoolean(process.env.SMARTCOACH_REQUIRE_COACH_ACCESS, false);
+  const parentEmailReleased = parentEmailFeatureReleased();
   const productionWarnings = [];
   if (!dedicatedSessionSecretConfigured) {
     productionWarnings.push("Set SMARTCOACH_SESSION_SECRET so coach sessions do not reuse automation or setup secrets.");
@@ -404,6 +405,9 @@ async function accountAutomationHealth(req, res) {
     productionWarnings.push("Connect the durable account registry so Stripe and setup automation survive deployments.");
   } else if (!registryStatus.reachable) {
     productionWarnings.push("Fix the durable account registry connection so Stripe and setup automation can save customer updates.");
+  }
+  if (parentEmailReleased) {
+    productionWarnings.push("Parent email tools are globally enabled. Keep SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED off until parent communication is ready for rollout.");
   }
   res.status(200).json({
     success: true,
@@ -417,6 +421,7 @@ async function accountAutomationHealth(req, res) {
     sessionSigningSource,
     sessionTtlSeconds: coachSessionTtlSeconds(),
     coachAccessEnforcementConfigured,
+    parentEmailFeatureReleased: parentEmailReleased,
     productionWarnings,
     readyForManualRegistryUpdates: automationSecretConfigured && registryReady,
     readyForStripeWebhooks: automationSecretConfigured && registryReady && stripeWebhookReady,
@@ -429,6 +434,7 @@ async function accountAutomationHealth(req, res) {
       { key: "sessionSigning", label: "Coach session signing", configured: sessionSigningReady },
       { key: "dedicatedSessionSecret", label: "Dedicated session secret", configured: dedicatedSessionSecretConfigured },
       { key: "coachAccessEnforcement", label: "Coach access enforcement", configured: coachAccessEnforcementConfigured },
+      { key: "parentEmailReleaseGate", label: "Parent email release gate off", configured: !parentEmailReleased },
     ],
   });
 }
