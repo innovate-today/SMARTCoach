@@ -479,11 +479,11 @@ Parent communication:
 - Athletes page now has lightweight parent email actions for the current filtered roster view:
   - open a mail draft with parent emails in BCC
   - copy parent emails to clipboard
+- Athlete detail now has a one-athlete parent email action when a parent email is saved.
 - Full parent communication is still planned.
 - Later need deeper ways to email:
   - whole group directly
   - selected athletes' parents
-  - one athlete's parent/parents from the athlete detail view
 - Coach should not have to find parent emails manually.
 
 Community/media:
