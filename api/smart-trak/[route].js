@@ -564,7 +564,7 @@ function automationAccountResult(account, registryResult, extra = {}) {
     setupReady,
     accessReady: setupReady && subscriptionAllowed,
     registry: registryResult,
-    accountRegistryRecord: account,
+    accountRegistryRecord: publicAccountRecord(account),
     environment: extra.environment || accountEnvironmentRows({
       suffix: account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_"),
       account,
@@ -601,7 +601,7 @@ async function previewAutomationAccount(payload, options = {}) {
       dryRun: true,
       reason: "Dry run only. No registry record was saved.",
     },
-    accountRegistryRecord: account,
+    accountRegistryRecord: publicAccountRecord(account),
     environment,
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
@@ -615,6 +615,15 @@ function accountSetupReady(account) {
   const codes = Array.isArray(source.coachAccessCodes) ? source.coachAccessCodes : [];
   const coachAccessReady = source.requireCoachAccess === false || codes.length > 0;
   return !!(source.token && source.locationId && coachAccessReady);
+}
+
+function publicAccountRecord(account) {
+  const source = account || {};
+  return {
+    ...source,
+    token: source.token ? "__hidden__" : "",
+    privateIntegrationToken: undefined,
+  };
 }
 
 async function accountRegistry(req, res) {
