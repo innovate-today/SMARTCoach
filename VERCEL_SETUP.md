@@ -183,6 +183,8 @@ The endpoint validates the automation secret, normalizes the account data, saves
 
 Missing or wrong automation secrets are rejected before the durable account registry is read or written.
 
+Regression tests verify partial subscription updates preserve saved SMART Trak connection fields and coach access codes.
+
 Stripe-style payloads are supported when the account key is placed in metadata. Preferred keys are `accountKey` or `smartcoach_account_key`; both can be added if the Stripe setup screen allows multiple metadata fields.
 
 ```json

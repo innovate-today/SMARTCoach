@@ -280,6 +280,93 @@ async function testInvalidStripeWebhookDoesNotTouchRegistry() {
   }
 }
 
+async function testPartialAutomationPreservesSavedConnection() {
+  const previousFetch = global.fetch;
+  const existing = {
+    accountKey: "merge-school",
+    productPlan: "pro",
+    token: "saved-token",
+    locationId: "saved-location",
+    coachSeats: 3,
+    coachAccessCodes: ["coach-one", "coach-two", "coach-three"],
+    parentEmailCoachAccess: [true, false, true],
+    requireCoachAccess: true,
+    subscription: {
+      status: "active",
+      billingCadence: "monthly",
+      amount: "39.99",
+      renewalDate: "2026-06-21",
+      stripeCustomerId: "cus_saved",
+      stripeSubscriptionId: "sub_saved",
+    },
+    logoUrl: "https://example.com/logo.png",
+    automationEventHistory: [],
+  };
+  let savedRecord = null;
+
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: JSON.stringify(existing) }),
+      };
+    }
+    if (text.includes("/set/")) {
+      const encodedPayload = text.split("/set/")[1].split("/").slice(1).join("/");
+      savedRecord = JSON.parse(decodeURIComponent(encodedPayload));
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "OK" }),
+      };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          accountKey: "merge-school",
+          subscriptionStatus: "past_due",
+          subscriptionAmount: "49.99",
+          renewalDate: "2026-07-21",
+          stripeSubscriptionId: "sub_updated",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.registry.saved, true);
+      assert.ok(savedRecord);
+      assert.strictEqual(savedRecord.token, existing.token);
+      assert.strictEqual(savedRecord.locationId, existing.locationId);
+      assert.deepStrictEqual(savedRecord.coachAccessCodes, existing.coachAccessCodes);
+      assert.deepStrictEqual(savedRecord.parentEmailCoachAccess, existing.parentEmailCoachAccess);
+      assert.strictEqual(savedRecord.logoUrl, existing.logoUrl);
+      assert.strictEqual(savedRecord.subscription.status, "past_due");
+      assert.strictEqual(savedRecord.subscription.amount, "49.99");
+      assert.strictEqual(savedRecord.subscription.renewalDate, "2026-07-21");
+      assert.strictEqual(savedRecord.subscription.stripeCustomerId, existing.subscription.stripeCustomerId);
+      assert.strictEqual(savedRecord.subscription.stripeSubscriptionId, "sub_updated");
+      assert.strictEqual(res.body.accountRegistryRecord.token, "__hidden__");
+      assert.deepStrictEqual(res.body.accountRegistryRecord.coachAccessCodes, ["__hidden__", "__hidden__", "__hidden__"]);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAutomationHealthLaunchReady() {
   const previousFetch = global.fetch;
   global.fetch = async (url) => {
@@ -507,6 +594,7 @@ async function testRegistryLookupHidesSecrets() {
   await testAutomationSecretRequiredBeforeRegistry();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testInvalidStripeWebhookDoesNotTouchRegistry();
+  await testPartialAutomationPreservesSavedConnection();
   await testAutomationHealthLaunchReady();
   await testParentEmailReleaseGate();
   await testCoachAccessRateLimit();
