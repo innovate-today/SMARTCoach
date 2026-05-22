@@ -43,6 +43,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  await attachRegistryAccount(req);
   if (!requireProPlan(req, res)) return;
 
   return selected(req, res);
@@ -59,6 +60,7 @@ async function accountStatus(req, res) {
     return;
   }
 
+  const registry = await attachRegistryAccount(req);
   const { accountKey, token, locationId, productPlan, accessCode, coachSeats, coachAccessCodes, subscription, logoUrl } = getGhlContext(req);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const tokenKey = accountKey === "default" ? "GHL_PRIVATE_INTEGRATION_TOKEN" : `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`;
@@ -70,12 +72,6 @@ async function accountStatus(req, res) {
   const missing = [];
   if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
-  let registry = { configured: registryConfigured(), found: false };
-  try {
-    registry = await loadAccountRecord(accountKey);
-  } catch (error) {
-    registry = { configured: true, found: false, error: error.message || "Registry could not be checked." };
-  }
   res.status(configured ? 200 : 404).json({
     success: configured,
     accountKey,
@@ -91,6 +87,7 @@ async function accountStatus(req, res) {
     registry: {
       configured: !!registry.configured,
       found: !!registry.found,
+      source: registry.found ? "registry" : "environment",
       updatedAt: registry.record && registry.record.updatedAt || "",
       error: registry.error || undefined,
     },
@@ -333,7 +330,7 @@ async function accountRegistry(req, res) {
   }
 }
 
-function accountSession(req, res) {
+async function accountSession(req, res) {
   setSessionHeaders(res);
 
   if (req.method === "OPTIONS") {
@@ -353,7 +350,8 @@ function accountSession(req, res) {
         firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
     ) || "default";
     const accessCode = cleanSetupText(firstPayloadValue(payload, ["accessCode", "coachAccessCode", "code"]));
-    const access = coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {} }, accessCode);
+    await attachRegistryAccountForKey(req, accountKey);
+    const access = coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: req.smartcoachRegistryAccount }, accessCode);
     if (!access.allowed) {
       res.status(access.statusCode || 401).json(access);
       return;
@@ -378,6 +376,33 @@ function accountSession(req, res) {
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not create coach session." });
   }
+}
+
+async function attachRegistryAccount(req) {
+  const accountKey = accountKeyFromRequest(req);
+  return attachRegistryAccountForKey(req, accountKey);
+}
+
+async function attachRegistryAccountForKey(req, accountKeyValue) {
+  const accountKey = normalizeSetupAccountKey(accountKeyValue) || "default";
+  let result = { configured: registryConfigured(), found: false, record: null };
+  try {
+    result = await loadAccountRecord(accountKey);
+    if (result && result.found && result.record) {
+      req.smartcoachRegistryAccount = result.record;
+    }
+  } catch (error) {
+    result = { configured: true, found: false, record: null, error: error.message || "Registry could not be checked." };
+  }
+  return result;
+}
+
+function accountKeyFromRequest(req) {
+  return (
+    headerValue(req, "x-smartcoach-account") ||
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key)) ||
+    "default"
+  );
 }
 
 function firstQueryValue(value) {
@@ -601,7 +626,7 @@ function automationAllowed(req) {
 
 function setAutomationHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-SMARTCoach-Automation-Secret");
 }
 
@@ -617,6 +642,11 @@ function firstPayloadValue(payload, keys) {
     if (value !== undefined && value !== null && String(value).trim() !== "") return value;
   }
   return "";
+}
+
+function headerValue(req, name) {
+  const headers = (req && req.headers) || {};
+  return headers[name] || headers[name.toLowerCase()] || "";
 }
 
 function httpError(statusCode, message) {

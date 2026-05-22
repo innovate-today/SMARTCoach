@@ -417,11 +417,11 @@ Subscription/customer management:
 - Blank subscription status remains allowed during migration so current accounts do not get locked out.
 - Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
 - Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.
-- Next production step: connect automation intake to a durable account registry because Vercel functions cannot persist environment variables at runtime.
 - Added signed coach session support behind `SMARTCOACH_SESSION_SECRET`.
 - Dashboard now exchanges a valid coach access code for a temporary session token and stops sending the raw code on each dashboard request when a session exists.
 - Added durable account registry support for Vercel KV / Upstash Redis REST.
 - `account-automation` now saves the normalized customer account record to the registry when `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` are configured.
+- When a registry record exists, SMART Trak uses it as the live account source before falling back to Vercel environment variables. Automation can now update plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL without a new Vercel variable for every customer change.
 - Added protected `account-registry` read endpoint for verifying saved customer registry records.
 - Need cleaner onboarding after purchase:
   - coach buys on website

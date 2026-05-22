@@ -130,7 +130,7 @@ Example payload:
 }
 ```
 
-The endpoint validates the automation secret, normalizes the account data, returns a registry record, and returns the exact setup fields needed for the account. It does not permanently store the registry by itself because Vercel serverless functions cannot safely write persistent environment variables at runtime. The next production step is to connect this endpoint to a durable account registry, such as GHL custom values/objects, Supabase, Vercel Postgres, or another database.
+The endpoint validates the automation secret, normalizes the account data, saves it to the durable registry when registry variables are configured, and returns the exact setup fields needed for the account.
 
 ## Durable Account Registry
 
@@ -149,7 +149,9 @@ Vercel KV/Upstash aliases are also supported:
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
 
-When the registry is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. You can verify a saved account with:
+When the registry is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. That means plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL can be updated by automation without adding a new Vercel variable for each customer update.
+
+You can verify a saved account with:
 
 - `GET /api/smart-trak/account-registry?account=lincolntrack`
 
