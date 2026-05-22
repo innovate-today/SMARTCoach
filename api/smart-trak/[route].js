@@ -96,10 +96,12 @@ async function accountStatus(req, res) {
   if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
   if (productPlan !== "essential" && requireCoachAccess && configuredCoachCodes < 1) missing.push({ label: "Coach access codes", key: coachAccessKey });
   res.status(configured ? 200 : 404).json({
-    success: configured,
+    success: configured && subscriptionAllowed,
     accountKey,
     productPlan,
     configured,
+    setupReady: configured,
+    accessReady: configured && subscriptionAllowed,
     crmConfigured,
     coachSeats,
     coachAccessCodesConfigured: configuredCoachCodes,

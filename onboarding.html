@@ -718,10 +718,17 @@ function renderReadiness(data){
   var detail=document.getElementById('readyDetail');
   var plan=data.productPlan||'pro';
   var configured=!!data.configured;
-  readyBar.className='readybar'+(configured||plan==='essential'?' good':' bad');
+  var subscriptionAllowed=data.subscriptionAccessAllowed!==false;
   if(plan==='essential'){
+    readyBar.className='readybar good';
     title.textContent='Essential account ready';
     detail.textContent='This account is set for stopwatch-only use. Athlete limits stay controlled in GHL.';
+    return;
+  }
+  readyBar.className='readybar'+(configured&&subscriptionAllowed?' good':' bad');
+  if(configured&&!subscriptionAllowed){
+    title.textContent='SMART Trak access blocked';
+    detail.textContent='The SMART Trak connection is configured, but the subscription status is blocking Pro access.';
     return;
   }
   if(configured){
@@ -755,7 +762,9 @@ function checkSetupStatus(){
     document.getElementById('resultSubscription').textContent=subscriptionLabel(currentSetup);
     renderReadiness(currentSetup);
     renderChecklist(currentSetup);
-    if(data.configured){
+    if(data.configured&&data.subscriptionAccessAllowed===false){
+      setStatus('Account setup is complete, but subscription status is blocking SMART Trak access.','bad');
+    }else if(data.configured){
       setStatus('Account is ready.','good');
     }else if(data.productPlan==='essential'){
       setStatus('Essential account is ready.','good');

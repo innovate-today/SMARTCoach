@@ -415,6 +415,7 @@ Subscription/customer management:
   - internal subscription notes
 - SMART Trak Pro API access is blocked when subscription status is `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, or `unpaid`.
 - Blank subscription status remains allowed during migration so current accounts do not get locked out.
+- Account status now separates setup readiness from access readiness, so a configured SMART Trak account can still show blocked when subscription status prevents Pro access.
 - Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
 - Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.
 - Added signed coach session support behind `SMARTCOACH_SESSION_SECRET`.
