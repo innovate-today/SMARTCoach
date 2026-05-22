@@ -276,6 +276,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 Before calling automation/security complete for rollout, verify this with a real test Pro account:
 
 - **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
+- **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** is completed for the test customer account after deploy.
 - **Registry write:** **Save Registry Update** returns saved and account lookup shows the account as saved.
 - **Subscription allow:** account status shows `accessReady: true` for `active` or `trialing`.
 - **Subscription block:** changing status to `past_due`, `unpaid`, or `canceled` blocks SMART Trak with a clear access message.

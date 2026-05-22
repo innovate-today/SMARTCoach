@@ -328,6 +328,23 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     </div>
   </section>
 
+  <section class="panel">
+    <div class="panelhead"><h2>Live Smoke Test</h2></div>
+    <div class="panelbody">
+      <div class="copyhint">Run this after a deploy or before turning on a new customer. It confirms the real customer path, not just the setup form.</div>
+      <div class="checklist">
+        <label class="checkrow"><input type="checkbox"><span><b>1. System check is ready<em class="checkbadge warn">Required</em></b><span>Run Check System with the automation secret. The result should say Ready for initial rollout and show no launch blockers.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup passes dry run<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, coach seats, subscription status, and coach codes before saving.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>3. Registry record is saved<em class="checkbadge warn">Required</em></b><span>Save the registry update, then use Lookup Account to confirm subscription, coach seats, connection fields, and recent update history are present.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>4. Customer dashboard opens<em class="checkbadge warn">Required</em></b><span>Open the customer SMART Trak link with the account key. Confirm the coach access prompt accepts the correct code and rejects a wrong code.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>5. Coach pages load real data<em class="checkbadge warn">Required</em></b><span>Check Dashboard, Athletes, Training Calendar, Planning Setup, and Plan Entry. The pages should load the customer roster and should not show setup-needed errors.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>6. One real workflow saves<em class="checkbadge warn">Required</em></b><span>Save one harmless test item, such as a manual mileage entry, race result, or stopwatch sync, then confirm it appears back in SMART Trak.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>7. Stripe status controls access<em class="checkbadge warn">Required</em></b><span>Send a Stripe test event or manually save status changes. Active or trialing should allow SMART Trak; past due, unpaid, or canceled should block it clearly.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>8. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED is intentionally turned on later.</span></span></label>
+      </div>
+    </div>
+  </section>
+
   <section id="linksPanel" class="panel" hidden>
     <div class="panelhead"><h2>Customer Links</h2></div>
     <div class="panelbody">
