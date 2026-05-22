@@ -126,6 +126,8 @@ Optional internal setup protection:
 
 When this is set, `/onboarding.html` and `/api/smart-trak/account-setup` require the setup code before generating customer setup fields. This keeps customer setup links out of casual view while still allowing the helper to be used internally.
 
+Regression tests verify setup fields cannot be generated without the correct setup code when `SMARTCOACH_ADMIN_SETUP_CODE` is configured.
+
 Coach session signing:
 
 - `SMARTCOACH_SESSION_SECRET`

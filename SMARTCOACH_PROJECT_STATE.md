@@ -454,6 +454,7 @@ Subscription/customer management:
 - Added account-key and coach-code generators to `/onboarding.html` to reduce manual setup mistakes. Coach code generation respects one-coach vs three-coach Pro setup.
 - Added copy-ready Stripe metadata and account automation JSON payloads to `/onboarding.html` so purchase/onboarding automation can be configured from the same account setup screen.
 - `/onboarding.html` now shows copy-ready production endpoint URLs for account automation and the signed Stripe webhook while keeping the full URLs hidden on screen.
+- Added regression coverage for `SMARTCOACH_ADMIN_SETUP_CODE` so setup fields cannot be generated without the correct internal setup code.
 - `/onboarding.html` now provides a copy-ready Stripe webhook event list for checkout, subscription, and invoice events needed to grant, update, or block account access.
 - Stripe/GHL automation account-key parsing accepts multiple account metadata aliases, including `accountKey` and `smartcoach_account_key`, so real checkout/subscription metadata is less brittle.
 - Stripe webhook processing now treats repeated Stripe event IDs as already handled, returns success for the retry, and avoids rewriting the customer registry record for duplicate webhook deliveries.

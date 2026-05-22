@@ -90,6 +90,43 @@ async function testAutomationDryRunDoesNotSave() {
   }
 }
 
+async function testAccountSetupCodeProtection() {
+  await withEnv({
+    SMARTCOACH_ADMIN_SETUP_CODE: "setup-secret",
+  }, async () => {
+    const missingRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "account-setup", account: "protected-school", plan: "pro" },
+      headers: {},
+    }, missingRes);
+
+    assert.strictEqual(missingRes.statusCode, 401);
+    assert.strictEqual(missingRes.body.adminSetupCodeRequired, true);
+
+    const wrongRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "account-setup", account: "protected-school", plan: "pro", setupCode: "wrong-code" },
+      headers: {},
+    }, wrongRes);
+
+    assert.strictEqual(wrongRes.statusCode, 401);
+    assert.strictEqual(wrongRes.body.adminSetupCodeRequired, true);
+
+    const allowedRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "account-setup", account: "protected-school", plan: "pro", setupCode: "setup-secret" },
+      headers: {},
+    }, allowedRes);
+
+    assert.strictEqual(allowedRes.statusCode, 200);
+    assert.strictEqual(allowedRes.body.accountKey, "protected-school");
+    assert.ok(Array.isArray(allowedRes.body.environment));
+  });
+}
+
 async function testAutomationSecretRequiredBeforeRegistry() {
   const previousFetch = global.fetch;
   let fetchCalled = false;
@@ -657,6 +694,7 @@ async function testRegistryLookupHidesSecrets() {
 
 (async () => {
   await testAutomationDryRunDoesNotSave();
+  await testAccountSetupCodeProtection();
   await testAutomationSecretRequiredBeforeRegistry();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testInvalidStripeWebhookDoesNotTouchRegistry();
