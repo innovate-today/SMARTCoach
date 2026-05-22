@@ -262,7 +262,30 @@ This endpoint also requires the automation secret. Account status reports whethe
 1. Import this GitHub repo into Vercel.
 2. Add the default account environment variables above.
 3. Point `app.smartcoach-pro.com` to the Vercel project.
-4. Test Share -> Sync to SMART Trak with one athlete who has saved times.
+4. Open `/onboarding.html` and run **Check System** with the automation secret.
+5. Fix any launch blockers before selling or activating a customer account.
+6. Create a live internal Pro test account in GHL/SMART Trak.
+7. Use **Test Setup First** for that account.
+8. Save the account to the durable registry.
+9. Add the SMART Trak custom link to that test subaccount.
+10. Test Share -> Sync to SMART Trak with one athlete who has saved times.
+11. Send at least one Stripe test-mode checkout/subscription event to the signed Stripe webhook and confirm the registry lookup shows the automation event.
+
+## Launch Validation Checklist
+
+Before calling automation/security complete for rollout, verify this with a real test Pro account:
+
+- **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
+- **Registry write:** **Save Registry Update** returns saved and account lookup shows the account as saved.
+- **Subscription allow:** account status shows `accessReady: true` for `active` or `trialing`.
+- **Subscription block:** changing status to `past_due`, `unpaid`, or `canceled` blocks SMART Trak with a clear access message.
+- **Coach access:** a valid coach code creates a signed session; wrong codes are rejected and rate-limited after repeated attempts.
+- **Stripe webhook:** Stripe test event updates the durable registry and appears in recent automation history.
+- **Stripe retry:** resending the same Stripe event returns success without rewriting the account record.
+- **No secret exposure:** automation responses and account lookup show saved/hidden status for private tokens and coach access codes instead of exposing values.
+- **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
+- **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
+- **Parent email rollout:** parent email remains hidden unless `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` is intentionally set later.
 
 Before pushing security/account changes, run:
 
