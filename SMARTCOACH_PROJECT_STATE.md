@@ -427,6 +427,7 @@ Subscription/customer management:
 - Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.
 - Added signed coach session support behind `SMARTCOACH_SESSION_SECRET`.
 - Dashboard now exchanges a valid coach access code for a temporary session token and stops sending the raw code on each dashboard request when a session exists.
+- Mobile stopwatch app now exposes the Account button on the Groups screen and prompts for a coach access code when the selected account requires SMART Trak access.
 - Coach session length is configurable with `SMARTCOACH_SESSION_TTL_SECONDS`, defaulting to 12 hours and clamped between 15 minutes and 7 days.
 - Added regression coverage so signed coach sessions cannot be reused across customer accounts and expire after the session window.
 - Added server-side throttling for coach session/access-code attempts so repeated bad codes pause before another login attempt is accepted.
