@@ -283,6 +283,22 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   <section id="automationPanel" class="panel" hidden>
     <div class="panelhead"><h2>Automation Payloads</h2></div>
     <div class="panelbody">
+      <div class="payloadbox" style="margin-bottom:10px">
+        <strong>Automation Endpoints</strong>
+        <span>Use these production URLs when wiring GHL/Stripe automation. Keep the automation secret and Stripe signing secret private.</span>
+        <div class="linkdetails">
+          <div class="linkdetail"><b>Account Automation</b><span>Protected POST</span></div>
+          <div class="linkdetail"><b>Stripe Webhook</b><span>Signed POST</span></div>
+        </div>
+        <div class="linkline">
+          <code id="automationEndpointText">Endpoint hidden</code>
+          <button type="button" class="secondary" onclick="copyEndpoint('automation')">Copy Automation Endpoint</button>
+        </div>
+        <div class="linkline">
+          <code id="stripeWebhookEndpointText">Endpoint hidden</code>
+          <button type="button" class="secondary" onclick="copyEndpoint('stripe')">Copy Stripe Webhook Endpoint</button>
+        </div>
+      </div>
       <div class="automationgrid">
         <div class="payloadbox">
           <strong>Stripe Metadata</strong>
@@ -908,6 +924,21 @@ function renderAutomationPayloads(data){
   payload.coachSeats=metadata.coachSeats;
   document.getElementById('stripeMetadataText').textContent=JSON.stringify(metadata,null,2);
   document.getElementById('automationPayloadText').textContent=JSON.stringify(payload,null,2);
+  setEndpointText('automationEndpointText','/api/smart-trak/account-automation');
+  setEndpointText('stripeWebhookEndpointText','/api/smart-trak/account-stripe-webhook');
+}
+function setEndpointText(id,path){
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.dataset.url=absoluteUrl(path);
+  el.textContent='Endpoint hidden';
+  el.title='Use the copy button instead of sharing this screen.';
+}
+function copyEndpoint(type){
+  var id=type==='stripe'?'stripeWebhookEndpointText':'automationEndpointText';
+  var label=type==='stripe'?'Stripe webhook endpoint copied.':'Automation endpoint copied.';
+  var el=document.getElementById(id);
+  copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'',label);
 }
 function copyPayload(type){
   var id=type==='stripe'?'stripeMetadataText':'automationPayloadText';
