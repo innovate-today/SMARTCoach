@@ -77,10 +77,14 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checklist{display:grid;gap:10px}
 .checkrow{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
 .checkrow input{width:18px;height:18px;accent-color:var(--blue);margin-top:1px}
-.checkrow b{display:block;font-size:14px;line-height:1.25}
+.checkrow b{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;line-height:1.25}
 .checkrow span{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.35}
 .checkrow a{color:#102a70;font-weight:800;text-decoration:none}
 .checkrow a:hover{text-decoration:underline}
+.checkbadge{border-radius:999px;background:#e2e8f0;color:#334155;padding:3px 8px;font-size:10px;font-weight:900;text-transform:uppercase;white-space:nowrap}
+.checkbadge.good{background:#dcfce7;color:#08733f}
+.checkbadge.bad{background:#fee2e2;color:#b00000}
+.checkbadge.warn{background:#ffedd5;color:#9a3412}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
 .lookupgrid{display:grid;grid-template-columns:1fr 240px auto auto;gap:12px;align-items:end}
 .formactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px}
@@ -479,12 +483,18 @@ function renderLookupResult(data){
     accountKey:account,
     productPlan:record.productPlan||'pro',
     coachSeats:record.coachSeats||1,
+    registry:{configured:!!registry.configured,found:!!registry.found},
+    crmConfigured:!!(record.locationId&&record.token),
+    configured:(record.productPlan==='essential')||!!(record.locationId&&record.token&&((record.coachAccessCodes||[]).length||record.accessCode)),
+    coachAccessCodesConfigured:(record.coachAccessCodes||[]).length||(record.accessCode?1:0),
     subscription:sub,
     logoUrl:record.logoUrl||'',
+    accountRegistryRecord:record,
     dashboardUrl:'/dashboard.html?account='+encodeURIComponent(account),
     ghlCustomLinkUrl:'/dashboard.html?account='+encodeURIComponent(account)+'&embed=1',
     accountUrl:'/?account='+encodeURIComponent(account)
   });
+  if(!document.getElementById('checklistPanel').hidden)renderChecklist(currentSetup);
 }
 function fillFormFromLookup(){
   if(!currentSetup||!currentSetup.accountKey)return;
@@ -729,6 +739,7 @@ function checkSetupStatus(){
     document.getElementById('resultCoachSeats').textContent=coachSeatsLabel(currentSetup);
     document.getElementById('resultSubscription').textContent=subscriptionLabel(currentSetup);
     renderReadiness(currentSetup);
+    renderChecklist(currentSetup);
     if(data.configured){
       setStatus('Account is ready.','good');
     }else if(data.productPlan==='essential'){
@@ -833,39 +844,77 @@ function renderChecklist(data){
   var plan=data.productPlan||'pro';
   var statusUrl='/api/smart-trak/account-status?account='+encodeURIComponent(account);
   var dashboardUrl=data.dashboardUrl||('/dashboard.html?account='+encodeURIComponent(account));
+  var signals=setupSignals(data);
   var rows=[
     {
       title:'Add setup fields in Vercel Production',
-      body:'Paste the required setup fields into the smart-coach project Environment Variables section.'
+      body:signals.registrySaved
+        ?'This account is saved in the durable registry, so new Vercel variables are not needed for normal subscription/account updates.'
+        :'Paste required setup fields into Vercel Production, or save this account to the durable registry.',
+      state:signals.registrySaved?'good':'warn',
+      status:signals.registrySaved?'Registry saved':'Manual setup'
     },
     {
       title:'Redeploy the project',
-      body:'Use the latest production deployment so the new variables are active.'
+      body:signals.registrySaved
+        ?'Registry changes apply on the next SMART Trak request. Redeploy is only needed after code or Vercel environment changes.'
+        :'Use the latest production deployment so Vercel environment variables are active.',
+      state:signals.registrySaved?'good':'warn',
+      status:signals.registrySaved?'No deploy needed':'Redeploy after vars'
     },
     {
       title:'Give each coach one access code',
       body:plan==='essential'
         ?'Essential is stopwatch-only, so no SMART Trak coach seats are needed.'
-        :'Use the Coach access codes field. One-coach accounts get one code. Three-coach accounts get three codes. Athlete count stays controlled by GHL.'
+        :'Use the Coach access codes field. One-coach accounts get one code. Three-coach accounts get three codes. Athlete count stays controlled by GHL.',
+      state:plan==='essential'||signals.coachCodesReady?'good':'bad',
+      status:plan==='essential'?'Not needed':signals.coachCodesReady?'Codes saved':'Missing codes'
     },
     {
       title:'Track the customer subscription',
-      body:'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. Athlete limits stay in GHL.'
+      body:'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. Athlete limits stay in GHL.',
+      state:signals.subscriptionAllowed?'good':'bad',
+      status:signals.subscriptionAllowed?'Access allowed':'Access blocked'
     },
     {
       title:'Check account status',
-      body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the SMART Trak fields are added.'
+      body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the SMART Trak fields are added.',
+      state:signals.accountConfigured?'good':'warn',
+      status:signals.accountConfigured?'Ready':'Check status'
     },
     {
       title:plan==='essential'?'Confirm Essential stopwatch':'Add the dashboard custom link',
       body:plan==='essential'
         ?'Open '+linkHtml(data.accountUrl||('/?account='+encodeURIComponent(account)),'customer stopwatch')+' and confirm Pro-only tabs and actions are hidden.'
-        :'Add '+linkHtml(data.ghlCustomLinkUrl||dashboardUrl,'the customer SMART Trak link')+' as the one custom sidebar/menu link, preferably opened in an iframe. If the account is not connected yet, it should show SMART Trak Setup Needed.'
+        :'Add '+linkHtml(data.ghlCustomLinkUrl||dashboardUrl,'the customer SMART Trak link')+' as the one custom sidebar/menu link, preferably opened in an iframe. If the account is not connected yet, it should show SMART Trak Setup Needed.',
+      state:signals.accountKey?'good':'warn',
+      status:signals.accountKey?'Link ready':'Needs account key'
     }
   ];
   document.getElementById('checklist').innerHTML=rows.map(function(row,i){
-    return '<label class="checkrow"><input type="checkbox"><span><b>'+esc((i+1)+'. '+row.title)+'</b><span>'+row.body+'</span></span></label>';
+    return '<label class="checkrow"><input type="checkbox" '+(row.state==='good'?'checked':'')+'><span><b>'+esc((i+1)+'. '+row.title)+'<em class="checkbadge '+esc(row.state||'')+'">'+esc(row.status||'Review')+'</em></b><span>'+row.body+'</span></span></label>';
   }).join('');
+}
+function setupSignals(data){
+  data=data||{};
+  var sub=data.subscription||{};
+  var record=data.accountRegistryRecord||{};
+  var plan=data.productPlan||record.productPlan||'pro';
+  var registry=data.registry||{};
+  var coachCodeCount=Number(data.coachAccessCodesConfigured)||((record.coachAccessCodes||[]).length)||(record.accessCode?1:0);
+  var subscriptionStatus=String(sub.status||'').toLowerCase();
+  var subscriptionAllowed=!subscriptionStatus||subscriptionStatus==='active'||subscriptionStatus==='trialing';
+  var crmReady=plan==='essential'||!!data.crmConfigured||!!(record.locationId&&record.token);
+  var coachCodesReady=plan==='essential'||coachCodeCount>0;
+  var configured=plan==='essential'||!!data.configured||(crmReady&&coachCodesReady);
+  return {
+    accountKey:!!data.accountKey,
+    registrySaved:!!(registry.saved||registry.found||record.updatedAt),
+    subscriptionAllowed:subscriptionAllowed,
+    crmReady:crmReady,
+    coachCodesReady:coachCodesReady,
+    accountConfigured:configured
+  };
 }
 function linkHtml(path,label){
   return '<a href="'+esc(path)+'" target="_blank" rel="noopener">'+esc(label)+'</a>';
