@@ -394,7 +394,14 @@ async function accountAutomationHealth(req, res) {
   const sessionSigningReady = !!sessionSigningSource;
   const coachAccessEnforcementConfigured = normalizeSetupBoolean(process.env.SMARTCOACH_REQUIRE_COACH_ACCESS, false);
   const parentEmailReleased = parentEmailFeatureReleased();
+  const launchBlockers = [];
   const productionWarnings = [];
+  if (!automationSecretConfigured) launchBlockers.push("Automation secret is missing.");
+  if (!registryReady) launchBlockers.push(registryStatus.configured ? "Account registry is not reachable." : "Durable account registry is not connected.");
+  if (!stripeWebhookReady) launchBlockers.push("Stripe webhook signing secret is missing.");
+  if (!dedicatedSessionSecretConfigured) launchBlockers.push("Dedicated coach session secret is missing.");
+  if (!coachAccessEnforcementConfigured) launchBlockers.push("Coach access enforcement is not turned on.");
+  if (parentEmailReleased) launchBlockers.push("Parent email tools are globally enabled before initial rollout.");
   if (!dedicatedSessionSecretConfigured) {
     productionWarnings.push("Set SMARTCOACH_SESSION_SECRET so coach sessions do not reuse automation or setup secrets.");
   }
@@ -411,6 +418,8 @@ async function accountAutomationHealth(req, res) {
   }
   res.status(200).json({
     success: true,
+    launchReady: launchBlockers.length === 0,
+    launchBlockers,
     automationSecretConfigured,
     registryConfigured: !!registryStatus.configured,
     registryReachable: !!registryStatus.reachable,
