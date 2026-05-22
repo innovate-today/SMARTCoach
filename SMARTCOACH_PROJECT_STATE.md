@@ -466,6 +466,7 @@ Subscription/customer management:
 - Added a minimal `package.json` so the full regression check can also run with `npm test`.
 - `npm test` now also validates project JSON config files including `package.json`, `vercel.json`, and SMART Trak schema/mapping JSON.
 - Added a GitHub Actions regression workflow so pushes and pull requests run `npm test` automatically.
+- Added regression coverage for the parent-email release gate, so per-coach email settings stay hidden until the global rollout flag is intentionally enabled.
 - Added `tests/ghl-account.test.js` as a lightweight regression check for subscription gating, Essential blocking, coach access-code checks, and signed coach-session acceptance. Run it with `node tests/ghl-account.test.js`.
 - Need cleaner onboarding after purchase:
   - coach buys on website

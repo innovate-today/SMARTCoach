@@ -216,10 +216,93 @@ async function testAutomationHealthLaunchReady() {
   }
 }
 
+async function testParentEmailReleaseGate() {
+  await withEnv({
+    SMARTCOACH_PRODUCT_PLAN_EMAILGATE: "pro",
+    GHL_PRIVATE_INTEGRATION_TOKEN_EMAILGATE: "token",
+    GHL_LOCATION_ID_EMAILGATE: "location",
+    SMARTCOACH_COACH_ACCESS_CODES_EMAILGATE: "coach-one",
+    SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_EMAILGATE: "1",
+    SMARTCOACH_REQUIRE_COACH_ACCESS_EMAILGATE: "true",
+    SMARTCOACH_SUBSCRIPTION_STATUS_EMAILGATE: "active",
+    SMARTCOACH_SESSION_SECRET: "session-secret",
+    SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED: undefined,
+  }, async () => {
+    const sessionRes = mockRes();
+    await handler({
+      method: "POST",
+      query: { route: "account-session" },
+      headers: { "x-forwarded-for": "127.0.0.21" },
+      body: { accountKey: "emailgate", accessCode: "coach-one" },
+    }, sessionRes);
+
+    assert.strictEqual(sessionRes.statusCode, 200);
+    assert.strictEqual(sessionRes.body.success, true);
+    assert.strictEqual(sessionRes.body.parentEmailAllowed, false);
+
+    const statusRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "account-status", account: "emailgate" },
+      headers: { "x-smartcoach-session": sessionRes.body.sessionToken },
+    }, statusRes);
+
+    assert.strictEqual(statusRes.statusCode, 200);
+    assert.strictEqual(statusRes.body.parentEmailToolsAllowed, false);
+    assert.strictEqual(statusRes.body.coach.parentEmailAllowed, false);
+  });
+
+  await withEnv({
+    SMARTCOACH_PRODUCT_PLAN_EMAILLIVE: "pro",
+    GHL_PRIVATE_INTEGRATION_TOKEN_EMAILLIVE: "token",
+    GHL_LOCATION_ID_EMAILLIVE: "location",
+    SMARTCOACH_COACH_SEATS_EMAILLIVE: "3",
+    SMARTCOACH_COACH_ACCESS_CODES_EMAILLIVE: "coach-one,coach-two",
+    SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_EMAILLIVE: "2",
+    SMARTCOACH_REQUIRE_COACH_ACCESS_EMAILLIVE: "true",
+    SMARTCOACH_SUBSCRIPTION_STATUS_EMAILLIVE: "active",
+    SMARTCOACH_SESSION_SECRET: "session-secret",
+    SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED: "true",
+  }, async () => {
+    const firstCoachRes = mockRes();
+    await handler({
+      method: "POST",
+      query: { route: "account-session" },
+      headers: { "x-forwarded-for": "127.0.0.22" },
+      body: { accountKey: "emaillive", accessCode: "coach-one" },
+    }, firstCoachRes);
+    assert.strictEqual(firstCoachRes.statusCode, 200);
+    assert.strictEqual(firstCoachRes.body.parentEmailAllowed, false);
+
+    const secondCoachRes = mockRes();
+    await handler({
+      method: "POST",
+      query: { route: "account-session" },
+      headers: { "x-forwarded-for": "127.0.0.23" },
+      body: { accountKey: "emaillive", accessCode: "coach-two" },
+    }, secondCoachRes);
+
+    assert.strictEqual(secondCoachRes.statusCode, 200);
+    assert.strictEqual(secondCoachRes.body.parentEmailAllowed, true);
+
+    const statusRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "account-status", account: "emaillive" },
+      headers: { "x-smartcoach-session": secondCoachRes.body.sessionToken },
+    }, statusRes);
+
+    assert.strictEqual(statusRes.statusCode, 200);
+    assert.strictEqual(statusRes.body.parentEmailToolsAllowed, true);
+    assert.strictEqual(statusRes.body.coach.parentEmailAllowed, true);
+  });
+}
+
 (async () => {
   await testAutomationDryRunDoesNotSave();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testAutomationHealthLaunchReady();
+  await testParentEmailReleaseGate();
   console.log("automation API dry-run and Stripe idempotency tests passed");
 })().catch((error) => {
   console.error(error);

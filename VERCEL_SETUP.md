@@ -114,6 +114,8 @@ Use **Check System** before launch. It reports one overall launch readiness resu
 
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
 
+Regression tests verify that coach-specific parent email settings stay hidden while the global parent email release gate is off.
+
 The setup checklist also shows ready/missing/warning badges based on the current customer account signals, so support can see whether registry, subscription, coach codes, and account configuration are ready.
 
 Automation and Stripe webhook responses hide private integration tokens and coach access-code values. The internal protected account lookup can still verify that secrets are saved by showing `Saved` and saved counts instead of exposing the actual values.
