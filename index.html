@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1777173146407"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1779491668172"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -525,8 +525,17 @@ function saveAccountSettings(){
     });
   }).catch(function(error){
     renderAccountSummary(error&&error.data?error.data:{productPlan:plan,configured:false},plan);
-    if(status){status.textContent='Account set to '+key+', but not connected: '+error.message;status.style.color='#c00';}
+    if(status){status.textContent=accountSettingsErrorMessage(key,error);status.style.color='#c00';}
   });
+}
+function accountSettingsErrorMessage(key,error){
+  var message=String(error&&error.message||'Account could not be checked.');
+  var data=error&&error.data||{};
+  if(data.accessCodeMissing)return 'Account '+key+' is saved, but no coach access code is configured yet.';
+  if(data.subscriptionAccessRequired||data.accessReady===false)return 'Account '+key+' is saved, but the subscription status is blocking SMART Trak access.';
+  if(data.missingSetupFields&&data.missingSetupFields.length)return 'Account '+key+' is saved, but SMART Trak setup is missing '+data.missingSetupFields.map(function(item){return item.label||item.key||'a required field';}).join(', ')+'.';
+  if(/not configured|not found|setup needed/i.test(message))return 'Account '+key+' was not found. Save this account in SMART Trak Account Setup first, or check the account key.';
+  return 'Account '+key+' could not connect: '+message;
 }
 function renderAccountSummary(data,fallbackPlan){
   var box=document.getElementById('account-summary');
@@ -536,8 +545,9 @@ function renderAccountSummary(data,fallbackPlan){
   var configured=!pro || !!(data&&data.configured);
   var accessReady=!pro || (configured&&!(data&&data.accessReady===false));
   var access=!!(data&&data.accessCodeRequired);
-  var title=pro?(!configured?'SMARTCoach Pro setup needed':accessReady?'SMARTCoach Pro ready':'SMARTCoach Pro access blocked'):'SMARTCoach Essential ready';
-  var detail=pro?(!configured?'SMART Trak connection is not finished yet.':accessReady?'SMART Trak connection is ready.':'Subscription status is blocking SMART Trak access.'):'Stopwatch-only account. SMART Trak tools are hidden.';
+  var notFound=pro&&data&&data.error&&/not configured|not found/i.test(data.error);
+  var title=pro?(!configured?(notFound?'Account key not found':'SMARTCoach Pro setup needed'):accessReady?'SMARTCoach Pro ready':'SMARTCoach Pro access blocked'):'SMARTCoach Essential ready';
+  var detail=pro?(!configured?(notFound?'Save this account in SMART Trak Account Setup first, or check the account key.':'SMART Trak connection is not finished yet.'):accessReady?'SMART Trak connection is ready.':'Subscription status is blocking SMART Trak access.'):'Stopwatch-only account. SMART Trak tools are hidden.';
   var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
   showAccessCodeRow(pro&&access);
   box.style.borderColor=accessReady?'#bbf7d0':'#fecaca';
