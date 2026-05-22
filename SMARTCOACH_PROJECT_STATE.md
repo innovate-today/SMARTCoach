@@ -481,9 +481,10 @@ Parent communication:
   - copy parent emails to clipboard
 - Athlete detail now has a one-athlete parent email action when a parent email is saved.
 - Athletes page now includes a group filter, so coaches can filter to a training group and email/copy those parents without manually searching.
+- Athletes page now supports selecting specific athletes; Email Parents and Copy Parent Emails use selected athletes when any are checked, otherwise they use the current filtered view.
 - Full parent communication is still planned.
 - Later need deeper ways to email:
-  - selected athletes' parents
+  - richer group/parent message templates and delivery history
 - Coach should not have to find parent emails manually.
 
 Community/media:
