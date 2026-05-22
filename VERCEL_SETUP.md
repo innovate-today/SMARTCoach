@@ -92,6 +92,12 @@ Optional internal setup protection:
 
 When this is set, `/onboarding.html` and `/api/smart-trak/account-setup` require the setup code before generating customer setup fields. This keeps customer setup links out of casual view while still allowing the helper to be used internally.
 
+Coach session signing:
+
+- `SMARTCOACH_SESSION_SECRET`
+
+When this is set, SMART Trak can exchange a valid coach access code for a short-lived signed session token. The browser can then use the temporary session instead of sending the raw coach access code on every request. If this is not set, the server falls back to `SMARTCOACH_AUTOMATION_SECRET` or `SMARTCOACH_ADMIN_SETUP_CODE` for signing if either exists.
+
 ## Automation Intake
 
 Set this secret before connecting GHL or Stripe automations:

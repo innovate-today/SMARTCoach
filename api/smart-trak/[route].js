@@ -11,7 +11,7 @@ const handlers = {
   "sync-session": require("../ghl/sync-session"),
   "training-plan": require("../ghl/training-plan"),
 };
-const { getGhlContext, requireProPlan, subscriptionAccessAllowed } = require("../../lib/ghl-account");
+const { getGhlContext, requireProPlan, coachCodeAllowed, createCoachSession, subscriptionAccessAllowed } = require("../../lib/ghl-account");
 
 module.exports = async function handler(req, res) {
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
@@ -27,6 +27,10 @@ module.exports = async function handler(req, res) {
 
   if (route === "account-automation") {
     return accountAutomation(req, res);
+  }
+
+  if (route === "account-session") {
+    return accountSession(req, res);
   }
 
   if (!selected) {
@@ -268,6 +272,53 @@ function accountAutomation(req, res) {
   }
 }
 
+function accountSession(req, res) {
+  setSessionHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const accountKey = normalizeSetupAccountKey(
+      firstPayloadValue(payload, ["accountKey", "account", "tenant", "key"]) ||
+        firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+    ) || "default";
+    const accessCode = cleanSetupText(firstPayloadValue(payload, ["accessCode", "coachAccessCode", "code"]));
+    const access = coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {} }, accessCode);
+    if (!access.allowed) {
+      res.status(access.statusCode || 401).json(access);
+      return;
+    }
+    const session = createCoachSession(accountKey, { ttlSeconds: 12 * 60 * 60 });
+    if (!session) {
+      res.status(500).json({
+        error: "SMART Trak session signing is not configured.",
+        sessionSecretRequired: true,
+      });
+      return;
+    }
+    res.status(200).json({
+      success: true,
+      accountKey,
+      productPlan: access.productPlan,
+      coachSeats: access.coachSeats,
+      sessionToken: session.token,
+      expiresAt: session.expiresAt,
+      expiresAtIso: session.expiresAtIso,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not create coach session." });
+  }
+}
+
 function firstQueryValue(value) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -491,6 +542,12 @@ function setAutomationHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-SMARTCoach-Automation-Secret");
+}
+
+function setSessionHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code, X-SMARTCoach-Session");
 }
 
 function firstPayloadValue(payload, keys) {

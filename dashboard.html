@@ -899,11 +899,23 @@ function setSmartCoachAccountKey(value){
 function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();
 }
+function sessionStorageKey(){
+  return 'sc_session_'+smartCoachAccountKey();
+}
 function smartCoachAccessCode(){
   try{return localStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
 }
 function setSmartCoachAccessCode(value){
   try{localStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
+}
+function smartCoachSession(){
+  try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
+}
+function setSmartCoachSession(value){
+  try{
+    if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
+    else sessionStorage.removeItem(sessionStorageKey());
+  }catch(e){}
 }
 function productPlan(){
   try{
@@ -1050,8 +1062,10 @@ function applyAdminTools(){
       init=init||{};
       var headers=new Headers(init.headers||{});
       headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      var session=smartCoachSession();
+      if(session)headers.set('X-SMARTCoach-Session',session);
       var accessCode=smartCoachAccessCode();
-      if(accessCode)headers.set('X-SMARTCoach-Access-Code',accessCode);
+      if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
       init.headers=headers;
     }
     return nativeFetch(input,init);
@@ -1518,8 +1532,23 @@ function submitDashboardAccessCode(){
   setSmartCoachAccessCode(code);
   els.accessStatus.textContent='Checking access...';
   els.accessStatus.style.color='#64748b';
-  els.accessModal.hidden=true;
-  loadDashboard();
+  fetch('/api/smart-trak/account-session',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(result.ok&&result.data&&result.data.sessionToken){
+      setSmartCoachSession(result.data.sessionToken);
+      setSmartCoachAccessCode('');
+    }
+    els.accessModal.hidden=true;
+    loadDashboard();
+  }).catch(function(){
+    els.accessModal.hidden=true;
+    loadDashboard();
+  });
 }
 
 function openAccountSettings(){

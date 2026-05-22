@@ -418,6 +418,8 @@ Subscription/customer management:
 - Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
 - Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.
 - Next production step: connect automation intake to a durable account registry because Vercel functions cannot persist environment variables at runtime.
+- Added signed coach session support behind `SMARTCOACH_SESSION_SECRET`.
+- Dashboard now exchanges a valid coach access code for a temporary session token and stops sending the raw code on each dashboard request when a session exists.
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated
