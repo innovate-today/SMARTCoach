@@ -394,6 +394,44 @@ async function accountAutomationHealth(req, res) {
   const sessionSigningReady = !!sessionSigningSource;
   const coachAccessEnforcementConfigured = normalizeSetupBoolean(process.env.SMARTCOACH_REQUIRE_COACH_ACCESS, false);
   const parentEmailReleased = parentEmailFeatureReleased();
+  const launchChecks = [
+    {
+      key: "automationSecret",
+      label: "Automation secret",
+      ready: automationSecretConfigured,
+      detail: automationSecretConfigured ? "Protected setup endpoints can accept trusted automation calls." : "Set SMARTCOACH_AUTOMATION_SECRET before connecting setup automation.",
+    },
+    {
+      key: "registry",
+      label: "Durable account registry",
+      ready: registryReady,
+      detail: registryReady ? "Customer account records can survive deployments and be updated by automation." : registryStatus.configured ? "Registry is configured but cannot be reached." : "Connect Vercel KV or Upstash Redis registry variables.",
+    },
+    {
+      key: "stripeWebhook",
+      label: "Stripe webhook",
+      ready: stripeWebhookReady,
+      detail: stripeWebhookReady ? "Stripe signatures can be verified before subscription updates are accepted." : "Set SMARTCOACH_STRIPE_WEBHOOK_SECRET from the Stripe webhook endpoint.",
+    },
+    {
+      key: "sessionSecret",
+      label: "Coach sessions",
+      ready: dedicatedSessionSecretConfigured,
+      detail: dedicatedSessionSecretConfigured ? "Coach sessions use a dedicated signing secret." : "Set SMARTCOACH_SESSION_SECRET so sessions do not reuse setup secrets.",
+    },
+    {
+      key: "coachAccess",
+      label: "Coach access enforcement",
+      ready: coachAccessEnforcementConfigured,
+      detail: coachAccessEnforcementConfigured ? "Pro accounts require a coach access code or signed coach session." : "Set SMARTCOACH_REQUIRE_COACH_ACCESS=true before launch.",
+    },
+    {
+      key: "parentEmail",
+      label: "Parent email release",
+      ready: !parentEmailReleased,
+      detail: parentEmailReleased ? "Parent email tools are globally enabled before the first rollout." : "Parent email tools remain hidden until intentionally released.",
+    },
+  ];
   const launchBlockers = [];
   const productionWarnings = [];
   if (!automationSecretConfigured) launchBlockers.push("Automation secret is missing.");
@@ -420,6 +458,7 @@ async function accountAutomationHealth(req, res) {
     success: true,
     launchReady: launchBlockers.length === 0,
     launchBlockers,
+    launchChecks,
     automationSecretConfigured,
     registryConfigured: !!registryStatus.configured,
     registryReachable: !!registryStatus.reachable,

@@ -170,9 +170,54 @@ async function testDuplicateStripeWebhookDoesNotSaveAgain() {
   }
 }
 
+async function testAutomationHealthLaunchReady() {
+  const previousFetch = global.fetch;
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/ping")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "PONG" }),
+      };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+      SMARTCOACH_STRIPE_WEBHOOK_SECRET: "stripe-webhook-secret",
+      SMARTCOACH_SESSION_SECRET: "session-secret",
+      SMARTCOACH_REQUIRE_COACH_ACCESS: "true",
+      SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED: undefined,
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "GET",
+        query: { route: "account-automation-health" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.launchReady, true);
+      assert.deepStrictEqual(res.body.launchBlockers, []);
+      assert.ok(Array.isArray(res.body.launchChecks));
+      assert.ok(res.body.launchChecks.length >= 6);
+      assert.strictEqual(res.body.launchChecks.every((check) => check.ready), true);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 (async () => {
   await testAutomationDryRunDoesNotSave();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
+  await testAutomationHealthLaunchReady();
   console.log("automation API dry-run and Stripe idempotency tests passed");
 })().catch((error) => {
   console.error(error);

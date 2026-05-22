@@ -435,6 +435,13 @@ function renderSystemResult(data){
   var launchHtml=blockers.length
     ? '<div class="empty">'+blockers.map(function(item){return esc(item);}).join('<br>')+'</div>'
     : '<div class="registryrow"><b>Launch blockers</b><span>None</span></div>';
+  var launchChecks=data.launchChecks||[];
+  var launchCheckHtml=launchChecks.length
+    ? '<div class="registrytitle"><div><b>Launch Checklist</b><span> What still has to be true before first rollout</span></div></div>'+
+      launchChecks.map(function(check){
+        return '<div class="registryrow"><b>'+esc(check.ready?'Ready':'Needs work')+'</b><span><strong>'+esc(check.label||'Check')+'</strong><br>'+esc(check.detail||'')+'</span></div>';
+      }).join('')
+    : '';
   var warnings=data.productionWarnings||[];
   var warningHtml=warnings.length
     ? '<div class="empty">'+warnings.map(function(item){return esc(item);}).join('<br>')+'</div>'
@@ -448,6 +455,7 @@ function renderSystemResult(data){
     '<div class="registrycards">'+cards+'</div>'+
     '<div class="registryrow"><b>Launch readiness</b><span>'+esc(data.launchReady?'Ready for initial rollout':'Not ready yet')+'</span></div>'+
     launchHtml+
+    launchCheckHtml+
     '<div class="registryrow"><b>Registry Connection</b><span>'+esc(data.registryReachable?'Reachable':data.registryError||'Not connected')+'</span></div>'+
     '<div class="registryrow"><b>Manual updates</b><span>'+esc(data.readyForManualRegistryUpdates?'Ready':'Needs registry and automation secret')+'</span></div>'+
     '<div class="registryrow"><b>Stripe webhooks</b><span>'+esc(data.readyForStripeWebhooks?'Ready':'Needs registry, automation secret, and Stripe webhook secret')+'</span></div>'+
