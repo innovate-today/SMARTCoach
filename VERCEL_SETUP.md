@@ -97,7 +97,26 @@ The same setup helper is available as a simple internal page:
 
 - `/onboarding.html`
 
-The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe. It also includes account-key and coach-code generators, copy-ready Stripe metadata and automation payloads, an internal system readiness check, plus an internal account lookup panel that can verify a saved registry record with the automation secret and load the customer subscription fields back into the setup form. The readiness check now separates basic working setup from stronger production setup by warning when coach sessions are using a fallback secret, global coach-access enforcement is off, the durable registry is missing, or the registry connection cannot be reached. The setup checklist also shows ready/missing/warning badges based on the current customer account signals, so support can see whether registry, subscription, coach codes, and account configuration are ready. Use **Save Registry Update** when a customer subscription or SMART Trak connection needs to be manually corrected before or after Stripe/GHL automation runs. Blank connection fields preserve the saved location ID, private integration token, coach access codes, and logo URL.
+The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe. It also includes account-key and coach-code generators, copy-ready Stripe metadata, automation endpoint URLs, recommended Stripe webhook events, automation payloads, an internal system readiness check, plus an internal account lookup panel that can verify a saved registry record with the automation secret and load the customer subscription fields back into the setup form.
+
+Use **Test Setup First** before saving a customer account. It validates the account payload, subscription status, coach seats, coach codes, and generated setup fields without writing to the durable registry.
+
+Use **Save Registry Update** when a customer subscription or SMART Trak connection needs to be manually corrected before or after Stripe/GHL automation runs. Blank connection fields preserve the saved location ID, private integration token, coach access codes, and logo URL.
+
+Use **Check System** before launch. It reports one overall launch readiness result, launch blockers, and a plain-language checklist for:
+
+- automation secret
+- durable account registry
+- Stripe webhook signing secret
+- dedicated coach session secret
+- coach access enforcement
+- parent email rollout gate
+
+Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
+
+The setup checklist also shows ready/missing/warning badges based on the current customer account signals, so support can see whether registry, subscription, coach codes, and account configuration are ready.
+
+Automation and Stripe webhook responses hide private integration tokens and coach access-code values. The internal protected account lookup can still verify that secrets are saved by showing `Saved` and saved counts instead of exposing the actual values.
 
 Optional internal setup protection:
 
@@ -198,7 +217,18 @@ Set this Vercel variable first:
 
 Use the signing secret from the Stripe webhook endpoint settings. The route verifies `Stripe-Signature` before updating the account registry. Put the SMARTCoach account key in Stripe metadata as `accountKey` so the webhook knows which customer account to update.
 
+Recommended Stripe events for the webhook endpoint:
+
+- `checkout.session.completed`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `invoice.payment_succeeded`
+- `invoice.payment_failed`
+
 Stripe webhooks only return success after the account registry update is saved. If the registry is missing or unavailable, the webhook returns an error so Stripe can retry the subscription update instead of marking it handled.
+
+Repeated Stripe events with the same Stripe event ID are treated as already handled. The webhook returns success for the retry and does not rewrite the existing registry record.
 
 ## Durable Account Registry
 
@@ -237,3 +267,4 @@ This endpoint also requires the automation secret. Account status reports whethe
 Before pushing security/account changes, run:
 
 - `node tests/ghl-account.test.js`
+- `node tests/automation-api.test.js`

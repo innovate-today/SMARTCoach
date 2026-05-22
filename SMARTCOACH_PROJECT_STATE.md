@@ -459,6 +459,7 @@ Subscription/customer management:
 - Added protected `account-automation-dry-run` and a **Test Setup First** button on `/onboarding.html` so internal setup can verify account access, subscription status, coach seats, coach codes, and generated setup fields without writing to the registry.
 - Added `tests/automation-api.test.js` to verify automation dry runs do not save registry records and duplicate Stripe webhook events do not rewrite already-handled account updates.
 - Automation and Stripe webhook responses now hide private integration token and coach access-code values in returned account records, while the protected internal registry lookup remains available for support verification.
+- Updated `VERCEL_SETUP.md` and `README.md` so production setup docs match the current onboarding helper, launch-readiness check, Stripe webhook events, hidden secret behavior, and regression tests.
 - Added `tests/ghl-account.test.js` as a lightweight regression check for subscription gating, Essential blocking, coach access-code checks, and signed coach-session acceptance. Run it with `node tests/ghl-account.test.js`.
 - Need cleaner onboarding after purchase:
   - coach buys on website
