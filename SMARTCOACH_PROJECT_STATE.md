@@ -413,7 +413,7 @@ Subscription/customer management:
   - renewal date
   - Stripe customer/subscription IDs
   - internal subscription notes
-- SMART Trak Pro API access is blocked when subscription status is `past_due`, `paused`, `canceled`, or `incomplete`.
+- SMART Trak Pro API access is blocked when subscription status is `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, or `unpaid`.
 - Blank subscription status remains allowed during migration so current accounts do not get locked out.
 - Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
 - Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.

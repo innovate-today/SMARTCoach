@@ -166,7 +166,7 @@ function accountSetup(req, res) {
       required: false,
       recommended: true,
       label: "Subscription status",
-      description: "Internal customer subscription status: active, trialing, past_due, paused, canceled, or incomplete.",
+      description: "Internal customer subscription status: active, trialing, past_due, paused, canceled, incomplete, incomplete_expired, or unpaid.",
     },
     {
       key: `SMARTCOACH_BILLING_CADENCE_${suffix}`,
@@ -705,7 +705,7 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
       required: false,
       recommended: true,
       label: "Subscription status",
-      description: "Internal customer subscription status: active, trialing, past_due, paused, canceled, or incomplete.",
+      description: "Internal customer subscription status: active, trialing, past_due, paused, canceled, incomplete, incomplete_expired, or unpaid.",
     },
     {
       key: `SMARTCOACH_BILLING_CADENCE_${suffix}`,
@@ -807,7 +807,7 @@ function publicSubscriptionSummary(subscription) {
 
 function normalizeSetupSubscriptionStatus(value) {
   const status = String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
-  return ["active", "trialing", "past_due", "paused", "canceled", "incomplete"].includes(status) ? status : "active";
+  return ["active", "trialing", "past_due", "paused", "canceled", "incomplete", "incomplete_expired", "unpaid"].includes(status) ? status : "active";
 }
 
 function normalizeSetupBillingCadence(value) {
