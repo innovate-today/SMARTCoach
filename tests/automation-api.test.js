@@ -90,6 +90,57 @@ async function testAutomationDryRunDoesNotSave() {
   }
 }
 
+async function testAutomationSecretRequiredBeforeRegistry() {
+  const previousFetch = global.fetch;
+  let fetchCalled = false;
+  global.fetch = async () => {
+    fetchCalled = true;
+    throw new Error("Unauthorized automation should not touch the registry.");
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const payload = {
+        accountKey: "unauthorized-school",
+        productPlan: "pro",
+        privateIntegrationToken: "pit",
+        locationId: "loc",
+        coachAccessCodes: "coach-code",
+        subscriptionStatus: "active",
+      };
+
+      const missingSecretRes = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation" },
+        headers: {},
+        body: payload,
+      }, missingSecretRes);
+
+      assert.strictEqual(missingSecretRes.statusCode, 401);
+      assert.strictEqual(missingSecretRes.body.automationSecretRequired, true);
+
+      const wrongSecretRes = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation" },
+        headers: { "x-smartcoach-automation-secret": "wrong-secret" },
+        body: payload,
+      }, wrongSecretRes);
+
+      assert.strictEqual(wrongSecretRes.statusCode, 401);
+      assert.strictEqual(wrongSecretRes.body.automationSecretRequired, true);
+      assert.strictEqual(fetchCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testDuplicateStripeWebhookDoesNotSaveAgain() {
   const previousFetch = global.fetch;
   const eventId = "evt_duplicate_123";
@@ -453,6 +504,7 @@ async function testRegistryLookupHidesSecrets() {
 
 (async () => {
   await testAutomationDryRunDoesNotSave();
+  await testAutomationSecretRequiredBeforeRegistry();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testInvalidStripeWebhookDoesNotTouchRegistry();
   await testAutomationHealthLaunchReady();

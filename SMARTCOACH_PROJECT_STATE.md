@@ -441,6 +441,7 @@ Subscription/customer management:
 - Added signed `account-stripe-webhook` intake for direct Stripe webhooks. It verifies `Stripe-Signature` with `SMARTCOACH_STRIPE_WEBHOOK_SECRET`, then reuses the safe registry merge logic. Stripe webhook requests now only return success after the registry save succeeds, so Stripe can retry if the durable registry is unavailable.
 - Added regression coverage to verify missing or invalid Stripe webhook signatures are rejected before the durable registry is touched.
 - Added protected `account-registry` read endpoint for verifying saved customer registry records.
+- Added regression coverage to verify missing or wrong automation secrets are rejected before the durable registry is touched.
 - Added internal account lookup on `/onboarding.html` so a customer registry record can be checked by account key and automation secret, with subscription fields loaded back into the setup form.
 - Account lookup now shows a last-update card and coach/support friendly timestamps for registry updates and recent automation events.
 - Account lookup now displays hidden private tokens as `Saved` and coach access codes by saved count, so support can verify setup without exposing secret values.
