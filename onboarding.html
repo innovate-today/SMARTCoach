@@ -495,6 +495,7 @@ function renderLookupResult(data){
     {label:'Plan',value:planLabel(record.productPlan)},
     {label:'Subscription',value:subscriptionLabel({subscription:sub})},
     {label:'Coach seats',value:coachSeatsLabel(record)},
+    {label:'Last update',value:shortDateTime(record.updatedAt)},
     {label:'Registry',value:registry.found?'Saved':'Not found'},
     {label:'Setup',value:data.setupReady?'Ready':'Needs setup'},
     {label:'Access',value:data.accessReady?'Allowed':(data.subscriptionAccessAllowed===false?'Blocked':'Not ready')}
@@ -513,7 +514,7 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Access Status</b><span>'+esc(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready'))+'</span></div>'+
     '<div class="registryrow"><b>Last Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
     '<div class="registryrow"><b>Last Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
-    '<div class="registryrow"><b>Updated</b><span>'+esc(record.updatedAt||'--')+'</span></div>'+
+    '<div class="registryrow"><b>Updated</b><span>'+esc(fullDateTime(record.updatedAt))+'</span></div>'+
     automationHistoryHtml(record.automationEventHistory);
   var guessedConfigured=(record.productPlan==='essential')||!!(record.locationId&&record.token&&((record.coachAccessCodes||[]).length||record.accessCode));
   currentSetup=Object.assign({},currentSetup||{},{
@@ -572,6 +573,18 @@ function lastEventLabel(event, part){
   if(source.stripeEventId)label+=' / '+source.stripeEventId;
   return label;
 }
+function shortDateTime(value){
+  if(!value)return '--';
+  var date=new Date(value);
+  if(Number.isNaN(date.getTime()))return value;
+  return date.toLocaleDateString([], {month:'short', day:'numeric'})+' · '+date.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+}
+function fullDateTime(value){
+  if(!value)return '--';
+  var date=new Date(value);
+  if(Number.isNaN(date.getTime()))return value;
+  return date.toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+}
 function parentEmailCoachAccessInputValue(value){
   return (Array.isArray(value)?value:[]).map(function(allowed,index){return allowed?String(index+1):'';}).filter(Boolean).join(',');
 }
@@ -586,7 +599,7 @@ function automationHistoryHtml(history){
     items.map(function(item){
       var label=lastEventLabel(item,'event');
       var source=lastEventLabel(item,'source');
-      var time=item.receivedAt||'--';
+      var time=shortDateTime(item.receivedAt);
       return '<div class="registryrow"><b>'+esc(source)+'</b><span>'+esc(label)+' · '+esc(time)+'</span></div>';
     }).join('');
 }
