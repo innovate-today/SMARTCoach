@@ -13,7 +13,15 @@ const handlers = {
   "sync-session": require("../ghl/sync-session"),
   "training-plan": require("../ghl/training-plan"),
 };
-const { getGhlContext, requireProPlan, coachCodeAllowed, createCoachSession, subscriptionAccessAllowed } = require("../../lib/ghl-account");
+const {
+  getGhlContext,
+  requireProPlan,
+  coachCodeAllowed,
+  createCoachSession,
+  coachSessionSecretSource,
+  coachSessionTtlSeconds,
+  subscriptionAccessAllowed,
+} = require("../../lib/ghl-account");
 const { registryConfigured, saveAccountRecord, loadAccountRecord } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 
@@ -322,13 +330,31 @@ function accountAutomationHealth(req, res) {
   const automationSecretConfigured = !!cleanSetupText(process.env.SMARTCOACH_AUTOMATION_SECRET);
   const registryReady = registryConfigured();
   const stripeWebhookReady = !!cleanSetupText(process.env.SMARTCOACH_STRIPE_WEBHOOK_SECRET);
-  const sessionSigningReady = !!cleanSetupText(process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE);
+  const dedicatedSessionSecretConfigured = !!cleanSetupText(process.env.SMARTCOACH_SESSION_SECRET);
+  const sessionSigningSource = coachSessionSecretSource();
+  const sessionSigningReady = !!sessionSigningSource;
+  const coachAccessEnforcementConfigured = normalizeSetupBoolean(process.env.SMARTCOACH_REQUIRE_COACH_ACCESS, false);
+  const productionWarnings = [];
+  if (!dedicatedSessionSecretConfigured) {
+    productionWarnings.push("Set SMARTCOACH_SESSION_SECRET so coach sessions do not reuse automation or setup secrets.");
+  }
+  if (!coachAccessEnforcementConfigured) {
+    productionWarnings.push("Set SMARTCOACH_REQUIRE_COACH_ACCESS=true after Pro accounts have coach access codes.");
+  }
+  if (!registryReady) {
+    productionWarnings.push("Connect the durable account registry so Stripe and setup automation survive deployments.");
+  }
   res.status(200).json({
     success: true,
     automationSecretConfigured,
     registryConfigured: registryReady,
     stripeWebhookConfigured: stripeWebhookReady,
+    dedicatedSessionSecretConfigured,
     sessionSigningConfigured: sessionSigningReady,
+    sessionSigningSource,
+    sessionTtlSeconds: coachSessionTtlSeconds(),
+    coachAccessEnforcementConfigured,
+    productionWarnings,
     readyForManualRegistryUpdates: automationSecretConfigured && registryReady,
     readyForStripeWebhooks: automationSecretConfigured && registryReady && stripeWebhookReady,
     readyForSignedCoachSessions: sessionSigningReady,
@@ -337,6 +363,8 @@ function accountAutomationHealth(req, res) {
       { key: "registry", label: "Durable account registry", configured: registryReady },
       { key: "stripeWebhook", label: "Stripe webhook signing secret", configured: stripeWebhookReady },
       { key: "sessionSigning", label: "Coach session signing", configured: sessionSigningReady },
+      { key: "dedicatedSessionSecret", label: "Dedicated session secret", configured: dedicatedSessionSecretConfigured },
+      { key: "coachAccessEnforcement", label: "Coach access enforcement", configured: coachAccessEnforcementConfigured },
     ],
   });
 }

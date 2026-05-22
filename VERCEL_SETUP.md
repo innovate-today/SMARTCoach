@@ -91,7 +91,7 @@ The same setup helper is available as a simple internal page:
 
 - `/onboarding.html`
 
-The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe. It also includes account-key and coach-code generators, copy-ready Stripe metadata and automation payloads, an internal system readiness check, plus an internal account lookup panel that can verify a saved registry record with the automation secret and load the customer subscription fields back into the setup form. Use **Save Registry Update** when a customer subscription or SMART Trak connection needs to be manually corrected before or after Stripe/GHL automation runs. Blank connection fields preserve the saved location ID, private integration token, coach access codes, and logo URL.
+The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe. It also includes account-key and coach-code generators, copy-ready Stripe metadata and automation payloads, an internal system readiness check, plus an internal account lookup panel that can verify a saved registry record with the automation secret and load the customer subscription fields back into the setup form. The readiness check now separates basic working setup from stronger production setup by warning when coach sessions are using a fallback secret, global coach-access enforcement is off, or the durable registry is missing. Use **Save Registry Update** when a customer subscription or SMART Trak connection needs to be manually corrected before or after Stripe/GHL automation runs. Blank connection fields preserve the saved location ID, private integration token, coach access codes, and logo URL.
 
 Optional internal setup protection:
 
@@ -104,7 +104,7 @@ Coach session signing:
 - `SMARTCOACH_SESSION_SECRET`
 - `SMARTCOACH_SESSION_TTL_SECONDS` optional, defaults to `43200` seconds / 12 hours
 
-When this is set, SMART Trak can exchange a valid coach access code for a short-lived signed session token. The browser can then use the temporary session instead of sending the raw coach access code on every request. If this is not set, the server falls back to `SMARTCOACH_AUTOMATION_SECRET` or `SMARTCOACH_ADMIN_SETUP_CODE` for signing if either exists.
+When this is set, SMART Trak can exchange a valid coach access code for a short-lived signed session token. The browser can then use the temporary session instead of sending the raw coach access code on every request. If this is not set, the server falls back to `SMARTCOACH_AUTOMATION_SECRET` or `SMARTCOACH_ADMIN_SETUP_CODE` for signing if either exists. Production should use a dedicated `SMARTCOACH_SESSION_SECRET` so coach sessions do not share automation/setup secrets.
 
 Session length can be adjusted with `SMARTCOACH_SESSION_TTL_SECONDS`. Values are clamped between 15 minutes and 7 days. The recommended production value is the default 12 hours, which usually covers a practice day without leaving long-lived access sitting in the browser.
 

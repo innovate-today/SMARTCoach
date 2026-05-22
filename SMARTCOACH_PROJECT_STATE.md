@@ -438,7 +438,7 @@ Subscription/customer management:
 - Added optional SMART Trak connection fields to `/onboarding.html` for internal setup/support: location ID, private integration token, coach access codes, and logo URL. Blank fields preserve existing saved registry values.
 - Added account-key and coach-code generators to `/onboarding.html` to reduce manual setup mistakes. Coach code generation respects one-coach vs three-coach Pro setup.
 - Added copy-ready Stripe metadata and account automation JSON payloads to `/onboarding.html` so purchase/onboarding automation can be configured from the same account setup screen.
-- Added protected `account-automation-health` endpoint and a `/onboarding.html` system readiness check for automation secret, durable registry, Stripe webhook signing secret, and signed coach sessions.
+- Added protected `account-automation-health` endpoint and a `/onboarding.html` system readiness check for automation secret, durable registry, Stripe webhook signing secret, signed coach sessions, dedicated session secret, and coach access enforcement. The readiness check now shows production warnings when sessions use fallback secrets, global coach access enforcement is off, or the durable registry is missing.
 - Registry account records now store a lightweight `lastAutomationEvent` stamp showing last update source, event type, optional Stripe event/object IDs, and received time. `/onboarding.html` lookup displays last source/event.
 - `/onboarding.html` manual registry save now only reports "saved" when the durable registry actually returns `saved: true`; otherwise it shows the registry setup problem.
 - Need cleaner onboarding after purchase:
