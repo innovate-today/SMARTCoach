@@ -290,3 +290,5 @@ Before calling automation/security complete for rollout, verify this with a real
 Before pushing security/account changes, run:
 
 - `npm test`
+
+GitHub Actions also runs this same regression command on pushes and pull requests, so GitHub can catch account/security regressions before or alongside Vercel deployment.
