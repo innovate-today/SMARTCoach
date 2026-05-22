@@ -102,8 +102,11 @@ When this is set, `/onboarding.html` and `/api/smart-trak/account-setup` require
 Coach session signing:
 
 - `SMARTCOACH_SESSION_SECRET`
+- `SMARTCOACH_SESSION_TTL_SECONDS` optional, defaults to `43200` seconds / 12 hours
 
 When this is set, SMART Trak can exchange a valid coach access code for a short-lived signed session token. The browser can then use the temporary session instead of sending the raw coach access code on every request. If this is not set, the server falls back to `SMARTCOACH_AUTOMATION_SECRET` or `SMARTCOACH_ADMIN_SETUP_CODE` for signing if either exists.
+
+Session length can be adjusted with `SMARTCOACH_SESSION_TTL_SECONDS`. Values are clamped between 15 minutes and 7 days. The recommended production value is the default 12 hours, which usually covers a practice day without leaving long-lived access sitting in the browser.
 
 Coach access-code attempts are throttled per account and IP address. Repeated wrong codes are paused temporarily and return `429` with `Retry-After`, which helps protect customer dashboards from brute-force access-code guessing.
 

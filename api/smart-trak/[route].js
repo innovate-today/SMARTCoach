@@ -484,7 +484,7 @@ async function accountSession(req, res) {
       return;
     }
     clearSessionFailures({ accountKey, ip });
-    const session = createCoachSession(accountKey, { ttlSeconds: 12 * 60 * 60 });
+    const session = createCoachSession(accountKey);
     if (!session) {
       res.status(500).json({
         error: "SMART Trak session signing is not configured.",
