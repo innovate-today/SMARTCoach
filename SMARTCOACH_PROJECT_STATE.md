@@ -425,6 +425,7 @@ Subscription/customer management:
 - `account-automation` merges later partial updates into the existing registry record, so Stripe/GHL subscription updates can change status, amount, renewal date, and Stripe IDs without wiping CRM connection fields or coach access codes.
 - Added signed `account-stripe-webhook` intake for direct Stripe webhooks. It verifies `Stripe-Signature` with `SMARTCOACH_STRIPE_WEBHOOK_SECRET`, then reuses the safe registry merge logic.
 - Added protected `account-registry` read endpoint for verifying saved customer registry records.
+- Added internal account lookup on `/onboarding.html` so a customer registry record can be checked by account key and automation secret, with subscription fields loaded back into the setup form.
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated

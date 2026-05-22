@@ -84,7 +84,7 @@ The same setup helper is available as a simple internal page:
 
 - `/onboarding.html`
 
-The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe.
+The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe. It also includes an internal account lookup panel that can verify a saved registry record with the automation secret and load the customer subscription fields back into the setup form.
 
 Optional internal setup protection:
 

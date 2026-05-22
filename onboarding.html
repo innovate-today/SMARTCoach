@@ -78,7 +78,15 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checkrow a{color:#102a70;font-weight:800;text-decoration:none}
 .checkrow a:hover{text-decoration:underline}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
+.lookupgrid{display:grid;grid-template-columns:1fr 240px auto;gap:12px;align-items:end}
+.registrybox{display:grid;gap:10px;margin-top:14px}
+.registrytitle{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
+.registrytitle b{font-size:16px}.registrytitle span{color:var(--muted);font-size:12px}
+.registrycards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.registryrow{display:grid;grid-template-columns:180px 1fr;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;font-size:13px}
+.registryrow b{color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:11px}
 @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
+@media(max-width:760px){.lookupgrid,.registrycards,.registryrow{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -126,6 +134,24 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="generateBtn" type="button" onclick="generateSetup()">Generate</button>
       </div>
       <div id="status" class="status"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Account Lookup</h2></div>
+    <div class="panelbody">
+      <div class="lookupgrid">
+        <div class="field">
+          <label for="lookupAccountKey">Account Key</label>
+          <input id="lookupAccountKey" type="text" placeholder="lincolntrack" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="automationSecret">Automation Secret</label>
+          <input id="automationSecret" type="password" placeholder="Required for registry lookup" autocomplete="off">
+        </div>
+        <button id="lookupBtn" type="button" class="secondary" onclick="lookupAccount()">Lookup Account</button>
+      </div>
+      <div id="lookupResult" class="registrybox"></div>
     </div>
   </section>
 
@@ -238,6 +264,93 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 var currentEnvironment=[];
 var currentSetup=null;
 prefillFromUrl();
+function lookupAccount(){
+  var account=(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'').trim();
+  var secret=document.getElementById('automationSecret').value.trim();
+  var box=document.getElementById('lookupResult');
+  if(!account){
+    setStatus('Enter an account key to look up.','bad');
+    return;
+  }
+  if(!secret){
+    setStatus('Enter the automation secret to look up the registry record.','bad');
+    return;
+  }
+  rememberAutomationSecret(secret);
+  box.innerHTML='<div class="empty">Looking up account...</div>';
+  document.getElementById('lookupBtn').disabled=true;
+  fetch('/api/smart-trak/account-registry?account='+encodeURIComponent(account),{
+    cache:'no-store',
+    headers:{'X-SMARTCoach-Automation-Secret':secret}
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok){
+      var err=new Error(result.data&&result.data.error||'Could not load account.');
+      err.data=result.data;
+      throw err;
+    }
+    renderLookupResult(result.data);
+    setStatus('Account registry record loaded.','good');
+  }).catch(function(error){
+    box.innerHTML='<div class="empty">'+esc(error.message||'Could not load account.')+'</div>';
+    setStatus(error.message||'Could not load account.','bad');
+  }).finally(function(){
+    document.getElementById('lookupBtn').disabled=false;
+  });
+}
+function renderLookupResult(data){
+  var record=data.accountRegistryRecord||{};
+  var sub=record.subscription||{};
+  var account=record.accountKey||data.accountKey||'';
+  var registry=data.registry||{};
+  var cards=[
+    {label:'Plan',value:planLabel(record.productPlan)},
+    {label:'Subscription',value:subscriptionLabel({subscription:sub})},
+    {label:'Coach seats',value:coachSeatsLabel(record)},
+    {label:'Registry',value:registry.found?'Saved':'Not found'}
+  ];
+  document.getElementById('lookupResult').innerHTML=
+    '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> Saved customer account record</span></div><button type="button" onclick="fillFormFromLookup()">Use In Form</button></div>'+
+    '<div class="registrycards">'+cards.map(function(card){return '<div class="card"><b>'+esc(card.value||'--')+'</b><span>'+esc(card.label)+'</span></div>';}).join('')+'</div>'+
+    '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
+    '<div class="registryrow"><b>Token</b><span>'+esc(maskValue(record.token))+'</span></div>'+
+    '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
+    '<div class="registryrow"><b>Stripe Subscription</b><span>'+esc(sub.stripeSubscriptionId||'--')+'</span></div>'+
+    '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
+    '<div class="registryrow"><b>Updated</b><span>'+esc(record.updatedAt||'--')+'</span></div>';
+  currentSetup=Object.assign({},currentSetup||{},{
+    accountKey:account,
+    productPlan:record.productPlan||'pro',
+    coachSeats:record.coachSeats||1,
+    subscription:sub,
+    dashboardUrl:'/dashboard.html?account='+encodeURIComponent(account),
+    ghlCustomLinkUrl:'/dashboard.html?account='+encodeURIComponent(account)+'&embed=1',
+    accountUrl:'/?account='+encodeURIComponent(account)
+  });
+}
+function fillFormFromLookup(){
+  if(!currentSetup||!currentSetup.accountKey)return;
+  var sub=currentSetup.subscription||{};
+  document.getElementById('accountKey').value=currentSetup.accountKey||'';
+  document.getElementById('lookupAccountKey').value=currentSetup.accountKey||'';
+  document.getElementById('plan').value=currentSetup.productPlan==='essential'?'essential':'pro';
+  document.getElementById('coachSeats').value=String(currentSetup.coachSeats)==='3'?'3':'1';
+  if(sub.status)document.getElementById('subscriptionStatus').value=sub.status;
+  if(sub.billingCadence)document.getElementById('billingCadence').value=sub.billingCadence==='annual'?'annual':'monthly';
+  document.getElementById('subscriptionAmount').value=sub.amount||'';
+  document.getElementById('renewalDate').value=sub.renewalDate||'';
+  document.getElementById('stripeCustomerId').value=sub.stripeCustomerId||'';
+  document.getElementById('stripeSubscriptionId').value=sub.stripeSubscriptionId||'';
+  document.getElementById('subscriptionNotes').value=sub.notes||'';
+  setStatus('Loaded this account into the setup form.','good');
+}
+function maskValue(value){
+  var text=String(value||'').trim();
+  if(!text)return '--';
+  if(text.length<=8)return text.slice(0,2)+'...';
+  return text.slice(0,4)+'...'+text.slice(-4);
+}
 function generateSetup(){
   var account=document.getElementById('accountKey').value.trim();
   var plan=document.getElementById('plan').value;
@@ -532,6 +645,7 @@ function prefillFromUrl(){
     var subscriptionStatus=(params.get('subscriptionStatus')||params.get('status')||'').trim();
     var billingCadence=(params.get('billingCadence')||params.get('cadence')||'').trim();
     if(account)document.getElementById('accountKey').value=account;
+    if(account)document.getElementById('lookupAccountKey').value=account;
     if(plan)document.getElementById('plan').value=plan==='essential'?'essential':'pro';
     if(coachSeats)document.getElementById('coachSeats').value=coachSeats==='3'?'3':'1';
     if(subscriptionStatus)document.getElementById('subscriptionStatus').value=subscriptionStatus;
@@ -543,11 +657,18 @@ function prefillFromUrl(){
     if(params.get('subscriptionNotes'))document.getElementById('subscriptionNotes').value=params.get('subscriptionNotes');
     var remembered=sessionStorage.getItem('smartcoach_setup_code')||'';
     if(remembered)document.getElementById('setupCode').value=remembered;
+    var automationSecret=sessionStorage.getItem('smartcoach_automation_secret')||'';
+    if(automationSecret)document.getElementById('automationSecret').value=automationSecret;
   }catch(e){}
 }
 function rememberSetupCode(value){
   try{
     sessionStorage.setItem('smartcoach_setup_code',value);
+  }catch(e){}
+}
+function rememberAutomationSecret(value){
+  try{
+    sessionStorage.setItem('smartcoach_automation_secret',value);
   }catch(e){}
 }
 </script>
