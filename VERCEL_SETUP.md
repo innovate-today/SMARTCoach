@@ -233,3 +233,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 2. Add the default account environment variables above.
 3. Point `app.smartcoach-pro.com` to the Vercel project.
 4. Test Share -> Sync to SMART Trak with one athlete who has saved times.
+
+Before pushing security/account changes, run:
+
+- `node tests/ghl-account.test.js`
