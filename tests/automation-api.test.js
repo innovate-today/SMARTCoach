@@ -172,6 +172,63 @@ async function testDuplicateStripeWebhookDoesNotSaveAgain() {
   }
 }
 
+async function testInvalidStripeWebhookDoesNotTouchRegistry() {
+  const previousFetch = global.fetch;
+  const secret = "stripe-webhook-secret";
+  let fetchCalled = false;
+  global.fetch = async () => {
+    fetchCalled = true;
+    throw new Error("Invalid Stripe signatures should not touch the registry.");
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_STRIPE_WEBHOOK_SECRET: secret,
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const payload = {
+        id: "evt_bad_signature",
+        type: "customer.subscription.updated",
+        data: {
+          object: {
+            object: "subscription",
+            id: "sub_bad_signature",
+            metadata: { accountKey: "bad-signature-school" },
+            status: "active",
+          },
+        },
+      };
+      const rawBody = JSON.stringify(payload);
+
+      const missingSignatureRes = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-stripe-webhook" },
+        headers: {},
+        body: rawBody,
+      }, missingSignatureRes);
+
+      assert.strictEqual(missingSignatureRes.statusCode, 401);
+      assert.match(missingSignatureRes.body.error, /signature is required/i);
+
+      const invalidSignatureRes = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-stripe-webhook" },
+        headers: { "stripe-signature": stripeSignature(rawBody, "wrong-secret") },
+        body: rawBody,
+      }, invalidSignatureRes);
+
+      assert.strictEqual(invalidSignatureRes.statusCode, 401);
+      assert.match(invalidSignatureRes.body.error, /could not be verified/i);
+      assert.strictEqual(fetchCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAutomationHealthLaunchReady() {
   const previousFetch = global.fetch;
   global.fetch = async (url) => {
@@ -397,6 +454,7 @@ async function testRegistryLookupHidesSecrets() {
 (async () => {
   await testAutomationDryRunDoesNotSave();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
+  await testInvalidStripeWebhookDoesNotTouchRegistry();
   await testAutomationHealthLaunchReady();
   await testParentEmailReleaseGate();
   await testCoachAccessRateLimit();

@@ -223,6 +223,8 @@ Set this Vercel variable first:
 
 Use the signing secret from the Stripe webhook endpoint settings. The route verifies `Stripe-Signature` before updating the account registry. Put the SMARTCoach account key in Stripe metadata as `accountKey` so the webhook knows which customer account to update.
 
+Invalid or missing Stripe signatures are rejected before the durable account registry is read or written.
+
 Recommended Stripe events for the webhook endpoint:
 
 - `checkout.session.completed`
