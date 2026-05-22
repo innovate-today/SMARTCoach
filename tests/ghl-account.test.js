@@ -48,6 +48,7 @@ withEnv({
   GHL_PRIVATE_INTEGRATION_TOKEN_TEST: "token",
   GHL_LOCATION_ID_TEST: "location",
   SMARTCOACH_COACH_ACCESS_CODES_TEST: "coach-one,coach-two",
+  SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_TEST: "1",
   SMARTCOACH_REQUIRE_COACH_ACCESS_TEST: "true",
   SMARTCOACH_SUBSCRIPTION_STATUS_TEST: "active",
   SMARTCOACH_SESSION_SECRET: "test-session-secret",
@@ -67,8 +68,10 @@ withEnv({
   const allowed = coachCodeAllowed(req(), "coach-one");
   assert.strictEqual(allowed.allowed, true);
   assert.strictEqual(allowed.coachSeats, 1);
+  assert.strictEqual(allowed.coachIndex, 0);
+  assert.strictEqual(allowed.parentEmailAllowed, true);
 
-  const session = createCoachSession("test");
+  const session = createCoachSession("test", { coachIndex: allowed.coachIndex, parentEmailAllowed: allowed.parentEmailAllowed });
   const sessionReq = { query: { account: "test" }, headers: { "x-smartcoach-session": session.token } };
   const sessionRes = mockRes();
   assert.strictEqual(requireProPlan(sessionReq, sessionRes), true);

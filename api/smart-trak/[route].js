@@ -18,6 +18,7 @@ const {
   requireProPlan,
   coachCodeAllowed,
   createCoachSession,
+  coachSessionFromRequest,
   coachSessionSecretSource,
   coachSessionTtlSeconds,
   subscriptionAccessAllowed,
@@ -83,6 +84,7 @@ async function accountStatus(req, res) {
 
   const registry = await attachRegistryAccount(req);
   const { accountKey, token, locationId, productPlan, accessCode, coachSeats, coachAccessCodes, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
+  const coachSession = coachSessionFromRequest(req, accountKey);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const tokenKey = accountKey === "default" ? "GHL_PRIVATE_INTEGRATION_TOKEN" : `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`;
   const locationKey = accountKey === "default" ? "GHL_LOCATION_ID" : `GHL_LOCATION_ID_${suffix}`;
@@ -107,6 +109,12 @@ async function accountStatus(req, res) {
     crmConfigured,
     coachSeats,
     coachAccessCodesConfigured: configuredCoachCodes,
+    coach: coachSession ? {
+      index: Number(coachSession.coachIndex) || 0,
+      label: `Coach ${(Number(coachSession.coachIndex) || 0) + 1}`,
+      parentEmailAllowed: !!coachSession.parentEmailAllowed,
+    } : null,
+    parentEmailToolsAllowed: !!(coachSession && coachSession.parentEmailAllowed),
     accessCodeRequired: configuredCoachCodes > 0 || !!requireCoachAccess,
     coachAccessRequired: configuredCoachCodes > 0 || !!requireCoachAccess,
     accessCodeMissing: !!requireCoachAccess && configuredCoachCodes < 1,
@@ -257,6 +265,13 @@ function accountSetup(req, res) {
         required: true,
         label: "Require coach access",
         description: "Blocks SMART Trak if this account does not have coach access codes configured.",
+      },
+      {
+        key: `SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_${suffix}`,
+        value: "",
+        required: false,
+        label: "Parent email enabled coaches",
+        description: "Optional. Use coach numbers like 1 or 1,3 to enable parent email tools only for those coach access codes.",
       }
     );
   }
@@ -545,7 +560,7 @@ async function accountSession(req, res) {
       return;
     }
     clearSessionFailures({ accountKey, ip });
-    const session = createCoachSession(accountKey);
+    const session = createCoachSession(accountKey, { coachIndex: access.coachIndex, parentEmailAllowed: access.parentEmailAllowed });
     if (!session) {
       res.status(500).json({
         error: "SMART Trak session signing is not configured.",
@@ -558,6 +573,8 @@ async function accountSession(req, res) {
       accountKey,
       productPlan: access.productPlan,
       coachSeats: access.coachSeats,
+      coachIndex: access.coachIndex,
+      parentEmailAllowed: !!access.parentEmailAllowed,
       sessionToken: session.token,
       expiresAt: session.expiresAt,
       expiresAtIso: session.expiresAtIso,
@@ -659,6 +676,8 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   };
   const coachCodesValue = firstAutomationValue(payload, ["coachAccessCodes", "coachCodes", "accessCodes"]);
   const coachCodes = coachCodesValue ? normalizeSetupCoachCodes(coachCodesValue, accountKey, coachSeats) : normalizeSetupCoachCodes(existing.coachAccessCodes || [], accountKey, coachSeats);
+  const parentEmailCoachAccessValue = firstAutomationValue(payload, ["parentEmailCoachAccess", "parentEmailCoachIndexes", "parentEmailCoaches"]);
+  const parentEmailCoachAccess = parentEmailCoachAccessValue ? normalizeParentEmailCoachAccess(parentEmailCoachAccessValue, coachSeats) : normalizeParentEmailCoachAccess(existing.parentEmailCoachAccess || [], coachSeats);
   const tokenValue = firstAutomationValue(payload, ["ghlToken", "privateIntegrationToken", "token"]);
   const locationValue = firstAutomationValue(payload, ["locationId", "ghlLocationId"]);
   const logoValue = firstAutomationValue(payload, ["logoUrl", "brandLogoUrl", "schoolLogoUrl"]);
@@ -673,6 +692,7 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     locationId: cleanSetupText(locationValue || existing.locationId),
     coachSeats: productPlan === "pro" ? coachSeats : 0,
     coachAccessCodes: productPlan === "pro" ? coachCodes : [],
+    parentEmailCoachAccess: productPlan === "pro" ? parentEmailCoachAccess : [],
     requireCoachAccess,
     subscription,
     logoUrl: cleanSetupText(logoValue || existing.logoUrl),
@@ -833,6 +853,13 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
         required: true,
         label: "Require coach access",
         description: "Blocks SMART Trak if this account does not have coach access codes configured.",
+      },
+      {
+        key: `SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_${suffix}`,
+        value: parentEmailAccessIndexes(account.parentEmailCoachAccess).join(","),
+        required: false,
+        label: "Parent email enabled coaches",
+        description: "Optional. Use coach numbers like 1 or 1,3 to enable parent email tools only for those coach access codes.",
       }
     );
   }
@@ -904,6 +931,37 @@ function normalizeSetupCoachCodes(value, accountKey, coachSeats) {
     codes.push(`${suggestedAccessCode(accountKey)}-c${codes.length + 1}`);
   }
   return codes.slice(0, normalizeSetupCoachSeats(coachSeats));
+}
+
+function normalizeParentEmailCoachAccess(value, coachSeats) {
+  const seats = normalizeSetupCoachSeats(coachSeats);
+  const allowed = Array.from({ length: seats }, () => false);
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      const raw = cleanSetupText(item).toLowerCase();
+      if (["1", "true", "yes", "on", "allow", "allowed", "enabled"].includes(raw)) allowed[index] = true;
+      else {
+        const number = Number(raw);
+        if (Number.isFinite(number) && number >= 1 && number <= seats) allowed[number - 1] = true;
+      }
+    });
+    return allowed;
+  }
+  const raw = cleanSetupText(value);
+  if (!raw) return allowed;
+  if (/^(all|true|yes|on|enabled)$/i.test(raw)) return allowed.map(() => true);
+  raw.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean).forEach((item, index) => {
+    const key = item.toLowerCase();
+    if (["true", "yes", "on", "allow", "allowed", "enabled"].includes(key)) allowed[index] = true;
+    const match = key.match(/(?:coach)?\s*([123])/);
+    const number = match ? Number(match[1]) : Number(key);
+    if (Number.isFinite(number) && number >= 1 && number <= seats) allowed[number - 1] = true;
+  });
+  return allowed;
+}
+
+function parentEmailAccessIndexes(value) {
+  return (Array.isArray(value) ? value : []).map((allowed, index) => allowed ? String(index + 1) : "").filter(Boolean);
 }
 
 function suggestedSubscriptionAmount(productPlan, coachSeatsValue) {

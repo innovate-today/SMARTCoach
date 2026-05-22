@@ -188,6 +188,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="coachAccessCodes" type="text" placeholder="coach_code_1, coach_code_2" autocomplete="off">
         </div>
         <div class="field">
+          <label for="parentEmailCoachAccess">Parent Email Enabled Coaches</label>
+          <input id="parentEmailCoachAccess" type="text" placeholder="Example: 1 or 1,3" autocomplete="off">
+        </div>
+        <div class="field">
           <label for="logoUrl">Logo URL</label>
           <input id="logoUrl" type="text" placeholder="Optional customer logo URL" autocomplete="off">
         </div>
@@ -477,6 +481,7 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
     '<div class="registryrow"><b>Token</b><span>'+esc(maskValue(record.token))+'</span></div>'+
     '<div class="registryrow"><b>Coach Codes</b><span>'+esc((record.coachAccessCodes||[]).length?String((record.coachAccessCodes||[]).length)+' saved':'--')+'</span></div>'+
+    '<div class="registryrow"><b>Parent Email Enabled</b><span>'+esc(parentEmailCoachAccessLabel(record.parentEmailCoachAccess))+'</span></div>'+
     '<div class="registryrow"><b>Logo URL</b><span>'+esc(record.logoUrl?maskValue(record.logoUrl):'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Subscription</b><span>'+esc(sub.stripeSubscriptionId||'--')+'</span></div>'+
@@ -499,6 +504,7 @@ function renderLookupResult(data){
     subscriptionAccessAllowed:data.subscriptionAccessAllowed,
     subscriptionBlockedReason:data.subscriptionBlockedReason||'',
     coachAccessCodesConfigured:(record.coachAccessCodes||[]).length||(record.accessCode?1:0),
+    parentEmailCoachAccess:record.parentEmailCoachAccess||[],
     subscription:sub,
     logoUrl:record.logoUrl||'',
     accountRegistryRecord:record,
@@ -518,6 +524,7 @@ function fillFormFromLookup(){
   document.getElementById('locationId').value='';
   document.getElementById('privateIntegrationToken').value='';
   document.getElementById('coachAccessCodes').value='';
+  document.getElementById('parentEmailCoachAccess').value=parentEmailCoachAccessInputValue(currentSetup.parentEmailCoachAccess);
   document.getElementById('logoUrl').value=currentSetup.logoUrl||'';
   if(sub.status)document.getElementById('subscriptionStatus').value=sub.status;
   if(sub.billingCadence)document.getElementById('billingCadence').value=sub.billingCadence==='annual'?'annual':'monthly';
@@ -540,6 +547,13 @@ function lastEventLabel(event, part){
   var label=source.eventType||'--';
   if(source.stripeEventId)label+=' / '+source.stripeEventId;
   return label;
+}
+function parentEmailCoachAccessInputValue(value){
+  return (Array.isArray(value)?value:[]).map(function(allowed,index){return allowed?String(index+1):'';}).filter(Boolean).join(',');
+}
+function parentEmailCoachAccessLabel(value){
+  var list=parentEmailCoachAccessInputValue(value);
+  return list?('Coach '+list.replace(/,/g, ', Coach ')):'Off';
 }
 function automationHistoryHtml(history){
   var items=Array.isArray(history)?history.filter(Boolean).slice(0,5):[];
@@ -613,6 +627,7 @@ function registryPayloadFromForm(){
     locationId:document.getElementById('locationId').value.trim(),
     privateIntegrationToken:document.getElementById('privateIntegrationToken').value.trim(),
     coachAccessCodes:document.getElementById('coachAccessCodes').value.trim(),
+    parentEmailCoachAccess:document.getElementById('parentEmailCoachAccess').value.trim(),
     logoUrl:document.getElementById('logoUrl').value.trim(),
     updateSource:'manual-onboarding',
     eventType:'manual_registry_update',
