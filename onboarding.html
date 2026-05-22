@@ -135,6 +135,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <button id="generateBtn" type="button" onclick="generateSetup()">Generate</button>
       </div>
+      <div class="formactions">
+        <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
+        <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Coach Codes</button>
+      </div>
       <div id="status" class="status"></div>
     </div>
   </section>
@@ -294,8 +298,49 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 var currentEnvironment=[];
 var currentSetup=null;
 prefillFromUrl();
+function generateAccountKey(){
+  var input=document.getElementById('accountKey');
+  var raw=input.value.trim();
+  var key=cleanAccountKey(raw);
+  if(!key)key='smartcoach'+randomCode(6);
+  input.value=key;
+  document.getElementById('lookupAccountKey').value=key;
+  setStatus('Account key generated.','good');
+}
+function generateCoachCodes(){
+  var account=cleanAccountKey(document.getElementById('accountKey').value.trim())||'coach';
+  var plan=document.getElementById('plan').value;
+  var seats=Number(document.getElementById('coachSeats').value)||1;
+  if(plan==='essential'){
+    document.getElementById('coachAccessCodes').value='';
+    setStatus('Essential is stopwatch-only, so coach access codes are not needed.','good');
+    return;
+  }
+  var codes=[];
+  for(var i=0;i<seats;i++){
+    codes.push('sc-'+account.slice(0,10)+'-'+randomCode(6)+'-c'+(i+1));
+  }
+  document.getElementById('coachAccessCodes').value=codes.join(',');
+  setStatus(seats===3?'Three coach access codes generated.':'One coach access code generated.','good');
+}
+function cleanAccountKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,40);
+}
+function randomCode(length){
+  var chars='abcdefghjkmnpqrstuvwxyz23456789';
+  var out='';
+  var values=new Uint32Array(length);
+  if(window.crypto&&window.crypto.getRandomValues){
+    window.crypto.getRandomValues(values);
+  }else{
+    for(var i=0;i<length;i++)values[i]=Math.floor(Math.random()*chars.length);
+  }
+  for(var j=0;j<length;j++)out+=chars[values[j]%chars.length];
+  return out;
+}
 function lookupAccount(){
-  var account=(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'').trim();
+  var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');
+  document.getElementById('lookupAccountKey').value=account;
   var secret=document.getElementById('automationSecret').value.trim();
   var box=document.getElementById('lookupResult');
   if(!account){
@@ -434,8 +479,11 @@ function saveRegistryUpdate(){
   });
 }
 function registryPayloadFromForm(){
+  var account=cleanAccountKey(document.getElementById('accountKey').value.trim());
+  document.getElementById('accountKey').value=account;
+  document.getElementById('lookupAccountKey').value=account;
   return {
-    accountKey:document.getElementById('accountKey').value.trim(),
+    accountKey:account,
     productPlan:document.getElementById('plan').value,
     coachSeats:document.getElementById('coachSeats').value,
     locationId:document.getElementById('locationId').value.trim(),
@@ -452,7 +500,9 @@ function registryPayloadFromForm(){
   };
 }
 function generateSetup(){
-  var account=document.getElementById('accountKey').value.trim();
+  var account=cleanAccountKey(document.getElementById('accountKey').value.trim());
+  document.getElementById('accountKey').value=account;
+  document.getElementById('lookupAccountKey').value=account;
   var plan=document.getElementById('plan').value;
   var coachSeats=document.getElementById('coachSeats').value;
   var subscriptionStatus=document.getElementById('subscriptionStatus').value;
