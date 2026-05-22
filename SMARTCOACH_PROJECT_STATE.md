@@ -441,6 +441,7 @@ Subscription/customer management:
 - Coach access prompts now stay open and show the server error when a login attempt fails, including rate-limit and missing coach-code setup messages.
 - Added regression coverage for coach access-code rate limiting after repeated wrong attempts.
 - Added durable account registry support for Vercel KV / Upstash Redis REST.
+- Check System and setup docs now explain the durable registry in plain language as customer account storage, not a coach-facing login feature.
 - `account-automation` now saves the normalized customer account record to the registry when `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` are configured.
 - When a registry record exists, SMART Trak uses it as the live account source before falling back to Vercel environment variables. Automation can now update plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL without a new Vercel variable for every customer change.
 - `account-automation` merges later partial updates into the existing registry record, so Stripe/GHL subscription updates can change status, amount, renewal date, and Stripe IDs without wiping CRM connection fields or coach access codes.

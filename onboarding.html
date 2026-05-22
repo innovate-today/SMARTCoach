@@ -467,8 +467,12 @@ function renderSystemResult(data){
   var sessionDetail=data.sessionSigningSource
     ? (data.sessionSigningSource==='session-secret'?'Dedicated secret':'Fallback secret')+' · '+sessionMinutes+' minutes'
     : 'Needs session, automation, or setup secret';
+  var registryHelp=data.registryReachable
+    ? '<div class="setupnote"><b>Customer account storage is ready</b>New customer account records can be saved here after purchase, without adding Vercel variables for every coach.</div>'
+    : '<div class="setupnote"><b>Customer account storage is not connected</b>Connect Vercel KV or Upstash Redis, or set SMARTCOACH_REGISTRY_REST_URL and SMARTCOACH_REGISTRY_REST_TOKEN. Until this is connected, each new customer account would need separate Vercel variables and a redeploy.</div>';
   document.getElementById('systemResult').innerHTML=
     '<div class="registrytitle"><div><b>Automation System</b><span> Internal setup readiness</span></div></div>'+
+    registryHelp+
     '<div class="registrycards">'+cards+'</div>'+
     '<div class="registryrow"><b>Launch readiness</b><span>'+esc(data.launchReady?'Ready for initial rollout':'Not ready yet')+'</span></div>'+
     launchHtml+
