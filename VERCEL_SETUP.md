@@ -53,7 +53,7 @@ Account status separates setup readiness from access readiness. A customer can b
 
 Automation, manual registry-save, and account registry lookup responses return the same readiness fields, so Stripe/GHL updates and internal support checks can confirm setup/access state without calling account status separately.
 
-Coach-facing pages use `accessReady` during account checks, so a subscription-blocked Pro account stops with a clear access-blocked message instead of continuing into dashboard or planning data calls.
+Coach-facing pages use `accessReady` during account checks, so a subscription-blocked Pro account stops with a clear access-blocked message instead of continuing into dashboard, roster, calendar, plan, history, records, or simulator data calls.
 
 Pro accounts need all three:
 

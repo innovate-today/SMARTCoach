@@ -688,6 +688,22 @@ function showAccess(data){
   els.accessStatus.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';
   setTimeout(function(){els.accessCode.focus();},50);
 }
+function ensureAccountAccess(){
+  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':accountKey()}}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(result.data&&result.data.accessReady===false){
+      els.mainPage.hidden=true;
+      els.accessPanel.hidden=false;
+      els.accessStatus.textContent=result.data.subscriptionBlockedReason||result.data.error||'SMART Trak access is blocked for this account.';
+      els.accessStatus.style.color='var(--bad)';
+      els.accessSubmit.disabled=true;
+      els.accessCode.disabled=true;
+      return false;
+    }
+    return true;
+  }).catch(function(){return true;});
+}
 function submitAccess(){
   if(!els.accessCode.value.trim()){
     els.accessStatus.textContent='Enter the access code to continue.';
@@ -756,7 +772,7 @@ function init(){
   els.accessCode.addEventListener('keydown',function(event){
     if(event.key==='Enter')submitAccess();
   });
-  loadMeetHistory();
+  ensureAccountAccess().then(function(ok){if(ok)loadMeetHistory();});
 }
 init();
 </script>

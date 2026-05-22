@@ -308,6 +308,18 @@ function apiHeaders(){
   if(code&&!session)headers['X-SMARTCoach-Access-Code']=code;
   return headers;
 }
+function ensureAccountAccess(){
+  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':accountKey()}}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(result.data&&result.data.accessReady===false){
+      setStatus(result.data.subscriptionBlockedReason||result.data.error||'SMART Trak access is blocked for this account.','error');
+      els.loadSbBtn.disabled=true;
+      return false;
+    }
+    return true;
+  }).catch(function(){return true;});
+}
 function esc(value){
   return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
@@ -480,6 +492,7 @@ function loadSmartTrakDashboard(){
   }).then(function(result){
     if(!result.ok){
       if(result.data&&result.data.accessCodeRequired)throw new Error('SMART Trak access code is needed. Open the Dashboard once, enter the code, then come back to the simulator.');
+      if(result.data&&result.data.subscriptionAccessRequired)throw new Error(result.data.error||'SMART Trak access is blocked for this account.');
       throw new Error(result.data&&result.data.error||'SMART Trak season bests failed to load.');
     }
     smartTrakMeetResults=result.data.meetResults||result.data.recentMeetResults||[];
@@ -679,7 +692,7 @@ function clearAll(){
   els.division.value='';
   els.teamName.value='';
   els.resultInput.value='';
-  render();
+  ensureAccountAccess().then(function(ok){if(ok)render();});
 }
 function copyResults(){
   if(!lastSimulation)render();
