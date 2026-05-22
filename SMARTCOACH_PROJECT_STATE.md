@@ -415,6 +415,9 @@ Subscription/customer management:
   - internal subscription notes
 - SMART Trak Pro API access is blocked when subscription status is `past_due`, `paused`, `canceled`, or `incomplete`.
 - Blank subscription status remains allowed during migration so current accounts do not get locked out.
+- Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
+- Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.
+- Next production step: connect automation intake to a durable account registry because Vercel functions cannot persist environment variables at runtime.
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated

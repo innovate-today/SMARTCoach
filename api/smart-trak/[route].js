@@ -25,6 +25,10 @@ module.exports = async function handler(req, res) {
     return accountSetup(req, res);
   }
 
+  if (route === "account-automation") {
+    return accountAutomation(req, res);
+  }
+
   if (!selected) {
     res.status(404).json({ error: "SMART Trak endpoint not found." });
     return;
@@ -220,6 +224,50 @@ function accountSetup(req, res) {
   });
 }
 
+function accountAutomation(req, res) {
+  setAutomationHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  if (!automationAllowed(req)) {
+    res.status(401).json({
+      error: "Automation secret is required.",
+      automationSecretRequired: true,
+    });
+    return;
+  }
+
+  try {
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const account = accountAutomationRecord(payload);
+    const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+    const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
+    res.status(200).json({
+      success: true,
+      accountKey: account.accountKey,
+      productPlan: account.productPlan,
+      coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
+      subscription: publicSubscriptionSummary(account.subscription),
+      subscriptionAccessAllowed: account.subscription.status === "active" || account.subscription.status === "trialing" || !account.subscription.status,
+      accountRegistryRecord: account,
+      environment,
+      dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
+      ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
+      accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not process automation payload." });
+  }
+}
+
 function firstQueryValue(value) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -249,6 +297,133 @@ function setupSubscriptionFromQuery(query, productPlan) {
   };
 }
 
+function accountAutomationRecord(payload) {
+  const accountKey = normalizeSetupAccountKey(
+    firstPayloadValue(payload, ["accountKey", "account", "tenant", "key", "locationName", "companyName"])
+  );
+  if (!accountKey) throw httpError(400, "Account key is required.");
+  const productPlan = normalizeSetupProductPlan(firstPayloadValue(payload, ["productPlan", "plan", "subscriptionPlan"]));
+  const coachSeats = normalizeSetupCoachSeats(firstPayloadValue(payload, ["coachSeats", "coaches", "seats"]));
+  const subscription = {
+    status: normalizeSetupSubscriptionStatus(firstPayloadValue(payload, ["subscriptionStatus", "status"]) || "active"),
+    billingCadence: normalizeSetupBillingCadence(firstPayloadValue(payload, ["billingCadence", "billingInterval", "cadence"]) || "monthly"),
+    amount: cleanSetupText(firstPayloadValue(payload, ["subscriptionAmount", "amount", "price"]) || suggestedSubscriptionAmount(productPlan, coachSeats)),
+    renewalDate: cleanSetupText(firstPayloadValue(payload, ["renewalDate", "renewsOn", "nextBillingDate"])),
+    stripeCustomerId: cleanSetupText(firstPayloadValue(payload, ["stripeCustomerId", "customerId"])),
+    stripeSubscriptionId: cleanSetupText(firstPayloadValue(payload, ["stripeSubscriptionId", "subscriptionId"])),
+    notes: cleanSetupText(firstPayloadValue(payload, ["subscriptionNotes", "notes"])),
+  };
+  const coachCodes = normalizeSetupCoachCodes(firstPayloadValue(payload, ["coachAccessCodes", "coachCodes", "accessCodes"]), accountKey, coachSeats);
+  return {
+    accountKey,
+    productPlan,
+    token: cleanSetupText(firstPayloadValue(payload, ["ghlToken", "privateIntegrationToken", "token"])),
+    locationId: cleanSetupText(firstPayloadValue(payload, ["locationId", "ghlLocationId"])),
+    coachSeats: productPlan === "pro" ? coachSeats : 0,
+    coachAccessCodes: productPlan === "pro" ? coachCodes : [],
+    subscription,
+    logoUrl: cleanSetupText(firstPayloadValue(payload, ["logoUrl", "brandLogoUrl", "schoolLogoUrl"])),
+  };
+}
+
+function accountEnvironmentRows({ suffix, account, includeCrm }) {
+  const rows = [
+    {
+      key: `SMARTCOACH_PRODUCT_PLAN_${suffix}`,
+      value: account.productPlan,
+      required: true,
+      label: "Plan",
+      description: "Controls whether this account is Essential or Pro.",
+    },
+    {
+      key: `SMARTCOACH_SUBSCRIPTION_STATUS_${suffix}`,
+      value: account.subscription.status,
+      required: false,
+      recommended: true,
+      label: "Subscription status",
+      description: "Internal customer subscription status: active, trialing, past_due, paused, canceled, or incomplete.",
+    },
+    {
+      key: `SMARTCOACH_BILLING_CADENCE_${suffix}`,
+      value: account.subscription.billingCadence,
+      required: false,
+      recommended: true,
+      label: "Billing cadence",
+      description: "Internal billing cadence for this customer: monthly or annual.",
+    },
+    {
+      key: `SMARTCOACH_SUBSCRIPTION_AMOUNT_${suffix}`,
+      value: account.subscription.amount,
+      required: false,
+      recommended: true,
+      label: "Subscription amount",
+      description: "Internal monthly or annual subscription amount. Athlete limits remain controlled in GHL.",
+    },
+    {
+      key: `SMARTCOACH_RENEWAL_DATE_${suffix}`,
+      value: account.subscription.renewalDate,
+      required: false,
+      recommended: true,
+      label: "Renewal date",
+      description: "Internal next renewal or billing date in YYYY-MM-DD format.",
+    },
+    {
+      key: `SMARTCOACH_STRIPE_CUSTOMER_ID_${suffix}`,
+      value: account.subscription.stripeCustomerId,
+      required: false,
+      label: "Stripe customer ID",
+      description: "Optional internal billing reference. This is not shown in the coach-facing app.",
+    },
+    {
+      key: `SMARTCOACH_STRIPE_SUBSCRIPTION_ID_${suffix}`,
+      value: account.subscription.stripeSubscriptionId,
+      required: false,
+      label: "Stripe subscription ID",
+      description: "Optional internal subscription reference. This is not shown in the coach-facing app.",
+    },
+    {
+      key: `SMARTCOACH_SUBSCRIPTION_NOTES_${suffix}`,
+      value: account.subscription.notes,
+      required: false,
+      label: "Subscription notes",
+      description: "Optional internal notes about this customer subscription.",
+    },
+  ];
+  if (includeCrm) {
+    rows.push(
+      {
+        key: `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`,
+        value: account.token || "paste_customer_private_integration_token",
+        required: true,
+        label: "Private integration token",
+        description: "Customer SMART Trak private integration token.",
+      },
+      {
+        key: `GHL_LOCATION_ID_${suffix}`,
+        value: account.locationId || "paste_customer_location_id",
+        required: true,
+        label: "Location ID",
+        description: "Customer SMART Trak sub-account location ID.",
+      },
+      {
+        key: `SMARTCOACH_COACH_SEATS_${suffix}`,
+        value: String(account.coachSeats || 1),
+        required: true,
+        label: "Coach seats",
+        description: "Controls whether this Pro account allows 1 coach or 3 coach access codes. Athlete count stays controlled by GHL.",
+      },
+      {
+        key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
+        value: (account.coachAccessCodes || []).join(","),
+        required: true,
+        label: "Coach access codes",
+        description: `Give one code to each coach. This account is set for ${account.coachSeats || 1} coach${(account.coachSeats || 1) === 1 ? "" : "es"}.`,
+      }
+    );
+  }
+  return rows;
+}
+
 function publicSubscriptionSummary(subscription) {
   const source = subscription || {};
   return {
@@ -273,6 +448,20 @@ function cleanSetupText(value) {
   return String(value || "").trim();
 }
 
+function normalizeSetupCoachCodes(value, accountKey, coachSeats) {
+  const codes = [];
+  const add = (item) => {
+    const code = cleanSetupText(item);
+    if (code && !codes.includes(code)) codes.push(code);
+  };
+  if (Array.isArray(value)) value.forEach(add);
+  else if (value) cleanSetupText(value).split(/[\n,]+/).forEach(add);
+  while (codes.length < normalizeSetupCoachSeats(coachSeats)) {
+    codes.push(`${suggestedAccessCode(accountKey)}-c${codes.length + 1}`);
+  }
+  return codes.slice(0, normalizeSetupCoachSeats(coachSeats));
+}
+
 function suggestedSubscriptionAmount(productPlan, coachSeatsValue) {
   if (productPlan === "essential") return "9.99";
   return normalizeSetupCoachSeats(firstQueryValue(coachSeatsValue)) === 3 ? "39.99" : "29.99";
@@ -283,6 +472,39 @@ function setupAdminAllowed(req) {
   if (!expected) return true;
   const provided = String((req.headers && (req.headers["x-smartcoach-setup-code"] || req.headers["X-SMARTCoach-Setup-Code"])) || firstQueryValue(req.query && req.query.setupCode) || "").trim();
   return provided && safeEqual(provided, expected);
+}
+
+function automationAllowed(req) {
+  const expected = cleanSetupText(process.env.SMARTCOACH_AUTOMATION_SECRET);
+  if (!expected) return false;
+  const auth = cleanSetupText(req.headers && (req.headers.authorization || req.headers.Authorization));
+  const bearer = auth.replace(/^Bearer\s+/i, "");
+  const provided = cleanSetupText(
+    (req.headers && (req.headers["x-smartcoach-automation-secret"] || req.headers["X-SMARTCoach-Automation-Secret"])) ||
+      bearer ||
+      firstQueryValue(req.query && req.query.automationSecret)
+  );
+  return provided && safeEqual(provided, expected);
+}
+
+function setAutomationHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-SMARTCoach-Automation-Secret");
+}
+
+function firstPayloadValue(payload, keys) {
+  for (const key of keys) {
+    const value = payload && payload[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
+function httpError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
 }
 
 function safeEqual(a, b) {

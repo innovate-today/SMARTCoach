@@ -92,6 +92,40 @@ Optional internal setup protection:
 
 When this is set, `/onboarding.html` and `/api/smart-trak/account-setup` require the setup code before generating customer setup fields. This keeps customer setup links out of casual view while still allowing the helper to be used internally.
 
+## Automation Intake
+
+Set this secret before connecting GHL or Stripe automations:
+
+- `SMARTCOACH_AUTOMATION_SECRET`
+
+Then GHL/Stripe automation can call:
+
+- `POST /api/smart-trak/account-automation`
+
+Send the secret as either:
+
+- `Authorization: Bearer your_secret`
+- `X-SMARTCoach-Automation-Secret: your_secret`
+
+Example payload:
+
+```json
+{
+  "accountKey": "lincolntrack",
+  "productPlan": "pro",
+  "coachSeats": 3,
+  "subscriptionStatus": "active",
+  "billingCadence": "monthly",
+  "subscriptionAmount": "39.99",
+  "renewalDate": "2026-06-21",
+  "stripeCustomerId": "cus_...",
+  "stripeSubscriptionId": "sub_...",
+  "locationId": "ghl_location_id"
+}
+```
+
+The endpoint validates the automation secret, normalizes the account data, returns a registry record, and returns the exact setup fields needed for the account. It does not permanently store the registry by itself because Vercel serverless functions cannot safely write persistent environment variables at runtime. The next production step is to connect this endpoint to a durable account registry, such as GHL custom values/objects, Supabase, Vercel Postgres, or another database.
+
 ## Deploy Order
 
 1. Import this GitHub repo into Vercel.
