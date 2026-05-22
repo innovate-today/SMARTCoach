@@ -517,8 +517,8 @@ function renderLookupResult(data){
     '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> Saved customer account record</span></div><button type="button" onclick="fillFormFromLookup()">Use In Form</button></div>'+
     '<div class="registrycards">'+cards.map(function(card){return '<div class="card"><b>'+esc(card.value||'--')+'</b><span>'+esc(card.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
-    '<div class="registryrow"><b>Token</b><span>'+esc(maskValue(record.token))+'</span></div>'+
-    '<div class="registryrow"><b>Coach Codes</b><span>'+esc((record.coachAccessCodes||[]).length?String((record.coachAccessCodes||[]).length)+' saved':'--')+'</span></div>'+
+    '<div class="registryrow"><b>Token</b><span>'+esc(secretStatus(record.token))+'</span></div>'+
+    '<div class="registryrow"><b>Coach Codes</b><span>'+esc(coachCodesSummary(record))+'</span></div>'+
     '<div class="registryrow"><b>Parent Email Enabled</b><span>'+esc(parentEmailCoachAccessLabel(record.parentEmailCoachAccess))+'</span></div>'+
     '<div class="registryrow"><b>Logo URL</b><span>'+esc(record.logoUrl?maskValue(record.logoUrl):'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
@@ -576,8 +576,21 @@ function fillFormFromLookup(){
 function maskValue(value){
   var text=String(value||'').trim();
   if(!text)return '--';
+  if(text==='__hidden__')return 'Saved';
   if(text.length<=8)return text.slice(0,2)+'...';
   return text.slice(0,4)+'...'+text.slice(-4);
+}
+function secretStatus(value){
+  var text=String(value||'').trim();
+  if(!text)return '--';
+  if(text==='__hidden__')return 'Saved';
+  return maskValue(text);
+}
+function coachCodesSummary(record){
+  var source=record||{};
+  var count=(source.coachAccessCodes||[]).length||(source.accessCode?1:0);
+  if(!count)return '--';
+  return String(count)+' saved';
 }
 function lastEventLabel(event, part){
   var source=event||{};
