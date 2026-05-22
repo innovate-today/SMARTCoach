@@ -427,6 +427,7 @@ Subscription/customer management:
 - Added protected `account-registry` read endpoint for verifying saved customer registry records.
 - Added internal account lookup on `/onboarding.html` so a customer registry record can be checked by account key and automation secret, with subscription fields loaded back into the setup form.
 - Added manual **Save Registry Update** action on `/onboarding.html` so internal support can correct a customer's plan/subscription fields in the durable registry without waiting for Stripe/GHL automation.
+- Added optional SMART Trak connection fields to `/onboarding.html` for internal setup/support: location ID, private integration token, coach access codes, and logo URL. Blank fields preserve existing saved registry values.
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated

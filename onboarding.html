@@ -80,6 +80,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
 .lookupgrid{display:grid;grid-template-columns:1fr 240px auto;gap:12px;align-items:end}
 .formactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px}
+.connectiongrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
 .registrybox{display:grid;gap:10px;margin-top:14px}
 .registrytitle{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .registrytitle b{font-size:16px}.registrytitle span{color:var(--muted);font-size:12px}
@@ -87,7 +88,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .registryrow{display:grid;grid-template-columns:180px 1fr;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;font-size:13px}
 .registryrow b{color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:11px}
 @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
-@media(max-width:760px){.lookupgrid,.registrycards,.registryrow{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
+@media(max-width:760px){.lookupgrid,.connectiongrid,.registrycards,.registryrow{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
 </style>
 </head>
 <body>
@@ -153,6 +154,31 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="lookupBtn" type="button" class="secondary" onclick="lookupAccount()">Lookup Account</button>
       </div>
       <div id="lookupResult" class="registrybox"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>SMART Trak Connection</h2></div>
+    <div class="panelbody">
+      <div class="connectiongrid">
+        <div class="field">
+          <label for="locationId">Location ID</label>
+          <input id="locationId" type="text" placeholder="Leave blank to preserve saved location" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="privateIntegrationToken">Private Integration Token</label>
+          <input id="privateIntegrationToken" type="password" placeholder="Leave blank to preserve saved token" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="coachAccessCodes">Coach Access Codes</label>
+          <input id="coachAccessCodes" type="text" placeholder="coach_code_1, coach_code_2" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="logoUrl">Logo URL</label>
+          <input id="logoUrl" type="text" placeholder="Optional customer logo URL" autocomplete="off">
+        </div>
+      </div>
+      <div class="status">Use these fields only for internal setup or support. Blank connection fields preserve the saved registry value.</div>
     </div>
   </section>
 
@@ -319,6 +345,8 @@ function renderLookupResult(data){
     '<div class="registrycards">'+cards.map(function(card){return '<div class="card"><b>'+esc(card.value||'--')+'</b><span>'+esc(card.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
     '<div class="registryrow"><b>Token</b><span>'+esc(maskValue(record.token))+'</span></div>'+
+    '<div class="registryrow"><b>Coach Codes</b><span>'+esc((record.coachAccessCodes||[]).length?String((record.coachAccessCodes||[]).length)+' saved':'--')+'</span></div>'+
+    '<div class="registryrow"><b>Logo URL</b><span>'+esc(record.logoUrl?maskValue(record.logoUrl):'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Subscription</b><span>'+esc(sub.stripeSubscriptionId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
@@ -328,6 +356,7 @@ function renderLookupResult(data){
     productPlan:record.productPlan||'pro',
     coachSeats:record.coachSeats||1,
     subscription:sub,
+    logoUrl:record.logoUrl||'',
     dashboardUrl:'/dashboard.html?account='+encodeURIComponent(account),
     ghlCustomLinkUrl:'/dashboard.html?account='+encodeURIComponent(account)+'&embed=1',
     accountUrl:'/?account='+encodeURIComponent(account)
@@ -340,6 +369,10 @@ function fillFormFromLookup(){
   document.getElementById('lookupAccountKey').value=currentSetup.accountKey||'';
   document.getElementById('plan').value=currentSetup.productPlan==='essential'?'essential':'pro';
   document.getElementById('coachSeats').value=String(currentSetup.coachSeats)==='3'?'3':'1';
+  document.getElementById('locationId').value='';
+  document.getElementById('privateIntegrationToken').value='';
+  document.getElementById('coachAccessCodes').value='';
+  document.getElementById('logoUrl').value=currentSetup.logoUrl||'';
   if(sub.status)document.getElementById('subscriptionStatus').value=sub.status;
   if(sub.billingCadence)document.getElementById('billingCadence').value=sub.billingCadence==='annual'?'annual':'monthly';
   document.getElementById('subscriptionAmount').value=sub.amount||'';
@@ -405,6 +438,10 @@ function registryPayloadFromForm(){
     accountKey:document.getElementById('accountKey').value.trim(),
     productPlan:document.getElementById('plan').value,
     coachSeats:document.getElementById('coachSeats').value,
+    locationId:document.getElementById('locationId').value.trim(),
+    privateIntegrationToken:document.getElementById('privateIntegrationToken').value.trim(),
+    coachAccessCodes:document.getElementById('coachAccessCodes').value.trim(),
+    logoUrl:document.getElementById('logoUrl').value.trim(),
     subscriptionStatus:document.getElementById('subscriptionStatus').value,
     billingCadence:document.getElementById('billingCadence').value,
     subscriptionAmount:document.getElementById('subscriptionAmount').value.trim(),
