@@ -289,5 +289,4 @@ Before calling automation/security complete for rollout, verify this with a real
 
 Before pushing security/account changes, run:
 
-- `node tests/ghl-account.test.js`
-- `node tests/automation-api.test.js`
+- `node tests/run-all.js`
