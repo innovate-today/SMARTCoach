@@ -265,7 +265,10 @@ async function accountAutomation(req, res) {
 
   try {
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const account = accountAutomationRecord(payload);
+    const accountKey = automationAccountKey(payload);
+    if (!accountKey) throw httpError(400, "Account key is required.");
+    const existing = await loadExistingAccountRecord(accountKey);
+    const account = accountAutomationRecord(payload, existing);
     const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
     const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
     const registryResult = await saveAccountRecord(account.accountKey, account);
@@ -434,33 +437,61 @@ function setupSubscriptionFromQuery(query, productPlan) {
   };
 }
 
-function accountAutomationRecord(payload) {
-  const accountKey = normalizeSetupAccountKey(
-    firstPayloadValue(payload, ["accountKey", "account", "tenant", "key", "locationName", "companyName"])
-  );
+async function loadExistingAccountRecord(accountKey) {
+  try {
+    const result = await loadAccountRecord(accountKey);
+    return result && result.found && result.record ? result.record : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function accountAutomationRecord(payload, existingRecord) {
+  const existing = existingRecord || {};
+  const existingSubscription = existing.subscription || {};
+  const accountKey = automationAccountKey(payload);
   if (!accountKey) throw httpError(400, "Account key is required.");
-  const productPlan = normalizeSetupProductPlan(firstPayloadValue(payload, ["productPlan", "plan", "subscriptionPlan"]));
-  const coachSeats = normalizeSetupCoachSeats(firstPayloadValue(payload, ["coachSeats", "coaches", "seats"]));
+  const productPlanValue = firstAutomationValue(payload, ["productPlan", "plan", "subscriptionPlan"]);
+  const productPlan = productPlanValue ? normalizeSetupProductPlan(productPlanValue) : normalizeSetupProductPlan(existing.productPlan || "pro");
+  const coachSeatsValue = firstAutomationValue(payload, ["coachSeats", "coaches", "seats"]);
+  const coachSeats = coachSeatsValue ? normalizeSetupCoachSeats(coachSeatsValue) : normalizeSetupCoachSeats(existing.coachSeats || 1);
+  const statusValue = firstAutomationValue(payload, ["subscriptionStatus", "status"]);
+  const billingValue = firstAutomationValue(payload, ["billingCadence", "billingInterval", "cadence", "interval"]);
+  const amountValue = firstAutomationValue(payload, ["subscriptionAmount", "amount", "price", "unitAmount", "unit_amount"]);
+  const renewalValue = firstAutomationValue(payload, ["renewalDate", "renewsOn", "nextBillingDate", "currentPeriodEnd", "current_period_end"]);
+  const stripeCustomerValue = firstAutomationValue(payload, ["stripeCustomerId", "customerId", "customer"]);
+  const stripeSubscriptionValue = firstAutomationValue(payload, ["stripeSubscriptionId", "subscriptionId", "subscription"]);
+  const notesValue = firstAutomationValue(payload, ["subscriptionNotes", "notes"]);
   const subscription = {
-    status: normalizeSetupSubscriptionStatus(firstPayloadValue(payload, ["subscriptionStatus", "status"]) || "active"),
-    billingCadence: normalizeSetupBillingCadence(firstPayloadValue(payload, ["billingCadence", "billingInterval", "cadence"]) || "monthly"),
-    amount: cleanSetupText(firstPayloadValue(payload, ["subscriptionAmount", "amount", "price"]) || suggestedSubscriptionAmount(productPlan, coachSeats)),
-    renewalDate: cleanSetupText(firstPayloadValue(payload, ["renewalDate", "renewsOn", "nextBillingDate"])),
-    stripeCustomerId: cleanSetupText(firstPayloadValue(payload, ["stripeCustomerId", "customerId"])),
-    stripeSubscriptionId: cleanSetupText(firstPayloadValue(payload, ["stripeSubscriptionId", "subscriptionId"])),
-    notes: cleanSetupText(firstPayloadValue(payload, ["subscriptionNotes", "notes"])),
+    status: statusValue ? normalizeSetupSubscriptionStatus(statusValue) : existingSubscription.status || "active",
+    billingCadence: billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly",
+    amount: amountValue ? normalizeMoneyAmount(amountValue) : existingSubscription.amount || suggestedSubscriptionAmount(productPlan, coachSeats),
+    renewalDate: renewalValue ? normalizeDateValue(renewalValue) : existingSubscription.renewalDate || "",
+    stripeCustomerId: cleanSetupText(stripeCustomerValue || existingSubscription.stripeCustomerId),
+    stripeSubscriptionId: cleanSetupText(stripeSubscriptionValue || existingSubscription.stripeSubscriptionId),
+    notes: cleanSetupText(notesValue || existingSubscription.notes),
   };
-  const coachCodes = normalizeSetupCoachCodes(firstPayloadValue(payload, ["coachAccessCodes", "coachCodes", "accessCodes"]), accountKey, coachSeats);
+  const coachCodesValue = firstAutomationValue(payload, ["coachAccessCodes", "coachCodes", "accessCodes"]);
+  const coachCodes = coachCodesValue ? normalizeSetupCoachCodes(coachCodesValue, accountKey, coachSeats) : normalizeSetupCoachCodes(existing.coachAccessCodes || [], accountKey, coachSeats);
+  const tokenValue = firstAutomationValue(payload, ["ghlToken", "privateIntegrationToken", "token"]);
+  const locationValue = firstAutomationValue(payload, ["locationId", "ghlLocationId"]);
+  const logoValue = firstAutomationValue(payload, ["logoUrl", "brandLogoUrl", "schoolLogoUrl"]);
   return {
     accountKey,
     productPlan,
-    token: cleanSetupText(firstPayloadValue(payload, ["ghlToken", "privateIntegrationToken", "token"])),
-    locationId: cleanSetupText(firstPayloadValue(payload, ["locationId", "ghlLocationId"])),
+    token: cleanSetupText(tokenValue || existing.token),
+    locationId: cleanSetupText(locationValue || existing.locationId),
     coachSeats: productPlan === "pro" ? coachSeats : 0,
     coachAccessCodes: productPlan === "pro" ? coachCodes : [],
     subscription,
-    logoUrl: cleanSetupText(firstPayloadValue(payload, ["logoUrl", "brandLogoUrl", "schoolLogoUrl"])),
+    logoUrl: cleanSetupText(logoValue || existing.logoUrl),
   };
+}
+
+function automationAccountKey(payload) {
+  return normalizeSetupAccountKey(
+    firstAutomationValue(payload, ["accountKey", "account", "tenant", "key", "locationName", "companyName", "client_reference_id"])
+  );
 }
 
 function accountEnvironmentRows({ suffix, account, includeCrm }) {
@@ -578,7 +609,28 @@ function normalizeSetupSubscriptionStatus(value) {
 
 function normalizeSetupBillingCadence(value) {
   const cadence = String(value || "").trim().toLowerCase();
-  return cadence === "annual" ? "annual" : "monthly";
+  return cadence === "annual" || cadence === "year" || cadence === "yearly" ? "annual" : "monthly";
+}
+
+function normalizeMoneyAmount(value) {
+  const raw = cleanSetupText(value);
+  if (!raw) return "";
+  const numeric = Number(raw);
+  if (Number.isFinite(numeric) && Math.abs(numeric) >= 100 && !raw.includes(".")) {
+    return (numeric / 100).toFixed(2);
+  }
+  return raw;
+}
+
+function normalizeDateValue(value) {
+  const raw = cleanSetupText(value);
+  if (!raw) return "";
+  const numeric = Number(raw);
+  if (Number.isFinite(numeric) && numeric > 1000000000) {
+    const milliseconds = numeric > 100000000000 ? numeric : numeric * 1000;
+    return new Date(milliseconds).toISOString().slice(0, 10);
+  }
+  return raw;
 }
 
 function cleanSetupText(value) {
@@ -640,6 +692,63 @@ function firstPayloadValue(payload, keys) {
   for (const key of keys) {
     const value = payload && payload[key];
     if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
+function firstAutomationValue(payload, keys) {
+  const candidates = automationPayloadCandidates(payload);
+  for (const source of candidates) {
+    for (const key of keys) {
+      const value = source && source[key];
+      if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+    }
+  }
+  const stripeObject = payload && payload.data && payload.data.object;
+  for (const key of keys) {
+    const value = stripeNestedValue(stripeObject, key);
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
+function automationPayloadCandidates(payload) {
+  const root = payload || {};
+  const object = root.data && root.data.object || {};
+  return [
+    root,
+    root.account,
+    root.customer,
+    root.subscription,
+    root.metadata,
+    object,
+    object.metadata,
+    object.customer_details,
+    object.subscription_details && object.subscription_details.metadata,
+    object.price,
+    object.plan,
+    object.recurring,
+  ].filter(Boolean);
+}
+
+function stripeNestedValue(object, key) {
+  const source = object || {};
+  if (key === "billingCadence" || key === "billingInterval" || key === "cadence" || key === "interval") {
+    return source.items && source.items.data && source.items.data[0] && source.items.data[0].price && source.items.data[0].price.recurring && source.items.data[0].price.recurring.interval ||
+      source.plan && source.plan.interval ||
+      source.price && source.price.recurring && source.price.recurring.interval;
+  }
+  if (key === "subscriptionAmount" || key === "amount" || key === "price" || key === "unitAmount" || key === "unit_amount") {
+    return source.amount_total || source.amount_paid || source.unit_amount ||
+      source.items && source.items.data && source.items.data[0] && source.items.data[0].price && source.items.data[0].price.unit_amount ||
+      source.plan && source.plan.amount ||
+      source.price && source.price.unit_amount;
+  }
+  if (key === "renewalDate" || key === "renewsOn" || key === "nextBillingDate" || key === "currentPeriodEnd" || key === "current_period_end") {
+    return source.current_period_end || source.currentPeriodEnd;
+  }
+  if (key === "stripeSubscriptionId" || key === "subscriptionId" || key === "subscription") {
+    return typeof source.subscription === "string" ? source.subscription : source.id && String(source.object || "").includes("subscription") ? source.id : "";
   }
   return "";
 }

@@ -130,7 +130,38 @@ Example payload:
 }
 ```
 
-The endpoint validates the automation secret, normalizes the account data, saves it to the durable registry when registry variables are configured, and returns the exact setup fields needed for the account.
+The endpoint validates the automation secret, normalizes the account data, saves it to the durable registry when registry variables are configured, and returns the exact setup fields needed for the account. Later automation calls can send only subscription/billing fields for the same `accountKey`; SMART Trak merges those updates into the existing registry record so the customer's location ID, token, coach seats, and coach access codes are preserved.
+
+Stripe-style payloads are supported when the account key is placed in metadata:
+
+```json
+{
+  "data": {
+    "object": {
+      "object": "subscription",
+      "id": "sub_...",
+      "status": "past_due",
+      "customer": "cus_...",
+      "current_period_end": 1787356800,
+      "metadata": {
+        "accountKey": "lincolntrack"
+      },
+      "items": {
+        "data": [
+          {
+            "price": {
+              "unit_amount": 3999,
+              "recurring": {
+                "interval": "month"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
 
 ## Durable Account Registry
 
