@@ -1463,6 +1463,11 @@ function loadDashboard(){
     if(els.refreshBtn)els.refreshBtn.disabled=false;
     return Promise.resolve();
   }
+  if(accountStatus&&accountStatus.accessReady===false){
+    els.status.textContent='SMART Trak access is blocked by subscription status.';
+    if(els.refreshBtn)els.refreshBtn.disabled=false;
+    return Promise.resolve();
+  }
   els.status.textContent='Loading dashboard...';
   els.lastUpdated.textContent='Updating...';
   els.refreshBtn.disabled=true;
@@ -1589,6 +1594,11 @@ function saveAccountSettings(){
       err.data=result.data;
       throw err;
     }
+    if(result.data&&result.data.accessReady===false){
+      var blocked=new Error('SMART Trak access is blocked by subscription status.');
+      blocked.data=result.data;
+      throw blocked;
+    }
     renderAccountSummary(result.data,plan);
     els.accountStatus.textContent='Account set to '+key+' and '+(plan==='essential'?'SMARTCoach Essential':'SMARTCoach Pro')+' is active.';
     els.accountStatus.style.color='#08783c';
@@ -1606,11 +1616,12 @@ function renderAccountSummary(data,fallbackPlan){
   var plan=(data&&data.productPlan)||fallbackPlan||productPlan();
   var pro=plan!=='essential';
   var configured=!pro || !!(data&&data.configured);
+  var accessReady=!pro || (configured&&!(data&&data.accessReady===false));
   var access=!!(data&&data.accessCodeRequired);
-  var title=pro?(configured?'SMART Trak ready':'SMART Trak setup needed'):'SMARTCoach Essential ready';
-  var detail=pro?(configured?'SMART Trak connection is ready.':'SMART Trak connection is not finished yet.'):'Stopwatch-only account. SMART Trak tools are hidden.';
+  var title=pro?(!configured?'SMART Trak setup needed':accessReady?'SMART Trak ready':'SMART Trak access blocked'):'SMARTCoach Essential ready';
+  var detail=pro?(!configured?'SMART Trak connection is not finished yet.':accessReady?'SMART Trak connection is ready.':'Subscription status is blocking SMART Trak access.'):'Stopwatch-only account. SMART Trak tools are hidden.';
   var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
-  els.accountSummary.className='accountsummary '+(configured?'good':'bad');
+  els.accountSummary.className='accountsummary '+(accessReady?'good':'bad');
   els.accountSummary.innerHTML='<b>'+esc(title)+'</b><span>'+esc(detail)+'</span><br><span>'+esc(accessText)+'</span>';
 }
 

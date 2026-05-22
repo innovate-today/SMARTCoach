@@ -51,6 +51,8 @@ SMART Trak Pro access is allowed when subscription status is blank, `active`, or
 
 Account status separates setup readiness from access readiness. A customer can be fully configured while still showing `accessReady: false` when the subscription status is blocking Pro access.
 
+Coach-facing pages use `accessReady` during account checks, so a subscription-blocked Pro account stops with a clear access-blocked message instead of continuing into dashboard or planning data calls.
+
 Pro accounts need all three:
 
 - `SMARTCOACH_PRODUCT_PLAN_LINCOLNTRACK=pro`

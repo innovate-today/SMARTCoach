@@ -374,7 +374,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null;
 
 function smartCoachAccountKey(){
   try{
@@ -510,6 +510,11 @@ function saveAccountSettings(){
       err.data=result.data;
       throw err;
     }
+    if(result.data&&result.data.accessReady===false){
+      var blocked=new Error('SMARTCoach Pro access is blocked by subscription status.');
+      blocked.data=result.data;
+      throw blocked;
+    }
     renderAccountSummary(result.data,plan);
     if(status){status.textContent='Account set to '+key+' and '+productPlanLabel(plan)+' is active.';status.style.color='#0a7a44';}
     return createSmartCoachSession(accessValue).then(function(){loadProData();});
@@ -524,14 +529,15 @@ function renderAccountSummary(data,fallbackPlan){
   var plan=(data&&data.productPlan)||fallbackPlan||productPlan();
   var pro=plan!=='essential';
   var configured=!pro || !!(data&&data.configured);
+  var accessReady=!pro || (configured&&!(data&&data.accessReady===false));
   var access=!!(data&&data.accessCodeRequired);
-  var title=pro?(configured?'SMARTCoach Pro ready':'SMARTCoach Pro setup needed'):'SMARTCoach Essential ready';
-  var detail=pro?(configured?'SMART Trak connection is ready.':'SMART Trak connection is not finished yet.'):'Stopwatch-only account. SMART Trak tools are hidden.';
+  var title=pro?(!configured?'SMARTCoach Pro setup needed':accessReady?'SMARTCoach Pro ready':'SMARTCoach Pro access blocked'):'SMARTCoach Essential ready';
+  var detail=pro?(!configured?'SMART Trak connection is not finished yet.':accessReady?'SMART Trak connection is ready.':'Subscription status is blocking SMART Trak access.'):'Stopwatch-only account. SMART Trak tools are hidden.';
   var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
   showAccessCodeRow(pro&&access);
-  box.style.borderColor=configured?'#bbf7d0':'#fecaca';
-  box.style.background=configured?'#f0fdf4':'#fef2f2';
-  box.innerHTML='<b style="display:block;color:'+(configured?'#0a7a44':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span>';
+  box.style.borderColor=accessReady?'#bbf7d0':'#fecaca';
+  box.style.background=accessReady?'#f0fdf4':'#fef2f2';
+  box.innerHTML='<b style="display:block;color:'+(accessReady?'#0a7a44':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span>';
 }
 function refreshAppVersion(){
   var url=new URL(window.location.href);
@@ -630,10 +636,12 @@ function applyPlanMode(){
 function syncProductPlanFromAccount(){
   if(productPlanOverride())return Promise.resolve(productPlan());
   return checkSmartCoachAccount().then(function(result){
+    accountStatus=result.data||null;
     if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
     applyPlanMode();
     return productPlan();
   }).catch(function(){
+    accountStatus=null;
     applyPlanMode();
     return productPlan();
   });
@@ -1054,6 +1062,7 @@ function loadProData(){
     renderMeetOptions();
     return;
   }
+  if(accountStatus&&accountStatus.accessReady===false)return;
   loadAthletes();
   loadTrainingPlans();
   loadSharedGroups();

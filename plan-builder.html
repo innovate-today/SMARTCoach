@@ -281,6 +281,7 @@ function saveAccountSettings(){
   if(input)input.value=key;
   checkSmartCoachAccount().then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+    if(result.data&&result.data.accessReady===false)throw new Error('SMART Trak access is blocked by subscription status.');
     loadBuilder();
   }).catch(function(error){
     setStatus('Account set to '+key+', but not connected: '+error.message,'bad');
@@ -322,6 +323,10 @@ function loadBuilder(){
   applySmartCoachLinks();
   if(!isProPlan())return;
   if(accountStatus&&accountStatus.configured===false)return;
+  if(accountStatus&&accountStatus.accessReady===false){
+    setStatus('SMART Trak access is blocked by subscription status.','bad');
+    return;
+  }
   applyAdminTools();
   var accountInput=document.getElementById('accountKey');
   if(accountInput)accountInput.value=smartCoachAccountKey();
