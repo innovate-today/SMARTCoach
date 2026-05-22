@@ -523,7 +523,7 @@ Help assistant:
 1. Finish manual workout builder flow for distance runners.
 2. App plan selection now waits for plan workout days to load before **Use Selected Plan** can apply, and it refuses to assign a plan without a selected/upcoming workout day. This prevents sync from using a stale or plan-name-only workout context.
 3. Phone app now gates calendar meet/race imports behind loaded active plan and active meet lists, skips days tied to archived plans, and skips days linked to archived meets.
-4. Make all dashboard/calendar/meet/record edits update instantly.
+4. Dashboard race result entry now updates the visible dashboard immediately after the server save succeeds; calendar, records, meet manager, manual mileage, edits, and voids already update local rows after successful saves.
 5. Clean Records page later if current history limitation becomes painful.
 6. Continue testing full app + desktop flow with a test Pro account.
 

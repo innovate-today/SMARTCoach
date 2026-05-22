@@ -2388,18 +2388,57 @@ function saveRaceResult(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Race result could not be saved.');
+    applyRaceResultLocally(updatedPayload,result.data||{});
     setRaceResultStatus('Saved '+(athlete.name||'athlete')+' - '+eventName+' '+resultDisplay+'.','ok');
     els.raceResultAthlete.value='';
     els.raceResultResult.value='';
     els.raceResultWind.value='';
     els.raceResultBest.value='none';
     els.raceResultNotes.value='';
-    return loadDashboard();
   }).catch(function(error){
     setRaceResultStatus(error.message||'Race result could not be saved.','bad');
   }).finally(function(){
     els.raceResultSave.disabled=false;
   });
+}
+
+function applyRaceResultLocally(payload,result){
+  var syncedAt=new Date().toISOString();
+  var row={
+    athleteName:payload.athleteName||payload.name||'',
+    contactId:result.contactId||payload.contactId||'',
+    recordId:result.recordId||'',
+    sourceRecordId:result.sourceRecordId||'',
+    meetName:payload.meetName||'',
+    meetDate:payload.meetDate||'',
+    season:payload.season||'',
+    seasonYear:payload.seasonYear||raceResultSeasonFromDate(payload.meetDate).seasonYear,
+    sport:payload.sport||'track',
+    event:payload.event||'',
+    resultDisplay:payload.resultDisplay||'',
+    wind:payload.wind||'',
+    isPr:!!payload.isPr,
+    isSeasonBest:!!payload.isSeasonBest,
+    syncedAt:syncedAt
+  };
+  recentMeetRows=recentMeetRows.filter(function(item){
+    if(row.recordId&&String(item.recordId||'')===String(row.recordId))return false;
+    if(row.sourceRecordId&&String(item.sourceRecordId||'')===String(row.sourceRecordId))return false;
+    return true;
+  });
+  recentMeetRows.unshift(row);
+  dashboardRows=dashboardRows.map(function(athlete){
+    if(!sameAthlete(row,athlete))return athlete;
+    var next=Object.assign({},athlete);
+    next.meetResultCount=num(next.meetResultCount)+1;
+    next.latestMeet=latestMeetForAthlete(Object.assign({},athlete,{contactId:row.contactId,name:row.athleteName}));
+    return next;
+  });
+  lastLoadedAt=syncedAt;
+  els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
+  renderSeasonFilterOptions();
+  updateBreakdowns();
+  renderRows();
 }
 
 function ensureRaceResultMeet(payload,seasonParts){
