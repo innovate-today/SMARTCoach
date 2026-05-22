@@ -454,8 +454,8 @@ async function accountStripeWebhook(req, res) {
     const rawBody = await requestBodyText(req);
     verifyStripeSignature(rawBody, signature, secret);
     const payload = JSON.parse(rawBody || "{}");
-    const result = await saveAutomationAccount(payload, { source: "stripe-webhook" });
-    if (!result.registry || !result.registry.saved) {
+    const result = await saveAutomationAccount(payload, { source: "stripe-webhook", skipDuplicateEvents: true });
+    if (!result.duplicateAutomationEvent && (!result.registry || !result.registry.saved)) {
       throw httpError(
         503,
         (result.registry && (result.registry.reason || result.registry.error)) ||
@@ -465,6 +465,7 @@ async function accountStripeWebhook(req, res) {
     res.status(200).json({
       success: true,
       stripeWebhookVerified: true,
+      stripeWebhookDuplicate: !!result.duplicateAutomationEvent,
       ...result,
     });
   } catch (error) {
@@ -479,11 +480,27 @@ async function saveAutomationAccount(payload, options = {}) {
   const account = accountAutomationRecord(payload, existing, options);
   const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
+  if (options.skipDuplicateEvents && automationEventAlreadyRecorded(existing, account.lastAutomationEvent)) {
+    return automationAccountResult(account, {
+      configured: registryConfigured(),
+      saved: false,
+      duplicate: true,
+      reason: "Duplicate automation event. Registry record was already updated.",
+    }, {
+      duplicateAutomationEvent: true,
+      environment,
+    });
+  }
   const registryResult = await saveAccountRecord(account.accountKey, account);
+  return automationAccountResult(account, registryResult, { environment });
+}
+
+function automationAccountResult(account, registryResult, extra = {}) {
   const subscriptionAllowed = subscriptionAccessAllowed(account.subscription);
   const setupReady = accountSetupReady(account);
   const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(account.subscription);
   return {
+    ...extra,
     accountKey: account.accountKey,
     productPlan: account.productPlan,
     coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
@@ -494,7 +511,11 @@ async function saveAutomationAccount(payload, options = {}) {
     accessReady: setupReady && subscriptionAllowed,
     registry: registryResult,
     accountRegistryRecord: account,
-    environment,
+    environment: extra.environment || accountEnvironmentRows({
+      suffix: account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_"),
+      account,
+      includeCrm: account.productPlan === "pro",
+    }),
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
     accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
@@ -816,6 +837,14 @@ function automationEventHistoryFor(existingHistory, event) {
   const key = automationEventKey(current);
   const withoutDuplicate = key ? history.filter((item) => automationEventKey(item) !== key) : history;
   return [current, ...withoutDuplicate].slice(0, 10);
+}
+
+function automationEventAlreadyRecorded(existingRecord, event) {
+  const key = automationEventKey(event);
+  if (!key || !existingRecord) return false;
+  const history = Array.isArray(existingRecord.automationEventHistory) ? existingRecord.automationEventHistory : [];
+  const events = [existingRecord.lastAutomationEvent, ...history].filter(Boolean);
+  return events.some((item) => automationEventKey(item) === key);
 }
 
 function automationEventKey(event) {
