@@ -2489,8 +2489,6 @@ function renderTrainingPlanOptions(){
   }
   input.value='0';
   updateTrainingPlanDisplay();
-  status.textContent='';
-  document.getElementById('tp-btn').disabled=!(TPA&&TPA.target);
   showSelectedTrainingPlan();
 }
 function openTrainingPlanPicker(){
@@ -2530,8 +2528,27 @@ function showSelectedTrainingPlan(){
   var input=document.getElementById('tp-plan');
   var plan=TP[parseInt(input.value)]||null;
   if(!plan){document.getElementById('tp-detail').innerHTML='';return;}
+  var btn=document.getElementById('tp-btn');
+  if(btn)btn.disabled=true;
+  document.getElementById('tp-status').textContent='Loading workouts for this plan...';
+  document.getElementById('tp-status').style.color='#555';
   renderTrainingPlanDetail(plan,null,true);
   loadTrainingPlanDays(plan);
+}
+function setTrainingPlanUseReady(plan,days){
+  var selected=TP[parseInt(document.getElementById('tp-plan').value)]||null;
+  if(!selected||selected!==plan)return;
+  var upcoming=upcomingPlanDays(days||[],5);
+  var btn=document.getElementById('tp-btn');
+  if(upcoming.length){
+    if(btn)btn.disabled=!(TPA&&TPA.target);
+    document.getElementById('tp-status').textContent='Choose a workout below, then use it for this '+(TPA&&TPA.kind==='athlete'?'athlete.':'group.');
+    document.getElementById('tp-status').style.color='#555';
+  }else{
+    if(btn)btn.disabled=true;
+    document.getElementById('tp-status').textContent='No upcoming workouts found for this plan.';
+    document.getElementById('tp-status').style.color='#c47a00';
+  }
 }
 function renderTrainingPlanDetail(plan,days,loading){
   var dates=[plan.startDate,plan.endDate].filter(Boolean).join(' to ');
@@ -2556,7 +2573,7 @@ function renderTrainingPlanDetail(plan,days,loading){
 }
 function loadTrainingPlanDays(plan){
   var key=(plan.id||'')+'|'+(plan.sourceRecordId||'')+'|all';
-  if(TPD[key]){plan.planDays=TPD[key];renderTrainingPlanDetail(plan,TPD[key],false);return;}
+  if(TPD[key]){plan.planDays=TPD[key];renderTrainingPlanDetail(plan,TPD[key],false);setTrainingPlanUseReady(plan,TPD[key]);return;}
   var url='/api/smart-trak/training-plan?kind=days&trainingPlanId='+encodeURIComponent(plan.id||'')+'&planSourceId='+encodeURIComponent(plan.sourceRecordId||'');
   fetch(url).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
@@ -2565,9 +2582,10 @@ function loadTrainingPlanDays(plan){
     TPD[key]=(result.data&&result.data.days)||[];
     plan.planDays=TPD[key];
     var selected=TP[parseInt(document.getElementById('tp-plan').value)]||null;
-    if(selected&&selected.id===plan.id)renderTrainingPlanDetail(plan,TPD[key],false);
+    if(selected&&selected.id===plan.id){renderTrainingPlanDetail(plan,TPD[key],false);setTrainingPlanUseReady(plan,TPD[key]);}
   }).catch(function(){
     renderTrainingPlanDetail(plan,[],false);
+    setTrainingPlanUseReady(plan,[]);
   });
 }
 function trainingPlanDaysKey(planId,planSourceId){
@@ -2595,6 +2613,7 @@ function selectTrainingPlanDay(planIndex,dayIndex){
   var days=upcomingPlanDays(plan.planDays||[],5);
   plan.selectedDay=days[dayIndex]||null;
   renderTrainingPlanDetail(plan,plan.planDays||[],false);
+  setTrainingPlanUseReady(plan,plan.planDays||[]);
 }
 function planDayRecordId(day){
   return day&&(day.id||day.sourceRecordId)||'';
@@ -2603,6 +2622,19 @@ function useSelectedTrainingPlan(){
   var sel=document.getElementById('tp-plan');
   var plan=TP[parseInt(sel.value)]||null;
   if(!plan)return;
+  if(!Array.isArray(plan.planDays)){
+    document.getElementById('tp-status').textContent='Loading workouts for this plan...';
+    document.getElementById('tp-status').style.color='#555';
+    fetchTrainingPlanDays(plan.id,plan.sourceRecordId).then(function(days){
+      plan.planDays=days||[];
+      renderTrainingPlanDetail(plan,plan.planDays,false);
+      setTrainingPlanUseReady(plan,plan.planDays);
+    }).catch(function(){
+      document.getElementById('tp-status').textContent='Could not load workouts for this plan.';
+      document.getElementById('tp-status').style.color='#c00';
+    });
+    return;
+  }
   if(TPA&&TPA.target){
     var target=TPA.target;
     clearCachedPlanTarget(target);
@@ -2614,6 +2646,11 @@ function useSelectedTrainingPlan(){
     target.trainingPlanPhase=plan.phase||plan.blockType||'';
     target.trainingPlanAuto='';
     var day=plan.selectedDay||(upcomingPlanDays(plan.planDays||[],5)[0])||null;
+    if(!day){
+      document.getElementById('tp-status').textContent='Select a workout from this plan first.';
+      document.getElementById('tp-status').style.color='#c47a00';
+      return;
+    }
     target.trainingPlanDayId=planDayRecordId(day);
     target.trainingPlanDaySourceId=day&&day.sourceRecordId||'';
     target.trainingPlanDayTitle=day&&day.title||'';

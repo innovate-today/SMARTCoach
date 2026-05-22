@@ -521,7 +521,7 @@ Help assistant:
 ## Current High-Priority Cleanup List
 
 1. Finish manual workout builder flow for distance runners.
-2. Verify app uses newly selected plan workout during sync.
+2. App plan selection now waits for plan workout days to load before **Use Selected Plan** can apply, and it refuses to assign a plan without a selected/upcoming workout day. This prevents sync from using a stale or plan-name-only workout context.
 3. Verify app excludes archived training plans and archived meets.
 4. Make all dashboard/calendar/meet/record edits update instantly.
 5. Clean Records page later if current history limitation becomes painful.
