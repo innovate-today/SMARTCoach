@@ -471,7 +471,8 @@ Standalone SMART Trak:
 Data import:
 
 - New customers will often have years of spreadsheets.
-- Need upload/import workflows for existing athlete data, race results, school records, training history, and plans.
+- Athletes page now has a lightweight roster import path: paste CSV/TSV rows, load an example, download a template, and save athlete/parent rows through the same SMART Trak athlete record flow.
+- Still need deeper upload/import workflows for race results, school records, training history, and plans.
 
 Parent communication:
 
