@@ -79,6 +79,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checkrow a:hover{text-decoration:underline}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
 .lookupgrid{display:grid;grid-template-columns:1fr 240px auto;gap:12px;align-items:end}
+.formactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px}
 .registrybox{display:grid;gap:10px;margin-top:14px}
 .registrytitle{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .registrytitle b{font-size:16px}.registrytitle span{color:var(--muted);font-size:12px}
@@ -86,7 +87,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .registryrow{display:grid;grid-template-columns:180px 1fr;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;font-size:13px}
 .registryrow b{color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:11px}
 @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
-@media(max-width:760px){.lookupgrid,.registrycards,.registryrow{grid-template-columns:1fr}}
+@media(max-width:760px){.lookupgrid,.registrycards,.registryrow{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
 </style>
 </head>
 <body>
@@ -199,6 +200,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <label for="subscriptionNotes">Subscription Notes</label>
           <input id="subscriptionNotes" type="text" placeholder="Optional internal notes, promo, school billing contact, etc." autocomplete="off">
         </div>
+      </div>
+      <div class="formactions">
+        <button id="saveRegistryBtn" type="button" onclick="saveRegistryUpdate()">Save Registry Update</button>
       </div>
     </div>
   </section>
@@ -350,6 +354,65 @@ function maskValue(value){
   if(!text)return '--';
   if(text.length<=8)return text.slice(0,2)+'...';
   return text.slice(0,4)+'...'+text.slice(-4);
+}
+function saveRegistryUpdate(){
+  var payload=registryPayloadFromForm();
+  var secret=document.getElementById('automationSecret').value.trim();
+  if(!payload.accountKey){
+    setStatus('Enter an account key before saving.','bad');
+    return;
+  }
+  if(!secret){
+    setStatus('Enter the automation secret before saving a registry update.','bad');
+    return;
+  }
+  rememberAutomationSecret(secret);
+  document.getElementById('saveRegistryBtn').disabled=true;
+  setStatus('Saving registry update...',null);
+  fetch('/api/smart-trak/account-automation',{
+    method:'POST',
+    cache:'no-store',
+    headers:{
+      'Content-Type':'application/json',
+      'X-SMARTCoach-Automation-Secret':secret
+    },
+    body:JSON.stringify(payload)
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok){
+      var err=new Error(result.data&&result.data.error||'Could not save registry update.');
+      err.data=result.data;
+      throw err;
+    }
+    currentSetup=result.data;
+    renderLookupResult({
+      success:true,
+      accountKey:result.data.accountKey,
+      registry:result.data.registry||{found:true},
+      accountRegistryRecord:result.data.accountRegistryRecord||{}
+    });
+    renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.accountRegistryRecord&&result.data.accountRegistryRecord.locationId&&result.data.accountRegistryRecord.token?'pro-ready':'pro-setup-needed'}));
+    setStatus('Registry update saved. SMART Trak will use this account record on the next request.','good');
+  }).catch(function(error){
+    setStatus(error.message||'Could not save registry update.','bad');
+  }).finally(function(){
+    document.getElementById('saveRegistryBtn').disabled=false;
+  });
+}
+function registryPayloadFromForm(){
+  return {
+    accountKey:document.getElementById('accountKey').value.trim(),
+    productPlan:document.getElementById('plan').value,
+    coachSeats:document.getElementById('coachSeats').value,
+    subscriptionStatus:document.getElementById('subscriptionStatus').value,
+    billingCadence:document.getElementById('billingCadence').value,
+    subscriptionAmount:document.getElementById('subscriptionAmount').value.trim(),
+    renewalDate:document.getElementById('renewalDate').value.trim(),
+    stripeCustomerId:document.getElementById('stripeCustomerId').value.trim(),
+    stripeSubscriptionId:document.getElementById('stripeSubscriptionId').value.trim(),
+    subscriptionNotes:document.getElementById('subscriptionNotes').value.trim()
+  };
 }
 function generateSetup(){
   var account=document.getElementById('accountKey').value.trim();
