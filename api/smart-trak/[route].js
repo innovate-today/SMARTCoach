@@ -622,6 +622,8 @@ function publicAccountRecord(account) {
   return {
     ...source,
     token: source.token ? "__hidden__" : "",
+    accessCode: source.accessCode ? "__hidden__" : "",
+    coachAccessCodes: Array.isArray(source.coachAccessCodes) ? source.coachAccessCodes.map(() => "__hidden__") : [],
     privateIntegrationToken: undefined,
   };
 }

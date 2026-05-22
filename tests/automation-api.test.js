@@ -82,6 +82,7 @@ async function testAutomationDryRunDoesNotSave() {
       assert.strictEqual(res.body.registry.saved, false);
       assert.strictEqual(res.body.accessReady, true);
       assert.strictEqual(res.body.accountRegistryRecord.token, "__hidden__");
+      assert.deepStrictEqual(res.body.accountRegistryRecord.coachAccessCodes, ["__hidden__"]);
       assert.strictEqual(fetchCalled, false);
     });
   } finally {
