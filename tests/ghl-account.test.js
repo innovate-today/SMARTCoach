@@ -3,6 +3,7 @@ const {
   requireProPlan,
   coachCodeAllowed,
   createCoachSession,
+  verifyCoachSession,
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../lib/ghl-account");
@@ -75,6 +76,14 @@ withEnv({
   const sessionReq = { query: { account: "test" }, headers: { "x-smartcoach-session": session.token } };
   const sessionRes = mockRes();
   assert.strictEqual(requireProPlan(sessionReq, sessionRes), true);
+  assert.strictEqual(verifyCoachSession(session.token, "other-account"), null);
+  const originalNow = Date.now;
+  try {
+    Date.now = () => (session.expiresAt + 60) * 1000;
+    assert.strictEqual(verifyCoachSession(session.token, "test"), null);
+  } finally {
+    Date.now = originalNow;
+  }
 
   withEnv({ SMARTCOACH_SUBSCRIPTION_STATUS_TEST: "canceled" }, () => {
     const blockedRes = mockRes();

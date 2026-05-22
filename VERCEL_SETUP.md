@@ -137,6 +137,8 @@ When this is set, SMART Trak can exchange a valid coach access code for a short-
 
 Session length can be adjusted with `SMARTCOACH_SESSION_TTL_SECONDS`. Values are clamped between 15 minutes and 7 days. The recommended production value is the default 12 hours, which usually covers a practice day without leaving long-lived access sitting in the browser.
 
+Regression tests verify signed coach sessions cannot be reused for another account and expire after their allowed session window.
+
 Coach access-code attempts are throttled per account and IP address. Repeated wrong codes are paused temporarily and return `429` with `Retry-After`, which helps protect customer dashboards from brute-force access-code guessing.
 
 Regression tests verify the coach access-code pause after repeated wrong attempts.
