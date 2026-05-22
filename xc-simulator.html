@@ -308,17 +308,20 @@ function apiHeaders(){
   if(code&&!session)headers['X-SMARTCoach-Access-Code']=code;
   return headers;
 }
+function defaultBrandLogo(){return '/assets/smart-logo.png';}
+function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
 function ensureAccountAccess(){
   return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':accountKey()}}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
+    applyBrandLogo(result.data&&result.data.logoUrl);
     if(result.data&&result.data.accessReady===false){
       setStatus(result.data.subscriptionBlockedReason||result.data.error||'SMART Trak access is blocked for this account.','error');
       els.loadSbBtn.disabled=true;
       return false;
     }
     return true;
-  }).catch(function(){return true;});
+  }).catch(function(){applyBrandLogo('');return true;});
 }
 function esc(value){
   return String(value==null?'':value).replace(/[&<>"']/g,function(ch){

@@ -399,7 +399,7 @@ Implemented:
 
 Future:
 
-- Coaches should be able to upload their own logo for dashboard/desktop views.
+- Customer logo URL from the account registry now applies across the main SMART Trak desktop pages: Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator.
 - Mobile app should use inverted colors: blue with white, compared with desktop white/blue.
 
 ## Future Planning Notes

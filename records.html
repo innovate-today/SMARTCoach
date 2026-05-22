@@ -122,7 +122,7 @@ tr:last-child td{border-bottom:0}
 <main id="mainPage" class="page">
   <section class="top">
     <div class="brand">
-      <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
         <h1>SMART Trak Records</h1>
         <div class="sub">School record board by event, gender, athlete, and season.</div>
@@ -1075,6 +1075,8 @@ function loadRecords(){
     els.refreshBtn.disabled=false;
   });
 }
+function defaultBrandLogo(){return '/assets/smart-logo.png';}
+function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
 function showAccess(data){
   els.mainPage.hidden=true;
   els.accessPanel.hidden=false;
@@ -1085,6 +1087,7 @@ function ensureAccountAccess(){
   return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':accountKey()}}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
+    applyBrandLogo(result.data&&result.data.logoUrl);
     if(result.data&&result.data.accessReady===false){
       els.mainPage.hidden=true;
       els.accessPanel.hidden=false;
@@ -1095,7 +1098,7 @@ function ensureAccountAccess(){
       return false;
     }
     return true;
-  }).catch(function(){return true;});
+  }).catch(function(){applyBrandLogo('');return true;});
 }
 function submitAccess(){
   if(!els.accessCode.value.trim()){
