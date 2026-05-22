@@ -374,7 +374,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, TPA=null, GV='training', APC={}, PICK=null, EQA=null, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TP_READY=false, MT_READY=false;
 
 function smartCoachAccountKey(){
   try{
@@ -812,14 +812,16 @@ function applyAthleteMatch(r){
   return a;
 }
 function loadTrainingPlans(){
-  if(!isProPlan()){TP=[];return;}
+  if(!isProPlan()){TP=[];TP_READY=false;return;}
   fetch('/api/smart-trak/training-plan?kind=assignments').then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Training plans unavailable');
     TP=activeTrainingPlans((result.data&&result.data.plans)||[]);
+    TP_READY=true;
     applyAutoPlansToCurrentGroup();
-  }).catch(function(){TP=[];});
+    loadCalendarMeetDays();
+  }).catch(function(){TP=[];TP_READY=false;});
 }
 function loadSharedGroups(){
   if(!isProPlan()){SG=[];return;}
@@ -832,7 +834,6 @@ function loadSharedGroups(){
     save();
     rl();
     if(CL)rr();
-    loadCalendarMeetDays();
   }).catch(function(){SG=[];});
 }
 function mergeSharedGroupsIntoLogs(){
@@ -946,7 +947,7 @@ function meetDisplaySubtitle(group,archiveLabel){
 }
 function mergeCalendarMeetDaysIntoLogs(days){
   var changed=false,activeIds={};
-  (days||[]).filter(function(day){return isCalendarMeetDay(day)&&!isRemovedPlanDay(day);}).forEach(function(day){
+  (days||[]).filter(function(day){return isCalendarMeetDay(day)&&!isRemovedPlanDay(day)&&isActiveTrainingPlanDay(day)&&isActiveCalendarMeetDay(day);}).forEach(function(day){
     var id=calendarMeetGroupId(day);
     activeIds[id]=true;
     var dateSeason=seasonForDate(day.date);
@@ -1007,6 +1008,36 @@ function meetRecordForCalendarDay(day){
     return title&&String(meet.name||'').trim().toLowerCase()===title&&String(meet.date||'')===date;
   })||null;
 }
+function activeTrainingPlanIds(){
+  var ids={};
+  (TP||[]).forEach(function(plan){
+    [plan&&plan.id,plan&&plan.sourceRecordId].forEach(function(value){
+      value=String(value||'').trim().toLowerCase();
+      if(value)ids[value]=true;
+    });
+  });
+  return ids;
+}
+function isActiveTrainingPlanDay(day){
+  if(!TP_READY)return false;
+  var planId=String(day&&day.trainingPlanId||'').trim().toLowerCase();
+  if(!planId)return true;
+  return !!activeTrainingPlanIds()[planId];
+}
+function activeMeetRecordIds(){
+  var ids={};
+  (MT||[]).forEach(function(meet){
+    var id=String(meet&&meet.id||'').trim();
+    if(id)ids[id]=true;
+  });
+  return ids;
+}
+function isActiveCalendarMeetDay(day){
+  if(!MT_READY)return false;
+  var linked=String(day&&day.linkedMeetId||'').trim();
+  if(!linked)return true;
+  return !!activeMeetRecordIds()[linked];
+}
 function sharedGroupsPayload(){
   var groups=logs.filter(function(group){return (group.type||'training')==='training'&&!group.archived;}).map(function(group){
     return {
@@ -1057,7 +1088,7 @@ function activeTrainingPlans(plans){
 }
 function loadProData(){
   if(!isProPlan()){
-    AR=[];TP=[];MT=[];TPD={};
+    AR=[];TP=[];MT=[];TPD={};TP_READY=false;MT_READY=false;
     renderAthleteList();
     renderMeetOptions();
     return;
@@ -1292,19 +1323,26 @@ function addGroupForView(){
   }
 }
 function loadMeets(){
-  if(!isProPlan()){MT=[];renderMeetOptions();return Promise.resolve();}
+  if(!isProPlan()){MT=[];MT_READY=false;renderMeetOptions();return Promise.resolve();}
   return fetch('/api/smart-trak/meets').then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Meets unavailable');
     MT=activeMeets((result.data&&result.data.meets)||[]);
+    MT_READY=true;
     if(reconcileSmartTrakMeetsIntoLogs())save();
     renderMeetOptions();
     rl();
-  }).catch(function(){MT=[];renderMeetOptions();});
+  }).catch(function(){MT=[];MT_READY=false;renderMeetOptions();});
 }
 function activeMeets(meets){
-  return (meets||[]).filter(function(meet){return meet&&!meet.archived&&!isArchivedStatus(meet.status);});
+  return (meets||[]).filter(function(meet){
+    if(!meet)return false;
+    if(meet.archived||meet.archivedAt)return false;
+    if(isArchivedStatus(meet.status))return false;
+    if(/\barchived\b/i.test(String(meet.status||'')))return false;
+    return true;
+  });
 }
 function isArchivedStatus(status){
   var value=String(status||'').trim().toLowerCase().replace(/[^a-z]/g,'');
