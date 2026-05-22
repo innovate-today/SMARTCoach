@@ -409,6 +409,9 @@ function clearAccountUrlOverride(){
 function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();
 }
+function sessionStorageKey(){
+  return 'sc_session_'+smartCoachAccountKey();
+}
 function accessCodeCookieName(){
   return accessCodeStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');
 }
@@ -428,6 +431,15 @@ function setSmartCoachAccessCode(value){
   var code=String(value||'').trim();
   try{localStorage.setItem(accessCodeStorageKey(),code);}catch(e){}
   writeSmartCoachCookie(accessCodeCookieName(),code);
+}
+function smartCoachSession(){
+  try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
+}
+function setSmartCoachSession(value){
+  try{
+    if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
+    else sessionStorage.removeItem(sessionStorageKey());
+  }catch(e){}
 }
 function showAccessCodeRow(show){
   var row=document.getElementById('access-code-row');
@@ -479,8 +491,9 @@ function saveAccountSettings(){
   var status=document.getElementById('account-status');
   var key=setSmartCoachAccountKey(input&&input.value);
   var plan=setProductPlan(planInput&&planInput.value);
+  var accessValue=accessInput?accessInput.value.trim():'';
   clearAccountUrlOverride();
-  if(accessInput)setSmartCoachAccessCode(accessInput.value);
+  if(accessInput)setSmartCoachAccessCode(accessValue);
   if(input)input.value=key;
   applyPlanMode();
   if(plan==='essential'){
@@ -499,7 +512,7 @@ function saveAccountSettings(){
     }
     renderAccountSummary(result.data,plan);
     if(status){status.textContent='Account set to '+key+' and '+productPlanLabel(plan)+' is active.';status.style.color='#0a7a44';}
-    loadProData();
+    return createSmartCoachSession(accessValue).then(function(){loadProData();});
   }).catch(function(error){
     renderAccountSummary(error&&error.data?error.data:{productPlan:plan,configured:false},plan);
     if(status){status.textContent='Account set to '+key+', but not connected: '+error.message;status.style.color='#c00';}
@@ -540,9 +553,31 @@ function smartCoachApiUrl(path){
 function smartCoachApiHeaders(extra){
   var headers=new Headers(extra||{});
   headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+  var session=smartCoachSession();
+  if(session)headers.set('X-SMARTCoach-Session',session);
   var accessCode=smartCoachAccessCode();
-  if(accessCode)headers.set('X-SMARTCoach-Access-Code',accessCode);
+  if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
   return headers;
+}
+function createSmartCoachSession(accessCode){
+  var code=String(accessCode||'').trim();
+  if(!code)return Promise.resolve(false);
+  return fetch('/api/smart-trak/account-session',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(result.ok&&result.data&&result.data.sessionToken){
+      setSmartCoachSession(result.data.sessionToken);
+      setSmartCoachAccessCode('');
+      return true;
+    }
+    return false;
+  }).catch(function(){
+    return false;
+  });
 }
 (function(){
   var nativeFetch=window.fetch.bind(window);
@@ -552,8 +587,10 @@ function smartCoachApiHeaders(extra){
       init=init||{};
       var headers=new Headers(init.headers||{});
       if(!headers.has('X-SMARTCoach-Account'))headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      var session=smartCoachSession();
+      if(session)headers.set('X-SMARTCoach-Session',session);
       var accessCode=smartCoachAccessCode();
-      if(accessCode)headers.set('X-SMARTCoach-Access-Code',accessCode);
+      if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
       init.headers=headers;
     }
     return nativeFetch(input,init);
