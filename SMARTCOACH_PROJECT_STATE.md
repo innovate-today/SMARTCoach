@@ -482,6 +482,7 @@ Parent communication:
 - Athlete detail now has a one-athlete parent email action when a parent email is saved.
 - Athletes page now includes a group filter, so coaches can filter to a training group and email/copy those parents without manually searching.
 - Athletes page now supports selecting specific athletes; Email Parents and Copy Parent Emails use selected athletes when any are checked, otherwise they use the current filtered view.
+- Parent email tools are opt-in on the Athletes page. The coach must enable email tools for the account/browser before Email Parents, Copy Parent Emails, or one-athlete parent email actions are shown or run.
 - Full parent communication is still planned.
 - Later need deeper ways to email:
   - richer group/parent message templates and delivery history
