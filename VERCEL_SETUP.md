@@ -98,6 +98,8 @@ Coach session signing:
 
 When this is set, SMART Trak can exchange a valid coach access code for a short-lived signed session token. The browser can then use the temporary session instead of sending the raw coach access code on every request. If this is not set, the server falls back to `SMARTCOACH_AUTOMATION_SECRET` or `SMARTCOACH_ADMIN_SETUP_CODE` for signing if either exists.
 
+Coach access-code attempts are throttled per account and IP address. Repeated wrong codes are paused temporarily and return `429` with `Retry-After`, which helps protect customer dashboards from brute-force access-code guessing.
+
 ## Automation Intake
 
 Set this secret before connecting GHL or Stripe automations:

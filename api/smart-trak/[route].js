@@ -15,6 +15,7 @@ const handlers = {
 };
 const { getGhlContext, requireProPlan, coachCodeAllowed, createCoachSession, subscriptionAccessAllowed } = require("../../lib/ghl-account");
 const { registryConfigured, saveAccountRecord, loadAccountRecord } = require("../../lib/account-registry");
+const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 
 module.exports = async function handler(req, res) {
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
@@ -452,12 +453,25 @@ async function accountSession(req, res) {
         firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
     ) || "default";
     const accessCode = cleanSetupText(firstPayloadValue(payload, ["accessCode", "coachAccessCode", "code"]));
+    const ip = requestIp(req);
+    const attempt = checkSessionAttempt({ accountKey, ip });
+    if (!attempt.allowed) {
+      res.setHeader("Retry-After", String(attempt.retryAfterSeconds || 900));
+      res.status(429).json({
+        error: "Too many access attempts. Wait a few minutes, then try again.",
+        retryAfterSeconds: attempt.retryAfterSeconds,
+      });
+      return;
+    }
     await attachRegistryAccountForKey(req, accountKey);
     const access = coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: req.smartcoachRegistryAccount }, accessCode);
     if (!access.allowed) {
+      const failure = recordSessionFailure({ accountKey, ip });
+      if (failure.blocked) res.setHeader("Retry-After", String(failure.retryAfterSeconds || 900));
       res.status(access.statusCode || 401).json(access);
       return;
     }
+    clearSessionFailures({ accountKey, ip });
     const session = createCoachSession(accountKey, { ttlSeconds: 12 * 60 * 60 });
     if (!session) {
       res.status(500).json({
