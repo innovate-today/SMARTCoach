@@ -248,6 +248,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
       </div>
       <div class="formactions">
+        <button id="dryRunRegistryBtn" type="button" class="secondary" onclick="dryRunRegistryUpdate()">Test Setup First</button>
         <button id="saveRegistryBtn" type="button" onclick="saveRegistryUpdate()">Save Registry Update</button>
       </div>
     </div>
@@ -614,6 +615,55 @@ function saveRegistryUpdate(){
     setStatus(error.message||'Could not save registry update.','bad');
   }).finally(function(){
     document.getElementById('saveRegistryBtn').disabled=false;
+  });
+}
+function dryRunRegistryUpdate(){
+  var payload=registryPayloadFromForm();
+  var secret=document.getElementById('automationSecret').value.trim();
+  if(!payload.accountKey){
+    setStatus('Enter an account key before testing setup.','bad');
+    return;
+  }
+  if(!secret){
+    setStatus('Enter the automation secret before testing setup.','bad');
+    return;
+  }
+  rememberAutomationSecret(secret);
+  document.getElementById('dryRunRegistryBtn').disabled=true;
+  setStatus('Testing setup without saving...',null);
+  fetch('/api/smart-trak/account-automation-dry-run',{
+    method:'POST',
+    cache:'no-store',
+    headers:{
+      'Content-Type':'application/json',
+      'X-SMARTCoach-Automation-Secret':secret
+    },
+    body:JSON.stringify(payload)
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok){
+      var err=new Error(result.data&&result.data.error||'Could not test setup.');
+      err.data=result.data;
+      throw err;
+    }
+    currentSetup=result.data;
+    renderLookupResult({
+      success:true,
+      accountKey:result.data.accountKey,
+      registry:{configured:!!(result.data.registry&&result.data.registry.configured),found:false,key:'',error:'Dry run only'},
+      accountRegistryRecord:result.data.accountRegistryRecord||{}
+    });
+    renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
+    if(result.data.accessReady){
+      setStatus('Dry run passed. This account would be ready after saving. Nothing was saved.','good');
+    }else{
+      setStatus(result.data.subscriptionBlockedReason||'Dry run complete. Fix the missing setup fields before saving. Nothing was saved.','bad');
+    }
+  }).catch(function(error){
+    setStatus(error.message||'Could not test setup.','bad');
+  }).finally(function(){
+    document.getElementById('dryRunRegistryBtn').disabled=false;
   });
 }
 function registryPayloadFromForm(){

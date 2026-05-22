@@ -44,6 +44,10 @@ module.exports = async function handler(req, res) {
     return accountAutomation(req, res);
   }
 
+  if (route === "account-automation-dry-run") {
+    return accountAutomationDryRun(req, res);
+  }
+
   if (route === "account-automation-health") {
     return accountAutomationHealth(req, res);
   }
@@ -326,6 +330,40 @@ async function accountAutomation(req, res) {
   }
 }
 
+async function accountAutomationDryRun(req, res) {
+  setAutomationHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  if (!automationAllowed(req)) {
+    res.status(401).json({
+      error: "Automation secret is required.",
+      automationSecretRequired: true,
+    });
+    return;
+  }
+
+  try {
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const result = await previewAutomationAccount(payload, { source: "automation-dry-run" });
+    res.status(200).json({
+      success: true,
+      dryRun: true,
+      ...result,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not test automation payload." });
+  }
+}
+
 async function accountAutomationHealth(req, res) {
   setAutomationHeaders(res);
 
@@ -455,6 +493,39 @@ async function saveAutomationAccount(payload, options = {}) {
     setupReady,
     accessReady: setupReady && subscriptionAllowed,
     registry: registryResult,
+    accountRegistryRecord: account,
+    environment,
+    dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
+    ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
+    accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
+  };
+}
+
+async function previewAutomationAccount(payload, options = {}) {
+  const accountKey = automationAccountKey(payload);
+  if (!accountKey) throw httpError(400, "Account key is required.");
+  const existing = await loadExistingAccountRecord(accountKey);
+  const account = accountAutomationRecord(payload, existing, options);
+  const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
+  const subscriptionAllowed = subscriptionAccessAllowed(account.subscription);
+  const setupReady = accountSetupReady(account);
+  const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(account.subscription);
+  return {
+    accountKey: account.accountKey,
+    productPlan: account.productPlan,
+    coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
+    subscription: publicSubscriptionSummary(account.subscription),
+    subscriptionAccessAllowed: subscriptionAllowed,
+    subscriptionBlockedReason,
+    setupReady,
+    accessReady: setupReady && subscriptionAllowed,
+    registry: {
+      configured: registryConfigured(),
+      saved: false,
+      dryRun: true,
+      reason: "Dry run only. No registry record was saved.",
+    },
     accountRegistryRecord: account,
     environment,
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
