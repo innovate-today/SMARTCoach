@@ -118,7 +118,7 @@ Regression tests verify that coach-specific parent email settings stay hidden wh
 
 The setup checklist also shows ready/missing/warning badges based on the current customer account signals, so support can see whether registry, subscription, coach codes, and account configuration are ready.
 
-Automation and Stripe webhook responses hide private integration tokens and coach access-code values. The internal protected account lookup can still verify that secrets are saved by showing `Saved` and saved counts instead of exposing the actual values.
+Automation, Stripe webhook, and protected account lookup responses hide private integration tokens and coach access-code values. The internal lookup can still verify that secrets are saved by showing `Saved` and saved counts instead of exposing the actual values.
 
 Optional internal setup protection:
 

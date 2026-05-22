@@ -337,12 +337,70 @@ async function testCoachAccessRateLimit() {
   });
 }
 
+async function testRegistryLookupHidesSecrets() {
+  const previousFetch = global.fetch;
+  const record = {
+    accountKey: "secret-school",
+    productPlan: "pro",
+    token: "private-integration-token",
+    locationId: "location",
+    accessCode: "legacy-access",
+    coachSeats: 3,
+    coachAccessCodes: ["coach-one", "coach-two"],
+    parentEmailCoachAccess: [true, false, false],
+    requireCoachAccess: true,
+    subscription: { status: "active", billingCadence: "monthly", amount: "39.99" },
+    updatedAt: "2026-05-22T00:00:00.000Z",
+  };
+
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: JSON.stringify(record) }),
+      };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "GET",
+        query: { route: "account-registry", account: "secret-school" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.setupReady, true);
+      assert.strictEqual(res.body.accountRegistryRecord.token, "__hidden__");
+      assert.strictEqual(res.body.accountRegistryRecord.accessCode, "__hidden__");
+      assert.deepStrictEqual(res.body.accountRegistryRecord.coachAccessCodes, ["__hidden__", "__hidden__"]);
+      assert.strictEqual(res.body.accountRegistryRecord.privateIntegrationToken, undefined);
+      assert.strictEqual(JSON.stringify(res.body).includes("private-integration-token"), false);
+      assert.strictEqual(JSON.stringify(res.body).includes("coach-one"), false);
+      assert.strictEqual(JSON.stringify(res.body).includes("legacy-access"), false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 (async () => {
   await testAutomationDryRunDoesNotSave();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testAutomationHealthLaunchReady();
   await testParentEmailReleaseGate();
   await testCoachAccessRateLimit();
+  await testRegistryLookupHidesSecrets();
   console.log("automation API dry-run and Stripe idempotency tests passed");
 })().catch((error) => {
   console.error(error);
