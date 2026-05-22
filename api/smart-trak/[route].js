@@ -72,17 +72,20 @@ async function accountStatus(req, res) {
   }
 
   const registry = await attachRegistryAccount(req);
-  const { accountKey, token, locationId, productPlan, accessCode, coachSeats, coachAccessCodes, subscription, logoUrl } = getGhlContext(req);
+  const { accountKey, token, locationId, productPlan, accessCode, coachSeats, coachAccessCodes, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const tokenKey = accountKey === "default" ? "GHL_PRIVATE_INTEGRATION_TOKEN" : `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`;
   const locationKey = accountKey === "default" ? "GHL_LOCATION_ID" : `GHL_LOCATION_ID_${suffix}`;
+  const coachAccessKey = accountKey === "default" ? "SMARTCOACH_COACH_ACCESS_CODES" : `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`;
   const configuredCoachCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes.length : accessCode ? 1 : 0;
   const crmConfigured = !!(token && locationId);
-  const configured = productPlan === "essential" || crmConfigured;
+  const coachAccessConfigured = !requireCoachAccess || configuredCoachCodes > 0;
+  const configured = productPlan === "essential" || (crmConfigured && coachAccessConfigured);
   const subscriptionAllowed = subscriptionAccessAllowed(subscription);
   const missing = [];
   if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
+  if (productPlan !== "essential" && requireCoachAccess && configuredCoachCodes < 1) missing.push({ label: "Coach access codes", key: coachAccessKey });
   res.status(configured ? 200 : 404).json({
     success: configured,
     accountKey,
@@ -91,8 +94,9 @@ async function accountStatus(req, res) {
     crmConfigured,
     coachSeats,
     coachAccessCodesConfigured: configuredCoachCodes,
-    accessCodeRequired: configuredCoachCodes > 0,
-    coachAccessRequired: configuredCoachCodes > 0,
+    accessCodeRequired: configuredCoachCodes > 0 || !!requireCoachAccess,
+    coachAccessRequired: configuredCoachCodes > 0 || !!requireCoachAccess,
+    accessCodeMissing: !!requireCoachAccess && configuredCoachCodes < 1,
     subscription: publicSubscriptionSummary(subscription),
     subscriptionAccessAllowed: subscriptionAllowed,
     registry: {
@@ -232,6 +236,13 @@ function accountSetup(req, res) {
         required: true,
         label: "Coach access codes",
         description: `Give one code to each coach. This account is set for ${coachSeats} coach${coachSeats === 1 ? "" : "es"}.`,
+      },
+      {
+        key: `SMARTCOACH_REQUIRE_COACH_ACCESS_${suffix}`,
+        value: "true",
+        required: true,
+        label: "Require coach access",
+        description: "Blocks SMART Trak if this account does not have coach access codes configured.",
       }
     );
   }
@@ -589,6 +600,8 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const tokenValue = firstAutomationValue(payload, ["ghlToken", "privateIntegrationToken", "token"]);
   const locationValue = firstAutomationValue(payload, ["locationId", "ghlLocationId"]);
   const logoValue = firstAutomationValue(payload, ["logoUrl", "brandLogoUrl", "schoolLogoUrl"]);
+  const requireCoachAccessValue = firstAutomationValue(payload, ["requireCoachAccess", "coachAccessRequired", "requireAccessCode"]);
+  const requireCoachAccess = productPlan === "pro" ? normalizeSetupBoolean(requireCoachAccessValue, existing.requireCoachAccess !== undefined ? existing.requireCoachAccess : true) : false;
   const event = automationEventSummary(payload, options);
   return {
     accountKey,
@@ -597,6 +610,7 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     locationId: cleanSetupText(locationValue || existing.locationId),
     coachSeats: productPlan === "pro" ? coachSeats : 0,
     coachAccessCodes: productPlan === "pro" ? coachCodes : [],
+    requireCoachAccess,
     subscription,
     logoUrl: cleanSetupText(logoValue || existing.logoUrl),
     lastAutomationEvent: event,
@@ -715,6 +729,13 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
         required: true,
         label: "Coach access codes",
         description: `Give one code to each coach. This account is set for ${account.coachSeats || 1} coach${(account.coachSeats || 1) === 1 ? "" : "es"}.`,
+      },
+      {
+        key: `SMARTCOACH_REQUIRE_COACH_ACCESS_${suffix}`,
+        value: account.requireCoachAccess === false ? "false" : "true",
+        required: true,
+        label: "Require coach access",
+        description: "Blocks SMART Trak if this account does not have coach access codes configured.",
       }
     );
   }
@@ -739,6 +760,14 @@ function normalizeSetupSubscriptionStatus(value) {
 function normalizeSetupBillingCadence(value) {
   const cadence = String(value || "").trim().toLowerCase();
   return cadence === "annual" || cadence === "year" || cadence === "yearly" ? "annual" : "monthly";
+}
+
+function normalizeSetupBoolean(value, fallback) {
+  const raw = String(value === undefined || value === null ? "" : value).trim().toLowerCase();
+  if (!raw) return !!fallback;
+  if (["1", "true", "yes", "on"].includes(raw)) return true;
+  if (["0", "false", "no", "off"].includes(raw)) return false;
+  return !!fallback;
 }
 
 function normalizeMoneyAmount(value) {

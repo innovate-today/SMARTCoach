@@ -59,6 +59,7 @@ Coach seat variables for Pro accounts:
 
 - `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=1`
 - `SMARTCOACH_COACH_ACCESS_CODES_LINCOLNTRACK=coach_code_1`
+- `SMARTCOACH_REQUIRE_COACH_ACCESS_LINCOLNTRACK=true`
 
 Use `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=3` and three comma-separated codes when the customer has the assistant coach add-on:
 
@@ -71,6 +72,12 @@ Legacy access-code support:
 - `SMARTCOACH_ACCESS_CODE_LINCOLNTRACK=...`
 
 Existing accounts that only use `SMARTCOACH_ACCESS_CODE_*` still work. New accounts should use `SMARTCOACH_COACH_SEATS_*` and `SMARTCOACH_COACH_ACCESS_CODES_*`.
+
+Recommended production security:
+
+- `SMARTCOACH_REQUIRE_COACH_ACCESS=true`
+
+Use the global setting after all active Pro accounts have coach access codes, or use the account-specific `SMARTCOACH_REQUIRE_COACH_ACCESS_ACCOUNTKEY=true` during migration. When required access is enabled, SMART Trak blocks a Pro account that has no coach access code configured instead of leaving the dashboard open.
 
 Use the setup helper endpoint to generate the exact variables for a new account:
 
