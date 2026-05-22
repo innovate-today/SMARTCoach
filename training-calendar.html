@@ -119,16 +119,16 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;resize:vertical}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:14px}
 .modalstatus{margin-right:auto;color:var(--muted);font-size:13px;font-weight:800}
-.activitychooser{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.activitychooser{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .activitychoice{background:#fff;color:#172033;border:1px solid var(--line);text-align:left;padding:12px;border-radius:8px;display:grid;gap:3px;min-height:74px}
 .activitychoice b{font-size:15px}
 .activitychoice small{font-size:12px;color:var(--muted);line-height:1.3}
 .activitychoice.active{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:#f4f7ff}
-.activitychoice.easy{border-color:#bae6fd;background:#f0f9ff}.activitychoice.easy b{color:#075985}
-.activitychoice.quality{border-color:#bbf7d0;background:#f0fdf4}.activitychoice.quality b{color:#166534}
-.activitychoice.race{border-color:#fed7aa;background:#fff7ed}.activitychoice.race b{color:#9a3412}
-.activitychoice.rest{border-color:#cbd5e1;background:#f8fafc;min-height:62px}.activitychoice.rest b{color:#475569}
-.activitychoice.easy.active{border-color:#0284c7;background:#e0f2fe}.activitychoice.quality.active{border-color:#16a34a;background:#dcfce7}.activitychoice.race.active{border-color:#ea580c;background:#ffedd5}.activitychoice.rest.active{border-color:#64748b;background:#e2e8f0}
+.activitychoice.easy{border-color:#bfd0ef;background:#f6f9ff}.activitychoice.easy b{color:#173891}
+.activitychoice.quality{border-color:#a7f3d0;background:#f4fffb}.activitychoice.quality b{color:#047857}
+.activitychoice.race{border-color:#ddd6fe;background:#faf7ff}.activitychoice.race b{color:#5b21b6}
+.activitychoice.rest{border-color:#d8d8d8;background:#fbfbfc;min-height:62px}.activitychoice.rest b{color:#475569}
+.activitychoice.easy.active{border-color:#2b4fcc;background:#eef3ff}.activitychoice.quality.active{border-color:#059669;background:#ecfdf5}.activitychoice.race.active{border-color:#7c3aed;background:#f3e8ff}.activitychoice.rest.active{border-color:#64748b;background:#e2e8f0}
 .activitysection{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .activitysection h3{font-size:15px;margin:0 0 10px}
 .compactgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -380,7 +380,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
       <div id="addDayChooser" class="activitychooser" aria-label="Choose calendar activity">
         <button class="activitychoice easy" data-add-activity-mode="easy" type="button"><b>Easy Run</b><small>Distance, optional notes, recovery work.</small></button>
         <button class="activitychoice quality" data-add-activity-mode="quality" type="button"><b>Quality Session</b><small>Warmup, reps, effort, recovery, cooldown.</small></button>
-        <button class="activitychoice race" data-add-activity-mode="race" type="button"><b>Race</b><small>Meet or race day attached to a plan.</small></button>
+        <button class="activitychoice race" data-add-activity-mode="race" type="button"><b>Race</b><small>Meet or race day, attached to a plan when needed.</small></button>
         <button class="activitychoice rest" data-add-activity-mode="off" type="button"><b>Rest / Day Off</b><small>Add an off day to the calendar.</small></button>
       </div>
       <div class="formgrid">
@@ -1560,8 +1560,8 @@ function setAddDayMode(mode){
   els.qualityActivityFields.hidden=addDayMode!=='quality';
   els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=false;
-  els.addDayVolumeField.hidden=addDayMode==='quality'||addDayMode==='race';
-  els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='race';
+  els.addDayVolumeField.hidden=addDayMode==='quality';
+  els.addDayTargetField.hidden=addDayMode==='quality';
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
     setActivityTypeOptions(['Easy/Recovery Run','Long Run'],'Easy/Recovery Run');
@@ -1585,8 +1585,10 @@ function setAddDayMode(mode){
     setActivityTypeOptions(['Race / Meet'],'Race / Meet');
     if(!els.addDayTitleInput.value||titleWasDefault)els.addDayTitleInput.value='Race day';
     els.addDayTitleInput.placeholder='Example: District Preview';
-    els.addDayVolume.value='';
-    els.addDayTarget.value='';
+    if(!els.addDayVolume.value)els.addDayVolume.value='';
+    if(!els.addDayTarget.value)els.addDayTarget.value='Race plan';
+    els.addDayVolume.placeholder='Example: 2 mile, 5K, or meet schedule';
+    els.addDayTarget.placeholder='Example: Race plan, goal pace, or event assignments';
     els.addDayDetails.placeholder='Race plan should be reviewed by event and athlete before competition.';
     els.addDayTitle.textContent='Add Race';
   }else if(addDayMode==='off'){

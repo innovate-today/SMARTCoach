@@ -520,7 +520,7 @@ Help assistant:
 
 ## Current High-Priority Cleanup List
 
-1. Finish manual workout builder flow for distance runners.
+1. Manual calendar builder is aligned for distance runners: Add Activity opens Easy Run, Quality Session, Race, and Rest/Day Off choices; Race keeps Planned Volume and Target fields visible; Quality uses the set builder/summary; Easy supports distance plus optional strides.
 2. App plan selection now waits for plan workout days to load before **Use Selected Plan** can apply, and it refuses to assign a plan without a selected/upcoming workout day. This prevents sync from using a stale or plan-name-only workout context.
 3. Phone app now gates calendar meet/race imports behind loaded active plan and active meet lists, skips days tied to archived plans, and skips days linked to archived meets.
 4. Dashboard race result entry now updates the visible dashboard immediately after the server save succeeds; calendar, records, meet manager, manual mileage, edits, and voids already update local rows after successful saves.
