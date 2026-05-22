@@ -420,6 +420,9 @@ Subscription/customer management:
 - Next production step: connect automation intake to a durable account registry because Vercel functions cannot persist environment variables at runtime.
 - Added signed coach session support behind `SMARTCOACH_SESSION_SECRET`.
 - Dashboard now exchanges a valid coach access code for a temporary session token and stops sending the raw code on each dashboard request when a session exists.
+- Added durable account registry support for Vercel KV / Upstash Redis REST.
+- `account-automation` now saves the normalized customer account record to the registry when `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` are configured.
+- Added protected `account-registry` read endpoint for verifying saved customer registry records.
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated

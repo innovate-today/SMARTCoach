@@ -12,6 +12,7 @@ const handlers = {
   "training-plan": require("../ghl/training-plan"),
 };
 const { getGhlContext, requireProPlan, coachCodeAllowed, createCoachSession, subscriptionAccessAllowed } = require("../../lib/ghl-account");
+const { registryConfigured, saveAccountRecord, loadAccountRecord } = require("../../lib/account-registry");
 
 module.exports = async function handler(req, res) {
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
@@ -29,6 +30,10 @@ module.exports = async function handler(req, res) {
     return accountAutomation(req, res);
   }
 
+  if (route === "account-registry") {
+    return accountRegistry(req, res);
+  }
+
   if (route === "account-session") {
     return accountSession(req, res);
   }
@@ -43,7 +48,7 @@ module.exports = async function handler(req, res) {
   return selected(req, res);
 };
 
-function accountStatus(req, res) {
+async function accountStatus(req, res) {
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
@@ -65,6 +70,12 @@ function accountStatus(req, res) {
   const missing = [];
   if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
+  let registry = { configured: registryConfigured(), found: false };
+  try {
+    registry = await loadAccountRecord(accountKey);
+  } catch (error) {
+    registry = { configured: true, found: false, error: error.message || "Registry could not be checked." };
+  }
   res.status(configured ? 200 : 404).json({
     success: configured,
     accountKey,
@@ -77,6 +88,12 @@ function accountStatus(req, res) {
     coachAccessRequired: configuredCoachCodes > 0,
     subscription: publicSubscriptionSummary(subscription),
     subscriptionAccessAllowed: subscriptionAllowed,
+    registry: {
+      configured: !!registry.configured,
+      found: !!registry.found,
+      updatedAt: registry.record && registry.record.updatedAt || "",
+      error: registry.error || undefined,
+    },
     logoUrl: logoUrl || "",
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
@@ -228,7 +245,7 @@ function accountSetup(req, res) {
   });
 }
 
-function accountAutomation(req, res) {
+async function accountAutomation(req, res) {
   setAutomationHeaders(res);
 
   if (req.method === "OPTIONS") {
@@ -254,6 +271,7 @@ function accountAutomation(req, res) {
     const account = accountAutomationRecord(payload);
     const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
     const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
+    const registryResult = await saveAccountRecord(account.accountKey, account);
     res.status(200).json({
       success: true,
       accountKey: account.accountKey,
@@ -261,6 +279,7 @@ function accountAutomation(req, res) {
       coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
       subscription: publicSubscriptionSummary(account.subscription),
       subscriptionAccessAllowed: account.subscription.status === "active" || account.subscription.status === "trialing" || !account.subscription.status,
+      registry: registryResult,
       accountRegistryRecord: account,
       environment,
       dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
@@ -269,6 +288,48 @@ function accountAutomation(req, res) {
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not process automation payload." });
+  }
+}
+
+async function accountRegistry(req, res) {
+  setAutomationHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (!automationAllowed(req)) {
+    res.status(401).json({
+      error: "Automation secret is required.",
+      automationSecretRequired: true,
+    });
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key)));
+    if (!accountKey) throw httpError(400, "Account key is required.");
+    const result = await loadAccountRecord(accountKey);
+    res.status(result.found ? 200 : 404).json({
+      success: !!result.found,
+      accountKey,
+      registry: {
+        configured: !!result.configured,
+        found: !!result.found,
+        key: result.key || "",
+        error: result.error || undefined,
+      },
+      accountRegistryRecord: result.record || null,
+      error: result.found ? undefined : result.configured ? "Account registry record was not found." : "Account registry is not configured.",
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not load account registry record." });
   }
 }
 

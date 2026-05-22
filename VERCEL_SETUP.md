@@ -132,6 +132,29 @@ Example payload:
 
 The endpoint validates the automation secret, normalizes the account data, returns a registry record, and returns the exact setup fields needed for the account. It does not permanently store the registry by itself because Vercel serverless functions cannot safely write persistent environment variables at runtime. The next production step is to connect this endpoint to a durable account registry, such as GHL custom values/objects, Supabase, Vercel Postgres, or another database.
 
+## Durable Account Registry
+
+For automated onboarding/subscription updates, add a small persistent registry. The current implementation supports a Vercel KV / Upstash Redis REST store.
+
+Add these Vercel environment variables:
+
+- `SMARTCOACH_REGISTRY_REST_URL`
+- `SMARTCOACH_REGISTRY_REST_TOKEN`
+- `SMARTCOACH_REGISTRY_PREFIX` optional, defaults to `smartcoach:account:`
+
+Vercel KV/Upstash aliases are also supported:
+
+- `KV_REST_API_URL`
+- `KV_REST_API_TOKEN`
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
+
+When the registry is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. You can verify a saved account with:
+
+- `GET /api/smart-trak/account-registry?account=lincolntrack`
+
+This endpoint also requires the automation secret. Account status reports whether the registry is configured and whether a record exists for the requested account.
+
 ## Deploy Order
 
 1. Import this GitHub repo into Vercel.
