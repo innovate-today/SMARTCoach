@@ -292,7 +292,8 @@ function refreshAppVersion(){
   window.location.replace(url.toString());
 }
 function checkSmartCoachAccount(){
-  return fetch('/api/smart-trak/account-status',{cache:'no-store'}).then(function(r){
+  var key=smartCoachAccountKey();
+  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   });
 }

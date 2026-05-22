@@ -424,6 +424,7 @@ Subscription/customer management:
 - SMART Trak API responses now send no-store/security headers so account status, coach sessions, roster data, and training data are not cached by browsers or shared proxies.
 - Coach-facing SMART Trak HTML pages now receive consistent Vercel no-store, noindex, no-referrer, and nosniff headers.
 - Legacy `/api/ghl/*` SMART Trak routes now attach the durable account registry before Pro access checks, so automated subscription/account updates are enforced consistently even when an older page calls a GHL route directly.
+- Dashboard, Plan Builder, and Planning Setup now call account status with the explicit account key, making customer account checks more reliable in embedded/custom-link contexts.
 - Added durable account registry support for Vercel KV / Upstash Redis REST.
 - `account-automation` now saves the normalized customer account record to the registry when `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` are configured.
 - When a registry record exists, SMART Trak uses it as the live account source before falling back to Vercel environment variables. Automation can now update plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL without a new Vercel variable for every customer change.
