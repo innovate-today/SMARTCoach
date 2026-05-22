@@ -104,7 +104,7 @@ Set this secret before connecting GHL or Stripe automations:
 
 - `SMARTCOACH_AUTOMATION_SECRET`
 
-Then GHL/Stripe automation can call:
+Then GHL automation or a trusted internal workflow can call:
 
 - `POST /api/smart-trak/account-automation`
 
@@ -162,6 +162,16 @@ Stripe-style payloads are supported when the account key is placed in metadata:
   }
 }
 ```
+
+For direct Stripe webhooks, use the signed Stripe route instead:
+
+- `POST /api/smart-trak/account-stripe-webhook`
+
+Set this Vercel variable first:
+
+- `SMARTCOACH_STRIPE_WEBHOOK_SECRET`
+
+Use the signing secret from the Stripe webhook endpoint settings. The route verifies `Stripe-Signature` before updating the account registry. Put the SMARTCoach account key in Stripe metadata as `accountKey` so the webhook knows which customer account to update.
 
 ## Durable Account Registry
 

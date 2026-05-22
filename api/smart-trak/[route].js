@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
   "athlete-profile": require("../ghl/athlete-profile"),
@@ -28,6 +30,10 @@ module.exports = async function handler(req, res) {
 
   if (route === "account-automation") {
     return accountAutomation(req, res);
+  }
+
+  if (route === "account-stripe-webhook") {
+    return accountStripeWebhook(req, res);
   }
 
   if (route === "account-registry") {
@@ -265,30 +271,69 @@ async function accountAutomation(req, res) {
 
   try {
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const accountKey = automationAccountKey(payload);
-    if (!accountKey) throw httpError(400, "Account key is required.");
-    const existing = await loadExistingAccountRecord(accountKey);
-    const account = accountAutomationRecord(payload, existing);
-    const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
-    const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
-    const registryResult = await saveAccountRecord(account.accountKey, account);
+    const result = await saveAutomationAccount(payload);
     res.status(200).json({
       success: true,
-      accountKey: account.accountKey,
-      productPlan: account.productPlan,
-      coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
-      subscription: publicSubscriptionSummary(account.subscription),
-      subscriptionAccessAllowed: account.subscription.status === "active" || account.subscription.status === "trialing" || !account.subscription.status,
-      registry: registryResult,
-      accountRegistryRecord: account,
-      environment,
-      dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
-      ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
-      accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
+      ...result,
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not process automation payload." });
   }
+}
+
+async function accountStripeWebhook(req, res) {
+  setAutomationHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const secret = cleanSetupText(process.env.SMARTCOACH_STRIPE_WEBHOOK_SECRET);
+    if (!secret) throw httpError(500, "Stripe webhook signing secret is not configured.");
+    const signature = headerValue(req, "stripe-signature");
+    if (!signature) throw httpError(401, "Stripe signature is required.");
+    const rawBody = await requestBodyText(req);
+    verifyStripeSignature(rawBody, signature, secret);
+    const payload = JSON.parse(rawBody || "{}");
+    const result = await saveAutomationAccount(payload);
+    res.status(200).json({
+      success: true,
+      stripeWebhookVerified: true,
+      ...result,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not process Stripe webhook." });
+  }
+}
+
+async function saveAutomationAccount(payload) {
+  const accountKey = automationAccountKey(payload);
+  if (!accountKey) throw httpError(400, "Account key is required.");
+  const existing = await loadExistingAccountRecord(accountKey);
+  const account = accountAutomationRecord(payload, existing);
+  const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
+  const registryResult = await saveAccountRecord(account.accountKey, account);
+  return {
+    accountKey: account.accountKey,
+    productPlan: account.productPlan,
+    coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
+    subscription: publicSubscriptionSummary(account.subscription),
+    subscriptionAccessAllowed: account.subscription.status === "active" || account.subscription.status === "trialing" || !account.subscription.status,
+    registry: registryResult,
+    accountRegistryRecord: account,
+    environment,
+    dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
+    ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
+    accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
+  };
 }
 
 async function accountRegistry(req, res) {
@@ -679,7 +724,7 @@ function automationAllowed(req) {
 function setAutomationHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-SMARTCoach-Automation-Secret");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Stripe-Signature, X-SMARTCoach-Automation-Secret");
 }
 
 function setSessionHeaders(res) {
@@ -751,6 +796,46 @@ function stripeNestedValue(object, key) {
     return typeof source.subscription === "string" ? source.subscription : source.id && String(source.object || "").includes("subscription") ? source.id : "";
   }
   return "";
+}
+
+async function requestBodyText(req) {
+  if (typeof req.body === "string") return req.body;
+  if (Buffer.isBuffer(req.body)) return req.body.toString("utf8");
+  if (req.rawBody) return Buffer.isBuffer(req.rawBody) ? req.rawBody.toString("utf8") : String(req.rawBody);
+  if (req.body && typeof req.body === "object") return JSON.stringify(req.body);
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    req.on("error", reject);
+  });
+}
+
+function verifyStripeSignature(rawBody, signatureHeader, secret) {
+  const parts = stripeSignatureParts(signatureHeader);
+  const timestamp = parts.t && parts.t[0];
+  const signatures = parts.v1 || [];
+  if (!timestamp || !signatures.length) throw httpError(401, "Stripe signature is invalid.");
+  const timestampSeconds = Number(timestamp);
+  if (!Number.isFinite(timestampSeconds)) throw httpError(401, "Stripe signature timestamp is invalid.");
+  const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds);
+  if (ageSeconds > 5 * 60) throw httpError(401, "Stripe signature is too old.");
+  const expected = crypto.createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex");
+  if (!signatures.some((signature) => safeEqual(signature, expected))) {
+    throw httpError(401, "Stripe signature could not be verified.");
+  }
+}
+
+function stripeSignatureParts(header) {
+  return String(header || "").split(",").reduce((parts, item) => {
+    const index = item.indexOf("=");
+    if (index < 1) return parts;
+    const key = item.slice(0, index).trim();
+    const value = item.slice(index + 1).trim();
+    if (!parts[key]) parts[key] = [];
+    parts[key].push(value);
+    return parts;
+  }, {});
 }
 
 function headerValue(req, name) {
