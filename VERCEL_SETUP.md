@@ -41,16 +41,28 @@ Pro accounts need all three:
 - `GHL_PRIVATE_INTEGRATION_TOKEN_LINCOLNTRACK=...`
 - `GHL_LOCATION_ID_LINCOLNTRACK=...`
 
-Recommended before customer launch:
+Coach seat variables for Pro accounts:
+
+- `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=1`
+- `SMARTCOACH_COACH_ACCESS_CODES_LINCOLNTRACK=coach_code_1`
+
+Use `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=3` and three comma-separated codes when the customer has the assistant coach add-on:
+
+- `SMARTCOACH_COACH_ACCESS_CODES_LINCOLNTRACK=coach_code_1,coach_code_2,coach_code_3`
+
+Each coach should receive one coach access code. Athlete limits are intentionally not enforced here; those stay controlled by GHL.
+
+Legacy access-code support:
 
 - `SMARTCOACH_ACCESS_CODE_LINCOLNTRACK=...`
 
-The setup helper generates a suggested access code value. When this access code is set, SMARTCoach Pro API data for that account requires the browser session to provide the code. This is an early protection layer, not the final subscription/auth system.
+Existing accounts that only use `SMARTCOACH_ACCESS_CODE_*` still work. New accounts should use `SMARTCOACH_COACH_SEATS_*` and `SMARTCOACH_COACH_ACCESS_CODES_*`.
 
 Use the setup helper endpoint to generate the exact variables for a new account:
 
 - `/api/smart-trak/account-setup?account=lincolntrack&plan=essential`
 - `/api/smart-trak/account-setup?account=lincolntrack&plan=pro`
+- `/api/smart-trak/account-setup?account=lincolntrack&plan=pro&coachSeats=3`
 
 The helper does not expose secrets. It only returns the variable names that need to be added in Vercel.
 

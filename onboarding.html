@@ -25,14 +25,14 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .panelhead{padding:16px 18px;border-bottom:1px solid var(--line)}
 .panelhead h2{font-size:18px;margin:0}
 .panelbody{padding:16px 18px}
-.grid{display:grid;grid-template-columns:1fr 190px 190px auto;gap:12px;align-items:end}
+.grid{display:grid;grid-template-columns:1fr 180px 150px 190px auto;gap:12px;align-items:end}
 .field{display:grid;gap:6px}
 label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:15px inherit;padding:10px 12px}
 textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,monospace;font-size:13px;line-height:1.45}
 .status{min-height:20px;font-size:13px;font-weight:800;color:var(--muted);margin-top:12px}
 .status.good{color:var(--good)}.status.bad{color:var(--bad)}
-.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .card{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .card b{display:block;font-size:18px;line-height:1.2}
 .card span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
@@ -111,6 +111,13 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           </select>
         </div>
         <div class="field">
+          <label for="coachSeats">Coach Seats</label>
+          <select id="coachSeats">
+            <option value="1">1 coach</option>
+            <option value="3">3 coaches</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="setupCode">Setup Code</label>
           <input id="setupCode" type="password" placeholder="If required" autocomplete="off">
         </div>
@@ -126,6 +133,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="cards">
         <div class="card"><b id="resultAccount">--</b><span>Account key</span></div>
         <div class="card"><b id="resultPlan">--</b><span>Plan</span></div>
+        <div class="card"><b id="resultCoachSeats">--</b><span>Coach seats</span></div>
         <div class="card"><b id="resultState">--</b><span>Setup state</span></div>
       </div>
       <div id="envList" class="envlist"></div>
@@ -182,6 +190,7 @@ prefillFromUrl();
 function generateSetup(){
   var account=document.getElementById('accountKey').value.trim();
   var plan=document.getElementById('plan').value;
+  var coachSeats=document.getElementById('coachSeats').value;
   var setupCode=document.getElementById('setupCode').value.trim();
   var status=document.getElementById('status');
   if(!account){
@@ -195,7 +204,7 @@ function generateSetup(){
     rememberSetupCode(setupCode);
     fetchOptions.headers={'X-SMARTCoach-Setup-Code':setupCode};
   }
-  fetch('/api/smart-trak/account-setup?account='+encodeURIComponent(account)+'&plan='+encodeURIComponent(plan),fetchOptions).then(function(res){
+  fetch('/api/smart-trak/account-setup?account='+encodeURIComponent(account)+'&plan='+encodeURIComponent(plan)+'&coachSeats='+encodeURIComponent(coachSeats),fetchOptions).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok){
@@ -223,6 +232,7 @@ function renderSetup(data){
   document.getElementById('linksPanel').hidden=false;
   document.getElementById('resultAccount').textContent=data.accountKey||'--';
   document.getElementById('resultPlan').textContent=planLabel(data.productPlan);
+  document.getElementById('resultCoachSeats').textContent=coachSeatsLabel(data);
   document.getElementById('resultState').textContent=stateLabel(data.setupState);
   renderReadiness(data);
   var env=data.environment||[];
@@ -257,15 +267,15 @@ function renderReadiness(data){
   readyBar.className='readybar'+(configured||plan==='essential'?' good':' bad');
   if(plan==='essential'){
     title.textContent='Essential account ready';
-    detail.textContent='This account is set for stopwatch-only use.';
+    detail.textContent='This account is set for stopwatch-only use. Athlete limits stay controlled in GHL.';
     return;
   }
   if(configured){
     title.textContent='SMART Trak account ready';
-    detail.textContent='The SMART Trak connection is configured and the dashboard can load customer data.';
+    detail.textContent='The SMART Trak connection is configured. Coach access is limited by the configured coach codes.';
   }else{
     title.textContent='SMART Trak setup needed';
-    detail.textContent='Add the private integration token and location ID in Vercel Production, then redeploy and check again.';
+    detail.textContent='Add the private integration token, location ID, coach seats, and coach access codes in Vercel Production, then redeploy and check again.';
   }
 }
 function checkSetupStatus(){
@@ -287,6 +297,7 @@ function checkSetupStatus(){
     var data=result.data||{};
     currentSetup=Object.assign({},currentSetup||{},data,{accountKey:data.accountKey||account});
     document.getElementById('resultState').textContent=data.productPlan==='essential'?'Essential ready':data.configured?'Pro ready':'Pro setup needed';
+    document.getElementById('resultCoachSeats').textContent=coachSeatsLabel(currentSetup);
     renderReadiness(currentSetup);
     if(data.configured){
       setStatus('Account is ready.','good');
@@ -383,6 +394,12 @@ function renderChecklist(data){
       body:'Use the latest production deployment so the new variables are active.'
     },
     {
+      title:'Give each coach one access code',
+      body:plan==='essential'
+        ?'Essential is stopwatch-only, so no SMART Trak coach seats are needed.'
+        :'Use the Coach access codes field. One-coach accounts get one code. Three-coach accounts get three codes. Athlete count stays controlled by GHL.'
+    },
+    {
       title:'Check account status',
       body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the SMART Trak fields are added.'
     },
@@ -408,6 +425,11 @@ function setStatus(text,type){
 function planLabel(value){
   return value==='essential'?'Essential':'Pro';
 }
+function coachSeatsLabel(data){
+  if((data&&data.productPlan)==='essential')return 'Not needed';
+  var seats=Number(data&&data.coachSeats)||1;
+  return seats===3?'3 coaches':'1 coach';
+}
 function stateLabel(value){
   var map={
     'essential-ready':'Essential ready',
@@ -424,8 +446,10 @@ function prefillFromUrl(){
     var params=new URLSearchParams(window.location.search||'');
     var account=(params.get('account')||params.get('tenant')||'').trim();
     var plan=(params.get('plan')||params.get('productPlan')||'').trim().toLowerCase();
+    var coachSeats=(params.get('coachSeats')||params.get('coaches')||params.get('seats')||'').trim();
     if(account)document.getElementById('accountKey').value=account;
     if(plan)document.getElementById('plan').value=plan==='essential'?'essential':'pro';
+    if(coachSeats)document.getElementById('coachSeats').value=coachSeats==='3'?'3':'1';
     var remembered=sessionStorage.getItem('smartcoach_setup_code')||'';
     if(remembered)document.getElementById('setupCode').value=remembered;
   }catch(e){}

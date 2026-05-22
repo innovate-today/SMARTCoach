@@ -46,10 +46,11 @@ function accountStatus(req, res) {
     return;
   }
 
-  const { accountKey, token, locationId, productPlan, accessCode, logoUrl } = getGhlContext(req);
+  const { accountKey, token, locationId, productPlan, accessCode, coachSeats, coachAccessCodes, logoUrl } = getGhlContext(req);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const tokenKey = accountKey === "default" ? "GHL_PRIVATE_INTEGRATION_TOKEN" : `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`;
   const locationKey = accountKey === "default" ? "GHL_LOCATION_ID" : `GHL_LOCATION_ID_${suffix}`;
+  const configuredCoachCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes.length : accessCode ? 1 : 0;
   const crmConfigured = !!(token && locationId);
   const configured = productPlan === "essential" || crmConfigured;
   const missing = [];
@@ -61,7 +62,10 @@ function accountStatus(req, res) {
     productPlan,
     configured,
     crmConfigured,
-    accessCodeRequired: !!accessCode,
+    coachSeats,
+    coachAccessCodesConfigured: configuredCoachCodes,
+    accessCodeRequired: configuredCoachCodes > 0,
+    coachAccessRequired: configuredCoachCodes > 0,
     logoUrl: logoUrl || "",
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
@@ -92,6 +96,8 @@ function accountSetup(req, res) {
   const accountKey = normalizeSetupAccountKey(requestedKey) || "customer";
   const requestedPlan = firstQueryValue(req.query && (req.query.plan || req.query.productPlan)) || "pro";
   const productPlan = normalizeSetupProductPlan(requestedPlan);
+  const requestedCoachSeats = firstQueryValue(req.query && (req.query.coachSeats || req.query.coaches || req.query.seats)) || "1";
+  const coachSeats = normalizeSetupCoachSeats(requestedCoachSeats);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const { token, locationId } = getGhlContext({ query: { account: accountKey }, headers: {} });
   const configured = !!(token && locationId);
@@ -120,14 +126,22 @@ function accountSetup(req, res) {
         required: true,
         label: "Location ID",
         description: "Customer SMART Trak sub-account location ID.",
+      }
+    );
+    env.push(
+      {
+        key: `SMARTCOACH_COACH_SEATS_${suffix}`,
+        value: String(coachSeats),
+        required: true,
+        label: "Coach seats",
+        description: "Controls whether this Pro account allows 1 coach or 3 coach access codes. Athlete count stays controlled by GHL.",
       },
       {
-        key: `SMARTCOACH_ACCESS_CODE_${suffix}`,
-        value: suggestedAccessCode(accountKey),
-        required: false,
-        recommended: true,
-        label: "SMART Trak access code",
-        description: "Recommended before launch. Protects this customer's Pro dashboard/API data if the dashboard link is copied.",
+        key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
+        value: suggestedCoachAccessCodes(accountKey, coachSeats).join(","),
+        required: true,
+        label: "Coach access codes",
+        description: `Give one code to each coach. This account is set for ${coachSeats} coach${coachSeats === 1 ? "" : "es"}.`,
       }
     );
   }
@@ -136,6 +150,8 @@ function accountSetup(req, res) {
     success: true,
     accountKey,
     productPlan,
+    coachSeats: productPlan === "pro" ? coachSeats : 0,
+    coachAccessCodesConfigured: productPlan === "pro" ? coachSeats : 0,
     configured,
     setupState: productPlan === "essential" ? "essential-ready" : configured ? "pro-ready" : "pro-setup-needed",
     environment: env,
@@ -156,6 +172,11 @@ function normalizeSetupAccountKey(value) {
 
 function normalizeSetupProductPlan(value) {
   return String(value || "").trim().toLowerCase() === "essential" ? "essential" : "pro";
+}
+
+function normalizeSetupCoachSeats(value) {
+  const seats = Number(String(value || "").trim());
+  return seats === 3 ? 3 : 1;
 }
 
 function setupAdminAllowed(req) {
@@ -182,4 +203,9 @@ function suggestedAccessCode(accountKey) {
     hash = Math.imul(hash, 16777619);
   }
   return `sc-${String(hash >>> 0).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function suggestedCoachAccessCodes(accountKey, coachSeats) {
+  const count = normalizeSetupCoachSeats(coachSeats);
+  return Array.from({ length: count }, (_, index) => `${suggestedAccessCode(accountKey)}-c${index + 1}`);
 }
