@@ -432,6 +432,7 @@ Subscription/customer management:
 - Added copy-ready Stripe metadata and account automation JSON payloads to `/onboarding.html` so purchase/onboarding automation can be configured from the same account setup screen.
 - Added protected `account-automation-health` endpoint and a `/onboarding.html` system readiness check for automation secret, durable registry, Stripe webhook signing secret, and signed coach sessions.
 - Registry account records now store a lightweight `lastAutomationEvent` stamp showing last update source, event type, optional Stripe event/object IDs, and received time. `/onboarding.html` lookup displays last source/event.
+- `/onboarding.html` manual registry save now only reports "saved" when the durable registry actually returns `saved: true`; otherwise it shows the registry setup problem.
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated

@@ -541,14 +541,19 @@ function saveRegistryUpdate(){
       throw err;
     }
     currentSetup=result.data;
+    var registry=result.data.registry||{};
     renderLookupResult({
       success:true,
       accountKey:result.data.accountKey,
-      registry:result.data.registry||{found:true},
+      registry:{configured:!!registry.configured,found:!!registry.saved,key:registry.key||'',error:registry.reason||registry.error},
       accountRegistryRecord:result.data.accountRegistryRecord||{}
     });
     renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.accountRegistryRecord&&result.data.accountRegistryRecord.locationId&&result.data.accountRegistryRecord.token?'pro-ready':'pro-setup-needed'}));
-    setStatus('Registry update saved. SMART Trak will use this account record on the next request.','good');
+    if(registry.saved){
+      setStatus('Registry update saved. SMART Trak will use this account record on the next request.','good');
+    }else{
+      setStatus(registry.reason||'Registry update was not saved because the durable registry is not configured.','bad');
+    }
   }).catch(function(error){
     setStatus(error.message||'Could not save registry update.','bad');
   }).finally(function(){
