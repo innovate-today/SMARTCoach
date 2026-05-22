@@ -661,6 +661,11 @@ function saveRegistryUpdate(){
     setStatus('Enter the automation secret before saving a registry update.','bad');
     return;
   }
+  var warning=registryPayloadWarning(payload);
+  if(warning&&!window.confirm(warning+' Save anyway?')){
+    setStatus(warning,'bad');
+    return;
+  }
   rememberAutomationSecret(secret);
   document.getElementById('saveRegistryBtn').disabled=true;
   setStatus('Saving registry update...',null);
@@ -690,7 +695,7 @@ function saveRegistryUpdate(){
     });
     renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
     if(registry.saved){
-      setStatus('Registry update saved. SMART Trak will use this account record on the next request.','good');
+      setStatus(result.data.accessReady?'Registry update saved. SMART Trak will use this account record on the next request.':'Registry update saved, but setup is not ready yet: '+setupMissingText(result.data),result.data.accessReady?'good':'bad');
     }else{
       setStatus(registry.reason||'Registry update was not saved because the durable registry is not configured.','bad');
     }
@@ -741,7 +746,7 @@ function dryRunRegistryUpdate(){
     if(result.data.accessReady){
       setStatus('Dry run passed. This account would be ready after saving. Nothing was saved.','good');
     }else{
-      setStatus(result.data.subscriptionBlockedReason||'Dry run complete. Fix the missing setup fields before saving. Nothing was saved.','bad');
+      setStatus(result.data.subscriptionBlockedReason||('Dry run complete. Fix before saving: '+setupMissingText(result.data)),'bad');
     }
   }).catch(function(error){
     setStatus(error.message||'Could not test setup.','bad');
@@ -830,6 +835,27 @@ function generateSetup(){
   }).finally(function(){
     document.getElementById('generateBtn').disabled=false;
   });
+}
+function registryPayloadWarning(payload){
+  payload=payload||{};
+  if((payload.productPlan||'pro')==='essential')return '';
+  var missing=[];
+  if(!String(payload.locationId||'').trim())missing.push('Location ID');
+  if(!String(payload.privateIntegrationToken||payload.token||'').trim())missing.push('Private integration token');
+  if(!String(payload.coachAccessCodes||'').trim())missing.push('Coach access code');
+  if(!missing.length)return '';
+  return 'This Pro account is missing '+missing.join(', ')+'. The coach will not be able to open SMART Trak until this is completed.';
+}
+function setupMissingText(data){
+  data=data||{};
+  if(data.subscriptionBlockedReason)return data.subscriptionBlockedReason;
+  var record=data.accountRegistryRecord||{};
+  var missing=[];
+  if(data.productPlan!=='essential'){
+    if(!data.crmConfigured&&!(record.locationId&&record.token))missing.push('SMART Trak connection fields');
+    if(!(Number(data.coachAccessCodesConfigured)||((record.coachAccessCodes||[]).length)||record.accessCode))missing.push('coach access code');
+  }
+  return missing.length?missing.join(', '):'account setup is incomplete';
 }
 function renderSetup(data){
   currentSetup=data;
