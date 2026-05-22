@@ -430,6 +430,7 @@ Subscription/customer management:
 - Added optional SMART Trak connection fields to `/onboarding.html` for internal setup/support: location ID, private integration token, coach access codes, and logo URL. Blank fields preserve existing saved registry values.
 - Added account-key and coach-code generators to `/onboarding.html` to reduce manual setup mistakes. Coach code generation respects one-coach vs three-coach Pro setup.
 - Added copy-ready Stripe metadata and account automation JSON payloads to `/onboarding.html` so purchase/onboarding automation can be configured from the same account setup screen.
+- Added protected `account-automation-health` endpoint and a `/onboarding.html` system readiness check for automation secret, durable registry, Stripe webhook signing secret, and signed coach sessions.
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated

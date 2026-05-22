@@ -82,7 +82,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checkrow a{color:#102a70;font-weight:800;text-decoration:none}
 .checkrow a:hover{text-decoration:underline}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
-.lookupgrid{display:grid;grid-template-columns:1fr 240px auto;gap:12px;align-items:end}
+.lookupgrid{display:grid;grid-template-columns:1fr 240px auto auto;gap:12px;align-items:end}
 .formactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px}
 .connectiongrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
 .registrybox{display:grid;gap:10px;margin-top:14px}
@@ -160,7 +160,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="automationSecret" type="password" placeholder="Required for registry lookup" autocomplete="off">
         </div>
         <button id="lookupBtn" type="button" class="secondary" onclick="lookupAccount()">Lookup Account</button>
+        <button id="healthBtn" type="button" class="secondary" onclick="checkAutomationHealth()">Check System</button>
       </div>
+      <div id="systemResult" class="registrybox"></div>
       <div id="lookupResult" class="registrybox"></div>
     </div>
   </section>
@@ -361,6 +363,48 @@ function randomCode(length){
   }
   for(var j=0;j<length;j++)out+=chars[values[j]%chars.length];
   return out;
+}
+function checkAutomationHealth(){
+  var secret=document.getElementById('automationSecret').value.trim();
+  var box=document.getElementById('systemResult');
+  if(!secret){
+    setStatus('Enter the automation secret to check system readiness.','bad');
+    return;
+  }
+  rememberAutomationSecret(secret);
+  box.innerHTML='<div class="empty">Checking system readiness...</div>';
+  document.getElementById('healthBtn').disabled=true;
+  fetch('/api/smart-trak/account-automation-health',{
+    cache:'no-store',
+    headers:{'X-SMARTCoach-Automation-Secret':secret}
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok){
+      var err=new Error(result.data&&result.data.error||'Could not check system readiness.');
+      err.data=result.data;
+      throw err;
+    }
+    renderSystemResult(result.data);
+    setStatus('System readiness checked.','good');
+  }).catch(function(error){
+    box.innerHTML='<div class="empty">'+esc(error.message||'Could not check system readiness.')+'</div>';
+    setStatus(error.message||'Could not check system readiness.','bad');
+  }).finally(function(){
+    document.getElementById('healthBtn').disabled=false;
+  });
+}
+function renderSystemResult(data){
+  var checks=data.checks||[];
+  var cards=checks.map(function(check){
+    return '<div class="card"><b>'+esc(check.configured?'Ready':'Missing')+'</b><span>'+esc(check.label)+'</span></div>';
+  }).join('');
+  document.getElementById('systemResult').innerHTML=
+    '<div class="registrytitle"><div><b>Automation System</b><span> Internal setup readiness</span></div></div>'+
+    '<div class="registrycards">'+cards+'</div>'+
+    '<div class="registryrow"><b>Manual updates</b><span>'+esc(data.readyForManualRegistryUpdates?'Ready':'Needs registry and automation secret')+'</span></div>'+
+    '<div class="registryrow"><b>Stripe webhooks</b><span>'+esc(data.readyForStripeWebhooks?'Ready':'Needs registry, automation secret, and Stripe webhook secret')+'</span></div>'+
+    '<div class="registryrow"><b>Coach sessions</b><span>'+esc(data.readyForSignedCoachSessions?'Ready':'Needs session, automation, or setup secret')+'</span></div>';
 }
 function lookupAccount(){
   var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');

@@ -32,6 +32,10 @@ module.exports = async function handler(req, res) {
     return accountAutomation(req, res);
   }
 
+  if (route === "account-automation-health") {
+    return accountAutomationHealth(req, res);
+  }
+
   if (route === "account-stripe-webhook") {
     return accountStripeWebhook(req, res);
   }
@@ -279,6 +283,49 @@ async function accountAutomation(req, res) {
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not process automation payload." });
   }
+}
+
+function accountAutomationHealth(req, res) {
+  setAutomationHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  if (!automationAllowed(req)) {
+    res.status(401).json({
+      error: "Automation secret is required.",
+      automationSecretRequired: true,
+    });
+    return;
+  }
+
+  const automationSecretConfigured = !!cleanSetupText(process.env.SMARTCOACH_AUTOMATION_SECRET);
+  const registryReady = registryConfigured();
+  const stripeWebhookReady = !!cleanSetupText(process.env.SMARTCOACH_STRIPE_WEBHOOK_SECRET);
+  const sessionSigningReady = !!cleanSetupText(process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE);
+  res.status(200).json({
+    success: true,
+    automationSecretConfigured,
+    registryConfigured: registryReady,
+    stripeWebhookConfigured: stripeWebhookReady,
+    sessionSigningConfigured: sessionSigningReady,
+    readyForManualRegistryUpdates: automationSecretConfigured && registryReady,
+    readyForStripeWebhooks: automationSecretConfigured && registryReady && stripeWebhookReady,
+    readyForSignedCoachSessions: sessionSigningReady,
+    checks: [
+      { key: "automationSecret", label: "Automation secret", configured: automationSecretConfigured },
+      { key: "registry", label: "Durable account registry", configured: registryReady },
+      { key: "stripeWebhook", label: "Stripe webhook signing secret", configured: stripeWebhookReady },
+      { key: "sessionSigning", label: "Coach session signing", configured: sessionSigningReady },
+    ],
+  });
 }
 
 async function accountStripeWebhook(req, res) {
