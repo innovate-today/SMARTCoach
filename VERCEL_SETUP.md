@@ -35,6 +35,18 @@ Essential accounts only need the plan variable:
 
 - `SMARTCOACH_PRODUCT_PLAN_LINCOLNTRACK=essential`
 
+Recommended subscription tracking variables:
+
+- `SMARTCOACH_SUBSCRIPTION_STATUS_LINCOLNTRACK=active`
+- `SMARTCOACH_BILLING_CADENCE_LINCOLNTRACK=monthly`
+- `SMARTCOACH_SUBSCRIPTION_AMOUNT_LINCOLNTRACK=29.99`
+- `SMARTCOACH_RENEWAL_DATE_LINCOLNTRACK=2026-06-21`
+- `SMARTCOACH_STRIPE_CUSTOMER_ID_LINCOLNTRACK=cus_...`
+- `SMARTCOACH_STRIPE_SUBSCRIPTION_ID_LINCOLNTRACK=sub_...`
+- `SMARTCOACH_SUBSCRIPTION_NOTES_LINCOLNTRACK=optional internal notes`
+
+These fields are for internal subscription tracking. Only the safe summary fields are returned through account status. Athlete limits remain controlled in GHL.
+
 Pro accounts need all three:
 
 - `SMARTCOACH_PRODUCT_PLAN_LINCOLNTRACK=pro`

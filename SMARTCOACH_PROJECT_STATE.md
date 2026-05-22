@@ -406,7 +406,13 @@ Future:
 
 Subscription/customer management:
 
-- Need a place to hold customer subscription information.
+- Added account setup fields for customer subscription information:
+  - subscription status
+  - billing cadence
+  - subscription amount
+  - renewal date
+  - Stripe customer/subscription IDs
+  - internal subscription notes
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated

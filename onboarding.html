@@ -32,7 +32,9 @@ input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;
 textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,monospace;font-size:13px;line-height:1.45}
 .status{min-height:20px;font-size:13px;font-weight:800;color:var(--muted);margin-top:12px}
 .status.good{color:var(--good)}.status.bad{color:var(--bad)}
-.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.subgrid{display:grid;grid-template-columns:150px 150px 140px 170px 1fr 1fr;gap:12px;align-items:end}
+.notesgrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+.cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .card{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
 .card b{display:block;font-size:18px;line-height:1.2}
 .card span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
@@ -76,7 +78,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checkrow a{color:#102a70;font-weight:800;text-decoration:none}
 .checkrow a:hover{text-decoration:underline}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
-@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.cards,.links,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
+@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
 </style>
 </head>
 <body>
@@ -127,6 +129,54 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     </div>
   </section>
 
+  <section class="panel">
+    <div class="panelhead"><h2>Subscription Tracking</h2></div>
+    <div class="panelbody">
+      <div class="subgrid">
+        <div class="field">
+          <label for="subscriptionStatus">Status</label>
+          <select id="subscriptionStatus">
+            <option value="active">Active</option>
+            <option value="trialing">Trialing</option>
+            <option value="past_due">Past due</option>
+            <option value="paused">Paused</option>
+            <option value="canceled">Canceled</option>
+            <option value="incomplete">Incomplete</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="billingCadence">Billing</label>
+          <select id="billingCadence">
+            <option value="monthly">Monthly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="subscriptionAmount">Amount</label>
+          <input id="subscriptionAmount" type="text" placeholder="29.99" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="renewalDate">Renewal Date</label>
+          <input id="renewalDate" type="date">
+        </div>
+        <div class="field">
+          <label for="stripeCustomerId">Customer ID</label>
+          <input id="stripeCustomerId" type="text" placeholder="cus_..." autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="stripeSubscriptionId">Subscription ID</label>
+          <input id="stripeSubscriptionId" type="text" placeholder="sub_..." autocomplete="off">
+        </div>
+      </div>
+      <div class="notesgrid">
+        <div class="field">
+          <label for="subscriptionNotes">Subscription Notes</label>
+          <input id="subscriptionNotes" type="text" placeholder="Optional internal notes, promo, school billing contact, etc." autocomplete="off">
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="resultPanel" class="panel" hidden>
     <div class="panelhead"><h2>Setup Result</h2></div>
     <div class="panelbody">
@@ -134,6 +184,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <div class="card"><b id="resultAccount">--</b><span>Account key</span></div>
         <div class="card"><b id="resultPlan">--</b><span>Plan</span></div>
         <div class="card"><b id="resultCoachSeats">--</b><span>Coach seats</span></div>
+        <div class="card"><b id="resultSubscription">--</b><span>Subscription</span></div>
         <div class="card"><b id="resultState">--</b><span>Setup state</span></div>
       </div>
       <div id="envList" class="envlist"></div>
@@ -191,6 +242,13 @@ function generateSetup(){
   var account=document.getElementById('accountKey').value.trim();
   var plan=document.getElementById('plan').value;
   var coachSeats=document.getElementById('coachSeats').value;
+  var subscriptionStatus=document.getElementById('subscriptionStatus').value;
+  var billingCadence=document.getElementById('billingCadence').value;
+  var subscriptionAmount=document.getElementById('subscriptionAmount').value.trim();
+  var renewalDate=document.getElementById('renewalDate').value.trim();
+  var stripeCustomerId=document.getElementById('stripeCustomerId').value.trim();
+  var stripeSubscriptionId=document.getElementById('stripeSubscriptionId').value.trim();
+  var subscriptionNotes=document.getElementById('subscriptionNotes').value.trim();
   var setupCode=document.getElementById('setupCode').value.trim();
   var status=document.getElementById('status');
   if(!account){
@@ -204,7 +262,19 @@ function generateSetup(){
     rememberSetupCode(setupCode);
     fetchOptions.headers={'X-SMARTCoach-Setup-Code':setupCode};
   }
-  fetch('/api/smart-trak/account-setup?account='+encodeURIComponent(account)+'&plan='+encodeURIComponent(plan)+'&coachSeats='+encodeURIComponent(coachSeats),fetchOptions).then(function(res){
+  var params=new URLSearchParams({
+    account:account,
+    plan:plan,
+    coachSeats:coachSeats,
+    subscriptionStatus:subscriptionStatus,
+    billingCadence:billingCadence,
+    subscriptionAmount:subscriptionAmount,
+    renewalDate:renewalDate,
+    stripeCustomerId:stripeCustomerId,
+    stripeSubscriptionId:stripeSubscriptionId,
+    subscriptionNotes:subscriptionNotes
+  });
+  fetch('/api/smart-trak/account-setup?'+params.toString(),fetchOptions).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok){
@@ -233,6 +303,7 @@ function renderSetup(data){
   document.getElementById('resultAccount').textContent=data.accountKey||'--';
   document.getElementById('resultPlan').textContent=planLabel(data.productPlan);
   document.getElementById('resultCoachSeats').textContent=coachSeatsLabel(data);
+  document.getElementById('resultSubscription').textContent=subscriptionLabel(data);
   document.getElementById('resultState').textContent=stateLabel(data.setupState);
   renderReadiness(data);
   var env=data.environment||[];
@@ -298,6 +369,7 @@ function checkSetupStatus(){
     currentSetup=Object.assign({},currentSetup||{},data,{accountKey:data.accountKey||account});
     document.getElementById('resultState').textContent=data.productPlan==='essential'?'Essential ready':data.configured?'Pro ready':'Pro setup needed';
     document.getElementById('resultCoachSeats').textContent=coachSeatsLabel(currentSetup);
+    document.getElementById('resultSubscription').textContent=subscriptionLabel(currentSetup);
     renderReadiness(currentSetup);
     if(data.configured){
       setStatus('Account is ready.','good');
@@ -400,6 +472,10 @@ function renderChecklist(data){
         :'Use the Coach access codes field. One-coach accounts get one code. Three-coach accounts get three codes. Athlete count stays controlled by GHL.'
     },
     {
+      title:'Track the customer subscription',
+      body:'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. Athlete limits stay in GHL.'
+    },
+    {
       title:'Check account status',
       body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the SMART Trak fields are added.'
     },
@@ -430,6 +506,12 @@ function coachSeatsLabel(data){
   var seats=Number(data&&data.coachSeats)||1;
   return seats===3?'3 coaches':'1 coach';
 }
+function subscriptionLabel(data){
+  var sub=(data&&data.subscription)||{};
+  var status=sub.status?sub.status.replace('_',' '):'not tracked';
+  var cadence=sub.billingCadence?sub.billingCadence:'';
+  return cadence?status+' / '+cadence:status;
+}
 function stateLabel(value){
   var map={
     'essential-ready':'Essential ready',
@@ -447,9 +529,18 @@ function prefillFromUrl(){
     var account=(params.get('account')||params.get('tenant')||'').trim();
     var plan=(params.get('plan')||params.get('productPlan')||'').trim().toLowerCase();
     var coachSeats=(params.get('coachSeats')||params.get('coaches')||params.get('seats')||'').trim();
+    var subscriptionStatus=(params.get('subscriptionStatus')||params.get('status')||'').trim();
+    var billingCadence=(params.get('billingCadence')||params.get('cadence')||'').trim();
     if(account)document.getElementById('accountKey').value=account;
     if(plan)document.getElementById('plan').value=plan==='essential'?'essential':'pro';
     if(coachSeats)document.getElementById('coachSeats').value=coachSeats==='3'?'3':'1';
+    if(subscriptionStatus)document.getElementById('subscriptionStatus').value=subscriptionStatus;
+    if(billingCadence)document.getElementById('billingCadence').value=billingCadence==='annual'?'annual':'monthly';
+    if(params.get('subscriptionAmount'))document.getElementById('subscriptionAmount').value=params.get('subscriptionAmount');
+    if(params.get('renewalDate'))document.getElementById('renewalDate').value=params.get('renewalDate');
+    if(params.get('stripeCustomerId'))document.getElementById('stripeCustomerId').value=params.get('stripeCustomerId');
+    if(params.get('stripeSubscriptionId'))document.getElementById('stripeSubscriptionId').value=params.get('stripeSubscriptionId');
+    if(params.get('subscriptionNotes'))document.getElementById('subscriptionNotes').value=params.get('subscriptionNotes');
     var remembered=sessionStorage.getItem('smartcoach_setup_code')||'';
     if(remembered)document.getElementById('setupCode').value=remembered;
   }catch(e){}

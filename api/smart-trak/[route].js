@@ -46,7 +46,7 @@ function accountStatus(req, res) {
     return;
   }
 
-  const { accountKey, token, locationId, productPlan, accessCode, coachSeats, coachAccessCodes, logoUrl } = getGhlContext(req);
+  const { accountKey, token, locationId, productPlan, accessCode, coachSeats, coachAccessCodes, subscription, logoUrl } = getGhlContext(req);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const tokenKey = accountKey === "default" ? "GHL_PRIVATE_INTEGRATION_TOKEN" : `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`;
   const locationKey = accountKey === "default" ? "GHL_LOCATION_ID" : `GHL_LOCATION_ID_${suffix}`;
@@ -66,6 +66,7 @@ function accountStatus(req, res) {
     coachAccessCodesConfigured: configuredCoachCodes,
     accessCodeRequired: configuredCoachCodes > 0,
     coachAccessRequired: configuredCoachCodes > 0,
+    subscription: publicSubscriptionSummary(subscription),
     logoUrl: logoUrl || "",
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
@@ -98,6 +99,7 @@ function accountSetup(req, res) {
   const productPlan = normalizeSetupProductPlan(requestedPlan);
   const requestedCoachSeats = firstQueryValue(req.query && (req.query.coachSeats || req.query.coaches || req.query.seats)) || "1";
   const coachSeats = normalizeSetupCoachSeats(requestedCoachSeats);
+  const subscription = setupSubscriptionFromQuery(req.query || {}, productPlan);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const { token, locationId } = getGhlContext({ query: { account: accountKey }, headers: {} });
   const configured = !!(token && locationId);
@@ -109,6 +111,59 @@ function accountSetup(req, res) {
       required: true,
       label: "Plan",
       description: "Controls whether this account is Essential or Pro.",
+    },
+    {
+      key: `SMARTCOACH_SUBSCRIPTION_STATUS_${suffix}`,
+      value: subscription.status,
+      required: false,
+      recommended: true,
+      label: "Subscription status",
+      description: "Internal customer subscription status: active, trialing, past_due, paused, canceled, or incomplete.",
+    },
+    {
+      key: `SMARTCOACH_BILLING_CADENCE_${suffix}`,
+      value: subscription.billingCadence,
+      required: false,
+      recommended: true,
+      label: "Billing cadence",
+      description: "Internal billing cadence for this customer: monthly or annual.",
+    },
+    {
+      key: `SMARTCOACH_SUBSCRIPTION_AMOUNT_${suffix}`,
+      value: subscription.amount,
+      required: false,
+      recommended: true,
+      label: "Subscription amount",
+      description: "Internal monthly or annual subscription amount. Athlete limits remain controlled in GHL.",
+    },
+    {
+      key: `SMARTCOACH_RENEWAL_DATE_${suffix}`,
+      value: subscription.renewalDate,
+      required: false,
+      recommended: true,
+      label: "Renewal date",
+      description: "Internal next renewal or billing date in YYYY-MM-DD format.",
+    },
+    {
+      key: `SMARTCOACH_STRIPE_CUSTOMER_ID_${suffix}`,
+      value: subscription.stripeCustomerId,
+      required: false,
+      label: "Stripe customer ID",
+      description: "Optional internal billing reference. This is not shown in the coach-facing app.",
+    },
+    {
+      key: `SMARTCOACH_STRIPE_SUBSCRIPTION_ID_${suffix}`,
+      value: subscription.stripeSubscriptionId,
+      required: false,
+      label: "Stripe subscription ID",
+      description: "Optional internal subscription reference. This is not shown in the coach-facing app.",
+    },
+    {
+      key: `SMARTCOACH_SUBSCRIPTION_NOTES_${suffix}`,
+      value: subscription.notes,
+      required: false,
+      label: "Subscription notes",
+      description: "Optional internal notes about this customer subscription.",
     },
   ];
   if (productPlan === "pro") {
@@ -152,6 +207,7 @@ function accountSetup(req, res) {
     productPlan,
     coachSeats: productPlan === "pro" ? coachSeats : 0,
     coachAccessCodesConfigured: productPlan === "pro" ? coachSeats : 0,
+    subscription: publicSubscriptionSummary(subscription),
     configured,
     setupState: productPlan === "essential" ? "essential-ready" : configured ? "pro-ready" : "pro-setup-needed",
     environment: env,
@@ -177,6 +233,47 @@ function normalizeSetupProductPlan(value) {
 function normalizeSetupCoachSeats(value) {
   const seats = Number(String(value || "").trim());
   return seats === 3 ? 3 : 1;
+}
+
+function setupSubscriptionFromQuery(query, productPlan) {
+  return {
+    status: normalizeSetupSubscriptionStatus(firstQueryValue(query.subscriptionStatus || query.status) || "active"),
+    billingCadence: normalizeSetupBillingCadence(firstQueryValue(query.billingCadence || query.cadence) || "monthly"),
+    amount: cleanSetupText(firstQueryValue(query.subscriptionAmount || query.amount) || suggestedSubscriptionAmount(productPlan, query.coachSeats || query.coaches || query.seats)),
+    renewalDate: cleanSetupText(firstQueryValue(query.renewalDate || query.renewsOn || query.nextBillingDate)),
+    stripeCustomerId: cleanSetupText(firstQueryValue(query.stripeCustomerId || query.customerId)),
+    stripeSubscriptionId: cleanSetupText(firstQueryValue(query.stripeSubscriptionId || query.subscriptionId)),
+    notes: cleanSetupText(firstQueryValue(query.subscriptionNotes || query.notes)),
+  };
+}
+
+function publicSubscriptionSummary(subscription) {
+  const source = subscription || {};
+  return {
+    status: source.status || "",
+    billingCadence: source.billingCadence || "",
+    amount: source.amount || "",
+    renewalDate: source.renewalDate || "",
+  };
+}
+
+function normalizeSetupSubscriptionStatus(value) {
+  const status = String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
+  return ["active", "trialing", "past_due", "paused", "canceled", "incomplete"].includes(status) ? status : "active";
+}
+
+function normalizeSetupBillingCadence(value) {
+  const cadence = String(value || "").trim().toLowerCase();
+  return cadence === "annual" ? "annual" : "monthly";
+}
+
+function cleanSetupText(value) {
+  return String(value || "").trim();
+}
+
+function suggestedSubscriptionAmount(productPlan, coachSeatsValue) {
+  if (productPlan === "essential") return "9.99";
+  return normalizeSetupCoachSeats(firstQueryValue(coachSeatsValue)) === 3 ? "39.99" : "29.99";
 }
 
 function setupAdminAllowed(req) {
