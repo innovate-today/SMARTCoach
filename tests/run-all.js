@@ -14,6 +14,12 @@ const htmlFiles = [
   "xc-simulator.html",
   "onboarding.html",
 ];
+const jsonFiles = [
+  "package.json",
+  "vercel.json",
+  "smart_trak_field_schema.json",
+  "smart_trak_object_mapping.json",
+];
 
 function run(label, command, args) {
   const result = spawnSync(command, args, { stdio: "inherit" });
@@ -41,11 +47,20 @@ function checkPageScripts() {
   });
 }
 
+function checkJsonFiles() {
+  jsonFiles.forEach((file) => {
+    if (!fs.existsSync(file)) return;
+    JSON.parse(fs.readFileSync(file, "utf8"));
+    console.log(`${file} json ok`);
+  });
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 jsFilesUnder("api").concat(jsFilesUnder("lib"), jsFilesUnder("tests")).forEach((file) => {
   run(`${file} syntax`, "node", ["-c", file]);
 });
+checkJsonFiles();
 checkPageScripts();
 
 console.log("SMARTCoach regression checks passed");
