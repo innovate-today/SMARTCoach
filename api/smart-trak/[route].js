@@ -427,12 +427,18 @@ async function saveAutomationAccount(payload, options = {}) {
   const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
   const registryResult = await saveAccountRecord(account.accountKey, account);
+  const subscriptionAllowed = subscriptionAccessAllowed(account.subscription);
+  const setupReady = accountSetupReady(account);
+  const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(account.subscription);
   return {
     accountKey: account.accountKey,
     productPlan: account.productPlan,
     coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
     subscription: publicSubscriptionSummary(account.subscription),
-    subscriptionAccessAllowed: account.subscription.status === "active" || account.subscription.status === "trialing" || !account.subscription.status,
+    subscriptionAccessAllowed: subscriptionAllowed,
+    subscriptionBlockedReason,
+    setupReady,
+    accessReady: setupReady && subscriptionAllowed,
     registry: registryResult,
     accountRegistryRecord: account,
     environment,
@@ -440,6 +446,14 @@ async function saveAutomationAccount(payload, options = {}) {
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
     accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
   };
+}
+
+function accountSetupReady(account) {
+  const source = account || {};
+  if (source.productPlan === "essential") return true;
+  const codes = Array.isArray(source.coachAccessCodes) ? source.coachAccessCodes : [];
+  const coachAccessReady = source.requireCoachAccess === false || codes.length > 0;
+  return !!(source.token && source.locationId && coachAccessReady);
 }
 
 async function accountRegistry(req, res) {

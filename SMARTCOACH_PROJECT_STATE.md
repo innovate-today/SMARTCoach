@@ -417,6 +417,7 @@ Subscription/customer management:
 - Blank subscription status remains allowed during migration so current accounts do not get locked out.
 - Account status now separates setup readiness from access readiness, so a configured SMART Trak account can still show blocked when subscription status prevents Pro access.
 - Account status includes `subscriptionBlockedReason`, and onboarding displays that reason when a configured account is blocked by billing status.
+- Account automation/manual registry save responses now return the same `setupReady`, `accessReady`, `subscriptionAccessAllowed`, and `subscriptionBlockedReason` signals as account status.
 - Stopwatch, dashboard, Plan Builder, and Planning Setup now respect `accessReady: false` during account checks so blocked subscriptions stop cleanly instead of loading Pro data and failing later.
 - Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
 - Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.
