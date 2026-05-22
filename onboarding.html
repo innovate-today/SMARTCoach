@@ -298,6 +298,11 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <code id="stripeWebhookEndpointText">Endpoint hidden</code>
           <button type="button" class="secondary" onclick="copyEndpoint('stripe')">Copy Stripe Webhook Endpoint</button>
         </div>
+        <div class="setupnote"><b>Stripe events to send</b>Use subscription and checkout events so SMART Trak can grant access, update renewals, and block unpaid/canceled accounts.</div>
+        <div class="linkline">
+          <code id="stripeEventListText">Events hidden</code>
+          <button type="button" class="secondary" onclick="copyStripeEvents()">Copy Stripe Events</button>
+        </div>
       </div>
       <div class="automationgrid">
         <div class="payloadbox">
@@ -939,6 +944,7 @@ function renderAutomationPayloads(data){
   document.getElementById('automationPayloadText').textContent=JSON.stringify(payload,null,2);
   setEndpointText('automationEndpointText','/api/smart-trak/account-automation');
   setEndpointText('stripeWebhookEndpointText','/api/smart-trak/account-stripe-webhook');
+  setStripeEventList();
 }
 function setEndpointText(id,path){
   var el=document.getElementById(id);
@@ -952,6 +958,27 @@ function copyEndpoint(type){
   var label=type==='stripe'?'Stripe webhook endpoint copied.':'Automation endpoint copied.';
   var el=document.getElementById(id);
   copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'',label);
+}
+function stripeWebhookEvents(){
+  return [
+    'checkout.session.completed',
+    'customer.subscription.created',
+    'customer.subscription.updated',
+    'customer.subscription.deleted',
+    'invoice.payment_succeeded',
+    'invoice.payment_failed'
+  ];
+}
+function setStripeEventList(){
+  var el=document.getElementById('stripeEventListText');
+  if(!el)return;
+  el.dataset.events=stripeWebhookEvents().join('\n');
+  el.textContent='Events hidden';
+  el.title='Use the copy button instead of sharing this screen.';
+}
+function copyStripeEvents(){
+  var el=document.getElementById('stripeEventListText');
+  copyText(el&&el.dataset&&el.dataset.events?el.dataset.events:stripeWebhookEvents().join('\n'),'Stripe event list copied.');
 }
 function copyPayload(type){
   var id=type==='stripe'?'stripeMetadataText':'automationPayloadText';
