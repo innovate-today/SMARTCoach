@@ -809,6 +809,7 @@ function renderAutomationPayloads(data){
   var account=data.accountKey||document.getElementById('accountKey').value.trim();
   var metadata={
     accountKey:account,
+    smartcoach_account_key:account,
     productPlan:data.productPlan||document.getElementById('plan').value,
     coachSeats:String(data.coachSeats||document.getElementById('coachSeats').value||'1')
   };

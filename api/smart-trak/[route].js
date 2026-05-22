@@ -656,7 +656,24 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
 
 function automationAccountKey(payload) {
   return normalizeSetupAccountKey(
-    firstAutomationValue(payload, ["accountKey", "account", "tenant", "key", "locationName", "companyName", "client_reference_id"])
+    firstAutomationValue(payload, [
+      "accountKey",
+      "smartcoachAccountKey",
+      "smartCoachAccountKey",
+      "smarttrakAccountKey",
+      "smartTrakAccountKey",
+      "smartcoach_account_key",
+      "smartcoachAccount",
+      "smartcoach_account",
+      "smarttrak_account_key",
+      "account",
+      "tenant",
+      "key",
+      "locationName",
+      "companyName",
+      "client_reference_id",
+      "clientReferenceId",
+    ])
   );
 }
 
