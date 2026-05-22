@@ -467,7 +467,9 @@ function renderLookupResult(data){
     {label:'Plan',value:planLabel(record.productPlan)},
     {label:'Subscription',value:subscriptionLabel({subscription:sub})},
     {label:'Coach seats',value:coachSeatsLabel(record)},
-    {label:'Registry',value:registry.found?'Saved':'Not found'}
+    {label:'Registry',value:registry.found?'Saved':'Not found'},
+    {label:'Setup',value:data.setupReady?'Ready':'Needs setup'},
+    {label:'Access',value:data.accessReady?'Allowed':(data.subscriptionAccessAllowed===false?'Blocked':'Not ready')}
   ];
   document.getElementById('lookupResult').innerHTML=
     '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> Saved customer account record</span></div><button type="button" onclick="fillFormFromLookup()">Use In Form</button></div>'+
@@ -479,17 +481,23 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Subscription</b><span>'+esc(sub.stripeSubscriptionId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
+    '<div class="registryrow"><b>Access Status</b><span>'+esc(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready'))+'</span></div>'+
     '<div class="registryrow"><b>Last Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
     '<div class="registryrow"><b>Last Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
     '<div class="registryrow"><b>Updated</b><span>'+esc(record.updatedAt||'--')+'</span></div>'+
     automationHistoryHtml(record.automationEventHistory);
+  var guessedConfigured=(record.productPlan==='essential')||!!(record.locationId&&record.token&&((record.coachAccessCodes||[]).length||record.accessCode));
   currentSetup=Object.assign({},currentSetup||{},{
     accountKey:account,
     productPlan:record.productPlan||'pro',
     coachSeats:record.coachSeats||1,
     registry:{configured:!!registry.configured,found:!!registry.found},
     crmConfigured:!!(record.locationId&&record.token),
-    configured:(record.productPlan==='essential')||!!(record.locationId&&record.token&&((record.coachAccessCodes||[]).length||record.accessCode)),
+    configured:typeof data.setupReady==='boolean'?data.setupReady:guessedConfigured,
+    setupReady:typeof data.setupReady==='boolean'?data.setupReady:guessedConfigured,
+    accessReady:typeof data.accessReady==='boolean'?data.accessReady:undefined,
+    subscriptionAccessAllowed:data.subscriptionAccessAllowed,
+    subscriptionBlockedReason:data.subscriptionBlockedReason||'',
     coachAccessCodesConfigured:(record.coachAccessCodes||[]).length||(record.accessCode?1:0),
     subscription:sub,
     logoUrl:record.logoUrl||'',
@@ -930,11 +938,11 @@ function setupSignals(data){
   var registry=data.registry||{};
   var coachCodeCount=Number(data.coachAccessCodesConfigured)||((record.coachAccessCodes||[]).length)||(record.accessCode?1:0);
   var subscriptionStatus=String(sub.status||'').toLowerCase();
-  var subscriptionAllowed=!subscriptionStatus||subscriptionStatus==='active'||subscriptionStatus==='trialing';
+  var subscriptionAllowed=typeof data.subscriptionAccessAllowed==='boolean'?data.subscriptionAccessAllowed:(!subscriptionStatus||subscriptionStatus==='active'||subscriptionStatus==='trialing');
   var subscriptionBlockedReason=data.subscriptionBlockedReason||('SMART Trak access is blocked because this subscription is '+(subscriptionStatus||'inactive').replace('_',' ')+'.');
   var crmReady=plan==='essential'||!!data.crmConfigured||!!(record.locationId&&record.token);
   var coachCodesReady=plan==='essential'||coachCodeCount>0;
-  var configured=plan==='essential'||!!data.configured||(crmReady&&coachCodesReady);
+  var configured=typeof data.setupReady==='boolean'?data.setupReady:(plan==='essential'||!!data.configured||(crmReady&&coachCodesReady));
   return {
     accountKey:!!data.accountKey,
     registrySaved:!!(registry.saved||registry.found||record.updatedAt),

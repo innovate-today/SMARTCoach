@@ -481,16 +481,24 @@ async function accountRegistry(req, res) {
     const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key)));
     if (!accountKey) throw httpError(400, "Account key is required.");
     const result = await loadAccountRecord(accountKey);
+    const record = result.record || null;
+    const setupReady = result.found ? accountSetupReady(record) : false;
+    const subscriptionAllowed = result.found ? subscriptionAccessAllowed(record && record.subscription) : false;
+    const subscriptionBlockedReason = result.found && !subscriptionAllowed ? subscriptionBlockedMessage(record && record.subscription) : "";
     res.status(result.found ? 200 : 404).json({
       success: !!result.found,
       accountKey,
+      setupReady,
+      accessReady: setupReady && subscriptionAllowed,
+      subscriptionAccessAllowed: subscriptionAllowed,
+      subscriptionBlockedReason,
       registry: {
         configured: !!result.configured,
         found: !!result.found,
         key: result.key || "",
         error: result.error || undefined,
       },
-      accountRegistryRecord: result.record || null,
+      accountRegistryRecord: record,
       error: result.found ? undefined : result.configured ? "Account registry record was not found." : "Account registry is not configured.",
     });
   } catch (error) {

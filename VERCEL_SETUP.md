@@ -51,7 +51,7 @@ SMART Trak Pro access is allowed when subscription status is blank, `active`, or
 
 Account status separates setup readiness from access readiness. A customer can be fully configured while still showing `accessReady: false` when the subscription status is blocking Pro access. The same response includes `subscriptionBlockedReason` so support can see the plain-language reason immediately.
 
-Automation and manual registry-save responses return the same readiness fields, so Stripe/GHL updates and internal support saves can be checked without calling account status separately.
+Automation, manual registry-save, and account registry lookup responses return the same readiness fields, so Stripe/GHL updates and internal support checks can confirm setup/access state without calling account status separately.
 
 Coach-facing pages use `accessReady` during account checks, so a subscription-blocked Pro account stops with a clear access-blocked message instead of continuing into dashboard or planning data calls.
 
