@@ -87,6 +87,20 @@ withEnv({
     assert.strictEqual(blockedAccess.statusCode, 402);
   });
 
+  withEnv({ SMARTCOACH_SUBSCRIPTION_STATUS_TEST: "payment failed" }, () => {
+    const blockedRes = mockRes();
+    assert.strictEqual(requireProPlan(req(), blockedRes), false);
+    assert.strictEqual(blockedRes.statusCode, 402);
+    assert.strictEqual(blockedRes.body.subscriptionStatus, "past_due");
+  });
+
+  withEnv({ SMARTCOACH_SUBSCRIPTION_STATUS_TEST: "cancelled" }, () => {
+    const blockedRes = mockRes();
+    assert.strictEqual(requireProPlan(req(), blockedRes), false);
+    assert.strictEqual(blockedRes.statusCode, 402);
+    assert.strictEqual(blockedRes.body.subscriptionStatus, "canceled");
+  });
+
   withEnv({ SMARTCOACH_PRODUCT_PLAN_TEST: "essential" }, () => {
     const essentialRes = mockRes();
     assert.strictEqual(requireProPlan(req(), essentialRes), false);

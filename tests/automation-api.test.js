@@ -367,6 +367,72 @@ async function testPartialAutomationPreservesSavedConnection() {
   }
 }
 
+async function testAutomationSubscriptionStatusAliases() {
+  const previousFetch = global.fetch;
+  const cases = [
+    ["paid", "active"],
+    ["payment failed", "past_due"],
+    ["failed payment", "past_due"],
+    ["cancelled", "canceled"],
+    ["pending", "incomplete"],
+    ["not paid", "unpaid"],
+    ["unexpected workflow text", "incomplete"],
+  ];
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      for (const [input, expected] of cases) {
+        let savedRecord = null;
+        global.fetch = async (url) => {
+          const text = String(url);
+          if (text.includes("/get/")) {
+            return {
+              ok: true,
+              status: 200,
+              text: async () => JSON.stringify({ result: "" }),
+            };
+          }
+          if (text.includes("/set/")) {
+            const encodedPayload = text.split("/set/")[1].split("/").slice(1).join("/");
+            savedRecord = JSON.parse(decodeURIComponent(encodedPayload));
+            return {
+              ok: true,
+              status: 200,
+              text: async () => JSON.stringify({ result: "OK" }),
+            };
+          }
+          throw new Error(`Unexpected registry call: ${text}`);
+        };
+
+        const res = mockRes();
+        await handler({
+          method: "POST",
+          query: { route: "account-automation" },
+          headers: { "x-smartcoach-automation-secret": "automation-secret" },
+          body: {
+            accountKey: `status-${expected.replace(/_/g, "-")}`,
+            productPlan: "pro",
+            privateIntegrationToken: "pit",
+            locationId: "loc",
+            coachAccessCodes: "coach-code",
+            subscriptionStatus: input,
+          },
+        }, res);
+
+        assert.strictEqual(res.statusCode, 200);
+        assert.strictEqual(savedRecord.subscription.status, expected);
+        assert.strictEqual(res.body.subscriptionAccessAllowed, expected === "active" || expected === "trialing");
+      }
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAutomationHealthLaunchReady() {
   const previousFetch = global.fetch;
   global.fetch = async (url) => {
@@ -595,6 +661,7 @@ async function testRegistryLookupHidesSecrets() {
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testInvalidStripeWebhookDoesNotTouchRegistry();
   await testPartialAutomationPreservesSavedConnection();
+  await testAutomationSubscriptionStatusAliases();
   await testAutomationHealthLaunchReady();
   await testParentEmailReleaseGate();
   await testCoachAccessRateLimit();
