@@ -287,12 +287,12 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <strong>Automation Endpoints</strong>
         <span>Use GHL's native Stripe payments first, then have GHL call SMART Trak automation. The direct Stripe webhook is optional fallback wiring.</span>
         <div class="linkdetails">
-          <div class="linkdetail"><b>Account Automation</b><span>Protected POST</span></div>
-          <div class="linkdetail"><b>Stripe Webhook</b><span>Signed POST</span></div>
+          <div class="linkdetail"><b>GHL Workflow</b><span>Recommended protected POST</span></div>
+          <div class="linkdetail"><b>Stripe Webhook</b><span>Optional signed fallback</span></div>
         </div>
         <div class="linkline">
           <code id="automationEndpointText">Endpoint hidden</code>
-          <button type="button" class="secondary" onclick="copyEndpoint('automation')">Copy Automation Endpoint</button>
+          <button type="button" class="secondary" onclick="copyEndpoint('automation')">Copy GHL Workflow Endpoint</button>
         </div>
         <div class="linkline">
           <code id="stripeWebhookEndpointText">Endpoint hidden</code>
@@ -312,10 +312,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <button type="button" class="secondary" onclick="copyPayload('stripe')">Copy Stripe Metadata</button>
         </div>
         <div class="payloadbox">
-          <strong>Automation Payload</strong>
-          <span>Use this JSON body with the protected account automation endpoint.</span>
+          <strong>GHL Workflow Payload</strong>
+          <span>Use this JSON body in the GHL workflow action that updates SMART Trak after subscription changes.</span>
           <pre id="automationPayloadText"></pre>
-          <button type="button" class="secondary" onclick="copyPayload('automation')">Copy Automation Payload</button>
+          <button type="button" class="secondary" onclick="copyPayload('automation')">Copy GHL Payload</button>
         </div>
       </div>
     </div>
@@ -993,7 +993,7 @@ function setEndpointText(id,path){
 }
 function copyEndpoint(type){
   var id=type==='stripe'?'stripeWebhookEndpointText':'automationEndpointText';
-  var label=type==='stripe'?'Stripe webhook endpoint copied.':'Automation endpoint copied.';
+  var label=type==='stripe'?'Stripe webhook endpoint copied.':'GHL workflow endpoint copied.';
   var el=document.getElementById(id);
   copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'',label);
 }
@@ -1020,7 +1020,7 @@ function copyStripeEvents(){
 }
 function copyPayload(type){
   var id=type==='stripe'?'stripeMetadataText':'automationPayloadText';
-  var label=type==='stripe'?'Stripe metadata copied.':'Automation payload copied.';
+  var label=type==='stripe'?'Stripe metadata copied.':'GHL workflow payload copied.';
   copyText(document.getElementById(id).textContent,label);
 }
 function updateVariableValue(index,value){

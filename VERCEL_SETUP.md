@@ -181,6 +181,15 @@ Example payload:
 }
 ```
 
+For the recommended GHL workflow action, use:
+
+- Method: `POST`
+- URL: `/api/smart-trak/account-automation`
+- Header: `X-SMARTCoach-Automation-Secret: your_secret`
+- Body type: raw JSON
+
+Send the customer's SMARTCoach account key plus subscription fields from the GHL/Stripe payment record. If GHL does not have a Stripe field available, leave it blank; the registry merge will preserve already saved values.
+
 The endpoint validates the automation secret, normalizes the account data, saves it to the durable registry when registry variables are configured, and returns the exact setup fields needed for the account. Later automation calls can send only subscription/billing fields for the same `accountKey`; SMART Trak merges those updates into the existing registry record so the customer's location ID, token, coach seats, and coach access codes are preserved.
 
 Missing or wrong automation secrets are rejected before the durable account registry is read or written.

@@ -422,6 +422,7 @@ Subscription/customer management:
 - Athletes, Training Calendar, Plan Entry, Meet History, Records, and XC Simulator now also check `accessReady` before loading SMART Trak data, so blocked subscriptions show a clear access-blocked message across the main coach pages.
 - Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
 - Launch billing guidance now treats GHL's native Stripe integration as the preferred payment/subscription path, with SMART Trak receiving subscription/access updates from GHL automation. Direct Stripe webhooks remain available as an optional fallback.
+- `/onboarding.html` now labels the recommended automation copy as the GHL workflow endpoint/payload, with direct Stripe webhook wording kept secondary.
 - Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.
 - Added signed coach session support behind `SMARTCOACH_SESSION_SECRET`.
 - Dashboard now exchanges a valid coach access code for a temporary session token and stops sending the raw code on each dashboard request when a session exists.
