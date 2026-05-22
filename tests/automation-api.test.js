@@ -298,11 +298,51 @@ async function testParentEmailReleaseGate() {
   });
 }
 
+async function testCoachAccessRateLimit() {
+  await withEnv({
+    SMARTCOACH_PRODUCT_PLAN_RATELIMIT: "pro",
+    GHL_PRIVATE_INTEGRATION_TOKEN_RATELIMIT: "token",
+    GHL_LOCATION_ID_RATELIMIT: "location",
+    SMARTCOACH_COACH_ACCESS_CODES_RATELIMIT: "coach-one",
+    SMARTCOACH_REQUIRE_COACH_ACCESS_RATELIMIT: "true",
+    SMARTCOACH_SUBSCRIPTION_STATUS_RATELIMIT: "active",
+    SMARTCOACH_SESSION_SECRET: "session-secret",
+  }, async () => {
+    for (let i = 0; i < 8; i += 1) {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-session" },
+        headers: { "x-forwarded-for": "127.0.0.31" },
+        body: { accountKey: "ratelimit", accessCode: `wrong-code-${i}` },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 401);
+      assert.strictEqual(res.body.allowed, false);
+      assert.strictEqual(res.body.accessCodeRequired, true);
+      if (i === 7) assert.ok(Number(res.headers["Retry-After"]) > 0);
+    }
+
+    const blockedRes = mockRes();
+    await handler({
+      method: "POST",
+      query: { route: "account-session" },
+      headers: { "x-forwarded-for": "127.0.0.31" },
+      body: { accountKey: "ratelimit", accessCode: "coach-one" },
+    }, blockedRes);
+
+    assert.strictEqual(blockedRes.statusCode, 429);
+    assert.match(blockedRes.body.error, /Too many access attempts/);
+    assert.ok(Number(blockedRes.headers["Retry-After"]) > 0);
+  });
+}
+
 (async () => {
   await testAutomationDryRunDoesNotSave();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testAutomationHealthLaunchReady();
   await testParentEmailReleaseGate();
+  await testCoachAccessRateLimit();
   console.log("automation API dry-run and Stripe idempotency tests passed");
 })().catch((error) => {
   console.error(error);

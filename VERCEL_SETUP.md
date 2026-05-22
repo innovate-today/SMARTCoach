@@ -137,6 +137,8 @@ Session length can be adjusted with `SMARTCOACH_SESSION_TTL_SECONDS`. Values are
 
 Coach access-code attempts are throttled per account and IP address. Repeated wrong codes are paused temporarily and return `429` with `Retry-After`, which helps protect customer dashboards from brute-force access-code guessing.
 
+Regression tests verify the coach access-code pause after repeated wrong attempts.
+
 SMART Trak API responses are sent with no-store security headers so account status, coach session responses, roster data, and training data are not cached by browsers or shared proxies.
 
 Coach-facing SMART Trak HTML pages are also served with no-store, noindex, no-referrer, and nosniff headers through `vercel.json`. This keeps embedded dashboard pages out of search indexes and reduces stale-page/cached-session surprises for coaches.
