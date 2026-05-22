@@ -1094,14 +1094,18 @@ function submitAccess(){
     if(result.ok&&result.data&&result.data.sessionToken){
       setSessionToken(result.data.sessionToken);
       setAccessCode('');
+      els.accessPanel.hidden=true;
+      els.mainPage.hidden=false;
+      loadRecords();
+      return;
     }
-    els.accessPanel.hidden=true;
-    els.mainPage.hidden=false;
-    loadRecords();
+    setAccessCode('');
+    els.accessStatus.textContent=(result.data&&result.data.error)||'Access code was not accepted.';
+    els.accessStatus.style.color='var(--warn)';
   }).catch(function(){
-    els.accessPanel.hidden=true;
-    els.mainPage.hidden=false;
-    loadRecords();
+    setAccessCode('');
+    els.accessStatus.textContent='Access could not be checked. Try again.';
+    els.accessStatus.style.color='var(--warn)';
   });
 }
 function init(){

@@ -1542,12 +1542,17 @@ function submitDashboardAccessCode(){
     if(result.ok&&result.data&&result.data.sessionToken){
       setSmartCoachSession(result.data.sessionToken);
       setSmartCoachAccessCode('');
+      els.accessModal.hidden=true;
+      loadDashboard();
+      return;
     }
-    els.accessModal.hidden=true;
-    loadDashboard();
+    setSmartCoachAccessCode('');
+    els.accessStatus.textContent=(result.data&&result.data.error)||'Access code was not accepted.';
+    els.accessStatus.style.color='#b00000';
   }).catch(function(){
-    els.accessModal.hidden=true;
-    loadDashboard();
+    setSmartCoachAccessCode('');
+    els.accessStatus.textContent='Access could not be checked. Try again.';
+    els.accessStatus.style.color='#b00000';
   });
 }
 
