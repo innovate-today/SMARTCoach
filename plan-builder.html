@@ -156,8 +156,14 @@ function setSmartCoachAccountKey(value){
 function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();
 }
+function sessionStorageKey(){
+  return 'sc_session_'+smartCoachAccountKey();
+}
 function smartCoachAccessCode(){
   try{return localStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
+}
+function smartCoachSession(){
+  try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
 }
 function productPlan(){
   try{
@@ -298,8 +304,10 @@ function checkSmartCoachAccount(){
       init=init||{};
       var headers=new Headers(init.headers||{});
       headers.set('X-SMARTCoach-Account',smartCoachAccountKey());
+      var session=smartCoachSession();
+      if(session)headers.set('X-SMARTCoach-Session',session);
       var accessCode=smartCoachAccessCode();
-      if(accessCode)headers.set('X-SMARTCoach-Access-Code',accessCode);
+      if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
       init.headers=headers;
     }
     return nativeFetch(input,init);

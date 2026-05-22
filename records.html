@@ -444,6 +444,7 @@ function pageUrl(path){
   return url.pathname+url.search;
 }
 function accessStorageKey(){return 'sc_access_'+accountKey();}
+function sessionStorageKey(){return 'sc_session_'+accountKey();}
 function accessCookieName(){return accessStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');}
 function getCookie(name){
   try{
@@ -462,10 +463,18 @@ function setAccessCode(value){
   try{localStorage.setItem(accessStorageKey(),code);}catch(e){}
   setCookie(accessCookieName(),code);
 }
+function sessionToken(){
+  try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
+}
+function setSessionToken(value){
+  try{if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());else sessionStorage.removeItem(sessionStorageKey());}catch(e){}
+}
 function apiHeaders(){
   var headers={'X-SMARTCoach-Account':accountKey()};
+  var session=sessionToken();
   var code=accessCode();
-  if(code)headers['X-SMARTCoach-Access-Code']=code;
+  if(session)headers['X-SMARTCoach-Session']=session;
+  if(code&&!session)headers['X-SMARTCoach-Access-Code']=code;
   return headers;
 }
 function esc(value){
@@ -1079,9 +1088,21 @@ function submitAccess(){
     return;
   }
   setAccessCode(els.accessCode.value);
-  els.accessPanel.hidden=true;
-  els.mainPage.hidden=false;
-  loadRecords();
+  fetch('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:accountKey(),accessCode:els.accessCode.value.trim()})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(result.ok&&result.data&&result.data.sessionToken){
+      setSessionToken(result.data.sessionToken);
+      setAccessCode('');
+    }
+    els.accessPanel.hidden=true;
+    els.mainPage.hidden=false;
+    loadRecords();
+  }).catch(function(){
+    els.accessPanel.hidden=true;
+    els.mainPage.hidden=false;
+    loadRecords();
+  });
 }
 function init(){
   els.toolsBody.hidden=true;
