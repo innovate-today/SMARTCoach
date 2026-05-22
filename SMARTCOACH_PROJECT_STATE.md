@@ -480,9 +480,9 @@ Parent communication:
   - open a mail draft with parent emails in BCC
   - copy parent emails to clipboard
 - Athlete detail now has a one-athlete parent email action when a parent email is saved.
+- Athletes page now includes a group filter, so coaches can filter to a training group and email/copy those parents without manually searching.
 - Full parent communication is still planned.
 - Later need deeper ways to email:
-  - whole group directly
   - selected athletes' parents
 - Coach should not have to find parent emails manually.
 
