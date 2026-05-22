@@ -173,6 +173,8 @@ Set this Vercel variable first:
 
 Use the signing secret from the Stripe webhook endpoint settings. The route verifies `Stripe-Signature` before updating the account registry. Put the SMARTCoach account key in Stripe metadata as `accountKey` so the webhook knows which customer account to update.
 
+Stripe webhooks only return success after the account registry update is saved. If the registry is missing or unavailable, the webhook returns an error so Stripe can retry the subscription update instead of marking it handled.
+
 ## Durable Account Registry
 
 For automated onboarding/subscription updates, add a small persistent registry. The current implementation supports a Vercel KV / Upstash Redis REST store.

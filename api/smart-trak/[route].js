@@ -350,6 +350,13 @@ async function accountStripeWebhook(req, res) {
     verifyStripeSignature(rawBody, signature, secret);
     const payload = JSON.parse(rawBody || "{}");
     const result = await saveAutomationAccount(payload, { source: "stripe-webhook" });
+    if (!result.registry || !result.registry.saved) {
+      throw httpError(
+        503,
+        (result.registry && (result.registry.reason || result.registry.error)) ||
+          "Stripe webhook could not save the account registry update."
+      );
+    }
     res.status(200).json({
       success: true,
       stripeWebhookVerified: true,
