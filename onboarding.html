@@ -728,7 +728,7 @@ function renderReadiness(data){
   readyBar.className='readybar'+(configured&&subscriptionAllowed?' good':' bad');
   if(configured&&!subscriptionAllowed){
     title.textContent='SMART Trak access blocked';
-    detail.textContent='The SMART Trak connection is configured, but the subscription status is blocking Pro access.';
+    detail.textContent=data.subscriptionBlockedReason||'The SMART Trak connection is configured, but the subscription status is blocking Pro access.';
     return;
   }
   if(configured){
@@ -763,7 +763,7 @@ function checkSetupStatus(){
     renderReadiness(currentSetup);
     renderChecklist(currentSetup);
     if(data.configured&&data.subscriptionAccessAllowed===false){
-      setStatus('Account setup is complete, but subscription status is blocking SMART Trak access.','bad');
+      setStatus(data.subscriptionBlockedReason||'Account setup is complete, but subscription status is blocking SMART Trak access.','bad');
     }else if(data.configured){
       setStatus('Account is ready.','good');
     }else if(data.productPlan==='essential'){
@@ -897,7 +897,9 @@ function renderChecklist(data){
     },
     {
       title:'Track the customer subscription',
-      body:'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. Athlete limits stay in GHL.',
+      body:signals.subscriptionAllowed
+        ?'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. Athlete limits stay in GHL.'
+        :signals.subscriptionBlockedReason,
       state:signals.subscriptionAllowed?'good':'bad',
       status:signals.subscriptionAllowed?'Access allowed':'Access blocked'
     },
@@ -929,6 +931,7 @@ function setupSignals(data){
   var coachCodeCount=Number(data.coachAccessCodesConfigured)||((record.coachAccessCodes||[]).length)||(record.accessCode?1:0);
   var subscriptionStatus=String(sub.status||'').toLowerCase();
   var subscriptionAllowed=!subscriptionStatus||subscriptionStatus==='active'||subscriptionStatus==='trialing';
+  var subscriptionBlockedReason=data.subscriptionBlockedReason||('SMART Trak access is blocked because this subscription is '+(subscriptionStatus||'inactive').replace('_',' ')+'.');
   var crmReady=plan==='essential'||!!data.crmConfigured||!!(record.locationId&&record.token);
   var coachCodesReady=plan==='essential'||coachCodeCount>0;
   var configured=plan==='essential'||!!data.configured||(crmReady&&coachCodesReady);
@@ -936,6 +939,7 @@ function setupSignals(data){
     accountKey:!!data.accountKey,
     registrySaved:!!(registry.saved||registry.found||record.updatedAt),
     subscriptionAllowed:subscriptionAllowed,
+    subscriptionBlockedReason:subscriptionAllowed?'':subscriptionBlockedReason,
     crmReady:crmReady,
     coachCodesReady:coachCodesReady,
     accountConfigured:configured

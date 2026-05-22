@@ -21,6 +21,7 @@ const {
   coachSessionSecretSource,
   coachSessionTtlSeconds,
   subscriptionAccessAllowed,
+  subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
 const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
@@ -91,6 +92,7 @@ async function accountStatus(req, res) {
   const coachAccessConfigured = !requireCoachAccess || configuredCoachCodes > 0;
   const configured = productPlan === "essential" || (crmConfigured && coachAccessConfigured);
   const subscriptionAllowed = subscriptionAccessAllowed(subscription);
+  const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(subscription);
   const missing = [];
   if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
@@ -110,6 +112,7 @@ async function accountStatus(req, res) {
     accessCodeMissing: !!requireCoachAccess && configuredCoachCodes < 1,
     subscription: publicSubscriptionSummary(subscription),
     subscriptionAccessAllowed: subscriptionAllowed,
+    subscriptionBlockedReason,
     registry: {
       configured: !!registry.configured,
       found: !!registry.found,
@@ -120,7 +123,7 @@ async function accountStatus(req, res) {
     logoUrl: logoUrl || "",
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
-    error: configured ? undefined : `SMARTCoach account "${accountKey}" is not configured.`,
+    error: configured ? subscriptionBlockedReason || undefined : `SMARTCoach account "${accountKey}" is not configured.`,
   });
 }
 

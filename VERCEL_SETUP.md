@@ -49,7 +49,7 @@ These fields are for internal subscription tracking. Only the safe summary field
 
 SMART Trak Pro access is allowed when subscription status is blank, `active`, or `trialing`. Setting the status to `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, or `unpaid` blocks Pro SMART Trak API access for that account. Blank status is currently allowed so existing customer accounts are not accidentally locked out during migration.
 
-Account status separates setup readiness from access readiness. A customer can be fully configured while still showing `accessReady: false` when the subscription status is blocking Pro access.
+Account status separates setup readiness from access readiness. A customer can be fully configured while still showing `accessReady: false` when the subscription status is blocking Pro access. The same response includes `subscriptionBlockedReason` so support can see the plain-language reason immediately.
 
 Coach-facing pages use `accessReady` during account checks, so a subscription-blocked Pro account stops with a clear access-blocked message instead of continuing into dashboard or planning data calls.
 
