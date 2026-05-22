@@ -632,6 +632,7 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const requireCoachAccessValue = firstAutomationValue(payload, ["requireCoachAccess", "coachAccessRequired", "requireAccessCode"]);
   const requireCoachAccess = productPlan === "pro" ? normalizeSetupBoolean(requireCoachAccessValue, existing.requireCoachAccess !== undefined ? existing.requireCoachAccess : true) : false;
   const event = automationEventSummary(payload, options);
+  const automationEventHistory = automationEventHistoryFor(existing.automationEventHistory, event);
   return {
     accountKey,
     productPlan,
@@ -643,6 +644,7 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     subscription,
     logoUrl: cleanSetupText(logoValue || existing.logoUrl),
     lastAutomationEvent: event,
+    automationEventHistory,
   };
 }
 
@@ -664,6 +666,22 @@ function automationEventSummary(payload, options = {}) {
     stripeObjectId: cleanSetupText(object.id || ""),
     receivedAt: new Date().toISOString(),
   };
+}
+
+function automationEventHistoryFor(existingHistory, event) {
+  const history = Array.isArray(existingHistory) ? existingHistory.filter(Boolean) : [];
+  const current = event || {};
+  const key = automationEventKey(current);
+  const withoutDuplicate = key ? history.filter((item) => automationEventKey(item) !== key) : history;
+  return [current, ...withoutDuplicate].slice(0, 10);
+}
+
+function automationEventKey(event) {
+  const source = event || {};
+  if (source.stripeEventId) return `stripe:${source.stripeEventId}`;
+  if (source.stripeObjectId && source.eventType) return `${source.eventType}:${source.stripeObjectId}`;
+  if (source.source && source.eventType && source.receivedAt) return `${source.source}:${source.eventType}:${source.receivedAt}`;
+  return "";
 }
 
 function accountEnvironmentRows({ suffix, account, includeCrm }) {

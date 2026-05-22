@@ -478,7 +478,8 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
     '<div class="registryrow"><b>Last Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
     '<div class="registryrow"><b>Last Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
-    '<div class="registryrow"><b>Updated</b><span>'+esc(record.updatedAt||'--')+'</span></div>';
+    '<div class="registryrow"><b>Updated</b><span>'+esc(record.updatedAt||'--')+'</span></div>'+
+    automationHistoryHtml(record.automationEventHistory);
   currentSetup=Object.assign({},currentSetup||{},{
     accountKey:account,
     productPlan:record.productPlan||'pro',
@@ -528,6 +529,17 @@ function lastEventLabel(event, part){
   var label=source.eventType||'--';
   if(source.stripeEventId)label+=' / '+source.stripeEventId;
   return label;
+}
+function automationHistoryHtml(history){
+  var items=Array.isArray(history)?history.filter(Boolean).slice(0,5):[];
+  if(!items.length)return '';
+  return '<div class="registrytitle"><div><b>Recent Automation</b><span> Last '+items.length+' account update'+(items.length===1?'':'s')+'</span></div></div>'+
+    items.map(function(item){
+      var label=lastEventLabel(item,'event');
+      var source=lastEventLabel(item,'source');
+      var time=item.receivedAt||'--';
+      return '<div class="registryrow"><b>'+esc(source)+'</b><span>'+esc(label)+' · '+esc(time)+'</span></div>';
+    }).join('');
 }
 function saveRegistryUpdate(){
   var payload=registryPayloadFromForm();

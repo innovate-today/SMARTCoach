@@ -212,7 +212,7 @@ Vercel KV/Upstash aliases are also supported:
 
 When the registry is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. That means plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL can be updated by automation without adding a new Vercel variable for each customer update.
 
-Each saved registry record also stores a small `lastAutomationEvent` stamp with the last update source, event type, optional Stripe event/object IDs, and received time. This is shown in the internal account lookup to help troubleshoot whether the latest change came from manual setup, GHL automation, or a Stripe webhook.
+Each saved registry record also stores a small `lastAutomationEvent` stamp and a short `automationEventHistory` list with recent update source, event type, optional Stripe event/object IDs, and received time. This is shown in the internal account lookup to help troubleshoot whether recent changes came from manual setup, GHL automation, or a Stripe webhook.
 
 You can verify a saved account with:
 
