@@ -11,7 +11,7 @@ const handlers = {
   "sync-session": require("../ghl/sync-session"),
   "training-plan": require("../ghl/training-plan"),
 };
-const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
+const { getGhlContext, requireProPlan, subscriptionAccessAllowed } = require("../../lib/ghl-account");
 
 module.exports = async function handler(req, res) {
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
@@ -53,6 +53,7 @@ function accountStatus(req, res) {
   const configuredCoachCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes.length : accessCode ? 1 : 0;
   const crmConfigured = !!(token && locationId);
   const configured = productPlan === "essential" || crmConfigured;
+  const subscriptionAllowed = subscriptionAccessAllowed(subscription);
   const missing = [];
   if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
@@ -67,6 +68,7 @@ function accountStatus(req, res) {
     accessCodeRequired: configuredCoachCodes > 0,
     coachAccessRequired: configuredCoachCodes > 0,
     subscription: publicSubscriptionSummary(subscription),
+    subscriptionAccessAllowed: subscriptionAllowed,
     logoUrl: logoUrl || "",
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,

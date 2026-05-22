@@ -413,6 +413,8 @@ Subscription/customer management:
   - renewal date
   - Stripe customer/subscription IDs
   - internal subscription notes
+- SMART Trak Pro API access is blocked when subscription status is `past_due`, `paused`, `canceled`, or `incomplete`.
+- Blank subscription status remains allowed during migration so current accounts do not get locked out.
 - Need cleaner onboarding after purchase:
   - coach buys on website
   - account key generated

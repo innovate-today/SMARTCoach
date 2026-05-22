@@ -47,6 +47,8 @@ Recommended subscription tracking variables:
 
 These fields are for internal subscription tracking. Only the safe summary fields are returned through account status. Athlete limits remain controlled in GHL.
 
+SMART Trak Pro access is allowed when subscription status is blank, `active`, or `trialing`. Setting the status to `past_due`, `paused`, `canceled`, or `incomplete` blocks Pro SMART Trak API access for that account. Blank status is currently allowed so existing customer accounts are not accidentally locked out during migration.
+
 Pro accounts need all three:
 
 - `SMARTCOACH_PRODUCT_PLAN_LINCOLNTRACK=pro`
