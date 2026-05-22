@@ -6,14 +6,18 @@ const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
+const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
 module.exports = async function handler(req, res) {
+  setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
   }
+
+  await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
 

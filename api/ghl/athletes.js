@@ -4,6 +4,7 @@ const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const CLASS_YEAR_TAG_PREFIX = "smartcoach-class-";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
+const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
 const ATHLETE_FIELD_ALIASES = {
   gender: ["gender", "sex", "division"],
@@ -18,12 +19,15 @@ const ATHLETE_FIELD_ALIASES = {
 };
 
 module.exports = async function handler(req, res) {
+  setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
   }
+
+  await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
 

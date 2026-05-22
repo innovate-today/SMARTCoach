@@ -1,10 +1,14 @@
 const syncSession = require("./sync-session");
 const { requireProPlan } = require("../../lib/ghl-account");
+const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
 module.exports = async function handler(req, res) {
+  setSmartTrakSecurityHeaders(res);
   if (req.method === "OPTIONS") {
     return syncSession(req, res);
   }
+
+  await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
 

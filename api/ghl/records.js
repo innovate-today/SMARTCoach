@@ -2,6 +2,7 @@ const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
+const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
 const FIELD_IDS = {
   record: ["ftIsXzZszu3s0cfJ55MU"],
@@ -30,12 +31,15 @@ const FIELD_IDS = {
 };
 
 module.exports = async function handler(req, res) {
+  setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
   }
+
+  await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
 

@@ -111,6 +111,8 @@ SMART Trak API responses are sent with no-store security headers so account stat
 
 Coach-facing SMART Trak HTML pages are also served with no-store, noindex, no-referrer, and nosniff headers through `vercel.json`. This keeps embedded dashboard pages out of search indexes and reduces stale-page/cached-session surprises for coaches.
 
+Legacy `/api/ghl/*` SMART Trak routes also attach the durable account registry before checking Pro access. That keeps direct older route calls aligned with the automated subscription/account registry, instead of falling back only to environment variables.
+
 ## Automation Intake
 
 Set this secret before connecting GHL or Stripe automations:

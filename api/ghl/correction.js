@@ -4,6 +4,7 @@ const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
+const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
   meet_result: ["Khq47asHEk0tRieDVUBg"],
@@ -44,12 +45,15 @@ const RECORD_FIELD_IDS = {
 };
 
 module.exports = async function handler(req, res) {
+  setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
   }
+
+  await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
 

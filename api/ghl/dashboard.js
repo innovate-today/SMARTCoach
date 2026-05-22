@@ -6,6 +6,7 @@ const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
+const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
@@ -42,12 +43,15 @@ const FIELD_IDS = {
 };
 
 module.exports = async function handler(req, res) {
+  setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
   }
+
+  await attachRegistryAccount(req);
 
   if (!requireProPlan(req, res)) return;
 
