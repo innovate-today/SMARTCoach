@@ -112,9 +112,9 @@ async function accountStatus(req, res) {
     coach: coachSession ? {
       index: Number(coachSession.coachIndex) || 0,
       label: `Coach ${(Number(coachSession.coachIndex) || 0) + 1}`,
-      parentEmailAllowed: !!coachSession.parentEmailAllowed,
+      parentEmailAllowed: parentEmailFeatureReleased() && !!coachSession.parentEmailAllowed,
     } : null,
-    parentEmailToolsAllowed: !!(coachSession && coachSession.parentEmailAllowed),
+    parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(coachSession && coachSession.parentEmailAllowed),
     accessCodeRequired: configuredCoachCodes > 0 || !!requireCoachAccess,
     coachAccessRequired: configuredCoachCodes > 0 || !!requireCoachAccess,
     accessCodeMissing: !!requireCoachAccess && configuredCoachCodes < 1,
@@ -560,7 +560,8 @@ async function accountSession(req, res) {
       return;
     }
     clearSessionFailures({ accountKey, ip });
-    const session = createCoachSession(accountKey, { coachIndex: access.coachIndex, parentEmailAllowed: access.parentEmailAllowed });
+    const parentEmailAllowed = parentEmailFeatureReleased() && !!access.parentEmailAllowed;
+    const session = createCoachSession(accountKey, { coachIndex: access.coachIndex, parentEmailAllowed });
     if (!session) {
       res.status(500).json({
         error: "SMART Trak session signing is not configured.",
@@ -574,7 +575,7 @@ async function accountSession(req, res) {
       productPlan: access.productPlan,
       coachSeats: access.coachSeats,
       coachIndex: access.coachIndex,
-      parentEmailAllowed: !!access.parentEmailAllowed,
+      parentEmailAllowed,
       sessionToken: session.token,
       expiresAt: session.expiresAt,
       expiresAtIso: session.expiresAtIso,
@@ -892,6 +893,10 @@ function normalizeSetupBoolean(value, fallback) {
   if (["1", "true", "yes", "on"].includes(raw)) return true;
   if (["0", "false", "no", "off"].includes(raw)) return false;
   return !!fallback;
+}
+
+function parentEmailFeatureReleased() {
+  return normalizeSetupBoolean(process.env.SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED, false);
 }
 
 function normalizeMoneyAmount(value) {
