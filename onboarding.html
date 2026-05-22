@@ -285,7 +285,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelbody">
       <div class="payloadbox" style="margin-bottom:10px">
         <strong>Automation Endpoints</strong>
-        <span>Use these production URLs when wiring GHL/Stripe automation. Keep the automation secret and Stripe signing secret private.</span>
+        <span>Use GHL's native Stripe payments first, then have GHL call SMART Trak automation. The direct Stripe webhook is optional fallback wiring.</span>
         <div class="linkdetails">
           <div class="linkdetail"><b>Account Automation</b><span>Protected POST</span></div>
           <div class="linkdetail"><b>Stripe Webhook</b><span>Signed POST</span></div>
@@ -298,7 +298,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <code id="stripeWebhookEndpointText">Endpoint hidden</code>
           <button type="button" class="secondary" onclick="copyEndpoint('stripe')">Copy Stripe Webhook Endpoint</button>
         </div>
-        <div class="setupnote"><b>Stripe events to send</b>Use subscription and checkout events so SMART Trak can grant access, update renewals, and block unpaid/canceled accounts.</div>
+        <div class="setupnote"><b>Recommended payment flow</b>Let GHL handle Stripe subscription payment status, then send SMART Trak the account key, plan, status, renewal, and Stripe IDs through the protected automation endpoint.</div>
         <div class="linkline">
           <code id="stripeEventListText">Events hidden</code>
           <button type="button" class="secondary" onclick="copyStripeEvents()">Copy Stripe Events</button>
@@ -307,7 +307,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="automationgrid">
         <div class="payloadbox">
           <strong>Stripe Metadata</strong>
-          <span>Add these metadata fields to the Stripe checkout/subscription/customer when possible.</span>
+          <span>Add these fields when possible so GHL workflows or optional direct Stripe webhooks can identify the SMART Trak customer account.</span>
           <pre id="stripeMetadataText"></pre>
           <button type="button" class="secondary" onclick="copyPayload('stripe')">Copy Stripe Metadata</button>
         </div>
@@ -339,7 +339,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label class="checkrow"><input type="checkbox"><span><b>4. Customer dashboard opens<em class="checkbadge warn">Required</em></b><span>Open the customer SMART Trak link with the account key. Confirm the coach access prompt accepts the correct code and rejects a wrong code.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>5. Coach pages load real data<em class="checkbadge warn">Required</em></b><span>Check Dashboard, Athletes, Training Calendar, Planning Setup, and Plan Entry. The pages should load the customer roster and should not show setup-needed errors.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>6. One real workflow saves<em class="checkbadge warn">Required</em></b><span>Save one harmless test item, such as a manual mileage entry, race result, or stopwatch sync, then confirm it appears back in SMART Trak.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>7. Stripe status controls access<em class="checkbadge warn">Required</em></b><span>Send a Stripe test event or manually save status changes. Active or trialing should allow SMART Trak; past due, unpaid, or canceled should block it clearly.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>7. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL subscription workflow or manually save status changes. Active or trialing should allow SMART Trak; past due, unpaid, or canceled should block it clearly.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>8. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED is intentionally turned on later.</span></span></label>
       </div>
     </div>

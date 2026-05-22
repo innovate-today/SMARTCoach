@@ -149,11 +149,13 @@ Legacy `/api/ghl/*` SMART Trak routes also attach the durable account registry b
 
 ## Automation Intake
 
-Set this secret before connecting GHL or Stripe automations:
+Recommended launch flow: let GHL handle Stripe payments/subscriptions through its native Stripe integration, then have a GHL workflow call SMART Trak's protected account automation endpoint when a customer buys, renews, fails payment, or cancels. SMART Trak should not be the payment processor; it should only receive the subscription/access result and update the customer account registry.
+
+Set this secret before connecting GHL automations:
 
 - `SMARTCOACH_AUTOMATION_SECRET`
 
-Then GHL automation or a trusted internal workflow can call:
+Then a GHL workflow or a trusted internal workflow can call:
 
 - `POST /api/smart-trak/account-automation`
 
@@ -185,7 +187,7 @@ Missing or wrong automation secrets are rejected before the durable account regi
 
 Regression tests verify partial subscription updates preserve saved SMART Trak connection fields and coach access codes.
 
-Stripe-style payloads are supported when the account key is placed in metadata. Preferred keys are `accountKey` or `smartcoach_account_key`; both can be added if the Stripe setup screen allows multiple metadata fields.
+Stripe-style payloads are supported when the account key is placed in metadata. This is mainly useful when passing Stripe subscription data through GHL workflows or for the optional direct Stripe webhook fallback. Preferred keys are `accountKey` or `smartcoach_account_key`; both can be added if the Stripe setup screen allows multiple metadata fields.
 
 ```json
 {
@@ -217,7 +219,7 @@ Stripe-style payloads are supported when the account key is placed in metadata. 
 }
 ```
 
-For direct Stripe webhooks, use the signed Stripe route instead:
+Direct Stripe webhooks are optional. Use the signed Stripe route only if SMART Trak needs to receive Stripe events directly instead of receiving subscription status from a GHL workflow:
 
 - `POST /api/smart-trak/account-stripe-webhook`
 
@@ -229,7 +231,7 @@ Use the signing secret from the Stripe webhook endpoint settings. The route veri
 
 Invalid or missing Stripe signatures are rejected before the durable account registry is read or written.
 
-Recommended Stripe events for the webhook endpoint:
+Recommended Stripe events for the optional direct webhook endpoint:
 
 - `checkout.session.completed`
 - `customer.subscription.created`
@@ -281,7 +283,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 8. Save the account to the durable registry.
 9. Add the SMART Trak custom link to that test subaccount.
 10. Test Share -> Sync to SMART Trak with one athlete who has saved times.
-11. Send at least one Stripe test-mode checkout/subscription event to the signed Stripe webhook and confirm the registry lookup shows the automation event.
+11. Trigger the GHL subscription workflow once and confirm the registry lookup shows the automation event. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
 
 ## Launch Validation Checklist
 
@@ -293,8 +295,8 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Subscription allow:** account status shows `accessReady: true` for `active` or `trialing`.
 - **Subscription block:** changing status to `past_due`, `unpaid`, or `canceled` blocks SMART Trak with a clear access message.
 - **Coach access:** a valid coach code creates a signed session; wrong codes are rejected and rate-limited after repeated attempts.
-- **Stripe webhook:** Stripe test event updates the durable registry and appears in recent automation history.
-- **Stripe retry:** resending the same Stripe event returns success without rewriting the account record.
+- **GHL subscription automation:** a GHL subscription workflow updates the durable registry and appears in recent automation history.
+- **Optional Stripe webhook:** if enabled, a Stripe test event updates the durable registry; resending the same Stripe event returns success without rewriting the account record.
 - **No secret exposure:** automation responses and account lookup show saved/hidden status for private tokens and coach access codes instead of exposing values.
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
 - **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
