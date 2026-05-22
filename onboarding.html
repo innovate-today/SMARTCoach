@@ -172,6 +172,33 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   </section>
 
   <section class="panel">
+    <div class="panelhead"><h2>Registry Setup Values</h2></div>
+    <div class="panelbody">
+      <div class="copyhint">This is internal customer account storage. Connect Vercel KV or Upstash Redis, then add these values in Vercel Environment Variables.</div>
+      <div class="varlist">
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_REGISTRY_REST_URL</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Same as KV_REST_API_URL or UPSTASH_REDIS_REST_URL</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_REST_URL','Registry URL field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Same as KV_REST_API_URL or UPSTASH_REDIS_REST_URL','Registry URL value note copied.')">Copy Value Note</button>
+        </div>
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_REGISTRY_REST_TOKEN</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Same as KV_REST_API_TOKEN or UPSTASH_REDIS_REST_TOKEN</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_REST_TOKEN','Registry token field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Same as KV_REST_API_TOKEN or UPSTASH_REDIS_REST_TOKEN','Registry token value note copied.')">Copy Value Note</button>
+        </div>
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta recommended">Recommended</em></div><code>SMARTCOACH_REGISTRY_PREFIX</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>smartcoach:account:</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_PREFIX','Registry prefix field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('smartcoach:account:','Registry prefix value copied.')">Copy Value</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
     <div class="panelhead"><h2>SMART Trak Connection</h2></div>
     <div class="panelbody">
       <div class="connectiongrid">
