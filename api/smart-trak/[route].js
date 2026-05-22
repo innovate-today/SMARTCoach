@@ -275,7 +275,7 @@ async function accountAutomation(req, res) {
 
   try {
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const result = await saveAutomationAccount(payload);
+    const result = await saveAutomationAccount(payload, { source: "automation" });
     res.status(200).json({
       success: true,
       ...result,
@@ -349,7 +349,7 @@ async function accountStripeWebhook(req, res) {
     const rawBody = await requestBodyText(req);
     verifyStripeSignature(rawBody, signature, secret);
     const payload = JSON.parse(rawBody || "{}");
-    const result = await saveAutomationAccount(payload);
+    const result = await saveAutomationAccount(payload, { source: "stripe-webhook" });
     res.status(200).json({
       success: true,
       stripeWebhookVerified: true,
@@ -360,11 +360,11 @@ async function accountStripeWebhook(req, res) {
   }
 }
 
-async function saveAutomationAccount(payload) {
+async function saveAutomationAccount(payload, options = {}) {
   const accountKey = automationAccountKey(payload);
   if (!accountKey) throw httpError(400, "Account key is required.");
   const existing = await loadExistingAccountRecord(accountKey);
-  const account = accountAutomationRecord(payload, existing);
+  const account = accountAutomationRecord(payload, existing, options);
   const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
   const registryResult = await saveAccountRecord(account.accountKey, account);
@@ -538,7 +538,7 @@ async function loadExistingAccountRecord(accountKey) {
   }
 }
 
-function accountAutomationRecord(payload, existingRecord) {
+function accountAutomationRecord(payload, existingRecord, options = {}) {
   const existing = existingRecord || {};
   const existingSubscription = existing.subscription || {};
   const accountKey = automationAccountKey(payload);
@@ -568,6 +568,7 @@ function accountAutomationRecord(payload, existingRecord) {
   const tokenValue = firstAutomationValue(payload, ["ghlToken", "privateIntegrationToken", "token"]);
   const locationValue = firstAutomationValue(payload, ["locationId", "ghlLocationId"]);
   const logoValue = firstAutomationValue(payload, ["logoUrl", "brandLogoUrl", "schoolLogoUrl"]);
+  const event = automationEventSummary(payload, options);
   return {
     accountKey,
     productPlan,
@@ -577,6 +578,7 @@ function accountAutomationRecord(payload, existingRecord) {
     coachAccessCodes: productPlan === "pro" ? coachCodes : [],
     subscription,
     logoUrl: cleanSetupText(logoValue || existing.logoUrl),
+    lastAutomationEvent: event,
   };
 }
 
@@ -584,6 +586,20 @@ function automationAccountKey(payload) {
   return normalizeSetupAccountKey(
     firstAutomationValue(payload, ["accountKey", "account", "tenant", "key", "locationName", "companyName", "client_reference_id"])
   );
+}
+
+function automationEventSummary(payload, options = {}) {
+  const root = payload || {};
+  const object = root.data && root.data.object || {};
+  const sourceValue = firstAutomationValue(payload, ["updateSource", "source", "automationSource"]);
+  const source = cleanSetupText(sourceValue || options.source || "automation");
+  return {
+    source,
+    eventType: cleanSetupText(root.type || firstAutomationValue(payload, ["eventType", "event", "trigger"]) || object.object || "account_update"),
+    stripeEventId: cleanSetupText(root.id && String(root.id).startsWith("evt_") ? root.id : ""),
+    stripeObjectId: cleanSetupText(object.id || ""),
+    receivedAt: new Date().toISOString(),
+  };
 }
 
 function accountEnvironmentRows({ suffix, account, includeCrm }) {

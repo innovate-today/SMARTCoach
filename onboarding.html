@@ -463,6 +463,8 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Subscription</b><span>'+esc(sub.stripeSubscriptionId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
+    '<div class="registryrow"><b>Last Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
+    '<div class="registryrow"><b>Last Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
     '<div class="registryrow"><b>Updated</b><span>'+esc(record.updatedAt||'--')+'</span></div>';
   currentSetup=Object.assign({},currentSetup||{},{
     accountKey:account,
@@ -500,6 +502,13 @@ function maskValue(value){
   if(!text)return '--';
   if(text.length<=8)return text.slice(0,2)+'...';
   return text.slice(0,4)+'...'+text.slice(-4);
+}
+function lastEventLabel(event, part){
+  var source=event||{};
+  if(part==='source')return source.source||'--';
+  var label=source.eventType||'--';
+  if(source.stripeEventId)label+=' / '+source.stripeEventId;
+  return label;
 }
 function saveRegistryUpdate(){
   var payload=registryPayloadFromForm();
@@ -558,6 +567,8 @@ function registryPayloadFromForm(){
     privateIntegrationToken:document.getElementById('privateIntegrationToken').value.trim(),
     coachAccessCodes:document.getElementById('coachAccessCodes').value.trim(),
     logoUrl:document.getElementById('logoUrl').value.trim(),
+    updateSource:'manual-onboarding',
+    eventType:'manual_registry_update',
     subscriptionStatus:document.getElementById('subscriptionStatus').value,
     billingCadence:document.getElementById('billingCadence').value,
     subscriptionAmount:document.getElementById('subscriptionAmount').value.trim(),
