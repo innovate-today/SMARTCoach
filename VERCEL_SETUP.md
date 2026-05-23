@@ -114,6 +114,8 @@ Use **Check System** before launch. It reports one overall launch readiness resu
 
 Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually. Use **Test Access Rules** to run no-save checks that active/trialing allow access while past due, unpaid, and canceled block access.
 
+After generating or saving a customer account, use the **Activation Runbook** panel for the exact support order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, then complete the live smoke test.
+
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
 
 Regression tests verify that coach-specific parent email settings stay hidden while the global parent email release gate is off.
@@ -306,9 +308,10 @@ This endpoint also requires the automation secret. Account status reports whethe
 6. Create a live internal Pro test account in GHL/SMART Trak.
 7. Use **Test Setup First** for that account.
 8. Save the account to the durable registry.
-9. Add the SMART Trak custom link to that test subaccount.
-10. Test Share -> Sync to SMART Trak with one athlete who has saved times.
-11. Trigger the GHL subscription workflow once and confirm the registry lookup shows the automation event. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
+9. Follow the `/onboarding.html` **Activation Runbook** for that test account.
+10. Add the SMART Trak custom link to that test subaccount.
+11. Test Share -> Sync to SMART Trak with one athlete who has saved times.
+12. Trigger the GHL subscription workflow once and confirm the registry lookup shows the automation event. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
 
 ## Launch Validation Checklist
 

@@ -85,6 +85,11 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .checkbadge.good{background:#dcfce7;color:#08733f}
 .checkbadge.bad{background:#fee2e2;color:#b00000}
 .checkbadge.warn{background:#ffedd5;color:#9a3412}
+.activationsteps{display:grid;gap:10px}
+.activationstep{display:grid;grid-template-columns:34px 1fr;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
+.activationstep b:first-child{display:grid;place-items:center;width:28px;height:28px;border-radius:999px;background:#e8eefc;color:#173891;font-size:13px}
+.activationstep strong{display:block;font-size:14px}
+.activationstep span{display:block;color:var(--muted);font-size:12px;line-height:1.4;margin-top:3px}
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
 .lookupgrid{display:grid;grid-template-columns:1fr 240px auto auto;gap:12px;align-items:end}
 .formactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px}
@@ -353,6 +358,17 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelhead"><h2>Setup Checklist</h2></div>
     <div class="panelbody">
       <div id="checklist" class="checklist"></div>
+    </div>
+  </section>
+
+  <section id="activationPanel" class="panel" hidden>
+    <div class="panelhead"><h2>Activation Runbook</h2></div>
+    <div class="panelbody">
+      <div class="copyhint">Use this as the plain-language order for turning on a new coach account.</div>
+      <div id="activationRunbook" class="activationsteps"></div>
+      <div class="formactions">
+        <button type="button" class="secondary" onclick="copyActivationRunbook()">Copy Activation Steps</button>
+      </div>
     </div>
   </section>
 
@@ -899,6 +915,7 @@ function renderSetup(data){
   document.getElementById('copyPanel').hidden=false;
   document.getElementById('automationPanel').hidden=false;
   document.getElementById('checklistPanel').hidden=false;
+  document.getElementById('activationPanel').hidden=false;
   document.getElementById('linksPanel').hidden=false;
   document.getElementById('resultAccount').textContent=data.accountKey||'--';
   document.getElementById('resultPlan').textContent=planLabel(data.productPlan);
@@ -920,6 +937,7 @@ function renderSetup(data){
   renderCustomerLinkDetails(data);
   renderAutomationPayloads(data);
   renderChecklist(data);
+  renderActivationRunbook(data);
 }
 function customerMainLink(data){
   if((data.productPlan||'pro')==='essential')return data.accountUrl||('/?account='+encodeURIComponent(data.accountKey||'customer'));
@@ -1338,6 +1356,57 @@ function renderChecklist(data){
   document.getElementById('checklist').innerHTML=rows.map(function(row,i){
     return '<label class="checkrow"><input type="checkbox" '+(row.state==='good'?'checked':'')+'><span><b>'+esc((i+1)+'. '+row.title)+'<em class="checkbadge '+esc(row.state||'')+'">'+esc(row.status||'Review')+'</em></b><span>'+row.body+'</span></span></label>';
   }).join('');
+}
+function activationSteps(data){
+  data=data||{};
+  var account=data.accountKey||document.getElementById('accountKey').value.trim()||'customer-account';
+  var plan=data.productPlan||document.getElementById('plan').value||'pro';
+  var link=absoluteUrl(customerMainLink(data));
+  var isEssential=plan==='essential';
+  return [
+    {
+      title:'Run Check System',
+      body:'Confirm launch readiness has no blockers: automation secret, durable registry, coach sessions, coach access enforcement, and parent email off.'
+    },
+    {
+      title:'Test setup first',
+      body:'Use Test Setup First for '+account+' before saving. Fix missing location ID, private integration token, coach codes, or subscription status.'
+    },
+    {
+      title:'Save the account record',
+      body:'Use Save Registry Update, then Lookup Account to confirm the registry record is saved and recent update history is present.'
+    },
+    {
+      title:isEssential?'Give the coach the stopwatch link':'Add the SMART Trak custom link',
+      body:isEssential
+        ?'Use the customer stopwatch link for app-only access: '+link
+        :'Add one custom sidebar link in the coach subaccount. Base app stays app.smartcoach-pro.com; only the account key changes. Link: '+link
+    },
+    {
+      title:'Verify coach access',
+      body:isEssential
+        ?'Open the stopwatch link and confirm Pro-only dashboard actions stay hidden.'
+        :'Open the customer dashboard, confirm the valid coach code works, and confirm a wrong code is rejected.'
+    },
+    {
+      title:'Complete live smoke test',
+      body:'Run Check Customer Access and Test Access Rules, then save one harmless real item such as mileage, race result, or a stopwatch sync.'
+    }
+  ];
+}
+function renderActivationRunbook(data){
+  var box=document.getElementById('activationRunbook');
+  if(!box)return;
+  box.innerHTML=activationSteps(data).map(function(step,index){
+    return '<div class="activationstep"><b>'+esc(index+1)+'</b><div><strong>'+esc(step.title)+'</strong><span>'+esc(step.body)+'</span></div></div>';
+  }).join('');
+}
+function copyActivationRunbook(){
+  var data=currentSetup||{};
+  var text=activationSteps(data).map(function(step,index){
+    return (index+1)+'. '+step.title+': '+step.body;
+  }).join('\n');
+  copyText(text,'Activation steps copied.');
 }
 function setupSignals(data){
   data=data||{};
