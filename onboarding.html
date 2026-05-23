@@ -723,6 +723,7 @@ function clearActivationHandoffIfSetupChanged(input){
   try{window.localStorage.removeItem(activationRecordStorageKey());}catch(error){}
   try{window.localStorage.removeItem(coachInviteStorageKey());}catch(error){}
   try{window.localStorage.removeItem(postLaunchStorageKey());}catch(error){}
+  setActivationRecordSmokeRow(false);
   loadPostLaunchChecklist();
   renderPostLaunchSummary();
   renderLiveSmokeSummary();
@@ -2270,6 +2271,9 @@ function smokeValidationProgress(){
   };
 }
 function markActivationRecordSmokeRow(){
+  setActivationRecordSmokeRow(true);
+}
+function setActivationRecordSmokeRow(checked){
   var list=document.getElementById('liveSmokeChecklist');
   if(!list)return;
   [].slice.call(list.querySelectorAll('.checkrow')).some(function(row){
@@ -2277,7 +2281,7 @@ function markActivationRecordSmokeRow(){
     var input=row.querySelector('input[type="checkbox"]');
     var label=(title&&title.textContent||'').trim();
     if(!/activation record/i.test(label)||!input)return false;
-    input.checked=true;
+    input.checked=!!checked;
     saveLiveSmokeChecklist();
     renderLiveSmokeSummary();
     return true;
