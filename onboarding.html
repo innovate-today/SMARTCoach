@@ -1597,7 +1597,7 @@ function renderPostLaunchSummary(){
   box.className='readybar '+(complete?'good':'warn');
   box.querySelector('b').textContent=complete?'Post-launch follow-up complete':followupComplete?'Coach invite not copied yet':'Post-launch follow-up pending';
   box.querySelector('span').textContent=complete
-    ?'Coach invite, first coach login, and first sync are confirmed for this account.'
+    ?'Coach invite copied '+invite.copiedAt+'; first coach login and first sync are confirmed for this account.'
     :followupComplete
       ?'First coach login and first sync are checked, but Copy Coach Invite has not been recorded for this account yet.'
       :progress.done+' of '+progress.total+' follow-up checks complete. Confirm first coach login and first sync after the coach invite is sent.';

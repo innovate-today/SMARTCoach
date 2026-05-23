@@ -514,6 +514,7 @@ Subscription/customer management:
 - Added a per-account post-launch follow-up checklist to `/onboarding.html` for first coach login and first sync; activation records now include this progress and next-action guidance points to it after the invite is copied.
 - The post-launch follow-up summary now updates visually as pending or complete based on the first-login and first-sync checks.
 - The post-launch follow-up summary now only shows complete after Copy Coach Invite has been recorded, so checked follow-up boxes cannot make the handoff look finished before the invite step.
+- When post-launch follow-up is complete, the summary now shows the coach-invite copied timestamp alongside first-login and first-sync confirmation.
 - After post-launch follow-up is complete, onboarding next-action guidance now reminds support to copy the final activation record before moving the account to normal monitoring.
 - Copy Activation Record now titles the copied note `SMARTCoach Final Activation Record` once first coach login and first sync are both checked.
 - Copy Activation Record now only treats the note as final after the coach invite has been copied and first-login/first-sync follow-up is complete.
