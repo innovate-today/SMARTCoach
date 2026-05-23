@@ -497,6 +497,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <button type="button" onclick="copyCustomLink()">Copy SMART Trak Link</button>
         </div>
         <a id="customLink" class="linkbtn" href="/dashboard.html">Open SMART Trak</a>
+        <button type="button" class="secondary" onclick="copyCoachInvite()">Copy Coach Invite</button>
       </div>
       <div class="links">
         <a id="accountLink" class="linkbtn secondary" href="/">Stopwatch</a>
@@ -1569,6 +1570,37 @@ function setCustomLinkText(path){
 function copyCustomLink(){
   var el=document.getElementById('customLinkText');
   copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'','SMART Trak link copied.');
+}
+function coachAccessCodeLines(){
+  var raw=(document.getElementById('coachAccessCodes')||{}).value||'';
+  var codes=raw.split(',').map(function(code){return code.trim();}).filter(Boolean);
+  if(!codes.length)return ['Coach access code: Use the code assigned during SMARTCoach setup.'];
+  if(codes.length===1)return ['Coach access code: '+codes[0]];
+  return codes.map(function(code,index){return 'Coach '+(index+1)+' access code: '+code;});
+}
+function copyCoachInvite(){
+  var data=currentSetup||{};
+  var account=data.accountKey||cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'');
+  var plan=data.productPlan||document.getElementById('plan').value||'pro';
+  var isEssential=plan==='essential';
+  var link=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account||'customer'})));
+  var lines=[
+    'SMARTCoach access',
+    '',
+    'Open this link: '+link,
+    'Account key: '+(account||'Use the account key from your setup email')
+  ];
+  if(isEssential){
+    lines.push('Plan: SMARTCoach Essential');
+    lines.push('This account uses the stopwatch app only.');
+  }else{
+    lines.push('Plan: SMARTCoach Pro');
+    lines=lines.concat(coachAccessCodeLines());
+    lines.push('Use the same account key and coach access code on desktop or phone.');
+  }
+  lines.push('');
+  lines.push('Keep this access private. Contact SMARTCoach support if the link or code does not work.');
+  copyText(lines.join('\n'),'Coach invite copied.');
 }
 function absoluteUrl(path){
   try{
