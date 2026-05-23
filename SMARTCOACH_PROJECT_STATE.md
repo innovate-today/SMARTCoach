@@ -488,6 +488,7 @@ Subscription/customer management:
 - Added **Copy Smoke Status** to `/onboarding.html` so support can paste the exact checked/missing live smoke-test items into notes during launch validation.
 - Copy Smoke Status now also includes activation-record copy status, final activation-record copy status, coach invite copied status, post-launch follow-up progress, and the current next action, so the support note can cover the full launch state.
 - Added a per-account launch sign-off to `/onboarding.html` so support can stamp the validation time, add a short launch note, and include that sign-off in the copied smoke-test status.
+- The launch sign-off copy now clearly says it is required before copying the activation record or sending the coach invite.
 - `Copy Activation Record` now also includes the live smoke-test sign-off fields, so the final customer support note records who validated launch readiness and when.
 - `/onboarding.html` next-action guidance now keeps pointing support to the live smoke test or launch sign-off until both are complete, instead of saying the account is ready too early.
 - The `/onboarding.html` live smoke-test checklist now persists in the browser per account key and includes a reset action, so setup progress survives refreshes without carrying over to a different customer.
