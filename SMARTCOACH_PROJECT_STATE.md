@@ -490,6 +490,7 @@ Subscription/customer management:
 - The `/onboarding.html` live smoke-test checklist now persists in the browser per account key and includes a reset action, so setup progress survives refreshes without carrying over to a different customer.
 - `/onboarding.html` now warns and blocks setup saves, dry runs, live access checks, and access-rule tests when the setup account key and lookup account key point to different customers.
 - Added an **Activation Runbook** to `/onboarding.html` so each new customer setup has the same plain-language order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, and complete the live smoke test.
+- The Activation Runbook now includes a visible handoff status strip that follows smoke-test completion, launch sign-off, activation-record copy, coach-invite copy, and post-launch follow-up for the current account key.
 - The Activation Runbook now ends with stamping launch sign-off and copying the activation record, so support has a final handoff step before coach access is turned on.
 - The Activation Runbook now also includes a final **Send coach invite** step using Copy Coach Invite after validation and internal handoff are complete.
 - The Activation Runbook now includes a post-launch **Confirm first login and sync** step so the written activation flow matches the follow-up checklist.

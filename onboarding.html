@@ -420,6 +420,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelbody">
       <div class="copyhint">Use this as the plain-language order for turning on a new coach account.</div>
       <div id="activationRunbook" class="activationsteps"></div>
+      <div id="activationHandoffStatus" class="readybar warn">
+        <div><b>Activation handoff not saved yet</b><span>Complete the smoke test, stamp launch sign-off, then copy the activation record before sending the coach invite.</span></div>
+      </div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="copyActivationRunbook()">Copy Activation Steps</button>
         <button type="button" class="secondary" onclick="copyActivationRecord()">Copy Activation Record</button>
@@ -1491,6 +1494,7 @@ function saveLiveSmokeSignoff(){
   try{
     window.localStorage.setItem(liveSmokeSignoffStorageKey(),JSON.stringify(liveSmokeSignoffData()));
   }catch(error){}
+  renderActivationHandoffStatus();
 }
 function loadLiveSmokeSignoff(){
   try{
@@ -1524,6 +1528,7 @@ function saveCoachInviteCopied(){
   try{
     window.localStorage.setItem(coachInviteStorageKey(),JSON.stringify({copiedAt:new Date().toLocaleString()}));
   }catch(error){}
+  renderActivationHandoffStatus();
 }
 function activationRecordData(){
   try{
@@ -1537,6 +1542,7 @@ function saveActivationRecordCopied(){
   try{
     window.localStorage.setItem(activationRecordStorageKey(),JSON.stringify({copiedAt:new Date().toLocaleString()}));
   }catch(error){}
+  renderActivationHandoffStatus();
 }
 function savePostLaunchChecklist(){
   try{
@@ -1578,6 +1584,7 @@ function renderPostLaunchSummary(){
   box.querySelector('span').textContent=complete
     ?'First coach login and first sync are confirmed for this account.'
     :progress.done+' of '+progress.total+' follow-up checks complete. Confirm first coach login and first sync after the coach invite is sent.';
+  renderActivationHandoffStatus();
 }
 function saveLiveSmokeChecklist(){
   try{
@@ -1676,6 +1683,44 @@ function renderLiveSmokeSummary(){
   box.querySelector('span').textContent=complete
     ?'All launch checks are marked complete for this account. Keep the account key, coach codes, and support notes with the customer record.'
     :done+' of '+total+' launch checks complete. Finish every required check before turning on a new coach account.';
+  renderActivationHandoffStatus();
+}
+function renderActivationHandoffStatus(){
+  var box=document.getElementById('activationHandoffStatus');
+  if(!box)return;
+  var smoke=smokeChecklistProgress();
+  var signoff=liveSmokeSignoffData();
+  var activationRecord=activationRecordData();
+  var invite=coachInviteData();
+  var postLaunch=postLaunchProgress();
+  var smokeComplete=smoke.total>0&&smoke.done===smoke.total;
+  var signed=!!(signoff.validatedBy&&signoff.validatedAt);
+  var postComplete=postLaunch.total>0&&postLaunch.done===postLaunch.total;
+  var title='Activation handoff not saved yet';
+  var detail='Complete the smoke test, stamp launch sign-off, then copy the activation record before sending the coach invite.';
+  var state='warn';
+  if(!smokeComplete){
+    detail=smoke.done+' of '+smoke.total+' smoke checks complete. Finish the checklist before copying the handoff.';
+  }else if(!signed){
+    title='Launch sign-off needed';
+    detail='Stamp launch sign-off, then copy the activation record.';
+  }else if(!activationRecord.copiedAt){
+    title='Activation record ready to copy';
+    detail='Copy and save the internal activation record before sending the coach invite.';
+  }else if(!invite.copiedAt){
+    title='Activation record saved';
+    detail='Copied '+activationRecord.copiedAt+'. Use Copy Coach Invite when ready to send coach access.';
+  }else if(!postComplete){
+    title='Coach invite copied';
+    detail='Invite copied '+invite.copiedAt+'. Confirm first coach login and first sync after the coach receives it.';
+  }else{
+    title='Activation handoff complete';
+    detail='Invite copied '+invite.copiedAt+'. First coach login and first sync are confirmed.';
+    state='good';
+  }
+  box.className='readybar '+state;
+  box.querySelector('b').textContent=title;
+  box.querySelector('span').textContent=detail;
 }
 function setLink(id,path){
   var el=document.getElementById(id);
@@ -1954,6 +1999,7 @@ function renderActivationRunbook(data){
   box.innerHTML=activationSteps(data).map(function(step,index){
     return '<div class="activationstep"><b>'+esc(index+1)+'</b><div><strong>'+esc(step.title)+'</strong><span>'+esc(step.body)+'</span></div></div>';
   }).join('');
+  renderActivationHandoffStatus();
 }
 function copyActivationRunbook(){
   var data=currentSetup||{};
