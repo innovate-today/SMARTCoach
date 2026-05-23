@@ -720,6 +720,7 @@ function clearActivationHandoffIfSetupChanged(input){
     parentEmailCoachAccess:true
   };
   if(!critical[input.id])return;
+  currentSetup=Object.assign({},currentSetup||{},{unsavedSetupChanges:true});
   try{window.localStorage.removeItem(activationRecordStorageKey());}catch(error){}
   try{window.localStorage.removeItem(coachInviteStorageKey());}catch(error){}
   try{window.localStorage.removeItem(postLaunchStorageKey());}catch(error){}
@@ -1176,6 +1177,7 @@ function saveRegistryUpdate(){
       accountRegistryRecord:result.data.accountRegistryRecord||{}
     });
     renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
+    rememberCurrentSetupFieldValues();
     if(registry.saved){
       setStatus(result.data.accessReady?'Registry update saved. SMART Trak will use this account record on the next request.':'Registry update saved, but setup is not ready yet: '+setupMissingText(result.data),result.data.accessReady?'good':'bad');
     }else{
@@ -2411,7 +2413,8 @@ function setupSignals(data){
   var configured=typeof data.setupReady==='boolean'?data.setupReady:(plan==='essential'||!!data.configured||(crmReady&&coachCodesReady));
   return {
     accountKey:!!data.accountKey,
-    registrySaved:!!(registry.saved||registry.found||(!registry.dryRun&&record.updatedAt)),
+    unsavedSetupChanges:!!data.unsavedSetupChanges,
+    registrySaved:!data.unsavedSetupChanges&&!!(registry.saved||registry.found||(!registry.dryRun&&record.updatedAt)),
     subscriptionAllowed:subscriptionAllowed,
     subscriptionBlockedReason:subscriptionAllowed?'':subscriptionBlockedReason,
     crmReady:crmReady,
@@ -2422,6 +2425,7 @@ function setupSignals(data){
 function accountSetupBlockerText(data){
   var signals=setupSignals(data);
   if(!signals.accountKey)return 'Enter the customer account key before copying activation or coach access notes.';
+  if(signals.unsavedSetupChanges)return 'Save Registry Update after the latest setup changes before copying activation or coach access notes.';
   if(!signals.registrySaved)return 'Save and verify the customer registry record before copying activation or coach access notes.';
   if(!signals.subscriptionAllowed)return signals.subscriptionBlockedReason;
   if(!signals.crmReady)return 'Add the customer Location ID and Private Integration Token before copying activation or coach access notes.';

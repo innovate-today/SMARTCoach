@@ -641,6 +641,7 @@ Help assistant:
 14. When copied activation state is cleared, the live smoke checklist's activation-record row is also unchecked so the visible checklist matches the saved handoff state.
 15. Activation record and coach invite copy now also require customer-account readiness: account key, saved registry record, allowed subscription, SMART Trak connection fields, coach access codes, and configured account status.
 16. Dry-run setup previews no longer count as a saved registry record for activation/coach-invite handoff; Save Registry Update and lookup confirmation are required.
+17. Critical setup edits now mark the account as having unsaved setup changes, blocking activation/coach-invite copy until Save Registry Update runs again.
 
 ## Known Good Test Flow
 
