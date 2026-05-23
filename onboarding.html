@@ -2050,6 +2050,7 @@ function activationRecordText(data,options){
   if(options.activationRecordCopiedAt)activationRecord.copiedAt=options.activationRecordCopiedAt;
   var invite=coachInviteData();
   var postLaunch=postLaunchProgress();
+  var postLaunchComplete=postLaunch.total>0&&postLaunch.done===postLaunch.total;
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
   var pageLines=coachPageLinks(account).map(function(link){
@@ -2059,7 +2060,7 @@ function activationRecordText(data,options){
   var stripeSubscriptionId=sub.stripeSubscriptionId||recordSub.stripeSubscriptionId||'--';
   var updatedAt=record.updatedAt||data.updatedAt||'';
   var lines=[
-    'SMARTCoach Activation Record',
+    postLaunchComplete?'SMARTCoach Final Activation Record':'SMARTCoach Activation Record',
     'Account key: '+(account||'Not set'),
     'Plan: '+planLabel(plan),
     'Coach seats: '+coachSeatsLabel(data),

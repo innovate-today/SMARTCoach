@@ -510,6 +510,7 @@ Subscription/customer management:
 - Added a per-account post-launch follow-up checklist to `/onboarding.html` for first coach login and first sync; activation records now include this progress and next-action guidance points to it after the invite is copied.
 - The post-launch follow-up summary now updates visually as pending or complete based on the first-login and first-sync checks.
 - After post-launch follow-up is complete, onboarding next-action guidance now reminds support to copy the final activation record before moving the account to normal monitoring.
+- Copy Activation Record now titles the copied note `SMARTCoach Final Activation Record` once first coach login and first sync are both checked.
 - Copy Coach Invite now tells coaches where to enter the account key and coach access code on the phone app: Groups screen -> Account.
 - Essential Copy Coach Invite now also tells stopwatch-only coaches where to enter the account key on the phone app.
 - The `/onboarding.html` Activation Runbook now names the full launch blocker set: automation secret, setup code, durable registry, Stripe webhook, coach session secret, coach access enforcement, and parent email rollout gate.
