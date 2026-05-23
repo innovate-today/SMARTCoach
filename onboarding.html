@@ -1433,6 +1433,10 @@ function liveSmokeSignoffStorageKey(){
   var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'default')||'default';
   return 'smartcoach_live_smoke_signoff_'+account;
 }
+function coachInviteStorageKey(){
+  var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'default')||'default';
+  return 'smartcoach_coach_invite_'+account;
+}
 function bindLiveSmokeSignoff(){
   loadLiveSmokeSignoff();
 }
@@ -1468,6 +1472,19 @@ function stampLiveSmokeSignoff(){
   saveLiveSmokeSignoff();
   setStatus('Launch sign-off timestamp saved for this account.','good');
 }
+function coachInviteData(){
+  try{
+    var raw=window.localStorage.getItem(coachInviteStorageKey());
+    return raw?JSON.parse(raw)||{}:{};
+  }catch(error){
+    return {};
+  }
+}
+function saveCoachInviteCopied(){
+  try{
+    window.localStorage.setItem(coachInviteStorageKey(),JSON.stringify({copiedAt:new Date().toLocaleString()}));
+  }catch(error){}
+}
 function saveLiveSmokeChecklist(){
   try{
     var list=document.getElementById('liveSmokeChecklist');
@@ -1500,6 +1517,7 @@ function resetLiveSmokeChecklist(){
     if(input)input.value='';
   });
   saveLiveSmokeSignoff();
+  try{window.localStorage.removeItem(coachInviteStorageKey());}catch(error){}
   renderLiveSmokeSummary();
   setStatus('Live smoke checklist reset for this account.','good');
 }
@@ -1612,6 +1630,7 @@ function copyCoachInvite(){
   }
   lines.push('');
   lines.push('Keep this access private. Contact SMARTCoach support if the link or code does not work.');
+  saveCoachInviteCopied();
   copyText(lines.join('\n'),'Coach invite copied.');
 }
 function absoluteUrl(path){
@@ -1853,6 +1872,7 @@ function activationRecordText(data){
   var plan=data.productPlan||record.productPlan||document.getElementById('plan').value||'pro';
   var smoke=smokeChecklistProgress();
   var signoff=liveSmokeSignoffData();
+  var invite=coachInviteData();
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
   var pageLines=coachPageLinks(account).map(function(link){
@@ -1885,7 +1905,7 @@ function activationRecordText(data){
     'Live smoke validated by: '+(signoff.validatedBy||'Not entered'),
     'Live smoke validated at: '+(signoff.validatedAt||'Not entered'),
     'Launch note: '+(signoff.note||'None'),
-    'Coach invite: Use Copy Coach Invite after this activation record is saved.',
+    'Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Use Copy Coach Invite after this activation record is saved.'),
     'Next action: '+accountNextAction(data,record),
     'Customer link: '+dashboardLink,
     'Status link: '+statusLink
