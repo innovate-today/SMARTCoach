@@ -909,7 +909,7 @@ function accountNextAction(data,record){
   if(smoke.total&&smoke.done===smoke.total&&!invite.copiedAt)return 'Activation record saved. Use Copy Coach Invite.';
   var postLaunch=postLaunchProgress();
   if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt&&postLaunch.total&&postLaunch.done<postLaunch.total)return 'Coach invite sent. Confirm first coach login and first sync.';
-  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Activation complete. Keep the account in normal support monitoring.';
+  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Copy the final activation record, then keep the account in normal support monitoring.';
   return 'Proceed to live smoke test: open coach pages and save one harmless real item.';
 }
 function lastEventLabel(event, part){
@@ -1725,7 +1725,7 @@ function renderActivationHandoffStatus(){
     detail='Invite copied '+invite.copiedAt+'. Confirm first coach login and first sync after the coach receives it.';
   }else{
     title='Activation handoff complete';
-    detail='Invite copied '+invite.copiedAt+'. First coach login and first sync are confirmed.';
+    detail='Invite copied '+invite.copiedAt+'. First coach login and first sync are confirmed. Copy the final activation record for the support note.';
     state='good';
   }
   box.className='readybar '+state;
