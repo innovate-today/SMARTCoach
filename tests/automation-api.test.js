@@ -83,6 +83,10 @@ async function testAutomationDryRunDoesNotSave() {
       assert.strictEqual(res.body.accessReady, true);
       assert.strictEqual(res.body.accountRegistryRecord.token, "__hidden__");
       assert.deepStrictEqual(res.body.accountRegistryRecord.coachAccessCodes, ["__hidden__"]);
+      assert.strictEqual(JSON.stringify(res.body).includes("pit"), false);
+      assert.strictEqual(JSON.stringify(res.body).includes("coach-code"), false);
+      assert.ok(res.body.environment.some((row) => row.key.includes("GHL_PRIVATE_INTEGRATION_TOKEN") && row.value === "__hidden__"));
+      assert.ok(res.body.environment.some((row) => row.key.includes("SMARTCOACH_COACH_ACCESS_CODES") && row.value === "__hidden__"));
       assert.strictEqual(fetchCalled, false);
     });
   } finally {
@@ -429,6 +433,10 @@ async function testPartialAutomationPreservesSavedConnection() {
       assert.strictEqual(savedRecord.subscription.stripeSubscriptionId, "sub_updated");
       assert.strictEqual(res.body.accountRegistryRecord.token, "__hidden__");
       assert.deepStrictEqual(res.body.accountRegistryRecord.coachAccessCodes, ["__hidden__", "__hidden__", "__hidden__"]);
+      assert.ok(res.body.environment.some((row) => row.key.includes("GHL_PRIVATE_INTEGRATION_TOKEN") && row.value === "__hidden__"));
+      assert.ok(res.body.environment.some((row) => row.key.includes("SMARTCOACH_COACH_ACCESS_CODES") && row.value === "__hidden__"));
+      assert.strictEqual(JSON.stringify(res.body).includes(existing.token), false);
+      assert.strictEqual(JSON.stringify(res.body).includes(existing.coachAccessCodes[0]), false);
     });
   } finally {
     global.fetch = previousFetch;

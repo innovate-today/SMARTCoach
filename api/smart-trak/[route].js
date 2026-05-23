@@ -588,11 +588,11 @@ function automationAccountResult(account, registryResult, extra = {}) {
     accessReady: setupReady && subscriptionAllowed,
     registry: registryResult,
     accountRegistryRecord: publicAccountRecord(account),
-    environment: extra.environment || accountEnvironmentRows({
+    environment: publicEnvironmentRows(extra.environment || accountEnvironmentRows({
       suffix: account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_"),
       account,
       includeCrm: account.productPlan === "pro",
-    }),
+    })),
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
     accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
@@ -625,7 +625,7 @@ async function previewAutomationAccount(payload, options = {}) {
       reason: "Dry run only. No registry record was saved.",
     },
     accountRegistryRecord: publicAccountRecord(account),
-    environment,
+    environment: publicEnvironmentRows(environment),
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
     accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
@@ -649,6 +649,17 @@ function publicAccountRecord(account) {
     coachAccessCodes: Array.isArray(source.coachAccessCodes) ? source.coachAccessCodes.map(() => "__hidden__") : [],
     privateIntegrationToken: undefined,
   };
+}
+
+function publicEnvironmentRows(rows) {
+  return (Array.isArray(rows) ? rows : []).map((row) => {
+    const key = String(row && row.key || "");
+    if (/GHL_PRIVATE_INTEGRATION_TOKEN|SMARTCOACH_COACH_ACCESS_CODES|SMARTCOACH_LEGACY_ACCESS_CODE/i.test(key)) {
+      const value = String(row.value || "");
+      if (value && !/^paste_/i.test(value)) return { ...row, value: "__hidden__" };
+    }
+    return row;
+  });
 }
 
 async function accountRegistry(req, res) {
