@@ -628,13 +628,22 @@ function bindAccountKeyWarning(){
   });
   var plan=document.getElementById('plan');
   if(plan){
-    plan.addEventListener('change',function(){
-      var data=setupForActiveAccount();
-      syncCustomerLinks(data);
-      renderCustomerLinkDetails(data);
-    });
+    plan.addEventListener('change',refreshActiveSetupDisplays);
+  }
+  var coachSeats=document.getElementById('coachSeats');
+  if(coachSeats){
+    coachSeats.addEventListener('change',refreshActiveSetupDisplays);
   }
   renderAccountKeyWarning();
+}
+function refreshActiveSetupDisplays(){
+  var data=setupForActiveAccount();
+  syncCustomerLinks(data);
+  renderCustomerLinkDetails(data);
+  var resultCoachSeats=document.getElementById('resultCoachSeats');
+  if(resultCoachSeats)resultCoachSeats.textContent=coachSeatsLabel(data);
+  if(!document.getElementById('checklistPanel').hidden)renderChecklist(data);
+  if(!document.getElementById('activationPanel').hidden)renderActivationRunbook(data);
 }
 function randomCode(length){
   var chars='abcdefghjkmnpqrstuvwxyz23456789';
