@@ -441,6 +441,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div id="liveSmokeSummary" class="readybar warn">
         <div><b>Live smoke test not complete</b><span>Check each required item as it passes. All ten checks should be complete before turning on a new coach account.</span></div>
         <div class="smokeactions">
+          <button type="button" class="secondary" onclick="copyLiveSmokeStatus()">Copy Smoke Status</button>
           <button type="button" class="secondary" onclick="resetLiveSmokeChecklist()">Reset Checklist</button>
         </div>
       </div>
@@ -1423,6 +1424,40 @@ function resetLiveSmokeChecklist(){
   saveLiveSmokeChecklist();
   renderLiveSmokeSummary();
   setStatus('Live smoke checklist reset for this account.','good');
+}
+function liveSmokeRows(){
+  var list=document.getElementById('liveSmokeChecklist');
+  if(!list)return [];
+  return [].slice.call(list.querySelectorAll('.checkrow')).map(function(row){
+    var input=row.querySelector('input[type="checkbox"]');
+    var title=row.querySelector('b');
+    var badge=title&&title.querySelector('em');
+    var details=row.querySelectorAll('span span');
+    var detail=details[details.length-1];
+    var label=(title&&title.textContent||'').replace(badge?badge.textContent:'','').trim();
+    return {
+      checked:!!(input&&input.checked),
+      label:label,
+      detail:(detail&&detail.textContent||'').trim()
+    };
+  });
+}
+function copyLiveSmokeStatus(){
+  var account=activeCustomerAccount()||'customer-account';
+  var rows=liveSmokeRows();
+  if(!rows.length){
+    setStatus('No live smoke checklist found.','bad');
+    return;
+  }
+  var done=rows.filter(function(row){return row.checked;}).length;
+  var lines=[
+    'SMARTCoach Live Smoke Test',
+    'Account key: '+account,
+    'Progress: '+done+' of '+rows.length+' complete'
+  ].concat(rows.map(function(row){
+    return (row.checked?'[x] ':'[ ] ')+row.label+' - '+row.detail;
+  }));
+  copyText(lines.join('\n'),'Live smoke status copied.');
 }
 function renderLiveSmokeSummary(){
   var list=document.getElementById('liveSmokeChecklist');

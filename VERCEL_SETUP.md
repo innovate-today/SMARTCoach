@@ -117,7 +117,7 @@ Use **Check System** before launch. It reports one overall launch readiness resu
 - coach access enforcement
 - parent email rollout gate
 
-Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually. A warning state means the account is ready but the current browser or phone still needs a coach access code. Use **Test Access Rules** to run no-save checks that active/trialing allow access while past due, unpaid, and canceled block access. The live smoke-test summary should say complete before a new coach account is turned on.
+Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually. A warning state means the account is ready but the current browser or phone still needs a coach access code. Use **Test Access Rules** to run no-save checks that active/trialing allow access while past due, unpaid, and canceled block access. The live smoke-test summary should say complete before a new coach account is turned on, and **Copy Smoke Status** can capture the current pass/missing checklist for support notes.
 
 The live smoke-test checklist is saved in the browser per account key, so a refresh does not clear setup progress for the customer being validated. Use **Reset Checklist** only when restarting that account's smoke test.
 
@@ -335,7 +335,7 @@ Before calling automation/security complete for rollout, verify this with a real
 
 - **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
 - **Launch security values:** Vercel Production has separate setup, automation, and session secrets; coach access enforcement is true; parent email feature flag is not set.
-- **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** -> **Check Customer Access** reports the test customer account is ready, then use the generated coach page links to complete the ten-item checklist after deploy.
+- **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** -> **Check Customer Access** reports the test customer account is ready, then use the generated coach page links to complete the ten-item checklist after deploy. Use **Copy Smoke Status** if the checklist needs to be saved before every item is complete.
 - **Registry write:** **Save Registry Update** returns saved and account lookup shows the account as saved.
 - **Subscription allow/block:** `/onboarding.html` -> **Live Smoke Test** -> **Test Access Rules** passes, proving `active` and `trialing` allow access while `past_due`, `unpaid`, and `canceled` block access without saving those test statuses.
 - **Coach access:** a valid coach code creates a signed session; wrong codes are rejected and rate-limited after repeated attempts.
