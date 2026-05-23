@@ -1795,6 +1795,7 @@ function activationRecordText(data){
   var account=data.accountKey||document.getElementById('accountKey').value.trim()||'';
   var plan=data.productPlan||record.productPlan||document.getElementById('plan').value||'pro';
   var smoke=smokeChecklistProgress();
+  var signoff=liveSmokeSignoffData();
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
   var pageLines=coachPageLinks(account).map(function(link){
@@ -1824,6 +1825,9 @@ function activationRecordText(data){
     'Coach codes: '+coachCodesSummary(record),
     'Parent email tools: '+parentEmailCoachAccessLabel(record.parentEmailCoachAccess||data.parentEmailCoachAccess),
     'Live smoke checklist: '+smoke.done+' of '+smoke.total+' complete',
+    'Live smoke validated by: '+(signoff.validatedBy||'Not entered'),
+    'Live smoke validated at: '+(signoff.validatedAt||'Not entered'),
+    'Launch note: '+(signoff.note||'None'),
     'Next action: '+accountNextAction(data,record),
     'Customer link: '+dashboardLink,
     'Status link: '+statusLink

@@ -125,7 +125,7 @@ If the setup form and account lookup show different account keys, `/onboarding.h
 
 After generating or saving a customer account, use the **Activation Runbook** panel for the exact support order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, then complete the live smoke test. Check System should show no launch blockers for the automation secret, setup code, durable registry, Stripe webhook, coach session secret, coach access enforcement, and parent email rollout gate.
 
-Use **Copy Activation Record** after the customer passes setup. It creates a plain support-note summary with the account key, plan, coach seats, subscription, Stripe IDs, registry/setup/access state, recent automation update, live smoke-test progress, next action, and customer link.
+Use **Copy Activation Record** after the customer passes setup. It creates a plain support-note summary with the account key, plan, coach seats, subscription, Stripe IDs, registry/setup/access state, recent automation update, live smoke-test progress, launch sign-off, next action, and customer link.
 
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
 
@@ -345,7 +345,7 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
 - **Coach pages:** Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator load for the test account without setup-needed errors.
 - **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
-- **Support handoff:** **Copy Activation Record** includes the account key, subscription, Stripe IDs when available, setup/access state, smoke progress, next action, customer link, status link, and coach page validation links.
+- **Support handoff:** **Copy Activation Record** includes the account key, subscription, Stripe IDs when available, setup/access state, smoke progress, launch sign-off, next action, customer link, status link, and coach page validation links.
 - **Parent email:** parent email tools remain hidden for initial rollout.
 
 Before pushing security/account changes, run:
