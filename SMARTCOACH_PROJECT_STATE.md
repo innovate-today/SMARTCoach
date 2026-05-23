@@ -646,6 +646,7 @@ Help assistant:
 19. Unsaved setup changes now appear in Next Action, the readiness banner, and the setup checklist so support sees Save Registry Update as the required next step.
 20. Dry-run lookup/setup panels now label themselves as dry-run previews instead of saved customer account records.
 21. Default activation handoff and smoke-checklist copy now names system readiness and saved customer setup before Copy Activation Record.
+22. Account lookup now distinguishes saved, dry-run, and not-found registry states in the panel title.
 
 ## Known Good Test Flow
 

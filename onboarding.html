@@ -973,7 +973,7 @@ function renderLookupResult(data){
   var account=record.accountKey||data.accountKey||'';
   var registry=data.registry||{};
   var registryLabel=registry.dryRun?'Dry run':registry.found?'Saved':'Not found';
-  var registryTitle=registry.dryRun?'Dry-run customer setup preview':'Saved customer account record';
+  var registryTitle=registry.dryRun?'Dry-run customer setup preview':registry.found?'Saved customer account record':'No saved customer account record found';
   var cards=[
     {label:'Plan',value:planLabel(record.productPlan)},
     {label:'Subscription',value:subscriptionLabel({subscription:sub})},
