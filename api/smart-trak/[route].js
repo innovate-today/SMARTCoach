@@ -284,7 +284,7 @@ function accountSetup(req, res) {
         key: `SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_${suffix}`,
         value: "",
         required: false,
-        label: "Parent email enabled coaches",
+        label: "Future parent email coaches",
         description: "Optional future release only. Use coach numbers like 1 or 1,3; tools stay hidden until the global parent email release flag is turned on.",
       }
     );
@@ -1048,7 +1048,7 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
         key: `SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_${suffix}`,
         value: parentEmailAccessIndexes(account.parentEmailCoachAccess).join(","),
         required: false,
-        label: "Parent email enabled coaches",
+        label: "Future parent email coaches",
         description: "Optional future release only. Use coach numbers like 1 or 1,3; tools stay hidden until the global parent email release flag is turned on.",
       }
     );

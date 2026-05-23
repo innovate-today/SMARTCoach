@@ -582,7 +582,7 @@ Parent communication:
 - Athlete detail now has a one-athlete parent email action when a parent email is saved.
 - Athletes page now includes a group filter, so coaches can filter to a training group and email/copy those parents without manually searching.
 - Athletes page now supports selecting specific athletes; Email Parents and Copy Parent Emails use selected athletes when any are checked, otherwise they use the current filtered view.
-- Parent email tools are not part of the initial rollout. They stay globally unreleased unless `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` is set later; until then, normal accounts do not show email controls or athlete selection checkboxes even if a coach is configured in `Parent Email Enabled Coaches`.
+- Parent email tools are not part of the initial rollout. They stay globally unreleased unless `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` is set later; until then, normal accounts do not show email controls or athlete selection checkboxes even if a coach is configured in `Future Parent Email Coaches`.
 - Athletes page roster filter now says `With parent contact` and matches any saved guardian name, email, or phone, so parent setup remains useful without presenting unreleased parent-email tooling.
 - Full parent communication is still planned.
 - Later need deeper ways to email:
