@@ -1661,6 +1661,8 @@ function copyLiveSmokeStatus(){
   var signoff=liveSmokeSignoffData();
   var invite=coachInviteData();
   var postLaunch=postLaunchProgress();
+  var data=currentSetup||{};
+  var record=data.accountRegistryRecord||{};
   var lines=[
     'SMARTCoach Live Smoke Test',
     'Account key: '+account,
@@ -1675,6 +1677,7 @@ function copyLiveSmokeStatus(){
   lines.push('Activation record: '+(activationRecord.copiedAt?'Copied '+activationRecord.copiedAt:'Not copied'));
   lines.push('Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Not copied'));
   lines.push('Post-launch follow-up: '+postLaunch.done+' of '+postLaunch.total+' complete');
+  lines.push('Next action: '+accountNextAction(data,record));
   copyText(lines.join('\n'),'Live smoke status copied.');
 }
 function renderLiveSmokeSummary(){
