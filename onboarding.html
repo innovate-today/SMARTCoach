@@ -2056,7 +2056,11 @@ function renderVariableRows(env){
     var required=row.required!==false;
     var status=required?'Required':row.recommended?'Recommended':'Optional';
     var statusClass=required?'':row.recommended?' recommended':' optional';
-    return '<div class="varrow"><div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta'+statusClass+'">'+status+'</em></div><code title="'+esc(row.label||row.key)+'">'+esc(row.key)+'</code></div><div class="varfield"><div class="varlabel"><span>Value</span></div><input value="'+esc(row.value)+'" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" oninput="updateVariableValue('+index+',this.value)"></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Setup Field</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">Copy Value</button></div>';
+    var hidden=isHiddenVariableValue(row);
+    var value=hidden?'Saved value hidden':row.value;
+    var readonly=hidden?' readonly aria-readonly="true"':'';
+    var copyLabel=hidden?'Copy Value Note':'Copy Value';
+    return '<div class="varrow"><div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta'+statusClass+'">'+status+'</em></div><code title="'+esc(row.label||row.key)+'">'+esc(row.key)+'</code></div><div class="varfield"><div class="varlabel"><span>Value</span></div><input value="'+esc(value)+'" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"'+readonly+' oninput="updateVariableValue('+index+',this.value)"></div><button type="button" class="secondary" onclick="copyVariablePart('+index+',&quot;key&quot;)">Copy Setup Field</button><button type="button" onclick="copyVariablePart('+index+',&quot;value&quot;)">'+copyLabel+'</button></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
 }
 function renderAutomationPayloads(data){
@@ -2117,13 +2121,21 @@ function copyPayload(type){
   copyText(document.getElementById(id).textContent,label);
 }
 function updateVariableValue(index,value){
+  if(isHiddenVariableValue(currentEnvironment[index]))return;
   if(currentEnvironment[index])currentEnvironment[index].value=value;
 }
 function copyVariablePart(index,part){
   var row=currentEnvironment[index];
   if(!row)return;
-  var text=part==='key'?row.key:row.value;
-  copyText(text,part==='key'?'Setup field copied.':'Setup value copied.');
+  var text=part==='key'?row.key:(isHiddenVariableValue(row)?hiddenVariableValueNote(row):row.value);
+  copyText(text,part==='key'?'Setup field copied.':(isHiddenVariableValue(row)?'Hidden value note copied.':'Setup value copied.'));
+}
+function isHiddenVariableValue(row){
+  return !!(row&&String(row.value||'')==='__hidden__');
+}
+function hiddenVariableValueNote(row){
+  var label=row&&row.label?row.label:'This saved value';
+  return label+' is already saved and hidden. Do not paste __hidden__; only replace it if you are intentionally rotating the value.';
 }
 function copyText(text,message,onSuccess){
   if(navigator.clipboard&&navigator.clipboard.writeText){

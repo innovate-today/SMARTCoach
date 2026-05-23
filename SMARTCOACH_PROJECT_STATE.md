@@ -543,6 +543,7 @@ Subscription/customer management:
 - Added `tests/automation-api.test.js` to verify automation dry runs do not save registry records and duplicate Stripe webhook events do not rewrite already-handled account updates.
 - Automation, Stripe webhook, and protected account lookup responses now hide private integration token and coach access-code values in returned account records, while the internal registry lookup remains available for support verification.
 - Automation and dry-run setup responses now also redact private integration token and coach access-code values from generated environment rows, keeping setup field names visible without echoing saved secrets back in API responses.
+- Onboarding setup rows now display redacted environment values as `Saved value hidden` and copy a value note instead of copying `__hidden__`, reducing the chance support pastes a redaction marker into Vercel.
 - Updated `VERCEL_SETUP.md` and `README.md` so production setup docs match the current onboarding helper, launch-readiness check, Stripe webhook events, hidden secret behavior, and regression tests.
 - `VERCEL_SETUP.md` now includes a launch validation checklist for the required live Pro test account pass before calling automation/security complete for rollout.
 - Live smoke-test wording now says all required checks should pass instead of hard-coding a checklist count, so the setup guide stays accurate as launch validation evolves.
