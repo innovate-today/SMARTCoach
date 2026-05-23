@@ -492,6 +492,7 @@ Subscription/customer management:
 - The Activation Runbook now ends with stamping launch sign-off and copying the activation record, so support has a final handoff step before coach access is turned on.
 - The Activation Runbook now also includes a final **Send coach invite** step using Copy Coach Invite after validation and internal handoff are complete.
 - Added **Copy Activation Record** to `/onboarding.html` so support can paste a customer setup summary with account key, plan, subscription, Stripe IDs, recent automation update, setup/access state, smoke-test progress, next action, customer link, status link, and coach page validation links.
+- `Copy Activation Record` now includes a coach-invite reminder so support saves the internal activation note before sending the coach-facing invite.
 - Added **Copy Coach Invite** to `/onboarding.html` Customer Links so support can send a coach-facing access note with the customer link, account key, plan, and coach access-code instructions after validation is complete.
 - The `/onboarding.html` Activation Runbook now names the full launch blocker set: automation secret, setup code, durable registry, Stripe webhook, coach session secret, coach access enforcement, and parent email rollout gate.
 - Added `tests/automation-api.test.js` to verify automation dry runs do not save registry records and duplicate Stripe webhook events do not rewrite already-handled account updates.
