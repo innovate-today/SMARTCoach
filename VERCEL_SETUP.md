@@ -120,6 +120,8 @@ Use **Check Customer Access** in the **Live Smoke Test** section after saving a 
 
 The live smoke-test checklist is saved in the browser per account key, so a refresh does not clear setup progress for the customer being validated. Use **Reset Checklist** only when restarting that account's smoke test.
 
+If the setup form and account lookup show different account keys, `/onboarding.html` warns and blocks saving, dry runs, and live access checks until they match. This prevents validating or saving the wrong coach account during activation.
+
 After generating or saving a customer account, use the **Activation Runbook** panel for the exact support order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, then complete the live smoke test.
 
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.

@@ -154,6 +154,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
         <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Coach Codes</button>
       </div>
+      <div id="accountKeyWarning" class="setupnote" hidden><b>Account keys do not match</b>The setup form and account lookup are pointing at different customers. Match the account keys before saving or running live checks.</div>
       <div id="status" class="status"></div>
     </div>
   </section>
@@ -433,6 +434,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 var currentEnvironment=[];
 var currentSetup=null;
 prefillFromUrl();
+bindAccountKeyWarning();
 bindLiveSmokeChecklist();
 function generateAccountKey(){
   var input=document.getElementById('accountKey');
@@ -441,6 +443,7 @@ function generateAccountKey(){
   if(!key)key='smartcoach'+randomCode(6);
   input.value=key;
   document.getElementById('lookupAccountKey').value=key;
+  renderAccountKeyWarning();
   loadLiveSmokeChecklist();
   renderLiveSmokeSummary();
   setStatus('Account key generated.','good');
@@ -463,6 +466,50 @@ function generateCoachCodes(){
 }
 function cleanAccountKey(value){
   return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,40);
+}
+function accountKeyValues(){
+  return {
+    setup:cleanAccountKey(document.getElementById('accountKey').value||''),
+    lookup:cleanAccountKey(document.getElementById('lookupAccountKey').value||'')
+  };
+}
+function activeCustomerAccount(){
+  var keys=accountKeyValues();
+  if(keys.setup&&keys.lookup&&keys.setup!==keys.lookup)return '';
+  return keys.setup||keys.lookup||'';
+}
+function accountKeysMismatch(){
+  var keys=accountKeyValues();
+  return !!(keys.setup&&keys.lookup&&keys.setup!==keys.lookup);
+}
+function ensureAccountKeysMatch(action){
+  if(!accountKeysMismatch())return true;
+  renderAccountKeyWarning();
+  setStatus('Account keys do not match. Match the setup and lookup account keys before '+action+'.','bad');
+  return false;
+}
+function renderAccountKeyWarning(){
+  var warning=document.getElementById('accountKeyWarning');
+  if(!warning)return;
+  warning.hidden=!accountKeysMismatch();
+}
+function bindAccountKeyWarning(){
+  ['accountKey','lookupAccountKey'].forEach(function(id){
+    var input=document.getElementById(id);
+    if(!input)return;
+    input.addEventListener('input',function(){
+      renderAccountKeyWarning();
+      loadLiveSmokeChecklist();
+      renderLiveSmokeSummary();
+    });
+    input.addEventListener('blur',function(){
+      input.value=cleanAccountKey(input.value);
+      renderAccountKeyWarning();
+      loadLiveSmokeChecklist();
+      renderLiveSmokeSummary();
+    });
+  });
+  renderAccountKeyWarning();
 }
 function randomCode(length){
   var chars='abcdefghjkmnpqrstuvwxyz23456789';
@@ -551,6 +598,7 @@ function lookupAccount(){
   var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');
   document.getElementById('lookupAccountKey').value=account;
   document.getElementById('accountKey').value=account;
+  renderAccountKeyWarning();
   loadLiveSmokeChecklist();
   renderLiveSmokeSummary();
   var secret=document.getElementById('automationSecret').value.trim();
@@ -645,6 +693,7 @@ function fillFormFromLookup(){
   var sub=currentSetup.subscription||{};
   document.getElementById('accountKey').value=currentSetup.accountKey||'';
   document.getElementById('lookupAccountKey').value=currentSetup.accountKey||'';
+  renderAccountKeyWarning();
   loadLiveSmokeChecklist();
   renderLiveSmokeSummary();
   document.getElementById('plan').value=currentSetup.productPlan==='essential'?'essential':'pro';
@@ -735,6 +784,7 @@ function automationHistoryHtml(history){
     }).join('');
 }
 function saveRegistryUpdate(){
+  if(!ensureAccountKeysMatch('saving this account'))return;
   var payload=registryPayloadFromForm();
   var secret=document.getElementById('automationSecret').value.trim();
   if(!payload.accountKey){
@@ -790,6 +840,7 @@ function saveRegistryUpdate(){
   });
 }
 function dryRunRegistryUpdate(){
+  if(!ensureAccountKeysMatch('testing this account'))return;
   var payload=registryPayloadFromForm();
   var secret=document.getElementById('automationSecret').value.trim();
   if(!payload.accountKey){
@@ -1052,7 +1103,8 @@ function checkSetupStatus(){
   });
 }
 function checkLiveSmokeAccess(){
-  var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'');
+  if(!ensureAccountKeysMatch('checking customer access'))return;
+  var account=activeCustomerAccount();
   var bar=document.getElementById('liveSmokeBar');
   var box=document.getElementById('liveSmokeResult');
   if(!account){
@@ -1061,6 +1113,7 @@ function checkLiveSmokeAccess(){
   }
   document.getElementById('accountKey').value=account;
   document.getElementById('lookupAccountKey').value=account;
+  renderAccountKeyWarning();
   bar.className='readybar';
   bar.querySelector('b').textContent='Checking customer access...';
   bar.querySelector('span').textContent='Looking at the live account status endpoint for this customer.';
@@ -1123,7 +1176,8 @@ function renderLiveSmokeAccess(data,ok){
   if(!document.getElementById('checklistPanel').hidden)renderChecklist(currentSetup);
 }
 function testAccessRules(){
-  var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'');
+  if(!ensureAccountKeysMatch('testing access rules'))return;
+  var account=activeCustomerAccount();
   var secret=document.getElementById('automationSecret').value.trim();
   var box=document.getElementById('liveSmokeResult');
   var bar=document.getElementById('liveSmokeBar');
@@ -1138,6 +1192,7 @@ function testAccessRules(){
   rememberAutomationSecret(secret);
   document.getElementById('accountKey').value=account;
   document.getElementById('lookupAccountKey').value=account;
+  renderAccountKeyWarning();
   document.getElementById('accessRulesBtn').disabled=true;
   bar.className='readybar';
   bar.querySelector('b').textContent='Testing access rules...';
