@@ -57,6 +57,7 @@ function checkJsonFiles() {
 
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
+run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
 run("security header regression tests", "node", ["tests/security-headers.test.js"]);
 jsFilesUnder("api").concat(jsFilesUnder("lib"), jsFilesUnder("tests")).forEach((file) => {
   run(`${file} syntax`, "node", ["-c", file]);

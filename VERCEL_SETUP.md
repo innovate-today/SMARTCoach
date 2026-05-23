@@ -280,6 +280,8 @@ Vercel KV/Upstash aliases are also supported:
 
 If Vercel creates `KV_REST_API_URL` and `KV_REST_API_TOKEN` automatically, those are enough. You can either leave them as-is or copy the same values into `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` for clarity.
 
+Regression tests cover both Vercel KV names and Upstash Redis names so customer account storage keeps working even when Vercel supplies the storage variables automatically.
+
 The `/onboarding.html` page also shows these registry setup field names in **Registry Setup Values** so internal support can copy the names while setting up Vercel.
 
 When the registry is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. That means plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL can be updated by automation without adding a new Vercel variable for each customer update.
