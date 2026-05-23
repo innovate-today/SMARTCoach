@@ -1466,9 +1466,13 @@ function bindPostLaunchChecklist(){
   var list=document.getElementById('postLaunchChecklist');
   if(!list)return;
   list.addEventListener('change',function(event){
-    if(event.target&&event.target.matches('input[type="checkbox"]'))savePostLaunchChecklist();
+    if(event.target&&event.target.matches('input[type="checkbox"]')){
+      savePostLaunchChecklist();
+      renderPostLaunchSummary();
+    }
   });
   loadPostLaunchChecklist();
+  renderPostLaunchSummary();
 }
 function liveSmokeSignoffData(){
   return {
@@ -1534,6 +1538,7 @@ function loadPostLaunchChecklist(){
     var states=JSON.parse(raw);
     inputs.forEach(function(input,index){input.checked=!!states[index];});
   }catch(error){}
+  renderPostLaunchSummary();
 }
 function postLaunchProgress(){
   var list=document.getElementById('postLaunchChecklist');
@@ -1543,6 +1548,17 @@ function postLaunchProgress(){
     done:checks.filter(function(input){return input.checked;}).length,
     total:checks.length
   };
+}
+function renderPostLaunchSummary(){
+  var box=document.getElementById('postLaunchFollowup');
+  if(!box)return;
+  var progress=postLaunchProgress();
+  var complete=progress.total>0&&progress.done===progress.total;
+  box.className='readybar '+(complete?'good':'warn');
+  box.querySelector('b').textContent=complete?'Post-launch follow-up complete':'Post-launch follow-up pending';
+  box.querySelector('span').textContent=complete
+    ?'First coach login and first sync are confirmed for this account.'
+    :progress.done+' of '+progress.total+' follow-up checks complete. Confirm first coach login and first sync after the coach invite is sent.';
 }
 function saveLiveSmokeChecklist(){
   try{
@@ -1579,6 +1595,7 @@ function resetLiveSmokeChecklist(){
   try{window.localStorage.removeItem(coachInviteStorageKey());}catch(error){}
   try{window.localStorage.removeItem(postLaunchStorageKey());}catch(error){}
   loadPostLaunchChecklist();
+  renderPostLaunchSummary();
   renderLiveSmokeSummary();
   setStatus('Live smoke checklist reset for this account.','good');
 }
