@@ -203,8 +203,7 @@ Example payload:
   "subscriptionAmount": "39.99",
   "renewalDate": "2026-06-21",
   "stripeCustomerId": "cus_...",
-  "stripeSubscriptionId": "sub_...",
-  "locationId": "ghl_location_id"
+  "stripeSubscriptionId": "sub_..."
 }
 ```
 
