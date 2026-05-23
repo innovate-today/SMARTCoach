@@ -999,11 +999,13 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Updated</b><span>'+esc(fullDateTime(record.updatedAt))+'</span></div>'+
     automationHistoryHtml(record.automationEventHistory);
   var guessedConfigured=(record.productPlan==='essential')||!!(record.locationId&&record.token&&((record.coachAccessCodes||[]).length||record.accessCode));
+  var unsavedSetupChanges=!!(data.unsavedSetupChanges||(registry&&registry.dryRun));
   currentSetup=Object.assign({},currentSetup||{},{
     accountKey:account,
     productPlan:record.productPlan||'pro',
     coachSeats:record.coachSeats||1,
     registry:{configured:!!registry.configured,found:!!registry.found},
+    unsavedSetupChanges:unsavedSetupChanges,
     crmConfigured:!!(record.locationId&&record.token),
     configured:typeof data.setupReady==='boolean'?data.setupReady:guessedConfigured,
     setupReady:typeof data.setupReady==='boolean'?data.setupReady:guessedConfigured,
@@ -1220,14 +1222,14 @@ function dryRunRegistryUpdate(){
       err.data=result.data;
       throw err;
     }
-    currentSetup=result.data;
+    currentSetup=Object.assign({},result.data,{unsavedSetupChanges:true});
     renderLookupResult({
       success:true,
       accountKey:result.data.accountKey,
-      registry:{configured:!!(result.data.registry&&result.data.registry.configured),found:false,key:'',error:'Dry run only'},
+      registry:{configured:!!(result.data.registry&&result.data.registry.configured),found:false,dryRun:true,key:'',error:'Dry run only'},
       accountRegistryRecord:result.data.accountRegistryRecord||{}
     });
-    renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
+    renderSetup(Object.assign({},result.data,{unsavedSetupChanges:true,setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
     if(result.data.accessReady){
       setStatus('Dry run passed. This account would be ready after saving. Nothing was saved.','good');
     }else{

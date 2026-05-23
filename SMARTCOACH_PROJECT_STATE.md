@@ -642,6 +642,7 @@ Help assistant:
 15. Activation record and coach invite copy now also require customer-account readiness: account key, saved registry record, allowed subscription, SMART Trak connection fields, coach access codes, and configured account status.
 16. Dry-run setup previews no longer count as a saved registry record for activation/coach-invite handoff; Save Registry Update and lookup confirmation are required.
 17. Critical setup edits now mark the account as having unsaved setup changes, blocking activation/coach-invite copy until Save Registry Update runs again.
+18. Dry-run results now keep the unsaved setup marker visible through lookup/setup rendering, while saved registry results clear it as the new baseline.
 
 ## Known Good Test Flow
 
