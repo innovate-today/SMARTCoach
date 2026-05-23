@@ -124,6 +124,8 @@ If the setup form and account lookup show different account keys, `/onboarding.h
 
 After generating or saving a customer account, use the **Activation Runbook** panel for the exact support order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, then complete the live smoke test.
 
+Use **Copy Activation Record** after the customer passes setup. It creates a plain support-note summary with the account key, plan, coach seats, subscription, registry/setup/access state, live smoke-test progress, next action, and customer link.
+
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
 
 Regression tests verify that coach-specific parent email settings stay hidden while the global parent email release gate is off.

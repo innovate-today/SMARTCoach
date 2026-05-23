@@ -371,6 +371,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div id="activationRunbook" class="activationsteps"></div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="copyActivationRunbook()">Copy Activation Steps</button>
+        <button type="button" class="secondary" onclick="copyActivationRecord()">Copy Activation Record</button>
       </div>
     </div>
   </section>
@@ -1559,6 +1560,50 @@ function copyActivationRunbook(){
     return (index+1)+'. '+step.title+': '+step.body;
   }).join('\n');
   copyText(text,'Activation steps copied.');
+}
+function smokeChecklistProgress(){
+  var list=document.getElementById('liveSmokeChecklist');
+  if(!list)return {done:0,total:0};
+  var checks=[].slice.call(list.querySelectorAll('input[type="checkbox"]'));
+  return {
+    done:checks.filter(function(input){return input.checked;}).length,
+    total:checks.length
+  };
+}
+function activationRecordText(data){
+  data=data||{};
+  var sub=data.subscription||{};
+  var record=data.accountRegistryRecord||{};
+  var account=data.accountKey||document.getElementById('accountKey').value.trim()||'';
+  var plan=data.productPlan||record.productPlan||document.getElementById('plan').value||'pro';
+  var smoke=smokeChecklistProgress();
+  var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
+  var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
+  var lines=[
+    'SMARTCoach Activation Record',
+    'Account key: '+(account||'Not set'),
+    'Plan: '+planLabel(plan),
+    'Coach seats: '+coachSeatsLabel(data),
+    'Subscription: '+subscriptionLabel(data),
+    'Billing cadence: '+(sub.billingCadence||'--'),
+    'Amount: '+(sub.amount||'--'),
+    'Renewal date: '+(sub.renewalDate||'--'),
+    'Registry: '+((data.registry&&data.registry.found)||(data.registry&&data.registry.saved)?'Saved':'Check registry'),
+    'SMART Trak setup: '+(data.setupReady||data.configured?'Ready':'Needs setup'),
+    'Access: '+(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready')),
+    'Device unlock: '+(data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Coach code needed':'Ready'),
+    'Coach codes: '+coachCodesSummary(record),
+    'Parent email tools: '+parentEmailCoachAccessLabel(record.parentEmailCoachAccess||data.parentEmailCoachAccess),
+    'Live smoke checklist: '+smoke.done+' of '+smoke.total+' complete',
+    'Next action: '+accountNextAction(data,record),
+    'Customer link: '+dashboardLink,
+    'Status link: '+statusLink,
+    'Notes: Parent email remains off for initial rollout unless the global release flag is intentionally enabled.'
+  ];
+  return lines.join('\n');
+}
+function copyActivationRecord(){
+  copyText(activationRecordText(currentSetup||{}),'Activation record copied.');
 }
 function setupSignals(data){
   data=data||{};
