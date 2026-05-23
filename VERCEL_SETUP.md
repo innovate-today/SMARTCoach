@@ -316,7 +316,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 ## Deploy Order
 
 1. Import this GitHub repo into Vercel.
-2. Add the default account environment variables above.
+2. Open `/onboarding.html`, use **Launch Security Values** -> **Generate Launch Secrets**, and add the security values plus registry values in Vercel Production.
 3. Point `app.smartcoach-pro.com` to the Vercel project.
 4. Open `/onboarding.html` and run **Check System** with the automation secret.
 5. Fix any launch blockers before selling or activating a customer account.
@@ -327,12 +327,14 @@ This endpoint also requires the automation secret. Account status reports whethe
 10. Add the SMART Trak custom link to that test subaccount.
 11. Test Share -> Sync to SMART Trak with one athlete who has saved times.
 12. Trigger the GHL subscription workflow once and confirm the registry lookup shows the automation event. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
+13. Use **Copy Activation Record** and save the support note for the test account.
 
 ## Launch Validation Checklist
 
 Before calling automation/security complete for rollout, verify this with a real test Pro account:
 
 - **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
+- **Launch security values:** Vercel Production has separate setup, automation, and session secrets; coach access enforcement is true; parent email feature flag is not set.
 - **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** -> **Check Customer Access** reports the test customer account is ready, then the remaining checklist is completed after deploy.
 - **Registry write:** **Save Registry Update** returns saved and account lookup shows the account as saved.
 - **Subscription allow/block:** `/onboarding.html` -> **Live Smoke Test** -> **Test Access Rules** passes, proving `active` and `trialing` allow access while `past_due`, `unpaid`, and `canceled` block access without saving those test statuses.
@@ -341,8 +343,10 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Optional Stripe webhook:** if enabled, a Stripe test event updates the durable registry; resending the same Stripe event returns success without rewriting the account record.
 - **No secret exposure:** automation responses and account lookup show saved/hidden status for private tokens and coach access codes instead of exposing values.
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
+- **Coach pages:** Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator load for the test account without setup-needed errors.
 - **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
-- **Parent email rollout:** parent email remains hidden unless `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` is intentionally set later.
+- **Support handoff:** **Copy Activation Record** includes the account key, subscription, Stripe IDs when available, setup/access state, smoke progress, next action, and customer link.
+- **Parent email:** parent email tools remain hidden for initial rollout.
 
 Before pushing security/account changes, run:
 
