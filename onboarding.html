@@ -423,7 +423,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="copyhint">Use this as the plain-language order for turning on a new coach account.</div>
       <div id="activationRunbook" class="activationsteps"></div>
       <div id="activationHandoffStatus" class="readybar warn">
-        <div><b>Activation handoff not saved yet</b><span>Complete the smoke test, stamp launch sign-off, then copy the activation record before sending the coach invite.</span></div>
+        <div><b>Activation handoff not saved yet</b><span>Complete the smoke test, confirm system and customer readiness, stamp launch sign-off, then copy the activation record before sending the coach invite.</span></div>
       </div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="copyActivationRunbook()">Copy Activation Steps</button>
@@ -460,7 +460,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label class="checkrow"><input type="checkbox"><span><b>6. Advanced coach pages load<em class="checkbadge warn">Required</em></b><span>Check Plan Builder, Meet History, Records, and XC Simulator for the customer account. They should load without setup-needed errors.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>7. One real workflow saves<em class="checkbadge warn">Required</em></b><span>Save one harmless test item, such as a manual mileage entry, race result, or stopwatch sync, then confirm it appears back in SMART Trak.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>8. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL subscription workflow or manually save status changes. Active or trialing should allow SMART Trak; past due, unpaid, or canceled should block it clearly.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>9. Activation record is saved<em class="checkbadge warn">Required</em></b><span>After launch sign-off, use Copy Activation Record and save the support note. This item is marked complete when the copy succeeds.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>9. Activation record is saved<em class="checkbadge warn">Required</em></b><span>After system readiness, saved customer setup, and launch sign-off are complete, use Copy Activation Record and save the support note. This item is marked complete when the copy succeeds.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>10. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED is intentionally turned on later.</span></span></label>
       </div>
       <div class="readybar" id="liveSmokeSignoff">
