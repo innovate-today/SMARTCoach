@@ -1574,11 +1574,15 @@ function activationRecordText(data){
   data=data||{};
   var sub=data.subscription||{};
   var record=data.accountRegistryRecord||{};
+  var recordSub=record.subscription||{};
   var account=data.accountKey||document.getElementById('accountKey').value.trim()||'';
   var plan=data.productPlan||record.productPlan||document.getElementById('plan').value||'pro';
   var smoke=smokeChecklistProgress();
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
+  var stripeCustomerId=sub.stripeCustomerId||recordSub.stripeCustomerId||'--';
+  var stripeSubscriptionId=sub.stripeSubscriptionId||recordSub.stripeSubscriptionId||'--';
+  var updatedAt=record.updatedAt||data.updatedAt||'';
   var lines=[
     'SMARTCoach Activation Record',
     'Account key: '+(account||'Not set'),
@@ -1588,7 +1592,12 @@ function activationRecordText(data){
     'Billing cadence: '+(sub.billingCadence||'--'),
     'Amount: '+(sub.amount||'--'),
     'Renewal date: '+(sub.renewalDate||'--'),
+    'Stripe customer: '+stripeCustomerId,
+    'Stripe subscription: '+stripeSubscriptionId,
     'Registry: '+((data.registry&&data.registry.found)||(data.registry&&data.registry.saved)?'Saved':'Check registry'),
+    'Last automation source: '+lastEventLabel(record.lastAutomationEvent,'source'),
+    'Last automation event: '+lastEventLabel(record.lastAutomationEvent,'event'),
+    'Last registry update: '+fullDateTime(updatedAt),
     'SMART Trak setup: '+(data.setupReady||data.configured?'Ready':'Needs setup'),
     'Access: '+(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready')),
     'Device unlock: '+(data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Coach code needed':'Ready'),
