@@ -2411,7 +2411,7 @@ function setupSignals(data){
   var configured=typeof data.setupReady==='boolean'?data.setupReady:(plan==='essential'||!!data.configured||(crmReady&&coachCodesReady));
   return {
     accountKey:!!data.accountKey,
-    registrySaved:!!(registry.saved||registry.found||record.updatedAt),
+    registrySaved:!!(registry.saved||registry.found||(!registry.dryRun&&record.updatedAt)),
     subscriptionAllowed:subscriptionAllowed,
     subscriptionBlockedReason:subscriptionAllowed?'':subscriptionBlockedReason,
     crmReady:crmReady,
