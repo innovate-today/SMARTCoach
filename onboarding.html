@@ -1587,6 +1587,15 @@ function postLaunchProgress(){
     total:checks.length
   };
 }
+function postLaunchStatusText(progress,invite){
+  progress=progress||{done:0,total:0};
+  invite=invite||{};
+  var text=progress.done+' of '+progress.total+' complete';
+  if(progress.total>0&&progress.done===progress.total&&!invite.copiedAt){
+    text+=' - coach invite not copied yet';
+  }
+  return text;
+}
 function renderPostLaunchSummary(){
   var box=document.getElementById('postLaunchFollowup');
   if(!box)return;
@@ -1687,7 +1696,7 @@ function copyLiveSmokeStatus(){
   lines.push('Activation record: '+(activationRecord.copiedAt?'Copied '+activationRecord.copiedAt:'Not copied'));
   lines.push('Final activation record: '+(activationRecord.finalCopiedAt?'Copied '+activationRecord.finalCopiedAt:'Not copied'));
   lines.push('Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Not copied'));
-  lines.push('Post-launch follow-up: '+postLaunch.done+' of '+postLaunch.total+' complete');
+  lines.push('Post-launch follow-up: '+postLaunchStatusText(postLaunch,invite));
   lines.push('Next action: '+accountNextAction(data,record));
   copyText(lines.join('\n'),'Live smoke status copied.');
 }
@@ -2125,7 +2134,7 @@ function activationRecordText(data,options){
     'Activation record copied: '+(activationRecord.copiedAt||'Not copied yet'),
     'Final activation record copied: '+(activationRecord.finalCopiedAt||'Not copied yet'),
     'Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Use Copy Coach Invite after this activation record is saved.'),
-    'Post-launch follow-up: '+postLaunch.done+' of '+postLaunch.total+' complete',
+    'Post-launch follow-up: '+postLaunchStatusText(postLaunch,invite),
     'Next action: '+accountNextAction(data,record),
     'Customer link: '+dashboardLink,
     'Status link: '+statusLink
