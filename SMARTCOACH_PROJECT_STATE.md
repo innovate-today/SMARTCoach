@@ -438,6 +438,7 @@ Subscription/customer management:
 - Coach-facing SMART Trak HTML pages now receive consistent Vercel no-store, noindex, no-referrer, and nosniff headers.
 - Added regression coverage for API no-store headers and Vercel HTML noindex/no-cache headers.
 - Legacy `/api/ghl/*` SMART Trak routes now attach the durable account registry before Pro access checks, so automated subscription/account updates are enforced consistently even when an older page calls a GHL route directly.
+- Account automation no longer silently generates coach access codes for new Pro accounts. Missing coach codes keep the account setup-incomplete so support must intentionally create and share coach codes.
 - Dashboard, Plan Builder, and Planning Setup now call account status with the explicit account key, making customer account checks more reliable in embedded/custom-link contexts.
 - Coach access prompts now stay open and show the server error when a login attempt fails, including rate-limit and missing coach-code setup messages.
 - Added regression coverage for coach access-code rate limiting after repeated wrong attempts.

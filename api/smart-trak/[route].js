@@ -1132,9 +1132,6 @@ function normalizeSetupCoachCodes(value, accountKey, coachSeats) {
   };
   if (Array.isArray(value)) value.forEach(add);
   else if (value) cleanSetupText(value).split(/[\n,]+/).forEach(add);
-  while (codes.length < normalizeSetupCoachSeats(coachSeats)) {
-    codes.push(`${suggestedAccessCode(accountKey)}-c${codes.length + 1}`);
-  }
   return codes.slice(0, normalizeSetupCoachSeats(coachSeats));
 }
 
