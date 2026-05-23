@@ -684,6 +684,7 @@ function checkAutomationHealth(){
     return;
   }
   rememberAutomationSecret(secret);
+  currentSystemHealth=null;
   box.innerHTML='<div class="empty">Checking system readiness...</div>';
   document.getElementById('healthBtn').disabled=true;
   fetch('/api/smart-trak/account-automation-health',{
@@ -700,6 +701,7 @@ function checkAutomationHealth(){
     renderSystemResult(result.data);
     setStatus('System readiness checked.','good');
   }).catch(function(error){
+    currentSystemHealth=null;
     box.innerHTML='<div class="empty">'+esc(error.message||'Could not check system readiness.')+'</div>';
     setStatus(error.message||'Could not check system readiness.','bad');
   }).finally(function(){
