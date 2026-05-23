@@ -518,6 +518,7 @@ async function testAutomationHealthLaunchReady() {
   try {
     await withEnv({
       SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_ADMIN_SETUP_CODE: "setup-secret",
       SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
       SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
       SMARTCOACH_STRIPE_WEBHOOK_SECRET: "stripe-webhook-secret",
@@ -537,8 +538,9 @@ async function testAutomationHealthLaunchReady() {
       assert.strictEqual(res.body.launchReady, true);
       assert.deepStrictEqual(res.body.launchBlockers, []);
       assert.ok(Array.isArray(res.body.launchChecks));
-      assert.ok(res.body.launchChecks.length >= 6);
+      assert.ok(res.body.launchChecks.length >= 7);
       assert.strictEqual(res.body.launchChecks.every((check) => check.ready), true);
+      assert.strictEqual(res.body.setupCodeConfigured, true);
     });
   } finally {
     global.fetch = previousFetch;

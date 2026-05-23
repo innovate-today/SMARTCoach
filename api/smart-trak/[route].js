@@ -396,6 +396,7 @@ async function accountAutomationHealth(req, res) {
   }
 
   const automationSecretConfigured = !!cleanSetupText(process.env.SMARTCOACH_AUTOMATION_SECRET);
+  const setupCodeConfigured = !!cleanSetupText(process.env.SMARTCOACH_ADMIN_SETUP_CODE);
   const registryStatus = await registryHealth();
   const registryReady = !!(registryStatus.configured && registryStatus.reachable);
   const stripeWebhookReady = !!cleanSetupText(process.env.SMARTCOACH_STRIPE_WEBHOOK_SECRET);
@@ -410,6 +411,12 @@ async function accountAutomationHealth(req, res) {
       label: "Automation secret",
       ready: automationSecretConfigured,
       detail: automationSecretConfigured ? "Protected setup endpoints can accept trusted automation calls." : "Set SMARTCOACH_AUTOMATION_SECRET before connecting setup automation.",
+    },
+    {
+      key: "setupCode",
+      label: "Setup page protection",
+      ready: setupCodeConfigured,
+      detail: setupCodeConfigured ? "Internal setup field generation requires the setup code." : "Set SMARTCOACH_ADMIN_SETUP_CODE so customer setup fields are not casually available.",
     },
     {
       key: "registry",
@@ -445,6 +452,7 @@ async function accountAutomationHealth(req, res) {
   const launchBlockers = [];
   const productionWarnings = [];
   if (!automationSecretConfigured) launchBlockers.push("Automation secret is missing.");
+  if (!setupCodeConfigured) launchBlockers.push("Internal setup code is missing.");
   if (!registryReady) launchBlockers.push(registryStatus.configured ? "Account registry is not reachable." : "Durable account registry is not connected.");
   if (!stripeWebhookReady) launchBlockers.push("Stripe webhook signing secret is missing.");
   if (!dedicatedSessionSecretConfigured) launchBlockers.push("Dedicated coach session secret is missing.");
@@ -452,6 +460,9 @@ async function accountAutomationHealth(req, res) {
   if (parentEmailReleased) launchBlockers.push("Parent email tools are globally enabled before initial rollout.");
   if (!dedicatedSessionSecretConfigured) {
     productionWarnings.push("Set SMARTCOACH_SESSION_SECRET so coach sessions do not reuse automation or setup secrets.");
+  }
+  if (!setupCodeConfigured) {
+    productionWarnings.push("Set SMARTCOACH_ADMIN_SETUP_CODE so internal customer setup field generation requires a setup code.");
   }
   if (!coachAccessEnforcementConfigured) {
     productionWarnings.push("Set SMARTCOACH_REQUIRE_COACH_ACCESS=true after Pro accounts have coach access codes.");
@@ -470,6 +481,7 @@ async function accountAutomationHealth(req, res) {
     launchBlockers,
     launchChecks,
     automationSecretConfigured,
+    setupCodeConfigured,
     registryConfigured: !!registryStatus.configured,
     registryReachable: !!registryStatus.reachable,
     registryError: registryStatus.error || "",
@@ -486,6 +498,7 @@ async function accountAutomationHealth(req, res) {
     readyForSignedCoachSessions: sessionSigningReady,
     checks: [
       { key: "automationSecret", label: "Automation secret", configured: automationSecretConfigured },
+      { key: "setupCode", label: "Internal setup code", configured: setupCodeConfigured },
       { key: "registry", label: "Durable account registry", configured: !!registryStatus.configured },
       { key: "registryConnection", label: "Registry connection", configured: registryReady },
       { key: "stripeWebhook", label: "Stripe webhook signing secret", configured: stripeWebhookReady },

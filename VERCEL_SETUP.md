@@ -110,6 +110,7 @@ Use **Save Registry Update** when a customer subscription or SMART Trak connecti
 Use **Check System** before launch. It reports one overall launch readiness result, launch blockers, and a plain-language checklist for:
 
 - automation secret
+- internal setup code
 - durable account registry
 - Stripe webhook signing secret
 - dedicated coach session secret
@@ -139,6 +140,8 @@ Optional internal setup protection:
 - `SMARTCOACH_ADMIN_SETUP_CODE`
 
 When this is set, `/onboarding.html` and `/api/smart-trak/account-setup` require the setup code before generating customer setup fields. This keeps customer setup links out of casual view while still allowing the helper to be used internally.
+
+The system readiness check treats this setup code as a launch requirement. Production should not show `Ready for initial rollout` unless `SMARTCOACH_ADMIN_SETUP_CODE` is set.
 
 Regression tests verify setup fields cannot be generated without the correct setup code when `SMARTCOACH_ADMIN_SETUP_CODE` is configured.
 
