@@ -478,6 +478,13 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="liveSmokeNotes" type="text" placeholder="Example: Ready for coach invite" oninput="saveLiveSmokeSignoff()">
         </div>
       </div>
+      <div class="readybar" id="postLaunchFollowup">
+        <div><b>Post-launch follow-up</b><span>After the coach invite is sent, confirm the first coach login and first sync.</span></div>
+      </div>
+      <div id="postLaunchChecklist" class="checklist">
+        <label class="checkrow"><input type="checkbox"><span><b>Coach login confirmed<em class="checkbadge good">Follow-up</em></b><span>Coach opened SMARTCoach and got past account/access-code setup.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>First sync confirmed<em class="checkbadge good">Follow-up</em></b><span>Coach completed the first app-to-SMART Trak sync or confirmed the first saved workflow appears.</span></span></label>
+      </div>
     </div>
   </section>
 
@@ -513,6 +520,7 @@ prefillFromUrl();
 bindAccountKeyWarning();
 bindLiveSmokeChecklist();
 bindLiveSmokeSignoff();
+bindPostLaunchChecklist();
 function generateAccountKey(){
   var input=document.getElementById('accountKey');
   var raw=input.value.trim();
@@ -523,6 +531,7 @@ function generateAccountKey(){
   renderAccountKeyWarning();
   loadLiveSmokeChecklist();
   loadLiveSmokeSignoff();
+  loadPostLaunchChecklist();
   renderLiveSmokeSummary();
   setStatus('Account key generated.','good');
 }
@@ -579,6 +588,7 @@ function bindAccountKeyWarning(){
       renderAccountKeyWarning();
       loadLiveSmokeChecklist();
       loadLiveSmokeSignoff();
+      loadPostLaunchChecklist();
       renderLiveSmokeSummary();
     });
     input.addEventListener('blur',function(){
@@ -586,6 +596,7 @@ function bindAccountKeyWarning(){
       renderAccountKeyWarning();
       loadLiveSmokeChecklist();
       loadLiveSmokeSignoff();
+      loadPostLaunchChecklist();
       renderLiveSmokeSummary();
     });
   });
@@ -731,6 +742,7 @@ function lookupAccount(){
   renderAccountKeyWarning();
   loadLiveSmokeChecklist();
   loadLiveSmokeSignoff();
+  loadPostLaunchChecklist();
   renderLiveSmokeSummary();
   var secret=document.getElementById('automationSecret').value.trim();
   var box=document.getElementById('lookupResult');
@@ -827,6 +839,7 @@ function fillFormFromLookup(){
   renderAccountKeyWarning();
   loadLiveSmokeChecklist();
   loadLiveSmokeSignoff();
+  loadPostLaunchChecklist();
   renderLiveSmokeSummary();
   document.getElementById('plan').value=currentSetup.productPlan==='essential'?'essential':'pro';
   document.getElementById('coachSeats').value=String(currentSetup.coachSeats)==='3'?'3':'1';
@@ -882,7 +895,9 @@ function accountNextAction(data,record){
   if(smoke.total&&smoke.done===smoke.total&&(!signoff.validatedBy||!signoff.validatedAt))return 'Stamp the launch sign-off, then copy the activation record.';
   var invite=coachInviteData();
   if(smoke.total&&smoke.done===smoke.total&&!invite.copiedAt)return 'Save the activation record, then use Copy Coach Invite.';
-  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Activation complete. Monitor the first coach login and first sync.';
+  var postLaunch=postLaunchProgress();
+  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt&&postLaunch.total&&postLaunch.done<postLaunch.total)return 'Coach invite sent. Confirm first coach login and first sync.';
+  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Activation complete. Keep the account in normal support monitoring.';
   return 'Proceed to live smoke test: open coach pages and save one harmless real item.';
 }
 function lastEventLabel(event, part){
@@ -1135,6 +1150,7 @@ function renderSetup(data){
   currentSetup=data;
   loadLiveSmokeChecklist();
   loadLiveSmokeSignoff();
+  loadPostLaunchChecklist();
   document.getElementById('resultPanel').hidden=false;
   document.getElementById('copyPanel').hidden=false;
   document.getElementById('automationPanel').hidden=false;
@@ -1439,8 +1455,20 @@ function coachInviteStorageKey(){
   var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'default')||'default';
   return 'smartcoach_coach_invite_'+account;
 }
+function postLaunchStorageKey(){
+  var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'default')||'default';
+  return 'smartcoach_post_launch_'+account;
+}
 function bindLiveSmokeSignoff(){
   loadLiveSmokeSignoff();
+}
+function bindPostLaunchChecklist(){
+  var list=document.getElementById('postLaunchChecklist');
+  if(!list)return;
+  list.addEventListener('change',function(event){
+    if(event.target&&event.target.matches('input[type="checkbox"]'))savePostLaunchChecklist();
+  });
+  loadPostLaunchChecklist();
 }
 function liveSmokeSignoffData(){
   return {
@@ -1487,6 +1515,35 @@ function saveCoachInviteCopied(){
     window.localStorage.setItem(coachInviteStorageKey(),JSON.stringify({copiedAt:new Date().toLocaleString()}));
   }catch(error){}
 }
+function savePostLaunchChecklist(){
+  try{
+    var list=document.getElementById('postLaunchChecklist');
+    if(!list)return;
+    var states=[].slice.call(list.querySelectorAll('input[type="checkbox"]')).map(function(input){return !!input.checked;});
+    window.localStorage.setItem(postLaunchStorageKey(),JSON.stringify(states));
+  }catch(error){}
+}
+function loadPostLaunchChecklist(){
+  try{
+    var list=document.getElementById('postLaunchChecklist');
+    if(!list)return;
+    var inputs=[].slice.call(list.querySelectorAll('input[type="checkbox"]'));
+    inputs.forEach(function(input){input.checked=false;});
+    var raw=window.localStorage.getItem(postLaunchStorageKey());
+    if(!raw)return;
+    var states=JSON.parse(raw);
+    inputs.forEach(function(input,index){input.checked=!!states[index];});
+  }catch(error){}
+}
+function postLaunchProgress(){
+  var list=document.getElementById('postLaunchChecklist');
+  if(!list)return {done:0,total:0};
+  var checks=[].slice.call(list.querySelectorAll('input[type="checkbox"]'));
+  return {
+    done:checks.filter(function(input){return input.checked;}).length,
+    total:checks.length
+  };
+}
 function saveLiveSmokeChecklist(){
   try{
     var list=document.getElementById('liveSmokeChecklist');
@@ -1520,6 +1577,8 @@ function resetLiveSmokeChecklist(){
   });
   saveLiveSmokeSignoff();
   try{window.localStorage.removeItem(coachInviteStorageKey());}catch(error){}
+  try{window.localStorage.removeItem(postLaunchStorageKey());}catch(error){}
+  loadPostLaunchChecklist();
   renderLiveSmokeSummary();
   setStatus('Live smoke checklist reset for this account.','good');
 }
@@ -1875,6 +1934,7 @@ function activationRecordText(data){
   var smoke=smokeChecklistProgress();
   var signoff=liveSmokeSignoffData();
   var invite=coachInviteData();
+  var postLaunch=postLaunchProgress();
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
   var pageLines=coachPageLinks(account).map(function(link){
@@ -1908,6 +1968,7 @@ function activationRecordText(data){
     'Live smoke validated at: '+(signoff.validatedAt||'Not entered'),
     'Launch note: '+(signoff.note||'None'),
     'Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Use Copy Coach Invite after this activation record is saved.'),
+    'Post-launch follow-up: '+postLaunch.done+' of '+postLaunch.total+' complete',
     'Next action: '+accountNextAction(data,record),
     'Customer link: '+dashboardLink,
     'Status link: '+statusLink
