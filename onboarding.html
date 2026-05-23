@@ -1269,10 +1269,14 @@ function renderLiveSmokeAccess(data,ok){
   var missingHtml=missing.length
     ? '<div class="empty">'+missing.map(function(item){return esc(item.label||item.key||item);}).join('<br>')+'</div>'
     : '<div class="registryrow"><b>Missing setup</b><span>None reported</span></div>';
+  var pageLinks=coachPageLinks(data.accountKey||'').map(function(link){
+    return linkHtml(link.path,link.label);
+  }).join(' · ');
   box.innerHTML=
     '<div class="registrytitle"><div><b>'+esc(data.accountKey||'Customer account')+'</b><span> Live customer access check</span></div></div>'+
     '<div class="registrycards">'+rows.map(function(row){return '<div class="card"><b>'+esc(row.value||'--')+'</b><span>'+esc(row.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Account link</b><span>'+linkHtml('/dashboard.html?account='+encodeURIComponent(data.accountKey||''),'Open dashboard')+' · '+linkHtml('/?account='+encodeURIComponent(data.accountKey||''),'Open stopwatch')+'</span></div>'+
+    '<div class="registryrow"><b>Coach page checks</b><span>'+pageLinks+'</span></div>'+
     '<div class="registryrow"><b>Message</b><span>'+esc(accessAllowed?(data.deviceAccessReady?'Ready for coach testing on this device.':'Account is ready. Enter a coach access code on this device before loading coach data.'):(data.subscriptionBlockedReason||data.error||'Finish the missing setup items, then check again.'))+'</span></div>'+
     '<div class="registryrow"><b>Next Action</b><span>'+esc(accountNextAction(data,data.accountRegistryRecord||{}))+'</span></div>'+
     missingHtml;
@@ -1741,6 +1745,20 @@ function setupSignals(data){
 }
 function linkHtml(path,label){
   return '<a href="'+esc(path)+'" target="_blank" rel="noopener">'+esc(label)+'</a>';
+}
+function coachPageLinks(account){
+  var query='?account='+encodeURIComponent(account||'');
+  return [
+    {label:'Dashboard',path:'/dashboard.html'+query},
+    {label:'Athletes',path:'/athletes.html'+query},
+    {label:'Training Calendar',path:'/training-calendar.html'+query},
+    {label:'Planning Setup',path:'/plan-setup.html'+query},
+    {label:'Plan Entry',path:'/plan-import.html'+query},
+    {label:'Plan Builder',path:'/plan-builder.html'+query},
+    {label:'Meet History',path:'/meet-history.html'+query},
+    {label:'Records',path:'/records.html'+query},
+    {label:'XC Simulator',path:'/xc-simulator.html'+query}
+  ];
 }
 function setStatus(text,type){
   var el=document.getElementById('status');
