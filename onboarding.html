@@ -1608,6 +1608,8 @@ function copyLiveSmokeStatus(){
   }
   var done=rows.filter(function(row){return row.checked;}).length;
   var signoff=liveSmokeSignoffData();
+  var invite=coachInviteData();
+  var postLaunch=postLaunchProgress();
   var lines=[
     'SMARTCoach Live Smoke Test',
     'Account key: '+account,
@@ -1618,6 +1620,8 @@ function copyLiveSmokeStatus(){
   lines.push('Validated by: '+(signoff.validatedBy||'Not entered'));
   lines.push('Validated at: '+(signoff.validatedAt||'Not entered'));
   lines.push('Launch note: '+(signoff.note||'None'));
+  lines.push('Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Not copied'));
+  lines.push('Post-launch follow-up: '+postLaunch.done+' of '+postLaunch.total+' complete');
   copyText(lines.join('\n'),'Live smoke status copied.');
 }
 function renderLiveSmokeSummary(){

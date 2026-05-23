@@ -483,6 +483,7 @@ Subscription/customer management:
 - Added **Test Access Rules** to the `/onboarding.html` Live Smoke Test so support can verify, without saving changes, that active/trialing subscriptions allow access and past due/unpaid/canceled subscriptions block access.
 - Added a live smoke-test completion summary to `/onboarding.html` so support can see whether all launch checks are complete before turning on a new coach account; the checklist now covers core pages, advanced pages, a real saved workflow, subscription access, the activation record, and parent email staying off.
 - Added **Copy Smoke Status** to `/onboarding.html` so support can paste the exact checked/missing live smoke-test items into notes during launch validation.
+- Copy Smoke Status now also includes coach invite copied status and post-launch follow-up progress, so the support note can cover the full launch state.
 - Added a per-account launch sign-off to `/onboarding.html` so support can stamp the validation time, add a short launch note, and include that sign-off in the copied smoke-test status.
 - `Copy Activation Record` now also includes the live smoke-test sign-off fields, so the final customer support note records who validated launch readiness and when.
 - `/onboarding.html` next-action guidance now keeps pointing support to the live smoke test or launch sign-off until both are complete, instead of saying the account is ready too early.
