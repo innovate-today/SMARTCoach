@@ -75,7 +75,7 @@ Use `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=3` and three comma-separated codes when
 
 Each coach should receive one coach access code. Athlete limits are intentionally not enforced here; those stay controlled by GHL.
 
-Automation does not silently create coach access codes for a new Pro account. Generate codes in `/onboarding.html` or provide them through the setup payload, then give one code to each coach. A Pro account with coach access required and no saved coach code stays setup-incomplete.
+Automation does not silently create coach access codes for a new Pro account. Generate codes in `/onboarding.html` or save them through the manual registry setup flow, then give one code to each coach. Do not put coach codes in the recurring GHL subscription payload. A Pro account with coach access required and no saved coach code stays setup-incomplete.
 
 Legacy access-code support:
 
