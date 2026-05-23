@@ -1988,7 +1988,6 @@ function coachAccessCodeLines(){
   var raw=(document.getElementById('coachAccessCodes')||{}).value||'';
   var codes=raw.split(',').map(function(code){return code.trim();}).filter(Boolean);
   if(!codes.length)return ['Coach access code: Use the code assigned during SMARTCoach setup.'];
-  if(codes.length===1)return ['Coach access code: '+codes[0]];
   return ['Coach access code: Use the individual coach code assigned to you.'];
 }
 function copyCoachInvite(){
