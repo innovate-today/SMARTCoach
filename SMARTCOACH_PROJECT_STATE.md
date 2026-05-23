@@ -499,6 +499,7 @@ Subscription/customer management:
 - `Copy Activation Record` now includes a coach-invite reminder so support saves the internal activation note before sending the coach-facing invite.
 - Added **Copy Coach Invite** to `/onboarding.html` Customer Links so support can send a coach-facing access note with the customer link, account key, plan, and coach access-code instructions after validation is complete.
 - Copy Coach Invite now refuses to copy until the live smoke-test checklist is complete and the launch sign-off is stamped, reducing the chance of inviting a coach before validation is done.
+- Copy Coach Invite now also refuses to copy until Copy Activation Record has been used for the current account, keeping the internal handoff saved before coach-facing access is sent.
 - Copy Coach Invite now saves a per-account copied timestamp in the setup browser, and later activation records show whether the invite has been copied.
 - Copy Activation Record now saves a per-account copied timestamp in the setup browser, and live smoke status plus next-action guidance show whether the internal activation note was saved before the coach invite is sent.
 - Onboarding next-action guidance now advances through activation record saved, coach invite copied, and activation complete states so support can see the final launch step clearly.

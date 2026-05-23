@@ -1760,6 +1760,11 @@ function copyCoachInvite(){
     setStatus('Stamp the launch sign-off before copying the coach invite.','bad');
     return;
   }
+  var activationRecord=activationRecordData();
+  if(smoke.total&&!activationRecord.copiedAt){
+    setStatus('Copy and save the activation record before copying the coach invite.','bad');
+    return;
+  }
   var link=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account||'customer'})));
   var lines=[
     'SMARTCoach access',
