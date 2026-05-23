@@ -635,6 +635,7 @@ Help assistant:
 8. Copy Activation Record now requires a fresh system readiness check that says Ready for initial rollout, so activation cannot be recorded while security, registry, Stripe webhook, coach session, coach access, or parent-email launch blockers remain.
 9. Copy Coach Invite now uses the same system readiness gate, preventing coach access notes from being sent if launch settings changed after activation.
 10. Activation handoff status now shows the system readiness requirement directly and refreshes when Check System starts, succeeds, or fails.
+11. Copy Smoke Status now includes system readiness, so partial or final smoke notes capture whether launch security was checked and ready.
 
 ## Known Good Test Flow
 

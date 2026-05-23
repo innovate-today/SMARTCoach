@@ -1796,10 +1796,13 @@ function copyLiveSmokeStatus(){
   var postLaunch=postLaunchProgress();
   var data=setupForActiveAccount();
   var record=data.accountRegistryRecord||{};
+  var systemReady=!!(currentSystemHealth&&currentSystemHealth.launchReady);
+  var systemBlockers=currentSystemHealth&&currentSystemHealth.launchBlockers||[];
   var lines=[
     'SMARTCoach Live Smoke Test',
     'Account key: '+account,
-    'Progress: '+done+' of '+rows.length+' complete'
+    'Progress: '+done+' of '+rows.length+' complete',
+    'System readiness: '+(systemReady?'Ready for initial rollout':systemBlockers.length?systemBlockers.join('; '):'Not checked')
   ].concat(rows.map(function(row){
     return (row.checked?'[x] ':'[ ] ')+row.label+' - '+row.detail;
   }));
