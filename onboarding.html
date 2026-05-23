@@ -972,17 +972,19 @@ function renderLookupResult(data){
   var sub=record.subscription||{};
   var account=record.accountKey||data.accountKey||'';
   var registry=data.registry||{};
+  var registryLabel=registry.dryRun?'Dry run':registry.found?'Saved':'Not found';
+  var registryTitle=registry.dryRun?'Dry-run customer setup preview':'Saved customer account record';
   var cards=[
     {label:'Plan',value:planLabel(record.productPlan)},
     {label:'Subscription',value:subscriptionLabel({subscription:sub})},
     {label:'Coach seats',value:coachSeatsLabel(record)},
     {label:'Last update',value:shortDateTime(record.updatedAt)},
-    {label:'Registry',value:registry.found?'Saved':'Not found'},
+    {label:'Registry',value:registryLabel},
     {label:'Setup',value:data.setupReady?'Ready':'Needs setup'},
     {label:'Access',value:data.accessReady?'Allowed':(data.subscriptionAccessAllowed===false?'Blocked':'Not ready')}
   ];
   document.getElementById('lookupResult').innerHTML=
-    '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> Saved customer account record</span></div><button type="button" onclick="fillFormFromLookup()">Use In Form</button></div>'+
+    '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> '+esc(registryTitle)+'</span></div><button type="button" onclick="fillFormFromLookup()">Use In Form</button></div>'+
     '<div class="registrycards">'+cards.map(function(card){return '<div class="card"><b>'+esc(card.value||'--')+'</b><span>'+esc(card.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
     '<div class="registryrow"><b>Token</b><span>'+esc(secretStatus(record.token))+'</span></div>'+
