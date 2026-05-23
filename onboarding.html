@@ -651,6 +651,12 @@ function bindAccountKeyWarning(){
   if(coachSeats){
     coachSeats.addEventListener('change',refreshActiveSetupDisplays);
   }
+  ['subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes'].forEach(function(id){
+    var input=document.getElementById(id);
+    if(!input)return;
+    input.addEventListener('change',refreshActiveSetupDisplays);
+    input.addEventListener('input',refreshActiveSetupDisplays);
+  });
   renderAccountKeyWarning();
 }
 function refreshActiveSetupDisplays(){

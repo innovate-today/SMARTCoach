@@ -485,6 +485,7 @@ Subscription/customer management:
 - Plan and coach-seat changes on `/onboarding.html` now refresh customer links, the visible coach-seat result, setup checklist, and activation runbook from the current form state.
 - The active-account snapshot now includes current subscription, logo, and parent-email form values so copied activation notes reflect edits made after lookup.
 - The active-account snapshot now recalculates subscription allow/block state from the current subscription status field, so copied next-action guidance does not keep an old blocked status after form edits.
+- Subscription field edits on `/onboarding.html` now refresh customer links, the setup checklist, and activation runbook from the current form state.
 - `/onboarding.html` now includes a live smoke-test checklist for the real customer-account path after deploys.
 - `/onboarding.html` setup checklist now shows ready/missing/warning badges based on the current customer account signals, including durable registry saved, subscription access, coach codes, and account configuration.
 - Registry account records now store a lightweight `lastAutomationEvent` stamp and a short `automationEventHistory` list showing recent update source, event type, optional Stripe event/object IDs, and received time. `/onboarding.html` lookup displays last source/event plus recent automation history.
