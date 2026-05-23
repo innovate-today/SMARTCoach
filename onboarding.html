@@ -571,6 +571,12 @@ function activeCustomerAccount(){
   if(keys.setup&&keys.lookup&&keys.setup!==keys.lookup)return '';
   return keys.setup||keys.lookup||'';
 }
+function setupForActiveAccount(){
+  var account=activeCustomerAccount();
+  var setupAccount=cleanAccountKey((currentSetup&&currentSetup.accountKey)||'');
+  if(currentSetup&&(!account||!setupAccount||setupAccount===account))return currentSetup;
+  return account?{accountKey:account}: {};
+}
 function accountKeysMismatch(){
   var keys=accountKeyValues();
   return !!(keys.setup&&keys.lookup&&keys.setup!==keys.lookup);
@@ -1711,7 +1717,7 @@ function copyLiveSmokeStatus(){
   var signoff=liveSmokeSignoffData();
   var invite=coachInviteData();
   var postLaunch=postLaunchProgress();
-  var data=currentSetup||{};
+  var data=setupForActiveAccount();
   var record=data.accountRegistryRecord||{};
   var lines=[
     'SMARTCoach Live Smoke Test',
@@ -1810,7 +1816,7 @@ function coachAccessCodeLines(){
   return codes.map(function(code,index){return 'Coach '+(index+1)+' access code: '+code;});
 }
 function copyCoachInvite(){
-  var data=currentSetup||{};
+  var data=setupForActiveAccount();
   var account=data.accountKey||cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'');
   var plan=data.productPlan||document.getElementById('plan').value||'pro';
   var isEssential=plan==='essential';
@@ -2075,7 +2081,7 @@ function renderActivationRunbook(data){
   renderActivationHandoffStatus();
 }
 function copyActivationRunbook(){
-  var data=currentSetup||{};
+  var data=setupForActiveAccount();
   var text=activationSteps(data).map(function(step,index){
     return (index+1)+'. '+step.title+': '+step.body;
   }).join('\n');
@@ -2192,7 +2198,7 @@ function copyActivationRecord(){
   var options={activationRecordCopiedAt:copiedAt};
   if(isFinal)options.finalActivationRecordCopiedAt=copiedAt;
   copyText(
-    activationRecordText(currentSetup||{},options),
+    activationRecordText(setupForActiveAccount(),options),
     isFinal?'Final activation record copied.':'Activation record copied.',
     function(){
       saveActivationRecordCopied(copiedAt,{final:isFinal});
