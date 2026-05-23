@@ -485,6 +485,7 @@ Subscription/customer management:
 - Added **Copy Smoke Status** to `/onboarding.html` so support can paste the exact checked/missing live smoke-test items into notes during launch validation.
 - Added a per-account launch sign-off to `/onboarding.html` so support can stamp the validation time, add a short launch note, and include that sign-off in the copied smoke-test status.
 - `Copy Activation Record` now also includes the live smoke-test sign-off fields, so the final customer support note records who validated launch readiness and when.
+- `/onboarding.html` next-action guidance now keeps pointing support to the live smoke test or launch sign-off until both are complete, instead of saying the account is ready too early.
 - The `/onboarding.html` live smoke-test checklist now persists in the browser per account key and includes a reset action, so setup progress survives refreshes without carrying over to a different customer.
 - `/onboarding.html` now warns and blocks setup saves, dry runs, live access checks, and access-rule tests when the setup account key and lookup account key point to different customers.
 - Added an **Activation Runbook** to `/onboarding.html` so each new customer setup has the same plain-language order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, and complete the live smoke test.

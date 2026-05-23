@@ -875,6 +875,11 @@ function accountNextAction(data,record){
   if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste coach access codes, then save the registry update.';
   if(data.accessReady===false)return 'Finish account setup, then check customer access again.';
   if(data.deviceAccessReady===false)return 'Account is ready. Enter a coach access code on this browser or phone to unlock coach data.';
+  var smoke=smokeChecklistProgress();
+  if(smoke.total&&smoke.done<smoke.total)return 'Complete the live smoke test before turning on the coach account.';
+  var signoff=liveSmokeSignoffData();
+  if(smoke.total&&smoke.done===smoke.total&&(!signoff.validatedBy||!signoff.validatedAt))return 'Stamp the launch sign-off, then copy the activation record.';
+  if(smoke.total&&smoke.done===smoke.total)return 'Ready to turn on the coach account and save the activation record.';
   return 'Proceed to live smoke test: open coach pages and save one harmless real item.';
 }
 function lastEventLabel(event, part){
