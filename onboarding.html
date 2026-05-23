@@ -1805,8 +1805,11 @@ function setCustomLinkText(path){
   }
 }
 function copyCustomLink(){
-  var el=document.getElementById('customLinkText');
-  copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'','SMART Trak link copied.');
+  var data=setupForActiveAccount();
+  var link=customerMainLink(data);
+  setLink('customLink',link);
+  setCustomLinkText(link);
+  copyText(absoluteUrl(link),'SMART Trak link copied.');
 }
 function coachAccessCodeLines(){
   var raw=(document.getElementById('coachAccessCodes')||{}).value||'';
