@@ -459,7 +459,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label class="checkrow"><input type="checkbox"><span><b>6. Advanced coach pages load<em class="checkbadge warn">Required</em></b><span>Check Plan Builder, Meet History, Records, and XC Simulator for the customer account. They should load without setup-needed errors.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>7. One real workflow saves<em class="checkbadge warn">Required</em></b><span>Save one harmless test item, such as a manual mileage entry, race result, or stopwatch sync, then confirm it appears back in SMART Trak.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>8. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL subscription workflow or manually save status changes. Active or trialing should allow SMART Trak; past due, unpaid, or canceled should block it clearly.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>9. Activation record is saved<em class="checkbadge warn">Required</em></b><span>After launch sign-off, use Copy Activation Record and save the support note with setup state, next action, customer links, coach invite status, and post-launch follow-up progress.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>9. Activation record is saved<em class="checkbadge warn">Required</em></b><span>After launch sign-off, use Copy Activation Record and save the support note. This item is marked complete when the copy succeeds.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>10. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED is intentionally turned on later.</span></span></label>
       </div>
       <div class="readybar" id="liveSmokeSignoff">
@@ -899,8 +899,8 @@ function accountNextAction(data,record){
   if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste coach access codes, then save the registry update.';
   if(data.accessReady===false)return 'Finish account setup, then check customer access again.';
   if(data.deviceAccessReady===false)return 'Account is ready. Enter a coach access code on this browser or phone to unlock coach data.';
-  var smoke=smokeChecklistProgress();
-  if(smoke.total&&smoke.done<smoke.total)return 'Complete the live smoke test before turning on the coach account.';
+  var smoke=smokeValidationProgress();
+  if(smoke.total&&smoke.done<smoke.total)return 'Complete the live smoke validation checks before turning on the coach account.';
   var signoff=liveSmokeSignoffData();
   if(smoke.total&&smoke.done===smoke.total&&(!signoff.validatedBy||!signoff.validatedAt))return 'Stamp the launch sign-off, then copy the activation record.';
   var activationRecord=activationRecordData();
@@ -1698,7 +1698,7 @@ function renderLiveSmokeSummary(){
 function renderActivationHandoffStatus(){
   var box=document.getElementById('activationHandoffStatus');
   if(!box)return;
-  var smoke=smokeChecklistProgress();
+  var smoke=smokeValidationProgress();
   var signoff=liveSmokeSignoffData();
   var activationRecord=activationRecordData();
   var invite=coachInviteData();
@@ -1710,7 +1710,7 @@ function renderActivationHandoffStatus(){
   var detail='Complete the smoke test, stamp launch sign-off, then copy the activation record before sending the coach invite.';
   var state='warn';
   if(!smokeComplete){
-    detail=smoke.done+' of '+smoke.total+' smoke checks complete. Finish the checklist before copying the handoff.';
+    detail=smoke.done+' of '+smoke.total+' validation checks complete. Finish these checks before copying the handoff.';
   }else if(!signed){
     title='Launch sign-off needed';
     detail='Stamp launch sign-off, then copy the activation record.';
@@ -2036,6 +2036,30 @@ function smokeChecklistProgress(){
     total:checks.length
   };
 }
+function isActivationRecordSmokeRow(row){
+  return /activation record/i.test(row&&row.label||'');
+}
+function smokeValidationProgress(){
+  var rows=liveSmokeRows().filter(function(row){return !isActivationRecordSmokeRow(row);});
+  return {
+    done:rows.filter(function(row){return row.checked;}).length,
+    total:rows.length
+  };
+}
+function markActivationRecordSmokeRow(){
+  var list=document.getElementById('liveSmokeChecklist');
+  if(!list)return;
+  [].slice.call(list.querySelectorAll('.checkrow')).some(function(row){
+    var title=row.querySelector('b');
+    var input=row.querySelector('input[type="checkbox"]');
+    var label=(title&&title.textContent||'').trim();
+    if(!/activation record/i.test(label)||!input)return false;
+    input.checked=true;
+    saveLiveSmokeChecklist();
+    renderLiveSmokeSummary();
+    return true;
+  });
+}
 function activationRecordText(data,options){
   data=data||{};
   options=options||{};
@@ -2095,10 +2119,10 @@ function activationRecordText(data,options){
   return lines.join('\n');
 }
 function copyActivationRecord(){
-  var smoke=smokeChecklistProgress();
+  var smoke=smokeValidationProgress();
   var signoff=liveSmokeSignoffData();
   if(smoke.total&&smoke.done<smoke.total){
-    setStatus('Complete the live smoke test before copying the activation record. Use Copy Smoke Status for partial notes.','bad');
+    setStatus('Complete the live smoke validation checks before copying the activation record. Use Copy Smoke Status for partial notes.','bad');
     return;
   }
   if(smoke.total&&(!signoff.validatedBy||!signoff.validatedAt)){
@@ -2109,7 +2133,10 @@ function copyActivationRecord(){
   copyText(
     activationRecordText(currentSetup||{},{activationRecordCopiedAt:copiedAt}),
     'Activation record copied.',
-    function(){saveActivationRecordCopied(copiedAt);}
+    function(){
+      saveActivationRecordCopied(copiedAt);
+      markActivationRecordSmokeRow();
+    }
   );
 }
 function setupSignals(data){
