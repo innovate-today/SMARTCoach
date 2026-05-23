@@ -388,6 +388,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div id="liveSmokeResult" class="registrybox"></div>
       <div id="liveSmokeSummary" class="readybar warn">
         <div><b>Live smoke test not complete</b><span>Check each required item as it passes. All eight checks should be complete before turning on a new coach account.</span></div>
+        <div class="smokeactions">
+          <button type="button" class="secondary" onclick="resetLiveSmokeChecklist()">Reset Checklist</button>
+        </div>
       </div>
       <div id="liveSmokeChecklist" class="checklist">
         <label class="checkrow"><input type="checkbox"><span><b>1. System check is ready<em class="checkbadge warn">Required</em></b><span>Run Check System with the automation secret. The result should say Ready for initial rollout and show no launch blockers.</span></span></label>
@@ -438,6 +441,8 @@ function generateAccountKey(){
   if(!key)key='smartcoach'+randomCode(6);
   input.value=key;
   document.getElementById('lookupAccountKey').value=key;
+  loadLiveSmokeChecklist();
+  renderLiveSmokeSummary();
   setStatus('Account key generated.','good');
 }
 function generateCoachCodes(){
@@ -545,6 +550,9 @@ function renderSystemResult(data){
 function lookupAccount(){
   var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');
   document.getElementById('lookupAccountKey').value=account;
+  document.getElementById('accountKey').value=account;
+  loadLiveSmokeChecklist();
+  renderLiveSmokeSummary();
   var secret=document.getElementById('automationSecret').value.trim();
   var box=document.getElementById('lookupResult');
   if(!account){
@@ -637,6 +645,8 @@ function fillFormFromLookup(){
   var sub=currentSetup.subscription||{};
   document.getElementById('accountKey').value=currentSetup.accountKey||'';
   document.getElementById('lookupAccountKey').value=currentSetup.accountKey||'';
+  loadLiveSmokeChecklist();
+  renderLiveSmokeSummary();
   document.getElementById('plan').value=currentSetup.productPlan==='essential'?'essential':'pro';
   document.getElementById('coachSeats').value=String(currentSetup.coachSeats)==='3'?'3':'1';
   document.getElementById('locationId').value='';
@@ -933,6 +943,7 @@ function setupMissingText(data){
 }
 function renderSetup(data){
   currentSetup=data;
+  loadLiveSmokeChecklist();
   document.getElementById('resultPanel').hidden=false;
   document.getElementById('copyPanel').hidden=false;
   document.getElementById('automationPanel').hidden=false;
@@ -960,6 +971,7 @@ function renderSetup(data){
   renderAutomationPayloads(data);
   renderChecklist(data);
   renderActivationRunbook(data);
+  renderLiveSmokeSummary();
 }
 function customerMainLink(data){
   if((data.productPlan||'pro')==='essential')return data.accountUrl||('/?account='+encodeURIComponent(data.accountKey||'customer'));
@@ -1208,9 +1220,47 @@ function bindLiveSmokeChecklist(){
   var list=document.getElementById('liveSmokeChecklist');
   if(!list)return;
   list.addEventListener('change',function(event){
-    if(event.target&&event.target.matches('input[type="checkbox"]'))renderLiveSmokeSummary();
+    if(event.target&&event.target.matches('input[type="checkbox"]')){
+      saveLiveSmokeChecklist();
+      renderLiveSmokeSummary();
+    }
   });
+  loadLiveSmokeChecklist();
   renderLiveSmokeSummary();
+}
+function liveSmokeStorageKey(){
+  var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'default')||'default';
+  return 'smartcoach_live_smoke_'+account;
+}
+function saveLiveSmokeChecklist(){
+  try{
+    var list=document.getElementById('liveSmokeChecklist');
+    if(!list)return;
+    var states=[].slice.call(list.querySelectorAll('input[type="checkbox"]')).map(function(input){return !!input.checked;});
+    window.localStorage.setItem(liveSmokeStorageKey(),JSON.stringify(states));
+  }catch(error){}
+}
+function loadLiveSmokeChecklist(){
+  try{
+    var list=document.getElementById('liveSmokeChecklist');
+    if(!list)return;
+    var inputs=[].slice.call(list.querySelectorAll('input[type="checkbox"]'));
+    inputs.forEach(function(input){input.checked=false;});
+    var raw=window.localStorage.getItem(liveSmokeStorageKey());
+    if(!raw)return;
+    var states=JSON.parse(raw);
+    inputs.forEach(function(input,index){
+      input.checked=!!states[index];
+    });
+  }catch(error){}
+}
+function resetLiveSmokeChecklist(){
+  var list=document.getElementById('liveSmokeChecklist');
+  if(!list)return;
+  [].slice.call(list.querySelectorAll('input[type="checkbox"]')).forEach(function(input){input.checked=false;});
+  saveLiveSmokeChecklist();
+  renderLiveSmokeSummary();
+  setStatus('Live smoke checklist reset for this account.','good');
 }
 function renderLiveSmokeSummary(){
   var list=document.getElementById('liveSmokeChecklist');
