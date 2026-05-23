@@ -285,7 +285,7 @@ function accountSetup(req, res) {
         value: "",
         required: false,
         label: "Parent email enabled coaches",
-        description: "Optional. Use coach numbers like 1 or 1,3 to enable parent email tools only for those coach access codes.",
+        description: "Optional future release only. Use coach numbers like 1 or 1,3; tools stay hidden until the global parent email release flag is turned on.",
       }
     );
   }
@@ -1049,7 +1049,7 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
         value: parentEmailAccessIndexes(account.parentEmailCoachAccess).join(","),
         required: false,
         label: "Parent email enabled coaches",
-        description: "Optional. Use coach numbers like 1 or 1,3 to enable parent email tools only for those coach access codes.",
+        description: "Optional future release only. Use coach numbers like 1 or 1,3; tools stay hidden until the global parent email release flag is turned on.",
       }
     );
   }

@@ -475,6 +475,7 @@ Subscription/customer management:
 - The system readiness check now reports one overall launch-readiness status plus launch blockers for automation secret, durable registry, Stripe webhook signing secret, dedicated session secret, coach access enforcement, and parent-email rollout state.
 - The system readiness check now includes a launch checklist with plain-language details for each automation/security requirement before initial rollout.
 - `/onboarding.html` now has **Copy System Status** after Check System, so support can save launch readiness, blockers, warnings, and setup/security checklist results before activating customers.
+- Onboarding now labels per-coach parent email access as `Future Parent Email Coaches`, making clear that those values are only staged for a later release while parent email remains globally off for initial rollout.
 - The Activation Runbook now tells support to use Copy System Status after Check System so system readiness is saved before customer activation steps continue.
 - Copy System Status now clears stale system-readiness data when a new Check System starts or fails, so support cannot accidentally copy an old passing result after a failed check.
 - Copied smoke-status, coach-invite, activation-runbook, and activation-record notes now ignore stale cached setup data when the active account key has changed.
