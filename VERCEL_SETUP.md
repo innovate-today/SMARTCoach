@@ -116,7 +116,7 @@ Use **Check System** before launch. It reports one overall launch readiness resu
 - coach access enforcement
 - parent email rollout gate
 
-Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually. Use **Test Access Rules** to run no-save checks that active/trialing allow access while past due, unpaid, and canceled block access.
+Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually. A warning state means the account is ready but the current browser or phone still needs a coach access code. Use **Test Access Rules** to run no-save checks that active/trialing allow access while past due, unpaid, and canceled block access.
 
 After generating or saving a customer account, use the **Activation Runbook** panel for the exact support order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, then complete the live smoke test.
 

@@ -67,6 +67,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .readybar b{display:block;font-size:14px}
 .readybar span{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.35}
 .readybar.good{border-color:#bbf7d0;background:#f0fdf4}.readybar.good b{color:var(--good)}
+.readybar.warn{border-color:#fed7aa;background:#fff7ed}.readybar.warn b{color:var(--warn)}
 .readybar.bad{border-color:#fecaca;background:#fef2f2}.readybar.bad b{color:var(--bad)}
 .linkline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .linkline code{border:1px solid var(--line);border-radius:7px;background:#fff;color:#102a70;padding:10px 12px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1075,10 +1076,11 @@ function renderLiveSmokeAccess(data,ok){
   var missing=Array.isArray(data.missingSetupFields)?data.missingSetupFields:[];
   var accessAllowed=!!data.accessReady;
   var setupReady=!!data.setupReady||!!data.configured;
-  bar.className='readybar '+(accessAllowed?'good':'bad');
-  bar.querySelector('b').textContent=accessAllowed?'Customer access is ready':'Customer access needs attention';
+  var deviceReady=!!data.deviceAccessReady;
+  bar.className='readybar '+(accessAllowed?(deviceReady?'good':'warn'):'bad');
+  bar.querySelector('b').textContent=accessAllowed?(deviceReady?'Customer access is ready':'Account ready, coach code needed'):'Customer access needs attention';
   bar.querySelector('span').textContent=accessAllowed
-    ?'The live account can open SMART Trak after the coach enters a valid access code or session.'
+    ?(deviceReady?'This browser or phone is unlocked for coach testing.':'The account is ready, but this browser or phone still needs a coach access code before coach data loads.')
     : data.subscriptionBlockedReason||data.error||'The live customer account is not ready yet.';
   currentSetup=Object.assign({},currentSetup||{},data,{accountKey:data.accountKey||cleanAccountKey(document.getElementById('accountKey').value)});
   var rows=[
