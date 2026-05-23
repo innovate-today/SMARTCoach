@@ -320,7 +320,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 ## Deploy Order
 
 1. Import this GitHub repo into Vercel.
-2. Open `/onboarding.html`, use **Launch Security Values** -> **Generate Launch Secrets**, and add the security values plus registry values in Vercel Production.
+2. Open `/onboarding.html`, use **Launch Security Values** -> **Generate Launch Secrets**, add the security values plus registry values in Vercel Production, then use **Clear Generated Secrets** after the Vercel values are saved.
 3. Point `app.smartcoach-pro.com` to the Vercel project.
 4. Open `/onboarding.html` and run **Check System** with the automation secret.
 5. Fix any launch blockers before selling or activating a customer account.
