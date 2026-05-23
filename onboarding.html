@@ -1536,6 +1536,7 @@ function saveCoachInviteCopied(copiedAt){
   try{
     window.localStorage.setItem(coachInviteStorageKey(),JSON.stringify({copiedAt:copiedAt||new Date().toLocaleString()}));
   }catch(error){}
+  renderPostLaunchSummary();
   renderActivationHandoffStatus();
 }
 function activationRecordData(){
