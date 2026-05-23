@@ -475,6 +475,7 @@ Subscription/customer management:
 - The system readiness check now reports one overall launch-readiness status plus launch blockers for automation secret, durable registry, Stripe webhook signing secret, dedicated session secret, coach access enforcement, and parent-email rollout state.
 - The system readiness check now includes a launch checklist with plain-language details for each automation/security requirement before initial rollout.
 - `/onboarding.html` now has **Copy System Status** after Check System, so support can save launch readiness, blockers, warnings, and setup/security checklist results before activating customers.
+- The Activation Runbook now tells support to use Copy System Status after Check System so system readiness is saved before customer activation steps continue.
 - `/onboarding.html` now includes a live smoke-test checklist for the real customer-account path after deploys.
 - `/onboarding.html` setup checklist now shows ready/missing/warning badges based on the current customer account signals, including durable registry saved, subscription access, coach codes, and account configuration.
 - Registry account records now store a lightweight `lastAutomationEvent` stamp and a short `automationEventHistory` list showing recent update source, event type, optional Stripe event/object IDs, and received time. `/onboarding.html` lookup displays last source/event plus recent automation history.
