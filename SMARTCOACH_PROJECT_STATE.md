@@ -639,6 +639,7 @@ Help assistant:
 12. Changing the setup or lookup account key now clears the prior system readiness result, forcing a fresh Check System for the active customer before activation or coach invite copy.
 13. Critical setup edits now clear copied activation/invite/follow-up state, including generated coach-code changes and accounts loaded through Use In Form, so support has to recopy handoff notes after access or subscription details change.
 14. When copied activation state is cleared, the live smoke checklist's activation-record row is also unchecked so the visible checklist matches the saved handoff state.
+15. Activation record and coach invite copy now also require customer-account readiness: account key, saved registry record, allowed subscription, SMART Trak connection fields, coach access codes, and configured account status.
 
 ## Known Good Test Flow
 

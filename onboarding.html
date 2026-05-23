@@ -1913,6 +1913,7 @@ function renderActivationHandoffStatus(){
   var activationRecord=activationRecordData();
   var invite=coachInviteData();
   var postLaunch=postLaunchProgress();
+  var accountBlocker=accountSetupBlockerText(setupForActiveAccount());
   var smokeComplete=smoke.total>0&&smoke.done===smoke.total;
   var signed=!!(signoff.validatedBy&&signoff.validatedAt);
   var systemBlocker=systemReadinessBlockerText();
@@ -1925,6 +1926,9 @@ function renderActivationHandoffStatus(){
   }else if(systemBlocker){
     title='System readiness needed';
     detail=systemBlocker;
+  }else if(accountBlocker){
+    title='Customer setup needed';
+    detail=accountBlocker;
   }else if(!signed){
     title='Launch sign-off needed';
     detail='Stamp launch sign-off, then copy the activation record.';
@@ -1988,6 +1992,11 @@ function copyCoachInvite(){
   var systemBlocker=systemReadinessBlockerText();
   if(systemBlocker){
     setStatus(systemBlocker,'bad');
+    return;
+  }
+  var accountBlocker=accountSetupBlockerText(data);
+  if(accountBlocker){
+    setStatus(accountBlocker,'bad');
     return;
   }
   if(smoke.total&&(!signoff.validatedBy||!signoff.validatedAt)){
@@ -2365,6 +2374,12 @@ function copyActivationRecord(){
     setStatus(systemBlocker,'bad');
     return;
   }
+  var data=setupForActiveAccount();
+  var accountBlocker=accountSetupBlockerText(data);
+  if(accountBlocker){
+    setStatus(accountBlocker,'bad');
+    return;
+  }
   if(smoke.total&&(!signoff.validatedBy||!signoff.validatedAt)){
     setStatus('Stamp the launch sign-off before copying the activation record.','bad');
     return;
@@ -2373,7 +2388,7 @@ function copyActivationRecord(){
   var options={activationRecordCopiedAt:copiedAt};
   if(isFinal)options.finalActivationRecordCopiedAt=copiedAt;
   copyText(
-    activationRecordText(setupForActiveAccount(),options),
+    activationRecordText(data,options),
     isFinal?'Final activation record copied.':'Activation record copied.',
     function(){
       saveActivationRecordCopied(copiedAt,{final:isFinal});
@@ -2403,6 +2418,16 @@ function setupSignals(data){
     coachCodesReady:coachCodesReady,
     accountConfigured:configured
   };
+}
+function accountSetupBlockerText(data){
+  var signals=setupSignals(data);
+  if(!signals.accountKey)return 'Enter the customer account key before copying activation or coach access notes.';
+  if(!signals.registrySaved)return 'Save and verify the customer registry record before copying activation or coach access notes.';
+  if(!signals.subscriptionAllowed)return signals.subscriptionBlockedReason;
+  if(!signals.crmReady)return 'Add the customer Location ID and Private Integration Token before copying activation or coach access notes.';
+  if(!signals.coachCodesReady)return 'Generate and save coach access codes before copying activation or coach access notes.';
+  if(!signals.accountConfigured)return 'Confirm the customer account status is configured before copying activation or coach access notes.';
+  return '';
 }
 function linkHtml(path,label){
   return '<a href="'+esc(path)+'" target="_blank" rel="noopener">'+esc(label)+'</a>';
