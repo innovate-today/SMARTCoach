@@ -2083,7 +2083,7 @@ function activationRecordText(data,options){
   if(options.activationRecordCopiedAt)activationRecord.copiedAt=options.activationRecordCopiedAt;
   var invite=coachInviteData();
   var postLaunch=postLaunchProgress();
-  var postLaunchComplete=postLaunch.total>0&&postLaunch.done===postLaunch.total;
+  var postLaunchComplete=!!invite.copiedAt&&postLaunch.total>0&&postLaunch.done===postLaunch.total;
   if(options.finalActivationRecordCopiedAt)activationRecord.finalCopiedAt=options.finalActivationRecordCopiedAt;
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
@@ -2133,7 +2133,8 @@ function copyActivationRecord(){
   var smoke=smokeValidationProgress();
   var signoff=liveSmokeSignoffData();
   var postLaunch=postLaunchProgress();
-  var isFinal=postLaunch.total>0&&postLaunch.done===postLaunch.total;
+  var invite=coachInviteData();
+  var isFinal=!!invite.copiedAt&&postLaunch.total>0&&postLaunch.done===postLaunch.total;
   if(smoke.total&&smoke.done<smoke.total){
     setStatus('Complete the live smoke validation checks before copying the activation record. Use Copy Smoke Status for partial notes.','bad');
     return;
