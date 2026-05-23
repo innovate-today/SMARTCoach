@@ -174,6 +174,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <button id="lookupBtn" type="button" class="secondary" onclick="lookupAccount()">Lookup Account</button>
         <button id="healthBtn" type="button" class="secondary" onclick="checkAutomationHealth()">Check System</button>
+        <button type="button" class="secondary" onclick="copySystemStatus()">Copy System Status</button>
       </div>
       <div id="systemResult" class="registrybox"></div>
       <div id="lookupResult" class="registrybox"></div>
@@ -520,6 +521,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 <script>
 var currentEnvironment=[];
 var currentSetup=null;
+var currentSystemHealth=null;
 prefillFromUrl();
 bindAccountKeyWarning();
 bindLiveSmokeChecklist();
@@ -705,6 +707,7 @@ function checkAutomationHealth(){
   });
 }
 function renderSystemResult(data){
+  currentSystemHealth=data||null;
   var checks=data.checks||[];
   var cards=checks.map(function(check){
     return '<div class="card"><b>'+esc(check.configured?'Ready':'Missing')+'</b><span>'+esc(check.label)+'</span></div>';
@@ -744,6 +747,32 @@ function renderSystemResult(data){
     '<div class="registryrow"><b>Coach sessions</b><span>'+esc(sessionDetail)+'</span></div>'+
     '<div class="registryrow"><b>Parent email rollout</b><span>'+esc(data.parentEmailFeatureReleased?'Live globally - turn off for initial rollout':'Off for initial rollout')+'</span></div>'+
     warningHtml;
+}
+function copySystemStatus(){
+  var data=currentSystemHealth;
+  if(!data){
+    setStatus('Run Check System before copying system status.','bad');
+    return;
+  }
+  var blockers=data.launchBlockers||[];
+  var checks=data.launchChecks||[];
+  var warnings=data.productionWarnings||[];
+  var lines=[
+    'SMARTCoach System Readiness',
+    'Checked at: '+new Date().toLocaleString(),
+    'Launch readiness: '+(data.launchReady?'Ready for initial rollout':'Not ready yet'),
+    'Launch blockers: '+(blockers.length?blockers.join('; '):'None')
+  ];
+  checks.forEach(function(check){
+    lines.push((check.ready?'[ready] ':'[needs work] ')+(check.label||'Check')+' - '+(check.detail||''));
+  });
+  lines.push('Registry connection: '+(data.registryReachable?'Reachable':data.registryError||'Not connected'));
+  lines.push('Manual registry updates: '+(data.readyForManualRegistryUpdates?'Ready':'Needs registry and automation secret'));
+  lines.push('Stripe webhooks: '+(data.readyForStripeWebhooks?'Ready':'Needs registry, automation secret, and Stripe webhook secret'));
+  lines.push('Coach sessions: '+(data.sessionSigningSource==='session-secret'?'Dedicated secret':data.sessionSigningSource?'Fallback secret':'Needs signing secret'));
+  lines.push('Parent email rollout: '+(data.parentEmailFeatureReleased?'Live globally - turn off for initial rollout':'Off for initial rollout'));
+  lines.push('Production warnings: '+(warnings.length?warnings.join('; '):'None'));
+  copyText(lines.join('\n'),'System status copied.');
 }
 function lookupAccount(){
   var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');
