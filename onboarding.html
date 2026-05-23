@@ -2071,15 +2071,28 @@ function renderAutomationPayloads(data){
     productPlan:data.productPlan||document.getElementById('plan').value,
     coachSeats:String(data.coachSeats||document.getElementById('coachSeats').value||'1')
   };
-  var payload=registryPayloadFromForm();
-  payload.accountKey=account;
-  payload.productPlan=metadata.productPlan;
-  payload.coachSeats=metadata.coachSeats;
+  var payload=safeAutomationPayloadFromForm(account,metadata);
   document.getElementById('stripeMetadataText').textContent=JSON.stringify(metadata,null,2);
   document.getElementById('automationPayloadText').textContent=JSON.stringify(payload,null,2);
   setEndpointText('automationEndpointText','/api/smart-trak/account-automation');
   setEndpointText('stripeWebhookEndpointText','/api/smart-trak/account-stripe-webhook');
   setStripeEventList();
+}
+function safeAutomationPayloadFromForm(account,metadata){
+  return {
+    accountKey:account,
+    productPlan:metadata.productPlan,
+    coachSeats:metadata.coachSeats,
+    updateSource:'ghl-subscription-workflow',
+    eventType:'subscription_update',
+    subscriptionStatus:document.getElementById('subscriptionStatus').value,
+    billingCadence:document.getElementById('billingCadence').value,
+    subscriptionAmount:document.getElementById('subscriptionAmount').value.trim(),
+    renewalDate:document.getElementById('renewalDate').value.trim(),
+    stripeCustomerId:document.getElementById('stripeCustomerId').value.trim(),
+    stripeSubscriptionId:document.getElementById('stripeSubscriptionId').value.trim(),
+    subscriptionNotes:document.getElementById('subscriptionNotes').value.trim()
+  };
 }
 function setEndpointText(id,path){
   var el=document.getElementById(id);

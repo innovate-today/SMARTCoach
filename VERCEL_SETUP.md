@@ -101,7 +101,7 @@ The same setup helper is available as a simple internal page:
 
 - `/onboarding.html`
 
-The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe. It also includes account-key and coach-code generators, copy-ready Stripe metadata, automation endpoint URLs, recommended Stripe webhook events, automation payloads, an internal system readiness check, plus an internal account lookup panel that can verify a saved registry record with the automation secret and load the customer subscription fields back into the setup form.
+The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe. It also includes account-key and coach-code generators, copy-ready Stripe metadata, automation endpoint URLs, recommended Stripe webhook events, subscription-only automation payloads, an internal system readiness check, plus an internal account lookup panel that can verify a saved registry record with the automation secret and load the customer subscription fields back into the setup form.
 
 Use **Test Setup First** before saving a customer account. It validates the account payload, subscription status, coach seats, coach codes, and generated setup fields without writing to the durable registry.
 
@@ -215,7 +215,7 @@ For the recommended GHL workflow action, use:
 - Header: `X-SMARTCoach-Automation-Secret: your_secret`
 - Body type: raw JSON
 
-Send the customer's SMARTCoach account key plus subscription fields from the GHL/Stripe payment record. If GHL does not have a Stripe field available, leave it blank; the registry merge will preserve already saved values.
+Send the customer's SMARTCoach account key plus subscription fields from the GHL/Stripe payment record. If GHL does not have a Stripe field available, leave it blank; the registry merge will preserve already saved values. Do not include SMART Trak private integration tokens or coach access codes in the copied GHL workflow payload; those stay in the saved registry setup flow.
 
 Subscription status accepts the internal values `active`, `trialing`, `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, and `unpaid`. Common workflow wording such as `paid`, `payment failed`, `failed payment`, `cancelled`, `pending`, and `not paid` is normalized automatically. Unknown status text is treated as `incomplete` so access is not accidentally left open.
 
