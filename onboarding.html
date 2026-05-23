@@ -548,6 +548,7 @@ function generateCoachCodes(){
   if(plan==='essential'){
     document.getElementById('coachAccessCodes').value='';
     setStatus('Essential is stopwatch-only, so coach access codes are not needed.','good');
+    refreshActiveSetupDisplays();
     return;
   }
   var codes=[];
@@ -556,6 +557,7 @@ function generateCoachCodes(){
   }
   document.getElementById('coachAccessCodes').value=codes.join(',');
   setStatus((seats===3?'Three coach access codes generated.':'One coach access code generated.')+' Give one code to each coach and keep a support copy.','good');
+  refreshActiveSetupDisplays();
 }
 function cleanAccountKey(value){
   return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,40);
@@ -576,6 +578,10 @@ function setupForActiveAccount(){
   var setupAccount=cleanAccountKey((currentSetup&&currentSetup.accountKey)||'');
   var plan=(document.getElementById('plan')||{}).value||'pro';
   var coachSeats=(document.getElementById('coachSeats')||{}).value||'1';
+  var locationId=((document.getElementById('locationId')||{}).value||'').trim();
+  var privateIntegrationToken=((document.getElementById('privateIntegrationToken')||{}).value||'').trim();
+  var coachAccessCodes=((document.getElementById('coachAccessCodes')||{}).value||'').trim();
+  var coachAccessCodeCount=coachAccessCodes.split(',').map(function(code){return code.trim();}).filter(Boolean).length;
   var subscription={
     status:(document.getElementById('subscriptionStatus')||{}).value||'active',
     billingCadence:(document.getElementById('billingCadence')||{}).value||'monthly',
@@ -592,6 +598,8 @@ function setupForActiveAccount(){
     accountKey:account,
     productPlan:plan,
     coachSeats:coachSeats,
+    crmConfigured:!!(locationId&&privateIntegrationToken),
+    coachAccessCodesConfigured:coachAccessCodeCount,
     parentEmailCoachAccess:((document.getElementById('parentEmailCoachAccess')||{}).value||'').trim(),
     logoUrl:((document.getElementById('logoUrl')||{}).value||'').trim(),
     subscription:subscription,
@@ -602,7 +610,7 @@ function setupForActiveAccount(){
     ghlCustomLinkUrl:'/dashboard.html?account='+encodeURIComponent(account)+'&embed=1'
   }:{};
   if(currentSetup&&(!account||!setupAccount||setupAccount===account)){
-    return Object.assign({},base,currentSetup,{productPlan:plan,coachSeats:coachSeats,parentEmailCoachAccess:base.parentEmailCoachAccess,logoUrl:base.logoUrl,subscription:subscription,subscriptionAccessAllowed:subscriptionAllowed,subscriptionBlockedReason:subscriptionBlockedReason});
+    return Object.assign({},base,currentSetup,{productPlan:plan,coachSeats:coachSeats,crmConfigured:base.crmConfigured,coachAccessCodesConfigured:base.coachAccessCodesConfigured,parentEmailCoachAccess:base.parentEmailCoachAccess,logoUrl:base.logoUrl,subscription:subscription,subscriptionAccessAllowed:subscriptionAllowed,subscriptionBlockedReason:subscriptionBlockedReason});
   }
   return base;
 }
@@ -651,7 +659,7 @@ function bindAccountKeyWarning(){
   if(coachSeats){
     coachSeats.addEventListener('change',refreshActiveSetupDisplays);
   }
-  ['subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
+  ['locationId','privateIntegrationToken','coachAccessCodes','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
     var input=document.getElementById(id);
     if(!input)return;
     input.addEventListener('change',refreshActiveSetupDisplays);
