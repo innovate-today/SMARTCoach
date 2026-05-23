@@ -517,6 +517,7 @@ Subscription/customer management:
 - After post-launch follow-up is complete, onboarding next-action guidance now reminds support to copy the final activation record before moving the account to normal monitoring.
 - Copy Activation Record now titles the copied note `SMARTCoach Final Activation Record` once first coach login and first sync are both checked.
 - Copy Activation Record now only treats the note as final after the coach invite has been copied and first-login/first-sync follow-up is complete.
+- `VERCEL_SETUP.md` now describes the same final activation-record rule: coach invite copied plus first-login/first-sync follow-up complete.
 - Final activation record copies now save a separate per-account timestamp, allowing onboarding next-action guidance to move from final handoff to normal support monitoring.
 - Copy Coach Invite now tells coaches where to enter the account key and coach access code on the phone app: Groups screen -> Account.
 - Essential Copy Coach Invite now also tells stopwatch-only coaches where to enter the account key on the phone app.
