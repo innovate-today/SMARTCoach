@@ -207,6 +207,52 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   </section>
 
   <section class="panel">
+    <div class="panelhead"><h2>Launch Security Values</h2></div>
+    <div class="panelbody">
+      <div class="copyhint">Add these once in Vercel Production before launch. Use private values for secrets; only the field names and safe value notes are shown here.</div>
+      <div class="varlist">
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_ADMIN_SETUP_CODE</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Create a private internal setup code</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_ADMIN_SETUP_CODE','Setup code field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Create a private internal setup code','Setup code value note copied.')">Copy Value Note</button>
+        </div>
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_AUTOMATION_SECRET</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Create a long private automation secret</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_AUTOMATION_SECRET','Automation secret field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Create a long private automation secret','Automation secret value note copied.')">Copy Value Note</button>
+        </div>
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_STRIPE_WEBHOOK_SECRET</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Use the Stripe webhook signing secret</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_STRIPE_WEBHOOK_SECRET','Stripe webhook field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Use the Stripe webhook signing secret','Stripe webhook value note copied.')">Copy Value Note</button>
+        </div>
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_SESSION_SECRET</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Create a different long private session secret</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_SESSION_SECRET','Session secret field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Create a different long private session secret','Session secret value note copied.')">Copy Value Note</button>
+        </div>
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_REQUIRE_COACH_ACCESS</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>true</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REQUIRE_COACH_ACCESS','Coach access field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('true','Coach access value copied.')">Copy Value</button>
+        </div>
+        <div class="varrow">
+          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta recommended">Initial Rollout</em></div><code>SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Do not set for initial rollout</code></div>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED','Parent email field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Do not set for initial rollout','Parent email rollout note copied.')">Copy Value Note</button>
+        </div>
+      </div>
+      <div class="setupnote"><b>Security launch rule</b>Run Check System after these are set. The page should not say Ready for initial rollout until required security values are present and parent email remains unreleased.</div>
+    </div>
+  </section>
+
+  <section class="panel">
     <div class="panelhead"><h2>SMART Trak Connection</h2></div>
     <div class="panelbody">
       <div class="connectiongrid">

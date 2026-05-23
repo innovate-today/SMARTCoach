@@ -301,6 +301,8 @@ Regression tests cover both Vercel KV names and Upstash Redis names so customer 
 
 The `/onboarding.html` page also shows these registry setup field names in **Registry Setup Values** so internal support can copy the names while setting up Vercel.
 
+The `/onboarding.html` page also includes **Launch Security Values** with copy-ready field names and safe value notes for `SMARTCOACH_ADMIN_SETUP_CODE`, `SMARTCOACH_AUTOMATION_SECRET`, `SMARTCOACH_STRIPE_WEBHOOK_SECRET`, `SMARTCOACH_SESSION_SECRET`, `SMARTCOACH_REQUIRE_COACH_ACCESS`, and the parent-email rollout flag. Use that panel before running **Check System** for launch readiness.
+
 When the registry is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. That means plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL can be updated by automation without adding a new Vercel variable for each customer update.
 
 Each saved registry record also stores a small `lastAutomationEvent` stamp and a short `automationEventHistory` list with recent update source, event type, optional Stripe event/object IDs, and received time. This is shown in the internal account lookup to help troubleshoot whether recent changes came from manual setup, GHL automation, or a Stripe webhook.
