@@ -1068,10 +1068,11 @@ function renderLiveSmokeAccess(data,ok){
     {label:'Plan',value:planLabel(data.productPlan)},
     {label:'Setup',value:setupReady?'Ready':'Needs setup'},
     {label:'Access',value:accessAllowed?'Allowed':(data.subscriptionBlockedReason?'Blocked':'Not ready')},
+    {label:'This Device',value:data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Needs coach code':'Ready'},
     {label:'Subscription',value:subscriptionLabel(data)},
     {label:'Registry',value:registry.found?'Saved':registry.configured?'Not found':'Not connected'},
     {label:'Registry Source',value:registry.source||'--'},
-    {label:'Coach Access',value:data.coachAccessRequired?(data.coachAccessCodesConfigured?'Required and configured':'Required but missing'):'Not required'},
+    {label:'Coach Access',value:data.coachAccessRequired?(data.coachAccessUnlocked?'Unlocked':data.coachAccessCodesConfigured?'Code required':'Required but missing'):'Not required'},
     {label:'Coach Seats',value:coachSeatsLabel(data)}
   ];
   var missingHtml=missing.length
@@ -1081,7 +1082,7 @@ function renderLiveSmokeAccess(data,ok){
     '<div class="registrytitle"><div><b>'+esc(data.accountKey||'Customer account')+'</b><span> Live customer access check</span></div></div>'+
     '<div class="registrycards">'+rows.map(function(row){return '<div class="card"><b>'+esc(row.value||'--')+'</b><span>'+esc(row.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Account link</b><span>'+linkHtml('/dashboard.html?account='+encodeURIComponent(data.accountKey||''),'Open dashboard')+' · '+linkHtml('/?account='+encodeURIComponent(data.accountKey||''),'Open stopwatch')+'</span></div>'+
-    '<div class="registryrow"><b>Message</b><span>'+esc(accessAllowed?'Ready for coach testing.':(data.subscriptionBlockedReason||data.error||'Finish the missing setup items, then check again.'))+'</span></div>'+
+    '<div class="registryrow"><b>Message</b><span>'+esc(accessAllowed?(data.deviceAccessReady?'Ready for coach testing on this device.':'Account is ready. Enter a coach access code on this device before loading coach data.'):(data.subscriptionBlockedReason||data.error||'Finish the missing setup items, then check again.'))+'</span></div>'+
     missingHtml;
   if(!document.getElementById('checklistPanel').hidden)renderChecklist(currentSetup);
 }

@@ -692,6 +692,67 @@ async function testRegistryLookupHidesSecrets() {
   }
 }
 
+async function testAccountStatusReportsDeviceUnlock() {
+  await withEnv({
+    SMARTCOACH_PRODUCT_PLAN_UNLOCK: "pro",
+    GHL_PRIVATE_INTEGRATION_TOKEN_UNLOCK: "token",
+    GHL_LOCATION_ID_UNLOCK: "location",
+    SMARTCOACH_COACH_ACCESS_CODES_UNLOCK: "coach-one",
+    SMARTCOACH_REQUIRE_COACH_ACCESS_UNLOCK: "true",
+    SMARTCOACH_SUBSCRIPTION_STATUS_UNLOCK: "active",
+    SMARTCOACH_SESSION_SECRET: "session-secret",
+  }, async () => {
+    const lockedRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "account-status", account: "unlock" },
+      headers: {},
+    }, lockedRes);
+
+    assert.strictEqual(lockedRes.statusCode, 200);
+    assert.strictEqual(lockedRes.body.accessReady, true);
+    assert.strictEqual(lockedRes.body.coachAccessRequired, true);
+    assert.strictEqual(lockedRes.body.coachAccessUnlocked, false);
+    assert.strictEqual(lockedRes.body.coachSessionActive, false);
+    assert.strictEqual(lockedRes.body.deviceAccessReady, false);
+
+    const codeRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "account-status", account: "unlock" },
+      headers: { "x-smartcoach-access-code": "coach-one" },
+    }, codeRes);
+
+    assert.strictEqual(codeRes.statusCode, 200);
+    assert.strictEqual(codeRes.body.accessReady, true);
+    assert.strictEqual(codeRes.body.coachAccessUnlocked, true);
+    assert.strictEqual(codeRes.body.coachAccessCodeAccepted, true);
+    assert.strictEqual(codeRes.body.deviceAccessReady, true);
+
+    const sessionRes = mockRes();
+    await handler({
+      method: "POST",
+      query: { route: "account-session" },
+      headers: { "x-forwarded-for": "127.0.0.41" },
+      body: { accountKey: "unlock", accessCode: "coach-one" },
+    }, sessionRes);
+    assert.strictEqual(sessionRes.statusCode, 200);
+
+    const unlockedRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "account-status", account: "unlock" },
+      headers: { "x-smartcoach-session": sessionRes.body.sessionToken },
+    }, unlockedRes);
+
+    assert.strictEqual(unlockedRes.statusCode, 200);
+    assert.strictEqual(unlockedRes.body.accessReady, true);
+    assert.strictEqual(unlockedRes.body.coachAccessUnlocked, true);
+    assert.strictEqual(unlockedRes.body.coachSessionActive, true);
+    assert.strictEqual(unlockedRes.body.deviceAccessReady, true);
+  });
+}
+
 (async () => {
   await testAutomationDryRunDoesNotSave();
   await testAccountSetupCodeProtection();
@@ -704,6 +765,7 @@ async function testRegistryLookupHidesSecrets() {
   await testParentEmailReleaseGate();
   await testCoachAccessRateLimit();
   await testRegistryLookupHidesSecrets();
+  await testAccountStatusReportsDeviceUnlock();
   console.log("automation API dry-run and Stripe idempotency tests passed");
 })().catch((error) => {
   console.error(error);

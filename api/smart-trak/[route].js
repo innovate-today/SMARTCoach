@@ -94,11 +94,17 @@ async function accountStatus(req, res) {
   const locationKey = accountKey === "default" ? "GHL_LOCATION_ID" : `GHL_LOCATION_ID_${suffix}`;
   const coachAccessKey = accountKey === "default" ? "SMARTCOACH_COACH_ACCESS_CODES" : `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`;
   const configuredCoachCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes.length : accessCode ? 1 : 0;
+  const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+  const providedAccessCode = String(headerValue(req, "x-smartcoach-access-code") || "").trim();
+  const accessCodeAccepted = !!(providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code)));
   const crmConfigured = !!(token && locationId);
   const coachAccessConfigured = !requireCoachAccess || configuredCoachCodes > 0;
   const configured = productPlan === "essential" || (crmConfigured && coachAccessConfigured);
   const subscriptionAllowed = subscriptionAccessAllowed(subscription);
   const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(subscription);
+  const coachAccessRequired = configuredCoachCodes > 0 || !!requireCoachAccess;
+  const coachAccessUnlocked = productPlan === "essential" || !coachAccessRequired || !!coachSession || accessCodeAccepted;
+  const deviceAccessReady = configured && subscriptionAllowed && coachAccessUnlocked;
   const missing = [];
   if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
@@ -110,6 +116,7 @@ async function accountStatus(req, res) {
     configured,
     setupReady: configured,
     accessReady: configured && subscriptionAllowed,
+    deviceAccessReady,
     crmConfigured,
     coachSeats,
     coachAccessCodesConfigured: configuredCoachCodes,
@@ -118,9 +125,12 @@ async function accountStatus(req, res) {
       label: `Coach ${(Number(coachSession.coachIndex) || 0) + 1}`,
       parentEmailAllowed: parentEmailFeatureReleased() && !!coachSession.parentEmailAllowed,
     } : null,
+    coachSessionActive: !!coachSession,
+    coachAccessUnlocked,
+    coachAccessCodeAccepted: accessCodeAccepted,
     parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(coachSession && coachSession.parentEmailAllowed),
-    accessCodeRequired: configuredCoachCodes > 0 || !!requireCoachAccess,
-    coachAccessRequired: configuredCoachCodes > 0 || !!requireCoachAccess,
+    accessCodeRequired: coachAccessRequired,
+    coachAccessRequired,
     accessCodeMissing: !!requireCoachAccess && configuredCoachCodes < 1,
     subscription: publicSubscriptionSummary(subscription),
     subscriptionAccessAllowed: subscriptionAllowed,

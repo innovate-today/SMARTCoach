@@ -416,6 +416,7 @@ Subscription/customer management:
 - SMART Trak Pro API access is blocked when subscription status is `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, or `unpaid`.
 - Blank subscription status remains allowed during migration so current accounts do not get locked out.
 - Account status now separates setup readiness from access readiness, so a configured SMART Trak account can still show blocked when subscription status prevents Pro access.
+- Account status now also reports `deviceAccessReady`, `coachAccessUnlocked`, and `coachSessionActive`, so support can distinguish a ready account from a browser/phone that still needs a coach access code.
 - Account status includes `subscriptionBlockedReason`, and onboarding displays that reason when a configured account is blocked by billing status.
 - Account automation/manual registry save/account registry lookup responses now return the same `setupReady`, `accessReady`, `subscriptionAccessAllowed`, and `subscriptionBlockedReason` signals as account status.
 - Stopwatch, dashboard, Plan Builder, and Planning Setup now respect `accessReady: false` during account checks so blocked subscriptions stop cleanly instead of loading Pro data and failing later.

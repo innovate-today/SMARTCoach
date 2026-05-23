@@ -545,14 +545,16 @@ function renderAccountSummary(data,fallbackPlan){
   var configured=!pro || !!(data&&data.configured);
   var accessReady=!pro || (configured&&!(data&&data.accessReady===false));
   var access=!!(data&&data.accessCodeRequired);
+  var deviceUnlocked=!pro || !access || !!(data&&data.deviceAccessReady);
   var notFound=pro&&data&&data.error&&/not configured|not found/i.test(data.error);
-  var title=pro?(!configured?(notFound?'Account key not found':'SMARTCoach Pro setup needed'):accessReady?'SMARTCoach Pro ready':'SMARTCoach Pro access blocked'):'SMARTCoach Essential ready';
-  var detail=pro?(!configured?(notFound?'Save this account in SMART Trak Account Setup first, or check the account key.':'SMART Trak connection is not finished yet.'):accessReady?'SMART Trak connection is ready.':'Subscription status is blocking SMART Trak access.'):'Stopwatch-only account. SMART Trak tools are hidden.';
+  var title=pro?(!configured?(notFound?'Account key not found':'SMARTCoach Pro setup needed'):!accessReady?'SMARTCoach Pro access blocked':deviceUnlocked?'SMARTCoach Pro ready':'Coach access code needed'):'SMARTCoach Essential ready';
+  var detail=pro?(!configured?(notFound?'Save this account in SMART Trak Account Setup first, or check the account key.':'SMART Trak connection is not finished yet.'):!accessReady?'Subscription status is blocking SMART Trak access.':deviceUnlocked?'SMART Trak connection is ready.':'Enter the coach access code on this phone to unlock SMART Trak.'):'Stopwatch-only account. SMART Trak tools are hidden.';
   var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
   showAccessCodeRow(pro&&access);
-  box.style.borderColor=accessReady?'#bbf7d0':'#fecaca';
-  box.style.background=accessReady?'#f0fdf4':'#fef2f2';
-  box.innerHTML='<b style="display:block;color:'+(accessReady?'#0a7a44':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span>';
+  var good=accessReady&&deviceUnlocked;
+  box.style.borderColor=good?'#bbf7d0':accessReady?'#fed7aa':'#fecaca';
+  box.style.background=good?'#f0fdf4':accessReady?'#fff7ed':'#fef2f2';
+  box.innerHTML='<b style="display:block;color:'+(good?'#0a7a44':accessReady?'#b45309':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span>';
 }
 function refreshAppVersion(){
   var url=new URL(window.location.href);

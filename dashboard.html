@@ -1618,10 +1618,11 @@ function renderAccountSummary(data,fallbackPlan){
   var configured=!pro || !!(data&&data.configured);
   var accessReady=!pro || (configured&&!(data&&data.accessReady===false));
   var access=!!(data&&data.accessCodeRequired);
-  var title=pro?(!configured?'SMART Trak setup needed':accessReady?'SMART Trak ready':'SMART Trak access blocked'):'SMARTCoach Essential ready';
-  var detail=pro?(!configured?'SMART Trak connection is not finished yet.':accessReady?'SMART Trak connection is ready.':'Subscription status is blocking SMART Trak access.'):'Stopwatch-only account. SMART Trak tools are hidden.';
+  var deviceUnlocked=!pro || !access || !!(data&&data.deviceAccessReady);
+  var title=pro?(!configured?'SMART Trak setup needed':!accessReady?'SMART Trak access blocked':deviceUnlocked?'SMART Trak ready':'Coach access code needed'):'SMARTCoach Essential ready';
+  var detail=pro?(!configured?'SMART Trak connection is not finished yet.':!accessReady?'Subscription status is blocking SMART Trak access.':deviceUnlocked?'SMART Trak connection is ready.':'Enter the coach access code on this browser to unlock SMART Trak.'):'Stopwatch-only account. SMART Trak tools are hidden.';
   var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
-  els.accountSummary.className='accountsummary '+(accessReady?'good':'bad');
+  els.accountSummary.className='accountsummary '+(accessReady&&deviceUnlocked?'good':'bad');
   els.accountSummary.innerHTML='<b>'+esc(title)+'</b><span>'+esc(detail)+'</span><br><span>'+esc(accessText)+'</span>';
 }
 
