@@ -880,7 +880,9 @@ function accountNextAction(data,record){
   if(smoke.total&&smoke.done<smoke.total)return 'Complete the live smoke test before turning on the coach account.';
   var signoff=liveSmokeSignoffData();
   if(smoke.total&&smoke.done===smoke.total&&(!signoff.validatedBy||!signoff.validatedAt))return 'Stamp the launch sign-off, then copy the activation record.';
-  if(smoke.total&&smoke.done===smoke.total)return 'Ready to turn on the coach account and save the activation record.';
+  var invite=coachInviteData();
+  if(smoke.total&&smoke.done===smoke.total&&!invite.copiedAt)return 'Save the activation record, then use Copy Coach Invite.';
+  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Activation complete. Monitor the first coach login and first sync.';
   return 'Proceed to live smoke test: open coach pages and save one harmless real item.';
 }
 function lastEventLabel(event, part){
