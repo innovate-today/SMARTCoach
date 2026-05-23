@@ -474,6 +474,7 @@ Subscription/customer management:
 - `/onboarding.html` manual registry save now only reports "saved" when the durable registry actually returns `saved: true`; otherwise it shows the registry setup problem.
 - `/onboarding.html` now warns before saving an incomplete Pro registry record and names missing setup pieces such as location ID, private integration token, or coach access code.
 - Added protected `account-automation-dry-run` and a **Test Setup First** button on `/onboarding.html` so internal setup can verify account access, subscription status, coach seats, coach codes, and generated setup fields without writing to the registry.
+- Added **Check Customer Access** to the `/onboarding.html` Live Smoke Test so support can verify live account status, subscription access, registry source, and coach access-code readiness from the setup page before opening every coach page manually.
 - Added `tests/automation-api.test.js` to verify automation dry runs do not save registry records and duplicate Stripe webhook events do not rewrite already-handled account updates.
 - Automation, Stripe webhook, and protected account lookup responses now hide private integration token and coach access-code values in returned account records, while the internal registry lookup remains available for support verification.
 - Updated `VERCEL_SETUP.md` and `README.md` so production setup docs match the current onboarding helper, launch-readiness check, Stripe webhook events, hidden secret behavior, and regression tests.

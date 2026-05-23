@@ -359,6 +359,11 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
     <div class="panelhead"><h2>Live Smoke Test</h2></div>
     <div class="panelbody">
       <div class="copyhint">Run this after a deploy or before turning on a new customer. It confirms the real customer path, not just the setup form.</div>
+      <div class="readybar" id="liveSmokeBar">
+        <div><b>Customer access not checked</b><span>Enter the account key above, then check whether SMART Trak sees the saved setup, subscription access, and coach access rules.</span></div>
+        <button id="liveSmokeBtn" type="button" class="secondary" onclick="checkLiveSmokeAccess()">Check Customer Access</button>
+      </div>
+      <div id="liveSmokeResult" class="registrybox"></div>
       <div class="checklist">
         <label class="checkrow"><input type="checkbox"><span><b>1. System check is ready<em class="checkbadge warn">Required</em></b><span>Run Check System with the automation secret. The result should say Ready for initial rollout and show no launch blockers.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup passes dry run<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, coach seats, subscription status, and coach codes before saving.</span></span></label>
@@ -989,6 +994,74 @@ function checkSetupStatus(){
   }).finally(function(){
     document.getElementById('checkStatusBtn').disabled=false;
   });
+}
+function checkLiveSmokeAccess(){
+  var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'');
+  var bar=document.getElementById('liveSmokeBar');
+  var box=document.getElementById('liveSmokeResult');
+  if(!account){
+    setStatus('Enter the customer account key before checking customer access.','bad');
+    return;
+  }
+  document.getElementById('accountKey').value=account;
+  document.getElementById('lookupAccountKey').value=account;
+  bar.className='readybar';
+  bar.querySelector('b').textContent='Checking customer access...';
+  bar.querySelector('span').textContent='Looking at the live account status endpoint for this customer.';
+  box.innerHTML='';
+  document.getElementById('liveSmokeBtn').disabled=true;
+  fetch('/api/smart-trak/account-status?account='+encodeURIComponent(account)+'&v='+Date.now(),{
+    cache:'no-store',
+    headers:{'X-SMARTCoach-Account':account}
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    renderLiveSmokeAccess(result.data||{},result.ok);
+    setStatus(result.ok?'Customer access checked.':'Customer access check found a setup problem.',result.ok?'good':'bad');
+  }).catch(function(){
+    bar.className='readybar bad';
+    bar.querySelector('b').textContent='Customer access check failed';
+    bar.querySelector('span').textContent='Try again after the latest Vercel deployment is ready.';
+    box.innerHTML='<div class="empty">Could not reach the live account status endpoint.</div>';
+    setStatus('Could not check customer access.','bad');
+  }).finally(function(){
+    document.getElementById('liveSmokeBtn').disabled=false;
+  });
+}
+function renderLiveSmokeAccess(data,ok){
+  data=data||{};
+  var bar=document.getElementById('liveSmokeBar');
+  var box=document.getElementById('liveSmokeResult');
+  var registry=data.registry||{};
+  var missing=Array.isArray(data.missingSetupFields)?data.missingSetupFields:[];
+  var accessAllowed=!!data.accessReady;
+  var setupReady=!!data.setupReady||!!data.configured;
+  bar.className='readybar '+(accessAllowed?'good':'bad');
+  bar.querySelector('b').textContent=accessAllowed?'Customer access is ready':'Customer access needs attention';
+  bar.querySelector('span').textContent=accessAllowed
+    ?'The live account can open SMART Trak after the coach enters a valid access code or session.'
+    : data.subscriptionBlockedReason||data.error||'The live customer account is not ready yet.';
+  currentSetup=Object.assign({},currentSetup||{},data,{accountKey:data.accountKey||cleanAccountKey(document.getElementById('accountKey').value)});
+  var rows=[
+    {label:'Plan',value:planLabel(data.productPlan)},
+    {label:'Setup',value:setupReady?'Ready':'Needs setup'},
+    {label:'Access',value:accessAllowed?'Allowed':(data.subscriptionBlockedReason?'Blocked':'Not ready')},
+    {label:'Subscription',value:subscriptionLabel(data)},
+    {label:'Registry',value:registry.found?'Saved':registry.configured?'Not found':'Not connected'},
+    {label:'Registry Source',value:registry.source||'--'},
+    {label:'Coach Access',value:data.coachAccessRequired?(data.coachAccessCodesConfigured?'Required and configured':'Required but missing'):'Not required'},
+    {label:'Coach Seats',value:coachSeatsLabel(data)}
+  ];
+  var missingHtml=missing.length
+    ? '<div class="empty">'+missing.map(function(item){return esc(item.label||item.key||item);}).join('<br>')+'</div>'
+    : '<div class="registryrow"><b>Missing setup</b><span>None reported</span></div>';
+  box.innerHTML=
+    '<div class="registrytitle"><div><b>'+esc(data.accountKey||'Customer account')+'</b><span> Live customer access check</span></div></div>'+
+    '<div class="registrycards">'+rows.map(function(row){return '<div class="card"><b>'+esc(row.value||'--')+'</b><span>'+esc(row.label)+'</span></div>';}).join('')+'</div>'+
+    '<div class="registryrow"><b>Account link</b><span>'+linkHtml('/dashboard.html?account='+encodeURIComponent(data.accountKey||''),'Open dashboard')+' · '+linkHtml('/?account='+encodeURIComponent(data.accountKey||''),'Open stopwatch')+'</span></div>'+
+    '<div class="registryrow"><b>Message</b><span>'+esc(accessAllowed?'Ready for coach testing.':(data.subscriptionBlockedReason||data.error||'Finish the missing setup items, then check again.'))+'</span></div>'+
+    missingHtml;
+  if(!document.getElementById('checklistPanel').hidden)renderChecklist(currentSetup);
 }
 function setLink(id,path){
   var el=document.getElementById(id);

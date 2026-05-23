@@ -112,6 +112,8 @@ Use **Check System** before launch. It reports one overall launch readiness resu
 - coach access enforcement
 - parent email rollout gate
 
+Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually.
+
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
 
 Regression tests verify that coach-specific parent email settings stay hidden while the global parent email release gate is off.
@@ -313,7 +315,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 Before calling automation/security complete for rollout, verify this with a real test Pro account:
 
 - **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
-- **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** is completed for the test customer account after deploy.
+- **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** -> **Check Customer Access** reports the test customer account is ready, then the remaining checklist is completed after deploy.
 - **Registry write:** **Save Registry Update** returns saved and account lookup shows the account as saved.
 - **Subscription allow:** account status shows `accessReady: true` for `active` or `trialing`.
 - **Subscription block:** changing status to `past_due`, `unpaid`, or `canceled` blocks SMART Trak with a clear access message.
