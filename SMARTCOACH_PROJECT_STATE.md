@@ -494,6 +494,7 @@ Subscription/customer management:
 - Added **Copy Activation Record** to `/onboarding.html` so support can paste a customer setup summary with account key, plan, subscription, Stripe IDs, recent automation update, setup/access state, smoke-test progress, next action, customer link, status link, and coach page validation links.
 - `Copy Activation Record` now includes a coach-invite reminder so support saves the internal activation note before sending the coach-facing invite.
 - Added **Copy Coach Invite** to `/onboarding.html` Customer Links so support can send a coach-facing access note with the customer link, account key, plan, and coach access-code instructions after validation is complete.
+- Copy Coach Invite now refuses to copy until the live smoke-test checklist is complete and the launch sign-off is stamped, reducing the chance of inviting a coach before validation is done.
 - Copy Coach Invite now tells coaches where to enter the account key and coach access code on the phone app: Groups screen -> Account.
 - Essential Copy Coach Invite now also tells stopwatch-only coaches where to enter the account key on the phone app.
 - The `/onboarding.html` Activation Runbook now names the full launch blocker set: automation secret, setup code, durable registry, Stripe webhook, coach session secret, coach access enforcement, and parent email rollout gate.

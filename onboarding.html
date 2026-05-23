@@ -1583,6 +1583,16 @@ function copyCoachInvite(){
   var account=data.accountKey||cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'');
   var plan=data.productPlan||document.getElementById('plan').value||'pro';
   var isEssential=plan==='essential';
+  var smoke=smokeChecklistProgress();
+  var signoff=liveSmokeSignoffData();
+  if(smoke.total&&smoke.done<smoke.total){
+    setStatus('Complete the live smoke test before copying the coach invite.','bad');
+    return;
+  }
+  if(smoke.total&&(!signoff.validatedBy||!signoff.validatedAt)){
+    setStatus('Stamp the launch sign-off before copying the coach invite.','bad');
+    return;
+  }
   var link=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account||'customer'})));
   var lines=[
     'SMARTCoach access',

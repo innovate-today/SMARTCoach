@@ -127,7 +127,7 @@ After generating or saving a customer account, use the **Activation Runbook** pa
 
 Use **Copy Activation Record** after the customer passes setup. It creates a plain support-note summary with the account key, plan, coach seats, subscription, Stripe IDs, registry/setup/access state, recent automation update, live smoke-test progress, launch sign-off, coach-invite reminder, next action, and customer link. The next action will continue pointing to the live smoke test or launch sign-off until both are complete.
 
-Use **Copy Coach Invite** from the Customer Links section after launch validation is complete. It creates a short coach-facing note with the SMARTCoach link, account key, and coach access-code instructions for the purchased plan, including where to enter the account key and coach code on the phone app. Essential invites also tell the coach where to enter the account key for stopwatch-only access.
+Use **Copy Coach Invite** from the Customer Links section after launch validation is complete. It will not copy until the live smoke-test checklist is complete and the launch sign-off is stamped. It creates a short coach-facing note with the SMARTCoach link, account key, and coach access-code instructions for the purchased plan, including where to enter the account key and coach code on the phone app. Essential invites also tell the coach where to enter the account key for stopwatch-only access.
 
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
 
