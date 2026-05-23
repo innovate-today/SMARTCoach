@@ -672,7 +672,7 @@ function copyLaunchSecurityValues(){
     'Do not add SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED for initial rollout. Leave parent email unreleased.',
     'SMARTCOACH_STRIPE_WEBHOOK_SECRET must come from the Stripe webhook endpoint.'
   ];
-  copyText(lines.join('\n'),'Launch security values copied.');
+  copyText(lines.join('\n'),'Launch security values copied. Save them in Vercel, then use Clear Generated Secrets.');
 }
 function checkAutomationHealth(){
   var secret=document.getElementById('automationSecret').value.trim();
