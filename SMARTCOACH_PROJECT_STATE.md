@@ -634,6 +634,7 @@ Help assistant:
 7. Onboarding/support setup refreshes immediately when location ID, private token presence, coach access codes, subscription fields, parent-email access, logo, or plan/seat values change; the private token still stays out of copied notes and records.
 8. Copy Activation Record now requires a fresh system readiness check that says Ready for initial rollout, so activation cannot be recorded while security, registry, Stripe webhook, coach session, coach access, or parent-email launch blockers remain.
 9. Copy Coach Invite now uses the same system readiness gate, preventing coach access notes from being sent if launch settings changed after activation.
+10. Activation handoff status now shows the system readiness requirement directly and refreshes when Check System starts, succeeds, or fails.
 
 ## Known Good Test Flow
 

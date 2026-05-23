@@ -753,6 +753,7 @@ function checkAutomationHealth(){
   }
   rememberAutomationSecret(secret);
   currentSystemHealth=null;
+  renderActivationHandoffStatus();
   box.innerHTML='<div class="empty">Checking system readiness...</div>';
   document.getElementById('healthBtn').disabled=true;
   fetch('/api/smart-trak/account-automation-health',{
@@ -770,6 +771,7 @@ function checkAutomationHealth(){
     setStatus('System readiness checked.','good');
   }).catch(function(error){
     currentSystemHealth=null;
+    renderActivationHandoffStatus();
     box.innerHTML='<div class="empty">'+esc(error.message||'Could not check system readiness.')+'</div>';
     setStatus(error.message||'Could not check system readiness.','bad');
   }).finally(function(){
@@ -817,6 +819,7 @@ function renderSystemResult(data){
     '<div class="registryrow"><b>Coach sessions</b><span>'+esc(sessionDetail)+'</span></div>'+
     '<div class="registryrow"><b>Parent email rollout</b><span>'+esc(data.parentEmailFeatureReleased?'Live globally - turn off for initial rollout':'Off for initial rollout')+'</span></div>'+
     warningHtml;
+  renderActivationHandoffStatus();
 }
 function copySystemStatus(){
   var data=currentSystemHealth;
@@ -845,7 +848,7 @@ function copySystemStatus(){
   copyText(lines.join('\n'),'System status copied.');
 }
 function systemReadinessBlockerText(){
-  if(!currentSystemHealth)return 'Run Check System and confirm Ready for initial rollout before copying the activation record.';
+  if(!currentSystemHealth)return 'Run Check System and confirm Ready for initial rollout before copying activation or coach access notes.';
   if(currentSystemHealth.launchReady)return '';
   var blockers=currentSystemHealth.launchBlockers||[];
   return blockers.length?'System is not ready for launch: '+blockers.join('; '):'System is not ready for launch yet.';
@@ -1836,12 +1839,16 @@ function renderActivationHandoffStatus(){
   var postLaunch=postLaunchProgress();
   var smokeComplete=smoke.total>0&&smoke.done===smoke.total;
   var signed=!!(signoff.validatedBy&&signoff.validatedAt);
+  var systemBlocker=systemReadinessBlockerText();
   var postComplete=postLaunch.total>0&&postLaunch.done===postLaunch.total;
   var title='Activation handoff not saved yet';
-  var detail='Complete the smoke test, stamp launch sign-off, then copy the activation record before sending the coach invite.';
+  var detail='Complete the smoke test, confirm system readiness, stamp launch sign-off, then copy the activation record before sending the coach invite.';
   var state='warn';
   if(!smokeComplete){
     detail=smoke.done+' of '+smoke.total+' validation checks complete. Finish these checks before copying the handoff.';
+  }else if(systemBlocker){
+    title='System readiness needed';
+    detail=systemBlocker;
   }else if(!signed){
     title='Launch sign-off needed';
     detail='Stamp launch sign-off, then copy the activation record.';
