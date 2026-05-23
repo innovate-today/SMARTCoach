@@ -538,6 +538,7 @@ Subscription/customer management:
 - Final activation record copies now save a separate per-account timestamp, allowing onboarding next-action guidance to move from final handoff to normal support monitoring.
 - Copy Coach Invite now tells coaches where to enter the account key and coach access code on the phone app: Groups screen -> Account.
 - Essential Copy Coach Invite now also tells stopwatch-only coaches where to enter the account key on the phone app.
+- Copy Coach Invite no longer lists every coach access code when a Pro account has multiple coaches; it tells the recipient to use their assigned code so one coach invite does not expose all seats.
 - The `/onboarding.html` Activation Runbook now names the full launch blocker set: automation secret, setup code, durable registry, Stripe webhook, coach session secret, coach access enforcement, and parent email rollout gate.
 - Added `tests/automation-api.test.js` to verify automation dry runs do not save registry records and duplicate Stripe webhook events do not rewrite already-handled account updates.
 - Automation, Stripe webhook, and protected account lookup responses now hide private integration token and coach access-code values in returned account records, while the internal registry lookup remains available for support verification.
