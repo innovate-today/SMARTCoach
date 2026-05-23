@@ -1914,8 +1914,8 @@ function renderLiveSmokeSummary(){
   box.className='readybar '+(complete?'good':'warn');
   box.querySelector('b').textContent=complete?'Live smoke test complete':'Live smoke test not complete';
   box.querySelector('span').textContent=complete
-    ?'All launch checks are marked complete for this account. Keep the account key, coach codes, and support notes with the customer record.'
-    :done+' of '+total+' launch checks complete. Finish every required check before turning on a new coach account.';
+    ?'All required live validation checks are marked complete for this account. Keep the account key, coach codes, and support notes with the customer record.'
+    :done+' of '+total+' required live validation checks complete. Finish every required check before turning on a new coach account.';
   renderActivationHandoffStatus();
 }
 function renderActivationHandoffStatus(){
