@@ -599,6 +599,7 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Stripe Subscription</b><span>'+esc(sub.stripeSubscriptionId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
     '<div class="registryrow"><b>Access Status</b><span>'+esc(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready'))+'</span></div>'+
+    '<div class="registryrow"><b>Next Action</b><span>'+esc(accountNextAction(data,record))+'</span></div>'+
     '<div class="registryrow"><b>Last Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
     '<div class="registryrow"><b>Last Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
     '<div class="registryrow"><b>Updated</b><span>'+esc(fullDateTime(record.updatedAt))+'</span></div>'+
@@ -665,6 +666,21 @@ function coachCodesSummary(record){
   var count=(source.coachAccessCodes||[]).length||(source.accessCode?1:0);
   if(!count)return '--';
   return String(count)+' saved';
+}
+function accountNextAction(data,record){
+  data=data||{};
+  record=record||{};
+  if(data.subscriptionBlockedReason||data.subscriptionAccessAllowed===false)return 'Fix subscription status before giving the coach access.';
+  var plan=data.productPlan||record.productPlan||'pro';
+  if(plan==='essential')return 'Open the stopwatch link and confirm Essential-only access.';
+  var missing=Array.isArray(data.missingSetupFields)?data.missingSetupFields:[];
+  if(missing.length)return 'Add missing setup: '+missing.map(function(item){return item.label||item.key||item;}).join(', ')+'.';
+  if(!(record.locationId&&record.token)&&data.crmConfigured===false)return 'Add the customer Location ID and Private Integration Token.';
+  var codeCount=Number(data.coachAccessCodesConfigured)||((record.coachAccessCodes||[]).length)||(record.accessCode?1:0);
+  if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste coach access codes, then save the registry update.';
+  if(data.accessReady===false)return 'Finish account setup, then check customer access again.';
+  if(data.deviceAccessReady===false)return 'Account is ready. Enter a coach access code on this browser or phone to unlock coach data.';
+  return 'Proceed to live smoke test: open coach pages and save one harmless real item.';
 }
 function lastEventLabel(event, part){
   var source=event||{};
@@ -1084,6 +1100,7 @@ function renderLiveSmokeAccess(data,ok){
     '<div class="registrycards">'+rows.map(function(row){return '<div class="card"><b>'+esc(row.value||'--')+'</b><span>'+esc(row.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Account link</b><span>'+linkHtml('/dashboard.html?account='+encodeURIComponent(data.accountKey||''),'Open dashboard')+' · '+linkHtml('/?account='+encodeURIComponent(data.accountKey||''),'Open stopwatch')+'</span></div>'+
     '<div class="registryrow"><b>Message</b><span>'+esc(accessAllowed?(data.deviceAccessReady?'Ready for coach testing on this device.':'Account is ready. Enter a coach access code on this device before loading coach data.'):(data.subscriptionBlockedReason||data.error||'Finish the missing setup items, then check again.'))+'</span></div>'+
+    '<div class="registryrow"><b>Next Action</b><span>'+esc(accountNextAction(data,data.accountRegistryRecord||{}))+'</span></div>'+
     missingHtml;
   if(!document.getElementById('checklistPanel').hidden)renderChecklist(currentSetup);
 }
