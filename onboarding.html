@@ -252,6 +252,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateLaunchSecrets()">Generate Launch Secrets</button>
         <button type="button" class="secondary" onclick="copyLaunchSecurityValues()">Copy Security Values</button>
+        <button type="button" class="secondary" onclick="clearLaunchSecrets()">Clear Generated Secrets</button>
       </div>
       <div class="setupnote"><b>Security launch rule</b>Run Check System after these are set. The page should not say Ready for initial rollout until required security values are present and parent email remains unreleased.</div>
     </div>
@@ -634,6 +635,12 @@ function generateLaunchSecrets(){
   document.getElementById('automationSecretValue').textContent=randomSecret('automation',48);
   document.getElementById('sessionSecretValue').textContent=randomSecret('session',48);
   setStatus('Launch secrets generated. Use different values for setup, automation, and session secrets.','good');
+}
+function clearLaunchSecrets(){
+  document.getElementById('setupCodeSecretValue').textContent='Generate a private internal setup code';
+  document.getElementById('automationSecretValue').textContent='Generate a long private automation secret';
+  document.getElementById('sessionSecretValue').textContent='Generate a different long private session secret';
+  setStatus('Generated launch secrets cleared from this screen.','good');
 }
 function copyLaunchSecret(id,message){
   var el=document.getElementById(id);
