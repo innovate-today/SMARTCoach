@@ -543,6 +543,7 @@ Subscription/customer management:
 - Automation, Stripe webhook, and protected account lookup responses now hide private integration token and coach access-code values in returned account records, while the internal registry lookup remains available for support verification.
 - Updated `VERCEL_SETUP.md` and `README.md` so production setup docs match the current onboarding helper, launch-readiness check, Stripe webhook events, hidden secret behavior, and regression tests.
 - `VERCEL_SETUP.md` now includes a launch validation checklist for the required live Pro test account pass before calling automation/security complete for rollout.
+- Live smoke-test wording now says all required checks should pass instead of hard-coding a checklist count, so the setup guide stays accurate as launch validation evolves.
 - Added `tests/run-all.js` as the single regression command for automation/account tests, server-side syntax checks, and coach-facing page script parsing. Run it with `node tests/run-all.js`.
 - Added a minimal `package.json` so the full regression check can also run with `npm test`.
 - `npm test` now also validates project JSON config files including `package.json`, `vercel.json`, and SMART Trak schema/mapping JSON.
