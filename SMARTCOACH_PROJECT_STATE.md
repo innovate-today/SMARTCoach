@@ -643,6 +643,7 @@ Help assistant:
 16. Dry-run setup previews no longer count as a saved registry record for activation/coach-invite handoff; Save Registry Update and lookup confirmation are required.
 17. Critical setup edits now mark the account as having unsaved setup changes, blocking activation/coach-invite copy until Save Registry Update runs again.
 18. Dry-run results now keep the unsaved setup marker visible through lookup/setup rendering, while saved registry results clear it as the new baseline.
+19. Unsaved setup changes now appear in Next Action, the readiness banner, and the setup checklist so support sees Save Registry Update as the required next step.
 
 ## Known Good Test Flow
 

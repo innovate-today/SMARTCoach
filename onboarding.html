@@ -1074,6 +1074,7 @@ function accountNextAction(data,record){
   data=data||{};
   record=record||{};
   if(data.subscriptionBlockedReason||data.subscriptionAccessAllowed===false)return 'Fix subscription status before giving the coach access.';
+  if(data.unsavedSetupChanges)return 'Save Registry Update after the latest setup changes, then check customer access again.';
   var plan=data.productPlan||record.productPlan||'pro';
   if(plan==='essential')return 'Open the stopwatch link and confirm Essential-only access.';
   var missing=Array.isArray(data.missingSetupFields)?data.missingSetupFields:[];
@@ -1400,6 +1401,12 @@ function renderReadiness(data){
   var plan=data.productPlan||'pro';
   var configured=!!data.configured;
   var subscriptionAllowed=data.subscriptionAccessAllowed!==false;
+  if(data.unsavedSetupChanges){
+    readyBar.className='readybar warn';
+    title.textContent='Unsaved setup changes';
+    detail.textContent='Use Save Registry Update after the latest setup changes, then check customer access before activation.';
+    return;
+  }
   if(plan==='essential'){
     readyBar.className='readybar good';
     title.textContent='Essential account ready';
@@ -2151,11 +2158,13 @@ function renderChecklist(data){
   var rows=[
     {
       title:'Add setup fields in Vercel Production',
-      body:signals.registrySaved
+      body:signals.unsavedSetupChanges
+        ?'Setup fields changed after the last saved handoff. Use Save Registry Update before activation or coach invite copy.'
+        :signals.registrySaved
         ?'This account is saved in the durable registry, so new Vercel variables are not needed for normal subscription/account updates.'
         :'Paste required setup fields into Vercel Production, or save this account to the durable registry.',
-      state:signals.registrySaved?'good':'warn',
-      status:signals.registrySaved?'Registry saved':'Manual setup'
+      state:signals.unsavedSetupChanges?'bad':signals.registrySaved?'good':'warn',
+      status:signals.unsavedSetupChanges?'Unsaved changes':signals.registrySaved?'Registry saved':'Manual setup'
     },
     {
       title:'Redeploy the project',
