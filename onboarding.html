@@ -575,14 +575,18 @@ function setupForActiveAccount(){
   var account=activeCustomerAccount();
   var setupAccount=cleanAccountKey((currentSetup&&currentSetup.accountKey)||'');
   var plan=(document.getElementById('plan')||{}).value||'pro';
+  var coachSeats=(document.getElementById('coachSeats')||{}).value||'1';
   var base=account?{
     accountKey:account,
     productPlan:plan,
+    coachSeats:coachSeats,
     accountUrl:'/?account='+encodeURIComponent(account),
     dashboardUrl:'/dashboard.html?account='+encodeURIComponent(account),
     ghlCustomLinkUrl:'/dashboard.html?account='+encodeURIComponent(account)+'&embed=1'
   }:{};
-  if(currentSetup&&(!account||!setupAccount||setupAccount===account))return Object.assign({},base,currentSetup);
+  if(currentSetup&&(!account||!setupAccount||setupAccount===account)){
+    return Object.assign({},base,currentSetup,{productPlan:plan,coachSeats:coachSeats});
+  }
   return base;
 }
 function accountKeysMismatch(){
@@ -622,6 +626,14 @@ function bindAccountKeyWarning(){
       renderLiveSmokeSummary();
     });
   });
+  var plan=document.getElementById('plan');
+  if(plan){
+    plan.addEventListener('change',function(){
+      var data=setupForActiveAccount();
+      syncCustomerLinks(data);
+      renderCustomerLinkDetails(data);
+    });
+  }
   renderAccountKeyWarning();
 }
 function randomCode(length){
