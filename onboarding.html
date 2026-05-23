@@ -601,6 +601,7 @@ function bindAccountKeyWarning(){
       loadLiveSmokeChecklist();
       loadLiveSmokeSignoff();
       loadPostLaunchChecklist();
+      syncCustomerLinks();
       renderLiveSmokeSummary();
     });
     input.addEventListener('blur',function(){
@@ -609,6 +610,7 @@ function bindAccountKeyWarning(){
       loadLiveSmokeChecklist();
       loadLiveSmokeSignoff();
       loadPostLaunchChecklist();
+      syncCustomerLinks();
       renderLiveSmokeSummary();
     });
   });
@@ -1219,11 +1221,7 @@ function renderSetup(data){
     return '<div class="envrow"><code>'+esc(row.label||row.key)+'</code><small>'+esc(row.description||'')+'</small></div>';
   }).join(''):'<div class="empty">No variables needed.</div>';
   renderVariableRows(env);
-  var customerLink=customerMainLink(data);
-  setLink('accountLink',data.accountUrl);
-  setLink('customLink',customerLink);
-  setLink('statusLink','/api/smart-trak/account-status?account='+encodeURIComponent(data.accountKey||'customer'));
-  setCustomLinkText(customerLink);
+  syncCustomerLinks(data);
   renderCustomerLinkDetails(data);
   renderAutomationPayloads(data);
   renderChecklist(data);
@@ -1233,6 +1231,16 @@ function renderSetup(data){
 function customerMainLink(data){
   if((data.productPlan||'pro')==='essential')return data.accountUrl||('/?account='+encodeURIComponent(data.accountKey||'customer'));
   return data.ghlCustomLinkUrl||data.dashboardUrl||('/dashboard.html?account='+encodeURIComponent(data.accountKey||'customer')+'&embed=1');
+}
+function syncCustomerLinks(data){
+  data=data||setupForActiveAccount();
+  var account=data.accountKey||activeCustomerAccount()||'customer';
+  var accountUrl=data.accountUrl||('/?account='+encodeURIComponent(account));
+  var customerLink=customerMainLink(Object.assign({},data,{accountKey:account,accountUrl:accountUrl}));
+  setLink('accountLink',accountUrl);
+  setLink('customLink',customerLink);
+  setLink('statusLink','/api/smart-trak/account-status?account='+encodeURIComponent(account));
+  setCustomLinkText(customerLink);
 }
 function renderCustomerLinkDetails(data){
   var plan=data.productPlan||'pro';
@@ -1806,9 +1814,8 @@ function setCustomLinkText(path){
 }
 function copyCustomLink(){
   var data=setupForActiveAccount();
+  syncCustomerLinks(data);
   var link=customerMainLink(data);
-  setLink('customLink',link);
-  setCustomLinkText(link);
   copyText(absoluteUrl(link),'SMART Trak link copied.');
 }
 function coachAccessCodeLines(){
