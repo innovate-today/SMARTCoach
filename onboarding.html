@@ -250,6 +250,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateLaunchSecrets()">Generate Launch Secrets</button>
+        <button type="button" class="secondary" onclick="copyLaunchSecurityValues()">Copy Security Values</button>
       </div>
       <div class="setupnote"><b>Security launch rule</b>Run Check System after these are set. The page should not say Ready for initial rollout until required security values are present and parent email remains unreleased.</div>
     </div>
@@ -599,6 +600,29 @@ function copyLaunchSecret(id,message){
     return;
   }
   copyText(value,message);
+}
+function launchSecretValue(id){
+  var el=document.getElementById(id);
+  var value=(el&&el.textContent||'').trim();
+  return value&&!/^Generate /.test(value)?value:'';
+}
+function copyLaunchSecurityValues(){
+  var setup=launchSecretValue('setupCodeSecretValue');
+  var automation=launchSecretValue('automationSecretValue');
+  var session=launchSecretValue('sessionSecretValue');
+  if(!setup||!automation||!session){
+    setStatus('Generate launch secrets first, then copy the security values.','bad');
+    return;
+  }
+  var lines=[
+    'SMARTCOACH_ADMIN_SETUP_CODE='+setup,
+    'SMARTCOACH_AUTOMATION_SECRET='+automation,
+    'SMARTCOACH_SESSION_SECRET='+session,
+    'SMARTCOACH_REQUIRE_COACH_ACCESS=true',
+    'SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED should not be set for initial rollout.',
+    'SMARTCOACH_STRIPE_WEBHOOK_SECRET must come from the Stripe webhook endpoint.'
+  ];
+  copyText(lines.join('\n'),'Launch security values copied.');
 }
 function checkAutomationHealth(){
   var secret=document.getElementById('automationSecret').value.trim();
