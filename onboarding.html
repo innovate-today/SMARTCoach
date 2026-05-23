@@ -439,7 +439,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div id="liveSmokeResult" class="registrybox"></div>
       <div id="liveSmokeSummary" class="readybar warn">
-        <div><b>Live smoke test not complete</b><span>Check each required item as it passes. All eight checks should be complete before turning on a new coach account.</span></div>
+        <div><b>Live smoke test not complete</b><span>Check each required item as it passes. All ten checks should be complete before turning on a new coach account.</span></div>
         <div class="smokeactions">
           <button type="button" class="secondary" onclick="resetLiveSmokeChecklist()">Reset Checklist</button>
         </div>
@@ -449,10 +449,12 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup passes dry run<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, coach seats, subscription status, and coach codes before saving.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>3. Registry record is saved<em class="checkbadge warn">Required</em></b><span>Save the registry update, then use Lookup Account to confirm subscription, coach seats, connection fields, and recent update history are present.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>4. Customer dashboard opens<em class="checkbadge warn">Required</em></b><span>Open the customer SMART Trak link with the account key. Confirm the coach access prompt accepts the correct code and rejects a wrong code.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>5. Coach pages load real data<em class="checkbadge warn">Required</em></b><span>Check Dashboard, Athletes, Training Calendar, Planning Setup, and Plan Entry. The pages should load the customer roster and should not show setup-needed errors.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>6. One real workflow saves<em class="checkbadge warn">Required</em></b><span>Save one harmless test item, such as a manual mileage entry, race result, or stopwatch sync, then confirm it appears back in SMART Trak.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>7. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL subscription workflow or manually save status changes. Active or trialing should allow SMART Trak; past due, unpaid, or canceled should block it clearly.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>8. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED is intentionally turned on later.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>5. Core coach pages load real data<em class="checkbadge warn">Required</em></b><span>Check Dashboard, Athletes, Training Calendar, Planning Setup, and Plan Entry. The pages should load the customer roster and should not show setup-needed errors.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>6. Advanced coach pages load<em class="checkbadge warn">Required</em></b><span>Check Plan Builder, Meet History, Records, and XC Simulator for the customer account. They should load without setup-needed errors.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>7. One real workflow saves<em class="checkbadge warn">Required</em></b><span>Save one harmless test item, such as a manual mileage entry, race result, or stopwatch sync, then confirm it appears back in SMART Trak.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>8. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL subscription workflow or manually save status changes. Active or trialing should allow SMART Trak; past due, unpaid, or canceled should block it clearly.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>9. Activation record is saved<em class="checkbadge warn">Required</em></b><span>Use Copy Activation Record and save the support note with the customer's account key, links, setup state, and next action.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>10. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED is intentionally turned on later.</span></span></label>
       </div>
     </div>
   </section>

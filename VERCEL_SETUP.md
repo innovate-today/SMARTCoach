@@ -335,7 +335,7 @@ Before calling automation/security complete for rollout, verify this with a real
 
 - **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
 - **Launch security values:** Vercel Production has separate setup, automation, and session secrets; coach access enforcement is true; parent email feature flag is not set.
-- **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** -> **Check Customer Access** reports the test customer account is ready, then the remaining checklist is completed after deploy.
+- **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** -> **Check Customer Access** reports the test customer account is ready, then the ten-item checklist is completed after deploy.
 - **Registry write:** **Save Registry Update** returns saved and account lookup shows the account as saved.
 - **Subscription allow/block:** `/onboarding.html` -> **Live Smoke Test** -> **Test Access Rules** passes, proving `active` and `trialing` allow access while `past_due`, `unpaid`, and `canceled` block access without saving those test statuses.
 - **Coach access:** a valid coach code creates a signed session; wrong codes are rejected and rate-limited after repeated attempts.
