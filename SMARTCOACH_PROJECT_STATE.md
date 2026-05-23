@@ -637,6 +637,7 @@ Help assistant:
 10. Activation handoff status now shows the system readiness requirement directly and refreshes when Check System starts, succeeds, or fails.
 11. Copy Smoke Status now includes system readiness, so partial or final smoke notes capture whether launch security was checked and ready.
 12. Changing the setup or lookup account key now clears the prior system readiness result, forcing a fresh Check System for the active customer before activation or coach invite copy.
+13. Critical setup edits now clear copied activation/invite/follow-up state, including generated coach-code changes and accounts loaded through Use In Form, so support has to recopy handoff notes after access or subscription details change.
 
 ## Known Good Test Flow
 

@@ -547,6 +547,7 @@ function generateCoachCodes(){
   var seats=Number(document.getElementById('coachSeats').value)||1;
   if(plan==='essential'){
     document.getElementById('coachAccessCodes').value='';
+    clearActivationHandoffIfSetupChanged(document.getElementById('coachAccessCodes'));
     setStatus('Essential is stopwatch-only, so coach access codes are not needed.','good');
     refreshActiveSetupDisplays();
     return;
@@ -556,6 +557,7 @@ function generateCoachCodes(){
     codes.push('sc-'+account.slice(0,10)+'-'+randomCode(6)+'-c'+(i+1));
   }
   document.getElementById('coachAccessCodes').value=codes.join(',');
+  clearActivationHandoffIfSetupChanged(document.getElementById('coachAccessCodes'));
   setStatus((seats===3?'Three coach access codes generated.':'One coach access code generated.')+' Give one code to each coach and keep a support copy.','good');
   refreshActiveSetupDisplays();
 }
@@ -633,7 +635,6 @@ function bindAccountKeyWarning(){
   ['accountKey','lookupAccountKey'].forEach(function(id){
     var input=document.getElementById(id);
     if(!input)return;
-    input.dataset.previousAccountKey=cleanAccountKey(input.value);
     input.addEventListener('input',function(){
       renderAccountKeyWarning();
       clearSystemHealthIfAccountChanged(input);
@@ -656,29 +657,85 @@ function bindAccountKeyWarning(){
   });
   var plan=document.getElementById('plan');
   if(plan){
-    plan.addEventListener('change',refreshActiveSetupDisplays);
+    plan.dataset.previousSetupValue=plan.value||'';
+    plan.addEventListener('change',function(){
+      clearActivationHandoffIfSetupChanged(plan);
+      refreshActiveSetupDisplays();
+    });
   }
   var coachSeats=document.getElementById('coachSeats');
   if(coachSeats){
-    coachSeats.addEventListener('change',refreshActiveSetupDisplays);
+    coachSeats.dataset.previousSetupValue=coachSeats.value||'';
+    coachSeats.addEventListener('change',function(){
+      clearActivationHandoffIfSetupChanged(coachSeats);
+      refreshActiveSetupDisplays();
+    });
   }
   ['locationId','privateIntegrationToken','coachAccessCodes','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
     var input=document.getElementById(id);
     if(!input)return;
-    input.addEventListener('change',refreshActiveSetupDisplays);
-    input.addEventListener('input',refreshActiveSetupDisplays);
+    input.dataset.previousSetupValue=input.value||'';
+    input.addEventListener('change',function(){
+      clearActivationHandoffIfSetupChanged(input);
+      refreshActiveSetupDisplays();
+    });
+    input.addEventListener('input',function(){
+      clearActivationHandoffIfSetupChanged(input);
+      refreshActiveSetupDisplays();
+    });
   });
+  rememberCurrentSetupFieldValues();
   renderAccountKeyWarning();
+}
+function resetSystemHealthResult(){
+  currentSystemHealth=null;
+  var box=document.getElementById('systemResult');
+  if(box)box.innerHTML='';
+  renderActivationHandoffStatus();
 }
 function clearSystemHealthIfAccountChanged(input){
   var previous=cleanAccountKey(input.dataset.previousAccountKey||'');
   var next=cleanAccountKey(input.value||'');
   if(previous===next)return;
   input.dataset.previousAccountKey=next;
-  currentSystemHealth=null;
-  var box=document.getElementById('systemResult');
-  if(box)box.innerHTML='';
-  renderActivationHandoffStatus();
+  resetSystemHealthResult();
+}
+function clearActivationHandoffIfSetupChanged(input){
+  var previous=String(input.dataset.previousSetupValue||'');
+  var next=String(input.value||'');
+  if(previous===next)return;
+  input.dataset.previousSetupValue=next;
+  var critical={
+    plan:true,
+    coachSeats:true,
+    locationId:true,
+    privateIntegrationToken:true,
+    coachAccessCodes:true,
+    subscriptionStatus:true,
+    billingCadence:true,
+    subscriptionAmount:true,
+    renewalDate:true,
+    stripeCustomerId:true,
+    stripeSubscriptionId:true,
+    parentEmailCoachAccess:true
+  };
+  if(!critical[input.id])return;
+  try{window.localStorage.removeItem(activationRecordStorageKey());}catch(error){}
+  try{window.localStorage.removeItem(coachInviteStorageKey());}catch(error){}
+  try{window.localStorage.removeItem(postLaunchStorageKey());}catch(error){}
+  loadPostLaunchChecklist();
+  renderPostLaunchSummary();
+  renderLiveSmokeSummary();
+}
+function rememberCurrentSetupFieldValues(){
+  ['accountKey','lookupAccountKey'].forEach(function(id){
+    var input=document.getElementById(id);
+    if(input)input.dataset.previousAccountKey=cleanAccountKey(input.value);
+  });
+  ['plan','coachSeats','locationId','privateIntegrationToken','coachAccessCodes','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
+    var input=document.getElementById(id);
+    if(input)input.dataset.previousSetupValue=input.value||'';
+  });
 }
 function refreshActiveSetupDisplays(){
   var data=setupForActiveAccount();
@@ -986,6 +1043,8 @@ function fillFormFromLookup(){
   document.getElementById('stripeCustomerId').value=sub.stripeCustomerId||'';
   document.getElementById('stripeSubscriptionId').value=sub.stripeSubscriptionId||'';
   document.getElementById('subscriptionNotes').value=sub.notes||'';
+  resetSystemHealthResult();
+  rememberCurrentSetupFieldValues();
   setStatus('Loaded this account into the setup form.','good');
 }
 function maskValue(value){
