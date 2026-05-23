@@ -2095,6 +2095,16 @@ function activationRecordText(data,options){
   return lines.join('\n');
 }
 function copyActivationRecord(){
+  var smoke=smokeChecklistProgress();
+  var signoff=liveSmokeSignoffData();
+  if(smoke.total&&smoke.done<smoke.total){
+    setStatus('Complete the live smoke test before copying the activation record. Use Copy Smoke Status for partial notes.','bad');
+    return;
+  }
+  if(smoke.total&&(!signoff.validatedBy||!signoff.validatedAt)){
+    setStatus('Stamp the launch sign-off before copying the activation record.','bad');
+    return;
+  }
   var copiedAt=new Date().toLocaleString();
   copyText(
     activationRecordText(currentSetup||{},{activationRecordCopiedAt:copiedAt}),
