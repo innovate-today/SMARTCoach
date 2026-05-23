@@ -139,7 +139,7 @@ Regression tests verify that coach-specific parent email settings stay hidden wh
 
 The setup checklist also shows ready/missing/warning badges based on the current customer account signals, so support can see whether registry, subscription, coach codes, and account configuration are ready.
 
-Automation, Stripe webhook, and protected account lookup responses hide private integration tokens and coach access-code values. The internal lookup can still verify that secrets are saved by showing `Saved` and saved counts instead of exposing the actual values.
+Automation, Stripe webhook, and protected account lookup responses hide private integration tokens and coach access-code values. The internal lookup can still verify that secrets are saved by showing `Saved` and saved counts instead of exposing the actual values. If a setup row shows `Saved value hidden`, do not paste that text or `__hidden__` into Vercel; only replace the value when intentionally rotating the token or coach codes.
 
 Optional internal setup protection:
 
@@ -347,7 +347,7 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Coach access:** a valid coach code creates a signed session; wrong codes are rejected and rate-limited after repeated attempts.
 - **GHL subscription automation:** a GHL subscription workflow updates the durable registry and appears in recent automation history.
 - **Optional Stripe webhook:** if enabled, a Stripe test event updates the durable registry; resending the same Stripe event returns success without rewriting the account record.
-- **No secret exposure:** automation responses and account lookup show saved/hidden status for private tokens and coach access codes instead of exposing values.
+- **No secret exposure:** automation responses and account lookup show saved/hidden status for private tokens and coach access codes instead of exposing values. Redacted setup rows should show `Saved value hidden` and should not copy `__hidden__` as a pasteable value.
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
 - **Coach pages:** Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator load for the test account without setup-needed errors.
 - **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
