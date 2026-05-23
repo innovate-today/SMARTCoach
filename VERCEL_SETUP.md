@@ -112,7 +112,7 @@ Use **Check System** before launch. It reports one overall launch readiness resu
 - coach access enforcement
 - parent email rollout gate
 
-Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually.
+Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually. Use **Test Access Rules** to run no-save checks that active/trialing allow access while past due, unpaid, and canceled block access.
 
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
 
@@ -317,8 +317,7 @@ Before calling automation/security complete for rollout, verify this with a real
 - **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
 - **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** -> **Check Customer Access** reports the test customer account is ready, then the remaining checklist is completed after deploy.
 - **Registry write:** **Save Registry Update** returns saved and account lookup shows the account as saved.
-- **Subscription allow:** account status shows `accessReady: true` for `active` or `trialing`.
-- **Subscription block:** changing status to `past_due`, `unpaid`, or `canceled` blocks SMART Trak with a clear access message.
+- **Subscription allow/block:** `/onboarding.html` -> **Live Smoke Test** -> **Test Access Rules** passes, proving `active` and `trialing` allow access while `past_due`, `unpaid`, and `canceled` block access without saving those test statuses.
 - **Coach access:** a valid coach code creates a signed session; wrong codes are rejected and rate-limited after repeated attempts.
 - **GHL subscription automation:** a GHL subscription workflow updates the durable registry and appears in recent automation history.
 - **Optional Stripe webhook:** if enabled, a Stripe test event updates the durable registry; resending the same Stripe event returns success without rewriting the account record.

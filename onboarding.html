@@ -88,6 +88,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
 .lookupgrid{display:grid;grid-template-columns:1fr 240px auto auto;gap:12px;align-items:end}
 .formactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px}
+.smokeactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .connectiongrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
 .registrybox{display:grid;gap:10px;margin-top:14px}
 .registrytitle{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
@@ -361,7 +362,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="copyhint">Run this after a deploy or before turning on a new customer. It confirms the real customer path, not just the setup form.</div>
       <div class="readybar" id="liveSmokeBar">
         <div><b>Customer access not checked</b><span>Enter the account key above, then check whether SMART Trak sees the saved setup, subscription access, and coach access rules.</span></div>
-        <button id="liveSmokeBtn" type="button" class="secondary" onclick="checkLiveSmokeAccess()">Check Customer Access</button>
+        <div class="smokeactions">
+          <button id="liveSmokeBtn" type="button" class="secondary" onclick="checkLiveSmokeAccess()">Check Customer Access</button>
+          <button id="accessRulesBtn" type="button" class="secondary" onclick="testAccessRules()">Test Access Rules</button>
+        </div>
       </div>
       <div id="liveSmokeResult" class="registrybox"></div>
       <div class="checklist">
@@ -1062,6 +1066,100 @@ function renderLiveSmokeAccess(data,ok){
     '<div class="registryrow"><b>Message</b><span>'+esc(accessAllowed?'Ready for coach testing.':(data.subscriptionBlockedReason||data.error||'Finish the missing setup items, then check again.'))+'</span></div>'+
     missingHtml;
   if(!document.getElementById('checklistPanel').hidden)renderChecklist(currentSetup);
+}
+function testAccessRules(){
+  var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'');
+  var secret=document.getElementById('automationSecret').value.trim();
+  var box=document.getElementById('liveSmokeResult');
+  var bar=document.getElementById('liveSmokeBar');
+  if(!account){
+    setStatus('Enter the customer account key before testing access rules.','bad');
+    return;
+  }
+  if(!secret){
+    setStatus('Enter the automation secret before testing access rules.','bad');
+    return;
+  }
+  rememberAutomationSecret(secret);
+  document.getElementById('accountKey').value=account;
+  document.getElementById('lookupAccountKey').value=account;
+  document.getElementById('accessRulesBtn').disabled=true;
+  bar.className='readybar';
+  bar.querySelector('b').textContent='Testing access rules...';
+  bar.querySelector('span').textContent='Checking active/trialing access and past-due blocking without saving changes.';
+  box.innerHTML='<div class="empty">Running no-save access rule tests...</div>';
+  Promise.all([
+    dryRunAccessRule('active',secret),
+    dryRunAccessRule('trialing',secret),
+    dryRunAccessRule('past_due',secret),
+    dryRunAccessRule('unpaid',secret),
+    dryRunAccessRule('canceled',secret)
+  ]).then(function(results){
+    renderAccessRuleResults(results);
+    setStatus('Access rules tested without saving registry changes.','good');
+  }).catch(function(error){
+    bar.className='readybar bad';
+    bar.querySelector('b').textContent='Access rule test failed';
+    bar.querySelector('span').textContent=error.message||'Could not test access rules.';
+    box.innerHTML='<div class="empty">'+esc(error.message||'Could not test access rules.')+'</div>';
+    setStatus(error.message||'Could not test access rules.','bad');
+  }).finally(function(){
+    document.getElementById('accessRulesBtn').disabled=false;
+  });
+}
+function dryRunAccessRule(status,secret){
+  var payload=registryPayloadFromForm();
+  payload.subscriptionStatus=status;
+  payload.eventType='access_rule_dry_run';
+  payload.updateSource='manual-onboarding-dry-run';
+  return fetch('/api/smart-trak/account-automation-dry-run',{
+    method:'POST',
+    cache:'no-store',
+    headers:{
+      'Content-Type':'application/json',
+      'X-SMARTCoach-Automation-Secret':secret
+    },
+    body:JSON.stringify(payload)
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data,status:status};});
+  }).then(function(result){
+    if(!result.ok){
+      throw new Error(result.data&&result.data.error||('Could not test '+status+' access.'));
+    }
+    return result;
+  });
+}
+function renderAccessRuleResults(results){
+  var bar=document.getElementById('liveSmokeBar');
+  var box=document.getElementById('liveSmokeResult');
+  var expected={
+    active:true,
+    trialing:true,
+    past_due:false,
+    unpaid:false,
+    canceled:false
+  };
+  var rows=results.map(function(result){
+    var data=result.data||{};
+    var shouldAllow=expected[result.status];
+    var passed=!!data.accessReady===shouldAllow;
+    return {
+      label:result.status.replace('_',' '),
+      value:passed?'Pass':'Check',
+      detail:shouldAllow?'Should allow SMART Trak access.':'Should block SMART Trak access.',
+      message:data.subscriptionBlockedReason||'Access allowed'
+    };
+  });
+  var allPassed=rows.every(function(row){return row.value==='Pass';});
+  bar.className='readybar '+(allPassed?'good':'bad');
+  bar.querySelector('b').textContent=allPassed?'Access rules are working':'Access rules need attention';
+  bar.querySelector('span').textContent=allPassed
+    ?'Active/trialing allow access, and past due/unpaid/canceled block access. No registry changes were saved.'
+    :'Review the access rule results before launch.';
+  box.innerHTML=
+    '<div class="registrytitle"><div><b>Subscription Access Rules</b><span> No-save validation</span></div></div>'+
+    '<div class="registrycards">'+rows.map(function(row){return '<div class="card"><b>'+esc(row.value)+'</b><span>'+esc(row.label)+'</span></div>';}).join('')+'</div>'+
+    rows.map(function(row){return '<div class="registryrow"><b>'+esc(row.label)+'</b><span>'+esc(row.detail)+'<br>'+esc(row.message)+'</span></div>';}).join('');
 }
 function setLink(id,path){
   var el=document.getElementById(id);
