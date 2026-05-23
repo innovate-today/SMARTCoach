@@ -244,9 +244,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta recommended">Initial Rollout</em></div><code>SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED</code></div>
-          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Do not set for initial rollout</code></div>
-          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED','Parent email field copied.')">Copy Setup Field</button>
-          <button type="button" onclick="copyText('Do not set for initial rollout','Parent email rollout note copied.')">Copy Value Note</button>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Leave absent for initial rollout</code></div>
+          <button type="button" class="secondary" onclick="copyText('Parent email is not released for initial rollout. Leave SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED absent in Vercel Production.','Parent email rollout note copied.')">Copy Rollout Note</button>
+          <button type="button" onclick="copyText('Do not add this variable until parent communication is intentionally released.','Parent email hold note copied.')">Copy Hold Note</button>
         </div>
       </div>
       <div class="formactions">
@@ -662,7 +662,7 @@ function copyLaunchSecurityValues(){
     'SMARTCOACH_AUTOMATION_SECRET='+automation,
     'SMARTCOACH_SESSION_SECRET='+session,
     'SMARTCOACH_REQUIRE_COACH_ACCESS=true',
-    'SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED should not be set for initial rollout.',
+    'Do not add SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED for initial rollout. Leave parent email unreleased.',
     'SMARTCOACH_STRIPE_WEBHOOK_SECRET must come from the Stripe webhook endpoint.'
   ];
   copyText(lines.join('\n'),'Launch security values copied.');
