@@ -376,12 +376,12 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <strong>Automation Endpoints</strong>
         <span>Use GHL's native Stripe payments first, then have GHL call SMART Trak automation. The direct Stripe webhook is optional fallback wiring.</span>
         <div class="linkdetails">
-          <div class="linkdetail"><b>GHL Workflow</b><span>Recommended protected POST</span></div>
+          <div class="linkdetail"><b>GHL Subscription Workflow</b><span>Recommended protected POST for subscription/access updates</span></div>
           <div class="linkdetail"><b>Stripe Webhook</b><span>Optional signed fallback</span></div>
         </div>
         <div class="linkline">
           <code id="automationEndpointText">Endpoint hidden</code>
-          <button type="button" class="secondary" onclick="copyEndpoint('automation')">Copy GHL Workflow Endpoint</button>
+          <button type="button" class="secondary" onclick="copyEndpoint('automation')">Copy GHL Subscription Endpoint</button>
         </div>
         <div class="linkline">
           <code id="stripeWebhookEndpointText">Endpoint hidden</code>
@@ -2103,7 +2103,7 @@ function setEndpointText(id,path){
 }
 function copyEndpoint(type){
   var id=type==='stripe'?'stripeWebhookEndpointText':'automationEndpointText';
-  var label=type==='stripe'?'Stripe webhook endpoint copied.':'GHL workflow endpoint copied.';
+  var label=type==='stripe'?'Stripe webhook endpoint copied.':'GHL subscription endpoint copied.';
   var el=document.getElementById(id);
   copyText(el&&el.dataset&&el.dataset.url?el.dataset.url:'',label);
 }

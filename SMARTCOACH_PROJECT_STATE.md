@@ -447,7 +447,7 @@ Subscription/customer management:
 - `/onboarding.html` now includes a Registry Setup Values panel with copy-ready Vercel variable names for customer account storage.
 - `account-automation` now saves the normalized customer account record to the registry when `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` are configured.
 - Added regression coverage proving Vercel KV aliases (`KV_REST_API_URL`, `KV_REST_API_TOKEN`) and Upstash aliases (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) work as customer account storage without duplicate SMARTCOACH registry env vars.
-- When a registry record exists, SMART Trak uses it as the live account source before falling back to Vercel environment variables. Automation can now update plan, subscription status, coach seats, coach access codes, location ID, token, and logo URL without a new Vercel variable for every customer change.
+- When a registry record exists, SMART Trak uses it as the live account source before falling back to Vercel environment variables. Trusted setup can update plan, coach seats, coach access codes, location ID, token, and logo URL without a new Vercel variable for every customer change, while recurring GHL subscription automation should stay limited to billing/access fields.
 - `account-automation` merges later partial updates into the existing registry record, so Stripe/GHL subscription updates can change status, amount, renewal date, and Stripe IDs without wiping CRM connection fields or coach access codes.
 - Added regression coverage so partial subscription automation updates preserve saved connection fields, coach access codes, parent email coach access, and logo URL.
 - Added signed `account-stripe-webhook` intake for direct Stripe webhooks. It verifies `Stripe-Signature` with `SMARTCOACH_STRIPE_WEBHOOK_SECRET`, then reuses the safe registry merge logic. Stripe webhook requests now only return success after the registry save succeeds, so Stripe can retry if the durable registry is unavailable.
@@ -550,6 +550,7 @@ Subscription/customer management:
 - `VERCEL_SETUP.md` recommended GHL automation example now excludes setup-only fields such as `locationId`, keeping the docs aligned with the subscription-only workflow payload.
 - `VERCEL_SETUP.md` now explicitly says coach access codes belong in the manual registry setup flow, not the recurring GHL subscription payload.
 - Live smoke-test and launch validation wording now explicitly refer to the GHL Subscription Payload and require confirming private tokens and coach access codes stay out of that copied workflow payload.
+- `/onboarding.html` now labels the copied automation endpoint as the GHL Subscription Endpoint so support does not confuse recurring billing updates with one-time setup secrets.
 - Updated `VERCEL_SETUP.md` and `README.md` so production setup docs match the current onboarding helper, launch-readiness check, Stripe webhook events, hidden secret behavior, and regression tests.
 - `VERCEL_SETUP.md` now includes a launch validation checklist for the required live Pro test account pass before calling automation/security complete for rollout.
 - Live smoke-test wording now says all required checks should pass instead of hard-coding a checklist count, so the setup guide stays accurate as launch validation evolves.
