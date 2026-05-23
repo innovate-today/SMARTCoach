@@ -585,6 +585,9 @@ function setupForActiveAccount(){
     stripeSubscriptionId:((document.getElementById('stripeSubscriptionId')||{}).value||'').trim(),
     notes:((document.getElementById('subscriptionNotes')||{}).value||'').trim()
   };
+  var subscriptionStatus=String(subscription.status||'').toLowerCase();
+  var subscriptionAllowed=!subscriptionStatus||subscriptionStatus==='active'||subscriptionStatus==='trialing';
+  var subscriptionBlockedReason=subscriptionAllowed?'':'SMART Trak access is blocked because this subscription is '+subscriptionStatus.replace('_',' ')+'.';
   var base=account?{
     accountKey:account,
     productPlan:plan,
@@ -592,12 +595,14 @@ function setupForActiveAccount(){
     parentEmailCoachAccess:((document.getElementById('parentEmailCoachAccess')||{}).value||'').trim(),
     logoUrl:((document.getElementById('logoUrl')||{}).value||'').trim(),
     subscription:subscription,
+    subscriptionAccessAllowed:subscriptionAllowed,
+    subscriptionBlockedReason:subscriptionBlockedReason,
     accountUrl:'/?account='+encodeURIComponent(account),
     dashboardUrl:'/dashboard.html?account='+encodeURIComponent(account),
     ghlCustomLinkUrl:'/dashboard.html?account='+encodeURIComponent(account)+'&embed=1'
   }:{};
   if(currentSetup&&(!account||!setupAccount||setupAccount===account)){
-    return Object.assign({},base,currentSetup,{productPlan:plan,coachSeats:coachSeats,parentEmailCoachAccess:base.parentEmailCoachAccess,logoUrl:base.logoUrl,subscription:subscription});
+    return Object.assign({},base,currentSetup,{productPlan:plan,coachSeats:coachSeats,parentEmailCoachAccess:base.parentEmailCoachAccess,logoUrl:base.logoUrl,subscription:subscription,subscriptionAccessAllowed:subscriptionAllowed,subscriptionBlockedReason:subscriptionBlockedReason});
   }
   return base;
 }
