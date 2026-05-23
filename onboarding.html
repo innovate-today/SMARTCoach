@@ -909,7 +909,8 @@ function accountNextAction(data,record){
   if(smoke.total&&smoke.done===smoke.total&&!invite.copiedAt)return 'Activation record saved. Use Copy Coach Invite.';
   var postLaunch=postLaunchProgress();
   if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt&&postLaunch.total&&postLaunch.done<postLaunch.total)return 'Coach invite sent. Confirm first coach login and first sync.';
-  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Copy the final activation record, then keep the account in normal support monitoring.';
+  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt&&postLaunch.total&&postLaunch.done===postLaunch.total&&!activationRecord.finalCopiedAt)return 'Copy the final activation record, then keep the account in normal support monitoring.';
+  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Activation complete. Keep the account in normal support monitoring.';
   return 'Proceed to live smoke test: open coach pages and save one harmless real item.';
 }
 function lastEventLabel(event, part){
@@ -1545,9 +1546,13 @@ function activationRecordData(){
     return {};
   }
 }
-function saveActivationRecordCopied(copiedAt){
+function saveActivationRecordCopied(copiedAt,options){
+  options=options||{};
   try{
-    window.localStorage.setItem(activationRecordStorageKey(),JSON.stringify({copiedAt:copiedAt||new Date().toLocaleString()}));
+    var current=activationRecordData();
+    var next=Object.assign({},current,{copiedAt:current.copiedAt||copiedAt||new Date().toLocaleString()});
+    if(options.final)next.finalCopiedAt=copiedAt||new Date().toLocaleString();
+    window.localStorage.setItem(activationRecordStorageKey(),JSON.stringify(next));
   }catch(error){}
   renderActivationHandoffStatus();
 }
@@ -1723,9 +1728,12 @@ function renderActivationHandoffStatus(){
   }else if(!postComplete){
     title='Coach invite copied';
     detail='Invite copied '+invite.copiedAt+'. Confirm first coach login and first sync after the coach receives it.';
+  }else if(!activationRecord.finalCopiedAt){
+    title='Final activation record needed';
+    detail='First coach login and first sync are confirmed. Copy the final activation record for the support note.';
   }else{
     title='Activation handoff complete';
-    detail='Invite copied '+invite.copiedAt+'. First coach login and first sync are confirmed. Copy the final activation record for the support note.';
+    detail='Final activation record copied '+activationRecord.finalCopiedAt+'. Keep the account in normal support monitoring.';
     state='good';
   }
   box.className='readybar '+state;
@@ -2075,6 +2083,7 @@ function activationRecordText(data,options){
   var invite=coachInviteData();
   var postLaunch=postLaunchProgress();
   var postLaunchComplete=postLaunch.total>0&&postLaunch.done===postLaunch.total;
+  if(options.finalActivationRecordCopiedAt)activationRecord.finalCopiedAt=options.finalActivationRecordCopiedAt;
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
   var pageLines=coachPageLinks(account).map(function(link){
@@ -2108,6 +2117,7 @@ function activationRecordText(data,options){
     'Live smoke validated at: '+(signoff.validatedAt||'Not entered'),
     'Launch note: '+(signoff.note||'None'),
     'Activation record copied: '+(activationRecord.copiedAt||'Not copied yet'),
+    'Final activation record copied: '+(activationRecord.finalCopiedAt||'Not copied yet'),
     'Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Use Copy Coach Invite after this activation record is saved.'),
     'Post-launch follow-up: '+postLaunch.done+' of '+postLaunch.total+' complete',
     'Next action: '+accountNextAction(data,record),
@@ -2121,6 +2131,8 @@ function activationRecordText(data,options){
 function copyActivationRecord(){
   var smoke=smokeValidationProgress();
   var signoff=liveSmokeSignoffData();
+  var postLaunch=postLaunchProgress();
+  var isFinal=postLaunch.total>0&&postLaunch.done===postLaunch.total;
   if(smoke.total&&smoke.done<smoke.total){
     setStatus('Complete the live smoke validation checks before copying the activation record. Use Copy Smoke Status for partial notes.','bad');
     return;
@@ -2130,11 +2142,13 @@ function copyActivationRecord(){
     return;
   }
   var copiedAt=new Date().toLocaleString();
+  var options={activationRecordCopiedAt:copiedAt};
+  if(isFinal)options.finalActivationRecordCopiedAt=copiedAt;
   copyText(
-    activationRecordText(currentSetup||{},{activationRecordCopiedAt:copiedAt}),
-    'Activation record copied.',
+    activationRecordText(currentSetup||{},options),
+    isFinal?'Final activation record copied.':'Activation record copied.',
     function(){
-      saveActivationRecordCopied(copiedAt);
+      saveActivationRecordCopied(copiedAt,{final:isFinal});
       markActivationRecordSmokeRow();
     }
   );
