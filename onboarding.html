@@ -1686,6 +1686,9 @@ function activationRecordText(data){
   var smoke=smokeChecklistProgress();
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
+  var pageLines=coachPageLinks(account).map(function(link){
+    return 'Coach page - '+link.label+': '+absoluteUrl(link.path);
+  });
   var stripeCustomerId=sub.stripeCustomerId||recordSub.stripeCustomerId||'--';
   var stripeSubscriptionId=sub.stripeSubscriptionId||recordSub.stripeSubscriptionId||'--';
   var updatedAt=record.updatedAt||data.updatedAt||'';
@@ -1712,9 +1715,10 @@ function activationRecordText(data){
     'Live smoke checklist: '+smoke.done+' of '+smoke.total+' complete',
     'Next action: '+accountNextAction(data,record),
     'Customer link: '+dashboardLink,
-    'Status link: '+statusLink,
+    'Status link: '+statusLink
+  ].concat(pageLines).concat([
     'Notes: Parent email remains off for initial rollout unless the global release flag is intentionally enabled.'
-  ];
+  ]);
   return lines.join('\n');
 }
 function copyActivationRecord(){

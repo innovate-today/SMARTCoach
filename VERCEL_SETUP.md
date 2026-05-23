@@ -345,7 +345,7 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
 - **Coach pages:** Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator load for the test account without setup-needed errors.
 - **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
-- **Support handoff:** **Copy Activation Record** includes the account key, subscription, Stripe IDs when available, setup/access state, smoke progress, next action, and customer link.
+- **Support handoff:** **Copy Activation Record** includes the account key, subscription, Stripe IDs when available, setup/access state, smoke progress, next action, customer link, status link, and coach page validation links.
 - **Parent email:** parent email tools remain hidden for initial rollout.
 
 Before pushing security/account changes, run:
