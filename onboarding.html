@@ -386,7 +386,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
       </div>
       <div id="liveSmokeResult" class="registrybox"></div>
-      <div class="checklist">
+      <div id="liveSmokeSummary" class="readybar warn">
+        <div><b>Live smoke test not complete</b><span>Check each required item as it passes. All eight checks should be complete before turning on a new coach account.</span></div>
+      </div>
+      <div id="liveSmokeChecklist" class="checklist">
         <label class="checkrow"><input type="checkbox"><span><b>1. System check is ready<em class="checkbadge warn">Required</em></b><span>Run Check System with the automation secret. The result should say Ready for initial rollout and show no launch blockers.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup passes dry run<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, coach seats, subscription status, and coach codes before saving.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>3. Registry record is saved<em class="checkbadge warn">Required</em></b><span>Save the registry update, then use Lookup Account to confirm subscription, coach seats, connection fields, and recent update history are present.</span></span></label>
@@ -427,6 +430,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 var currentEnvironment=[];
 var currentSetup=null;
 prefillFromUrl();
+bindLiveSmokeChecklist();
 function generateAccountKey(){
   var input=document.getElementById('accountKey');
   var raw=input.value.trim();
@@ -1199,6 +1203,28 @@ function renderAccessRuleResults(results){
     '<div class="registrytitle"><div><b>Subscription Access Rules</b><span> No-save validation</span></div></div>'+
     '<div class="registrycards">'+rows.map(function(row){return '<div class="card"><b>'+esc(row.value)+'</b><span>'+esc(row.label)+'</span></div>';}).join('')+'</div>'+
     rows.map(function(row){return '<div class="registryrow"><b>'+esc(row.label)+'</b><span>'+esc(row.detail)+'<br>'+esc(row.message)+'</span></div>';}).join('');
+}
+function bindLiveSmokeChecklist(){
+  var list=document.getElementById('liveSmokeChecklist');
+  if(!list)return;
+  list.addEventListener('change',function(event){
+    if(event.target&&event.target.matches('input[type="checkbox"]'))renderLiveSmokeSummary();
+  });
+  renderLiveSmokeSummary();
+}
+function renderLiveSmokeSummary(){
+  var list=document.getElementById('liveSmokeChecklist');
+  var box=document.getElementById('liveSmokeSummary');
+  if(!list||!box)return;
+  var checks=[].slice.call(list.querySelectorAll('input[type="checkbox"]'));
+  var done=checks.filter(function(input){return input.checked;}).length;
+  var total=checks.length;
+  var complete=total>0&&done===total;
+  box.className='readybar '+(complete?'good':'warn');
+  box.querySelector('b').textContent=complete?'Live smoke test complete':'Live smoke test not complete';
+  box.querySelector('span').textContent=complete
+    ?'All launch checks are marked complete for this account. Keep the account key, coach codes, and support notes with the customer record.'
+    :done+' of '+total+' launch checks complete. Finish every required check before turning on a new coach account.';
 }
 function setLink(id,path){
   var el=document.getElementById(id);
