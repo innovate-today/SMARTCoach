@@ -218,7 +218,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="field">
           <label for="coachAccessCodes">Coach Access Codes</label>
-          <input id="coachAccessCodes" type="text" placeholder="coach_code_1, coach_code_2" autocomplete="off">
+          <input id="coachAccessCodes" type="text" placeholder="Generate codes, then give one to each coach" autocomplete="off">
         </div>
         <div class="field">
           <label for="parentEmailCoachAccess">Parent Email Enabled Coaches</label>
@@ -229,6 +229,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="logoUrl" type="text" placeholder="Optional customer logo URL" autocomplete="off">
         </div>
       </div>
+      <div class="setupnote"><b>Coach codes are intentional</b>Generate or paste coach access codes before saving a new Pro account. Blank coach-code fields preserve saved codes on existing accounts, but a new Pro account with no code stays setup-incomplete.</div>
       <div class="status">Use these fields only for internal setup or support. Blank connection fields preserve the saved registry value.</div>
     </div>
   </section>
@@ -448,7 +449,7 @@ function generateCoachCodes(){
     codes.push('sc-'+account.slice(0,10)+'-'+randomCode(6)+'-c'+(i+1));
   }
   document.getElementById('coachAccessCodes').value=codes.join(',');
-  setStatus(seats===3?'Three coach access codes generated.':'One coach access code generated.','good');
+  setStatus((seats===3?'Three coach access codes generated.':'One coach access code generated.')+' Give one code to each coach and keep a support copy.','good');
 }
 function cleanAccountKey(value){
   return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,40);
@@ -896,7 +897,7 @@ function registryPayloadWarning(payload){
   if(!String(payload.privateIntegrationToken||payload.token||'').trim())missing.push('Private integration token');
   if(!String(payload.coachAccessCodes||'').trim())missing.push('Coach access code');
   if(!missing.length)return '';
-  return 'This Pro account is missing '+missing.join(', ')+'. The coach will not be able to open SMART Trak until this is completed.';
+  return 'This Pro account is missing '+missing.join(', ')+'. The coach will not be able to open SMART Trak until this is completed. Coach codes are not created automatically.';
 }
 function setupMissingText(data){
   data=data||{};
