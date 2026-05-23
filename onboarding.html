@@ -893,8 +893,10 @@ function accountNextAction(data,record){
   if(smoke.total&&smoke.done<smoke.total)return 'Complete the live smoke test before turning on the coach account.';
   var signoff=liveSmokeSignoffData();
   if(smoke.total&&smoke.done===smoke.total&&(!signoff.validatedBy||!signoff.validatedAt))return 'Stamp the launch sign-off, then copy the activation record.';
+  var activationRecord=activationRecordData();
+  if(smoke.total&&smoke.done===smoke.total&&!activationRecord.copiedAt)return 'Copy and save the activation record, then use Copy Coach Invite.';
   var invite=coachInviteData();
-  if(smoke.total&&smoke.done===smoke.total&&!invite.copiedAt)return 'Save the activation record, then use Copy Coach Invite.';
+  if(smoke.total&&smoke.done===smoke.total&&!invite.copiedAt)return 'Activation record saved. Use Copy Coach Invite.';
   var postLaunch=postLaunchProgress();
   if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt&&postLaunch.total&&postLaunch.done<postLaunch.total)return 'Coach invite sent. Confirm first coach login and first sync.';
   if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Activation complete. Keep the account in normal support monitoring.';
@@ -1455,6 +1457,10 @@ function coachInviteStorageKey(){
   var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'default')||'default';
   return 'smartcoach_coach_invite_'+account;
 }
+function activationRecordStorageKey(){
+  var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'default')||'default';
+  return 'smartcoach_activation_record_'+account;
+}
 function postLaunchStorageKey(){
   var account=cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'default')||'default';
   return 'smartcoach_post_launch_'+account;
@@ -1517,6 +1523,19 @@ function coachInviteData(){
 function saveCoachInviteCopied(){
   try{
     window.localStorage.setItem(coachInviteStorageKey(),JSON.stringify({copiedAt:new Date().toLocaleString()}));
+  }catch(error){}
+}
+function activationRecordData(){
+  try{
+    var raw=window.localStorage.getItem(activationRecordStorageKey());
+    return raw?JSON.parse(raw)||{}:{};
+  }catch(error){
+    return {};
+  }
+}
+function saveActivationRecordCopied(){
+  try{
+    window.localStorage.setItem(activationRecordStorageKey(),JSON.stringify({copiedAt:new Date().toLocaleString()}));
   }catch(error){}
 }
 function savePostLaunchChecklist(){
@@ -1592,6 +1611,7 @@ function resetLiveSmokeChecklist(){
     if(input)input.value='';
   });
   saveLiveSmokeSignoff();
+  try{window.localStorage.removeItem(activationRecordStorageKey());}catch(error){}
   try{window.localStorage.removeItem(coachInviteStorageKey());}catch(error){}
   try{window.localStorage.removeItem(postLaunchStorageKey());}catch(error){}
   loadPostLaunchChecklist();
@@ -1637,6 +1657,8 @@ function copyLiveSmokeStatus(){
   lines.push('Validated by: '+(signoff.validatedBy||'Not entered'));
   lines.push('Validated at: '+(signoff.validatedAt||'Not entered'));
   lines.push('Launch note: '+(signoff.note||'None'));
+  var activationRecord=activationRecordData();
+  lines.push('Activation record: '+(activationRecord.copiedAt?'Copied '+activationRecord.copiedAt:'Not copied'));
   lines.push('Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Not copied'));
   lines.push('Post-launch follow-up: '+postLaunch.done+' of '+postLaunch.total+' complete');
   copyText(lines.join('\n'),'Live smoke status copied.');
@@ -1958,6 +1980,7 @@ function activationRecordText(data){
   var plan=data.productPlan||record.productPlan||document.getElementById('plan').value||'pro';
   var smoke=smokeChecklistProgress();
   var signoff=liveSmokeSignoffData();
+  var activationRecord=activationRecordData();
   var invite=coachInviteData();
   var postLaunch=postLaunchProgress();
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
@@ -1992,6 +2015,7 @@ function activationRecordText(data){
     'Live smoke validated by: '+(signoff.validatedBy||'Not entered'),
     'Live smoke validated at: '+(signoff.validatedAt||'Not entered'),
     'Launch note: '+(signoff.note||'None'),
+    'Activation record copied: '+(activationRecord.copiedAt||'Not copied yet'),
     'Coach invite: '+(invite.copiedAt?'Copied '+invite.copiedAt:'Use Copy Coach Invite after this activation record is saved.'),
     'Post-launch follow-up: '+postLaunch.done+' of '+postLaunch.total+' complete',
     'Next action: '+accountNextAction(data,record),
@@ -2003,6 +2027,7 @@ function activationRecordText(data){
   return lines.join('\n');
 }
 function copyActivationRecord(){
+  saveActivationRecordCopied();
   copyText(activationRecordText(currentSetup||{}),'Activation record copied.');
 }
 function setupSignals(data){
