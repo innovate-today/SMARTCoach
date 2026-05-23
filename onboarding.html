@@ -633,8 +633,10 @@ function bindAccountKeyWarning(){
   ['accountKey','lookupAccountKey'].forEach(function(id){
     var input=document.getElementById(id);
     if(!input)return;
+    input.dataset.previousAccountKey=cleanAccountKey(input.value);
     input.addEventListener('input',function(){
       renderAccountKeyWarning();
+      clearSystemHealthIfAccountChanged(input);
       loadLiveSmokeChecklist();
       loadLiveSmokeSignoff();
       loadPostLaunchChecklist();
@@ -644,6 +646,7 @@ function bindAccountKeyWarning(){
     input.addEventListener('blur',function(){
       input.value=cleanAccountKey(input.value);
       renderAccountKeyWarning();
+      clearSystemHealthIfAccountChanged(input);
       loadLiveSmokeChecklist();
       loadLiveSmokeSignoff();
       loadPostLaunchChecklist();
@@ -666,6 +669,16 @@ function bindAccountKeyWarning(){
     input.addEventListener('input',refreshActiveSetupDisplays);
   });
   renderAccountKeyWarning();
+}
+function clearSystemHealthIfAccountChanged(input){
+  var previous=cleanAccountKey(input.dataset.previousAccountKey||'');
+  var next=cleanAccountKey(input.value||'');
+  if(previous===next)return;
+  input.dataset.previousAccountKey=next;
+  currentSystemHealth=null;
+  var box=document.getElementById('systemResult');
+  if(box)box.innerHTML='';
+  renderActivationHandoffStatus();
 }
 function refreshActiveSetupDisplays(){
   var data=setupForActiveAccount();

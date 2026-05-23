@@ -636,6 +636,7 @@ Help assistant:
 9. Copy Coach Invite now uses the same system readiness gate, preventing coach access notes from being sent if launch settings changed after activation.
 10. Activation handoff status now shows the system readiness requirement directly and refreshes when Check System starts, succeeds, or fails.
 11. Copy Smoke Status now includes system readiness, so partial or final smoke notes capture whether launch security was checked and ready.
+12. Changing the setup or lookup account key now clears the prior system readiness result, forcing a fresh Check System for the active customer before activation or coach invite copy.
 
 ## Known Good Test Flow
 
