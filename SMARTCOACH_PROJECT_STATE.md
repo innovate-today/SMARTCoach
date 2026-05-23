@@ -457,7 +457,7 @@ Subscription/customer management:
 - Added internal account lookup on `/onboarding.html` so a customer registry record can be checked by account key and automation secret, with subscription fields loaded back into the setup form.
 - Account lookup now shows a last-update card and coach/support friendly timestamps for registry updates and recent automation events.
 - Account lookup now displays hidden private tokens as `Saved` and coach access codes by saved count, so support can verify setup without exposing secret values.
-- `/onboarding.html` now includes **Launch Security Values** with copy-ready Vercel field names and safe value notes for setup code, automation secret, Stripe webhook secret, session secret, coach access enforcement, and the parent-email rollout gate.
+- `/onboarding.html` now includes **Launch Security Values** with copy-ready Vercel field names, safe value notes, and a browser-side generator for separate setup, automation, and session secrets.
 - Added manual **Save Registry Update** action on `/onboarding.html` so internal support can correct a customer's plan/subscription fields in the durable registry without waiting for Stripe/GHL automation.
 - Added optional SMART Trak connection fields to `/onboarding.html` for internal setup/support: location ID, private integration token, coach access codes, and logo URL. Blank fields preserve existing saved registry values.
 - Added account-key and coach-code generators to `/onboarding.html` to reduce manual setup mistakes. Coach code generation respects one-coach vs three-coach Pro setup.

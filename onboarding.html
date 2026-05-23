@@ -213,15 +213,15 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="varlist">
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_ADMIN_SETUP_CODE</code></div>
-          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Create a private internal setup code</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code id="setupCodeSecretValue">Generate a private internal setup code</code></div>
           <button type="button" class="secondary" onclick="copyText('SMARTCOACH_ADMIN_SETUP_CODE','Setup code field copied.')">Copy Setup Field</button>
-          <button type="button" onclick="copyText('Create a private internal setup code','Setup code value note copied.')">Copy Value Note</button>
+          <button type="button" onclick="copyLaunchSecret('setupCodeSecretValue','Setup code value copied.')">Copy Value</button>
         </div>
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_AUTOMATION_SECRET</code></div>
-          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Create a long private automation secret</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code id="automationSecretValue">Generate a long private automation secret</code></div>
           <button type="button" class="secondary" onclick="copyText('SMARTCOACH_AUTOMATION_SECRET','Automation secret field copied.')">Copy Setup Field</button>
-          <button type="button" onclick="copyText('Create a long private automation secret','Automation secret value note copied.')">Copy Value Note</button>
+          <button type="button" onclick="copyLaunchSecret('automationSecretValue','Automation secret value copied.')">Copy Value</button>
         </div>
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_STRIPE_WEBHOOK_SECRET</code></div>
@@ -231,9 +231,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_SESSION_SECRET</code></div>
-          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Create a different long private session secret</code></div>
+          <div class="varfield"><div class="varlabel"><span>Value</span></div><code id="sessionSecretValue">Generate a different long private session secret</code></div>
           <button type="button" class="secondary" onclick="copyText('SMARTCOACH_SESSION_SECRET','Session secret field copied.')">Copy Setup Field</button>
-          <button type="button" onclick="copyText('Create a different long private session secret','Session secret value note copied.')">Copy Value Note</button>
+          <button type="button" onclick="copyLaunchSecret('sessionSecretValue','Session secret value copied.')">Copy Value</button>
         </div>
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_REQUIRE_COACH_ACCESS</code></div>
@@ -247,6 +247,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <button type="button" class="secondary" onclick="copyText('SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED','Parent email field copied.')">Copy Setup Field</button>
           <button type="button" onclick="copyText('Do not set for initial rollout','Parent email rollout note copied.')">Copy Value Note</button>
         </div>
+      </div>
+      <div class="formactions">
+        <button type="button" class="secondary" onclick="generateLaunchSecrets()">Generate Launch Secrets</button>
       </div>
       <div class="setupnote"><b>Security launch rule</b>Run Check System after these are set. The page should not say Ready for initial rollout until required security values are present and parent email remains unreleased.</div>
     </div>
@@ -569,6 +572,33 @@ function randomCode(length){
   }
   for(var j=0;j<length;j++)out+=chars[values[j]%chars.length];
   return out;
+}
+function randomSecret(prefix,length){
+  var chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  var out='';
+  var values=new Uint32Array(length);
+  if(window.crypto&&window.crypto.getRandomValues){
+    window.crypto.getRandomValues(values);
+  }else{
+    for(var i=0;i<length;i++)values[i]=Math.floor(Math.random()*chars.length);
+  }
+  for(var j=0;j<length;j++)out+=chars[values[j]%chars.length];
+  return prefix+'_'+out;
+}
+function generateLaunchSecrets(){
+  document.getElementById('setupCodeSecretValue').textContent=randomSecret('setup',24);
+  document.getElementById('automationSecretValue').textContent=randomSecret('automation',48);
+  document.getElementById('sessionSecretValue').textContent=randomSecret('session',48);
+  setStatus('Launch secrets generated. Use different values for setup, automation, and session secrets.','good');
+}
+function copyLaunchSecret(id,message){
+  var el=document.getElementById(id);
+  var value=(el&&el.textContent||'').trim();
+  if(!value||/^Generate /.test(value)){
+    setStatus('Generate launch secrets first, then copy the value.','bad');
+    return;
+  }
+  copyText(value,message);
 }
 function checkAutomationHealth(){
   var secret=document.getElementById('automationSecret').value.trim();
