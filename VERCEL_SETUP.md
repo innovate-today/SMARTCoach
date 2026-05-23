@@ -331,7 +331,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 9. Follow the `/onboarding.html` **Activation Runbook** for that test account.
 10. Add the SMART Trak custom link to that test subaccount.
 11. Test Share -> Sync to SMART Trak with one athlete who has saved times.
-12. Trigger the GHL subscription workflow once and confirm the registry lookup shows the automation event. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
+12. Trigger the GHL Subscription Payload workflow once and confirm the registry lookup shows the automation event. Confirm the copied GHL payload did not include private tokens or coach access codes. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
 13. Use **Copy Activation Record** and save the support note for the test account.
 
 ## Launch Validation Checklist
@@ -344,7 +344,7 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Registry write:** **Save Registry Update** returns saved and account lookup shows the account as saved.
 - **Subscription allow/block:** `/onboarding.html` -> **Live Smoke Test** -> **Test Access Rules** passes, proving `active` and `trialing` allow access while `past_due`, `unpaid`, and `canceled` block access without saving those test statuses.
 - **Coach access:** a valid coach code creates a signed session; wrong codes are rejected and rate-limited after repeated attempts.
-- **GHL subscription automation:** a GHL subscription workflow updates the durable registry and appears in recent automation history.
+- **GHL subscription automation:** the GHL Subscription Payload updates the durable registry and appears in recent automation history, while private tokens and coach access codes remain in the manual registry setup flow.
 - **Optional Stripe webhook:** if enabled, a Stripe test event updates the durable registry; resending the same Stripe event returns success without rewriting the account record.
 - **No secret exposure:** automation responses and account lookup show saved/hidden status for private tokens and coach access codes instead of exposing values. Redacted setup rows should show `Saved value hidden` and should not copy `__hidden__` as a pasteable value.
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
