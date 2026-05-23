@@ -502,6 +502,7 @@ Subscription/customer management:
 - Copy Coach Invite now also refuses to copy until Copy Activation Record has been used for the current account, keeping the internal handoff saved before coach-facing access is sent.
 - Copy Coach Invite now saves a per-account copied timestamp in the setup browser, and later activation records show whether the invite has been copied.
 - Copy Activation Record now saves a per-account copied timestamp in the setup browser, and live smoke status plus next-action guidance show whether the internal activation note was saved before the coach invite is sent.
+- Activation-record and coach-invite copied timestamps now save only after the copy action succeeds, so the handoff status does not advance on a failed clipboard action.
 - Onboarding next-action guidance now advances through activation record saved, coach invite copied, and activation complete states so support can see the final launch step clearly.
 - Added a per-account post-launch follow-up checklist to `/onboarding.html` for first coach login and first sync; activation records now include this progress and next-action guidance points to it after the invite is copied.
 - The post-launch follow-up summary now updates visually as pending or complete based on the first-login and first-sync checks.

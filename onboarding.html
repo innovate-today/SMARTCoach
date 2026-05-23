@@ -1524,9 +1524,9 @@ function coachInviteData(){
     return {};
   }
 }
-function saveCoachInviteCopied(){
+function saveCoachInviteCopied(copiedAt){
   try{
-    window.localStorage.setItem(coachInviteStorageKey(),JSON.stringify({copiedAt:new Date().toLocaleString()}));
+    window.localStorage.setItem(coachInviteStorageKey(),JSON.stringify({copiedAt:copiedAt||new Date().toLocaleString()}));
   }catch(error){}
   renderActivationHandoffStatus();
 }
@@ -1538,9 +1538,9 @@ function activationRecordData(){
     return {};
   }
 }
-function saveActivationRecordCopied(){
+function saveActivationRecordCopied(copiedAt){
   try{
-    window.localStorage.setItem(activationRecordStorageKey(),JSON.stringify({copiedAt:new Date().toLocaleString()}));
+    window.localStorage.setItem(activationRecordStorageKey(),JSON.stringify({copiedAt:copiedAt||new Date().toLocaleString()}));
   }catch(error){}
   renderActivationHandoffStatus();
 }
@@ -1784,8 +1784,8 @@ function copyCoachInvite(){
   }
   lines.push('');
   lines.push('Keep this access private. Contact SMARTCoach support if the link or code does not work.');
-  saveCoachInviteCopied();
-  copyText(lines.join('\n'),'Coach invite copied.');
+  var copiedAt=new Date().toLocaleString();
+  copyText(lines.join('\n'),'Coach invite copied.',function(){saveCoachInviteCopied(copiedAt);});
 }
 function absoluteUrl(path){
   try{
@@ -1870,14 +1870,17 @@ function copyVariablePart(index,part){
   var text=part==='key'?row.key:row.value;
   copyText(text,part==='key'?'Setup field copied.':'Setup value copied.');
 }
-function copyText(text,message){
+function copyText(text,message,onSuccess){
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(function(){setStatus(message,'good');}).catch(function(){fallbackCopy(text,message);});
+    navigator.clipboard.writeText(text).then(function(){
+      if(typeof onSuccess==='function')onSuccess();
+      setStatus(message,'good');
+    }).catch(function(){fallbackCopy(text,message,onSuccess);});
     return;
   }
-  fallbackCopy(text,message);
+  fallbackCopy(text,message,onSuccess);
 }
-function fallbackCopy(text,message){
+function fallbackCopy(text,message,onSuccess){
   var area=document.createElement('textarea');
   area.value=text;
   document.body.appendChild(area);
@@ -1885,6 +1888,7 @@ function fallbackCopy(text,message){
   area.select();
   try{
     document.execCommand('copy');
+    if(typeof onSuccess==='function')onSuccess();
     setStatus(message,'good');
   }catch(e){
     setStatus('Copy failed. Select and copy the value manually.','bad');
@@ -2022,8 +2026,9 @@ function smokeChecklistProgress(){
     total:checks.length
   };
 }
-function activationRecordText(data){
+function activationRecordText(data,options){
   data=data||{};
+  options=options||{};
   var sub=data.subscription||{};
   var record=data.accountRegistryRecord||{};
   var recordSub=record.subscription||{};
@@ -2031,7 +2036,8 @@ function activationRecordText(data){
   var plan=data.productPlan||record.productPlan||document.getElementById('plan').value||'pro';
   var smoke=smokeChecklistProgress();
   var signoff=liveSmokeSignoffData();
-  var activationRecord=activationRecordData();
+  var activationRecord=Object.assign({},activationRecordData());
+  if(options.activationRecordCopiedAt)activationRecord.copiedAt=options.activationRecordCopiedAt;
   var invite=coachInviteData();
   var postLaunch=postLaunchProgress();
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
@@ -2078,8 +2084,12 @@ function activationRecordText(data){
   return lines.join('\n');
 }
 function copyActivationRecord(){
-  saveActivationRecordCopied();
-  copyText(activationRecordText(currentSetup||{}),'Activation record copied.');
+  var copiedAt=new Date().toLocaleString();
+  copyText(
+    activationRecordText(currentSetup||{},{activationRecordCopiedAt:copiedAt}),
+    'Activation record copied.',
+    function(){saveActivationRecordCopied(copiedAt);}
+  );
 }
 function setupSignals(data){
   data=data||{};
