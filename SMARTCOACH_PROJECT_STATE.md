@@ -633,6 +633,7 @@ Help assistant:
 6. Latest smoke check passed across phone app, dashboard, athletes, calendar, planning, meet history, records, XC simulator, onboarding, API files, and account/security regression tests. Next full-flow pass should use a live test Pro account in Vercel/GHL and include launch security values, Clear Generated Secrets, parent email off, all coach pages, stopwatch sync, subscription automation, and Copy Activation Record.
 7. Onboarding/support setup refreshes immediately when location ID, private token presence, coach access codes, subscription fields, parent-email access, logo, or plan/seat values change; the private token still stays out of copied notes and records.
 8. Copy Activation Record now requires a fresh system readiness check that says Ready for initial rollout, so activation cannot be recorded while security, registry, Stripe webhook, coach session, coach access, or parent-email launch blockers remain.
+9. Copy Coach Invite now uses the same system readiness gate, preventing coach access notes from being sent if launch settings changed after activation.
 
 ## Known Good Test Flow
 

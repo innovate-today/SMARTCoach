@@ -1902,6 +1902,11 @@ function copyCoachInvite(){
     setStatus('Complete the live smoke test before copying the coach invite.','bad');
     return;
   }
+  var systemBlocker=systemReadinessBlockerText();
+  if(systemBlocker){
+    setStatus(systemBlocker,'bad');
+    return;
+  }
   if(smoke.total&&(!signoff.validatedBy||!signoff.validatedAt)){
     setStatus('Stamp the launch sign-off before copying the coach invite.','bad');
     return;
