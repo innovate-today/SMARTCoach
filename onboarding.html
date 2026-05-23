@@ -574,8 +574,16 @@ function activeCustomerAccount(){
 function setupForActiveAccount(){
   var account=activeCustomerAccount();
   var setupAccount=cleanAccountKey((currentSetup&&currentSetup.accountKey)||'');
-  if(currentSetup&&(!account||!setupAccount||setupAccount===account))return currentSetup;
-  return account?{accountKey:account}: {};
+  var plan=(document.getElementById('plan')||{}).value||'pro';
+  var base=account?{
+    accountKey:account,
+    productPlan:plan,
+    accountUrl:'/?account='+encodeURIComponent(account),
+    dashboardUrl:'/dashboard.html?account='+encodeURIComponent(account),
+    ghlCustomLinkUrl:'/dashboard.html?account='+encodeURIComponent(account)+'&embed=1'
+  }:{};
+  if(currentSetup&&(!account||!setupAccount||setupAccount===account))return Object.assign({},base,currentSetup);
+  return base;
 }
 function accountKeysMismatch(){
   var keys=accountKeyValues();

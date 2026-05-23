@@ -480,6 +480,7 @@ Subscription/customer management:
 - Copied smoke-status, coach-invite, activation-runbook, and activation-record notes now ignore stale cached setup data when the active account key has changed.
 - Copy SMART Trak Link now rebuilds the customer link from the active account key before copying, avoiding stale custom-link URLs after account-key edits.
 - Customer links on `/onboarding.html` now resync when the account key changes, so Open SMART Trak, Stopwatch, and Account Status links follow the active customer account.
+- The active-account helper now carries the selected plan and default customer links even before Generate or Lookup runs, keeping copied/opened onboarding links accurate for a fresh account key.
 - `/onboarding.html` now includes a live smoke-test checklist for the real customer-account path after deploys.
 - `/onboarding.html` setup checklist now shows ready/missing/warning badges based on the current customer account signals, including durable registry saved, subscription access, coach codes, and account configuration.
 - Registry account records now store a lightweight `lastAutomationEvent` stamp and a short `automationEventHistory` list showing recent update source, event type, optional Stripe event/object IDs, and received time. `/onboarding.html` lookup displays last source/event plus recent automation history.
