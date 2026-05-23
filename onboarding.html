@@ -844,6 +844,12 @@ function copySystemStatus(){
   lines.push('Production warnings: '+(warnings.length?warnings.join('; '):'None'));
   copyText(lines.join('\n'),'System status copied.');
 }
+function systemReadinessBlockerText(){
+  if(!currentSystemHealth)return 'Run Check System and confirm Ready for initial rollout before copying the activation record.';
+  if(currentSystemHealth.launchReady)return '';
+  var blockers=currentSystemHealth.launchBlockers||[];
+  return blockers.length?'System is not ready for launch: '+blockers.join('; '):'System is not ready for launch yet.';
+}
 function lookupAccount(){
   var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');
   document.getElementById('lookupAccountKey').value=account;
@@ -2206,6 +2212,8 @@ function activationRecordText(data,options){
   var postLaunch=postLaunchProgress();
   var postLaunchComplete=!!invite.copiedAt&&postLaunch.total>0&&postLaunch.done===postLaunch.total;
   if(options.finalActivationRecordCopiedAt)activationRecord.finalCopiedAt=options.finalActivationRecordCopiedAt;
+  var systemReady=!!(currentSystemHealth&&currentSystemHealth.launchReady);
+  var systemBlockers=currentSystemHealth&&currentSystemHealth.launchBlockers||[];
   var dashboardLink=absoluteUrl(customerMainLink(Object.assign({},data,{accountKey:account})));
   var statusLink=absoluteUrl('/api/smart-trak/account-status?account='+encodeURIComponent(account||'customer'));
   var pageLines=coachPageLinks(account).map(function(link){
@@ -2229,6 +2237,7 @@ function activationRecordText(data,options){
     'Last automation source: '+lastEventLabel(record.lastAutomationEvent,'source'),
     'Last automation event: '+lastEventLabel(record.lastAutomationEvent,'event'),
     'Last registry update: '+fullDateTime(updatedAt),
+    'System readiness: '+(systemReady?'Ready for initial rollout':systemBlockers.length?systemBlockers.join('; '):'Not checked'),
     'SMART Trak setup: '+(data.setupReady||data.configured?'Ready':'Needs setup'),
     'Access: '+(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready')),
     'Device unlock: '+(data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Coach code needed':'Ready'),
@@ -2258,6 +2267,11 @@ function copyActivationRecord(){
   var isFinal=!!invite.copiedAt&&postLaunch.total>0&&postLaunch.done===postLaunch.total;
   if(smoke.total&&smoke.done<smoke.total){
     setStatus('Complete the live smoke validation checks before copying the activation record. Use Copy Smoke Status for partial notes.','bad');
+    return;
+  }
+  var systemBlocker=systemReadinessBlockerText();
+  if(systemBlocker){
+    setStatus(systemBlocker,'bad');
     return;
   }
   if(smoke.total&&(!signoff.validatedBy||!signoff.validatedAt)){
