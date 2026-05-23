@@ -123,7 +123,7 @@ The live smoke-test checklist is saved in the browser per account key, so a refr
 
 If the setup form and account lookup show different account keys, `/onboarding.html` warns and blocks saving, dry runs, and live access checks until they match. This prevents validating or saving the wrong coach account during activation.
 
-After generating or saving a customer account, use the **Activation Runbook** panel for the exact support order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, then complete the live smoke test.
+After generating or saving a customer account, use the **Activation Runbook** panel for the exact support order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, then complete the live smoke test. Check System should show no launch blockers for the automation secret, setup code, durable registry, Stripe webhook, coach session secret, coach access enforcement, and parent email rollout gate.
 
 Use **Copy Activation Record** after the customer passes setup. It creates a plain support-note summary with the account key, plan, coach seats, subscription, Stripe IDs, registry/setup/access state, recent automation update, live smoke-test progress, next action, and customer link.
 
