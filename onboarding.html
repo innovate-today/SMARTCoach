@@ -1590,12 +1590,16 @@ function renderPostLaunchSummary(){
   var box=document.getElementById('postLaunchFollowup');
   if(!box)return;
   var progress=postLaunchProgress();
-  var complete=progress.total>0&&progress.done===progress.total;
+  var invite=coachInviteData();
+  var followupComplete=progress.total>0&&progress.done===progress.total;
+  var complete=!!invite.copiedAt&&followupComplete;
   box.className='readybar '+(complete?'good':'warn');
-  box.querySelector('b').textContent=complete?'Post-launch follow-up complete':'Post-launch follow-up pending';
+  box.querySelector('b').textContent=complete?'Post-launch follow-up complete':followupComplete?'Coach invite not copied yet':'Post-launch follow-up pending';
   box.querySelector('span').textContent=complete
-    ?'First coach login and first sync are confirmed for this account.'
-    :progress.done+' of '+progress.total+' follow-up checks complete. Confirm first coach login and first sync after the coach invite is sent.';
+    ?'Coach invite, first coach login, and first sync are confirmed for this account.'
+    :followupComplete
+      ?'First coach login and first sync are checked, but Copy Coach Invite has not been recorded for this account yet.'
+      :progress.done+' of '+progress.total+' follow-up checks complete. Confirm first coach login and first sync after the coach invite is sent.';
   renderActivationHandoffStatus();
 }
 function saveLiveSmokeChecklist(){
