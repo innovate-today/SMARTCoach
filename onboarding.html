@@ -401,10 +401,10 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <button type="button" class="secondary" onclick="copyPayload('stripe')">Copy Stripe Metadata</button>
         </div>
         <div class="payloadbox">
-          <strong>GHL Workflow Payload</strong>
-          <span>Use this JSON body in the GHL workflow action that updates SMART Trak after subscription changes.</span>
+          <strong>GHL Subscription Payload</strong>
+          <span>Use this JSON body when GHL updates SMART Trak after subscription changes. Setup secrets and coach codes are intentionally not included.</span>
           <pre id="automationPayloadText"></pre>
-          <button type="button" class="secondary" onclick="copyPayload('automation')">Copy GHL Payload</button>
+          <button type="button" class="secondary" onclick="copyPayload('automation')">Copy GHL Subscription Payload</button>
         </div>
       </div>
     </div>
@@ -2130,7 +2130,7 @@ function copyStripeEvents(){
 }
 function copyPayload(type){
   var id=type==='stripe'?'stripeMetadataText':'automationPayloadText';
-  var label=type==='stripe'?'Stripe metadata copied.':'GHL workflow payload copied.';
+  var label=type==='stripe'?'Stripe metadata copied.':'GHL subscription payload copied.';
   copyText(document.getElementById(id).textContent,label);
 }
 function updateVariableValue(index,value){
