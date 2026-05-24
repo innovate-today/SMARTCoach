@@ -348,7 +348,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 11. Test Share -> Sync to SMART Trak with one athlete who has saved times.
 12. Log one standalone race result and confirm it reaches Dashboard, Meet History, and athlete bests.
 13. Load My Season Best in XC Simulator, load a saved field, and score one simulated meet.
-14. Trigger the GHL Subscription Payload workflow once and confirm account lookup shows the automation event. Confirm the copied GHL payload did not include private tokens or coach access codes. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
+14. Trigger the GHL Subscription Payload workflow once and confirm account lookup shows the recent account update. Confirm the copied GHL payload did not include private tokens or coach access codes. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
 15. Use **Copy Activation Record** and save the support note for the test account.
 16. Use **Copy Coach Invite** only after validation is complete and the activation record has been saved.
 17. After the invite is sent, complete post-launch phone follow-up: first coach login, first sync, and phone bulk archive.
@@ -360,6 +360,7 @@ Before calling automation/security complete for rollout, verify this with a real
 
 - **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
 - **Launch security values:** Vercel Production has separate setup, automation, and session secrets; coach access enforcement is true; parent email tools remain off.
+- **Setup preview:** **Test Setup First** passes for the live test account before **Save Account Setup** is used.
 - **Live smoke test:** `/onboarding.html` -> **Live Smoke Test** -> **Check Customer Access** reports the test customer account is ready, then use the generated coach page links to complete the required checklist after deploy. Use **Copy Smoke Status** if the checklist needs to be saved before every item is complete. Save the activation record after launch sign-off, then save the final activation record after the coach invite is copied and post-launch follow-up is complete.
 - **Account setup save:** **Save Account Setup** returns saved and account lookup shows the account as saved.
 - **Subscription allow/block:** `/onboarding.html` -> **Live Smoke Test** -> **Test Access Rules** passes, proving `active` and `trialing` allow access while `past_due`, `paused`, `unpaid`, `canceled`, `incomplete`, and `incomplete_expired` block access without saving those test statuses.
