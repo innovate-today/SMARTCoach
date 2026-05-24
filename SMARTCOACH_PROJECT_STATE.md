@@ -723,6 +723,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 66. Onboarding setup-needed and checklist wording now points support to Save Account Setup for normal customer setup instead of implying every customer change needs Vercel variables and a redeploy.
 67. Onboarding setup preview labels now distinguish normal customer activation from fallback Vercel variables, so support sees Save Account Setup as the main path.
 68. Activation handoff wording now says Copy Coach Invite only after validation and the internal activation record are saved, making the coach-facing invite sequence explicit.
+69. Onboarding subscription checklist wording now separates billing-allowed account access from browser/phone coach-code unlock.
 
 ## Known Good Test Flow
 

@@ -2238,10 +2238,10 @@ function renderChecklist(data){
     {
       title:'Track the customer subscription',
       body:signals.subscriptionAllowed
-        ?'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. Athlete limits stay in GHL.'
+        ?'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. This means billing allows the account; the browser or phone may still need the coach code entered. Athlete limits stay in GHL.'
         :signals.subscriptionBlockedReason,
       state:signals.subscriptionAllowed?'good':'bad',
-      status:signals.subscriptionAllowed?'Access allowed':'Access blocked'
+      status:signals.subscriptionAllowed?'Billing allows':'Access blocked'
     },
     {
       title:'Check account status',
