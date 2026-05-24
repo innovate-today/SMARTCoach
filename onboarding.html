@@ -149,7 +149,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <label for="setupCode">Setup Code</label>
           <input id="setupCode" type="password" placeholder="If required" autocomplete="off">
         </div>
-        <button id="generateBtn" type="button" onclick="generateSetup()">Generate</button>
+        <button id="generateBtn" type="button" onclick="generateSetup()">Preview Setup</button>
       </div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
@@ -355,16 +355,16 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div id="envList" class="envlist"></div>
       <div id="readyBar" class="readybar">
-        <div><b id="readyTitle">Setup not checked</b><span id="readyDetail">After adding variables and redeploying, check whether this account is ready.</span></div>
+        <div><b id="readyTitle">Setup not checked</b><span id="readyDetail">Save the account setup or add fallback variables, then check whether this account is ready.</span></div>
         <button id="checkStatusBtn" type="button" class="secondary" onclick="checkSetupStatus()">Check Setup Status</button>
       </div>
     </div>
   </section>
 
   <section id="copyPanel" class="panel" hidden>
-    <div class="panelhead"><h2>Production Setup Fields</h2></div>
+    <div class="panelhead"><h2>Setup Fields / Fallback Variables</h2></div>
     <div class="panelbody">
-      <div class="copyhint">Add required rows in Vercel Production. Recommended rows protect customer data before launch. Copy Setup Field into the Name box and Copy Value into the Value box.</div>
+      <div class="copyhint">Use Save Account Setup for normal customer activation. These rows are fallback Vercel variables for the default account, migration, or emergency recovery.</div>
       <div id="varList" class="varlist"></div>
     </div>
   </section>
@@ -1319,7 +1319,7 @@ function generateSetup(){
       throw err;
     }
     renderSetup(result.data);
-    setStatus('Setup fields generated. Add them in Vercel Production, then redeploy.','good');
+    setStatus('Setup preview generated. Use Save Account Setup for normal activation, or copy fallback variables only when needed.','good');
   }).catch(function(error){
     if(error&&error.data&&error.data.adminSetupCodeRequired){
       setStatus('Enter the setup code to generate customer setup fields.','bad');
@@ -2215,7 +2215,7 @@ function renderChecklist(data){
         ?'Setup fields changed after the last saved handoff. Use Save Account Setup before activation or coach invite copy.'
         :signals.registrySaved
         ?'This account is saved in customer account storage, so new Vercel variables are not needed for normal subscription/account updates.'
-        :'Paste required setup fields into Vercel Production, or save this account to customer account storage.',
+        :'Use Save Account Setup for normal activation, or copy fallback variables only when customer account storage is not available.',
       state:signals.unsavedSetupChanges?'bad':signals.registrySaved?'good':'warn',
       status:signals.unsavedSetupChanges?'Unsaved changes':signals.registrySaved?'Account saved':'Manual setup'
     },
