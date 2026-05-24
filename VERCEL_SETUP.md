@@ -354,6 +354,7 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
 - **Standalone race result:** one manually logged race result updates Dashboard, Meet History, and the athlete bests.
 - **XC Simulator:** My Season Best loads the coach's team, a saved field can be loaded, and scoring produces complete team results.
+- **Post-launch phone follow-up:** after the coach invite is sent, confirm first coach login, first sync, and phone bulk archive before copying the final activation record.
 - **Support handoff:** **Copy Activation Record** includes the account key, subscription, Stripe IDs when available, setup/access state, smoke progress, launch sign-off, coach-invite reminder or copied time, post-launch follow-up, next action, customer link, status link, and coach page validation links.
 - **Parent email:** parent email tools remain hidden for initial rollout.
 

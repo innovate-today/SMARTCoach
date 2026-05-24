@@ -514,7 +514,7 @@ Subscription/customer management:
 - The Activation Runbook now includes a visible handoff status strip that follows smoke-test completion, launch sign-off, activation-record copy, coach-invite copy, and post-launch follow-up for the current account key.
 - The Activation Runbook now ends with stamping launch sign-off and copying the activation record, so support has a final handoff step before coach access is turned on.
 - The Activation Runbook now also includes a final **Send coach invite** step using Copy Coach Invite after validation and internal handoff are complete.
-- The Activation Runbook now includes a post-launch **Confirm first login and sync** step so the written activation flow matches the follow-up checklist.
+- The Activation Runbook now includes a post-launch **Confirm phone follow-up** step so the written activation flow matches the follow-up checklist.
 - Added **Copy Activation Record** to `/onboarding.html` so support can paste a customer setup summary with account key, plan, subscription, Stripe IDs, recent automation update, setup/access state, smoke-test progress, next action, customer link, status link, and coach page validation links.
 - The live smoke-test checklist now describes Copy Activation Record as the support note that includes setup state, next action, customer links, coach invite status, and post-launch follow-up progress.
 - Copy Activation Record now requires the live smoke validation checks to be complete and launch sign-off to be stamped; support should use Copy Smoke Status for partial launch notes.
@@ -690,6 +690,7 @@ These are intentionally not blocking the current launch path unless the user re-
 36. Meet History pending notes were narrowed: event/gender ranking and first-ever PB/SB behavior are implemented; meet-result corrections update linked Records entries, while full Athlete Best recalculation after corrections remains parked.
 37. Records page parked notes were narrowed: faster-current checks exist, while deeper historical record retention after refresh remains parked.
 38. Onboarding post-launch follow-up now includes phone bulk archive alongside first coach login and first sync.
+39. Vercel launch validation checklist now has an explicit post-launch phone follow-up bullet before final activation record copy.
 
 ## Known Good Test Flow
 
