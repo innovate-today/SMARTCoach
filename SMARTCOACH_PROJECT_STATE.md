@@ -464,8 +464,8 @@ Subscription/customer management:
 - The Launch Security Values parent-email row now copies only rollout/hold notes rather than the Vercel field name, reducing the chance of enabling unreleased parent email tools during initial rollout.
 - Launch Security Values now has **Clear Generated Secrets** so setup staff can wipe generated setup/automation/session secrets from the page after saving them in Vercel.
 - Copy Security Values now reminds setup staff to save the values in Vercel and then use Clear Generated Secrets.
-- Added manual **Save Registry Update** action on `/onboarding.html` so internal support can correct a customer's plan/subscription fields in the durable registry without waiting for Stripe/GHL automation.
-- Added optional SMART Trak connection fields to `/onboarding.html` for internal setup/support: location ID, private integration token, coach access codes, and logo URL. Blank fields preserve existing saved registry values.
+- Added manual **Save Account Setup** action on `/onboarding.html` so internal support can correct a customer's plan/subscription fields in customer account storage without waiting for Stripe/GHL automation.
+- Added optional SMART Trak connection fields to `/onboarding.html` for internal setup/support: location ID, private integration token, coach access codes, and logo URL. Blank fields preserve existing saved customer account values.
 - Added account-key and coach-code generators to `/onboarding.html` to reduce manual setup mistakes. Coach code generation respects one-coach vs three-coach Pro setup.
 - Added copy-ready Stripe metadata and account automation JSON payloads to `/onboarding.html` so purchase/onboarding automation can be configured from the same account setup screen.
 - `/onboarding.html` now shows copy-ready production endpoint URLs for account automation and the signed Stripe webhook while keeping the full URLs hidden on screen.
@@ -497,7 +497,7 @@ Subscription/customer management:
 - `/onboarding.html` manual registry save now only reports "saved" when the durable registry actually returns `saved: true`; otherwise it shows the registry setup problem.
 - `/onboarding.html` now warns before saving an incomplete Pro registry record and names missing setup pieces such as location ID, private integration token, or coach access code.
 - Added protected `account-automation-dry-run` and a **Test Setup First** button on `/onboarding.html` so internal setup can verify account access, subscription status, coach seats, coach codes, and generated setup fields without writing to the registry.
-- Added **Check Customer Access** to the `/onboarding.html` Live Smoke Test so support can verify live account status, subscription access, registry source, and coach access-code readiness from the setup page before opening every coach page manually.
+- Added **Check Customer Access** to the `/onboarding.html` Live Smoke Test so support can verify live account status, subscription access, account record source, and coach access-code readiness from the setup page before opening every coach page manually.
 - Check Customer Access now includes direct links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator for the selected customer account.
 - Check Customer Access now shows a warning state when the account is ready but the current browser/phone still needs a coach access code, so support does not confuse account readiness with device unlock.
 - Added **Test Access Rules** to the `/onboarding.html` Live Smoke Test so support can verify, without saving changes, that active/trialing subscriptions allow access and blocked billing statuses block access.
@@ -510,7 +510,7 @@ Subscription/customer management:
 - `/onboarding.html` next-action guidance now keeps pointing support to the live smoke test or launch sign-off until both are complete, instead of saying the account is ready too early.
 - The `/onboarding.html` live smoke-test checklist now persists in the browser per account key and includes a reset action, so setup progress survives refreshes without carrying over to a different customer.
 - `/onboarding.html` now warns and blocks setup saves, dry runs, live access checks, and access-rule tests when the setup account key and lookup account key point to different customers.
-- Added an **Activation Runbook** to `/onboarding.html` so each new customer setup has the same plain-language order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, and complete the live smoke test.
+- Added an **Activation Runbook** to `/onboarding.html` so each new customer setup has the same plain-language order: Check System, Test Setup First, Save Account Setup, add the single SMART Trak custom link, verify coach access, and complete the live smoke test.
 - The Activation Runbook now includes a visible handoff status strip that follows smoke-test completion, launch sign-off, activation-record copy, coach-invite copy, and post-launch follow-up for the current account key.
 - The Activation Runbook now ends with stamping launch sign-off and copying the activation record, so support has an internal handoff step before the coach invite is sent.
 - The Activation Runbook now also includes a final **Send coach invite** step using Copy Coach Invite after validation and internal handoff are complete.
@@ -551,7 +551,7 @@ Subscription/customer management:
 - The copied GHL workflow payload on `/onboarding.html` now includes subscription/account fields only and leaves SMART Trak private tokens and coach access codes out of the automation example.
 - The onboarding payload card now labels that example as `GHL Subscription Payload` and states that setup secrets and coach codes are intentionally not included.
 - `VERCEL_SETUP.md` recommended GHL automation example now excludes setup-only fields such as `locationId`, keeping the docs aligned with the subscription-only workflow payload.
-- `VERCEL_SETUP.md` now explicitly says coach access codes belong in the manual registry setup flow, not the recurring GHL subscription payload.
+- `VERCEL_SETUP.md` now explicitly says coach access codes belong in the manual account setup flow, not the recurring GHL subscription payload.
 - Live smoke-test and launch validation wording now explicitly refer to the GHL Subscription Payload and require confirming private tokens and coach access codes stay out of that copied workflow payload.
 - `/onboarding.html` now labels the copied automation endpoint as the GHL Subscription Endpoint so support does not confuse recurring billing updates with one-time setup secrets.
 - Updated `VERCEL_SETUP.md` and `README.md` so production setup docs match the current onboarding helper, launch-readiness check, Stripe webhook events, hidden secret behavior, and regression tests.
@@ -662,21 +662,21 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 5. Clean Records page later if current history limitation becomes painful.
 6. Latest smoke check passed across phone app, dashboard, athletes, calendar, planning, meet history, records, XC simulator, onboarding, API files, and account/security regression tests. Next full-flow pass should use a live test Pro account in Vercel/GHL and include launch security values, Clear Generated Secrets, parent email off, all coach pages, stopwatch sync, subscription automation, and Copy Activation Record.
 7. Onboarding/support setup refreshes immediately when location ID, private token presence, coach access codes, subscription fields, parent-email access, logo, or plan/seat values change; the private token still stays out of copied notes and records.
-8. Copy Activation Record now requires a fresh system readiness check that says Ready for initial rollout, so activation cannot be recorded while security, registry, Stripe webhook, coach session, coach access, or parent-email launch blockers remain.
+8. Copy Activation Record now requires a fresh system readiness check that says Ready for initial rollout, so activation cannot be recorded while security, customer account storage, Stripe webhook, coach session, coach access, or parent-email launch blockers remain.
 9. Copy Coach Invite now uses the same system readiness gate, preventing coach invites from being sent if launch settings changed after activation.
 10. Activation handoff status now shows the system readiness requirement directly and refreshes when Check System starts, succeeds, or fails.
 11. Copy Smoke Status now includes system readiness, so partial or final smoke notes capture whether launch security was checked and ready.
 12. Changing the setup or lookup account key now clears the prior system readiness result, forcing a fresh Check System for the active customer before activation or coach invite copy.
 13. Critical setup edits now clear copied activation/invite/follow-up state, including generated coach-code changes and accounts loaded through Use In Form, so support has to recopy handoff notes after access or subscription details change.
 14. When copied activation state is cleared, the live smoke checklist's activation-record row is also unchecked so the visible checklist matches the saved handoff state.
-15. Activation record and coach invite copy now also require customer-account readiness: account key, saved registry record, allowed subscription, SMART Trak connection fields, coach access codes, and configured account status.
-16. Dry-run setup previews no longer count as a saved registry record for activation/coach-invite handoff; Save Registry Update and lookup confirmation are required.
-17. Critical setup edits now mark the account as having unsaved setup changes, blocking activation/coach-invite copy until Save Registry Update runs again.
-18. Dry-run results now keep the unsaved setup marker visible through lookup/setup rendering, while saved registry results clear it as the new baseline.
-19. Unsaved setup changes now appear in Next Action, the readiness banner, and the setup checklist so support sees Save Registry Update as the required next step.
+15. Activation record and coach invite copy now also require customer-account readiness: account key, saved customer account record, allowed subscription, SMART Trak connection fields, coach access codes, and configured account status.
+16. Dry-run setup previews no longer count as a saved customer account record for activation/coach-invite handoff; Save Account Setup and lookup confirmation are required.
+17. Critical setup edits now mark the account as having unsaved setup changes, blocking activation/coach-invite copy until Save Account Setup runs again.
+18. Dry-run results now keep the unsaved setup marker visible through lookup/setup rendering, while saved account results clear it as the new baseline.
+19. Unsaved setup changes now appear in Next Action, the readiness banner, and the setup checklist so support sees Save Account Setup as the required next step.
 20. Dry-run lookup/setup panels now label themselves as dry-run previews instead of saved customer account records.
 21. Default activation handoff and smoke-checklist copy now names system readiness and saved customer setup before Copy Activation Record.
-22. Account lookup now distinguishes saved, dry-run, and not-found registry states in the panel title.
+22. Account lookup now distinguishes saved, dry-run, and not-found customer account states in the panel title.
 23. Athletes parent-email action buttons are hidden in the raw page markup as well as runtime gating, preventing any first-render flash during the initial rollout.
 24. Athletes parent-contact info tips now say contact details are stored with the roster and parent messaging stays off until that feature is intentionally released.
 25. XC Simulator now has its own coach access-code prompt, so coaches can unlock season-best loading there instead of being sent back to Dashboard first.
@@ -697,7 +697,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 40. Vercel deploy order now continues past the first activation record through Copy Coach Invite, post-launch phone follow-up, final activation record, and normal support monitoring.
 41. README now points new operators to the same `/onboarding.html` launch path before calling a customer account done.
 42. README now includes `npm test` as the top-level verification command before pushing changes.
-43. `VERCEL_SETUP.md` now leads with the registry-first launch model and treats account-specific Vercel variables as default-account/migration fallback.
+43. `VERCEL_SETUP.md` now leads with the customer-account-storage launch model and treats account-specific Vercel variables as default-account/migration fallback.
 44. `VERCEL_SETUP.md` customer account setup now says new customer values should be saved through `/onboarding.html`, with account-specific Vercel names documented as fallback references.
 45. `VERCEL_SETUP.md` now plainly separates the recurring GHL Subscription Payload from one-time/private setup values: billing and access fields can be automated, while location ID, private token, setup code, session secret, automation secret, and coach codes stay in protected setup.
 46. Onboarding activation runbook now says to save the handoff before sending the coach invite instead of "turning on coach access," keeping support wording aligned with subscription and coach-code gates.
@@ -707,9 +707,9 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 50. Copy Activation Record now labels the copied activation record as an internal support note only, so the coach-facing invite stays separate from setup/support details.
 51. Copied post-launch follow-up text now says when the coach invite was copied and when the account is ready for the final activation record.
 52. Test Access Rules now checks every blocked launch subscription state shown in onboarding: past due, paused, unpaid, canceled, incomplete, and incomplete expired.
-53. Registry-save and dry-run status messages now distinguish subscription-blocked access from incomplete setup, so support sees billing/status blockers separately from missing token/location/coach-code setup.
+53. Account setup save and dry-run status messages now distinguish subscription-blocked access from incomplete setup, so support sees billing/status blockers separately from missing token/location/coach-code setup.
 54. Check Customer Access status messages now distinguish a fully unlocked device from an account that is ready but still needs the coach code entered on that browser or phone.
-55. Account lookup only shows **Use In Form** for saved registry records or dry-run previews, preventing support from loading an empty not-found account record into setup.
+55. Account lookup only shows **Use In Form** for saved customer account records or dry-run previews, preventing support from loading an empty not-found account record into setup.
 56. README now points operators to **Remaining Launch Parked Items** in this project state file so future work is not mistaken for launch blockers.
 57. Remaining Launch Parked Items now includes Track Simulator and the SMARTCoach Pro help button/assistant, so the canonical parked list matches the current future-work list.
 58. Onboarding live-smoke checklist now says blocked billing statuses should block SMART Trak, matching the broader Test Access Rules coverage instead of naming only three statuses.
@@ -722,7 +722,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 Use this as the current launch regression test:
 
 1. In `onboarding.html`, run Check System and confirm it says Ready for initial rollout.
-2. Check Customer Access for a live Pro test account and confirm subscription access, registry source, SMART Trak connection, and coach access-code readiness.
+2. Check Customer Access for a live Pro test account and confirm subscription access, account record source, SMART Trak connection, and coach access-code readiness.
 3. Open Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator with the customer account key.
 4. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
 5. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
