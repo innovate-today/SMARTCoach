@@ -662,6 +662,7 @@ Help assistant:
 22. Account lookup now distinguishes saved, dry-run, and not-found registry states in the panel title.
 23. Athletes parent-email action buttons are hidden in the raw page markup as well as runtime gating, preventing any first-render flash during the initial rollout.
 24. Athletes parent-contact info tips now say contact details are stored with the roster and parent messaging stays off until that feature is intentionally released.
+25. XC Simulator now has its own coach access-code prompt, so coaches can unlock season-best loading there instead of being sent back to Dashboard first.
 
 ## Known Good Test Flow
 
