@@ -170,7 +170,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="field">
           <label for="automationSecret">Automation Secret</label>
-          <input id="automationSecret" type="password" placeholder="Required for registry lookup" autocomplete="off">
+          <input id="automationSecret" type="password" placeholder="Required for account lookup" autocomplete="off">
         </div>
         <button id="lookupBtn" type="button" class="secondary" onclick="lookupAccount()">Lookup Account</button>
         <button id="healthBtn" type="button" class="secondary" onclick="checkAutomationHealth()">Check System</button>
@@ -182,7 +182,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   </section>
 
   <section class="panel">
-    <div class="panelhead"><h2>Registry Setup Values</h2></div>
+    <div class="panelhead"><h2>Customer Account Storage Setup</h2></div>
     <div class="panelbody">
       <div class="copyhint">This is internal customer account storage. Connect Vercel KV or Upstash Redis, then add these values in Vercel Environment Variables.</div>
       <div class="varlist">
@@ -285,7 +285,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
       </div>
       <div class="setupnote"><b>Coach codes are intentional</b>Generate or paste coach access codes before saving a new Pro account. Blank coach-code fields preserve saved codes on existing accounts, but a new Pro account with no code stays setup-incomplete.</div>
-      <div class="status">Use these fields only for internal setup or support. Blank connection fields preserve the saved registry value.</div>
+      <div class="status">Use these fields only for internal setup or support. Blank connection fields preserve the saved customer account value.</div>
     </div>
   </section>
 
@@ -338,7 +338,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div class="formactions">
         <button id="dryRunRegistryBtn" type="button" class="secondary" onclick="dryRunRegistryUpdate()">Test Setup First</button>
-        <button id="saveRegistryBtn" type="button" onclick="saveRegistryUpdate()">Save Registry Update</button>
+        <button id="saveRegistryBtn" type="button" onclick="saveRegistryUpdate()">Save Account Setup</button>
       </div>
     </div>
   </section>
@@ -454,7 +454,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div id="liveSmokeChecklist" class="checklist">
         <label class="checkrow"><input type="checkbox"><span><b>1. System check is ready<em class="checkbadge warn">Required</em></b><span>Run Check System with the automation secret. The result should say Ready for initial rollout and show no launch blockers.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup passes dry run<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, coach seats, subscription status, and coach codes before saving.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>3. Registry record is saved<em class="checkbadge warn">Required</em></b><span>Save the registry update, then use Lookup Account to confirm subscription, coach seats, connection fields, and recent update history are present.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>3. Customer account record is saved<em class="checkbadge warn">Required</em></b><span>Save the account setup, then use Lookup Account to confirm subscription, coach seats, connection fields, and recent update history are present.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>4. Customer dashboard opens<em class="checkbadge warn">Required</em></b><span>Open the customer SMART Trak link with the account key. Confirm the coach access prompt accepts the correct code and rejects a wrong code.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>5. Core coach pages load real data<em class="checkbadge warn">Required</em></b><span>Check Dashboard, Athletes, Training Calendar, Planning Setup, and Plan Entry. The pages should load the customer roster and should not show setup-needed errors.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>6. Advanced coach pages load<em class="checkbadge warn">Required</em></b><span>Check Plan Builder, Meet History, Records, and XC Simulator for the customer account. They should load without setup-needed errors.</span></span></label>
@@ -944,7 +944,7 @@ function lookupAccount(){
     return;
   }
   if(!secret){
-    setStatus('Enter the automation secret to look up the registry record.','bad');
+    setStatus('Enter the automation secret to look up the customer account record.','bad');
     return;
   }
   rememberAutomationSecret(secret);
@@ -962,7 +962,7 @@ function lookupAccount(){
       throw err;
     }
     renderLookupResult(result.data);
-    setStatus('Account registry record loaded.','good');
+    setStatus('Customer account record loaded.','good');
   }).catch(function(error){
     box.innerHTML='<div class="empty">'+esc(error.message||'Could not load account.')+'</div>';
     setStatus(error.message||'Could not load account.','bad');
@@ -1080,14 +1080,14 @@ function accountNextAction(data,record){
   data=data||{};
   record=record||{};
   if(data.subscriptionBlockedReason||data.subscriptionAccessAllowed===false)return 'Fix subscription status before sending the coach invite.';
-  if(data.unsavedSetupChanges)return 'Save Registry Update after the latest setup changes, then check customer access again.';
+  if(data.unsavedSetupChanges)return 'Save Account Setup after the latest setup changes, then check customer access again.';
   var plan=data.productPlan||record.productPlan||'pro';
   if(plan==='essential')return 'Open the stopwatch link and confirm Essential-only access.';
   var missing=Array.isArray(data.missingSetupFields)?data.missingSetupFields:[];
   if(missing.length)return 'Add missing setup: '+missing.map(function(item){return item.label||item.key||item;}).join(', ')+'.';
   if(!(record.locationId&&record.token)&&data.crmConfigured===false)return 'Add the customer Location ID and Private Integration Token.';
   var codeCount=Number(data.coachAccessCodesConfigured)||((record.coachAccessCodes||[]).length)||(record.accessCode?1:0);
-  if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste coach access codes, then save the registry update.';
+  if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste coach access codes, then save the account setup.';
   if(data.accessReady===false)return 'Finish account setup, then check customer access again.';
   if(data.deviceAccessReady===false)return 'Account is ready. Enter a coach access code on this browser or phone to unlock coach data.';
   var smoke=smokeValidationProgress();
@@ -1150,7 +1150,7 @@ function saveRegistryUpdate(){
     return;
   }
   if(!secret){
-    setStatus('Enter the automation secret before saving a registry update.','bad');
+    setStatus('Enter the automation secret before saving account setup.','bad');
     return;
   }
   var warning=registryPayloadWarning(payload);
@@ -1160,7 +1160,7 @@ function saveRegistryUpdate(){
   }
   rememberAutomationSecret(secret);
   document.getElementById('saveRegistryBtn').disabled=true;
-  setStatus('Saving registry update...',null);
+  setStatus('Saving account setup...',null);
   fetch('/api/smart-trak/account-automation',{
     method:'POST',
     cache:'no-store',
@@ -1173,7 +1173,7 @@ function saveRegistryUpdate(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok){
-      var err=new Error(result.data&&result.data.error||'Could not save registry update.');
+      var err=new Error(result.data&&result.data.error||'Could not save account setup.');
       err.data=result.data;
       throw err;
     }
@@ -1190,10 +1190,10 @@ function saveRegistryUpdate(){
     if(registry.saved){
       setStatus(savedRegistryStatusMessage(result.data),result.data.accessReady?'good':'bad');
     }else{
-      setStatus(registry.reason||'Registry update was not saved because the durable registry is not configured.','bad');
+      setStatus(registry.reason||'Account setup was not saved because customer account storage is not configured.','bad');
     }
   }).catch(function(error){
-    setStatus(error.message||'Could not save registry update.','bad');
+    setStatus(error.message||'Could not save account setup.','bad');
   }).finally(function(){
     document.getElementById('saveRegistryBtn').disabled=false;
   });
@@ -1353,9 +1353,9 @@ function setupMissingText(data){
 }
 function savedRegistryStatusMessage(data){
   data=data||{};
-  if(data.accessReady)return 'Registry update saved. SMART Trak will use this account record on the next request.';
-  if(data.subscriptionBlockedReason)return 'Registry update saved. Subscription blocks access: '+data.subscriptionBlockedReason;
-  return 'Registry update saved, but setup is not ready yet: '+setupMissingText(data);
+  if(data.accessReady)return 'Account setup saved. SMART Trak will use this account record on the next request.';
+  if(data.subscriptionBlockedReason)return 'Account setup saved. Subscription blocks access: '+data.subscriptionBlockedReason;
+  return 'Account setup saved, but setup is not ready yet: '+setupMissingText(data);
 }
 function renderSetup(data){
   currentSetup=data;
@@ -1416,7 +1416,7 @@ function renderReadiness(data){
   if(data.unsavedSetupChanges){
     readyBar.className='readybar warn';
     title.textContent='Unsaved setup changes';
-    detail.textContent='Use Save Registry Update after the latest setup changes, then check customer access before sending the coach invite.';
+    detail.textContent='Use Save Account Setup after the latest setup changes, then check customer access before sending the coach invite.';
     return;
   }
   if(plan==='essential'){
@@ -2212,17 +2212,17 @@ function renderChecklist(data){
     {
       title:'Add setup fields in Vercel Production',
       body:signals.unsavedSetupChanges
-        ?'Setup fields changed after the last saved handoff. Use Save Registry Update before activation or coach invite copy.'
+        ?'Setup fields changed after the last saved handoff. Use Save Account Setup before activation or coach invite copy.'
         :signals.registrySaved
-        ?'This account is saved in the durable registry, so new Vercel variables are not needed for normal subscription/account updates.'
-        :'Paste required setup fields into Vercel Production, or save this account to the durable registry.',
+        ?'This account is saved in customer account storage, so new Vercel variables are not needed for normal subscription/account updates.'
+        :'Paste required setup fields into Vercel Production, or save this account to customer account storage.',
       state:signals.unsavedSetupChanges?'bad':signals.registrySaved?'good':'warn',
-      status:signals.unsavedSetupChanges?'Unsaved changes':signals.registrySaved?'Registry saved':'Manual setup'
+      status:signals.unsavedSetupChanges?'Unsaved changes':signals.registrySaved?'Account saved':'Manual setup'
     },
     {
       title:'Redeploy the project',
       body:signals.registrySaved
-        ?'Registry changes apply on the next SMART Trak request. Redeploy is only needed after code or Vercel environment changes.'
+        ?'Saved account changes apply on the next SMART Trak request. Redeploy is only needed after code or Vercel environment changes.'
         :'Use the latest production deployment so Vercel environment variables are active.',
       state:signals.registrySaved?'good':'warn',
       status:signals.registrySaved?'No deploy needed':'Redeploy after vars'
@@ -2271,7 +2271,7 @@ function activationSteps(data){
   return [
     {
       title:'Run Check System',
-      body:'Confirm launch readiness has no blockers, then use Copy System Status to save the readiness note: automation secret, setup code, durable registry, Stripe webhook, coach session secret, coach access enforcement, and parent email off.'
+      body:'Confirm launch readiness has no blockers, then use Copy System Status to save the readiness note: automation secret, setup code, customer account storage, Stripe webhook, coach session secret, coach access enforcement, and parent email off.'
     },
     {
       title:'Test setup first',
@@ -2279,7 +2279,7 @@ function activationSteps(data){
     },
     {
       title:'Save the account record',
-      body:'Use Save Registry Update, then Lookup Account to confirm the registry record is saved and recent update history is present.'
+      body:'Use Save Account Setup, then Lookup Account to confirm the customer account record is saved and recent update history is present.'
     },
     {
       title:isEssential?'Give the coach the stopwatch link':'Add the SMART Trak custom link',
@@ -2403,7 +2403,7 @@ function activationRecordText(data,options){
     'Customer account record: '+((data.registry&&data.registry.found)||(data.registry&&data.registry.saved)?'Saved':'Check account storage'),
     'Last automation source: '+lastEventLabel(record.lastAutomationEvent,'source'),
     'Last automation event: '+lastEventLabel(record.lastAutomationEvent,'event'),
-    'Last registry update: '+fullDateTime(updatedAt),
+    'Last account update: '+fullDateTime(updatedAt),
     'System readiness: '+(systemReady?'Ready for initial rollout':systemBlockers.length?systemBlockers.join('; '):'Not checked'),
     'SMART Trak setup: '+(data.setupReady||data.configured?'Ready':'Needs setup'),
     'Access: '+(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready')),
@@ -2490,8 +2490,8 @@ function setupSignals(data){
 function accountSetupBlockerText(data){
   var signals=setupSignals(data);
   if(!signals.accountKey)return 'Enter the customer account key before copying the activation record or coach invite.';
-  if(signals.unsavedSetupChanges)return 'Save Registry Update after the latest setup changes before copying the activation record or coach invite.';
-  if(!signals.registrySaved)return 'Save and verify the customer registry record before copying the activation record or coach invite.';
+  if(signals.unsavedSetupChanges)return 'Save Account Setup after the latest setup changes before copying the activation record or coach invite.';
+  if(!signals.registrySaved)return 'Save and verify the customer account record before copying the activation record or coach invite.';
   if(!signals.subscriptionAllowed)return signals.subscriptionBlockedReason;
   if(!signals.crmReady)return 'Add the customer Location ID and Private Integration Token before copying the activation record or coach invite.';
   if(!signals.coachCodesReady)return 'Generate and save coach access codes before copying the activation record or coach invite.';
