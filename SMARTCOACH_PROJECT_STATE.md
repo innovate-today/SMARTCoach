@@ -30,7 +30,8 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 Current launch status:
 
 - Code/security/setup cleanup is largely complete for the initial rollout path.
-- Remaining launch readiness is primarily live validation with a real Pro test account in Vercel/GHL.
+- Cleanup/launch prep is estimated at 90-95% complete.
+- Remaining launch readiness is primarily the final 5-10% live validation with a real Pro test account in Vercel/GHL.
 - Do not implement parked future ideas during this pass unless the user explicitly pulls one forward.
 - Use `/live-launch-validation.html`, `LIVE_LAUNCH_VALIDATION.md`, and the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
 
@@ -766,6 +767,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 102. Live validation page now sends **Open Setup** back to `/onboarding.html` with the same account key, keeping support on the same customer record while moving between setup and validation.
 103. Live validation page now displays the active account scope above the validation record so support can confirm the checklist belongs to the customer being tested.
 104. `VERCEL_SETUP.md` now documents the account-scoped `/live-launch-validation.html?account=<account-key>` flow, including Copy Summary and returning to onboarding for the same customer.
+105. Current launch-readiness estimate is now recorded as 90-95% complete, with the remaining 5-10% identified as live Pro test account validation rather than more cleanup.
 
 ## Known Good Test Flow
 
