@@ -67,6 +67,7 @@ textarea{min-height:90px;resize:vertical}
     </div>
     <div class="actions">
       <a id="setupLink" class="linkbtn" href="/onboarding.html">Open Setup</a>
+      <a id="stopwatchLink" class="linkbtn secondary" href="/">Open Stopwatch</a>
       <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">Open Dashboard</a>
       <a id="statusLink" class="linkbtn secondary" href="/api/smart-trak/account-status">Account Status</a>
       <a class="linkbtn secondary" href="/LIVE_LAUNCH_VALIDATION.md">Markdown Checklist</a>
@@ -255,16 +256,19 @@ function bindSavedFields(){
 }
 function syncAccountLinks(){
   var setup=document.getElementById('setupLink');
+  var stopwatch=document.getElementById('stopwatchLink');
   var dashboard=document.getElementById('dashboardLink');
   var status=document.getElementById('statusLink');
   if(launchAccountKey&&launchAccountKey!=='default'){
     var query='?account='+encodeURIComponent(launchAccountKey);
     if(setup)setup.href='/onboarding.html'+query;
+    if(stopwatch)stopwatch.href='/'+query;
     if(dashboard)dashboard.href='/dashboard.html'+query;
     if(status)status.href='/api/smart-trak/account-status'+query;
     return;
   }
   if(setup)setup.href='/onboarding.html';
+  if(stopwatch)stopwatch.href='/';
   if(dashboard)dashboard.href='/dashboard.html';
   if(status)status.href='/api/smart-trak/account-status';
 }

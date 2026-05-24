@@ -770,6 +770,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 105. Current launch-readiness estimate is now recorded as 90-95% complete, with the remaining 5-10% identified as live Pro test account validation rather than more cleanup.
 106. Live validation page now includes account-scoped quick links for Dashboard and Account Status so support can jump directly to the customer being validated.
 107. `VERCEL_SETUP.md` now also mentions the live validation page's account-scoped Dashboard and Account Status quick links.
+108. Live validation page now includes an account-scoped Stopwatch quick link, and `VERCEL_SETUP.md` names it alongside Dashboard and Account Status.
 
 ## Known Good Test Flow
 
