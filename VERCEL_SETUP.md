@@ -358,6 +358,8 @@ This endpoint also requires the automation secret. Account status reports whethe
 
 Before calling automation/security complete for rollout, verify this with a real test Pro account:
 
+Use `LIVE_LAUNCH_VALIDATION.md` for the shorter operator checklist, fill-in validation record, issue log, stop/go rules, retest rule, and first-week monitoring checks.
+
 - **System readiness:** `/onboarding.html` -> **Check System** reports `Ready for initial rollout`.
 - **Launch security values:** Vercel Production has separate setup, automation, and session secrets; coach access enforcement is true; parent email tools remain off.
 - **Setup preview:** **Test Setup First** passes for the live test account before **Save Account Setup** is used.
