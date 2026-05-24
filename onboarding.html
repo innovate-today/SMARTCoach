@@ -420,7 +420,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   <section id="activationPanel" class="panel" hidden>
     <div class="panelhead"><h2>Activation Runbook</h2></div>
     <div class="panelbody">
-      <div class="copyhint">Use this as the plain-language order for turning on a new coach account.</div>
+      <div class="copyhint">Use this as the plain-language order for preparing and sending a new coach invite.</div>
       <div id="activationRunbook" class="activationsteps"></div>
       <div id="activationHandoffStatus" class="readybar warn">
         <div><b>Activation handoff not saved yet</b><span>Complete the smoke test, confirm system and customer readiness, stamp launch sign-off, then copy the activation record before sending the coach invite.</span></div>
@@ -435,7 +435,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
   <section class="panel">
     <div class="panelhead"><h2>Live Smoke Test</h2></div>
     <div class="panelbody">
-      <div class="copyhint">Run this after a deploy or before turning on a new customer. It confirms the real customer path, not just the setup form.</div>
+      <div class="copyhint">Run this after a deploy or before sending a new coach invite. It confirms the real customer path, not just the setup form.</div>
       <div class="readybar" id="liveSmokeBar">
         <div><b>Customer access not checked</b><span>Enter the account key above, then check whether SMART Trak sees the saved setup, subscription access, and coach access rules.</span></div>
         <div class="smokeactions">
@@ -445,7 +445,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div id="liveSmokeResult" class="registrybox"></div>
       <div id="liveSmokeSummary" class="readybar warn">
-        <div><b>Live smoke test not complete</b><span>Check each required item as it passes. All required checks should be complete before turning on a new coach account.</span></div>
+        <div><b>Live smoke test not complete</b><span>Check each required item as it passes. All required checks should be complete before sending the coach invite.</span></div>
         <div class="smokeactions">
           <button type="button" class="secondary" onclick="copyLiveSmokeStatus()">Copy Smoke Status</button>
           <button type="button" class="secondary" onclick="resetLiveSmokeChecklist()">Reset Checklist</button>
@@ -1090,7 +1090,7 @@ function accountNextAction(data,record){
   if(data.accessReady===false)return 'Finish account setup, then check customer access again.';
   if(data.deviceAccessReady===false)return 'Account is ready. Enter a coach access code on this browser or phone to unlock coach data.';
   var smoke=smokeValidationProgress();
-  if(smoke.total&&smoke.done<smoke.total)return 'Complete the live smoke validation checks before turning on the coach account.';
+  if(smoke.total&&smoke.done<smoke.total)return 'Complete the live smoke validation checks before sending the coach invite.';
   var signoff=liveSmokeSignoffData();
   if(smoke.total&&smoke.done===smoke.total&&(!signoff.validatedBy||!signoff.validatedAt))return 'Stamp the launch sign-off, then copy the activation record.';
   var activationRecord=activationRecordData();
@@ -1918,7 +1918,7 @@ function renderLiveSmokeSummary(){
   box.querySelector('b').textContent=complete?'Live smoke test complete':'Live smoke test not complete';
   box.querySelector('span').textContent=complete
     ?'All required live validation checks are marked complete for this account. Keep the account key, coach codes, and support notes with the customer record.'
-    :done+' of '+total+' required live validation checks complete. Finish every required check before turning on a new coach account.';
+    :done+' of '+total+' required live validation checks complete. Finish every required check before sending the coach invite.';
   renderActivationHandoffStatus();
 }
 function renderActivationHandoffStatus(){

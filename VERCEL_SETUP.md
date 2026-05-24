@@ -130,7 +130,7 @@ Use **Check System** before launch. It reports one overall launch readiness resu
 - coach access enforcement
 - parent email rollout gate
 
-Use **Copy System Status** after Check System to save the launch-readiness result, blockers, production warnings, and setup/security checklist in the support notes before activating customers.
+Use **Copy System Status** after Check System to save the launch-readiness result, blockers, production warnings, and setup/security checklist in the support notes before sending coach invites.
 
 Use **Check Customer Access** in the **Live Smoke Test** section after saving a customer account. It calls the live account status endpoint for that account key and shows whether setup, subscription access, registry storage, and coach access-code requirements are ready before opening every coach page manually. A warning state means the account is ready but the current browser or phone still needs a coach access code. Use **Test Access Rules** to run no-save checks that active/trialing allow access while past due, unpaid, and canceled block access. The live smoke-test summary should say complete before the coach invite is sent, and **Copy Smoke Status** can capture the current pass/missing checklist, launch sign-off, activation-record copy status, final activation-record copy status, coach invite, post-launch follow-up, and next action for support notes.
 
@@ -339,7 +339,7 @@ This endpoint also requires the automation secret. Account status reports whethe
 2. Open `/onboarding.html`, use **Launch Security Values** -> **Generate Launch Secrets**, add the security values plus registry values in Vercel Production, then use **Clear Generated Secrets** after the Vercel values are saved.
 3. Point `app.smartcoach-pro.com` to the Vercel project.
 4. Open `/onboarding.html` and run **Check System** with the automation secret.
-5. Fix any launch blockers before selling or activating a customer account.
+5. Fix any launch blockers before selling or sending a coach invite for a customer account.
 6. Create a live internal Pro test account in GHL/SMART Trak.
 7. Use **Test Setup First** for that account.
 8. Save the account to the durable registry.

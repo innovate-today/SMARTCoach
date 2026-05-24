@@ -477,7 +477,7 @@ Subscription/customer management:
 - The system readiness check also shows the parent email rollout gate. Initial rollout should keep `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED` off, even if parent-email coach access is configured on an individual account.
 - The system readiness check now reports one overall launch-readiness status plus launch blockers for automation secret, durable registry, Stripe webhook signing secret, dedicated session secret, coach access enforcement, and parent-email rollout state.
 - The system readiness check now includes a launch checklist with plain-language details for each automation/security requirement before initial rollout.
-- `/onboarding.html` now has **Copy System Status** after Check System, so support can save launch readiness, blockers, warnings, and setup/security checklist results before activating customers.
+- `/onboarding.html` now has **Copy System Status** after Check System, so support can save launch readiness, blockers, warnings, and setup/security checklist results before sending coach invites.
 - Onboarding now labels per-coach parent email access as `Future Parent Email Coaches`, making clear that those values are only staged for a later release while parent email remains globally off for initial rollout.
 - The Activation Runbook now tells support to use Copy System Status after Check System so system readiness is saved before customer activation steps continue.
 - Copy System Status now clears stale system-readiness data when a new Check System starts or fails, so support cannot accidentally copy an old passing result after a failed check.
@@ -501,7 +501,7 @@ Subscription/customer management:
 - Check Customer Access now includes direct links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator for the selected customer account.
 - Check Customer Access now shows a warning state when the account is ready but the current browser/phone still needs a coach access code, so support does not confuse account readiness with device unlock.
 - Added **Test Access Rules** to the `/onboarding.html` Live Smoke Test so support can verify, without saving changes, that active/trialing subscriptions allow access and past due/unpaid/canceled subscriptions block access.
-- Added a live smoke-test completion summary to `/onboarding.html` so support can see whether all required live validation checks are complete before turning on a new coach account; the checklist now covers core pages, advanced pages, a real saved workflow, subscription access, the activation record, and parent email staying off.
+- Added a live smoke-test completion summary to `/onboarding.html` so support can see whether all required live validation checks are complete before sending the coach invite; the checklist now covers core pages, advanced pages, a real saved workflow, subscription access, the activation record, and parent email staying off.
 - Added **Copy Smoke Status** to `/onboarding.html` so support can paste the exact checked/missing live smoke-test items into notes during launch validation.
 - Copy Smoke Status now also includes activation-record copy status, final activation-record copy status, coach invite copied status, post-launch follow-up progress, and the current next action, so the support note can cover the full launch state.
 - Added a per-account launch sign-off to `/onboarding.html` so support can stamp the validation time, add a short launch note, and include that sign-off in the copied smoke-test status.
@@ -700,6 +700,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 45. `VERCEL_SETUP.md` now plainly separates the recurring GHL Subscription Payload from one-time/private setup values: billing and access fields can be automated, while location ID, private token, setup code, session secret, automation secret, and coach codes stay in protected setup.
 46. Onboarding activation runbook now says to save the handoff before sending the coach invite instead of "turning on coach access," keeping support wording aligned with subscription and coach-code gates.
 47. `VERCEL_SETUP.md` live smoke wording now says validation should be complete before the coach invite is sent, avoiding the impression that access is manually turned on outside the subscription/setup gates.
+48. Onboarding and setup docs now use "send the coach invite" instead of "turn on" language, matching the actual gated access model.
 
 ## Known Good Test Flow
 
