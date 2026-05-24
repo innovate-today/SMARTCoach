@@ -2217,15 +2217,15 @@ function renderChecklist(data){
         ?'This account is saved in customer account storage, so new Vercel variables are not needed for normal subscription/account updates.'
         :'Use Save Account Setup for normal activation, or copy fallback variables only when customer account storage is not available.',
       state:signals.unsavedSetupChanges?'bad':signals.registrySaved?'good':'warn',
-      status:signals.unsavedSetupChanges?'Unsaved changes':signals.registrySaved?'Account saved':'Manual setup'
+      status:signals.unsavedSetupChanges?'Unsaved changes':signals.registrySaved?'Account saved':'Save needed'
     },
     {
-      title:'Redeploy the project',
+      title:'Use current production deploy',
       body:signals.registrySaved
         ?'Saved account changes apply on the next SMART Trak request. Redeploy is only needed after code or Vercel environment changes.'
-        :'Use the latest production deployment so Vercel environment variables are active.',
+        :'Use the latest production deployment. Redeploy is only needed if fallback Vercel variables were changed.',
       state:signals.registrySaved?'good':'warn',
-      status:signals.registrySaved?'No deploy needed':'Redeploy after vars'
+      status:signals.registrySaved?'No deploy needed':'Fallback deploy only'
     },
     {
       title:'Give each coach one access code',
