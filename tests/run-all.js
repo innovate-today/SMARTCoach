@@ -56,6 +56,40 @@ function checkJsonFiles() {
   });
 }
 
+function checkLiveValidationPage() {
+  const html = fs.readFileSync("live-launch-validation.html", "utf8");
+  const requiredPageLinks = [
+    "/dashboard.html",
+    "/athletes.html",
+    "/training-calendar.html",
+    "/plan-setup.html",
+    "/plan-import.html",
+    "/plan-builder.html",
+    "/meet-history.html",
+    "/records.html",
+    "/xc-simulator.html",
+  ];
+  const requiredText = [
+    "Open Setup",
+    "Open Stopwatch",
+    "Account Status",
+    "Copy Validation Link",
+    "Copy Summary",
+    "Coach Page Links",
+  ];
+  requiredPageLinks.forEach((path) => {
+    if (!html.includes(`data-page-link="${path}"`)) {
+      throw new Error(`live launch validation page missing ${path}`);
+    }
+  });
+  requiredText.forEach((text) => {
+    if (!html.includes(text)) {
+      throw new Error(`live launch validation page missing ${text}`);
+    }
+  });
+  console.log("live launch validation links ok");
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
@@ -65,5 +99,6 @@ jsFilesUnder("api").concat(jsFilesUnder("lib"), jsFilesUnder("tests")).forEach((
 });
 checkJsonFiles();
 checkPageScripts();
+checkLiveValidationPage();
 
 console.log("SMARTCoach regression checks passed");
