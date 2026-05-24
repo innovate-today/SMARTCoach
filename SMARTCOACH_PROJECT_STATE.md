@@ -748,6 +748,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 84. Project state now shows `main` as the active branch, uses `git push origin main:main`, and states that the next launch-readiness step is live validation with a real Pro test account.
 85. Added `LIVE_LAUNCH_VALIDATION.md` as a short operator checklist for the real Pro test account pass before initial rollout.
 86. Live launch validation checklist now includes adding/verifying the SMART Trak custom link and reopening the account after the GHL Subscription Payload update.
+87. Live launch validation checklist now includes a fill-in validation record and final rollout decision fields.
 
 ## Known Good Test Flow
 

@@ -2,6 +2,16 @@
 
 Use this checklist with one real Pro test account before calling the initial rollout ready.
 
+## Validation Record
+
+- Account key:
+- Test subaccount:
+- Tester:
+- Date:
+- Result: Pass / Needs work
+- Blockers:
+- Notes:
+
 ## Setup
 
 1. Open `/onboarding.html`.
@@ -66,3 +76,9 @@ Open each page with the customer account key and confirm real customer data load
 4. Use **Copy Coach Invite** and send the coach-facing access note.
 5. After the coach receives the invite, confirm first login, first sync, and phone bulk archive.
 6. Use **Copy Activation Record** again to save the final activation record.
+
+## Final Decision
+
+- Initial rollout ready: Yes / No
+- Final activation record saved: Yes / No
+- Normal support monitoring started: Yes / No
