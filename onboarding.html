@@ -1539,7 +1539,7 @@ function renderLiveSmokeAccess(data,ok){
     {label:'This Device',value:data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Needs coach code':'Ready'},
     {label:'Subscription',value:subscriptionLabel(data)},
     {label:'Account Record',value:registry.found?'Saved':registry.configured?'Not found':'Not connected'},
-    {label:'Record Source',value:registry.source||'--'},
+    {label:'Account Source',value:registry.source||'--'},
     {label:'Coach Access',value:data.coachAccessRequired?(data.coachAccessUnlocked?'Unlocked':data.coachAccessCodesConfigured?'Code required':'Required but missing'):'Not required'},
     {label:'Coach Seats',value:coachSeatsLabel(data)}
   ];

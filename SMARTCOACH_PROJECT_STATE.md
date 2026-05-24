@@ -670,13 +670,13 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 13. Critical setup edits now clear copied activation/invite/follow-up state, including generated coach-code changes and accounts loaded through Load Into Form, so support has to recopy handoff notes after access or subscription details change.
 14. When copied activation state is cleared, the live smoke checklist's activation-record row is also unchecked so the visible checklist matches the saved handoff state.
 15. Activation record and coach invite copy now also require customer-account readiness: account key, saved customer account record, allowed subscription, SMART Trak connection fields, coach access codes, and configured account status.
-16. Dry-run setup previews no longer count as a saved customer account record for activation/coach-invite handoff; Save Account Setup and lookup confirmation are required.
+16. Setup previews no longer count as a saved customer account record for activation/coach-invite handoff; Save Account Setup and lookup confirmation are required.
 17. Critical setup edits now mark the account as having unsaved setup changes, blocking activation/coach-invite copy until Save Account Setup runs again.
-18. Dry-run results now keep the unsaved setup marker visible through lookup/setup rendering, while saved account results clear it as the new baseline.
+18. Setup preview results now keep the unsaved setup marker visible through lookup/setup rendering, while saved account results clear it as the new baseline.
 19. Unsaved setup changes now appear in Next Action, the readiness banner, and the setup checklist so support sees Save Account Setup as the required next step.
-20. Dry-run lookup/setup panels now label themselves as dry-run previews instead of saved customer account records.
+20. Setup preview lookup/setup panels now label themselves as previews instead of saved customer account records.
 21. Default activation handoff and smoke-checklist copy now names system readiness and saved customer setup before Copy Activation Record.
-22. Account lookup now distinguishes saved, dry-run, and not-found customer account states in the panel title.
+22. Account lookup now distinguishes saved, preview, and not-found customer account states in the panel title.
 23. Athletes parent-email action buttons are hidden in the raw page markup as well as runtime gating, preventing any first-render flash during the initial rollout.
 24. Athletes parent-contact info tips now say contact details are stored with the roster and parent messaging stays off until that feature is intentionally released.
 25. XC Simulator now has its own coach access-code prompt, so coaches can unlock season-best loading there instead of being sent back to Dashboard first.
@@ -707,7 +707,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 50. Copy Activation Record now labels the copied activation record as an internal support note only, so the coach-facing invite stays separate from setup/support details.
 51. Copied post-launch follow-up text now says when the coach invite was copied and when the account is ready for the final activation record.
 52. Test Access Rules now checks every blocked launch subscription state shown in onboarding: past due, paused, unpaid, canceled, incomplete, and incomplete expired.
-53. Account setup save and dry-run status messages now distinguish subscription-blocked access from incomplete setup, so support sees billing/status blockers separately from missing token/location/coach-code setup.
+53. Account setup save and setup preview status messages now distinguish subscription-blocked access from incomplete setup, so support sees billing/status blockers separately from missing token/location/coach-code setup.
 54. Check Customer Access status messages now distinguish a fully unlocked device from an account that is ready but still needs the coach code entered on that browser or phone.
 55. Account lookup only shows **Load Into Form** for saved customer account records or setup previews, preventing support from loading an empty not-found account record into setup.
 56. README now points operators to **Remaining Launch Parked Items** in this project state file so future work is not mistaken for launch blockers.
@@ -735,6 +735,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 78. Onboarding account lookup now labels the update history section **Recent Account Updates** instead of Recent Automation.
 79. Onboarding account lookup now uses **Load Into Form**, **Customer setup preview**, and clearer last-update labels so support can understand saved or previewed account details without internal wording.
 80. Onboarding system and setup preview wording now uses **Launch System**, **Preview**, and recent account update language instead of dry-run/automation-history wording in the support-facing flow.
+81. Live smoke-test account cards now say **Account Source** instead of **Record Source**, so support can tell where the customer account was loaded from.
 
 ## Known Good Test Flow
 
