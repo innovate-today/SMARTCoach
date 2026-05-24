@@ -714,6 +714,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 57. Remaining Launch Parked Items now includes Track Simulator and the SMARTCoach Pro help button/assistant, so the canonical parked list matches the current future-work list.
 58. Onboarding live-smoke checklist now says blocked billing statuses should block SMART Trak, matching the broader Test Access Rules coverage instead of naming only three statuses.
 59. Test Access Rules progress text and project-state wording now use the same broad blocked-billing language as the actual access-rule coverage.
+60. Onboarding system and customer-access results now label registry state as customer account storage/account record so support sees the launch meaning instead of internal storage jargon.
 
 ## Known Good Test Flow
 

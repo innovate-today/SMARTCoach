@@ -888,9 +888,9 @@ function renderSystemResult(data){
     '<div class="registryrow"><b>Launch readiness</b><span>'+esc(data.launchReady?'Ready for initial rollout':'Not ready yet')+'</span></div>'+
     launchHtml+
     launchCheckHtml+
-    '<div class="registryrow"><b>Registry Connection</b><span>'+esc(data.registryReachable?'Reachable':data.registryError||'Not connected')+'</span></div>'+
-    '<div class="registryrow"><b>Manual updates</b><span>'+esc(data.readyForManualRegistryUpdates?'Ready':'Needs registry and automation secret')+'</span></div>'+
-    '<div class="registryrow"><b>Stripe webhooks</b><span>'+esc(data.readyForStripeWebhooks?'Ready':'Needs registry, automation secret, and Stripe webhook secret')+'</span></div>'+
+    '<div class="registryrow"><b>Customer account storage</b><span>'+esc(data.registryReachable?'Reachable':data.registryError||'Not connected')+'</span></div>'+
+    '<div class="registryrow"><b>Manual account updates</b><span>'+esc(data.readyForManualRegistryUpdates?'Ready':'Needs account storage and automation secret')+'</span></div>'+
+    '<div class="registryrow"><b>Stripe webhooks</b><span>'+esc(data.readyForStripeWebhooks?'Ready':'Needs account storage, automation secret, and Stripe webhook secret')+'</span></div>'+
     '<div class="registryrow"><b>Coach sessions</b><span>'+esc(sessionDetail)+'</span></div>'+
     '<div class="registryrow"><b>Parent email rollout</b><span>'+esc(data.parentEmailFeatureReleased?'Live globally - turn off for initial rollout':'Off for initial rollout')+'</span></div>'+
     warningHtml;
@@ -914,9 +914,9 @@ function copySystemStatus(){
   checks.forEach(function(check){
     lines.push((check.ready?'[ready] ':'[needs work] ')+(check.label||'Check')+' - '+(check.detail||''));
   });
-  lines.push('Registry connection: '+(data.registryReachable?'Reachable':data.registryError||'Not connected'));
-  lines.push('Manual registry updates: '+(data.readyForManualRegistryUpdates?'Ready':'Needs registry and automation secret'));
-  lines.push('Stripe webhooks: '+(data.readyForStripeWebhooks?'Ready':'Needs registry, automation secret, and Stripe webhook secret'));
+  lines.push('Customer account storage: '+(data.registryReachable?'Reachable':data.registryError||'Not connected'));
+  lines.push('Manual account updates: '+(data.readyForManualRegistryUpdates?'Ready':'Needs account storage and automation secret'));
+  lines.push('Stripe webhooks: '+(data.readyForStripeWebhooks?'Ready':'Needs account storage, automation secret, and Stripe webhook secret'));
   lines.push('Coach sessions: '+(data.sessionSigningSource==='session-secret'?'Dedicated secret':data.sessionSigningSource?'Fallback secret':'Needs signing secret'));
   lines.push('Parent email rollout: '+(data.parentEmailFeatureReleased?'Live globally - turn off for initial rollout':'Off for initial rollout'));
   lines.push('Production warnings: '+(warnings.length?warnings.join('; '):'None'));
@@ -983,7 +983,7 @@ function renderLookupResult(data){
     {label:'Subscription',value:subscriptionLabel({subscription:sub})},
     {label:'Coach seats',value:coachSeatsLabel(record)},
     {label:'Last update',value:shortDateTime(record.updatedAt)},
-    {label:'Registry',value:registryLabel},
+    {label:'Account record',value:registryLabel},
     {label:'Setup',value:data.setupReady?'Ready':'Needs setup'},
     {label:'Access',value:data.accessReady?'Allowed':(data.subscriptionAccessAllowed===false?'Blocked':'Not ready')}
   ];
@@ -1538,8 +1538,8 @@ function renderLiveSmokeAccess(data,ok){
     {label:'Access',value:accessAllowed?'Allowed':(data.subscriptionBlockedReason?'Blocked':'Not ready')},
     {label:'This Device',value:data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Needs coach code':'Ready'},
     {label:'Subscription',value:subscriptionLabel(data)},
-    {label:'Registry',value:registry.found?'Saved':registry.configured?'Not found':'Not connected'},
-    {label:'Registry Source',value:registry.source||'--'},
+    {label:'Account Record',value:registry.found?'Saved':registry.configured?'Not found':'Not connected'},
+    {label:'Record Source',value:registry.source||'--'},
     {label:'Coach Access',value:data.coachAccessRequired?(data.coachAccessUnlocked?'Unlocked':data.coachAccessCodesConfigured?'Code required':'Required but missing'):'Not required'},
     {label:'Coach Seats',value:coachSeatsLabel(data)}
   ];
@@ -2400,7 +2400,7 @@ function activationRecordText(data,options){
     'Renewal date: '+(sub.renewalDate||'--'),
     'Stripe customer: '+stripeCustomerId,
     'Stripe subscription: '+stripeSubscriptionId,
-    'Registry: '+((data.registry&&data.registry.found)||(data.registry&&data.registry.saved)?'Saved':'Check registry'),
+    'Customer account record: '+((data.registry&&data.registry.found)||(data.registry&&data.registry.saved)?'Saved':'Check account storage'),
     'Last automation source: '+lastEventLabel(record.lastAutomationEvent,'source'),
     'Last automation event: '+lastEventLabel(record.lastAutomationEvent,'event'),
     'Last registry update: '+fullDateTime(updatedAt),
