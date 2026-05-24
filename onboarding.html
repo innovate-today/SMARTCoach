@@ -1133,7 +1133,7 @@ function parentEmailCoachAccessLabel(value){
 function automationHistoryHtml(history){
   var items=Array.isArray(history)?history.filter(Boolean).slice(0,5):[];
   if(!items.length)return '';
-  return '<div class="registrytitle"><div><b>Recent Automation</b><span> Last '+items.length+' account update'+(items.length===1?'':'s')+'</span></div></div>'+
+  return '<div class="registrytitle"><div><b>Recent Account Updates</b><span> Last '+items.length+' account update'+(items.length===1?'':'s')+'</span></div></div>'+
     items.map(function(item){
       var label=lastEventLabel(item,'event');
       var source=lastEventLabel(item,'source');

@@ -732,6 +732,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 75. `VERCEL_SETUP.md` now uses customer account record / **Save Account Setup** wording in remaining active setup and optional Stripe webhook sections.
 76. Onboarding now labels the GHL/Stripe payload panel as **Subscription Update Payloads** and **Subscription Update Endpoints**, making its purpose clearer while preserving copy-ready endpoint details.
 77. Copied activation records now say last account update source/event instead of last automation source/event.
+78. Onboarding account lookup now labels the update history section **Recent Account Updates** instead of Recent Automation.
 
 ## Known Good Test Flow
 
