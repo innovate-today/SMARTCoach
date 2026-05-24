@@ -692,6 +692,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 37. Records page parked notes were narrowed: faster-current checks exist, while deeper historical record retention after refresh remains parked.
 38. Onboarding post-launch follow-up now includes phone bulk archive alongside first coach login and first sync.
 39. Vercel launch validation checklist now has an explicit post-launch phone follow-up bullet before final activation record copy.
+40. Vercel deploy order now continues past the first activation record through Copy Coach Invite, post-launch phone follow-up, final activation record, and normal support monitoring.
 
 ## Known Good Test Flow
 

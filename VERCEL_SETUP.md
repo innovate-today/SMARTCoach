@@ -335,6 +335,9 @@ This endpoint also requires the automation secret. Account status reports whethe
 13. Load My Season Best in XC Simulator, load a saved field, and score one simulated meet.
 14. Trigger the GHL Subscription Payload workflow once and confirm the registry lookup shows the automation event. Confirm the copied GHL payload did not include private tokens or coach access codes. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
 15. Use **Copy Activation Record** and save the support note for the test account.
+16. Use **Copy Coach Invite** only after validation is complete and the activation record has been saved.
+17. After the invite is sent, complete post-launch phone follow-up: first coach login, first sync, and phone bulk archive.
+18. Use **Copy Activation Record** again to save the final activation record, then move the account to normal support monitoring.
 
 ## Launch Validation Checklist
 
