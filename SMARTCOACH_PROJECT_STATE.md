@@ -693,6 +693,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 38. Onboarding post-launch follow-up now includes phone bulk archive alongside first coach login and first sync.
 39. Vercel launch validation checklist now has an explicit post-launch phone follow-up bullet before final activation record copy.
 40. Vercel deploy order now continues past the first activation record through Copy Coach Invite, post-launch phone follow-up, final activation record, and normal support monitoring.
+41. README now points new operators to the same `/onboarding.html` launch path before calling a customer account done.
 
 ## Known Good Test Flow
 
