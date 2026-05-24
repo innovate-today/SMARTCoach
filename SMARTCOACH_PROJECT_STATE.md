@@ -348,7 +348,7 @@ Important behavior:
 
 Known/pending:
 
-- Meet result corrections should update related records/bests where appropriate.
+- Meet result corrections update linked Records entries when they can be matched. Full Athlete Best recalculation after corrections is still parked; coaches can manually adjust PB/SB flags during correction for now.
 
 ## Meets Management
 
@@ -676,7 +676,7 @@ Help assistant:
 33. Manage Meets instant UI update warning was cleared; save, archive/restore, and delete now update the visible manager list after confirmed saves.
 34. Archived training plans and archived meets are documented as filtered out of phone app selectors.
 35. Meet season note now reflects the current month mapping and says saved meet seasons are trusted when already stored.
-36. Meet History pending notes were narrowed: event/gender ranking and first-ever PB/SB behavior are implemented; correction effects on related bests/records remain the only parked concern there.
+36. Meet History pending notes were narrowed: event/gender ranking and first-ever PB/SB behavior are implemented; meet-result corrections update linked Records entries, while full Athlete Best recalculation after corrections remains parked.
 
 ## Known Good Test Flow
 
