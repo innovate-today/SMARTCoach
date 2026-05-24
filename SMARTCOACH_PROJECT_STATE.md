@@ -728,6 +728,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 71. Onboarding page subtitle now describes the current launch job: save customer setup, validate readiness, and copy coach-facing links.
 72. Onboarding checklist status labels now say save needed/fallback deploy only instead of manual setup/redeploy after vars, keeping account storage as the normal launch path.
 73. `VERCEL_SETUP.md` now uses **Save Account Setup** instead of "manual account setup flow" for coach codes, private tokens, and protected setup values.
+74. Onboarding system readiness and copied system status now label saved account updates as **Save Account Setup** instead of manual account updates.
 
 ## Known Good Test Flow
 

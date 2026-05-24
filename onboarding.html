@@ -889,7 +889,7 @@ function renderSystemResult(data){
     launchHtml+
     launchCheckHtml+
     '<div class="registryrow"><b>Customer account storage</b><span>'+esc(data.registryReachable?'Reachable':data.registryError||'Not connected')+'</span></div>'+
-    '<div class="registryrow"><b>Manual account updates</b><span>'+esc(data.readyForManualRegistryUpdates?'Ready':'Needs account storage and automation secret')+'</span></div>'+
+    '<div class="registryrow"><b>Save Account Setup</b><span>'+esc(data.readyForManualRegistryUpdates?'Ready':'Needs account storage and automation secret')+'</span></div>'+
     '<div class="registryrow"><b>Stripe webhooks</b><span>'+esc(data.readyForStripeWebhooks?'Ready':'Needs account storage, automation secret, and Stripe webhook secret')+'</span></div>'+
     '<div class="registryrow"><b>Coach sessions</b><span>'+esc(sessionDetail)+'</span></div>'+
     '<div class="registryrow"><b>Parent email rollout</b><span>'+esc(data.parentEmailFeatureReleased?'Live globally - turn off for initial rollout':'Off for initial rollout')+'</span></div>'+
@@ -915,7 +915,7 @@ function copySystemStatus(){
     lines.push((check.ready?'[ready] ':'[needs work] ')+(check.label||'Check')+' - '+(check.detail||''));
   });
   lines.push('Customer account storage: '+(data.registryReachable?'Reachable':data.registryError||'Not connected'));
-  lines.push('Manual account updates: '+(data.readyForManualRegistryUpdates?'Ready':'Needs account storage and automation secret'));
+  lines.push('Save Account Setup: '+(data.readyForManualRegistryUpdates?'Ready':'Needs account storage and automation secret'));
   lines.push('Stripe webhooks: '+(data.readyForStripeWebhooks?'Ready':'Needs account storage, automation secret, and Stripe webhook secret'));
   lines.push('Coach sessions: '+(data.sessionSigningSource==='session-secret'?'Dedicated secret':data.sessionSigningSource?'Fallback secret':'Needs signing secret'));
   lines.push('Parent email rollout: '+(data.parentEmailFeatureReleased?'Live globally - turn off for initial rollout':'Off for initial rollout'));
