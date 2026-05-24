@@ -667,7 +667,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 10. Activation handoff status now shows the system readiness requirement directly and refreshes when Check System starts, succeeds, or fails.
 11. Copy Smoke Status now includes system readiness, so partial or final smoke notes capture whether launch security was checked and ready.
 12. Changing the setup or lookup account key now clears the prior system readiness result, forcing a fresh Check System for the active customer before activation or coach invite copy.
-13. Critical setup edits now clear copied activation/invite/follow-up state, including generated coach-code changes and accounts loaded through Use In Form, so support has to recopy handoff notes after access or subscription details change.
+13. Critical setup edits now clear copied activation/invite/follow-up state, including generated coach-code changes and accounts loaded through Load Into Form, so support has to recopy handoff notes after access or subscription details change.
 14. When copied activation state is cleared, the live smoke checklist's activation-record row is also unchecked so the visible checklist matches the saved handoff state.
 15. Activation record and coach invite copy now also require customer-account readiness: account key, saved customer account record, allowed subscription, SMART Trak connection fields, coach access codes, and configured account status.
 16. Dry-run setup previews no longer count as a saved customer account record for activation/coach-invite handoff; Save Account Setup and lookup confirmation are required.
@@ -709,7 +709,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 52. Test Access Rules now checks every blocked launch subscription state shown in onboarding: past due, paused, unpaid, canceled, incomplete, and incomplete expired.
 53. Account setup save and dry-run status messages now distinguish subscription-blocked access from incomplete setup, so support sees billing/status blockers separately from missing token/location/coach-code setup.
 54. Check Customer Access status messages now distinguish a fully unlocked device from an account that is ready but still needs the coach code entered on that browser or phone.
-55. Account lookup only shows **Use In Form** for saved customer account records or dry-run previews, preventing support from loading an empty not-found account record into setup.
+55. Account lookup only shows **Load Into Form** for saved customer account records or setup previews, preventing support from loading an empty not-found account record into setup.
 56. README now points operators to **Remaining Launch Parked Items** in this project state file so future work is not mistaken for launch blockers.
 57. Remaining Launch Parked Items now includes Track Simulator and the SMARTCoach Pro help button/assistant, so the canonical parked list matches the current future-work list.
 58. Onboarding live-smoke checklist now says blocked billing statuses should block SMART Trak, matching the broader Test Access Rules coverage instead of naming only three statuses.
@@ -733,6 +733,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 76. Onboarding now labels the GHL/Stripe payload panel as **Subscription Update Payloads** and **Subscription Update Endpoints**, making its purpose clearer while preserving copy-ready endpoint details.
 77. Copied activation records now say last account update source/event instead of last automation source/event.
 78. Onboarding account lookup now labels the update history section **Recent Account Updates** instead of Recent Automation.
+79. Onboarding account lookup now uses **Load Into Form**, **Customer setup preview**, and clearer last-update labels so support can understand saved or previewed account details without internal wording.
 
 ## Known Good Test Flow
 

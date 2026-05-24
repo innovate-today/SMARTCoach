@@ -976,8 +976,8 @@ function renderLookupResult(data){
   var account=record.accountKey||data.accountKey||'';
   var registry=data.registry||{};
   var registryLabel=registry.dryRun?'Dry run':registry.found?'Saved':'Not found';
-  var registryTitle=registry.dryRun?'Dry-run customer setup preview':registry.found?'Saved customer account record':'No saved customer account record found';
-  var useFormButton=(registry.found||registry.dryRun)?'<button type="button" onclick="fillFormFromLookup()">Use In Form</button>':'';
+  var registryTitle=registry.dryRun?'Customer setup preview':registry.found?'Saved customer account record':'No saved customer account record found';
+  var useFormButton=(registry.found||registry.dryRun)?'<button type="button" onclick="fillFormFromLookup()">Load Into Form</button>':'';
   var cards=[
     {label:'Plan',value:planLabel(record.productPlan)},
     {label:'Subscription',value:subscriptionLabel({subscription:sub})},
@@ -1000,8 +1000,8 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
     '<div class="registryrow"><b>Account Access</b><span>'+esc(data.accessReady?'Account allowed':(data.subscriptionBlockedReason||'Not ready'))+'</span></div>'+
     '<div class="registryrow"><b>Next Action</b><span>'+esc(accountNextAction(data,record))+'</span></div>'+
-    '<div class="registryrow"><b>Last Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
-    '<div class="registryrow"><b>Last Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
+    '<div class="registryrow"><b>Last Update Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
+    '<div class="registryrow"><b>Last Update Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
     '<div class="registryrow"><b>Updated</b><span>'+esc(fullDateTime(record.updatedAt))+'</span></div>'+
     automationHistoryHtml(record.automationEventHistory);
   var guessedConfigured=(record.productPlan==='essential')||!!(record.locationId&&record.token&&((record.coachAccessCodes||[]).length||record.accessCode));
