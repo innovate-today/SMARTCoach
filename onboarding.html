@@ -189,20 +189,20 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_REGISTRY_REST_URL</code></div>
           <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Same as KV_REST_API_URL or UPSTASH_REDIS_REST_URL</code></div>
-          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_REST_URL','Registry URL field copied.')">Copy Setup Field</button>
-          <button type="button" onclick="copyText('Same as KV_REST_API_URL or UPSTASH_REDIS_REST_URL','Registry URL value note copied.')">Copy Value Note</button>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_REST_URL','Account storage URL field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Same as KV_REST_API_URL or UPSTASH_REDIS_REST_URL','Account storage URL value note copied.')">Copy Value Note</button>
         </div>
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta">Required</em></div><code>SMARTCOACH_REGISTRY_REST_TOKEN</code></div>
           <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Same as KV_REST_API_TOKEN or UPSTASH_REDIS_REST_TOKEN</code></div>
-          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_REST_TOKEN','Registry token field copied.')">Copy Setup Field</button>
-          <button type="button" onclick="copyText('Same as KV_REST_API_TOKEN or UPSTASH_REDIS_REST_TOKEN','Registry token value note copied.')">Copy Value Note</button>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_REST_TOKEN','Account storage token field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('Same as KV_REST_API_TOKEN or UPSTASH_REDIS_REST_TOKEN','Account storage token value note copied.')">Copy Value Note</button>
         </div>
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta recommended">Recommended</em></div><code>SMARTCOACH_REGISTRY_PREFIX</code></div>
           <div class="varfield"><div class="varlabel"><span>Value</span></div><code>smartcoach:account:</code></div>
-          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_PREFIX','Registry prefix field copied.')">Copy Setup Field</button>
-          <button type="button" onclick="copyText('smartcoach:account:','Registry prefix value copied.')">Copy Value</button>
+          <button type="button" class="secondary" onclick="copyText('SMARTCOACH_REGISTRY_PREFIX','Account storage prefix field copied.')">Copy Setup Field</button>
+          <button type="button" onclick="copyText('smartcoach:account:','Account storage prefix value copied.')">Copy Value</button>
         </div>
       </div>
     </div>
@@ -1600,7 +1600,7 @@ function testAccessRules(){
     dryRunAccessRule('incomplete_expired',secret)
   ]).then(function(results){
     renderAccessRuleResults(results);
-    setStatus('Access rules tested without saving registry changes.','good');
+    setStatus('Access rules tested without saving account changes.','good');
   }).catch(function(error){
     bar.className='readybar bad';
     bar.querySelector('b').textContent='Access rule test failed';
@@ -1661,7 +1661,7 @@ function renderAccessRuleResults(results){
   bar.className='readybar '+(allPassed?'good':'bad');
   bar.querySelector('b').textContent=allPassed?'Access rules are working':'Access rules need attention';
   bar.querySelector('span').textContent=allPassed
-    ?'Active/trialing allow access, and all blocked subscription states block access. No registry changes were saved.'
+    ?'Active/trialing allow access, and all blocked subscription states block access. No account changes were saved.'
     :'Review the access rule results before launch.';
   box.innerHTML=
     '<div class="registrytitle"><div><b>Subscription Access Rules</b><span> No-save validation</span></div></div>'+
