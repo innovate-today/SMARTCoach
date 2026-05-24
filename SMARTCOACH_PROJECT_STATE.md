@@ -32,7 +32,7 @@ Current launch status:
 - Code/security/setup cleanup is largely complete for the initial rollout path.
 - Remaining launch readiness is primarily live validation with a real Pro test account in Vercel/GHL.
 - Do not implement parked future ideas during this pass unless the user explicitly pulls one forward.
-- Use the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
+- Use `LIVE_LAUNCH_VALIDATION.md` and the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
 
 Typical deploy commands:
 
@@ -746,6 +746,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 82. Live smoke-test checklist now says **Customer setup preview passes** instead of dry-run wording.
 83. `VERCEL_SETUP.md` launch validation now explicitly checks **Test Setup First** before Save Account Setup and says GHL updates should appear as recent account updates.
 84. Project state now shows `main` as the active branch, uses `git push origin main:main`, and states that the next launch-readiness step is live validation with a real Pro test account.
+85. Added `LIVE_LAUNCH_VALIDATION.md` as a short operator checklist for the real Pro test account pass before initial rollout.
 
 ## Known Good Test Flow
 
