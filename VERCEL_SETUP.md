@@ -66,7 +66,7 @@ Account status separates setup readiness from access readiness. A customer can b
 
 Account status also separates account access from device unlock. `accessReady: true` means the account setup and subscription allow SMART Trak. `deviceAccessReady: true` means the current browser or phone also has a valid coach session or accepted coach access code.
 
-Automation, manual account setup saves, and account lookup responses return the same readiness fields, so Stripe/GHL updates and internal support checks can confirm setup/access state without calling account status separately.
+Automation, **Save Account Setup**, and account lookup responses return the same readiness fields, so Stripe/GHL updates and internal support checks can confirm setup/access state without calling account status separately.
 
 Coach-facing pages use `accessReady` during account checks, so a subscription-blocked Pro account stops with a clear access-blocked message instead of continuing into dashboard, roster, calendar, plan, history, records, or simulator data calls.
 
@@ -279,7 +279,7 @@ Set this Vercel variable first:
 
 - `SMARTCOACH_STRIPE_WEBHOOK_SECRET`
 
-Use the signing secret from the Stripe webhook endpoint settings. The route verifies `Stripe-Signature` before updating the account registry. Put the SMARTCoach account key in Stripe metadata as `accountKey` so the webhook knows which customer account to update.
+Use the signing secret from the Stripe webhook endpoint settings. The route verifies `Stripe-Signature` before updating the customer account record. Put the SMARTCoach account key in Stripe metadata as `accountKey` so the webhook knows which customer account to update.
 
 Invalid or missing Stripe signatures are rejected before customer account storage is read or written.
 
@@ -325,7 +325,7 @@ The `/onboarding.html` page also includes **Launch Security Values** with copy-r
 
 When customer account storage is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. Trusted setup can save plan, coach seats, coach access codes, location ID, token, and logo URL without adding a new Vercel variable for each customer update. The recurring GHL Subscription Payload should remain limited to subscription/access fields.
 
-Each saved customer account record also stores a small `lastAutomationEvent` stamp and a short `automationEventHistory` list with recent update source, event type, optional Stripe event/object IDs, and received time. This is shown in the internal account lookup to help troubleshoot whether recent changes came from manual setup, GHL automation, or a Stripe webhook.
+Each saved customer account record also stores a small `lastAutomationEvent` stamp and a short `automationEventHistory` list with recent update source, event type, optional Stripe event/object IDs, and received time. This is shown in the internal account lookup to help troubleshoot whether recent changes came from **Save Account Setup**, GHL automation, or a Stripe webhook.
 
 You can verify a saved account with:
 
