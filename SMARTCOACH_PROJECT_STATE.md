@@ -155,7 +155,7 @@ Important behavior:
 Known issues/parked:
 
 - Records page school-record history currently keeps the current record and may only reliably keep one previous record. Parked for now.
-- Some app access-code behavior may still need polish. The app showed green account status but sync was missing until refresh/fix.
+- Phone app account access now has a visible Account button, coach access-code prompt, and device unlock status. Live smoke testing should still confirm first coach login and first sync on an actual phone.
 - Need verify bulk archive behavior on the mobile app.
 
 ## Dashboard State
