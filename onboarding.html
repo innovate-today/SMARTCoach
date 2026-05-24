@@ -2367,6 +2367,7 @@ function activationRecordText(data,options){
   var updatedAt=record.updatedAt||data.updatedAt||'';
   var lines=[
     postLaunchComplete?'SMARTCoach Final Activation Record':'SMARTCoach Activation Record',
+    'Audience: Internal support note only - do not send this full record to the coach.',
     'Account key: '+(account||'Not set'),
     'Plan: '+planLabel(plan),
     'Coach seats: '+coachSeatsLabel(data),

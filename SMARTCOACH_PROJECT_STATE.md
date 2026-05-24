@@ -512,7 +512,7 @@ Subscription/customer management:
 - `/onboarding.html` now warns and blocks setup saves, dry runs, live access checks, and access-rule tests when the setup account key and lookup account key point to different customers.
 - Added an **Activation Runbook** to `/onboarding.html` so each new customer setup has the same plain-language order: Check System, Test Setup First, Save Registry Update, add the single SMART Trak custom link, verify coach access, and complete the live smoke test.
 - The Activation Runbook now includes a visible handoff status strip that follows smoke-test completion, launch sign-off, activation-record copy, coach-invite copy, and post-launch follow-up for the current account key.
-- The Activation Runbook now ends with stamping launch sign-off and copying the activation record, so support has a final handoff step before coach access is turned on.
+- The Activation Runbook now ends with stamping launch sign-off and copying the activation record, so support has an internal handoff step before the coach invite is sent.
 - The Activation Runbook now also includes a final **Send coach invite** step using Copy Coach Invite after validation and internal handoff are complete.
 - The Activation Runbook now includes a post-launch **Confirm phone follow-up** step so the written activation flow matches the follow-up checklist.
 - Added **Copy Activation Record** to `/onboarding.html` so support can paste a customer setup summary with account key, plan, subscription, Stripe IDs, recent automation update, setup/access state, smoke-test progress, next action, customer link, status link, and coach page validation links.
@@ -702,6 +702,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 47. `VERCEL_SETUP.md` live smoke wording now says validation should be complete before the coach invite is sent, avoiding the impression that access is manually turned on outside the subscription/setup gates.
 48. Onboarding and setup docs now use "send the coach invite" instead of "turn on" language, matching the actual gated access model.
 49. Copy Coach Invite now gives Pro coaches a simple first-use path: start on Dashboard, manage roster in Athletes, and use Training Calendar for daily work.
+50. Copy Activation Record now labels the copied activation record as an internal support note only, so the coach-facing invite stays separate from setup/support details.
 
 ## Known Good Test Flow
 
