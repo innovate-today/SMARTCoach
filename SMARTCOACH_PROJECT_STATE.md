@@ -701,6 +701,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 46. Onboarding activation runbook now says to save the handoff before sending the coach invite instead of "turning on coach access," keeping support wording aligned with subscription and coach-code gates.
 47. `VERCEL_SETUP.md` live smoke wording now says validation should be complete before the coach invite is sent, avoiding the impression that access is manually turned on outside the subscription/setup gates.
 48. Onboarding and setup docs now use "send the coach invite" instead of "turn on" language, matching the actual gated access model.
+49. Copy Coach Invite now gives Pro coaches a simple first-use path: start on Dashboard, manage roster in Athletes, and use Training Calendar for daily work.
 
 ## Known Good Test Flow
 

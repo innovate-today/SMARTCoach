@@ -1953,7 +1953,7 @@ function renderActivationHandoffStatus(){
     detail='Copy and save the internal activation record before sending the coach invite.';
   }else if(!invite.copiedAt){
     title='Activation record saved';
-    detail='Copied '+activationRecord.copiedAt+'. Use Copy Coach Invite when ready to send coach access.';
+    detail='Copied '+activationRecord.copiedAt+'. Use Copy Coach Invite when ready to send the coach invite.';
   }else if(!postComplete){
     title='Coach invite copied';
     detail='Invite copied '+invite.copiedAt+'. Confirm first coach login, first sync, and phone bulk archive after the coach receives it.';
@@ -2037,6 +2037,7 @@ function copyCoachInvite(){
   }else{
     lines.push('Plan: SMARTCoach Pro');
     lines=lines.concat(coachAccessCodeLines());
+    lines.push('Start here: open Dashboard first, then use Athletes for roster setup and Training Calendar for daily work.');
     lines.push('Desktop: open the SMARTCoach link and enter the coach access code if prompted.');
     lines.push('Phone: open the stopwatch app, go to Groups, tap Account, then enter the account key and coach access code.');
   }
