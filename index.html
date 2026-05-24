@@ -474,11 +474,20 @@ function openAccountSettings(){
   if(planInput)planInput.value=productPlan();
   if(planDisplay)planDisplay.textContent=productPlanLabel(productPlan());
   if(accessInput)accessInput.value=smartCoachAccessCode();
-  showAccessCodeRow(false);
-  if(status){status.textContent='';status.style.color='#555';}
-  renderAccountSummary(null,productPlan());
+  showAccessCodeRow(productPlan()!=='essential');
+  if(status){status.textContent='Checking account...';status.style.color='#555';}
+  renderAccountSummary({productPlan:productPlan(),configured:false,checking:true},productPlan());
   if(version)version.textContent='App version '+appVersion();
   sm('m-account');
+  if(productPlan()!=='essential'){
+    checkSmartCoachAccount(smartCoachAccountKey()).then(function(result){
+      renderAccountSummary(result.data,productPlan());
+      if(status){status.textContent=result.data&&result.data.deviceAccessReady?'SMARTCoach Pro is active.':'Enter the coach access code, then tap Save Settings.';status.style.color=result.data&&result.data.deviceAccessReady?'#0a7a44':'#555';}
+    }).catch(function(error){
+      renderAccountSummary(error&&error.data?error.data:{productPlan:productPlan(),configured:false},productPlan());
+      if(status){status.textContent=accountSettingsErrorMessage(smartCoachAccountKey(),error);status.style.color='#c00';}
+    });
+  }
 }
 function appVersion(){
   var meta=document.querySelector('meta[name="app-version"]');
