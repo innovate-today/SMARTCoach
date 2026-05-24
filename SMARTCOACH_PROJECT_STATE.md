@@ -21,30 +21,33 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 
 ## Current Source And Deployment
 
-- Repo: `/Users/marcusmoore/Documents/Codex/2026-04-30/continue-with-smartcoach/smartcoach-repo`
+- Repo: `/Users/marcusmoore/Documents/Codex/2026-05-19/continue-smartcoach-from-smartcoach-project-state/smartcoach-repo`
 - Production URL: `https://app.smartcoach-pro.com`
 - Deployment: Vercel from GitHub `innovate-today/SMARTCoach`
-- The user usually deploys by copying git commands into Terminal.
-- Codex may have trouble writing to `.git`; give the user commit/push commands when needed.
+- Current working branch: `calendar-manual-entry`, pushed to `main` with `git -C smartcoach-repo push origin calendar-manual-entry:main`.
+- Codex can usually push now. If GitHub DNS fails on the first try, retry once.
 
 Typical deploy commands:
 
 ```bash
-cd /Users/marcusmoore/Documents/Codex/2026-04-30/continue-with-smartcoach/smartcoach-repo
+cd /Users/marcusmoore/Documents/Codex/2026-05-19/continue-smartcoach-from-smartcoach-project-state/smartcoach-repo
 git add <files>
 git commit -m "<message>"
-git push origin main
+git push origin calendar-manual-entry:main
 ```
 
 ## Main Pages
 
 - `index.html`: mobile SMARTCoach stopwatch app.
 - `dashboard.html`: main SMART Trak dashboard.
+- `athletes.html`: coach-facing roster, athlete details, parent contact storage, and notes.
 - `training-calendar.html`: training calendar, plan days, status management.
 - `plan-import.html`: Plan Entry page for upload, paste, or manual workout creation.
-- `plan-builder.html`: guided plan builder, current fitness setup, and plan assignments.
+- `plan-setup.html`: Planning Setup page for current fitness, training groups, and plan assignments.
+- `plan-builder.html`: guided plan builder for drafting new training plans.
 - `meet-history.html`: meet schedule and meet-result comparison/history.
 - `records.html`: school record board.
+- `xc-simulator.html`: cross country scoring simulator using saved opponents and SMART Trak season bests.
 - `onboarding.html`: account setup helper.
 
 ## Backend Endpoints
