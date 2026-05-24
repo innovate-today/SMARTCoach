@@ -27,6 +27,8 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .panelbody{padding:16px 18px}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .recordgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.quicklinks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.quicklinks a{display:flex;align-items:center;justify-content:center;text-align:center}
 .field{display:grid;gap:6px}
 label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 input,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:15px inherit;padding:10px 12px}
@@ -50,7 +52,7 @@ textarea{min-height:90px;resize:vertical}
 .issue-table th,.issue-table td{border:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
 .issue-table th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:11px;letter-spacing:.03em}
 .issue-table input{border:0;border-radius:0;padding:4px 0;font-size:13px}
-@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.recordgrid{grid-template-columns:1fr}.panelhead{align-items:flex-start;flex-direction:column}}
+@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.recordgrid,.quicklinks{grid-template-columns:1fr}.panelhead{align-items:flex-start;flex-direction:column}}
 @media(max-width:760px){.accountbar{align-items:flex-start;flex-direction:column}}
 @media print{body{background:#fff}.page{max-width:none;padding:0}.actions{display:none}.panel{break-inside:avoid}.checkrow{break-inside:avoid}}
 </style>
@@ -103,6 +105,21 @@ textarea{min-height:90px;resize:vertical}
       <label class="checkrow"><input type="checkbox"><span><b>Parent email tools are off</b><span>Parent email is not released in the initial rollout and should not be visible/live on accounts.</span></span></label>
       <label class="checkrow"><input type="checkbox"><span><b>GHL can send the Subscription Payload</b><span>The preferred billing path is GHL native Stripe integration sending subscription/access updates to SMART Trak.</span></span></label>
       <label class="checkrow"><input type="checkbox"><span><b>Real Pro test account is available</b><span>Use a test account, not a future customer account.</span></span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Coach Page Links</h2><span>Account-scoped pages to validate</span></div>
+    <div class="panelbody quicklinks">
+      <a class="linkbtn secondary" data-page-link="/dashboard.html" href="/dashboard.html">Dashboard</a>
+      <a class="linkbtn secondary" data-page-link="/athletes.html" href="/athletes.html">Athletes</a>
+      <a class="linkbtn secondary" data-page-link="/training-calendar.html" href="/training-calendar.html">Training Calendar</a>
+      <a class="linkbtn secondary" data-page-link="/plan-setup.html" href="/plan-setup.html">Planning Setup</a>
+      <a class="linkbtn secondary" data-page-link="/plan-import.html" href="/plan-import.html">Plan Entry</a>
+      <a class="linkbtn secondary" data-page-link="/plan-builder.html" href="/plan-builder.html">Plan Builder</a>
+      <a class="linkbtn secondary" data-page-link="/meet-history.html" href="/meet-history.html">Meet History</a>
+      <a class="linkbtn secondary" data-page-link="/records.html" href="/records.html">Records</a>
+      <a class="linkbtn secondary" data-page-link="/xc-simulator.html" href="/xc-simulator.html">XC Simulator</a>
     </div>
   </section>
 
@@ -272,6 +289,12 @@ function syncAccountLinks(){
   if(stopwatch)stopwatch.href='/';
   if(dashboard)dashboard.href='/dashboard.html';
   if(status)status.href='/api/smart-trak/account-status';
+  document.querySelectorAll('[data-page-link]').forEach(function(link){
+    var path=link.getAttribute('data-page-link')||'/dashboard.html';
+    link.href=launchAccountKey&&launchAccountKey!=='default'
+      ?path+'?account='+encodeURIComponent(launchAccountKey)
+      :path;
+  });
 }
 function renderAccountScope(){
   var el=document.getElementById('activeAccountLabel');
