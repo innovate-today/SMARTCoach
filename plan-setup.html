@@ -927,7 +927,7 @@ function payloadFromForm(){
 function submitPlan(){
   if(!questionnaire)return;
   var payload=payloadFromForm();
-  if(!payload.primaryEvent||!payload.planStartDate||!payload.peakDate){setStatus('Primary event, start date, and peak date are required.','bad');return;}
+  if(!payload.primaryEvent||!payload.planStartDate||!payload.peakDate){setStatus('Primary event focus, plan start date, and plan end date are required.','bad');return;}
   if(!payload.priorityMeets){setStatus('Enter the meet schedule before creating the plan.','bad');return;}
   if(payload.planScope==='individual'&&!payload.contactId){setStatus('Select an athlete for an individual plan.','bad');return;}
   var btn=document.getElementById('submit');
