@@ -82,3 +82,11 @@ Open each page with the customer account key and confirm real customer data load
 - Initial rollout ready: Yes / No
 - Final activation record saved: Yes / No
 - Normal support monitoring started: Yes / No
+
+## Issue Log
+
+Use this section for anything found during the live pass that needs a fix or retest.
+
+| Area | Issue | Owner | Status | Retest Notes |
+| --- | --- | --- | --- | --- |
+|  |  |  |  |  |
