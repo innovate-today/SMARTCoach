@@ -977,6 +977,7 @@ function renderLookupResult(data){
   var registry=data.registry||{};
   var registryLabel=registry.dryRun?'Dry run':registry.found?'Saved':'Not found';
   var registryTitle=registry.dryRun?'Dry-run customer setup preview':registry.found?'Saved customer account record':'No saved customer account record found';
+  var useFormButton=(registry.found||registry.dryRun)?'<button type="button" onclick="fillFormFromLookup()">Use In Form</button>':'';
   var cards=[
     {label:'Plan',value:planLabel(record.productPlan)},
     {label:'Subscription',value:subscriptionLabel({subscription:sub})},
@@ -987,7 +988,7 @@ function renderLookupResult(data){
     {label:'Access',value:data.accessReady?'Allowed':(data.subscriptionAccessAllowed===false?'Blocked':'Not ready')}
   ];
   document.getElementById('lookupResult').innerHTML=
-    '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> '+esc(registryTitle)+'</span></div><button type="button" onclick="fillFormFromLookup()">Use In Form</button></div>'+
+    '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> '+esc(registryTitle)+'</span></div>'+useFormButton+'</div>'+
     '<div class="registrycards">'+cards.map(function(card){return '<div class="card"><b>'+esc(card.value||'--')+'</b><span>'+esc(card.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
     '<div class="registryrow"><b>Token</b><span>'+esc(secretStatus(record.token))+'</span></div>'+

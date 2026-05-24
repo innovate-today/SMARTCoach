@@ -707,6 +707,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 52. Test Access Rules now checks every blocked launch subscription state shown in onboarding: past due, paused, unpaid, canceled, incomplete, and incomplete expired.
 53. Registry-save and dry-run status messages now distinguish subscription-blocked access from incomplete setup, so support sees billing/status blockers separately from missing token/location/coach-code setup.
 54. Check Customer Access status messages now distinguish a fully unlocked device from an account that is ready but still needs the coach code entered on that browser or phone.
+55. Account lookup only shows **Use In Form** for saved registry records or dry-run previews, preventing support from loading an empty not-found account record into setup.
 
 ## Known Good Test Flow
 
