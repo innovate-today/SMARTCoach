@@ -1503,8 +1503,9 @@ function checkLiveSmokeAccess(){
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
-    renderLiveSmokeAccess(result.data||{},result.ok);
-    setStatus(result.ok?'Customer access checked.':'Customer access check found a setup problem.',result.ok?'good':'bad');
+    var data=result.data||{};
+    renderLiveSmokeAccess(data,result.ok);
+    setStatus(liveSmokeAccessStatusText(data,result.ok),result.ok&&data.accessReady&&data.deviceAccessReady?'good':result.ok&&data.accessReady?null:'bad');
   }).catch(function(){
     bar.className='readybar bad';
     bar.querySelector('b').textContent='Customer access check failed';
@@ -1556,6 +1557,13 @@ function renderLiveSmokeAccess(data,ok){
     '<div class="registryrow"><b>Next Action</b><span>'+esc(accountNextAction(data,data.accountRegistryRecord||{}))+'</span></div>'+
     missingHtml;
   if(!document.getElementById('checklistPanel').hidden)renderChecklist(currentSetup);
+}
+function liveSmokeAccessStatusText(data,ok){
+  data=data||{};
+  if(!ok||!data.accessReady)return 'Customer access check found a setup problem.';
+  if(data.deviceAccessReady)return 'Customer access is ready on this device.';
+  if(data.coachAccessRequired)return 'Account is ready. Enter a coach access code on this device before testing pages.';
+  return 'Customer access checked.';
 }
 function testAccessRules(){
   if(!ensureAccountKeysMatch('testing access rules'))return;

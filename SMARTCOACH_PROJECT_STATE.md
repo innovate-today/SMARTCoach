@@ -706,6 +706,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 51. Copied post-launch follow-up text now says when the coach invite was copied and when the account is ready for the final activation record.
 52. Test Access Rules now checks every blocked launch subscription state shown in onboarding: past due, paused, unpaid, canceled, incomplete, and incomplete expired.
 53. Registry-save and dry-run status messages now distinguish subscription-blocked access from incomplete setup, so support sees billing/status blockers separately from missing token/location/coach-code setup.
+54. Check Customer Access status messages now distinguish a fully unlocked device from an account that is ready but still needs the coach code entered on that browser or phone.
 
 ## Known Good Test Flow
 
