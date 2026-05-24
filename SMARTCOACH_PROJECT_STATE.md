@@ -648,6 +648,8 @@ These are intentionally not blocking the current launch path unless the user re-
 - Parent email tools stay unreleased for initial rollout.
 - Deeper import workflows for race results, school records, training history, and plans remain future work.
 - Plan Builder full-plan review/spreadsheet-style adjustment remains future work.
+- Track Simulator remains future work: similar to XC Simulator, with saved competitor fields/entries and SMART Trak season bests where possible.
+- SMARTCoach Pro help button/assistant remains future work for instructions, subscription questions, and how-to guidance.
 
 ## Recent Launch Cleanup Log
 
@@ -709,6 +711,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 54. Check Customer Access status messages now distinguish a fully unlocked device from an account that is ready but still needs the coach code entered on that browser or phone.
 55. Account lookup only shows **Use In Form** for saved registry records or dry-run previews, preventing support from loading an empty not-found account record into setup.
 56. README now points operators to **Remaining Launch Parked Items** in this project state file so future work is not mistaken for launch blockers.
+57. Remaining Launch Parked Items now includes Track Simulator and the SMARTCoach Pro help button/assistant, so the canonical parked list matches the current future-work list.
 
 ## Known Good Test Flow
 
