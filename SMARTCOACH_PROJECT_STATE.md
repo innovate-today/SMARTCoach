@@ -337,6 +337,8 @@ Implemented:
 - Results section has its own scroll.
 - Sticky header added.
 - Gender-aware comparison is required.
+- Fastest/rank comparisons group by event plus normalized athlete gender.
+- First-ever meet results for an event can auto-count as PB/SB when no prior best exists.
 
 Important behavior:
 
@@ -346,8 +348,6 @@ Important behavior:
 
 Known/pending:
 
-- Make sure gender is actually considered everywhere in fastest/rank/comparison logic.
-- Meet results with first-ever event should count as a new best, not "No new best".
 - Meet result corrections should update related records/bests where appropriate.
 
 ## Meets Management
@@ -676,6 +676,7 @@ Help assistant:
 33. Manage Meets instant UI update warning was cleared; save, archive/restore, and delete now update the visible manager list after confirmed saves.
 34. Archived training plans and archived meets are documented as filtered out of phone app selectors.
 35. Meet season note now reflects the current month mapping and says saved meet seasons are trusted when already stored.
+36. Meet History pending notes were narrowed: event/gender ranking and first-ever PB/SB behavior are implemented; correction effects on related bests/records remain the only parked concern there.
 
 ## Known Good Test Flow
 
