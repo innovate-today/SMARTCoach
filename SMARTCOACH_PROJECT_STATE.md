@@ -756,7 +756,8 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 92. `VERCEL_SETUP.md` launch validation now points operators to `LIVE_LAUNCH_VALIDATION.md` for the shorter recordable live-pass checklist.
 93. GitHub Actions regression workflow now triggers on `main` pushes and `main` pull requests only, matching the current deployment branch.
 94. Launch docs and workflow references have been checked for stale branch/setup wording; remaining launch-readiness work is the live Pro test account validation, not more cleanup.
-95. Onboarding live smoke tools now include a direct link to `LIVE_LAUNCH_VALIDATION.md`, so support can open the recordable live Pro test checklist from the setup page.
+95. Onboarding live smoke tools now include a direct live-validation link, so support can open the recordable live Pro test checklist from the setup page.
+96. Added `live-launch-validation.html` as a support-facing live validation page and pointed onboarding to it, while keeping `LIVE_LAUNCH_VALIDATION.md` as the markdown source.
 
 ## Known Good Test Flow
 

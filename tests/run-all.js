@@ -13,6 +13,7 @@ const htmlFiles = [
   "records.html",
   "xc-simulator.html",
   "onboarding.html",
+  "live-launch-validation.html",
 ];
 const jsonFiles = [
   "package.json",

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMARTCoach Live Launch Validation</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b00000}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1040px;margin:0 auto;padding:24px 18px 44px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:48px;height:48px;display:grid;place-items:center;flex:0 0 48px}
+.mark img{max-width:48px;max-height:48px;object-fit:contain}
+h1{font-size:24px;line-height:1.15;margin:0}
+.sub{color:var(--muted);font-size:14px;margin-top:4px;line-height:1.35}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
+.linkbtn.secondary{background:#dde3ed;color:#172033}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.panelhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.panelhead h2{font-size:18px;margin:0}
+.panelhead span{color:var(--muted);font-size:12px;font-weight:800}
+.panelbody{padding:16px 18px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.recordgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.field{display:grid;gap:6px}
+label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
+input,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:15px inherit;padding:10px 12px}
+textarea{min-height:90px;resize:vertical}
+.checklist{display:grid;gap:10px}
+.checkrow{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:11px 12px}
+.checkrow input{width:18px;height:18px;accent-color:var(--blue);margin-top:1px}
+.checkrow b{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;line-height:1.25}
+.checkrow span span{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.35}
+.badge{border-radius:999px;background:#ffedd5;color:#9a3412;padding:3px 8px;font-size:10px;font-weight:900;text-transform:uppercase;white-space:nowrap}
+.badge.good{background:#dcfce7;color:#08733f}
+.note{border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#1e3a8a;padding:11px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}
+.note b{display:block;color:#102a70;margin-bottom:3px}
+.decision{border-color:#fed7aa;background:#fff7ed;color:#9a3412}
+.issue-table{width:100%;border-collapse:collapse;font-size:13px}
+.issue-table th,.issue-table td{border:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+.issue-table th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:11px;letter-spacing:.03em}
+@media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.recordgrid{grid-template-columns:1fr}.panelhead{align-items:flex-start;flex-direction:column}}
+@media print{body{background:#fff}.page{max-width:none;padding:0}.actions{display:none}.panel{break-inside:avoid}.checkrow{break-inside:avoid}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>SMARTCoach Live Launch Validation</h1>
+        <div class="sub">Use this with one real Pro test account before calling the initial rollout ready.</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="linkbtn" href="/onboarding.html">Open Setup</a>
+      <a class="linkbtn secondary" href="/LIVE_LAUNCH_VALIDATION.md">Markdown Checklist</a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Validation Record</h2><span>Fill in before the pass starts</span></div>
+    <div class="panelbody">
+      <div class="recordgrid">
+        <div class="field"><label>Account Key</label><input placeholder="customer-account-key"></div>
+        <div class="field"><label>Test Subaccount</label><input placeholder="Example High School"></div>
+        <div class="field"><label>Tester</label><input placeholder="Support name"></div>
+        <div class="field"><label>Date</label><input placeholder="mm/dd/yyyy"></div>
+        <div class="field"><label>Result</label><input placeholder="Pass or Needs work"></div>
+        <div class="field"><label>Blockers</label><input placeholder="None or describe"></div>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Notes</label><textarea placeholder="Important launch notes, decisions, or retest context"></textarea></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Prerequisites</h2><span>Do not start until these are true</span></div>
+    <div class="panelbody checklist">
+      <label class="checkrow"><input type="checkbox"><span><b>Latest production deploy is live</b><span>Vercel production is on the latest main deployment and the custom domain is assigned.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Customer account storage is connected</b><span>Saved account records can be created and looked up without using per-customer Vercel variables.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Launch security values are saved</b><span>Setup, automation, and session secrets are separate; coach access enforcement is on.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Parent email tools are off</b><span>Parent email is not released in the initial rollout and should not be visible/live on accounts.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>GHL can send the Subscription Payload</b><span>The preferred billing path is GHL native Stripe integration sending subscription/access updates to SMART Trak.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Real Pro test account is available</b><span>Use a test account, not a future customer account.</span></span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Setup And Access</h2><span>Run from onboarding</span></div>
+    <div class="panelbody checklist">
+      <label class="checkrow"><input type="checkbox"><span><b>Check System is ready<em class="badge">Required</em></b><span>Open onboarding and confirm Check System says Ready for initial rollout.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Test Setup First passes<em class="badge">Required</em></b><span>Preview the customer account setup before saving it.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Save Account Setup succeeds<em class="badge">Required</em></b><span>Save the customer account record and confirm Lookup Account finds it.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>SMART Trak custom link is added<em class="badge">Required</em></b><span>Add the single SMART Trak custom link in the test subaccount and confirm it opens the correct dashboard.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Check Customer Access is ready<em class="badge">Required</em></b><span>Confirm subscription access, SMART Trak connection fields, coach codes, and account source are ready.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Coach code unlock works<em class="badge">Required</em></b><span>The assigned coach code unlocks the current browser or phone, and a wrong code is rejected.</span></span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Coach Pages</h2><span>Open with the customer account key</span></div>
+    <div class="panelbody checklist">
+      <label class="checkrow"><input type="checkbox"><span><b>Dashboard loads real customer data</b><span>No setup-needed error.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Athletes loads active roster data</b><span>Active athlete list matches the customer account.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Training Calendar loads plan days</b><span>Calendar opens and filters/status controls respond.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Planning Setup, Plan Entry, and Plan Builder load</b><span>Fitness, groups, assignments, and plan tools open without account errors.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Meet History and Records load</b><span>Meet data and record board open without blank/error state.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>XC Simulator scores</b><span>My Season Best and saved field tools work for the test account.</span></span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Core Workflows</h2><span>Use harmless test data</span></div>
+    <div class="panelbody checklist">
+      <label class="checkrow"><input type="checkbox"><span><b>Active athletes appear on phone</b><span>Create or activate at least one athlete and confirm app dropdowns show active athletes only.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Plan and group flow works</b><span>Create/import a plan, build a training group, assign the plan, and confirm calendar plan days appear.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Stopwatch sync saves</b><span>Time one harmless workout on the phone app and sync it.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Dashboard reflects synced workout</b><span>Confirm volume, completed workout details, splits, athlete latest training, and calendar status update.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Standalone race result saves</b><span>Log one race result from SMART Trak and confirm Dashboard, Meet History, and athlete bests update.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>XC simulation can be scored</b><span>Load My Season Best, load a saved field, and score one simulated meet.</span></span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Subscription And Security</h2><span>Go / no-go checks</span></div>
+    <div class="panelbody checklist">
+      <label class="checkrow"><input type="checkbox"><span><b>GHL Subscription Payload updates account</b><span>Account lookup shows a recent subscription/account update after the workflow runs.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Payload excludes secrets</b><span>Private integration tokens, setup secrets, automation secrets, session secrets, and coach access codes are not included in the copied GHL payload.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Blocked billing blocks SMART Trak</b><span>Test Access Rules confirms active/trialing allow access and blocked billing statuses deny access.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Account still opens after subscription update</b><span>The custom link still opens correctly after the GHL Subscription Payload update.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Parent email remains hidden/off</b><span>Do not release parent email tools during initial rollout.</span></span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Handoff</h2><span>Complete after checks pass</span></div>
+    <div class="panelbody checklist">
+      <label class="checkrow"><input type="checkbox"><span><b>Live smoke-test checks are complete</b><span>All required checks in onboarding are complete.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Launch sign-off is stamped</b><span>Validated by, timestamp, and short launch note are saved.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Activation record is saved</b><span>Use Copy Activation Record and save the internal support note.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Coach invite is sent</b><span>Use Copy Coach Invite and send the coach-facing access note.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Post-launch follow-up is complete</b><span>Confirm first login, first sync, and phone bulk archive, then save the final activation record.</span></span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Final Decision</h2><span>Initial rollout gate</span></div>
+    <div class="panelbody">
+      <div class="note decision"><b>Do not mark ready if anything is open.</b>Initial rollout should wait if any required item failed, any blocker is open, parent email tools are visible, private tokens or coach access codes appear in the GHL Subscription Payload, or the final activation record has not been saved.</div>
+      <div class="grid">
+        <label class="checkrow"><input type="checkbox"><span><b>Initial rollout ready</b><span>All launch checks passed.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>Final activation record saved</b><span>Final support note saved after post-launch follow-up.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>Normal support monitoring started</b><span>First-week monitoring can begin.</span></span></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Issue Log</h2><span>Track blockers and retests</span></div>
+    <div class="panelbody">
+      <table class="issue-table">
+        <thead><tr><th>Area</th><th>Issue</th><th>Owner</th><th>Status</th><th>Retest Notes</th></tr></thead>
+        <tbody>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+</body>
+</html>
