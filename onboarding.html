@@ -1976,7 +1976,7 @@ function renderActivationHandoffStatus(){
     detail='Copy and save the internal activation record before sending the coach invite.';
   }else if(!invite.copiedAt){
     title='Activation record saved';
-    detail='Copied '+activationRecord.copiedAt+'. Use Copy Coach Invite when ready to send the coach invite.';
+    detail='Copied '+activationRecord.copiedAt+'. Use Copy Coach Invite now to send the coach-facing access note.';
   }else if(!postComplete){
     title='Coach invite copied';
     detail='Invite copied '+invite.copiedAt+'. Confirm first coach login, first sync, and phone bulk archive after the coach receives it.';
@@ -2303,7 +2303,7 @@ function activationSteps(data){
     },
     {
       title:'Send coach invite',
-      body:'After validation is complete, use Copy Coach Invite to send the coach the SMARTCoach link, account key, and coach access-code instructions.'
+      body:'After validation and the internal activation record are saved, use Copy Coach Invite to send the coach the SMARTCoach link, account key, and coach access-code instructions.'
     },
     {
       title:'Confirm phone follow-up',

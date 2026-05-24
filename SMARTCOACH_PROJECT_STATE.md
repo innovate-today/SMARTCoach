@@ -722,6 +722,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 65. Parent-email launch hold copy now uses plain support language: keep parent email tools off for initial rollout.
 66. Onboarding setup-needed and checklist wording now points support to Save Account Setup for normal customer setup instead of implying every customer change needs Vercel variables and a redeploy.
 67. Onboarding setup preview labels now distinguish normal customer activation from fallback Vercel variables, so support sees Save Account Setup as the main path.
+68. Activation handoff wording now says Copy Coach Invite only after validation and the internal activation record are saved, making the coach-facing invite sequence explicit.
 
 ## Known Good Test Flow
 
