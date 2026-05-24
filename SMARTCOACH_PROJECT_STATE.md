@@ -643,7 +643,6 @@ Help assistant:
 
 These are intentionally not blocking the current launch path unless the user re-prioritizes them:
 
-- Post-launch phone follow-up now tracks first coach login, first sync, and bulk archive.
 - Records page deeper historical record retention after refresh is parked; faster-current checks exist.
 - Meet-result corrections update linked Records entries, but full Athlete Best recalculation after corrections is parked.
 - Parent email tools stay unreleased for initial rollout.
