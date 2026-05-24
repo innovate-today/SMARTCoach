@@ -40,6 +40,8 @@ textarea{min-height:90px;resize:vertical}
 .badge.good{background:#dcfce7;color:#08733f}
 .note{border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#1e3a8a;padding:11px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}
 .note b{display:block;color:#102a70;margin-bottom:3px}
+.status{color:var(--muted);font-size:12px;font-weight:800;margin-top:10px;text-align:right}
+.status.good{color:var(--good)}.status.bad{color:var(--bad)}
 .decision{border-color:#fed7aa;background:#fff7ed;color:#9a3412}
 .issue-table{width:100%;border-collapse:collapse;font-size:13px}
 .issue-table th,.issue-table td{border:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
@@ -62,6 +64,7 @@ textarea{min-height:90px;resize:vertical}
     <div class="actions">
       <a class="linkbtn" href="/onboarding.html">Open Setup</a>
       <a class="linkbtn secondary" href="/LIVE_LAUNCH_VALIDATION.md">Markdown Checklist</a>
+      <button type="button" class="secondary" onclick="copyValidationSummary()">Copy Summary</button>
       <button type="button" class="secondary" onclick="window.print()">Print</button>
       <button type="button" class="secondary" onclick="resetChecklist()">Reset</button>
     </div>
@@ -205,6 +208,7 @@ textarea{min-height:90px;resize:vertical}
           <tr><td><input data-save="issue-3-area" placeholder="Area"></td><td><input data-save="issue-3-issue" placeholder="Issue"></td><td><input data-save="issue-3-owner" placeholder="Owner"></td><td><input data-save="issue-3-status" placeholder="Status"></td><td><input data-save="issue-3-retest" placeholder="Retest notes"></td></tr>
         </tbody>
       </table>
+      <div id="copyStatus" class="status"></div>
     </div>
   </section>
 </main>
@@ -232,6 +236,77 @@ function resetChecklist(){
   });
   document.querySelectorAll('[data-save]').forEach(function(el){el.value=''});
   document.querySelectorAll('.checkrow input[type="checkbox"]').forEach(function(el){el.checked=false});
+}
+function fieldValue(name){
+  var el=document.querySelector('[data-save="'+name+'"]');
+  return el&&el.value.trim()?el.value.trim():'--';
+}
+function collectCheckedSummary(){
+  var lines=[];
+  document.querySelectorAll('.panel').forEach(function(panel){
+    var heading=panel.querySelector('h2');
+    var checks=[].slice.call(panel.querySelectorAll('.checkrow input[type="checkbox"]'));
+    if(!heading||!checks.length)return;
+    var complete=checks.filter(function(check){return check.checked}).length;
+    lines.push(heading.textContent+': '+complete+'/'+checks.length+' complete');
+    checks.forEach(function(check){
+      var title=check.closest('.checkrow').querySelector('b');
+      lines.push('  '+(check.checked?'[x] ':'[ ] ')+(title?title.textContent.replace(/\s+/g,' ').trim():'Checklist item'));
+    });
+  });
+  return lines;
+}
+function collectIssues(){
+  var rows=[];
+  for(var index=1;index<=3;index+=1){
+    var area=fieldValue('issue-'+index+'-area');
+    var issue=fieldValue('issue-'+index+'-issue');
+    var owner=fieldValue('issue-'+index+'-owner');
+    var status=fieldValue('issue-'+index+'-status');
+    var retest=fieldValue('issue-'+index+'-retest');
+    if([area,issue,owner,status,retest].some(function(value){return value!=='--'})){
+      rows.push('- '+area+' | '+issue+' | Owner: '+owner+' | Status: '+status+' | Retest: '+retest);
+    }
+  }
+  return rows.length?rows:['- No issues logged'];
+}
+function copyValidationSummary(){
+  var lines=[
+    'SMARTCoach Live Launch Validation',
+    'Account Key: '+fieldValue('record-account-key'),
+    'Test Subaccount: '+fieldValue('record-subaccount'),
+    'Tester: '+fieldValue('record-tester'),
+    'Date: '+fieldValue('record-date'),
+    'Result: '+fieldValue('record-result'),
+    'Blockers: '+fieldValue('record-blockers'),
+    'Notes: '+fieldValue('record-notes'),
+    '',
+    'Checklist'
+  ].concat(collectCheckedSummary()).concat([
+    '',
+    'Issue Log'
+  ]).concat(collectIssues());
+  copyText(lines.join('\n'));
+}
+function copyText(text){
+  var done=function(){setCopyStatus('Validation summary copied.',true)};
+  var fail=function(){setCopyStatus('Copy failed. Use Print or select the page text.',false)};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(fail);
+    return;
+  }
+  var area=document.createElement('textarea');
+  area.value=text;
+  document.body.appendChild(area);
+  area.select();
+  try{document.execCommand('copy')?done():fail()}catch(err){fail()}
+  document.body.removeChild(area);
+}
+function setCopyStatus(message,good){
+  var el=document.getElementById('copyStatus');
+  if(!el)return;
+  el.textContent=message;
+  el.className='status '+(good?'good':'bad');
 }
 bindSavedFields();
 </script>

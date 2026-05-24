@@ -760,6 +760,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 96. Added `live-launch-validation.html` as a support-facing live validation page and pointed onboarding to it, while keeping `LIVE_LAUNCH_VALIDATION.md` as the markdown source.
 97. Live launch validation page now saves checklist progress, validation record fields, and issue-log fields locally in the browser, with Print and Reset controls for the live pass.
 98. Live launch validation page now includes first-week monitoring and retest-rule sections, matching the markdown checklist source on the support-facing page.
+99. Live launch validation page now has Copy Summary, giving support a paste-ready note with validation record fields, checklist progress, and issue-log entries.
 
 ## Known Good Test Flow
 
