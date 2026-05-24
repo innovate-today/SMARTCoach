@@ -2,6 +2,18 @@
 
 Use this checklist with one real Pro test account before calling the initial rollout ready.
 
+## Prerequisites
+
+Do not begin the live pass until these are true:
+
+- Vercel production is on the latest `main` deployment.
+- `app.smartcoach-pro.com` points to the Vercel project.
+- Customer account storage is connected.
+- Launch security values are saved in Vercel Production.
+- Parent email tools remain unreleased/off.
+- GHL can send the Subscription Payload to SMART Trak.
+- The test account is a real Pro account, not a future customer account.
+
 ## Validation Record
 
 - Account key:
