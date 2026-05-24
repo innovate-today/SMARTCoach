@@ -771,6 +771,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 106. Live validation page now includes account-scoped quick links for Dashboard and Account Status so support can jump directly to the customer being validated.
 107. `VERCEL_SETUP.md` now also mentions the live validation page's account-scoped Dashboard and Account Status quick links.
 108. Live validation page now includes an account-scoped Stopwatch quick link, and `VERCEL_SETUP.md` names it alongside Dashboard and Account Status.
+109. Live validation page now includes **Copy Validation Link** for saving or reopening the account-scoped checklist URL, and `VERCEL_SETUP.md` documents it.
 
 ## Known Good Test Flow
 

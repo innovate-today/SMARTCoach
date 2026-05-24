@@ -71,6 +71,7 @@ textarea{min-height:90px;resize:vertical}
       <a id="dashboardLink" class="linkbtn secondary" href="/dashboard.html">Open Dashboard</a>
       <a id="statusLink" class="linkbtn secondary" href="/api/smart-trak/account-status">Account Status</a>
       <a class="linkbtn secondary" href="/LIVE_LAUNCH_VALIDATION.md">Markdown Checklist</a>
+      <button type="button" class="secondary" onclick="copyValidationLink()">Copy Validation Link</button>
       <button type="button" class="secondary" onclick="copyValidationSummary()">Copy Summary</button>
       <button type="button" class="secondary" onclick="window.print()">Print</button>
       <button type="button" class="secondary" onclick="resetChecklist()">Reset</button>
@@ -342,9 +343,18 @@ function copyValidationSummary(){
   ]).concat(collectIssues());
   copyText(lines.join('\n'));
 }
-function copyText(text){
-  var done=function(){setCopyStatus('Validation summary copied.',true)};
-  var fail=function(){setCopyStatus('Copy failed. Use Print or select the page text.',false)};
+function validationLink(){
+  var path=launchAccountKey&&launchAccountKey!=='default'
+    ?'/live-launch-validation.html?account='+encodeURIComponent(launchAccountKey)
+    :'/live-launch-validation.html';
+  return window.location.origin+path;
+}
+function copyValidationLink(){
+  copyText(validationLink(),'Validation link copied.','Copy failed. Select the browser URL instead.');
+}
+function copyText(text,successMessage,failureMessage){
+  var done=function(){setCopyStatus(successMessage||'Validation summary copied.',true)};
+  var fail=function(){setCopyStatus(failureMessage||'Copy failed. Use Print or select the page text.',false)};
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(done).catch(fail);
     return;
