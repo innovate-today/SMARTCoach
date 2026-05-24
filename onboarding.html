@@ -32,6 +32,10 @@ input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;
 textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,monospace;font-size:13px;line-height:1.45}
 .status{min-height:20px;font-size:13px;font-weight:800;color:var(--muted);margin-top:12px}
 .status.good{color:var(--good)}.status.bad{color:var(--bad)}
+.actionresult{display:none;border:1px solid var(--line);border-radius:8px;background:#fbfdff;color:#475569;font-size:13px;font-weight:800;line-height:1.35;margin-top:12px;padding:11px 12px}
+.actionresult.good{display:block;border-color:#bbf7d0;background:#f0fdf4;color:var(--good)}
+.actionresult.bad{display:block;border-color:#fecaca;background:#fef2f2;color:var(--bad)}
+.actionresult.pending{display:block;border-color:#bfdbfe;background:#eff6ff;color:#173891}
 .subgrid{display:grid;grid-template-columns:150px 150px 140px 170px 1fr 1fr;gap:12px;align-items:end}
 .notesgrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
 .cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}
@@ -340,6 +344,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="dryRunRegistryBtn" type="button" class="secondary" onclick="dryRunRegistryUpdate()">Test Setup First</button>
         <button id="saveRegistryBtn" type="button" onclick="saveRegistryUpdate()">Save Account Setup</button>
       </div>
+      <div id="setupActionResult" class="actionresult"></div>
     </div>
   </section>
 
@@ -1162,6 +1167,7 @@ function saveRegistryUpdate(){
   rememberAutomationSecret(secret);
   document.getElementById('saveRegistryBtn').disabled=true;
   setStatus('Saving account setup...',null);
+  setSetupActionResult('Saving account setup...', 'pending');
   fetch('/api/smart-trak/account-automation',{
     method:'POST',
     cache:'no-store',
@@ -1190,11 +1196,14 @@ function saveRegistryUpdate(){
     rememberCurrentSetupFieldValues();
     if(registry.saved){
       setStatus(savedRegistryStatusMessage(result.data),result.data.accessReady?'good':'bad');
+      setSetupActionResult(savedRegistryStatusMessage(result.data),result.data.accessReady?'good':'bad');
     }else{
       setStatus(registry.reason||'Account setup was not saved because customer account storage is not configured.','bad');
+      setSetupActionResult(registry.reason||'Account setup was not saved because customer account storage is not configured.','bad');
     }
   }).catch(function(error){
     setStatus(error.message||'Could not save account setup.','bad');
+    setSetupActionResult(error.message||'Could not save account setup.','bad');
   }).finally(function(){
     document.getElementById('saveRegistryBtn').disabled=false;
   });
@@ -1214,6 +1223,7 @@ function dryRunRegistryUpdate(){
   rememberAutomationSecret(secret);
   document.getElementById('dryRunRegistryBtn').disabled=true;
   setStatus('Testing setup without saving...',null);
+  setSetupActionResult('Testing setup without saving...', 'pending');
   fetch('/api/smart-trak/account-automation-dry-run',{
     method:'POST',
     cache:'no-store',
@@ -1240,11 +1250,14 @@ function dryRunRegistryUpdate(){
     renderSetup(Object.assign({},result.data,{unsavedSetupChanges:true,setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
     if(result.data.accessReady){
       setStatus('Setup preview passed. This account would be ready after saving. Nothing was saved.','good');
+      setSetupActionResult('Setup preview passed. This account would be ready after saving. Nothing was saved.','good');
     }else{
       setStatus(result.data.subscriptionBlockedReason?('Setup preview complete. Subscription blocks access: '+result.data.subscriptionBlockedReason):('Setup preview complete. Fix before saving: '+setupMissingText(result.data)),'bad');
+      setSetupActionResult(result.data.subscriptionBlockedReason?('Setup preview complete. Subscription blocks access: '+result.data.subscriptionBlockedReason):('Setup preview complete. Fix before saving: '+setupMissingText(result.data)),'bad');
     }
   }).catch(function(error){
     setStatus(error.message||'Could not test setup.','bad');
+    setSetupActionResult(error.message||'Could not test setup.','bad');
   }).finally(function(){
     document.getElementById('dryRunRegistryBtn').disabled=false;
   });
@@ -2521,6 +2534,12 @@ function setStatus(text,type){
   var el=document.getElementById('status');
   el.textContent=text||'';
   el.className='status'+(type?' '+type:'');
+}
+function setSetupActionResult(text,type){
+  var el=document.getElementById('setupActionResult');
+  if(!el)return;
+  el.textContent=text||'';
+  el.className='actionresult'+(type?' '+type:'');
 }
 function planLabel(value){
   return value==='essential'?'Essential':'Pro';
