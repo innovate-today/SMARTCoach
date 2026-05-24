@@ -36,17 +36,19 @@ For SMARTCoach Pro accounts, the SMART Trak custom link should point to the dash
 
 Only one SMART Trak custom link is needed because the dashboard contains the Plan Builder button. The stopwatch link is mainly for mobile practice/meet timing.
 
-The app reads account-specific Vercel variables by converting the account key to uppercase:
+For new customers, save these account values through `/onboarding.html` -> **Save Registry Update**. SMART Trak uses the saved registry record at runtime before falling back to account-specific Vercel variables.
+
+Account-specific Vercel variables are still supported for migration or fallback. The fallback names are built by converting the account key to uppercase:
 
 - `SMARTCOACH_PRODUCT_PLAN_LINCOLNTRACK`
 - `GHL_PRIVATE_INTEGRATION_TOKEN_LINCOLNTRACK`
 - `GHL_LOCATION_ID_LINCOLNTRACK`
 
-Essential accounts only need the plan variable:
+Essential fallback accounts only need the plan variable:
 
 - `SMARTCOACH_PRODUCT_PLAN_LINCOLNTRACK=essential`
 
-Recommended subscription tracking variables:
+Optional subscription tracking fallback variables:
 
 - `SMARTCOACH_SUBSCRIPTION_STATUS_LINCOLNTRACK=active`
 - `SMARTCOACH_BILLING_CADENCE_LINCOLNTRACK=monthly`
@@ -56,7 +58,7 @@ Recommended subscription tracking variables:
 - `SMARTCOACH_STRIPE_SUBSCRIPTION_ID_LINCOLNTRACK=sub_...`
 - `SMARTCOACH_SUBSCRIPTION_NOTES_LINCOLNTRACK=optional internal notes`
 
-These fields are for internal subscription tracking. Only the safe summary fields are returned through account status. Athlete limits remain controlled in GHL.
+These fields are for internal subscription tracking. In the current launch path, store them in the registry through `/onboarding.html` or the GHL Subscription Payload instead of adding per-customer Vercel variables. Only the safe summary fields are returned through account status. Athlete limits remain controlled in GHL.
 
 SMART Trak Pro access is allowed when subscription status is blank, `active`, or `trialing`. Setting the status to `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, or `unpaid` blocks Pro SMART Trak API access for that account. Blank status is currently allowed so existing customer accounts are not accidentally locked out during migration.
 
@@ -68,13 +70,13 @@ Automation, manual registry-save, and account registry lookup responses return t
 
 Coach-facing pages use `accessReady` during account checks, so a subscription-blocked Pro account stops with a clear access-blocked message instead of continuing into dashboard, roster, calendar, plan, history, records, or simulator data calls.
 
-Pro accounts need all three:
+Pro fallback accounts need all three:
 
 - `SMARTCOACH_PRODUCT_PLAN_LINCOLNTRACK=pro`
 - `GHL_PRIVATE_INTEGRATION_TOKEN_LINCOLNTRACK=...`
 - `GHL_LOCATION_ID_LINCOLNTRACK=...`
 
-Coach seat variables for Pro accounts:
+Coach seat fallback variables for Pro accounts:
 
 - `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=1`
 - `SMARTCOACH_COACH_ACCESS_CODES_LINCOLNTRACK=coach_code_1`
@@ -92,7 +94,7 @@ Legacy access-code support:
 
 - `SMARTCOACH_ACCESS_CODE_LINCOLNTRACK=...`
 
-Existing accounts that only use `SMARTCOACH_ACCESS_CODE_*` still work. New accounts should use `SMARTCOACH_COACH_SEATS_*` and `SMARTCOACH_COACH_ACCESS_CODES_*`.
+Existing accounts that only use `SMARTCOACH_ACCESS_CODE_*` still work. New registry accounts should use coach seats and coach access codes saved through `/onboarding.html`.
 
 Recommended production security:
 
