@@ -328,11 +328,13 @@ This endpoint also requires the automation secret. Account status reports whethe
 6. Create a live internal Pro test account in GHL/SMART Trak.
 7. Use **Test Setup First** for that account.
 8. Save the account to the durable registry.
-9. Follow the `/onboarding.html` **Activation Runbook** for that test account.
-10. Add the SMART Trak custom link to that test subaccount.
+9. Add the SMART Trak custom link to that test subaccount.
+10. Follow the `/onboarding.html` **Activation Runbook** for that test account.
 11. Test Share -> Sync to SMART Trak with one athlete who has saved times.
-12. Trigger the GHL Subscription Payload workflow once and confirm the registry lookup shows the automation event. Confirm the copied GHL payload did not include private tokens or coach access codes. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
-13. Use **Copy Activation Record** and save the support note for the test account.
+12. Log one standalone race result and confirm it reaches Dashboard, Meet History, and athlete bests.
+13. Load My Season Best in XC Simulator, load a saved field, and score one simulated meet.
+14. Trigger the GHL Subscription Payload workflow once and confirm the registry lookup shows the automation event. Confirm the copied GHL payload did not include private tokens or coach access codes. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
+15. Use **Copy Activation Record** and save the support note for the test account.
 
 ## Launch Validation Checklist
 
@@ -350,6 +352,8 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
 - **Coach pages:** Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator load for the test account without setup-needed errors.
 - **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
+- **Standalone race result:** one manually logged race result updates Dashboard, Meet History, and the athlete bests.
+- **XC Simulator:** My Season Best loads the coach's team, a saved field can be loaded, and scoring produces complete team results.
 - **Support handoff:** **Copy Activation Record** includes the account key, subscription, Stripe IDs when available, setup/access state, smoke progress, launch sign-off, coach-invite reminder or copied time, post-launch follow-up, next action, customer link, status link, and coach page validation links.
 - **Parent email:** parent email tools remain hidden for initial rollout.
 
