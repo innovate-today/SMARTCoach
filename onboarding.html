@@ -923,7 +923,7 @@ function copySystemStatus(){
   copyText(lines.join('\n'),'System status copied.');
 }
 function systemReadinessBlockerText(){
-  if(!currentSystemHealth)return 'Run Check System and confirm Ready for initial rollout before copying activation or coach access notes.';
+  if(!currentSystemHealth)return 'Run Check System and confirm Ready for initial rollout before copying the activation record or coach invite.';
   if(currentSystemHealth.launchReady)return '';
   var blockers=currentSystemHealth.launchBlockers||[];
   return blockers.length?'System is not ready for launch: '+blockers.join('; '):'System is not ready for launch yet.';
@@ -2489,13 +2489,13 @@ function setupSignals(data){
 }
 function accountSetupBlockerText(data){
   var signals=setupSignals(data);
-  if(!signals.accountKey)return 'Enter the customer account key before copying activation or coach access notes.';
-  if(signals.unsavedSetupChanges)return 'Save Registry Update after the latest setup changes before copying activation or coach access notes.';
-  if(!signals.registrySaved)return 'Save and verify the customer registry record before copying activation or coach access notes.';
+  if(!signals.accountKey)return 'Enter the customer account key before copying the activation record or coach invite.';
+  if(signals.unsavedSetupChanges)return 'Save Registry Update after the latest setup changes before copying the activation record or coach invite.';
+  if(!signals.registrySaved)return 'Save and verify the customer registry record before copying the activation record or coach invite.';
   if(!signals.subscriptionAllowed)return signals.subscriptionBlockedReason;
-  if(!signals.crmReady)return 'Add the customer Location ID and Private Integration Token before copying activation or coach access notes.';
-  if(!signals.coachCodesReady)return 'Generate and save coach access codes before copying activation or coach access notes.';
-  if(!signals.accountConfigured)return 'Confirm the customer account status is configured before copying activation or coach access notes.';
+  if(!signals.crmReady)return 'Add the customer Location ID and Private Integration Token before copying the activation record or coach invite.';
+  if(!signals.coachCodesReady)return 'Generate and save coach access codes before copying the activation record or coach invite.';
+  if(!signals.accountConfigured)return 'Confirm the customer account status is configured before copying the activation record or coach invite.';
   return '';
 }
 function linkHtml(path,label){
