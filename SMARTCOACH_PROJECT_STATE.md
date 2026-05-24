@@ -148,8 +148,8 @@ Implemented:
 Important behavior:
 
 - If the selected plan workout changes in-app, sync should use the newly selected workout, not the original plan default.
-- Archived training plans should not appear in the app plan selector.
-- Archived meets should not appear in app meet selectors.
+- Archived training plans are filtered out of the app plan selector.
+- Archived meets are filtered out of app meet selectors.
 - Meet selection should lead to adding athletes/runners for timing.
 
 Known issues/parked:
@@ -362,7 +362,6 @@ Implemented:
 Known issues:
 
 - In iframe, archive buttons worked in browser but not inside desktop app at one point. Watch for event handler/iframe quirks.
-- App select-meet dropdown should exclude archived meets.
 - The meet season can be confusing if a meet date is in May but labeled Fall 2026. The app should trust the meet's stored season but the coach workflow should make this obvious.
 
 ## Records Page State
@@ -675,6 +674,7 @@ Help assistant:
 31. Onboarding live smoke validation now splits stopwatch sync, standalone race result, and XC Simulator scoring into separate required launch checks, matching the Vercel setup guide.
 32. Phone bulk archive is documented as implemented for Training and Meet groups, with only live phone smoke testing remaining.
 33. Manage Meets instant UI update warning was cleared; save, archive/restore, and delete now update the visible manager list after confirmed saves.
+34. Archived training plans and archived meets are documented as filtered out of phone app selectors.
 
 ## Known Good Test Flow
 
