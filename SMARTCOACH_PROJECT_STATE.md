@@ -703,6 +703,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 48. Onboarding and setup docs now use "send the coach invite" instead of "turn on" language, matching the actual gated access model.
 49. Copy Coach Invite now gives Pro coaches a simple first-use path: start on Dashboard, manage roster in Athletes, and use Training Calendar for daily work.
 50. Copy Activation Record now labels the copied activation record as an internal support note only, so the coach-facing invite stays separate from setup/support details.
+51. Copied post-launch follow-up text now says when the coach invite was copied and when the account is ready for the final activation record.
 
 ## Known Good Test Flow
 

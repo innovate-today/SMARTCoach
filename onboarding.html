@@ -1794,7 +1794,9 @@ function postLaunchStatusText(progress,invite){
   progress=progress||{done:0,total:0};
   invite=invite||{};
   var text=progress.done+' of '+progress.total+' complete';
-  if(progress.total>0&&progress.done===progress.total&&!invite.copiedAt){
+  if(progress.total>0&&progress.done===progress.total&&invite.copiedAt){
+    text+=' - ready for final activation record; coach invite copied '+invite.copiedAt;
+  }else if(progress.total>0&&progress.done===progress.total&&!invite.copiedAt){
     text+=' - coach invite not copied yet';
   }
   return text;
