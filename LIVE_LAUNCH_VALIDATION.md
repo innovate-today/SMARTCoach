@@ -2,6 +2,8 @@
 
 Use this checklist with one real Pro test account before calling the initial rollout ready.
 
+For the working support page, open `/live-launch-validation.html?account=<account-key>`. That page saves progress separately per account key, shows the active account scope, includes account-scoped setup/stopwatch/dashboard/status/page links, and can copy a paste-ready validation summary.
+
 ## Prerequisites
 
 Do not begin the live pass until these are true:
@@ -26,14 +28,15 @@ Do not begin the live pass until these are true:
 
 ## Setup
 
-1. Open `/onboarding.html`.
-2. Run **Check System** and confirm it says **Ready for initial rollout**.
-3. Create or choose one live Pro test account in GHL/SMART Trak.
-4. Run **Test Setup First** for that account.
-5. Use **Save Account Setup**.
-6. Use **Lookup Account** and confirm the customer account record is saved.
-7. Add the SMART Trak custom link to the test subaccount.
-8. Open the custom link and confirm it lands on the correct customer dashboard.
+1. Open `/live-launch-validation.html?account=<account-key>` and confirm the active account scope is correct.
+2. Use **Open Setup** from that page, or open `/onboarding.html?account=<account-key>`.
+3. Run **Check System** and confirm it says **Ready for initial rollout**.
+4. Create or choose one live Pro test account in GHL/SMART Trak.
+5. Run **Test Setup First** for that account.
+6. Use **Save Account Setup**.
+7. Use **Lookup Account** and confirm the customer account record is saved.
+8. Add the SMART Trak custom link to the test subaccount.
+9. Open the custom link and confirm it lands on the correct customer dashboard.
 
 ## Account Access
 

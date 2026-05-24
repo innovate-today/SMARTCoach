@@ -775,6 +775,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 110. Live validation page now includes account-scoped Coach Page Links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator.
 111. Live validation Copy Summary now includes the account-scoped validation link, setup link, stopwatch link, dashboard/status links, and coach-page validation links.
 112. Regression tests now verify the live validation page keeps its required account-scoped support actions and coach-page validation links.
+113. `LIVE_LAUNCH_VALIDATION.md` now points operators to the account-scoped HTML validation page and starts setup from the same account-specific flow.
 
 ## Known Good Test Flow
 
