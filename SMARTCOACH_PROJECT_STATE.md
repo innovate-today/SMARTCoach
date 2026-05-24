@@ -745,6 +745,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 81. Live smoke-test account cards now say **Account Source** instead of **Record Source**, so support can tell where the customer account was loaded from.
 82. Live smoke-test checklist now says **Customer setup preview passes** instead of dry-run wording.
 83. `VERCEL_SETUP.md` launch validation now explicitly checks **Test Setup First** before Save Account Setup and says GHL updates should appear as recent account updates.
+84. Project state now shows `main` as the active branch, uses `git push origin main:main`, and states that the next launch-readiness step is live validation with a real Pro test account.
 
 ## Known Good Test Flow
 
