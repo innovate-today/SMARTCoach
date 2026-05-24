@@ -768,6 +768,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 103. Live validation page now displays the active account scope above the validation record so support can confirm the checklist belongs to the customer being tested.
 104. `VERCEL_SETUP.md` now documents the account-scoped `/live-launch-validation.html?account=<account-key>` flow, including Copy Summary and returning to onboarding for the same customer.
 105. Current launch-readiness estimate is now recorded as 90-95% complete, with the remaining 5-10% identified as live Pro test account validation rather than more cleanup.
+106. Live validation page now includes account-scoped quick links for Dashboard and Account Status so support can jump directly to the customer being validated.
 
 ## Known Good Test Flow
 
