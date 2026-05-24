@@ -712,6 +712,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 55. Account lookup only shows **Use In Form** for saved registry records or dry-run previews, preventing support from loading an empty not-found account record into setup.
 56. README now points operators to **Remaining Launch Parked Items** in this project state file so future work is not mistaken for launch blockers.
 57. Remaining Launch Parked Items now includes Track Simulator and the SMARTCoach Pro help button/assistant, so the canonical parked list matches the current future-work list.
+58. Onboarding live-smoke checklist now says blocked billing statuses should block SMART Trak, matching the broader Test Access Rules coverage instead of naming only three statuses.
 
 ## Known Good Test Flow
 
