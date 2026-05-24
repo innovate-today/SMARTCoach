@@ -744,17 +744,20 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 Use this as the current launch regression test:
 
 1. In `onboarding.html`, run Check System and confirm it says Ready for initial rollout.
-2. Check Customer Access for a live Pro test account and confirm subscription access, account record source, SMART Trak connection, and coach access-code readiness.
-3. Open Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator with the customer account key.
-4. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
-5. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
-6. Create or import a plan, build a training group, assign the plan to a group or selected athletes, and confirm the Training Calendar shows the plan days.
-7. Open the phone app with the customer account key, choose group/plan, select an upcoming workout, time a rep/rest workout, and sync.
-8. Confirm Dashboard volume, completed workout details, splits, athlete latest training, and Training Calendar status update after sync.
-9. Log one standalone race result and confirm Dashboard, Meet History, and athlete bests update.
-10. Load My Season Best in XC Simulator, load a saved field, and score the meet.
-11. Confirm parent email controls remain hidden/off for initial rollout.
-12. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.
+2. For a live Pro test account, run Test Setup First, then Save Account Setup.
+3. Lookup the account and confirm the customer account record is saved with subscription, coach seats, SMART Trak connection, and coach access-code readiness.
+4. Check Customer Access and confirm account access, account source, SMART Trak connection, and device/coach-code status.
+5. Open Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator with the customer account key.
+6. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
+7. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
+8. Create or import a plan, build a training group, assign the plan to a group or selected athletes, and confirm the Training Calendar shows the plan days.
+9. Open the phone app with the customer account key, choose group/plan, select an upcoming workout, time a rep/rest workout, and sync.
+10. Confirm Dashboard volume, completed workout details, splits, athlete latest training, and Training Calendar status update after sync.
+11. Log one standalone race result and confirm Dashboard, Meet History, and athlete bests update.
+12. Load My Season Best in XC Simulator, load a saved field, and score the meet.
+13. Trigger the GHL Subscription Payload once and confirm account lookup shows the recent account update without exposing private tokens or coach access codes.
+14. Confirm parent email controls remain hidden/off for initial rollout.
+15. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.
 
 ## Notes For Future Codex Sessions
 
