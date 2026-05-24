@@ -2,15 +2,26 @@
 
 ## Required Environment Variables
 
-Set these in Vercel Project Settings -> Environment Variables:
+For the current launch path, configure production with `/onboarding.html` and the durable account registry. New customer accounts should be saved to the registry instead of adding a new set of Vercel variables for every coach.
+
+At minimum, production should have:
+
+- registry storage values, such as `KV_REST_API_URL` and `KV_REST_API_TOKEN`, or `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN`
+- `SMARTCOACH_AUTOMATION_SECRET`
+- `SMARTCOACH_ADMIN_SETUP_CODE`
+- `SMARTCOACH_SESSION_SECRET`
+- `SMARTCOACH_REQUIRE_COACH_ACCESS=true`
+- `SMARTCOACH_STRIPE_WEBHOOK_SECRET` if direct Stripe webhooks are enabled
+
+Default environment variables are still supported for the original/default SMARTCoach Pro account or migration fallback:
 
 - `GHL_PRIVATE_INTEGRATION_TOKEN`
 - `GHL_LOCATION_ID`
 - `SMARTCOACH_PRODUCT_PLAN`
 
-The browser app calls serverless SMART Trak endpoints. Those functions use the private token, so the token is not exposed in `index.html`.
+The browser app calls serverless SMART Trak endpoints. Those functions use private tokens, so private integration tokens are not exposed in `index.html`.
 
-Use `SMARTCOACH_PRODUCT_PLAN=pro` for the default SMARTCoach Pro account.
+Use `SMARTCOACH_PRODUCT_PLAN=pro` only for the default SMARTCoach Pro account. New customers should use registry records created from `/onboarding.html`.
 
 ## Customer Account Setup
 

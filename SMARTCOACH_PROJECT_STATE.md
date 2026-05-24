@@ -695,6 +695,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 40. Vercel deploy order now continues past the first activation record through Copy Coach Invite, post-launch phone follow-up, final activation record, and normal support monitoring.
 41. README now points new operators to the same `/onboarding.html` launch path before calling a customer account done.
 42. README now includes `npm test` as the top-level verification command before pushing changes.
+43. `VERCEL_SETUP.md` now leads with the registry-first launch model and treats account-specific Vercel variables as default-account/migration fallback.
 
 ## Known Good Test Flow
 
