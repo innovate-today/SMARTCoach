@@ -245,9 +245,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="varrow">
           <div class="varfield"><div class="varlabel"><span>Hold Note</span><em class="varmeta recommended">Initial Rollout</em></div><code>Parent email is not released yet</code></div>
-          <div class="varfield"><div class="varlabel"><span>Action</span></div><code>Do not add a parent email feature flag</code></div>
-          <button type="button" class="secondary" onclick="copyText('Parent email is not released for initial rollout. Do not add the parent email feature flag in Vercel Production.','Parent email rollout note copied.')">Copy Rollout Note</button>
-          <button type="button" onclick="copyText('Do not add this variable until parent communication is intentionally released.','Parent email hold note copied.')">Copy Hold Note</button>
+          <div class="varfield"><div class="varlabel"><span>Action</span></div><code>Keep parent email off for launch</code></div>
+          <button type="button" class="secondary" onclick="copyText('Parent email is not released for initial rollout. Keep parent email tools off in Vercel Production.','Parent email rollout note copied.')">Copy Rollout Note</button>
+          <button type="button" onclick="copyText('Keep parent email tools off until parent communication is intentionally released.','Parent email hold note copied.')">Copy Hold Note</button>
         </div>
       </div>
       <div class="formactions">
@@ -814,7 +814,7 @@ function copyLaunchSecurityValues(){
     'SMARTCOACH_AUTOMATION_SECRET='+automation,
     'SMARTCOACH_SESSION_SECRET='+session,
     'SMARTCOACH_REQUIRE_COACH_ACCESS=true',
-    'Parent email hold: do not add the parent email feature flag for initial rollout.',
+    'Parent email hold: keep parent email tools off for initial rollout.',
     'SMARTCOACH_STRIPE_WEBHOOK_SECRET must come from the Stripe webhook endpoint.'
   ];
   copyText(lines.join('\n'),'Launch security values copied. Save them in Vercel, then use Clear Generated Secrets.');
