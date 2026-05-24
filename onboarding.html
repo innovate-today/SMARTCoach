@@ -1101,7 +1101,7 @@ function accountNextAction(data,record){
   var postLaunch=postLaunchProgress();
   if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt&&postLaunch.total&&postLaunch.done<postLaunch.total)return 'Coach invite sent. Confirm first coach login, first sync, and phone bulk archive.';
   if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt&&postLaunch.total&&postLaunch.done===postLaunch.total&&!activationRecord.finalCopiedAt)return 'Copy the final activation record, then keep the account in normal support monitoring.';
-  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Activation complete. Keep the account in normal support monitoring.';
+  if(smoke.total&&smoke.done===smoke.total&&invite.copiedAt)return 'Final activation handoff complete. Keep the account in normal support monitoring.';
   return 'Proceed to live smoke test: open coach pages and save one harmless real item.';
 }
 function lastEventLabel(event, part){
