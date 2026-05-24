@@ -18,8 +18,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 h1{font-size:24px;line-height:1.15;margin:0}
 .sub{color:var(--muted);font-size:14px;margin-top:4px;line-height:1.35}
 .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
-.linkbtn.secondary{background:#dde3ed;color:#172033}
+.linkbtn,button{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none}
+.linkbtn.secondary,button.secondary{background:#dde3ed;color:#172033}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
 .panelhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .panelhead h2{font-size:18px;margin:0}
@@ -44,6 +44,7 @@ textarea{min-height:90px;resize:vertical}
 .issue-table{width:100%;border-collapse:collapse;font-size:13px}
 .issue-table th,.issue-table td{border:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
 .issue-table th{background:#f8fafc;color:#475569;text-transform:uppercase;font-size:11px;letter-spacing:.03em}
+.issue-table input{border:0;border-radius:0;padding:4px 0;font-size:13px}
 @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.recordgrid{grid-template-columns:1fr}.panelhead{align-items:flex-start;flex-direction:column}}
 @media print{body{background:#fff}.page{max-width:none;padding:0}.actions{display:none}.panel{break-inside:avoid}.checkrow{break-inside:avoid}}
 </style>
@@ -61,6 +62,8 @@ textarea{min-height:90px;resize:vertical}
     <div class="actions">
       <a class="linkbtn" href="/onboarding.html">Open Setup</a>
       <a class="linkbtn secondary" href="/LIVE_LAUNCH_VALIDATION.md">Markdown Checklist</a>
+      <button type="button" class="secondary" onclick="window.print()">Print</button>
+      <button type="button" class="secondary" onclick="resetChecklist()">Reset</button>
     </div>
   </section>
 
@@ -68,14 +71,14 @@ textarea{min-height:90px;resize:vertical}
     <div class="panelhead"><h2>Validation Record</h2><span>Fill in before the pass starts</span></div>
     <div class="panelbody">
       <div class="recordgrid">
-        <div class="field"><label>Account Key</label><input placeholder="customer-account-key"></div>
-        <div class="field"><label>Test Subaccount</label><input placeholder="Example High School"></div>
-        <div class="field"><label>Tester</label><input placeholder="Support name"></div>
-        <div class="field"><label>Date</label><input placeholder="mm/dd/yyyy"></div>
-        <div class="field"><label>Result</label><input placeholder="Pass or Needs work"></div>
-        <div class="field"><label>Blockers</label><input placeholder="None or describe"></div>
+        <div class="field"><label>Account Key</label><input data-save="record-account-key" placeholder="customer-account-key"></div>
+        <div class="field"><label>Test Subaccount</label><input data-save="record-subaccount" placeholder="Example High School"></div>
+        <div class="field"><label>Tester</label><input data-save="record-tester" placeholder="Support name"></div>
+        <div class="field"><label>Date</label><input data-save="record-date" placeholder="mm/dd/yyyy"></div>
+        <div class="field"><label>Result</label><input data-save="record-result" placeholder="Pass or Needs work"></div>
+        <div class="field"><label>Blockers</label><input data-save="record-blockers" placeholder="None or describe"></div>
       </div>
-      <div class="field" style="margin-top:10px"><label>Notes</label><textarea placeholder="Important launch notes, decisions, or retest context"></textarea></div>
+      <div class="field" style="margin-top:10px"><label>Notes</label><textarea data-save="record-notes" placeholder="Important launch notes, decisions, or retest context"></textarea></div>
     </div>
   </section>
 
@@ -167,13 +170,40 @@ textarea{min-height:90px;resize:vertical}
       <table class="issue-table">
         <thead><tr><th>Area</th><th>Issue</th><th>Owner</th><th>Status</th><th>Retest Notes</th></tr></thead>
         <tbody>
-          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
-          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
-          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
+          <tr><td><input data-save="issue-1-area" placeholder="Area"></td><td><input data-save="issue-1-issue" placeholder="Issue"></td><td><input data-save="issue-1-owner" placeholder="Owner"></td><td><input data-save="issue-1-status" placeholder="Status"></td><td><input data-save="issue-1-retest" placeholder="Retest notes"></td></tr>
+          <tr><td><input data-save="issue-2-area" placeholder="Area"></td><td><input data-save="issue-2-issue" placeholder="Issue"></td><td><input data-save="issue-2-owner" placeholder="Owner"></td><td><input data-save="issue-2-status" placeholder="Status"></td><td><input data-save="issue-2-retest" placeholder="Retest notes"></td></tr>
+          <tr><td><input data-save="issue-3-area" placeholder="Area"></td><td><input data-save="issue-3-issue" placeholder="Issue"></td><td><input data-save="issue-3-owner" placeholder="Owner"></td><td><input data-save="issue-3-status" placeholder="Status"></td><td><input data-save="issue-3-retest" placeholder="Retest notes"></td></tr>
         </tbody>
       </table>
     </div>
   </section>
 </main>
+<script>
+var storagePrefix='smartcoach-live-launch-validation:';
+function storageKey(name){return storagePrefix+name}
+function bindSavedFields(){
+  document.querySelectorAll('[data-save]').forEach(function(el){
+    var saved=localStorage.getItem(storageKey(el.getAttribute('data-save')));
+    if(saved!==null)el.value=saved;
+    el.addEventListener('input',function(){
+      localStorage.setItem(storageKey(el.getAttribute('data-save')),el.value);
+    });
+  });
+  document.querySelectorAll('.checkrow input[type="checkbox"]').forEach(function(el,index){
+    var key=storageKey('check-'+index);
+    el.checked=localStorage.getItem(key)==='true';
+    el.addEventListener('change',function(){localStorage.setItem(key,el.checked?'true':'false')});
+  });
+}
+function resetChecklist(){
+  if(!window.confirm('Reset the saved live launch validation checklist on this browser?'))return;
+  Object.keys(localStorage).forEach(function(key){
+    if(key.indexOf(storagePrefix)===0)localStorage.removeItem(key);
+  });
+  document.querySelectorAll('[data-save]').forEach(function(el){el.value=''});
+  document.querySelectorAll('.checkrow input[type="checkbox"]').forEach(function(el){el.checked=false});
+}
+bindSavedFields();
+</script>
 </body>
 </html>
