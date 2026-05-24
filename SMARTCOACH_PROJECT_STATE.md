@@ -75,10 +75,10 @@ Status: mostly complete and tested.
 
 Implemented:
 
-- Account-specific environment variables.
+- Account-specific environment variables plus durable registry records.
 - Product plan gating: Essential vs Pro.
 - Pro setup-needed state if plan is Pro but CRM variables are missing.
-- Access code protection for SMART Trak dashboard/API data.
+- Coach access-code protection for SMART Trak pages/API data, with signed browser sessions after a valid code is entered.
 - Setup helper page for generating Vercel variable names and customer links.
 - Customer dashboard link can be hidden in setup helper to reduce accidental sharing.
 
@@ -87,12 +87,13 @@ Important variables:
 - `SMARTCOACH_PRODUCT_PLAN_<ACCOUNT>`
 - `GHL_PRIVATE_INTEGRATION_TOKEN_<ACCOUNT>`
 - `GHL_LOCATION_ID_<ACCOUNT>`
-- `SMARTCOACH_ACCESS_CODE_<ACCOUNT>`
+- `SMARTCOACH_COACH_ACCESS_CODES_<ACCOUNT>` or saved registry coach access codes
+- `SMARTCOACH_REQUIRE_COACH_ACCESS=true`
 - optional logo URL variable if configured for customer branding.
 
 Known UX note:
 
-- The access code may be requested again after logout/new browser/session. That is acceptable for security, but long term we need a cleaner auth/session model.
+- The coach access code may be requested again after logout/new browser/session. That is acceptable for security. Current pages exchange a valid code for a signed session token before loading SMART Trak data.
 
 ## SMART Trak Data Model
 
