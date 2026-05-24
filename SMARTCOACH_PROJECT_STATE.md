@@ -750,6 +750,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 86. Live launch validation checklist now includes adding/verifying the SMART Trak custom link and reopening the account after the GHL Subscription Payload update.
 87. Live launch validation checklist now includes a fill-in validation record and final rollout decision fields.
 88. Live launch validation checklist now includes an issue log for blockers, owners, status, and retest notes found during the real Pro test pass.
+89. Live launch validation checklist now includes stop/go rules and a retest rule for any code, setup, GHL workflow, or Vercel environment change.
 
 ## Known Good Test Flow
 

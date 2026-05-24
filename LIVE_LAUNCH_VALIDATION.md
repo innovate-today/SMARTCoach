@@ -79,9 +79,23 @@ Open each page with the customer account key and confirm real customer data load
 
 ## Final Decision
 
+Do not mark the initial rollout ready if any required checklist item failed, any blocker is open, parent email tools are visible, private tokens or coach access codes appear in the GHL Subscription Payload, or the final activation record has not been saved.
+
 - Initial rollout ready: Yes / No
 - Final activation record saved: Yes / No
 - Normal support monitoring started: Yes / No
+
+## Retest Rule
+
+If any issue requires a code, setup, GHL workflow, or Vercel environment change, rerun the affected section and then rerun these checks before changing the result to Pass:
+
+- Check System
+- Test Setup First
+- Save Account Setup
+- Lookup Account
+- Check Customer Access
+- The workflow that originally failed
+- Copy Activation Record after the retest passes
 
 ## Issue Log
 
