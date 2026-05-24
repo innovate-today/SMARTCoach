@@ -699,6 +699,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 44. `VERCEL_SETUP.md` customer account setup now says new customer values should be saved through `/onboarding.html`, with account-specific Vercel names documented as fallback references.
 45. `VERCEL_SETUP.md` now plainly separates the recurring GHL Subscription Payload from one-time/private setup values: billing and access fields can be automated, while location ID, private token, setup code, session secret, automation secret, and coach codes stay in protected setup.
 46. Onboarding activation runbook now says to save the handoff before sending the coach invite instead of "turning on coach access," keeping support wording aligned with subscription and coach-code gates.
+47. `VERCEL_SETUP.md` live smoke wording now says validation should be complete before the coach invite is sent, avoiding the impression that access is manually turned on outside the subscription/setup gates.
 
 ## Known Good Test Flow
 
