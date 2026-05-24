@@ -641,7 +641,7 @@ Help assistant:
 
 ## Remaining Launch Parked Items
 
-These are intentionally not blocking the current launch path unless the user re-prioritizes them:
+These are intentionally not blocking the current launch path unless the user re-prioritizes them. This section is a planning list only; do not implement these ideas during launch cleanup unless the user explicitly asks for that item next.
 
 - Records page deeper historical record retention after refresh is parked; faster-current checks exist.
 - Meet-result corrections update linked Records entries, but full Athlete Best recalculation after corrections is parked.
