@@ -155,8 +155,8 @@ Important behavior:
 Known issues/parked:
 
 - Records page school-record history currently keeps the current record and may only reliably keep one previous record. Parked for now.
-- Phone app account access now has a visible Account button, coach access-code prompt, and device unlock status. Live smoke testing should still confirm first coach login and first sync on an actual phone.
-- Bulk archive should still be touched during real phone smoke testing, but it is no longer a known unfinished feature.
+- Phone app account access now has a visible Account button, coach access-code prompt, and device unlock status. Post-launch phone follow-up should confirm first coach login, first sync, and bulk archive on an actual phone.
+- Bulk archive is no longer a known unfinished feature; onboarding now tracks it as part of post-launch phone follow-up.
 
 ## Dashboard State
 
@@ -528,16 +528,16 @@ Subscription/customer management:
 - Copy Activation Record now saves a per-account copied timestamp in the setup browser, and live smoke status plus next-action guidance show whether the internal activation note was saved before the coach invite is sent.
 - Activation-record and coach-invite copied timestamps now save only after the copy action succeeds, so the handoff status does not advance on a failed clipboard action.
 - Onboarding next-action guidance now advances through activation record saved, coach invite copied, and activation complete states so support can see the final launch step clearly.
-- Added a per-account post-launch follow-up checklist to `/onboarding.html` for first coach login and first sync; activation records now include this progress and next-action guidance points to it after the invite is copied.
-- The post-launch follow-up summary now updates visually as pending or complete based on the first-login and first-sync checks.
+- Added a per-account post-launch follow-up checklist to `/onboarding.html` for first coach login, first sync, and phone bulk archive; activation records now include this progress and next-action guidance points to it after the invite is copied.
+- The post-launch follow-up summary now updates visually as pending or complete based on the first-login, first-sync, and phone bulk-archive checks.
 - The post-launch follow-up summary now only shows complete after Copy Coach Invite has been recorded, so checked follow-up boxes cannot make the handoff look finished before the invite step.
-- When post-launch follow-up is complete, the summary now shows the coach-invite copied timestamp alongside first-login and first-sync confirmation.
+- When post-launch follow-up is complete, the summary now shows the coach-invite copied timestamp alongside first-login, first-sync, and phone bulk-archive confirmation.
 - Copied smoke-status and activation-record notes now flag when post-launch follow-up boxes are complete but Copy Coach Invite has not been recorded yet.
 - After post-launch follow-up is complete, onboarding next-action guidance now reminds support to copy the final activation record before moving the account to normal monitoring.
-- Copy Activation Record now titles the copied note `SMARTCoach Final Activation Record` once first coach login and first sync are both checked.
-- Copy Activation Record now only treats the note as final after the coach invite has been copied and first-login/first-sync follow-up is complete.
-- `VERCEL_SETUP.md` now describes the same final activation-record rule: coach invite copied plus first-login/first-sync follow-up complete.
-- The activation handoff strip now uses the same final activation-record wording: coach invite copied plus first login and first sync confirmed.
+- Copy Activation Record now titles the copied note `SMARTCoach Final Activation Record` once first coach login, first sync, and phone bulk archive are checked.
+- Copy Activation Record now only treats the note as final after the coach invite has been copied and post-launch phone follow-up is complete.
+- `VERCEL_SETUP.md` now describes the same final activation-record rule: coach invite copied plus post-launch phone follow-up complete.
+- The activation handoff strip now uses the same final activation-record wording: coach invite copied plus first login, first sync, and phone bulk archive confirmed.
 - Final activation record copies now save a separate per-account timestamp, allowing onboarding next-action guidance to move from final handoff to normal support monitoring.
 - Copy Coach Invite now tells coaches where to enter the account key and coach access code on the phone app: Groups screen -> Account.
 - Essential Copy Coach Invite now also tells stopwatch-only coaches where to enter the account key on the phone app.
@@ -643,7 +643,7 @@ Help assistant:
 
 These are intentionally not blocking the current launch path unless the user re-prioritizes them:
 
-- Real-phone smoke test still needs to touch first coach login, first sync, and bulk archive.
+- Post-launch phone follow-up now tracks first coach login, first sync, and bulk archive.
 - Records page deeper historical record retention after refresh is parked; faster-current checks exist.
 - Meet-result corrections update linked Records entries, but full Athlete Best recalculation after corrections is parked.
 - Parent email tools stay unreleased for initial rollout.
@@ -689,6 +689,7 @@ These are intentionally not blocking the current launch path unless the user re-
 35. Meet season note now reflects the current month mapping and says saved meet seasons are trusted when already stored.
 36. Meet History pending notes were narrowed: event/gender ranking and first-ever PB/SB behavior are implemented; meet-result corrections update linked Records entries, while full Athlete Best recalculation after corrections remains parked.
 37. Records page parked notes were narrowed: faster-current checks exist, while deeper historical record retention after refresh remains parked.
+38. Onboarding post-launch follow-up now includes phone bulk archive alongside first coach login and first sync.
 
 ## Known Good Test Flow
 
@@ -705,7 +706,7 @@ Use this as the current launch regression test:
 9. Log one standalone race result and confirm Dashboard, Meet History, and athlete bests update.
 10. Load My Season Best in XC Simulator, load a saved field, and score the meet.
 11. Confirm parent email controls remain hidden/off for initial rollout.
-12. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync follow-up.
+12. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.
 
 ## Notes For Future Codex Sessions
 
