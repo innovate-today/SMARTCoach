@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-05-23
+Last updated: 2026-05-24
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -24,8 +24,15 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 - Repo: `/Users/marcusmoore/Documents/Codex/2026-05-19/continue-smartcoach-from-smartcoach-project-state/smartcoach-repo`
 - Production URL: `https://app.smartcoach-pro.com`
 - Deployment: Vercel from GitHub `innovate-today/SMARTCoach`
-- Current working branch: `calendar-manual-entry`, pushed to `main` with `git -C smartcoach-repo push origin calendar-manual-entry:main`.
+- Current working branch: `main`, pushed to `main` with `git -C smartcoach-repo push origin main:main`.
 - Codex can usually push now. If GitHub DNS fails on the first try, retry once.
+
+Current launch status:
+
+- Code/security/setup cleanup is largely complete for the initial rollout path.
+- Remaining launch readiness is primarily live validation with a real Pro test account in Vercel/GHL.
+- Do not implement parked future ideas during this pass unless the user explicitly pulls one forward.
+- Use the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
 
 Typical deploy commands:
 
@@ -33,7 +40,7 @@ Typical deploy commands:
 cd /Users/marcusmoore/Documents/Codex/2026-05-19/continue-smartcoach-from-smartcoach-project-state/smartcoach-repo
 git add <files>
 git commit -m "<message>"
-git push origin calendar-manual-entry:main
+git push origin main:main
 ```
 
 ## Main Pages
