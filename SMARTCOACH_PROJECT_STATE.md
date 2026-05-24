@@ -649,7 +649,9 @@ These are intentionally not blocking the current launch path unless the user re-
 - Deeper import workflows for race results, school records, training history, and plans remain future work.
 - Plan Builder full-plan review/spreadsheet-style adjustment remains future work.
 
-## Current High-Priority Cleanup List
+## Recent Launch Cleanup Log
+
+Completed or intentionally narrowed items from the launch cleanup pass:
 
 1. Manual calendar builder is aligned for distance runners: Add Activity opens Easy Run, Quality Session, Race, and Rest/Day Off choices; Race keeps Planned Volume and Target fields visible; Quality uses the set builder/summary; Easy supports distance plus optional strides.
 2. App plan selection now waits for plan workout days to load before **Use Selected Plan** can apply, and it refuses to assign a plan without a selected/upcoming workout day. This prevents sync from using a stale or plan-name-only workout context.
