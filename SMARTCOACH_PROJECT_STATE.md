@@ -134,7 +134,7 @@ Implemented:
 - Training groups and Meet groups are separated.
 - Archive tab exists.
 - Groups can be archived.
-- Bulk archive for training and meet groups was requested and partially worked on.
+- Bulk archive exists for active Training groups and Meet groups, with archived groups moved to the Archive tab and saved through the shared group save path.
 - Active athletes are loaded from SMART Trak using `SMARTCoach Active = Yes`.
 - A runner cannot be selected twice within the same group.
 - A new athlete can be added from the app and should be created active in SMART Trak.
@@ -156,7 +156,7 @@ Known issues/parked:
 
 - Records page school-record history currently keeps the current record and may only reliably keep one previous record. Parked for now.
 - Phone app account access now has a visible Account button, coach access-code prompt, and device unlock status. Live smoke testing should still confirm first coach login and first sync on an actual phone.
-- Need verify bulk archive behavior on the mobile app.
+- Bulk archive should still be touched during real phone smoke testing, but it is no longer a known unfinished feature.
 
 ## Dashboard State
 
@@ -673,6 +673,7 @@ Help assistant:
 29. Stopwatch settings fallback files now label the editable name as Group Name instead of Workout Name, matching the current app settings screen.
 30. Stopwatch settings fallback files now also use the current Splits on Detail Line and Beep/Vibrate on All Button Taps labels.
 31. Onboarding live smoke validation now splits stopwatch sync, standalone race result, and XC Simulator scoring into separate required launch checks, matching the Vercel setup guide.
+32. Phone bulk archive is documented as implemented for Training and Meet groups, with only live phone smoke testing remaining.
 
 ## Known Good Test Flow
 
