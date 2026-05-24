@@ -88,7 +88,7 @@ Use `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=3` and three comma-separated codes when
 
 Each coach should receive one coach access code. Athlete limits are intentionally not enforced here; those stay controlled by GHL.
 
-Automation does not silently create coach access codes for a new Pro account. Generate codes in `/onboarding.html` or save them through the manual account setup flow, then give one code to each coach. Do not put coach codes in the recurring GHL subscription payload. A Pro account with coach access required and no saved coach code stays setup-incomplete.
+Automation does not silently create coach access codes for a new Pro account. Generate codes in `/onboarding.html` and save them with **Save Account Setup**, then give one code to each coach. Do not put coach codes in the recurring GHL subscription payload. A Pro account with coach access required and no saved coach code stays setup-incomplete.
 
 Legacy access-code support:
 
@@ -229,7 +229,7 @@ For the recommended GHL workflow action, use:
 - Header: `X-SMARTCoach-Automation-Secret: your_secret`
 - Body type: raw JSON
 
-Send the customer's SMARTCoach account key plus subscription fields from the GHL/Stripe payment record. If GHL does not have a Stripe field available, leave it blank; the account merge will preserve already saved values. Do not include SMART Trak private integration tokens or coach access codes in the copied GHL workflow payload; those stay in the saved account setup flow.
+Send the customer's SMARTCoach account key plus subscription fields from the GHL/Stripe payment record. If GHL does not have a Stripe field available, leave it blank; the account merge will preserve already saved values. Do not include SMART Trak private integration tokens or coach access codes in the copied GHL workflow payload; those stay in **Save Account Setup**.
 
 Subscription status accepts the internal values `active`, `trialing`, `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, and `unpaid`. Common workflow wording such as `paid`, `payment failed`, `failed payment`, `cancelled`, `pending`, and `not paid` is normalized automatically. Unknown status text is treated as `incomplete` so access is not accidentally left open.
 
@@ -364,7 +364,7 @@ Before calling automation/security complete for rollout, verify this with a real
 - **Account setup save:** **Save Account Setup** returns saved and account lookup shows the account as saved.
 - **Subscription allow/block:** `/onboarding.html` -> **Live Smoke Test** -> **Test Access Rules** passes, proving `active` and `trialing` allow access while `past_due`, `paused`, `unpaid`, `canceled`, `incomplete`, and `incomplete_expired` block access without saving those test statuses.
 - **Coach access:** a valid coach code creates a signed session; wrong codes are rejected and rate-limited after repeated attempts.
-- **GHL subscription automation:** the GHL Subscription Payload updates customer account storage and appears in recent automation history, while private tokens and coach access codes remain in the manual account setup flow.
+- **GHL subscription automation:** the GHL Subscription Payload updates customer account storage and appears in recent automation history, while private tokens and coach access codes remain in **Save Account Setup**.
 - **Optional Stripe webhook:** if enabled, a Stripe test event updates customer account storage; resending the same Stripe event returns success without rewriting the account record.
 - **No secret exposure:** automation responses and account lookup show saved/hidden status for private tokens and coach access codes instead of exposing values. Redacted setup rows should show `Saved value hidden` and should not copy `__hidden__` as a pasteable value.
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
