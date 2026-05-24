@@ -500,7 +500,7 @@ Subscription/customer management:
 - Added **Check Customer Access** to the `/onboarding.html` Live Smoke Test so support can verify live account status, subscription access, registry source, and coach access-code readiness from the setup page before opening every coach page manually.
 - Check Customer Access now includes direct links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator for the selected customer account.
 - Check Customer Access now shows a warning state when the account is ready but the current browser/phone still needs a coach access code, so support does not confuse account readiness with device unlock.
-- Added **Test Access Rules** to the `/onboarding.html` Live Smoke Test so support can verify, without saving changes, that active/trialing subscriptions allow access and past due/unpaid/canceled subscriptions block access.
+- Added **Test Access Rules** to the `/onboarding.html` Live Smoke Test so support can verify, without saving changes, that active/trialing subscriptions allow access and blocked billing statuses block access.
 - Added a live smoke-test completion summary to `/onboarding.html` so support can see whether all required live validation checks are complete before sending the coach invite; the checklist now covers core pages, advanced pages, a real saved workflow, subscription access, the activation record, and parent email staying off.
 - Added **Copy Smoke Status** to `/onboarding.html` so support can paste the exact checked/missing live smoke-test items into notes during launch validation.
 - Copy Smoke Status now also includes activation-record copy status, final activation-record copy status, coach invite copied status, post-launch follow-up progress, and the current next action, so the support note can cover the full launch state.
@@ -713,6 +713,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 56. README now points operators to **Remaining Launch Parked Items** in this project state file so future work is not mistaken for launch blockers.
 57. Remaining Launch Parked Items now includes Track Simulator and the SMARTCoach Pro help button/assistant, so the canonical parked list matches the current future-work list.
 58. Onboarding live-smoke checklist now says blocked billing statuses should block SMART Trak, matching the broader Test Access Rules coverage instead of naming only three statuses.
+59. Test Access Rules progress text and project-state wording now use the same broad blocked-billing language as the actual access-rule coverage.
 
 ## Known Good Test Flow
 

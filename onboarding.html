@@ -1587,7 +1587,7 @@ function testAccessRules(){
   document.getElementById('accessRulesBtn').disabled=true;
   bar.className='readybar';
   bar.querySelector('b').textContent='Testing access rules...';
-  bar.querySelector('span').textContent='Checking active/trialing access and past-due blocking without saving changes.';
+  bar.querySelector('span').textContent='Checking active/trialing access and blocked billing statuses without saving changes.';
   box.innerHTML='<div class="empty">Running no-save access rule tests...</div>';
   Promise.all([
     dryRunAccessRule('active',secret),
