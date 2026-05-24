@@ -171,6 +171,15 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     <a id="setupPreviewLink" class="linkbtn admin-only" hidden href="/plan-setup.html?admin=1&plan=pro">Admin Preview</a>
   </div>
 </section>
+<section id="accessMessage" class="essential-message" hidden>
+  <h1>SMART Trak Access Required</h1>
+  <p>Enter the coach access code for this SMART Trak account to continue planning setup.</p>
+  <div class="essential-actions">
+    <input id="accessCodeInput" type="password" placeholder="Access code" autocomplete="off" style="max-width:260px">
+    <button class="primary" onclick="submitAccessCode()" type="button">Continue</button>
+  </div>
+  <p id="accessStatus" style="color:var(--muted);font-size:13px;margin-top:10px"></p>
+</section>
 <script>
 var questionnaire=null,athletes=[],meets=[],plans=[],trainingGroups=[],selectedGroupId='',accountStatus=null,fitnessDraftValues={},assignmentDraftValues={},assignmentDraftPlanKey='';
 var fitnessEvents=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
@@ -207,6 +216,15 @@ function smartCoachAccessCode(){
 function smartCoachSession(){
   try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
 }
+function setSmartCoachSession(value){
+  try{
+    if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
+    else sessionStorage.removeItem(sessionStorageKey());
+  }catch(e){}
+}
+function setSmartCoachAccessCode(value){
+  try{localStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
+}
 function productPlan(){
   try{
     var fromUrl=productPlanOverride();
@@ -241,6 +259,8 @@ function applyPlanMode(){
   if(message)message.hidden=pro||setupNeeded;
   var setup=document.getElementById('setupMessage');
   if(setup)setup.hidden=!setupNeeded;
+  var access=document.getElementById('accessMessage');
+  if(access&&(!access.hidden)&&setupNeeded)access.hidden=true;
   var badge=document.getElementById('productModeBadge');
   if(badge)badge.textContent=productPlanLabel(productPlan());
 }
@@ -322,9 +342,50 @@ function saveAccountSettings(){
   checkSmartCoachAccount().then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
     if(result.data&&result.data.accessReady===false)throw new Error('SMART Trak access is blocked by subscription status.');
+    if(result.data&&result.data.accessCodeRequired&&!smartCoachSession()){showAccessMessage(result.data);return;}
 	    loadBuilder();
   }).catch(function(error){
     setStatus('Account set to '+key+', but not connected: '+error.message,'bad');
+  });
+}
+function showAccessMessage(data){
+  document.body.classList.add('plan-essential');
+  var essential=document.getElementById('essentialMessage');
+  var setup=document.getElementById('setupMessage');
+  var access=document.getElementById('accessMessage');
+  if(essential)essential.hidden=true;
+  if(setup)setup.hidden=true;
+  if(access)access.hidden=false;
+  var status=document.getElementById('accessStatus');
+  if(status){status.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';status.style.color='var(--muted)';}
+  var input=document.getElementById('accessCodeInput');
+  if(input){input.value='';setTimeout(function(){input.focus();},50);}
+}
+function submitAccessCode(){
+  var input=document.getElementById('accessCodeInput');
+  var status=document.getElementById('accessStatus');
+  var code=(input&&input.value||'').trim();
+  if(!code){if(status){status.textContent='Enter the access code to continue.';status.style.color='var(--bad)';}return;}
+  setSmartCoachAccessCode(code);
+  if(status){status.textContent='Checking access...';status.style.color='var(--muted)';}
+  fetch('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(result.ok&&result.data&&result.data.sessionToken){
+      setSmartCoachSession(result.data.sessionToken);
+      setSmartCoachAccessCode('');
+      var access=document.getElementById('accessMessage');
+      if(access)access.hidden=true;
+      accountStatus=Object.assign({},accountStatus||{},{accessCodeRequired:false,deviceAccessReady:true});
+      document.body.classList.remove('plan-essential');
+      loadBuilder();
+      return;
+    }
+    setSmartCoachAccessCode('');
+    if(status){status.textContent=(result.data&&result.data.error)||'Access code was not accepted.';status.style.color='var(--bad)';}
+  }).catch(function(){
+    setSmartCoachAccessCode('');
+    if(status){status.textContent='Access could not be checked. Try again.';status.style.color='var(--bad)';}
   });
 }
 function refreshAppVersion(){
@@ -363,6 +424,10 @@ function loadBuilder(){
   applySmartCoachLinks();
   if(!isProPlan())return;
   if(accountStatus&&accountStatus.configured===false)return;
+  if(accountStatus&&accountStatus.accessCodeRequired&&!smartCoachSession()){
+    showAccessMessage(accountStatus);
+    return;
+  }
   if(accountStatus&&accountStatus.accessReady===false){
     setStatus('SMART Trak access is blocked by subscription status.','bad');
     return;
@@ -378,6 +443,7 @@ function loadBuilder(){
     fetch('/api/smart-trak/groups').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{groups:[]}};})
   ]).then(function(results){
     var athleteResult=results[0],planResult=results[1],groupResult=results[2];
+    if(results.some(function(item){return item&&item.data&&item.data.accessCodeRequired;})){showAccessMessage((results.find(function(item){return item&&item.data&&item.data.accessCodeRequired;})||{}).data);return;}
     if(!athleteResult.ok)throw new Error(athleteResult.data&&athleteResult.data.error?athleteResult.data.error:'Athletes unavailable');
     athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
     plans=(planResult.data&&planResult.data.plans)||[];
