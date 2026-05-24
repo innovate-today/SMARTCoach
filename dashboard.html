@@ -2379,7 +2379,9 @@ function saveRaceResult(){
   };
   els.raceResultSave.disabled=true;
   setRaceResultStatus('Saving race result...','');
+  var savedPayload=null;
   ensureRaceResultMeet(payload,seasonParts).then(function(updatedPayload){
+    savedPayload=updatedPayload;
     return fetch('/api/smart-trak/meet-result',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -2389,7 +2391,7 @@ function saveRaceResult(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Race result could not be saved.');
-    applyRaceResultLocally(updatedPayload,result.data||{});
+    applyRaceResultLocally(savedPayload||payload,result.data||{});
     setRaceResultStatus('Saved '+(athlete.name||'athlete')+' - '+eventName+' '+resultDisplay+'.','ok');
     els.raceResultAthlete.value='';
     els.raceResultResult.value='';

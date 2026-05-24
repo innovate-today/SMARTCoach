@@ -90,6 +90,17 @@ function checkLiveValidationPage() {
   console.log("live launch validation links ok");
 }
 
+function checkStandaloneRaceResultSaveScope() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  if (!html.includes("var savedPayload=null;")) {
+    throw new Error("dashboard standalone race result save must keep the updated payload across promise steps.");
+  }
+  if (!html.includes("applyRaceResultLocally(savedPayload||payload")) {
+    throw new Error("dashboard standalone race result save must apply the saved payload locally.");
+  }
+  console.log("standalone race result save scope ok");
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
@@ -100,5 +111,6 @@ jsFilesUnder("api").concat(jsFilesUnder("lib"), jsFilesUnder("tests")).forEach((
 checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
+checkStandaloneRaceResultSaveScope();
 
 console.log("SMARTCoach regression checks passed");
