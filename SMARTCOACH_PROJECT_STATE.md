@@ -362,7 +362,7 @@ Implemented:
 Known issues:
 
 - In iframe, archive buttons worked in browser but not inside desktop app at one point. Watch for event handler/iframe quirks.
-- The meet season can be confusing if a meet date is in May but labeled Fall 2026. The app should trust the meet's stored season but the coach workflow should make this obvious.
+- Auto-created meet/training seasons use the current mapping: Summer = June-July, Fall = August-November, Winter = December-January, Spring = February-May. If a meet has a saved season, app selectors should trust the stored season.
 
 ## Records Page State
 
@@ -675,6 +675,7 @@ Help assistant:
 32. Phone bulk archive is documented as implemented for Training and Meet groups, with only live phone smoke testing remaining.
 33. Manage Meets instant UI update warning was cleared; save, archive/restore, and delete now update the visible manager list after confirmed saves.
 34. Archived training plans and archived meets are documented as filtered out of phone app selectors.
+35. Meet season note now reflects the current month mapping and says saved meet seasons are trusted when already stored.
 
 ## Known Good Test Flow
 
