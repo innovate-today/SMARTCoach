@@ -21,7 +21,7 @@ Default environment variables are still supported for the original/default SMART
 
 The browser app calls serverless SMART Trak endpoints. Those functions use private tokens, so private integration tokens are not exposed in `index.html`.
 
-Use `SMARTCOACH_PRODUCT_PLAN=pro` only for the default SMARTCoach Pro account. New customers should use registry records created from `/onboarding.html`.
+Use `SMARTCOACH_PRODUCT_PLAN=pro` only for the default SMARTCoach Pro account. New customers should use customer account records created from `/onboarding.html`.
 
 ## Customer Account Setup
 
@@ -185,11 +185,11 @@ Coach-facing SMART Trak HTML pages are also served with no-store, noindex, no-re
 
 Regression tests verify both API no-store headers and Vercel HTML page noindex/no-cache headers.
 
-Legacy `/api/ghl/*` SMART Trak routes also attach the durable account registry before checking Pro access. That keeps direct older route calls aligned with the automated subscription/account registry, instead of falling back only to environment variables.
+Legacy `/api/ghl/*` SMART Trak routes also attach customer account storage before checking Pro access. That keeps direct older route calls aligned with automated subscription/account storage, instead of falling back only to environment variables.
 
 ## Automation Intake
 
-Recommended launch flow: let GHL handle Stripe payments/subscriptions through its native Stripe integration, then have a GHL workflow call SMART Trak's protected account automation endpoint when a customer buys, renews, fails payment, or cancels. SMART Trak should not be the payment processor; it should only receive the subscription/access result and update the customer account registry.
+Recommended launch flow: let GHL handle Stripe payments/subscriptions through its native Stripe integration, then have a GHL workflow call SMART Trak's protected account automation endpoint when a customer buys, renews, fails payment, or cancels. SMART Trak should not be the payment processor; it should only receive the subscription/access result and update the customer account record.
 
 Set this secret before connecting GHL automations:
 
@@ -233,9 +233,9 @@ Send the customer's SMARTCoach account key plus subscription fields from the GHL
 
 Subscription status accepts the internal values `active`, `trialing`, `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, and `unpaid`. Common workflow wording such as `paid`, `payment failed`, `failed payment`, `cancelled`, `pending`, and `not paid` is normalized automatically. Unknown status text is treated as `incomplete` so access is not accidentally left open.
 
-The endpoint validates the automation secret, normalizes the account data, saves it to the durable registry when registry variables are configured, and returns the exact setup fields needed for the account. The recommended GHL subscription workflow should send only subscription/billing fields for the same `accountKey`; SMART Trak merges those updates into the existing registry record so the customer's location ID, token, coach seats, and coach access codes are preserved.
+The endpoint validates the automation secret, normalizes the account data, saves it to customer account storage when storage variables are configured, and returns the exact setup fields needed for the account. The recommended GHL subscription workflow should send only subscription/billing fields for the same `accountKey`; SMART Trak merges those updates into the existing customer account record so the customer's location ID, token, coach seats, and coach access codes are preserved.
 
-Missing or wrong automation secrets are rejected before the durable account registry is read or written.
+Missing or wrong automation secrets are rejected before customer account storage is read or written.
 
 Regression tests verify partial subscription updates preserve saved SMART Trak connection fields and coach access codes.
 
@@ -281,7 +281,7 @@ Set this Vercel variable first:
 
 Use the signing secret from the Stripe webhook endpoint settings. The route verifies `Stripe-Signature` before updating the account registry. Put the SMARTCoach account key in Stripe metadata as `accountKey` so the webhook knows which customer account to update.
 
-Invalid or missing Stripe signatures are rejected before the durable account registry is read or written.
+Invalid or missing Stripe signatures are rejected before customer account storage is read or written.
 
 Recommended Stripe events for the optional direct webhook endpoint:
 
@@ -292,15 +292,15 @@ Recommended Stripe events for the optional direct webhook endpoint:
 - `invoice.payment_succeeded`
 - `invoice.payment_failed`
 
-Stripe webhooks only return success after the account registry update is saved. If the registry is missing or unavailable, the webhook returns an error so Stripe can retry the subscription update instead of marking it handled.
+Stripe webhooks only return success after the customer account update is saved. If customer account storage is missing or unavailable, the webhook returns an error so Stripe can retry the subscription update instead of marking it handled.
 
-Repeated Stripe events with the same Stripe event ID are treated as already handled. The webhook returns success for the retry and does not rewrite the existing registry record.
+Repeated Stripe events with the same Stripe event ID are treated as already handled. The webhook returns success for the retry and does not rewrite the existing customer account record.
 
-## Durable Account Registry
+## Customer Account Storage
 
-For automated onboarding/subscription updates, add a small persistent registry. The current implementation supports a Vercel KV / Upstash Redis REST store.
+For automated onboarding/subscription updates, add small persistent customer account storage. The current implementation supports a Vercel KV / Upstash Redis REST store.
 
-Plain meaning: this registry is where SMART Trak saves each customer account record after purchase. It stores the account key, subscription status, coach seats, coach access codes, SMART Trak connection, and optional logo URL. With the registry connected, adding a new customer does not require new Vercel variables or a redeploy.
+Plain meaning: this is where SMART Trak saves each customer account record after purchase. It stores the account key, subscription status, coach seats, coach access codes, SMART Trak connection, and optional logo URL. With customer account storage connected, adding a new customer does not require new Vercel variables or a redeploy.
 
 Add these Vercel environment variables:
 
@@ -323,20 +323,20 @@ The `/onboarding.html` page also shows these account storage field names in **Cu
 
 The `/onboarding.html` page also includes **Launch Security Values** with copy-ready field names and safe value notes for `SMARTCOACH_ADMIN_SETUP_CODE`, `SMARTCOACH_AUTOMATION_SECRET`, `SMARTCOACH_STRIPE_WEBHOOK_SECRET`, `SMARTCOACH_SESSION_SECRET`, and `SMARTCOACH_REQUIRE_COACH_ACCESS`. The parent-email rollout row is intentionally a hold note only: do not add `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED` for initial rollout. Use **Generate Launch Secrets** there to create separate setup, automation, and session secret values, then **Copy Security Values** to paste the generated values into Vercel before running **Check System** for launch readiness. After the values are saved in Vercel, use **Clear Generated Secrets** so those one-time values are no longer visible on the setup screen.
 
-When the registry is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. Trusted setup can save plan, coach seats, coach access codes, location ID, token, and logo URL without adding a new Vercel variable for each customer update. The recurring GHL Subscription Payload should remain limited to subscription/access fields.
+When customer account storage is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. Trusted setup can save plan, coach seats, coach access codes, location ID, token, and logo URL without adding a new Vercel variable for each customer update. The recurring GHL Subscription Payload should remain limited to subscription/access fields.
 
-Each saved registry record also stores a small `lastAutomationEvent` stamp and a short `automationEventHistory` list with recent update source, event type, optional Stripe event/object IDs, and received time. This is shown in the internal account lookup to help troubleshoot whether recent changes came from manual setup, GHL automation, or a Stripe webhook.
+Each saved customer account record also stores a small `lastAutomationEvent` stamp and a short `automationEventHistory` list with recent update source, event type, optional Stripe event/object IDs, and received time. This is shown in the internal account lookup to help troubleshoot whether recent changes came from manual setup, GHL automation, or a Stripe webhook.
 
 You can verify a saved account with:
 
 - `GET /api/smart-trak/account-registry?account=lincolntrack`
 
-This endpoint also requires the automation secret. Account status reports whether the registry is configured and whether a record exists for the requested account.
+This endpoint also requires the automation secret. Account status reports whether customer account storage is configured and whether a record exists for the requested account.
 
 ## Deploy Order
 
 1. Import this GitHub repo into Vercel.
-2. Open `/onboarding.html`, use **Launch Security Values** -> **Generate Launch Secrets**, add the security values plus registry values in Vercel Production, then use **Clear Generated Secrets** after the Vercel values are saved.
+2. Open `/onboarding.html`, use **Launch Security Values** -> **Generate Launch Secrets**, add the security values plus customer account storage values in Vercel Production, then use **Clear Generated Secrets** after the Vercel values are saved.
 3. Point `app.smartcoach-pro.com` to the Vercel project.
 4. Open `/onboarding.html` and run **Check System** with the automation secret.
 5. Fix any launch blockers before selling or sending a coach invite for a customer account.

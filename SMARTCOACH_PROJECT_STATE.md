@@ -716,6 +716,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 59. Test Access Rules progress text and project-state wording now use the same broad blocked-billing language as the actual access-rule coverage.
 60. Onboarding system and customer-access results now label registry state as customer account storage/account record so support sees the launch meaning instead of internal storage jargon.
 61. Onboarding and setup docs now use **Save Account Setup** for the customer-account save action, while internal code names still use registry terms where appropriate.
+62. `VERCEL_SETUP.md` now uses customer account storage/account record wording throughout the active launch guide while keeping endpoint and variable names unchanged.
 
 ## Known Good Test Flow
 
