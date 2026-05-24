@@ -220,6 +220,8 @@ Example payload:
 }
 ```
 
+Plain boundary: the GHL Subscription Payload is for subscription/access updates only. It can send the account key, product plan, coach seats, subscription status, billing cadence, amount, renewal date, and Stripe customer/subscription IDs. It should not send location ID, private integration token, setup code, automation secret, session secret, or coach access codes. Those setup values stay in `/onboarding.html` -> **Save Registry Update** or Vercel production secrets.
+
 For the recommended GHL workflow action, use:
 
 - Method: `POST`

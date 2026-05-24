@@ -697,6 +697,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 42. README now includes `npm test` as the top-level verification command before pushing changes.
 43. `VERCEL_SETUP.md` now leads with the registry-first launch model and treats account-specific Vercel variables as default-account/migration fallback.
 44. `VERCEL_SETUP.md` customer account setup now says new customer values should be saved through `/onboarding.html`, with account-specific Vercel names documented as fallback references.
+45. `VERCEL_SETUP.md` now plainly separates the recurring GHL Subscription Payload from one-time/private setup values: billing and access fields can be automated, while location ID, private token, setup code, session secret, automation secret, and coach codes stay in protected setup.
 
 ## Known Good Test Flow
 
