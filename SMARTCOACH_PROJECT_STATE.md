@@ -718,6 +718,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 61. Onboarding and setup docs now use **Save Account Setup** for the customer-account save action, while internal code names still use registry terms where appropriate.
 62. `VERCEL_SETUP.md` now uses customer account storage/account record wording throughout the active launch guide while keeping endpoint and variable names unchanged.
 63. Onboarding account-storage copy/status messages now say account storage/account changes instead of registry URL/token/prefix or registry changes.
+64. The Launch Security Values parent-email row now displays as a hold note rather than a Vercel setup field, and the everyday onboarding UI no longer shows the parent-email feature flag name during initial rollout.
 
 ## Known Good Test Flow
 

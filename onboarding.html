@@ -244,9 +244,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <button type="button" onclick="copyText('true','Coach access value copied.')">Copy Value</button>
         </div>
         <div class="varrow">
-          <div class="varfield"><div class="varlabel"><span>Setup Field</span><em class="varmeta recommended">Initial Rollout</em></div><code>SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED</code></div>
-          <div class="varfield"><div class="varlabel"><span>Value</span></div><code>Leave absent for initial rollout</code></div>
-          <button type="button" class="secondary" onclick="copyText('Parent email is not released for initial rollout. Leave SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED absent in Vercel Production.','Parent email rollout note copied.')">Copy Rollout Note</button>
+          <div class="varfield"><div class="varlabel"><span>Hold Note</span><em class="varmeta recommended">Initial Rollout</em></div><code>Parent email is not released yet</code></div>
+          <div class="varfield"><div class="varlabel"><span>Action</span></div><code>Do not add a parent email feature flag</code></div>
+          <button type="button" class="secondary" onclick="copyText('Parent email is not released for initial rollout. Do not add the parent email feature flag in Vercel Production.','Parent email rollout note copied.')">Copy Rollout Note</button>
           <button type="button" onclick="copyText('Do not add this variable until parent communication is intentionally released.','Parent email hold note copied.')">Copy Hold Note</button>
         </div>
       </div>
@@ -463,7 +463,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label class="checkrow"><input type="checkbox"><span><b>9. XC Simulator scores<em class="checkbadge warn">Required</em></b><span>Load My Season Best, load a saved field, and score one simulated meet with complete team results.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>10. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL Subscription Payload workflow or manually save status changes. Active or trialing should allow SMART Trak; blocked billing statuses should block it clearly. Setup secrets and coach codes should stay out of the copied GHL payload.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>11. Activation record is saved<em class="checkbadge warn">Required</em></b><span>After system readiness, saved customer setup, and launch sign-off are complete, use Copy Activation Record and save the support note. This item is marked complete when the copy succeeds.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>12. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED is intentionally turned on later.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>12. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless the parent communication feature is intentionally turned on later.</span></span></label>
       </div>
       <div class="readybar" id="liveSmokeSignoff">
         <div><b>Launch sign-off</b><span>Required before copying the activation record or sending the coach invite.</span></div>
@@ -814,7 +814,7 @@ function copyLaunchSecurityValues(){
     'SMARTCOACH_AUTOMATION_SECRET='+automation,
     'SMARTCOACH_SESSION_SECRET='+session,
     'SMARTCOACH_REQUIRE_COACH_ACCESS=true',
-    'Do not add SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED for initial rollout. Leave parent email unreleased.',
+    'Parent email hold: do not add the parent email feature flag for initial rollout.',
     'SMARTCOACH_STRIPE_WEBHOOK_SECRET must come from the Stripe webhook endpoint.'
   ];
   copyText(lines.join('\n'),'Launch security values copied. Save them in Vercel, then use Clear Generated Secrets.');
