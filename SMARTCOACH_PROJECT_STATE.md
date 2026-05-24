@@ -357,10 +357,10 @@ Implemented:
 - Dashboard Manage Meets modal.
 - Add/edit/archive/delete meets.
 - Archived status added to Meets object status dropdown.
+- Manage Meets save, archive/restore, and delete update the visible meet manager list immediately after the server confirms.
 
 Known issues:
 
-- Manage Meets save/archive/delete needs instant UI updates.
 - In iframe, archive buttons worked in browser but not inside desktop app at one point. Watch for event handler/iframe quirks.
 - App select-meet dropdown should exclude archived meets.
 - The meet season can be confusing if a meet date is in May but labeled Fall 2026. The app should trust the meet's stored season but the coach workflow should make this obvious.
@@ -674,6 +674,7 @@ Help assistant:
 30. Stopwatch settings fallback files now also use the current Splits on Detail Line and Beep/Vibrate on All Button Taps labels.
 31. Onboarding live smoke validation now splits stopwatch sync, standalone race result, and XC Simulator scoring into separate required launch checks, matching the Vercel setup guide.
 32. Phone bulk archive is documented as implemented for Training and Meet groups, with only live phone smoke testing remaining.
+33. Manage Meets instant UI update warning was cleared; save, archive/restore, and delete now update the visible manager list after confirmed saves.
 
 ## Known Good Test Flow
 
