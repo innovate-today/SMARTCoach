@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - calendar-manual-entry
   pull_request:
     branches:
       - main
