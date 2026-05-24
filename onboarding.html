@@ -1078,7 +1078,7 @@ function coachCodesSummary(record){
 function accountNextAction(data,record){
   data=data||{};
   record=record||{};
-  if(data.subscriptionBlockedReason||data.subscriptionAccessAllowed===false)return 'Fix subscription status before giving the coach access.';
+  if(data.subscriptionBlockedReason||data.subscriptionAccessAllowed===false)return 'Fix subscription status before sending the coach invite.';
   if(data.unsavedSetupChanges)return 'Save Registry Update after the latest setup changes, then check customer access again.';
   var plan=data.productPlan||record.productPlan||'pro';
   if(plan==='essential')return 'Open the stopwatch link and confirm Essential-only access.';
@@ -1578,8 +1578,11 @@ function testAccessRules(){
     dryRunAccessRule('active',secret),
     dryRunAccessRule('trialing',secret),
     dryRunAccessRule('past_due',secret),
+    dryRunAccessRule('paused',secret),
     dryRunAccessRule('unpaid',secret),
-    dryRunAccessRule('canceled',secret)
+    dryRunAccessRule('canceled',secret),
+    dryRunAccessRule('incomplete',secret),
+    dryRunAccessRule('incomplete_expired',secret)
   ]).then(function(results){
     renderAccessRuleResults(results);
     setStatus('Access rules tested without saving registry changes.','good');
@@ -1622,8 +1625,11 @@ function renderAccessRuleResults(results){
     active:true,
     trialing:true,
     past_due:false,
+    paused:false,
     unpaid:false,
-    canceled:false
+    canceled:false,
+    incomplete:false,
+    incomplete_expired:false
   };
   var rows=results.map(function(result){
     var data=result.data||{};
@@ -1640,7 +1646,7 @@ function renderAccessRuleResults(results){
   bar.className='readybar '+(allPassed?'good':'bad');
   bar.querySelector('b').textContent=allPassed?'Access rules are working':'Access rules need attention';
   bar.querySelector('span').textContent=allPassed
-    ?'Active/trialing allow access, and past due/unpaid/canceled block access. No registry changes were saved.'
+    ?'Active/trialing allow access, and all blocked subscription states block access. No registry changes were saved.'
     :'Review the access rule results before launch.';
   box.innerHTML=
     '<div class="registrytitle"><div><b>Subscription Access Rules</b><span> No-save validation</span></div></div>'+
