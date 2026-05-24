@@ -773,6 +773,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 108. Live validation page now includes an account-scoped Stopwatch quick link, and `VERCEL_SETUP.md` names it alongside Dashboard and Account Status.
 109. Live validation page now includes **Copy Validation Link** for saving or reopening the account-scoped checklist URL, and `VERCEL_SETUP.md` documents it.
 110. Live validation page now includes account-scoped Coach Page Links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator.
+111. Live validation Copy Summary now includes the account-scoped validation link, setup link, stopwatch link, dashboard/status links, and coach-page validation links.
 
 ## Known Good Test Flow
 

@@ -348,6 +348,28 @@ function collectIssues(){
   }
   return rows.length?rows:['- No issues logged'];
 }
+function absolutePath(path){
+  return window.location.origin+path;
+}
+function accountPath(path){
+  if(launchAccountKey&&launchAccountKey!=='default'){
+    return path+'?account='+encodeURIComponent(launchAccountKey);
+  }
+  return path;
+}
+function collectValidationLinks(){
+  var lines=[
+    'Validation checklist: '+validationLink(),
+    'Setup: '+absolutePath(accountPath('/onboarding.html')),
+    'Stopwatch: '+absolutePath(accountPath('/')),
+    'Dashboard: '+absolutePath(accountPath('/dashboard.html')),
+    'Account status: '+absolutePath(accountPath('/api/smart-trak/account-status'))
+  ];
+  document.querySelectorAll('[data-page-link]').forEach(function(link){
+    lines.push(link.textContent.trim()+': '+absolutePath(accountPath(link.getAttribute('data-page-link')||'/dashboard.html')));
+  });
+  return lines;
+}
 function copyValidationSummary(){
   var lines=[
     'SMARTCoach Live Launch Validation',
@@ -359,8 +381,11 @@ function copyValidationSummary(){
     'Blockers: '+fieldValue('record-blockers'),
     'Notes: '+fieldValue('record-notes'),
     '',
+    'Account Links'
+  ].concat(collectValidationLinks()).concat([
+    '',
     'Checklist'
-  ].concat(collectCheckedSummary()).concat([
+  ]).concat(collectCheckedSummary()).concat([
     '',
     'Issue Log'
   ]).concat(collectIssues());
@@ -370,7 +395,7 @@ function validationLink(){
   var path=launchAccountKey&&launchAccountKey!=='default'
     ?'/live-launch-validation.html?account='+encodeURIComponent(launchAccountKey)
     :'/live-launch-validation.html';
-  return window.location.origin+path;
+  return absolutePath(path);
 }
 function copyValidationLink(){
   copyText(validationLink(),'Validation link copied.','Copy failed. Select the browser URL instead.');
