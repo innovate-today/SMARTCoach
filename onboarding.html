@@ -882,7 +882,7 @@ function renderSystemResult(data){
     ? '<div class="setupnote"><b>Customer account storage is ready</b>New customer account records can be saved here after purchase, without adding Vercel variables for every coach.</div>'
     : '<div class="setupnote"><b>Customer account storage is not connected</b>Connect Vercel KV or Upstash Redis, or set SMARTCOACH_REGISTRY_REST_URL and SMARTCOACH_REGISTRY_REST_TOKEN. Until this is connected, each new customer account would need separate Vercel variables and a redeploy.</div>';
   document.getElementById('systemResult').innerHTML=
-    '<div class="registrytitle"><div><b>Automation System</b><span> Internal setup readiness</span></div></div>'+
+    '<div class="registrytitle"><div><b>Launch System</b><span> Internal setup readiness</span></div></div>'+
     registryHelp+
     '<div class="registrycards">'+cards+'</div>'+
     '<div class="registryrow"><b>Launch readiness</b><span>'+esc(data.launchReady?'Ready for initial rollout':'Not ready yet')+'</span></div>'+
@@ -975,7 +975,7 @@ function renderLookupResult(data){
   var sub=record.subscription||{};
   var account=record.accountKey||data.accountKey||'';
   var registry=data.registry||{};
-  var registryLabel=registry.dryRun?'Dry run':registry.found?'Saved':'Not found';
+  var registryLabel=registry.dryRun?'Preview':registry.found?'Saved':'Not found';
   var registryTitle=registry.dryRun?'Customer setup preview':registry.found?'Saved customer account record':'No saved customer account record found';
   var useFormButton=(registry.found||registry.dryRun)?'<button type="button" onclick="fillFormFromLookup()">Load Into Form</button>':'';
   var cards=[
@@ -1233,14 +1233,14 @@ function dryRunRegistryUpdate(){
     renderLookupResult({
       success:true,
       accountKey:result.data.accountKey,
-      registry:{configured:!!(result.data.registry&&result.data.registry.configured),found:false,dryRun:true,key:'',error:'Dry run only'},
+      registry:{configured:!!(result.data.registry&&result.data.registry.configured),found:false,dryRun:true,key:'',error:'Preview only'},
       accountRegistryRecord:result.data.accountRegistryRecord||{}
     });
     renderSetup(Object.assign({},result.data,{unsavedSetupChanges:true,setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
     if(result.data.accessReady){
-      setStatus('Dry run passed. This account would be ready after saving. Nothing was saved.','good');
+      setStatus('Setup preview passed. This account would be ready after saving. Nothing was saved.','good');
     }else{
-      setStatus(result.data.subscriptionBlockedReason?('Dry run complete. Subscription blocks access: '+result.data.subscriptionBlockedReason):('Dry run complete. Fix before saving: '+setupMissingText(result.data)),'bad');
+      setStatus(result.data.subscriptionBlockedReason?('Setup preview complete. Subscription blocks access: '+result.data.subscriptionBlockedReason):('Setup preview complete. Fix before saving: '+setupMissingText(result.data)),'bad');
     }
   }).catch(function(error){
     setStatus(error.message||'Could not test setup.','bad');

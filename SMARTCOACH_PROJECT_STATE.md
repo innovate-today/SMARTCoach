@@ -734,6 +734,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 77. Copied activation records now say last account update source/event instead of last automation source/event.
 78. Onboarding account lookup now labels the update history section **Recent Account Updates** instead of Recent Automation.
 79. Onboarding account lookup now uses **Load Into Form**, **Customer setup preview**, and clearer last-update labels so support can understand saved or previewed account details without internal wording.
+80. Onboarding system and setup preview wording now uses **Launch System**, **Preview**, and recent account update language instead of dry-run/automation-history wording in the support-facing flow.
 
 ## Known Good Test Flow
 
