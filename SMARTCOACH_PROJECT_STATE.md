@@ -32,6 +32,7 @@ Current launch status:
 - Code/security/setup cleanup is largely complete for the initial rollout path.
 - Cleanup/launch prep is estimated at 90-95% complete.
 - Remaining launch readiness is primarily the final 5-10% live validation with a real Pro test account in Vercel/GHL.
+- Treat additional cleanup as paused unless live validation exposes a blocker.
 - Do not implement parked future ideas during this pass unless the user explicitly pulls one forward.
 - Use `/live-launch-validation.html`, `LIVE_LAUNCH_VALIDATION.md`, and the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
 
@@ -776,6 +777,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 111. Live validation Copy Summary now includes the account-scoped validation link, setup link, stopwatch link, dashboard/status links, and coach-page validation links.
 112. Regression tests now verify the live validation page keeps its required account-scoped support actions and coach-page validation links.
 113. `LIVE_LAUNCH_VALIDATION.md` now points operators to the account-scoped HTML validation page and starts setup from the same account-specific flow.
+114. Launch cleanup is now explicitly paused unless the live Pro validation pass exposes a blocker; the next practical work should be production validation, not more prep polishing.
 
 ## Known Good Test Flow
 

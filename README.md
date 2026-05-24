@@ -6,6 +6,8 @@ For production deployment, customer onboarding, subscription automation, Stripe 
 
 Launch accounts through `/onboarding.html`: check system readiness, run Test Setup First, save the customer account setup, complete the live smoke test, copy the activation record, copy the coach invite, confirm phone follow-up, then copy the final activation record.
 
+Cleanup/launch prep is effectively paused unless live Pro validation exposes a blocker. The next launch step is the production validation pass with `/live-launch-validation.html?account=<account-key>`.
+
 Parked/future items are tracked in `SMARTCOACH_PROJECT_STATE.md` under **Remaining Launch Parked Items**. Those items are planning notes only and are not launch blockers unless they are explicitly re-prioritized.
 
 Before pushing changes, run:
