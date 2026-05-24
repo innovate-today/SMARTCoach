@@ -75,7 +75,7 @@ Status: mostly complete and tested.
 
 Implemented:
 
-- Account-specific environment variables plus durable registry records.
+- Account-specific environment variables plus customer account storage records.
 - Product plan gating: Essential vs Pro.
 - Pro setup-needed state if plan is Pro but CRM variables are missing.
 - Coach access-code protection for SMART Trak pages/API data, with signed browser sessions after a valid code is entered.
@@ -87,7 +87,7 @@ Important variables:
 - `SMARTCOACH_PRODUCT_PLAN_<ACCOUNT>`
 - `GHL_PRIVATE_INTEGRATION_TOKEN_<ACCOUNT>`
 - `GHL_LOCATION_ID_<ACCOUNT>`
-- `SMARTCOACH_COACH_ACCESS_CODES_<ACCOUNT>` or saved registry coach access codes
+- `SMARTCOACH_COACH_ACCESS_CODES_<ACCOUNT>` or coach access codes saved through customer account storage
 - `SMARTCOACH_REQUIRE_COACH_ACCESS=true`
 - optional logo URL variable if configured for customer branding.
 
@@ -421,14 +421,14 @@ Subscription/customer management:
 - Account status now separates setup readiness from access readiness, so a configured SMART Trak account can still show blocked when subscription status prevents Pro access.
 - Account status now also reports `deviceAccessReady`, `coachAccessUnlocked`, and `coachSessionActive`, so support can distinguish a ready account from a browser/phone that still needs a coach access code.
 - Account status includes `subscriptionBlockedReason`, and onboarding displays that reason when a configured account is blocked by billing status.
-- Account automation/manual registry save/account registry lookup responses now return the same `setupReady`, `accessReady`, `subscriptionAccessAllowed`, and `subscriptionBlockedReason` signals as account status.
+- Account automation, Save Account Setup, and account lookup responses now return the same `setupReady`, `accessReady`, `subscriptionAccessAllowed`, and `subscriptionBlockedReason` signals as account status.
 - Stopwatch, dashboard, Plan Builder, and Planning Setup now respect `accessReady: false` during account checks so blocked subscriptions stop cleanly instead of loading Pro data and failing later.
 - Athletes, Training Calendar, Plan Entry, Meet History, Records, and XC Simulator now also check `accessReady` before loading SMART Trak data, so blocked subscriptions show a clear access-blocked message across the main coach pages.
 - Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
 - Launch billing guidance now treats GHL's native Stripe integration as the preferred payment/subscription path, with SMART Trak receiving subscription/access updates from GHL automation. Direct Stripe webhooks remain available as an optional fallback.
 - `/onboarding.html` now labels the recommended automation copy as the GHL workflow endpoint and GHL Subscription Payload, with direct Stripe webhook wording kept secondary.
 - GHL workflow subscription status normalization now accepts common payment words like paid, payment failed, failed payment, cancelled, pending, and not paid. Unknown automation status text becomes `incomplete` so access is not accidentally allowed.
-- Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus registry record.
+- Automation intake validates `SMARTCOACH_AUTOMATION_SECRET`, normalizes the customer account/subscription payload, and returns the setup fields plus customer account record.
 - Added signed coach session support behind `SMARTCOACH_SESSION_SECRET`.
 - Dashboard now exchanges a valid coach access code for a temporary session token and stops sending the raw code on each dashboard request when a session exists.
 - Mobile stopwatch app now exposes the Account button on the Groups screen and prompts for a coach access code when the selected account requires SMART Trak access.
@@ -440,25 +440,25 @@ Subscription/customer management:
 - SMART Trak API responses now send no-store/security headers so account status, coach sessions, roster data, and training data are not cached by browsers or shared proxies.
 - Coach-facing SMART Trak HTML pages now receive consistent Vercel no-store, noindex, no-referrer, and nosniff headers.
 - Added regression coverage for API no-store headers and Vercel HTML noindex/no-cache headers.
-- Legacy `/api/ghl/*` SMART Trak routes now attach the durable account registry before Pro access checks, so automated subscription/account updates are enforced consistently even when an older page calls a GHL route directly.
+- Legacy `/api/ghl/*` SMART Trak routes now attach customer account storage before Pro access checks, so automated subscription/account updates are enforced consistently even when an older page calls a GHL route directly.
 - Account automation no longer silently generates coach access codes for new Pro accounts. Missing coach codes keep the account setup-incomplete so support must intentionally create and share coach codes.
 - Dashboard, Plan Builder, and Planning Setup now call account status with the explicit account key, making customer account checks more reliable in embedded/custom-link contexts.
 - Coach access prompts now stay open and show the server error when a login attempt fails, including rate-limit and missing coach-code setup messages.
 - Added regression coverage for coach access-code rate limiting after repeated wrong attempts.
-- Added durable account registry support for Vercel KV / Upstash Redis REST.
-- Check System and setup docs now explain the durable registry in plain language as customer account storage, not a coach-facing login feature.
-- `/onboarding.html` now includes a Registry Setup Values panel with copy-ready Vercel variable names for customer account storage.
-- `account-automation` now saves the normalized customer account record to the registry when `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` are configured.
+- Added customer account storage support for Vercel KV / Upstash Redis REST.
+- Check System and setup docs now explain customer account storage in plain language, not as a coach-facing login feature.
+- `/onboarding.html` now includes a Customer Account Storage setup panel with copy-ready Vercel variable names.
+- `account-automation` now saves the normalized customer account record to customer account storage when `SMARTCOACH_REGISTRY_REST_URL` and `SMARTCOACH_REGISTRY_REST_TOKEN` are configured.
 - Added regression coverage proving Vercel KV aliases (`KV_REST_API_URL`, `KV_REST_API_TOKEN`) and Upstash aliases (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) work as customer account storage without duplicate SMARTCOACH registry env vars.
-- When a registry record exists, SMART Trak uses it as the live account source before falling back to Vercel environment variables. Trusted setup can update plan, coach seats, coach access codes, location ID, token, and logo URL without a new Vercel variable for every customer change, while recurring GHL subscription automation should stay limited to billing/access fields.
-- `account-automation` merges later partial updates into the existing registry record, so Stripe/GHL subscription updates can change status, amount, renewal date, and Stripe IDs without wiping CRM connection fields or coach access codes.
+- When a customer account record exists, SMART Trak uses it as the live account source before falling back to Vercel environment variables. Trusted setup can update plan, coach seats, coach access codes, location ID, token, and logo URL without a new Vercel variable for every customer change, while recurring GHL subscription automation should stay limited to billing/access fields.
+- `account-automation` merges later partial updates into the existing customer account record, so Stripe/GHL subscription updates can change status, amount, renewal date, and Stripe IDs without wiping CRM connection fields or coach access codes.
 - Added regression coverage so partial subscription automation updates preserve saved connection fields, coach access codes, parent email coach access, and logo URL.
 - Added signed `account-stripe-webhook` intake for direct Stripe webhooks. It verifies `Stripe-Signature` with `SMARTCOACH_STRIPE_WEBHOOK_SECRET`, then reuses the safe registry merge logic. Stripe webhook requests now only return success after the registry save succeeds, so Stripe can retry if the durable registry is unavailable.
-- Added regression coverage to verify missing or invalid Stripe webhook signatures are rejected before the durable registry is touched.
-- Added protected `account-registry` read endpoint for verifying saved customer registry records.
-- Added regression coverage to verify missing or wrong automation secrets are rejected before the durable registry is touched.
-- Added internal account lookup on `/onboarding.html` so a customer registry record can be checked by account key and automation secret, with subscription fields loaded back into the setup form.
-- Account lookup now shows a last-update card and coach/support friendly timestamps for registry updates and recent automation events.
+- Added regression coverage to verify missing or invalid Stripe webhook signatures are rejected before customer account storage is touched.
+- Added protected `account-registry` read endpoint for verifying saved customer account records.
+- Added regression coverage to verify missing or wrong automation secrets are rejected before customer account storage is touched.
+- Added internal account lookup on `/onboarding.html` so a customer account record can be checked by account key and automation secret, with subscription fields loaded back into the setup form.
+- Account lookup now shows a last-update card and coach/support friendly timestamps for customer account updates.
 - Account lookup now displays hidden private tokens as `Saved` and coach access codes by saved count, so support can verify setup without exposing secret values.
 - `/onboarding.html` now includes **Launch Security Values** with copy-ready Vercel field names, safe value notes, a browser-side generator for separate setup/automation/session secrets, and a copy-all security values action.
 - The Launch Security Values parent-email row now copies only rollout/hold notes rather than the Vercel field name, reducing the chance of enabling unreleased parent email tools during initial rollout.
@@ -551,7 +551,7 @@ Subscription/customer management:
 - The copied GHL workflow payload on `/onboarding.html` now includes subscription/account fields only and leaves SMART Trak private tokens and coach access codes out of the automation example.
 - The onboarding payload card now labels that example as `GHL Subscription Payload` and states that setup secrets and coach codes are intentionally not included.
 - `VERCEL_SETUP.md` recommended GHL automation example now excludes setup-only fields such as `locationId`, keeping the docs aligned with the subscription-only workflow payload.
-- `VERCEL_SETUP.md` now explicitly says coach access codes belong in the manual account setup flow, not the recurring GHL subscription payload.
+- `VERCEL_SETUP.md` now explicitly says coach access codes belong in **Save Account Setup**, not the recurring GHL subscription payload.
 - Live smoke-test and launch validation wording now explicitly refer to the GHL Subscription Payload and require confirming private tokens and coach access codes stay out of that copied workflow payload.
 - `/onboarding.html` now labels the copied automation endpoint as the GHL Subscription Endpoint so support does not confuse recurring billing updates with one-time setup secrets.
 - Updated `VERCEL_SETUP.md` and `README.md` so production setup docs match the current onboarding helper, launch-readiness check, Stripe webhook events, hidden secret behavior, and regression tests.
