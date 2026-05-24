@@ -10,6 +10,8 @@ Use this checklist with one real Pro test account before calling the initial rol
 4. Run **Test Setup First** for that account.
 5. Use **Save Account Setup**.
 6. Use **Lookup Account** and confirm the customer account record is saved.
+7. Add the SMART Trak custom link to the test subaccount.
+8. Open the custom link and confirm it lands on the correct customer dashboard.
 
 ## Account Access
 
@@ -18,6 +20,7 @@ Use this checklist with one real Pro test account before calling the initial rol
 3. Confirm the SMART Trak connection fields are ready.
 4. Confirm coach access codes are configured.
 5. Confirm the current browser or phone can unlock with the assigned coach code.
+6. Confirm the custom link still includes the customer account key after refresh.
 
 ## Coach Pages
 
@@ -52,7 +55,8 @@ Open each page with the customer account key and confirm real customer data load
 2. Confirm account lookup shows a recent account update.
 3. Confirm the copied GHL payload does not include private integration tokens or coach access codes.
 4. Confirm blocked billing statuses block SMART Trak in **Test Access Rules**.
-5. Confirm parent email tools remain hidden/off for initial rollout.
+5. Confirm the account still opens after the GHL Subscription Payload update.
+6. Confirm parent email tools remain hidden/off for initial rollout.
 
 ## Handoff
 
@@ -62,4 +66,3 @@ Open each page with the customer account key and confirm real customer data load
 4. Use **Copy Coach Invite** and send the coach-facing access note.
 5. After the coach receives the invite, confirm first login, first sync, and phone bulk archive.
 6. Use **Copy Activation Record** again to save the final activation record.
-
