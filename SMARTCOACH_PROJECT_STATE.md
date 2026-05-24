@@ -725,6 +725,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 68. Activation handoff wording now says Copy Coach Invite only after validation and the internal activation record are saved, making the coach-facing invite sequence explicit.
 69. Onboarding subscription checklist wording now separates billing-allowed account access from browser/phone coach-code unlock.
 70. Onboarding lookup, live-smoke, access-rule, and activation-record labels now say account access/account allowed instead of plain access/allowed, reducing confusion with device unlock.
+71. Onboarding page subtitle now describes the current launch job: save customer setup, validate readiness, and copy coach-facing links.
 
 ## Known Good Test Flow
 
