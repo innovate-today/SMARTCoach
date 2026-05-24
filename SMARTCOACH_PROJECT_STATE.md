@@ -661,6 +661,7 @@ Help assistant:
 21. Default activation handoff and smoke-checklist copy now names system readiness and saved customer setup before Copy Activation Record.
 22. Account lookup now distinguishes saved, dry-run, and not-found registry states in the panel title.
 23. Athletes parent-email action buttons are hidden in the raw page markup as well as runtime gating, preventing any first-render flash during the initial rollout.
+24. Athletes parent-contact info tips now say contact details are stored with the roster and parent messaging stays off until that feature is intentionally released.
 
 ## Known Good Test Flow
 
