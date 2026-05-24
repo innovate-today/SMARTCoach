@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-05-19
+Last updated: 2026-05-23
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
