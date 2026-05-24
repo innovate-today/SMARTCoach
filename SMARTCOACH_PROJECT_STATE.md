@@ -752,6 +752,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 88. Live launch validation checklist now includes an issue log for blockers, owners, status, and retest notes found during the real Pro test pass.
 89. Live launch validation checklist now includes stop/go rules and a retest rule for any code, setup, GHL workflow, or Vercel environment change.
 90. Live launch validation checklist now starts with prerequisites for latest Vercel deploy, custom domain, customer account storage, launch security values, parent email off, GHL Subscription Payload, and a real Pro test account.
+91. Live launch validation checklist now includes first-week monitoring checks for custom-link return, coach-code unlock, first sync, first race result, subscription updates, blocked billing, parent email off, and support issue logging.
 
 ## Known Good Test Flow
 

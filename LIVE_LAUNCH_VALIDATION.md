@@ -97,6 +97,19 @@ Do not mark the initial rollout ready if any required checklist item failed, any
 - Final activation record saved: Yes / No
 - Normal support monitoring started: Yes / No
 
+## First-Week Monitoring
+
+After the final activation record is saved, monitor the first coach account for these items during the first week:
+
+- Coach can return to the custom link without setup errors.
+- Coach can unlock SMART Trak with the assigned coach code on a new browser or phone if prompted.
+- First real stopwatch sync appears on Dashboard and Training Calendar.
+- First manually logged race result appears on Dashboard and Meet History.
+- GHL Subscription Payload updates do not overwrite SMART Trak connection fields or coach codes.
+- Blocked billing status still blocks SMART Trak access when tested.
+- Parent email tools remain hidden/off.
+- Any coach support issue is added to the Issue Log with owner, status, and retest notes.
+
 ## Retest Rule
 
 If any issue requires a code, setup, GHL workflow, or Vercel environment change, rerun the affected section and then rerun these checks before changing the result to Pass:
