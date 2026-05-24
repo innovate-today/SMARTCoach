@@ -765,6 +765,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 101. Onboarding now opens `/live-launch-validation.html` with the active account key, and the validation page saves checklist progress separately per account key.
 102. Live validation page now sends **Open Setup** back to `/onboarding.html` with the same account key, keeping support on the same customer record while moving between setup and validation.
 103. Live validation page now displays the active account scope above the validation record so support can confirm the checklist belongs to the customer being tested.
+104. `VERCEL_SETUP.md` now documents the account-scoped `/live-launch-validation.html?account=<account-key>` flow, including Copy Summary and returning to onboarding for the same customer.
 
 ## Known Good Test Flow
 
