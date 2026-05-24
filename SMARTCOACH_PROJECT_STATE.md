@@ -666,6 +666,7 @@ Help assistant:
 26. Planning Setup and Plan Builder now also have direct coach access-code prompts, keeping Pro setup pages consistent with the other SMART Trak pages.
 27. Planning Setup and Plan Builder access prompts now submit with the Enter key, matching the rest of the coach pages.
 28. Planning Setup validation now says plan end date instead of peak date, keeping the page copy aligned with the current field label.
+29. Stopwatch settings fallback files now label the editable name as Group Name instead of Workout Name, matching the current app settings screen.
 
 ## Known Good Test Flow
 
