@@ -763,6 +763,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 99. Live launch validation page now has Copy Summary, giving support a paste-ready note with validation record fields, checklist progress, and issue-log entries.
 100. README and current project status now point operators to `/live-launch-validation.html` as the primary support-facing live Pro validation checklist, with `LIVE_LAUNCH_VALIDATION.md` kept as the source/reference.
 101. Onboarding now opens `/live-launch-validation.html` with the active account key, and the validation page saves checklist progress separately per account key.
+102. Live validation page now sends **Open Setup** back to `/onboarding.html` with the same account key, keeping support on the same customer record while moving between setup and validation.
 
 ## Known Good Test Flow
 

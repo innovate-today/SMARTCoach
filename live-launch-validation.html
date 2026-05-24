@@ -62,7 +62,7 @@ textarea{min-height:90px;resize:vertical}
       </div>
     </div>
     <div class="actions">
-      <a class="linkbtn" href="/onboarding.html">Open Setup</a>
+      <a id="setupLink" class="linkbtn" href="/onboarding.html">Open Setup</a>
       <a class="linkbtn secondary" href="/LIVE_LAUNCH_VALIDATION.md">Markdown Checklist</a>
       <button type="button" class="secondary" onclick="copyValidationSummary()">Copy Summary</button>
       <button type="button" class="secondary" onclick="window.print()">Print</button>
@@ -246,6 +246,13 @@ function bindSavedFields(){
     el.addEventListener('change',function(){localStorage.setItem(key,el.checked?'true':'false')});
   });
 }
+function syncSetupLink(){
+  var link=document.getElementById('setupLink');
+  if(!link)return;
+  link.href=launchAccountKey&&launchAccountKey!=='default'
+    ?'/onboarding.html?account='+encodeURIComponent(launchAccountKey)
+    :'/onboarding.html';
+}
 function resetChecklist(){
   if(!window.confirm('Reset the saved live launch validation checklist on this browser?'))return;
   Object.keys(localStorage).forEach(function(key){
@@ -332,6 +339,7 @@ function setCopyStatus(message,good){
   el.textContent=message;
   el.className='status '+(good?'good':'bad');
 }
+syncSetupLink();
 bindSavedFields();
 </script>
 </body>
