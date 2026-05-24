@@ -1436,7 +1436,7 @@ function renderReadiness(data){
     detail.textContent='The SMART Trak connection is configured. Coach access is limited by the configured coach codes.';
   }else{
     title.textContent='SMART Trak setup needed';
-    detail.textContent='Add the private integration token, location ID, coach seats, and coach access codes in Vercel Production, then redeploy and check again.';
+    detail.textContent='Add the location ID, private integration token, coach seats, and coach access codes, then use Save Account Setup and check again.';
   }
 }
 function checkSetupStatus(){
@@ -2210,7 +2210,7 @@ function renderChecklist(data){
   var signals=setupSignals(data);
   var rows=[
     {
-      title:'Add setup fields in Vercel Production',
+      title:'Save customer setup fields',
       body:signals.unsavedSetupChanges
         ?'Setup fields changed after the last saved handoff. Use Save Account Setup before activation or coach invite copy.'
         :signals.registrySaved

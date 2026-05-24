@@ -720,6 +720,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 63. Onboarding account-storage copy/status messages now say account storage/account changes instead of registry URL/token/prefix or registry changes.
 64. The Launch Security Values parent-email row now displays as a hold note rather than a Vercel setup field, and the everyday onboarding UI no longer shows the parent-email feature flag name during initial rollout.
 65. Parent-email launch hold copy now uses plain support language: keep parent email tools off for initial rollout.
+66. Onboarding setup-needed and checklist wording now points support to Save Account Setup for normal customer setup instead of implying every customer change needs Vercel variables and a redeploy.
 
 ## Known Good Test Flow
 
