@@ -1187,7 +1187,7 @@ function saveRegistryUpdate(){
     renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
     rememberCurrentSetupFieldValues();
     if(registry.saved){
-      setStatus(result.data.accessReady?'Registry update saved. SMART Trak will use this account record on the next request.':'Registry update saved, but setup is not ready yet: '+setupMissingText(result.data),result.data.accessReady?'good':'bad');
+      setStatus(savedRegistryStatusMessage(result.data),result.data.accessReady?'good':'bad');
     }else{
       setStatus(registry.reason||'Registry update was not saved because the durable registry is not configured.','bad');
     }
@@ -1239,7 +1239,7 @@ function dryRunRegistryUpdate(){
     if(result.data.accessReady){
       setStatus('Dry run passed. This account would be ready after saving. Nothing was saved.','good');
     }else{
-      setStatus(result.data.subscriptionBlockedReason||('Dry run complete. Fix before saving: '+setupMissingText(result.data)),'bad');
+      setStatus(result.data.subscriptionBlockedReason?('Dry run complete. Subscription blocks access: '+result.data.subscriptionBlockedReason):('Dry run complete. Fix before saving: '+setupMissingText(result.data)),'bad');
     }
   }).catch(function(error){
     setStatus(error.message||'Could not test setup.','bad');
@@ -1350,6 +1350,12 @@ function setupMissingText(data){
   }
   return missing.length?missing.join(', '):'account setup is incomplete';
 }
+function savedRegistryStatusMessage(data){
+  data=data||{};
+  if(data.accessReady)return 'Registry update saved. SMART Trak will use this account record on the next request.';
+  if(data.subscriptionBlockedReason)return 'Registry update saved. Subscription blocks access: '+data.subscriptionBlockedReason;
+  return 'Registry update saved, but setup is not ready yet: '+setupMissingText(data);
+}
 function renderSetup(data){
   currentSetup=data;
   loadLiveSmokeChecklist();
@@ -1409,7 +1415,7 @@ function renderReadiness(data){
   if(data.unsavedSetupChanges){
     readyBar.className='readybar warn';
     title.textContent='Unsaved setup changes';
-    detail.textContent='Use Save Registry Update after the latest setup changes, then check customer access before activation.';
+    detail.textContent='Use Save Registry Update after the latest setup changes, then check customer access before sending the coach invite.';
     return;
   }
   if(plan==='essential'){

@@ -705,6 +705,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 50. Copy Activation Record now labels the copied activation record as an internal support note only, so the coach-facing invite stays separate from setup/support details.
 51. Copied post-launch follow-up text now says when the coach invite was copied and when the account is ready for the final activation record.
 52. Test Access Rules now checks every blocked launch subscription state shown in onboarding: past due, paused, unpaid, canceled, incomplete, and incomplete expired.
+53. Registry-save and dry-run status messages now distinguish subscription-blocked access from incomplete setup, so support sees billing/status blockers separately from missing token/location/coach-code setup.
 
 ## Known Good Test Flow
 
