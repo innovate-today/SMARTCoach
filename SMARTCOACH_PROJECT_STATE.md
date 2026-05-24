@@ -386,11 +386,11 @@ Implemented:
 - Edit/delete buttons.
 - Gender field added to Records custom object.
 - Table supports expanded history.
+- Saving a current record checks existing records for the same board and keeps the faster existing record current when appropriate.
 
 Known issue parked:
 
-- Refresh may only keep one historical record under the current school record. This is acceptable for now but needs a real fix later.
-- Need ensure faster time is always current for race events.
+- Refresh may only keep one historical record under the current school record. This is acceptable for now but needs a real fix later if record-board history becomes a launch priority.
 - Date display off-by-one was fixed in `records.html`.
 
 ## Branding
@@ -677,6 +677,7 @@ Help assistant:
 34. Archived training plans and archived meets are documented as filtered out of phone app selectors.
 35. Meet season note now reflects the current month mapping and says saved meet seasons are trusted when already stored.
 36. Meet History pending notes were narrowed: event/gender ranking and first-ever PB/SB behavior are implemented; meet-result corrections update linked Records entries, while full Athlete Best recalculation after corrections remains parked.
+37. Records page parked notes were narrowed: faster-current checks exist, while deeper historical record retention after refresh remains parked.
 
 ## Known Good Test Flow
 
