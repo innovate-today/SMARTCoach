@@ -32,7 +32,7 @@ Current launch status:
 - Code/security/setup cleanup is largely complete for the initial rollout path.
 - Remaining launch readiness is primarily live validation with a real Pro test account in Vercel/GHL.
 - Do not implement parked future ideas during this pass unless the user explicitly pulls one forward.
-- Use `LIVE_LAUNCH_VALIDATION.md` and the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
+- Use `/live-launch-validation.html`, `LIVE_LAUNCH_VALIDATION.md`, and the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
 
 Typical deploy commands:
 
@@ -761,6 +761,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 97. Live launch validation page now saves checklist progress, validation record fields, and issue-log fields locally in the browser, with Print and Reset controls for the live pass.
 98. Live launch validation page now includes first-week monitoring and retest-rule sections, matching the markdown checklist source on the support-facing page.
 99. Live launch validation page now has Copy Summary, giving support a paste-ready note with validation record fields, checklist progress, and issue-log entries.
+100. README and current project status now point operators to `/live-launch-validation.html` as the primary support-facing live Pro validation checklist, with `LIVE_LAUNCH_VALIDATION.md` kept as the source/reference.
 
 ## Known Good Test Flow
 
