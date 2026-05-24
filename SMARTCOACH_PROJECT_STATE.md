@@ -730,6 +730,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 73. `VERCEL_SETUP.md` now uses **Save Account Setup** instead of "manual account setup flow" for coach codes, private tokens, and protected setup values.
 74. Onboarding system readiness and copied system status now label saved account updates as **Save Account Setup** instead of manual account updates.
 75. `VERCEL_SETUP.md` now uses customer account record / **Save Account Setup** wording in remaining active setup and optional Stripe webhook sections.
+76. Onboarding now labels the GHL/Stripe payload panel as **Subscription Update Payloads** and **Subscription Update Endpoints**, making its purpose clearer while preserving copy-ready endpoint details.
 
 ## Known Good Test Flow
 
