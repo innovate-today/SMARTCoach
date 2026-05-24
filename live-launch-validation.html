@@ -165,6 +165,36 @@ textarea{min-height:90px;resize:vertical}
   </section>
 
   <section class="panel">
+    <div class="panelhead"><h2>First-Week Monitoring</h2><span>After the final activation record</span></div>
+    <div class="panelbody checklist">
+      <label class="checkrow"><input type="checkbox"><span><b>Coach can return to the custom link</b><span>The SMART Trak custom link opens without setup errors after the first launch.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Coach can unlock on a new browser or phone</b><span>The assigned coach code works if SMART Trak asks for it again on another device.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>First real stopwatch sync appears</b><span>The first real app sync shows on Dashboard and Training Calendar.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>First manually logged race result appears</b><span>The first SMART Trak race result shows on Dashboard and Meet History.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Subscription updates preserve setup</b><span>GHL Subscription Payload updates do not overwrite SMART Trak connection fields or coach codes.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Blocked billing still blocks access</b><span>Blocked billing status continues to deny SMART Trak access when tested.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Parent email remains off</b><span>Parent email tools stay hidden/unreleased during the first week.</span></span></label>
+      <label class="checkrow"><input type="checkbox"><span><b>Support issues are logged</b><span>Any coach support issue is added to the Issue Log with owner, status, and retest notes.</span></span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Retest Rule</h2><span>Use after any fix or setup change</span></div>
+    <div class="panelbody">
+      <div class="note"><b>Retest before changing a blocker to pass.</b>If any issue requires a code, setup, GHL workflow, or Vercel environment change, rerun the affected section and then rerun these checks.</div>
+      <div class="checklist">
+        <label class="checkrow"><input type="checkbox"><span><b>Check System rerun</b><span>Launch system readiness still says Ready for initial rollout.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>Test Setup First rerun</b><span>The customer setup preview still passes.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>Save Account Setup rerun</b><span>The saved customer account record reflects the corrected setup.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>Lookup Account rerun</b><span>The account lookup confirms the saved setup and recent account update.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>Check Customer Access rerun</b><span>Account access, connection, coach-code, and subscription checks still pass.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>Original failed workflow rerun</b><span>The workflow that failed now passes with the corrected setup.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>Activation record copied after retest</b><span>Save a new activation record after the retest passes.</span></span></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
     <div class="panelhead"><h2>Issue Log</h2><span>Track blockers and retests</span></div>
     <div class="panelbody">
       <table class="issue-table">
