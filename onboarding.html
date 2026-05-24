@@ -985,7 +985,7 @@ function renderLookupResult(data){
     {label:'Last update',value:shortDateTime(record.updatedAt)},
     {label:'Account record',value:registryLabel},
     {label:'Setup',value:data.setupReady?'Ready':'Needs setup'},
-    {label:'Access',value:data.accessReady?'Allowed':(data.subscriptionAccessAllowed===false?'Blocked':'Not ready')}
+    {label:'Account Access',value:data.accessReady?'Account allowed':(data.subscriptionAccessAllowed===false?'Blocked':'Not ready')}
   ];
   document.getElementById('lookupResult').innerHTML=
     '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> '+esc(registryTitle)+'</span></div>'+useFormButton+'</div>'+
@@ -998,7 +998,7 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Subscription</b><span>'+esc(sub.stripeSubscriptionId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
-    '<div class="registryrow"><b>Access Status</b><span>'+esc(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready'))+'</span></div>'+
+    '<div class="registryrow"><b>Account Access</b><span>'+esc(data.accessReady?'Account allowed':(data.subscriptionBlockedReason||'Not ready'))+'</span></div>'+
     '<div class="registryrow"><b>Next Action</b><span>'+esc(accountNextAction(data,record))+'</span></div>'+
     '<div class="registryrow"><b>Last Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
     '<div class="registryrow"><b>Last Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
@@ -1535,7 +1535,7 @@ function renderLiveSmokeAccess(data,ok){
   var rows=[
     {label:'Plan',value:planLabel(data.productPlan)},
     {label:'Setup',value:setupReady?'Ready':'Needs setup'},
-    {label:'Access',value:accessAllowed?'Allowed':(data.subscriptionBlockedReason?'Blocked':'Not ready')},
+    {label:'Account Access',value:accessAllowed?'Account allowed':(data.subscriptionBlockedReason?'Blocked':'Not ready')},
     {label:'This Device',value:data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Needs coach code':'Ready'},
     {label:'Subscription',value:subscriptionLabel(data)},
     {label:'Account Record',value:registry.found?'Saved':registry.configured?'Not found':'Not connected'},
@@ -1654,7 +1654,7 @@ function renderAccessRuleResults(results){
       label:result.status.replace('_',' '),
       value:passed?'Pass':'Check',
       detail:shouldAllow?'Should allow SMART Trak access.':'Should block SMART Trak access.',
-      message:data.subscriptionBlockedReason||'Access allowed'
+      message:data.subscriptionBlockedReason||'Billing allows account access'
     };
   });
   var allPassed=rows.every(function(row){return row.value==='Pass';});
@@ -2406,7 +2406,7 @@ function activationRecordText(data,options){
     'Last account update: '+fullDateTime(updatedAt),
     'System readiness: '+(systemReady?'Ready for initial rollout':systemBlockers.length?systemBlockers.join('; '):'Not checked'),
     'SMART Trak setup: '+(data.setupReady||data.configured?'Ready':'Needs setup'),
-    'Access: '+(data.accessReady?'Allowed':(data.subscriptionBlockedReason||'Not ready')),
+    'Account access: '+(data.accessReady?'Account allowed':(data.subscriptionBlockedReason||'Not ready')),
     'Device unlock: '+(data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Coach code needed':'Ready'),
     'Coach codes: '+coachCodesSummary(record),
     'Future parent email coaches: '+parentEmailCoachAccessLabel(record.parentEmailCoachAccess||data.parentEmailCoachAccess),
