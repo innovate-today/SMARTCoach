@@ -509,13 +509,13 @@ Subscription/customer management:
 - `Copy Activation Record` now also includes the live smoke-test sign-off fields, so the final customer support note records who validated launch readiness and when.
 - `/onboarding.html` next-action guidance now keeps pointing support to the live smoke test or launch sign-off until both are complete, instead of saying the account is ready too early.
 - The `/onboarding.html` live smoke-test checklist now persists in the browser per account key and includes a reset action, so setup progress survives refreshes without carrying over to a different customer.
-- `/onboarding.html` now warns and blocks setup saves, dry runs, live access checks, and access-rule tests when the setup account key and lookup account key point to different customers.
+- `/onboarding.html` now warns and blocks setup saves, setup previews, live access checks, and access-rule tests when the setup account key and lookup account key point to different customers.
 - Added an **Activation Runbook** to `/onboarding.html` so each new customer setup has the same plain-language order: Check System, Test Setup First, Save Account Setup, add the single SMART Trak custom link, verify coach access, and complete the live smoke test.
 - The Activation Runbook now includes a visible handoff status strip that follows smoke-test completion, launch sign-off, activation-record copy, coach-invite copy, and post-launch follow-up for the current account key.
 - The Activation Runbook now ends with stamping launch sign-off and copying the activation record, so support has an internal handoff step before the coach invite is sent.
 - The Activation Runbook now also includes a final **Send coach invite** step using Copy Coach Invite after validation and internal handoff are complete.
 - The Activation Runbook now includes a post-launch **Confirm phone follow-up** step so the written activation flow matches the follow-up checklist.
-- Added **Copy Activation Record** to `/onboarding.html` so support can paste a customer setup summary with account key, plan, subscription, Stripe IDs, recent automation update, setup/access state, smoke-test progress, next action, customer link, status link, and coach page validation links.
+- Added **Copy Activation Record** to `/onboarding.html` so support can paste a customer setup summary with account key, plan, subscription, Stripe IDs, recent account update, setup/access state, smoke-test progress, next action, customer link, status link, and coach page validation links.
 - The live smoke-test checklist now describes Copy Activation Record as the support note that includes setup state, next action, customer links, coach invite status, and post-launch follow-up progress.
 - Copy Activation Record now requires the live smoke validation checks to be complete and launch sign-off to be stamped; support should use Copy Smoke Status for partial launch notes.
 - Copy Activation Record now treats the activation-record checklist row as the outcome of the copy action, avoiding a checklist deadlock and marking that row complete after a successful copy.
@@ -543,9 +543,9 @@ Subscription/customer management:
 - Essential Copy Coach Invite now also tells stopwatch-only coaches where to enter the account key on the phone app.
 - Copy Coach Invite no longer includes raw coach access-code values in the copied Pro invite; it tells the recipient to use their assigned code so one coach-facing note does not expose saved access codes.
 - The `/onboarding.html` Activation Runbook now names the full launch blocker set: automation secret, setup code, durable registry, Stripe webhook, coach session secret, coach access enforcement, and parent email rollout gate.
-- Added `tests/automation-api.test.js` to verify automation dry runs do not save registry records and duplicate Stripe webhook events do not rewrite already-handled account updates.
+- Added `tests/automation-api.test.js` to verify setup previews do not save customer account records and duplicate Stripe webhook events do not rewrite already-handled account updates.
 - Automation, Stripe webhook, and protected account lookup responses now hide private integration token and coach access-code values in returned account records, while the internal registry lookup remains available for support verification.
-- Automation and dry-run setup responses now also redact private integration token and coach access-code values from generated environment rows, keeping setup field names visible without echoing saved secrets back in API responses.
+- Automation and setup preview responses now also redact private integration token and coach access-code values from generated environment rows, keeping setup field names visible without echoing saved secrets back in API responses.
 - Onboarding setup rows now display redacted environment values as `Saved value hidden` and copy a value note instead of copying `__hidden__`, reducing the chance support pastes a redaction marker into Vercel.
 - `VERCEL_SETUP.md` now documents that `Saved value hidden` and `__hidden__` are redaction markers, not values to paste, unless support is intentionally rotating a secret.
 - The copied GHL workflow payload on `/onboarding.html` now includes subscription/account fields only and leaves SMART Trak private tokens and coach access codes out of the automation example.
@@ -736,6 +736,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 79. Onboarding account lookup now uses **Load Into Form**, **Customer setup preview**, and clearer last-update labels so support can understand saved or previewed account details without internal wording.
 80. Onboarding system and setup preview wording now uses **Launch System**, **Preview**, and recent account update language instead of dry-run/automation-history wording in the support-facing flow.
 81. Live smoke-test account cards now say **Account Source** instead of **Record Source**, so support can tell where the customer account was loaded from.
+82. Live smoke-test checklist now says **Customer setup preview passes** instead of dry-run wording.
 
 ## Known Good Test Flow
 
