@@ -447,7 +447,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div id="liveSmokeSummary" class="readybar warn">
         <div><b>Live smoke test not complete</b><span>Check each required item as it passes. All required checks should be complete before sending the coach invite.</span></div>
         <div class="smokeactions">
-          <a class="linkbtn secondary" href="/live-launch-validation.html" target="_blank" rel="noopener">Open Live Validation Checklist</a>
+          <a id="validationLink" class="linkbtn secondary" href="/live-launch-validation.html" target="_blank" rel="noopener">Open Live Validation Checklist</a>
           <button type="button" class="secondary" onclick="copyLiveSmokeStatus()">Copy Smoke Status</button>
           <button type="button" class="secondary" onclick="resetLiveSmokeChecklist()">Reset Checklist</button>
         </div>
@@ -1400,6 +1400,7 @@ function syncCustomerLinks(data){
   setLink('accountLink',accountUrl);
   setLink('customLink',customerLink);
   setLink('statusLink','/api/smart-trak/account-status?account='+encodeURIComponent(account));
+  setLink('validationLink','/live-launch-validation.html?account='+encodeURIComponent(account));
   setCustomLinkText(customerLink);
 }
 function renderCustomerLinkDetails(data){

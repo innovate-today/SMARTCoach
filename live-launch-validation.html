@@ -213,14 +213,31 @@ textarea{min-height:90px;resize:vertical}
   </section>
 </main>
 <script>
-var storagePrefix='smartcoach-live-launch-validation:';
+var baseStoragePrefix='smartcoach-live-launch-validation:';
+var launchAccountKey=initialAccountKey();
+var storagePrefix=baseStoragePrefix+launchAccountKey+':';
+function cleanAccountKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'');
+}
+function initialAccountKey(){
+  var params=new URLSearchParams(window.location.search);
+  return cleanAccountKey(params.get('account')||params.get('accountKey')||localStorage.getItem(baseStoragePrefix+'last-account')||'default')||'default';
+}
 function storageKey(name){return storagePrefix+name}
 function bindSavedFields(){
   document.querySelectorAll('[data-save]').forEach(function(el){
+    var name=el.getAttribute('data-save');
     var saved=localStorage.getItem(storageKey(el.getAttribute('data-save')));
-    if(saved!==null)el.value=saved;
+    if(name==='record-account-key'&&launchAccountKey!=='default'){
+      el.value=launchAccountKey;
+      localStorage.setItem(storageKey(name),launchAccountKey);
+      localStorage.setItem(baseStoragePrefix+'last-account',launchAccountKey);
+    }else if(saved!==null)el.value=saved;
     el.addEventListener('input',function(){
-      localStorage.setItem(storageKey(el.getAttribute('data-save')),el.value);
+      localStorage.setItem(storageKey(name),el.value);
+      if(name==='record-account-key'){
+        localStorage.setItem(baseStoragePrefix+'last-account',cleanAccountKey(el.value)||'default');
+      }
     });
   });
   document.querySelectorAll('.checkrow input[type="checkbox"]').forEach(function(el,index){
@@ -236,6 +253,13 @@ function resetChecklist(){
   });
   document.querySelectorAll('[data-save]').forEach(function(el){el.value=''});
   document.querySelectorAll('.checkrow input[type="checkbox"]').forEach(function(el){el.checked=false});
+  if(launchAccountKey!=='default'){
+    var accountField=document.querySelector('[data-save="record-account-key"]');
+    if(accountField){
+      accountField.value=launchAccountKey;
+      localStorage.setItem(storageKey('record-account-key'),launchAccountKey);
+    }
+  }
 }
 function fieldValue(name){
   var el=document.querySelector('[data-save="'+name+'"]');
