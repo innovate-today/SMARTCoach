@@ -667,6 +667,7 @@ Help assistant:
 27. Planning Setup and Plan Builder access prompts now submit with the Enter key, matching the rest of the coach pages.
 28. Planning Setup validation now says plan end date instead of peak date, keeping the page copy aligned with the current field label.
 29. Stopwatch settings fallback files now label the editable name as Group Name instead of Workout Name, matching the current app settings screen.
+30. Stopwatch settings fallback files now also use the current Splits on Detail Line and Beep/Vibrate on All Button Taps labels.
 
 ## Known Good Test Flow
 
