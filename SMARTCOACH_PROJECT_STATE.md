@@ -675,28 +675,20 @@ Help assistant:
 
 ## Known Good Test Flow
 
-Use this as a regression test:
+Use this as the current launch regression test:
 
-1. Create/activate athletes in SMART Trak.
-2. Confirm app athlete dropdown shows only active athletes.
-3. Create or import a training plan.
-4. Assign plan to a group or selected athletes.
-5. Open app and choose plan/group.
-6. Select a workout from the next 5 days.
-7. Time a rep/rest workout.
-8. Sync to SMART Trak.
-9. Confirm:
-   - contact note created
-   - performance record created
-   - plan day updates if linked
-   - dashboard completed workout appears
-   - reps/rests display clearly
-   - target review compares reps, not total time
-10. Create a meet result and confirm:
-   - meet result created
-   - athlete best updates
-   - first result for an event becomes PB/SB
-   - meet history shows correct event/gender comparison.
+1. In `onboarding.html`, run Check System and confirm it says Ready for initial rollout.
+2. Check Customer Access for a live Pro test account and confirm subscription access, registry source, SMART Trak connection, and coach access-code readiness.
+3. Open Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator with the customer account key.
+4. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
+5. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
+6. Create or import a plan, build a training group, assign the plan to a group or selected athletes, and confirm the Training Calendar shows the plan days.
+7. Open the phone app with the customer account key, choose group/plan, select an upcoming workout, time a rep/rest workout, and sync.
+8. Confirm Dashboard volume, completed workout details, splits, athlete latest training, and Training Calendar status update after sync.
+9. Log one standalone race result and confirm Dashboard, Meet History, and athlete bests update.
+10. Load My Season Best in XC Simulator, load a saved field, and score the meet.
+11. Confirm parent email controls remain hidden/off for initial rollout.
+12. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync follow-up.
 
 ## Notes For Future Codex Sessions
 
