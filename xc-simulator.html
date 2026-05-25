@@ -345,7 +345,7 @@ function apiHeaders(){
 function defaultBrandLogo(){return '/assets/smart-logo.png';}
 function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
 function ensureAccountAccess(){
-  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':accountKey()}}).then(function(res){
+  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     applyBrandLogo(result.data&&result.data.logoUrl);
@@ -353,7 +353,7 @@ function ensureAccountAccess(){
       showAccessBlocked(result.data);
       return false;
     }
-    if(result.data&&result.data.accessCodeRequired){
+    if(result.data&&result.data.accessCodeRequired&&!result.data.coachAccessUnlocked&&!result.data.deviceAccessReady){
       showAccess(result.data);
       return false;
     }
