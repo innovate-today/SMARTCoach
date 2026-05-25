@@ -648,6 +648,14 @@ Help assistant:
 
 - Future idea: SMARTCoach Pro help button for instructions, subscription questions, and how-to guidance.
 
+Athlete training calendar:
+
+- Future idea: athlete-facing training calendar.
+- Athletes can view assigned training, then mark each workout as completed, adjusted, or skipped.
+- Athlete actions should update the coach-facing SMART Trak Training Calendar.
+- Must be password protected; the coach controls the password and can turn athlete calendar access active/inactive.
+- Coach should control which athletes/groups can see the calendar.
+
 ## Remaining Launch Parked Items
 
 These are intentionally not blocking the current launch path unless the user re-prioritizes them. This section is a planning list only; do not implement these ideas during launch cleanup unless the user explicitly asks for that item next.
@@ -659,6 +667,7 @@ These are intentionally not blocking the current launch path unless the user re-
 - Plan Builder full-plan review/spreadsheet-style adjustment remains future work.
 - Track Simulator remains future work: similar to XC Simulator, with saved competitor fields/entries and SMART Trak season bests where possible.
 - SMARTCoach Pro help button/assistant remains future work for instructions, subscription questions, and how-to guidance.
+- Athlete-facing training calendar remains future work: password-protected athlete access where athletes can complete, adjust, or skip assigned workouts and those actions update the SMART Trak Training Calendar.
 
 ## Recent Launch Cleanup Log
 
