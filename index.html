@@ -805,18 +805,46 @@ function shortDateTime(ts){
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 }
 function now(){return Date.now();}
+var _feedbackAudio=null;
+function feedbackAudioContext(){
+  if(_feedbackAudio)return _feedbackAudio;
+  var Ctx=window.AudioContext||window.webkitAudioContext;
+  if(!Ctx)return null;
+  _feedbackAudio=new Ctx();
+  return _feedbackAudio;
+}
+function prepareFeedbackAudio(){
+  try{
+    var c=feedbackAudioContext();
+    if(c&&c.state==='suspended')c.resume();
+  }catch(e){}
+}
+function playFeedbackTone(c){
+  if(!c)return;
+  var o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);
+  o.type='square';
+  o.frequency.setValueAtTime(880,c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(1320,c.currentTime+0.08);
+  g.gain.setValueAtTime(0.0001,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.22,c.currentTime+0.01);
+  g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.16);
+  o.start(c.currentTime);
+  o.stop(c.currentTime+0.17);
+}
 function beep(){
   try{
-    var c=new(window.AudioContext||window.webkitAudioContext)();
-    var o=c.createOscillator(),g=c.createGain();
-    o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.value=1047;
-    g.gain.setValueAtTime(0.5,c.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15);
-    o.start();o.stop(c.currentTime+0.15);
+    var c=feedbackAudioContext();
+    if(!c)return;
+    if(c.state==='suspended'){
+      c.resume().then(function(){playFeedbackTone(c);}).catch(function(){playFeedbackTone(c);});
+    }else{
+      playFeedbackTone(c);
+    }
   }catch(e){}
 }
 function buzz(){
-  try{if(navigator.vibrate)navigator.vibrate(25);}catch(e){}
+  try{if(navigator.vibrate)navigator.vibrate([35]);}catch(e){}
 }
 function tapFeedback(){
   if(!CL||!CL.cfg||!CL.cfg.beep)return;
@@ -2109,6 +2137,7 @@ function masterToggle(){
 function masterReset(){
   if(!CL)return;
   if(!confirm('Reset all timers and saved run history for this group?'))return;
+  tapFeedback();
   CL.runners.forEach(function(r){
     r.on=false;r.el=0;r.t0=0;r.le=0;r.lt=0;r.laps=[];r.saved=[];r.ts=null;
   });
@@ -2931,7 +2960,7 @@ var _info={
   showPlan:{t:'Plan on Detail Line',b:'Shows or hides the assigned plan name on each runner row. Hidden plans still stay assigned and sync with the workout.'},
   showTarget:{t:'Target on Detail Line',b:'Shows or hides the target time range on each runner row. Targets are still calculated in the background.'},
   showSync:{t:'Sync Status on Detail Line',b:'Shows or hides ready-to-sync and already-synced status on each runner row. Saved workouts can still be synced from the group Sync action.'},
-  beep:{t:'Beep/Vibrate on All Button Taps',b:'Adds beep and vibration feedback for start, stop, split, End Rep, and End Rest taps during the workout.'}
+  beep:{t:'Beep/Vibrate on All Button Taps',b:'Adds phone feedback for Start, Stop, Lap, End Rep, End Rest, and Reset taps. If a browser blocks sound, vibration still runs where supported.'}
 };
 function showInfo(k){
   var d=_info[k];if(!d)return;
@@ -3958,6 +3987,7 @@ applyPlanMode();applyAdminTools();load();rl();
 syncProductPlanFromAccount().then(function(){rl();loadProData();});
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
+  prepareFeedbackAudio();
   var t=e.target;
   if(t.tagName==='BUTTON'||t.classList.contains('blnk')||t.classList.contains('ibtn')||t.classList.contains('tog')){
     e.preventDefault();t.click();
