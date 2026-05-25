@@ -998,7 +998,7 @@ function renderLookupResult(data){
     '<div class="registrycards">'+cards.map(function(card){return '<div class="card"><b>'+esc(card.value||'--')+'</b><span>'+esc(card.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
     '<div class="registryrow"><b>Token</b><span>'+esc(secretStatus(record.token))+'</span></div>'+
-    '<div class="registryrow"><b>GHL Account Key Value</b><span>'+esc(ghlCustomValueSyncMessage(data.ghlCustomValueSync)||'Synced during Save Account Setup when Location ID and token are entered.')+'</span></div>'+
+    '<div class="registryrow"><b>GHL account_key</b><span>'+esc(ghlCustomValueLookupLabel(data.ghlCustomValueSync,record))+'</span></div>'+
     '<div class="registryrow"><b>Coach Codes</b><span>'+esc(coachCodesSummary(record))+'</span></div>'+
     '<div class="registryrow"><b>Future Parent Email Coaches</b><span>'+esc(parentEmailCoachAccessLabel(record.parentEmailCoachAccess))+'</span></div>'+
     '<div class="registryrow"><b>Logo URL</b><span>'+esc(record.logoUrl?maskValue(record.logoUrl):'--')+'</span></div>'+
@@ -1379,6 +1379,14 @@ function ghlCustomValueSyncMessage(sync){
   if(!sync.attempted)return '';
   if(sync.success)return 'GHL custom value account_key was '+(sync.action||'synced')+'.';
   return 'GHL custom value account_key was not synced: '+(sync.error||sync.reason||'check the customer Location ID and Private Integration Token.');
+}
+function ghlCustomValueLookupLabel(sync,record){
+  sync=sync||{};
+  record=record||{};
+  if(sync.success)return 'Synced on last save to '+(sync.value||record.accountKey||'this account key')+'.';
+  if(sync.attempted)return 'Not synced on last save: '+(sync.error||sync.reason||'check Location ID and Private Integration Token.');
+  if(record.locationId&&record.token)return 'Ready to sync on the next Save Account Setup.';
+  return 'Needs Location ID and Private Integration Token before it can sync.';
 }
 function renderSetup(data){
   currentSetup=data;
