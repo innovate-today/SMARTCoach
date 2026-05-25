@@ -24,6 +24,8 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .top > .actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 .top .action-row,.top .modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.setup-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.setup-label{font-size:13px;font-weight:900;color:#172033;margin-right:4px}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
@@ -205,14 +207,15 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <div class="actions">
       <div class="action-row">
         <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
-        <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
-        <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Athlete Setup</a>
-        <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
-      </div>
-      <div class="modal-action-row">
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="approveDraftsBtn" class="modal-action" type="button" hidden>Approve Drafts</button>
         <button id="scheduleApprovedBtn" class="modal-action" type="button" hidden>Schedule Approved</button>
+      </div>
+      <div class="setup-row" aria-label="Training setup links">
+        <span class="setup-label">Training Setup:</span>
+        <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Athlete Setup</a>
+        <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
+        <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
       </div>
     </div>
@@ -378,7 +381,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     </div>
     <div class="modalbody">
       <div id="addDayChooser" class="activitychooser" aria-label="Choose calendar activity">
-        <button class="activitychoice easy" data-add-activity-mode="easy" type="button"><b>Easy Run</b><small>Distance, optional notes, recovery work.</small></button>
+        <button class="activitychoice easy" data-add-activity-mode="easy" type="button"><b>Easy Run</b><small>Distance, optional notes, optional strides.</small></button>
         <button class="activitychoice quality" data-add-activity-mode="quality" type="button"><b>Quality Session</b><small>Warmup, reps, effort, recovery, cooldown.</small></button>
         <button class="activitychoice race" data-add-activity-mode="race" type="button"><b>Race</b><small>Meet or race day, attached to a plan when needed.</small></button>
         <button class="activitychoice rest" data-add-activity-mode="off" type="button"><b>Rest / Day Off</b><small>Add an off day to the calendar.</small></button>
@@ -396,7 +399,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div id="easyActivityFields" class="activitysection" hidden>
           <h3>Easy Run</h3>
           <div class="compactgrid">
-            <div class="field"><label for="addEasyDistance">Distance</label><input id="addEasyDistance" class="mini-input" type="number" min="0" step="0.1" placeholder="5"></div>
+            <div class="field"><label for="addEasyDistance">Distance</label><input id="addEasyDistance" class="mini-input" type="number" min="0" step="1" placeholder="5"></div>
             <div class="field"><label for="addEasyUnit">Unit</label><select id="addEasyUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div>
             <div class="field"><label>&nbsp;</label><button id="addEasyStridesBtn" class="builder-link" type="button">Add Post-Run Strides</button></div>
           </div>
@@ -405,7 +408,6 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
             <div class="compactgrid">
               <div class="field"><label for="addEasyStridesReps">Reps</label><input id="addEasyStridesReps" class="mini-input" type="number" min="1" step="1" value="5"></div>
               <div class="field"><label for="addEasyStridesDistance">Distance</label><div class="inline-control"><input id="addEasyStridesDistance" class="mini-input" type="number" min="0" step="1" value="100"><select id="addEasyStridesUnit" class="mini-select"><option>m</option><option>mi</option><option>km</option></select></div></div>
-              <div class="field"><label for="addEasyStridesRecovery">Recovery</label><div class="inline-control"><input id="addEasyStridesRecovery" class="mini-input" type="number" min="0" step="1" value="100"><select id="addEasyStridesRecoveryUnit" class="mini-select"><option>m walk</option><option>m jog</option><option>min jog</option><option>sec rest</option></select></div></div>
               <div class="field"><label>&nbsp;</label><button id="removeEasyStridesBtn" class="ghost" type="button">Remove Strides</button></div>
             </div>
           </div>
@@ -413,8 +415,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div id="qualityActivityFields" class="activitysection" hidden>
           <h3>Quality Session</h3>
           <div class="compactgrid">
-            <div class="field"><label for="addQualityWarmupValue">Warmup</label><div class="inline-control"><input id="addQualityWarmupValue" class="mini-input" type="number" min="0" step="0.1" value="1"><select id="addQualityWarmupUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div></div>
-            <div class="field"><label for="addQualityCooldownValue">Cooldown</label><div class="inline-control"><input id="addQualityCooldownValue" class="mini-input" type="number" min="0" step="0.1" value="2"><select id="addQualityCooldownUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div></div>
+            <div class="field"><label for="addQualityWarmupValue">Warmup</label><div class="inline-control"><input id="addQualityWarmupValue" class="mini-input" type="number" min="0" step="1" value="1"><select id="addQualityWarmupUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div></div>
+            <div class="field"><label for="addQualityCooldownValue">Cooldown</label><div class="inline-control"><input id="addQualityCooldownValue" class="mini-input" type="number" min="0" step="1" value="2"><select id="addQualityCooldownUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div></div>
           </div>
           <div id="qualityRows" style="margin-top:12px"></div>
           <div class="builder-links">
@@ -565,8 +567,6 @@ var els={
   addEasyStridesReps:document.getElementById('addEasyStridesReps'),
   addEasyStridesDistance:document.getElementById('addEasyStridesDistance'),
   addEasyStridesUnit:document.getElementById('addEasyStridesUnit'),
-  addEasyStridesRecovery:document.getElementById('addEasyStridesRecovery'),
-  addEasyStridesRecoveryUnit:document.getElementById('addEasyStridesRecoveryUnit'),
   removeEasyStridesBtn:document.getElementById('removeEasyStridesBtn'),
   qualityActivityFields:document.getElementById('qualityActivityFields'),
   addQualityWarmupValue:document.getElementById('addQualityWarmupValue'),
@@ -1509,8 +1509,6 @@ function openAddDayModal(dateValue,mode){
   els.addEasyStridesReps.value='5';
   els.addEasyStridesDistance.value='100';
   els.addEasyStridesUnit.value='m';
-  els.addEasyStridesRecovery.value='100';
-  els.addEasyStridesRecoveryUnit.value='m walk';
   els.addQualityWarmupValue.value='1';
   els.addQualityWarmupUnit.value='mi';
   els.addQualityCooldownValue.value='2';
@@ -1726,7 +1724,7 @@ function buildAddDayActivityValues(){
     var lines=[];
     if(distance)lines.push(distance+' easy');
     if(!els.easyStridesFields.hidden){
-      var strideLine=els.addEasyStridesReps.value+' x '+distanceLabel(els.addEasyStridesDistance.value,els.addEasyStridesUnit.value)+' strides / '+distanceLabel(els.addEasyStridesRecovery.value,els.addEasyStridesRecoveryUnit.value)+' recovery';
+      var strideLine=els.addEasyStridesReps.value+' x '+distanceLabel(els.addEasyStridesDistance.value,els.addEasyStridesUnit.value)+' strides';
       easyMiles+=Number(els.addEasyStridesReps.value||0)*unitMiles(els.addEasyStridesDistance.value,els.addEasyStridesUnit.value);
       lines.push(strideLine);
     }

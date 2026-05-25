@@ -121,7 +121,6 @@ tr:last-child td{border-bottom:0}
       <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
       <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
       <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
-      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
       <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
     </div>
   </section>
@@ -204,7 +203,6 @@ var els={
   accessSubmit:document.getElementById('accessSubmit'),
   accessStatus:document.getElementById('accessStatus'),
   dashboardLink:document.getElementById('dashboardLink'),
-  planBuilderLink:document.getElementById('planBuilderLink'),
   refreshBtn:document.getElementById('refreshBtn'),
   lastUpdated:document.getElementById('lastUpdated'),
   meetCount:document.getElementById('meetCount'),
@@ -742,7 +740,6 @@ function init(){
   if(recordsLink)recordsLink.href=pageUrl('/records.html');
   var xcSimulatorLink=document.getElementById('xcSimulatorLink');
   if(xcSimulatorLink)xcSimulatorLink.href=pageUrl('/xc-simulator.html');
-  els.planBuilderLink.href=pageUrl('/plan-builder.html');
   els.refreshBtn.addEventListener('click',loadMeetHistory);
   els.search.addEventListener('input',render);
   els.seasonFilter.addEventListener('change',render);
