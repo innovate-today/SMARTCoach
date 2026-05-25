@@ -3,7 +3,6 @@ const GHL_VERSION = "2021-07-28";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const SEASON_RECORD_SCHEMA_KEY = "custom_objects.season_records";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
-const RECORD_SCHEMA_KEY = "custom_objects.records";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
@@ -86,15 +85,6 @@ module.exports = async function handler(req, res) {
       sourceRecordId: athleteBestSourceRecordId,
       meetResultSourceRecordId: properties.source_record_id,
     });
-    const records = await createRecordEntries({
-      token,
-      locationId,
-      contactId: contact.id,
-      meetResult,
-      meetResultRecordId,
-      meetResultSourceRecordId: properties.source_record_id,
-    });
-
     res.status(200).json({
       success: true,
       athlete: meetResult.athleteName,
@@ -103,7 +93,7 @@ module.exports = async function handler(req, res) {
       sourceRecordId: properties.source_record_id,
       seasonRecord,
       athleteBest,
-      records,
+      records: [],
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Meet result sync failed." });
@@ -600,89 +590,6 @@ function compactProperties(properties) {
     cleaned[key] = value;
     return cleaned;
   }, {});
-}
-
-async function createRecordEntries({ token, locationId, contactId, meetResult, meetResultRecordId, meetResultSourceRecordId }) {
-  const entries = [];
-  if (meetResult.isPr) entries.push("Personal Best");
-  if (meetResult.isSeasonBest) entries.push("Season Best");
-
-  const results = [];
-  for (const type of entries) {
-    const sourceRecordId = buildRecordSourceRecordId({ contactId, meetResult, type, meetResultSourceRecordId });
-    const duplicate = await findObjectRecord({
-      token,
-      locationId,
-      schemaKey: RECORD_SCHEMA_KEY,
-      sourceRecordId,
-    });
-    if (duplicate && duplicate.id) {
-      results.push({ action: "exists", type, recordId: duplicate.id, sourceRecordId });
-      continue;
-    }
-
-    try {
-      const properties = buildRecordProperties({
-        contactId,
-        meetResult,
-        type,
-        meetResultRecordId,
-        meetResultSourceRecordId,
-        sourceRecordId,
-      });
-      const created = await ghlFetch({
-        token,
-        path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records`,
-        method: "POST",
-        body: { locationId, properties },
-      });
-      results.push({
-        action: "created",
-        type,
-        recordId: created.id || (created.record && created.record.id) || null,
-        sourceRecordId,
-      });
-    } catch (error) {
-      if (error.statusCode && error.statusCode >= 500) throw error;
-      results.push({ action: "skipped", type, statusCode: error.statusCode || null, reason: error.message || "Records object is not configured yet.", sourceRecordId });
-    }
-  }
-  return results;
-}
-
-function buildRecordProperties({ contactId, meetResult, type, meetResultRecordId, meetResultSourceRecordId, sourceRecordId }) {
-  const recordName = `${meetResult.athleteName} - ${type} - ${meetResult.event} - ${meetResult.resultDisplay}`;
-  return compactProperties({
-    record: recordName,
-    record_type: optionValue(type),
-    record_scope: "athlete",
-    sport: sportValue(meetResult.sport),
-    event: meetResult.event,
-    result_display: meetResult.resultDisplay,
-    result_ms: meetResult.resultMs,
-    athlete_contact: contactId,
-    athlete_name_snapshot: meetResult.athleteName,
-    meet_name: meetResult.meetName,
-    meet_record_id: meetResult.meetRecordId,
-    meet_result_id: meetResultRecordId || meetResultSourceRecordId,
-    record_date: dateOnly(meetResult.meetDate),
-    season: optionValue(meetResult.season),
-    season_year: meetResult.meetDate.getFullYear(),
-    is_current: "Yes",
-    record_notes: meetResult.coachRaceNotes,
-    source_system: "smartcoach_pro",
-    source_record_id: sourceRecordId,
-  });
-}
-
-function buildRecordSourceRecordId({ contactId, meetResult, type, meetResultSourceRecordId }) {
-  return [
-    "rec",
-    optionValue(type),
-    slugValue(contactId || meetResult.athleteName),
-    slugValue(meetResult.event),
-    slugValue(meetResultSourceRecordId || buildSourceRecordId({ contactId, meetResult })),
-  ].filter(Boolean).join("_");
 }
 
 function buildSourceRecordId({ contactId, meetResult }) {

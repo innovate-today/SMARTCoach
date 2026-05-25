@@ -320,6 +320,20 @@ async function addCorrectionNote({ token, contactId, body }) {
 }
 
 async function updateLinkedMeetRecords({ token, locationId, contactId, athleteName, record, props, nextValues, resultMs, correctionTime, reason }) {
+  void token;
+  void locationId;
+  void contactId;
+  void athleteName;
+  void record;
+  void props;
+  void nextValues;
+  void resultMs;
+  void correctionTime;
+  void reason;
+  return { updated: 0, skipped: true, reason: "records_page_is_coach_managed" };
+}
+
+async function updateLinkedMeetRecordsLegacy({ token, locationId, contactId, athleteName, record, props, nextValues, resultMs, correctionTime, reason }) {
   const linked = await findLinkedRecordEntries({
     token,
     locationId,

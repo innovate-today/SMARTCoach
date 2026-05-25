@@ -147,7 +147,8 @@ async function retireCurrentRecords({ token, locationId, properties, excludeReco
     if (excludeRecordId && record.recordId === excludeRecordId) return false;
     return recordBoardKey(record) === boardKey;
   });
-  const betterExisting = boardRecords.find((record) => !newRecordIsBetter(properties, record));
+  const currentRecords = boardRecords.filter((record) => record.isCurrent);
+  const betterExisting = currentRecords.find((record) => !newRecordIsBetter(properties, record));
   if (betterExisting) {
     properties.is_current = "No";
     properties.record_notes = [clean(properties.record_notes), `Saved as historical on ${new Date().toISOString().slice(0, 10)} because the current record is faster: ${clean(betterExisting.resultDisplay || betterExisting.resultMark)} by ${clean(betterExisting.athleteName)}.`].filter(Boolean).join("\n");
@@ -155,7 +156,19 @@ async function retireCurrentRecords({ token, locationId, properties, excludeReco
     if (!properties.previous_record_holder) properties.previous_record_holder = betterExisting.athleteName;
     return [];
   }
-  const matches = boardRecords.filter((record) => record.isCurrent);
+  const matches = currentRecords;
+  for (const record of matches) {
+    if (!record.recordId) continue;
+    const retiredProperties = recordPropertiesFromRecord(record);
+    retiredProperties.is_current = "No";
+    retiredProperties.record_notes = appendRetiredNote(record.recordNotes, properties);
+    await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(record.recordId)}?locationId=${encodeURIComponent(locationId)}`,
+      method: "PUT",
+      body: { properties: retiredProperties },
+    });
+  }
   return matches;
 }
 
