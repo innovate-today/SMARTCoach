@@ -1081,7 +1081,7 @@ function normalizeQuestionnaire(value) {
 
 function trainingPlanQuestionnaire() {
   return {
-    title: "Guided Plan Builder",
+    title: "Guided Auto Build Plan",
     description: "Create a coach-reviewed season, mesocycle, week, group, or individual plan.",
     fields: [
       {

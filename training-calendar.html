@@ -205,12 +205,12 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
     <div class="actions">
       <div class="action-row">
         <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
-        <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
-        <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
-        <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+        <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
+        <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Athlete Setup</a>
+        <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
       </div>
       <div class="modal-action-row">
-        <button id="manualMileageBtn" class="modal-action" type="button">Log Mileage</button>
+        <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="approveDraftsBtn" class="modal-action" type="button" hidden>Approve Drafts</button>
         <button id="scheduleApprovedBtn" class="modal-action" type="button" hidden>Schedule Approved</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
@@ -438,7 +438,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 <div id="manualMileageModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="manualMileageTitle">
     <div class="modalhead">
-      <h2 id="manualMileageTitle">Log Mileage</h2>
+      <h2 id="manualMileageTitle">Log Miles</h2>
       <button id="manualMileageClose" class="ghost" type="button">Close</button>
     </div>
     <div class="modalbody">
@@ -447,7 +447,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div class="field"><label for="manualMileageScope">Apply To <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Individual for one athlete or Group for every athlete in an active training group.">i</span></label><select id="manualMileageScope"><option value="">Select apply to</option><option value="athlete">Individual</option><option value="group">Group</option></select></div>
         <div class="field"><label for="manualMileageAthlete">Athlete <span class="fieldinfo" tabindex="0" data-tip="Select the athlete receiving this mileage entry when Apply To is Individual.">i</span></label><select id="manualMileageAthlete"><option value="">Select athlete</option></select></div>
         <div class="field"><label for="manualMileageGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Select an active training group. Archived groups are hidden.">i</span></label><select id="manualMileageGroup"><option value="">Select active group</option></select></div>
-        <div class="field"><label for="manualMileageWorkout">Effort <span class="fieldinfo" tabindex="0" data-tip="Choose the effort category for this completed mileage. These match the Plan Entry effort options.">i</span></label><select id="manualMileageWorkout"><option value="">Select effort</option><option>Easy</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option></select></div>
+        <div class="field"><label for="manualMileageWorkout">Effort <span class="fieldinfo" tabindex="0" data-tip="Choose the effort category for this completed mileage. These match the Upload/Paste Plan effort options.">i</span></label><select id="manualMileageWorkout"><option value="">Select effort</option><option>Easy</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option></select></div>
         <div class="field"><label for="manualMileageDistance">Distance <span class="fieldinfo info-left" tabindex="0" data-tip="Enter the completed distance. SMART Trak accepts miles or common distance wording.">i</span></label><input id="manualMileageDistance" type="text" placeholder="Example: 4 miles"></div>
         <div class="field"><label for="manualMileageTime">Time <span class="fieldinfo" tabindex="0" data-tip="Optional total time for the completed mileage. Leave blank if only distance matters.">i</span></label><input id="manualMileageTime" type="text" placeholder="Optional, e.g. 36:20"></div>
         <div class="field"><label for="manualMileageSource">Source <span class="fieldinfo info-left" tabindex="0" data-tip="Choose where this mileage information came from.">i</span></label><select id="manualMileageSource"><option value="">Select source</option><option>Athlete reported</option><option>Coach entered</option><option>Watch upload</option></select></div>

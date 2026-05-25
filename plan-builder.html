@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="app-version" content="builder-1777173146407">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SMART Trak Plan Builder</title>
+<title>SMART Trak Auto Build Plan</title>
 <style>
 :root{--blue:#2B4FCC;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f3f6fb;--white:#fff;--ok:#0a7a44;--warn:#c47a00;--bad:#c00}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -94,13 +94,13 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 <div id="productModeBadge" class="admin-mode-badge admin-only" hidden></div>
 <div class="wrap pro-page-only">
   <div class="top">
-	    <div class="brand"><div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div><div><h1>SMART Trak Plan Builder</h1><div class="sub">Build a start-to-finish draft plan, then review and adjust it before it becomes the working calendar.</div></div></div>
+	    <div class="brand"><div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div><div><h1>SMART Trak Auto Build Plan</h1><div class="sub">Build a start-to-finish draft plan, then review and adjust it before it becomes the working calendar.</div></div></div>
     <div class="top-actions">
       <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save Settings</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button></div>
       <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
       <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
-      <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
-      <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Planning Setup</a>
+      <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
+      <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Athlete Setup</a>
     </div>
   </div>
 	  <div class="panel">
@@ -115,7 +115,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 </div>
 <section id="essentialMessage" class="essential-message" hidden>
   <h1>SMARTCoach Essential</h1>
-  <p>The plan builder is included with SMARTCoach Pro through SMART Trak. Essential accounts keep the stopwatch clean and focused.</p>
+  <p>Auto Build Plan is included with SMARTCoach Pro through SMART Trak. Essential accounts keep the stopwatch clean and focused.</p>
   <div class="essential-actions">
     <a id="essentialStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
     <a id="essentialProLink" class="linkbtn admin-only" hidden href="/plan-builder.html?plan=pro">Preview Pro</a>
@@ -544,7 +544,7 @@ var builderFieldSections=[
   {before:'planStyle',title:'Coach Preferences',body:'Choose how bold the plan should be and add any final instructions.'}
 ];
 var builderFieldCopy={
-  planName:{label:'Plan Name',placeholder:'Example: CC Girls 1',tip:'Name the plan so it is easy to find later in Plan Entry, Planning Setup, and the Training Calendar.'},
+  planName:{label:'Plan Name',placeholder:'Example: CC Girls 1',tip:'Name the plan so it is easy to find later in Upload/Paste Plan, Athlete Setup, and the Training Calendar.'},
   planScope:{label:'Plan Scope',tip:'Choose Group for a shared group plan or Individual for one athlete.'},
   athleteName:{label:'Athlete',placeholder:'Select athlete',tip:'Only needed when Plan Scope is Individual.'},
   seasonBlock:{label:'Season Block',tip:'Choose the season this plan belongs to for filtering and review.'},
@@ -756,7 +756,7 @@ function payloadFromForm(){
   var athleteOpt=athleteEl&&athleteEl.options[athleteEl.selectedIndex];
   payload.planScope=payload.planScope||'group';
   payload.blockType='track_season';
-  payload.assignedGroup=payload.planName||'Plan Builder Group';
+  payload.assignedGroup=payload.planName||'Auto Build Plan Group';
   payload.currentFitnessSport=sportForEvent(payload.primaryEvent);
   payload.currentFitnessDistance='Latest matching fitness set';
   payload.currentFitnessTime='';

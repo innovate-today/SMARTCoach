@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="app-version" content="plan-setup-active-plans">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SMART Trak Planning Setup</title>
+<title>SMART Trak Athlete Setup</title>
 <style>
 :root{--blue:#2B4FCC;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f3f6fb;--white:#fff;--ok:#0a7a44;--warn:#c47a00;--bad:#c00}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -96,13 +96,13 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 <div id="productModeBadge" class="admin-mode-badge admin-only" hidden></div>
 <div class="wrap pro-page-only">
   <div class="top">
-	    <div class="brand"><div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div><div><h1>SMART Trak Planning Setup</h1><div class="sub">Set athlete fitness marks for training targets and assign saved plans to groups or athletes.</div></div></div>
+	    <div class="brand"><div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div><div><h1>SMART Trak Athlete Setup</h1><div class="sub">Set athlete fitness marks for training targets and assign saved plans to groups or athletes.</div></div></div>
     <div class="top-actions">
       <div class="account-control admin-only" hidden><label for="accountKey">Account</label><input id="accountKey" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="secondary" onclick="saveAccountSettings()" type="button">Save Settings</button><button class="secondary" onclick="refreshAppVersion()" type="button">Refresh</button></div>
       <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
       <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
-      <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Plan Entry</a>
-      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Plan Builder</a>
+      <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
+      <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
     </div>
   </div>
   <div class="panel">
@@ -157,7 +157,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 </div>
 <section id="essentialMessage" class="essential-message" hidden>
   <h1>SMARTCoach Essential</h1>
-  <p>Planning setup is included with SMARTCoach Pro through SMART Trak. Essential accounts keep the stopwatch clean and focused.</p>
+  <p>Athlete Setup is included with SMARTCoach Pro through SMART Trak. Essential accounts keep the stopwatch clean and focused.</p>
   <div class="essential-actions">
     <a id="essentialStopwatchLink" class="linkbtn" href="/">Open Stopwatch</a>
     <a id="essentialProLink" class="linkbtn admin-only" hidden href="/plan-setup.html?plan=pro">Preview Pro</a>
@@ -173,7 +173,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 </section>
 <section id="accessMessage" class="essential-message" hidden>
   <h1>SMART Trak Access Required</h1>
-  <p>Enter the coach access code for this SMART Trak account to continue planning setup.</p>
+  <p>Enter the coach access code for this SMART Trak account to continue Athlete Setup.</p>
   <div class="essential-actions">
     <input id="accessCodeInput" type="password" placeholder="Access code" autocomplete="off" style="max-width:260px">
     <button class="primary" onclick="submitAccessCode()" type="button">Continue</button>
