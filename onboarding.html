@@ -998,6 +998,7 @@ function renderLookupResult(data){
     '<div class="registrycards">'+cards.map(function(card){return '<div class="card"><b>'+esc(card.value||'--')+'</b><span>'+esc(card.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
     '<div class="registryrow"><b>Token</b><span>'+esc(secretStatus(record.token))+'</span></div>'+
+    '<div class="registryrow"><b>GHL Account Key Value</b><span>'+esc(ghlCustomValueSyncMessage(data.ghlCustomValueSync)||'Synced during Save Account Setup when Location ID and token are entered.')+'</span></div>'+
     '<div class="registryrow"><b>Coach Codes</b><span>'+esc(coachCodesSummary(record))+'</span></div>'+
     '<div class="registryrow"><b>Future Parent Email Coaches</b><span>'+esc(parentEmailCoachAccessLabel(record.parentEmailCoachAccess))+'</span></div>'+
     '<div class="registryrow"><b>Logo URL</b><span>'+esc(record.logoUrl?maskValue(record.logoUrl):'--')+'</span></div>'+
@@ -1194,9 +1195,11 @@ function saveRegistryUpdate(){
     });
     renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
     rememberCurrentSetupFieldValues();
+    var customValueNote=ghlCustomValueSyncMessage(result.data.ghlCustomValueSync);
+    var savedMessage=savedRegistryStatusMessage(result.data)+(customValueNote?' '+customValueNote:'');
     if(registry.saved){
-      setStatus(savedRegistryStatusMessage(result.data),result.data.accessReady?'good':'bad');
-      setSetupActionResult(savedRegistryStatusMessage(result.data),result.data.accessReady?'good':'bad');
+      setStatus(savedMessage,result.data.accessReady?'good':'bad');
+      setSetupActionResult(savedMessage,result.data.accessReady?'good':'bad');
     }else{
       setStatus(registry.reason||'Account setup was not saved because customer account storage is not configured.','bad');
       setSetupActionResult(registry.reason||'Account setup was not saved because customer account storage is not configured.','bad');
@@ -1370,6 +1373,12 @@ function savedRegistryStatusMessage(data){
   if(data.accessReady)return 'Account setup saved. SMART Trak will use this account record on the next request.';
   if(data.subscriptionBlockedReason)return 'Account setup saved. Subscription blocks access: '+data.subscriptionBlockedReason;
   return 'Account setup saved, but setup is not ready yet: '+setupMissingText(data);
+}
+function ghlCustomValueSyncMessage(sync){
+  sync=sync||{};
+  if(!sync.attempted)return '';
+  if(sync.success)return 'GHL custom value account_key was '+(sync.action||'synced')+'.';
+  return 'GHL custom value account_key was not synced: '+(sync.error||sync.reason||'check the customer Location ID and Private Integration Token.');
 }
 function renderSetup(data){
   currentSetup=data;

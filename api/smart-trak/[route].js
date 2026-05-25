@@ -1,5 +1,9 @@
 const crypto = require("crypto");
 
+const GHL_BASE_URL = "https://services.leadconnectorhq.com";
+const GHL_VERSION = "2021-07-28";
+const GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME = "account_key";
+
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
   "athlete-profile": require("../ghl/athlete-profile"),
@@ -569,7 +573,8 @@ async function saveAutomationAccount(payload, options = {}) {
     });
   }
   const registryResult = await saveAccountRecord(account.accountKey, account);
-  return automationAccountResult(account, registryResult, { environment });
+  const customValueSync = await syncAccountKeyCustomValue(account);
+  return automationAccountResult(account, registryResult, { environment, customValueSync });
 }
 
 function automationAccountResult(account, registryResult, extra = {}) {
@@ -587,6 +592,7 @@ function automationAccountResult(account, registryResult, extra = {}) {
     setupReady,
     accessReady: setupReady && subscriptionAllowed,
     registry: registryResult,
+    ghlCustomValueSync: extra.customValueSync || customValueSyncSkipped("Not attempted."),
     accountRegistryRecord: publicAccountRecord(account),
     environment: publicEnvironmentRows(extra.environment || accountEnvironmentRows({
       suffix: account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_"),
@@ -596,6 +602,91 @@ function automationAccountResult(account, registryResult, extra = {}) {
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
     accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
+  };
+}
+
+async function syncAccountKeyCustomValue(account) {
+  if (!account || account.productPlan === "essential") return customValueSyncSkipped("Essential accounts do not need a SMART Trak custom value.");
+  if (!account.token || !account.locationId) return customValueSyncSkipped("Missing Location ID or Private Integration Token.");
+  try {
+    const existing = await findGhlCustomValue({
+      token: account.token,
+      locationId: account.locationId,
+      name: GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME,
+    });
+    if (existing && existing.id) {
+      const updated = await ghlRequest({
+        token: account.token,
+        path: `/locations/${encodeURIComponent(account.locationId)}/customValues/${encodeURIComponent(existing.id)}`,
+        method: "PUT",
+        body: { name: existing.name || GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME, value: account.accountKey },
+      });
+      return customValueSyncSuccess("updated", updated, account.accountKey);
+    }
+    const created = await ghlRequest({
+      token: account.token,
+      path: `/locations/${encodeURIComponent(account.locationId)}/customValues`,
+      method: "POST",
+      body: { name: GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME, value: account.accountKey },
+    });
+    return customValueSyncSuccess("created", created, account.accountKey);
+  } catch (error) {
+    return {
+      attempted: true,
+      success: false,
+      name: GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME,
+      fieldKey: `{{custom_values.${GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME}}}`,
+      value: account.accountKey || "",
+      error: error.message || "Could not sync GHL account key custom value.",
+    };
+  }
+}
+
+async function findGhlCustomValue({ token, locationId, name }) {
+  const data = await ghlRequest({
+    token,
+    path: `/locations/${encodeURIComponent(locationId)}/customValues`,
+    method: "GET",
+  });
+  const values = Array.isArray(data && data.customValues) ? data.customValues :
+    Array.isArray(data && data.custom_values) ? data.custom_values :
+    Array.isArray(data && data.values) ? data.values :
+    Array.isArray(data) ? data : [];
+  const target = normalizeCustomValueName(name);
+  return values.find((item) => {
+    const fieldKey = String(item && (item.fieldKey || item.field_key || item.key) || "");
+    return normalizeCustomValueName(item && item.name) === target ||
+      normalizeCustomValueName(fieldKey.replace(/^.*custom_values\.?/i, "")) === target ||
+      fieldKey.includes(`custom_values.${name}`) ||
+      fieldKey.includes(`custom_values_${name}`);
+  }) || null;
+}
+
+function normalizeCustomValueName(value) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function customValueSyncSuccess(action, data, accountKey) {
+  const customValue = data && (data.customValue || data.custom_value || data);
+  return {
+    attempted: true,
+    success: true,
+    action,
+    id: String(customValue && (customValue.id || customValue._id) || ""),
+    name: String(customValue && customValue.name || GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME),
+    fieldKey: String(customValue && (customValue.fieldKey || customValue.field_key || customValue.key) || `{{custom_values.${GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME}}}`),
+    value: accountKey || "",
+  };
+}
+
+function customValueSyncSkipped(reason) {
+  return {
+    attempted: false,
+    success: false,
+    name: GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME,
+    fieldKey: `{{custom_values.${GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME}}}`,
+    value: "",
+    reason,
   };
 }
 
@@ -660,6 +751,30 @@ function publicEnvironmentRows(rows) {
     }
     return row;
   });
+}
+
+async function ghlRequest({ token, path, method = "GET", body }) {
+  const response = await fetch(`${GHL_BASE_URL}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Version: GHL_VERSION,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const text = await response.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (error) {
+    data = { message: text };
+  }
+  if (!response.ok) {
+    throw httpError(response.status, data.message || data.error || `GHL request failed with ${response.status}.`);
+  }
+  return data;
 }
 
 async function accountRegistry(req, res) {

@@ -443,6 +443,82 @@ async function testPartialAutomationPreservesSavedConnection() {
   }
 }
 
+async function testAccountSetupSyncsGhlAccountKeyCustomValue() {
+  const previousFetch = global.fetch;
+  let savedRecord = null;
+  const ghlCalls = [];
+
+  global.fetch = async (url, options = {}) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "" }),
+      };
+    }
+    if (text.includes("/set/")) {
+      const encodedPayload = text.split("/set/")[1].split("/").slice(1).join("/");
+      savedRecord = JSON.parse(decodeURIComponent(encodedPayload));
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "OK" }),
+      };
+    }
+    if (text.includes("services.leadconnectorhq.com/locations/location-123/customValues")) {
+      ghlCalls.push({ url: text, method: options.method || "GET", body: options.body ? JSON.parse(options.body) : null });
+      if ((options.method || "GET") === "GET") {
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({ customValues: [] }),
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ customValue: { id: "cv_123", name: "account_key", fieldKey: "{{custom_values.account_key}}" } }),
+      };
+    }
+    throw new Error(`Unexpected setup custom value call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          accountKey: "custom-value-school",
+          productPlan: "pro",
+          privateIntegrationToken: "pit",
+          locationId: "location-123",
+          coachAccessCodes: "coach-code",
+          subscriptionStatus: "active",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.ok(savedRecord);
+      assert.strictEqual(res.body.registry.saved, true);
+      assert.strictEqual(res.body.ghlCustomValueSync.success, true);
+      assert.strictEqual(res.body.ghlCustomValueSync.action, "created");
+      assert.strictEqual(ghlCalls.length, 2);
+      assert.strictEqual(ghlCalls[1].method, "POST");
+      assert.deepStrictEqual(ghlCalls[1].body, { name: "account_key", value: "custom-value-school" });
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAutomationSubscriptionStatusAliases() {
   const previousFetch = global.fetch;
   const cases = [
@@ -802,6 +878,7 @@ async function testAccountStatusReportsDeviceUnlock() {
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testInvalidStripeWebhookDoesNotTouchRegistry();
   await testPartialAutomationPreservesSavedConnection();
+  await testAccountSetupSyncsGhlAccountKeyCustomValue();
   await testAutomationSubscriptionStatusAliases();
   await testAutomationHealthLaunchReady();
   await testParentEmailReleaseGate();
