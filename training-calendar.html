@@ -121,6 +121,12 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;resize:vertical}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:14px}
 .modalstatus{margin-right:auto;color:var(--muted);font-size:13px;font-weight:800}
+.meet-manager{margin-top:14px;display:grid;gap:8px}
+.meet-card{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:10px 12px}
+.meet-card.archived{opacity:.68}
+.meet-card span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.meet-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+button.compact{padding:6px 9px;font-size:12px}
 .activitychooser{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .activitychoice{background:#fff;color:#172033;border:1px solid var(--line);text-align:left;padding:12px;border-radius:8px;display:grid;gap:3px;min-height:74px}
 .activitychoice b{font-size:15px}
@@ -208,8 +214,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
       <div class="action-row">
         <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
-        <a id="raceResultLink" class="linkbtn modal-action" href="/dashboard.html?action=logRaceResult">Log Race Result</a>
-        <a id="manageMeetsLink" class="linkbtn modal-action" href="/dashboard.html?action=manageMeets">Manage Meets</a>
+        <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
+        <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
         <button id="approveDraftsBtn" class="modal-action" type="button" hidden>Approve Drafts</button>
         <button id="scheduleApprovedBtn" class="modal-action" type="button" hidden>Schedule Approved</button>
       </div>
@@ -466,12 +472,66 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
   </section>
 </div>
 
+<div id="raceResultModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="raceResultTitle">
+    <div class="modalhead">
+      <h2 id="raceResultTitle">Log Race Result</h2>
+      <button id="raceResultClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field"><label for="raceResultDate">Date <span class="fieldinfo" tabindex="0" data-tip="Choose the date the race was completed.">i</span></label><input id="raceResultDate" type="date" placeholder="Select race date"></div>
+        <div class="field"><label for="raceResultSport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country.">i</span></label><select id="raceResultSport"><option value="">Select sport</option><option value="track">Track</option><option value="cross_country">Cross Country</option></select></div>
+        <div class="field"><label for="raceResultMeet">Meet <span class="fieldinfo" tabindex="0" data-tip="Choose an existing meet, or enter a new meet name.">i</span></label><select id="raceResultMeet"><option value="">Loading meets...</option></select></div>
+        <div class="field" id="raceResultMeetNameWrap" hidden><label for="raceResultMeetName">New Meet Name <span class="fieldinfo info-left" tabindex="0" data-tip="Use this when the meet is not already saved.">i</span></label><input id="raceResultMeetName" type="text" placeholder="Example: District Preview"></div>
+        <div class="field"><label for="raceResultAthlete">Athlete <span class="fieldinfo" tabindex="0" data-tip="Select the athlete receiving this race result.">i</span></label><select id="raceResultAthlete"><option value="">Select athlete</option></select></div>
+        <div class="field"><label for="raceResultEvent">Event <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the race distance or event.">i</span></label><select id="raceResultEvent"><option value="">Select event</option></select></div>
+        <div class="field"><label for="raceResultResult">Result <span class="fieldinfo" tabindex="0" data-tip="Enter the official result time, such as 12:21.0 or 19:08.">i</span></label><input id="raceResultResult" type="text" placeholder="Example: 19:08"></div>
+        <div class="field"><label for="raceResultWind">Wind <span class="fieldinfo info-left" tabindex="0" data-tip="Optional wind reading for track events.">i</span></label><input id="raceResultWind" type="text" placeholder="Optional, e.g. +1.2"></div>
+        <div class="field"><label for="raceResultBest">Best Status <span class="fieldinfo" tabindex="0" data-tip="Mark PB or SB if the coach already knows it.">i</span></label><select id="raceResultBest"><option value="none">No PB/SB</option><option value="pb">PB only</option><option value="sb">SB only</option><option value="both">PB and SB</option></select></div>
+        <div class="field full"><label for="raceResultNotes">Notes <span class="fieldinfo" tabindex="0" data-tip="Optional race notes, context, or coach comments.">i</span></label><textarea id="raceResultNotes" placeholder="Optional race notes"></textarea></div>
+      </div>
+      <div class="modalactions">
+        <div id="raceResultStatus" class="modalstatus">Save a result without leaving the calendar.</div>
+        <button id="raceResultSave" type="button">Save Race Result</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="meetManagerModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="meetManagerTitle">
+    <div class="modalhead">
+      <h2 id="meetManagerTitle">Manage Meets</h2>
+      <button id="meetManagerClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field"><label for="meetManagerName">Meet</label><input id="meetManagerName" type="text" placeholder="Meet name"></div>
+        <div class="field"><label for="meetManagerDate">Date</label><input id="meetManagerDate" type="date"></div>
+        <div class="field"><label for="meetManagerSeason">Season</label><select id="meetManagerSeason"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div>
+        <div class="field"><label for="meetManagerYear">Season Year</label><input id="meetManagerYear" type="number" placeholder="2026"></div>
+        <div class="field"><label for="meetManagerStatusSelect">Status</label><select id="meetManagerStatusSelect"><option>Scheduled</option><option>Completed</option><option>Archived</option></select></div>
+      </div>
+      <div class="modalactions">
+        <div id="meetManagerStatus" class="modalstatus">Create or update meets for the stopwatch and meet results.</div>
+        <button id="meetManagerClear" class="ghost" type="button">New Meet</button>
+        <button id="meetManagerSave" type="button">Save Meet</button>
+      </div>
+      <div id="meetManagerList" class="meet-manager"></div>
+    </div>
+  </section>
+</div>
+
 <script>
 var plans=[];
 var days=[];
 var mileageAthletes=[];
 var mileageTrainingRows=[];
 var trainingGroups=[];
+var raceResultMeetRows=[];
+var meetManagerRows=[];
+var meetManagerEditingId='';
 var activeDay=null;
 var viewMode='week';
 var listSort={key:'date',dir:'asc'};
@@ -598,7 +658,35 @@ var els={
   manualMileageSurface:document.getElementById('manualMileageSurface'),
   manualMileageNotes:document.getElementById('manualMileageNotes'),
   manualMileageStatus:document.getElementById('manualMileageStatus'),
-  manualMileageSave:document.getElementById('manualMileageSave')
+  manualMileageSave:document.getElementById('manualMileageSave'),
+  raceResultBtn:document.getElementById('raceResultBtn'),
+  raceResultModal:document.getElementById('raceResultModal'),
+  raceResultClose:document.getElementById('raceResultClose'),
+  raceResultDate:document.getElementById('raceResultDate'),
+  raceResultSport:document.getElementById('raceResultSport'),
+  raceResultMeet:document.getElementById('raceResultMeet'),
+  raceResultMeetNameWrap:document.getElementById('raceResultMeetNameWrap'),
+  raceResultMeetName:document.getElementById('raceResultMeetName'),
+  raceResultAthlete:document.getElementById('raceResultAthlete'),
+  raceResultEvent:document.getElementById('raceResultEvent'),
+  raceResultResult:document.getElementById('raceResultResult'),
+  raceResultWind:document.getElementById('raceResultWind'),
+  raceResultBest:document.getElementById('raceResultBest'),
+  raceResultNotes:document.getElementById('raceResultNotes'),
+  raceResultStatus:document.getElementById('raceResultStatus'),
+  raceResultSave:document.getElementById('raceResultSave'),
+  manageMeetsBtn:document.getElementById('manageMeetsBtn'),
+  meetManagerModal:document.getElementById('meetManagerModal'),
+  meetManagerClose:document.getElementById('meetManagerClose'),
+  meetManagerName:document.getElementById('meetManagerName'),
+  meetManagerDate:document.getElementById('meetManagerDate'),
+  meetManagerSeason:document.getElementById('meetManagerSeason'),
+  meetManagerYear:document.getElementById('meetManagerYear'),
+  meetManagerStatusSelect:document.getElementById('meetManagerStatusSelect'),
+  meetManagerStatus:document.getElementById('meetManagerStatus'),
+  meetManagerClear:document.getElementById('meetManagerClear'),
+  meetManagerSave:document.getElementById('meetManagerSave'),
+  meetManagerList:document.getElementById('meetManagerList')
 };
 function accountKey(){
   try{
@@ -1923,6 +2011,319 @@ function openManualMileage(){
 function closeManualMileage(){
   els.manualMileageModal.hidden=true;
 }
+function openRaceResult(){
+  if(!els.raceResultDate.value)els.raceResultDate.value=todayInputValue();
+  if(!els.raceResultSport.value)els.raceResultSport.value='track';
+  renderRaceResultAthletes();
+  renderRaceResultMeets();
+  syncRaceResultSport();
+  setRaceResultStatus('Save a result without leaving the calendar.','');
+  els.raceResultModal.hidden=false;
+  loadRaceResultMeets();
+}
+function closeRaceResult(){els.raceResultModal.hidden=true;}
+function renderRaceResultAthletes(){
+  var current=els.raceResultAthlete.value;
+  var rows=activeMileageAthletes();
+  els.raceResultAthlete.innerHTML='<option value="">Select athlete</option>'+(rows.length?rows:[{contactId:'',name:'No active athletes loaded'}]).map(function(row){
+    var value=row.contactId||row.name||'';
+    return '<option value="'+esc(value)+'">'+esc(row.name||'Unnamed')+'</option>';
+  }).join('');
+  if(current)els.raceResultAthlete.value=current;
+}
+function activeMileageAthletes(){
+  return mileageAthletes.filter(function(row){
+    var status=String(row.status||'').toLowerCase();
+    if(status&&status!=='active')return false;
+    if(row.smartcoachActive===false)return false;
+    return true;
+  });
+}
+function loadRaceResultMeets(){
+  setRaceResultStatus('Loading meets...','');
+  return fetch('/api/smart-trak/meets',{headers:apiHeaders(),cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not load meets.');
+    raceResultMeetRows=(result.data.meets||[]).filter(function(meet){return !/archived/i.test(meet.status||'');});
+    renderRaceResultMeets();
+    setRaceResultStatus('Choose a meet, athlete, event, and result.','');
+  }).catch(function(error){
+    raceResultMeetRows=[];
+    renderRaceResultMeets();
+    setRaceResultStatus(error.message||'Could not load meets. You can still enter a meet manually.','bad');
+  });
+}
+function renderRaceResultMeets(){
+  var current=els.raceResultMeet.value;
+  var options='<option value="">Select meet</option><option value="__new__">Enter meet manually</option>';
+  options+=raceResultMeetRows.slice().sort(function(a,b){
+    return String(b.date||'').localeCompare(String(a.date||'')) || String(a.name||'').localeCompare(String(b.name||''));
+  }).map(function(meet){
+    var label=[meet.name||'Unnamed meet',formatDate(meet.date),meet.season,meet.seasonYear].filter(Boolean).join(' · ');
+    return '<option value="'+esc(meet.id||meet.name||'')+'">'+esc(label)+'</option>';
+  }).join('');
+  els.raceResultMeet.innerHTML=options;
+  if(current)els.raceResultMeet.value=current;
+  if(!els.raceResultMeet.value&&raceResultMeetRows.length===0)els.raceResultMeet.value='__new__';
+  syncRaceResultMeet();
+}
+function syncRaceResultMeet(){
+  var manual=(els.raceResultMeet.value||'')==='__new__';
+  els.raceResultMeetNameWrap.hidden=!manual;
+  if(!manual){
+    var meet=selectedRaceResultMeet();
+    if(meet&&meet.date)els.raceResultDate.value=dateInputValue(meet.date);
+  }
+}
+function syncRaceResultSport(){
+  var current=els.raceResultEvent.value;
+  var sport=els.raceResultSport.value||'track';
+  var events=sport==='cross_country'?['','2 Mile','3200m','5K']:['','400m','800m','1500m','1600m','1 Mile','2 Mile','3200m','5K'];
+  els.raceResultEvent.innerHTML=events.map(function(eventName){
+    return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
+  }).join('');
+  if(current&&events.indexOf(current)>=0)els.raceResultEvent.value=current;
+}
+function selectedRaceResultMeet(){
+  var id=els.raceResultMeet.value||'';
+  return raceResultMeetRows.find(function(meet){return String(meet.id||meet.name||'')===String(id);})||null;
+}
+function selectedRaceResultAthlete(){
+  var selected=els.raceResultAthlete.value||'';
+  return mileageAthletes.find(function(row){return String(row.contactId||row.name||'')===String(selected);})||null;
+}
+function dateInputValue(value){
+  var date=parseCalendarDate(value);
+  return isNaN(date.getTime())?todayInputValue():isoDate(date);
+}
+function raceResultSeasonFromDate(value){
+  var date=parseCalendarDate(value);
+  if(isNaN(date.getTime()))date=new Date();
+  return {season:seasonFromDate(isoDate(date)),seasonYear:String(date.getFullYear())};
+}
+function saveRaceResult(){
+  var athlete=selectedRaceResultAthlete();
+  var meet=selectedRaceResultMeet();
+  var manualMeet=(els.raceResultMeet.value||'')==='__new__';
+  var meetName=manualMeet?(els.raceResultMeetName.value||'').trim():(meet&&meet.name||'');
+  var date=els.raceResultDate.value||todayInputValue();
+  var eventName=els.raceResultEvent.value||'';
+  var resultDisplay=(els.raceResultResult.value||'').trim();
+  if(!athlete){setRaceResultStatus('Select an athlete.','bad');return;}
+  if(!meetName){setRaceResultStatus('Select a meet or enter a meet name.','bad');return;}
+  if(!eventName){setRaceResultStatus('Select an event.','bad');return;}
+  if(!resultDisplay){setRaceResultStatus('Enter the race result.','bad');return;}
+  var best=els.raceResultBest.value||'none';
+  var seasonParts=raceResultSeasonFromDate(date);
+  var payload={
+    athleteName:athlete.name||'',
+    contactId:athlete.contactId||'',
+    smartcoachAthleteId:athlete.smartcoachAthleteId||'',
+    meetName:meetName,
+    meetRecordId:meet&&meet.id||'',
+    meetDate:date,
+    season:meet&&meet.season||seasonParts.season,
+    sport:els.raceResultSport.value||'track',
+    event:eventName,
+    resultDisplay:resultDisplay,
+    wind:els.raceResultWind.value,
+    isPr:best==='pb'||best==='both',
+    isSeasonBest:best==='sb'||best==='both',
+    coachRaceNotes:els.raceResultNotes.value
+  };
+  els.raceResultSave.disabled=true;
+  setRaceResultStatus('Saving race result...','');
+  ensureRaceResultMeet(payload,seasonParts).then(function(updatedPayload){
+    var headers=apiHeaders();
+    headers['Content-Type']='application/json';
+    return fetch('/api/smart-trak/meet-result',{method:'POST',headers:headers,body:JSON.stringify(updatedPayload)});
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Race result could not be saved.');
+    setRaceResultStatus('Saved '+(athlete.name||'athlete')+' - '+eventName+' '+resultDisplay+'.','ok');
+    els.raceResultAthlete.value='';
+    els.raceResultResult.value='';
+    els.raceResultWind.value='';
+    els.raceResultBest.value='none';
+    els.raceResultNotes.value='';
+    return loadCalendar();
+  }).catch(function(error){
+    setRaceResultStatus(error.message||'Race result could not be saved.','bad');
+  }).finally(function(){
+    els.raceResultSave.disabled=false;
+  });
+}
+function ensureRaceResultMeet(payload,seasonParts){
+  if(payload.meetRecordId)return Promise.resolve(payload);
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  return fetch('/api/smart-trak/meets',{method:'POST',headers:headers,body:JSON.stringify({
+    meetName:payload.meetName,
+    meetDate:payload.meetDate,
+    season:payload.season||seasonParts.season,
+    seasonYear:seasonParts.seasonYear,
+    status:'Completed'
+  })}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet could not be created.');
+    var meet=result.data&&result.data.meet||{};
+    payload.meetRecordId=meet.id||'';
+    if(meet.name)payload.meetName=meet.name;
+    if(meet.season)payload.season=meet.season;
+    upsertManagedMeet(meet);
+    raceResultMeetRows=meet.id?raceResultMeetRows.filter(function(item){return String(item.id||'')!==String(meet.id);}).concat([meet]):raceResultMeetRows;
+    renderRaceResultMeets();
+    if(meet.id)els.raceResultMeet.value=meet.id;
+    syncRaceResultMeet();
+    return payload;
+  });
+}
+function setRaceResultStatus(text,type){
+  els.raceResultStatus.textContent=text||'';
+  els.raceResultStatus.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--good)':'var(--muted)';
+}
+function openMeetManager(){
+  clearMeetManagerForm();
+  els.meetManagerModal.hidden=false;
+  loadManagedMeets();
+}
+function closeMeetManager(){
+  els.meetManagerModal.hidden=true;
+  meetManagerEditingId='';
+}
+function clearMeetManagerForm(){
+  meetManagerEditingId='';
+  els.meetManagerName.value='';
+  els.meetManagerDate.value=todayInputValue();
+  var date=parseCalendarDate(els.meetManagerDate.value);
+  setSelectValue(els.meetManagerSeason,seasonFromDate(els.meetManagerDate.value)||'Spring');
+  els.meetManagerYear.value=isNaN(date.getTime())?new Date().getFullYear():date.getFullYear();
+  setSelectValue(els.meetManagerStatusSelect,'Scheduled');
+  els.meetManagerSave.textContent='Save Meet';
+  setMeetManagerStatus('Create or update meets for the stopwatch and meet results.','');
+}
+function loadManagedMeets(){
+  setMeetManagerStatus('Loading meets...','');
+  fetch('/api/smart-trak/meets',{headers:apiHeaders(),cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not load meets.');
+    meetManagerRows=result.data.meets||[];
+    renderManagedMeets();
+    setMeetManagerStatus(meetManagerRows.length+' meet'+(meetManagerRows.length===1?'':'s')+' loaded.','success');
+  }).catch(function(error){
+    meetManagerRows=[];
+    renderManagedMeets();
+    setMeetManagerStatus(error.message||'Could not load meets.','error');
+  });
+}
+function renderManagedMeets(){
+  if(!meetManagerRows.length){
+    els.meetManagerList.innerHTML='<div class="empty">No meets found yet.</div>';
+    return;
+  }
+  els.meetManagerList.innerHTML=meetManagerRows.slice().sort(function(a,b){
+    return String(a.date||'').localeCompare(String(b.date||'')) || String(a.name||'').localeCompare(String(b.name||''));
+  }).map(function(meet){
+    var archived=/archived/i.test(meet.status||'');
+    return '<div class="meet-card'+(archived?' archived':'')+'">'+
+      '<div><b>'+esc(meet.name||'Unnamed meet')+'</b><span>'+esc([formatDate(meet.date),meet.season,meet.seasonYear,meet.status||'Scheduled'].filter(Boolean).join(' · '))+'</span></div>'+
+      '<div class="meet-actions">'+
+        '<button class="ghost compact" data-edit-managed-meet="'+esc(meet.id||'')+'" type="button">Edit</button>'+
+        (archived?'<button class="ghost compact" data-restore-managed-meet="'+esc(meet.id||'')+'" type="button">Restore</button>':'<button class="ghost compact" data-archive-managed-meet="'+esc(meet.id||'')+'" type="button">Archive</button>')+
+        '<button class="danger compact" data-delete-managed-meet="'+esc(meet.id||'')+'" type="button">Delete</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function editManagedMeetForm(id){
+  var meet=meetManagerRows.find(function(item){return String(item.id||'')===String(id||'');});
+  if(!meet){setMeetManagerStatus('Could not find that meet.','error');return;}
+  meetManagerEditingId=meet.id||'';
+  els.meetManagerName.value=meet.name||'';
+  els.meetManagerDate.value=meet.date?dateInputValue(meet.date):todayInputValue();
+  setSelectValue(els.meetManagerSeason,meet.season||'Spring');
+  els.meetManagerYear.value=meet.seasonYear||new Date().getFullYear();
+  setSelectValue(els.meetManagerStatusSelect,meet.status||'Scheduled');
+  els.meetManagerSave.textContent='Update Meet';
+  setMeetManagerStatus('Editing '+(meet.name||'meet')+'.','');
+}
+function saveManagedMeet(){
+  var name=els.meetManagerName.value.trim();
+  if(!name){setMeetManagerStatus('Meet name is required.','error');return;}
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  var payload={recordId:meetManagerEditingId,meetName:name,meetDate:els.meetManagerDate.value,season:els.meetManagerSeason.value,seasonYear:els.meetManagerYear.value,status:els.meetManagerStatusSelect.value};
+  els.meetManagerSave.disabled=true;
+  setMeetManagerStatus(meetManagerEditingId?'Updating meet...':'Creating meet...','');
+  fetch('/api/smart-trak/meets',{method:meetManagerEditingId?'PATCH':'POST',headers:headers,body:JSON.stringify(payload)}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet save failed.');
+    var wasEditing=!!meetManagerEditingId;
+    if(result.data&&result.data.meet)upsertManagedMeet(result.data.meet);
+    renderManagedMeets();
+    clearMeetManagerForm();
+    setMeetManagerStatus((wasEditing?'Updated ':'Saved ')+(result.data&&result.data.meet&&result.data.meet.name||name)+'.','success');
+    return loadCalendar();
+  }).catch(function(error){
+    setMeetManagerStatus(error.message||'Meet save failed.','error');
+  }).finally(function(){
+    els.meetManagerSave.disabled=false;
+  });
+}
+function upsertManagedMeet(meet){
+  if(!meet)return;
+  var index=meetManagerRows.findIndex(function(item){return String(item.id||'')===String(meet.id||'');});
+  if(index>=0)meetManagerRows[index]=Object.assign({},meetManagerRows[index],meet);
+  else meetManagerRows.push(meet);
+}
+function updateManagedMeetStatus(id,status){
+  var meet=meetManagerRows.find(function(item){return String(item.id||'')===String(id||'');});
+  if(!meet)return;
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  setMeetManagerStatus((status==='Archived'?'Archiving':'Restoring')+' meet...','');
+  fetch('/api/smart-trak/meets',{method:'PATCH',headers:headers,body:JSON.stringify({recordId:id,meetName:meet.name,meetDate:meet.date,season:meet.season,seasonYear:meet.seasonYear,status:status})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet update failed.');
+    meet.status=status;
+    if(result.data&&result.data.meet)Object.assign(meet,result.data.meet);
+    renderManagedMeets();
+    setMeetManagerStatus((status==='Archived'?'Archived ':'Restored ')+(meet.name||'meet')+'.','success');
+    return loadCalendar();
+  }).catch(function(error){
+    setMeetManagerStatus(error.message||'Meet update failed.','error');
+  });
+}
+function deleteManagedMeetRecord(id){
+  var meet=meetManagerRows.find(function(item){return String(item.id||'')===String(id||'');});
+  if(!meet)return;
+  if(!window.confirm('Delete '+(meet.name||'this meet')+' from SMART Trak? This does not delete existing meet results.'))return;
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  setMeetManagerStatus('Deleting meet...','');
+  fetch('/api/smart-trak/meets',{method:'DELETE',headers:headers,body:JSON.stringify({recordId:id})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Meet delete failed.');
+    meetManagerRows=meetManagerRows.filter(function(item){return String(item.id||'')!==String(id||'');});
+    renderManagedMeets();
+    clearMeetManagerForm();
+    setMeetManagerStatus('Deleted '+(meet.name||'meet')+'.','success');
+    return loadCalendar();
+  }).catch(function(error){
+    setMeetManagerStatus(error.message||'Meet delete failed.','error');
+  });
+}
+function setMeetManagerStatus(text,type){
+  els.meetManagerStatus.textContent=text||'';
+  els.meetManagerStatus.style.color=type==='error'?'var(--bad)':type==='success'?'var(--good)':'var(--muted)';
+}
 function renderManualMileageAthletes(){
   var current=els.manualMileageAthlete.value;
   els.manualMileageAthlete.innerHTML='<option value="">Select athlete</option>'+(mileageAthletes.length?mileageAthletes:[{contactId:'',name:'No athletes loaded'}]).map(function(row){
@@ -2127,10 +2528,6 @@ function init(){
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
   loadMixPreference();
   els.dashboardLink.href=pageUrl('/dashboard.html');
-  var raceResultLink=document.getElementById('raceResultLink');
-  if(raceResultLink)raceResultLink.href=pageUrl('/dashboard.html?action=logRaceResult');
-  var manageMeetsLink=document.getElementById('manageMeetsLink');
-  if(manageMeetsLink)manageMeetsLink.href=pageUrl('/dashboard.html?action=manageMeets');
   els.planImportLink.href=pageUrl('/plan-import.html');
   els.planSetupLink.href=pageUrl('/plan-setup.html');
   els.planBuilderLink.href=pageUrl('/plan-builder.html');
@@ -2139,6 +2536,15 @@ function init(){
   els.manualMileageClose.addEventListener('click',closeManualMileage);
   els.manualMileageScope.addEventListener('change',updateManualMileageScope);
   els.manualMileageSave.addEventListener('click',saveManualMileage);
+  els.raceResultBtn.addEventListener('click',openRaceResult);
+  els.raceResultClose.addEventListener('click',closeRaceResult);
+  els.raceResultMeet.addEventListener('change',syncRaceResultMeet);
+  els.raceResultSport.addEventListener('change',syncRaceResultSport);
+  els.raceResultSave.addEventListener('click',saveRaceResult);
+  els.manageMeetsBtn.addEventListener('click',openMeetManager);
+  els.meetManagerClose.addEventListener('click',closeMeetManager);
+  els.meetManagerClear.addEventListener('click',clearMeetManagerForm);
+  els.meetManagerSave.addEventListener('click',saveManagedMeet);
   els.addDayClose.addEventListener('click',closeAddDayModal);
   els.addDayChooser.addEventListener('click',function(event){
     var button=event.target.closest&&event.target.closest('[data-add-activity-mode]');
@@ -2228,6 +2634,30 @@ function init(){
     archivePlanFromPicker(button.getAttribute('data-plan-archive')||'',button.getAttribute('data-plan-restore')==='1');
   });
   document.addEventListener('click',function(event){
+    var editManagedMeet=event.target.closest&&event.target.closest('[data-edit-managed-meet]');
+    if(editManagedMeet){
+      event.preventDefault();
+      editManagedMeetForm(editManagedMeet.getAttribute('data-edit-managed-meet')||'');
+      return;
+    }
+    var archiveManagedMeet=event.target.closest&&event.target.closest('[data-archive-managed-meet]');
+    if(archiveManagedMeet){
+      event.preventDefault();
+      updateManagedMeetStatus(archiveManagedMeet.getAttribute('data-archive-managed-meet')||'','Archived');
+      return;
+    }
+    var restoreManagedMeet=event.target.closest&&event.target.closest('[data-restore-managed-meet]');
+    if(restoreManagedMeet){
+      event.preventDefault();
+      updateManagedMeetStatus(restoreManagedMeet.getAttribute('data-restore-managed-meet')||'','Scheduled');
+      return;
+    }
+    var deleteManagedMeet=event.target.closest&&event.target.closest('[data-delete-managed-meet]');
+    if(deleteManagedMeet){
+      event.preventDefault();
+      deleteManagedMeetRecord(deleteManagedMeet.getAttribute('data-delete-managed-meet')||'');
+      return;
+    }
     if(els.planPicker.contains(event.target))return;
     els.planPickerMenu.hidden=true;
   });
