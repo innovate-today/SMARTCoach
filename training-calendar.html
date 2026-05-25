@@ -832,10 +832,10 @@ function planEffectiveEndDate(plan){
   return latest||end;
 }
 function isPastPlan(plan){
-  var approval=String(plan&&plan.approvalStatus||'').toLowerCase();
+  var approval=[plan&&plan.approvalStatus,plan&&plan.status,plan&&plan.recordStatus,plan&&plan.state,plan&&plan.visibility].filter(Boolean).join(' ').toLowerCase();
   if(plan&&plan.archived)return true;
   if(/\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(String(plan&&plan.schoolConstraints||'')))return true;
-  if(approval.indexOf('archiv')>=0||approval.indexOf('inactive')>=0)return true;
+  if(approval.indexOf('archiv')>=0||approval.indexOf('inactive')>=0||approval.indexOf('deleted')>=0)return true;
   var end=planEffectiveEndDate(plan);
   if(isNaN(end.getTime()))return false;
   var today=new Date();

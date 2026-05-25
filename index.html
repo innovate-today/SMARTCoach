@@ -1118,9 +1118,10 @@ function saveSharedGroupsNow(){
 }
 function activeTrainingPlans(plans){
   return (plans||[]).filter(function(plan){
+    var status=[plan&&plan.approvalStatus,plan&&plan.status,plan&&plan.recordStatus,plan&&plan.state,plan&&plan.visibility].filter(Boolean).join(' ');
     if(plan&&plan.archived)return false;
-    if(isArchivedStatus(plan&&plan.approvalStatus))return false;
-    if(/\barchived\b/i.test(String(plan&&plan.approvalStatus||'')))return false;
+    if(isArchivedStatus(status))return false;
+    if(/\b(archive|archived|inactive|deleted)\b/i.test(status))return false;
     if(/\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(String(plan&&plan.schoolConstraints||'')))return false;
     return true;
   });

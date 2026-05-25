@@ -209,6 +209,8 @@ async function listTrainingPlans({ token, locationId }) {
 
 function normalizeTrainingPlanRecord(record) {
   const props = recordProperties(record);
+  const approvalStatus = labelValue(prop(props, "approval_status"));
+  const schoolConstraints = prop(props, "school_constraints");
   return {
     id: record && record.id ? record.id : prop(props, "source_record_id"),
     sourceRecordId: prop(props, "source_record_id"),
@@ -232,9 +234,9 @@ function normalizeTrainingPlanRecord(record) {
     assignedAthleteNames: parseAssignedAthleteNames(prop(props, "school_constraints")),
     priorityMeets: prop(props, "priority_meets"),
     noPracticeDates: prop(props, "no_practice_dates"),
-    schoolConstraints: prop(props, "school_constraints"),
-    archived: planArchiveState(prop(props, "school_constraints")) || planStatusArchiveState(prop(props, "approval_status")),
-    approvalStatus: labelValue(prop(props, "approval_status")),
+    schoolConstraints,
+    archived: planArchiveState(schoolConstraints) || planStatusArchiveState(approvalStatus) || recordArchiveState(record, props),
+    approvalStatus,
     description: prop(props, "workout_description"),
   };
 }
@@ -269,13 +271,19 @@ async function assignAthletesToPlan({ token, locationId, payload }) {
   const athleteIds = Array.isArray(payload && payload.athleteIds) ? payload.athleteIds.map(clean).filter(Boolean) : [];
   const athleteNames = Array.isArray(payload && payload.athleteNames) ? payload.athleteNames.map(clean).filter(Boolean) : [];
   const existingSchoolConstraints = clean(payload && payload.schoolConstraints);
+  const clearAssignment = !!(payload && payload.clearAssignment);
 
   if (!planId) throw httpError(400, "Select a training plan first.");
 
-  const properties = compactProperties({
-    assigned_group: assignedGroup,
-    school_constraints: assignmentBlockText(existingSchoolConstraints, { assignedGroup, athleteIds, athleteNames }),
-  });
+  const properties = clearAssignment
+    ? {
+        assigned_group: " ",
+        school_constraints: removeAssignmentBlockText(existingSchoolConstraints) || " ",
+      }
+    : compactProperties({
+        assigned_group: assignedGroup,
+        school_constraints: assignmentBlockText(existingSchoolConstraints, { assignedGroup, athleteIds, athleteNames }),
+      });
 
   await ghlFetch({
     token,
@@ -284,7 +292,7 @@ async function assignAthletesToPlan({ token, locationId, payload }) {
     body: { properties },
   });
 
-  return { planId, assignedGroup, athleteIds, athleteNames };
+  return { planId, assignedGroup: clearAssignment ? "" : assignedGroup, athleteIds: clearAssignment ? [] : athleteIds, athleteNames: clearAssignment ? [] : athleteNames };
 }
 
 async function updateTrainingPlanDay({ token, locationId, payload }) {
@@ -466,7 +474,7 @@ function appendPlanDayStatusAudit(notes, status, reason) {
 }
 
 function assignmentBlockText(existingText, assignment) {
-  const base = clean(existingText).replace(/\n?\[SMARTCoach Assignments\][\s\S]*?\[\/SMARTCoach Assignments\]\n?/g, "").trim();
+  const base = removeAssignmentBlockText(existingText);
   const block = [
     "[SMARTCoach Assignments]",
     `Group: ${clean(assignment.assignedGroup)}`,
@@ -475,6 +483,10 @@ function assignmentBlockText(existingText, assignment) {
     "[/SMARTCoach Assignments]",
   ].join("\n");
   return [base, block].filter(Boolean).join("\n\n");
+}
+
+function removeAssignmentBlockText(existingText) {
+  return clean(existingText).replace(/\n?\[SMARTCoach Assignments\][\s\S]*?\[\/SMARTCoach Assignments\]\n?/g, "").trim();
 }
 
 function planArchiveBlockText(existingText, archive) {
@@ -497,6 +509,17 @@ function planArchiveState(text) {
 function planStatusArchiveState(status) {
   const value = labelValue(status).toLowerCase().replace(/[^a-z]/g, "");
   return value === "archive" || value === "archived" || value === "inactive";
+}
+
+function recordArchiveState(record, props) {
+  if (record && (record.archived || record.isArchived || record.deleted)) return true;
+  const statusText = [
+    record && record.status,
+    record && record.recordStatus,
+    record && record.approvalStatus,
+    props && (props.status || props.record_status || props.approval_status),
+  ].map(labelValue).join(" ");
+  return planStatusArchiveState(statusText) || /\b(archive|archived|inactive)\b/i.test(statusText);
 }
 
 function parseAssignedAthleteIds(text) {
