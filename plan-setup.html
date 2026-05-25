@@ -62,17 +62,24 @@ select[multiple]{min-height:112px}
 .assignment-head h2{font-size:16px;letter-spacing:0}
 .assignment-head p{font-size:13px;color:var(--muted);margin-top:2px}
 .assignment-grid{display:grid;grid-template-columns:minmax(0,1fr) 220px 150px 130px;gap:8px;margin-bottom:10px}
+.assignment-group-field{min-width:0}
 .assignment-athletes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
 .assignment-athletes label{display:flex;align-items:center;gap:8px;border:1px solid #cfd6e0;border-radius:7px;padding:8px 10px;font-size:13px;font-weight:800;color:#374151}
 .assignment-athletes small{display:block;color:var(--muted);font-weight:700;margin-top:2px}
 .assignment-athletes input{width:18px;height:18px;accent-color:var(--blue)}
 .assignment-status{font-size:13px;color:var(--muted);font-weight:800;text-align:right}
+.assignment-save-status{min-height:18px;margin:4px 0 0;text-align:right}
 .groups{border-bottom:1px solid var(--line);padding:16px 20px;background:#fff}
-.group-grid{display:grid;grid-template-columns:260px minmax(0,1fr);gap:12px;align-items:start}
+.group-grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;align-items:start}
+.group-sidebar{border:1px solid #c7d2fe;background:#f8fbff;border-radius:8px;padding:12px;display:grid;gap:10px}
+.group-sidebar-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.group-sidebar-head b{font-size:12px;color:#173891;text-transform:uppercase;letter-spacing:.04em}
 .group-list{display:grid;gap:6px}
-.group-pill{border:1px solid #cfd6e0;background:#fff;color:#111827;text-align:left;border-radius:7px;padding:9px 10px;font-size:13px;font-weight:850}
-.group-pill.active{border-color:var(--blue);box-shadow:0 0 0 2px rgba(43,79,204,.12)}
-.group-editor{display:grid;gap:8px}
+.group-pill{border:1px solid #c7d2fe;background:#fff;color:#111827;text-align:left;border-radius:8px;padding:10px 11px;font-size:13px;font-weight:850;box-shadow:0 1px 0 rgba(15,23,42,.03)}
+.group-pill small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.group-pill.active{border-color:var(--blue);background:#eef4ff;box-shadow:0 0 0 2px rgba(43,79,204,.12)}
+.group-editor{display:grid;gap:8px;border:1px solid #d1d9e6;background:#fff;border-radius:8px;padding:12px}
+.group-editor-title{font-size:13px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:.03em}
 .group-editor-row{display:grid;grid-template-columns:minmax(0,1fr) 140px;gap:8px}
 .group-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
 .group-status{font-size:13px;color:var(--muted);font-weight:800;min-height:18px}
@@ -123,11 +130,12 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
         <div id="groupStatus" class="group-status"></div>
       </div>
       <div class="group-grid">
-        <div>
+        <div class="group-sidebar">
+          <div class="group-sidebar-head"><b>Groups</b><button class="primary mini" onclick="newTrainingGroup()" type="button">New Group</button></div>
           <div id="groupList" class="group-list"><div class="meet-empty">Loading groups...</div></div>
-          <div class="group-actions" style="justify-content:flex-start;margin-top:8px"><button class="secondary mini" onclick="newTrainingGroup()" type="button">New Group</button></div>
         </div>
         <div class="group-editor">
+          <div class="group-editor-title">Athletes in Selected Group</div>
           <div class="group-editor-row">
             <input id="groupName" type="text" placeholder="Group name e.g. Girls 400">
             <select id="groupGenderFilter" aria-label="Filter group athletes" onchange="renderGroupAthletes()"><option value="all">All athletes</option><option value="girls">Girls</option><option value="boys">Boys</option><option value="unlisted">Unlisted</option></select>
@@ -140,15 +148,15 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     <div class="assignments">
       <div class="assignment-head">
         <div><h2>Plan Assignments</h2><p>Choose a saved plan, set the group label, and assign it to the athletes who should see that plan on the calendar.</p></div>
-        <div id="assignmentStatus" class="assignment-status"></div>
       </div>
       <div class="assignment-grid">
         <select id="assignmentPlan" onchange="renderAssignmentAthletes()"><option value="">Loading plans...</option></select>
-        <select id="assignmentGroup" onchange="applySelectedGroupToAssignment()"><option value="">Select group</option></select>
+        <div class="assignment-group-field"><input id="assignmentGroup" list="assignmentGroupOptions" type="text" placeholder="Select or type group" onchange="applySelectedGroupToAssignment()"><datalist id="assignmentGroupOptions"></datalist></div>
         <select id="assignmentGenderFilter" aria-label="Filter assignment athletes" onchange="renderAssignmentAthletes()"><option value="all">All athletes</option><option value="girls">Girls</option><option value="boys">Boys</option><option value="unlisted">Unlisted</option></select>
         <select id="assignmentSort" aria-label="Sort assignment athletes" onchange="renderAssignmentAthletes()"><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option></select>
       </div>
       <div id="assignmentAthletes" class="assignment-athletes"><div class="meet-empty">Loading athletes...</div></div>
+      <div id="assignmentStatus" class="assignment-status assignment-save-status"></div>
       <div class="fitness-actions"><button class="secondary mini" onclick="toggleAssignmentAthletes(true)">Select All</button><button class="secondary mini" onclick="toggleAssignmentAthletes(false)">Clear</button><button class="primary mini" onclick="savePlanAssignments()">Save Assignments</button></div>
     </div>
 	    <div id="status" class="status">Loading setup...</div>
@@ -637,11 +645,12 @@ function renderTrainingGroups(){
   renderAssignmentGroupOptions();
 }
 function renderAssignmentGroupOptions(){
-  var select=document.getElementById('assignmentGroup');
-  if(!select)return;
-  var current=select.value;
-  select.innerHTML='<option value="">Select group</option>'+trainingGroups.map(function(group){return '<option value="'+esc(group.name)+'">'+esc(group.name)+'</option>';}).join('');
-  if(current)select.value=current;
+  var input=document.getElementById('assignmentGroup');
+  var list=document.getElementById('assignmentGroupOptions');
+  if(!input||!list)return;
+  var current=input.value;
+  list.innerHTML=trainingGroups.map(function(group){return '<option value="'+esc(group.name)+'"></option>';}).join('');
+  input.value=current;
 }
 function selectTrainingGroup(id){
   captureGroupAthleteChoices();
@@ -736,7 +745,8 @@ function saveTrainingGroups(message){
 }
 function applySelectedGroupToAssignment(){
   var select=document.getElementById('assignmentGroup');
-  var group=trainingGroups.find(function(item){return item.name===select.value;});
+  var selectedName=String(select&&select.value||'').trim().toLowerCase();
+  var group=trainingGroups.find(function(item){return String(item.name||'').trim().toLowerCase()===selectedName;});
   if(!group)return;
   var plan=selectedAssignmentPlan();
   if(!plan)return;
@@ -747,7 +757,14 @@ function applySelectedGroupToAssignment(){
 }
 function planLabel(plan){return plan?plan.title+([plan.assignedGroup,plan.season,plan.seasonYear].filter(Boolean).length?' - '+[plan.assignedGroup,plan.season,plan.seasonYear].filter(Boolean).join(' · '):''):'Select plan';}
 function activeAssignmentPlans(){
-  return plans.filter(function(plan){return !plan.archived;});
+  return plans.filter(function(plan){return !isArchivedPlan(plan);});
+}
+function isArchivedPlan(plan){
+  if(!plan)return false;
+  if(plan.archived)return true;
+  if(/\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(String(plan.schoolConstraints||'')))return true;
+  var status=String(plan.approvalStatus||plan.status||'').toLowerCase();
+  return status.indexOf('archiv')>=0||status.indexOf('inactive')>=0;
 }
 function renderAssignmentPlans(){
   var select=document.getElementById('assignmentPlan');
@@ -796,13 +813,12 @@ function renderAssignmentAthletes(){
   if(!box)return;
   captureAssignmentDraftValues();
   var plan=selectedAssignmentPlan();
-  assignmentDraftPlanKey=assignmentPlanKey(plan);
+  var nextPlanKey=assignmentPlanKey(plan);
+  var planChanged=assignmentDraftPlanKey!==nextPlanKey;
+  assignmentDraftPlanKey=nextPlanKey;
   if(group&&plan){
     renderAssignmentGroupOptions();
-    if(plan.assignedGroup&&!Array.prototype.slice.call(group.options).some(function(opt){return opt.value===plan.assignedGroup;})){
-      group.insertAdjacentHTML('beforeend','<option value="'+esc(plan.assignedGroup)+'">'+esc(plan.assignedGroup)+'</option>');
-    }
-    group.value=plan.assignedGroup||'';
+    if(planChanged)group.value=plan.assignedGroup||'';
   }
   if(!athletes.length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
   var draft=assignmentDraftValues[assignmentDraftPlanKey];
