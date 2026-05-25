@@ -1074,6 +1074,9 @@ var tableSorts={
   training:{key:'syncedAt',dir:'desc'},
   volume:{key:'volumeMiles',dir:'desc'}
 };
+var pendingDashboardAction=(function(){
+  try{return new URLSearchParams(window.location.search||'').get('action')||'';}catch(e){return '';}
+})();
 var els={
   rows:document.getElementById('rows'),
   recentMeetRows:document.getElementById('recentMeetRows'),
@@ -1495,6 +1498,7 @@ function loadDashboard(){
     updateWeekRanges();
     updateBreakdowns();
     renderRows();
+    openPendingDashboardAction();
   }).catch(function(error){
     dashboardRows=[];
     recentMeetRows=[];
@@ -1514,6 +1518,13 @@ function loadDashboard(){
   }).finally(function(){
     if(els.refreshBtn)els.refreshBtn.disabled=false;
   });
+}
+function openPendingDashboardAction(){
+  if(!pendingDashboardAction)return;
+  var action=pendingDashboardAction;
+  pendingDashboardAction='';
+  if(action==='logRaceResult')openRaceResult();
+  if(action==='manageMeets')openMeetManager();
 }
 function showDashboardAccessCode(data){
   els.lastUpdated.textContent='Access required';

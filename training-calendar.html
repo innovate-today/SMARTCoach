@@ -28,7 +28,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .setup-label{font-size:13px;font-weight:900;color:#172033;margin-right:4px}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
-button.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
+button.modal-action,.linkbtn.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
 button.ghost{background:#eef2f7;color:#172033}
 button.danger{background:#fee2e2;color:#991b1b}
 button:disabled{opacity:.55;cursor:not-allowed}
@@ -208,6 +208,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
       <div class="action-row">
         <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
+        <a id="raceResultLink" class="linkbtn modal-action" href="/dashboard.html?action=logRaceResult">Log Race Result</a>
+        <a id="manageMeetsLink" class="linkbtn modal-action" href="/dashboard.html?action=manageMeets">Manage Meets</a>
         <button id="approveDraftsBtn" class="modal-action" type="button" hidden>Approve Drafts</button>
         <button id="scheduleApprovedBtn" class="modal-action" type="button" hidden>Schedule Approved</button>
       </div>
@@ -2125,6 +2127,10 @@ function init(){
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
   loadMixPreference();
   els.dashboardLink.href=pageUrl('/dashboard.html');
+  var raceResultLink=document.getElementById('raceResultLink');
+  if(raceResultLink)raceResultLink.href=pageUrl('/dashboard.html?action=logRaceResult');
+  var manageMeetsLink=document.getElementById('manageMeetsLink');
+  if(manageMeetsLink)manageMeetsLink.href=pageUrl('/dashboard.html?action=manageMeets');
   els.planImportLink.href=pageUrl('/plan-import.html');
   els.planSetupLink.href=pageUrl('/plan-setup.html');
   els.planBuilderLink.href=pageUrl('/plan-builder.html');
