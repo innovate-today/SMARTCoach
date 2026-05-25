@@ -1639,26 +1639,33 @@ function checkSmartCoachAccount(){
   });
 }
 
-function updateBreakdowns(){
-  var active=dashboardRows.length;
-  var withFitness=dashboardRows.filter(function(row){return row.currentFitness&&row.currentFitness.label;}).length;
-  var currentWeekAthletes=dashboardRows.filter(function(row){return num(row.currentWeekRuns)>0;}).length;
-  var rangedMeetRows=recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet');});
-  var rangedTrainingRows=recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training');});
+function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
+  rows=rows||dashboardRows;
+  meetRows=meetRows||recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet');});
+  trainingRows=trainingRows||recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training');});
+  volumeRows=volumeRows||completedVolumeRows(trainingRows,meetRows);
+  var active=rows.length;
+  var withFitness=rows.filter(function(row){return row.currentFitness&&row.currentFitness.label;}).length;
+  var currentWeekAthletes=uniqueAthleteCount(trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}));
   var rangeText='Showing '+seasonRangeLabel()+' · '+activityRangeLabel();
+  els.athleteCount.textContent=active;
+  els.currentWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}).length;
+  if(els.previousWeekRuns)els.previousWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date()));}).length;
+  els.currentWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)));
+  els.previousWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())));
   els.rosterActive.textContent=active;
   els.rosterFitness.textContent=withFitness;
   els.rosterMissingFitness.textContent=Math.max(0,active-withFitness);
   els.meetRangeLabel.textContent=rangeText;
-  els.meetSyncCount.textContent=rangedMeetRows.length;
-  els.meetPbCount.textContent=rangedMeetRows.filter(function(row){return row.isPr;}).length;
-  els.meetSbCount.textContent=rangedMeetRows.filter(function(row){return row.isSeasonBest;}).length;
+  els.meetSyncCount.textContent=meetRows.length;
+  els.meetPbCount.textContent=meetRows.filter(function(row){return row.isPr;}).length;
+  els.meetSbCount.textContent=meetRows.filter(function(row){return row.isSeasonBest;}).length;
   els.trainingRangeLabel.textContent=rangeText;
-  els.trainingSyncCount.textContent=rangedTrainingRows.length;
-  els.trainingVolumeCount.textContent=formatMiles(sumTrainingVolume(rangedTrainingRows));
-  els.trainingMonthVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.currentMonthVolumeMiles);},0));
-  els.trainingOnTargetCount.textContent=rangedTrainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
-  els.trainingReviewCount.textContent=rangedTrainingRows.filter(isOutsideTarget).length;
+  els.trainingSyncCount.textContent=trainingRows.length;
+  els.trainingVolumeCount.textContent=formatMiles(sumTrainingVolume(volumeRows));
+  els.trainingMonthVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfCurrentMonthDate(),startOfNextMonthDate()));
+  els.trainingOnTargetCount.textContent=trainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
+  els.trainingReviewCount.textContent=trainingRows.filter(isOutsideTarget).length;
   els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
   els.trainingMissingThisWeek.textContent=Math.max(0,active-currentWeekAthletes);
 }
@@ -1696,13 +1703,14 @@ function renderSeasonFilterOptions(){
 function renderRows(){
   var query=els.search.value.trim().toLowerCase();
   var filter=els.quickFilter.value||'all';
-  updateBreakdowns();
-  var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&(!query||searchText(row).indexOf(query)>=0);}),tableSorts.roster,rosterSortValue);
+  var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&athleteMatchesDashboardSearch(row,query);}),tableSorts.roster,rosterSortValue);
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
-  var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0);}),tableSorts.meet,meetSortValue);
-  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0);}),tableSorts.training,trainingSortValue);
-  var volumeRows=sortRows(groupVolumeByAthlete(trainingRows),tableSorts.volume,volumeSortValue);
+  var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.meet,meetSortValue);
+  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.training,trainingSortValue);
+  var completedRows=completedVolumeRows(trainingRows,meetRows);
+  var volumeRows=sortRows(groupVolumeByAthlete(completedRows),tableSorts.volume,volumeSortValue);
   var trainingGroups=sortRows(groupTrainingByAthlete(trainingRows),tableSorts.training,trainingGroupSortValue);
+  updateBreakdowns(rows,meetRows,trainingRows,completedRows);
   visibleRosterRows=rows;
   visibleMeetRows=meetRows;
   visibleTrainingRows=trainingRows;
@@ -1726,7 +1734,7 @@ function renderRows(){
   els.trainingViewCount.textContent=trainingRows.length;
   els.volumeSubtabCount.textContent=volumeRows.length;
   els.workoutsSubtabCount.textContent=trainingRows.length;
-  els.status.textContent=formatMiles(sumTrainingVolume(trainingRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+seasonRangeLabel()+' · '+activityRangeLabel();
+  els.status.textContent=formatMiles(sumTrainingVolume(completedRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+seasonRangeLabel()+' · '+activityRangeLabel();
   els.filterState.textContent=filterStateText(query,filter);
   els.filterState.hidden=isDefaultView(query,filter);
   updateActiveMetric(filter);
@@ -3420,20 +3428,22 @@ function groupVolumeByAthlete(rows){
     if(!miles)return;
     var key=String(row.contactId||row.athleteName||'').toLowerCase();
     if(!groups[key]){
-      var athlete=findDashboardAthleteForTraining(row)||{};
       groups[key]={
         athleteName:row.athleteName||'Unnamed',
         contactId:row.contactId||'',
         volumeMiles:0,
-        currentWeekVolumeMiles:num(athlete.currentWeekVolumeMiles),
-        previousWeekVolumeMiles:num(athlete.previousWeekVolumeMiles),
-        currentMonthVolumeMiles:num(athlete.currentMonthVolumeMiles),
+        currentWeekVolumeMiles:0,
+        previousWeekVolumeMiles:0,
+        currentMonthVolumeMiles:0,
         syncs:0,
         groups:[],
         lastDate:''
       };
     }
     groups[key].volumeMiles+=miles;
+    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)))groups[key].currentWeekVolumeMiles+=miles;
+    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())))groups[key].previousWeekVolumeMiles+=miles;
+    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,startOfCurrentMonthDate(),startOfNextMonthDate()))groups[key].currentMonthVolumeMiles+=miles;
     groups[key].syncs+=1;
     if(row.groupName&&groups[key].groups.indexOf(row.groupName)<0)groups[key].groups.push(row.groupName);
     var date=row.syncedAt||row.sessionDate||'';
@@ -3441,6 +3451,9 @@ function groupVolumeByAthlete(rows){
   });
   return Object.keys(groups).map(function(key){
     groups[key].volumeMiles=Math.round(groups[key].volumeMiles*10)/10;
+    groups[key].currentWeekVolumeMiles=Math.round(groups[key].currentWeekVolumeMiles*10)/10;
+    groups[key].previousWeekVolumeMiles=Math.round(groups[key].previousWeekVolumeMiles*10)/10;
+    groups[key].currentMonthVolumeMiles=Math.round(groups[key].currentMonthVolumeMiles*10)/10;
     return groups[key];
   });
 }
@@ -3669,6 +3682,73 @@ function volumeCellHtml(row){
 
 function sumTrainingVolume(rows){
   return (rows||[]).reduce(function(sum,row){return sum+completedVolumeMiles(row);},0);
+}
+
+function completedVolumeRows(trainingRows,meetRows){
+  return (trainingRows||[]).concat(raceVolumeRows(meetRows||[]));
+}
+
+function raceVolumeRows(meetRows){
+  return (meetRows||[]).map(function(row){
+    var miles=raceDistanceMiles(row);
+    if(!miles)return null;
+    return {
+      athleteName:row.athleteName||'',
+      contactId:row.contactId||'',
+      groupName:'Race results',
+      workoutType:'Race / Meet',
+      workoutPrescription:[row.meetName,row.event].filter(Boolean).join(' · '),
+      completedVolume:row.event,
+      completedVolumeMiles:miles,
+      plannedVolume:'',
+      sessionDate:row.meetDate||row.syncedAt,
+      syncedAt:row.syncedAt||row.meetDate
+    };
+  }).filter(Boolean);
+}
+
+function raceDistanceMiles(row){
+  var text=String(row&&row.event||'').toLowerCase();
+  if(!text)return 0;
+  var twoMile=text.match(/\b2\s*(?:mile|mi)\b/);
+  if(twoMile)return 2;
+  var mile=text.match(/\b1\s*(?:mile|mi)\b|\bmile\b/);
+  if(mile)return 1;
+  var k=text.match(/\b(\d+(?:\.\d+)?)\s*k\b/);
+  if(k)return volumeAmountToMiles(Number(k[1]),'k');
+  var meters=text.match(/\b(\d+(?:\.\d+)?)\s*m\b/);
+  if(meters)return volumeAmountToMiles(Number(meters[1]),'m');
+  return 0;
+}
+
+function sumCompletedVolumeBetween(rows,start,end){
+  return (rows||[]).reduce(function(sum,row){
+    return dateInRange(row.sessionDate||row.meetDate||row.syncedAt,start,end)?sum+completedVolumeMiles(row):sum;
+  },0);
+}
+
+function dateInRange(value,start,end){
+  var date=parseActivityDate(value);
+  return !!(date&&date>=start&&date<end);
+}
+
+function uniqueAthleteCount(rows){
+  var seen={};
+  (rows||[]).forEach(function(row){
+    var key=String(row.contactId||row.athleteName||row.name||'').toLowerCase();
+    if(key)seen[key]=true;
+  });
+  return Object.keys(seen).length;
+}
+
+function startOfCurrentMonthDate(){
+  var now=new Date();
+  return new Date(now.getFullYear(),now.getMonth(),1);
+}
+
+function startOfNextMonthDate(){
+  var now=new Date();
+  return new Date(now.getFullYear(),now.getMonth()+1,1);
 }
 
 function formatMiles(value){
@@ -3963,6 +4043,24 @@ function findDashboardAthleteForTraining(row){
     return String(athlete.contactId||'')===String(row.contactId||'') ||
       String(athlete.name||'').toLowerCase()===String(row.athleteName||'').toLowerCase();
   });
+}
+
+function athleteMatchesDashboardSearch(row,query){
+  if(!query)return true;
+  return searchText(row).indexOf(query)>=0 || athleteActivitySearchText(row).indexOf(query)>=0;
+}
+
+function athleteActivitySearchText(row){
+  var name=String(row&&row.name||'').toLowerCase();
+  var contactId=String(row&&row.contactId||'');
+  var items=[];
+  recentTrainingRows.forEach(function(item){
+    if(String(item.contactId||'')===contactId || String(item.athleteName||'').toLowerCase()===name)items.push(recentTrainingSearchText(item));
+  });
+  recentMeetRows.forEach(function(item){
+    if(String(item.contactId||'')===contactId || String(item.athleteName||'').toLowerCase()===name)items.push(recentMeetSearchText(item));
+  });
+  return items.join(' ');
 }
 
 function searchText(row){
