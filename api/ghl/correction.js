@@ -809,6 +809,7 @@ function optionValue(value) {
 function workoutTypeValue(value) {
   const normalized = optionValue(value);
   const aliases = {
+    easy: "easy_recovery_run",
     easy_run: "easy_recovery_run",
     recovery_run: "easy_recovery_run",
     tempo_run: "extensive_tempo",

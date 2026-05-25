@@ -490,7 +490,7 @@ tr:last-child td{border-bottom:0}
           <label for="manualMileageWorkout">Effort <span class="fieldinfo" tabindex="0" data-tip="Choose the effort category for this completed mileage. These match the Upload/Paste Plan effort options.">i</span></label>
           <select id="manualMileageWorkout">
             <option value="">Select effort</option>
-            <option>Easy</option>
+            <option value="Easy/Recovery Run">Easy</option>
             <option>Threshold</option>
             <option>Interval</option>
             <option>Repetition</option>
@@ -2627,8 +2627,13 @@ function correctionPreviousPayload(row){
 }
 
 function findTrainingRow(button){
+  var rowKey=button.getAttribute('data-row-key')||'';
   var recordId=button.getAttribute('data-record-id')||'';
   var sourceRecordId=button.getAttribute('data-source-record-id')||'';
+  if(rowKey){
+    var keyed=recentTrainingRows.find(function(item){return trainingRowKey(item)===rowKey;});
+    if(keyed)return keyed;
+  }
   return recentTrainingRows.find(function(item){
     return (recordId&&item.recordId===recordId) || (sourceRecordId&&item.sourceRecordId===sourceRecordId);
   });
@@ -3453,7 +3458,7 @@ function groupVolumeByAthlete(rows){
     if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())))groups[key].previousWeekVolumeMiles+=miles;
     if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,startOfCurrentMonthDate(),startOfNextMonthDate()))groups[key].currentMonthVolumeMiles+=miles;
     groups[key].syncs+=1;
-    if(row.groupName&&groups[key].groups.indexOf(row.groupName)<0)groups[key].groups.push(row.groupName);
+    if(displayableTrainingGroupName(row.groupName)&&groups[key].groups.indexOf(row.groupName)<0)groups[key].groups.push(row.groupName);
     var date=row.syncedAt||row.sessionDate||'';
     if(compareValues(date,groups[key].lastDate)>0)groups[key].lastDate=date;
   });
@@ -3633,8 +3638,36 @@ function trainingWorkoutDetailTable(rows){
 
 function trainingActionButtons(row){
   if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
-  var attrs=' data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'"';
+  var attrs=' data-row-key="'+esc(trainingRowKey(row))+'" data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.athleteName||'')+'"';
   return '<button class="ghost compact" data-edit-training="1"'+attrs+' type="button" onclick="event.stopPropagation();event.preventDefault();openCorrectionModal(this);return false;">Edit</button> <button class="danger compact" data-void-training="1"'+attrs+' type="button" onclick="event.stopPropagation();event.preventDefault();voidTrainingRecord(this);return false;">Void</button>';
+}
+
+function trainingRowKey(row){
+  return [
+    row&&row.recordId,
+    row&&row.sourceRecordId,
+    row&&row.contactId,
+    row&&row.athleteName,
+    row&&row.sessionDate,
+    row&&row.syncedAt,
+    row&&row.completedVolume,
+    row&&row.totalTimeDisplay,
+    row&&(row.workoutPrescription||row.workoutType)
+  ].map(function(value){return String(value||'').toLowerCase();}).join('|');
+}
+
+function displayableTrainingGroupName(name){
+  var text=String(name||'').trim();
+  if(!text||/^race results$/i.test(text))return false;
+  return !isArchivedTrainingGroupName(text);
+}
+
+function isArchivedTrainingGroupName(name){
+  var text=String(name||'').trim().toLowerCase();
+  if(!text)return false;
+  return (trainingGroups||[]).some(function(group){
+    return String(group&&group.name||'').trim().toLowerCase()===text && !!group.archived;
+  });
 }
 
 function correctionStatusHtml(row){
@@ -3769,7 +3802,10 @@ function parseCompletedMiles(value,fallback){
   var reps=text.match(/(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
   if(reps)return volumeAmountToMiles(Number(reps[1])*Number(reps[2]),reps[3]);
   var match=text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
-  return match?volumeAmountToMiles(Number(match[1]),match[2]):num(fallback);
+  if(match)return volumeAmountToMiles(Number(match[1]),match[2]);
+  var numericOnly=text.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
+  if(numericOnly)return Number(numericOnly[1]);
+  return num(fallback);
 }
 function volumeAmountToMiles(amount,unit){
   unit=String(unit||'').toLowerCase();

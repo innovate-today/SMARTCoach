@@ -432,8 +432,9 @@ function parseVolumeToMiles(value) {
   const rangeMatch = text.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
   if (rangeMatch) return convertVolumeToMiles((Number(rangeMatch[1]) + Number(rangeMatch[2])) / 2, rangeMatch[3]);
   const match = text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
-  if (!match) return 0;
-  return convertVolumeToMiles(Number(match[1]), match[2]);
+  if (match) return convertVolumeToMiles(Number(match[1]), match[2]);
+  const numericOnly = text.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
+  return numericOnly ? Number(numericOnly[1]) : 0;
 }
 
 function effectiveCompletedVolume(row) {

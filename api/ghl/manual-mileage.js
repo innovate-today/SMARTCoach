@@ -93,6 +93,7 @@ function clean(value) {
 function manualWorkoutType(value) {
   const normalized = value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   const aliases = {
+    easy: "Easy/Recovery Run",
     easy_run: "Easy/Recovery Run",
     recovery_run: "Easy/Recovery Run",
     easy_recovery_run: "Easy/Recovery Run",
