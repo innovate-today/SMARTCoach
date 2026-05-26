@@ -41,13 +41,12 @@ module.exports = async function handler(req, res) {
     lastTrainingMirrorSync,
     latestTrainingMirror: trainingMirror.slice(-5).map((item) => {
       const props = item.properties || {};
-      const coachNote = clean(props.coach_note);
       return {
         recordId: item.id,
-        athlete: clean(props.athlete_name_snapshot || props.athlete_name),
-        workout: clean(props.group_name || props.workout_type || props.workout_name),
-        volume: noteValue(coachNote, "Completed volume") || clean(props.completed_volume),
-        date: clean(props.session_date || props.workout_date),
+        athlete: clean(props.athlete_name),
+        workout: clean(props.workout_name),
+        volume: clean(props.completed_volume),
+        date: clean(props.workout_date),
         savedAt: clean(item.updatedAt || item.createdAt),
       };
     }),
@@ -62,10 +61,4 @@ function setCorsHeaders(res) {
 
 function clean(value) {
   return String(value == null ? "" : value).trim();
-}
-
-function noteValue(note, label) {
-  const prefix = `${label}:`;
-  const line = clean(note).split(/\r?\n/).find((item) => item.trim().toLowerCase().startsWith(prefix.toLowerCase()));
-  return line ? clean(line.slice(prefix.length)) : "";
 }
