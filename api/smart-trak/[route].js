@@ -328,6 +328,7 @@ async function accountAutomation(req, res) {
     res.status(401).json({
       error: "Automation secret is required.",
       automationSecretRequired: true,
+      automationDebug: automationSecretDebug(req),
     });
     return;
   }
@@ -1332,6 +1333,24 @@ function automationAllowed(req) {
       firstAutomationValue(payload, ["automationSecret", "smartcoachAutomationSecret", "SMARTCOACH_AUTOMATION_SECRET", "secret", "token"])
   );
   return provided && safeEqual(provided, expected);
+}
+
+function automationSecretDebug(req) {
+  const headers = req && req.headers || {};
+  const payload = requestBodyObject(req);
+  const customData = payload && (payload.customData || payload.custom_data) || {};
+  return {
+    expectedConfigured: !!cleanSetupText(process.env.SMARTCOACH_AUTOMATION_SECRET),
+    queryKeys: Object.keys(req && req.query || {}).sort(),
+    hasQueryAutomationSecret: !!firstQueryValue(req && req.query && req.query.automationSecret),
+    hasQuerySecret: !!firstQueryValue(req && req.query && req.query.secret),
+    hasQueryToken: !!firstQueryValue(req && req.query && req.query.token),
+    hasAutomationHeader: !!(headers["x-smartcoach-automation-secret"] || headers["X-SMARTCoach-Automation-Secret"]),
+    hasAuthorizationHeader: !!(headers.authorization || headers.Authorization),
+    bodyKeys: Object.keys(payload || {}).sort(),
+    customDataKeys: customData && typeof customData === "object" ? Object.keys(customData).sort() : [],
+    hasNestedAutomationSecret: !!firstAutomationValue(payload, ["automationSecret", "smartcoachAutomationSecret", "SMARTCOACH_AUTOMATION_SECRET", "secret", "token"]),
+  };
 }
 
 function requestBodyObject(req) {
