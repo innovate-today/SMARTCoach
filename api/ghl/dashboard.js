@@ -2,6 +2,10 @@ const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
+const ATHLETE_FIELD_ALIASES = {
+  smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
+  smartcoachAthleteId: ["smartcoach athlete id", "smartcoach_athlete_id", "athlete id", "smartcoach id"],
+};
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
@@ -93,15 +97,16 @@ module.exports = async function handler(req, res) {
       loadTrainingMirror(accountKey),
     ]);
     const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
+    const athletesWithTraining = mergeAthletesFromPerformanceRecords(athletes, allPerformanceRecords);
 
-    const rows = athletes.map((athlete) => buildAthleteRow({
+    const rows = athletesWithTraining.map((athlete) => buildAthleteRow({
       athlete,
       bestRecords,
       meetRecords,
       performanceRecords: allPerformanceRecords,
     }));
-    const meetResults = buildRecentMeetResults({ athletes, meetRecords });
-    const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords });
+    const meetResults = buildRecentMeetResults({ athletes: athletesWithTraining, meetRecords });
+    const trainingSyncs = buildRecentTrainingSyncs({ athletes: athletesWithTraining, performanceRecords: allPerformanceRecords });
     const recentMeetResults = meetResults.slice(0, 100);
     const recentTrainingSyncs = trainingSyncs.slice(0, 100);
 
@@ -134,7 +139,10 @@ function setCorsHeaders(res) {
 }
 
 async function listActiveAthletes({ token, locationId }) {
-  const genderFieldIds = await listContactFieldIds({ token, locationId, names: ["gender", "sex", "division"] });
+  const [genderFieldIds, rosterFieldIds] = await Promise.all([
+    listContactFieldIds({ token, locationId, names: ["gender", "sex", "division"] }),
+    resolveRosterFieldIds({ token, locationId }),
+  ]);
   const result = await ghlFetch({
     token,
     path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=100`,
@@ -142,9 +150,49 @@ async function listActiveAthletes({ token, locationId }) {
   });
 
   return (result.contacts || [])
-    .map((contact) => normalizeContact(contact, { genderFieldIds }))
+    .map((contact) => normalizeContact(contact, { genderFieldIds, rosterFieldIds }))
     .filter((athlete) => athlete.smartcoachActive)
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function resolveRosterFieldIds({ token, locationId }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/locations/${encodeURIComponent(locationId)}/customFields`,
+      method: "GET",
+    });
+    const fields = customFieldsFromResult(result);
+    return Object.keys(ATHLETE_FIELD_ALIASES).reduce((memo, key) => {
+      memo[key] = matchingContactFieldIds(fields, ATHLETE_FIELD_ALIASES[key]);
+      return memo;
+    }, {});
+  } catch (error) {
+    return {};
+  }
+}
+
+function matchingContactFieldIds(fields, names) {
+  const wanted = names.map((name) => clean(name).toLowerCase()).filter(Boolean);
+  const normalizedWanted = names.map(normalizeLookupKey).filter(Boolean);
+  return fields.filter((field) => {
+    const labels = [
+      field.id,
+      field.key,
+      field.fieldKey,
+      field.field_key,
+      field.name,
+      field.fieldName,
+      field.field_name,
+      field.label,
+    ].map((value) => clean(value).toLowerCase());
+    return labels.some((label) => {
+      if (wanted.includes(label)) return true;
+      if (normalizedWanted.includes(normalizeLookupKey(label))) return true;
+      const simple = label.split(".").pop().split("_").pop();
+      return wanted.includes(simple);
+    });
+  }).map((field) => clean(field.id || field.fieldId || field.customFieldId)).filter(Boolean);
 }
 
 async function listContactFieldIds({ token, locationId, names }) {
@@ -236,6 +284,34 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
   return rows.sort(sortMeetSyncDesc);
 }
 
+function mergeAthletesFromPerformanceRecords(athletes, performanceRecords) {
+  const rows = Array.isArray(athletes) ? athletes.slice() : [];
+  const byContact = new Set(rows.map((athlete) => clean(athlete && athlete.id)).filter(Boolean));
+  const byName = new Set(rows.map((athlete) => clean(athlete && athlete.name).toLowerCase()).filter(Boolean));
+
+  (Array.isArray(performanceRecords) ? performanceRecords : []).forEach((record) => {
+    const props = recordProperties(record);
+    const contactId = prop(props, "athlete_contact");
+    const name = prop(props, "athlete_name_snapshot");
+    if (!name) return;
+    if ((contactId && byContact.has(contactId)) || byName.has(name.toLowerCase())) return;
+
+    rows.push({
+      id: contactId || `app_sync_${normalizeLookupKey(name) || rows.length + 1}`,
+      name,
+      gender: "",
+      smartcoachActive: true,
+      smartcoachAthleteId: "",
+      tags: ["smartcoach-athlete"],
+      appSyncedOnly: true,
+    });
+    if (contactId) byContact.add(contactId);
+    byName.add(name.toLowerCase());
+  });
+
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords }) {
   const bests = bestRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeBest).filter((item) => item.event);
   const meets = meetRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeMeetResult).filter((item) => item.event || item.resultDisplay).sort(sortByDateDesc);
@@ -291,13 +367,22 @@ function isFutureDate(value) {
 }
 
 function normalizeContact(contact, options = {}) {
-  const smartcoachActiveValue = existingCustomFieldValue(contact, SMARTCOACH_ACTIVE_FIELD_ID);
+  const rosterFieldIds = options.rosterFieldIds || {};
+  const smartcoachActiveValue = existingCustomFieldValueByIdsOrNames(
+    contact,
+    fieldIdsWithFallback(rosterFieldIds.smartcoachActive, SMARTCOACH_ACTIVE_FIELD_ID),
+    ATHLETE_FIELD_ALIASES.smartcoachActive
+  );
   return {
     id: contact.id,
     name: contactName(contact),
     gender: contactGender(contact, options.genderFieldIds),
     smartcoachActive: isActiveValue(smartcoachActiveValue),
-    smartcoachAthleteId: existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID),
+    smartcoachAthleteId: existingCustomFieldValueByIdsOrNames(
+      contact,
+      fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID),
+      ATHLETE_FIELD_ALIASES.smartcoachAthleteId
+    ),
     tags: Array.isArray(contact.tags) ? contact.tags : [],
   };
 }
@@ -739,6 +824,7 @@ function existingCustomFieldValue(contact, fieldId) {
 
 function existingCustomFieldValueByName(contact, names) {
   const wanted = names.map((name) => clean(name).toLowerCase()).filter(Boolean);
+  const normalizedWanted = names.map(normalizeLookupKey).filter(Boolean);
   const field = customFieldList(contact).find((item) => {
     if (!item) return false;
     const labels = [
@@ -756,11 +842,24 @@ function existingCustomFieldValueByName(contact, names) {
     ].map((value) => clean(value).toLowerCase());
     return labels.some((label) => {
       if (wanted.includes(label)) return true;
+      if (normalizedWanted.includes(normalizeLookupKey(label))) return true;
       const simple = label.split(".").pop().split("_").pop();
       return wanted.includes(simple);
     });
   });
   return field ? fieldValue(field) : "";
+}
+
+function existingCustomFieldValueByIdsOrNames(contact, fieldIds, names) {
+  const idValue = (Array.isArray(fieldIds) ? fieldIds : [fieldIds])
+    .map((fieldId) => existingCustomFieldValue(contact, fieldId))
+    .find(Boolean);
+  if (idValue) return idValue;
+  return existingCustomFieldValueByName(contact, names);
+}
+
+function fieldIdsWithFallback(fieldIds, fallback) {
+  return Array.from(new Set([...(Array.isArray(fieldIds) ? fieldIds : []), fallback].map(clean).filter(Boolean)));
 }
 
 function customFieldList(contact) {
