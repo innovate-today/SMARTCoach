@@ -1327,7 +1327,9 @@ function automationAllowed(req) {
     (req.headers && (req.headers["x-smartcoach-automation-secret"] || req.headers["X-SMARTCoach-Automation-Secret"])) ||
       bearer ||
       firstQueryValue(req.query && req.query.automationSecret) ||
-      firstAutomationValue(payload, ["automationSecret", "smartcoachAutomationSecret", "SMARTCOACH_AUTOMATION_SECRET"])
+      firstQueryValue(req.query && req.query.secret) ||
+      firstQueryValue(req.query && req.query.token) ||
+      firstAutomationValue(payload, ["automationSecret", "smartcoachAutomationSecret", "SMARTCOACH_AUTOMATION_SECRET", "secret", "token"])
   );
   return provided && safeEqual(provided, expected);
 }
@@ -1380,6 +1382,8 @@ function firstAutomationValue(payload, keys) {
       if (value !== undefined && value !== null && String(value).trim() !== "") return value;
     }
   }
+  const nestedValue = findNestedAutomationValue(payload, keys);
+  if (nestedValue !== undefined && nestedValue !== null && String(nestedValue).trim() !== "") return nestedValue;
   const stripeObject = payload && payload.data && payload.data.object;
   for (const key of keys) {
     const value = stripeNestedValue(stripeObject, key);
@@ -1407,6 +1411,35 @@ function automationPayloadCandidates(payload) {
     object.plan,
     object.recurring,
   ].filter(Boolean);
+}
+
+function findNestedAutomationValue(source, keys, seen = new Set()) {
+  if (!source || typeof source !== "object") return "";
+  if (seen.has(source)) return "";
+  seen.add(source);
+  const wanted = new Set(keys.map((key) => normalizeAutomationKey(key)));
+  if (Array.isArray(source)) {
+    for (const item of source) {
+      if (item && typeof item === "object") {
+        const pairKey = item.key || item.name || item.field || item.label;
+        const pairValue = item.value || item.val || item.text;
+        if (pairKey && wanted.has(normalizeAutomationKey(pairKey)) && pairValue !== undefined && pairValue !== null && String(pairValue).trim() !== "") return pairValue;
+      }
+      const nested = findNestedAutomationValue(item, keys, seen);
+      if (nested !== undefined && nested !== null && String(nested).trim() !== "") return nested;
+    }
+    return "";
+  }
+  for (const [key, value] of Object.entries(source)) {
+    if (wanted.has(normalizeAutomationKey(key)) && value !== undefined && value !== null && String(value).trim() !== "") return value;
+    const nested = findNestedAutomationValue(value, keys, seen);
+    if (nested !== undefined && nested !== null && String(nested).trim() !== "") return nested;
+  }
+  return "";
+}
+
+function normalizeAutomationKey(key) {
+  return String(key || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 function stripeNestedValue(object, key) {
