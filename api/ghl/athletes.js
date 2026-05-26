@@ -306,8 +306,12 @@ async function ghlFetch({ token, path, method, body }) {
 
 function normalizeContact(contact, options = {}) {
   const rosterFieldIds = options.rosterFieldIds || {};
+  const tags = Array.isArray(contact.tags) ? contact.tags : [];
   const smartcoachActiveValue = existingCustomFieldValueByIdsOrNames(contact, fieldIdsWithFallback(rosterFieldIds.smartcoachActive, SMARTCOACH_ACTIVE_FIELD_ID), ATHLETE_FIELD_ALIASES.smartcoachActive);
   const smartcoachAthleteId = existingCustomFieldValueByIdsOrNames(contact, fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID), ATHLETE_FIELD_ALIASES.smartcoachAthleteId);
+  const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
+  const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
+  const smartcoachActive = isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && Boolean(smartcoachAthleteId || hasAthleteTag));
   return {
     id: contact.id,
     name: contactName(contact),
@@ -324,10 +328,10 @@ function normalizeContact(contact, options = {}) {
     parentGuardian2Email: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardian2Email, ATHLETE_FIELD_ALIASES.parentGuardian2Email),
     parentGuardian2Phone: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardian2Phone, ATHLETE_FIELD_ALIASES.parentGuardian2Phone),
     coachNotes: contactFieldByIdsOrNames(contact, rosterFieldIds.coachNotes, ATHLETE_FIELD_ALIASES.coachNotes),
-    smartcoachActive: isActiveValue(smartcoachActiveValue),
+    smartcoachActive,
     smartcoachActiveValue,
     smartcoachAthleteId,
-    tags: Array.isArray(contact.tags) ? contact.tags : [],
+    tags,
   };
 }
 
@@ -413,6 +417,10 @@ function matchingContactFieldIds(fields, names) {
 
 function isActiveValue(value) {
   return /^(yes|y|true|active|1|on)$/i.test(clean(value));
+}
+
+function isInactiveValue(value) {
+  return /^(no|n|false|inactive|0|off)$/i.test(clean(value));
 }
 
 function customFieldList(contact) {

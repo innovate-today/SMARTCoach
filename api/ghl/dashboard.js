@@ -143,7 +143,7 @@ async function listActiveAthletes({ token, locationId }) {
 
   return (result.contacts || [])
     .map((contact) => normalizeContact(contact, { genderFieldIds }))
-    .filter((athlete) => athlete.smartcoachActive)
+    .filter((athlete) => athlete.smartcoachRosterMember)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -291,14 +291,22 @@ function isFutureDate(value) {
 }
 
 function normalizeContact(contact, options = {}) {
+  const tags = Array.isArray(contact.tags) ? contact.tags : [];
   const smartcoachActiveValue = existingCustomFieldValue(contact, SMARTCOACH_ACTIVE_FIELD_ID);
+  const smartcoachAthleteId = existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID);
+  const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
+  const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
+  const inferredSmartCoachAthlete = Boolean(smartcoachAthleteId || hasAthleteTag);
+  const smartcoachActive = isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && inferredSmartCoachAthlete);
   return {
     id: contact.id,
     name: contactName(contact),
     gender: contactGender(contact, options.genderFieldIds),
-    smartcoachActive: isActiveValue(smartcoachActiveValue),
-    smartcoachAthleteId: existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID),
-    tags: Array.isArray(contact.tags) ? contact.tags : [],
+    smartcoachActive,
+    smartcoachActiveValue,
+    smartcoachAthleteId,
+    smartcoachRosterMember: smartcoachActive || inferredSmartCoachAthlete,
+    tags,
   };
 }
 
@@ -799,6 +807,10 @@ function contactName(contact) {
 
 function isActiveValue(value) {
   return /^(yes|y|true|active|1|on)$/i.test(clean(value));
+}
+
+function isInactiveValue(value) {
+  return /^(no|n|false|inactive|0|off)$/i.test(clean(value));
 }
 
 function labelValue(value) {
