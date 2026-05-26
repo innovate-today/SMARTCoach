@@ -6,6 +6,7 @@ const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { loadTrainingMirror } = require("../../lib/account-registry");
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo", "lgSfedW35TT44Nxgl7tY"],
   athlete_name_snapshot: ["m20bSENWaEB4jBMtXgMD", "NxKoU2l9QohpmzRt2gin", "0lX15xSvQP77xhNH45q1", "OjTWebwJU389MGpccJ2b"],
@@ -74,7 +75,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { token, locationId } = getGhlContext(req);
+  const { token, locationId, accountKey } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak athlete profile is not configured on the server." });
@@ -87,19 +88,23 @@ module.exports = async function handler(req, res) {
 
     if (!contactId) throw httpError(400, "Athlete contact is required.");
 
-    const [bestRecords, meetRecords, performanceRecords, recordEntries] = await Promise.all([
+    const [bestRecords, meetRecords, performanceRecords, recordEntries, mirroredPerformanceRecords] = await Promise.all([
       searchByAthlete({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, limit: 50 }),
       searchByAthlete({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, limit: 25 }),
       searchByAthlete({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, limit: 25 }),
       searchByAthlete({ token, locationId, schemaKey: RECORD_SCHEMA_KEY, limit: 25 }),
+      loadTrainingMirror(accountKey),
     ]);
+    const mirroredTraining = (mirroredPerformanceRecords || [])
+      .filter((record) => recordMatchesAthlete(record, { contactId, athleteName }));
+    const trainingRecords = uniqueRecords([...performanceRecords, ...mirroredTraining]);
 
     const profile = {
       contactId,
       athleteName,
       bests: bestRecords.map(normalizeBest).filter((item) => item.event),
       meetResults: meetRecords.map(normalizeMeetResult).filter((item) => item.event || item.resultDisplay).sort(sortByDateDesc).slice(0, 5),
-      training: performanceRecords.map(normalizePerformanceRecord).filter((item) => item.groupName || item.totalTimeDisplay).sort(sortByDateDesc).slice(0, 5),
+      training: trainingRecords.map(normalizePerformanceRecord).filter((item) => item.groupName || item.totalTimeDisplay).sort(sortByDateDesc).slice(0, 5),
       records: recordEntries.map(normalizeRecordEntry).filter((item) => item.recordType || item.resultDisplay).sort(sortByDateDesc).slice(0, 5),
     };
 
@@ -221,6 +226,17 @@ function recordsFromResult(result) {
     ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
     ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
   ];
+}
+
+function uniqueRecords(records) {
+  const seen = {};
+  return (Array.isArray(records) ? records : []).filter((record) => {
+    const props = recordProperties(record);
+    const key = (record && record.id) || prop(props, "source_record_id") || JSON.stringify(props);
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 function recordProperties(record) {

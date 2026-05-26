@@ -7,6 +7,7 @@ const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { loadTrainingMirror } = require("../../lib/account-registry");
 
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
@@ -76,7 +77,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { token, locationId } = getGhlContext(req);
+  const { token, locationId, accountKey } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak dashboard is not configured on the server." });
@@ -84,21 +85,23 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const [athletes, bestRecords, meetRecords, performanceRecords] = await Promise.all([
+    const [athletes, bestRecords, meetRecords, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
       listActiveAthletes({ token, locationId }),
       searchObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY }),
       searchObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
       searchObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
+      loadTrainingMirror(accountKey),
     ]);
+    const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
 
     const rows = athletes.map((athlete) => buildAthleteRow({
       athlete,
       bestRecords,
       meetRecords,
-      performanceRecords,
+      performanceRecords: allPerformanceRecords,
     }));
     const meetResults = buildRecentMeetResults({ athletes, meetRecords });
-    const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords });
+    const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords });
     const recentMeetResults = meetResults.slice(0, 100);
     const recentTrainingSyncs = trainingSyncs.slice(0, 100);
 

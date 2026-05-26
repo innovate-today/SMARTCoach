@@ -11,6 +11,7 @@ const ATHLETE_FIELD_ALIASES = {
 };
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { mirrorTrainingRecords } = require("../../lib/account-registry");
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -30,7 +31,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { token, locationId } = getGhlContext(req);
+  const { token, locationId, accountKey } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak sync is not configured on the server." });
@@ -97,7 +98,8 @@ module.exports = async function handler(req, res) {
       const records = Array.isArray(item.performanceRecords) ? item.performanceRecords : [];
       return total + records.filter((record) => record && record.recordId).length;
     }, 0);
-    res.status(200).json({ success: true, synced, savedRecordCount, planDayUpdate });
+    const trainingMirror = await saveTrainingMirror(accountKey, synced);
+    res.status(200).json({ success: true, synced, savedRecordCount, planDayUpdate, trainingMirror });
   } catch (error) {
     const body = { error: error.message || "SMART Trak sync failed." };
     if (error.code) body.code = error.code;
@@ -111,6 +113,28 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code");
+}
+
+async function saveTrainingMirror(accountKey, synced) {
+  const syncedAt = new Date().toISOString();
+  const records = [];
+  (Array.isArray(synced) ? synced : []).forEach((item) => {
+    const performanceRecords = Array.isArray(item.performanceRecords) ? item.performanceRecords : [];
+    performanceRecords.forEach((record) => {
+      if (!record || !record.recordId) return;
+      records.push({
+        recordId: record.recordId,
+        sourceRecordId: record.sourceRecordId,
+        syncedAt,
+        properties: record.properties || {},
+      });
+    });
+  });
+  try {
+    return await mirrorTrainingRecords(accountKey, records);
+  } catch (error) {
+    return { saved: false, count: 0, error: error.message || "Training mirror could not be saved." };
+  }
 }
 
 function normalizeSession(payload) {
@@ -338,6 +362,7 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
       runNumber: run.runNumber,
       recordId,
       sourceRecordId: properties.source_record_id,
+      properties,
     });
   }
 
