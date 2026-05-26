@@ -1322,12 +1322,25 @@ function automationAllowed(req) {
   if (!expected) return false;
   const auth = cleanSetupText(req.headers && (req.headers.authorization || req.headers.Authorization));
   const bearer = auth.replace(/^Bearer\s+/i, "");
+  const payload = requestBodyObject(req);
   const provided = cleanSetupText(
     (req.headers && (req.headers["x-smartcoach-automation-secret"] || req.headers["X-SMARTCoach-Automation-Secret"])) ||
       bearer ||
-      firstQueryValue(req.query && req.query.automationSecret)
+      firstQueryValue(req.query && req.query.automationSecret) ||
+      firstAutomationValue(payload, ["automationSecret", "smartcoachAutomationSecret", "SMARTCOACH_AUTOMATION_SECRET"])
   );
   return provided && safeEqual(provided, expected);
+}
+
+function requestBodyObject(req) {
+  if (!req || !req.body) return {};
+  if (typeof req.body === "object" && !Buffer.isBuffer(req.body)) return req.body;
+  try {
+    const text = Buffer.isBuffer(req.body) ? req.body.toString("utf8") : String(req.body || "");
+    return text ? JSON.parse(text) : {};
+  } catch (error) {
+    return {};
+  }
 }
 
 function setAutomationHeaders(res) {
@@ -1383,6 +1396,8 @@ function automationPayloadCandidates(payload) {
     root.account,
     root.customer,
     root.subscription,
+    root.customData,
+    root.custom_data,
     root.metadata,
     object,
     object.metadata,
