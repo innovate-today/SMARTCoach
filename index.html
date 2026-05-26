@@ -3976,10 +3976,11 @@ function markSyncedRuns(synced){
     var records=item.performanceRecords||[];
     r.saved.forEach(function(s,i){
       var rec=records[i]||{};
+      if(!rec.recordId)return;
       s.synced=true;
       s.syncedAt=new Date().toISOString();
       if(rec.sourceRecordId)s.sourceRecordId=rec.sourceRecordId;
-      if(rec.recordId)s.performanceRecordId=rec.recordId;
+      s.performanceRecordId=rec.recordId;
     });
   });
   save();
@@ -3990,7 +3991,7 @@ function syncSavedRecordCount(synced){
   if(!Array.isArray(synced))return 0;
   return synced.reduce(function(total,item){
     var records=item&&Array.isArray(item.performanceRecords)?item.performanceRecords:[];
-    return total+records.filter(function(record){return record&&(record.recordId||record.sourceRecordId);}).length;
+    return total+records.filter(function(record){return record&&record.recordId;}).length;
   },0);
 }
 

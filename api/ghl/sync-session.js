@@ -93,12 +93,16 @@ module.exports = async function handler(req, res) {
       linkedPerformanceRecords,
     });
 
-    const savedRecordCount = synced.reduce((total, item) => total + (Array.isArray(item.performanceRecords) ? item.performanceRecords.length : 0), 0);
+    const savedRecordCount = synced.reduce((total, item) => {
+      const records = Array.isArray(item.performanceRecords) ? item.performanceRecords : [];
+      return total + records.filter((record) => record && record.recordId).length;
+    }, 0);
     res.status(200).json({ success: true, synced, savedRecordCount, planDayUpdate });
   } catch (error) {
     const body = { error: error.message || "SMART Trak sync failed." };
     if (error.code) body.code = error.code;
     if (error.duplicates) body.duplicates = error.duplicates;
+    if (error.details) body.details = error.details;
     res.status(error.statusCode || 500).json(body);
   }
 };
@@ -1142,6 +1146,7 @@ function workoutTypeValue(value) {
     easy: "easy_recovery_run",
     easy_run: "easy_recovery_run",
     recovery_run: "easy_recovery_run",
+    easy_recovery: "easy_recovery_run",
     tempo_run: "extensive_tempo",
     warmup_cooldown: "easy_recovery_run",
     warm_up_cool_down: "easy_recovery_run",
@@ -1149,8 +1154,21 @@ function workoutTypeValue(value) {
     speed_endurance_ii: "speed_endurance_2",
     special_endurance_i: "special_endurance_1",
     special_endurance_ii: "special_endurance_2",
+    quality: "aerobic_power",
+    quality_session: "aerobic_power",
+    workout: "other",
+    track: "other",
+    cross_country: "other",
+    meets_races: "race",
+    race_meet: "race",
+    track_meet: "race",
+    cross_country_race: "race",
+    off_day: "other",
+    rest_day: "other",
+    no_practice: "other",
+    note: "other",
   };
-  return aliases[normalized] || normalized;
+  return aliases[normalized] || normalized || "other";
 }
 
 function validDate(value) {
@@ -1180,5 +1198,6 @@ function httpError(statusCode, message, details) {
   error.statusCode = statusCode;
   if (details && details.code) error.code = details.code;
   if (details && details.duplicates) error.duplicates = details.duplicates;
+  if (details) error.details = details;
   return error;
 }
