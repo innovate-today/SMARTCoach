@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1779491668172"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1779819150000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -3540,6 +3540,13 @@ function selectedSyncRunners(){
   checked.forEach(function(cb){selectedIds[parseInt(cb.value)]=true;});
   return CL.runners.filter(function(r){return selectedIds[r.id]&&r.saved&&r.saved.length;});
 }
+function selectedSyncRequiresResync(){
+  var checked=document.querySelectorAll('.sy-runner:checked');
+  for(var i=0;i<checked.length;i++){
+    if(checked[i].getAttribute('data-resync')==='1')return true;
+  }
+  return false;
+}
 function selectedRunnerPlans(runners){
   return (runners||selectedSyncRunners()).map(function(r){return runnerPlan(r);}).filter(function(plan){return plan.trainingPlanDayId||plan.trainingPlanTitle||plan.trainingPlanDayTitle;});
 }
@@ -3718,6 +3725,7 @@ function doSMARTTraKSync(forceDuplicateSync){
   if(!CL)return;
   var btn=document.getElementById('sy-btn');
   var status=document.getElementById('sy-status');
+  var shouldForceDuplicateSync=forceDuplicateSync===true||selectedSyncRequiresResync();
   var selectedRunners=selectedSyncRunners();
   if(!selectedRunners.length){status.textContent='Check athlete(s) only if you need to sync them again.';status.style.color='#c47a00';status.style.fontWeight='700';updateSyncButtonState();return;}
   var surf=visibleSyncValue('sy-surf','surface',status);
@@ -3729,11 +3737,11 @@ function doSMARTTraKSync(forceDuplicateSync){
   var wtype=syncPlan.hasPlan?(syncPlan.workoutType||'Aerobic Power'):visibleSyncValue('sy-wtype','workout type',status);
   if(season===null||phase===null||wtype===null||surf===null)return;
   if(syncPlan.isMeetDay){
-    submitPlanDayMeetResults({selectedRunners:selectedRunners,status:status,button:btn,surface:surf,weather:weather,season:season,syncPlan:syncPlan,forceDuplicateSync:forceDuplicateSync===true});
+    submitPlanDayMeetResults({selectedRunners:selectedRunners,status:status,button:btn,surface:surf,weather:weather,season:season,syncPlan:syncPlan,forceDuplicateSync:shouldForceDuplicateSync});
     return;
   }
   var localSynced=selectedRunners.filter(hasSyncedRuns);
-  if(localSynced.length&&!forceDuplicateSync){
+  if(localSynced.length&&!shouldForceDuplicateSync){
     status.textContent='One or more selected athletes were already synced.';status.style.color='#c47a00';status.style.fontWeight='700';
     if(confirm('One or more selected athletes already have synced runs. Sync them again anyway?')){
       doSMARTTraKSync(true);
@@ -3803,14 +3811,14 @@ function doSMARTTraKSync(forceDuplicateSync){
       weather:weather,
       completedVolume:completedVolume,
       sessionDate:new Date().toISOString(),
-      forceDuplicateSync:forceDuplicateSync===true,
       trainingPlanId:commonSyncPlanValue(syncPlan,'trainingPlanId',CL.trainingPlanId),
       trainingPlanSourceId:commonSyncPlanValue(syncPlan,'trainingPlanSourceId',CL.trainingPlanSourceId),
       trainingPlanTitle:commonSyncPlanValue(syncPlan,'trainingPlanTitle',CL.trainingPlanTitle),
       trainingPlanDayId:commonSyncPlanValue(syncPlan,'trainingPlanDayId',CL.trainingPlanDayId)||commonSyncPlanValue(syncPlan,'trainingPlanDaySourceId',CL.trainingPlanDaySourceId),
       trainingPlanDaySourceId:commonSyncPlanValue(syncPlan,'trainingPlanDaySourceId',CL.trainingPlanDaySourceId),
       trainingPlanDayTitle:commonSyncPlanValue(syncPlan,'trainingPlanDayTitle',CL.trainingPlanDayTitle),
-      athletes:athletes
+      athletes:athletes,
+      forceDuplicateSync:shouldForceDuplicateSync
     })
     });
   }).then(function(r){
@@ -3824,6 +3832,10 @@ function doSMARTTraKSync(forceDuplicateSync){
     var savedRecordCount=Number(result.data&&result.data.savedRecordCount)||syncSavedRecordCount(result.data&&result.data.synced);
     if(!savedRecordCount){
       throw new Error('SMART Trak did not confirm saved workout records. Refresh and try syncing again.');
+    }
+    var mirror=result.data&&result.data.trainingMirror;
+    if(!mirror||!mirror.saved){
+      throw new Error('SMART Trak saved the workout but did not confirm the dashboard update. Refresh and try syncing again.');
     }
     markSyncedRuns(result.data&&result.data.synced);
     status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' · '+savedRecordCount+' workout record'+(savedRecordCount===1?'':'s')+' saved to SMART Trak.';
