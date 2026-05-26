@@ -5,6 +5,10 @@ const SEASON_RECORD_SCHEMA_KEY = "custom_objects.season_records";
 const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
+const ATHLETE_FIELD_ALIASES = {
+  smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
+  smartcoachAthleteId: ["smartcoach athlete id", "smartcoach_athlete_id", "athlete id", "smartcoach id"],
+};
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
@@ -89,7 +93,8 @@ module.exports = async function handler(req, res) {
       linkedPerformanceRecords,
     });
 
-    res.status(200).json({ success: true, synced, planDayUpdate });
+    const savedRecordCount = synced.reduce((total, item) => total + (Array.isArray(item.performanceRecords) ? item.performanceRecords.length : 0), 0);
+    res.status(200).json({ success: true, synced, savedRecordCount, planDayUpdate });
   } catch (error) {
     const body = { error: error.message || "SMART Trak sync failed." };
     if (error.code) body.code = error.code;
@@ -101,7 +106,7 @@ module.exports = async function handler(req, res) {
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code");
 }
 
 function normalizeSession(payload) {
@@ -191,7 +196,7 @@ async function findOrCreateContact({ token, locationId, athlete, session }) {
     const contact = await getContact({ token, contactId: athlete.contactId });
     if (contact && contact.id) {
       await addTags({ token, contactId: contact.id, tags: buildTags(session) });
-      await markContactAsSmartCoachAthlete({ token, contact, athlete });
+      await markContactAsSmartCoachAthlete({ token, locationId, contact, athlete });
       return contact;
     }
   }
@@ -199,7 +204,7 @@ async function findOrCreateContact({ token, locationId, athlete, session }) {
   const existing = await findExistingContact({ token, locationId, athleteName: athlete.name });
   if (existing) {
     await addTags({ token, contactId: existing.id, tags: buildTags(session) });
-    await markContactAsSmartCoachAthlete({ token, contact: existing, athlete });
+    await markContactAsSmartCoachAthlete({ token, locationId, contact: existing, athlete });
     return existing;
   }
 
@@ -224,7 +229,7 @@ async function findOrCreateContact({ token, locationId, athlete, session }) {
   if (!contact || !contact.id) {
     throw httpError(502, `SMART Trak did not return a contact for ${athlete.name}.`);
   }
-  await markContactAsSmartCoachAthlete({ token, contact, athlete });
+  await markContactAsSmartCoachAthlete({ token, locationId, contact, athlete });
   return contact;
 }
 
@@ -265,20 +270,24 @@ async function addTags({ token, contactId, tags }) {
   }
 }
 
-async function markContactAsSmartCoachAthlete({ token, contact, athlete }) {
-  const smartcoachAthleteId = athlete.smartcoachAthleteId || existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID) || buildAthleteId(athlete.name);
+async function markContactAsSmartCoachAthlete({ token, locationId, contact, athlete }) {
+  const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
+  const activeFieldIds = fieldIdsWithFallback(rosterFieldIds.smartcoachActive, SMARTCOACH_ACTIVE_FIELD_ID);
+  const athleteIdFieldIds = fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID);
+  const smartcoachAthleteId = athlete.smartcoachAthleteId
+    || existingCustomFieldValueByIdsOrNames(contact, athleteIdFieldIds, ATHLETE_FIELD_ALIASES.smartcoachAthleteId)
+    || buildAthleteId(athlete.name);
+  const customFields = [];
+  addCustomFieldValue(customFields, activeFieldIds, "Yes");
+  addCustomFieldValue(customFields, athleteIdFieldIds, smartcoachAthleteId);
+  if (!customFields.length) return;
 
   try {
     await ghlFetch({
       token,
       path: `/contacts/${encodeURIComponent(contact.id)}`,
       method: "PUT",
-      body: {
-        customFields: [
-          { id: SMARTCOACH_ACTIVE_FIELD_ID, value: "Yes" },
-          { id: SMARTCOACH_ATHLETE_ID_FIELD_ID, value: smartcoachAthleteId },
-        ],
-      },
+      body: { customFields },
     });
   } catch (error) {
     if (error.statusCode && error.statusCode >= 500) throw error;
@@ -317,9 +326,13 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
       },
     });
 
+    const recordId = objectRecordId(record);
+    if (!recordId) {
+      throw httpError(502, `SMART Trak did not return a saved workout record for ${athlete.name}.`);
+    }
     created.push({
       runNumber: run.runNumber,
-      recordId: record.id || (record.record && record.record.id) || null,
+      recordId,
       sourceRecordId: properties.source_record_id,
     });
   }
@@ -383,7 +396,7 @@ async function upsertSeasonRecord({ token, locationId, contactId, athlete, sessi
 
     return {
       action: "updated",
-      recordId: updated.id || (updated.record && updated.record.id) || existing.id,
+      recordId: objectRecordId(updated) || existing.id,
       sourceRecordId,
     };
   }
@@ -398,9 +411,14 @@ async function upsertSeasonRecord({ token, locationId, contactId, athlete, sessi
     },
   });
 
+  const recordId = objectRecordId(created);
+  if (!recordId) {
+    throw httpError(502, `SMART Trak did not return a saved season record for ${athlete.name}.`);
+  }
+
   return {
     action: "created",
-    recordId: created.id || (created.record && created.record.id) || null,
+    recordId,
     sourceRecordId,
   };
 }
@@ -900,6 +918,69 @@ function buildAthleteId(name) {
   return `sca_${slugValue(name).replace(/-/g, "_") || "athlete"}`;
 }
 
+async function resolveRosterFieldIds({ token, locationId }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/locations/${encodeURIComponent(locationId)}/customFields`,
+      method: "GET",
+    });
+    const fields = customFieldsFromResult(result);
+    return Object.keys(ATHLETE_FIELD_ALIASES).reduce((memo, key) => {
+      memo[key] = matchingContactFieldIds(fields, ATHLETE_FIELD_ALIASES[key]);
+      return memo;
+    }, {});
+  } catch (error) {
+    return {};
+  }
+}
+
+function matchingContactFieldIds(fields, names) {
+  const wanted = names.map((name) => clean(name).toLowerCase()).filter(Boolean);
+  return fields.filter((field) => {
+    const labels = [
+      field.id,
+      field.key,
+      field.fieldKey,
+      field.field_key,
+      field.name,
+      field.fieldName,
+      field.field_name,
+      field.label,
+    ].map((value) => clean(value).toLowerCase());
+    return labels.some((label) => {
+      if (wanted.includes(label)) return true;
+      const simple = label.split(".").pop().split("_").pop();
+      return wanted.includes(simple);
+    });
+  }).map((field) => clean(field.id || field.fieldId || field.customFieldId)).filter(Boolean);
+}
+
+function customFieldsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.customFields) ? result.customFields : []),
+    ...(Array.isArray(result && result.fields) ? result.fields : []),
+    ...(Array.isArray(result && result.data && result.data.customFields) ? result.data.customFields : []),
+    ...(Array.isArray(result && result.data && result.data.fields) ? result.data.fields : []),
+  ];
+}
+
+function addCustomFieldValue(customFields, fieldIds, value) {
+  const id = fieldId(fieldIds);
+  if (!id || typeof value === "undefined") return;
+  customFields.push({ id, value: clean(value) });
+}
+
+function fieldId(fieldIds) {
+  return Array.isArray(fieldIds) && fieldIds.length ? fieldIds[0] : "";
+}
+
+function fieldIdsWithFallback(fieldIds, fallbackId) {
+  const ids = Array.isArray(fieldIds) ? fieldIds.slice() : [];
+  if (fallbackId && !ids.includes(fallbackId)) ids.push(fallbackId);
+  return ids;
+}
+
 function existingCustomFieldValue(contact, fieldId) {
   const fields = Array.isArray(contact && contact.customFields) ? contact.customFields : [];
   const field = fields.find((item) => {
@@ -909,6 +990,65 @@ function existingCustomFieldValue(contact, fieldId) {
   if (!field) return "";
   const value = field.value || field.fieldValue || field.field_value;
   return value ? String(value) : "";
+}
+
+function existingCustomFieldValueByIdsOrNames(contact, fieldIds, names) {
+  const byId = (fieldIds || []).map((fieldId) => existingCustomFieldValue(contact, fieldId)).find(Boolean);
+  if (byId) return byId;
+  const wanted = (names || []).map((name) => clean(name).toLowerCase()).filter(Boolean);
+  const fields = customFieldList(contact);
+  const field = fields.find((item) => {
+    if (!item) return false;
+    const labels = [
+      item.id,
+      item.fieldId,
+      item.field_id,
+      item.customFieldId,
+      item.key,
+      item.fieldKey,
+      item.field_key,
+      item.name,
+      item.fieldName,
+      item.field_name,
+      item.label,
+    ].map((value) => clean(value).toLowerCase());
+    return labels.some((label) => {
+      if (wanted.includes(label)) return true;
+      const simple = label.split(".").pop().split("_").pop();
+      return wanted.includes(simple);
+    });
+  });
+  return field ? fieldValue(field) : "";
+}
+
+function customFieldList(contact) {
+  if (!contact) return [];
+  if (Array.isArray(contact.customFields)) return contact.customFields;
+  if (Array.isArray(contact.customField)) return contact.customField;
+  if (Array.isArray(contact.customFieldsData)) return contact.customFieldsData;
+  if (contact.customFields && typeof contact.customFields === "object") {
+    return Object.keys(contact.customFields).map((key) => ({ id: key, value: contact.customFields[key] }));
+  }
+  return [];
+}
+
+function fieldValue(field) {
+  const value = field && (field.value || field.fieldValue || field.field_value || field.valueString || field.value_string);
+  if (Array.isArray(value)) return value.map((part) => clean(part && typeof part === "object" ? part.value || part.name || part.label : part)).filter(Boolean).join(", ");
+  return clean(value);
+}
+
+function objectRecordId(result) {
+  const candidates = [
+    result && result.id,
+    result && result._id,
+    result && result.recordId,
+    result && result.record && (result.record.id || result.record._id || result.record.recordId),
+    result && result.data && (result.data.id || result.data._id || result.data.recordId),
+    result && result.data && result.data.record && (result.data.record.id || result.data.record._id || result.data.record.recordId),
+    firstRecord(result) && (firstRecord(result).id || firstRecord(result)._id || firstRecord(result).recordId),
+  ];
+  return candidates.map(clean).find(Boolean) || "";
 }
 
 function firstRecord(result) {

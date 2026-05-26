@@ -3821,8 +3821,12 @@ function doSMARTTraKSync(forceDuplicateSync){
       err.status=result.status;err.data=result.data;throw err;
     }
     var count=result.data&&result.data.synced?result.data.synced.length:athletes.length;
+    var savedRecordCount=Number(result.data&&result.data.savedRecordCount)||syncSavedRecordCount(result.data&&result.data.synced);
+    if(!savedRecordCount){
+      throw new Error('SMART Trak did not confirm saved workout records. Refresh and try syncing again.');
+    }
     markSyncedRuns(result.data&&result.data.synced);
-    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+'. Workout saved to athlete records.';
+    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' · '+savedRecordCount+' workout record'+(savedRecordCount===1?'':'s')+' saved to SMART Trak.';
     status.style.color='#0a7a44';
     status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
@@ -3981,6 +3985,13 @@ function markSyncedRuns(synced){
   save();
   rr();
   renderSyncAthletes();
+}
+function syncSavedRecordCount(synced){
+  if(!Array.isArray(synced))return 0;
+  return synced.reduce(function(total,item){
+    var records=item&&Array.isArray(item.performanceRecords)?item.performanceRecords:[];
+    return total+records.filter(function(record){return record&&(record.recordId||record.sourceRecordId);}).length;
+  },0);
 }
 
 applyPlanMode();applyAdminTools();load();rl();
