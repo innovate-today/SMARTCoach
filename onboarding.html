@@ -571,7 +571,7 @@ function generateCoachCodes(){
   refreshActiveSetupDisplays();
 }
 function cleanAccountKey(value){
-  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,40);
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'').slice(0,80);
 }
 function accountKeyValues(){
   return {
