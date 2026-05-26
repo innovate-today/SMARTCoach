@@ -30,22 +30,30 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 Current launch status:
 
 - Code/security/setup cleanup is largely complete for the initial rollout path.
-- Cleanup/launch prep is estimated at 90-95% complete, but production deployment is currently blocked by the Vercel Hobby serverless-function limit.
-- Remaining launch readiness is primarily live validation with a real Pro test account in Vercel/GHL after the deployment blocker is cleared.
+- Cleanup/launch prep is estimated at 90-95% complete.
+- The previous Vercel Hobby serverless-function deployment blocker has been resolved in code by keeping the API function count within the Hobby limit.
+- Production is serving the current SMART Trak route layout and current launch-validation pages as of 2026-05-26.
+- Remaining launch readiness is primarily live validation with a real Pro test account in Vercel/GHL, especially tests that require the assigned coach access code.
 - Treat additional cleanup as paused unless live validation exposes a blocker.
 - Do not implement parked future ideas during this pass unless the user explicitly pulls one forward.
 - Use `/live-launch-validation.html`, `LIVE_LAUNCH_VALIDATION.md`, and the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
 
 Latest handoff:
 
-- Latest pushed commit: `dca22af Keep athlete group assignment after save`.
-- The working tree was clean after this push.
-- App workout sync was confirmed working on the real Pro test account: the user confirmed a `20.2` second Stevie Ray stopwatch workout appeared correctly in SMART Trak.
+- Latest pushed code commit before this state update: `dca22af Keep athlete group assignment after save`.
+- Latest local commit when this handoff was checked: `dbe75c0 Update SMARTCoach project state`.
+- Repo status was clean on `main...origin/main`; `git push origin main:main` returned `Everything up-to-date`.
+- Local regression suite passed with `npm test`.
+- Production checks passed for the deployment blocker:
+  - `/live-launch-validation.html` loads on `https://app.smartcoach-pro.com`.
+  - `/api/ghl/sync-diagnostics` returns 404, confirming the old extra API function is no longer deployed.
+  - `/api/smart-trak/sync-diagnostics?account=sc-qxwjweksyuf7sdofhpb4` exists and correctly requires coach access.
+  - `/api/smart-trak/account-status?account=sc-qxwjweksyuf7sdofhpb4` returns `200` with `configured: true`, `accessReady: true`, `subscription.status: active`, `registry.found: true`, `coachAccessCodesConfigured: 1`, `deviceAccessReady: false`, and `parentEmailToolsAllowed: false`.
+- Production content checks confirmed the current Training Calendar `Training Setup:` row and the current Upload/Paste Plan Add Workouts wording are live.
+- App workout sync was previously confirmed working on the real Pro test account: the user confirmed a `20.2` second Stevie Ray stopwatch workout appeared correctly in SMART Trak.
 - A remaining live issue was fixed and pushed locally/GitHub: athletes added on the Athletes page should keep their selected training group after save instead of appearing and then disappearing.
-- Vercel production is not currently receiving the latest commits because the project hit the Hobby limit: "No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan." Until this is fixed, recent commits can be pushed to GitHub but may not deploy.
-- Recent failed deploy commits included `2585e0d Include tagged athletes in roster lookups` and `8bd8e53 Show mirrored app workouts on dashboard`.
-- Last known ready production deployment shown in Vercel was around `ada5f79 Mirror synced workouts for SMART Trak views`; verify Vercel before judging whether a pushed fix is live.
-- Next practical step: resolve the Vercel function-limit blocker by consolidating functions/routes or moving the project to a plan that supports the current function count, then redeploy and retest the latest pushed fixes.
+- Code inspection confirmed the known dashboard retest items are implemented locally: dashboard cards use filtered rows, archived training groups are excluded from the Groups column, and race results are included in completed volume.
+- Next practical step: complete the live Pro test-account validation pass with the assigned coach access code, starting with Athletes group-save retest, dashboard filtered-volume retests, manual mileage same-day edit retest, and phone app follow-up checks.
 
 Latest SaaS/account setup truth:
 
@@ -829,6 +837,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 112. Regression tests now verify the live validation page keeps its required account-scoped support actions and coach-page validation links.
 113. `LIVE_LAUNCH_VALIDATION.md` now points operators to the account-scoped HTML validation page and starts setup from the same account-specific flow.
 114. Launch cleanup is now explicitly paused unless the live Pro validation pass exposes a blocker; the next practical work should be production validation, not more prep polishing.
+115. Production retest on 2026-05-26 confirmed the Vercel function-limit fix is live: the old `/api/ghl/sync-diagnostics` route returns 404, the unified `/api/smart-trak/sync-diagnostics` route exists and requires coach access, the live validation page loads, the real Pro test account record is active/configured from registry storage, parent email tools are off, and current Training Calendar / Upload-Paste wording is deployed. Remaining validation requires the assigned coach code for live SMART Trak page/API workflows.
 
 ## Known Good Test Flow
 
@@ -838,7 +847,7 @@ Use this as the current launch regression test:
 2. For a live Pro test account, run Test Setup First, then Save Account Setup.
 3. Lookup the account and confirm the customer account record is saved with subscription, coach seats, SMART Trak connection, and coach access-code readiness.
 4. Check Customer Access and confirm account access, account source, SMART Trak connection, and device/coach-code status.
-5. Open Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator with the customer account key.
+5. Open Dashboard, Athletes, Training Calendar, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Meet History, Records, and XC Simulator with the customer account key.
 6. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
 7. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
 8. Create or import a plan, build a training group, assign the plan to a group or selected athletes, and confirm the Training Calendar shows the plan days.
