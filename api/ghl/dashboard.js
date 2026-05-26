@@ -151,7 +151,7 @@ async function listActiveAthletes({ token, locationId }) {
 
   return (result.contacts || [])
     .map((contact) => normalizeContact(contact, { genderFieldIds, rosterFieldIds }))
-    .filter((athlete) => athlete.smartcoachRosterMember)
+    .filter((athlete) => athlete.smartcoachActive)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -368,30 +368,22 @@ function isFutureDate(value) {
 
 function normalizeContact(contact, options = {}) {
   const rosterFieldIds = options.rosterFieldIds || {};
-  const tags = Array.isArray(contact.tags) ? contact.tags : [];
   const smartcoachActiveValue = existingCustomFieldValueByIdsOrNames(
     contact,
     fieldIdsWithFallback(rosterFieldIds.smartcoachActive, SMARTCOACH_ACTIVE_FIELD_ID),
     ATHLETE_FIELD_ALIASES.smartcoachActive
   );
-  const smartcoachAthleteId = existingCustomFieldValueByIdsOrNames(
-    contact,
-    fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID),
-    ATHLETE_FIELD_ALIASES.smartcoachAthleteId
-  );
-  const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
-  const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
-  const inferredSmartCoachAthlete = Boolean(smartcoachAthleteId || hasAthleteTag);
-  const smartcoachActive = isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && inferredSmartCoachAthlete);
   return {
     id: contact.id,
     name: contactName(contact),
     gender: contactGender(contact, options.genderFieldIds),
-    smartcoachActive,
-    smartcoachActiveValue,
-    smartcoachAthleteId,
-    smartcoachRosterMember: smartcoachActive || inferredSmartCoachAthlete,
-    tags,
+    smartcoachActive: isActiveValue(smartcoachActiveValue),
+    smartcoachAthleteId: existingCustomFieldValueByIdsOrNames(
+      contact,
+      fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID),
+      ATHLETE_FIELD_ALIASES.smartcoachAthleteId
+    ),
+    tags: Array.isArray(contact.tags) ? contact.tags : [],
   };
 }
 
@@ -906,10 +898,6 @@ function contactName(contact) {
 
 function isActiveValue(value) {
   return /^(yes|y|true|active|1|on)$/i.test(clean(value));
-}
-
-function isInactiveValue(value) {
-  return /^(no|n|false|inactive|0|off)$/i.test(clean(value));
 }
 
 function labelValue(value) {
