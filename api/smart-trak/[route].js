@@ -14,7 +14,7 @@ const handlers = {
   correction: require("../ghl/correction"),
   "meet-result": require("../ghl/meet-result"),
   meets: require("../ghl/meets"),
-  "sync-diagnostics": require("../ghl/sync-diagnostics"),
+  "sync-diagnostics": require("../../lib/sync-diagnostics"),
   "sync-session": require("../ghl/sync-session"),
   "training-plan": require("../ghl/training-plan"),
 };
