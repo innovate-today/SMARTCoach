@@ -456,7 +456,7 @@ function loadBuilder(){
     if(!athleteResult.ok)throw new Error(athleteResult.data&&athleteResult.data.error?athleteResult.data.error:'Athletes unavailable');
     athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
     plans=(planResult.data&&planResult.data.plans)||[];
-    trainingGroups=(groupResult.data&&groupResult.data.groups)||[];
+    trainingGroups=reconcileTrainingGroupsForRoster((groupResult.data&&groupResult.data.groups)||[]);
     selectedGroupId=trainingGroups[0]&&trainingGroups[0].id||'';
     renderFitnessRows();
     renderTrainingGroups();
@@ -632,6 +632,25 @@ function setFitnessStatus(text,type){var s=document.getElementById('fitnessStatu
 function setAssignmentStatus(text,type){var s=document.getElementById('assignmentStatus');if(!s)return;s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';}
 function setGroupStatus(text,type){var s=document.getElementById('groupStatus');if(!s)return;s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';}
 function groupKey(group){return String(group&&group.id||'');}
+function reconcileTrainingGroupsForRoster(sourceGroups){
+  var ids={},names={};
+  athletes.forEach(function(athlete){
+    if(athlete.id)ids[String(athlete.id)]=true;
+    if(athlete.name)names[String(athlete.name||'').trim().toLowerCase()]=true;
+  });
+  return (sourceGroups||[]).map(function(group){
+    var members=(group.athletes||group.runners||[]);
+    var cleaned=members.filter(function(member){
+      var id=String(member.contactId||member.id||'');
+      var name=String(member.name||'').trim().toLowerCase();
+      return id&&ids[id]||name&&names[name];
+    });
+    if(members.length&&!cleaned.length)return null;
+    var next=Object.assign({},group);
+    next.athletes=cleaned;
+    return next;
+  }).filter(Boolean);
+}
 function selectedTrainingGroup(){return trainingGroups.find(function(group){return groupKey(group)===selectedGroupId;})||null;}
 function renderTrainingGroups(){
   var list=document.getElementById('groupList');

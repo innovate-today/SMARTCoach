@@ -7,6 +7,8 @@ const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
 const ATHLETE_FIELD_ALIASES = {
+  smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
+  smartcoachAthleteId: ["smartcoach athlete id", "smartcoach_athlete_id", "athlete id", "smartcoach id"],
   gender: ["gender", "sex", "division"],
   grade: ["graduation year", "graduation_year", "grad year", "class year", "class_year", "class", "grade"],
   parentGuardianName: ["parent_guardian_name", "parent guardian name", "parent/guardian name", "guardian name", "parent name"],
@@ -224,15 +226,14 @@ async function addTags({ token, contactId, tags }) {
 }
 
 async function updateAthleteContact({ token, contact, athleteName, payload, rosterFieldIds }) {
-  const smartcoachAthleteId = clean(payload && payload.smartcoachAthleteId) || existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID) || buildAthleteId(athleteName || contactName(contact));
+  const smartcoachAthleteId = clean(payload && payload.smartcoachAthleteId) || existingCustomFieldValueByIdsOrNames(contact, fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID), ATHLETE_FIELD_ALIASES.smartcoachAthleteId) || buildAthleteId(athleteName || contactName(contact));
   const activeValue = payload && Object.prototype.hasOwnProperty.call(payload, "smartcoachActive")
     ? (truthy(payload.smartcoachActive) ? "Yes" : "No")
     : "Yes";
-  const customFields = [
-    { id: SMARTCOACH_ACTIVE_FIELD_ID, value: activeValue },
-    { id: SMARTCOACH_ATHLETE_ID_FIELD_ID, value: smartcoachAthleteId },
-  ];
+  const customFields = [];
 
+  addCustomFieldValue(customFields, fieldIdsWithFallback(rosterFieldIds.smartcoachActive, SMARTCOACH_ACTIVE_FIELD_ID), activeValue);
+  addCustomFieldValue(customFields, fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID), smartcoachAthleteId);
   addCustomFieldValue(customFields, rosterFieldIds.gender, payload && payload.gender);
   addCustomFieldValue(customFields, rosterFieldIds.grade, payload && payload.grade);
   addCustomFieldValue(customFields, rosterFieldIds.parentGuardianName, payload && payload.parentGuardianName);
@@ -275,6 +276,12 @@ function fieldId(fieldIds) {
   return Array.isArray(fieldIds) && fieldIds.length ? fieldIds[0] : "";
 }
 
+function fieldIdsWithFallback(fieldIds, fallbackId) {
+  const ids = Array.isArray(fieldIds) ? fieldIds.slice() : [];
+  if (fallbackId && !ids.includes(fallbackId)) ids.push(fallbackId);
+  return ids;
+}
+
 async function ghlFetch({ token, path, method, body }) {
   const response = await fetch(`${GHL_BASE_URL}${path}`, {
     method,
@@ -299,7 +306,8 @@ async function ghlFetch({ token, path, method, body }) {
 
 function normalizeContact(contact, options = {}) {
   const rosterFieldIds = options.rosterFieldIds || {};
-  const smartcoachActiveValue = existingCustomFieldValue(contact, SMARTCOACH_ACTIVE_FIELD_ID);
+  const smartcoachActiveValue = existingCustomFieldValueByIdsOrNames(contact, fieldIdsWithFallback(rosterFieldIds.smartcoachActive, SMARTCOACH_ACTIVE_FIELD_ID), ATHLETE_FIELD_ALIASES.smartcoachActive);
+  const smartcoachAthleteId = existingCustomFieldValueByIdsOrNames(contact, fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID), ATHLETE_FIELD_ALIASES.smartcoachAthleteId);
   return {
     id: contact.id,
     name: contactName(contact),
@@ -318,7 +326,7 @@ function normalizeContact(contact, options = {}) {
     coachNotes: contactFieldByIdsOrNames(contact, rosterFieldIds.coachNotes, ATHLETE_FIELD_ALIASES.coachNotes),
     smartcoachActive: isActiveValue(smartcoachActiveValue),
     smartcoachActiveValue,
-    smartcoachAthleteId: existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID),
+    smartcoachAthleteId,
     tags: Array.isArray(contact.tags) ? contact.tags : [],
   };
 }
@@ -344,6 +352,10 @@ function contactGender(contact, genderFieldIds = []) {
 
 function contactFieldByIdsOrNames(contact, fieldIds = [], names = []) {
   return (fieldIds || []).map((fieldId) => existingCustomFieldValue(contact, fieldId)).find(Boolean) || existingCustomFieldValueByName(contact, names);
+}
+
+function existingCustomFieldValueByIdsOrNames(contact, fieldIds = [], names = []) {
+  return contactFieldByIdsOrNames(contact, fieldIds, names);
 }
 
 function contactName(contact) {
