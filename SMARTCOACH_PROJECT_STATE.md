@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-05-24
+Last updated: 2026-05-26
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -30,11 +30,52 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 Current launch status:
 
 - Code/security/setup cleanup is largely complete for the initial rollout path.
-- Cleanup/launch prep is estimated at 90-95% complete.
-- Remaining launch readiness is primarily the final 5-10% live validation with a real Pro test account in Vercel/GHL.
+- Cleanup/launch prep is estimated at 90-95% complete, but production deployment is currently blocked by the Vercel Hobby serverless-function limit.
+- Remaining launch readiness is primarily live validation with a real Pro test account in Vercel/GHL after the deployment blocker is cleared.
 - Treat additional cleanup as paused unless live validation exposes a blocker.
 - Do not implement parked future ideas during this pass unless the user explicitly pulls one forward.
 - Use `/live-launch-validation.html`, `LIVE_LAUNCH_VALIDATION.md`, and the Known Good Test Flow at the bottom of this file as the next practical launch checklist.
+
+Latest handoff:
+
+- Latest pushed commit: `dca22af Keep athlete group assignment after save`.
+- The working tree was clean after this push.
+- App workout sync was confirmed working on the real Pro test account: the user confirmed a `20.2` second Stevie Ray stopwatch workout appeared correctly in SMART Trak.
+- A remaining live issue was fixed and pushed locally/GitHub: athletes added on the Athletes page should keep their selected training group after save instead of appearing and then disappearing.
+- Vercel production is not currently receiving the latest commits because the project hit the Hobby limit: "No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan." Until this is fixed, recent commits can be pushed to GitHub but may not deploy.
+- Recent failed deploy commits included `2585e0d Include tagged athletes in roster lookups` and `8bd8e53 Show mirrored app workouts on dashboard`.
+- Last known ready production deployment shown in Vercel was around `ada5f79 Mirror synced workouts for SMART Trak views`; verify Vercel before judging whether a pushed fix is live.
+- Next practical step: resolve the Vercel function-limit blocker by consolidating functions/routes or moving the project to a plan that supports the current function count, then redeploy and retest the latest pushed fixes.
+
+Latest SaaS/account setup truth:
+
+- GHL SaaS is the intended account creation path. GHL creates/provisions the sub-account and applies the SMARTCoach snapshot; SMART Trak account automation stores the SMARTCoach account record and subscription/access state.
+- The snapshot should include a custom value named `account_key` and a SMART Trak custom menu link using `https://app.smartcoach-pro.com/dashboard.html?account={{custom_values.account_key}}&embed=1`.
+- GHL workflow webhook success was confirmed for `/api/smart-trak/account-automation`, creating a saved account record like `sc-qxwjweksyuf7sdofhpb4` from `locationId`.
+- The GHL workflow payload should send billing/account fields only: `eventType`, `accountKey`, `locationId`, `plan`, `coachSeats`, `subscriptionStatus`, `billingCadence`, `source`, and `automationSecret` or the automation secret query parameter. Do not send private integration tokens or coach codes in the recurring subscription payload.
+- After a new GHL sub-account exists, support still has to open `/onboarding.html`, load the account key, enter that sub-account's Location ID and Private Integration Token, generate/paste coach access code(s), and click Save Account Setup.
+- Save Account Setup was confirmed to update the GHL custom value `account_key`; the confirmation message should say the value was updated.
+- A single coach access code can unlock both desktop SMART Trak and the phone app for the same coach/device workflow. The seat limit is about allowed coach codes, not counting the desktop and phone as two separate coaches.
+
+Latest product direction:
+
+- Training Calendar is now the primary place for one-day workouts, races, rest/off days, and notes.
+- Upload/Paste Plan is for full-plan upload/paste workflows. Its Add Workouts description should say: "Add one-day workouts, races, rest days, or notes on the Training Calendar."
+- Training Calendar header should use first-row actions in this order: Dashboard, Log Miles, Log Race Result, Manage Meets.
+- Training Calendar should have a second row labeled `Training Setup:` with Athlete Setup, Upload/Paste Plan, Auto Build Plan, and Refresh. That second-row setup cluster belongs on Training Calendar only, not Dashboard, Athletes, or Meet History.
+- Button rename standard: Planning Setup -> Athlete Setup, Plan Entry -> Upload/Paste Plan, Plan Builder -> Auto Build Plan.
+- Training Calendar Log Race Result and Manage Meets should open their modals on the Training Calendar page, not navigate the coach to Dashboard.
+- Number steppers for workout entry should move by whole numbers, while still allowing coaches to type decimals manually.
+
+Latest known issues to retest after Vercel deploys latest code:
+
+- Athletes page: adding an athlete with a group should save and keep the group visible immediately after save.
+- New-account group leakage: if old test groups appear in a new sub-account, confirm whether the snapshot carried hidden SMARTCoach training group records or whether the group API needs stricter account scoping.
+- Dashboard Training Load/Volume by Athlete should exclude archived groups from the Groups column.
+- Dashboard cards should respect search/filter context. Example: searching for one athlete should make training load cards reflect that athlete or filtered set, not the whole roster.
+- Confirm race volume counts into total volume, and document `Volume miles` as completed training/race volume converted to miles for the current filters.
+- Manual Log Miles should treat bare numeric distance like `8` as miles or clearly force the unit. Same-day mileage edits must open the exact selected workout, not the first same-day mileage row.
+- Phone app still needs a refresh button, a clearer drag handle for runner reordering, and reliable beep/vibrate on stopwatch button taps.
 
 Typical deploy commands:
 
@@ -51,9 +92,9 @@ git push origin main:main
 - `dashboard.html`: main SMART Trak dashboard.
 - `athletes.html`: coach-facing roster, athlete details, parent contact storage, and notes.
 - `training-calendar.html`: training calendar, plan days, status management.
-- `plan-import.html`: Plan Entry page for upload, paste, or manual workout creation.
-- `plan-setup.html`: Planning Setup page for current fitness, training groups, and plan assignments.
-- `plan-builder.html`: guided plan builder for drafting new training plans.
+- `plan-import.html`: Upload/Paste Plan page for full-plan upload and paste workflows. Single-day workouts now belong on Training Calendar.
+- `plan-setup.html`: Athlete Setup page for current fitness, training groups, and plan assignments.
+- `plan-builder.html`: Auto Build Plan page for guided plan drafting.
 - `meet-history.html`: meet schedule and meet-result comparison/history.
 - `records.html`: school record board.
 - `xc-simulator.html`: cross country scoring simulator using saved opponents and SMART Trak season bests.
@@ -384,7 +425,8 @@ Product decision:
 - Current visible row is the current school record for event + gender.
 - Row expands to show history/past records for that same event + gender.
 - Coach can add school records manually, by paste, or by template upload.
-- If a record is beaten by stopwatch or manually entered meet result, the old current record should be replaced by the new current record but preserved in history.
+- Records page should be updated only through Records tools or bulk import tools. App stopwatch syncs and Log Race Result / meet-result entry do not need to auto-update the school record board.
+- If a coach updates a school record through the Records tools, the old current record should be replaced by the new current record and, if practical, preserved in the expanded history.
 
 Implemented:
 
