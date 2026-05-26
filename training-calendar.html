@@ -529,6 +529,7 @@ var days=[];
 var mileageAthletes=[];
 var mileageTrainingRows=[];
 var trainingGroups=[];
+var calendarMeets=[];
 var raceResultMeetRows=[];
 var meetManagerRows=[];
 var meetManagerEditingId='';
@@ -954,7 +955,7 @@ function filteredDays(){
   var type=els.typeFilter.value||'all';
   var status=els.statusFilter.value||'all';
   var dateRange=els.dateFilter.value||'all';
-  return days.filter(function(day){
+  return calendarDaysWithMeets().filter(function(day){
     if(status==='all'&&isRemovedDay(day))return false;
     if(!day.trainingPlanId&&!planSet.__standalone)return false;
     if(day.trainingPlanId&&!planSet[String(day.trainingPlanId||'')])return false;
@@ -964,6 +965,47 @@ function filteredDays(){
     if(query&&searchText(day).indexOf(query)===-1)return false;
     return true;
   }).sort(compareByCurrentWeekFirst);
+}
+function calendarDaysWithMeets(){
+  var list=(days||[]).slice();
+  var existingMeetIds={};
+  var existingMeetKeys={};
+  list.forEach(function(day){
+    if(day&&day.linkedMeetId)existingMeetIds[String(day.linkedMeetId)]=true;
+    if(day&&day.dayType==='Meet')existingMeetKeys[meetCalendarKey(day.title||day.workoutTitle,day.date)]=true;
+  });
+  (calendarMeets||[]).forEach(function(meet){
+    if(!meet||meet.archived||/archived/i.test(meet.status||''))return;
+    var id=String(meet.id||'');
+    var key=meetCalendarKey(meet.name,meet.date);
+    if((id&&existingMeetIds[id])||existingMeetKeys[key])return;
+    list.push(meetCalendarDay(meet));
+    existingMeetKeys[key]=true;
+  });
+  return list;
+}
+function meetCalendarKey(name,date){
+  return [String(date||'').slice(0,10),String(name||'').trim().toLowerCase()].join('|');
+}
+function meetCalendarDay(meet){
+  return {
+    id:'meet_'+(meet.id||meetCalendarKey(meet.name,meet.date)),
+    sourceRecordId:'meet_'+(meet.id||meetCalendarKey(meet.name,meet.date)),
+    trainingPlanId:'',
+    linkedMeetId:meet.id||'',
+    date:meet.date||'',
+    dayType:'Meet',
+    groupName:'',
+    athleteContact:'',
+    athleteName:'',
+    title:meet.name||'Race day',
+    details:'Meet created from Manage Meets.',
+    workoutType:'Race / Meet',
+    targetSplits:'Race plan',
+    plannedVolume:'Meet schedule',
+    status:meet.status||'Scheduled',
+    coachNotes:[meet.season,meet.seasonYear].filter(Boolean).join(' ')
+  };
 }
 function matchesDateRange(day,range){
   if(range==='all')return true;
@@ -2492,7 +2534,8 @@ function loadCalendar(){
     fetch('/api/smart-trak/training-plan?kind=assignments',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
     fetch('/api/smart-trak/training-plan?kind=days',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
     fetch('/api/smart-trak/dashboard',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{athletes:[],recentTrainingSyncs:[],trainingSyncs:[]}};}),
-    fetch('/api/smart-trak/groups',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};})
+    fetch('/api/smart-trak/groups',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
+    fetch('/api/smart-trak/meets',{headers:apiHeaders(),cache:'no-store'}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{meets:[]}};})
   ]).then(function(results){
     if(!results[0].ok&&results[0].data&&results[0].data.accessCodeRequired){
       showAccess(results[0].data);
@@ -2505,6 +2548,7 @@ function loadCalendar(){
     mileageAthletes=results[2].ok?(results[2].data.athletes||[]):[];
     mileageTrainingRows=results[2].ok?(results[2].data.recentTrainingSyncs||results[2].data.trainingSyncs||[]):[];
     trainingGroups=results[3].ok?(results[3].data.groups||[]):[];
+    calendarMeets=results[4].ok?(results[4].data.meets||[]):[];
     els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
     renderOptions();
     render();
@@ -2514,6 +2558,7 @@ function loadCalendar(){
     mileageAthletes=[];
     mileageTrainingRows=[];
     trainingGroups=[];
+    calendarMeets=[];
     els.calendar.innerHTML='';
     els.empty.hidden=false;
     els.empty.textContent=error.message||'Training calendar failed to load.';

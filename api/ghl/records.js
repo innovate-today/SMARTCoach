@@ -521,8 +521,17 @@ function composeRecordNotes(note, row) {
 }
 
 function extractRecordGender(note) {
-  const match = clean(note).match(/^Gender:\s*(Boys|Girls|Coed|Unlisted)\s*$/im);
-  return match ? match[1] : "";
+  const match = clean(note).match(/^Gender:\s*(Boy|Boys|Girl|Girls|Coed|Unlisted)\s*$/im);
+  if (!match) return "";
+  return normalizeGenderLabel(match[1]);
+}
+
+function normalizeGenderLabel(value) {
+  const text = clean(value).toLowerCase();
+  if (text === "boy" || text === "boys" || text === "male" || text === "men") return "Boy";
+  if (text === "girl" || text === "girls" || text === "female" || text === "women") return "Girl";
+  if (text === "coed") return "Coed";
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
 }
 
 function slugValue(value) {
