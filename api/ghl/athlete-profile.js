@@ -31,6 +31,31 @@ const FIELD_IDS = {
   record_date: ["lXHnJHTLrt0njYh0wIRX"],
 };
 
+const FIELD_LABELS = {
+  athlete_contact: ["athlete contact", "athlete"],
+  athlete_name_snapshot: ["athlete name snapshot", "athlete name", "name snapshot"],
+  event: ["event"],
+  personal_best_display: ["personal best display", "personal best"],
+  personal_best_meet: ["personal best meet"],
+  personal_best_date: ["personal best date"],
+  season_best_display: ["season best display", "season best"],
+  season_best_meet: ["season best meet"],
+  season_best_date: ["season best date"],
+  last_result_display: ["last result display", "last result"],
+  last_result_date: ["last result date"],
+  meet_name: ["meet name", "meet"],
+  result_display: ["result display", "result"],
+  meet_date: ["meet date", "date"],
+  is_pr: ["is pr", "pr"],
+  is_season_best: ["is season best", "season best"],
+  group_name: ["group name", "group"],
+  workout_type: ["workout type", "type"],
+  total_time_display: ["total time display", "total time"],
+  session_date: ["session date", "workout date", "date"],
+  record_type: ["record type"],
+  record_date: ["record date"],
+};
+
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
@@ -213,11 +238,69 @@ function prop(props, key) {
 
 function readPropValue(props, key) {
   if (!props) return "";
+  const wanted = propLookupKeys(key);
   if (Array.isArray(props)) {
-    const field = props.find((item) => item && (item.key === key || item.id === key || item.fieldKey === key || item.fieldId === key || item.customFieldId === key));
-    return field ? clean(field.value || field.fieldValue || field.field_value) : "";
+    const field = props.find((item) => item && fieldLabels(item).some((label) => wanted.includes(normalizeLookupKey(label))));
+    return field ? fieldValue(field) : "";
   }
-  return clean(props[key]);
+  if (Object.prototype.hasOwnProperty.call(props, key)) return clean(props[key]);
+  const match = Object.keys(props).find((item) => wanted.includes(normalizeLookupKey(item)));
+  return match ? clean(props[match]) : "";
+}
+
+function propLookupKeys(key) {
+  const base = [
+    key,
+    `custom_objects.athlete_bests.${key}`,
+    `custom_objects.meet_results.${key}`,
+    `custom_objects.performance_records.${key}`,
+    `custom_objects.records.${key}`,
+  ].concat(FIELD_IDS[key] || [], FIELD_LABELS[key] || []);
+  return base.map(normalizeLookupKey).filter(Boolean);
+}
+
+function fieldLabels(field) {
+  return [
+    field.id,
+    field.fieldId,
+    field.field_id,
+    field.customFieldId,
+    field.key,
+    field.fieldKey,
+    field.field_key,
+    field.name,
+    field.fieldName,
+    field.field_name,
+    field.label,
+    field.displayName,
+    field.display_name,
+  ].map(clean).filter(Boolean);
+}
+
+function fieldValue(field) {
+  const value = firstPresent([field.value, field.fieldValue, field.field_value, field.valueString, field.value_string]);
+  if (Array.isArray(value)) return value.map(fieldValuePart).filter(Boolean).join(", ");
+  return fieldValuePart(value);
+}
+
+function fieldValuePart(value) {
+  if (value === null || typeof value === "undefined") return "";
+  if (typeof value === "object") return clean(value.value || value.name || value.label || value.key || value.id);
+  return clean(value);
+}
+
+function firstPresent(values) {
+  for (const value of values) {
+    if (value !== null && typeof value !== "undefined" && value !== "") return value;
+  }
+  return "";
+}
+
+function normalizeLookupKey(value) {
+  const text = clean(value).toLowerCase();
+  if (!text) return "";
+  const suffix = text.split(".").pop();
+  return suffix.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
 
 function labelValue(value) {
