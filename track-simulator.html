@@ -53,10 +53,10 @@ textarea{min-height:285px;resize:vertical;line-height:1.45}
 .status{font-size:13px;color:var(--muted);font-weight:800;margin-right:auto}
 .sim-status-row{display:flex;align-items:center;min-height:22px}
 .multi-select{min-height:108px}
-.sim-main-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.sim-main-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .saved-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .utility-actions{display:grid;grid-template-columns:repeat(2,112px);gap:10px;justify-content:end}
-.sim-actions button{padding:9px 10px;white-space:nowrap}
+.sim-actions button{padding:9px 10px;white-space:normal;line-height:1.15}
 .sim-actions .compact{font-size:13px;padding:8px 9px}
 .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
@@ -184,10 +184,10 @@ tr:last-child td{border-bottom:0}
         <div class="sim-actions">
           <div class="sim-status-row"><div id="status" class="status">Ready to score.</div></div>
           <div class="sim-main-actions">
-            <button id="loadSbBtn" class="secondary" type="button">My Season Bests</button>
-            <button id="scoreBtn" type="button">Score Meet</button>
-            <button id="copyBtn" class="secondary" type="button">Copy Results</button>
-            <button id="templateBtn" class="secondary" type="button">Template CSV</button>
+            <button id="loadSbBtn" class="secondary" type="button">Load SBs</button>
+            <button id="scoreBtn" type="button">Score</button>
+            <button id="copyBtn" class="secondary" type="button">Copy</button>
+            <button id="templateBtn" class="secondary" type="button">Template</button>
           </div>
           <div class="saved-actions">
             <button id="saveFieldBtn" class="field-action compact" type="button">Save Field</button>
