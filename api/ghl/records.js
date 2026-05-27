@@ -171,13 +171,37 @@ function summarizeMirrorResults(results) {
 }
 
 function mergeNormalizedRecords(primary, secondary) {
-  const seen = {};
-  return (primary || []).concat(secondary || []).filter((record) => {
+  const byKey = new Map();
+  (primary || []).concat(secondary || []).forEach((record) => {
     const key = normalizedRecordKey(record);
-    if (!key || seen[key]) return false;
-    seen[key] = true;
-    return true;
-  }).sort(sortRecords);
+    if (!key) return;
+    byKey.set(key, byKey.has(key) ? mergeRecordDetails(byKey.get(key), record) : record);
+  });
+  return Array.from(byKey.values()).sort(sortRecords);
+}
+
+function mergeRecordDetails(existing, incoming) {
+  const merged = { ...(existing || {}) };
+  Object.keys(incoming || {}).forEach((key) => {
+    if (recordDetailIsMissing(merged[key], key) && !recordDetailIsMissing(incoming[key], key)) {
+      merged[key] = incoming[key];
+    }
+  });
+  if (!merged.isCurrent && incoming && incoming.isCurrent && recordDetailIsMissing(existing && existing.event, "event") && recordDetailIsMissing(existing && existing.resultDisplay, "resultDisplay")) {
+    merged.isCurrent = true;
+  }
+  return merged;
+}
+
+function recordDetailIsMissing(value, key) {
+  if (value === null || typeof value === "undefined") return true;
+  if (typeof value === "number") return !Number.isFinite(value) || value === 0;
+  const text = clean(value);
+  if (!text) return true;
+  if (key === "gender" && text.toLowerCase() === "unlisted") return true;
+  if (key === "event" && text.toLowerCase() === "unlisted event") return true;
+  if ((key === "resultDisplay" || key === "resultMark") && text.toLowerCase() === "no result") return true;
+  return false;
 }
 
 function normalizedRecordKey(record) {
@@ -521,7 +545,15 @@ function recordUniqueKey(record, props) {
 }
 
 function recordProperties(record) {
-  return (record && (record.properties || record.fields || record.customFields)) || {};
+  return (record && (
+    record.properties ||
+    record.fields ||
+    record.customFields ||
+    record.customField ||
+    record.customFieldsData ||
+    record.fieldValues ||
+    record.values
+  )) || {};
 }
 
 function objectRecordId(record) {
