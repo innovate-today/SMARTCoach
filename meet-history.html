@@ -37,13 +37,14 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .status{color:var(--muted);font-size:13px;text-align:right;min-width:150px}
 .split{display:grid;grid-template-columns:minmax(260px,300px) minmax(620px,1fr);gap:14px;align-items:start}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.split>.panel:first-child{overflow:visible}
 .results-panel{height:72vh;display:flex;flex-direction:column;min-height:520px}
 .panelhead{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .paneltitle{display:flex;align-items:center;gap:6px}
 .panelhead h2{font-size:16px;margin:0}
 .panelhead span{font-size:12px;color:var(--muted)}
 .info-dot{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:#fff;color:#111827;border:1px solid var(--line);font-size:12px;font-weight:900;cursor:help;line-height:1}
-.info-dot:after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 8px);transform:none;width:260px;max-width:min(72vw,260px);padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font-size:12px;font-weight:700;line-height:1.35;box-shadow:0 12px 28px rgba(15,23,42,.18);opacity:0;pointer-events:none;z-index:30}
+.info-dot:after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 8px);transform:none;width:300px;max-width:min(72vw,300px);padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font-size:12px;font-weight:700;line-height:1.35;box-shadow:0 12px 28px rgba(15,23,42,.18);opacity:0;pointer-events:none;z-index:80}
 .info-dot:hover:after,.info-dot:focus:after{opacity:1}
 .meet-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fbfdff}
 .meet-summary-card{border:1px solid #edf1f7;border-radius:8px;background:#fff;padding:9px 10px}
