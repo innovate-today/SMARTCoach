@@ -863,6 +863,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 126. Training Calendar now opens the same day detail modal for meets created from Manage Meets as it does for calendar-created meet days. Editing, quick status changes, and Remove from Calendar on those Manage Meets cards save back to the saved meet record.
 127. Records edit no longer leaves a duplicate pre-edit row in the browser cache. Record merging now dedupes by saved record id/source id before falling back to the full row identity, and edit save replaces the original row plus any stale cached copy.
 128. Meet History layout now uses a narrower Meets column and a slightly more compact Results table so the Results section fits better on desktop without horizontal scrolling.
+129. Meet History now shows an info marker beside Meets to explain that selecting a meet filters the Results panel and compare rows compare the same meet across dates.
 
 ## Known Good Test Flow
 
