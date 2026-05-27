@@ -40,9 +40,9 @@ Current launch status:
 
 Latest handoff:
 
-- Latest pushed code commit before this state update: `7107095 Update mobile app naming in coach guide`.
-- Latest local commit when this handoff was checked: `7107095 Update mobile app naming in coach guide`.
-- Repo was pushed to `main` after the SMARTCoach Pro Mobile App naming update in the how-to guide.
+- Latest pushed code commit before this state update: `ba7a264 Rename how to guide title`.
+- Latest local commit when this handoff was checked: `ba7a264 Rename how to guide title`.
+- Repo was pushed to `main` after the how-to title was renamed to SMARTCoach Pro & SMART Trak How To Guide.
 - Latest docs/state maintenance in progress: keep `SMART_TRAK_COACH_HOW_TO.md` and this file updated after each feature or fix so new chats can resume without reconstructing history.
 - Recent regression status: docs-only updates need `git diff --check`; code changes should continue to use `npm test` before push when practical.
 - Weather page is now part of SMART Trak:
@@ -698,18 +698,18 @@ Field events:
 
 Relays:
 
-- Future idea: relay support.
-- Time one relay entry with four runners attached.
-- Each split should be tied to the runner/leg.
+- Implemented across SMARTCoach Pro Mobile App and SMART Trak.
+- One relay entry can be timed with four runners attached.
+- Each split is tied to the runner/leg.
 - All four runners attach to the final relay time.
 
 Cross country competition simulator:
 
-- Future idea: hypothetical results vs other teams.
+- Implemented as `/xc-simulator.html`.
 - Enter/copy top seven athletes and times for multiple teams.
 - Score top five with sixth/seventh as displacers.
 - Keep running weekly competitor lists to see team ranking over time.
-- Need copy/paste from common result websites.
+- Future enhancement: improve copy/paste from common result websites.
 
 Track simulator:
 
@@ -741,6 +741,7 @@ These are intentionally not blocking the current launch path unless the user re-
 - Plan Builder full-plan review/spreadsheet-style adjustment remains future work.
 - SMARTCoach Pro help button/assistant remains future work for instructions, subscription questions, and how-to guidance.
 - Athlete-facing training calendar remains future work: password-protected athlete access where athletes can complete, adjust, or skip assigned workouts and those actions update the SMART Trak Training Calendar.
+- Field-event tracking remains future work for jumps, throws, attempts, video, and notes.
 
 ## Recent Launch Cleanup Log
 
@@ -891,6 +892,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 143. Updated `SMART_TRAK_COACH_HOW_TO.md` so the coach guide stays current with Weather, Track Simulator, relay support, mobile relay timing, Records, Meet History, and Training Calendar updates.
 144. Updated the how-to guide naming from Phone App/phone app to SMARTCoach Pro Mobile App for consistent product language.
 145. Renamed the how-to guide title to SMARTCoach Pro & SMART Trak How To Guide.
+146. Cleaned the future-planning list so completed relay support and XC Simulator work are no longer presented as unfinished future items.
 
 ## Known Good Test Flow
 
