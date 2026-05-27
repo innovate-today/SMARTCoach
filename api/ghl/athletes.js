@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
@@ -33,7 +34,7 @@ module.exports = async function handler(req, res) {
 
   if (!requireProPlan(req, res)) return;
 
-  const { token, locationId } = getGhlContext(req);
+  const { accountKey, token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak athlete roster is not configured on the server." });
@@ -45,6 +46,20 @@ module.exports = async function handler(req, res) {
       const includeContacts = /^(yes|true|1)$/i.test(clean(req.query && (req.query.includeContacts || req.query.allContacts)));
       const query = clean(req.query && (req.query.query || req.query.search));
       const athletes = await listSmartCoachAthletes({ token, locationId, includeContacts, query });
+      if (clean(req.query && req.query.action) === "calendarLink") {
+        const athleteId = clean(req.query && (req.query.athleteId || req.query.contactId));
+        const athlete = athletes.find((item) => clean(item.id) === athleteId || clean(item.smartcoachAthleteId) === athleteId);
+        if (!athlete) throw httpError(404, "Athlete was not found.");
+        if (!athlete.smartcoachActive) throw httpError(403, "This athlete is not active.");
+        const code = athleteAccessCode(accountKey, athlete.id);
+        res.status(200).json({
+          success: true,
+          athlete: { id: athlete.id, name: athlete.name, smartcoachAthleteId: athlete.smartcoachAthleteId },
+          code,
+          url: `/athlete-calendar.html?account=${encodeURIComponent(accountKey)}&athlete=${encodeURIComponent(athlete.id)}&code=${encodeURIComponent(code)}`,
+        });
+        return;
+      }
       res.status(200).json({ success: true, athletes });
       return;
     }
@@ -494,6 +509,11 @@ function truthy(value) {
 
 function normalizeFieldLabel(value) {
   return clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function athleteAccessCode(accountKey, athleteId) {
+  const secret = clean(process.env.SMARTCOACH_ATHLETE_ACCESS_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || "smartcoach-athlete-calendar");
+  return crypto.createHmac("sha256", secret).update(`${clean(accountKey).toLowerCase()}:${clean(athleteId)}`).digest("hex").slice(0, 12);
 }
 
 function clean(value) {
