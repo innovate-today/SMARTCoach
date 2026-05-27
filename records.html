@@ -527,10 +527,15 @@ function recordIdentity(row){
     row&&row.recordDate||''
   ].filter(Boolean).join('|').toLowerCase();
 }
+function recordMergeKey(row){
+  if(row&&row.recordId)return 'id:'+String(row.recordId).toLowerCase();
+  if(row&&row.sourceRecordId)return 'source:'+String(row.sourceRecordId).toLowerCase();
+  return recordIdentity(row);
+}
 function mergeRecordLists(primary,secondary){
   var seen={};
   return (primary||[]).concat(secondary||[]).filter(function(row){
-    var key=recordIdentity(row);
+    var key=recordMergeKey(row);
     if(!key||seen[key])return false;
     seen[key]=true;
     return true;
@@ -553,13 +558,26 @@ function upsertCachedRecords(rows){
   records=mergeRecordLists(rows,records);
   saveCachedRecords(records);
 }
+function replaceCachedRecord(original,updated){
+  var originalIdentity=recordIdentity(original);
+  var originalMergeKey=recordMergeKey(original);
+  var updatedMergeKey=recordMergeKey(updated);
+  records=records.filter(function(row){
+    var rowIdentity=recordIdentity(row);
+    var rowMergeKey=recordMergeKey(row);
+    return rowIdentity!==originalIdentity&&rowMergeKey!==originalMergeKey&&rowMergeKey!==updatedMergeKey;
+  });
+  upsertCachedRecords([updated]);
+}
 function removeCachedRecord(id){
-  records=records.filter(function(row){return String(row.recordId||'')!==String(id||'');});
+  records=records.filter(function(row){return String(row.recordId||'')!==String(id||'')&&String(row.sourceRecordId||'')!==String(id||'');});
   saveCachedRecords(records);
 }
 function findRecordByKey(key){
   return records.find(function(row){
     return String(row.recordId||'')===String(key||'') ||
+      String(row.sourceRecordId||'')===String(key||'') ||
+      recordMergeKey(row)===String(key||'') ||
       recordIdentity(row)===String(key||'');
   })||null;
 }
@@ -730,8 +748,7 @@ function saveRecordEdit(){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be updated.');
     var updated=normalizedRecordFromPayload(payload,editingRecord);
     retireLocalCurrentRecords(updated,editingRecord.recordId);
-    records=records.map(function(row){return row.recordId===editingRecord.recordId?updated:row;});
-    saveCachedRecords(records);
+    replaceCachedRecord(editingRecord,updated);
     renderOptions();
     render();
     setRecordEditStatus('Record updated.','good');
