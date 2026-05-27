@@ -1001,7 +1001,14 @@ function isDistanceEvent(event) {
 function eventDistanceMeters(event) {
   const key = clean(event).toLowerCase().replace(/\s+/g, "");
   const map = {
+    "100m": 100,
+    "100h": 100,
+    "110h": 110,
+    "200m": 200,
+    "300m": 300,
+    "300h": 300,
     "400m": 400,
+    "400h": 400,
     "600m": 600,
     "800m": 800,
     "1500m": 1500,
@@ -1325,7 +1332,14 @@ function trainingPlanQuestionnaire() {
 
 function standardEventOptions() {
   return [
+    "100m",
+    "100H",
+    "110H",
+    "200m",
+    "300m",
+    "300H",
     "400m",
+    "400H",
     "600m",
     "800m",
     "1500m",

@@ -2121,7 +2121,7 @@ function syncRaceResultMeet(){
 function syncRaceResultSport(){
   var current=els.raceResultEvent.value;
   var sport=els.raceResultSport.value||'track';
-  var events=sport==='cross_country'?['','2 Mile','3200m','5K']:['','400m','800m','1500m','1600m','1 Mile','2 Mile','3200m','5K'];
+  var events=sport==='cross_country'?['','2 Mile','3200m','5K']:['','100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
   els.raceResultEvent.innerHTML=events.map(function(eventName){
     return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
   }).join('');

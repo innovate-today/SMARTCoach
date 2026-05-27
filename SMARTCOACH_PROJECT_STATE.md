@@ -859,6 +859,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 122. User retested again and still only saw the last saved record after refresh. Records page now renders individual record rows instead of collapsing records into board groups, and Records Tools gender choices are now only Boys and Girls.
 123. Records edit modal opened blank because row actions depended on `recordId`, which can be missing or mismatched for cached/merged rows. Edit/delete actions now use the row identity key and fall back to removing local-only rows from the view.
 124. Records page cleanup: removed the History column and unused expansion/history helpers after switching the page to direct record rows.
+125. SMART Trak event lists now include 100m, 100H, 110H, 200m, 300m, 300H, and 400H wherever the app presents race/event options, including Records, Dashboard meet tools, Training Calendar race results, plan setup/builder/import, phone meet setup/save/sync pickers, and backend plan option/distance mapping.
 
 ## Known Good Test Flow
 
