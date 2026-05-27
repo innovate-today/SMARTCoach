@@ -867,6 +867,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 131. Track Simulator now supports excluding multiple events from scoring and SMART Trak season-best loading, plus a Template CSV download that respects the current event filter and excluded events.
 132. Records backend listing now keeps paging through GHL custom-object results until an empty or duplicate page instead of stopping after the first short batch, and it recognizes more record ID response shapes. This is meant to prevent the Records page from showing only the newest saved record when GHL caps or reshapes list responses.
 133. Records now mirrors records saved through the Records page into the durable account registry and merges that server-side mirror on load. This is a stronger fallback for the live issue where GHL returns only the latest Records custom-object row after refresh.
+134. Records mirror was changed from rewriting one shared account-record array to per-record registry keys plus an index. This prevents quick sequential saves from overwriting the mirror with only the latest saved record.
 
 ## Known Good Test Flow
 
