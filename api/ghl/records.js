@@ -283,16 +283,30 @@ function normalizeRecordPayload(row) {
 async function listRecords({ token, locationId }) {
   const records = [];
   for (let page = 1; page <= 10; page += 1) {
-    const result = await ghlFetch({
+    const result = await optionalGhlFetch({
       token,
       path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/search`,
       method: "POST",
       body: { locationId, page, pageLimit: 100 },
     });
+    if (!result) break;
     const batch = recordsFromResult(result);
     records.push(...batch);
     if (batch.length < 100) break;
   }
+
+  for (let page = 1; page <= 10; page += 1) {
+    const direct = await optionalGhlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records?locationId=${encodeURIComponent(locationId)}&page=${page}&pageLimit=100`,
+      method: "GET",
+    });
+    if (!direct) break;
+    const batch = recordsFromResult(direct);
+    records.push(...batch);
+    if (batch.length < 100) break;
+  }
+
   return uniqueRecords(records).map(normalizeRecord).sort(sortRecords);
 }
 
@@ -357,6 +371,14 @@ async function ghlFetch({ token, path, method, body }) {
   return data;
 }
 
+async function optionalGhlFetch(args) {
+  try {
+    return await ghlFetch(args);
+  } catch (error) {
+    return null;
+  }
+}
+
 function recordsFromResult(result) {
   return [
     ...(Array.isArray(result && result.records) ? result.records : []),
@@ -371,11 +393,29 @@ function uniqueRecords(records) {
   const seen = {};
   return records.filter((record) => {
     const props = recordProperties(record);
-    const key = (record && record.id) || prop(props, "source_record_id") || JSON.stringify(props);
+    const key = recordUniqueKey(record, props);
     if (!key || seen[key]) return false;
     seen[key] = true;
     return true;
   });
+}
+
+function recordUniqueKey(record, props) {
+  const id = clean(record && record.id);
+  if (id) return `id:${id}`;
+  const sourceId = prop(props, "source_record_id");
+  if (sourceId) return `source:${sourceId}`;
+  return [
+    "record",
+    prop(props, "record") || recordName(record),
+    labelValue(prop(props, "record_scope")) || "School",
+    labelValue(prop(props, "gender")) || extractRecordGender(prop(props, "record_notes")) || "Unlisted",
+    labelValue(prop(props, "sport")) || "Track",
+    prop(props, "event"),
+    prop(props, "result_display") || prop(props, "result_mark"),
+    prop(props, "athlete_name_snapshot"),
+    prop(props, "record_date"),
+  ].map((part) => optionValue(part)).join("|");
 }
 
 function recordProperties(record) {
@@ -543,6 +583,7 @@ function buildManualSourceRecordId(row) {
     "manual_record",
     slugValue(row.recordScope),
     slugValue(row.recordType),
+    slugValue(row.gender),
     slugValue(row.event),
     slugValue(row.athleteName || row.meetName || "team"),
     slugValue(row.recordDate),

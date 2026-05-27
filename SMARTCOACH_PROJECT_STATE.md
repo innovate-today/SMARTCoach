@@ -58,6 +58,7 @@ Latest handoff:
   - Records now recovers singular `Boy` / `Girl` gender values from saved record notes, preserving separate boys and girls records for the same event after reload.
   - Athletes no longer immediately reloads over the optimistic group assignment after saving, so the selected group should remain visible immediately after save.
 - Phone app meet-result save now uses an Event dropdown for race distance selection and sends the selected event in both captured meet-result saves and scheduled meet-day syncs.
+- Records reload now uses both GHL record listing paths and a full record identity key so different school records, such as Boy 400m and Boy 800m, should not collapse into one row after refresh.
 - `SMART_TRAK_COACH_HOW_TO.md` was added as the coach tutorial covering SMART Trak Dashboard, Athletes, Training Calendar, Meet History, XC Simulator, Records, Manage Meets, Log Race Result, Log Miles, and the phone app Training/Meet/Archive/Settings/Sync workflows.
 - The coach how-to guide was cleaned so it does not mention GHL or use "coach-facing" wording.
 - Next practical step: deploy/retest those three live fixes, then continue the live Pro test-account validation pass with dashboard filtered-volume retests, manual mileage same-day edit retest, and phone app follow-up checks.
@@ -849,6 +850,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 117. Phone app meet-result save now replaces the Event text/prompt flow with a race dropdown and includes the selected event in meet-result sync payloads.
 118. Added `SMART_TRAK_COACH_HOW_TO.md` as a coach tutorial for each SMART Trak page, the main popup tools, and the phone app workflows.
 119. Cleaned the coach how-to guide so it uses coach-ready language and does not mention GHL or "coach-facing".
+120. Records reload issue retested by user with Boy 400m plus Boy 800m: only one record remained after refresh. Backend Records listing now combines search and direct GHL list endpoints, dedupes by full record identity instead of a weak fallback, and includes gender in manual source IDs.
 
 ## Known Good Test Flow
 
