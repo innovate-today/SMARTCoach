@@ -30,7 +30,7 @@ Volume miles means completed training and race volume converted into miles for t
 
 ## Athletes Page
 
-Use the Athletes page as the coach-facing roster. This replaces the need to work inside the full GHL Contacts screen for normal athlete setup.
+Use the Athletes page to manage the roster, parent contact information, training groups, and coach notes.
 
 How to use it:
 
