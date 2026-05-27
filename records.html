@@ -568,6 +568,12 @@ function removeCachedRecord(id){
   records=records.filter(function(row){return String(row.recordId||'')!==String(id||'');});
   saveCachedRecords(records);
 }
+function findRecordByKey(key){
+  return records.find(function(row){
+    return String(row.recordId||'')===String(key||'') ||
+      recordIdentity(row)===String(key||'');
+  })||null;
+}
 function optionList(values,selected){
   return values.map(function(value){
     return '<option value="'+esc(value)+'"'+(value===selected?' selected':'')+'>'+esc(value)+'</option>';
@@ -689,11 +695,11 @@ function saveSingleRecord(){
   });
 }
 function openRecordEdit(id){
-  editingRecord=records.find(function(row){return String(row.recordId||'')===String(id||'');})||null;
+  editingRecord=findRecordByKey(id);
   if(!editingRecord){setBulkStatus('Could not find that record.','bad');return;}
   setSelect(els.editRecordType,'School Record',RECORD_TYPES);
   setSelect(els.editRecordScope,'School',RECORD_SCOPES);
-  setSelect(els.editGender,editingRecord.gender||'Unlisted',GENDERS);
+  setSelect(els.editGender,editingRecord.gender||'Boys',GENDERS);
   setSelect(els.editSport,editingRecord.sport,SPORTS);
   setSelect(els.editEvent,recordEvent(editingRecord),EVENTS);
   els.editResult.value=editingRecord.resultDisplay||editingRecord.resultMark||'';
@@ -748,9 +754,19 @@ function saveRecordEdit(){
   });
 }
 function deleteRecord(){
-  if(!editingRecord||!editingRecord.recordId)return;
+  if(!editingRecord)return;
   if(!window.confirm('Delete this record from SMART Trak?'))return;
   var id=editingRecord.recordId;
+  if(!id){
+    var key=recordIdentity(editingRecord);
+    records=records.filter(function(row){return recordIdentity(row)!==key;});
+    saveCachedRecords(records);
+    renderOptions();
+    render();
+    closeRecordEdit();
+    setBulkStatus('Record removed from this view.','good');
+    return;
+  }
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
   els.recordDeleteBtn.disabled=true;
@@ -1046,6 +1062,7 @@ function historyCountLabel(count){
 function recordRowHtml(row,board){
   var eventName=recordEvent(row);
   var value=recordValue(row);
+  var key=recordIdentity(row);
   var history=board&&board.history||[];
   var expanded=!!(board&&expandedRecordBoards[board.key]);
   var toggle=history.length?'<button class="rowtoggle" data-toggle-board="'+esc(board.key)+'" type="button" aria-label="Toggle record history">'+(expanded?'▾':'▸')+'</button>':'<span class="rowtoggle" aria-hidden="true"></span>';
@@ -1059,14 +1076,14 @@ function recordRowHtml(row,board){
     '<td>'+esc(formatDate(row.recordDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
     '<td>'+status+'</td>'+
     '<td>'+esc(historyCountLabel(history.length))+'</td>'+
-    '<td><button class="ghost compact" data-edit-record="'+esc(row.recordId||'')+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(row.recordId||'')+'" type="button">Delete</button></td>'+
+    '<td><button class="ghost compact" data-edit-record="'+esc(key)+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(key)+'" type="button">Delete</button></td>'+
   '</tr>';
 }
 function recordHistoryHtml(board){
   if(!expandedRecordBoards[board.key]||!board.history.length)return '';
   return '<tr class="historyrow"><td colspan="9"><div class="historybox"><div class="historytitle">Past records for '+esc(recordEvent(board.main))+' · '+esc(board.main.gender||'Unlisted')+'</div>'+
     board.history.map(function(row){
-      var actions=row.isSynthetic?'<span class="muted">Recovered history</span>':'<button class="ghost compact" data-edit-record="'+esc(row.recordId||'')+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(row.recordId||'')+'" type="button">Delete</button>';
+      var actions=row.isSynthetic?'<span class="muted">Recovered history</span>':'<button class="ghost compact" data-edit-record="'+esc(recordIdentity(row))+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(recordIdentity(row))+'" type="button">Delete</button>';
       return '<div class="historyitem">'+
         '<div><div class="historylabel">Record</div><div class="historyvalue"><b>'+esc(recordValue(row))+'</b></div></div>'+
         '<div><div class="historylabel">Holder</div><div class="historyvalue">'+esc(row.athleteName||'')+'</div></div>'+
@@ -1201,7 +1218,7 @@ function init(){
     var del=event.target.closest&&event.target.closest('[data-delete-record]');
     if(del){
       event.preventDefault();
-      editingRecord=records.find(function(row){return String(row.recordId||'')===String(del.getAttribute('data-delete-record')||'');})||null;
+      editingRecord=findRecordByKey(del.getAttribute('data-delete-record')||'');
       deleteRecord();
       return;
     }
