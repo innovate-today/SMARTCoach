@@ -862,6 +862,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 125. SMART Trak event lists now include 100m, 100H, 110H, 200m, 300m, 300H, and 400H wherever the app presents race/event options, including Records, Dashboard meet tools, Training Calendar race results, plan setup/builder/import, phone meet setup/save/sync pickers, and backend plan option/distance mapping.
 126. Training Calendar now opens the same day detail modal for meets created from Manage Meets as it does for calendar-created meet days. Editing, quick status changes, and Remove from Calendar on those Manage Meets cards save back to the saved meet record.
 127. Records edit no longer leaves a duplicate pre-edit row in the browser cache. Record merging now dedupes by saved record id/source id before falling back to the full row identity, and edit save replaces the original row plus any stale cached copy.
+128. Meet History layout now uses a narrower Meets column and a slightly more compact Results table so the Results section fits better on desktop without horizontal scrolling.
 
 ## Known Good Test Flow
 
