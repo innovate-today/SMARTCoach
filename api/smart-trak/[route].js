@@ -6,7 +6,7 @@ const GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME = "account_key";
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
-  "athlete-calendar": require("../ghl/athlete-calendar"),
+  "athlete-calendar": require("../../lib/athlete-calendar"),
   "athlete-profile": require("../ghl/athlete-profile"),
   athletes: require("../ghl/athletes"),
   dashboard: require("../ghl/dashboard"),
