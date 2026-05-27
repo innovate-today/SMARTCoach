@@ -88,7 +88,9 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .daytop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .daydate{border:0;background:transparent;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;margin:0;padding:0;text-align:left}
 .day.today .daydate{display:inline-flex;align-items:center;border-radius:999px;background:var(--blue);color:#fff;padding:4px 8px}
-.dayadd{flex:0 0 auto;background:#eef6ff;color:#173891;border:1px solid #bfd0ef;font-size:12px;padding:5px 8px;min-height:28px}
+.daytools{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.dayadd,.daypaste{flex:0 0 auto;background:#eef6ff;color:#173891;border:1px solid #bfd0ef;font-size:12px;padding:5px 8px;min-height:28px}
+.daypaste{background:#fff}
 .addwrap{position:relative;display:flex;justify-content:flex-end}
 .dayactions{display:none;position:absolute;z-index:6;top:calc(100% + 6px);right:0;min-width:166px;gap:6px;padding:9px;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:0 14px 30px rgba(15,23,42,.18)}
 .addwrap:hover .dayactions,.addwrap:focus-within .dayactions{display:grid}
@@ -96,12 +98,14 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .dayaction:hover{text-decoration:underline}
 .dayicon{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;color:#fff;font-size:12px;line-height:1}
 .dayicon.activity{background:#2B4FCC}.dayicon.rest{background:#64748b}
-.item{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff;cursor:grab}
+.item{position:relative;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff;cursor:grab}
 .item:active{cursor:grabbing}
 .item.dragging{opacity:.55}
 .item.meet{border-left-color:#7c3aed}.item.recovery{border-left-color:#0a7a44}.item.off{border-left-color:#94a3b8}.item.skipped{opacity:.68}
 .item b{display:block;font-size:14px;line-height:1.25}
-.bulkcheck{display:flex;align-items:center;gap:6px;color:#475569;font-size:12px;font-weight:900;margin-bottom:6px}
+.itemcopy{position:absolute;right:7px;top:7px;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;border:1px solid #bfd0ef;background:#fff;color:#173891;font-size:15px;font-weight:900;padding:0;z-index:2}
+.itemcopy:hover{background:#eef6ff}
+.bulkcheck{display:flex;align-items:center;gap:6px;color:#475569;font-size:12px;font-weight:900;margin-bottom:6px;padding-right:30px}
 .bulkcheck input{width:auto;margin:0}
 .meta{color:var(--muted);font-size:12px;line-height:1.35;margin-top:4px}
 .pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:900;background:#e8eefc;color:#173891;margin-top:6px}
@@ -1277,12 +1281,11 @@ function weekSection(key,weekDays){
 function dayColumn(date,items){
   var isToday=isoDate(date)===isoDate(new Date());
   var dateKey=isoDate(date);
-  return '<div class="day'+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'"><div class="daytop"><button class="daydate" data-add-day="'+esc(dateKey)+'" type="button">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</button><div class="addwrap"><button class="dayadd" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button">Add</button>'+
+  return '<div class="day'+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'"><div class="daytop"><button class="daydate" data-add-day="'+esc(dateKey)+'" type="button">'+esc((isToday?'Today · ':'')+date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</button><div class="daytools"><button class="daypaste" data-paste-day="'+esc(dateKey)+'" type="button">Paste</button><div class="addwrap"><button class="dayadd" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button">Add</button>'+
     '<div class="dayactions" aria-label="Add options">'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button"><span class="dayicon activity">+</span>Add Activity</button>'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="off" type="button"><span class="dayicon rest">+</span>Add Rest Day</button>'+
-      '<button class="dayaction" data-paste-day="'+esc(dateKey)+'" type="button"><span class="dayicon activity">+</span>Paste Copied</button>'+
-    '</div></div></div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
+    '</div></div></div></div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
 }
 function dayItem(day){
   var category=dayMixCategory(day);
@@ -1291,7 +1294,7 @@ function dayItem(day){
   if(status.indexOf('skipped')>=0)cls+=' skipped';
   var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
   var id=day.id||day.sourceRecordId||'';
-  return '<article class="item'+cls+'" draggable="true" data-drag-day-id="'+esc(id)+'"><label class="bulkcheck"><input data-bulk-check="'+esc(id)+'" type="checkbox" '+(selectedBulkDayIds.indexOf(id)>=0?'checked':'')+'> Select for status update</label><button class="itembtn" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+
+  return '<article class="item'+cls+'" draggable="true" data-drag-day-id="'+esc(id)+'"><button class="itemcopy" data-copy-day-id="'+esc(id)+'" type="button" title="Copy" aria-label="Copy '+esc(day.title||day.dayType||'calendar item')+'">⧉</button><label class="bulkcheck"><input data-bulk-check="'+esc(id)+'" type="checkbox" '+(selectedBulkDayIds.indexOf(id)>=0?'checked':'')+'> Select for status update</label><button class="itembtn" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+
     '<b>'+esc(day.title||day.dayType||'Plan day')+'</b>'+
     '<div class="meta">'+esc([day.groupName,day.athleteName,day.workoutType,sportFromDay(day)].filter(Boolean).join(' · '))+'</div>'+
     '<div class="meta">'+esc(day.details||'')+'</div>'+
@@ -1357,10 +1360,14 @@ function moveTrainingPlanDay(day,nextDate){
 }
 function copyActiveDay(){
   if(!activeDay)return;
-  copiedCalendarDay=copyableCalendarDay(activeDay);
+  copyCalendarDay(activeDay,true);
+}
+function copyCalendarDay(day,closeAfterCopy){
+  if(!day)return;
+  copiedCalendarDay=copyableCalendarDay(day);
   try{sessionStorage.setItem('smarttrak_copied_calendar_day',JSON.stringify(copiedCalendarDay));}catch(e){}
-  els.status.textContent='Copied '+(copiedCalendarDay.title||'calendar day')+'. Use Paste Copied on another date.';
-  closeDayModal();
+  els.status.textContent='Copied '+(copiedCalendarDay.title||'calendar day')+'. Use Paste on another date.';
+  if(closeAfterCopy)closeDayModal();
 }
 function copyableCalendarDay(day){
   return {
@@ -1389,7 +1396,7 @@ function copiedDayFromStorage(){
 }
 function pasteCopiedDay(targetDate){
   var copied=copiedDayFromStorage();
-  if(!copied){els.status.textContent='Copy a workout first, then choose Paste Copied on the target date.';return;}
+  if(!copied){els.status.textContent='Copy a workout first, then choose Paste on the target date.';return;}
   var date=String(targetDate||'').slice(0,10);
   if(!date){els.status.textContent='Choose a valid date for the copied workout.';return;}
   var plan=copied.trainingPlanId?plans.find(function(item){return planId(item)===String(copied.trainingPlanId)||String(item.sourceRecordId||'')===String(copied.trainingPlanId);})||null:null;
@@ -3210,6 +3217,11 @@ function init(){
   els.calendar.addEventListener('click',function(event){
     if(event.target.closest&&event.target.closest('[data-bulk-check-all]'))return;
     if(event.target.closest&&event.target.closest('[data-bulk-check]'))return;
+    var copyButton=event.target.closest&&event.target.closest('[data-copy-day-id]');
+    if(copyButton){
+      copyCalendarDay(findCalendarDayById(copyButton.getAttribute('data-copy-day-id')),false);
+      return;
+    }
     var pasteButton=event.target.closest&&event.target.closest('[data-paste-day]');
     if(pasteButton){
       pasteCopiedDay(pasteButton.getAttribute('data-paste-day')||todayInputValue());

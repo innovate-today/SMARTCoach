@@ -898,7 +898,8 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 146. Cleaned the future-planning list so completed relay support and XC Simulator work are no longer presented as unfinished future items.
 147. Added initial Athlete Calendar portal at `/athlete-calendar.html`, plus `/api/smart-trak/athlete-calendar` inside the unified SMART Trak API route. Coaches can copy a unique athlete link from Athletes; athletes can view assigned workouts and submit Complete, Modify, or Skip without a coach access code. The handler lives in `lib/athlete-calendar.js` so the deployment stays within the Vercel Hobby serverless-function limit. Calendar link generation was moved onto the existing `/api/smart-trak/athletes?action=calendarLink` path after the new athlete-calendar route returned Vercel plain server-error text during live link creation.
 148. Training Calendar Week View now has Previous Week and Next Week controls so coaches can schedule future weeks directly from the calendar grid.
-149. Training Calendar day updates now retry without rejected option fields when GHL rejects a saved option value, fixing remove/status updates for saved Easy/Recovery Run days. Calendar items can also be copied from the day modal and pasted onto another date with Paste Copied.
+149. Training Calendar day updates now retry without rejected option fields when GHL rejects a saved option value, fixing remove/status updates for saved Easy/Recovery Run days. Calendar items can also be copied from the day modal and pasted onto another date.
+150. Training Calendar copy/paste is now surfaced directly on the week calendar: each workout/meet card has a copy button, and each day header has a visible Paste button so coaches do not have to open the Add menu to paste.
 
 ## Known Good Test Flow
 

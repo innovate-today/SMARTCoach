@@ -64,11 +64,9 @@ To move a workout or meet to another date, grab the calendar item and drag it to
 
 To copy a workout already on the calendar:
 
-1. Click the workout.
-2. Click **Copy**.
-3. Go to the target week or date.
-4. Click **Add** on that date.
-5. Click **Paste Copied**.
+1. Click the copy icon on the workout card, or open the workout and click **Copy**.
+2. Go to the target week or date.
+3. Click **Paste** on that date.
 
 Use the status tools when a group of days needs to be changed:
 
