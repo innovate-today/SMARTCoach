@@ -965,9 +965,12 @@ function baseRecordsForBoards(){
 }
 function filteredRecords(){
   var status=els.statusFilter.value;
-  return baseRecordsForBoards().filter(function(row){
-    if(status==='current'&&!row.isCurrent)return false;
-    if(status==='historical'&&row.isCurrent)return false;
+  var base=baseRecordsForBoards().filter(recordIsUsable);
+  var currentKeys=currentRecordKeys(base);
+  return base.filter(function(row){
+    var isCurrent=!!currentKeys[recordIdentity(row)];
+    if(status==='current'&&!isCurrent)return false;
+    if(status==='historical'&&isCurrent)return false;
     return true;
   });
 }
@@ -1028,11 +1031,31 @@ function updateSortButtons(){
 function recordIsUsable(row){
   return !!(row&&typeof row==='object'&&recordHasDisplayData(row));
 }
-function recordRowHtml(row,board){
+function recordScore(row){
+  return Number(row&&row.resultMs)||parseResultMs(recordValue(row))||Number.POSITIVE_INFINITY;
+}
+function currentRecordKeys(list){
+  var boards={};
+  (list||[]).forEach(function(row){
+    var key=recordBoardKey(row);
+    if(!key)return;
+    var existing=boards[key];
+    var score=recordScore(row);
+    var existingScore=existing?recordScore(existing):Number.POSITIVE_INFINITY;
+    if(!existing||score<existingScore||(score===existingScore&&String(row.recordDate||'')>String(existing.recordDate||''))){
+      boards[key]=row;
+    }
+  });
+  return Object.keys(boards).reduce(function(map,key){
+    map[recordIdentity(boards[key])]=true;
+    return map;
+  },{});
+}
+function recordRowHtml(row,currentKeys){
   var eventName=recordEvent(row)||'Unlisted event';
   var value=recordValue(row)||'No result';
   var key=recordIdentity(row);
-  var status=row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
+  var status=currentKeys&&currentKeys[key]?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
   return '<tr>'+
     '<td><div class="name">'+esc(eventName)+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
     '<td>'+esc(row.gender||'Unlisted')+'</td>'+
@@ -1045,10 +1068,11 @@ function recordRowHtml(row,board){
   '</tr>';
 }
 function render(){
-  var list=filteredRecords().filter(recordIsUsable);
+  var list=filteredRecords();
   if(filtersAreDefault()&&list.length<records.length){
     list=sortRecords(records.filter(recordIsUsable));
   }
+  var currentKeys=currentRecordKeys(records.filter(recordIsUsable));
   var events={};
   var athletes={};
   list.forEach(function(row){
@@ -1057,12 +1081,12 @@ function render(){
     if(row.athleteName)athletes[row.athleteName]=true;
   });
   els.recordCount.textContent=list.length;
-  els.currentCount.textContent=list.filter(function(row){return row.isCurrent;}).length;
+  els.currentCount.textContent=list.filter(function(row){return currentKeys[recordIdentity(row)];}).length;
   els.eventCount.textContent=Object.keys(events).length;
   els.athleteCount.textContent=Object.keys(athletes).length;
   els.status.textContent=list.length+' record'+(list.length===1?'':'s');
   updateSortButtons();
-  els.rows.innerHTML=list.map(function(row){return recordRowHtml(row,null);}).join('');
+  els.rows.innerHTML=list.map(function(row){return recordRowHtml(row,currentKeys);}).join('');
   els.empty.hidden=!!list.length;
 }
 function loadRecords(){
@@ -1114,10 +1138,12 @@ function showRecordsDebug(debug){
   var mirrorCount=Number(debug.mirrorCount||0);
   var mergedCount=Number(debug.mergedCount||0);
   var registryState=mirror.configured===false?'off':'on';
-  var text=String(pendingRecordsSourcePrefix||'')+'Records source: GHL '+ghlCount+', mirror '+mirrorCount+', merged '+mergedCount+'. Registry '+registryState+', index '+Number(mirror.indexCount||0)+', scan '+Number(mirror.scanCount||0)+', load '+Number(mirror.loadCount||0)+'.';
+  var detail='Records source: GHL '+ghlCount+', mirror '+mirrorCount+', merged '+mergedCount+'. Registry '+registryState+', index '+Number(mirror.indexCount||0)+', scan '+Number(mirror.scanCount||0)+', load '+Number(mirror.loadCount||0)+'.';
+  var text=String(pendingRecordsSourcePrefix||'Records loaded. ');
   pendingRecordsSourcePrefix='';
-  if(mirror.error)text+=' '+mirror.error;
-  setBulkStatus(text,mergedCount<=1?'bad':mirrorCount>0?'good':'warn');
+  if(mirror.error)text+=mirror.error;
+  els.bulkStatus.title=detail+(mirror.error?' '+mirror.error:'');
+  setBulkStatus(text,mirror.error||mergedCount<=0?'bad':'good');
 }
 function defaultBrandLogo(){return '/assets/smart-logo.png';}
 function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
