@@ -345,7 +345,7 @@ var editingRecord=null;
 var expandedRecordBoards={};
 var RECORD_TYPES=['School Record'];
 var RECORD_SCOPES=['School'];
-var GENDERS=['Boys','Girls','Coed','Unlisted'];
+var GENDERS=['Boys','Girls'];
 var SPORTS=['Track','Cross Country','Road'];
 var EVENTS=['400m','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
 var SEASONS=['Spring','Summer','Fall','Winter','Offseason'];
@@ -576,13 +576,13 @@ function optionList(values,selected){
 function fillStaticSelects(){
   els.singleRecordType.innerHTML=optionList(RECORD_TYPES,'School Record');
   els.singleRecordScope.innerHTML=optionList(RECORD_SCOPES,'School');
-  els.singleGender.innerHTML=optionList(GENDERS,'Unlisted');
+  els.singleGender.innerHTML=optionList(GENDERS,'Boys');
   els.singleSport.innerHTML=optionList(SPORTS,'Track');
   els.singleEvent.innerHTML=optionList(EVENTS,'400m');
   els.singleSeason.innerHTML=optionList(SEASONS,'Spring');
   els.editRecordType.innerHTML=optionList(RECORD_TYPES,'School Record');
   els.editRecordScope.innerHTML=optionList(RECORD_SCOPES,'School');
-  els.editGender.innerHTML=optionList(GENDERS,'Unlisted');
+  els.editGender.innerHTML=optionList(GENDERS,'Boys');
   els.editSport.innerHTML=optionList(SPORTS,'Track');
   els.editEvent.innerHTML=optionList(EVENTS,'400m');
   els.editSeason.innerHTML=optionList(SEASONS,'Spring');
@@ -601,7 +601,7 @@ function setSelect(select,value,options){
 function clearSingleRecordForm(){
   els.singleRecordType.value='School Record';
   els.singleRecordScope.value='School';
-  els.singleGender.value='Unlisted';
+  els.singleGender.value='Boys';
   els.singleSport.value='Track';
   els.singleEvent.value='400m';
   els.singleResult.value='';
@@ -1046,9 +1046,10 @@ function historyCountLabel(count){
 function recordRowHtml(row,board){
   var eventName=recordEvent(row);
   var value=recordValue(row);
-  var expanded=!!expandedRecordBoards[board.key];
-  var toggle=board.history.length?'<button class="rowtoggle" data-toggle-board="'+esc(board.key)+'" type="button" aria-label="Toggle record history">'+(expanded?'▾':'▸')+'</button>':'<span class="rowtoggle" aria-hidden="true"></span>';
-  var status='<span class="pill good">Current</span>';
+  var history=board&&board.history||[];
+  var expanded=!!(board&&expandedRecordBoards[board.key]);
+  var toggle=history.length?'<button class="rowtoggle" data-toggle-board="'+esc(board.key)+'" type="button" aria-label="Toggle record history">'+(expanded?'▾':'▸')+'</button>':'<span class="rowtoggle" aria-hidden="true"></span>';
+  var status=row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
   return '<tr>'+
     '<td><div class="name">'+toggle+esc(eventName)+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
     '<td>'+esc(row.gender||'Unlisted')+'</td>'+
@@ -1057,7 +1058,7 @@ function recordRowHtml(row,board){
     '<td>'+esc(row.meetName||'')+'</td>'+
     '<td>'+esc(formatDate(row.recordDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
     '<td>'+status+'</td>'+
-    '<td>'+esc(historyCountLabel(board.history.length))+'</td>'+
+    '<td>'+esc(historyCountLabel(history.length))+'</td>'+
     '<td><button class="ghost compact" data-edit-record="'+esc(row.recordId||'')+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(row.recordId||'')+'" type="button">Delete</button></td>'+
   '</tr>';
 }
@@ -1078,7 +1079,6 @@ function recordHistoryHtml(board){
 }
 function render(){
   var list=filteredRecords().filter(recordIsUsable);
-  var boards=recordGroupsForView();
   var events={};
   var athletes={};
   list.forEach(function(row){
@@ -1086,14 +1086,14 @@ function render(){
     if(event)events[event]=true;
     if(row.athleteName)athletes[row.athleteName]=true;
   });
-  els.recordCount.textContent=boards.length;
-  els.currentCount.textContent=boards.length;
+  els.recordCount.textContent=list.length;
+  els.currentCount.textContent=list.filter(function(row){return row.isCurrent;}).length;
   els.eventCount.textContent=Object.keys(events).length;
   els.athleteCount.textContent=Object.keys(athletes).length;
-  els.status.textContent=boards.length+' record board'+(boards.length===1?'':'s');
+  els.status.textContent=list.length+' record'+(list.length===1?'':'s');
   updateSortButtons();
-  els.rows.innerHTML=boards.map(function(board){return recordRowHtml(board.main,board)+recordHistoryHtml(board);}).join('');
-  els.empty.hidden=!!boards.length;
+  els.rows.innerHTML=list.map(function(row){return recordRowHtml(row,null);}).join('');
+  els.empty.hidden=!!list.length;
 }
 function loadRecords(){
   els.refreshBtn.disabled=true;

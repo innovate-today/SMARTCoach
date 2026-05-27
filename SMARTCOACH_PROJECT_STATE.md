@@ -60,6 +60,7 @@ Latest handoff:
 - Phone app meet-result save now uses an Event dropdown for race distance selection and sends the selected event in both captured meet-result saves and scheduled meet-day syncs.
 - Records reload now uses both GHL record listing paths and a full record identity key so different school records, such as Boy 400m and Boy 800m, should not collapse into one row after refresh.
 - Records page now also keeps an account-scoped browser cache of records saved from that page and merges it after reload, protecting coaches from GHL list responses that only return the newest saved batch.
+- Records table now renders each saved record row directly instead of collapsing records into one board row, and the Records Tools gender dropdown is limited to Boys and Girls with Boys as the default.
 - `SMART_TRAK_COACH_HOW_TO.md` was added as the coach tutorial covering SMART Trak Dashboard, Athletes, Training Calendar, Meet History, XC Simulator, Records, Manage Meets, Log Race Result, Log Miles, and the phone app Training/Meet/Archive/Settings/Sync workflows.
 - The coach how-to guide was cleaned so it does not mention GHL or use "coach-facing" wording.
 - Next practical step: deploy/retest those three live fixes, then continue the live Pro test-account validation pass with dashboard filtered-volume retests, manual mileage same-day edit retest, and phone app follow-up checks.
@@ -853,6 +854,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 119. Cleaned the coach how-to guide so it uses coach-ready language and does not mention GHL or "coach-facing".
 120. Records reload issue retested by user with Boy 400m plus Boy 800m: only one record remained after refresh. Backend Records listing now combines search and direct GHL list endpoints, dedupes by full record identity instead of a weak fallback, and includes gender in manual source IDs.
 121. User retested by adding three more records; the newest records stayed but earlier records disappeared after refresh. Records page now stores account-scoped saved records in browser storage and merges them with server records on reload, including cache updates for single save, bulk save, edit, and delete.
+122. User retested again and still only saw the last saved record after refresh. Records page now renders individual record rows instead of collapsing records into board groups, and Records Tools gender choices are now only Boys and Girls.
 
 ## Known Good Test Flow
 
