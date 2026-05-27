@@ -121,6 +121,23 @@ How to use it:
 
 Fastest by event should separate boys and girls so results are compared correctly.
 
+## Track Simulator
+
+Use the Track Simulator for track meet planning and projected team scoring.
+
+How to use it:
+
+1. Choose the SMART Trak season-best source and event filter.
+2. Set your team name and scoring table.
+3. Click **My Season Bests** to load projected entries for your team.
+4. Paste or type competitor entries into the meet entries box.
+5. Click **Score Meet**.
+6. Review team scores, event places, marks, and projected points.
+7. Use **Save Field** to keep competitor entries for later.
+8. Use **Load Field** the next week, update marks, then score again.
+
+Use this page before a track meet to test lineup decisions, event changes, and projected point swings.
+
 ## XC Simulator
 
 Use the XC Simulator for cross country race planning and "what if" scoring.
@@ -298,7 +315,7 @@ If the app says a run is already synced, do not resync unless you are intentiona
 5. Sync after practice.
 6. Review the Dashboard.
 7. Log any extra miles or race results that were not timed in the app.
-8. Use Meet History, XC Simulator, and Records when needed.
+8. Use Meet History, Track Simulator, XC Simulator, and Records when needed.
 
 ## Quick Troubleshooting
 

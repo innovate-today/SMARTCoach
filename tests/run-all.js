@@ -11,6 +11,7 @@ const htmlFiles = [
   "plan-builder.html",
   "meet-history.html",
   "records.html",
+  "track-simulator.html",
   "xc-simulator.html",
   "onboarding.html",
   "live-launch-validation.html",
@@ -67,6 +68,7 @@ function checkLiveValidationPage() {
     "/plan-builder.html",
     "/meet-history.html",
     "/records.html",
+    "/track-simulator.html",
     "/xc-simulator.html",
   ];
   const requiredText = [

@@ -347,12 +347,13 @@ This endpoint also requires the automation secret. Account status reports whethe
 10. Follow the `/onboarding.html` **Activation Runbook** for that test account.
 11. Test Share -> Sync to SMART Trak with one athlete who has saved times.
 12. Log one standalone race result and confirm it reaches Dashboard, Meet History, and athlete bests.
-13. Load My Season Best in XC Simulator, load a saved field, and score one simulated meet.
-14. Trigger the GHL Subscription Payload workflow once and confirm account lookup shows the recent account update. Confirm the copied GHL payload did not include private tokens or coach access codes. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
-15. Use **Copy Activation Record** and save the support note for the test account.
-16. Use **Copy Coach Invite** only after validation is complete and the activation record has been saved.
-17. After the invite is sent, complete post-launch phone follow-up: first coach login, first sync, and phone bulk archive.
-18. Use **Copy Activation Record** again to save the final activation record, then move the account to normal support monitoring.
+13. Load My Season Bests in Track Simulator, load a saved field, and score one simulated meet.
+14. Load My Season Best in XC Simulator, load a saved field, and score one simulated meet.
+15. Trigger the GHL Subscription Payload workflow once and confirm account lookup shows the recent account update. Confirm the copied GHL payload did not include private tokens or coach access codes. If using the optional direct Stripe webhook fallback, also send one Stripe test-mode checkout/subscription event.
+16. Use **Copy Activation Record** and save the support note for the test account.
+17. Use **Copy Coach Invite** only after validation is complete and the activation record has been saved.
+18. After the invite is sent, complete post-launch phone follow-up: first coach login, first sync, and phone bulk archive.
+19. Use **Copy Activation Record** again to save the final activation record, then move the account to normal support monitoring.
 
 ## Launch Validation Checklist
 
@@ -371,9 +372,10 @@ Use `/live-launch-validation.html?account=<account-key>` for the support-facing 
 - **Optional Stripe webhook:** if enabled, a Stripe test event updates customer account storage; resending the same Stripe event returns success without rewriting the account record.
 - **No secret exposure:** automation responses and account lookup show saved/hidden status for private tokens and coach access codes instead of exposing values. Redacted setup rows should show `Saved value hidden` and should not copy `__hidden__` as a pasteable value.
 - **Customer link:** the GHL custom link opens the correct account dashboard with the customer account key.
-- **Coach pages:** Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator load for the test account without setup-needed errors.
+- **Coach pages:** Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, Track Simulator, and XC Simulator load for the test account without setup-needed errors.
 - **Stopwatch sync:** one completed stopwatch workout syncs into SMART Trak for a test athlete.
 - **Standalone race result:** one manually logged race result updates Dashboard, Meet History, and the athlete bests.
+- **Track Simulator:** My Season Bests loads the coach's team, a saved field can be loaded, and scoring produces team points by event.
 - **XC Simulator:** My Season Best loads the coach's team, a saved field can be loaded, and scoring produces complete team results.
 - **Post-launch phone follow-up:** after the coach invite is sent, confirm first coach login, first sync, and phone bulk archive before copying the final activation record.
 - **Support handoff:** **Copy Activation Record** is internal-only and includes the account key, subscription, Stripe IDs when available, setup/access state, smoke progress, launch sign-off, coach-invite reminder or copied time, post-launch follow-up, next action, customer link, status link, and coach page validation links.

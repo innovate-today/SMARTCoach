@@ -110,6 +110,7 @@ tr:last-child td{border-bottom:0}
       <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
       <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
       <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
+      <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
       <button id="resetBtn" class="utility-action" type="button">Reset</button>
     </div>
   </section>
@@ -262,6 +263,7 @@ var els={
   dashboardLink:document.getElementById('dashboardLink'),
   meetHistoryLink:document.getElementById('meetHistoryLink'),
   recordsLink:document.getElementById('recordsLink'),
+  trackSimulatorLink:document.getElementById('trackSimulatorLink'),
   resetBtn:document.getElementById('resetBtn'),
   raceName:document.getElementById('raceName'),
   division:document.getElementById('division'),
@@ -813,6 +815,7 @@ function init(){
   els.dashboardLink.href=pageUrl('/dashboard.html');
   els.meetHistoryLink.href=pageUrl('/meet-history.html');
   els.recordsLink.href=pageUrl('/records.html');
+  els.trackSimulatorLink.href=pageUrl('/track-simulator.html');
   els.accessSubmit.addEventListener('click',submitAccess);
   els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});
   els.resetBtn.addEventListener('click',clearAll);

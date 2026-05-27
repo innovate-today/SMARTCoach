@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak Track Meet Simulator</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b00000;--violet:#6d28d9}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1480px;margin:0 auto;padding:22px 18px 32px}
+body.embedded .page{max-width:none;padding:16px 18px 28px}
+.top{position:sticky;top:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:0 14px 32px rgba(15,23,42,.14)}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:64px;height:64px;display:grid;place-items:center;flex:0 0 64px}
+.mark img{display:block;max-width:64px;max-height:64px;object-fit:contain}
+h1{font-size:24px;line-height:1.15;margin:0}
+.sub{font-size:14px;color:var(--muted);margin-top:4px}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none}
+button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
+button.ghost{background:#eef2f7;color:#172033}
+button.utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line)}
+button.field-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
+button.delete-action{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+button:disabled{opacity:.55;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:minmax(360px,.45fr) minmax(640px,1fr);gap:14px;align-items:start}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.access{max-width:560px;margin:0 auto 18px}
+.access .panelbody{display:grid;gap:10px}
+.accessrow{display:flex;gap:8px}
+.accessrow input{flex:1}
+.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:12px;background:#fbfdff}
+.panelhead h2{font-size:17px;margin:0}
+.panelhead span{font-size:12px;color:var(--muted);font-weight:800}
+.panelbody{padding:14px 16px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:grid;gap:6px}
+.field.full{grid-column:1/-1}
+label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
+textarea{min-height:285px;resize:vertical;line-height:1.45}
+.fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
+.fieldinfo:after{content:attr(data-tip);position:absolute;left:0;top:24px;width:270px;max-width:80vw;padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:50;white-space:normal}
+.fieldinfo.info-left:after{left:auto;right:0}
+.fieldinfo:hover:after,.fieldinfo:focus:after{opacity:1}
+.hint{font-size:12px;color:var(--muted);line-height:1.35}
+.note{border:1px solid #c7d2fe;background:#f8fbff;border-radius:8px;padding:10px 12px;color:#334155;font-size:13px;line-height:1.4;margin-bottom:12px}
+.sim-actions{display:grid;gap:10px;margin-top:12px}
+.status{font-size:13px;color:var(--muted);font-weight:800;margin-right:auto}
+.sim-status-row{display:flex;align-items:center;min-height:22px}
+.sim-main-actions,.saved-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.utility-actions{display:grid;grid-template-columns:repeat(2,112px);gap:10px;justify-content:end}
+.sim-actions button{padding:9px 10px;white-space:nowrap}
+.sim-actions .compact{font-size:13px;padding:8px 9px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.card b{display:block;font-size:22px;line-height:1.12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.tablewrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto;margin-bottom:14px}
+table{width:100%;border-collapse:collapse;min-width:860px}
+th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
+td{font-size:14px}
+tr:last-child td{border-bottom:0}
+.name{font-weight:900;color:#102a70}
+.muted{color:var(--muted);font-size:12px;margin-top:2px}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#e8eefc;color:#173891}
+.pill.good{background:#dcfce7;color:var(--good)}
+.pill.warn{background:#ffedd5;color:var(--warn)}
+.pill.violet{background:#ede9fe;color:var(--violet)}
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
+.output-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:0 12px 12px}
+@media(max-width:980px){
+  .top{align-items:flex-start;flex-direction:column}
+  .actions{width:100%}
+  .actions a,.actions button{flex:1;text-align:center}
+  .grid{grid-template-columns:1fr}
+  .cards{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .page{padding:14px 10px 24px}
+  .formgrid,.cards{grid-template-columns:1fr}
+  .sim-main-actions,.saved-actions,.utility-actions{grid-template-columns:1fr}
+  .output-actions{align-items:stretch;flex-direction:column}
+  .accessrow{flex-direction:column}
+  button,.linkbtn{text-align:center}
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>SMART Trak Track Meet Simulator</h1>
+        <div class="sub">Project team points by event, entry, athlete, and saved competitor fields.</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
+      <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
+      <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
+      <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
+      <button id="resetBtn" class="utility-action" type="button">Reset</button>
+    </div>
+  </section>
+
+  <section id="accessPanel" class="panel access" hidden>
+    <div class="panelhead">
+      <h2>SMART Trak Access Required</h2>
+      <span>Coach access</span>
+    </div>
+    <div class="panelbody">
+      <p class="hint">Enter the coach access code for this SMART Trak account to load season bests into the Track Meet Simulator.</p>
+      <div class="accessrow">
+        <input id="accessCode" type="password" placeholder="Access code" autocomplete="off">
+        <button id="accessSubmit" type="button">Continue</button>
+      </div>
+      <p id="accessStatus" class="hint"></p>
+    </div>
+  </section>
+
+  <section id="mainGrid" class="grid">
+    <section class="panel">
+      <div class="panelhead">
+        <h2>Meet Setup</h2>
+        <span>Paste or type entries</span>
+      </div>
+      <div class="panelbody">
+        <div class="note">Use one entry per line. Accepted formats: <b>Team, Athlete, Event, Mark</b> or tab-separated rows. Track times rank fastest first. Field marks rank farthest/highest first.</div>
+        <div class="formgrid">
+          <div class="field">
+            <label for="genderSelect">SMART Trak SB Source <span class="fieldinfo" tabindex="0" data-tip="Load current season-best track results from SMART Trak for boys, girls, or both.">i</span></label>
+            <select id="genderSelect">
+              <option value="girls">Girls Track</option>
+              <option value="boys">Boys Track</option>
+              <option value="all">Boys + Girls Track</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="eventFilter">Event Filter <span class="fieldinfo info-left" tabindex="0" data-tip="Load all track season bests or only one event. Manual pasted entries can still include any event.">i</span></label>
+            <select id="eventFilter"></select>
+          </div>
+          <div class="field">
+            <label for="teamName">Your Team Name <span class="fieldinfo" tabindex="0" data-tip="Season bests load under this team name. Save or load opponent entries underneath.">i</span></label>
+            <input id="teamName" type="text" placeholder="Example: SMART Trak">
+          </div>
+          <div class="field">
+            <label for="pointsTable">Scoring <span class="fieldinfo info-left" tabindex="0" data-tip="Default high school dual/invitational scoring is 10-8-6-5-4-3-2-1. Custom accepts comma-separated points.">i</span></label>
+            <select id="pointsTable">
+              <option value="10,8,6,5,4,3,2,1">10-8-6-5-4-3-2-1</option>
+              <option value="5,3,1">5-3-1</option>
+              <option value="6,4,3,2,1">6-4-3-2-1</option>
+              <option value="10,8,6,4,2,1">10-8-6-4-2-1</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="customPoints">Custom Points</label>
+            <input id="customPoints" type="text" placeholder="Example: 10,8,6,5,4,3,2,1">
+          </div>
+          <div class="field">
+            <label for="maxPerTeam">Max Scorers / Team <span class="fieldinfo info-left" tabindex="0" data-tip="Optional cap per team per event. Leave blank if every placing athlete can score.">i</span></label>
+            <input id="maxPerTeam" type="number" min="1" max="9" placeholder="Optional">
+          </div>
+          <div class="field full">
+            <label for="entryInput">Meet Entries <span class="fieldinfo" tabindex="0" data-tip="Include team, athlete, event, and projected mark. Times can be 12.34 or 4:55.2. Field marks can be 18-6, 18'6, or 42.5.">i</span></label>
+            <textarea id="entryInput" spellcheck="false" placeholder="Blue HS, Avery Johnson, 400m, 51.8&#10;Red HS, Mason Lee, 400m, 52.1&#10;Blue HS, Chris Moore, Long Jump, 20-4"></textarea>
+            <div class="hint">Tip: edit marks, move athletes between events, or paste opponent heat sheets to test meet outcomes.</div>
+          </div>
+        </div>
+        <div class="sim-actions">
+          <div class="sim-status-row"><div id="status" class="status">Ready to score.</div></div>
+          <div class="sim-main-actions">
+            <button id="loadSbBtn" class="secondary" type="button">My Season Bests</button>
+            <button id="scoreBtn" type="button">Score Meet</button>
+            <button id="copyBtn" class="secondary" type="button">Copy Results</button>
+          </div>
+          <div class="saved-actions">
+            <button id="saveFieldBtn" class="field-action compact" type="button">Save Field</button>
+            <button id="loadFieldBtn" class="field-action compact" type="button">Load Field</button>
+            <button id="deleteFieldBtn" class="delete-action compact" type="button">Delete Field</button>
+          </div>
+          <div class="utility-actions">
+            <button id="exampleBtn" class="ghost compact" type="button">Example</button>
+            <button id="clearBtn" class="ghost compact" type="button">Clear</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <section class="cards">
+        <div class="card"><b id="teamCount">0</b><span>Teams</span></div>
+        <div class="card"><b id="eventCount">0</b><span>Events scored</span></div>
+        <div class="card"><b id="winnerName">--</b><span>Projected winner</span></div>
+        <div class="card"><b id="winningScore">--</b><span>Winning points</span></div>
+      </section>
+
+      <section class="panel">
+        <div class="panelhead">
+          <h2>Team Scores</h2>
+          <span id="teamSummary">No simulation yet</span>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Place</th><th>Team</th><th>Points</th><th>Event Wins</th><th>Scoring Entries</th></tr>
+            </thead>
+            <tbody id="teamRows"></tbody>
+          </table>
+          <div id="teamEmpty" class="empty">Score a meet to see team points.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panelhead">
+          <h2>Event Results</h2>
+          <span id="eventSummary">Projected places and points</span>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Place</th><th>Athlete</th><th>Team</th><th>Mark</th><th>Points</th></tr>
+            </thead>
+            <tbody id="entryRows"></tbody>
+          </table>
+          <div id="entryEmpty" class="empty">No entries scored yet.</div>
+        </div>
+      </section>
+    </section>
+  </section>
+</main>
+
+<script>
+var TRACK_EVENTS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3000m','3200m','2 Mile','Long Jump','Triple Jump','High Jump','Pole Vault','Shot Put','Discus','Javelin'];
+var FIELD_EVENTS={'long jump':true,'triple jump':true,'high jump':true,'pole vault':true,'shot put':true,'discus':true,'javelin':true,'hammer':true};
+var smartTrakMeetResults=[];
+var lastSimulation=null;
+var els={
+  dashboardLink:document.getElementById('dashboardLink'),
+  meetHistoryLink:document.getElementById('meetHistoryLink'),
+  recordsLink:document.getElementById('recordsLink'),
+  xcSimulatorLink:document.getElementById('xcSimulatorLink'),
+  resetBtn:document.getElementById('resetBtn'),
+  genderSelect:document.getElementById('genderSelect'),
+  eventFilter:document.getElementById('eventFilter'),
+  teamName:document.getElementById('teamName'),
+  pointsTable:document.getElementById('pointsTable'),
+  customPoints:document.getElementById('customPoints'),
+  maxPerTeam:document.getElementById('maxPerTeam'),
+  entryInput:document.getElementById('entryInput'),
+  status:document.getElementById('status'),
+  loadSbBtn:document.getElementById('loadSbBtn'),
+  scoreBtn:document.getElementById('scoreBtn'),
+  copyBtn:document.getElementById('copyBtn'),
+  saveFieldBtn:document.getElementById('saveFieldBtn'),
+  loadFieldBtn:document.getElementById('loadFieldBtn'),
+  deleteFieldBtn:document.getElementById('deleteFieldBtn'),
+  exampleBtn:document.getElementById('exampleBtn'),
+  clearBtn:document.getElementById('clearBtn'),
+  teamCount:document.getElementById('teamCount'),
+  eventCount:document.getElementById('eventCount'),
+  winnerName:document.getElementById('winnerName'),
+  winningScore:document.getElementById('winningScore'),
+  teamSummary:document.getElementById('teamSummary'),
+  eventSummary:document.getElementById('eventSummary'),
+  teamRows:document.getElementById('teamRows'),
+  entryRows:document.getElementById('entryRows'),
+  teamEmpty:document.getElementById('teamEmpty'),
+  entryEmpty:document.getElementById('entryEmpty'),
+  mainGrid:document.getElementById('mainGrid'),
+  accessPanel:document.getElementById('accessPanel'),
+  accessCode:document.getElementById('accessCode'),
+  accessSubmit:document.getElementById('accessSubmit'),
+  accessStatus:document.getElementById('accessStatus')
+};
+function cleanKey(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';}
+function accountKey(){try{var p=new URLSearchParams(window.location.search||'');return cleanKey(p.get('account')||p.get('tenant')||localStorage.getItem('sc_account')||'default');}catch(e){return 'default';}}
+function embeddedMode(){try{var p=new URLSearchParams(window.location.search||'');return p.get('embed')==='1'||p.get('iframe')==='1'||p.get('embedded')==='1';}catch(e){return false;}}
+function pageUrl(path){var url=new URL(path,window.location.origin);var key=accountKey();if(key&&key!=='default')url.searchParams.set('account',key);if(embeddedMode())url.searchParams.set('embed','1');return url.pathname+url.search;}
+function accessStorageKey(){return 'sc_access_'+accountKey();}
+function sessionStorageKey(){return 'sc_session_'+accountKey();}
+function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
+function setAccessCode(value){try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
+function sessionToken(){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}}
+function setSessionToken(value){try{if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());else sessionStorage.removeItem(sessionStorageKey());}catch(e){}}
+function apiHeaders(){var h={'X-SMARTCoach-Account':accountKey()};var s=sessionToken();var c=accessCode();if(s)h['X-SMARTCoach-Session']=s;if(c&&!s)h['X-SMARTCoach-Access-Code']=c;return h;}
+function defaultBrandLogo(){return '/assets/smart-logo.png';}
+function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
+function ensureAccountAccess(){
+  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){
+    applyBrandLogo(result.data&&result.data.logoUrl);
+    if(result.data&&result.data.accessReady===false){showAccessBlocked(result.data);return false;}
+    if(result.data&&result.data.accessCodeRequired&&!result.data.coachAccessUnlocked&&!result.data.deviceAccessReady){showAccess(result.data);return false;}
+    els.accessPanel.hidden=true;els.mainGrid.hidden=false;return true;
+  }).catch(function(){applyBrandLogo('');return true;});
+}
+function showAccess(data){els.mainGrid.hidden=true;els.accessPanel.hidden=false;els.accessSubmit.disabled=false;els.accessCode.disabled=false;els.accessCode.value='';els.accessStatus.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';els.accessStatus.style.color='var(--muted)';setTimeout(function(){els.accessCode.focus();},50);}
+function showAccessBlocked(data){els.mainGrid.hidden=true;els.accessPanel.hidden=false;els.accessStatus.textContent=(data&&data.subscriptionBlockedReason)||(data&&data.error)||'SMART Trak access is blocked for this account.';els.accessStatus.style.color='var(--bad)';els.accessSubmit.disabled=true;els.accessCode.disabled=true;}
+function submitAccess(){
+  var code=els.accessCode.value.trim();
+  if(!code){els.accessStatus.textContent='Enter the access code to continue.';els.accessStatus.style.color='var(--bad)';return;}
+  setAccessCode(code);els.accessStatus.textContent='Checking access...';els.accessStatus.style.color='var(--muted)';
+  fetch('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:accountKey(),accessCode:code})}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){
+    if(result.ok&&result.data&&result.data.sessionToken){setSessionToken(result.data.sessionToken);setAccessCode('');els.accessPanel.hidden=true;els.mainGrid.hidden=false;setStatus('Track Meet Simulator unlocked.','');loadSeasonBests();return;}
+    setAccessCode('');els.accessStatus.textContent=(result.data&&result.data.error)||'Access code was not accepted.';els.accessStatus.style.color='var(--bad)';
+  }).catch(function(){setAccessCode('');els.accessStatus.textContent='Access could not be checked. Try again.';els.accessStatus.style.color='var(--bad)';});
+}
+function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
+function csvCell(value){var text=String(value==null?'':value);return /[,"\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;}
+function setStatus(text,type){els.status.textContent=text;els.status.style.color=type==='error'?'var(--bad)':type==='warn'?'var(--warn)':'var(--muted)';}
+function genderKey(value){var text=String(value||'').trim().toLowerCase();if(/^f|girl|women|female/.test(text))return 'girls';if(/^m|boy|men|male/.test(text))return 'boys';return text;}
+function normalizeEvent(value){
+  var text=String(value||'').trim().replace(/\s+/g,' ');
+  var lower=text.toLowerCase();
+  var aliases={'100':'100m','200':'200m','300':'300m','400':'400m','600':'600m','800':'800m','1500':'1500m','1600':'1600m','mile':'1 Mile','one mile':'1 Mile','3000':'3000m','3200':'3200m','2 mile':'2 Mile','two mile':'2 Mile','lj':'Long Jump','tj':'Triple Jump','hj':'High Jump','pv':'Pole Vault','sp':'Shot Put'};
+  if(aliases[lower])return aliases[lower];
+  var found=TRACK_EVENTS.find(function(event){return event.toLowerCase()===lower;});
+  return found||text;
+}
+function isFieldEvent(event){return !!FIELD_EVENTS[String(event||'').toLowerCase()];}
+function rowSport(row){var text=[row&&row.sport,row&&row.meetName,row&&row.event,row&&row.coachRaceNotes].filter(Boolean).join(' ').toLowerCase();if(text.indexOf('cross_country')>=0||text.indexOf('cross country')>=0||/\bxc\b/.test(text))return 'cross_country';if(text.indexOf('track')>=0)return 'track';return '';}
+function eventMatches(row,eventName){var event=normalizeEvent(row&&row.event||row);return eventName==='all'||event.toLowerCase()===String(eventName||'').toLowerCase();}
+function fieldStorageKey(){return 'track_sim_field_'+accountKey()+'_'+els.genderSelect.value+'_'+els.eventFilter.value;}
+function readSavedFieldText(){try{return localStorage.getItem(fieldStorageKey())||'';}catch(e){return '';}}
+function writeSavedFieldText(text){try{localStorage.setItem(fieldStorageKey(),text||'');}catch(e){}}
+function deleteSavedFieldText(){try{localStorage.removeItem(fieldStorageKey());}catch(e){}}
+function parseTime(value){
+  var raw=String(value||'').trim();
+  if(!raw)return null;
+  var parts=raw.split(':').map(function(part){return part.trim();});
+  if(parts.some(function(part){return part===''||isNaN(Number(part));}))return null;
+  var seconds=0;
+  if(parts.length===1)seconds=Number(parts[0]);
+  else if(parts.length===2)seconds=Number(parts[0])*60+Number(parts[1]);
+  else if(parts.length===3)seconds=Number(parts[0])*3600+Number(parts[1])*60+Number(parts[2]);
+  else return null;
+  return isFinite(seconds)&&seconds>0?seconds:null;
+}
+function parseFieldMark(value){
+  var raw=String(value||'').trim().toLowerCase().replace(/[′’]/g,"'").replace(/[″”]/g,'"');
+  if(!raw)return null;
+  var feetInches=raw.match(/^(\d+)\s*(?:'|-|ft)\s*(\d+(?:\.\d+)?)?/);
+  if(feetInches)return Number(feetInches[1])*12+Number(feetInches[2]||0);
+  var meters=raw.match(/^(\d+(?:\.\d+)?)\s*m$/);
+  if(meters)return Number(meters[1])*39.3701;
+  var numeric=Number(raw.replace(/[^0-9.]/g,''));
+  return isFinite(numeric)&&numeric>0?numeric:null;
+}
+function parseMark(event,value){
+  var mark=isFieldEvent(event)?parseFieldMark(value):parseTime(value);
+  return mark==null?null:mark;
+}
+function formatTime(seconds){
+  if(!isFinite(seconds))return '--';
+  var whole=Math.floor(seconds);
+  var tenths=Math.round((seconds-whole)*10);
+  if(tenths===10){whole+=1;tenths=0;}
+  var h=Math.floor(whole/3600),m=Math.floor((whole%3600)/60),s=whole%60;
+  var sec=String(s).padStart(2,'0')+(tenths?'.'+tenths:'');
+  if(h)return h+':'+String(m).padStart(2,'0')+':'+sec;
+  if(m)return m+':'+sec;
+  return String(s)+(tenths?'.'+tenths:'');
+}
+function formatFieldMark(inches){
+  if(!isFinite(inches))return '--';
+  var feet=Math.floor(inches/12);
+  var inch=Math.round((inches-feet*12)*10)/10;
+  if(inch>=12){feet+=1;inch-=12;}
+  return feet+"-"+(inch%1?inch.toFixed(1):String(Math.round(inch)));
+}
+function formatMark(event,value){return isFieldEvent(event)?formatFieldMark(value):formatTime(value);}
+function splitLine(line){var parts=line.indexOf('\t')>-1?line.split('\t'):line.split(',');return parts.map(function(part){return part.trim();}).filter(Boolean);}
+function parseEntries(text){
+  var rows=[],warnings=[];
+  String(text||'').split(/\r?\n/).forEach(function(line,index){
+    var clean=line.trim();
+    if(!clean)return;
+    var parts=splitLine(clean);
+    if(parts.length<4){warnings.push('Line '+(index+1)+' needs team, athlete, event, and mark.');return;}
+    var eventIndex=-1,eventName='';
+    for(var i=0;i<parts.length;i++){
+      var normalized=normalizeEvent(parts[i]);
+      if(TRACK_EVENTS.map(function(e){return e.toLowerCase();}).indexOf(normalized.toLowerCase())>=0){eventIndex=i;eventName=normalized;break;}
+    }
+    if(eventIndex<0){warnings.push('Line '+(index+1)+' has an unknown event.');return;}
+    var markIndex=-1,markValue=null;
+    for(var j=parts.length-1;j>=0;j--){
+      if(j===eventIndex)continue;
+      var parsed=parseMark(eventName,parts[j]);
+      if(parsed!=null){markIndex=j;markValue=parsed;break;}
+    }
+    if(markIndex<0){warnings.push('Line '+(index+1)+' is missing a readable mark.');return;}
+    var labels=parts.filter(function(_,i){return i!==eventIndex&&i!==markIndex;});
+    rows.push({team:labels[0]||'Unattached',athlete:labels.slice(1).join(' ')||'Athlete '+(rows.length+1),event:eventName,mark:markValue,rawMark:parts[markIndex],line:index+1});
+  });
+  return {rows:rows,warnings:warnings};
+}
+function parsedLineTeam(line){
+  var parts=splitLine(line);
+  if(parts.length<4)return '';
+  return parts[0]||'';
+}
+function linesWithoutTeam(text,teamName){
+  var team=String(teamName||'').trim().toLowerCase();
+  return String(text||'').split(/\r?\n/).filter(function(line){if(!line.trim())return false;var lineTeam=parsedLineTeam(line).toLowerCase();return !team||!lineTeam||lineTeam!==team;}).join('\n');
+}
+function linesForTeam(text,teamName){
+  var team=String(teamName||'').trim().toLowerCase();
+  return String(text||'').split(/\r?\n/).filter(function(line){return line.trim()&&team&&parsedLineTeam(line).toLowerCase()===team;}).join('\n');
+}
+function combineBlocks(myTeamText,opponents){return [myTeamText,opponents].map(function(block){return String(block||'').trim();}).filter(Boolean).join('\n');}
+function pointsList(){
+  var text=els.pointsTable.value==='custom'?els.customPoints.value:els.pointsTable.value;
+  var points=String(text||'').split(',').map(function(item){return Number(item.trim());}).filter(function(value){return isFinite(value)&&value>0;});
+  return points.length?points:[10,8,6,5,4,3,2,1];
+}
+function loadSmartTrakDashboard(){
+  els.loadSbBtn.disabled=true;
+  setStatus('Loading SMART Trak season bests...','');
+  return fetch('/api/smart-trak/dashboard',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){
+    if(!result.ok){
+      if(result.data&&result.data.accessCodeRequired){showAccess(result.data);throw new Error('Enter the access code to load SMART Trak season bests.');}
+      if(result.data&&result.data.subscriptionAccessRequired)throw new Error(result.data.error||'SMART Trak access is blocked for this account.');
+      throw new Error(result.data&&result.data.error||'SMART Trak season bests failed to load.');
+    }
+    smartTrakMeetResults=result.data.meetResults||result.data.recentMeetResults||[];
+    return smartTrakMeetResults;
+  }).finally(function(){els.loadSbBtn.disabled=false;});
+}
+function bestRowsForSelection(rows){
+  var gender=els.genderSelect.value;
+  var eventName=els.eventFilter.value||'all';
+  var bestByAthleteEvent={};
+  rows.forEach(function(row){
+    if(gender!=='all'&&genderKey(row.athleteGender)!==gender)return;
+    if(rowSport(row)&&rowSport(row)!=='track')return;
+    var event=normalizeEvent(row.event);
+    if(!eventMatches(row,eventName))return;
+    if(!row.isSeasonBest)return;
+    var mark=parseMark(event,row.resultDisplay);
+    if(mark==null&&row.resultMs&&!isFieldEvent(event))mark=Number(row.resultMs)/1000;
+    if(mark==null)return;
+    var key=[row.contactId||row.athleteName||'',event].join('|').toLowerCase();
+    var current=bestByAthleteEvent[key];
+    var better=!current||(isFieldEvent(event)?mark>current.mark:mark<current.mark);
+    if(better)bestByAthleteEvent[key]={row:row,event:event,mark:mark};
+  });
+  return Object.keys(bestByAthleteEvent).map(function(key){return bestByAthleteEvent[key];}).sort(function(a,b){
+    return a.event.localeCompare(b.event)||(isFieldEvent(a.event)?b.mark-a.mark:a.mark-b.mark)||String(a.row.athleteName||'').localeCompare(String(b.row.athleteName||''));
+  });
+}
+function loadSeasonBests(){
+  if(!els.teamName.value.trim())els.teamName.value='SMART Trak';
+  var load=smartTrakMeetResults.length?Promise.resolve(smartTrakMeetResults):loadSmartTrakDashboard();
+  return load.then(function(rows){
+    var bests=bestRowsForSelection(rows);
+    if(!bests.length){setStatus('No SMART Trak season-best track results found for this selection.','warn');return;}
+    var team=els.teamName.value.trim()||'SMART Trak';
+    var myTeamText=bests.map(function(item){return [team,item.row.athleteName||'Unnamed',item.event,formatMark(item.event,item.mark)].map(csvCell).join(', ');}).join('\n');
+    var opponents=linesWithoutTeam(els.entryInput.value,team)||readSavedFieldText();
+    els.entryInput.value=combineBlocks(myTeamText,opponents);
+    render();
+    setStatus(bests.length+' SMART Trak season-best entr'+(bests.length===1?'y':'ies')+' loaded'+(opponents?' with saved competitors.':'.'),'');
+  }).catch(function(error){setStatus(error.message||'SMART Trak season bests failed to load.','error');});
+}
+function saveField(){
+  var team=els.teamName.value.trim()||'SMART Trak';
+  var opponents=linesWithoutTeam(els.entryInput.value,team);
+  writeSavedFieldText(opponents);
+  setStatus(opponents?'Saved competitor field for this selection.':'No competitor lines found to save.','');
+}
+function loadField(){
+  var opponents=readSavedFieldText();
+  if(!opponents){setStatus('No saved competitor field for this selection yet.','warn');return;}
+  var team=els.teamName.value.trim()||'SMART Trak';
+  var myTeam=linesForTeam(els.entryInput.value,team);
+  els.entryInput.value=combineBlocks(myTeam,opponents);
+  render();
+  setStatus('Loaded saved competitor field.','');
+}
+function deleteField(){
+  if(!readSavedFieldText()){setStatus('No saved competitor field to delete.','warn');return;}
+  deleteSavedFieldText();
+  setStatus('Deleted saved competitor field.','');
+}
+function simulate(){
+  var points=pointsList();
+  var maxPerTeam=Number(els.maxPerTeam.value)||0;
+  var parsed=parseEntries(els.entryInput.value);
+  var byEvent={};
+  parsed.rows.forEach(function(row){
+    var key=row.event.toLowerCase();
+    if(!byEvent[key])byEvent[key]={name:row.event,entries:[]};
+    byEvent[key].entries.push(row);
+  });
+  var scoringEntries=[],teamMap={};
+  Object.keys(byEvent).forEach(function(key){
+    var event=byEvent[key];
+    event.entries.sort(function(a,b){return isFieldEvent(event.name)?b.mark-a.mark:a.mark-b.mark;});
+    var teamCounts={};
+    var place=0;
+    event.entries.forEach(function(row,index){
+      row.overall=index+1;
+      var teamKey=String(row.team||'').trim().toLowerCase();
+      teamCounts[teamKey]=teamCounts[teamKey]||0;
+      var eligible=!maxPerTeam||teamCounts[teamKey]<maxPerTeam;
+      if(eligible&&place<points.length){
+        place+=1;
+        teamCounts[teamKey]+=1;
+        row.place=place;
+        row.points=points[place-1]||0;
+        scoringEntries.push(row);
+      }else{
+        row.place=null;
+        row.points=0;
+      }
+      if(!teamMap[teamKey])teamMap[teamKey]={name:row.team||'Unattached',points:0,wins:0,entries:0,scorers:[]};
+      teamMap[teamKey].entries+=1;
+      teamMap[teamKey].points+=row.points;
+      if(row.place===1)teamMap[teamKey].wins+=1;
+      if(row.points)teamMap[teamKey].scorers.push(row);
+    });
+  });
+  var teams=Object.keys(teamMap).map(function(key){return teamMap[key];}).filter(function(team){return team.entries>0;}).sort(function(a,b){return b.points-a.points||b.wins-a.wins||a.name.localeCompare(b.name);});
+  teams.forEach(function(team,index){team.place=index+1;});
+  return {events:Object.keys(byEvent).map(function(key){return byEvent[key];}).sort(function(a,b){return a.name.localeCompare(b.name);}),teams:teams,entries:parsed.rows,warnings:parsed.warnings,points:points};
+}
+function render(){
+  lastSimulation=simulate();
+  var sim=lastSimulation;
+  els.teamRows.innerHTML=sim.teams.map(function(team){
+    return '<tr><td><span class="pill '+(team.place===1?'good':'')+'">'+team.place+'</span></td><td><div class="name">'+esc(team.name)+'</div></td><td><b>'+team.points+'</b></td><td>'+team.wins+'</td><td>'+team.scorers.slice(0,8).map(function(row){return '<span class="pill">'+row.points+'</span> '+esc(row.event)+' - '+esc(row.athlete);}).join('<br>')+'</td></tr>';
+  }).join('');
+  var eventRows=[];
+  sim.events.forEach(function(event){
+    event.entries.forEach(function(row){
+      eventRows.push('<tr><td><div class="name">'+esc(event.name)+'</div></td><td>'+(row.place?'<span class="pill '+(row.place===1?'good':'')+'">'+row.place+'</span>':'--')+'</td><td>'+esc(row.athlete)+'</td><td>'+esc(row.team)+'</td><td><b>'+formatMark(event.name,row.mark)+'</b></td><td>'+(row.points?row.points:'--')+'</td></tr>');
+    });
+  });
+  els.entryRows.innerHTML=eventRows.join('');
+  els.teamEmpty.hidden=!!sim.teams.length;
+  els.entryEmpty.hidden=!!sim.entries.length;
+  els.teamCount.textContent=String(sim.teams.length);
+  els.eventCount.textContent=String(sim.events.length);
+  els.winnerName.textContent=sim.teams[0]?sim.teams[0].name:'--';
+  els.winningScore.textContent=sim.teams[0]?String(sim.teams[0].points):'--';
+  els.teamSummary.textContent=sim.teams.length?sim.teams.length+' teams · '+sim.points.join('-')+' scoring':'No teams yet';
+  els.eventSummary.textContent=sim.entries.length+' entries across '+sim.events.length+' event'+(sim.events.length===1?'':'s');
+  var warningText=sim.warnings.length?' · '+sim.warnings.length+' line'+(sim.warnings.length===1?'':'s')+' skipped':'';
+  els.status.textContent=sim.entries.length+' entries loaded'+warningText+'.';
+  els.status.style.color=sim.warnings.length?'var(--warn)':'var(--muted)';
+}
+function loadExample(){
+  els.teamName.value='Blue HS';
+  els.genderSelect.value='girls';
+  els.eventFilter.value='all';
+  els.entryInput.value=[
+    'Blue HS, Avery Johnson, 100m, 12.48',
+    'Red HS, Maya Hill, 100m, 12.61',
+    'Gold HS, Nia Cole, 100m, 12.75',
+    'Blue HS, Carrie Bailess, 200m, 25.52',
+    'Red HS, Erin Stone, 200m, 25.90',
+    'Gold HS, Reese Lane, 200m, 26.12',
+    'Blue HS, Avery Johnson, 400m, 58.8',
+    'Red HS, Tori Banks, 400m, 59.6',
+    'Gold HS, Amara Fox, 400m, 1:00.4',
+    'Blue HS, Mia Price, 800m, 2:22.8',
+    'Red HS, Zoe Clark, 800m, 2:24.1',
+    'Gold HS, Hana Reed, 800m, 2:25.5',
+    'Blue HS, Jess King, 1600m, 5:15.2',
+    'Red HS, Leah Moss, 1600m, 5:18.7',
+    'Gold HS, Sara West, 1600m, 5:22.1',
+    'Blue HS, Chris Moore, Long Jump, 17-8',
+    'Red HS, Taylor Gray, Long Jump, 17-2',
+    'Gold HS, Ivy Ross, Long Jump, 16-11',
+    'Red HS, Nora Diaz, Shot Put, 36-4',
+    'Blue HS, Elle Carter, Shot Put, 34-10',
+    'Gold HS, Mina Long, Shot Put, 33-7'
+  ].join('\n');
+  render();
+}
+function clearAll(){els.teamName.value='';els.entryInput.value='';els.customPoints.value='';els.maxPerTeam.value='';ensureAccountAccess().then(function(ok){if(ok)render();});}
+function copyResults(){
+  if(!lastSimulation)render();
+  var sim=lastSimulation;
+  var lines=['Track Meet Simulation','Team Scores'];
+  sim.teams.forEach(function(team){lines.push(team.place+'. '+team.name+' - '+team.points+' pts ('+team.wins+' event wins)');});
+  lines.push('');
+  lines.push('Event Results');
+  sim.events.forEach(function(event){
+    lines.push(event.name);
+    event.entries.forEach(function(row){lines.push('  '+(row.place||'-')+'. '+row.athlete+' - '+row.team+' - '+formatMark(event.name,row.mark)+' - '+(row.points||0)+' pts');});
+  });
+  var text=lines.join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(function(){setStatus('Simulation copied.','');});
+  else window.prompt('Copy simulation results',text);
+}
+function fillEventFilter(){
+  els.eventFilter.innerHTML='<option value="all">All events</option>'+TRACK_EVENTS.map(function(event){return '<option value="'+esc(event)+'">'+esc(event)+'</option>';}).join('');
+}
+function init(){
+  document.body.classList.toggle('embedded',embeddedMode());
+  try{localStorage.setItem('sc_account',accountKey());}catch(e){}
+  fillEventFilter();
+  els.dashboardLink.href=pageUrl('/dashboard.html');
+  els.meetHistoryLink.href=pageUrl('/meet-history.html');
+  els.recordsLink.href=pageUrl('/records.html');
+  els.xcSimulatorLink.href=pageUrl('/xc-simulator.html');
+  els.accessSubmit.addEventListener('click',submitAccess);
+  els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});
+  els.resetBtn.addEventListener('click',clearAll);
+  els.loadSbBtn.addEventListener('click',loadSeasonBests);
+  els.scoreBtn.addEventListener('click',render);
+  els.copyBtn.addEventListener('click',copyResults);
+  els.saveFieldBtn.addEventListener('click',saveField);
+  els.loadFieldBtn.addEventListener('click',loadField);
+  els.deleteFieldBtn.addEventListener('click',deleteField);
+  els.exampleBtn.addEventListener('click',loadExample);
+  els.clearBtn.addEventListener('click',clearAll);
+  els.entryInput.addEventListener('input',function(){setStatus('Edits ready. Click Score Meet.','');});
+  els.pointsTable.addEventListener('change',render);
+  els.customPoints.addEventListener('input',function(){if(els.pointsTable.value==='custom')render();});
+  els.maxPerTeam.addEventListener('input',render);
+  els.teamName.value='SMART Trak';
+  render();
+}
+init();
+</script>
+</body>
+</html>

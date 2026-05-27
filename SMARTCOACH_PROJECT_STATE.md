@@ -63,7 +63,7 @@ Latest handoff:
 - Records table now renders each saved record row directly instead of collapsing records into one board row, and the Records Tools gender dropdown is limited to Boys and Girls with Boys as the default.
 - Records edit/delete buttons now target the row's full identity key instead of relying only on a record ID, so cached or merged records open with their saved values instead of a blank edit modal.
 - Records page no longer shows the History column or unused expansion controls now that each saved record is shown directly.
-- `SMART_TRAK_COACH_HOW_TO.md` was added as the coach tutorial covering SMART Trak Dashboard, Athletes, Training Calendar, Meet History, XC Simulator, Records, Manage Meets, Log Race Result, Log Miles, and the phone app Training/Meet/Archive/Settings/Sync workflows.
+- `SMART_TRAK_COACH_HOW_TO.md` was added as the coach tutorial covering SMART Trak Dashboard, Athletes, Training Calendar, Meet History, Track Simulator, XC Simulator, Records, Manage Meets, Log Race Result, Log Miles, and the phone app Training/Meet/Archive/Settings/Sync workflows.
 - The coach how-to guide was cleaned so it does not mention GHL or use "coach-facing" wording.
 - Next practical step: deploy/retest those three live fixes, then continue the live Pro test-account validation pass with dashboard filtered-volume retests, manual mileage same-day edit retest, and phone app follow-up checks.
 
@@ -473,7 +473,7 @@ Implemented:
 
 Future:
 
-- Customer logo URL from the account registry now applies across the main SMART Trak desktop pages: Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator.
+- Customer logo URL from the account registry now applies across the main SMART Trak desktop pages: Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, Track Simulator, and XC Simulator.
 - Mobile app should use inverted colors: blue with white, compared with desktop white/blue.
 
 ## Future Planning Notes
@@ -494,7 +494,7 @@ Subscription/customer management:
 - Account status includes `subscriptionBlockedReason`, and onboarding displays that reason when a configured account is blocked by billing status.
 - Account automation, Save Account Setup, and account lookup responses now return the same `setupReady`, `accessReady`, `subscriptionAccessAllowed`, and `subscriptionBlockedReason` signals as account status.
 - Stopwatch, dashboard, Plan Builder, and Planning Setup now respect `accessReady: false` during account checks so blocked subscriptions stop cleanly instead of loading Pro data and failing later.
-- Athletes, Training Calendar, Plan Entry, Meet History, Records, and XC Simulator now also check `accessReady` before loading SMART Trak data, so blocked subscriptions show a clear access-blocked message across the main coach pages.
+- Athletes, Training Calendar, Plan Entry, Meet History, Records, Track Simulator, and XC Simulator now also check `accessReady` before loading SMART Trak data, so blocked subscriptions show a clear access-blocked message across the main coach pages.
 - Added protected `account-automation` intake endpoint for GHL/Stripe automation payloads.
 - Launch billing guidance now treats GHL's native Stripe integration as the preferred payment/subscription path, with SMART Trak receiving subscription/access updates from GHL automation. Direct Stripe webhooks remain available as an optional fallback.
 - `/onboarding.html` now labels the recommended automation copy as the GHL workflow endpoint and GHL Subscription Payload, with direct Stripe webhook wording kept secondary.
@@ -569,7 +569,7 @@ Subscription/customer management:
 - `/onboarding.html` now warns before saving an incomplete Pro customer account record and names missing setup pieces such as location ID, private integration token, or coach access code.
 - Added protected `account-automation-dry-run` and a **Test Setup First** button on `/onboarding.html` so internal setup can verify account access, subscription status, coach seats, coach codes, and generated setup fields without writing to customer account storage.
 - Added **Check Customer Access** to the `/onboarding.html` Live Smoke Test so support can verify live account status, subscription access, account record source, and coach access-code readiness from the setup page before opening every coach page manually.
-- Check Customer Access now includes direct links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator for the selected customer account.
+- Check Customer Access now includes direct links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, Track Simulator, and XC Simulator for the selected customer account.
 - Check Customer Access now shows a warning state when the account is ready but the current browser/phone still needs a coach access code, so support does not confuse account readiness with device unlock.
 - Added **Test Access Rules** to the `/onboarding.html` Live Smoke Test so support can verify, without saving changes, that active/trialing subscriptions allow access and blocked billing statuses block access.
 - Added a live smoke-test completion summary to `/onboarding.html` so support can see whether all required live validation checks are complete before sending the coach invite; the checklist now covers core pages, advanced pages, a real saved workflow, subscription access, the activation record, and parent email staying off.
@@ -701,10 +701,10 @@ Cross country competition simulator:
 
 Track simulator:
 
-- Future idea: page similar to the XC Simulator.
-- Compare hypothetical track meet outcomes by event, athlete, team, and projected points.
-- Should support saving competitor fields/entries so coaches can update week to week.
-- Use SMART Trak season bests for the coach's team where possible.
+- Implemented as `/track-simulator.html`.
+- Compares hypothetical track meet outcomes by event, athlete, team, and projected points.
+- Supports saved competitor fields/entries so coaches can update week to week.
+- Uses SMART Trak season bests for the coach's team where possible.
 
 Help assistant:
 
@@ -727,7 +727,6 @@ These are intentionally not blocking the current launch path unless the user re-
 - Parent email tools stay unreleased for initial rollout.
 - Deeper import workflows for race results, school records, training history, and plans remain future work.
 - Plan Builder full-plan review/spreadsheet-style adjustment remains future work.
-- Track Simulator remains future work: similar to XC Simulator, with saved competitor fields/entries and SMART Trak season bests where possible.
 - SMARTCoach Pro help button/assistant remains future work for instructions, subscription questions, and how-to guidance.
 - Athlete-facing training calendar remains future work: password-protected athlete access where athletes can complete, adjust, or skip assigned workouts and those actions update the SMART Trak Training Calendar.
 
@@ -791,7 +790,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 54. Check Customer Access status messages now distinguish a fully unlocked device from an account that is ready but still needs the coach code entered on that browser or phone.
 55. Account lookup only shows **Load Into Form** for saved customer account records or setup previews, preventing support from loading an empty not-found account record into setup.
 56. README now points operators to **Remaining Launch Parked Items** in this project state file so future work is not mistaken for launch blockers.
-57. Remaining Launch Parked Items now includes Track Simulator and the SMARTCoach Pro help button/assistant, so the canonical parked list matches the current future-work list.
+57. Remaining Launch Parked Items previously included Track Simulator and the SMARTCoach Pro help button/assistant, so the canonical parked list matched the then-current future-work list.
 58. Onboarding live-smoke checklist now says blocked billing statuses should block SMART Trak, matching the broader Test Access Rules coverage instead of naming only three statuses.
 59. Test Access Rules progress text and project-state wording now use the same broad blocked-billing language as the actual access-rule coverage.
 60. Onboarding system and customer-access results now label registry state as customer account storage/account record so support sees the launch meaning instead of internal storage jargon.
@@ -844,7 +843,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 107. `VERCEL_SETUP.md` now also mentions the live validation page's account-scoped Dashboard and Account Status quick links.
 108. Live validation page now includes an account-scoped Stopwatch quick link, and `VERCEL_SETUP.md` names it alongside Dashboard and Account Status.
 109. Live validation page now includes **Copy Validation Link** for saving or reopening the account-scoped checklist URL, and `VERCEL_SETUP.md` documents it.
-110. Live validation page now includes account-scoped Coach Page Links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, and XC Simulator.
+110. Live validation page now includes account-scoped Coach Page Links for Dashboard, Athletes, Training Calendar, Planning Setup, Plan Entry, Plan Builder, Meet History, Records, Track Simulator, and XC Simulator.
 111. Live validation Copy Summary now includes the account-scoped validation link, setup link, stopwatch link, dashboard/status links, and coach-page validation links.
 112. Regression tests now verify the live validation page keeps its required account-scoped support actions and coach-page validation links.
 113. `LIVE_LAUNCH_VALIDATION.md` now points operators to the account-scoped HTML validation page and starts setup from the same account-specific flow.
@@ -864,6 +863,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 127. Records edit no longer leaves a duplicate pre-edit row in the browser cache. Record merging now dedupes by saved record id/source id before falling back to the full row identity, and edit save replaces the original row plus any stale cached copy.
 128. Meet History layout now uses a narrower Meets column and a slightly more compact Results table so the Results section fits better on desktop without horizontal scrolling.
 129. Meet History now shows an info marker beside Meets to explain that selecting a meet filters the Results panel and compare rows compare the same meet across dates.
+130. Added `/track-simulator.html`, a Track Meet Simulator similar to XC Simulator. It supports manual/pasted entries, SMART Trak season-best loading, saved competitor fields, configurable scoring tables, optional max scorers per team per event, team scores, event results, and copyable output. Dashboard, Meet History, XC Simulator, onboarding coach links, live validation links, README, Vercel setup, and regression tests now include Track Simulator.
 
 ## Known Good Test Flow
 
@@ -873,14 +873,14 @@ Use this as the current launch regression test:
 2. For a live Pro test account, run Test Setup First, then Save Account Setup.
 3. Lookup the account and confirm the customer account record is saved with subscription, coach seats, SMART Trak connection, and coach access-code readiness.
 4. Check Customer Access and confirm account access, account source, SMART Trak connection, and device/coach-code status.
-5. Open Dashboard, Athletes, Training Calendar, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Meet History, Records, and XC Simulator with the customer account key.
+5. Open Dashboard, Athletes, Training Calendar, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Meet History, Records, Track Simulator, and XC Simulator with the customer account key.
 6. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
 7. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
 8. Create or import a plan, build a training group, assign the plan to a group or selected athletes, and confirm the Training Calendar shows the plan days.
 9. Open the phone app with the customer account key, choose group/plan, select an upcoming workout, time a rep/rest workout, and sync.
 10. Confirm Dashboard volume, completed workout details, splits, athlete latest training, and Training Calendar status update after sync.
 11. Log one standalone race result and confirm Dashboard, Meet History, and athlete bests update.
-12. Load My Season Best in XC Simulator, load a saved field, and score the meet.
+12. Load My Season Bests in Track Simulator and My Season Best in XC Simulator, load saved fields, and score both simulated meets.
 13. Trigger the GHL Subscription Payload once and confirm account lookup shows the recent account update without exposing private tokens or coach access codes.
 14. Confirm parent email controls remain hidden/off for initial rollout.
 15. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.
