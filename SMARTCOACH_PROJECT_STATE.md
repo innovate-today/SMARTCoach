@@ -904,6 +904,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 152. Athlete Calendar access now uses the same active-athlete rule as the coach Athletes page: athletes with a SMARTCoach athlete id or `smartcoach-athlete` tag are accepted unless explicitly inactive. The athlete-calendar loader also reads contact and custom object field values more defensively when GHL returns object-shaped field values.
 153. Athlete Calendar now merges duplicate visible cards for the same athlete/date/title/group, keeping the richer scheduled workout details while showing the submitted status. Athlete submissions also include the original training-plan day id/source id so future complete/skip updates can update the linked calendar day status instead of appearing as a duplicate day.
 154. Athlete Calendar submissions now send `Track` as the sync surface instead of `Unspecified`, preventing GHL from rejecting completed athlete updates when the Surface field only allows saved surface options.
+155. Athlete Calendar cards now show a clear submitted indicator after a workout is Completed, Modified, or Skipped, including a tinted card state and selected action button so athletes can tell what they already submitted.
 
 ## Known Good Test Flow
 
