@@ -1015,12 +1015,11 @@ function updateSortButtons(){
   });
 }
 function recordIsUsable(row){
-  if(!recordEvent(row)||!recordValue(row))return false;
-  return true;
+  return !!(row&&typeof row==='object');
 }
 function recordRowHtml(row,board){
-  var eventName=recordEvent(row);
-  var value=recordValue(row);
+  var eventName=recordEvent(row)||'Unlisted event';
+  var value=recordValue(row)||'No result';
   var key=recordIdentity(row);
   var status=row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
   return '<tr>'+
