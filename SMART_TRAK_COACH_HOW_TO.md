@@ -376,6 +376,23 @@ How to use it:
 
 If the app says a run is already synced, do not resync unless you are intentionally replacing or sending that saved workout again.
 
+## Athlete Calendar
+
+Use the Athlete Calendar when athletes need to see assigned workouts and submit their own completion update.
+
+How to use it:
+
+1. Open **Athletes**.
+2. Click **Calendar Link** for an active athlete.
+3. Send that unique link to the athlete.
+4. The athlete opens the link and sees workouts assigned directly to them or to one of their training groups.
+5. The athlete can mark a workout **Complete**, **Modify**, or **Skip**.
+6. Modified workouts can include actual distance or volume, optional time, and optional notes.
+7. Skipped workouts require a note.
+8. Submitted updates save into SMART Trak as athlete-submitted completed workout records.
+
+Athlete links are unique to each athlete. Athletes do not need the coach access code.
+
 ## Simple Weekly Coach Workflow
 
 1. Start on **Training Calendar**.

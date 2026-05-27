@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
 
   await attachRegistryAccount(req);
 
-  if (!requireProPlan(req, res)) return;
+  if (!req.smartcoachAthleteAccess && !requireProPlan(req, res)) return;
 
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });

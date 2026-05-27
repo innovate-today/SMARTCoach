@@ -6,6 +6,7 @@ const GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME = "account_key";
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
+  "athlete-calendar": require("../ghl/athlete-calendar"),
   "athlete-profile": require("../ghl/athlete-profile"),
   athletes: require("../ghl/athletes"),
   dashboard: require("../ghl/dashboard"),
@@ -72,6 +73,10 @@ module.exports = async function handler(req, res) {
   if (!selected) {
     res.status(404).json({ error: "SMART Trak endpoint not found." });
     return;
+  }
+
+  if (route === "athlete-calendar") {
+    return selected(req, res);
   }
 
   await attachRegistryAccount(req);

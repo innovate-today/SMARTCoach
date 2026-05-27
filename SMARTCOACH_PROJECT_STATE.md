@@ -40,9 +40,9 @@ Current launch status:
 
 Latest handoff:
 
-- Latest pushed code commit before this state update: `ba7a264 Rename how to guide title`.
-- Latest local commit when this handoff was checked: `ba7a264 Rename how to guide title`.
-- Repo was pushed to `main` after the how-to title was renamed to SMARTCoach Pro & SMART Trak How To Guide.
+- Latest pushed code commit before this state update: `9e1bfcf Clean up future planning list`.
+- Latest local commit when this handoff was checked: `9e1bfcf Clean up future planning list`.
+- Repo was pushed to `main` after the future-planning cleanup.
 - Latest docs/state maintenance in progress: keep `SMART_TRAK_COACH_HOW_TO.md` and this file updated after each feature or fix so new chats can resume without reconstructing history.
 - Recent regression status: docs-only updates need `git diff --check`; code changes should continue to use `npm test` before push when practical.
 - Weather page is now part of SMART Trak:
@@ -130,6 +130,7 @@ git push origin main:main
 - `track-simulator.html`: track meet scoring simulator using saved opponent fields and SMART Trak season bests.
 - `xc-simulator.html`: cross country scoring simulator using saved opponents and SMART Trak season bests.
 - `weather.html`: live weather page with saved locations, current conditions, hourly forecast, and daily forecast.
+- `athlete-calendar.html`: athlete-facing calendar portal for assigned workout completion, modification, and skip submissions.
 - `onboarding.html`: account setup helper.
 
 ## Backend Endpoints
@@ -724,11 +725,13 @@ Help assistant:
 
 Athlete training calendar:
 
-- Future idea: athlete-facing training calendar.
+- Initial implementation added as `/athlete-calendar.html`.
 - Athletes can view assigned training, then mark each workout as completed, adjusted, or skipped.
 - Athlete actions should update the coach-facing SMART Trak Training Calendar.
-- Must be password protected; the coach controls the password and can turn athlete calendar access active/inactive.
-- Coach should control which athletes/groups can see the calendar.
+- Athlete access uses a unique athlete link/code generated from the Athletes page.
+- Current scope: athletes can view workouts assigned directly to them or to one of their training groups, then submit Complete, Modify, or Skip.
+- Submitted updates save into SMART Trak as athlete-submitted completed workout records; skipped submissions require notes and modified submissions can include actual volume/time.
+- Future enhancement: add richer coach calendar summary counts and optional coach approval.
 
 ## Remaining Launch Parked Items
 
@@ -740,7 +743,7 @@ These are intentionally not blocking the current launch path unless the user re-
 - Deeper import workflows for race results, school records, training history, and plans remain future work.
 - Plan Builder full-plan review/spreadsheet-style adjustment remains future work.
 - SMARTCoach Pro help button/assistant remains future work for instructions, subscription questions, and how-to guidance.
-- Athlete-facing training calendar remains future work: password-protected athlete access where athletes can complete, adjust, or skip assigned workouts and those actions update the SMART Trak Training Calendar.
+- Athlete-facing training calendar initial portal is implemented; future work is richer coach calendar response summaries, optional approval, and athlete access management controls.
 - Field-event tracking remains future work for jumps, throws, attempts, video, and notes.
 
 ## Recent Launch Cleanup Log
@@ -893,6 +896,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 144. Updated the how-to guide naming from Phone App/phone app to SMARTCoach Pro Mobile App for consistent product language.
 145. Renamed the how-to guide title to SMARTCoach Pro & SMART Trak How To Guide.
 146. Cleaned the future-planning list so completed relay support and XC Simulator work are no longer presented as unfinished future items.
+147. Added initial Athlete Calendar portal at `/athlete-calendar.html`, plus `/api/smart-trak/athlete-calendar` inside the unified SMART Trak API route. Coaches can copy a unique athlete link from Athletes; athletes can view assigned workouts and submit Complete, Modify, or Skip without a coach access code.
 
 ## Known Good Test Flow
 
