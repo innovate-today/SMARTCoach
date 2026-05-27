@@ -1273,10 +1273,13 @@ function loadAthletes(){
     renderAthleteList();
     applyAutoPlansToCurrentGroup();
     if(CL)rr();
-    if(CL&&CL.type==='meet'){
-      var meetSave=document.getElementById('m-meet-save');
-      if(meetSave&&!meetSave.classList.contains('h'))updateMeetBestHints();
+  if(CL&&CL.type==='meet'){
+    var meetSave=document.getElementById('m-meet-save');
+    if(meetSave&&!meetSave.classList.contains('h')){
+      renderMeetRelayRunnerOptions();
+      updateMeetBestHints();
     }
+  }
   }).catch(function(){AR=[];renderAthleteList();});
 }
 function handleAthleteSelect(id,el){
@@ -3297,6 +3300,8 @@ function hasMeetSyncedRuns(r){
 function renderMeetSaveAthletes(){
   var box=document.getElementById('ms-athletes');
   if(!box||!CL)return;
+  if(selectedMeetResultType()==='relay'){box.style.display='none';box.innerHTML='';return;}
+  box.style.display='';
   var rs=CL.runners.filter(function(r){return r.saved&&r.saved.length;});
   if(!rs.length){box.innerHTML='<div style="font-size:12px;color:#777;padding:8px 12px;background:#fff">No saved meet times yet</div>';return;}
   box.innerHTML=rs.map(function(r){
@@ -3306,6 +3311,42 @@ function renderMeetSaveAthletes(){
     return '<div class="sync-athlete"><input type="checkbox" class="ms-runner" value="'+r.id+'" data-resave="'+(synced===runs?'1':'0')+'" '+(synced===runs?'':'checked')+' onchange="handleMeetRunnerToggle(this)"><span class="sync-athlete-main">'+ex(r.name)+'<small>'+note+'</small><small id="save-state-'+r.id+'" class="save-state"></small><small id="best-hint-'+r.id+'" class="best-hint"></small></span><span class="best-flags"><label class="best-flag"><input type="checkbox" class="ms-pb" data-runner-id="'+r.id+'">PB</label><label class="best-flag"><input type="checkbox" class="ms-sb" data-runner-id="'+r.id+'">SB</label></span></div>';
   }).join('');
   updateMeetSaveStates();
+}
+function selectedMeetResultType(){
+  var el=document.getElementById('ms-result-type');
+  return el&&el.value==='relay'?'relay':'individual';
+}
+function syncMeetResultType(){
+  var relay=selectedMeetResultType()==='relay';
+  var relayBox=document.getElementById('ms-relay-fields');
+  var athletes=document.getElementById('ms-athletes');
+  if(relayBox)relayBox.style.display=relay?'block':'none';
+  if(athletes)athletes.style.display=relay?'none':'';
+  renderMeetSaveAthletes();
+  renderMeetRelayRunnerOptions();
+  updateMeetBestHints();
+}
+function renderMeetRelayRunnerOptions(){
+  for(var i=1;i<=4;i++){
+    var select=document.getElementById('ms-relay-runner-'+i);
+    if(!select)continue;
+    var current=select.value;
+    select.innerHTML='<option value="">Runner '+i+'</option>'+AR.map(function(a){
+      return '<option value="'+ex(a.name||'')+'">'+ex(a.name||'Unnamed')+'</option>';
+    }).join('');
+    if(current)select.value=current;
+  }
+}
+function meetRelayLegsPayload(){
+  var legs=[];
+  for(var i=1;i<=4;i++){
+    var runner=document.getElementById('ms-relay-runner-'+i);
+    var split=document.getElementById('ms-relay-split-'+i);
+    var name=runner&&runner.value?runner.value.trim():'';
+    var time=split&&split.value?split.value.trim():'';
+    if(name||time)legs.push({lap:i,name:name,time:time});
+  }
+  return legs;
 }
 function updateMeetSaveStates(){
   document.querySelectorAll('.ms-runner').forEach(function(cb){
@@ -3353,15 +3394,26 @@ function openMeetSave(preselectRunnerId){
   hm('msh');
   loadAthletes();
   renderMeetSaveAthletes();
+  renderMeetRelayRunnerOptions();
   if(preselectRunnerId)selectOnlyMeetRunner(preselectRunnerId);
   document.getElementById('ms-meet').textContent=CL.meetName||'Meet';
   setMeetSaveEvent(CL.eventName||CL.name||'');
   document.getElementById('ms-date').textContent=CL.meetDate||new Date().toISOString().slice(0,10);
   document.getElementById('ms-status').textContent='';
+  document.getElementById('ms-result-type').value='individual';
+  document.getElementById('ms-relay-team').value='';
+  document.getElementById('ms-relay-result').value='';
+  for(var i=1;i<=4;i++){
+    var runner=document.getElementById('ms-relay-runner-'+i);
+    var split=document.getElementById('ms-relay-split-'+i);
+    if(runner)runner.value='';
+    if(split)split.value='';
+  }
   document.getElementById('ms-wind').value='';
   document.getElementById('ms-notes').value='';
   var btn=document.getElementById('ms-btn');
   btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;
+  syncMeetResultType();
   sm('m-meet-save');
   updateMeetSaveStates();
   updateMeetBestHints();
@@ -3427,6 +3479,10 @@ function loadMeetBestHint(r){
 }
 function submitCapturedMeetResults(forceDuplicateSync){
   if(!CL)return;
+  if(selectedMeetResultType()==='relay'){
+    submitCapturedRelayMeetResult(forceDuplicateSync);
+    return;
+  }
   var btn=document.getElementById('ms-btn');
   var status=document.getElementById('ms-status');
   var selected=selectedMeetRunners();
@@ -3515,6 +3571,64 @@ function submitCapturedMeetResults(forceDuplicateSync){
       if(confirm('This meet result already exists. Save again only if you intentionally want another copy.')){
         submitCapturedMeetResults(true);
       }
+      return;
+    }
+    status.textContent='Error: '+e.message;status.style.color='#c00';
+    btn.textContent='Save Meet Results';btn.disabled=false;
+  });
+}
+function submitCapturedRelayMeetResult(forceDuplicateSync){
+  if(!CL)return;
+  var btn=document.getElementById('ms-btn');
+  var status=document.getElementById('ms-status');
+  var eventName=selectedMeetSaveEvent();
+  var result=document.getElementById('ms-relay-result').value.trim();
+  var team=document.getElementById('ms-relay-team').value.trim();
+  var legs=meetRelayLegsPayload();
+  if(!eventName){status.textContent='Select an event before saving relay results.';status.style.color='#c00';status.style.fontWeight='700';return;}
+  if(!result){status.textContent='Enter the relay total time before saving.';status.style.color='#c00';status.style.fontWeight='700';return;}
+  if(legs.length<2){status.textContent='Select relay runners and enter their splits.';status.style.color='#c00';status.style.fontWeight='700';return;}
+  var notes=document.getElementById('ms-notes').value.trim();
+  var sourceId=['mobile-relay',CL.id||CL.meetRecordId||CL.meetName||'meet',eventName,team||'team',CL.meetDate||'',forceDuplicateSync?Date.now():''].join(':');
+  var payload={
+    resultType:'relay',
+    relayType:eventName,
+    relayTeamName:team,
+    meetName:CL.meetName||'Meet',
+    meetDate:CL.meetDate||new Date().toISOString().slice(0,10),
+    meetRecordId:CL.meetRecordId||'',
+    season:CL.season||currentSeason().season,
+    sport:'track',
+    event:eventName,
+    resultDisplay:result,
+    wind:document.getElementById('ms-wind').value.trim(),
+    splitsJson:JSON.stringify(legs),
+    coachRaceNotes:notes,
+    sourceRecordId:sourceId
+  };
+  btn.textContent='Saving...';btn.disabled=true;
+  status.textContent='Saving relay result...';status.style.color='#555';status.style.fontWeight='400';
+  fetch(smartCoachApiUrl('/api/smart-trak/meet-result'),{
+    method:'POST',
+    headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
+    body:JSON.stringify(payload)
+  }).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,status:r.status,data:data};});
+  }).then(function(resultData){
+    if(!resultData.ok){
+      var err=new Error(resultData.data&&resultData.data.error?resultData.data.error:'Relay result save failed');
+      err.status=resultData.status;throw err;
+    }
+    status.textContent='Relay result saved to SMART Trak!';
+    status.style.color='#0a7a44';status.style.fontWeight='700';
+    btn.textContent='Saved!';btn.style.background='#0a7a44';
+    finishEntryQuickAction('m-meet-save');
+    setTimeout(function(){btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
+  }).catch(function(e){
+    if(e.status===409){
+      status.textContent='This relay result already exists.';status.style.color='#c47a00';status.style.fontWeight='700';
+      btn.textContent='Save Meet Results';btn.disabled=false;
+      if(confirm('This relay result already exists. Save it again anyway?'))submitCapturedRelayMeetResult(true);
       return;
     }
     status.textContent='Error: '+e.message;status.style.color='#c00';
@@ -4083,7 +4197,7 @@ document.addEventListener('touchstart',function(e){
 <div class="mover h" id="m-profile"><div class="msh"><div class="mhd"></div><div class="mttl" id="profile-title">Athlete Profile</div><div class="profile-box" id="profile-body"></div><button class="mbtn c" onclick="hm('m-profile')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="clearAthleteTrainingPlan()" style="display:none;margin-top:8px">Use Group Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><input id="ms-event" type="hidden" value="400m"/><button type="button" id="ms-event-display" class="sinp picker-control" onclick="openMeetSaveEventPicker()">400m</button></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Result Type</label><select id="ms-result-type" class="sinp" onchange="syncMeetResultType()"><option value="individual">Individual</option><option value="relay">Relay</option></select></div><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><input id="ms-event" type="hidden" value="400m"/><button type="button" id="ms-event-display" class="sinp picker-control" onclick="openMeetSaveEventPicker()">400m</button></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div id="ms-relay-fields" style="display:none"><div class="srow"><label class="slbl">Relay Team</label><input id="ms-relay-team" class="sinp" type="text" placeholder="Example: Boys A" autocomplete="off"/></div><div class="srow"><label class="slbl">Total Time</label><input id="ms-relay-result" class="sinp" type="text" placeholder="Example: 3:20.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 1</label><select id="ms-relay-runner-1" class="sinp"></select></div><div class="srow"><label class="slbl">Split 1</label><input id="ms-relay-split-1" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 2</label><select id="ms-relay-runner-2" class="sinp"></select></div><div class="srow"><label class="slbl">Split 2</label><input id="ms-relay-split-2" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 3</label><select id="ms-relay-runner-3" class="sinp"></select></div><div class="srow"><label class="slbl">Split 3</label><input id="ms-relay-split-3" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 4</label><select id="ms-relay-runner-4" class="sinp"></select></div><div class="srow"><label class="slbl">Split 4</label><input id="ms-relay-split-4" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMART Trak</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div id="sy-plan-summary"></div><div id="sy-manual-fields"><div class="srow" id="sy-row-season"><label class="slbl">Season</label><input id="sy-season" type="hidden" value="Spring"/><button type="button" id="sy-season-display" class="sinp picker-control" onclick="openSeasonPicker()">Spring</button></div><div class="srow" id="sy-row-phase"><label class="slbl">Phase</label><input id="sy-phase" type="hidden" value="GPP"/><button type="button" id="sy-phase-display" class="sinp picker-control" onclick="openPhasePicker()">GPP</button></div><div class="srow" id="sy-row-wtype"><label class="slbl">Workout Type</label><input id="sy-wtype" type="hidden" value=""/><button type="button" id="sy-wtype-display" class="sinp picker-control" onclick="openWorkoutTypePicker()">Select Workout Type</button></div></div><div class="srow" id="sy-row-meet-event"><label class="slbl">Event</label><input id="sy-meet-event" type="hidden" value="400m"/><button type="button" id="sy-meet-event-display" class="sinp picker-control" onclick="openSyncMeetEventPicker()">400m</button></div><div class="srow"><label class="slbl">Surface</label><input id="sy-surf" type="hidden" value=""/><button type="button" id="sy-surf-display" class="sinp picker-control" onclick="openSurfacePicker()">Select Surface</button></div><div class="srow"><label class="slbl">Weather</label><input id="sy-weather" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Volume</label><input id="sy-volume" class="sinp" type="text" placeholder="Optional completed volume" autocomplete="off"/></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMART Trak</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
 </html>

@@ -145,6 +145,7 @@ button.compact{padding:6px 9px;font-size:12px}
 .relaylegs{grid-column:1/-1;display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}
 .relaylegs h3{font-size:13px;margin:0;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 .relayleg{display:grid;grid-template-columns:1fr 140px;gap:8px}
+.relayleg input,.relayleg select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .compactgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .manual-row{border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:10px;overflow:hidden}
 .manual-row-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f4f4f5;border-bottom:1px solid var(--line);padding:9px 10px}
@@ -496,10 +497,10 @@ button.compact{padding:6px 9px;font-size:12px}
         <div class="field"><label for="raceResultEvent">Event <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the race distance or event.">i</span></label><select id="raceResultEvent"><option value="">Select event</option></select></div>
         <div class="relaylegs" id="raceResultRelayLegs" hidden>
           <h3>Relay Splits</h3>
-          <div class="relayleg"><input id="raceResultRelayName1" type="text" placeholder="Runner 1"><input id="raceResultRelaySplit1" type="text" placeholder="Split"></div>
-          <div class="relayleg"><input id="raceResultRelayName2" type="text" placeholder="Runner 2"><input id="raceResultRelaySplit2" type="text" placeholder="Split"></div>
-          <div class="relayleg"><input id="raceResultRelayName3" type="text" placeholder="Runner 3"><input id="raceResultRelaySplit3" type="text" placeholder="Split"></div>
-          <div class="relayleg"><input id="raceResultRelayName4" type="text" placeholder="Runner 4"><input id="raceResultRelaySplit4" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="raceResultRelayName1"><option value="">Runner 1</option></select><input id="raceResultRelaySplit1" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="raceResultRelayName2"><option value="">Runner 2</option></select><input id="raceResultRelaySplit2" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="raceResultRelayName3"><option value="">Runner 3</option></select><input id="raceResultRelaySplit3" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="raceResultRelayName4"><option value="">Runner 4</option></select><input id="raceResultRelaySplit4" type="text" placeholder="Split"></div>
         </div>
         <div class="field"><label for="raceResultResult">Result <span class="fieldinfo" tabindex="0" data-tip="Enter the official result time, such as 12:21.0 or 19:08.">i</span></label><input id="raceResultResult" type="text" placeholder="Example: 19:08"></div>
         <div class="field"><label for="raceResultWind">Wind <span class="fieldinfo info-left" tabindex="0" data-tip="Optional wind reading for track events.">i</span></label><input id="raceResultWind" type="text" placeholder="Optional, e.g. +1.2"></div>
@@ -2308,6 +2309,7 @@ function openRaceResult(){
   if(!els.raceResultDate.value)els.raceResultDate.value=todayInputValue();
   if(!els.raceResultSport.value)els.raceResultSport.value='track';
   renderRaceResultAthletes();
+  renderRelayRunnerOptions();
   renderRaceResultMeets();
   syncRaceResultSport();
   syncRaceResultType();
@@ -2324,6 +2326,18 @@ function renderRaceResultAthletes(){
     return '<option value="'+esc(value)+'">'+esc(row.name||'Unnamed')+'</option>';
   }).join('');
   if(current)els.raceResultAthlete.value=current;
+}
+function renderRelayRunnerOptions(){
+  var rows=activeMileageAthletes();
+  for(var i=1;i<=4;i+=1){
+    var select=document.getElementById('raceResultRelayName'+i);
+    if(!select)continue;
+    var current=select.value;
+    select.innerHTML='<option value="">Runner '+i+'</option>'+rows.map(function(row){
+      return '<option value="'+esc(row.name||'')+'">'+esc(row.name||'Unnamed')+'</option>';
+    }).join('');
+    if(current)select.value=current;
+  }
 }
 function activeMileageAthletes(){
   return mileageAthletes.filter(function(row){

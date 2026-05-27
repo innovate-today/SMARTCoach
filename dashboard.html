@@ -150,6 +150,7 @@ tr:last-child td{border-bottom:0}
 .relaylegs{grid-column:1/-1;display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}
 .relaylegs h3{font-size:13px;margin:0;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 .relayleg{display:grid;grid-template-columns:1fr 140px;gap:8px}
+.relayleg input,.relayleg select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .originalbox{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 12px;margin-bottom:12px;color:#475569;font-size:12px;line-height:1.4}
 .originalbox b{display:block;color:#111827;font-size:13px;margin-bottom:4px}
 .meet-manager{display:grid;gap:10px;margin-top:14px;max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}
@@ -612,10 +613,10 @@ tr:last-child td{border-bottom:0}
         </div>
         <div class="relaylegs" id="raceResultRelayLegs" hidden>
           <h3>Relay Splits</h3>
-          <div class="relayleg"><input id="raceResultRelayName1" type="text" placeholder="Runner 1"><input id="raceResultRelaySplit1" type="text" placeholder="Split"></div>
-          <div class="relayleg"><input id="raceResultRelayName2" type="text" placeholder="Runner 2"><input id="raceResultRelaySplit2" type="text" placeholder="Split"></div>
-          <div class="relayleg"><input id="raceResultRelayName3" type="text" placeholder="Runner 3"><input id="raceResultRelaySplit3" type="text" placeholder="Split"></div>
-          <div class="relayleg"><input id="raceResultRelayName4" type="text" placeholder="Runner 4"><input id="raceResultRelaySplit4" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="raceResultRelayName1"><option value="">Runner 1</option></select><input id="raceResultRelaySplit1" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="raceResultRelayName2"><option value="">Runner 2</option></select><input id="raceResultRelaySplit2" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="raceResultRelayName3"><option value="">Runner 3</option></select><input id="raceResultRelaySplit3" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="raceResultRelayName4"><option value="">Runner 4</option></select><input id="raceResultRelaySplit4" type="text" placeholder="Split"></div>
         </div>
         <div class="field">
           <label for="raceResultResult">Result <span class="fieldinfo" tabindex="0" data-tip="Enter the official result time, such as 12:21.0 or 19:08.">i</span></label>
@@ -2301,6 +2302,7 @@ function openRaceResult(){
   if(els.raceResultDate&&!els.raceResultDate.value)els.raceResultDate.value=todayInputValue();
   if(els.raceResultSport&&!els.raceResultSport.value)els.raceResultSport.value='track';
   renderRaceResultAthletes();
+  renderRelayRunnerOptions();
   renderRaceResultMeets();
   syncRaceResultSport();
   syncRaceResultType();
@@ -2322,6 +2324,18 @@ function renderRaceResultAthletes(){
     return '<option value="'+esc(value)+'">'+esc(row.name||'Unnamed')+'</option>';
   }).join('');
   if(current)els.raceResultAthlete.value=current;
+}
+function renderRelayRunnerOptions(){
+  var rows=activeDashboardAthletes();
+  for(var i=1;i<=4;i+=1){
+    var select=document.getElementById('raceResultRelayName'+i);
+    if(!select)continue;
+    var current=select.value;
+    select.innerHTML='<option value="">Runner '+i+'</option>'+rows.map(function(row){
+      return '<option value="'+esc(row.name||'')+'">'+esc(row.name||'Unnamed')+'</option>';
+    }).join('');
+    if(current)select.value=current;
+  }
 }
 
 function activeDashboardAthletes(){
