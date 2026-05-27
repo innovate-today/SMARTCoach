@@ -413,6 +413,7 @@ var els={
   empty:document.getElementById('empty')
 };
 var pendingRecordsSourcePrefix='';
+var firstRecordsLoad=true;
 function accountKey(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -967,6 +968,13 @@ function filteredRecords(){
     return true;
   });
 }
+function filtersAreDefault(){
+  return !String(els.search.value||'').trim() &&
+    els.genderFilter.value==='all' &&
+    els.typeFilter.value==='all' &&
+    els.eventFilter.value==='all' &&
+    els.statusFilter.value==='all';
+}
 function recordBoardKey(row){
   return [
     'school_record',
@@ -1035,6 +1043,9 @@ function recordRowHtml(row,board){
 }
 function render(){
   var list=filteredRecords().filter(recordIsUsable);
+  if(filtersAreDefault()&&list.length<records.length){
+    list=sortRecords(records.filter(recordIsUsable));
+  }
   var events={};
   var athletes={};
   list.forEach(function(row){
@@ -1065,6 +1076,14 @@ function loadRecords(){
     mergeAndCacheRecords(result.data.records||[]);
     els.lastUpdated.textContent='Last updated '+formatDateTime(result.data.generatedAt||new Date().toISOString());
     renderOptions();
+    if(firstRecordsLoad){
+      els.search.value='';
+      els.genderFilter.value='all';
+      els.typeFilter.value='all';
+      els.eventFilter.value='all';
+      els.statusFilter.value='all';
+      firstRecordsLoad=false;
+    }
     render();
     showRecordsDebug(result.data&&result.data.debug);
   }).catch(function(error){
