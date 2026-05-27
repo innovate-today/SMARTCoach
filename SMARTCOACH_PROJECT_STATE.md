@@ -901,6 +901,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 149. Training Calendar day updates now retry without rejected option fields when GHL rejects a saved option value, fixing remove/status updates for saved Easy/Recovery Run days. Calendar items can also be copied from the day modal and pasted onto another date.
 150. Training Calendar copy/paste is now surfaced directly on the week calendar: each workout/meet card has a copy button, and each day header has a visible Paste button so coaches do not have to open the Add menu to paste.
 151. Add Easy Run now defaults the Distance field to a real value of 5 mi instead of showing 5 as a placeholder, preventing blank planned volume when coaches leave the default visible value unchanged.
+152. Athlete Calendar access now uses the same active-athlete rule as the coach Athletes page: athletes with a SMARTCoach athlete id or `smartcoach-athlete` tag are accepted unless explicitly inactive. The athlete-calendar loader also reads contact and custom object field values more defensively when GHL returns object-shaped field values.
 
 ## Known Good Test Flow
 
