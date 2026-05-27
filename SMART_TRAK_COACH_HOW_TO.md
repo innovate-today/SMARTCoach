@@ -49,7 +49,7 @@ Use the Training Calendar as the main place to add one-day workouts, races, rest
 
 How to use it:
 
-1. Use **Week View**, **List View**, or **Today** to move around the calendar.
+1. Use **Previous Week**, **Next Week**, **Week View**, **List View**, or **Today** to move around the calendar.
 2. Click **Add** on a date.
 3. Choose the activity type:
    - **Easy Run** for easy, recovery, or long run days.

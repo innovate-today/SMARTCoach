@@ -69,7 +69,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .planarchive.restore{background:#dcfce7;color:var(--good)}
 .planempty{padding:10px;color:var(--muted);font-size:13px}
 .status{color:var(--muted);font-size:13px;text-align:right}
-.viewtabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.viewtabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .viewtab{background:#fff;color:#172033;border:1px solid var(--line)}
 .viewtab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 .calendar{display:grid;gap:12px}
@@ -272,7 +272,9 @@ button.compact{padding:6px 9px;font-size:12px}
   <div class="calendarhint"><b>Status update:</b> check the days you want to change, choose a status, then click Update Selected.</div>
 
   <section class="viewtabs" aria-label="Calendar view">
+    <button id="prevWeekBtn" class="viewtab" type="button">Previous Week</button>
     <button id="weekViewBtn" class="viewtab active" type="button">Week View</button>
+    <button id="nextWeekBtn" class="viewtab" type="button">Next Week</button>
     <button id="listViewBtn" class="viewtab" type="button">List View</button>
     <button id="todayBtn" class="viewtab" type="button">Today</button>
   </section>
@@ -552,6 +554,7 @@ var meetManagerRows=[];
 var meetManagerEditingId='';
 var activeDay=null;
 var viewMode='week';
+var calendarWeekStart=startOfWeek(new Date());
 var listSort={key:'date',dir:'asc'};
 var pendingStatusUpdates={};
 var mixHidden=false;
@@ -598,7 +601,9 @@ var els={
   bulkStatusBtn:document.getElementById('bulkStatusBtn'),
   search:document.getElementById('search'),
   status:document.getElementById('status'),
+  prevWeekBtn:document.getElementById('prevWeekBtn'),
   weekViewBtn:document.getElementById('weekViewBtn'),
+  nextWeekBtn:document.getElementById('nextWeekBtn'),
   listViewBtn:document.getElementById('listViewBtn'),
   todayBtn:document.getElementById('todayBtn'),
   calendar:document.getElementById('calendar'),
@@ -1057,8 +1062,14 @@ function upsertCalendarMeet(meet){
   else calendarMeets.push(meet);
 }
 function matchesDateRange(day,range){
-  if(range==='all')return true;
   var date=parseCalendarDate(day.date);
+  if(viewMode==='week'){
+    if(isNaN(date.getTime()))return false;
+    var selectedStart=startOfWeek(calendarWeekStart||new Date());
+    var selectedEnd=addDays(selectedStart,6);
+    return date>=selectedStart&&date<=selectedEnd;
+  }
+  if(range==='all')return true;
   if(isNaN(date.getTime()))return range==='all';
   var today=new Date();
   today.setHours(0,0,0,0);
@@ -1151,6 +1162,8 @@ function render(){
   els.scheduleApprovedBtn.textContent=approvedCount?'Schedule Approved ('+approvedCount+')':'Schedule Approved';
   els.weekViewBtn.classList.toggle('active',viewMode==='week');
   els.listViewBtn.classList.toggle('active',viewMode==='list');
+  els.prevWeekBtn.classList.toggle('active',false);
+  els.nextWeekBtn.classList.toggle('active',false);
   els.calendar.classList.toggle('weekscroll',viewMode==='week');
   els.calendar.classList.toggle('listscroll',viewMode==='list');
   els.calendar.innerHTML=viewMode==='list'?renderListView(list):renderWeekView(list);
@@ -1176,6 +1189,7 @@ function renderMixBar(counts){
 }
 function jumpToToday(){
   els.dateFilter.value='current_week';
+  calendarWeekStart=startOfWeek(new Date());
   viewMode='week';
   render();
   setTimeout(function(){
@@ -1191,7 +1205,7 @@ function renderWeekView(list){
     weeks[key].push(day);
   });
   var keys=Object.keys(weeks).sort();
-  if(!keys.length)keys=[isoDate(startOfWeek(new Date()))];
+  if(!keys.length)keys=[isoDate(startOfWeek(calendarWeekStart||new Date()))];
   return keys.map(function(key){
     var weekDays=weeks[key];
     if(key==='unscheduled')return weekSection(key,weekDays);
@@ -1204,6 +1218,11 @@ function renderWeekView(list){
     }
     return '<section class="week" data-current-week="'+(key===isoDate(startOfWeek(new Date()))?'1':'0')+'"><div class="weekhead"><b>'+esc(weekTitle(key))+'</b><span>'+((weekDays||[]).length)+' plan days</span></div><div class="days">'+columns.join('')+'</div></section>';
   }).join('');
+}
+function shiftWeek(offset){
+  calendarWeekStart=addDays(startOfWeek(calendarWeekStart||new Date()),offset*7);
+  viewMode='week';
+  render();
 }
 function renderListView(list){
   if(!list.length)return '';
@@ -3026,6 +3045,8 @@ function init(){
     viewMode='week';
     render();
   });
+  els.prevWeekBtn.addEventListener('click',function(){shiftWeek(-1);});
+  els.nextWeekBtn.addEventListener('click',function(){shiftWeek(1);});
   els.listViewBtn.addEventListener('click',function(){
     viewMode='list';
     render();
