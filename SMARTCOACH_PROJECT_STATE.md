@@ -57,6 +57,7 @@ Latest handoff:
   - Training Calendar now pulls saved Manage Meets records into the calendar as race/meet days, so races created from the Manage Meets popup are visible even when they are not attached to a training-plan day.
   - Records now recovers singular `Boy` / `Girl` gender values from saved record notes, preserving separate boys and girls records for the same event after reload.
   - Athletes no longer immediately reloads over the optimistic group assignment after saving, so the selected group should remain visible immediately after save.
+- Phone app meet-result save now uses an Event dropdown for race distance selection and sends the selected event in both captured meet-result saves and scheduled meet-day syncs.
 - Next practical step: deploy/retest those three live fixes, then continue the live Pro test-account validation pass with dashboard filtered-volume retests, manual mileage same-day edit retest, and phone app follow-up checks.
 
 Latest SaaS/account setup truth:
@@ -843,6 +844,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 114. Launch cleanup is now explicitly paused unless the live Pro validation pass exposes a blocker; the next practical work should be production validation, not more prep polishing.
 115. Production retest on 2026-05-26 confirmed the Vercel function-limit fix is live: the old `/api/ghl/sync-diagnostics` route returns 404, the unified `/api/smart-trak/sync-diagnostics` route exists and requires coach access, the live validation page loads, the real Pro test account record is active/configured from registry storage, parent email tools are off, and current Training Calendar / Upload-Paste wording is deployed. Remaining validation requires the assigned coach code for live SMART Trak page/API workflows.
 116. User live retest found three blockers: Manage Meets races did not appear on Training Calendar, same-event boys/girls records could collapse after reload, and Athletes group assignment did not remain visible immediately after save. Local fixes are in place for all three and should be deployed/retested.
+117. Phone app meet-result save now replaces the Event text/prompt flow with a race dropdown and includes the selected event in meet-result sync payloads.
 
 ## Known Good Test Flow
 
