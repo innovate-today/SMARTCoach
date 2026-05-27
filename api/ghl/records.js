@@ -3,6 +3,7 @@ const GHL_VERSION = "2021-07-28";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { mirrorSchoolRecords, loadSchoolRecordsMirror } = require("../../lib/account-registry");
 
 const FIELD_IDS = {
   record: ["ftIsXzZszu3s0cfJ55MU"],
@@ -48,7 +49,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { token, locationId } = getGhlContext(req);
+  const { accountKey, token, locationId } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak records are not configured on the server." });
@@ -74,11 +75,16 @@ module.exports = async function handler(req, res) {
           method: "POST",
           body: { locationId, properties },
         });
+        const createdRecord = normalizeRecord({
+          id: objectRecordId(result),
+          properties,
+        }, properties);
         created.push({
           recordId: objectRecordId(result),
           sourceRecordId: properties.source_record_id,
           recordName: properties.record,
         });
+        await mirrorRecordsBestEffort(accountKey, [createdRecord]);
       }
       res.status(200).json({
         success: true,
@@ -91,6 +97,7 @@ module.exports = async function handler(req, res) {
     if (req.method === "PATCH") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
       const record = await updateRecord({ token, locationId, payload });
+      await mirrorRecordsBestEffort(accountKey, [record]);
       res.status(200).json({ success: true, record });
       return;
     }
@@ -98,11 +105,12 @@ module.exports = async function handler(req, res) {
     if (req.method === "DELETE") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       await deleteRecord({ token, payload });
+      await mirrorRecordsBestEffort(accountKey, [], { deleteIds: [clean(payload && payload.recordId), clean(payload && payload.sourceRecordId)] });
       res.status(200).json({ success: true });
       return;
     }
 
-    const records = await listRecords({ token, locationId });
+    const records = mergeNormalizedRecords(await listRecords({ token, locationId }), await loadRecordsMirrorBestEffort(accountKey));
     res.status(200).json({
       success: true,
       generatedAt: new Date().toISOString(),
@@ -117,6 +125,46 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code, X-SMARTCoach-Session");
+}
+
+async function mirrorRecordsBestEffort(accountKey, records, options) {
+  try {
+    await mirrorSchoolRecords(accountKey, records, options);
+  } catch (error) {}
+}
+
+async function loadRecordsMirrorBestEffort(accountKey) {
+  try {
+    return await loadSchoolRecordsMirror(accountKey);
+  } catch (error) {
+    return [];
+  }
+}
+
+function mergeNormalizedRecords(primary, secondary) {
+  const seen = {};
+  return (primary || []).concat(secondary || []).filter((record) => {
+    const key = normalizedRecordKey(record);
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  }).sort(sortRecords);
+}
+
+function normalizedRecordKey(record) {
+  if (record && record.recordId) return `id:${clean(record.recordId)}`;
+  if (record && record.sourceRecordId) return `source:${clean(record.sourceRecordId)}`;
+  return [
+    "record",
+    clean(record && record.recordName),
+    clean(record && record.recordScope),
+    clean(record && record.gender),
+    clean(record && record.sport),
+    clean(record && record.event),
+    clean(record && (record.resultDisplay || record.resultMark)),
+    clean(record && record.athleteName),
+    clean(record && record.recordDate),
+  ].map(optionValue).join("|");
 }
 
 async function updateRecord({ token, locationId, payload }) {

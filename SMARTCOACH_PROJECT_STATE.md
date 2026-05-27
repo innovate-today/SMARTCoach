@@ -866,6 +866,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 130. Added `/track-simulator.html`, a Track Meet Simulator similar to XC Simulator. It supports manual/pasted entries, SMART Trak season-best loading, saved competitor fields, configurable scoring tables, optional max scorers per team per event, team scores, event results, and copyable output. Dashboard, Meet History, XC Simulator, onboarding coach links, live validation links, README, Vercel setup, and regression tests now include Track Simulator.
 131. Track Simulator now supports excluding multiple events from scoring and SMART Trak season-best loading, plus a Template CSV download that respects the current event filter and excluded events.
 132. Records backend listing now keeps paging through GHL custom-object results until an empty or duplicate page instead of stopping after the first short batch, and it recognizes more record ID response shapes. This is meant to prevent the Records page from showing only the newest saved record when GHL caps or reshapes list responses.
+133. Records now mirrors records saved through the Records page into the durable account registry and merges that server-side mirror on load. This is a stronger fallback for the live issue where GHL returns only the latest Records custom-object row after refresh.
 
 ## Known Good Test Flow
 
