@@ -302,6 +302,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="msh">
     <div class="mhd"></div>
     <div class="mttl">New Group</div>
+    <div id="ml-existing"></div>
     <input class="minp" id="mln" placeholder="e.g. Workout 4" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"/>
     <button class="mbtn" onclick="createGroup()">Create</button>
     <button class="mbtn c" onclick="hm('ml')">Cancel</button>
@@ -1392,6 +1393,7 @@ function addGroupForView(){
     sm('mmg');
   }else{
     if(GV==='archive')setGroupView('training');
+    renderAddExistingGroups();
     sm('ml');
   }
 }
@@ -1565,6 +1567,22 @@ function oGroup(id){
   for(var i=0;i<logs.length;i++){if(logs[i].id===id){CL=logs[i];break;}}
   document.getElementById('ltit').textContent=CL.type==='meet'?meetDisplayTitle(CL):CL.name;
   go('s-group');
+}
+function renderAddExistingGroups(){
+  var box=document.getElementById('ml-existing');
+  if(!box)return;
+  var groups=logs.filter(function(l){
+    return (l.type||'training')==='training'&&!l.archived&&isCurrentGroup(l);
+  });
+  if(!groups.length){box.innerHTML='';return;}
+  box.innerHTML='<div style="padding:0 12px 8px;text-align:left"><div style="font-size:12px;font-weight:700;color:#777;margin-bottom:6px;text-transform:uppercase">Existing Groups</div>'+groups.map(function(group){
+    var count=(group.runners||[]).length;
+    return '<button type="button" class="picker-row" onclick="openExistingGroupFromAdd('+group.id+')"><b>'+ex(group.name||'Group')+'</b><small>'+count+' athlete'+(count===1?'':'s')+'</small></button>';
+  }).join('')+'</div>';
+}
+function openExistingGroupFromAdd(id){
+  hm('ml');
+  oGroup(id);
 }
 function createGroup(){
   var name=document.getElementById('mln').value.trim()||'New Group';
