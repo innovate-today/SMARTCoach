@@ -26,6 +26,7 @@ button.ghost{background:#eef2f7;color:#172033}
 button.utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line)}
 button.field-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
 button.delete-action{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+button.neutral-action{background:#eef2f7;color:#334155;border:1px solid #dbe3ef}
 button:disabled{opacity:.55;cursor:not-allowed}
 .grid{display:grid;grid-template-columns:minmax(360px,.45fr) minmax(640px,1fr);gap:14px;align-items:start}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
@@ -194,9 +195,9 @@ tr:last-child td{border-bottom:0}
             <button id="deleteFieldBtn" class="delete-action compact" type="button">Delete Field</button>
           </div>
           <div class="utility-actions">
-            <button id="templateBtn" class="secondary compact" type="button">Template</button>
-            <button id="exampleBtn" class="ghost compact" type="button">Example</button>
-            <button id="clearBtn" class="ghost compact" type="button">Clear</button>
+            <button id="templateBtn" class="neutral-action compact" type="button">Template</button>
+            <button id="exampleBtn" class="neutral-action compact" type="button">Example</button>
+            <button id="clearBtn" class="neutral-action compact" type="button">Clear</button>
           </div>
         </div>
       </div>
