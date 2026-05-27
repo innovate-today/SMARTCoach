@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,9 +40,9 @@ Current launch status:
 
 Latest handoff:
 
-- Latest pushed code commit before this state update: `dca22af Keep athlete group assignment after save`.
-- Latest local commit when this handoff was checked: `dbe75c0 Update SMARTCoach project state`.
-- Repo status was clean on `main...origin/main`; `git push origin main:main` returned `Everything up-to-date`.
+- Latest pushed code commit before this state update: `ad7cfc6 Clean up coach how-to wording`.
+- Latest local commit when this handoff was checked: `ad7cfc6 Clean up coach how-to wording`.
+- Repo was pushed to `main` after the coach how-to wording cleanup.
 - Local regression suite passed with `npm test`.
 - Production checks passed for the deployment blocker:
   - `/live-launch-validation.html` loads on `https://app.smartcoach-pro.com`.
@@ -58,6 +58,8 @@ Latest handoff:
   - Records now recovers singular `Boy` / `Girl` gender values from saved record notes, preserving separate boys and girls records for the same event after reload.
   - Athletes no longer immediately reloads over the optimistic group assignment after saving, so the selected group should remain visible immediately after save.
 - Phone app meet-result save now uses an Event dropdown for race distance selection and sends the selected event in both captured meet-result saves and scheduled meet-day syncs.
+- `SMART_TRAK_COACH_HOW_TO.md` was added as the coach tutorial covering SMART Trak Dashboard, Athletes, Training Calendar, Meet History, XC Simulator, Records, Manage Meets, Log Race Result, Log Miles, and the phone app Training/Meet/Archive/Settings/Sync workflows.
+- The coach how-to guide was cleaned so it does not mention GHL or use "coach-facing" wording.
 - Next practical step: deploy/retest those three live fixes, then continue the live Pro test-account validation pass with dashboard filtered-volume retests, manual mileage same-day edit retest, and phone app follow-up checks.
 
 Latest SaaS/account setup truth:
@@ -845,6 +847,8 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 115. Production retest on 2026-05-26 confirmed the Vercel function-limit fix is live: the old `/api/ghl/sync-diagnostics` route returns 404, the unified `/api/smart-trak/sync-diagnostics` route exists and requires coach access, the live validation page loads, the real Pro test account record is active/configured from registry storage, parent email tools are off, and current Training Calendar / Upload-Paste wording is deployed. Remaining validation requires the assigned coach code for live SMART Trak page/API workflows.
 116. User live retest found three blockers: Manage Meets races did not appear on Training Calendar, same-event boys/girls records could collapse after reload, and Athletes group assignment did not remain visible immediately after save. Local fixes are in place for all three and should be deployed/retested.
 117. Phone app meet-result save now replaces the Event text/prompt flow with a race dropdown and includes the selected event in meet-result sync payloads.
+118. Added `SMART_TRAK_COACH_HOW_TO.md` as a coach tutorial for each SMART Trak page, the main popup tools, and the phone app workflows.
+119. Cleaned the coach how-to guide so it uses coach-ready language and does not mention GHL or "coach-facing".
 
 ## Known Good Test Flow
 
