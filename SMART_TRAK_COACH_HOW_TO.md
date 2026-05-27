@@ -1,0 +1,331 @@
+# SMART Trak Coach How-To Guide
+
+This guide explains how coaches use SMART Trak and the SMARTCoach phone app together. SMART Trak is the desktop command center. The phone app is used at practice or meets to time athletes, manage groups, and sync completed work back to SMART Trak.
+
+## Best Place To Start
+
+1. Open **Athlete Setup** and confirm the roster, active athletes, and training groups.
+2. Open **Training Calendar** and add the next workout, race, or rest day.
+3. Open the SMARTCoach phone app, choose the training group, and time the workout.
+4. Sync the workout to SMART Trak.
+5. Review the result on the **Dashboard**.
+
+## SMART Trak Dashboard
+
+Use the Dashboard as the daily coaching home base. It shows roster status, training volume, current fitness, recent meet results, completed workouts, and athlete progress.
+
+How to use it:
+
+1. Review the top cards for this week volume, previous week volume, active athletes, and current week workouts.
+2. Use the search box to find one athlete or group.
+3. Use the filters to narrow the view by athlete group, activity type, or season.
+4. Use the main tabs:
+   - **Roster Overview** shows each athlete's current fitness, latest meet result, latest training, weekly volume, and status.
+   - **Recent Meet Results** shows saved race results and PB/SB updates.
+   - **Training Load** shows volume by athlete and completed workouts.
+5. Click **Show workouts** under an athlete to see completed workout details.
+6. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
+
+Volume miles means completed training and race volume converted into miles for the current filters. Quality session work reps count toward actual quality volume. Recovery between reps does not count unless it is entered as actual running or walking distance.
+
+## Athletes Page
+
+Use the Athletes page as the coach-facing roster. This replaces the need to work inside the full GHL Contacts screen for normal athlete setup.
+
+How to use it:
+
+1. Click **Add Athlete** to create a new athlete.
+2. Enter name, gender, class year, parent contact information, and coach notes.
+3. Mark the athlete active if they should appear in SMART Trak and the phone app.
+4. Assign the athlete to training groups.
+5. Click an athlete name to review details.
+6. Use **Edit** to update roster information.
+
+Use **Class Year** instead of grade so the coach does not have to update every athlete each school year.
+
+## Training Calendar
+
+Use the Training Calendar as the main place to add one-day workouts, races, rest days, and notes. This page is where a coach should build the week.
+
+How to use it:
+
+1. Use **Week View**, **List View**, or **Today** to move around the calendar.
+2. Click **Add** on a date.
+3. Choose the activity type:
+   - **Easy Run** for easy, recovery, or long run days.
+   - **Quality Session** for workouts with reps, sets, efforts, and recoveries.
+   - **Race/Meet** for track meets or cross country races.
+   - **Rest/Day Off** for off days, travel days, or no assigned workout.
+4. Choose the group that should receive the workout.
+5. Attach the day to a plan only if needed.
+6. Save the calendar day.
+
+Use the status tools when a group of days needs to be changed:
+
+1. Check the days you want to update.
+2. Choose the new status.
+3. Click **Update Selected**.
+
+The **Visible Mix** shows how the calendar is balanced across workouts, meets/races, recovery, off/travel, and other days.
+
+## Upload/Paste Plan
+
+Use Upload/Paste Plan for full plans, not one-day workout entry. One-day workouts, races, rest days, and notes should be added on the Training Calendar.
+
+How to use it:
+
+1. Choose **Upload File** if the plan is in a spreadsheet or text file.
+2. Choose **Paste Plan** if the coach already has a written plan.
+3. Review the preview table before saving.
+4. Save the plan days.
+5. Open Training Calendar to confirm the plan appears correctly.
+
+## Athlete Setup
+
+Use Athlete Setup for items coaches do less often: current fitness sources, training groups, and plan assignments.
+
+Common uses:
+
+1. Set each athlete's current fitness mark so SMART Trak can calculate training targets.
+2. Create or update training groups.
+3. Assign saved plans to groups or athletes.
+4. Remove athletes from old group assignments when needed.
+
+Training groups also appear in the phone app, so keep them clean and practical for how practice is actually organized.
+
+## Auto Build Plan
+
+Use Auto Build Plan when the coach wants SMART Trak to help generate a plan from season dates, event focus, meets/races, and coaching preferences.
+
+How to use it:
+
+1. Enter the plan name.
+2. Choose group or individual scope.
+3. Select the season block and plan dates.
+4. Choose the primary event focus or latest matching fitness set.
+5. Add meets, races, blackout dates, and schedule notes.
+6. Answer the planning questions.
+7. Generate the plan and review before using it.
+
+## Meet History
+
+Use Meet History to review race results, compare athletes, and track progress across events and seasons.
+
+How to use it:
+
+1. Filter by season, gender, meet, event, or athlete.
+2. Review fastest results by event.
+3. Use athlete progression to see improvement over time.
+4. Check PB and SB updates.
+5. Correct or void results if a saved result is wrong.
+
+Fastest by event should separate boys and girls so results are compared correctly.
+
+## XC Simulator
+
+Use the XC Simulator for cross country race planning and "what if" scoring.
+
+How to use it:
+
+1. Choose the SMART Trak season-best source.
+2. Set your team name, race name, division, score runners, and displacers.
+3. Click **My Season Best** to load your team's current season bests.
+4. Paste or type other teams' runners into the results box.
+5. Click **Score Meet**.
+6. Review team scores, scorers, displacers, average time, and spread.
+7. Use **Save Field** to keep opponent teams for later.
+8. Use **Load Field** the next week, update times, then score again.
+9. Use **Delete Field** when a saved opponent field is no longer needed.
+
+Use this page before a meet to test possible race outcomes and lineup decisions.
+
+## Records
+
+Use Records as the school record board. It is meant to display official records entered by the coach.
+
+How to use it:
+
+1. Open **Records Tools**.
+2. Add one record manually or import records in bulk.
+3. Review the current record board.
+4. If a record is replaced, the current row should show the new record.
+5. Expand the record to see the previous record history.
+
+The Records page is not meant to update automatically from the phone app or from Log Race Result. Coaches control when the official record board changes.
+
+## Manage Meets
+
+Use Manage Meets to create and maintain the meet schedule.
+
+How to use it:
+
+1. Click **Manage Meets**.
+2. Add the meet name, sport, date, season, and status.
+3. Save the meet.
+4. Edit meets when details change.
+5. Archive meets that should no longer appear in active selectors.
+
+Season mapping:
+
+- **Summer:** June and July
+- **Fall:** August through November
+- **Winter:** December and January
+- **Spring:** February through May
+
+## Log Race Result
+
+Use Log Race Result when a race result needs to be entered without using the phone stopwatch.
+
+How to use it:
+
+1. Click **Log Race Result**.
+2. Choose the date and sport.
+3. Choose an existing meet or enter a new meet name.
+4. Select the athlete.
+5. Choose the event.
+6. Enter the result.
+7. Choose best status if needed.
+8. Add notes if helpful.
+9. Save the race result.
+
+Saved race results update the Dashboard, Meet History, and athlete bests. They do not automatically update the official Records page.
+
+## Log Miles
+
+Use Log Miles for manual mileage entries that were not timed in the app.
+
+How to use it:
+
+1. Click **Log Miles**.
+2. Choose the date.
+3. Choose whether the mileage applies to an individual athlete or a group.
+4. Select the athlete or group.
+5. Choose the effort.
+6. Enter the distance with a clear unit, such as `4 miles`, `4 mi`, or `0.5 mi`.
+7. Add time, source, surface, and notes if useful.
+8. Save mileage.
+
+Manual mileage appears in Dashboard training volume and athlete training load.
+
+## Phone App: Training Section
+
+Use the Training section at practice for daily workouts.
+
+How to use it:
+
+1. Open the SMARTCoach app.
+2. Choose **Training**.
+3. Select the group.
+4. Add runners if needed.
+5. Reorder runners into the order they are training that day.
+6. Tap **Start** for one athlete or **Start All** for the group.
+7. Use **Lap All**, **End Rep All**, or **End Rest All** depending on the workout type.
+8. Tap **Stop** when the athlete or group is finished.
+9. Sync to SMART Trak after the workout.
+
+The app can still capture splits even if the coach hides splits on the detail line.
+
+## Phone App: Meet Section
+
+Use the Meet section for meet-day timing and meet result capture.
+
+How to use it:
+
+1. Open the SMARTCoach app.
+2. Choose **Meets**.
+3. Select the meet.
+4. Select the event or group.
+5. Add athletes to the event.
+6. Time the race.
+7. Save and sync results to SMART Trak.
+
+Meet results should appear in SMART Trak after sync.
+
+## Phone App: Archive
+
+Use Archive to keep old groups or meet lists out of the active view without deleting history.
+
+How to use it:
+
+1. Open **Archive**.
+2. Review archived groups or meets.
+3. Restore anything that should be active again.
+4. Use bulk archive after a season to clean up the phone app.
+
+Archive is safer than delete because it keeps old work available if the coach needs it later.
+
+## Phone App: Settings
+
+Use Settings to control the group and what the coach sees during workouts.
+
+Common settings:
+
+- **Group Name:** the name shown for the current training group.
+- **Laps:** show or capture lap timing.
+- **Rep/Rest Splits:** capture rep and rest splits.
+- **Multiple:** allow multiple athletes to be timed in the same group.
+- **Splits on Detail Line:** show or hide split chips during the workout.
+- **Plan on Detail Line:** show or hide the assigned plan.
+- **Target on Detail Line:** show or hide target ranges.
+- **Sync Status on Detail Line:** show or hide sync status.
+- **Beep/Vibrate on All Button Taps:** gives feedback for start, stop, lap, rep, and rest taps.
+- **Archive Group:** moves the group out of the active list.
+
+Settings save automatically when leaving the screen.
+
+## Phone App: Sync To SMART Trak
+
+Use Sync to send completed workouts or meet results from the phone app to SMART Trak.
+
+How to use it:
+
+1. Tap **Sync**.
+2. Review the athletes with saved work.
+3. Select athletes only if the app asks you to choose who should sync or resync.
+4. Enter surface, weather, or volume if the app asks for it.
+5. Tap the sync button.
+6. Wait for the green confirmation.
+7. Check SMART Trak Dashboard to confirm the workout appears.
+
+If the app says a run is already synced, do not resync unless you are intentionally replacing or sending that saved workout again.
+
+## Simple Weekly Coach Workflow
+
+1. Start on **Training Calendar**.
+2. Add the week's workouts, races, and rest days.
+3. Confirm training groups on **Athlete Setup** if needed.
+4. Use the phone app at practice.
+5. Sync after practice.
+6. Review the Dashboard.
+7. Log any extra miles or race results that were not timed in the app.
+8. Use Meet History, XC Simulator, and Records when needed.
+
+## Quick Troubleshooting
+
+If athletes do not show:
+
+- Confirm the athlete is active.
+- Confirm the athlete is assigned to the right training group.
+- Refresh SMART Trak.
+
+If a workout does not show after sync:
+
+- Confirm the phone app says the workout record saved to SMART Trak.
+- Refresh the Dashboard.
+- Check the athlete under Training Load or Completed Workouts.
+
+If SMART Trak asks for an access code:
+
+- Enter the coach access code created during account setup.
+- Use the same coach code for desktop SMART Trak and the phone app unless the account has separate coach seats assigned.
+
+If old groups or plans appear:
+
+- Archive old groups, meets, or plans.
+- Refresh the page after changes.
+
+If volume looks wrong:
+
+- Confirm the distance includes a unit such as `mi`, `miles`, `m`, or `km`.
+- Confirm the activity is saved to the correct athlete or group.
+- Confirm the current filters are not hiding part of the data.
