@@ -40,9 +40,9 @@ Current launch status:
 
 Latest handoff:
 
-- Latest pushed code commit before this state update: `2f807aa Update docs for weather and relay support`.
-- Latest local commit when this handoff was checked: `2f807aa Update docs for weather and relay support`.
-- Repo was pushed to `main` after the Weather/relay documentation and project-state refresh.
+- Latest pushed code commit before this state update: `7107095 Update mobile app naming in coach guide`.
+- Latest local commit when this handoff was checked: `7107095 Update mobile app naming in coach guide`.
+- Repo was pushed to `main` after the SMARTCoach Pro Mobile App naming update in the how-to guide.
 - Latest docs/state maintenance in progress: keep `SMART_TRAK_COACH_HOW_TO.md` and this file updated after each feature or fix so new chats can resume without reconstructing history.
 - Recent regression status: docs-only updates need `git diff --check`; code changes should continue to use `npm test` before push when practical.
 - Weather page is now part of SMART Trak:
@@ -890,6 +890,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 142. Added `/weather.html`, a live Weather page with saved locations, current conditions, hourly forecast, daily forecast, Dashboard/Training Calendar buttons, and improved `city, state` searches.
 143. Updated `SMART_TRAK_COACH_HOW_TO.md` so the coach guide stays current with Weather, Track Simulator, relay support, mobile relay timing, Records, Meet History, and Training Calendar updates.
 144. Updated the how-to guide naming from Phone App/phone app to SMARTCoach Pro Mobile App for consistent product language.
+145. Renamed the how-to guide title to SMARTCoach Pro & SMART Trak How To Guide.
 
 ## Known Good Test Flow
 

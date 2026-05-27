@@ -1,4 +1,4 @@
-# SMART Trak Coach How-To Guide
+# SMARTCoach Pro & SMART Trak How To Guide
 
 This guide explains how coaches use SMART Trak and the SMARTCoach Pro Mobile App together. SMART Trak is the desktop command center. The SMARTCoach Pro Mobile App is used at practice or meets to time athletes, manage groups, and sync completed work back to SMART Trak.
 
