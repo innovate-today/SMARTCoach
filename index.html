@@ -713,6 +713,8 @@ function normalizeRelayState(relay){
     var leg=(source.legs&&source.legs[i])||{};
     return{name:leg.name||'',contactId:leg.contactId||'',smartcoachAthleteId:leg.smartcoachAthleteId||''};
   });
+  base.on=!!source.on;
+  base.startAt=Number(source.startAt)||0;
   base.elapsed=Number(source.elapsed)||0;
   base.currentLeg=Math.max(0,Math.min(3,Number(source.currentLeg)||0));
   base.splits=(source.splits||[]).slice(0,4).map(function(split,i){
