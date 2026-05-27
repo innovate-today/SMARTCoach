@@ -83,6 +83,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .days{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));overflow:auto}
 .day{min-height:170px;border-right:1px solid var(--line);padding:10px;background:#fff}
 .day.today{background:#f4f7ff;box-shadow:inset 0 0 0 2px rgba(43,79,204,.18)}
+.day.drop-target{background:#eef6ff;box-shadow:inset 0 0 0 2px rgba(43,79,204,.32)}
 .day:last-child{border-right:0}
 .daytop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .daydate{border:0;background:transparent;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;margin:0;padding:0;text-align:left}
@@ -95,7 +96,9 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .dayaction:hover{text-decoration:underline}
 .dayicon{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;color:#fff;font-size:12px;line-height:1}
 .dayicon.activity{background:#2B4FCC}.dayicon.rest{background:#64748b}
-.item{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff}
+.item{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff;cursor:grab}
+.item:active{cursor:grabbing}
+.item.dragging{opacity:.55}
 .item.meet{border-left-color:#7c3aed}.item.recovery{border-left-color:#0a7a44}.item.off{border-left-color:#94a3b8}.item.skipped{opacity:.68}
 .item b{display:block;font-size:14px;line-height:1.25}
 .bulkcheck{display:flex;align-items:center;gap:6px;color:#475569;font-size:12px;font-weight:900;margin-bottom:6px}
@@ -542,6 +545,7 @@ var selectedPlanIds=[];
 var selectedBulkDayIds=[];
 var includePastPlans=false;
 var addDayMode='easy';
+var draggedDayId='';
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -1245,13 +1249,99 @@ function dayItem(day){
   if(status.indexOf('skipped')>=0)cls+=' skipped';
   var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
   var id=day.id||day.sourceRecordId||'';
-  return '<article class="item'+cls+'"><label class="bulkcheck"><input data-bulk-check="'+esc(id)+'" type="checkbox" '+(selectedBulkDayIds.indexOf(id)>=0?'checked':'')+'> Select for status update</label><button class="itembtn" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+
+  return '<article class="item'+cls+'" draggable="true" data-drag-day-id="'+esc(id)+'"><label class="bulkcheck"><input data-bulk-check="'+esc(id)+'" type="checkbox" '+(selectedBulkDayIds.indexOf(id)>=0?'checked':'')+'> Select for status update</label><button class="itembtn" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+
     '<b>'+esc(day.title||day.dayType||'Plan day')+'</b>'+
     '<div class="meta">'+esc([day.groupName,day.athleteName,day.workoutType,sportFromDay(day)].filter(Boolean).join(' · '))+'</div>'+
     '<div class="meta">'+esc(day.details||'')+'</div>'+
     '<div class="meta">'+esc([day.targetSplits,day.plannedVolume].filter(Boolean).join(' · '))+'</div>'+
     '<span class="pill '+statusClass+'">'+esc(day.status||'Scheduled')+'</span>'+
   '</button></article>';
+}
+function moveCalendarDay(day,targetDate){
+  if(!day||!targetDate)return Promise.resolve(false);
+  var nextDate=String(targetDate||'').slice(0,10);
+  if(!nextDate||String(day.date||'').slice(0,10)===nextDate){
+    els.status.textContent='Drop on a different day to move.';
+    return Promise.resolve(false);
+  }
+  return isManagedMeetCalendarDay(day)?moveManagedMeetDay(day,nextDate):moveTrainingPlanDay(day,nextDate);
+}
+function moveTrainingPlanDay(day,nextDate){
+  var id=day.id||day.sourceRecordId||'';
+  if(!id){
+    els.status.textContent='This calendar item is missing its saved id.';
+    return Promise.resolve(false);
+  }
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.status.textContent='Moving '+(day.title||day.dayType||'calendar item')+'...';
+  return fetch('/api/smart-trak/training-plan',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'updateDay',
+      dayId:id,
+      reason:'Moved on Training Calendar by drag and drop.',
+      updates:{
+        date:nextDate,
+        dayType:day.dayType,
+        title:day.title,
+        workoutType:day.workoutType,
+        energySystem:day.energySystem,
+        status:day.status||'Scheduled',
+        groupName:day.groupName,
+        athleteName:day.athleteName,
+        plannedVolume:day.plannedVolume,
+        targetSplits:day.targetSplits,
+        details:day.details,
+        linkedMeetId:day.linkedMeetId,
+        linkedPerformanceRecordIds:day.linkedPerformanceRecordIds,
+        coachNotes:day.coachNotes
+      }
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not move calendar item.');
+    days=days.map(function(item){
+      return item.id===id||item.sourceRecordId===id ? Object.assign({},item,{date:nextDate}) : item;
+    });
+    selectedBulkDayIds=selectedBulkDayIds.filter(function(item){return item!==id;});
+    renderOptions();
+    render();
+    els.status.textContent='Moved '+(day.title||day.dayType||'calendar item')+' to '+formatDate(nextDate)+'.';
+    return true;
+  });
+}
+function moveManagedMeetDay(day,nextDate){
+  var meet=managedMeetForCalendarDay(day)||{};
+  var recordId=day.linkedMeetId||meet.id||'';
+  if(!recordId){
+    els.status.textContent='This meet is missing its saved meet id.';
+    return Promise.resolve(false);
+  }
+  var parsed=parseCalendarDate(nextDate);
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  var payload={
+    recordId:recordId,
+    meetName:meet.name||day.title||'Meet',
+    meetDate:nextDate,
+    season:seasonFromDate(nextDate)||meet.season||'Spring',
+    seasonYear:String(isNaN(parsed.getTime())?new Date().getFullYear():parsed.getFullYear()),
+    status:meet.status||day.status||'Scheduled'
+  };
+  els.status.textContent='Moving '+(payload.meetName||'meet')+'...';
+  return fetch('/api/smart-trak/meets',{method:'PATCH',headers:headers,body:JSON.stringify(payload)}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not move meet.');
+    upsertCalendarMeet(Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,season:payload.season,seasonYear:payload.seasonYear,status:payload.status},result.data&&result.data.meet||{}));
+    renderOptions();
+    render();
+    els.status.textContent='Moved '+(payload.meetName||'meet')+' to '+formatDate(nextDate)+'.';
+    return true;
+  });
 }
 function openDayModal(day){
   if(!day)return;
@@ -2868,6 +2958,47 @@ function init(){
   els.listViewBtn.addEventListener('click',function(){
     viewMode='list';
     render();
+  });
+  els.calendar.addEventListener('dragstart',function(event){
+    var item=event.target.closest&&event.target.closest('[data-drag-day-id]');
+    if(!item)return;
+    draggedDayId=item.getAttribute('data-drag-day-id')||'';
+    item.classList.add('dragging');
+    if(event.dataTransfer){
+      event.dataTransfer.effectAllowed='move';
+      event.dataTransfer.setData('text/plain',draggedDayId);
+    }
+  });
+  els.calendar.addEventListener('dragend',function(event){
+    draggedDayId='';
+    document.querySelectorAll('.item.dragging,.day.drop-target').forEach(function(node){node.classList.remove('dragging','drop-target');});
+  });
+  els.calendar.addEventListener('dragover',function(event){
+    if(!draggedDayId)return;
+    var column=event.target.closest&&event.target.closest('[data-calendar-date]');
+    if(!column)return;
+    event.preventDefault();
+    if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+    document.querySelectorAll('.day.drop-target').forEach(function(node){if(node!==column)node.classList.remove('drop-target');});
+    column.classList.add('drop-target');
+  });
+  els.calendar.addEventListener('dragleave',function(event){
+    var column=event.target.closest&&event.target.closest('[data-calendar-date]');
+    if(column&&!column.contains(event.relatedTarget))column.classList.remove('drop-target');
+  });
+  els.calendar.addEventListener('drop',function(event){
+    if(!draggedDayId)return;
+    var column=event.target.closest&&event.target.closest('[data-calendar-date]');
+    if(!column)return;
+    event.preventDefault();
+    var id=draggedDayId;
+    var targetDate=column.getAttribute('data-calendar-date')||'';
+    draggedDayId='';
+    document.querySelectorAll('.item.dragging,.day.drop-target').forEach(function(node){node.classList.remove('dragging','drop-target');});
+    moveCalendarDay(findCalendarDayById(id),targetDate).catch(function(error){
+      els.status.textContent=error.message||'Could not move calendar item.';
+      render();
+    });
   });
   els.todayBtn.addEventListener('click',jumpToToday);
   els.calendar.addEventListener('click',function(event){
