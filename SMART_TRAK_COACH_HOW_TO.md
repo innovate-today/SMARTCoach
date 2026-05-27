@@ -162,6 +162,22 @@ How to use it:
 
 Use this page before a meet to test possible race outcomes and lineup decisions.
 
+## Weather
+
+Use Weather to check live conditions for practice, meets, and travel.
+
+How to use it:
+
+1. Open **Weather** from Dashboard or Training Calendar.
+2. Search for a city or city/state, such as `Orlando` or `Orlando, FL`.
+3. Review the current conditions card for temperature, feels-like temperature, wind, humidity, and precipitation.
+4. Review the hourly forecast for the next part of the day.
+5. Review the daily forecast for the week.
+6. Save frequent locations so they are easy to open again.
+7. Click **Refresh** before practice or meet time when conditions may have changed.
+
+Saved locations stay in that SMARTCoach account's browser.
+
 ## Records
 
 Use Records as the school record board. It is meant to display official records entered by the coach.

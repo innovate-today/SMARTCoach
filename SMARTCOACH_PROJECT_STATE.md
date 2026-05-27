@@ -40,20 +40,30 @@ Current launch status:
 
 Latest handoff:
 
-- Latest pushed code commit before this state update: `ad7cfc6 Clean up coach how-to wording`.
-- Latest local commit when this handoff was checked: `ad7cfc6 Clean up coach how-to wording`.
-- Repo was pushed to `main` after the coach how-to wording cleanup.
-- Local regression suite passed with `npm test`.
-- Production checks passed for the deployment blocker:
-  - `/live-launch-validation.html` loads on `https://app.smartcoach-pro.com`.
-  - `/api/ghl/sync-diagnostics` returns 404, confirming the old extra API function is no longer deployed.
-  - `/api/smart-trak/sync-diagnostics?account=sc-qxwjweksyuf7sdofhpb4` exists and correctly requires coach access.
-  - `/api/smart-trak/account-status?account=sc-qxwjweksyuf7sdofhpb4` returns `200` with `configured: true`, `accessReady: true`, `subscription.status: active`, `registry.found: true`, `coachAccessCodesConfigured: 1`, `deviceAccessReady: false`, and `parentEmailToolsAllowed: false`.
-- Production content checks confirmed the current Training Calendar `Training Setup:` row and the current Upload/Paste Plan Add Workouts wording are live.
+- Latest pushed code commit before this state update: `4784a0d Improve weather location search`.
+- Latest local commit when this handoff was checked: `4784a0d Improve weather location search`.
+- Repo was pushed to `main` after the Weather city/state search cleanup.
+- Latest docs/state maintenance in progress: keep `SMART_TRAK_COACH_HOW_TO.md` and this file updated after each feature or fix so new chats can resume without reconstructing history.
+- Recent regression status: docs-only updates need `git diff --check`; code changes should continue to use `npm test` before push when practical.
+- Weather page is now part of SMART Trak:
+  - `/weather.html` provides live weather without an API key using Open-Meteo geocoding and forecast APIs.
+  - Dashboard and Training Calendar include a Weather button.
+  - Weather supports saved account-scoped browser locations, current conditions, hourly forecast, and daily forecast.
+  - City/state searches such as `Orlando, FL` are parsed and matched against US state abbreviations/names.
+- Relay support is now built across mobile and SMART Trak:
+  - Mobile Meet flow supports meet > race > relay, four active-athlete leg selectors, Start/Lap/Finish relay timing, and relay result sync.
+  - Dashboard and Training Calendar Log Race Result support relay result type, relay events, relay team, runner selectors, splits, and total time.
+  - Dashboard Recent Meet Results can open relay details and edit relay event/team/total/splits; correction APIs allow relay edits without an individual athlete contact.
+  - Relay events are in event dropdowns across mobile, Dashboard, Training Calendar, Records, Track Simulator, plan setup/builder, and backend training-plan options.
+- Track Simulator is live at `/track-simulator.html` with SMART Trak season-best loading, manual/pasted entries, saved fields, multiple-event exclusion, Template CSV, scoring, and cleaned button presentation.
+- Training Calendar supports dragging workouts and meets to another day.
+- Meet History has a narrower Meets column and a white info bubble explaining meet selection and compare rows.
+- Records page fixes are currently confirmed by the user:
+  - Saved records survive refresh through direct rows plus durable server-side registry mirror/per-record keys.
+  - Current/historical status is corrected so only the best current record for an event/gender stays current.
+  - Records source diagnostics were changed back from detailed debug wording to the normal saved-record source display after troubleshooting.
 - App workout sync was previously confirmed working on the real Pro test account: the user confirmed a `20.2` second Stevie Ray stopwatch workout appeared correctly in SMART Trak.
-- A remaining live issue was fixed and pushed locally/GitHub: athletes added on the Athletes page should keep their selected training group after save instead of appearing and then disappearing.
-- Code inspection confirmed the known dashboard retest items are implemented locally: dashboard cards use filtered rows, archived training groups are excluded from the Groups column, and race results are included in completed volume.
-- Latest live blocker fixes made after user retest:
+- Earlier live blocker fixes made after user retest:
   - Training Calendar now pulls saved Manage Meets records into the calendar as race/meet days, so races created from the Manage Meets popup are visible even when they are not attached to a training-plan day.
   - Records now recovers singular `Boy` / `Girl` gender values from saved record notes, preserving separate boys and girls records for the same event after reload.
   - Athletes no longer immediately reloads over the optimistic group assignment after saving, so the selected group should remain visible immediately after save.
@@ -117,7 +127,9 @@ git push origin main:main
 - `plan-builder.html`: Auto Build Plan page for guided plan drafting.
 - `meet-history.html`: meet schedule and meet-result comparison/history.
 - `records.html`: school record board.
+- `track-simulator.html`: track meet scoring simulator using saved opponent fields and SMART Trak season bests.
 - `xc-simulator.html`: cross country scoring simulator using saved opponents and SMART Trak season bests.
+- `weather.html`: live weather page with saved locations, current conditions, hourly forecast, and daily forecast.
 - `onboarding.html`: account setup helper.
 
 ## Backend Endpoints
@@ -224,7 +236,7 @@ Important behavior:
 
 Known issues/parked:
 
-- Records page school-record history currently keeps the current record and may only reliably keep one previous record. Parked for now.
+- Records page multi-record save/current-historical behavior was fixed and user-confirmed after live retest. Keep it in the regression flow because GHL custom-object listing behavior has been inconsistent.
 - Phone app account access now has a visible Account button, coach access-code prompt, and device unlock status. Post-launch phone follow-up should confirm first coach login, first sync, and bulk archive on an actual phone.
 - Bulk archive is no longer a known unfinished feature; onboarding now tracks it as part of post-launch phone follow-up.
 
@@ -869,6 +881,14 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 133. Records now mirrors records saved through the Records page into the durable account registry and merges that server-side mirror on load. This is a stronger fallback for the live issue where GHL returns only the latest Records custom-object row after refresh.
 134. Records mirror was changed from rewriting one shared account-record array to per-record registry keys plus an index. This prevents quick sequential saves from overwriting the mirror with only the latest saved record.
 135. Records mirror now also scans per-record registry keys in case the index set is missing, and Records API/page responses surface mirror diagnostics so the live page can report whether GHL count, mirror count, or registry status is the blocker.
+136. Records row loading, current/historical status correction, and saved-source display were live retested and confirmed fixed by the user.
+137. Training Calendar now supports dragging workouts and meets to another day.
+138. Meet History info bubble was adjusted to match the app's white bubble style and overlay above the list without pushing content.
+139. Mobile meet timing now supports relays inside the meet > race flow, with four active-athlete leg selectors, Start/Lap/Finish Relay timing, and relay result sync to SMART Trak.
+140. SMART Trak Log Race Result and relay edit flows support relay type, relay events, relay team, runner names, splits, total time, meet, and date.
+141. Relay events are included everywhere event dropdowns are used, including the mobile app, Dashboard, Training Calendar, Records, Track Simulator, and plan tools.
+142. Added `/weather.html`, a live Weather page with saved locations, current conditions, hourly forecast, daily forecast, Dashboard/Training Calendar buttons, and improved `city, state` searches.
+143. Updated `SMART_TRAK_COACH_HOW_TO.md` so the coach guide stays current with Weather, Track Simulator, relay support, mobile relay timing, Records, Meet History, and Training Calendar updates.
 
 ## Known Good Test Flow
 
@@ -878,17 +898,20 @@ Use this as the current launch regression test:
 2. For a live Pro test account, run Test Setup First, then Save Account Setup.
 3. Lookup the account and confirm the customer account record is saved with subscription, coach seats, SMART Trak connection, and coach access-code readiness.
 4. Check Customer Access and confirm account access, account source, SMART Trak connection, and device/coach-code status.
-5. Open Dashboard, Athletes, Training Calendar, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Meet History, Records, Track Simulator, and XC Simulator with the customer account key.
+5. Open Dashboard, Athletes, Training Calendar, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Meet History, Records, Track Simulator, XC Simulator, and Weather with the customer account key.
 6. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
 7. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
 8. Create or import a plan, build a training group, assign the plan to a group or selected athletes, and confirm the Training Calendar shows the plan days.
 9. Open the phone app with the customer account key, choose group/plan, select an upcoming workout, time a rep/rest workout, and sync.
 10. Confirm Dashboard volume, completed workout details, splits, athlete latest training, and Training Calendar status update after sync.
 11. Log one standalone race result and confirm Dashboard, Meet History, and athlete bests update.
-12. Load My Season Bests in Track Simulator and My Season Best in XC Simulator, load saved fields, and score both simulated meets.
-13. Trigger the GHL Subscription Payload once and confirm account lookup shows the recent account update without exposing private tokens or coach access codes.
-14. Confirm parent email controls remain hidden/off for initial rollout.
-15. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.
+12. Log one relay result from SMART Trak and one relay result from mobile meet timing; confirm relay detail/edit support shows relay type, total time, runners, and splits.
+13. Add multiple Records rows for the same event/gender with different marks and confirm only the best stays current after refresh.
+14. Load My Season Bests in Track Simulator and My Season Best in XC Simulator, load saved fields, and score both simulated meets.
+15. Search Weather by city and city/state, save a location, refresh, and confirm current/hourly/daily forecast cards render.
+16. Trigger the GHL Subscription Payload once and confirm account lookup shows the recent account update without exposing private tokens or coach access codes.
+17. Confirm parent email controls remain hidden/off for initial rollout.
+18. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.
 
 ## Notes For Future Codex Sessions
 
