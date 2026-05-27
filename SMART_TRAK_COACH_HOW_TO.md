@@ -60,6 +60,8 @@ How to use it:
 5. Attach the day to a plan only if needed.
 6. Save the calendar day.
 
+To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.
+
 Use the status tools when a group of days needs to be changed:
 
 1. Check the days you want to update.
@@ -118,6 +120,7 @@ How to use it:
 3. Use athlete progression to see improvement over time.
 4. Check PB and SB updates.
 5. Correct or void results if a saved result is wrong.
+6. Select a meet in the Meets column to show only that meet's results. Select a compare row to compare the same meet across dates.
 
 Fastest by event should separate boys and girls so results are compared correctly.
 
@@ -130,11 +133,14 @@ How to use it:
 1. Choose the SMART Trak season-best source and event filter.
 2. Set your team name and scoring table.
 3. Click **My Season Bests** to load projected entries for your team.
-4. Paste or type competitor entries into the meet entries box.
-5. Click **Score Meet**.
-6. Review team scores, event places, marks, and projected points.
-7. Use **Save Field** to keep competitor entries for later.
-8. Use **Load Field** the next week, update marks, then score again.
+4. Exclude events that should not be included in the projection.
+5. Paste or type competitor entries into the meet entries box.
+6. Click **Template CSV** when a spreadsheet template is needed.
+7. Click **Score Meet**.
+8. Review team scores, event places, marks, and projected points.
+9. Use **Save Field** to keep competitor entries for later.
+10. Use **Load Field** the next week, update marks, then score again.
+11. Use **Delete Field** when a saved opponent field is no longer needed.
 
 Use this page before a track meet to test lineup decisions, event changes, and projected point swings.
 
@@ -164,9 +170,13 @@ How to use it:
 
 1. Open **Records Tools**.
 2. Add one record manually or import records in bulk.
-3. Review the current record board.
-4. If a record is replaced, the current row should show the new record.
-5. Expand the record to see the previous record history.
+3. Use Boys or Girls for the gender.
+4. Choose the event, enter the record, record holder, meet, date, season, and year.
+5. Review the current record board.
+6. Use **Edit** to correct a saved record.
+7. Use **Delete** only when a row should be removed from the record board.
+
+Records are shown as direct table rows. If more than one current row exists for the same event and gender, the fastest or best row should be current and the others should be historical.
 
 The Records page is not meant to update automatically from the phone app or from Log Race Result. Coaches control when the official record board changes.
 
@@ -206,6 +216,17 @@ How to use it:
 9. Save the race result.
 
 Saved race results update the Dashboard, Meet History, and athlete bests. They do not automatically update the official Records page.
+
+Relay results:
+
+1. Change **Result Type** to **Relay**.
+2. Choose the relay event, such as `4x100m`, `4x200m`, `4x400m`, `4x800m`, `Sprint Medley`, or `Distance Medley`.
+3. Enter the relay team name if needed.
+4. Select each runner from the active-athlete dropdown.
+5. Enter each split and the total result.
+6. Save the relay result.
+
+Relay results save as a team result with named splits. They do not create PB/SB athlete-best updates for individual runners.
 
 ## Log Miles
 
@@ -257,6 +278,39 @@ How to use it:
 7. Save and sync results to SMART Trak.
 
 Meet results should appear in SMART Trak after sync.
+
+For individual events, add the runners for that race, time the event, save the results, and sync.
+
+For relays:
+
+1. Open **Meets**.
+2. Select the meet.
+3. Select the relay event.
+4. Turn **Relay** on.
+5. Tap each leg and select the active athlete running that leg.
+6. Tap **Start** to begin one relay clock.
+7. Tap **Lap** at each exchange to capture the split and move to the next runner.
+8. Tap **Finish Relay** or **Stop** after the final leg.
+9. Tap **Save** or **Sync** when the relay result is ready.
+10. Confirm the relay result in SMART Trak.
+
+The synced relay result includes the relay type, total result, meet name/date, runner names, and splits by runner.
+
+## SMART Trak Relay Support
+
+Relay events are available in event dropdowns across SMARTCoach Pro and SMART Trak, including mobile meet timing, Log Race Result, Training Calendar, Records, Track Simulator, and plan setup tools.
+
+Common relay events:
+
+- `4x100m`
+- `4x200m`
+- `4x400m`
+- `4x800m`
+- `Sprint Medley`
+- `Distance Medley`
+- `Other Relay`
+
+Relay results can be reviewed from Dashboard Recent Meet Results and Meet History. On the Dashboard, click the relay row to view details such as relay type, total result, meet, date, and splits by runner. Use **Edit** on a relay result to correct the relay event, team name, total time, runner names, or splits. Use **Void** if the saved relay result should no longer count in SMART Trak reporting.
 
 ## Phone App: Archive
 
