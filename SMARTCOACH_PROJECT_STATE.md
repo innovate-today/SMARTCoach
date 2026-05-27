@@ -860,6 +860,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 123. Records edit modal opened blank because row actions depended on `recordId`, which can be missing or mismatched for cached/merged rows. Edit/delete actions now use the row identity key and fall back to removing local-only rows from the view.
 124. Records page cleanup: removed the History column and unused expansion/history helpers after switching the page to direct record rows.
 125. SMART Trak event lists now include 100m, 100H, 110H, 200m, 300m, 300H, and 400H wherever the app presents race/event options, including Records, Dashboard meet tools, Training Calendar race results, plan setup/builder/import, phone meet setup/save/sync pickers, and backend plan option/distance mapping.
+126. Training Calendar now opens the same day detail modal for meets created from Manage Meets as it does for calendar-created meet days. Editing, quick status changes, and Remove from Calendar on those Manage Meets cards save back to the saved meet record.
 
 ## Known Good Test Flow
 

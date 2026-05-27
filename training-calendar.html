@@ -991,6 +991,7 @@ function meetCalendarDay(meet){
   return {
     id:'meet_'+(meet.id||meetCalendarKey(meet.name,meet.date)),
     sourceRecordId:'meet_'+(meet.id||meetCalendarKey(meet.name,meet.date)),
+    managedMeetCalendarDay:true,
     trainingPlanId:'',
     linkedMeetId:meet.id||'',
     date:meet.date||'',
@@ -1006,6 +1007,31 @@ function meetCalendarDay(meet){
     status:meet.status||'Scheduled',
     coachNotes:[meet.season,meet.seasonYear].filter(Boolean).join(' ')
   };
+}
+function findCalendarDayById(id){
+  return calendarDaysWithMeets().find(function(day){
+    return day.id===id||day.sourceRecordId===id;
+  })||null;
+}
+function isManagedMeetCalendarDay(day){
+  return !!(day&&day.managedMeetCalendarDay);
+}
+function managedMeetForCalendarDay(day){
+  if(!day)return null;
+  var id=String(day.linkedMeetId||'');
+  var key=meetCalendarKey(day.title,day.date);
+  return calendarMeets.find(function(meet){
+    return (id&&String(meet.id||'')===id)||meetCalendarKey(meet.name,meet.date)===key;
+  })||null;
+}
+function upsertCalendarMeet(meet){
+  if(!meet)return;
+  var id=String(meet.id||'');
+  var index=calendarMeets.findIndex(function(item){
+    return (id&&String(item.id||'')===id)||meetCalendarKey(item.name,item.date)===meetCalendarKey(meet.name,meet.date);
+  });
+  if(index>=0)calendarMeets[index]=Object.assign({},calendarMeets[index],meet);
+  else calendarMeets.push(meet);
 }
 function matchesDateRange(day,range){
   if(range==='all')return true;
@@ -1283,7 +1309,7 @@ function openEditModal(){
   els.editDetails.value=activeDay.details||'';
   els.editNotes.value=stripCalendarMetaLines(stripAdjustmentLines(activeDay.coachNotes||''));
   els.editReason.value='';
-  setDayEditStatus('Adjustments are saved to SMART Trak.','');
+  setDayEditStatus(isManagedMeetCalendarDay(activeDay)?'Meet changes save to Manage Meets and update the calendar.':'Adjustments are saved to SMART Trak.','');
   els.dayEditModal.hidden=false;
 }
 function closeEditModal(){
@@ -1291,6 +1317,10 @@ function closeEditModal(){
 }
 function removeActiveDay(){
   if(!activeDay)return;
+  if(isManagedMeetCalendarDay(activeDay)){
+    archiveManagedMeetCalendarDay();
+    return;
+  }
   var title=activeDay.title||activeDay.dayType||'this plan day';
   var reason='Removed from calendar by coach.';
   var headers=apiHeaders();
@@ -1355,6 +1385,10 @@ function quickUpdateActiveDayStatus(statusLabel){
   reason=String(reason||'').trim();
   if(!reason){
     alert('Please enter a short reason so SMART Trak keeps a useful note.');
+    return;
+  }
+  if(isManagedMeetCalendarDay(activeDay)){
+    updateManagedMeetCalendarDayStatus(statusLabel,reason);
     return;
   }
   var headers=apiHeaders();
@@ -1507,6 +1541,10 @@ function saveDayEdit(){
     setDayEditStatus('Reason is required so the adjustment has context.','error');
     return;
   }
+  if(isManagedMeetCalendarDay(activeDay)){
+    saveManagedMeetCalendarEdit(reason);
+    return;
+  }
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
   els.dayEditSave.disabled=true;
@@ -1566,6 +1604,113 @@ function saveDayEdit(){
     setDayEditStatus(error.message||'Could not save adjustment.','error');
   }).finally(function(){
     els.dayEditSave.disabled=false;
+  });
+}
+function saveManagedMeetCalendarEdit(reason){
+  var meet=managedMeetForCalendarDay(activeDay)||{};
+  var recordId=activeDay.linkedMeetId||meet.id||'';
+  if(!recordId){
+    setDayEditStatus('This meet is missing its saved meet id. Open Manage Meets and update it there.','error');
+    return;
+  }
+  var date=els.editDate.value||activeDay.date||todayInputValue();
+  var parsed=parseCalendarDate(date);
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  var payload={
+    recordId:recordId,
+    meetName:els.editTitle.value.trim()||meet.name||activeDay.title||'Meet',
+    meetDate:date,
+    season:seasonFromDate(date)||meet.season||'Spring',
+    seasonYear:String(isNaN(parsed.getTime())?new Date().getFullYear():parsed.getFullYear()),
+    status:els.editStatus.value||meet.status||activeDay.status||'Scheduled'
+  };
+  els.dayEditSave.disabled=true;
+  setDayEditStatus('Saving meet changes...','');
+  fetch('/api/smart-trak/meets',{method:'PATCH',headers:headers,body:JSON.stringify(payload)}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save meet changes.');
+    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,season:payload.season,seasonYear:payload.seasonYear,status:payload.status},result.data&&result.data.meet||{});
+    upsertCalendarMeet(saved);
+    activeDay=meetCalendarDay(saved);
+    setDayEditStatus('Meet updated.','success');
+    renderOptions();
+    render();
+    els.status.textContent='Meet updated on calendar.';
+    closeEditModal();
+    closeDayModal();
+  }).catch(function(error){
+    setDayEditStatus(error.message||'Could not save meet changes.','error');
+  }).finally(function(){
+    els.dayEditSave.disabled=false;
+  });
+}
+function updateManagedMeetCalendarDayStatus(statusLabel,reason){
+  var meet=managedMeetForCalendarDay(activeDay)||{};
+  var recordId=activeDay.linkedMeetId||meet.id||'';
+  if(!recordId){alert('This meet is missing its saved meet id. Open Manage Meets and update it there.');return;}
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.status.textContent='Updating meet...';
+  var date=meet.date||activeDay.date||todayInputValue();
+  var parsed=parseCalendarDate(date);
+  var payload={
+    recordId:recordId,
+    meetName:meet.name||activeDay.title||'Meet',
+    meetDate:date,
+    season:meet.season||seasonFromDate(date)||'Spring',
+    seasonYear:meet.seasonYear||String(isNaN(parsed.getTime())?new Date().getFullYear():parsed.getFullYear()),
+    status:statusLabel
+  };
+  fetch('/api/smart-trak/meets',{method:'PATCH',headers:headers,body:JSON.stringify(payload)}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update meet.');
+    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,season:payload.season,seasonYear:payload.seasonYear,status:statusLabel},result.data&&result.data.meet||{});
+    upsertCalendarMeet(saved);
+    activeDay=meetCalendarDay(saved);
+    closeDayModal();
+    renderOptions();
+    render();
+    els.status.textContent='Meet marked '+statusLabel+'.';
+  }).catch(function(error){
+    alert(error.message||'Could not update meet.');
+    render();
+  });
+}
+function archiveManagedMeetCalendarDay(){
+  var meet=managedMeetForCalendarDay(activeDay)||{};
+  var recordId=activeDay.linkedMeetId||meet.id||'';
+  if(!recordId){alert('This meet is missing its saved meet id. Open Manage Meets and archive it there.');return;}
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.dayRemoveBtn.disabled=true;
+  els.dayRemoveBtn.textContent='Removing...';
+  var date=meet.date||activeDay.date||todayInputValue();
+  var parsed=parseCalendarDate(date);
+  var payload={
+    recordId:recordId,
+    meetName:meet.name||activeDay.title||'Meet',
+    meetDate:date,
+    season:meet.season||seasonFromDate(date)||'Spring',
+    seasonYear:meet.seasonYear||String(isNaN(parsed.getTime())?new Date().getFullYear():parsed.getFullYear()),
+    status:'Archived'
+  };
+  fetch('/api/smart-trak/meets',{method:'PATCH',headers:headers,body:JSON.stringify(payload)}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not remove meet from calendar.');
+    upsertCalendarMeet(Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,season:payload.season,seasonYear:payload.seasonYear,status:'Archived'},result.data&&result.data.meet||{}));
+    closeDayModal();
+    renderOptions();
+    render();
+    els.status.textContent='Meet removed from current calendar view.';
+  }).catch(function(error){
+    alert(error.message||'Could not remove meet from calendar.');
+  }).finally(function(){
+    els.dayRemoveBtn.disabled=false;
+    els.dayRemoveBtn.textContent='Remove from Calendar';
   });
 }
 function archivePlanFromPicker(planIdValue, restore){
@@ -2744,7 +2889,7 @@ function init(){
     var button=event.target.closest&&event.target.closest('[data-day-id]');
     if(!button)return;
     var id=button.getAttribute('data-day-id')||'';
-    openDayModal(days.find(function(day){return day.id===id||day.sourceRecordId===id;}));
+    openDayModal(findCalendarDayById(id));
   });
   els.calendar.addEventListener('change',function(event){
     var all=event.target.closest&&event.target.closest('[data-bulk-check-all]');
