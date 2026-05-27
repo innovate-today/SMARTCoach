@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
           body: { locationId, properties },
         });
         created.push({
-          recordId: result.id || (result.record && result.record.id) || "",
+          recordId: objectRecordId(result),
           sourceRecordId: properties.source_record_id,
           recordName: properties.record,
         });
@@ -282,6 +282,7 @@ function normalizeRecordPayload(row) {
 
 async function listRecords({ token, locationId }) {
   const records = [];
+  const seen = {};
   for (let page = 1; page <= 10; page += 1) {
     const result = await optionalGhlFetch({
       token,
@@ -291,8 +292,8 @@ async function listRecords({ token, locationId }) {
     });
     if (!result) break;
     const batch = recordsFromResult(result);
-    records.push(...batch);
-    if (batch.length < 100) break;
+    const added = addUniqueRawRecords(records, seen, batch);
+    if (!batch.length || !added) break;
   }
 
   for (let page = 1; page <= 10; page += 1) {
@@ -303,8 +304,8 @@ async function listRecords({ token, locationId }) {
     });
     if (!direct) break;
     const batch = recordsFromResult(direct);
-    records.push(...batch);
-    if (batch.length < 100) break;
+    const added = addUniqueRawRecords(records, seen, batch);
+    if (!batch.length || !added) break;
   }
 
   return uniqueRecords(records).map(normalizeRecord).sort(sortRecords);
@@ -314,7 +315,7 @@ function normalizeRecord(record, fallbackProperties) {
   const props = fallbackProperties || recordProperties(record);
   const fallback = deriveRecordFromName(prop(props, "record") || recordName(record));
   return {
-    recordId: record && record.id ? record.id : "",
+    recordId: objectRecordId(record),
     recordName: prop(props, "record") || recordName(record),
     recordType: labelValue(prop(props, "record_type")) || fallback.recordType || "School Record",
     recordScope: labelValue(prop(props, "record_scope")) || "School",
@@ -380,13 +381,37 @@ async function optionalGhlFetch(args) {
 }
 
 function recordsFromResult(result) {
-  return [
-    ...(Array.isArray(result && result.records) ? result.records : []),
-    ...(Array.isArray(result && result.items) ? result.items : []),
-    ...(Array.isArray(result && result.data) ? result.data : []),
-    ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
-    ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
-  ];
+  const direct = [
+    result && result.record,
+    result && result.data && result.data.record,
+  ].filter(Boolean);
+  return direct.concat(
+    arrayValue(result && result.records),
+    arrayValue(result && result.items),
+    arrayValue(result && result.data),
+    arrayValue(result && result.data && result.data.records),
+    arrayValue(result && result.data && result.data.items),
+    arrayValue(result && result.data && result.data.data),
+    arrayValue(result && result.data && result.data.results),
+    arrayValue(result && result.results)
+  );
+}
+
+function arrayValue(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function addUniqueRawRecords(target, seen, batch) {
+  let added = 0;
+  for (const record of batch || []) {
+    const props = recordProperties(record);
+    const key = recordUniqueKey(record, props);
+    if (!key || seen[key]) continue;
+    seen[key] = true;
+    target.push(record);
+    added += 1;
+  }
+  return added;
 }
 
 function uniqueRecords(records) {
@@ -401,7 +426,7 @@ function uniqueRecords(records) {
 }
 
 function recordUniqueKey(record, props) {
-  const id = clean(record && record.id);
+  const id = objectRecordId(record);
   if (id) return `id:${id}`;
   const sourceId = prop(props, "source_record_id");
   if (sourceId) return `source:${sourceId}`;
@@ -420,6 +445,19 @@ function recordUniqueKey(record, props) {
 
 function recordProperties(record) {
   return (record && (record.properties || record.fields || record.customFields)) || {};
+}
+
+function objectRecordId(record) {
+  const candidates = [
+    record && record.id,
+    record && record._id,
+    record && record.recordId,
+    record && record.objectRecordId,
+    record && record.record && (record.record.id || record.record._id || record.record.recordId),
+    record && record.data && (record.data.id || record.data._id || record.data.recordId),
+    record && record.data && record.data.record && (record.data.record.id || record.data.record._id || record.data.record.recordId),
+  ];
+  return candidates.map(clean).find(Boolean) || "";
 }
 
 function prop(props, key) {
