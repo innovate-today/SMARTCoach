@@ -82,6 +82,7 @@ module.exports = async function handler(req, res) {
           trainingPlanDayId: athlete.trainingPlanDayId || session.trainingPlanDayId,
           trainingPlanDaySourceId: athlete.trainingPlanDaySourceId || session.trainingPlanDaySourceId,
           trainingPlanDayTitle: athlete.trainingPlanDayTitle || session.trainingPlanDayTitle,
+          athleteSubmittedStatus: athlete.athleteSubmittedStatus || session.athleteSubmittedStatus,
         });
       });
       synced.push({ runnerId: athlete.runnerId, athlete: athlete.name, contactId: contact.id, performanceRecords, seasonRecord });
@@ -169,6 +170,7 @@ function normalizeSession(payload) {
     trainingPlanDayId: clean(payload.trainingPlanDayId),
     trainingPlanDaySourceId: clean(payload.trainingPlanDaySourceId),
     trainingPlanDayTitle: clean(payload.trainingPlanDayTitle),
+    athleteSubmittedStatus: clean(payload.athleteSubmittedStatus),
     athletes,
   };
 }
@@ -185,6 +187,7 @@ function normalizeAthlete(raw) {
     trainingPlanDayId: clean(raw && raw.trainingPlanDayId),
     trainingPlanDaySourceId: clean(raw && raw.trainingPlanDaySourceId),
     trainingPlanDayTitle: clean(raw && raw.trainingPlanDayTitle),
+    athleteSubmittedStatus: clean(raw && raw.athleteSubmittedStatus),
     trainingPlanPhase: clean(raw && raw.trainingPlanPhase),
     trainingPlanDayWorkoutType: clean(raw && raw.trainingPlanDayWorkoutType),
     plannedTargetRange: clean(raw && raw.plannedTargetRange),
@@ -486,6 +489,7 @@ async function updateLinkedTrainingPlanDay({ token, locationId, session, linkedP
     }).join("\n");
 
     try {
+      const nextStatus = trainingPlanDayStatus(first.athleteSubmittedStatus || session.athleteSubmittedStatus);
       const updated = await ghlFetch({
         token,
         path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/${encodeURIComponent(dayId)}`,
@@ -493,10 +497,10 @@ async function updateLinkedTrainingPlanDay({ token, locationId, session, linkedP
         body: {
           locationId,
           properties: {
-            status: "completed",
+            status: nextStatus,
             linked_performance_record_ids: linkedText,
             coach_notes: [
-              `Completed from SMARTCoach on ${dateOnly(validDate(session.sessionDate) || new Date())}.`,
+              `${trainingPlanDayStatusLabel(nextStatus)} from SMARTCoach on ${dateOnly(validDate(session.sessionDate) || new Date())}.`,
               (first.trainingPlanTitle || session.trainingPlanTitle) ? `Plan: ${first.trainingPlanTitle || session.trainingPlanTitle}` : "",
               (first.trainingPlanDayTitle || session.trainingPlanDayTitle) ? `Workout: ${first.trainingPlanDayTitle || session.trainingPlanDayTitle}` : "",
             ].filter(Boolean).join("\n"),
@@ -519,6 +523,16 @@ async function updateLinkedTrainingPlanDay({ token, locationId, session, linkedP
 
   if (updates.length === 1) return updates[0];
   return { action: updates.some((item) => item.action === "skipped") ? "partial" : "updated", updates };
+}
+
+function trainingPlanDayStatus(value) {
+  const text = clean(value).toLowerCase();
+  if (text === "skip" || text === "skipped") return "Skipped";
+  return "Completed";
+}
+
+function trainingPlanDayStatusLabel(status) {
+  return trainingPlanDayStatus(status) === "Skipped" ? "Skipped" : "Completed";
 }
 
 async function findObjectRecord({ token, locationId, schemaKey, sourceRecordId }) {
