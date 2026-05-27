@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak Weather</title>
+<style>
+:root{--blue:#2b4fcc;--line:#d6dfec;--muted:#52627a;--bg:#eef3f9;--panel:#fff;--ink:#111827;--good:#08783c;--warn:#b45309}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+body.embedded .page{max-width:none;padding:16px 18px 28px}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none}
+button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
+button.ghost,.linkbtn.ghost{background:#eef2f7;color:#172033}
+button.danger{background:#fee2e2;color:#b91c1c}
+button:disabled{opacity:.55;cursor:not-allowed}
+.page{max-width:1440px;margin:0 auto;padding:18px 26px 34px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;box-shadow:0 8px 22px rgba(15,23,42,.08)}
+.brand{display:flex;align-items:center;gap:14px}
+.mark{width:62px;height:62px;border-radius:10px;display:grid;place-items:center;overflow:hidden}
+.mark img{width:58px;height:58px;object-fit:contain}
+h1{font-size:26px;line-height:1.05;margin:0 0 3px}
+.sub{color:#435574;font-size:14px}
+.updated{display:inline-flex;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#f8fbff;font-size:13px;font-weight:800;color:#1f2a44}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;overflow:hidden}
+.panelhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panelhead h2{font-size:18px;margin:0}
+.panelbody{padding:14px 16px}
+.locrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+label{display:grid;gap:5px;font-size:12px;font-weight:900;text-transform:uppercase;color:#435066;letter-spacing:.03em}
+input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
+.saved{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#eef3ff;color:#173891;border:1px solid #bfd0ef;border-radius:999px;padding:6px 9px;font-size:13px;font-weight:900}
+.chip button{padding:0;background:transparent;color:#b91c1c;font-size:14px;line-height:1}
+.grid{display:grid;grid-template-columns:1.1fr 1.9fr;gap:14px}
+.current{display:grid;grid-template-columns:1fr;gap:10px}
+.temp{font-size:58px;line-height:.95;font-weight:950;color:#0f1f4a}
+.condition{font-size:19px;font-weight:900}
+.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.metric{border:1px solid var(--line);border-radius:8px;padding:10px;background:#fbfdff}
+.metric b{display:block;font-size:18px}
+.metric span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.forecastgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.daycard,.hourcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px;min-width:0}
+.daycard b,.hourcard b{display:block;font-size:14px}
+.daycard .hi{font-size:20px;font-weight:950;margin-top:6px}
+.daycard .lo,.hourcard span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.hourrow{display:grid;grid-template-columns:repeat(12,minmax(112px,1fr));gap:8px;overflow:auto;padding-bottom:4px}
+.status{font-size:13px;font-weight:900;color:var(--muted)}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+@media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%;justify-content:stretch}.actions a,.actions button{text-align:center;flex:1}.grid{grid-template-columns:1fr}.forecastgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.locrow{grid-template-columns:1fr}.temp{font-size:46px}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>SMART Trak Weather</h1>
+        <div class="sub">Live conditions and forecasts for practice, meets, and travel days.</div>
+        <div id="lastUpdated" class="updated">Choose a location</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
+      <a id="calendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
+      <button id="refreshBtn" class="ghost" type="button">Refresh</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead">
+      <h2>Locations</h2>
+      <div id="status" class="status">Search by city, school, track, or address.</div>
+    </div>
+    <div class="panelbody">
+      <div class="locrow">
+        <label>Search Location
+          <input id="locationInput" type="search" placeholder="Example: Kansas City, MO" autocomplete="off">
+        </label>
+        <button id="searchBtn" type="button">Search</button>
+        <button id="saveBtn" class="secondary" type="button">Save Location</button>
+      </div>
+      <div id="savedLocations" class="saved"></div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <section class="panel">
+      <div class="panelhead"><h2>Current</h2><span id="currentPlace" class="status"></span></div>
+      <div id="currentBody" class="panelbody current">
+        <div class="empty">No weather loaded yet.</div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panelhead"><h2>Hourly Forecast</h2><span class="status">Next 12 hours</span></div>
+      <div class="panelbody">
+        <div id="hourlyBody" class="hourrow"></div>
+      </div>
+    </section>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Daily / Weekly Forecast</h2><span class="status">Next 7 days</span></div>
+    <div class="panelbody">
+      <div id="dailyBody" class="forecastgrid"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+var currentLocation=null;
+var weatherData=null;
+var els={
+  dashboardLink:document.getElementById('dashboardLink'),
+  calendarLink:document.getElementById('calendarLink'),
+  refreshBtn:document.getElementById('refreshBtn'),
+  searchBtn:document.getElementById('searchBtn'),
+  saveBtn:document.getElementById('saveBtn'),
+  locationInput:document.getElementById('locationInput'),
+  savedLocations:document.getElementById('savedLocations'),
+  status:document.getElementById('status'),
+  lastUpdated:document.getElementById('lastUpdated'),
+  currentPlace:document.getElementById('currentPlace'),
+  currentBody:document.getElementById('currentBody'),
+  hourlyBody:document.getElementById('hourlyBody'),
+  dailyBody:document.getElementById('dailyBody')
+};
+function cleanKey(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';}
+function accountKey(){try{var p=new URLSearchParams(window.location.search||'');return cleanKey(p.get('account')||p.get('tenant')||localStorage.getItem('sc_account')||'default');}catch(e){return 'default';}}
+function embeddedMode(){try{var p=new URLSearchParams(window.location.search||'');return p.get('embed')==='1'||p.get('iframe')==='1'||p.get('embedded')==='1';}catch(e){return false;}}
+function pageUrl(path){var url=new URL(path,window.location.origin);var key=accountKey();if(key&&key!=='default')url.searchParams.set('account',key);if(embeddedMode())url.searchParams.set('embed','1');return url.pathname+url.search;}
+function storageKey(){return 'sc_weather_locations_'+accountKey();}
+function activeKey(){return 'sc_weather_active_'+accountKey();}
+function esc(value){return String(value||'').replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
+function savedLocations(){try{return JSON.parse(localStorage.getItem(storageKey())||'[]');}catch(e){return [];}}
+function setSavedLocations(rows){try{localStorage.setItem(storageKey(),JSON.stringify(rows||[]));}catch(e){}}
+function setStatus(text,type){els.status.textContent=text||'';els.status.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';}
+function weatherLabel(code){
+  var map={0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Cloudy',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',95:'Thunderstorm',96:'Thunderstorm with hail',99:'Thunderstorm with hail'};
+  return map[Number(code)]||'Forecast';
+}
+function windDir(deg){var dirs=['N','NE','E','SE','S','SW','W','NW'];return dirs[Math.round((Number(deg)||0)/45)%8];}
+function formatTime(value){var d=new Date(value);return d.toLocaleTimeString([], {hour:'numeric'});}
+function formatDay(value){var d=new Date(value+'T00:00:00');return d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});}
+function renderSaved(){
+  var rows=savedLocations();
+  els.savedLocations.innerHTML=rows.length?rows.map(function(row,index){
+    return '<span class="chip"><span role="button" tabindex="0" onclick="loadLocationByIndex('+index+')">'+esc(row.name)+'</span><button type="button" title="Remove" onclick="removeLocation('+index+')">x</button></span>';
+  }).join(''):'<span class="status">No saved locations yet.</span>';
+}
+function searchLocation(){
+  var q=els.locationInput.value.trim();
+  if(!q){setStatus('Enter a location first.','bad');return;}
+  setStatus('Searching location...','');
+  fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=5&language=en&format=json').then(function(res){return res.json();}).then(function(data){
+    var row=data&&data.results&&data.results[0];
+    if(!row)throw new Error('No matching location found.');
+    currentLocation={
+      name:[row.name,row.admin1,row.country_code].filter(Boolean).join(', '),
+      latitude:row.latitude,
+      longitude:row.longitude,
+      timezone:row.timezone||'auto'
+    };
+    try{localStorage.setItem(activeKey(),JSON.stringify(currentLocation));}catch(e){}
+    return loadWeather(currentLocation);
+  }).catch(function(error){setStatus(error.message||'Location search failed.','bad');});
+}
+function loadWeather(location){
+  if(!location)return;
+  currentLocation=location;
+  setStatus('Loading weather...','');
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+encodeURIComponent(location.latitude)+'&longitude='+encodeURIComponent(location.longitude)+'&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max';
+  return fetch(url).then(function(res){return res.json();}).then(function(data){
+    weatherData=data;
+    renderWeather();
+    setStatus('Weather loaded.','good');
+  }).catch(function(error){setStatus(error.message||'Weather failed to load.','bad');});
+}
+function renderWeather(){
+  var c=weatherData&&weatherData.current;
+  if(!c){els.currentBody.innerHTML='<div class="empty">No weather loaded yet.</div>';return;}
+  els.currentPlace.textContent=currentLocation&&currentLocation.name||'';
+  els.lastUpdated.textContent='Last updated '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  els.currentBody.innerHTML='<div><div class="temp">'+Math.round(c.temperature_2m)+'°</div><div class="condition">'+esc(weatherLabel(c.weather_code))+'</div><div class="sub">Feels like '+Math.round(c.apparent_temperature)+'°</div></div>'+
+    '<div class="meta">'+
+      metric('Humidity',Math.round(c.relative_humidity_2m)+'%')+
+      metric('Wind',Math.round(c.wind_speed_10m)+' mph '+windDir(c.wind_direction_10m))+
+      metric('Precip',Number(c.precipitation||0).toFixed(2)+' in')+
+      metric('Location',currentLocation&&currentLocation.name||'')+
+    '</div>';
+  renderHourly();
+  renderDaily();
+}
+function metric(label,value){return '<div class="metric"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>';}
+function renderHourly(){
+  var h=weatherData&&weatherData.hourly||{};
+  var now=Date.now();
+  var rows=(h.time||[]).map(function(time,index){return{time:time,index:index,date:new Date(time).getTime()};}).filter(function(row){return row.date>=now-3600000;}).slice(0,12);
+  els.hourlyBody.innerHTML=rows.map(function(row){
+    var i=row.index;
+    return '<div class="hourcard"><b>'+esc(formatTime(h.time[i]))+'</b><span>'+esc(weatherLabel(h.weather_code[i]))+'</span><div class="hi">'+Math.round(h.temperature_2m[i])+'°</div><span>Feels '+Math.round(h.apparent_temperature[i])+'°</span><span>Rain '+Math.round(h.precipitation_probability[i]||0)+'%</span><span>Wind '+Math.round(h.wind_speed_10m[i]||0)+' mph</span></div>';
+  }).join('');
+}
+function renderDaily(){
+  var d=weatherData&&weatherData.daily||{};
+  els.dailyBody.innerHTML=(d.time||[]).slice(0,7).map(function(day,index){
+    return '<div class="daycard"><b>'+esc(formatDay(day))+'</b><span>'+esc(weatherLabel(d.weather_code[index]))+'</span><div class="hi">'+Math.round(d.temperature_2m_max[index])+'°</div><div class="lo">Low '+Math.round(d.temperature_2m_min[index])+'°</div><span>Rain '+Math.round(d.precipitation_probability_max[index]||0)+'%</span><span>Wind '+Math.round(d.wind_speed_10m_max[index]||0)+' mph</span></div>';
+  }).join('');
+}
+function saveCurrent(){
+  if(!currentLocation){setStatus('Load a location before saving.','bad');return;}
+  var rows=savedLocations().filter(function(row){return row.name!==currentLocation.name;});
+  rows.unshift(currentLocation);
+  setSavedLocations(rows.slice(0,10));
+  renderSaved();
+  setStatus('Location saved.','good');
+}
+function loadLocationByIndex(index){
+  var row=savedLocations()[index];
+  if(row){try{localStorage.setItem(activeKey(),JSON.stringify(row));}catch(e){}loadWeather(row);}
+}
+function removeLocation(index){
+  var rows=savedLocations();
+  rows.splice(index,1);
+  setSavedLocations(rows);
+  renderSaved();
+}
+function init(){
+  document.body.classList.toggle('embedded',embeddedMode());
+  try{localStorage.setItem('sc_account',accountKey());}catch(e){}
+  els.dashboardLink.href=pageUrl('/dashboard.html');
+  els.calendarLink.href=pageUrl('/training-calendar.html');
+  els.searchBtn.addEventListener('click',searchLocation);
+  els.saveBtn.addEventListener('click',saveCurrent);
+  els.refreshBtn.addEventListener('click',function(){if(currentLocation)loadWeather(currentLocation);});
+  els.locationInput.addEventListener('keydown',function(event){if(event.key==='Enter')searchLocation();});
+  renderSaved();
+  try{currentLocation=JSON.parse(localStorage.getItem(activeKey())||'null');}catch(e){currentLocation=null;}
+  if(currentLocation)loadWeather(currentLocation);
+}
+init();
+</script>
+</body>
+</html>
