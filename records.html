@@ -445,6 +445,7 @@ function pageUrl(path){
 }
 function accessStorageKey(){return 'sc_access_'+accountKey();}
 function sessionStorageKey(){return 'sc_session_'+accountKey();}
+function recordsCacheKey(){return 'sc_records_cache_'+accountKey();}
 function accessCookieName(){return accessStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');}
 function getCookie(name){
   try{
@@ -522,6 +523,50 @@ function parseResultMs(value){
   if(parts.length===2)seconds=parts[0]*60+parts[1];
   if(parts.length===3)seconds=parts[0]*3600+parts[1]*60+parts[2];
   return Math.round(seconds*1000);
+}
+function recordIdentity(row){
+  return [
+    row&&row.recordId?'id:'+row.recordId:'',
+    row&&row.sourceRecordId?'source:'+row.sourceRecordId:'',
+    row&&row.recordType||'School Record',
+    row&&row.recordScope||'School',
+    row&&row.gender||'Unlisted',
+    row&&row.sport||'Track',
+    recordEvent(row),
+    recordValue(row),
+    row&&row.athleteName||'',
+    row&&row.recordDate||''
+  ].filter(Boolean).join('|').toLowerCase();
+}
+function mergeRecordLists(primary,secondary){
+  var seen={};
+  return (primary||[]).concat(secondary||[]).filter(function(row){
+    var key=recordIdentity(row);
+    if(!key||seen[key])return false;
+    seen[key]=true;
+    return true;
+  });
+}
+function cachedRecords(){
+  try{
+    var rows=JSON.parse(localStorage.getItem(recordsCacheKey())||'[]');
+    return Array.isArray(rows)?rows:[];
+  }catch(e){return[];}
+}
+function saveCachedRecords(rows){
+  try{localStorage.setItem(recordsCacheKey(),JSON.stringify((rows||[]).filter(recordIsUsable).slice(0,500)));}catch(e){}
+}
+function mergeAndCacheRecords(serverRows){
+  records=mergeRecordLists(serverRows,cachedRecords());
+  saveCachedRecords(records);
+}
+function upsertCachedRecords(rows){
+  records=mergeRecordLists(rows,records);
+  saveCachedRecords(records);
+}
+function removeCachedRecord(id){
+  records=records.filter(function(row){return String(row.recordId||'')!==String(id||'');});
+  saveCachedRecords(records);
 }
 function optionList(values,selected){
   return values.map(function(value){
@@ -632,7 +677,7 @@ function saveSingleRecord(){
     var created=result.data&&result.data.created&&result.data.created[0]||{};
     var local=normalizedRecordFromPayload(Object.assign({},payload,{recordId:created.recordId||'',sourceRecordId:created.sourceRecordId||payload.sourceRecordId}));
     retireLocalCurrentRecords(local,local.recordId);
-    records.unshift(local);
+    upsertCachedRecords([local]);
     renderOptions();
     render();
     clearSingleRecordForm();
@@ -691,6 +736,7 @@ function saveRecordEdit(){
     var updated=normalizedRecordFromPayload(payload,editingRecord);
     retireLocalCurrentRecords(updated,editingRecord.recordId);
     records=records.map(function(row){return row.recordId===editingRecord.recordId?updated:row;});
+    saveCachedRecords(records);
     renderOptions();
     render();
     setRecordEditStatus('Record updated.','good');
@@ -714,7 +760,7 @@ function deleteRecord(){
   }).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
     if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be deleted.');
-    records=records.filter(function(row){return row.recordId!==id;});
+    removeCachedRecord(id);
     renderOptions();
     render();
     closeRecordEdit();
@@ -825,7 +871,7 @@ function saveBulkRecords(){
       return normalizedRecordFromPayload(Object.assign({},row,{recordId:saved.recordId||'',sourceRecordId:saved.sourceRecordId||row.sourceRecordId}));
     });
     localRows.forEach(function(row){retireLocalCurrentRecords(row,row.recordId);});
-    records=localRows.concat(records);
+    upsertCachedRecords(localRows);
     renderOptions();
     render();
     setBulkStatus('Saved '+(result.data.createdCount||bulkRows.length)+' records.','good');
@@ -1060,7 +1106,7 @@ function loadRecords(){
       return;
     }
     if(!result.ok)throw new Error(result.data&&result.data.error||'Records failed to load.');
-    records=result.data.records||[];
+    mergeAndCacheRecords(result.data.records||[]);
     els.lastUpdated.textContent='Last updated '+formatDateTime(result.data.generatedAt||new Date().toISOString());
     renderOptions();
     render();
