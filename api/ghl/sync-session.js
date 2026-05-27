@@ -83,6 +83,7 @@ module.exports = async function handler(req, res) {
           trainingPlanDaySourceId: athlete.trainingPlanDaySourceId || session.trainingPlanDaySourceId,
           trainingPlanDayTitle: athlete.trainingPlanDayTitle || session.trainingPlanDayTitle,
           athleteSubmittedStatus: athlete.athleteSubmittedStatus || session.athleteSubmittedStatus,
+          athleteSubmittedNote: athlete.athleteSubmittedNote || session.athleteSubmittedNote,
         });
       });
       synced.push({ runnerId: athlete.runnerId, athlete: athlete.name, contactId: contact.id, performanceRecords, seasonRecord });
@@ -171,6 +172,7 @@ function normalizeSession(payload) {
     trainingPlanDaySourceId: clean(payload.trainingPlanDaySourceId),
     trainingPlanDayTitle: clean(payload.trainingPlanDayTitle),
     athleteSubmittedStatus: clean(payload.athleteSubmittedStatus),
+    athleteSubmittedNote: clean(payload.athleteSubmittedNote),
     athletes,
   };
 }
@@ -188,6 +190,7 @@ function normalizeAthlete(raw) {
     trainingPlanDaySourceId: clean(raw && raw.trainingPlanDaySourceId),
     trainingPlanDayTitle: clean(raw && raw.trainingPlanDayTitle),
     athleteSubmittedStatus: clean(raw && raw.athleteSubmittedStatus),
+    athleteSubmittedNote: clean(raw && raw.athleteSubmittedNote),
     trainingPlanPhase: clean(raw && raw.trainingPlanPhase),
     trainingPlanDayWorkoutType: clean(raw && raw.trainingPlanDayWorkoutType),
     plannedTargetRange: clean(raw && raw.plannedTargetRange),
@@ -503,6 +506,7 @@ async function updateLinkedTrainingPlanDay({ token, locationId, session, linkedP
               `${trainingPlanDayStatusLabel(nextStatus)} from SMARTCoach on ${dateOnly(validDate(session.sessionDate) || new Date())}.`,
               (first.trainingPlanTitle || session.trainingPlanTitle) ? `Plan: ${first.trainingPlanTitle || session.trainingPlanTitle}` : "",
               (first.trainingPlanDayTitle || session.trainingPlanDayTitle) ? `Workout: ${first.trainingPlanDayTitle || session.trainingPlanDayTitle}` : "",
+              (first.athleteSubmittedNote || session.athleteSubmittedNote) ? `Athlete note: ${first.athleteSubmittedNote || session.athleteSubmittedNote}` : "",
             ].filter(Boolean).join("\n"),
           },
         },

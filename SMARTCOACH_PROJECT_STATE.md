@@ -905,6 +905,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 153. Athlete Calendar now merges duplicate visible cards for the same athlete/date/title/group, keeping the richer scheduled workout details while showing the submitted status. Athlete submissions also include the original training-plan day id/source id so future complete/skip updates can update the linked calendar day status instead of appearing as a duplicate day.
 154. Athlete Calendar submissions now send `Track` as the sync surface instead of `Unspecified`, preventing GHL from rejecting completed athlete updates when the Surface field only allows saved surface options.
 155. Athlete Calendar cards now show a clear submitted indicator after a workout is Completed, Modified, or Skipped, including a tinted card state and selected action button so athletes can tell what they already submitted.
+156. Athlete Calendar now marks a card locally immediately after a successful submission, so athletes see the submitted state even if GHL calendar status takes time to reflect the update. Athlete notes are also carried into the linked Training Calendar day coach notes as `Athlete note: ...`, while still syncing into the performance/training note.
 
 ## Known Good Test Flow
 
