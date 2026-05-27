@@ -906,6 +906,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 154. Athlete Calendar submissions now send `Track` as the sync surface instead of `Unspecified`, preventing GHL from rejecting completed athlete updates when the Surface field only allows saved surface options.
 155. Athlete Calendar cards now show a clear submitted indicator after a workout is Completed, Modified, or Skipped, including a tinted card state and selected action button so athletes can tell what they already submitted.
 156. Athlete Calendar now marks a card locally immediately after a successful submission, so athletes see the submitted state even if GHL calendar status takes time to reflect the update. Athlete notes are also carried into the linked Training Calendar day coach notes as `Athlete note: ...`, while still syncing into the performance/training note.
+157. Athlete Calendar submitted states now use stronger, consistent card colors and status-pill colors for Completed, Modified, and Skipped, with the indicator wording changed to `Athlete submitted: ...`.
 
 ## Known Good Test Flow
 
