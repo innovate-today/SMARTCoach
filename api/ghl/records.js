@@ -3,7 +3,7 @@ const GHL_VERSION = "2021-07-28";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
-const { mirrorSchoolRecords, loadSchoolRecordsMirror } = require("../../lib/account-registry");
+const { mirrorSchoolRecords, loadSchoolRecordsMirror, schoolRecordsMirrorStatus } = require("../../lib/account-registry");
 
 const FIELD_IDS = {
   record: ["ftIsXzZszu3s0cfJ55MU"],
@@ -62,6 +62,7 @@ module.exports = async function handler(req, res) {
       const rows = Array.isArray(payload && payload.records) ? payload.records : [];
       if (!rows.length) throw httpError(400, "Add at least one record before saving.");
       const created = [];
+      const mirrorResults = [];
       for (const row of rows) {
         const properties = buildRecordProperties(row);
         const retired = await retireCurrentRecords({ token, locationId, properties });
@@ -84,12 +85,13 @@ module.exports = async function handler(req, res) {
           sourceRecordId: properties.source_record_id,
           recordName: properties.record,
         });
-        await mirrorRecordsBestEffort(accountKey, [createdRecord]);
+        mirrorResults.push(await mirrorRecordsBestEffort(accountKey, [createdRecord]));
       }
       res.status(200).json({
         success: true,
         createdCount: created.length,
         created,
+        mirror: summarizeMirrorResults(mirrorResults),
       });
       return;
     }
@@ -97,24 +99,32 @@ module.exports = async function handler(req, res) {
     if (req.method === "PATCH") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
       const record = await updateRecord({ token, locationId, payload });
-      await mirrorRecordsBestEffort(accountKey, [record]);
-      res.status(200).json({ success: true, record });
+      const mirror = await mirrorRecordsBestEffort(accountKey, [record]);
+      res.status(200).json({ success: true, record, mirror });
       return;
     }
 
     if (req.method === "DELETE") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       await deleteRecord({ token, payload });
-      await mirrorRecordsBestEffort(accountKey, [], { deleteIds: [clean(payload && payload.recordId), clean(payload && payload.sourceRecordId)] });
-      res.status(200).json({ success: true });
+      const mirror = await mirrorRecordsBestEffort(accountKey, [], { deleteIds: [clean(payload && payload.recordId), clean(payload && payload.sourceRecordId)] });
+      res.status(200).json({ success: true, mirror });
       return;
     }
 
-    const records = mergeNormalizedRecords(await listRecords({ token, locationId }), await loadRecordsMirrorBestEffort(accountKey));
+    const ghlRecords = await listRecords({ token, locationId });
+    const mirroredRecords = await loadRecordsMirrorBestEffort(accountKey);
+    const records = mergeNormalizedRecords(ghlRecords, mirroredRecords);
     res.status(200).json({
       success: true,
       generatedAt: new Date().toISOString(),
       records,
+      debug: {
+        ghlCount: ghlRecords.length,
+        mirrorCount: mirroredRecords.length,
+        mergedCount: records.length,
+        mirrorStatus: await mirrorStatusBestEffort(accountKey),
+      },
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Records lookup failed." });
@@ -129,8 +139,10 @@ function setCorsHeaders(res) {
 
 async function mirrorRecordsBestEffort(accountKey, records, options) {
   try {
-    await mirrorSchoolRecords(accountKey, records, options);
-  } catch (error) {}
+    return await mirrorSchoolRecords(accountKey, records, options);
+  } catch (error) {
+    return { saved: false, error: error.message || "Records mirror failed." };
+  }
 }
 
 async function loadRecordsMirrorBestEffort(accountKey) {
@@ -139,6 +151,23 @@ async function loadRecordsMirrorBestEffort(accountKey) {
   } catch (error) {
     return [];
   }
+}
+
+async function mirrorStatusBestEffort(accountKey) {
+  try {
+    return await schoolRecordsMirrorStatus(accountKey);
+  } catch (error) {
+    return { configured: false, error: error.message || "Records mirror status failed." };
+  }
+}
+
+function summarizeMirrorResults(results) {
+  const list = Array.isArray(results) ? results : [];
+  return {
+    saved: list.some((item) => item && item.saved),
+    count: list.reduce((sum, item) => sum + (Number(item && item.count) || 0), 0),
+    errors: list.map((item) => item && item.error).filter(Boolean),
+  };
 }
 
 function mergeNormalizedRecords(primary, secondary) {

@@ -694,7 +694,7 @@ function saveSingleRecord(){
     renderOptions();
     render();
     clearSingleRecordForm();
-    setBulkStatus('Record saved.','good');
+    setBulkStatus(mirrorWarning(result.data&&result.data.mirror)||'Record saved.','good');
   }).catch(function(error){
     setBulkStatus(error.message||'Record could not be saved.','bad');
   }).finally(function(){
@@ -751,7 +751,7 @@ function saveRecordEdit(){
     replaceCachedRecord(editingRecord,updated);
     renderOptions();
     render();
-    setRecordEditStatus('Record updated.','good');
+    setRecordEditStatus(mirrorWarning(result.data&&result.data.mirror)||'Record updated.','good');
     closeRecordEdit();
   }).catch(function(error){
     setRecordEditStatus(error.message||'Record could not be updated.','bad');
@@ -1048,6 +1048,7 @@ function loadRecords(){
     els.lastUpdated.textContent='Last updated '+formatDateTime(result.data.generatedAt||new Date().toISOString());
     renderOptions();
     render();
+    showRecordsDebug(result.data&&result.data.debug);
   }).catch(function(error){
     records=[];
     els.rows.innerHTML='';
@@ -1058,6 +1059,20 @@ function loadRecords(){
   }).finally(function(){
     els.refreshBtn.disabled=false;
   });
+}
+function mirrorWarning(mirror){
+  if(!mirror)return '';
+  var errors=mirror.errors||[];
+  if(errors.length)return 'Record saved, but durable mirror reported: '+errors[0];
+  if(mirror.saved===false&&mirror.error)return 'Record saved, but durable mirror reported: '+mirror.error;
+  return '';
+}
+function showRecordsDebug(debug){
+  if(!debug)return;
+  var mirror=debug.mirrorStatus||{};
+  if(debug.ghlCount<=1&&debug.mirrorCount===0){
+    setBulkStatus('Records source warning: GHL returned '+debug.ghlCount+' row and durable mirror loaded 0 rows. Mirror status '+JSON.stringify(mirror)+'.','bad');
+  }
 }
 function defaultBrandLogo(){return '/assets/smart-logo.png';}
 function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
