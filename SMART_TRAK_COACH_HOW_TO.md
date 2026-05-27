@@ -1,12 +1,12 @@
 # SMART Trak Coach How-To Guide
 
-This guide explains how coaches use SMART Trak and the SMARTCoach phone app together. SMART Trak is the desktop command center. The phone app is used at practice or meets to time athletes, manage groups, and sync completed work back to SMART Trak.
+This guide explains how coaches use SMART Trak and the SMARTCoach Pro Mobile App together. SMART Trak is the desktop command center. The SMARTCoach Pro Mobile App is used at practice or meets to time athletes, manage groups, and sync completed work back to SMART Trak.
 
 ## Best Place To Start
 
 1. Open **Athlete Setup** and confirm the roster, active athletes, and training groups.
 2. Open **Training Calendar** and add the next workout, race, or rest day.
-3. Open the SMARTCoach phone app, choose the training group, and time the workout.
+3. Open the SMARTCoach Pro Mobile App, choose the training group, and time the workout.
 4. Sync the workout to SMART Trak.
 5. Review the result on the **Dashboard**.
 
@@ -36,7 +36,7 @@ How to use it:
 
 1. Click **Add Athlete** to create a new athlete.
 2. Enter name, gender, class year, parent contact information, and coach notes.
-3. Mark the athlete active if they should appear in SMART Trak and the phone app.
+3. Mark the athlete active if they should appear in SMART Trak and the SMARTCoach Pro Mobile App.
 4. Assign the athlete to training groups.
 5. Click an athlete name to review details.
 6. Use **Edit** to update roster information.
@@ -93,7 +93,7 @@ Common uses:
 3. Assign saved plans to groups or athletes.
 4. Remove athletes from old group assignments when needed.
 
-Training groups also appear in the phone app, so keep them clean and practical for how practice is actually organized.
+Training groups also appear in the SMARTCoach Pro Mobile App, so keep them clean and practical for how practice is actually organized.
 
 ## Auto Build Plan
 
@@ -194,7 +194,7 @@ How to use it:
 
 Records are shown as direct table rows. If more than one current row exists for the same event and gender, the fastest or best row should be current and the others should be historical.
 
-The Records page is not meant to update automatically from the phone app or from Log Race Result. Coaches control when the official record board changes.
+The Records page is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
 
 ## Manage Meets
 
@@ -261,7 +261,7 @@ How to use it:
 
 Manual mileage appears in Dashboard training volume and athlete training load.
 
-## Phone App: Training Section
+## SMARTCoach Pro Mobile App: Training Section
 
 Use the Training section at practice for daily workouts.
 
@@ -279,7 +279,7 @@ How to use it:
 
 The app can still capture splits even if the coach hides splits on the detail line.
 
-## Phone App: Meet Section
+## SMARTCoach Pro Mobile App: Meet Section
 
 Use the Meet section for meet-day timing and meet result capture.
 
@@ -328,7 +328,7 @@ Common relay events:
 
 Relay results can be reviewed from Dashboard Recent Meet Results and Meet History. On the Dashboard, click the relay row to view details such as relay type, total result, meet, date, and splits by runner. Use **Edit** on a relay result to correct the relay event, team name, total time, runner names, or splits. Use **Void** if the saved relay result should no longer count in SMART Trak reporting.
 
-## Phone App: Archive
+## SMARTCoach Pro Mobile App: Archive
 
 Use Archive to keep old groups or meet lists out of the active view without deleting history.
 
@@ -337,11 +337,11 @@ How to use it:
 1. Open **Archive**.
 2. Review archived groups or meets.
 3. Restore anything that should be active again.
-4. Use bulk archive after a season to clean up the phone app.
+4. Use bulk archive after a season to clean up the SMARTCoach Pro Mobile App.
 
 Archive is safer than delete because it keeps old work available if the coach needs it later.
 
-## Phone App: Settings
+## SMARTCoach Pro Mobile App: Settings
 
 Use Settings to control the group and what the coach sees during workouts.
 
@@ -360,9 +360,9 @@ Common settings:
 
 Settings save automatically when leaving the screen.
 
-## Phone App: Sync To SMART Trak
+## SMARTCoach Pro Mobile App: Sync To SMART Trak
 
-Use Sync to send completed workouts or meet results from the phone app to SMART Trak.
+Use Sync to send completed workouts or meet results from the SMARTCoach Pro Mobile App to SMART Trak.
 
 How to use it:
 
@@ -381,7 +381,7 @@ If the app says a run is already synced, do not resync unless you are intentiona
 1. Start on **Training Calendar**.
 2. Add the week's workouts, races, and rest days.
 3. Confirm training groups on **Athlete Setup** if needed.
-4. Use the phone app at practice.
+4. Use the SMARTCoach Pro Mobile App at practice.
 5. Sync after practice.
 6. Review the Dashboard.
 7. Log any extra miles or race results that were not timed in the app.
@@ -397,14 +397,14 @@ If athletes do not show:
 
 If a workout does not show after sync:
 
-- Confirm the phone app says the workout record saved to SMART Trak.
+- Confirm the SMARTCoach Pro Mobile App says the workout record saved to SMART Trak.
 - Refresh the Dashboard.
 - Check the athlete under Training Load or Completed Workouts.
 
 If SMART Trak asks for an access code:
 
 - Enter the coach access code created during account setup.
-- Use the same coach code for desktop SMART Trak and the phone app unless the account has separate coach seats assigned.
+- Use the same coach code for desktop SMART Trak and the SMARTCoach Pro Mobile App unless the account has separate coach seats assigned.
 
 If old groups or plans appear:
 
