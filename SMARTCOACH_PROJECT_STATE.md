@@ -864,6 +864,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 128. Meet History layout now uses a narrower Meets column and a slightly more compact Results table so the Results section fits better on desktop without horizontal scrolling.
 129. Meet History now shows an info marker beside Meets to explain that selecting a meet filters the Results panel and compare rows compare the same meet across dates.
 130. Added `/track-simulator.html`, a Track Meet Simulator similar to XC Simulator. It supports manual/pasted entries, SMART Trak season-best loading, saved competitor fields, configurable scoring tables, optional max scorers per team per event, team scores, event results, and copyable output. Dashboard, Meet History, XC Simulator, onboarding coach links, live validation links, README, Vercel setup, and regression tests now include Track Simulator.
+131. Track Simulator now supports excluding multiple events from scoring and SMART Trak season-best loading, plus a Template CSV download that respects the current event filter and excluded events.
 
 ## Known Good Test Flow
 

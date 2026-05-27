@@ -52,7 +52,9 @@ textarea{min-height:285px;resize:vertical;line-height:1.45}
 .sim-actions{display:grid;gap:10px;margin-top:12px}
 .status{font-size:13px;color:var(--muted);font-weight:800;margin-right:auto}
 .sim-status-row{display:flex;align-items:center;min-height:22px}
-.sim-main-actions,.saved-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.multi-select{min-height:108px}
+.sim-main-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.saved-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .utility-actions{display:grid;grid-template-columns:repeat(2,112px);gap:10px;justify-content:end}
 .sim-actions button{padding:9px 10px;white-space:nowrap}
 .sim-actions .compact{font-size:13px;padding:8px 9px}
@@ -146,6 +148,11 @@ tr:last-child td{border-bottom:0}
             <label for="eventFilter">Event Filter <span class="fieldinfo info-left" tabindex="0" data-tip="Load all track season bests or only one event. Manual pasted entries can still include any event.">i</span></label>
             <select id="eventFilter"></select>
           </div>
+          <div class="field full">
+            <label for="excludeEvents">Exclude Events <span class="fieldinfo" tabindex="0" data-tip="Choose one or more events to leave out of scoring and season-best loading. Hold Command or Control to select multiple.">i</span></label>
+            <select id="excludeEvents" class="multi-select" multiple></select>
+            <div class="hint">Use this for meets that do not contest every event, or to test scoring without selected events.</div>
+          </div>
           <div class="field">
             <label for="teamName">Your Team Name <span class="fieldinfo" tabindex="0" data-tip="Season bests load under this team name. Save or load opponent entries underneath.">i</span></label>
             <input id="teamName" type="text" placeholder="Example: SMART Trak">
@@ -180,6 +187,7 @@ tr:last-child td{border-bottom:0}
             <button id="loadSbBtn" class="secondary" type="button">My Season Bests</button>
             <button id="scoreBtn" type="button">Score Meet</button>
             <button id="copyBtn" class="secondary" type="button">Copy Results</button>
+            <button id="templateBtn" class="secondary" type="button">Template CSV</button>
           </div>
           <div class="saved-actions">
             <button id="saveFieldBtn" class="field-action compact" type="button">Save Field</button>
@@ -250,6 +258,7 @@ var els={
   resetBtn:document.getElementById('resetBtn'),
   genderSelect:document.getElementById('genderSelect'),
   eventFilter:document.getElementById('eventFilter'),
+  excludeEvents:document.getElementById('excludeEvents'),
   teamName:document.getElementById('teamName'),
   pointsTable:document.getElementById('pointsTable'),
   customPoints:document.getElementById('customPoints'),
@@ -259,6 +268,7 @@ var els={
   loadSbBtn:document.getElementById('loadSbBtn'),
   scoreBtn:document.getElementById('scoreBtn'),
   copyBtn:document.getElementById('copyBtn'),
+  templateBtn:document.getElementById('templateBtn'),
   saveFieldBtn:document.getElementById('saveFieldBtn'),
   loadFieldBtn:document.getElementById('loadFieldBtn'),
   deleteFieldBtn:document.getElementById('deleteFieldBtn'),
@@ -327,6 +337,22 @@ function normalizeEvent(value){
 function isFieldEvent(event){return !!FIELD_EVENTS[String(event||'').toLowerCase()];}
 function rowSport(row){var text=[row&&row.sport,row&&row.meetName,row&&row.event,row&&row.coachRaceNotes].filter(Boolean).join(' ').toLowerCase();if(text.indexOf('cross_country')>=0||text.indexOf('cross country')>=0||/\bxc\b/.test(text))return 'cross_country';if(text.indexOf('track')>=0)return 'track';return '';}
 function eventMatches(row,eventName){var event=normalizeEvent(row&&row.event||row);return eventName==='all'||event.toLowerCase()===String(eventName||'').toLowerCase();}
+function excludedEventSet(){
+  var set={};
+  Array.prototype.slice.call(els.excludeEvents.options||[]).forEach(function(option){
+    if(option.selected)set[String(option.value||'').toLowerCase()]=true;
+  });
+  return set;
+}
+function isExcludedEvent(event,set){
+  return !!(set||excludedEventSet())[String(normalizeEvent(event)||'').toLowerCase()];
+}
+function selectableEvents(){
+  var set=excludedEventSet();
+  var single=els.eventFilter.value;
+  if(single&&single!=='all')return isExcludedEvent(single,set)?[]:[single];
+  return TRACK_EVENTS.filter(function(event){return !isExcludedEvent(event,set);});
+}
 function fieldStorageKey(){return 'track_sim_field_'+accountKey()+'_'+els.genderSelect.value+'_'+els.eventFilter.value;}
 function readSavedFieldText(){try{return localStorage.getItem(fieldStorageKey())||'';}catch(e){return '';}}
 function writeSavedFieldText(text){try{localStorage.setItem(fieldStorageKey(),text||'');}catch(e){}}
@@ -437,11 +463,13 @@ function loadSmartTrakDashboard(){
 function bestRowsForSelection(rows){
   var gender=els.genderSelect.value;
   var eventName=els.eventFilter.value||'all';
+  var excluded=excludedEventSet();
   var bestByAthleteEvent={};
   rows.forEach(function(row){
     if(gender!=='all'&&genderKey(row.athleteGender)!==gender)return;
     if(rowSport(row)&&rowSport(row)!=='track')return;
     var event=normalizeEvent(row.event);
+    if(isExcludedEvent(event,excluded))return;
     if(!eventMatches(row,eventName))return;
     if(!row.isSeasonBest)return;
     var mark=parseMark(event,row.resultDisplay);
@@ -494,8 +522,10 @@ function simulate(){
   var points=pointsList();
   var maxPerTeam=Number(els.maxPerTeam.value)||0;
   var parsed=parseEntries(els.entryInput.value);
+  var excluded=excludedEventSet();
   var byEvent={};
   parsed.rows.forEach(function(row){
+    if(isExcludedEvent(row.event,excluded))return;
     var key=row.event.toLowerCase();
     if(!byEvent[key])byEvent[key]={name:row.event,entries:[]};
     byEvent[key].entries.push(row);
@@ -530,7 +560,10 @@ function simulate(){
   });
   var teams=Object.keys(teamMap).map(function(key){return teamMap[key];}).filter(function(team){return team.entries>0;}).sort(function(a,b){return b.points-a.points||b.wins-a.wins||a.name.localeCompare(b.name);});
   teams.forEach(function(team,index){team.place=index+1;});
-  return {events:Object.keys(byEvent).map(function(key){return byEvent[key];}).sort(function(a,b){return a.name.localeCompare(b.name);}),teams:teams,entries:parsed.rows,warnings:parsed.warnings,points:points};
+  var events=Object.keys(byEvent).map(function(key){return byEvent[key];}).sort(function(a,b){return a.name.localeCompare(b.name);});
+  var includedEntries=[];
+  events.forEach(function(event){includedEntries=includedEntries.concat(event.entries);});
+  return {events:events,teams:teams,entries:includedEntries,warnings:parsed.warnings,points:points,excludedCount:parsed.rows.length-includedEntries.length};
 }
 function render(){
   lastSimulation=simulate();
@@ -554,7 +587,8 @@ function render(){
   els.teamSummary.textContent=sim.teams.length?sim.teams.length+' teams · '+sim.points.join('-')+' scoring':'No teams yet';
   els.eventSummary.textContent=sim.entries.length+' entries across '+sim.events.length+' event'+(sim.events.length===1?'':'s');
   var warningText=sim.warnings.length?' · '+sim.warnings.length+' line'+(sim.warnings.length===1?'':'s')+' skipped':'';
-  els.status.textContent=sim.entries.length+' entries loaded'+warningText+'.';
+  var excludedText=sim.excludedCount?' · '+sim.excludedCount+' entr'+(sim.excludedCount===1?'y':'ies')+' excluded':'';
+  els.status.textContent=sim.entries.length+' entries loaded'+excludedText+warningText+'.';
   els.status.style.color=sim.warnings.length?'var(--warn)':'var(--muted)';
 }
 function loadExample(){
@@ -586,7 +620,7 @@ function loadExample(){
   ].join('\n');
   render();
 }
-function clearAll(){els.teamName.value='';els.entryInput.value='';els.customPoints.value='';els.maxPerTeam.value='';ensureAccountAccess().then(function(ok){if(ok)render();});}
+function clearAll(){els.teamName.value='';els.entryInput.value='';els.customPoints.value='';els.maxPerTeam.value='';Array.prototype.slice.call(els.excludeEvents.options||[]).forEach(function(option){option.selected=false;});ensureAccountAccess().then(function(ok){if(ok)render();});}
 function copyResults(){
   if(!lastSimulation)render();
   var sim=lastSimulation;
@@ -602,8 +636,31 @@ function copyResults(){
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(function(){setStatus('Simulation copied.','');});
   else window.prompt('Copy simulation results',text);
 }
+function downloadTemplate(){
+  var events=selectableEvents();
+  if(!events.length){
+    setStatus('All events are excluded. Choose at least one event before downloading a template.','warn');
+    return;
+  }
+  var rows=[['Team','Athlete','Event','Mark','Notes']];
+  events.forEach(function(event){
+    rows.push([els.teamName.value.trim()||'Your Team','Athlete Name',event,isFieldEvent(event)?'18-6':'12.34','']);
+  });
+  var csv=rows.map(function(row){return row.map(csvCell).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='smart-trak-track-simulator-template.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){URL.revokeObjectURL(url);},500);
+  setStatus('Template CSV downloaded for '+events.length+' event'+(events.length===1?'':'s')+'.','');
+}
 function fillEventFilter(){
   els.eventFilter.innerHTML='<option value="all">All events</option>'+TRACK_EVENTS.map(function(event){return '<option value="'+esc(event)+'">'+esc(event)+'</option>';}).join('');
+  els.excludeEvents.innerHTML=TRACK_EVENTS.map(function(event){return '<option value="'+esc(event)+'">'+esc(event)+'</option>';}).join('');
 }
 function init(){
   document.body.classList.toggle('embedded',embeddedMode());
@@ -619,12 +676,15 @@ function init(){
   els.loadSbBtn.addEventListener('click',loadSeasonBests);
   els.scoreBtn.addEventListener('click',render);
   els.copyBtn.addEventListener('click',copyResults);
+  els.templateBtn.addEventListener('click',downloadTemplate);
   els.saveFieldBtn.addEventListener('click',saveField);
   els.loadFieldBtn.addEventListener('click',loadField);
   els.deleteFieldBtn.addEventListener('click',deleteField);
   els.exampleBtn.addEventListener('click',loadExample);
   els.clearBtn.addEventListener('click',clearAll);
   els.entryInput.addEventListener('input',function(){setStatus('Edits ready. Click Score Meet.','');});
+  els.eventFilter.addEventListener('change',render);
+  els.excludeEvents.addEventListener('change',render);
   els.pointsTable.addEventListener('change',render);
   els.customPoints.addEventListener('input',function(){if(els.pointsTable.value==='custom')render();});
   els.maxPerTeam.addEventListener('input',render);
