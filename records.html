@@ -1070,9 +1070,13 @@ function mirrorWarning(mirror){
 function showRecordsDebug(debug){
   if(!debug)return;
   var mirror=debug.mirrorStatus||{};
-  if(debug.ghlCount<=1&&debug.mirrorCount===0){
-    setBulkStatus('Records source warning: GHL returned '+debug.ghlCount+' row and durable mirror loaded 0 rows. Mirror status '+JSON.stringify(mirror)+'.','bad');
-  }
+  var ghlCount=Number(debug.ghlCount||0);
+  var mirrorCount=Number(debug.mirrorCount||0);
+  var mergedCount=Number(debug.mergedCount||0);
+  var registryState=mirror.configured===false?'off':'on';
+  var text='Records source: GHL '+ghlCount+', mirror '+mirrorCount+', merged '+mergedCount+'. Registry '+registryState+', index '+Number(mirror.indexCount||0)+', scan '+Number(mirror.scanCount||0)+', load '+Number(mirror.loadCount||0)+'.';
+  if(mirror.error)text+=' '+mirror.error;
+  setBulkStatus(text,mergedCount<=1?'bad':mirrorCount>0?'good':'warn');
 }
 function defaultBrandLogo(){return '/assets/smart-logo.png';}
 function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
