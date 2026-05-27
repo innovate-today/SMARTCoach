@@ -1355,6 +1355,13 @@ function standardEventOptions() {
     "15K",
     "Half Marathon",
     "Marathon",
+    "4x100m",
+    "4x200m",
+    "4x400m",
+    "4x800m",
+    "Sprint Medley",
+    "Distance Medley",
+    "Other Relay",
     "Other",
   ].map((event) => ({ label: event, value: event }));
 }

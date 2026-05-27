@@ -1652,7 +1652,7 @@ function openMeetEventPicker(){
   var input=document.getElementById('mg-event');
   var display=document.getElementById('mg-event-display');
   if(!input||!display)return;
-  var events=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
+  var events=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay','Other'];
   var items=events.map(function(label){
     return{label:label,value:label,selected:input.value===label};
   });
@@ -2801,7 +2801,7 @@ function openSeasonPicker(){openSyncPicker('sy-season','sy-season-display','Sele
 function openPhasePicker(){openSyncPicker('sy-phase','sy-phase-display','Select Phase',['GPP','SPP','Pre-Competition','Competition','Transition']);}
 function openWorkoutTypePicker(){openSyncPicker('sy-wtype','sy-wtype-display','Select Workout Type',['Select Workout Type','Acceleration','Max Velocity','Speed Endurance I','Special Endurance I','Special Endurance II','Lactate Tolerance','Extensive Tempo','Intensive Tempo','Lactate Threshold','Easy/Recovery Run','Long Run','Aerobic Power','Plyometrics','Strength Circuit','Hill Sprints']);}
 function meetEventLabels(){
-  return ['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
+  return ['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
 }
 function selectMeetEventValue(value){
   var label=normalizeEventLabel(value||'');

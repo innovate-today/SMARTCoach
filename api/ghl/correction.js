@@ -20,6 +20,7 @@ const FIELD_IDS = {
   is_pr: ["XMvKfEECN6PCcA0TKwzN"],
   is_season_best: ["zO57s50B9sf62EPdoq7J"],
   coach_race_notes: ["84pkqVasLVDNye0XCVaH"],
+  splits_json: ["bIjfXwW7mDCkkjGS4LL5", "kT3jmzTT9uFrJxvZSeUK"],
   workout_type: ["jX0YLlpt08vxNKV3JyM5"],
   surface: ["ZMzx2xPdO3XxuzAvj84"],
   total_time_display: ["z9eZIcIL1B7yaeR5jXHI"],
@@ -83,7 +84,8 @@ module.exports = async function handler(req, res) {
     const isMeetResult = recordType === "meet" || recordType === "meet_result";
     const schemaKey = isMeetResult ? MEET_RESULT_SCHEMA_KEY : PERFORMANCE_RECORD_SCHEMA_KEY;
 
-    if (!contactId) throw httpError(400, "Missing athlete contact.");
+    const relayCorrection = isMeetResult && (clean(payload.updates && payload.updates.resultType).toLowerCase() === "relay" || clean(payload.previous && payload.previous.resultType).toLowerCase() === "relay");
+    if (!contactId && !relayCorrection) throw httpError(400, "Missing athlete contact.");
     if (!recordId && !sourceRecordId) throw httpError(400, isMeetResult ? "Missing meet result." : "Missing performance record.");
 
     const record = recordId
@@ -125,25 +127,27 @@ module.exports = async function handler(req, res) {
       },
     });
 
-    await addCorrectionNote({
-      token,
-      contactId,
-      body: isMeetResult ? buildMeetVoidNote({
-        athleteName,
-        reason,
-        correctionTime,
-        record,
-        props,
-        sourceRecordId: sourceRecordId || prop(props, "source_record_id"),
-      }) : buildVoidNote({
-        athleteName,
-        reason,
-        correctionTime,
-        record,
-        props,
-        sourceRecordId: sourceRecordId || prop(props, "source_record_id"),
-      }),
-    });
+    if (contactId) {
+      await addCorrectionNote({
+        token,
+        contactId,
+        body: isMeetResult ? buildMeetVoidNote({
+          athleteName,
+          reason,
+          correctionTime,
+          record,
+          props,
+          sourceRecordId: sourceRecordId || prop(props, "source_record_id"),
+        }) : buildVoidNote({
+          athleteName,
+          reason,
+          correctionTime,
+          record,
+          props,
+          sourceRecordId: sourceRecordId || prop(props, "source_record_id"),
+        }),
+      });
+    }
 
     res.status(200).json({ success: true, action: "voided", recordId: record.id, recordType: isMeetResult ? "meet" : "training" });
   } catch (error) {
@@ -162,16 +166,23 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     wind: prop(props, "wind"),
     isPr: yesText(prop(props, "is_pr")) ? "Yes" : "No",
     isSeasonBest: yesText(prop(props, "is_season_best")) ? "Yes" : "No",
+    resultType: noteValue(previousNote, "Result Type") || "Individual",
+    relayTeamName: noteValue(previousNote, "Relay Team"),
+    splitsJson: prop(props, "splits_json"),
     notes: stripMeetSystemNoteLines(previousNote),
   };
+  const isRelay = clean(updates.resultType).toLowerCase() === "relay" || clean(previousValues.resultType).toLowerCase() === "relay";
   const nextValues = {
     meetName: clean(updates.meetName) || previousValues.meetName,
     meetDate: clean(updates.meetDate) || previousValues.meetDate,
     event: clean(updates.event) || previousValues.event,
     resultDisplay: clean(updates.resultDisplay) || previousValues.resultDisplay,
     wind: clean(updates.wind),
-    isPr: clean(updates.isPr) ? yesText(updates.isPr) ? "Yes" : "No" : previousValues.isPr,
-    isSeasonBest: clean(updates.isSeasonBest) ? yesText(updates.isSeasonBest) ? "Yes" : "No" : previousValues.isSeasonBest,
+    isPr: isRelay ? "No" : clean(updates.isPr) ? yesText(updates.isPr) ? "Yes" : "No" : previousValues.isPr,
+    isSeasonBest: isRelay ? "No" : clean(updates.isSeasonBest) ? yesText(updates.isSeasonBest) ? "Yes" : "No" : previousValues.isSeasonBest,
+    resultType: isRelay ? "Relay" : "Individual",
+    relayTeamName: isRelay ? clean(updates.relayTeamName) || previousValues.relayTeamName : "",
+    splitsJson: isRelay ? normalizeSplitsJson(updates.splitsJson || previousValues.splitsJson) : "",
     notes: clean(updates.notes),
   };
   const changes = changedValues(previousValues, nextValues, {
@@ -182,6 +193,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     wind: "Wind",
     isPr: "PB",
     isSeasonBest: "SB",
+    resultType: "Result Type",
+    relayTeamName: "Relay Team",
+    splitsJson: "Relay Splits",
     notes: "Notes",
   });
   if (!changes.length) throw httpError(400, "No correction changes were provided.");
@@ -190,7 +204,12 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
   if (nextValues.resultDisplay && !resultMs) throw httpError(400, "Enter result like 58.2, 4:52.3, or 18:04.5.");
 
   const correctionTime = new Date().toISOString();
-  const nextNote = replaceMeetNoteLines(previousNote, {
+  const nextNote = replaceMeetNoteLines(previousNote, isRelay ? {
+    "Result Type": "Relay",
+    "Relay Type": nextValues.event,
+    "Relay Team": nextValues.relayTeamName,
+    Wind: nextValues.wind,
+  } : {
     Wind: nextValues.wind,
   }, nextValues.notes, correctionTime, reason);
 
@@ -208,6 +227,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
         wind: nextValues.wind,
         is_pr: nextValues.isPr,
         is_season_best: nextValues.isSeasonBest,
+        splits_json: nextValues.splitsJson,
         coach_race_notes: nextNote,
       },
     },
@@ -226,19 +246,21 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     reason,
   });
 
-  await addCorrectionNote({
-    token,
-    contactId,
-    body: buildMeetEditNote({
-      athleteName,
-      reason,
-      correctionTime,
-      record,
-      props,
-      sourceRecordId: clean(payload.sourceRecordId) || prop(props, "source_record_id"),
-      changes,
-    }),
-  });
+  if (contactId) {
+    await addCorrectionNote({
+      token,
+      contactId,
+      body: buildMeetEditNote({
+        athleteName,
+        reason,
+        correctionTime,
+        record,
+        props,
+        sourceRecordId: clean(payload.sourceRecordId) || prop(props, "source_record_id"),
+        changes,
+      }),
+    });
+  }
 
   return { success: true, action: "edited", recordType: "meet", recordId: record.id, changes, linkedRecords };
 }
@@ -462,6 +484,7 @@ function previousProps(previous, recordType) {
       wind: clean(data.wind),
       is_pr: clean(data.isPr),
       is_season_best: clean(data.isSeasonBest),
+      splits_json: clean(data.splitsJson),
       coach_race_notes: clean(data.coachRaceNotes || data.notes),
     };
   }
@@ -596,7 +619,8 @@ function replaceNoteLines(note, labeledValues, notes, correctionTime, reason) {
 function replaceMeetNoteLines(note, labeledValues, notes, correctionTime, reason) {
   const nextLines = clean(note).split(/\r?\n/).filter((line) => {
     if (isCorrectionLine(line)) return false;
-    return !/^Wind:/i.test(line.trim());
+    const label = line.split(":")[0].trim().toLowerCase();
+    return !Object.keys(labeledValues).some((key) => key.toLowerCase() === label);
   });
   Object.keys(labeledValues).forEach((label) => {
     if (labeledValues[label]) nextLines.unshift(`${label}: ${labeledValues[label]}`);
@@ -617,7 +641,7 @@ function stripSystemNoteLines(note) {
 function stripMeetSystemNoteLines(note) {
   return clean(note).split(/\r?\n/).filter((line) => {
     if (isCorrectionLine(line)) return false;
-    return !/^Wind:/i.test(line.trim());
+    return !/^(Wind|Result Type|Relay Type|Relay Team|Event|Splits):/i.test(line.trim());
   }).join("\n");
 }
 
@@ -629,6 +653,26 @@ function noteValue(note, label) {
   const prefix = `${label}:`;
   const line = clean(note).split(/\r?\n/).find((item) => item.trim().toLowerCase().startsWith(prefix.toLowerCase()));
   return line ? clean(line.slice(prefix.length)) : "";
+}
+
+function normalizeSplitsJson(value) {
+  const text = clean(value);
+  if (!text) return "";
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      return JSON.stringify(parsed.map((split, index) => ({
+        lap: Number(split && split.lap) || index + 1,
+        name: clean(split && split.name),
+        time: clean(split && (split.time || split.split)),
+      })).filter((split) => split.name || split.time));
+    }
+  } catch (error) {}
+  const rows = text.split(/\r?\n/).map((line, index) => {
+    const match = line.match(/^\s*([^:]+?)\s*:\s*(.+?)\s*$/);
+    return match ? { lap: index + 1, name: clean(match[1]), time: clean(match[2]) } : null;
+  }).filter(Boolean);
+  return rows.length ? JSON.stringify(rows) : text;
 }
 
 function parseTimeToMs(value) {

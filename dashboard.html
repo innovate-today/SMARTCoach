@@ -755,8 +755,22 @@ tr:last-child td{border-bottom:0}
             <option value="15K">15K</option>
             <option value="Half Marathon">Half Marathon</option>
             <option value="Marathon">Marathon</option>
+            <option value="4x100m">4x100m</option>
+            <option value="4x200m">4x200m</option>
+            <option value="4x400m">4x400m</option>
+            <option value="4x800m">4x800m</option>
+            <option value="Sprint Medley">Sprint Medley</option>
+            <option value="Distance Medley">Distance Medley</option>
+            <option value="Other Relay">Other Relay</option>
             <option value="Other">Other</option>
           </select>
+        </div>
+        <div class="relaylegs" id="meetCorrectionRelayFields" hidden>
+          <h3>Relay Splits</h3>
+          <div class="relayleg"><select id="meetCorrectionRelayName1"><option value="">Runner 1</option></select><input id="meetCorrectionRelaySplit1" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="meetCorrectionRelayName2"><option value="">Runner 2</option></select><input id="meetCorrectionRelaySplit2" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="meetCorrectionRelayName3"><option value="">Runner 3</option></select><input id="meetCorrectionRelaySplit3" type="text" placeholder="Split"></div>
+          <div class="relayleg"><select id="meetCorrectionRelayName4"><option value="">Runner 4</option></select><input id="meetCorrectionRelaySplit4" type="text" placeholder="Split"></div>
         </div>
         <div class="field">
           <label for="meetCorrectionResult">Result</label>
@@ -765,6 +779,10 @@ tr:last-child td{border-bottom:0}
         <div class="field">
           <label for="meetCorrectionWind">Wind</label>
           <input id="meetCorrectionWind" type="text" placeholder="Optional">
+        </div>
+        <div class="field" id="meetCorrectionRelayTeamWrap" hidden>
+          <label for="meetCorrectionRelayTeam">Relay Team</label>
+          <input id="meetCorrectionRelayTeam" type="text" placeholder="Example: Boys A">
         </div>
         <div class="field">
           <label for="meetCorrectionBest">New Best</label>
@@ -904,7 +922,7 @@ var meetCorrectionRow=null;
 var voidRequest=null;
 var meetManagerEditingId='';
 var lastLoadedAt='';
-var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'];
+var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay','Other'];
 var activeTab='roster';
 var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
@@ -1201,6 +1219,9 @@ var els={
   meetCorrectionDate:document.getElementById('meetCorrectionDate'),
   meetCorrectionName:document.getElementById('meetCorrectionName'),
   meetCorrectionEvent:document.getElementById('meetCorrectionEvent'),
+  meetCorrectionRelayFields:document.getElementById('meetCorrectionRelayFields'),
+  meetCorrectionRelayTeamWrap:document.getElementById('meetCorrectionRelayTeamWrap'),
+  meetCorrectionRelayTeam:document.getElementById('meetCorrectionRelayTeam'),
   meetCorrectionResult:document.getElementById('meetCorrectionResult'),
   meetCorrectionWind:document.getElementById('meetCorrectionWind'),
   meetCorrectionBest:document.getElementById('meetCorrectionBest'),
@@ -1395,6 +1416,7 @@ els.correctionClose.addEventListener('click',closeCorrectionModal);
 els.correctionSave.addEventListener('click',saveCorrection);
 els.meetCorrectionClose.addEventListener('click',closeMeetCorrectionModal);
 els.meetCorrectionSave.addEventListener('click',saveMeetCorrection);
+els.meetCorrectionEvent.addEventListener('change',syncMeetCorrectionRelayFields);
 els.voidClose.addEventListener('click',closeVoidModal);
 els.voidSave.addEventListener('click',saveVoidRecord);
 els.meetManagerClose.addEventListener('click',closeMeetManager);
@@ -2399,7 +2421,8 @@ function syncRaceResultSport(){
   var current=els.raceResultEvent.value;
   var sport=els.raceResultSport.value||'track';
   var relay=els.raceResultType&&els.raceResultType.value==='relay';
-  var events=relay?['','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay']:(sport==='cross_country'?['','2 Mile','3200m','5K']:['','100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon']);
+  var relayEvents=['4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
+  var events=relay?[''].concat(relayEvents):(sport==='cross_country'?['','2 Mile','3200m','5K']:['','100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(relayEvents));
   els.raceResultEvent.innerHTML=events.map(function(eventName){
     return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
   }).join('');
@@ -2862,7 +2885,11 @@ function openMeetCorrectionModal(button){
   renderMeetCorrectionEventOptions(meetCorrectionRow.event||'');
   els.meetCorrectionResult.value=meetCorrectionRow.resultDisplay||'';
   els.meetCorrectionWind.value=meetCorrectionRow.wind||'';
+  syncMeetCorrectionRelayFields();
+  renderMeetCorrectionRelayOptions();
+  populateMeetCorrectionRelayFields(meetCorrectionRow);
   els.meetCorrectionBest.value=meetCorrectionRow.isPr&&meetCorrectionRow.isSeasonBest?'both':meetCorrectionRow.isPr?'pb':meetCorrectionRow.isSeasonBest?'sb':'none';
+  if(isRelayResult(meetCorrectionRow))els.meetCorrectionBest.value='none';
   els.meetCorrectionReason.value='';
   els.meetCorrectionNotes.value=meetCorrectionNotesFromRow(meetCorrectionRow);
   setMeetCorrectionStatus('Corrections are saved to SMART Trak notes.','');
@@ -2884,6 +2911,55 @@ function renderMeetCorrectionEventOptions(current){
   els.meetCorrectionEvent.value=value&&options.indexOf(value)>=0?value:'400m';
 }
 
+function syncMeetCorrectionRelayFields(){
+  var relay=isRelayResult(meetCorrectionRow)||isRelayEvent(els.meetCorrectionEvent&&els.meetCorrectionEvent.value);
+  if(els.meetCorrectionRelayFields)els.meetCorrectionRelayFields.hidden=!relay;
+  if(els.meetCorrectionRelayTeamWrap)els.meetCorrectionRelayTeamWrap.hidden=!relay;
+  if(els.meetCorrectionBest)els.meetCorrectionBest.disabled=relay;
+}
+
+function isRelayEvent(value){
+  return /^(4x|sprint medley|distance medley|other relay)/i.test(String(value||'').trim());
+}
+
+function renderMeetCorrectionRelayOptions(){
+  for(var i=1;i<=4;i+=1){
+    var select=document.getElementById('meetCorrectionRelayName'+i);
+    if(!select)continue;
+    var current=select.value;
+    var rows=activeDashboardAthletes();
+    select.innerHTML='<option value="">Runner '+i+'</option>'+rows.map(function(row){
+      return '<option value="'+esc(row.name||'')+'">'+esc(row.name||'Unnamed')+'</option>';
+    }).join('');
+    if(current)select.value=current;
+  }
+}
+
+function populateMeetCorrectionRelayFields(row){
+  var relay=isRelayResult(row);
+  if(els.meetCorrectionRelayTeam)els.meetCorrectionRelayTeam.value=relay?(row.relayTeamName||row.athleteName||''):'';
+  var splits=parseSplitLines(row&&row.splitsText||'');
+  for(var i=1;i<=4;i+=1){
+    var name=document.getElementById('meetCorrectionRelayName'+i);
+    var split=document.getElementById('meetCorrectionRelaySplit'+i);
+    var item=splits[i-1]||{};
+    if(name)name.value=item.name||item.label||'';
+    if(split)split.value=item.time||'';
+  }
+}
+
+function meetCorrectionRelayPayload(){
+  var rows=[];
+  for(var i=1;i<=4;i+=1){
+    var name=document.getElementById('meetCorrectionRelayName'+i);
+    var split=document.getElementById('meetCorrectionRelaySplit'+i);
+    var runner=(name&&name.value||'').trim();
+    var time=(split&&split.value||'').trim();
+    if(runner||time)rows.push({lap:i,name:runner,time:time});
+  }
+  return rows;
+}
+
 function saveMeetCorrection(){
   if(!meetCorrectionRow)return;
   var reason=els.meetCorrectionReason.value.trim();
@@ -2892,6 +2968,12 @@ function saveMeetCorrection(){
     return;
   }
   var best=els.meetCorrectionBest.value||'none';
+  var relay=isRelayResult(meetCorrectionRow)||isRelayEvent(els.meetCorrectionEvent.value);
+  var relaySplits=relay?meetCorrectionRelayPayload():[];
+  if(relay&&relaySplits.length<2){
+    setMeetCorrectionStatus('Add at least two relay legs.','error');
+    return;
+  }
   els.meetCorrectionSave.disabled=true;
   setMeetCorrectionStatus('Saving correction...','');
   fetch('/api/smart-trak/correction',{
@@ -2903,7 +2985,7 @@ function saveMeetCorrection(){
       recordId:meetCorrectionRow.recordId||'',
       sourceRecordId:meetCorrectionRow.sourceRecordId||'',
       contactId:meetCorrectionRow.contactId||'',
-      athleteName:meetCorrectionRow.athleteName||'',
+      athleteName:relay?(els.meetCorrectionRelayTeam.value||meetCorrectionRow.athleteName||'Relay Team'):(meetCorrectionRow.athleteName||''),
       reason:reason,
       previous:meetCorrectionPreviousPayload(meetCorrectionRow),
       updates:{
@@ -2912,9 +2994,12 @@ function saveMeetCorrection(){
         event:els.meetCorrectionEvent.value,
         resultDisplay:els.meetCorrectionResult.value,
         wind:els.meetCorrectionWind.value,
-        isPr:best==='pb'||best==='both'?'yes':'no',
-        isSeasonBest:best==='sb'||best==='both'?'yes':'no',
-        notes:els.meetCorrectionNotes.value
+        isPr:!relay&&(best==='pb'||best==='both')?'yes':'no',
+        isSeasonBest:!relay&&(best==='sb'||best==='both')?'yes':'no',
+        notes:els.meetCorrectionNotes.value,
+        resultType:relay?'relay':'individual',
+        relayTeamName:relay?els.meetCorrectionRelayTeam.value:'',
+        splitsJson:relay?JSON.stringify(relaySplits):''
       }
     })
   }).then(function(res){
@@ -2927,9 +3012,12 @@ function saveMeetCorrection(){
       event:els.meetCorrectionEvent.value,
       resultDisplay:els.meetCorrectionResult.value,
       wind:els.meetCorrectionWind.value,
-      isPr:best==='pb'||best==='both',
-      isSeasonBest:best==='sb'||best==='both',
-      notes:els.meetCorrectionNotes.value
+      isPr:!relay&&(best==='pb'||best==='both'),
+      isSeasonBest:!relay&&(best==='sb'||best==='both'),
+      notes:els.meetCorrectionNotes.value,
+      resultType:relay?'relay':'individual',
+      relayTeamName:relay?els.meetCorrectionRelayTeam.value:'',
+      splitsText:relay?JSON.stringify(relaySplits):''
     },reason);
     setMeetCorrectionStatus('Correction saved.','success');
     closeMeetCorrectionModal();
@@ -2954,6 +3042,10 @@ function applyMeetCorrectionLocally(row,updates,reason){
       wind:updates.wind||'',
       isPr:!!updates.isPr,
       isSeasonBest:!!updates.isSeasonBest,
+      resultType:updates.resultType||item.resultType,
+      relayType:updates.resultType==='relay'?updates.event:item.relayType,
+      relayTeamName:updates.relayTeamName||item.relayTeamName,
+      splitsText:updates.splitsText||item.splitsText,
       coachRaceNotes:updates.notes||'',
       corrected:true,
       correctionDate:correctedAt,
@@ -3003,6 +3095,9 @@ function meetCorrectionPreviousPayload(row){
     wind:row.wind||'',
     isPr:row.isPr?'yes':'no',
     isSeasonBest:row.isSeasonBest?'yes':'no',
+    resultType:isRelayResult(row)?'relay':'individual',
+    relayTeamName:row.relayTeamName||'',
+    splitsJson:row.splitsText||'',
     notes:meetCorrectionNotesFromRow(row),
     coachRaceNotes:row.coachRaceNotes||''
   };

@@ -140,7 +140,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
 </section>
 <script>
 var questionnaire=null,athletes=[],meets=[],plans=[],accountStatus=null,fitnessDraftValues={},assignmentDraftValues={},assignmentDraftPlanKey='';
-var fitnessEvents=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
+var fitnessEvents=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
 var fitnessSports=[{label:'Track',value:'track'},{label:'Cross Country',value:'cross_country'}];
 function smartCoachAccountKey(){
   try{
@@ -591,7 +591,7 @@ function builderOptions(f){
   return f.options||[];
 }
 function standardBuilderEventOptions(){
-  return ['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].map(function(event){return{label:event,value:event};});
+  return ['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'].map(function(event){return{label:event,value:event};});
 }
 function renderForm(){
   var box=document.getElementById('form');

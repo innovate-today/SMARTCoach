@@ -2388,7 +2388,8 @@ function syncRaceResultSport(){
   var current=els.raceResultEvent.value;
   var sport=els.raceResultSport.value||'track';
   var relay=els.raceResultType&&els.raceResultType.value==='relay';
-  var events=relay?['','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay']:(sport==='cross_country'?['','2 Mile','3200m','5K']:['','100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon']);
+  var relayEvents=['4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
+  var events=relay?[''].concat(relayEvents):(sport==='cross_country'?['','2 Mile','3200m','5K']:['','100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(relayEvents));
   els.raceResultEvent.innerHTML=events.map(function(eventName){
     return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
   }).join('');
