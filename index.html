@@ -302,7 +302,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="msh">
     <div class="mhd"></div>
     <div class="mttl">New Group</div>
-    <div id="ml-existing"></div>
     <input class="minp" id="mln" placeholder="e.g. Workout 4" type="text" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"/>
     <button class="mbtn" onclick="createGroup()">Create</button>
     <button class="mbtn c" onclick="hm('ml')">Cancel</button>
@@ -691,7 +690,7 @@ function maybePromptForCoachAccess(data){
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:l.cfg,runners:l.runners.map(function(r){
+      return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:l.type||'training',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',relay:normalizeRelayState(l.relay),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:l.cfg,runners:l.runners.map(function(r){
         return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayType:r.trainingPlanDayType||'',trainingPlanDayDate:r.trainingPlanDayDate||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:r.trainingPlanDayLinkedMeetId||'',saved:r.saved||[]};
       })};
     });
@@ -702,6 +701,26 @@ function save(){
 }
 function defaultCfg(){
   return{laps:1,repRest:0,multiple:1,notes:1,splits:1,showPlan:1,showTarget:1,showSync:1,beep:1};
+}
+function defaultRelayState(){
+  return{enabled:0,teamName:'',legs:[{name:''},{name:''},{name:''},{name:''}],on:false,elapsed:0,startAt:0,currentLeg:0,splits:[],saved:[],ts:null};
+}
+function normalizeRelayState(relay){
+  var base=defaultRelayState(),source=relay||{};
+  base.enabled=source.enabled?1:0;
+  base.teamName=source.teamName||'';
+  base.legs=[0,1,2,3].map(function(i){
+    var leg=(source.legs&&source.legs[i])||{};
+    return{name:leg.name||'',contactId:leg.contactId||'',smartcoachAthleteId:leg.smartcoachAthleteId||''};
+  });
+  base.elapsed=Number(source.elapsed)||0;
+  base.currentLeg=Math.max(0,Math.min(3,Number(source.currentLeg)||0));
+  base.splits=(source.splits||[]).slice(0,4).map(function(split,i){
+    return{lap:i+1,name:split.name||base.legs[i]&&base.legs[i].name||'',ms:Number(split.ms)||0,time:split.time||fmt(Number(split.ms)||0)};
+  });
+  base.saved=(source.saved||[]).map(function(run){return run||{};});
+  base.ts=source.ts||null;
+  return base;
 }
 function normalizeCfg(cfg){
   var base=defaultCfg(),source=cfg||{};
@@ -717,7 +736,7 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:normalizeCfg(l.cfg),
+        return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:meta.type,season:meta.season,seasonYear:meta.seasonYear,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,relay:normalizeRelayState(l.relay),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:normalizeCfg(l.cfg),
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayType:r.trainingPlanDayType||'',trainingPlanDayDate:r.trainingPlanDayDate||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:r.trainingPlanDayLinkedMeetId||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -1393,7 +1412,6 @@ function addGroupForView(){
     sm('mmg');
   }else{
     if(GV==='archive')setGroupView('training');
-    renderAddExistingGroups();
     sm('ml');
   }
 }
@@ -1568,22 +1586,6 @@ function oGroup(id){
   document.getElementById('ltit').textContent=CL.type==='meet'?meetDisplayTitle(CL):CL.name;
   go('s-group');
 }
-function renderAddExistingGroups(){
-  var box=document.getElementById('ml-existing');
-  if(!box)return;
-  var groups=logs.filter(function(l){
-    return (l.type||'training')==='training'&&!l.archived&&isCurrentGroup(l);
-  });
-  if(!groups.length){box.innerHTML='';return;}
-  box.innerHTML='<div style="padding:0 12px 8px;text-align:left"><div style="font-size:12px;font-weight:700;color:#777;margin-bottom:6px;text-transform:uppercase">Existing Groups</div>'+groups.map(function(group){
-    var count=(group.runners||[]).length;
-    return '<button type="button" class="picker-row" onclick="openExistingGroupFromAdd('+group.id+')"><b>'+ex(group.name||'Group')+'</b><small>'+count+' athlete'+(count===1?'':'s')+'</small></button>';
-  }).join('')+'</div>';
-}
-function openExistingGroupFromAdd(id){
-  hm('ml');
-  oGroup(id);
-}
 function createGroup(){
   var name=document.getElementById('mln').value.trim()||'New Group';
   var cs=currentSeason();
@@ -1750,15 +1752,34 @@ function rr(){
   var el=document.getElementById('rs');
   var planSub=[CL.trainingPlanTitle,CL.trainingPlanDayTitle].filter(Boolean).join(' · ');
   var planHtml=planSub?'<div class="lsec" style="margin-top:8px"><div class="erow pro-only" onclick="openSeasonPlan(true)"><span class="elbl"><b>Plan</b><br><small style="color:#777">'+ex(planSub)+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>':'';
+  var relayHtml=relayPanelHtml();
   var summaryHtml=groupSyncSummaryHtml();
   if(!CL.runners.length){
-    el.innerHTML=planHtml+summaryHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
+    el.innerHTML=planHtml+relayHtml+summaryHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else{
-    el.innerHTML=planHtml+summaryHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=planHtml+relayHtml+summaryHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
   }
   updateGroupPrimaryAction();
   updMB();
   renderRunnerTargets();
+}
+function relayPanelHtml(){
+  if(!CL||CL.type!=='meet')return'';
+  CL.relay=normalizeRelayState(CL.relay);
+  var relay=CL.relay;
+  var enabled=!!relay.enabled;
+  var total=relayElapsedMs();
+  var current=enabled?relay.legs[relay.currentLeg]||{}:{};
+  var rows=enabled?relay.legs.map(function(leg,i){
+    var split=relay.splits[i];
+    var label=split?fmt(split.ms):(relay.on&&i===relay.currentLeg?fmt(relayCurrentLegMs()):'--');
+    return '<div class="erow" onclick="openRelayLegPicker('+i+')" style="min-height:42px"><span class="elbl"><b>Leg '+(i+1)+'</b><br><small style="color:#777">'+ex(leg.name||'Select runner')+'</small></span><span style="font-weight:800;color:'+(split?'#0a7a44':'#777')+'">'+ex(label)+'</span></div>';
+  }).join(''):'';
+  var saved=relay.saved&&relay.saved.length?relay.saved.filter(function(run){return !run.meetSynced;}).length:0;
+  return '<div class="lsec" style="margin-top:8px">'+
+    '<div class="erow" style="min-height:42px"><span class="elbl"><b>Relay</b><br><small style="color:#777">'+(enabled?'Timing one relay team'+(current.name?' · Current: '+ex(current.name):''):'Off for this race')+'</small></span><button type="button" class="sbtn'+(enabled?' on':'')+'" onclick="toggleRelayMode(event)">'+(enabled?'On':'Off')+'</button></div>'+
+    (enabled?'<div class="erow" style="min-height:42px"><span class="elbl"><b>Total</b><br><small style="color:#777">'+(saved?saved+' relay result ready to save':'Lap records each leg split')+'</small></span><span id="relay-total-live" style="font-weight:900;color:#111">'+ex(fmt(total))+'</span></div><div class="erow" style="min-height:42px"><span class="elbl"><b>Current Leg</b><br><small style="color:#777">'+ex(current.name||'Select runner')+'</small></span><span id="relay-leg-live" style="font-weight:900;color:#111">'+ex(fmt(relayCurrentLegMs()))+'</span></div>'+rows:'')+
+  '</div>';
 }
 function groupSavedRunCounts(){
   var ready=0,done=0,total=0;
@@ -1773,6 +1794,12 @@ function groupSavedRunCounts(){
       }
     });
   });
+  if(CL.type==='meet'&&CL.relay&&CL.relay.saved){
+    CL.relay.saved.forEach(function(run){
+      total++;
+      if(run.meetSynced)done++;else ready++;
+    });
+  }
   return{ready:ready,done:done,total:total};
 }
 function groupReadyRunCount(){
@@ -1962,10 +1989,54 @@ function targetFromVisibleRunnerRow(r){
   if(!m)return{};
   return{plannedTargetRange:m[1].trim()};
 }
+function relayEnabled(){
+  return !!(CL&&CL.type==='meet'&&CL.relay&&CL.relay.enabled);
+}
+function relayElapsedMs(){
+  if(!CL||!CL.relay)return 0;
+  var relay=CL.relay;
+  return (Number(relay.elapsed)||0)+(relay.on?now()-(Number(relay.startAt)||now()):0);
+}
+function relaySplitSum(){
+  if(!CL||!CL.relay)return 0;
+  return (CL.relay.splits||[]).reduce(function(sum,split){return sum+(Number(split.ms)||0);},0);
+}
+function relayCurrentLegMs(){
+  return Math.max(0,relayElapsedMs()-relaySplitSum());
+}
+function toggleRelayMode(event){
+  if(event)event.stopPropagation();
+  if(!CL||CL.type!=='meet')return;
+  CL.relay=normalizeRelayState(CL.relay);
+  CL.relay.enabled=CL.relay.enabled?0:1;
+  if(CL.relay.enabled){
+    CL.cfg.laps=1;
+    CL.cfg.multiple=1;
+    CL.cfg.splits=1;
+  }else if(CL.relay.on){
+    stopRelay(false);
+  }
+  save();rr();
+}
+function openRelayLegPicker(index){
+  if(!CL||CL.type!=='meet')return;
+  CL.relay=normalizeRelayState(CL.relay);
+  var leg=CL.relay.legs[index]||{};
+  var items=AR.map(function(a){
+    return{label:a.name,sub:'Active athlete',selected:String(a.name||'').trim().toLowerCase()===String(leg.name||'').trim().toLowerCase()};
+  });
+  if(leg.name&&!findAthleteByName(leg.name))items.unshift({label:leg.name,sub:'Current runner',selected:true});
+  openPicker('Select Relay Leg '+(index+1),items,function(item){
+    var athlete=findAthleteByName(item.label)||{};
+    CL.relay.legs[index]={name:item.label||'',contactId:athlete.id||'',smartcoachAthleteId:athlete.smartcoachAthleteId||''};
+    if(CL.relay.splits[index])CL.relay.splits[index].name=item.label||'';
+    save();rr();
+  });
+}
 function uN(id,v){var r=find(id);if(r){r.name=v;applyAthleteMatch(r);queueSharedGroupsSave();}}
 function uNote(id,v){var r=find(id);if(r)r.note=v;}
 function updMB(){
-  var any=CL&&CL.runners.some(function(r){return r.on;});
+  var any=relayEnabled()?CL.relay.on:(CL&&CL.runners.some(function(r){return r.on;}));
   var b=document.getElementById('mb');
   if(b){b.textContent=any?'Stop':'Start';b.style.background=any?'#555':'#2B4FCC';}
   updateMasterLapButton();
@@ -1974,6 +2045,11 @@ function updMB(){
 function updateMasterLapButton(){
   var b=document.getElementById('mlb');
   if(!b)return;
+  if(relayEnabled()){
+    b.hidden=!(CL.relay&&CL.relay.on);
+    if(!b.hidden)b.textContent=CL.relay.currentLeg>=3?'Finish Relay':'Lap';
+    return;
+  }
   var running=CL&&CL.cfg&&CL.cfg.laps?CL.runners.filter(function(r){return r.on;}):[];
   b.hidden=!running||!running.length;
   if(!b.hidden)b.textContent=masterLapLabel(running);
@@ -2064,6 +2140,7 @@ function doLap(id){
 }
 
 function masterLap(){
+  if(relayEnabled()){relayLap();return;}
   if(!CL||!CL.cfg.laps)return;
   var running=CL.runners.filter(function(r){return r.on;});
   if(!running.length)return;
@@ -2071,6 +2148,60 @@ function masterLap(){
   var n=now();
   running.forEach(function(r){recordRunnerLap(r,n);});
   updateMasterLapButton();
+}
+
+function startRelay(){
+  if(!CL||!CL.relay)return;
+  var relay=CL.relay;
+  relay.on=true;
+  relay.startAt=now();
+  if(!relay.ts)relay.ts=relay.startAt;
+  tick();
+  rr();
+}
+
+function stopRelay(saveResult){
+  if(!CL||!CL.relay)return;
+  var relay=CL.relay;
+  relay.elapsed=relayElapsedMs();
+  relay.on=false;
+  relay.startAt=0;
+  if(saveResult&&relay.elapsed){
+    var legs=relay.legs.map(function(leg,i){
+      var split=relay.splits[i]||{};
+      return{lap:i+1,name:split.name||leg.name||'',ms:Number(split.ms)||0,time:split.time||fmt(Number(split.ms)||0)};
+    }).filter(function(leg){return leg.name||leg.ms;});
+    relay.saved.push({ms:relay.elapsed,ts:relay.ts||now(),legs:legs,teamName:relay.teamName||'',eventName:CL.eventName||CL.name||'',meetSynced:false});
+  }
+}
+
+function resetRelayTimer(clearSaved){
+  if(!CL)return;
+  CL.relay=normalizeRelayState(CL.relay);
+  var saved=clearSaved?[]:CL.relay.saved||[];
+  CL.relay.elapsed=0;
+  CL.relay.startAt=0;
+  CL.relay.currentLeg=0;
+  CL.relay.splits=[];
+  CL.relay.on=false;
+  CL.relay.ts=null;
+  CL.relay.saved=saved;
+}
+
+function relayLap(){
+  if(!CL||!CL.relay||!CL.relay.on)return;
+  tapFeedback();
+  var relay=CL.relay;
+  var index=Math.min(relay.currentLeg,3);
+  var leg=relay.legs[index]||{};
+  var splitMs=relayCurrentLegMs();
+  relay.splits[index]={lap:index+1,name:leg.name||'',ms:splitMs,time:fmt(splitMs)};
+  if(index>=3){
+    stopRelay(true);
+  }else{
+    relay.currentLeg=index+1;
+  }
+  save();rr();
 }
 
 function recordRunnerLap(r,n){
@@ -2133,6 +2264,11 @@ function currentSegmentClass(r){
 function masterToggle(){
   if(!CL)return;
   tapFeedback();
+  if(relayEnabled()){
+    if(CL.relay.on){stopRelay(true);save();rr();}
+    else{resetRelayTimer(false);startRelay();}
+    return;
+  }
   var any=CL.runners.some(function(r){return r.on;});
   if(any){
     /* STOP ALL */
@@ -2159,6 +2295,7 @@ function masterReset(){
   if(!CL)return;
   if(!confirm('Reset all timers and saved run history for this group?'))return;
   tapFeedback();
+  if(relayEnabled())resetRelayTimer(true);
   CL.runners.forEach(function(r){
     r.on=false;r.el=0;r.t0=0;r.le=0;r.lt=0;r.laps=[];r.saved=[];r.ts=null;
   });
@@ -2171,8 +2308,14 @@ function tick(){
   if(tk)return;
   tk=setInterval(function(){
     if(!CL){clearInterval(tk);tk=null;return;}
-    var anyOn=CL.runners.some(function(r){return r.on;});
+    var anyOn=(relayEnabled()&&CL.relay.on)||CL.runners.some(function(r){return r.on;});
     if(!anyOn){clearInterval(tk);tk=null;return;}
+    if(relayEnabled()&&CL.relay.on){
+      var total=document.getElementById('relay-total-live');
+      var leg=document.getElementById('relay-leg-live');
+      if(total)total.textContent=fmt(relayElapsedMs());
+      if(leg)leg.textContent=fmt(relayCurrentLegMs());
+    }
     CL.runners.filter(function(r){return r.on;}).forEach(function(r){
       var row=document.getElementById('rr-'+r.id);
       if(!row)return;
@@ -3283,6 +3426,7 @@ function syncFromShareResults(){
   }
   var syncable=logs.filter(function(group){
     if(!group||group.archived)return false;
+    if(group.type==='meet'&&group.relay&&group.relay.saved&&group.relay.saved.some(function(run){return run&&!run.meetSynced;}))return true;
     return (group.runners||[]).some(function(r){
       return (r.saved||[]).some(function(run){
         return group.type==='meet'?!run.meetSynced:!run.synced;
@@ -3315,6 +3459,9 @@ function meetSavedRunCount(r){
 function hasMeetSyncedRuns(r){
   return (r.saved||[]).some(function(s){return s&&s.meetSynced;});
 }
+function readyRelayRuns(){
+  return CL&&CL.relay&&CL.relay.saved?CL.relay.saved.filter(function(run){return run&&!run.meetSynced;}):[];
+}
 function renderMeetSaveAthletes(){
   var box=document.getElementById('ms-athletes');
   if(!box||!CL)return;
@@ -3345,10 +3492,11 @@ function syncMeetResultType(){
   updateMeetBestHints();
 }
 function renderMeetRelayRunnerOptions(){
+  var saved=readyRelayRuns()[0]||null;
   for(var i=1;i<=4;i++){
     var select=document.getElementById('ms-relay-runner-'+i);
     if(!select)continue;
-    var current=select.value;
+    var current=select.value||saved&&saved.legs&&saved.legs[i-1]&&saved.legs[i-1].name||'';
     select.innerHTML='<option value="">Runner '+i+'</option>'+AR.map(function(a){
       return '<option value="'+ex(a.name||'')+'">'+ex(a.name||'Unnamed')+'</option>';
     }).join('');
@@ -3418,7 +3566,7 @@ function openMeetSave(preselectRunnerId){
   setMeetSaveEvent(CL.eventName||CL.name||'');
   document.getElementById('ms-date').textContent=CL.meetDate||new Date().toISOString().slice(0,10);
   document.getElementById('ms-status').textContent='';
-  document.getElementById('ms-result-type').value='individual';
+  document.getElementById('ms-result-type').value=readyRelayRuns().length?'relay':'individual';
   document.getElementById('ms-relay-team').value='';
   document.getElementById('ms-relay-result').value='';
   for(var i=1;i<=4;i++){
@@ -3429,6 +3577,7 @@ function openMeetSave(preselectRunnerId){
   }
   document.getElementById('ms-wind').value='';
   document.getElementById('ms-notes').value='';
+  populateMeetRelayFromSaved();
   var btn=document.getElementById('ms-btn');
   btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;
   syncMeetResultType();
@@ -3436,6 +3585,18 @@ function openMeetSave(preselectRunnerId){
   updateMeetSaveStates();
   updateMeetBestHints();
   updateMeetSaveEmptyState();
+}
+function populateMeetRelayFromSaved(){
+  var run=readyRelayRuns()[0]||null;
+  if(!run)return;
+  document.getElementById('ms-relay-team').value=run.teamName||CL.relay&&CL.relay.teamName||'';
+  document.getElementById('ms-relay-result').value=fmt(Number(run.ms)||0);
+  (run.legs||[]).forEach(function(leg,i){
+    var runner=document.getElementById('ms-relay-runner-'+(i+1));
+    var split=document.getElementById('ms-relay-split-'+(i+1));
+    if(runner)runner.value=leg.name||'';
+    if(split)split.value=leg.time||fmt(Number(leg.ms)||0);
+  });
 }
 function selectOnlyMeetRunner(runnerId){
   document.querySelectorAll('.ms-runner').forEach(function(cb){
@@ -3603,11 +3764,12 @@ function submitCapturedRelayMeetResult(forceDuplicateSync){
   var result=document.getElementById('ms-relay-result').value.trim();
   var team=document.getElementById('ms-relay-team').value.trim();
   var legs=meetRelayLegsPayload();
+  var savedRelay=readyRelayRuns()[0]||null;
   if(!eventName){status.textContent='Select an event before saving relay results.';status.style.color='#c00';status.style.fontWeight='700';return;}
   if(!result){status.textContent='Enter the relay total time before saving.';status.style.color='#c00';status.style.fontWeight='700';return;}
   if(legs.length<2){status.textContent='Select relay runners and enter their splits.';status.style.color='#c00';status.style.fontWeight='700';return;}
   var notes=document.getElementById('ms-notes').value.trim();
-  var sourceId=['mobile-relay',CL.id||CL.meetRecordId||CL.meetName||'meet',eventName,team||'team',CL.meetDate||'',forceDuplicateSync?Date.now():''].join(':');
+  var sourceId=['mobile-relay',CL.id||CL.meetRecordId||CL.meetName||'meet',eventName,team||'team',CL.meetDate||'',savedRelay&&savedRelay.ts||'',forceDuplicateSync?Date.now():''].join(':');
   var payload={
     resultType:'relay',
     relayType:eventName,
@@ -3639,6 +3801,12 @@ function submitCapturedRelayMeetResult(forceDuplicateSync){
     }
     status.textContent='Relay result saved to SMART Trak!';
     status.style.color='#0a7a44';status.style.fontWeight='700';
+    if(savedRelay){
+      savedRelay.meetSynced=true;
+      savedRelay.meetSyncedAt=new Date().toISOString();
+      if(resultData.data&&resultData.data.recordId)savedRelay.meetResultRecordId=resultData.data.recordId;
+      save();rr();
+    }
     btn.textContent='Saved!';btn.style.background='#0a7a44';
     finishEntryQuickAction('m-meet-save');
     setTimeout(function(){btn.textContent='Save Meet Results';btn.style.background='#2B4FCC';btn.disabled=false;},3000);
