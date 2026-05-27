@@ -36,6 +36,29 @@ module.exports = async function handler(req, res) {
   try {
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const meetResult = normalizeMeetResult(payload);
+    if (meetResult.resultType === "relay") {
+      const properties = buildMeetResultProperties({ contactId: "", meetResult });
+      const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
+      if (duplicate && !meetResult.forceDuplicateSync) {
+        throw httpError(409, "This relay result appears to have already been saved.");
+      }
+      const record = await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records`,
+        method: "POST",
+        body: { locationId, properties },
+      });
+      res.status(200).json({
+        success: true,
+        athlete: meetResult.athleteName,
+        contactId: "",
+        recordId: record.id || (record.record && record.record.id) || null,
+        sourceRecordId: properties.source_record_id,
+        relay: true,
+        records: [],
+      });
+      return;
+    }
     const contact = await findOrCreateContact({ token, locationId, meetResult });
     const seasonSourceRecordId = buildSeasonSourceRecordId({ contactId: contact.id, meetResult });
     const existingSeasonRecord = await findObjectRecord({
@@ -111,9 +134,12 @@ function normalizeMeetResult(payload) {
 
   const meetDate = payload.meetDate ? new Date(payload.meetDate) : new Date();
   const resultDisplay = clean(payload.resultDisplay);
-  const athleteName = clean(payload.athleteName);
+  const resultType = clean(payload.resultType).toLowerCase() === "relay" ? "relay" : "individual";
+  const relayType = clean(payload.relayType || payload.event);
+  const relayTeamName = clean(payload.relayTeamName);
+  const athleteName = resultType === "relay" ? clean(payload.athleteName || relayTeamName || `${relayType || "Relay"} Team`) : clean(payload.athleteName);
 
-  if (!athleteName && !clean(payload.contactId)) throw httpError(400, "Athlete is required.");
+  if (resultType !== "relay" && !athleteName && !clean(payload.contactId)) throw httpError(400, "Athlete is required.");
   if (!clean(payload.meetName)) throw httpError(400, "Meet name is required.");
   if (!clean(payload.event)) throw httpError(400, "Event is required.");
   if (!resultDisplay) throw httpError(400, "Result is required.");
@@ -132,8 +158,11 @@ function normalizeMeetResult(payload) {
     resultMs: Number(payload.resultMs) || parseTimeToMs(resultDisplay) || null,
     wind: clean(payload.wind),
     splitsJson: clean(payload.splitsJson),
-    isPr: truthy(payload.isPr),
-    isSeasonBest: truthy(payload.isSeasonBest),
+    resultType,
+    relayType,
+    relayTeamName,
+    isPr: resultType !== "relay" && truthy(payload.isPr),
+    isSeasonBest: resultType !== "relay" && truthy(payload.isSeasonBest),
     coachRaceNotes: clean(payload.coachRaceNotes),
     sourceRecordId: clean(payload.sourceRecordId),
     forceDuplicateSync: payload.forceDuplicateSync === true,
@@ -231,11 +260,21 @@ function buildMeetResultProperties({ contactId, meetResult }) {
     splits_json: splitLines.length ? splitLines.join("\n") : "",
     is_pr: meetResult.isPr ? "Yes" : "No",
     is_season_best: meetResult.isSeasonBest ? "Yes" : "No",
-    coach_race_notes: meetResult.coachRaceNotes,
+    coach_race_notes: meetResultNotes(meetResult),
     source_system: "smartcoach_pro",
     source_record_id: sourceRecordId,
   };
-  return properties;
+  return compactProperties(properties);
+}
+
+function meetResultNotes(meetResult) {
+  if (meetResult.resultType !== "relay") return meetResult.coachRaceNotes;
+  return [
+    "Result Type: Relay",
+    `Relay Type: ${meetResult.relayType || meetResult.event}`,
+    meetResult.relayTeamName ? `Relay Team: ${meetResult.relayTeamName}` : "",
+    meetResult.coachRaceNotes,
+  ].filter(Boolean).join("\n");
 }
 
 async function addMeetResultNote({ token, contactId, meetResult }) {
@@ -249,7 +288,8 @@ async function addMeetResultNote({ token, contactId, meetResult }) {
 
   const splits = formatSplitsForNote(meetResult.splitsJson);
   if (splits.length) lines.push("Splits:", ...splits);
-  if (meetResult.coachRaceNotes) lines.push(`Notes: ${meetResult.coachRaceNotes}`);
+  const notes = meetResultNotes(meetResult);
+  if (notes) lines.push(`Notes: ${notes}`);
 
   await ghlFetch({
     token,
@@ -270,8 +310,10 @@ function formatSplitsForNote(splitsJson) {
   if (!Array.isArray(splits)) return [];
   return splits
     .map((split, index) => {
-      const time = clean(split && split.time);
+      const time = clean(split && (split.time || split.split));
       if (!time) return "";
+      const name = clean(split && split.name);
+      if (name) return `${name}: ${time}`;
       const lap = Number(split && split.lap) || index + 1;
       return `Lap ${lap}: ${time}`;
     })

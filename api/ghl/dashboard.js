@@ -27,7 +27,7 @@ const FIELD_IDS = {
   result_display: ["Cu9h6mq2X6uPSQG6IraM"],
   result_ms: ["tqdu89hWLwfdiylZzxqj"],
   meet_date: ["rYZUhun2ynmK8MNsYgph"],
-  sport: ["NFlleoMtJlvlB1KAOqpR"],
+  sport: ["NFlleoMtJlvlB1KAOqpR", "rgFknLe8077zfXPF5i9I"],
   wind: ["sYR9reCyygQaHH3x88DR"],
   is_pr: ["XMvKfEECN6PCcA0TKwzN"],
   is_season_best: ["zO57s50B9sf62EPdoq7J"],
@@ -39,7 +39,7 @@ const FIELD_IDS = {
   total_time_ms: ["tzmjjgk4FwJLfJDZ1KAc"],
   session_date: ["pl69ao2Pu76zeUKMEWpm"],
   rep_number: ["J0SJxcm3yeraYzoYgjXe"],
-  splits_json: ["bIjfXwW7mDCkkjGS4LL5"],
+  splits_json: ["bIjfXwW7mDCkkjGS4LL5", "kT3jmzTT9uFrJxvZSeUK"],
   coach_note: ["Afy8b8lAbUoti9cCqa1m"],
 };
 
@@ -219,12 +219,14 @@ function buildRecentTrainingSyncs({ athletes, performanceRecords }) {
 
 function buildRecentMeetResults({ athletes, meetRecords }) {
   const rows = [];
+  const matchedRecordIds = new Set();
   athletes.forEach((athlete) => {
     meetRecords.forEach((record) => {
       if (!recordMatchesAthlete(record, athlete)) return;
       if (isVoidedMeetResult(record)) return;
       const result = normalizeMeetResult(record);
       if (!result.event && !result.resultDisplay) return;
+      if (result.recordId) matchedRecordIds.add(result.recordId);
       rows.push({
         athleteName: athlete.name,
         contactId: athlete.id,
@@ -232,6 +234,13 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
         ...result,
       });
     });
+  });
+  meetRecords.forEach((record) => {
+    if (isVoidedMeetResult(record)) return;
+    const result = normalizeMeetResult(record);
+    if (!isRelayMeetResult(result)) return;
+    if (result.recordId && matchedRecordIds.has(result.recordId)) return;
+    rows.push(result);
   });
   return rows.sort(sortMeetSyncDesc);
 }
@@ -335,9 +344,12 @@ function normalizeBest(record) {
 function normalizeMeetResult(record) {
   const props = recordProperties(record);
   const coachRaceNotes = prop(props, "coach_race_notes");
+  const splitsText = prop(props, "splits_json");
+  const resultType = noteValue(coachRaceNotes, "Result Type");
   return {
     recordId: record && record.id ? record.id : "",
     sourceRecordId: prop(props, "source_record_id"),
+    athleteName: prop(props, "athlete_name_snapshot"),
     meetName: prop(props, "meet_name"),
     event: prop(props, "event"),
     resultDisplay: prop(props, "result_display"),
@@ -347,12 +359,20 @@ function normalizeMeetResult(record) {
     wind: prop(props, "wind"),
     isPr: yes(prop(props, "is_pr")),
     isSeasonBest: yes(prop(props, "is_season_best")),
+    splitsText,
+    resultType,
+    relayType: noteValue(coachRaceNotes, "Relay Type"),
+    relayTeamName: noteValue(coachRaceNotes, "Relay Team"),
     coachRaceNotes,
     correctionDate: noteValue(coachRaceNotes, "Correction Date"),
     correctionReason: noteValue(coachRaceNotes, "Correction Reason"),
     corrected: !!noteValue(coachRaceNotes, "Correction Date"),
     syncedAt: recordTimestamp(record),
   };
+}
+
+function isRelayMeetResult(result) {
+  return clean(result && result.resultType).toLowerCase() === "relay" || /"name"\s*:/.test(clean(result && result.splitsText));
 }
 
 function isVoidedMeetResult(record) {
