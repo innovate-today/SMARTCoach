@@ -907,6 +907,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 155. Athlete Calendar cards now show a clear submitted indicator after a workout is Completed, Modified, or Skipped, including a tinted card state and selected action button so athletes can tell what they already submitted.
 156. Athlete Calendar now marks a card locally immediately after a successful submission, so athletes see the submitted state even if GHL calendar status takes time to reflect the update. Athlete notes are also carried into the linked Training Calendar day coach notes as `Athlete note: ...`, while still syncing into the performance/training note.
 157. Athlete Calendar submitted states now use stronger, consistent card colors and status-pill colors for Completed, Modified, and Skipped, with the indicator wording changed to `Athlete submitted: ...`.
+158. How To guide updated with Athlete Calendar submitted-card indicators and where coaches can read athlete notes.
 
 ## Known Good Test Flow
 

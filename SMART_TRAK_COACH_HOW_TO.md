@@ -395,9 +395,12 @@ How to use it:
 5. The athlete can mark a workout **Complete**, **Modify**, or **Skip**.
 6. Modified workouts can include actual distance or volume, optional time, and optional notes.
 7. Skipped workouts require a note.
-8. Submitted updates save into SMART Trak as athlete-submitted completed workout records.
+8. After a successful submission, the workout card shows **Athlete submitted: Completed**, **Athlete submitted: Modified**, or **Athlete submitted: Skipped** with a matching card color and selected action button.
+9. Submitted updates save into SMART Trak as athlete-submitted completed workout records.
 
 Athlete links are unique to each athlete. Athletes do not need the coach access code.
+
+Athlete notes sync into the completed workout/performance note. They are also added to the linked Training Calendar workout's coach notes as **Athlete note:** so coaches can open the calendar workout and read what the athlete submitted.
 
 ## Simple Weekly Coach Workflow
 
