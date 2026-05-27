@@ -62,6 +62,14 @@ How to use it:
 
 To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.
 
+To copy a workout already on the calendar:
+
+1. Click the workout.
+2. Click **Copy**.
+3. Go to the target week or date.
+4. Click **Add** on that date.
+5. Click **Paste Copied**.
+
 Use the status tools when a group of days needs to be changed:
 
 1. Check the days you want to update.

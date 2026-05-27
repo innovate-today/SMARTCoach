@@ -299,6 +299,7 @@ button.compact{padding:6px 9px;font-size:12px}
       <h2 id="dayModalTitle">Plan Day</h2>
       <div class="actions">
         <button id="dayEditBtn" class="secondary" type="button">Edit</button>
+        <button id="dayCopyBtn" class="secondary" type="button">Copy</button>
         <button id="dayRemoveBtn" class="danger" type="button">Remove from Calendar</button>
         <button id="dayModalClose" class="ghost" type="button">Close</button>
       </div>
@@ -563,6 +564,7 @@ var selectedBulkDayIds=[];
 var includePastPlans=false;
 var addDayMode='easy';
 var draggedDayId='';
+var copiedCalendarDay=null;
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -613,6 +615,7 @@ var els={
   dayModalBody:document.getElementById('dayModalBody'),
   dayModalClose:document.getElementById('dayModalClose'),
   dayEditBtn:document.getElementById('dayEditBtn'),
+  dayCopyBtn:document.getElementById('dayCopyBtn'),
   dayRemoveBtn:document.getElementById('dayRemoveBtn'),
   dayEditModal:document.getElementById('dayEditModal'),
   dayEditClose:document.getElementById('dayEditClose'),
@@ -1278,6 +1281,7 @@ function dayColumn(date,items){
     '<div class="dayactions" aria-label="Add options">'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="easy" type="button"><span class="dayicon activity">+</span>Add Activity</button>'+
       '<button class="dayaction" data-add-day="'+esc(dateKey)+'" data-add-mode="off" type="button"><span class="dayicon rest">+</span>Add Rest Day</button>'+
+      '<button class="dayaction" data-paste-day="'+esc(dateKey)+'" type="button"><span class="dayicon activity">+</span>Paste Copied</button>'+
     '</div></div></div>'+(items.length?items.map(dayItem).join(''):'<div class="meta">No plan day</div>')+'</div>';
 }
 function dayItem(day){
@@ -1349,6 +1353,116 @@ function moveTrainingPlanDay(day,nextDate){
     render();
     els.status.textContent='Moved '+(day.title||day.dayType||'calendar item')+' to '+formatDate(nextDate)+'.';
     return true;
+  });
+}
+function copyActiveDay(){
+  if(!activeDay)return;
+  copiedCalendarDay=copyableCalendarDay(activeDay);
+  try{sessionStorage.setItem('smarttrak_copied_calendar_day',JSON.stringify(copiedCalendarDay));}catch(e){}
+  els.status.textContent='Copied '+(copiedCalendarDay.title||'calendar day')+'. Use Paste Copied on another date.';
+  closeDayModal();
+}
+function copyableCalendarDay(day){
+  return {
+    trainingPlanId:day.trainingPlanId||'',
+    trainingPlanSourceId:day.trainingPlanSourceId||'',
+    dayType:day.dayType||'Workout',
+    groupName:day.groupName||'',
+    athleteContact:day.athleteContact||'',
+    athleteName:day.athleteName||'',
+    title:day.title||day.dayType||'Copied workout',
+    details:day.details||'',
+    workoutType:day.workoutType||'',
+    energySystem:day.energySystem||'',
+    targetSplits:day.targetSplits||'',
+    plannedVolume:day.plannedVolume||'',
+    status:'Scheduled',
+    linkedMeetId:'',
+    linkedPerformanceRecordIds:'',
+    coachNotes:day.coachNotes||''
+  };
+}
+function copiedDayFromStorage(){
+  if(copiedCalendarDay)return copiedCalendarDay;
+  try{copiedCalendarDay=JSON.parse(sessionStorage.getItem('smarttrak_copied_calendar_day')||'null');}catch(e){copiedCalendarDay=null;}
+  return copiedCalendarDay;
+}
+function pasteCopiedDay(targetDate){
+  var copied=copiedDayFromStorage();
+  if(!copied){els.status.textContent='Copy a workout first, then choose Paste Copied on the target date.';return;}
+  var date=String(targetDate||'').slice(0,10);
+  if(!date){els.status.textContent='Choose a valid date for the copied workout.';return;}
+  var plan=copied.trainingPlanId?plans.find(function(item){return planId(item)===String(copied.trainingPlanId)||String(item.sourceRecordId||'')===String(copied.trainingPlanId);})||null:null;
+  var groupName=copied.groupName||(plan?planSubject(plan):'');
+  var day={
+    date:date,
+    dayType:copied.dayType||'Workout',
+    groupName:groupName,
+    athleteContact:copied.athleteContact||'',
+    athleteName:copied.athleteName||'',
+    workoutTitle:copied.title||'Copied workout',
+    workoutDetails:copied.details||'',
+    workoutType:copied.workoutType||'',
+    energySystem:copied.energySystem||'',
+    targetSplits:copied.targetSplits||'',
+    plannedVolume:copied.plannedVolume||'',
+    status:'Scheduled',
+    linkedMeetId:'',
+    linkedPerformanceRecordIds:'',
+    coachNotes:[copied.coachNotes,'Copied on Training Calendar from '+(copied.title||'calendar day')].filter(Boolean).join('\n')
+  };
+  day.sourceRecordId=uniqueCalendarDaySourceId(plan,day);
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.status.textContent='Pasting '+(day.workoutTitle||'calendar day')+'...';
+  createMeetForCalendarDay(plan,day).then(function(meet){
+    if(meet&&meet.id)day.linkedMeetId=meet.id;
+    return fetch('/api/smart-trak/training-plan',{
+      method:'POST',
+      headers:headers,
+      body:JSON.stringify({
+        action:'appendDays',
+        planId:plan?(plan.id||plan.sourceRecordId||planId(plan)):'',
+        planSourceRecordId:plan&&plan.sourceRecordId||'',
+        planName:plan&&plan.title||'Standalone Calendar Activity',
+        planScope:plan&&plan.scope||'Group',
+        groupName:groupName,
+        season:plan&&plan.season||seasonFromDate(date),
+        seasonYear:plan&&plan.seasonYear||String(new Date(date+'T00:00:00').getFullYear()),
+        phase:plan&&plan.phase||'GPP',
+        calendarName:plan&&plan.calendarName||'Training Calendar',
+        days:[day]
+      })
+    });
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not paste copied workout.');
+    var savedDay=result.data&&result.data.days&&result.data.days[0]||{};
+    days.push({
+      id:savedDay.recordId||savedDay.id||day.sourceRecordId,
+      sourceRecordId:savedDay.sourceRecordId||day.sourceRecordId,
+      trainingPlanId:plan?(plan.id||plan.sourceRecordId||planId(plan)):'',
+      date:day.date,
+      dayType:day.dayType,
+      groupName:day.groupName,
+      athleteContact:day.athleteContact,
+      athleteName:day.athleteName,
+      title:day.workoutTitle,
+      details:day.workoutDetails,
+      workoutType:day.workoutType,
+      energySystem:day.energySystem,
+      targetSplits:day.targetSplits,
+      plannedVolume:day.plannedVolume,
+      status:day.status,
+      linkedMeetId:day.linkedMeetId,
+      coachNotes:day.coachNotes
+    });
+    renderOptions();
+    render();
+    els.status.textContent='Copied workout pasted on '+formatDate(parseCalendarDate(date))+'.';
+  }).catch(function(error){
+    els.status.textContent=error.message||'Could not paste copied workout.';
   });
 }
 function moveManagedMeetDay(day,nextDate){
@@ -3096,6 +3210,11 @@ function init(){
   els.calendar.addEventListener('click',function(event){
     if(event.target.closest&&event.target.closest('[data-bulk-check-all]'))return;
     if(event.target.closest&&event.target.closest('[data-bulk-check]'))return;
+    var pasteButton=event.target.closest&&event.target.closest('[data-paste-day]');
+    if(pasteButton){
+      pasteCopiedDay(pasteButton.getAttribute('data-paste-day')||todayInputValue());
+      return;
+    }
     var addButton=event.target.closest&&event.target.closest('[data-add-day]');
     if(addButton){
       openAddDayModal(addButton.getAttribute('data-add-day')||todayInputValue(),addButton.getAttribute('data-add-mode')||'easy');
@@ -3131,6 +3250,7 @@ function init(){
   });
   els.dayModalClose.addEventListener('click',closeDayModal);
   els.dayEditBtn.addEventListener('click',openEditModal);
+  els.dayCopyBtn.addEventListener('click',copyActiveDay);
   els.dayRemoveBtn.addEventListener('click',removeActiveDay);
   els.dayEditClose.addEventListener('click',closeEditModal);
   els.dayEditSave.addEventListener('click',saveDayEdit);

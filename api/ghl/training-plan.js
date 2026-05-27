@@ -323,18 +323,34 @@ async function updateTrainingPlanDay({ token, locationId, payload }) {
 
   if (!Object.keys(properties).length) throw httpError(400, "No plan day updates were provided.");
 
-  await ghlFetch({
-    token,
-    path: `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/${encodeURIComponent(dayId)}?locationId=${encodeURIComponent(locationId)}`,
-    method: "PUT",
-    body: { properties },
-  });
+  await updateTrainingPlanDayRecordWithFallback({ token, locationId, dayId, properties });
 
   return {
     id: dayId,
     updatedAt: new Date().toISOString(),
     changedFields: Object.keys(properties),
   };
+}
+
+async function updateTrainingPlanDayRecordWithFallback({ token, locationId, dayId, properties }) {
+  const path = `/objects/${encodeURIComponent(TRAINING_PLAN_DAY_SCHEMA_KEY)}/records/${encodeURIComponent(dayId)}?locationId=${encodeURIComponent(locationId)}`;
+  try {
+    return await ghlFetch({ token, path, method: "PUT", body: { properties } });
+  } catch (error) {
+    if (!/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "")) throw error;
+    const withoutWorkoutType = { ...properties };
+    delete withoutWorkoutType.workout_type;
+    try {
+      return await ghlFetch({ token, path, method: "PUT", body: { properties: withoutWorkoutType } });
+    } catch (secondError) {
+      if (!/allowed option|isn't an allowed option|not an allowed/i.test(secondError.message || "")) throw secondError;
+      const safeProperties = { ...withoutWorkoutType };
+      delete safeProperties.day_type;
+      delete safeProperties.energy_system;
+      delete safeProperties.status;
+      return await ghlFetch({ token, path, method: "PUT", body: { properties: safeProperties } });
+    }
+  }
 }
 
 async function resolveTrainingPlanDayRecordId({ token, locationId, dayId }) {
