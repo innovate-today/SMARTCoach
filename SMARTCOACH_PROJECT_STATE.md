@@ -900,6 +900,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 148. Training Calendar Week View now has Previous Week and Next Week controls so coaches can schedule future weeks directly from the calendar grid.
 149. Training Calendar day updates now retry without rejected option fields when GHL rejects a saved option value, fixing remove/status updates for saved Easy/Recovery Run days. Calendar items can also be copied from the day modal and pasted onto another date.
 150. Training Calendar copy/paste is now surfaced directly on the week calendar: each workout/meet card has a copy button, and each day header has a visible Paste button so coaches do not have to open the Add menu to paste.
+151. Add Easy Run now defaults the Distance field to a real value of 5 mi instead of showing 5 as a placeholder, preventing blank planned volume when coaches leave the default visible value unchanged.
 
 ## Known Good Test Flow
 

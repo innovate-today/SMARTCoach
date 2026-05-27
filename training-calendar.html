@@ -422,7 +422,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <div id="easyActivityFields" class="activitysection" hidden>
           <h3>Easy Run</h3>
           <div class="compactgrid">
-            <div class="field"><label for="addEasyDistance">Distance</label><input id="addEasyDistance" class="mini-input" type="number" min="0" step="1" placeholder="5"></div>
+            <div class="field"><label for="addEasyDistance">Distance</label><input id="addEasyDistance" class="mini-input" type="number" min="0" step="1" value="5"></div>
             <div class="field"><label for="addEasyUnit">Unit</label><select id="addEasyUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div>
             <div class="field"><label>&nbsp;</label><button id="addEasyStridesBtn" class="builder-link" type="button">Add Post-Run Strides</button></div>
           </div>
@@ -2029,7 +2029,7 @@ function openAddDayModal(dateValue,mode){
   els.addDayTarget.value='';
   els.addDayDetails.value='';
   els.addDayNotes.value='';
-  els.addEasyDistance.value='';
+  els.addEasyDistance.value='5';
   els.addEasyUnit.value='mi';
   els.easyStridesFields.hidden=true;
   els.addEasyStridesReps.value='5';
