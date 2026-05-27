@@ -412,6 +412,7 @@ var els={
   rows:document.getElementById('rows'),
   empty:document.getElementById('empty')
 };
+var pendingRecordsSourcePrefix='';
 function accountKey(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -694,7 +695,8 @@ function saveSingleRecord(){
     renderOptions();
     render();
     clearSingleRecordForm();
-    setBulkStatus(mirrorWarning(result.data&&result.data.mirror)||'Record saved.','good');
+    pendingRecordsSourcePrefix=(mirrorWarning(result.data&&result.data.mirror)||'Record saved.')+' ';
+    return loadRecords();
   }).catch(function(error){
     setBulkStatus(error.message||'Record could not be saved.','bad');
   }).finally(function(){
@@ -753,6 +755,8 @@ function saveRecordEdit(){
     render();
     setRecordEditStatus(mirrorWarning(result.data&&result.data.mirror)||'Record updated.','good');
     closeRecordEdit();
+    pendingRecordsSourcePrefix=(mirrorWarning(result.data&&result.data.mirror)||'Record updated.')+' ';
+    return loadRecords();
   }).catch(function(error){
     setRecordEditStatus(error.message||'Record could not be updated.','bad');
   }).finally(function(){
@@ -786,7 +790,8 @@ function deleteRecord(){
     renderOptions();
     render();
     closeRecordEdit();
-    setBulkStatus('Record deleted.','good');
+    pendingRecordsSourcePrefix='Record deleted. ';
+    return loadRecords();
   }).catch(function(error){
     setRecordEditStatus(error.message||'Record could not be deleted.','bad');
   }).finally(function(){
@@ -900,6 +905,8 @@ function saveBulkRecords(){
     bulkRows=[];
     els.bulkText.value='';
     renderBulkPreview();
+    pendingRecordsSourcePrefix='Saved '+(result.data.createdCount||localRows.length)+' records. ';
+    return loadRecords();
   }).catch(function(error){
     els.saveBulkBtn.disabled=false;
     setBulkStatus(error.message||'Records could not be saved.','bad');
@@ -1074,7 +1081,8 @@ function showRecordsDebug(debug){
   var mirrorCount=Number(debug.mirrorCount||0);
   var mergedCount=Number(debug.mergedCount||0);
   var registryState=mirror.configured===false?'off':'on';
-  var text='Records source: GHL '+ghlCount+', mirror '+mirrorCount+', merged '+mergedCount+'. Registry '+registryState+', index '+Number(mirror.indexCount||0)+', scan '+Number(mirror.scanCount||0)+', load '+Number(mirror.loadCount||0)+'.';
+  var text=String(pendingRecordsSourcePrefix||'')+'Records source: GHL '+ghlCount+', mirror '+mirrorCount+', merged '+mergedCount+'. Registry '+registryState+', index '+Number(mirror.indexCount||0)+', scan '+Number(mirror.scanCount||0)+', load '+Number(mirror.loadCount||0)+'.';
+  pendingRecordsSourcePrefix='';
   if(mirror.error)text+=' '+mirror.error;
   setBulkStatus(text,mergedCount<=1?'bad':mirrorCount>0?'good':'warn');
 }
