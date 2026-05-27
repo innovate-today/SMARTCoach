@@ -62,6 +62,7 @@ Latest handoff:
 - Records page now also keeps an account-scoped browser cache of records saved from that page and merges it after reload, protecting coaches from GHL list responses that only return the newest saved batch.
 - Records table now renders each saved record row directly instead of collapsing records into one board row, and the Records Tools gender dropdown is limited to Boys and Girls with Boys as the default.
 - Records edit/delete buttons now target the row's full identity key instead of relying only on a record ID, so cached or merged records open with their saved values instead of a blank edit modal.
+- Records page no longer shows the History column or unused expansion controls now that each saved record is shown directly.
 - `SMART_TRAK_COACH_HOW_TO.md` was added as the coach tutorial covering SMART Trak Dashboard, Athletes, Training Calendar, Meet History, XC Simulator, Records, Manage Meets, Log Race Result, Log Miles, and the phone app Training/Meet/Archive/Settings/Sync workflows.
 - The coach how-to guide was cleaned so it does not mention GHL or use "coach-facing" wording.
 - Next practical step: deploy/retest those three live fixes, then continue the live Pro test-account validation pass with dashboard filtered-volume retests, manual mileage same-day edit retest, and phone app follow-up checks.
@@ -857,6 +858,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 121. User retested by adding three more records; the newest records stayed but earlier records disappeared after refresh. Records page now stores account-scoped saved records in browser storage and merges them with server records on reload, including cache updates for single save, bulk save, edit, and delete.
 122. User retested again and still only saw the last saved record after refresh. Records page now renders individual record rows instead of collapsing records into board groups, and Records Tools gender choices are now only Boys and Girls.
 123. Records edit modal opened blank because row actions depended on `recordId`, which can be missing or mismatched for cached/merged rows. Edit/delete actions now use the row identity key and fall back to removing local-only rows from the view.
+124. Records page cleanup: removed the History column and unused expansion/history helpers after switching the page to direct record rows.
 
 ## Known Good Test Flow
 

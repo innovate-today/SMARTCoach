@@ -80,14 +80,6 @@ tr:last-child td{border-bottom:0}
 .pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#e8eefc;color:#173891}
 .pill.good{background:#dcfce7;color:var(--good)}
 .pill.warn{background:#ffedd5;color:var(--warn)}
-.rowtoggle{border:0;background:transparent;color:#102a70;font-size:14px;font-weight:900;padding:0 7px 0 0;cursor:pointer;vertical-align:1px}
-.historyrow td{background:#f8fbff;padding:0}
-.historybox{padding:10px 14px 12px 34px;border-left:3px solid #dbeafe}
-.historytitle{font-size:12px;font-weight:900;text-transform:uppercase;color:#475569;letter-spacing:.03em;margin-bottom:8px}
-.historyitem{display:grid;grid-template-columns:120px 150px 1fr 130px 120px auto;gap:12px;align-items:center;border-top:1px solid var(--line);padding:9px 0}
-.historyitem:first-of-type{border-top:0}
-.historylabel{color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
-.historyvalue{font-size:13px}
 .empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
 .access{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
 .access h1{font-size:24px;margin-bottom:8px}
@@ -113,7 +105,6 @@ tr:last-child td{border-bottom:0}
   .bulkhelp,.bulkfile{grid-template-columns:1fr}
   .recordform{grid-template-columns:1fr}
   .recordform .wide{grid-column:auto}
-  .historyitem{grid-template-columns:1fr 1fr}
   .status{text-align:left}
 }
 </style>
@@ -256,7 +247,6 @@ tr:last-child td{border-bottom:0}
           <th><button class="sortbtn" data-sort="meet" type="button">Meet</button></th>
           <th><button class="sortbtn" data-sort="date" type="button">Date</button></th>
           <th>Status</th>
-          <th>History</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -342,7 +332,6 @@ var records=[];
 var bulkRows=[];
 var recordSort={key:'event',dir:'asc'};
 var editingRecord=null;
-var expandedRecordBoards={};
 var RECORD_TYPES=['School Record'];
 var RECORD_SCOPES=['School'];
 var GENDERS=['Boys','Girls'];
@@ -993,106 +982,21 @@ function recordIsUsable(row){
   if(!recordEvent(row)||!recordValue(row))return false;
   return !type||type.indexOf('school')>=0;
 }
-function newestRecord(a,b){
-  return String(b.recordDate||'').localeCompare(String(a.recordDate||'')) ||
-    String(b.syncedAt||'').localeCompare(String(a.syncedAt||'')) ||
-    (b.resultMs||parseResultMs(b.resultDisplay))-(a.resultMs||parseResultMs(a.resultDisplay));
-}
-function recordTimeMs(row){
-  return Number(row&&row.resultMs)||parseResultMs(row&&row.resultDisplay)||0;
-}
-function bestRecord(a,b){
-  var aMs=recordTimeMs(a);
-  var bMs=recordTimeMs(b);
-  if(aMs&&bMs&&aMs!==bMs)return aMs-bMs;
-  if(aMs&&!bMs)return -1;
-  if(!aMs&&bMs)return 1;
-  return newestRecord(a,b);
-}
-function boardMainRecord(group,status){
-  var ranked=group.slice().sort(bestRecord);
-  var historical=ranked.slice(1);
-  if(status==='historical')return historical[0]||ranked[0]||group[0];
-  return ranked[0]||group[0];
-}
-function recordGroupsForView(){
-  var status=els.statusFilter.value;
-  var groups={};
-  baseRecordsForBoards().forEach(function(row){
-    var key=recordBoardKey(row);
-    if(!groups[key])groups[key]=[];
-    groups[key].push(row);
-  });
-  return Object.keys(groups).map(function(key){
-    var group=groups[key].slice().sort(newestRecord);
-    var main=boardMainRecord(group,status);
-    var history=group.filter(function(row){return row!==main;}).sort(bestRecord);
-    if(!history.length&&main&&main.previousRecordDisplay){
-      history.push({
-        recordId:'',
-        isSynthetic:true,
-        recordType:'School Record',
-        recordScope:'School',
-        gender:main.gender||'Unlisted',
-        sport:main.sport||'Track',
-        event:recordEvent(main),
-        resultDisplay:main.previousRecordDisplay,
-        resultMs:parseResultMs(main.previousRecordDisplay),
-        resultMark:'',
-        athleteName:main.previousRecordHolder||'',
-        meetName:'',
-        recordDate:main.recordDate,
-        season:main.season,
-        seasonYear:main.seasonYear,
-        isCurrent:false,
-        recordNotes:'Recovered from previous record fields.'
-      });
-    }
-    return {key:key,main:main,history:history,all:group};
-  }).filter(function(board){
-    if(status==='current')return !!board.main;
-    if(status==='historical')return !!(board.main&&board.history.length);
-    return !!board.main;
-  }).sort(function(a,b){return compareRecordValue(a.main,b.main,recordSort.key)*(recordSort.dir==='desc'?-1:1) || String(recordEvent(a.main)||'').localeCompare(String(recordEvent(b.main)||'')) || String(a.main.gender||'').localeCompare(String(b.main.gender||''));});
-}
-function historyCountLabel(count){
-  if(!count)return 'No history';
-  return count+' past record'+(count===1?'':'s');
-}
 function recordRowHtml(row,board){
   var eventName=recordEvent(row);
   var value=recordValue(row);
   var key=recordIdentity(row);
-  var history=board&&board.history||[];
-  var expanded=!!(board&&expandedRecordBoards[board.key]);
-  var toggle=history.length?'<button class="rowtoggle" data-toggle-board="'+esc(board.key)+'" type="button" aria-label="Toggle record history">'+(expanded?'▾':'▸')+'</button>':'<span class="rowtoggle" aria-hidden="true"></span>';
   var status=row.isCurrent?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
   return '<tr>'+
-    '<td><div class="name">'+toggle+esc(eventName)+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
+    '<td><div class="name">'+esc(eventName)+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
     '<td>'+esc(row.gender||'Unlisted')+'</td>'+
     '<td><b>'+esc(value)+'</b></td>'+
     '<td>'+esc(row.athleteName||'')+'</td>'+
     '<td>'+esc(row.meetName||'')+'</td>'+
     '<td>'+esc(formatDate(row.recordDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
     '<td>'+status+'</td>'+
-    '<td>'+esc(historyCountLabel(history.length))+'</td>'+
     '<td><button class="ghost compact" data-edit-record="'+esc(key)+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(key)+'" type="button">Delete</button></td>'+
   '</tr>';
-}
-function recordHistoryHtml(board){
-  if(!expandedRecordBoards[board.key]||!board.history.length)return '';
-  return '<tr class="historyrow"><td colspan="9"><div class="historybox"><div class="historytitle">Past records for '+esc(recordEvent(board.main))+' · '+esc(board.main.gender||'Unlisted')+'</div>'+
-    board.history.map(function(row){
-      var actions=row.isSynthetic?'<span class="muted">Recovered history</span>':'<button class="ghost compact" data-edit-record="'+esc(recordIdentity(row))+'" type="button">Edit</button> <button class="danger compact" data-delete-record="'+esc(recordIdentity(row))+'" type="button">Delete</button>';
-      return '<div class="historyitem">'+
-        '<div><div class="historylabel">Record</div><div class="historyvalue"><b>'+esc(recordValue(row))+'</b></div></div>'+
-        '<div><div class="historylabel">Holder</div><div class="historyvalue">'+esc(row.athleteName||'')+'</div></div>'+
-        '<div><div class="historylabel">Meet</div><div class="historyvalue">'+esc(row.meetName||'')+'</div></div>'+
-        '<div><div class="historylabel">Date</div><div class="historyvalue">'+esc(formatDate(row.recordDate))+'</div></div>'+
-        '<div><span class="pill warn">Historical</span></div>'+
-        '<div>'+actions+'</div>'+
-      '</div>';
-    }).join('')+'</div></td></tr>';
 }
 function render(){
   var list=filteredRecords().filter(recordIsUsable);
@@ -1221,13 +1125,6 @@ function init(){
       editingRecord=findRecordByKey(del.getAttribute('data-delete-record')||'');
       deleteRecord();
       return;
-    }
-    var toggle=event.target.closest&&event.target.closest('[data-toggle-board]');
-    if(toggle){
-      event.preventDefault();
-      var key=toggle.getAttribute('data-toggle-board')||'';
-      expandedRecordBoards[key]=!expandedRecordBoards[key];
-      render();
     }
   });
   els.search.addEventListener('input',render);
