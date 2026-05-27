@@ -4375,6 +4375,7 @@ setTimeout(function(){var s=document.getElementById('splash');s.classList.add('g
 document.addEventListener('touchstart',function(e){
   prepareFeedbackAudio();
   var t=e.target;
+  if(t.closest&&t.closest('.picker-row'))return;
   if(t.tagName==='BUTTON'||t.classList.contains('blnk')||t.classList.contains('ibtn')||t.classList.contains('tog')){
     e.preventDefault();t.click();
   }
