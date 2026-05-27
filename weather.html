@@ -142,6 +142,27 @@ function weatherLabel(code){
   var map={0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Cloudy',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',95:'Thunderstorm',96:'Thunderstorm with hail',99:'Thunderstorm with hail'};
   return map[Number(code)]||'Forecast';
 }
+var US_STATES={al:'Alabama',ak:'Alaska',az:'Arizona',ar:'Arkansas',ca:'California',co:'Colorado',ct:'Connecticut',de:'Delaware',fl:'Florida',ga:'Georgia',hi:'Hawaii',id:'Idaho',il:'Illinois',in:'Indiana',ia:'Iowa',ks:'Kansas',ky:'Kentucky',la:'Louisiana',me:'Maine',md:'Maryland',ma:'Massachusetts',mi:'Michigan',mn:'Minnesota',ms:'Mississippi',mo:'Missouri',mt:'Montana',ne:'Nebraska',nv:'Nevada',nh:'New Hampshire',nj:'New Jersey',nm:'New Mexico',ny:'New York',nc:'North Carolina',nd:'North Dakota',oh:'Ohio',ok:'Oklahoma',or:'Oregon',pa:'Pennsylvania',ri:'Rhode Island',sc:'South Carolina',sd:'South Dakota',tn:'Tennessee',tx:'Texas',ut:'Utah',vt:'Vermont',va:'Virginia',wa:'Washington',wv:'West Virginia',wi:'Wisconsin',wy:'Wyoming',dc:'District of Columbia'};
+function parseLocationQuery(value){
+  var parts=String(value||'').split(',').map(function(part){return part.trim();}).filter(Boolean);
+  return{city:parts[0]||String(value||'').trim(),region:parts[1]||''};
+}
+function regionMatches(row,region){
+  var wanted=String(region||'').trim().toLowerCase();
+  if(!wanted)return true;
+  var stateName=US_STATES[wanted]||wanted;
+  var admin=String(row&&row.admin1||'').trim().toLowerCase();
+  var country=String(row&&row.country_code||'').trim().toLowerCase();
+  return admin===wanted||admin===stateName.toLowerCase()||country===wanted;
+}
+function chooseGeocodeResult(results,region){
+  var rows=results||[];
+  if(region){
+    var matched=rows.find(function(row){return regionMatches(row,region);});
+    if(matched)return matched;
+  }
+  return rows[0]||null;
+}
 function windDir(deg){var dirs=['N','NE','E','SE','S','SW','W','NW'];return dirs[Math.round((Number(deg)||0)/45)%8];}
 function formatTime(value){var d=new Date(value);return d.toLocaleTimeString([], {hour:'numeric'});}
 function formatDay(value){var d=new Date(value+'T00:00:00');return d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});}
@@ -154,9 +175,10 @@ function renderSaved(){
 function searchLocation(){
   var q=els.locationInput.value.trim();
   if(!q){setStatus('Enter a location first.','bad');return;}
+  var parsed=parseLocationQuery(q);
   setStatus('Searching location...','');
-  fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=5&language=en&format=json').then(function(res){return res.json();}).then(function(data){
-    var row=data&&data.results&&data.results[0];
+  fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(parsed.city)+'&count=10&language=en&format=json').then(function(res){return res.json();}).then(function(data){
+    var row=chooseGeocodeResult(data&&data.results,parsed.region);
     if(!row)throw new Error('No matching location found.');
     currentLocation={
       name:[row.name,row.admin1,row.country_code].filter(Boolean).join(', '),
