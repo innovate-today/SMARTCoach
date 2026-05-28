@@ -734,10 +734,13 @@ Hooked runner / nested timing groups:
   - Tapping Start/End Rep/Rest on any runner in a hook controls every runner in that hook.
   - Unhooked runners continue to work exactly as they do now.
 - Hooking must be available before and during the workout. It should not require stopping the workout.
+- Hooking must also support live changes while a rep/rest is actively running, because packs often split mid-rep. Example: during a 1-mile interval, runners 1-5 start hooked; on lap 3 runners 1-3 pull away while runners 4 and 5 separate. The coach should be able to keep 1-3 hooked for the shared finish while unhooking 4 and 5 so each can receive an individual finish time for that same rep.
+- Hooks should be treated as a live control-group state for the next timing action, not as a permanent athlete grouping. Coaches may reset hooks between reps as fatigue changes the pack, such as 1-3 hooked, 4 unhooked, 5 unhooked, 6-7 hooked, 8-9 hooked, and 10 unhooked.
+- Mid-rep hook edits should not rewrite already-recorded split/lap history. They should only determine which runners receive the next Start, End Rep, Lap, or Rest action after the hook change.
 - Sync should remain normal: each athlete keeps individual saved reps/rests, but shared hook actions stamp matching times to every runner in the hook.
 - Important UX safeguards:
   - Include a visible Unhook action.
-  - Prevent accidental hook changes while a rep/rest is actively running unless confirmed or handled cleanly.
+  - Allow active timing hook changes, but make the active hook state very visible so the coach knows which athletes will receive the next timing action.
   - Make colors colorblind-friendly with labels or patterns, not color alone.
   - Consider a quick `Hook Mode` toggle so normal row interactions stay simple.
 
