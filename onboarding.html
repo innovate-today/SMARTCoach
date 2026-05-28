@@ -573,7 +573,7 @@ function generateCoachCodes(){
   }
   document.getElementById('coachAccessCodes').value=codes.join(',');
   clearActivationHandoffIfSetupChanged(document.getElementById('coachAccessCodes'));
-  setStatus((seats===3?'Three coach access codes generated.':'One coach access code generated.')+' Give one code to each coach and keep a support copy.','good');
+  setStatus(seats+' coach access code'+(seats===1?'':'s')+' generated. Give codes only to active staff and keep a support copy. Saving changed codes counts toward the 2-per-month reset limit.','good');
   refreshActiveSetupDisplays();
 }
 function cleanAccountKey(value){

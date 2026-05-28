@@ -89,6 +89,7 @@ Latest SaaS/account setup truth:
 - Essential is stopwatch-only, requires an active code, and allows one active device session at a time. A new Essential login displaces the previous active device session.
 - Pro plans enforce active-athlete limits in SMARTCoach code: Pro 25 has 25 active athletes, Pro 100 has 100, and Pro 200 has 200. Inactive/archived athletes do not count; delete should be reserved for mistakes/duplicates.
 - Pro coach access allows up to 10 coach codes. The account owner is responsible for distributing codes, and schools should keep coach count low to protect clean synced data.
+- Coach codes can be changed through onboarding/Save Account Setup, but code resets are limited to 2 times per month per account. A saved code change increments the coach-code session version so old signed Pro sessions stop unlocking access. Recurring subscription payloads should not include coach codes, so billing updates do not count as resets.
 - A single coach access code can unlock both desktop SMART Trak and the SMARTCoach Pro Mobile App for the same coach/device workflow. The seat limit is about allowed coach codes, not counting the desktop and phone as two separate coaches.
 
 Latest product direction:
@@ -970,6 +971,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 166. Training Calendar Race add modal now hides Effort/Type and Target because race days save those defaults internally. Planned Volume is hidden for Track races and shown for Cross Country races, where distance such as 2 mile or 5K is useful.
 167. Training Calendar Rest / Day Off add modal now hides Effort/Type, Planned Volume, Target, and Details while still saving the off-day defaults internally.
 168. SaaS plan enforcement started: shared plan definitions now cover Essential, Pro 25, Pro 100, and Pro 200 with the latest prices; onboarding exposes those tiers; Essential now requires an active code and one active device session; Pro athlete creation/reactivation is capped by active-athlete plan limit; the how-to guide documents the plan/pricing/limit rules.
+169. Coach-code reset guard added: changing saved coach access codes through account setup is limited to 2 changes per month per account, with reset history stored on the account record. Saved code changes also increment a coach-code session version so old signed Pro sessions no longer unlock access. Generate Coach Codes now warns that saving changed codes counts toward the monthly reset limit.
 
 ## Known Good Test Flow
 

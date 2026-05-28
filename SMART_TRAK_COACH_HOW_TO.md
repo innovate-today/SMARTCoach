@@ -21,6 +21,8 @@ SMARTCoach has four customer plans:
 
 Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. Pro accounts can have up to 10 coach codes, but schools should keep the active coach list tight because more coaches syncing data increases the chance of messy records.
 
+Coach codes can be changed when staff changes, but code resets are limited to 2 times per month. Changing the saved coach codes invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
+
 ## SMART Trak Dashboard
 
 Use the Dashboard as the daily coaching home base. It shows roster status, training volume, current fitness, recent meet results, completed workouts, and athlete progress.

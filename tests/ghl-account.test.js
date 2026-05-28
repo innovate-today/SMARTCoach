@@ -77,6 +77,15 @@ withEnv({
   const sessionRes = mockRes();
   assert.strictEqual(requireProPlan(sessionReq, sessionRes), true);
   assert.strictEqual(verifyCoachSession(session.token, "other-account"), null);
+  withEnv({ SMARTCOACH_COACH_CODE_VERSION_TEST: "2" }, () => {
+    const staleSession = createCoachSession("test", { coachIndex: 0, coachCodeVersion: 1 });
+    const staleRes = mockRes();
+    assert.strictEqual(requireProPlan({ query: { account: "test" }, headers: { "x-smartcoach-session": staleSession.token } }, staleRes), false);
+    assert.strictEqual(staleRes.statusCode, 401);
+    const currentSession = createCoachSession("test", { coachIndex: 0, coachCodeVersion: 2 });
+    const currentRes = mockRes();
+    assert.strictEqual(requireProPlan({ query: { account: "test" }, headers: { "x-smartcoach-session": currentSession.token } }, currentRes), true);
+  });
   const originalNow = Date.now;
   try {
     Date.now = () => (session.expiresAt + 60) * 1000;

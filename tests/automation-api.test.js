@@ -443,6 +443,71 @@ async function testPartialAutomationPreservesSavedConnection() {
   }
 }
 
+async function testCoachCodeResetLimit() {
+  const previousFetch = global.fetch;
+  const month = new Date().toISOString().slice(0, 7);
+  const existing = {
+    accountKey: "reset-limit-school",
+    productPlan: "pro25",
+    token: "saved-token",
+    locationId: "saved-location",
+    coachSeats: 1,
+    coachAccessCodes: ["old-code"],
+    requireCoachAccess: true,
+    subscription: { status: "active", billingCadence: "monthly", amount: "45.00" },
+    coachCodeChangeHistory: [
+      { changedAt: `${month}-01T12:00:00.000Z`, month, source: "manual-onboarding" },
+      { changedAt: `${month}-10T12:00:00.000Z`, month, source: "manual-onboarding" },
+    ],
+  };
+  let saveCalled = false;
+
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: JSON.stringify(existing) }),
+      };
+    }
+    if (text.includes("/set/")) {
+      saveCalled = true;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "OK" }),
+      };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          accountKey: "reset-limit-school",
+          coachAccessCodes: "new-code",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 429);
+      assert.match(res.body.error, /2 times per month/);
+      assert.strictEqual(saveCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountSetupSyncsGhlAccountKeyCustomValue() {
   const previousFetch = global.fetch;
   let savedRecord = null;
@@ -878,6 +943,7 @@ async function testAccountStatusReportsDeviceUnlock() {
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testInvalidStripeWebhookDoesNotTouchRegistry();
   await testPartialAutomationPreservesSavedConnection();
+  await testCoachCodeResetLimit();
   await testAccountSetupSyncsGhlAccountKeyCustomValue();
   await testAutomationSubscriptionStatusAliases();
   await testAutomationHealthLaunchReady();

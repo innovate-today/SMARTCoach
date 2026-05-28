@@ -103,8 +103,9 @@ async function accountStatus(req, res) {
   }
 
   const registry = await attachRegistryAccount(req);
-  const { accountKey, token, locationId, productPlan, productPlanLabel, activeAthleteLimit, accessCode, coachSeats, coachAccessCodes, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
+  const { accountKey, token, locationId, productPlan, productPlanLabel, activeAthleteLimit, accessCode, coachSeats, coachAccessCodes, coachCodeVersion, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
   const coachSession = coachSessionFromRequest(req, accountKey);
+  const currentCoachSession = coachSessionVersionAllowed(coachSession, coachCodeVersion) ? coachSession : null;
   const proPlan = isProPlan(productPlan);
   const essentialSessionActive = productPlan === "essential" ? essentialSessionMatches(coachSession, registry.record) : false;
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
@@ -121,7 +122,7 @@ async function accountStatus(req, res) {
   const subscriptionAllowed = subscriptionAccessAllowed(subscription);
   const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(subscription);
   const coachAccessRequired = !proPlan || configuredCoachCodes > 0 || !!requireCoachAccess;
-  const coachAccessUnlocked = !coachAccessRequired || (proPlan ? !!coachSession : essentialSessionActive) || accessCodeAccepted;
+  const coachAccessUnlocked = !coachAccessRequired || (proPlan ? !!currentCoachSession : essentialSessionActive) || accessCodeAccepted;
   const deviceAccessReady = configured && subscriptionAllowed && coachAccessUnlocked;
   const missing = [];
   if (proPlan && !token) missing.push({ label: "Private integration token", key: tokenKey });
@@ -140,15 +141,15 @@ async function accountStatus(req, res) {
     crmConfigured,
     coachSeats,
     coachAccessCodesConfigured: configuredCoachCodes,
-    coach: coachSession ? {
-      index: Number(coachSession.coachIndex) || 0,
-      label: `Coach ${(Number(coachSession.coachIndex) || 0) + 1}`,
-      parentEmailAllowed: parentEmailFeatureReleased() && !!coachSession.parentEmailAllowed,
+    coach: currentCoachSession ? {
+      index: Number(currentCoachSession.coachIndex) || 0,
+      label: `Coach ${(Number(currentCoachSession.coachIndex) || 0) + 1}`,
+      parentEmailAllowed: parentEmailFeatureReleased() && !!currentCoachSession.parentEmailAllowed,
     } : null,
-    coachSessionActive: proPlan ? !!coachSession : essentialSessionActive,
+    coachSessionActive: proPlan ? !!currentCoachSession : essentialSessionActive,
     coachAccessUnlocked,
     coachAccessCodeAccepted: accessCodeAccepted,
-    parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(coachSession && coachSession.parentEmailAllowed),
+    parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(currentCoachSession && currentCoachSession.parentEmailAllowed),
     accessCodeRequired: coachAccessRequired,
     coachAccessRequired,
     accessCodeMissing: !!requireCoachAccess && configuredCoachCodes < 1,
@@ -175,6 +176,13 @@ function essentialSessionMatches(session, accountRecord) {
   if (!active.sessionId || !session.sessionId || !safeEqual(String(active.sessionId), String(session.sessionId))) return false;
   const expiresAt = Date.parse(active.expiresAtIso || active.expiresAt || "");
   return !Number.isFinite(expiresAt) || expiresAt > Date.now();
+}
+
+function coachSessionVersionAllowed(session, expectedVersion) {
+  const version = Number(expectedVersion) || 0;
+  if (!session) return false;
+  if (!version) return true;
+  return Number(session.coachCodeVersion) === version;
 }
 
 function accountSetup(req, res) {
@@ -398,7 +406,7 @@ async function accountAutomationDryRun(req, res) {
 
   try {
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const result = await previewAutomationAccount(payload, { source: "automation-dry-run" });
+    const result = await previewAutomationAccount(payload, { source: "automation-dry-run", dryRun: true });
     res.status(200).json({
       success: true,
       dryRun: true,
@@ -905,7 +913,7 @@ async function accountSession(req, res) {
     clearSessionFailures({ accountKey, ip });
     const parentEmailAllowed = parentEmailFeatureReleased() && !!access.parentEmailAllowed;
     const sessionId = crypto.randomBytes(12).toString("hex");
-    const session = createCoachSession(accountKey, { coachIndex: access.coachIndex, parentEmailAllowed, sessionId });
+    const session = createCoachSession(accountKey, { coachIndex: access.coachIndex, parentEmailAllowed, sessionId, coachCodeVersion: access.coachCodeVersion });
     if (!session) {
       res.status(500).json({
         error: "SMART Trak session signing is not configured.",
@@ -1039,6 +1047,7 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   };
   const coachCodesValue = firstAutomationValue(payload, ["coachAccessCodes", "coachCodes", "accessCodes"]);
   const coachCodes = coachCodesValue ? normalizeSetupCoachCodes(coachCodesValue, accountKey, coachSeats, productPlan) : normalizeSetupCoachCodes(existing.coachAccessCodes || [], accountKey, coachSeats, productPlan);
+  const coachCodeChange = coachCodeChangeState(existing, coachCodes, options);
   const parentEmailCoachAccessValue = firstAutomationValue(payload, ["parentEmailCoachAccess", "parentEmailCoachIndexes", "parentEmailCoaches"]);
   const parentEmailCoachAccess = parentEmailCoachAccessValue ? normalizeParentEmailCoachAccess(parentEmailCoachAccessValue, coachSeats, productPlan) : normalizeParentEmailCoachAccess(existing.parentEmailCoachAccess || [], coachSeats, productPlan);
   const tokenValue = firstAutomationValue(payload, ["ghlToken", "privateIntegrationToken", "token"]);
@@ -1059,9 +1068,43 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     requireCoachAccess,
     subscription,
     logoUrl: cleanSetupText(logoValue || existing.logoUrl),
+    coachCodeChangeHistory: coachCodeChange.history,
+    lastCoachCodeChange: coachCodeChange.latest || existing.lastCoachCodeChange || null,
+    coachCodeVersion: coachCodeChange.changed && !options.dryRun ? (Number(existing.coachCodeVersion) || 0) + 1 : Number(existing.coachCodeVersion) || 0,
     lastAutomationEvent: event,
     automationEventHistory,
   };
+}
+
+function coachCodeChangeState(existing, nextCodes, options = {}) {
+  const currentCodes = normalizeSetupCoachCodes(existing && existing.coachAccessCodes || [], existing && existing.accountKey || "", existing && existing.coachSeats || 1, existing && existing.productPlan);
+  const incomingCodes = Array.isArray(nextCodes) ? nextCodes : [];
+  const history = Array.isArray(existing && existing.coachCodeChangeHistory) ? existing.coachCodeChangeHistory.filter(Boolean) : [];
+  if (!currentCodes.length || !incomingCodes.length || codesMatch(currentCodes, incomingCodes)) {
+    return { changed: false, history, latest: null };
+  }
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const monthlyChanges = history.filter((item) => String(item && item.month || "").slice(0, 7) === monthKey);
+  if (monthlyChanges.length >= 2) {
+    throw httpError(429, "Coach code reset limit reached for this month. Coach codes can be changed 2 times per month.");
+  }
+  const latest = {
+    changedAt: new Date().toISOString(),
+    month: monthKey,
+    source: cleanSetupText(options.source || "manual"),
+  };
+  return {
+    changed: true,
+    history: options.dryRun ? history : [latest, ...history].slice(0, 24),
+    latest: options.dryRun ? null : latest,
+  };
+}
+
+function codesMatch(left, right) {
+  const a = (Array.isArray(left) ? left : []).map(cleanSetupText).filter(Boolean).sort();
+  const b = (Array.isArray(right) ? right : []).map(cleanSetupText).filter(Boolean).sort();
+  if (a.length !== b.length) return false;
+  return a.every((code, index) => safeEqual(code, b[index]));
 }
 
 function automationAccountKey(payload) {
