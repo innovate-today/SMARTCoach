@@ -729,7 +729,7 @@ Hooked runner / nested timing groups:
 - Proposed mobile interaction:
   - Coach drags runners into the desired order.
   - Coach slides a runner row to reveal hook color choices instead of slide-to-delete.
-  - Available hook colors: blue, red, yellow, green, orange.
+  - Available hook colors: blue, red, yellow, green, black.
   - Assign the same color to runners who should be controlled together.
   - Hooked runners show a clear outline/accent in the assigned color.
   - Tapping Start/End Rep/Rest on any runner in a hook controls every runner in that hook.
@@ -959,7 +959,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 159. Added the GHL Conversation AI SMARTCoach Help widget through `/assets/smartcoach-help-widget.js`, loading widget id `6a1785dc1b5a98ef9df8eae9` across SMARTCoach HTML pages. The How To guide now includes SMARTCoach Help usage examples and notes that billing questions are outside the help scope.
 160. SMARTCoach Help widget loader now forces GHL chat-widget layers above the full-screen mobile app screens so the help icon remains visible after the splash screen.
 161. Removed the SMARTCoach Help widget from the SMARTCoach Pro Mobile App pages (`app.html` and `SMARTCoach.html`) because the GHL chat window is too large for the mobile timing workflow. The widget remains on desktop SMART Trak pages.
-162. Added live hook timing controls to the SMARTCoach Pro Mobile App. Coaches can swipe a runner row to assign blue/red/yellow/green/orange hooks, clear hooks, and use Start/Stop/Lap/End Rep/End Rest on any hooked runner to apply the same timing action and timestamp to the whole hooked pack. Hook state can change while timers are running and does not rewrite already-recorded splits.
+162. Added live hook timing controls to the SMARTCoach Pro Mobile App. Coaches can swipe a runner row to assign blue/red/yellow/green/black hooks, clear hooks, and use Start/Stop/Lap/End Rep/End Rest on any hooked runner to apply the same timing action and timestamp to the whole hooked pack. Hook state can change while timers are running and does not rewrite already-recorded splits.
 
 ## Known Good Test Flow
 
