@@ -415,7 +415,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <div class="field" hidden><label for="addDayType">Day Type <span class="fieldinfo" tabindex="0" data-tip="Use Workout for training sessions or Meets/Races for competition days.">i</span></label><select id="addDayType"><option value="Workout">Workout</option><option value="Meet">Meets/Races</option><option value="Recovery">Recovery</option><option value="Off Day">Off/Travel</option><option value="Other">Other</option></select></div>
         <div class="field"><label for="addDaySport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country so race and workout days are labeled correctly.">i</span></label><select id="addDaySport"><option>Track</option><option>Cross Country</option></select></div>
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
-        <div class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Choose the effort or race type for this activity.">i</span></label><select id="addDayWorkoutType"><option value="">Select effort / type</option></select></div>
+        <div id="addDayWorkoutTypeField" class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Choose the effort or race type for this activity.">i</span></label><select id="addDayWorkoutType"><option value="">Select effort / type</option></select></div>
         <div class="field"><label for="addDayGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Choose an active training group.">i</span></label><select id="addDayGroup"><option value="">Select group</option></select></div>
         <div id="addDayVolumeField" class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional override. Easy Run volume is also calculated from the distance below.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles"></div>
         <div id="addDayTargetField" class="field"><label for="addDayTarget">Target <span class="fieldinfo info-left" tabindex="0" data-tip="Optional override. Leave blank to use the standard target for this activity.">i</span></label><input id="addDayTarget" type="text" placeholder="Example: Conversational"></div>
@@ -647,6 +647,7 @@ var els={
   addDayType:document.getElementById('addDayType'),
   addDaySport:document.getElementById('addDaySport'),
   addDayTitleInput:document.getElementById('addDayTitleInput'),
+  addDayWorkoutTypeField:document.getElementById('addDayWorkoutTypeField'),
   addDayWorkoutType:document.getElementById('addDayWorkoutType'),
   addDayGroup:document.getElementById('addDayGroup'),
   addDayVolumeField:document.getElementById('addDayVolumeField'),
@@ -2084,7 +2085,8 @@ function setAddDayMode(mode){
   els.qualityActivityFields.hidden=addDayMode!=='quality';
   els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=false;
-  els.addDayVolumeField.hidden=addDayMode==='quality';
+  els.addDayWorkoutTypeField.hidden=addDayMode==='easy';
+  els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality';
   els.addDayTargetField.hidden=addDayMode==='quality';
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
