@@ -57,7 +57,7 @@ How to use it:
    - **Race/Meet** for track meets or cross country races.
    - **Rest/Day Off** for off days, travel days, or no assigned workout.
 4. Choose the group that should receive the workout.
-5. Attach the day to a plan only if needed.
+5. Leave **Manual calendar entry** selected when entering workouts week by week, or choose a saved uploaded/pasted/built plan if the day belongs to that plan.
 6. Save the calendar day.
 
 To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.

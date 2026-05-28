@@ -961,6 +961,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 161. Removed the SMARTCoach Help widget from the SMARTCoach Pro Mobile App pages (`app.html` and `SMARTCoach.html`) because the GHL chat window is too large for the mobile timing workflow. The widget remains on desktop SMART Trak pages.
 162. Added live hook timing controls to the SMARTCoach Pro Mobile App. Coaches can swipe a runner row to assign blue/red/yellow/green/black hooks, clear hooks, and use Start/Stop/Lap/End Rep/End Rest on any hooked runner to apply the same timing action and timestamp to the whole hooked pack. Hook state can change while timers are running and does not rewrite already-recorded splits.
 163. Removed the SMARTCoach Help widget from the main SMARTCoach Pro Mobile App entry page (`index.html`) so the chat bubble no longer appears on the mobile splash screen. The help widget remains on desktop SMART Trak pages.
+164. Training Calendar Add Calendar Day language now uses `Plan Source` with `Manual calendar entry` instead of `Add To Plan` / `Standalone calendar activity`, clarifying that coaches can manually enter their real weekly plan without attaching it to an uploaded, pasted, or auto-built saved plan.
 
 ## Known Good Test Flow
 

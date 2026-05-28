@@ -411,7 +411,7 @@ button.compact{padding:6px 9px;font-size:12px}
       </div>
       <div class="formgrid">
         <div class="field"><label for="addDayDate">Date <span class="fieldinfo" tabindex="0" data-tip="The clicked calendar date is used by default.">i</span></label><input id="addDayDate" type="date"></div>
-        <div class="field"><label for="addDayPlan">Add To Plan <span class="fieldinfo info-left" tabindex="0" data-tip="Optional. Choose a saved plan to attach this day, or leave Standalone for a one-off calendar activity.">i</span></label><select id="addDayPlan"><option value="">Standalone calendar activity</option></select></div>
+        <div class="field"><label for="addDayPlan">Plan Source <span class="fieldinfo info-left" tabindex="0" data-tip="Optional. Choose a saved uploaded/pasted/built plan only if this day belongs to it. If you enter the plan week by week, leave Manual calendar entry selected.">i</span></label><select id="addDayPlan"><option value="">Manual calendar entry</option></select></div>
         <div class="field" hidden><label for="addDayType">Day Type <span class="fieldinfo" tabindex="0" data-tip="Use Workout for training sessions or Meets/Races for competition days.">i</span></label><select id="addDayType"><option value="Workout">Workout</option><option value="Meet">Meets/Races</option><option value="Recovery">Recovery</option><option value="Off Day">Off/Travel</option><option value="Other">Other</option></select></div>
         <div class="field"><label for="addDaySport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country so race and workout days are labeled correctly.">i</span></label><select id="addDaySport"><option>Track</option><option>Cross Country</option></select></div>
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
@@ -453,7 +453,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <div class="field full"><label for="addDayNotes">Coach Notes <span class="fieldinfo" tabindex="0" data-tip="Optional private planning context.">i</span></label><textarea id="addDayNotes" placeholder="Optional coach notes"></textarea></div>
       </div>
       <div class="modalactions">
-        <div id="addDayStatus" class="modalstatus">Attach to a plan if needed, or save as standalone.</div>
+        <div id="addDayStatus" class="modalstatus">Save as a manual calendar entry, or connect it to a saved plan.</div>
         <button id="addDaySave" type="button">Save Calendar Day</button>
       </div>
     </div>
@@ -1431,7 +1431,7 @@ function pasteCopiedDay(targetDate){
         action:'appendDays',
         planId:plan?(plan.id||plan.sourceRecordId||planId(plan)):'',
         planSourceRecordId:plan&&plan.sourceRecordId||'',
-        planName:plan&&plan.title||'Standalone Calendar Activity',
+      planName:plan&&plan.title||'Manual Calendar Entry',
         planScope:plan&&plan.scope||'Group',
         groupName:groupName,
         season:plan&&plan.season||seasonFromDate(date),
@@ -2043,7 +2043,7 @@ function openAddDayModal(dateValue,mode){
   els.addDayPlan.value='';
   syncAddDayPlanFields();
   setAddDayMode(addDayMode);
-  setAddDayStatus('Attach to a plan if needed, or save as standalone.','');
+  setAddDayStatus('Save as a manual calendar entry, or connect it to a saved plan.','');
   els.addDayModal.hidden=false;
 }
 function closeAddDayModal(){
@@ -2052,7 +2052,7 @@ function closeAddDayModal(){
 function renderAddDayPlans(){
   var current=els.addDayPlan.value;
   var available=visiblePlans().filter(function(plan){return !isPastPlan(plan);});
-  els.addDayPlan.innerHTML='<option value="">Standalone calendar activity</option>'+available.map(function(plan){
+  els.addDayPlan.innerHTML='<option value="">Manual calendar entry</option>'+available.map(function(plan){
     var id=planId(plan);
     return '<option value="'+esc(id)+'">'+esc(plan.title||'Untitled plan')+(planSubject(plan)?' · '+esc(planSubject(plan)):'')+'</option>';
   }).join('');
@@ -2371,7 +2371,7 @@ function saveAddedCalendarDay(){
       action:'appendDays',
       planId:plan?(plan.id||plan.sourceRecordId||planId(plan)):'',
       planSourceRecordId:plan&&plan.sourceRecordId||'',
-      planName:plan&&plan.title||'Standalone Calendar Activity',
+        planName:plan&&plan.title||'Manual Calendar Entry',
       planScope:plan&&plan.scope||'Group',
       groupName:groupName,
       assignedGroup:groupName,
