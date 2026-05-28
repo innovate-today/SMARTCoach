@@ -37,7 +37,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--G1)}
 
 /* RUNNER ROW */
-.rr-wrap{position:relative;overflow:hidden;border-bottom:1px solid var(--G2);}.rdelbtn{position:absolute;right:0;top:0;bottom:0;width:72px;background:#ff3b30;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;}.runner-row{background:var(--G1);padding:4px 8px 4px 10px;position:relative;transition:transform .2s ease;will-change:transform;}.runner-row.selected{background:#eef0ff;border-left:3px solid #2B4FCC;}.row-top{display:flex;align-items:center;gap:5px;margin-bottom:2px;flex-wrap:nowrap}
+.rr-wrap{position:relative;overflow:hidden;border-bottom:1px solid var(--G2);}.hookbar{position:absolute;right:0;top:0;bottom:0;width:210px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 8px;user-select:none}.hookbtn{width:25px;height:25px;border-radius:50%;border:2px solid rgba(255,255,255,.75);font-size:0;cursor:pointer}.hookbtn.clear{width:auto;border-radius:10px;background:#fff;color:#111827;font-size:11px;font-weight:800;padding:4px 7px}.hookbtn.blue{background:#2B4FCC}.hookbtn.red{background:#ef4444}.hookbtn.yellow{background:#facc15}.hookbtn.green{background:#22c55e}.hookbtn.orange{background:#f97316}.runner-row{background:var(--G1);padding:4px 8px 4px 10px;position:relative;transition:transform .2s ease;will-change:transform;}.runner-row.selected{background:#eef0ff;border-left:3px solid #2B4FCC;}.runner-row.hook-blue{box-shadow:inset 4px 0 #2B4FCC}.runner-row.hook-red{box-shadow:inset 4px 0 #ef4444}.runner-row.hook-yellow{box-shadow:inset 4px 0 #facc15}.runner-row.hook-green{box-shadow:inset 4px 0 #22c55e}.runner-row.hook-orange{box-shadow:inset 4px 0 #f97316}.hookchip{display:inline-flex;align-items:center;border-radius:999px;padding:2px 7px;color:#fff;font-size:10px;font-weight:800;text-transform:uppercase}.hookchip.blue{background:#2B4FCC}.hookchip.red{background:#ef4444}.hookchip.yellow{background:#a16207}.hookchip.green{background:#15803d}.hookchip.orange{background:#c2410c}.row-top{display:flex;align-items:center;gap:5px;margin-bottom:2px;flex-wrap:nowrap}
 .rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0;max-width:140px}
 .rname:focus{border-color:var(--R)}
 .rname::placeholder{color:#bbb;font-weight:400}
@@ -300,7 +300,7 @@ function save(){
   try{
     var s=logs.map(function(l){
       return{id:l.id,name:l.name,cfg:l.cfg,runners:l.runners.map(function(r){
-        return{id:r.id,name:r.name,note:r.note||'',saved:r.saved||[]};
+        return{id:r.id,name:r.name,note:r.note||'',hook:r.hook||'',saved:r.saved||[]};
       })};
     });
     localStorage.setItem('sc1',JSON.stringify(s));
@@ -317,7 +317,7 @@ function load(){
         return{id:l.id,name:l.name,cfg:l.cfg||{laps:1,multiple:1,notes:1,beep:1},
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',saved:r.saved||[],
-              on:false,el:0,t0:0,le:0,lt:0,laps:[],sel:true};
+              hook:r.hook||'',on:false,el:0,t0:0,le:0,lt:0,laps:[],sel:true};
           })};
       });
       lid=parseInt(localStorage.getItem('sc1_lid')||'10');
@@ -408,7 +408,7 @@ function shareAll(){
 
 function mkR(){
   return{id:rid++,name:'Runner '+((CL?CL.runners.length:0)+1),note:'',
-    on:false,el:0,t0:0,le:0,lt:0,laps:[],saved:[],ts:null,sel:true};
+    hook:'',on:false,el:0,t0:0,le:0,lt:0,laps:[],saved:[],ts:null,sel:true};
 }
 function addR(){if(CL){CL.runners.push(mkR());save();rr();}}
 function delR(){
@@ -427,6 +427,8 @@ function rr(){
 }
 function rHTML(r){
   var lapsHtml='';
+  var hookClass=r.hook?' hook-'+r.hook:'';
+  var hookChip=r.hook?'<span class="hookchip '+r.hook+'">'+ex(r.hook)+' hook</span>':'';
   if(CL.cfg.laps&&r.laps.length){
     var lines=[],chunk=[];
     r.laps.forEach(function(x){
@@ -439,8 +441,15 @@ function rHTML(r){
     lapsHtml='<div class="rlaps" id="rl-'+r.id+'"></div>';
   }
   return'<div class="rr-wrap" id="rw-'+r.id+'">'+
-    '<div class="rdelbtn" id="db-'+r.id+'" onclick="deleteRunner('+r.id+')">Delete</div>'+
-    '<div class="runner-row'+(r.sel?' selected':'')+'" id="rr-'+r.id+'"'+
+    '<div class="hookbar" id="hb-'+r.id+'">'+
+      '<button class="hookbtn blue" type="button" onclick="setHook('+r.id+',&quot;blue&quot;)" aria-label="Blue hook">Blue</button>'+
+      '<button class="hookbtn red" type="button" onclick="setHook('+r.id+',&quot;red&quot;)" aria-label="Red hook">Red</button>'+
+      '<button class="hookbtn yellow" type="button" onclick="setHook('+r.id+',&quot;yellow&quot;)" aria-label="Yellow hook">Yellow</button>'+
+      '<button class="hookbtn green" type="button" onclick="setHook('+r.id+',&quot;green&quot;)" aria-label="Green hook">Green</button>'+
+      '<button class="hookbtn orange" type="button" onclick="setHook('+r.id+',&quot;orange&quot;)" aria-label="Orange hook">Orange</button>'+
+      '<button class="hookbtn clear" type="button" onclick="setHook('+r.id+',&quot;&quot;)">Clear</button>'+
+    '</div>'+
+    '<div class="runner-row'+(r.sel?' selected':'')+hookClass+'" id="rr-'+r.id+'"'+
       ' ontouchstart="_ss(event,'+r.id+')"'+
       ' ontouchmove="_sm(event,'+r.id+')"'+
       ' ontouchend="_se(event,'+r.id+')">'+
@@ -448,6 +457,7 @@ function rHTML(r){
         '<input class="rname" id="rn-'+r.id+'" type="text" value="'+ex(r.name)+'" placeholder="Name"'+
           ' autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"'+
           ' oninput="uN('+r.id+',this.value)" onblur="save()"/>'+
+        hookChip+
         '<div class="row-btns" style="gap:5px;display:flex;align-items:center;flex-shrink:0">'+
           '<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">Lap</button>'+
           '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>'+
@@ -466,6 +476,20 @@ function rHTML(r){
 
 function uN(id,v){var r=find(id);if(r)r.name=v;}
 function uNote(id,v){var r=find(id);if(r)r.note=v;}
+function setHook(id,color){
+  var r=find(id);if(!r)return;
+  if(color&&['blue','red','yellow','green','orange'].indexOf(color)<0)return;
+  r.hook=color||'';
+  _closeAll();
+  save();
+  rr();
+}
+function hookGroup(id){
+  var r=find(id);
+  if(!r)return[];
+  if(!r.hook)return[r];
+  return CL.runners.filter(function(x){return x.hook===r.hook;});
+}
 function updMB(){
   var any=CL&&CL.runners.some(function(r){return r.on;});
   var b=document.getElementById('mb');
@@ -476,10 +500,40 @@ function updMB(){
 function stopRunner(r){
   if(!r.on)return;
   var n=now();
+  stopRunnerAt(r,n);
+}
+function stopRunnerAt(r,n){
+  if(!r.on)return;
   r.el+=n-r.t0;   /* freeze total time */
   r.le+=n-r.lt;   /* freeze current lap time */
   r.on=false;
   r.saved.push({ms:r.el,ts:r.ts,laps:r.laps.slice(),note:r.note});
+}
+function startRunnerAt(r,n){
+  r.t0=n;
+  r.lt=n;
+  r.le=0;
+  r.on=true;
+  if(!r.ts)r.ts=n;
+}
+function updateRunnerControls(r){
+  var row=document.getElementById('rr-'+r.id);
+  if(!row)return;
+  var vEl=row.querySelector('.rtotal');if(vEl)vEl.textContent=fmt(r.el);
+  var ltEl=row.querySelector('.rlaptime');if(ltEl)ltEl.textContent=r.on?fmt(gle(r)):'';
+  var sb=row.querySelector('.sbtn');if(sb){sb.textContent=r.on?'Stop':'Start';sb.classList.toggle('on',!!r.on);}
+  var lb=row.querySelector('.lapbtn');if(lb)lb.classList.toggle('vis',!!(r.on&&CL.cfg.laps));
+}
+function renderRunnerLaps(r){
+  var lapEl=document.getElementById('rl-'+r.id);
+  if(!lapEl||!CL.cfg.laps)return;
+  var lines=[],chunk=[];
+  r.laps.forEach(function(x){
+    chunk.push(fmt(x));
+    if(chunk.length===5){lines.push(chunk.join(' / '));chunk=[];}
+  });
+  if(chunk.length)lines.push(chunk.join(' / '));
+  lapEl.innerHTML=r.laps.length?'<span class="rlapslbl">Laps: </span>'+lines.join(' /<br>'):'';
 }
 
 /* Individual start/stop toggle */
@@ -487,35 +541,25 @@ function togR(id){
   var r=find(id);if(!r)return;
   if(r.on){
     /* STOP: freeze time, save run */
-    stopRunner(r);
+    var nStop=now();
+    var stopped=hookGroup(id);
+    stopped.forEach(function(x){if(x.on)stopRunnerAt(x,nStop);});
     save();
     /* update display to show frozen time */
-    var row=document.getElementById('rr-'+r.id);
-    if(row){
-      var vEl=row.querySelector('.rtotal');if(vEl)vEl.textContent=fmt(r.el);
-      var ltEl=row.querySelector('.rlaptime');if(ltEl)ltEl.textContent='';
-      var sb=row.querySelector('.sbtn');if(sb){sb.textContent='Start';sb.classList.remove('on');}
-      var lb=row.querySelector('.lapbtn');if(lb)lb.classList.remove('vis');
-    }
+    stopped.forEach(updateRunnerControls);
     updMB();
   }else{
     /* START: resume from current el, new lap from scratch */
     if(CL.cfg.beep)beep();
+    var group=hookGroup(id);
     if(!CL.cfg.multiple){
-      CL.runners.forEach(function(x){if(x.id!==id&&x.on)stopRunner(x);});
+      var nOutside=now();
+      CL.runners.forEach(function(x){if(group.indexOf(x)<0&&x.on)stopRunnerAt(x,nOutside);});
     }
     var n=now();
-    r.t0=n;          /* new start point - el stays frozen from before */
-    r.lt=n;          /* new lap start */
-    r.le=0;          /* reset current lap counter */
-    r.on=true;
-    if(!r.ts)r.ts=n; /* only set ts on very first start */
+    group.forEach(function(x){if(!x.on)startRunnerAt(x,n);});
     /* update display */
-    var row=document.getElementById('rr-'+r.id);
-    if(row){
-      var sb=row.querySelector('.sbtn');if(sb){sb.textContent='Stop';sb.classList.add('on');}
-      if(CL.cfg.laps){var lb=row.querySelector('.lapbtn');if(lb)lb.classList.add('vis');}
-    }
+    group.forEach(updateRunnerControls);
     updMB();
     tick();
   }
@@ -525,20 +569,13 @@ function togR(id){
 function doLap(id){
   var r=find(id);if(!r||!r.on)return;
   var n=now();
-  var lapTime=r.le+(n-r.lt);  /* time for THIS lap only */
-  r.laps.push(lapTime);
-  r.le=0;r.lt=n;               /* reset lap timer, keep total running */
-  /* update lap list display */
-  var lapEl=document.getElementById('rl-'+r.id);
-  if(lapEl&&CL.cfg.laps){
-    var lines=[],chunk=[];
-    r.laps.forEach(function(x){
-      chunk.push(fmt(x));
-      if(chunk.length===5){lines.push(chunk.join(' / '));chunk=[];}
-    });
-    if(chunk.length)lines.push(chunk.join(' / '));
-    lapEl.innerHTML='<span class="rlapslbl">Laps: </span>'+lines.join(' /<br>');
-  }
+  hookGroup(id).forEach(function(x){
+    if(!x.on)return;
+    var lapTime=x.le+(n-x.lt);  /* time for THIS lap only */
+    x.laps.push(lapTime);
+    x.le=0;x.lt=n;               /* reset lap timer, keep total running */
+    renderRunnerLaps(x);
+  });
 }
 
 /* Master Start/Stop: controls ALL runners */
@@ -547,7 +584,8 @@ function masterToggle(){
   var any=CL.runners.some(function(r){return r.on;});
   if(any){
     /* STOP ALL */
-    CL.runners.forEach(function(r){if(r.on)stopRunner(r);});
+    var nStop=now();
+    CL.runners.forEach(function(r){if(r.on)stopRunnerAt(r,nStop);});
     save();
     rr(); /* re-render to show frozen times */
   }else{
@@ -698,7 +736,7 @@ function _sm(e,id){
   var dy=Math.abs(e.touches[0].clientY-s.y);
   if(dy>15){delete _sw[id];return;}
   if(dx<-5){
-    var cl=Math.max(-75,Math.min(0,dx));
+    var cl=Math.max(-210,Math.min(0,dx));
     var row=document.getElementById('rr-'+id);
     if(row)row.style.transform='translateX('+cl+'px)';
     e.preventDefault();
@@ -713,7 +751,7 @@ function _se(e,id){
   var dx=e.changedTouches[0].clientX-s.x;
   var row=document.getElementById('rr-'+id);
   if(dx<-40){
-    if(row)row.style.transform='translateX(-75px)';
+    if(row)row.style.transform='translateX(-210px)';
   }else{
     if(row)row.style.transform='';
   }

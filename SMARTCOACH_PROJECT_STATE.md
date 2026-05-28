@@ -723,7 +723,8 @@ Field events:
 
 Hooked runner / nested timing groups:
 
-- Future idea: allow coaches to temporarily hook/nest runners inside one workout group during active timing so one Start/End Rep/Rest action controls several athletes who are currently running together.
+- Implemented in the SMARTCoach Pro Mobile App timing rows.
+- Allows coaches to temporarily hook/nest runners inside one workout group during active timing so one Start/End Rep/Rest action controls several athletes who are currently running together.
 - Use case: a 10-runner group starts 8 reps together. After rep 3, the pack splits into subgroups such as 5, 2, 2, and 1. Coaches should be able to control each subgroup with one tap while still syncing individual athlete results normally.
 - Proposed mobile interaction:
   - Coach drags runners into the desired order.
@@ -958,6 +959,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 159. Added the GHL Conversation AI SMARTCoach Help widget through `/assets/smartcoach-help-widget.js`, loading widget id `6a1785dc1b5a98ef9df8eae9` across SMARTCoach HTML pages. The How To guide now includes SMARTCoach Help usage examples and notes that billing questions are outside the help scope.
 160. SMARTCoach Help widget loader now forces GHL chat-widget layers above the full-screen mobile app screens so the help icon remains visible after the splash screen.
 161. Removed the SMARTCoach Help widget from the SMARTCoach Pro Mobile App pages (`app.html` and `SMARTCoach.html`) because the GHL chat window is too large for the mobile timing workflow. The widget remains on desktop SMART Trak pages.
+162. Added live hook timing controls to the SMARTCoach Pro Mobile App. Coaches can swipe a runner row to assign blue/red/yellow/green/orange hooks, clear hooks, and use Start/Stop/Lap/End Rep/End Rest on any hooked runner to apply the same timing action and timestamp to the whole hooked pack. Hook state can change while timers are running and does not rewrite already-recorded splits.
 
 ## Known Good Test Flow
 

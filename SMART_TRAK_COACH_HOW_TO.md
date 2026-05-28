@@ -285,6 +285,20 @@ How to use it:
 
 The app can still capture splits even if the coach hides splits on the detail line.
 
+### Hooking Runners During A Workout
+
+Use hooks when a training group breaks into smaller packs during a workout and the coach still wants one tap to control each pack.
+
+How to use it:
+
+1. Reorder runners so athletes running together are near each other.
+2. Swipe a runner row left to reveal hook colors.
+3. Choose the same color for runners who should be controlled together.
+4. Tap **Start**, **Stop**, **Lap**, **End Rep**, or **End Rest** on any runner in that hook.
+5. Use **Clear** from the swipe actions to unhook a runner when they separate.
+
+Hooks can be changed while the watch is running. The change only affects the next timing action. Already captured splits and saved reps stay unchanged.
+
 ## SMARTCoach Pro Mobile App: Meet Section
 
 Use the Meet section for meet-day timing and meet result capture.
