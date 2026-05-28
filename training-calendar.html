@@ -2085,9 +2085,9 @@ function setAddDayMode(mode){
   els.qualityActivityFields.hidden=addDayMode!=='quality';
   els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=false;
-  els.addDayWorkoutTypeField.hidden=addDayMode==='easy';
-  els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality';
-  els.addDayTargetField.hidden=addDayMode==='quality';
+  els.addDayWorkoutTypeField.hidden=addDayMode==='easy'||addDayMode==='race';
+  els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality'||(addDayMode==='race'&&normalizeSport(els.addDaySport.value)!=='Cross Country');
+  els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='race';
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
     setActivityTypeOptions(['Easy/Recovery Run','Long Run'],'Easy/Recovery Run');
