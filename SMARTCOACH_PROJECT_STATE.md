@@ -693,9 +693,53 @@ Community/media:
 
 Field events:
 
-- Future idea: meets-only field event tracking.
-- Examples: high jump, long jump, triple jump, pole vault, shot, discus, javelin, hammer.
-- Track makes/misses/attempts, video, and notes.
+- Future idea: meets-only field event tracking across SMARTCoach Pro Mobile App and SMART Trak.
+- Supported event targets: high jump, long jump, triple jump, pole vault, shot put, discus, javelin, and hammer, with possible later expansion for indoor weight throw, turbo jav, and multi-event support.
+- Keep field events in meet-result workflows first, not daily training workouts:
+  - SMARTCoach Pro Mobile App Meet section
+  - SMART Trak Log Race/Meet Result
+  - Meet History
+  - Athlete detail modal
+  - Records
+  - Track Simulator later
+- Add field result type alongside Race and Relay. Field result forms should capture athlete, event, mark, attempts, notes, optional wind for long/triple, optional place, and optional video URL.
+- Start video support as a URL field rather than file upload. Coaches can link Hudl, YouTube unlisted, Google Drive, iCloud, or similar services before SMARTCoach owns file storage.
+- Attempt tracking:
+  - Throws and horizontal jumps can start with attempts text/json for attempts 1-6, foul flags, marks, wind, and notes.
+  - High jump and pole vault can later use height rows with make/miss/pass sequences such as O, XO, XXO, XXX.
+- Meet History columns can remain mostly the same. Field rows show the mark in Result and open a detail modal with event, mark, attempts, wind, notes, video link, meet, and date.
+- Records support must compare field marks as higher/farther is better, while running events still use lower time is better.
+- Normalize field marks internally for comparison while preserving the coach's display text. Support feet-inches like `18-04.5`, text feet/inches like `18' 4.5"`, metric like `5.60m`, and throwing marks.
+- Recommended build order:
+  1. Add field events to all event dropdowns.
+  2. Add Field result type to desktop Log Race/Meet Result.
+  3. Save field marks into Meet History.
+  4. Add field result detail/edit modal support.
+  5. Add Records comparison logic for field marks.
+  6. Add mobile Meet section field-event logging.
+  7. Add video URL.
+  8. Add structured attempts.
+  9. Add Track Simulator field-event support.
+
+Hooked runner / nested timing groups:
+
+- Future idea: allow coaches to temporarily hook/nest runners inside one workout group during active timing so one Start/End Rep/Rest action controls several athletes who are currently running together.
+- Use case: a 10-runner group starts 8 reps together. After rep 3, the pack splits into subgroups such as 5, 2, 2, and 1. Coaches should be able to control each subgroup with one tap while still syncing individual athlete results normally.
+- Proposed mobile interaction:
+  - Coach drags runners into the desired order.
+  - Coach slides a runner row to reveal hook color choices instead of slide-to-delete.
+  - Available hook colors: blue, red, yellow, green, orange.
+  - Assign the same color to runners who should be controlled together.
+  - Hooked runners show a clear outline/accent in the assigned color.
+  - Tapping Start/End Rep/Rest on any runner in a hook controls every runner in that hook.
+  - Unhooked runners continue to work exactly as they do now.
+- Hooking must be available before and during the workout. It should not require stopping the workout.
+- Sync should remain normal: each athlete keeps individual saved reps/rests, but shared hook actions stamp matching times to every runner in the hook.
+- Important UX safeguards:
+  - Include a visible Unhook action.
+  - Prevent accidental hook changes while a rep/rest is actively running unless confirmed or handled cleanly.
+  - Make colors colorblind-friendly with labels or patterns, not color alone.
+  - Consider a quick `Hook Mode` toggle so normal row interactions stay simple.
 
 Relays:
 
