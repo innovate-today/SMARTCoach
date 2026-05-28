@@ -910,6 +910,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 158. How To guide updated with Athlete Calendar submitted-card indicators and where coaches can read athlete notes.
 159. Added the GHL Conversation AI SMARTCoach Help widget through `/assets/smartcoach-help-widget.js`, loading widget id `6a1785dc1b5a98ef9df8eae9` across SMARTCoach HTML pages. The How To guide now includes SMARTCoach Help usage examples and notes that billing questions are outside the help scope.
 160. SMARTCoach Help widget loader now forces GHL chat-widget layers above the full-screen mobile app screens so the help icon remains visible after the splash screen.
+161. Removed the SMARTCoach Help widget from the SMARTCoach Pro Mobile App pages (`app.html` and `SMARTCoach.html`) because the GHL chat window is too large for the mobile timing workflow. The widget remains on desktop SMART Trak pages.
 
 ## Known Good Test Flow
 

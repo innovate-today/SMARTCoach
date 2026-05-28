@@ -415,7 +415,7 @@ Athlete notes sync into the completed workout/performance note. They are also ad
 
 ## SMARTCoach Help
 
-SMARTCoach pages include the SMARTCoach Help widget. Use it when a coach needs quick how-to help inside SMART Trak or the SMARTCoach Pro Mobile App.
+SMART Trak desktop pages include the SMARTCoach Help widget. Use it when a coach needs quick how-to help inside SMART Trak.
 
 Good questions to ask:
 
