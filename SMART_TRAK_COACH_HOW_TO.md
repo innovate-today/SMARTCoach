@@ -413,6 +413,21 @@ Athlete notes sync into the completed workout/performance note. They are also ad
 7. Log any extra miles or race results that were not timed in the app.
 8. Use Meet History, Track Simulator, XC Simulator, and Records when needed.
 
+## SMARTCoach Help
+
+SMARTCoach pages include the SMARTCoach Help widget. Use it when a coach needs quick how-to help inside SMART Trak or the SMARTCoach Pro Mobile App.
+
+Good questions to ask:
+
+- How do I add a workout to the Training Calendar?
+- How do athlete calendar links work?
+- Where do athlete notes go?
+- How do I time a relay?
+- How do I save meet results?
+- Why is an athlete or group missing?
+
+The help assistant should answer product and workflow questions from the SMARTCoach knowledge base. Billing questions are not part of SMARTCoach Help.
+
 ## Quick Troubleshooting
 
 If athletes do not show:

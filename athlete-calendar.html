@@ -102,5 +102,6 @@ function jsonResult(res){return res.json().catch(function(){return{};}).then(fun
 function formatDate(value){var d=new Date(String(value||'')+'T12:00:00');if(Number.isNaN(d.getTime()))return value||'';return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
 document.addEventListener('DOMContentLoaded',init);
 </script>
+<script src="/assets/smartcoach-help-widget.js"></script>
 </body>
 </html>
