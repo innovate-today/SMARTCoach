@@ -85,7 +85,11 @@ Latest SaaS/account setup truth:
 - The GHL workflow payload should send billing/account fields only: `eventType`, `accountKey`, `locationId`, `plan`, `coachSeats`, `subscriptionStatus`, `billingCadence`, `source`, and `automationSecret` or the automation secret query parameter. Do not send private integration tokens or coach codes in the recurring subscription payload.
 - After a new GHL sub-account exists, support still has to open `/onboarding.html`, load the account key, enter that sub-account's Location ID and Private Integration Token, generate/paste coach access code(s), and click Save Account Setup.
 - Save Account Setup was confirmed to update the GHL custom value `account_key`; the confirmation message should say the value was updated.
-- A single coach access code can unlock both desktop SMART Trak and the phone app for the same coach/device workflow. The seat limit is about allowed coach codes, not counting the desktop and phone as two separate coaches.
+- Current plan breakdown: Essential is $10/month or $100/year; Pro 25 is $45/month or $450/year; Pro 100 is $75/month or $750/year; Pro 200 is $150/month or $1500/year.
+- Essential is stopwatch-only, requires an active code, and allows one active device session at a time. A new Essential login displaces the previous active device session.
+- Pro plans enforce active-athlete limits in SMARTCoach code: Pro 25 has 25 active athletes, Pro 100 has 100, and Pro 200 has 200. Inactive/archived athletes do not count; delete should be reserved for mistakes/duplicates.
+- Pro coach access allows up to 10 coach codes. The account owner is responsible for distributing codes, and schools should keep coach count low to protect clean synced data.
+- A single coach access code can unlock both desktop SMART Trak and the SMARTCoach Pro Mobile App for the same coach/device workflow. The seat limit is about allowed coach codes, not counting the desktop and phone as two separate coaches.
 
 Latest product direction:
 
@@ -159,8 +163,8 @@ Status: mostly complete and tested.
 Implemented:
 
 - Account-specific environment variables plus customer account storage records.
-- Product plan gating: Essential vs Pro.
-- Pro setup-needed state if plan is Pro but CRM variables are missing.
+- Product plan gating: Essential, Pro 25, Pro 100, and Pro 200.
+- Pro setup-needed state if plan is Pro but CRM variables are missing; Essential setup requires an active coach code.
 - Coach access-code protection for SMART Trak pages/API data, with signed browser sessions after a valid code is entered.
 - Setup helper page for generating Vercel variable names and customer links.
 - Customer dashboard link can be hidden in setup helper to reduce accidental sharing.
@@ -965,6 +969,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 165. Training Calendar Easy Run add modal now hides Planned Volume and Effort/Type because distance and the Easy Run tab already define those values. Easy days still save `Easy/Recovery Run` and derive planned volume from the distance field.
 166. Training Calendar Race add modal now hides Effort/Type and Target because race days save those defaults internally. Planned Volume is hidden for Track races and shown for Cross Country races, where distance such as 2 mile or 5K is useful.
 167. Training Calendar Rest / Day Off add modal now hides Effort/Type, Planned Volume, Target, and Details while still saving the off-day defaults internally.
+168. SaaS plan enforcement started: shared plan definitions now cover Essential, Pro 25, Pro 100, and Pro 200 with the latest prices; onboarding exposes those tiers; Essential now requires an active code and one active device session; Pro athlete creation/reactivation is capped by active-athlete plan limit; the how-to guide documents the plan/pricing/limit rules.
 
 ## Known Good Test Flow
 

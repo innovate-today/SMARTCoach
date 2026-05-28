@@ -476,20 +476,18 @@ function openAccountSettings(){
   if(planInput)planInput.value=productPlan();
   if(planDisplay)planDisplay.textContent=productPlanLabel(productPlan());
   if(accessInput)accessInput.value=smartCoachAccessCode();
-  showAccessCodeRow(productPlan()!=='essential');
+  showAccessCodeRow(true);
   if(status){status.textContent='Checking account...';status.style.color='#555';}
   renderAccountSummary({productPlan:productPlan(),configured:false,checking:true},productPlan());
   if(version)version.textContent='App version '+appVersion();
   sm('m-account');
-  if(productPlan()!=='essential'){
-    checkSmartCoachAccount(smartCoachAccountKey()).then(function(result){
-      renderAccountSummary(result.data,productPlan());
-      if(status){status.textContent=result.data&&result.data.deviceAccessReady?'SMARTCoach Pro is active.':'Enter the coach access code, then tap Save Settings.';status.style.color=result.data&&result.data.deviceAccessReady?'#0a7a44':'#555';}
-    }).catch(function(error){
-      renderAccountSummary(error&&error.data?error.data:{productPlan:productPlan(),configured:false},productPlan());
-      if(status){status.textContent=accountSettingsErrorMessage(smartCoachAccountKey(),error);status.style.color='#c00';}
-    });
-  }
+  checkSmartCoachAccount(smartCoachAccountKey()).then(function(result){
+    renderAccountSummary(result.data,productPlan());
+    if(status){status.textContent=result.data&&result.data.deviceAccessReady?productPlanLabel(productPlan())+' is active.':'Enter the coach access code, then tap Save Settings.';status.style.color=result.data&&result.data.deviceAccessReady?'#0a7a44':'#555';}
+  }).catch(function(error){
+    renderAccountSummary(error&&error.data?error.data:{productPlan:productPlan(),configured:false},productPlan());
+    if(status){status.textContent=accountSettingsErrorMessage(smartCoachAccountKey(),error);status.style.color='#c00';}
+  });
 }
 function appVersion(){
   var meta=document.querySelector('meta[name="app-version"]');
@@ -508,10 +506,24 @@ function saveAccountSettings(){
   if(input)input.value=key;
   applyPlanMode();
   if(plan==='essential'){
-    showAccessCodeRow(false);
-    renderAccountSummary({productPlan:'essential',configured:true,accessCodeRequired:false},plan);
-    if(status){status.textContent='SMARTCoach Essential is active.';status.style.color='#0a7a44';}
-    loadProData();
+    if(status){status.textContent='Checking '+key+'...';status.style.color='#555';status.style.fontWeight='700';}
+    checkSmartCoachAccount(key).then(function(result){
+      if(!result.ok){
+        var err=new Error(result.data&&result.data.error?result.data.error:'Account is not configured.');
+        err.data=result.data;
+        throw err;
+      }
+      renderAccountSummary(result.data,plan);
+      return createSmartCoachSession(accessValue).then(function(created){
+        if(result.data&&result.data.accessCodeRequired&&!created&&!smartCoachSession()){
+          throw new Error('Enter the active coach code to use SMARTCoach Essential on this device.');
+        }
+        if(status){status.textContent='Account set to '+key+' and SMARTCoach Essential is active.';status.style.color='#0a7a44';}
+      });
+    }).catch(function(error){
+      renderAccountSummary(error&&error.data?error.data:{productPlan:plan,configured:false},plan);
+      if(status){status.textContent=accountSettingsErrorMessage(key,error);status.style.color='#c00';}
+    });
     return;
   }
   if(status){status.textContent='Checking '+key+'...';status.style.color='#555';status.style.fontWeight='700';}
@@ -553,15 +565,15 @@ function renderAccountSummary(data,fallbackPlan){
   if(!box)return;
   var plan=(data&&data.productPlan)||fallbackPlan||productPlan();
   var pro=plan!=='essential';
-  var configured=!pro || !!(data&&data.configured);
-  var accessReady=!pro || (configured&&!(data&&data.accessReady===false));
+  var configured=!!(data&&data.configured);
+  var accessReady=configured&&!(data&&data.accessReady===false);
   var access=!!(data&&data.accessCodeRequired);
-  var deviceUnlocked=!pro || !access || !!(data&&data.deviceAccessReady);
+  var deviceUnlocked=!access || !!(data&&data.deviceAccessReady);
   var notFound=pro&&data&&data.error&&/not configured|not found/i.test(data.error);
-  var title=pro?(!configured?(notFound?'Account key not found':'SMARTCoach Pro setup needed'):!accessReady?'SMARTCoach Pro access blocked':deviceUnlocked?'SMARTCoach Pro ready':'Coach access code needed'):'SMARTCoach Essential ready';
-  var detail=pro?(!configured?(notFound?'Save this account in SMART Trak Account Setup first, or check the account key.':'SMART Trak connection is not finished yet.'):!accessReady?'Subscription status is blocking SMART Trak access.':deviceUnlocked?'SMART Trak connection is ready.':'Enter the coach access code on this phone to unlock SMART Trak.'):'Stopwatch-only account. SMART Trak tools are hidden.';
-  var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
-  showAccessCodeRow(pro&&access);
+  var title=pro?(!configured?(notFound?'Account key not found':'SMARTCoach Pro setup needed'):!accessReady?'SMARTCoach Pro access blocked':deviceUnlocked?'SMARTCoach Pro ready':'Coach access code needed'):(!configured?'Active code needed':deviceUnlocked?'SMARTCoach Essential ready':'Active code needed');
+  var detail=pro?(!configured?(notFound?'Save this account in SMART Trak Account Setup first, or check the account key.':'SMART Trak connection is not finished yet.'):!accessReady?'Subscription status is blocking SMART Trak access.':deviceUnlocked?'SMART Trak connection is ready.':'Enter the coach access code on this phone to unlock SMART Trak.'):(deviceUnlocked?'Stopwatch-only account. One device session is active.':'Enter the active coach code to use SMARTCoach Essential on this device.');
+  var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'Active code: '+(access?'Required':'Off');
+  showAccessCodeRow(access);
   var good=accessReady&&deviceUnlocked;
   box.style.borderColor=good?'#bbf7d0':accessReady?'#fed7aa':'#fecaca';
   box.style.background=good?'#f0fdf4':accessReady?'#fff7ed':'#fef2f2';

@@ -32,6 +32,12 @@ const {
 } = require("../../lib/ghl-account");
 const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
+const {
+  normalizeProductPlan: normalizePlanKey,
+  planDefinition,
+  isProPlan,
+  suggestedSubscriptionAmount: planSubscriptionAmount,
+} = require("../../lib/smartcoach-plans");
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -97,8 +103,10 @@ async function accountStatus(req, res) {
   }
 
   const registry = await attachRegistryAccount(req);
-  const { accountKey, token, locationId, productPlan, accessCode, coachSeats, coachAccessCodes, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
+  const { accountKey, token, locationId, productPlan, productPlanLabel, activeAthleteLimit, accessCode, coachSeats, coachAccessCodes, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
   const coachSession = coachSessionFromRequest(req, accountKey);
+  const proPlan = isProPlan(productPlan);
+  const essentialSessionActive = productPlan === "essential" ? essentialSessionMatches(coachSession, registry.record) : false;
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const tokenKey = accountKey === "default" ? "GHL_PRIVATE_INTEGRATION_TOKEN" : `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`;
   const locationKey = accountKey === "default" ? "GHL_LOCATION_ID" : `GHL_LOCATION_ID_${suffix}`;
@@ -108,21 +116,23 @@ async function accountStatus(req, res) {
   const providedAccessCode = String(headerValue(req, "x-smartcoach-access-code") || "").trim();
   const accessCodeAccepted = !!(providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code)));
   const crmConfigured = !!(token && locationId);
-  const coachAccessConfigured = !requireCoachAccess || configuredCoachCodes > 0;
-  const configured = productPlan === "essential" || (crmConfigured && coachAccessConfigured);
+  const coachAccessConfigured = (!requireCoachAccess && proPlan) || configuredCoachCodes > 0;
+  const configured = proPlan ? (crmConfigured && coachAccessConfigured) : coachAccessConfigured;
   const subscriptionAllowed = subscriptionAccessAllowed(subscription);
   const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(subscription);
-  const coachAccessRequired = configuredCoachCodes > 0 || !!requireCoachAccess;
-  const coachAccessUnlocked = productPlan === "essential" || !coachAccessRequired || !!coachSession || accessCodeAccepted;
+  const coachAccessRequired = !proPlan || configuredCoachCodes > 0 || !!requireCoachAccess;
+  const coachAccessUnlocked = !coachAccessRequired || (proPlan ? !!coachSession : essentialSessionActive) || accessCodeAccepted;
   const deviceAccessReady = configured && subscriptionAllowed && coachAccessUnlocked;
   const missing = [];
-  if (productPlan !== "essential" && !token) missing.push({ label: "Private integration token", key: tokenKey });
-  if (productPlan !== "essential" && !locationId) missing.push({ label: "Location ID", key: locationKey });
-  if (productPlan !== "essential" && requireCoachAccess && configuredCoachCodes < 1) missing.push({ label: "Coach access codes", key: coachAccessKey });
+  if (proPlan && !token) missing.push({ label: "Private integration token", key: tokenKey });
+  if (proPlan && !locationId) missing.push({ label: "Location ID", key: locationKey });
+  if (requireCoachAccess && configuredCoachCodes < 1) missing.push({ label: "Coach access codes", key: coachAccessKey });
   res.status(configured ? 200 : 404).json({
     success: configured && subscriptionAllowed,
     accountKey,
     productPlan,
+    productPlanLabel,
+    activeAthleteLimit,
     configured,
     setupReady: configured,
     accessReady: configured && subscriptionAllowed,
@@ -135,7 +145,7 @@ async function accountStatus(req, res) {
       label: `Coach ${(Number(coachSession.coachIndex) || 0) + 1}`,
       parentEmailAllowed: parentEmailFeatureReleased() && !!coachSession.parentEmailAllowed,
     } : null,
-    coachSessionActive: !!coachSession,
+    coachSessionActive: proPlan ? !!coachSession : essentialSessionActive,
     coachAccessUnlocked,
     coachAccessCodeAccepted: accessCodeAccepted,
     parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(coachSession && coachSession.parentEmailAllowed),
@@ -155,8 +165,16 @@ async function accountStatus(req, res) {
     logoUrl: logoUrl || "",
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
-    error: configured ? subscriptionBlockedReason || undefined : `SMARTCoach account "${accountKey}" is not configured.`,
+    error: configured ? subscriptionBlockedReason || (!coachAccessUnlocked ? "Active coach code needed." : undefined) : `SMARTCoach account "${accountKey}" is not configured.`,
   });
+}
+
+function essentialSessionMatches(session, accountRecord) {
+  if (!session || !accountRecord || accountRecord.productPlan !== "essential") return false;
+  const active = accountRecord.essentialActiveSession || {};
+  if (!active.sessionId || !session.sessionId || !safeEqual(String(active.sessionId), String(session.sessionId))) return false;
+  const expiresAt = Date.parse(active.expiresAtIso || active.expiresAt || "");
+  return !Number.isFinite(expiresAt) || expiresAt > Date.now();
 }
 
 function accountSetup(req, res) {
@@ -183,7 +201,7 @@ function accountSetup(req, res) {
   const requestedPlan = firstQueryValue(req.query && (req.query.plan || req.query.productPlan)) || "pro";
   const productPlan = normalizeSetupProductPlan(requestedPlan);
   const requestedCoachSeats = firstQueryValue(req.query && (req.query.coachSeats || req.query.coaches || req.query.seats)) || "1";
-  const coachSeats = normalizeSetupCoachSeats(requestedCoachSeats);
+  const coachSeats = normalizeSetupCoachSeats(requestedCoachSeats, productPlan);
   const subscription = setupSubscriptionFromQuery(req.query || {}, productPlan);
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const { token, locationId } = getGhlContext({ query: { account: accountKey }, headers: {} });
@@ -219,7 +237,7 @@ function accountSetup(req, res) {
       required: false,
       recommended: true,
       label: "Subscription amount",
-      description: "Internal monthly or annual subscription amount. Athlete limits remain controlled in GHL.",
+      description: "Internal monthly or annual subscription amount. Active athlete limits are enforced by SMARTCoach.",
     },
     {
       key: `SMARTCOACH_RENEWAL_DATE_${suffix}`,
@@ -251,7 +269,7 @@ function accountSetup(req, res) {
       description: "Optional internal notes about this customer subscription.",
     },
   ];
-  if (productPlan === "pro") {
+  if (isProPlan(productPlan)) {
     env.push(
       {
         key: `GHL_PRIVATE_INTEGRATION_TOKEN_${suffix}`,
@@ -268,28 +286,32 @@ function accountSetup(req, res) {
         description: "Customer SMART Trak sub-account location ID.",
       }
     );
+  }
+  env.push(
+    {
+      key: `SMARTCOACH_COACH_SEATS_${suffix}`,
+      value: String(coachSeats),
+      required: true,
+      label: "Coach seats",
+      description: isProPlan(productPlan) ? "Pro accounts allow up to 10 coach access codes. Keep coach count tight to protect clean data." : "Essential allows one active device session at a time.",
+    },
+    {
+      key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
+      value: suggestedCoachAccessCodes(accountKey, coachSeats, productPlan).join(","),
+      required: true,
+      label: "Coach access codes",
+      description: isProPlan(productPlan) ? `Give coach codes only to active staff. This account is set for ${coachSeats} coach${coachSeats === 1 ? "" : "es"}.` : "Essential requires an active code and allows one active device at a time.",
+    },
+    {
+      key: `SMARTCOACH_REQUIRE_COACH_ACCESS_${suffix}`,
+      value: "true",
+      required: true,
+      label: "Require coach access",
+      description: "Blocks SMARTCoach until this account has an active coach access code configured.",
+    }
+  );
+  if (isProPlan(productPlan)) {
     env.push(
-      {
-        key: `SMARTCOACH_COACH_SEATS_${suffix}`,
-        value: String(coachSeats),
-        required: true,
-        label: "Coach seats",
-        description: "Controls whether this Pro account allows 1 coach or 3 coach access codes. Athlete count stays controlled by GHL.",
-      },
-      {
-        key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
-        value: suggestedCoachAccessCodes(accountKey, coachSeats).join(","),
-        required: true,
-        label: "Coach access codes",
-        description: `Give one code to each coach. This account is set for ${coachSeats} coach${coachSeats === 1 ? "" : "es"}.`,
-      },
-      {
-        key: `SMARTCOACH_REQUIRE_COACH_ACCESS_${suffix}`,
-        value: "true",
-        required: true,
-        label: "Require coach access",
-        description: "Blocks SMART Trak if this account does not have coach access codes configured.",
-      },
       {
         key: `SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_${suffix}`,
         value: "",
@@ -304,11 +326,13 @@ function accountSetup(req, res) {
     success: true,
     accountKey,
     productPlan,
-    coachSeats: productPlan === "pro" ? coachSeats : 0,
-    coachAccessCodesConfigured: productPlan === "pro" ? coachSeats : 0,
+    productPlanLabel: planDefinition(productPlan).label,
+    activeAthleteLimit: planDefinition(productPlan).activeAthleteLimit,
+    coachSeats,
+    coachAccessCodesConfigured: coachSeats,
     subscription: publicSubscriptionSummary(subscription),
     configured,
-    setupState: productPlan === "essential" ? "essential-ready" : configured ? "pro-ready" : "pro-setup-needed",
+    setupState: !isProPlan(productPlan) ? configured ? "essential-ready" : "essential-code-needed" : configured ? "pro-ready" : "pro-setup-needed",
     environment: env,
     accountUrl: `/?account=${encodeURIComponent(accountKey)}`,
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(accountKey)}`,
@@ -567,7 +591,7 @@ async function saveAutomationAccount(payload, options = {}) {
   const existing = await loadExistingAccountRecord(accountKey);
   const account = accountAutomationRecord(payload, existing, options);
   const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
-  const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
+  const environment = accountEnvironmentRows({ suffix, account, includeCrm: isProPlan(account.productPlan) });
   if (options.skipDuplicateEvents && automationEventAlreadyRecorded(existing, account.lastAutomationEvent)) {
     return automationAccountResult(account, {
       configured: registryConfigured(),
@@ -592,7 +616,9 @@ function automationAccountResult(account, registryResult, extra = {}) {
     ...extra,
     accountKey: account.accountKey,
     productPlan: account.productPlan,
-    coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
+    productPlanLabel: planDefinition(account.productPlan).label,
+    activeAthleteLimit: planDefinition(account.productPlan).activeAthleteLimit,
+    coachSeats: account.coachSeats || 1,
     subscription: publicSubscriptionSummary(account.subscription),
     subscriptionAccessAllowed: subscriptionAllowed,
     subscriptionBlockedReason,
@@ -604,7 +630,7 @@ function automationAccountResult(account, registryResult, extra = {}) {
     environment: publicEnvironmentRows(extra.environment || accountEnvironmentRows({
       suffix: account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_"),
       account,
-      includeCrm: account.productPlan === "pro",
+      includeCrm: isProPlan(account.productPlan),
     })),
     dashboardUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}`,
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
@@ -703,14 +729,16 @@ async function previewAutomationAccount(payload, options = {}) {
   const existing = await loadExistingAccountRecord(accountKey);
   const account = accountAutomationRecord(payload, existing, options);
   const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
-  const environment = accountEnvironmentRows({ suffix, account, includeCrm: account.productPlan === "pro" });
+  const environment = accountEnvironmentRows({ suffix, account, includeCrm: isProPlan(account.productPlan) });
   const subscriptionAllowed = subscriptionAccessAllowed(account.subscription);
   const setupReady = accountSetupReady(account);
   const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(account.subscription);
   return {
     accountKey: account.accountKey,
     productPlan: account.productPlan,
-    coachSeats: account.productPlan === "pro" ? account.coachSeats : 0,
+    productPlanLabel: planDefinition(account.productPlan).label,
+    activeAthleteLimit: planDefinition(account.productPlan).activeAthleteLimit,
+    coachSeats: account.coachSeats || 1,
     subscription: publicSubscriptionSummary(account.subscription),
     subscriptionAccessAllowed: subscriptionAllowed,
     subscriptionBlockedReason,
@@ -732,9 +760,9 @@ async function previewAutomationAccount(payload, options = {}) {
 
 function accountSetupReady(account) {
   const source = account || {};
-  if (source.productPlan === "essential") return true;
   const codes = Array.isArray(source.coachAccessCodes) ? source.coachAccessCodes : [];
   const coachAccessReady = source.requireCoachAccess === false || codes.length > 0;
+  if (!isProPlan(source.productPlan)) return coachAccessReady;
   return !!(source.token && source.locationId && coachAccessReady);
 }
 
@@ -745,6 +773,7 @@ function publicAccountRecord(account) {
     token: source.token ? "__hidden__" : "",
     accessCode: source.accessCode ? "__hidden__" : "",
     coachAccessCodes: Array.isArray(source.coachAccessCodes) ? source.coachAccessCodes.map(() => "__hidden__") : [],
+    essentialActiveSession: source.essentialActiveSession ? { active: true, expiresAtIso: source.essentialActiveSession.expiresAtIso || "" } : undefined,
     privateIntegrationToken: undefined,
   };
 }
@@ -875,13 +904,29 @@ async function accountSession(req, res) {
     }
     clearSessionFailures({ accountKey, ip });
     const parentEmailAllowed = parentEmailFeatureReleased() && !!access.parentEmailAllowed;
-    const session = createCoachSession(accountKey, { coachIndex: access.coachIndex, parentEmailAllowed });
+    const sessionId = crypto.randomBytes(12).toString("hex");
+    const session = createCoachSession(accountKey, { coachIndex: access.coachIndex, parentEmailAllowed, sessionId });
     if (!session) {
       res.status(500).json({
         error: "SMART Trak session signing is not configured.",
         sessionSecretRequired: true,
       });
       return;
+    }
+    if (access.productPlan === "essential") {
+      const existing = (await loadExistingAccountRecord(accountKey)) || req.smartcoachRegistryAccount || {};
+      await saveAccountRecord(accountKey, {
+        ...existing,
+        accountKey,
+        productPlan: "essential",
+        essentialActiveSession: {
+          sessionId,
+          coachIndex: access.coachIndex || 0,
+          createdAt: new Date().toISOString(),
+          expiresAt: session.expiresAt,
+          expiresAtIso: session.expiresAtIso,
+        },
+      });
     }
     res.status(200).json({
       success: true,
@@ -935,19 +980,22 @@ function normalizeSetupAccountKey(value) {
 }
 
 function normalizeSetupProductPlan(value) {
-  return String(value || "").trim().toLowerCase() === "essential" ? "essential" : "pro";
+  return normalizePlanKey(value);
 }
 
-function normalizeSetupCoachSeats(value) {
+function normalizeSetupCoachSeats(value, productPlan) {
   const seats = Number(String(value || "").trim());
-  return seats === 3 ? 3 : 1;
+  const max = productPlan === "essential" ? 1 : 10;
+  if (!Number.isFinite(seats) || seats < 1) return 1;
+  return Math.max(1, Math.min(Math.floor(seats), max));
 }
 
 function setupSubscriptionFromQuery(query, productPlan) {
+  const billingCadence = normalizeSetupBillingCadence(firstQueryValue(query.billingCadence || query.cadence) || "monthly");
   return {
     status: normalizeSetupSubscriptionStatus(firstQueryValue(query.subscriptionStatus || query.status) || "active"),
-    billingCadence: normalizeSetupBillingCadence(firstQueryValue(query.billingCadence || query.cadence) || "monthly"),
-    amount: cleanSetupText(firstQueryValue(query.subscriptionAmount || query.amount) || suggestedSubscriptionAmount(productPlan, query.coachSeats || query.coaches || query.seats)),
+    billingCadence,
+    amount: cleanSetupText(firstQueryValue(query.subscriptionAmount || query.amount) || suggestedSubscriptionAmount(productPlan, query.coachSeats || query.coaches || query.seats, billingCadence)),
     renewalDate: cleanSetupText(firstQueryValue(query.renewalDate || query.renewsOn || query.nextBillingDate)),
     stripeCustomerId: cleanSetupText(firstQueryValue(query.stripeCustomerId || query.customerId)),
     stripeSubscriptionId: cleanSetupText(firstQueryValue(query.stripeSubscriptionId || query.subscriptionId)),
@@ -972,7 +1020,7 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const productPlanValue = firstAutomationValue(payload, ["productPlan", "plan", "subscriptionPlan"]);
   const productPlan = productPlanValue ? normalizeSetupProductPlan(productPlanValue) : normalizeSetupProductPlan(existing.productPlan || "pro");
   const coachSeatsValue = firstAutomationValue(payload, ["coachSeats", "coaches", "seats"]);
-  const coachSeats = coachSeatsValue ? normalizeSetupCoachSeats(coachSeatsValue) : normalizeSetupCoachSeats(existing.coachSeats || 1);
+  const coachSeats = coachSeatsValue ? normalizeSetupCoachSeats(coachSeatsValue, productPlan) : normalizeSetupCoachSeats(existing.coachSeats || 1, productPlan);
   const statusValue = firstAutomationValue(payload, ["subscriptionStatus", "status"]);
   const billingValue = firstAutomationValue(payload, ["billingCadence", "billingInterval", "cadence", "interval"]);
   const amountValue = firstAutomationValue(payload, ["subscriptionAmount", "amount", "price", "unitAmount", "unit_amount"]);
@@ -983,21 +1031,21 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const subscription = {
     status: statusValue ? normalizeSetupSubscriptionStatus(statusValue) : existingSubscription.status || "active",
     billingCadence: billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly",
-    amount: amountValue ? normalizeMoneyAmount(amountValue) : existingSubscription.amount || suggestedSubscriptionAmount(productPlan, coachSeats),
+    amount: amountValue ? normalizeMoneyAmount(amountValue) : existingSubscription.amount || suggestedSubscriptionAmount(productPlan, coachSeats, billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly"),
     renewalDate: renewalValue ? normalizeDateValue(renewalValue) : existingSubscription.renewalDate || "",
     stripeCustomerId: cleanSetupText(stripeCustomerValue || existingSubscription.stripeCustomerId),
     stripeSubscriptionId: cleanSetupText(stripeSubscriptionValue || existingSubscription.stripeSubscriptionId),
     notes: cleanSetupText(notesValue || existingSubscription.notes),
   };
   const coachCodesValue = firstAutomationValue(payload, ["coachAccessCodes", "coachCodes", "accessCodes"]);
-  const coachCodes = coachCodesValue ? normalizeSetupCoachCodes(coachCodesValue, accountKey, coachSeats) : normalizeSetupCoachCodes(existing.coachAccessCodes || [], accountKey, coachSeats);
+  const coachCodes = coachCodesValue ? normalizeSetupCoachCodes(coachCodesValue, accountKey, coachSeats, productPlan) : normalizeSetupCoachCodes(existing.coachAccessCodes || [], accountKey, coachSeats, productPlan);
   const parentEmailCoachAccessValue = firstAutomationValue(payload, ["parentEmailCoachAccess", "parentEmailCoachIndexes", "parentEmailCoaches"]);
-  const parentEmailCoachAccess = parentEmailCoachAccessValue ? normalizeParentEmailCoachAccess(parentEmailCoachAccessValue, coachSeats) : normalizeParentEmailCoachAccess(existing.parentEmailCoachAccess || [], coachSeats);
+  const parentEmailCoachAccess = parentEmailCoachAccessValue ? normalizeParentEmailCoachAccess(parentEmailCoachAccessValue, coachSeats, productPlan) : normalizeParentEmailCoachAccess(existing.parentEmailCoachAccess || [], coachSeats, productPlan);
   const tokenValue = firstAutomationValue(payload, ["ghlToken", "privateIntegrationToken", "token"]);
   const locationValue = firstAutomationValue(payload, ["locationId", "ghlLocationId"]);
   const logoValue = firstAutomationValue(payload, ["logoUrl", "brandLogoUrl", "schoolLogoUrl"]);
   const requireCoachAccessValue = firstAutomationValue(payload, ["requireCoachAccess", "coachAccessRequired", "requireAccessCode"]);
-  const requireCoachAccess = productPlan === "pro" ? normalizeSetupBoolean(requireCoachAccessValue, existing.requireCoachAccess !== undefined ? existing.requireCoachAccess : true) : false;
+  const requireCoachAccess = normalizeSetupBoolean(requireCoachAccessValue, existing.requireCoachAccess !== undefined ? existing.requireCoachAccess : true);
   const event = automationEventSummary(payload, options);
   const automationEventHistory = automationEventHistoryFor(existing.automationEventHistory, event);
   return {
@@ -1005,9 +1053,9 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     productPlan,
     token: cleanSetupText(tokenValue || existing.token),
     locationId: cleanSetupText(locationValue || existing.locationId),
-    coachSeats: productPlan === "pro" ? coachSeats : 0,
-    coachAccessCodes: productPlan === "pro" ? coachCodes : [],
-    parentEmailCoachAccess: productPlan === "pro" ? parentEmailCoachAccess : [],
+    coachSeats,
+    coachAccessCodes: coachCodes,
+    parentEmailCoachAccess: isProPlan(productPlan) ? parentEmailCoachAccess : [],
     requireCoachAccess,
     subscription,
     logoUrl: cleanSetupText(logoValue || existing.logoUrl),
@@ -1108,7 +1156,7 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
       required: false,
       recommended: true,
       label: "Subscription amount",
-      description: "Internal monthly or annual subscription amount. Athlete limits remain controlled in GHL.",
+      description: "Internal monthly or annual subscription amount. Active athlete limits are enforced by SMARTCoach.",
     },
     {
       key: `SMARTCOACH_RENEWAL_DATE_${suffix}`,
@@ -1140,6 +1188,29 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
       description: "Optional internal notes about this customer subscription.",
     },
   ];
+  rows.push(
+    {
+      key: `SMARTCOACH_COACH_SEATS_${suffix}`,
+      value: String(account.coachSeats || 1),
+      required: true,
+      label: "Coach seats",
+      description: isProPlan(account.productPlan) ? "Pro accounts can have up to 10 coach codes. Keep coach count tight to protect clean data." : "Essential allows one active device session at a time.",
+    },
+    {
+      key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
+      value: (account.coachAccessCodes || []).join(","),
+      required: true,
+      label: "Coach access codes",
+      description: isProPlan(account.productPlan) ? `Give codes only to active staff. This account is set for ${account.coachSeats || 1} coach${(account.coachSeats || 1) === 1 ? "" : "es"}.` : "Essential requires an active code and allows one active device at a time.",
+    },
+    {
+      key: `SMARTCOACH_REQUIRE_COACH_ACCESS_${suffix}`,
+      value: account.requireCoachAccess === false ? "false" : "true",
+      required: true,
+      label: "Require coach access",
+      description: "Blocks SMARTCoach until this account has an active coach access code configured.",
+    }
+  );
   if (includeCrm) {
     rows.push(
       {
@@ -1155,27 +1226,6 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
         required: true,
         label: "Location ID",
         description: "Customer SMART Trak sub-account location ID.",
-      },
-      {
-        key: `SMARTCOACH_COACH_SEATS_${suffix}`,
-        value: String(account.coachSeats || 1),
-        required: true,
-        label: "Coach seats",
-        description: "Controls whether this Pro account allows 1 coach or 3 coach access codes. Athlete count stays controlled by GHL.",
-      },
-      {
-        key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
-        value: (account.coachAccessCodes || []).join(","),
-        required: true,
-        label: "Coach access codes",
-        description: `Give one code to each coach. This account is set for ${account.coachSeats || 1} coach${(account.coachSeats || 1) === 1 ? "" : "es"}.`,
-      },
-      {
-        key: `SMARTCOACH_REQUIRE_COACH_ACCESS_${suffix}`,
-        value: account.requireCoachAccess === false ? "false" : "true",
-        required: true,
-        label: "Require coach access",
-        description: "Blocks SMART Trak if this account does not have coach access codes configured.",
       },
       {
         key: `SMARTCOACH_PARENT_EMAIL_COACH_ACCESS_${suffix}`,
@@ -1270,7 +1320,7 @@ function cleanSetupText(value) {
   return String(value || "").trim();
 }
 
-function normalizeSetupCoachCodes(value, accountKey, coachSeats) {
+function normalizeSetupCoachCodes(value, accountKey, coachSeats, productPlan) {
   const codes = [];
   const add = (item) => {
     const code = cleanSetupText(item);
@@ -1278,11 +1328,11 @@ function normalizeSetupCoachCodes(value, accountKey, coachSeats) {
   };
   if (Array.isArray(value)) value.forEach(add);
   else if (value) cleanSetupText(value).split(/[\n,]+/).forEach(add);
-  return codes.slice(0, normalizeSetupCoachSeats(coachSeats));
+  return codes.slice(0, normalizeSetupCoachSeats(coachSeats, productPlan));
 }
 
-function normalizeParentEmailCoachAccess(value, coachSeats) {
-  const seats = normalizeSetupCoachSeats(coachSeats);
+function normalizeParentEmailCoachAccess(value, coachSeats, productPlan) {
+  const seats = normalizeSetupCoachSeats(coachSeats, productPlan);
   const allowed = Array.from({ length: seats }, () => false);
   if (Array.isArray(value)) {
     value.forEach((item, index) => {
@@ -1301,7 +1351,7 @@ function normalizeParentEmailCoachAccess(value, coachSeats) {
   raw.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean).forEach((item, index) => {
     const key = item.toLowerCase();
     if (["true", "yes", "on", "allow", "allowed", "enabled"].includes(key)) allowed[index] = true;
-    const match = key.match(/(?:coach)?\s*([123])/);
+    const match = key.match(/(?:coach)?\s*(\d+)/);
     const number = match ? Number(match[1]) : Number(key);
     if (Number.isFinite(number) && number >= 1 && number <= seats) allowed[number - 1] = true;
   });
@@ -1312,9 +1362,8 @@ function parentEmailAccessIndexes(value) {
   return (Array.isArray(value) ? value : []).map((allowed, index) => allowed ? String(index + 1) : "").filter(Boolean);
 }
 
-function suggestedSubscriptionAmount(productPlan, coachSeatsValue) {
-  if (productPlan === "essential") return "9.99";
-  return normalizeSetupCoachSeats(firstQueryValue(coachSeatsValue)) === 3 ? "39.99" : "29.99";
+function suggestedSubscriptionAmount(productPlan, coachSeatsValue, billingCadence) {
+  return planSubscriptionAmount(productPlan, billingCadence);
 }
 
 function setupAdminAllowed(req) {
@@ -1559,7 +1608,7 @@ function suggestedAccessCode(accountKey) {
   return `sc-${String(hash >>> 0).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function suggestedCoachAccessCodes(accountKey, coachSeats) {
-  const count = normalizeSetupCoachSeats(coachSeats);
+function suggestedCoachAccessCodes(accountKey, coachSeats, productPlan) {
+  const count = normalizeSetupCoachSeats(coachSeats, productPlan);
   return Array.from({ length: count }, (_, index) => `${suggestedAccessCode(accountKey)}-c${index + 1}`);
 }

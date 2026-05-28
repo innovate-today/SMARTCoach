@@ -138,7 +138,9 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <div class="field">
           <label for="plan">Plan</label>
           <select id="plan">
-            <option value="pro">SMARTCoach Pro</option>
+            <option value="pro25">SMARTCoach Pro 25</option>
+            <option value="pro100">SMARTCoach Pro 100</option>
+            <option value="pro200">SMARTCoach Pro 200</option>
             <option value="essential">SMARTCoach Essential</option>
           </select>
         </div>
@@ -146,7 +148,15 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <label for="coachSeats">Coach Seats</label>
           <select id="coachSeats">
             <option value="1">1 coach</option>
+            <option value="2">2 coaches</option>
             <option value="3">3 coaches</option>
+            <option value="4">4 coaches</option>
+            <option value="5">5 coaches</option>
+            <option value="6">6 coaches</option>
+            <option value="7">7 coaches</option>
+            <option value="8">8 coaches</option>
+            <option value="9">9 coaches</option>
+            <option value="10">10 coaches</option>
           </select>
         </div>
         <div class="field">
@@ -319,7 +329,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="field">
           <label for="subscriptionAmount">Amount</label>
-          <input id="subscriptionAmount" type="text" placeholder="29.99" autocomplete="off">
+          <input id="subscriptionAmount" type="text" placeholder="45.00" autocomplete="off">
         </div>
         <div class="field">
           <label for="renewalDate">Renewal Date</label>
@@ -555,11 +565,7 @@ function generateCoachCodes(){
   var plan=document.getElementById('plan').value;
   var seats=Number(document.getElementById('coachSeats').value)||1;
   if(plan==='essential'){
-    document.getElementById('coachAccessCodes').value='';
-    clearActivationHandoffIfSetupChanged(document.getElementById('coachAccessCodes'));
-    setStatus('Essential is stopwatch-only, so coach access codes are not needed.','good');
-    refreshActiveSetupDisplays();
-    return;
+    seats=1;
   }
   var codes=[];
   for(var i=0;i<seats;i++){
@@ -1011,7 +1017,7 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Last Update Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
     '<div class="registryrow"><b>Updated</b><span>'+esc(fullDateTime(record.updatedAt))+'</span></div>'+
     automationHistoryHtml(record.automationEventHistory);
-  var guessedConfigured=(record.productPlan==='essential')||!!(record.locationId&&record.token&&((record.coachAccessCodes||[]).length||record.accessCode));
+  var guessedConfigured=(record.productPlan==='essential'&&(((record.coachAccessCodes||[]).length)||record.accessCode))||!!(record.locationId&&record.token&&((record.coachAccessCodes||[]).length||record.accessCode));
   var unsavedSetupChanges=!!(data.unsavedSetupChanges||(registry&&registry.dryRun));
   currentSetup=Object.assign({},currentSetup||{},{
     accountKey:account,
@@ -1046,8 +1052,8 @@ function fillFormFromLookup(){
   loadLiveSmokeSignoff();
   loadPostLaunchChecklist();
   renderLiveSmokeSummary();
-  document.getElementById('plan').value=currentSetup.productPlan==='essential'?'essential':'pro';
-  document.getElementById('coachSeats').value=String(currentSetup.coachSeats)==='3'?'3':'1';
+  document.getElementById('plan').value=normalizePlanValue(currentSetup.productPlan);
+  document.getElementById('coachSeats').value=String(Math.max(1,Math.min(10,Number(currentSetup.coachSeats)||1)));
   document.getElementById('locationId').value='';
   document.getElementById('privateIntegrationToken').value='';
   document.getElementById('coachAccessCodes').value='';
@@ -1193,7 +1199,7 @@ function saveRegistryUpdate(){
       registry:{configured:!!registry.configured,found:!!registry.saved,key:registry.key||'',error:registry.reason||registry.error},
       accountRegistryRecord:result.data.accountRegistryRecord||{}
     });
-    renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
+    renderSetup(Object.assign({},result.data,{setupState:result.data.productPlan==='essential'?(result.data.setupReady?'essential-ready':'essential-code-needed'):result.data.setupReady?'pro-ready':'pro-setup-needed'}));
     rememberCurrentSetupFieldValues();
     var customValueNote=ghlCustomValueSyncMessage(result.data.ghlCustomValueSync);
     var savedMessage=savedRegistryStatusMessage(result.data)+(customValueNote?' '+customValueNote:'');
@@ -1250,7 +1256,7 @@ function dryRunRegistryUpdate(){
       registry:{configured:!!(result.data.registry&&result.data.registry.configured),found:false,dryRun:true,key:'',error:'Preview only'},
       accountRegistryRecord:result.data.accountRegistryRecord||{}
     });
-    renderSetup(Object.assign({},result.data,{unsavedSetupChanges:true,setupState:result.data.productPlan==='essential'?'essential-ready':result.data.setupReady?'pro-ready':'pro-setup-needed'}));
+    renderSetup(Object.assign({},result.data,{unsavedSetupChanges:true,setupState:result.data.productPlan==='essential'?(result.data.setupReady?'essential-ready':'essential-code-needed'):result.data.setupReady?'pro-ready':'pro-setup-needed'}));
     if(result.data.accessReady){
       setStatus('Setup preview passed. This account would be ready after saving. Nothing was saved.','good');
       setSetupActionResult('Setup preview passed. This account would be ready after saving. Nothing was saved.','good');
@@ -1452,9 +1458,9 @@ function renderReadiness(data){
     return;
   }
   if(plan==='essential'){
-    readyBar.className='readybar good';
-    title.textContent='Essential account ready';
-    detail.textContent='This account is set for stopwatch-only use. Athlete limits stay controlled in GHL.';
+    readyBar.className='readybar'+(configured&&subscriptionAllowed?' good':' bad');
+    title.textContent=configured?'Essential account ready':'Essential code needed';
+    detail.textContent=configured?'This account is set for stopwatch-only use with one active device session.':'Generate and save one active coach code before sending the Essential link.';
     return;
   }
   readyBar.className='readybar'+(configured&&subscriptionAllowed?' good':' bad');
@@ -1489,7 +1495,7 @@ function checkSetupStatus(){
   }).then(function(result){
     var data=result.data||{};
     currentSetup=Object.assign({},currentSetup||{},data,{accountKey:data.accountKey||account});
-    document.getElementById('resultState').textContent=data.productPlan==='essential'?'Essential ready':data.configured?'Pro ready':'Pro setup needed';
+    document.getElementById('resultState').textContent=data.productPlan==='essential'?(data.configured?'Essential ready':'Essential code needed'):data.configured?'Pro ready':'Pro setup needed';
     document.getElementById('resultCoachSeats').textContent=coachSeatsLabel(currentSetup);
     document.getElementById('resultSubscription').textContent=subscriptionLabel(currentSetup);
     renderReadiness(currentSetup);
@@ -1498,7 +1504,7 @@ function checkSetupStatus(){
       setStatus(data.subscriptionBlockedReason||'Account setup is complete, but subscription status is blocking SMART Trak access.','bad');
     }else if(data.configured){
       setStatus('Account is ready.','good');
-    }else if(data.productPlan==='essential'){
+    }else if(data.productPlan==='essential'&&data.configured){
       setStatus('Essential account is ready.','good');
     }else{
       var missing=(data.missingSetupFields||[]).map(function(item){return item.label;}).join(', ');
@@ -2262,15 +2268,15 @@ function renderChecklist(data){
     {
       title:'Give each coach one access code',
       body:plan==='essential'
-        ?'Essential is stopwatch-only, so no SMART Trak coach seats are needed.'
-        :'Use the Coach access codes field. One-coach accounts get one code. Three-coach accounts get three codes. Athlete count stays controlled by GHL.',
-      state:plan==='essential'||signals.coachCodesReady?'good':'bad',
-      status:plan==='essential'?'Not needed':signals.coachCodesReady?'Codes saved':'Missing codes'
+        ?'Essential needs one active coach code. Only one device session stays active at a time.'
+        :'Use the Coach access codes field for active staff only. Pro allows up to 10 coaches, but fewer coaches keeps synced data cleaner. Active athlete limits are enforced by SMARTCoach.',
+      state:signals.coachCodesReady?'good':'bad',
+      status:signals.coachCodesReady?'Codes saved':'Missing codes'
     },
     {
       title:'Track the customer subscription',
       body:signals.subscriptionAllowed
-        ?'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. This means billing allows the account; the browser or phone may still need the coach code entered. Athlete limits stay in GHL.'
+        ?'Keep the subscription status, billing cadence, amount, renewal date, and optional Stripe references with this account. This means billing allows the account; the browser or phone may still need the coach code entered. Active athlete limits are enforced by SMARTCoach.'
         :signals.subscriptionBlockedReason,
       state:signals.subscriptionAllowed?'good':'bad',
       status:signals.subscriptionAllowed?'Billing allows':'Access blocked'
@@ -2506,7 +2512,7 @@ function setupSignals(data){
   var subscriptionAllowed=typeof data.subscriptionAccessAllowed==='boolean'?data.subscriptionAccessAllowed:(!subscriptionStatus||subscriptionStatus==='active'||subscriptionStatus==='trialing');
   var subscriptionBlockedReason=data.subscriptionBlockedReason||('SMART Trak access is blocked because this subscription is '+(subscriptionStatus||'inactive').replace('_',' ')+'.');
   var crmReady=plan==='essential'||!!data.crmConfigured||!!(record.locationId&&record.token);
-  var coachCodesReady=plan==='essential'||coachCodeCount>0;
+  var coachCodesReady=coachCodeCount>0;
   var configured=typeof data.setupReady==='boolean'?data.setupReady:(plan==='essential'||!!data.configured||(crmReady&&coachCodesReady));
   return {
     accountKey:!!data.accountKey,
@@ -2560,12 +2566,19 @@ function setSetupActionResult(text,type){
   el.className='actionresult'+(type?' '+type:'');
 }
 function planLabel(value){
-  return value==='essential'?'Essential':'Pro';
+  var map={essential:'Essential',pro25:'Pro 25',pro100:'Pro 100',pro200:'Pro 200',pro:'Pro 25'};
+  return map[normalizePlanValue(value)]||'Pro 25';
 }
 function coachSeatsLabel(data){
-  if((data&&data.productPlan)==='essential')return 'Not needed';
   var seats=Number(data&&data.coachSeats)||1;
-  return seats===3?'3 coaches':'1 coach';
+  return seats+' coach'+(seats===1?'':'es');
+}
+function normalizePlanValue(value){
+  var raw=String(value||'').trim().toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
+  if(raw==='essential'||raw==='smartcoach essential')return 'essential';
+  if(raw==='pro 100'||raw==='smartcoach pro 100'||raw==='100'||raw==='pro100')return 'pro100';
+  if(raw==='pro 200'||raw==='smartcoach pro 200'||raw==='200'||raw==='pro200')return 'pro200';
+  return 'pro25';
 }
 function subscriptionLabel(data){
   var sub=(data&&data.subscription)||{};
@@ -2576,6 +2589,7 @@ function subscriptionLabel(data){
 function stateLabel(value){
   var map={
     'essential-ready':'Essential ready',
+    'essential-code-needed':'Essential code needed',
     'pro-ready':'Pro ready',
     'pro-setup-needed':'Pro setup needed'
   };
@@ -2594,8 +2608,8 @@ function prefillFromUrl(){
     var billingCadence=(params.get('billingCadence')||params.get('cadence')||'').trim();
     if(account)document.getElementById('accountKey').value=account;
     if(account)document.getElementById('lookupAccountKey').value=account;
-    if(plan)document.getElementById('plan').value=plan==='essential'?'essential':'pro';
-    if(coachSeats)document.getElementById('coachSeats').value=coachSeats==='3'?'3':'1';
+    if(plan)document.getElementById('plan').value=normalizePlanValue(plan);
+    if(coachSeats)document.getElementById('coachSeats').value=String(Math.max(1,Math.min(10,Number(coachSeats)||1)));
     if(subscriptionStatus)document.getElementById('subscriptionStatus').value=subscriptionStatus;
     if(billingCadence)document.getElementById('billingCadence').value=billingCadence==='annual'?'annual':'monthly';
     if(params.get('subscriptionAmount'))document.getElementById('subscriptionAmount').value=params.get('subscriptionAmount');

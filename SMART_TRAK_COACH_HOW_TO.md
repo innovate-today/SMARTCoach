@@ -10,6 +10,17 @@ This guide explains how coaches use SMART Trak and the SMARTCoach Pro Mobile App
 4. Sync the workout to SMART Trak.
 5. Review the result on the **Dashboard**.
 
+## Plans And Limits
+
+SMARTCoach has four customer plans:
+
+1. **Essential**: $10/month or $100/year. Stopwatch-only access. Requires an active coach code and allows one active device session at a time.
+2. **Pro 25**: $45/month or $450/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 25 active athletes.
+3. **Pro 100**: $75/month or $750/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 100 active athletes.
+4. **Pro 200**: $150/month or $1500/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 200 active athletes.
+
+Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. Pro accounts can have up to 10 coach codes, but schools should keep the active coach list tight because more coaches syncing data increases the chance of messy records.
+
 ## SMART Trak Dashboard
 
 Use the Dashboard as the daily coaching home base. It shows roster status, training volume, current fitness, recent meet results, completed workouts, and athlete progress.

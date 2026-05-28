@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
 
   if (!requireProPlan(req, res)) return;
 
-  const { accountKey, token, locationId } = getGhlContext(req);
+  const { accountKey, token, locationId, activeAthleteLimit, productPlanLabel } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak athlete roster is not configured on the server." });
@@ -66,6 +66,7 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      await enforceActiveAthleteLimit({ token, locationId, payload, activeAthleteLimit, productPlanLabel });
       const athlete = await createOrUpdateAthlete({ token, locationId, payload });
       res.status(200).json({ success: true, athlete });
       return;
@@ -81,6 +82,24 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code, X-SMARTCoach-Session");
+}
+
+async function enforceActiveAthleteLimit({ token, locationId, payload, activeAthleteLimit, productPlanLabel }) {
+  const limit = Number(activeAthleteLimit) || 0;
+  if (!limit) return;
+  const wantsActive = !payload || !Object.prototype.hasOwnProperty.call(payload, "smartcoachActive") || truthy(payload.smartcoachActive);
+  if (!wantsActive) return;
+  const activeAthletes = await listSmartCoachAthletes({ token, locationId, includeContacts: false });
+  const contactId = clean(payload && payload.contactId);
+  const athleteId = clean(payload && payload.smartcoachAthleteId);
+  const name = clean(payload && payload.name).toLowerCase();
+  const alreadyActive = activeAthletes.some((athlete) =>
+    (contactId && clean(athlete.id) === contactId) ||
+    (athleteId && clean(athlete.smartcoachAthleteId) === athleteId) ||
+    (name && clean(athlete.name).toLowerCase() === name)
+  );
+  if (alreadyActive || activeAthletes.length < limit) return;
+  throw httpError(403, `${productPlanLabel || "This plan"} allows ${limit} active athlete${limit === 1 ? "" : "s"}. Archive or mark an athlete inactive before adding another active athlete.`);
 }
 
 async function listSmartCoachAthletes({ token, locationId, includeContacts = false, query = "" }) {
