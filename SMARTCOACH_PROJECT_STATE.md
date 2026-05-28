@@ -964,6 +964,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 164. Training Calendar Add Calendar Day language now uses `Plan Source` with `Manual calendar entry` instead of `Add To Plan` / `Standalone calendar activity`, clarifying that coaches can manually enter their real weekly plan without attaching it to an uploaded, pasted, or auto-built saved plan.
 165. Training Calendar Easy Run add modal now hides Planned Volume and Effort/Type because distance and the Easy Run tab already define those values. Easy days still save `Easy/Recovery Run` and derive planned volume from the distance field.
 166. Training Calendar Race add modal now hides Effort/Type and Target because race days save those defaults internally. Planned Volume is hidden for Track races and shown for Cross Country races, where distance such as 2 mile or 5K is useful.
+167. Training Calendar Rest / Day Off add modal now hides Effort/Type, Planned Volume, Target, and Details while still saving the off-day defaults internally.
 
 ## Known Good Test Flow
 

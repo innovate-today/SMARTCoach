@@ -449,7 +449,7 @@ button.compact{padding:6px 9px;font-size:12px}
           </div>
         </div>
         <div id="addActivitySummary" class="activitysummary" hidden><div class="activitysummary-title">Quality Session Summary</div><div id="addActivitySummaryBody" class="activitysummary-body"></div></div>
-        <div class="field full"><label for="addDayDetails">Details <span class="fieldinfo" tabindex="0" data-tip="Workout instructions, race notes, warmup, cooldown, or reminders.">i</span></label><textarea id="addDayDetails" placeholder="Add the session details"></textarea></div>
+        <div id="addDayDetailsField" class="field full"><label for="addDayDetails">Details <span class="fieldinfo" tabindex="0" data-tip="Workout instructions, race notes, warmup, cooldown, or reminders.">i</span></label><textarea id="addDayDetails" placeholder="Add the session details"></textarea></div>
         <div class="field full"><label for="addDayNotes">Coach Notes <span class="fieldinfo" tabindex="0" data-tip="Optional private planning context.">i</span></label><textarea id="addDayNotes" placeholder="Optional coach notes"></textarea></div>
       </div>
       <div class="modalactions">
@@ -654,6 +654,7 @@ var els={
   addDayVolume:document.getElementById('addDayVolume'),
   addDayTargetField:document.getElementById('addDayTargetField'),
   addDayTarget:document.getElementById('addDayTarget'),
+  addDayDetailsField:document.getElementById('addDayDetailsField'),
   easyActivityFields:document.getElementById('easyActivityFields'),
   addEasyDistance:document.getElementById('addEasyDistance'),
   addEasyUnit:document.getElementById('addEasyUnit'),
@@ -2085,9 +2086,10 @@ function setAddDayMode(mode){
   els.qualityActivityFields.hidden=addDayMode!=='quality';
   els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=false;
-  els.addDayWorkoutTypeField.hidden=addDayMode==='easy'||addDayMode==='race';
-  els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality'||(addDayMode==='race'&&normalizeSport(els.addDaySport.value)!=='Cross Country');
-  els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='race';
+  els.addDayWorkoutTypeField.hidden=addDayMode==='easy'||addDayMode==='race'||addDayMode==='off';
+  els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality'||addDayMode==='off'||(addDayMode==='race'&&normalizeSport(els.addDaySport.value)!=='Cross Country');
+  els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='race'||addDayMode==='off';
+  els.addDayDetailsField.hidden=addDayMode==='off';
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
     setActivityTypeOptions(['Easy/Recovery Run','Long Run'],'Easy/Recovery Run');
