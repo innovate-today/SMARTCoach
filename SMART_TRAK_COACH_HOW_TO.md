@@ -263,7 +263,7 @@ Relay results:
 5. Enter each split and the total result.
 6. Save the relay result.
 
-Relay results save as a team result with named splits. They do not create PB/SB athlete-best updates for individual runners.
+Relay results save as a team result with named splits. SMART Trak can mark a relay result as **SB** when it is the fastest saved relay result for that relay event in the current season. Relay results do not use **PB** tags and do not create individual athlete-best updates for the runners.
 
 Field event results:
 
@@ -352,7 +352,7 @@ For relays:
 5. Tap each leg and select the active athlete running that leg.
 6. Tap **Start** to begin one relay clock.
 7. Tap **Lap** at each exchange to capture the split and move to the next runner.
-8. Tap **Finish Relay** or **Stop** after the final leg.
+8. Tap **Finish** or **Stop** after the final leg.
 9. Tap **Save** or **Sync** when the relay result is ready.
 10. Confirm the relay result in SMART Trak.
 
@@ -391,7 +391,7 @@ Common relay events:
 - `Distance Medley`
 - `Other Relay`
 
-Relay results can be reviewed from Dashboard Recent Meet Results and Meet History. On the Dashboard, click the relay row to view details such as relay type, total result, meet, date, and splits by runner. Use **Edit** on a relay result to correct the relay event, team name, total time, runner names, or splits. Use **Void** if the saved relay result should no longer count in SMART Trak reporting.
+Relay results can be reviewed from Dashboard Recent Meet Results and Meet History. On the Dashboard, click the relay row to view details such as relay type, total result, meet, date, and splits by runner. SMART Trak shows **SB** for a relay when it is the fastest saved relay result for that relay event in the current season. Relay results do not use **PB**. Use **Edit** on a relay result to correct the relay event, team name, total time, runner names, or splits. Use **Void** if the saved relay result should no longer count in SMART Trak reporting.
 
 ## SMART Trak Field Event Support
 
@@ -491,7 +491,7 @@ Athlete notes sync into the completed workout/performance note. They are also ad
 
 ## SMARTCoach Help
 
-SMART Trak desktop pages include the SMARTCoach Help widget. Use it when a coach needs quick how-to help inside SMART Trak.
+SMART Trak desktop pages include the SMARTCoach Help widget powered by GHL Conversation AI and the SMARTCoach knowledge base. Use it when a coach needs quick how-to help inside SMART Trak.
 
 Good questions to ask:
 

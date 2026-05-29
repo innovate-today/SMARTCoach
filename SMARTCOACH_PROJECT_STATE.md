@@ -687,14 +687,14 @@ Parent communication:
 - Athletes page now supports selecting specific athletes; Email Parents and Copy Parent Emails use selected athletes when any are checked, otherwise they use the current filtered view.
 - Parent email tools are not part of the initial rollout. They stay globally unreleased unless `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` is set later; until then, normal accounts do not show email controls or athlete selection checkboxes even if a coach is configured in `Future Parent Email Coaches`.
 - Athletes page roster filter now says `With parent contact` and matches any saved guardian name, email, or phone, so parent setup remains useful without presenting unreleased parent-email tooling.
-- Full parent communication is still planned.
-- Later need deeper ways to email:
-  - richer group/parent message templates and delivery history
-- Coach should not have to find parent emails manually.
+- Parent email is not the preferred future path because sending from SMARTCoach would require a separate domain and would sit outside normal school email.
+- Future parent communication should focus on parent contact organization, copy/export contact lists, coach-copy message text, possible SMS/manual message support if allowed, and workflows that help the coach communicate without SMARTCoach becoming the official email sender.
+- Coach should not have to find parent contact details manually.
 
 Community/media:
 
-- Future idea: attach image/video and sync/post to SMARTCoach Pro community when a PR/new record happens.
+- GHL Community is not the preferred default path because it requires a domain.
+- Future idea: build a simple SMART Trak team highlights or achievement feed, attach PR/record media links to athlete profiles, create coach-controlled share cards, or support a different community approach that does not depend on GHL Community unless domain/community setup becomes worthwhile.
 
 Field events:
 
@@ -774,7 +774,8 @@ Track simulator:
 
 Help assistant:
 
-- Future idea: SMARTCoach Pro help button for instructions, subscription questions, and how-to guidance.
+- Implemented through the GHL Conversation AI SMARTCoach Help widget on desktop SMART Trak pages, using the SMARTCoach knowledge base.
+- Future work is knowledge-base/content improvement, not a separate assistant build. Billing questions remain outside SMARTCoach Help.
 
 Athlete training calendar:
 
@@ -784,7 +785,7 @@ Athlete training calendar:
 - Athlete access uses a unique athlete link/code generated from the Athletes page.
 - Current scope: athletes can view workouts assigned directly to them or to one of their training groups, then submit Complete, Modify, or Skip.
 - Submitted updates save into SMART Trak as athlete-submitted completed workout records; skipped submissions require notes and modified submissions can include actual volume/time.
-- Future enhancement: add richer coach calendar summary counts and optional coach approval.
+- Future enhancement: add richer coach calendar response summaries, filters for athlete-submitted updates, a clearer coach review view for notes/corrections, optional coach approval before athlete updates fully count, and athlete access management controls.
 
 ## Remaining Launch Parked Items
 
@@ -792,12 +793,13 @@ These are intentionally not blocking the current launch path unless the user re-
 
 - Records page deeper historical record retention after refresh is parked; faster-current checks exist.
 - Meet-result corrections update linked Records entries, but full Athlete Best recalculation after corrections is parked.
-- Parent email tools stay unreleased for initial rollout.
+- Parent email tools stay unreleased for initial rollout; future parent communication should avoid relying on SMARTCoach-sent email unless a domain/sending strategy is intentionally added.
 - Deeper import workflows for race results, school records, training history, and plans remain future work.
 - Plan Builder full-plan review/spreadsheet-style adjustment remains future work.
-- SMARTCoach Pro help button/assistant remains future work for instructions, subscription questions, and how-to guidance.
-- Athlete-facing training calendar initial portal is implemented; future work is richer coach calendar response summaries, optional approval, and athlete access management controls.
+- SMARTCoach Help is implemented through GHL Conversation AI; future work is knowledge-base improvement.
+- Athlete-facing training calendar initial portal is implemented; future work is richer coach calendar response summaries, optional approval, review filters, and athlete access management controls.
 - Field-event tracking initial support is implemented; future work is deeper vertical-jump height progression, place/scoring, and richer field-event analytics.
+- Community/media remains future work, but GHL Community is not the default path because it requires a domain; prefer a lightweight in-app highlights/feed or share-card approach first.
 
 ## Recent Launch Cleanup Log
 
