@@ -983,6 +983,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 178. Reworked SMARTCoach Pro Mobile App field attempt entry again so the attempt modal uses a built-in mark pad with numbers, **-**, **.**, Del, and Clear instead of relying on the phone keyboard. Attempt edit/delete actions now carry the exact athlete key into the correction flow so editing does not drift back to a blank add-attempt state.
 179. Field-event mobile sheets are now full-height screens. Field attempt review rows use larger attempt/mark text with smaller edit/delete buttons, the field attempt modal closes after adding or correcting an attempt, Settings includes a feet/inches vs meters field-mark preference, and vertical jumps require an explicit **Result** selection of O/X/P instead of defaulting to a make.
 180. Cleaned up SMARTCoach Pro Mobile App vertical jump attempt history. Each height now shows as one score-sheet style row with a fixed height column and tappable O/X/P chips for editing, plus compact delete controls underneath so rows no longer wrap into crowded edit/delete button clusters.
+181. Mobile field-event flight Save now reads **Save to SMART Trak** and attempts to sync directly to SMART Trak Meet Results in one step. If SMART Trak is unavailable or the request fails, the field results remain saved on the device with a retry message telling the coach to tap **Results** later.
 
 ## Known Good Test Flow
 

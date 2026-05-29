@@ -372,8 +372,8 @@ For field events from the SMARTCoach Pro Mobile App:
 10. Tap **i** on an athlete row to review, edit, or delete that athlete's attempts.
    For high jump and pole vault, tap an **O**, **X**, or **P** mark on the attempts page to edit that attempt.
 11. Use the built-in mark pad for numbers, **-**, and **.** so feet-inch marks and decimal marks can be entered without opening the phone keyboard. Choose feet/inches or meters from SMARTCoach Pro Mobile App **Settings**.
-12. Tap **Save** to queue all athletes in the flight locally.
-13. Tap **Results** in the bottom tray to save queued field results to SMART Trak.
+12. Tap **Save to SMART Trak** to send all athletes in the flight to SMART Trak Meet Results.
+13. If the app cannot reach SMART Trak, the flight is kept on the device and the message will say to tap **Results** later to retry sync.
 
 You can also enter a field result directly from **Save Meet Results** by changing **Result Type** to **Field Event**. Use the live **Field** tray button when you need to capture marks during the event.
 
