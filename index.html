@@ -3978,9 +3978,13 @@ function openFieldAttemptInfo(index){
         grouped[height].push({attempt:attempt,index:i});
       });
       list.innerHTML=Object.keys(grouped).map(function(height){
-        var marks=grouped[height].map(function(row){return fieldAttemptCode(row.attempt);}).join(' ');
-        var buttons=grouped[height].map(function(row){return '<button type="button" class="sbtn" style="font-size:11px;padding:5px 7px" onclick="editFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+row.index+')">Edit '+(row.index+1)+'</button><button type="button" class="sbtn" style="font-size:11px;padding:5px 7px" onclick="removeFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+row.index+')">Delete '+(row.index+1)+'</button>';}).join('');
-        return '<div class="sync-athlete" style="align-items:center;padding:12px 10px"><span class="sync-athlete-main"><b style="font-size:20px">'+ex(height)+' &nbsp; '+ex(marks)+'</b><small style="font-size:14px">Attempts at this height</small></span><span style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">'+buttons+'</span></div>';
+        var markButtons=grouped[height].map(function(row){
+          return '<button type="button" class="sbtn" style="font-size:18px;line-height:1;padding:7px 10px;min-width:38px" onclick="editFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+row.index+')">'+ex(fieldAttemptCode(row.attempt))+'</button>';
+        }).join('');
+        var deleteButtons=grouped[height].map(function(row){
+          return '<button type="button" class="sbtn" style="font-size:11px;padding:4px 7px" onclick="removeFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+row.index+')">Delete '+(row.index+1)+'</button>';
+        }).join('');
+        return '<div style="background:#fff;border-bottom:0.5px solid #e5e5ea;padding:14px 12px"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:30px;font-weight:900;line-height:1;color:#333;min-width:86px;white-space:nowrap">'+ex(height)+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+markButtons+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0 98px">'+deleteButtons+'</div><div style="font-size:11px;color:#777;margin:6px 0 0 98px">Tap O, X, or P to edit.</div></div>';
       }).join('');
     }else{
       list.innerHTML=competitor.attempts&&competitor.attempts.length?competitor.attempts.map(function(attempt,i){
