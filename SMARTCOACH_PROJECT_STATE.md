@@ -987,7 +987,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 182. SMART Trak meet-result sync now auto-tags field event marks as PB/SB when the saved mark is the athlete's best saved mark for that field event ever or in the current season. This applies to field results saved from SMARTCoach Pro Mobile App and desktop Log Race Result.
 183. Cleaned the SMARTCoach Pro Mobile App meet timing screen by removing the inline Relay and Field Events bands above the runner rows. Field remains available from the bottom tray, and the old Results tray slot now opens the Relay controls sheet with the same relay on/off, leg selection, and timing behavior.
 184. Simplified the SMARTCoach Pro Mobile App meet tray: tapping **Relay** now activates relay timing and opens the relay controls directly, with a separate Turn Off Relay recovery button inside the sheet. The Plan tray button is hidden on meet timing screens, and Field/Relay tray icons now use event-specific symbols instead of Sort/Sum icons.
-185. Updated SMARTCoach Pro Mobile App meet tray icons again: Field uses a group icon and Relay uses a four-person relay-team grid icon while preserving the app's blue tray stroke style.
+185. Updated SMARTCoach Pro Mobile App meet tray icons again: Field uses a trending-up icon and Relay uses a four-person relay-team grid icon while preserving the app's blue tray stroke style.
 
 ## Known Good Test Flow
 
