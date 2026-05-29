@@ -107,7 +107,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .registrycards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .registryrow{display:grid;grid-template-columns:180px 1fr;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;font-size:13px}
 .registryrow b{color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:11px}
-.subscriberbar{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+.subscriberbar{display:grid;grid-template-columns:1fr 240px auto auto;gap:10px;align-items:end}
 .subscribertable{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .subscribertable th,.subscribertable td{border-bottom:1px solid var(--line);padding:10px 11px;text-align:left;vertical-align:top;font-size:13px}
 .subscribertable th{background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
@@ -190,10 +190,14 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <label for="subscriberSearch">Search Subscribers</label>
           <input id="subscriberSearch" type="text" placeholder="Account key, plan, or status" autocomplete="off">
         </div>
+        <div class="field">
+          <label for="subscriberAutomationSecret">Automation Secret</label>
+          <input id="subscriberAutomationSecret" type="password" placeholder="Required to list subscribers" autocomplete="off">
+        </div>
         <button id="subscriberLoadBtn" type="button" class="secondary" onclick="loadSubscribers()">Load Subscribers</button>
         <button type="button" class="secondary" onclick="clearSubscriberSearch()">Clear</button>
       </div>
-      <div id="subscriberResult" class="registrybox"><div class="empty">Load subscribers to find an account key for support or code resets.</div></div>
+      <div id="subscriberResult" class="registrybox"><div class="empty">Enter the automation secret, then load subscribers to find an account key for support or code resets.</div></div>
     </div>
   </section>
 
@@ -968,15 +972,33 @@ function systemReadinessBlockerText(){
 function bindSubscriberSearch(){
   var search=document.getElementById('subscriberSearch');
   if(search)search.addEventListener('input',renderSubscribers);
+  var subscriberSecret=document.getElementById('subscriberAutomationSecret');
+  var lookupSecret=document.getElementById('automationSecret');
+  if(subscriberSecret)subscriberSecret.addEventListener('input',function(){syncAutomationSecretFields('subscriber');});
+  if(lookupSecret)lookupSecret.addEventListener('input',function(){syncAutomationSecretFields('lookup');});
+}
+function syncAutomationSecretFields(source){
+  var subscriberSecret=document.getElementById('subscriberAutomationSecret');
+  var lookupSecret=document.getElementById('automationSecret');
+  if(!subscriberSecret||!lookupSecret)return;
+  if(source==='subscriber')lookupSecret.value=subscriberSecret.value;
+  else subscriberSecret.value=lookupSecret.value;
+}
+function activeAutomationSecret(){
+  var subscriberSecret=document.getElementById('subscriberAutomationSecret');
+  var lookupSecret=document.getElementById('automationSecret');
+  return String((subscriberSecret&&subscriberSecret.value)||(lookupSecret&&lookupSecret.value)||'').trim();
 }
 function loadSubscribers(){
-  var secret=document.getElementById('automationSecret').value.trim();
+  var secret=activeAutomationSecret();
   var box=document.getElementById('subscriberResult');
   if(!secret){
+    box.innerHTML='<div class="empty">Enter the automation secret to unlock the subscriber list.</div>';
     setStatus('Enter the automation secret before loading subscribers.','bad');
     return;
   }
   rememberAutomationSecret(secret);
+  syncAutomationSecretFields('subscriber');
   box.innerHTML='<div class="empty">Loading subscriber accounts...</div>';
   document.getElementById('subscriberLoadBtn').disabled=true;
   fetch('/api/smart-trak/account-registry?action=list&limit=500',{
@@ -2734,7 +2756,11 @@ function prefillFromUrl(){
     var remembered=sessionStorage.getItem('smartcoach_setup_code')||'';
     if(remembered)document.getElementById('setupCode').value=remembered;
     var automationSecret=sessionStorage.getItem('smartcoach_automation_secret')||'';
-    if(automationSecret)document.getElementById('automationSecret').value=automationSecret;
+    if(automationSecret){
+      document.getElementById('automationSecret').value=automationSecret;
+      var subscriberSecret=document.getElementById('subscriberAutomationSecret');
+      if(subscriberSecret)subscriberSecret.value=automationSecret;
+    }
   }catch(e){}
 }
 function rememberSetupCode(value){
