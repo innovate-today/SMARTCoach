@@ -3815,8 +3815,13 @@ function openFieldAttempt(index){
   var event=activeFieldEvent();
   var competitor=event&&event.competitors[Number(index)||0];
   if(!event||!competitor)return;
+  showFieldAttemptModal(event,competitor,Number(index)||0,-1);
+}
+function showFieldAttemptModal(event,competitor,competitorIndex,editIndex){
+  if(!event||!competitor)return;
   event.selectedAthleteKey=fieldAthleteKey(competitor);
   CL.field.activeAthleteKey=event.selectedAthleteKey;
+  var attempt=editIndex>=0&&competitor.attempts?competitor.attempts[editIndex]:null;
   var title=document.getElementById('fa-title');
   var name=document.getElementById('fa-athlete');
   var mark=document.getElementById('fa-mark');
@@ -3824,29 +3829,40 @@ function openFieldAttempt(index){
   var wind=document.getElementById('fa-wind-row');
   var edit=document.getElementById('fa-edit-index');
   var btn=document.getElementById('fa-save-btn');
-  if(title)title.textContent=fieldIsVertical(event.eventName)?event.eventName+' Attempt':event.eventName+' Attempt';
+  if(title)title.textContent=attempt?'Edit Attempt':event.eventName+' Attempt';
   if(name)name.textContent=competitor.athleteName||'Athlete';
-  if(mark)mark.value='';
+  if(mark)mark.value=attempt?(attempt.mark||''):'';
   if(status){
     status.innerHTML=fieldIsVertical(event.eventName)?'<option value="Make">O</option><option value="Miss">X</option><option value="Pass">P</option>':'<option>Legal</option><option>Foul</option><option>Pass</option>';
+    if(attempt)status.value=attempt.status||'Legal';
   }
   if(wind)wind.style.display=fieldIsVertical(event.eventName)?'none':'';
-  if(edit)edit.value='-1';
-  if(btn)btn.textContent='Add Attempt';
+  if(edit)edit.value=attempt?String(editIndex):'-1';
+  if(btn)btn.textContent=attempt?'Save Correction':'Add Attempt';
   document.getElementById('fa-wind').value=competitor.wind||'';
   document.getElementById('fa-notes').value=competitor.notes||'';
-  document.getElementById('fa-status-text').textContent='';
+  var text=document.getElementById('fa-status-text');
+  if(text){
+    text.textContent=attempt?'Editing attempt '+(Number(editIndex)+1)+'. Change the mark or status, then tap Save Correction.':'';
+    text.style.color='#555';
+  }
   save();
   sm('m-field-attempt');
-  setTimeout(function(){var input=document.getElementById('fa-mark');if(input)input.focus();},250);
 }
 function insertFieldMarkChar(ch){
   var input=document.getElementById('fa-mark');
   if(!input)return;
+  if(ch==='del'){
+    input.value=input.value.slice(0,-1);
+    return;
+  }
+  if(ch==='clear'){
+    input.value='';
+    return;
+  }
   var start=input.selectionStart==null?input.value.length:input.selectionStart;
   var end=input.selectionEnd==null?input.value.length:input.selectionEnd;
   input.value=input.value.slice(0,start)+ch+input.value.slice(end);
-  input.focus();
   try{input.setSelectionRange(start+ch.length,start+ch.length);}catch(e){}
 }
 function addFieldAttempt(){
@@ -3933,6 +3949,8 @@ function openFieldAttemptInfo(index){
   var list=document.getElementById('fai-list');
   if(title)title.textContent=competitor.athleteName||'Attempts';
   if(list){
+    var athleteKey=fieldAthleteKey(competitor);
+    var encodedKey=encodeURIComponent(athleteKey);
     if(competitor.attempts&&competitor.attempts.length&&fieldIsVertical(event.eventName)){
       var grouped={};
       competitor.attempts.forEach(function(attempt,i){
@@ -3942,13 +3960,13 @@ function openFieldAttemptInfo(index){
       });
       list.innerHTML=Object.keys(grouped).map(function(height){
         var marks=grouped[height].map(function(row){return fieldAttemptCode(row.attempt);}).join(' ');
-        var buttons=grouped[height].map(function(row){return '<button type="button" class="sbtn" style="font-size:13px;padding:6px 9px" onclick="editFieldAttempt('+row.index+')">Edit '+(row.index+1)+'</button><button type="button" class="sbtn" style="font-size:13px;padding:6px 9px" onclick="removeFieldAttempt('+row.index+')">Delete '+(row.index+1)+'</button>';}).join('');
+        var buttons=grouped[height].map(function(row){return '<button type="button" class="sbtn" style="font-size:13px;padding:6px 9px" onclick="editFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+row.index+')">Edit '+(row.index+1)+'</button><button type="button" class="sbtn" style="font-size:13px;padding:6px 9px" onclick="removeFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+row.index+')">Delete '+(row.index+1)+'</button>';}).join('');
         return '<div class="sync-athlete" style="align-items:flex-start"><span class="sync-athlete-main"><b>'+ex(height)+' &nbsp; '+ex(marks)+'</b><small>Attempts at this height</small></span><span style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">'+buttons+'</span></div>';
       }).join('');
     }else{
       list.innerHTML=competitor.attempts&&competitor.attempts.length?competitor.attempts.map(function(attempt,i){
         var label=fieldAttemptCode(attempt)+(attempt.mark?' · '+attempt.mark:'');
-        return '<div class="sync-athlete"><span class="sync-athlete-main"><b>Attempt '+(i+1)+'</b><small>'+ex(label)+'</small></span><button type="button" class="sbtn" onclick="editFieldAttempt('+i+')">Edit</button><button type="button" class="sbtn" onclick="removeFieldAttempt('+i+')">Delete</button></div>';
+        return '<div class="sync-athlete"><span class="sync-athlete-main"><b>Attempt '+(i+1)+'</b><small>'+ex(label)+'</small></span><button type="button" class="sbtn" onclick="editFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+i+')">Edit</button><button type="button" class="sbtn" onclick="removeFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+i+')">Delete</button></div>';
       }).join(''):'<div style="font-size:16px;color:#777;padding:16px;background:#fff">No attempts captured.</div>';
     }
   }
@@ -3991,37 +4009,33 @@ function fieldBestMarkForCompetitor(eventName,competitor){
   return good[0].mark||'';
 }
 function editFieldAttempt(index){
-  var event=activeFieldEvent();
   var competitor=activeFieldCompetitor();
+  editFieldAttemptForAthlete(competitor?fieldAthleteKey(competitor):'',index);
+}
+function editFieldAttemptForAthlete(athleteKey,index){
+  var event=activeFieldEvent();
+  var competitor=event&&(event.competitors||[]).find(function(item){return fieldAthleteKey(item)===String(athleteKey||'');});
+  if(!competitor)competitor=activeFieldCompetitor();
   var attempt=competitor&&competitor.attempts&&competitor.attempts[index];
   if(!event||!competitor||!attempt)return;
   hm('m-field-attempts');
-  openFieldAttempt((event.competitors||[]).indexOf(competitor));
-  setTimeout(function(){
-    var title=document.getElementById('fa-title');
-    var mark=document.getElementById('fa-mark');
-    var status=document.getElementById('fa-status');
-    var edit=document.getElementById('fa-edit-index');
-    var btn=document.getElementById('fa-save-btn');
-    var text=document.getElementById('fa-status-text');
-    if(title)title.textContent='Edit Attempt';
-    if(mark)mark.value=attempt.mark||'';
-    if(status)status.value=attempt.status||'Legal';
-    if(edit)edit.value=String(index);
-    if(btn)btn.textContent='Save Correction';
-    if(text){text.textContent='Editing attempt '+(Number(index)+1)+'. Change the mark or status, then tap Save Correction.';text.style.color='#555';}
-    if(mark)mark.focus();
-  },260);
+  showFieldAttemptModal(event,competitor,(event.competitors||[]).indexOf(competitor),Number(index));
 }
 function removeFieldAttempt(index){
   var competitor=activeFieldCompetitor();
-  if(!competitor)return;
+  removeFieldAttemptForAthlete(competitor?fieldAthleteKey(competitor):'',index);
+}
+function removeFieldAttemptForAthlete(athleteKey,index){
+  var event=activeFieldEvent();
+  var competitor=event&&(event.competitors||[]).find(function(item){return fieldAthleteKey(item)===String(athleteKey||'');});
+  if(!competitor)competitor=activeFieldCompetitor();
+  if(!event||!competitor)return;
   competitor.attempts.splice(index,1);
   competitor.attempts.forEach(function(attempt,i){attempt.number=i+1;});
-  competitor.resultDisplay=fieldBestMarkForCompetitor(activeFieldEvent().eventName,competitor);
+  competitor.resultDisplay=fieldBestMarkForCompetitor(event.eventName,competitor);
   save();
   renderFieldCapture();
-  openFieldAttemptInfo((activeFieldEvent().competitors||[]).indexOf(competitor));
+  openFieldAttemptInfo((event.competitors||[]).indexOf(competitor));
 }
 function setFieldCaptureStatus(text,type){
   var el=document.getElementById('fc-status');
@@ -5082,7 +5096,7 @@ document.addEventListener('touchstart',function(e){
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-field-events"><div class="msh"><div class="mhd"></div><div class="mttl">Field Events</div><button class="mbtn" type="button" onclick="addFieldEvent()" style="background:#2B4FCC">+ Add Field Event</button><div class="lsec" id="fe-list" style="margin-top:8px"></div><button class="mbtn c" onclick="hm('m-field-events')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-field-capture"><div class="msh"><div class="mhd"></div><div class="field-top"><div class="mttl" id="fc-title">Field Event</div><button class="mbtn field-save" onclick="saveCapturedFieldResult()" style="background:#2B4FCC">Save</button></div><div id="fc-status" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><div id="fc-athlete-list" class="field-list"></div><button class="mbtn" onclick="openFieldAthletePicker()" style="background:#2B4FCC">+ Add Athlete</button><button class="mbtn c" onclick="clearFieldCaptureDraft()" style="margin-top:8px">Clear Flight Draft</button><button class="mbtn c" onclick="removeFieldEvent()" style="margin-top:8px;color:#c00">Delete Field Event</button><button class="mbtn c" onclick="hm('m-field-capture');renderFieldEvents();sm('m-field-events')" style="margin-top:8px">Back to Field Events</button><button class="mbtn c" onclick="hm('m-field-capture')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
-<div class="mover h" id="m-field-attempt"><div class="msh"><div class="mhd"></div><div class="mttl" id="fa-title">Add Attempt</div><input id="fa-edit-index" type="hidden" value="-1"/><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><div class="sinp" id="fa-athlete" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Attempt</label><div style="flex:1;display:flex;gap:6px;align-items:center"><input id="fa-mark" class="sinp" type="text" inputmode="decimal" pattern="[0-9.\\-]*" placeholder="Example: 18-6" autocomplete="off" style="min-width:0"/><button type="button" class="sbtn" onclick="insertFieldMarkChar('-')" style="font-size:18px;padding:6px 11px;min-width:38px">-</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('.')" style="font-size:18px;padding:6px 11px;min-width:38px">.</button></div></div><div class="srow"><label class="slbl">Status</label><select id="fa-status" class="sinp"><option>Legal</option><option>Foul</option><option>Pass</option></select></div><div class="srow" id="fa-wind-row"><label class="slbl">Wind</label><input id="fa-wind" class="sinp" type="text" inputmode="decimal" pattern="[0-9.\\-]*" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="fa-notes" class="sinp" type="text" placeholder="Optional notes" autocomplete="off"/></div></div><div id="fa-status-text" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" id="fa-save-btn" onclick="addFieldAttempt()" style="background:#2B4FCC">Add Attempt</button><button class="mbtn c" onclick="hm('m-field-attempt')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-field-attempt"><div class="msh"><div class="mhd"></div><div class="mttl" id="fa-title">Add Attempt</div><input id="fa-edit-index" type="hidden" value="-1"/><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><div class="sinp" id="fa-athlete" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Attempt</label><input id="fa-mark" class="sinp" type="text" inputmode="none" pattern="[0-9.\\-]*" placeholder="Example: 18-6" autocomplete="off" readonly/></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 12px 8px"><button type="button" class="sbtn" onclick="insertFieldMarkChar('1')">1</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('2')">2</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('3')">3</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('del')">Del</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('4')">4</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('5')">5</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('6')">6</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('-')">-</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('7')">7</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('8')">8</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('9')">9</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('.')">.</button><button type="button" class="sbtn" style="grid-column:span 2" onclick="insertFieldMarkChar('clear')">Clear</button><button type="button" class="sbtn" style="grid-column:span 2" onclick="insertFieldMarkChar('0')">0</button></div><div class="srow"><label class="slbl">Status</label><select id="fa-status" class="sinp"><option>Legal</option><option>Foul</option><option>Pass</option></select></div><div class="srow" id="fa-wind-row"><label class="slbl">Wind</label><input id="fa-wind" class="sinp" type="text" inputmode="decimal" pattern="[0-9.\\-]*" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="fa-notes" class="sinp" type="text" placeholder="Optional notes" autocomplete="off"/></div></div><div id="fa-status-text" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" id="fa-save-btn" onclick="addFieldAttempt()" style="background:#2B4FCC">Add Attempt</button><button class="mbtn c" onclick="hm('m-field-attempt')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-field-attempts"><div class="msh"><div class="mhd"></div><div class="mttl" id="fai-title">Attempts</div><div id="fai-list" style="padding:0 12px 8px"></div><button class="mbtn c" onclick="hm('m-field-attempts')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Result Type</label><select id="ms-result-type" class="sinp" onchange="syncMeetResultType()"><option value="individual">Individual</option><option value="relay">Relay</option><option value="field">Field Event</option></select></div><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><input id="ms-event" type="hidden" value="400m"/><button type="button" id="ms-event-display" class="sinp picker-control" onclick="openMeetSaveEventPicker()">400m</button></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div id="ms-relay-fields" style="display:none"><div class="srow"><label class="slbl">Relay Team</label><input id="ms-relay-team" class="sinp" type="text" placeholder="Example: Boys A" autocomplete="off"/></div><div class="srow"><label class="slbl">Total Time</label><input id="ms-relay-result" class="sinp" type="text" placeholder="Example: 3:20.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 1</label><select id="ms-relay-runner-1" class="sinp"></select></div><div class="srow"><label class="slbl">Split 1</label><input id="ms-relay-split-1" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 2</label><select id="ms-relay-runner-2" class="sinp"></select></div><div class="srow"><label class="slbl">Split 2</label><input id="ms-relay-split-2" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 3</label><select id="ms-relay-runner-3" class="sinp"></select></div><div class="srow"><label class="slbl">Split 3</label><input id="ms-relay-split-3" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 4</label><select id="ms-relay-runner-4" class="sinp"></select></div><div class="srow"><label class="slbl">Split 4</label><input id="ms-relay-split-4" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div></div><div id="ms-field-fields" style="display:none"><div class="srow"><label class="slbl">Athlete</label><select id="ms-field-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Mark</label><input id="ms-field-result" class="sinp" type="text" placeholder="Example: 18-6" autocomplete="off"/></div><div class="srow"><label class="slbl">Attempts</label><input id="ms-field-attempts" class="sinp" type="text" placeholder="Example: 18-6, foul, 19-1" autocomplete="off"/></div><div class="srow"><label class="slbl">Video</label><input id="ms-field-video" class="sinp" type="url" placeholder="Optional video URL" autocomplete="off"/></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMART Trak</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div id="sy-plan-summary"></div><div id="sy-manual-fields"><div class="srow" id="sy-row-season"><label class="slbl">Season</label><input id="sy-season" type="hidden" value="Spring"/><button type="button" id="sy-season-display" class="sinp picker-control" onclick="openSeasonPicker()">Spring</button></div><div class="srow" id="sy-row-phase"><label class="slbl">Phase</label><input id="sy-phase" type="hidden" value="GPP"/><button type="button" id="sy-phase-display" class="sinp picker-control" onclick="openPhasePicker()">GPP</button></div><div class="srow" id="sy-row-wtype"><label class="slbl">Workout Type</label><input id="sy-wtype" type="hidden" value=""/><button type="button" id="sy-wtype-display" class="sinp picker-control" onclick="openWorkoutTypePicker()">Select Workout Type</button></div></div><div class="srow" id="sy-row-meet-event"><label class="slbl">Event</label><input id="sy-meet-event" type="hidden" value="400m"/><button type="button" id="sy-meet-event-display" class="sinp picker-control" onclick="openSyncMeetEventPicker()">400m</button></div><div class="srow"><label class="slbl">Surface</label><input id="sy-surf" type="hidden" value=""/><button type="button" id="sy-surf-display" class="sinp picker-control" onclick="openSurfacePicker()">Select Surface</button></div><div class="srow"><label class="slbl">Weather</label><input id="sy-weather" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Volume</label><input id="sy-volume" class="sinp" type="text" placeholder="Optional completed volume" autocomplete="off"/></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMART Trak</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>

@@ -980,6 +980,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 175. Refined the SMARTCoach Pro Mobile App field-event flight screen. Save Flight Results moved to the top, the athlete list scrolls for larger flights, athlete rows now show labeled Last and Best values side by side, the **i** button sits next to Attempt, attempt/wind inputs request a decimal keyboard, and the attempt detail page can edit/correct or delete attempts.
 176. Tightened the SMARTCoach Pro Mobile App field-event flight layout again: top Save is now a compact header-style button, athlete row controls stay on one line, delete uses the standard red circle button, Best recalculates from captured legal/made attempts, vertical jumps use **O/X/P**, and the attempts detail page groups vertical jumps by height, such as `5-6 X X O`.
 177. Adjusted SMARTCoach Pro Mobile App vertical jump capture so High Jump and Pole Vault rows show **Current** height and **Attempt** pattern instead of Last/Best. The attempt modal now has explicit **-** and **.** mark-entry buttons for phone keyboards, and editing an attempt opens a clear **Save Correction** state.
+178. Reworked SMARTCoach Pro Mobile App field attempt entry again so the attempt modal uses a built-in mark pad with numbers, **-**, **.**, Del, and Clear instead of relying on the phone keyboard. Attempt edit/delete actions now carry the exact athlete key into the correction flow so editing does not drift back to a blank add-attempt state.
 
 ## Known Good Test Flow
 
