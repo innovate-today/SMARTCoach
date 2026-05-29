@@ -1869,11 +1869,17 @@ function relayControlHtml(){
     return '<div class="erow" onclick="openRelayLegPicker('+i+')" style="min-height:42px"><span class="elbl"><b>Leg '+(i+1)+'</b><br><small style="color:#777">'+ex(leg.name||'Select runner')+'</small></span><span style="font-weight:800;color:'+(split?'#0a7a44':'#777')+'">'+ex(label)+'</span></div>';
   }).join('');
   var saved=relay.saved&&relay.saved.length?relay.saved.filter(function(run){return !run.meetSynced;}).length:0;
+  var lapText=relay.currentLeg>=3?'Finish':'Lap';
   return '<div class="lsec" style="margin-top:8px">'+
     '<div class="erow" style="min-height:42px"><span class="elbl"><b>Total</b><br><small style="color:#777">'+(saved?saved+' relay result ready to save':'Lap records each leg split')+'</small></span><span id="relay-total-live" style="font-weight:900;color:#111">'+ex(fmt(total))+'</span></div>'+
     '<div class="erow" style="min-height:42px"><span class="elbl"><b>Current Leg</b><br><small style="color:#777">'+ex(current.name||'Select runner')+'</small></span><span id="relay-leg-live" style="font-weight:900;color:#111">'+ex(fmt(relayCurrentLegMs()))+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px 12px;background:#fff;border-bottom:0.5px solid #e5e5ea">'+
+      '<button class="sbtn'+(relay.on?' on':'')+'" type="button" onclick="relaySheetToggle()">'+(relay.on?'Stop':'Start')+'</button>'+
+      '<button class="lapbtn vis" type="button" onclick="relaySheetLap()" '+(relay.on?'':'disabled style="opacity:.45"')+'>'+lapText+'</button>'+
+      '<button class="sbtn" type="button" onclick="relaySheetReset()" style="border-color:#555;color:#333">Reset</button>'+
+    '</div>'+
     rows+
-  '</div><button class="mbtn c" onclick="disableRelayMode()" style="margin-top:8px;color:#c00">Turn Off Relay</button>';
+  '</div>';
 }
 function relayPanelHtml(){return'';}
 function openRelayControls(){
@@ -1888,6 +1894,31 @@ function renderRelayControls(){
   var box=document.getElementById('relay-controls');
   if(!box||!CL||CL.type!=='meet')return;
   box.innerHTML=relayControlHtml();
+}
+function relaySheetToggle(){
+  if(!CL||!relayEnabled())return;
+  if(CL.relay.on){
+    stopRelay(true);
+    save();
+    rr();
+  }else{
+    resetRelayTimer(false);
+    startRelay();
+  }
+  renderRelayControls();
+}
+function relaySheetLap(){
+  if(!CL||!relayEnabled()||!CL.relay.on)return;
+  relayLap();
+  renderRelayControls();
+}
+function relaySheetReset(){
+  if(!CL||!relayEnabled())return;
+  if(!confirm('Reset relay timer and unsaved relay result?'))return;
+  resetRelayTimer(true);
+  save();
+  rr();
+  renderRelayControls();
 }
 function fieldPanelHtml(){return'';}
 function groupSavedRunCounts(){
