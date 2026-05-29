@@ -348,13 +348,14 @@ For relays:
 1. Open **Meets**.
 2. Select the meet.
 3. Select the relay event.
-4. Turn **Relay** on.
-5. Tap each leg and select the active athlete running that leg.
-6. Tap **Start** to begin one relay clock.
-7. Tap **Lap** at each exchange to capture the split and move to the next runner.
-8. Tap **Finish Relay** or **Stop** after the final leg.
-9. Tap **Save** or **Sync** when the relay result is ready.
-10. Confirm the relay result in SMART Trak.
+4. Tap **Relay** in the bottom tray.
+5. Turn **Relay** on.
+6. Tap each leg and select the active athlete running that leg.
+7. Tap **Start** to begin one relay clock.
+8. Tap **Lap** at each exchange to capture the split and move to the next runner.
+9. Tap **Finish Relay** or **Stop** after the final leg.
+10. Tap **Save** or **Sync** when the relay result is ready.
+11. Confirm the relay result in SMART Trak.
 
 The synced relay result includes the relay type, total result, meet name/date, runner names, and splits by runner.
 
@@ -373,7 +374,7 @@ For field events from the SMARTCoach Pro Mobile App:
    For high jump and pole vault, tap an **O**, **X**, or **P** mark on the attempts page to edit that attempt.
 11. Use the built-in mark pad for numbers, **-**, and **.** so feet-inch marks and decimal marks can be entered without opening the phone keyboard. Choose feet/inches or meters from SMARTCoach Pro Mobile App **Settings**.
 12. Tap **Save to SMART Trak** to send all athletes in the flight to SMART Trak Meet Results.
-13. If the app cannot reach SMART Trak, the flight is kept on the device and the message will say to tap **Results** later to retry sync.
+13. If the app cannot reach SMART Trak, the flight is kept on the device and the message will say to tap **Save to SMART Trak** later to retry sync.
 
 You can also enter a field result directly from **Save Meet Results** by changing **Result Type** to **Field Event**. Use the live **Field** tray button when you need to capture marks during the event.
 

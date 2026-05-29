@@ -1828,20 +1828,19 @@ function rr(){
   var el=document.getElementById('rs');
   var planSub=[CL.trainingPlanTitle,CL.trainingPlanDayTitle].filter(Boolean).join(' · ');
   var planHtml=planSub?'<div class="lsec" style="margin-top:8px"><div class="erow pro-only" onclick="openSeasonPlan(true)"><span class="elbl"><b>Plan</b><br><small style="color:#777">'+ex(planSub)+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>':'';
-  var relayHtml=relayPanelHtml();
-  var fieldHtml=fieldPanelHtml();
   var summaryHtml=groupSyncSummaryHtml();
   if(!CL.runners.length){
-    el.innerHTML=planHtml+relayHtml+fieldHtml+summaryHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
+    el.innerHTML=planHtml+summaryHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else{
-    el.innerHTML=planHtml+relayHtml+fieldHtml+summaryHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=planHtml+summaryHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
   }
   updateGroupPrimaryAction();
   updateTrayActions();
   updMB();
   renderRunnerTargets();
+  renderRelayControls();
 }
-function relayPanelHtml(){
+function relayControlHtml(){
   if(!CL||CL.type!=='meet')return'';
   CL.relay=normalizeRelayState(CL.relay);
   var relay=CL.relay;
@@ -1859,20 +1858,18 @@ function relayPanelHtml(){
     (enabled?'<div class="erow" style="min-height:42px"><span class="elbl"><b>Total</b><br><small style="color:#777">'+(saved?saved+' relay result ready to save':'Lap records each leg split')+'</small></span><span id="relay-total-live" style="font-weight:900;color:#111">'+ex(fmt(total))+'</span></div><div class="erow" style="min-height:42px"><span class="elbl"><b>Current Leg</b><br><small style="color:#777">'+ex(current.name||'Select runner')+'</small></span><span id="relay-leg-live" style="font-weight:900;color:#111">'+ex(fmt(relayCurrentLegMs()))+'</span></div>'+rows:'')+
   '</div>';
 }
-function fieldPanelHtml(){
-  if(!CL||CL.type!=='meet')return'';
-  CL.field=normalizeFieldState(CL.field);
-  var ready=readyFieldResults().length;
-  var saved=(CL.field.saved||[]).filter(function(result){return result&&result.meetSynced;}).length;
-  var inProgress=(CL.field.events||[]).reduce(function(total,event){
-    return total+(event.competitors||[]).reduce(function(sub,item){return sub+(item.attempts?item.attempts.length:0);},0);
-  },0);
-  if(!ready&&!saved&&!inProgress)return'';
-  var latest=(CL.field.saved||[]).slice(-1)[0]||{};
-  var sub=ready?ready+' field result'+(ready===1?'':'s')+' ready to save':saved+' field result'+(saved===1?'':'s')+' saved';
-  if(inProgress&&!ready)sub=inProgress+' attempt'+(inProgress===1?'':'s')+' in progress';
-  return '<div class="lsec" style="margin-top:8px"><div class="erow" onclick="openFieldCapture()" style="min-height:42px"><span class="elbl"><b>Field Events</b><br><small style="color:#777">'+ex(sub)+(latest.eventName?' · '+ex(latest.eventName):'')+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>';
+function relayPanelHtml(){return'';}
+function openRelayControls(){
+  if(!CL||CL.type!=='meet')return;
+  renderRelayControls();
+  sm('m-relay');
 }
+function renderRelayControls(){
+  var box=document.getElementById('relay-controls');
+  if(!box||!CL||CL.type!=='meet')return;
+  box.innerHTML=relayControlHtml();
+}
+function fieldPanelHtml(){return'';}
 function groupSavedRunCounts(){
   var ready=0,done=0,total=0;
   if(!CL)return{ready:0,done:0,total:0};
@@ -1930,14 +1927,14 @@ function updateTrayActions(){
   var sortLabel=document.getElementById('tray-sort-label');
   var sumLabel=document.getElementById('tray-sum-label');
   if(sortLabel)sortLabel.textContent=CL&&CL.type==='meet'?'Field':'Sort';
-  if(sumLabel)sumLabel.textContent=CL&&CL.type==='meet'?'Results':'Sum';
+  if(sumLabel)sumLabel.textContent=CL&&CL.type==='meet'?'Relay':'Sum';
 }
 function traySortAction(){
   if(CL&&CL.type==='meet'){openFieldCapture();return;}
   go('s-sort');
 }
 function traySumAction(){
-  if(CL&&CL.type==='meet'){openMeetSave();return;}
+  if(CL&&CL.type==='meet'){openRelayControls();return;}
   sums();
 }
 function rHTML(r){
@@ -3792,7 +3789,7 @@ function renderFieldCapture(){
       return '<div class="rrow" style="min-height:118px;padding:10px 10px;border-bottom:1px solid #ddd"><div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap"><button type="button" class="rname rpick" onclick="openFieldAttempt('+index+')" style="flex:1;min-width:0;max-width:none;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+ex(item.athleteName||'Athlete')+'</button><button class="sbtn" onclick="openFieldAttempt('+index+')" style="font-size:14px;padding:6px 8px;min-width:70px">Attempt</button><button class="ibtn" onclick="openFieldAttemptInfo('+index+')" style="flex:0 0 32px;width:32px;height:32px">i</button><button class="xbtn" onclick="removeFieldCompetitor('+index+')" style="flex:0 0 32px;width:32px;height:32px">&times;</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 8px 0 8px"><div><div style="font-size:12px;font-weight:800;color:#586985;text-transform:uppercase">'+leftLabel+'</div><div style="font-size:36px;font-weight:900;line-height:1.05;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+ex(leftValue||'--')+'</div></div><div><div style="font-size:12px;font-weight:800;color:#586985;text-transform:uppercase">'+rightLabel+'</div><div style="font-size:36px;font-weight:900;line-height:1.05;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+ex(rightValue||'--')+'</div></div></div></div>';
     }).join(''):'<div style="padding:20px;text-align:center;color:#777;font-size:16px">Tap + to add athletes to this event.</div>';
   }
-  if(message)message.textContent=readyFieldResults().length?readyFieldResults().length+' field result ready. Tap Results to retry sync.':'';
+  if(message)message.textContent=readyFieldResults().length?readyFieldResults().length+' field result ready. Tap Save to SMART Trak to retry sync.':'';
 }
 function fieldIsVertical(eventName){
   return /high jump|pole vault/i.test(eventName||'');
@@ -3960,7 +3957,7 @@ function saveCapturedFieldResult(){
     setTimeout(function(){if(btn){btn.textContent='Save to SMART Trak';btn.style.background='#2B4FCC';btn.disabled=false;}},2500);
   }).catch(function(e){
     renderFieldCapture();
-    setFieldCaptureStatus(queued.length+' field result'+(queued.length===1?'':'s')+' saved on this device. Tap Results to retry sync.','warn');
+    setFieldCaptureStatus(queued.length+' field result'+(queued.length===1?'':'s')+' saved on this device. Tap Save to SMART Trak to retry sync.','warn');
     if(btn){btn.textContent='Save to SMART Trak';btn.style.background='#2B4FCC';btn.disabled=false;}
   });
 }
@@ -5142,6 +5139,7 @@ document.addEventListener('touchstart',function(e){
 <div class="mover h" id="m-profile"><div class="msh"><div class="mhd"></div><div class="mttl" id="profile-title">Athlete Profile</div><div class="profile-box" id="profile-body"></div><button class="mbtn c" onclick="hm('m-profile')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="clearAthleteTrainingPlan()" style="display:none;margin-top:8px">Use Group Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h" id="m-relay"><div class="msh"><div class="mhd"></div><div class="mttl">Relay</div><div id="relay-controls"></div><button class="mbtn c" onclick="hm('m-relay')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-field-events"><div class="msh"><div class="mhd"></div><div class="mttl">Field Events</div><button class="mbtn" type="button" onclick="addFieldEvent()" style="background:#2B4FCC">+ Add Field Event</button><div class="lsec" id="fe-list" style="margin-top:8px"></div><button class="mbtn c" onclick="hm('m-field-events')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-field-capture"><div class="msh"><div class="mhd"></div><div class="field-top"><div class="mttl" id="fc-title">Field Event</div><button class="mbtn field-save" id="fc-save-btn" onclick="saveCapturedFieldResult()" style="background:#2B4FCC">Save to SMART Trak</button></div><div id="fc-status" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><div id="fc-athlete-list" class="field-list"></div><button class="mbtn" onclick="openFieldAthletePicker()" style="background:#2B4FCC">+ Add Athlete</button><button class="mbtn c" onclick="clearFieldCaptureDraft()" style="margin-top:8px">Clear Flight Draft</button><button class="mbtn c" onclick="removeFieldEvent()" style="margin-top:8px;color:#c00">Delete Field Event</button><button class="mbtn c" onclick="hm('m-field-capture');renderFieldEvents();sm('m-field-events')" style="margin-top:8px">Back to Field Events</button><button class="mbtn c" onclick="hm('m-field-capture')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-field-attempt"><div class="msh"><div class="mhd"></div><div class="mttl" id="fa-title">Add Attempt</div><input id="fa-edit-index" type="hidden" value="-1"/><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><div class="sinp" id="fa-athlete" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Attempt</label><input id="fa-mark" class="sinp" type="text" inputmode="none" pattern="[0-9.\\-]*" placeholder="Example: 18-6" autocomplete="off" readonly/></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 12px 8px"><button type="button" class="sbtn" onclick="insertFieldMarkChar('1')">1</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('2')">2</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('3')">3</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('del')">Del</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('4')">4</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('5')">5</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('6')">6</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('-')">-</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('7')">7</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('8')">8</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('9')">9</button><button type="button" class="sbtn" onclick="insertFieldMarkChar('.')">.</button><button type="button" class="sbtn" style="grid-column:span 2" onclick="insertFieldMarkChar('clear')">Clear</button><button type="button" class="sbtn" style="grid-column:span 2" onclick="insertFieldMarkChar('0')">0</button></div><div class="srow"><label class="slbl" id="fa-status-label">Status</label><select id="fa-status" class="sinp"><option>Legal</option><option>Foul</option><option>Pass</option></select></div><div class="srow" id="fa-wind-row"><label class="slbl">Wind</label><input id="fa-wind" class="sinp" type="text" inputmode="decimal" pattern="[0-9.\\-]*" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="fa-notes" class="sinp" type="text" placeholder="Optional notes" autocomplete="off"/></div></div><div id="fa-status-text" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" id="fa-save-btn" onclick="addFieldAttempt()" style="background:#2B4FCC">Add Attempt</button><button class="mbtn c" onclick="hm('m-field-attempt')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
