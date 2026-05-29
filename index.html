@@ -39,7 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .drag-handle{position:absolute;left:8px;top:8px;width:26px;height:36px;border:1px solid var(--G2);border-radius:8px;background:#f8f8f8;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}.drag-handle:active{cursor:grabbing;background:#eef3ff;border-color:var(--R)}.drag-handle::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--G3);box-shadow:0 8px 0 var(--G3),0 16px 0 var(--G3),9px 0 0 var(--G3),9px 8px 0 var(--G3),9px 16px 0 var(--G3)}
 .row-top{display:flex;align-items:center;gap:6px;margin-bottom:0;flex-wrap:nowrap;padding-top:3px}
 .rname{font-size:15px;color:var(--R);font-weight:700;font-family:inherit;background:var(--W);border:1px solid var(--G2);border-radius:8px;outline:none;padding:6px 10px;flex:1;caret-color:var(--R);-webkit-appearance:none;min-width:0;max-width:140px}
-.runner-row.running .ibtn,.runner-row.running .xbtn{display:none}.runner-row.running .rname{max-width:none;flex:1 1 116px}.runner-row.running .row-btns{flex:0 0 auto}.runner-row.running .lapbtn,.runner-row.running .sbtn{padding-left:10px;padding-right:10px;font-size:16px}
+.runner-row.running .ibtn,.runner-row.running .xbtn{display:none!important}.runner-row.running .rname{max-width:none;flex:1 1 116px}.runner-row.running .row-btns{flex:0 0 auto}.runner-row.running .lapbtn,.runner-row.running .sbtn{padding-left:10px;padding-right:10px;font-size:16px}
 .rpick{text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rname:focus{border-color:var(--R)}
 .rname::placeholder{color:#bbb;font-weight:400}
@@ -1844,13 +1844,10 @@ function delR(){
 function rr(){
   if(!CL)return;
   var el=document.getElementById('rs');
-  var planSub=[CL.trainingPlanTitle,CL.trainingPlanDayTitle].filter(Boolean).join(' · ');
-  var planHtml=planSub?'<div class="lsec" style="margin-top:8px"><div class="erow pro-only" onclick="openSeasonPlan(true)"><span class="elbl"><b>Plan</b><br><small style="color:#777">'+ex(planSub)+'</small></span><span style="color:#bbb">&rsaquo;</span></div></div>':'';
-  var summaryHtml=groupSyncSummaryHtml();
   if(!CL.runners.length){
-    el.innerHTML=planHtml+summaryHtml+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
+    el.innerHTML='<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else{
-    el.innerHTML=planHtml+summaryHtml+CL.runners.map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=CL.runners.map(function(r){return rHTML(r);}).join('');
   }
   updateGroupPrimaryAction();
   updateTrayActions();
