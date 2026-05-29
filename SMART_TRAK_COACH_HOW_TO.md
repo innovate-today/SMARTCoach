@@ -363,14 +363,15 @@ For field events from the SMARTCoach Pro Mobile App:
 1. Open **Meets**.
 2. Select the meet.
 3. Tap **Field** in the bottom tray.
-4. Select the field event.
-5. Add every athlete in the flight, such as 1-5 jumpers or throwers.
-6. Tap an athlete in the flight list before recording that athlete's attempt.
-7. Capture each attempt as it happens, including legal marks, fouls, or passes.
-8. Enter or confirm each athlete's best official mark.
-9. Add wind, video link, or notes for the selected athlete when useful.
-10. Tap **Save Flight Results** to queue all athletes in the flight locally.
-11. Tap **Results** in the bottom tray to save queued field results to SMART Trak.
+4. Tap **+ Add Field Event** and choose the field event, such as Long Jump.
+5. Tap the field event to open its flight.
+6. Tap **+ Add Athlete** to add every athlete in that flight.
+7. Tap **Attempt** on an athlete row to record that athlete's attempt.
+8. For horizontal jumps and throws, enter the distance or choose Foul/Pass. Best mark is shown on the athlete row.
+9. For high jump and pole vault, enter the height and choose Make, Miss, or Pass.
+10. Tap **i** on an athlete row to review or delete that athlete's attempts.
+11. Tap **Save Flight Results** to queue all athletes in the flight locally.
+12. Tap **Results** in the bottom tray to save queued field results to SMART Trak.
 
 You can also enter a field result directly from **Save Meet Results** by changing **Result Type** to **Field Event**. Use the live **Field** tray button when you need to capture marks during the event.
 

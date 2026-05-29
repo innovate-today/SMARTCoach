@@ -718,7 +718,7 @@ function defaultRelayState(){
   return{enabled:0,teamName:'',legs:[{name:''},{name:''},{name:''},{name:''}],on:false,elapsed:0,startAt:0,currentLeg:0,splits:[],saved:[],ts:null};
 }
 function defaultFieldState(){
-  return{eventName:'Long Jump',selectedAthleteKey:'',pendingAthleteKey:'',attemptStatus:'Legal',competitors:[],saved:[]};
+  return{events:[],activeEventId:'',activeAthleteKey:'',attemptStatus:'Legal',saved:[]};
 }
 function normalizeRelayState(relay){
   var base=defaultRelayState(),source=relay||{};
@@ -741,19 +741,31 @@ function normalizeRelayState(relay){
 }
 function normalizeFieldState(field){
   var base=defaultFieldState(),source=field||{};
-  base.eventName=source.eventName||base.eventName;
-  base.selectedAthleteKey=source.selectedAthleteKey||source.contactId||source.athleteName||'';
-  base.pendingAthleteKey=source.pendingAthleteKey||'';
   base.attemptStatus=source.attemptStatus||'Legal';
-  base.competitors=(source.competitors||[]).map(function(item){
-    return normalizeFieldCompetitor(item);
-  });
-  if(!base.competitors.length&&(source.athleteName||source.contactId||source.attempts&&source.attempts.length||source.resultDisplay)){
-    base.competitors.push(normalizeFieldCompetitor(source));
+  base.events=(source.events||[]).map(function(item,index){return normalizeFieldEvent(item,index);});
+  if(!base.events.length&&(source.eventName||source.competitors&&source.competitors.length||source.athleteName||source.resultDisplay)){
+    base.events.push(normalizeFieldEvent({
+      id:source.activeEventId||'field_event_legacy',
+      eventName:source.eventName||'Long Jump',
+      selectedAthleteKey:source.selectedAthleteKey||source.contactId||source.athleteName||'',
+      competitors:source.competitors&&source.competitors.length?source.competitors:[source]
+    },0));
   }
-  if(base.competitors.length&&!base.selectedAthleteKey)base.selectedAthleteKey=fieldAthleteKey(base.competitors[0]);
+  base.activeEventId=source.activeEventId||base.events[0]&&base.events[0].id||'';
+  base.activeAthleteKey=source.activeAthleteKey||'';
   base.saved=(source.saved||[]).map(function(result){return result||{};});
   return base;
+}
+function normalizeFieldEvent(item,index){
+  item=item||{};
+  var event={
+    id:item.id||('field_event_'+Date.now()+'_'+index),
+    eventName:item.eventName||'Long Jump',
+    selectedAthleteKey:item.selectedAthleteKey||'',
+    competitors:(item.competitors||[]).map(function(competitor){return normalizeFieldCompetitor(competitor);})
+  };
+  if(event.competitors.length&&!event.selectedAthleteKey)event.selectedAthleteKey=fieldAthleteKey(event.competitors[0]);
+  return event;
 }
 function normalizeFieldCompetitor(item){
   item=item||{};
@@ -763,7 +775,6 @@ function normalizeFieldCompetitor(item){
     smartcoachAthleteId:item.smartcoachAthleteId||'',
     resultDisplay:item.resultDisplay||'',
     wind:item.wind||'',
-    video:item.video||'',
     notes:item.notes||'',
     attempts:(item.attempts||[]).map(function(attempt,index){
       return{number:Number(attempt.number)||index+1,mark:attempt.mark||'',status:attempt.status||'Legal',note:attempt.note||'',ts:attempt.ts||''};
@@ -1840,7 +1851,9 @@ function fieldPanelHtml(){
   CL.field=normalizeFieldState(CL.field);
   var ready=readyFieldResults().length;
   var saved=(CL.field.saved||[]).filter(function(result){return result&&result.meetSynced;}).length;
-  var inProgress=(CL.field.competitors||[]).reduce(function(total,item){return total+(item.attempts?item.attempts.length:0);},0);
+  var inProgress=(CL.field.events||[]).reduce(function(total,event){
+    return total+(event.competitors||[]).reduce(function(sub,item){return sub+(item.attempts?item.attempts.length:0);},0);
+  },0);
   if(!ready&&!saved&&!inProgress)return'';
   var latest=(CL.field.saved||[]).slice(-1)[0]||{};
   var sub=ready?ready+' field result'+(ready===1?'':'s')+' ready to save':saved+' field result'+(saved===1?'':'s')+' saved';
@@ -3634,191 +3647,224 @@ function readyFieldResults(){
   return CL&&CL.field&&CL.field.saved?CL.field.saved.filter(function(result){return result&&!result.meetSynced;}):[];
 }
 function fieldCompetitorHasWork(item){
-  return !!(item&&(item.resultDisplay||(item.attempts&&item.attempts.length)||item.wind||item.video||item.notes));
+  return !!(item&&(item.resultDisplay||(item.attempts&&item.attempts.length)||item.wind||item.notes));
 }
-function fieldCompetitorIsQueued(item){
+function activeFieldEvent(){
+  if(!CL)return null;
+  CL.field=normalizeFieldState(CL.field);
+  return (CL.field.events||[]).find(function(item){return item.id===CL.field.activeEventId;})||CL.field.events[0]||null;
+}
+function activeFieldCompetitor(){
+  var event=activeFieldEvent();
+  if(!event)return null;
+  var key=event.selectedAthleteKey||CL.field.activeAthleteKey||'';
+  return (event.competitors||[]).find(function(item){return fieldAthleteKey(item)===key;})||event.competitors[0]||null;
+}
+function fieldCompetitorIsQueued(event,item){
   if(!CL||!CL.field||!item)return false;
   var key=fieldAthleteKey(item);
   return (CL.field.saved||[]).some(function(row){
-    return !row.meetSynced&&row.eventName===CL.field.eventName&&fieldAthleteKey(row)===key;
+    return !row.meetSynced&&row.eventName===(event&&event.eventName||'')&&fieldAthleteKey(row)===key;
   });
 }
-function selectedFieldCompetitor(){
-  if(!CL)return null;
-  CL.field=normalizeFieldState(CL.field);
-  var key=CL.field.selectedAthleteKey;
-  return (CL.field.competitors||[]).find(function(item){return fieldAthleteKey(item)===key;})||CL.field.competitors[0]||null;
-}
 function openFieldCapture(){
+  openFieldEvents();
+}
+function openFieldEvents(){
   if(!CL||CL.type!=='meet')return;
   loadAthletes();
   CL.field=normalizeFieldState(CL.field);
+  renderFieldEvents();
+  sm('m-field-events');
+}
+function renderFieldEvents(){
+  if(!CL)return;
+  CL.field=normalizeFieldState(CL.field);
+  var list=document.getElementById('fe-list');
+  if(!list)return;
+  var events=CL.field.events||[];
+  list.innerHTML=events.length?events.map(function(event,index){
+    var attempts=(event.competitors||[]).reduce(function(total,item){return total+(item.attempts?item.attempts.length:0);},0);
+    var ready=(CL.field.saved||[]).filter(function(row){return !row.meetSynced&&row.eventName===event.eventName;}).length;
+    var sub=(event.competitors||[]).length+' athlete'+((event.competitors||[]).length===1?'':'s');
+    if(attempts)sub+=' · '+attempts+' attempt'+(attempts===1?'':'s');
+    if(ready)sub+=' · '+ready+' ready';
+    return '<div class="erow" onclick="openFieldEvent('+index+')" style="min-height:64px"><span class="elbl"><b>'+ex(event.eventName)+'</b><br><small style="color:#777">'+ex(sub)+'</small></span><span style="color:#bbb">&rsaquo;</span></div>';
+  }).join(''):'<div style="padding:20px;text-align:center;color:#777;font-size:16px">Tap + to add a field event.</div>';
+}
+function addFieldEvent(){
+  if(!CL)return;
+  CL.field=normalizeFieldState(CL.field);
+  openPicker('Add Field Event',fieldEventLabels().map(function(label){return{label:label,value:label};}),function(item){
+    var event=normalizeFieldEvent({id:'field_event_'+Date.now(),eventName:item.value||item.label,competitors:[]},CL.field.events.length);
+    CL.field.events.push(event);
+    CL.field.activeEventId=event.id;
+    save();
+    openFieldEvent(CL.field.events.length-1);
+  });
+}
+function openFieldEvent(index){
+  if(!CL)return;
+  CL.field=normalizeFieldState(CL.field);
+  var event=CL.field.events[Number(index)||0];
+  if(!event)return;
+  CL.field.activeEventId=event.id;
+  save();
   renderFieldCapture();
   sm('m-field-capture');
 }
-function setFieldCaptureEvent(value){
+function openFieldAthletePicker(){
   if(!CL)return;
   CL.field=normalizeFieldState(CL.field);
-  CL.field.eventName=value||fieldEventLabels()[0];
-  renderFieldCapture();
-  save();
-}
-function openFieldCaptureEventPicker(){
-  if(!CL)return;
-  CL.field=normalizeFieldState(CL.field);
-  var selected=CL.field.eventName||fieldEventLabels()[0];
-  openPicker('Select Field Event',fieldEventLabels().map(function(label){
-    return{label:label,value:label,selected:label===selected};
-  }),function(item){setFieldCaptureEvent(item.value||item.label);});
-}
-function addFieldFlightAthlete(){
-  if(!CL)return;
-  CL.field=normalizeFieldState(CL.field);
-  var select=document.getElementById('fc-athlete-add');
-  var value=select&&select.value||CL.field.pendingAthleteKey||'';
-  var athlete=AR.find(function(a){return String(a.id||'')===String(value||'') || String(a.name||'').toLowerCase()===String(value||'').toLowerCase();})||{};
-  if(!athlete.name){setFieldCaptureStatus('Select an athlete to add to the flight.','bad');return;}
-  var competitor=normalizeFieldCompetitor({athleteName:athlete.name,contactId:athlete.id||'',smartcoachAthleteId:athlete.smartcoachAthleteId||''});
-  var key=fieldAthleteKey(competitor);
-  if(!CL.field.competitors.some(function(item){return fieldAthleteKey(item)===key;}))CL.field.competitors.push(competitor);
-  CL.field.selectedAthleteKey=key;
-  CL.field.pendingAthleteKey='';
-  renderFieldCapture();
-  save();
-}
-function selectFieldCompetitor(index){
-  if(!CL)return;
-  CL.field=normalizeFieldState(CL.field);
-  var item=CL.field.competitors[Number(index)||0];
-  CL.field.selectedAthleteKey=item?fieldAthleteKey(item):'';
-  renderFieldCapture();
-  save();
+  var event=activeFieldEvent();
+  if(!event)return;
+  var used={};
+  event.competitors.forEach(function(item){used[fieldAthleteKey(item)]=true;});
+  openPicker('Add Athlete',AR.map(function(a){
+    var key=String(a.id||a.name||'');
+    return{label:a.name||'Unnamed',value:key,disabled:!!used[key]};
+  }),function(item){
+    var athlete=AR.find(function(a){return String(a.id||a.name||'')===String(item.value||'');})||{};
+    if(!athlete.name)return;
+    var competitor=normalizeFieldCompetitor({athleteName:athlete.name,contactId:athlete.id||'',smartcoachAthleteId:athlete.smartcoachAthleteId||''});
+    event.competitors.push(competitor);
+    event.selectedAthleteKey=fieldAthleteKey(competitor);
+    save();
+    renderFieldCapture();
+  });
 }
 function removeFieldCompetitor(index){
   if(!CL)return;
   CL.field=normalizeFieldState(CL.field);
+  var event=activeFieldEvent();
+  if(!event)return;
   index=Number(index)||0;
-  var competitor=CL.field.competitors[index];
+  var competitor=event.competitors[index];
   if(competitor&&fieldCompetitorHasWork(competitor)&&!confirm('Remove this athlete from the field flight and clear their captured attempts?'))return;
   var key=fieldAthleteKey(competitor);
-  CL.field.competitors.splice(index,1);
-  if(CL.field.selectedAthleteKey===key)CL.field.selectedAthleteKey=CL.field.competitors[0]?fieldAthleteKey(CL.field.competitors[0]):'';
+  event.competitors.splice(index,1);
+  if(event.selectedAthleteKey===key)event.selectedAthleteKey=event.competitors[0]?fieldAthleteKey(event.competitors[0]):'';
   save();
   renderFieldCapture();
 }
-function updateSelectedFieldDetails(){
-  if(!CL)return null;
+function removeFieldEvent(){
+  if(!CL)return;
   CL.field=normalizeFieldState(CL.field);
-  var competitor=selectedFieldCompetitor();
-  if(!competitor)return null;
-  competitor.resultDisplay=(document.getElementById('fc-result')&&document.getElementById('fc-result').value||competitor.resultDisplay||'').trim();
-  competitor.wind=(document.getElementById('fc-wind')&&document.getElementById('fc-wind').value||'').trim();
-  competitor.video=(document.getElementById('fc-video')&&document.getElementById('fc-video').value||'').trim();
-  competitor.notes=(document.getElementById('fc-notes')&&document.getElementById('fc-notes').value||'').trim();
-  return competitor;
+  var event=activeFieldEvent();
+  if(!event)return;
+  var hasWork=event.competitors.some(fieldCompetitorHasWork);
+  if(hasWork&&!confirm('Delete this field event and all unsaved attempts?'))return;
+  CL.field.events=CL.field.events.filter(function(item){return item.id!==event.id;});
+  CL.field.activeEventId=CL.field.events[0]?CL.field.events[0].id:'';
+  save();
+  hm('m-field-capture');
+  renderFieldEvents();
+  sm('m-field-events');
 }
 function renderFieldCapture(){
   if(!CL)return;
   CL.field=normalizeFieldState(CL.field);
-  var eventDisplay=document.getElementById('fc-event-display');
-  var athleteAdd=document.getElementById('fc-athlete-add');
-  var mark=document.getElementById('fc-mark');
-  var status=document.getElementById('fc-status-type');
-  var result=document.getElementById('fc-result');
-  var wind=document.getElementById('fc-wind');
-  var video=document.getElementById('fc-video');
-  var notes=document.getElementById('fc-notes');
-  var attempts=document.getElementById('fc-attempt-list');
-  var flight=document.getElementById('fc-flight-list');
-  var saved=document.getElementById('fc-saved-list');
+  var event=activeFieldEvent();
+  var title=document.getElementById('fc-title');
+  var flight=document.getElementById('fc-athlete-list');
   var message=document.getElementById('fc-status');
-  var selected=selectedFieldCompetitor();
-  if(eventDisplay)eventDisplay.textContent=CL.field.eventName||fieldEventLabels()[0];
-  if(athleteAdd){
-    athleteAdd.innerHTML='<option value="">Add athlete to flight</option>'+AR.map(function(a){
-      return '<option value="'+ex(a.id||a.name||'')+'">'+ex(a.name||'Unnamed')+'</option>';
-    }).join('');
-  }
-  if(mark)mark.value='';
-  if(status)status.value=CL.field.attemptStatus||'Legal';
-  if(result)result.value=selected&&selected.resultDisplay||'';
-  if(wind)wind.value=selected&&selected.wind||'';
-  if(video)video.value=selected&&selected.video||'';
-  if(notes)notes.value=selected&&selected.notes||'';
+  if(title)title.textContent=event?event.eventName:'Field Event';
   if(flight){
-    flight.innerHTML=CL.field.competitors.length?CL.field.competitors.map(function(item,index){
-      var key=fieldAthleteKey(item);
-      var active=selected&&fieldAthleteKey(selected)===key;
-      var label=item.attempts&&item.attempts.length?item.attempts.length+' attempts':'No attempts';
-      if(item.resultDisplay)label+=' · best '+item.resultDisplay;
-      return '<div class="sync-athlete" style="'+(active?'border-color:#2B4FCC;background:#eef3ff':'')+'"><button type="button" class="sync-athlete-main" onclick="selectFieldCompetitor('+index+')" style="text-align:left;background:transparent;border:0;padding:0"><b>'+ex(item.athleteName||'Athlete')+'</b><small>'+ex(label)+'</small></button><button type="button" class="sbtn" onclick="removeFieldCompetitor('+index+')">Remove</button></div>';
-    }).join(''):'<div style="font-size:12px;color:#777;padding:8px 12px;background:#fff">Add the athletes in this flight.</div>';
+    flight.innerHTML=event&&event.competitors.length?event.competitors.map(function(item,index){
+      var last=fieldLastAttemptText(item);
+      var best=fieldIsVertical(event.eventName)?'':item.resultDisplay?'Best '+item.resultDisplay:'No best';
+      return '<div class="rrow" style="min-height:128px;padding:12px 10px;border-bottom:1px solid #ddd"><button type="button" class="rname rpick" onclick="openFieldAttempt('+index+')" style="width:42%;text-align:left">'+ex(item.athleteName||'Athlete')+'</button><button class="sbtn" onclick="openFieldAttempt('+index+')" style="min-width:92px">Attempt</button><button class="ibtn" onclick="openFieldAttemptInfo('+index+')">i</button><button class="delbtn" onclick="removeFieldCompetitor('+index+')">&times;</button><div style="font-size:42px;font-weight:900;line-height:1.1;margin-left:84px;color:#111">'+ex(last||'--')+'</div><div style="font-size:13px;color:#586985;margin-left:86px">'+ex(best||'')+'</div></div>';
+    }).join(''):'<div style="padding:20px;text-align:center;color:#777;font-size:16px">Tap + to add athletes to this event.</div>';
   }
-  if(attempts){
-    attempts.innerHTML=selected&&selected.attempts.length?selected.attempts.map(function(attempt,index){
-      return '<div class="sync-athlete"><span class="sync-athlete-main"><b>Attempt '+(index+1)+': '+ex(attempt.status||'Legal')+'</b><small>'+ex(attempt.mark||attempt.note||'No mark')+'</small></span><button type="button" class="sbtn" onclick="removeFieldAttempt('+index+')">Remove</button></div>';
-    }).join(''):'<div style="font-size:12px;color:#777;padding:8px 12px;background:#fff">'+(selected?'No attempts captured for selected athlete':'Select an athlete in the flight to record attempts')+'</div>';
-  }
-  if(saved){
-    var rows=(CL.field.saved||[]).slice().reverse();
-    saved.innerHTML=rows.length?rows.map(function(row){
-      return '<div class="sync-athlete"><span class="sync-athlete-main"><b>'+ex(row.athleteName||'Athlete')+' · '+ex(row.eventName||'Field Event')+'</b><small>'+ex(row.resultDisplay||'No mark')+' · '+(row.meetSynced?'Saved':'Ready to save')+'</small></span></div>';
-    }).join(''):'';
-  }
-  if(message)message.textContent=readyFieldResults().length?readyFieldResults().length+' field result ready to save.':CL.field.competitors.length?'Capture attempts for each athlete, then save the flight results.':'Add athletes to this flight.';
+  if(message)message.textContent=readyFieldResults().length?readyFieldResults().length+' field result ready to save.':'';
 }
-function addFieldAttempt(){
+function fieldIsVertical(eventName){
+  return /high jump|pole vault/i.test(eventName||'');
+}
+function fieldLastAttemptText(item){
+  var attempt=item&&item.attempts&&item.attempts[item.attempts.length-1];
+  if(!attempt)return'';
+  var lastThree=(item.attempts||[]).slice(-3);
+  if(lastThree.length===3&&lastThree.every(function(row){return row.status==='Miss';}))return'3 misses';
+  return attempt.status==='Foul'?'Foul':attempt.status==='Pass'?'Pass':attempt.status==='Miss'?'Miss':attempt.mark||attempt.status||'--';
+}
+function openFieldAttempt(index){
   if(!CL)return;
   CL.field=normalizeFieldState(CL.field);
-  var competitor=updateSelectedFieldDetails();
-  if(!competitor){setFieldCaptureStatus('Add/select an athlete before recording an attempt.','bad');return;}
-  var mark=(document.getElementById('fc-mark')&&document.getElementById('fc-mark').value||'').trim();
-  var status=(document.getElementById('fc-status-type')&&document.getElementById('fc-status-type').value||'Legal').trim();
-  if(status==='Legal'&&!mark){setFieldCaptureStatus('Enter a mark for a legal attempt.','bad');return;}
-  var label=mark || status;
-  competitor.attempts.push({number:competitor.attempts.length+1,mark:label,status:status,ts:new Date().toISOString()});
-  CL.field.attemptStatus=status;
-  if(status==='Legal'&&mark)competitor.resultDisplay=mark;
+  var event=activeFieldEvent();
+  var competitor=event&&event.competitors[Number(index)||0];
+  if(!event||!competitor)return;
+  event.selectedAthleteKey=fieldAthleteKey(competitor);
+  CL.field.activeAthleteKey=event.selectedAthleteKey;
+  var title=document.getElementById('fa-title');
+  var name=document.getElementById('fa-athlete');
+  var mark=document.getElementById('fa-mark');
+  var status=document.getElementById('fa-status');
+  var wind=document.getElementById('fa-wind-row');
+  if(title)title.textContent=fieldIsVertical(event.eventName)?event.eventName+' Attempt':event.eventName+' Attempt';
+  if(name)name.textContent=competitor.athleteName||'Athlete';
+  if(mark)mark.value='';
+  if(status){
+    status.innerHTML=fieldIsVertical(event.eventName)?'<option>Make</option><option>Miss</option><option>Pass</option>':'<option>Legal</option><option>Foul</option><option>Pass</option>';
+  }
+  if(wind)wind.style.display=fieldIsVertical(event.eventName)?'none':'';
+  document.getElementById('fa-wind').value=competitor.wind||'';
+  document.getElementById('fa-notes').value=competitor.notes||'';
+  document.getElementById('fa-status-text').textContent='';
   save();
-  renderFieldCapture();
+  sm('m-field-attempt');
 }
-function removeFieldAttempt(index){
-  if(!CL||!CL.field)return;
-  var competitor=selectedFieldCompetitor();
-  if(!competitor)return;
-  competitor.attempts.splice(index,1);
-  competitor.attempts.forEach(function(attempt,i){attempt.number=i+1;});
+function addFieldAttempt(){
+  var event=activeFieldEvent();
+  var competitor=activeFieldCompetitor();
+  if(!event||!competitor)return;
+  var mark=(document.getElementById('fa-mark')&&document.getElementById('fa-mark').value||'').trim();
+  var status=(document.getElementById('fa-status')&&document.getElementById('fa-status').value||'Legal').trim();
+  var wind=(document.getElementById('fa-wind')&&document.getElementById('fa-wind').value||'').trim();
+  var notes=(document.getElementById('fa-notes')&&document.getElementById('fa-notes').value||'').trim();
+  if((status==='Legal'||status==='Make')&&!mark){setFieldAttemptStatus('Enter the mark/height for this attempt.','bad');return;}
+  competitor.wind=wind;
+  competitor.notes=notes;
+  competitor.attempts.push({number:competitor.attempts.length+1,mark:mark,status:status,ts:new Date().toISOString()});
+  if((status==='Legal'||status==='Make')&&mark)competitor.resultDisplay=mark;
   save();
   renderFieldCapture();
+  setFieldAttemptStatus('Attempt added.','good');
+  document.getElementById('fa-mark').value='';
 }
 function saveCapturedFieldResult(){
   if(!CL)return;
   CL.field=normalizeFieldState(CL.field);
-  updateSelectedFieldDetails();
-  if(!CL.field.eventName){setFieldCaptureStatus('Select a field event.','bad');return;}
-  var competitors=(CL.field.competitors||[]).filter(function(item){return fieldCompetitorHasWork(item)&&!fieldCompetitorIsQueued(item);});
+  var event=activeFieldEvent();
+  if(!event){setFieldCaptureStatus('Add a field event first.','bad');return;}
+  var competitors=(event.competitors||[]).filter(function(item){return fieldCompetitorHasWork(item)&&!fieldCompetitorIsQueued(event,item);});
   if(!competitors.length){setFieldCaptureStatus('Capture attempts or best marks before saving flight results.','bad');return;}
+  if(fieldIsVertical(event.eventName)){
+    competitors.forEach(function(item){
+      if(!item.resultDisplay&&item.attempts&&item.attempts.length&&item.attempts.every(function(attempt){return attempt.status!=='Make';}))item.resultDisplay='NH';
+    });
+  }
   var missing=competitors.find(function(item){return !item.resultDisplay;});
   if(missing){setFieldCaptureStatus('Enter the best official mark for '+missing.athleteName+'.','bad');return;}
   var ts=new Date().toISOString();
   competitors.forEach(function(item,index){
     CL.field.saved.push({
       id:'field_'+Date.now()+'_'+index,
-      eventName:CL.field.eventName,
+      eventName:event.eventName,
       athleteName:item.athleteName,
       contactId:item.contactId,
       smartcoachAthleteId:item.smartcoachAthleteId,
       resultDisplay:item.resultDisplay,
       wind:item.wind,
       attempts:item.attempts.slice(),
-      video:item.video,
+      video:'',
       notes:item.notes,
       ts:ts,
       meetSynced:false
     });
   });
-  CL.field.competitors=[];
-  CL.field.selectedAthleteKey='';
+  event.competitors=[];
+  event.selectedAthleteKey='';
   save();
   rr();
   renderFieldCapture();
@@ -3827,13 +3873,50 @@ function saveCapturedFieldResult(){
 function clearFieldCaptureDraft(){
   if(!CL)return;
   CL.field=normalizeFieldState(CL.field);
-  CL.field.competitors=[];
-  CL.field.selectedAthleteKey='';
+  var event=activeFieldEvent();
+  if(event){event.competitors=[];event.selectedAthleteKey='';}
   save();
   renderFieldCapture();
 }
+function openFieldAttemptInfo(index){
+  if(!CL)return;
+  CL.field=normalizeFieldState(CL.field);
+  var event=activeFieldEvent();
+  var competitor=event&&event.competitors[Number(index)||0];
+  if(!event||!competitor)return;
+  event.selectedAthleteKey=fieldAthleteKey(competitor);
+  var title=document.getElementById('fai-title');
+  var list=document.getElementById('fai-list');
+  if(title)title.textContent=competitor.athleteName||'Attempts';
+  if(list){
+    list.innerHTML=competitor.attempts&&competitor.attempts.length?competitor.attempts.map(function(attempt,i){
+      var label=attempt.status+(attempt.mark?' · '+attempt.mark:'');
+      return '<div class="sync-athlete"><span class="sync-athlete-main"><b>Attempt '+(i+1)+'</b><small>'+ex(label)+'</small></span><button type="button" class="sbtn" onclick="removeFieldAttempt('+i+')">Delete</button></div>';
+    }).join(''):'<div style="font-size:16px;color:#777;padding:16px;background:#fff">No attempts captured.</div>';
+  }
+  save();
+  sm('m-field-attempts');
+}
+function removeFieldAttempt(index){
+  var competitor=activeFieldCompetitor();
+  if(!competitor)return;
+  competitor.attempts.splice(index,1);
+  competitor.attempts.forEach(function(attempt,i){attempt.number=i+1;});
+  var lastLegal=[].concat(competitor.attempts).reverse().find(function(attempt){return attempt.status==='Legal'||attempt.status==='Make';});
+  competitor.resultDisplay=lastLegal&&lastLegal.mark||'';
+  save();
+  renderFieldCapture();
+  openFieldAttemptInfo((activeFieldEvent().competitors||[]).indexOf(competitor));
+}
 function setFieldCaptureStatus(text,type){
   var el=document.getElementById('fc-status');
+  if(!el)return;
+  el.textContent=text||'';
+  el.style.color=type==='bad'?'#c00':type==='good'?'#0a7a44':'#555';
+  el.style.fontWeight='700';
+}
+function setFieldAttemptStatus(text,type){
+  var el=document.getElementById('fa-status-text');
   if(!el)return;
   el.textContent=text||'';
   el.style.color=type==='bad'?'#c00':type==='good'?'#0a7a44':'#555';
@@ -4882,7 +4965,10 @@ document.addEventListener('touchstart',function(e){
 <div class="mover h" id="m-profile"><div class="msh"><div class="mhd"></div><div class="mttl" id="profile-title">Athlete Profile</div><div class="profile-box" id="profile-body"></div><button class="mbtn c" onclick="hm('m-profile')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="clearAthleteTrainingPlan()" style="display:none;margin-top:8px">Use Group Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h" id="m-field-capture"><div class="msh"><div class="mhd"></div><div class="mttl">Field Event Flight</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Event</label><button id="fc-event-display" class="sinp picker-control" onclick="openFieldCaptureEventPicker()">Long Jump</button></div><div class="srow"><label class="slbl">Add Athlete</label><select id="fc-athlete-add" class="sinp"></select></div><button class="mbtn" type="button" onclick="addFieldFlightAthlete()" style="background:#2B4FCC">Add to Flight</button><div id="fc-flight-list" style="padding:2px 12px 8px"></div><div class="srow"><label class="slbl">Attempt</label><input id="fc-mark" class="sinp" type="text" placeholder="Example: 18-6" autocomplete="off"/></div><div class="srow"><label class="slbl">Status</label><select id="fc-status-type" class="sinp"><option>Legal</option><option>Foul</option><option>Pass</option></select></div><button class="mbtn" type="button" onclick="addFieldAttempt()" style="background:#2B4FCC">Add Attempt</button><div id="fc-attempt-list" style="padding:2px 12px 8px"></div><div class="srow"><label class="slbl">Best Mark</label><input id="fc-result" class="sinp" type="text" placeholder="Official mark" autocomplete="off" onchange="updateSelectedFieldDetails();save()"/></div><div class="srow"><label class="slbl">Wind</label><input id="fc-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off" onchange="updateSelectedFieldDetails();save()"/></div><div class="srow"><label class="slbl">Video</label><input id="fc-video" class="sinp" type="url" placeholder="Optional video URL" autocomplete="off" onchange="updateSelectedFieldDetails();save()"/></div><div class="srow"><label class="slbl">Notes</label><input id="fc-notes" class="sinp" type="text" placeholder="Optional notes" autocomplete="off" onchange="updateSelectedFieldDetails();save()"/></div><div id="fc-saved-list" style="padding:2px 12px 8px"></div></div><div id="fc-status" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" onclick="saveCapturedFieldResult()" style="background:#2B4FCC">Save Flight Results</button><button class="mbtn c" onclick="clearFieldCaptureDraft()" style="margin-top:8px">Clear Flight Draft</button><button class="mbtn c" onclick="hm('m-field-capture')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-field-events"><div class="msh"><div class="mhd"></div><div class="mttl">Field Events</div><button class="mbtn" type="button" onclick="addFieldEvent()" style="background:#2B4FCC">+ Add Field Event</button><div class="lsec" id="fe-list" style="margin-top:8px"></div><button class="mbtn c" onclick="hm('m-field-events')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h" id="m-field-capture"><div class="msh"><div class="mhd"></div><div class="mttl" id="fc-title">Field Event</div><div id="fc-athlete-list" style="padding:0 0 8px"></div><div id="fc-status" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" onclick="openFieldAthletePicker()" style="background:#2B4FCC">+ Add Athlete</button><button class="mbtn" onclick="saveCapturedFieldResult()" style="margin-top:8px;background:#2B4FCC">Save Flight Results</button><button class="mbtn c" onclick="clearFieldCaptureDraft()" style="margin-top:8px">Clear Flight Draft</button><button class="mbtn c" onclick="removeFieldEvent()" style="margin-top:8px;color:#c00">Delete Field Event</button><button class="mbtn c" onclick="hm('m-field-capture');renderFieldEvents();sm('m-field-events')" style="margin-top:8px">Back to Field Events</button><button class="mbtn c" onclick="hm('m-field-capture')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-field-attempt"><div class="msh"><div class="mhd"></div><div class="mttl" id="fa-title">Add Attempt</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><div class="sinp" id="fa-athlete" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Attempt</label><input id="fa-mark" class="sinp" type="text" placeholder="Example: 18-6" autocomplete="off"/></div><div class="srow"><label class="slbl">Status</label><select id="fa-status" class="sinp"><option>Legal</option><option>Foul</option><option>Pass</option></select></div><div class="srow" id="fa-wind-row"><label class="slbl">Wind</label><input id="fa-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="fa-notes" class="sinp" type="text" placeholder="Optional notes" autocomplete="off"/></div></div><div id="fa-status-text" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" onclick="addFieldAttempt()" style="background:#2B4FCC">Add Attempt</button><button class="mbtn c" onclick="hm('m-field-attempt')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-field-attempts"><div class="msh"><div class="mhd"></div><div class="mttl" id="fai-title">Attempts</div><div id="fai-list" style="padding:0 12px 8px"></div><button class="mbtn c" onclick="hm('m-field-attempts')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Result Type</label><select id="ms-result-type" class="sinp" onchange="syncMeetResultType()"><option value="individual">Individual</option><option value="relay">Relay</option><option value="field">Field Event</option></select></div><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><input id="ms-event" type="hidden" value="400m"/><button type="button" id="ms-event-display" class="sinp picker-control" onclick="openMeetSaveEventPicker()">400m</button></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div id="ms-relay-fields" style="display:none"><div class="srow"><label class="slbl">Relay Team</label><input id="ms-relay-team" class="sinp" type="text" placeholder="Example: Boys A" autocomplete="off"/></div><div class="srow"><label class="slbl">Total Time</label><input id="ms-relay-result" class="sinp" type="text" placeholder="Example: 3:20.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 1</label><select id="ms-relay-runner-1" class="sinp"></select></div><div class="srow"><label class="slbl">Split 1</label><input id="ms-relay-split-1" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 2</label><select id="ms-relay-runner-2" class="sinp"></select></div><div class="srow"><label class="slbl">Split 2</label><input id="ms-relay-split-2" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 3</label><select id="ms-relay-runner-3" class="sinp"></select></div><div class="srow"><label class="slbl">Split 3</label><input id="ms-relay-split-3" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 4</label><select id="ms-relay-runner-4" class="sinp"></select></div><div class="srow"><label class="slbl">Split 4</label><input id="ms-relay-split-4" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div></div><div id="ms-field-fields" style="display:none"><div class="srow"><label class="slbl">Athlete</label><select id="ms-field-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Mark</label><input id="ms-field-result" class="sinp" type="text" placeholder="Example: 18-6" autocomplete="off"/></div><div class="srow"><label class="slbl">Attempts</label><input id="ms-field-attempts" class="sinp" type="text" placeholder="Example: 18-6, foul, 19-1" autocomplete="off"/></div><div class="srow"><label class="slbl">Video</label><input id="ms-field-video" class="sinp" type="url" placeholder="Optional video URL" autocomplete="off"/></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMART Trak</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div id="sy-plan-summary"></div><div id="sy-manual-fields"><div class="srow" id="sy-row-season"><label class="slbl">Season</label><input id="sy-season" type="hidden" value="Spring"/><button type="button" id="sy-season-display" class="sinp picker-control" onclick="openSeasonPicker()">Spring</button></div><div class="srow" id="sy-row-phase"><label class="slbl">Phase</label><input id="sy-phase" type="hidden" value="GPP"/><button type="button" id="sy-phase-display" class="sinp picker-control" onclick="openPhasePicker()">GPP</button></div><div class="srow" id="sy-row-wtype"><label class="slbl">Workout Type</label><input id="sy-wtype" type="hidden" value=""/><button type="button" id="sy-wtype-display" class="sinp picker-control" onclick="openWorkoutTypePicker()">Select Workout Type</button></div></div><div class="srow" id="sy-row-meet-event"><label class="slbl">Event</label><input id="sy-meet-event" type="hidden" value="400m"/><button type="button" id="sy-meet-event-display" class="sinp picker-control" onclick="openSyncMeetEventPicker()">400m</button></div><div class="srow"><label class="slbl">Surface</label><input id="sy-surf" type="hidden" value=""/><button type="button" id="sy-surf-display" class="sinp picker-control" onclick="openSurfacePicker()">Select Surface</button></div><div class="srow"><label class="slbl">Weather</label><input id="sy-weather" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Volume</label><input id="sy-volume" class="sinp" type="text" placeholder="Optional completed volume" autocomplete="off"/></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMART Trak</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 </body>
