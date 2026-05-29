@@ -2271,6 +2271,7 @@ function startRunnerAt(r,n){
 function updateRunnerControls(r){
   var row=document.getElementById('rr-'+r.id);
   if(!row)return;
+  row.classList.toggle('running',!!r.on);
   var vEl=row.querySelector('.rtotal');if(vEl)vEl.textContent=fmt(r.el);
   var ltEl=row.querySelector('.rlaptime');if(ltEl)ltEl.textContent=r.on?fmt(gle(r)):'';
   var sb=row.querySelector('.sbtn');if(sb){sb.textContent=r.on?'Stop':'Start';sb.classList.toggle('on',!!r.on);}
