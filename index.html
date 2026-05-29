@@ -1937,7 +1937,7 @@ function updateTrayActions(){
   var meet=CL&&CL.type==='meet';
   if(sortLabel)sortLabel.textContent=meet?'Field':'Sort';
   if(sumLabel)sumLabel.textContent=meet?'Relay':'Sum';
-  if(sortIcon)sortIcon.innerHTML=meet?'<polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/>':'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
+  if(sortIcon)sortIcon.innerHTML=meet?'<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>':'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
   if(sumIcon)sumIcon.innerHTML=meet?'<circle cx="8" cy="7" r="2"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="15" r="2"/><circle cx="16" cy="15" r="2"/><path d="M4 12c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M12 12c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M4 20c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M12 20c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/>':'<path d="M18 4H6l6 8-6 8h12"/>';
   if(planBtn)planBtn.hidden=!!meet;
 }
