@@ -37,6 +37,14 @@ module.exports = async function handler(req, res) {
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const meetResult = normalizeMeetResult(payload);
     if (meetResult.resultType === "relay") {
+      const existingRelayResults = await findMeetResultRecordsForRelayEvent({
+        token,
+        locationId,
+        event: meetResult.event,
+      });
+      const autoFlags = calculateRelayMeetResultFlags({ existingRelayResults, meetResult });
+      meetResult.isPr = false;
+      meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
       const properties = buildMeetResultProperties({ contactId: "", meetResult });
       const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
       if (duplicate && !meetResult.forceDuplicateSync) {
@@ -55,6 +63,8 @@ module.exports = async function handler(req, res) {
         recordId: record.id || (record.record && record.record.id) || null,
         sourceRecordId: properties.source_record_id,
         relay: true,
+        isPr: false,
+        isSeasonBest: meetResult.isSeasonBest,
         records: [],
       });
       return;
@@ -198,7 +208,7 @@ function normalizeMeetResult(payload) {
     relayType,
     relayTeamName,
     isPr: resultType !== "relay" && truthy(payload.isPr),
-    isSeasonBest: resultType !== "relay" && truthy(payload.isSeasonBest),
+    isSeasonBest: truthy(payload.isSeasonBest),
     fieldAttempts: clean(payload.fieldAttempts),
     fieldVideo: clean(payload.fieldVideo),
     coachRaceNotes: clean(payload.coachRaceNotes),
@@ -421,6 +431,29 @@ async function findMeetResultRecordsForAthleteEvent({ token, locationId, contact
   }
 }
 
+async function findMeetResultRecordsForRelayEvent({ token, locationId, event }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records/search`,
+      method: "POST",
+      body: {
+        locationId,
+        page: 1,
+        pageLimit: 100,
+      },
+    });
+    const wantedEvent = optionValue(event);
+    return recordsFromResult(result).filter((item) => {
+      const props = recordProperties(item);
+      return optionValue(recordValue(props, "event")) === wantedEvent && isRelayMeetResultRecord(props);
+    });
+  } catch (error) {
+    if (error.statusCode && error.statusCode >= 500) throw error;
+    return [];
+  }
+}
+
 async function upsertSeasonRecord({ token, locationId, contactId, meetResult, existing, sourceRecordId }) {
   const properties = buildSeasonRecordProperties({ contactId, meetResult, existing, sourceRecordId });
 
@@ -631,6 +664,34 @@ function calculateFieldMeetResultFlags({ existingFieldResults, meetResult }) {
     isSeasonBest: !seasonBest || currentMark > seasonBest,
     isPr: !bestEver || currentMark > bestEver,
   };
+}
+
+function calculateRelayMeetResultFlags({ existingRelayResults, meetResult }) {
+  if (!meetResult.resultMs) return { isSeasonBest: false, isPr: false };
+  const sourceRecordId = meetResult.sourceRecordId || "";
+  let seasonBestMs = 0;
+
+  (existingRelayResults || []).forEach((record) => {
+    const props = recordProperties(record);
+    const existingSourceRecordId = recordValue(props, "source_record_id");
+    if (sourceRecordId && existingSourceRecordId === sourceRecordId) return;
+    if (!sameMeetResultSeason(props, meetResult)) return;
+    const existingMs = numberValue(recordValue(props, "result_ms")) || parseTimeToMs(recordValue(props, "result_display"));
+    if (!existingMs) return;
+    seasonBestMs = seasonBestMs ? Math.min(seasonBestMs, existingMs) : existingMs;
+  });
+
+  return {
+    isSeasonBest: !seasonBestMs || meetResult.resultMs < seasonBestMs,
+    isPr: false,
+  };
+}
+
+function isRelayMeetResultRecord(props) {
+  const notes = clean(recordValue(props, "coach_race_notes"));
+  const splits = clean(recordValue(props, "splits_json"));
+  const athleteContact = clean(recordValue(props, "athlete_contact"));
+  return /result type:\s*relay/i.test(notes) || (!athleteContact && /"name"\s*:|^[^:\n]+:\s*\d/i.test(splits));
 }
 
 function sameMeetResultSeason(props, meetResult) {
