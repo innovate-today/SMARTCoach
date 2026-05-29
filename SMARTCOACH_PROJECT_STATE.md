@@ -989,6 +989,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 184. Simplified the SMARTCoach Pro Mobile App meet tray: tapping **Relay** now activates relay timing and opens the relay controls directly, with a separate Turn Off Relay recovery button inside the sheet. The Plan tray button is hidden on meet timing screens, and Field/Relay tray icons now use event-specific symbols instead of Sort/Sum icons.
 185. Updated SMARTCoach Pro Mobile App meet tray icons again: Field uses a trending-up icon and Relay uses a four-person relay-team grid icon while preserving the app's blue tray stroke style.
 186. Cleaned SMARTCoach Pro Mobile App bottom trays by context. Training group timing hides the unused Sort and Sum buttons, meet list view hides Plan, and Archive list view leaves only Delete so coaches see fewer inactive controls.
+187. Adjusted SMARTCoach Pro Mobile App hooked runner rows so the hook pill no longer squeezes the athlete name. Hook labels move below the name lane, and active timing rows wrap large action buttons onto their own line so athlete names remain readable while timers are running.
 
 ## Known Good Test Flow
 
