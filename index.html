@@ -210,9 +210,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <button class="bb gy" onclick="masterReset()">Reset</button>
   </div>
   <div class="tbar">
-    <button class="tbtn" onclick="traySortAction()"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="tray-sort-label">Sort</span></button>
-    <button class="tbtn" onclick="traySumAction()"><svg viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg><span id="tray-sum-label">Sum</span></button>
-    <button class="tbtn pro-only" onclick="openSeasonPlan(true)"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Plan</span></button>
+    <button class="tbtn" onclick="traySortAction()"><svg id="tray-sort-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="tray-sort-label">Sort</span></button>
+    <button class="tbtn" onclick="traySumAction()"><svg id="tray-sum-icon" viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg><span id="tray-sum-label">Sum</span></button>
+    <button class="tbtn pro-only" id="tray-plan-btn" onclick="openSeasonPlan(true)"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Plan</span></button>
     <button class="tbtn" onclick="addR()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn" onclick="go('s-set')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
     <button class="tbtn" onclick="delR()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
@@ -1845,22 +1845,27 @@ function relayControlHtml(){
   CL.relay=normalizeRelayState(CL.relay);
   var relay=CL.relay;
   var enabled=!!relay.enabled;
+  if(!enabled)return '<div style="padding:16px;text-align:center;color:#777;font-size:16px">Tap Relay in the tray to set up relay timing.</div>';
   var total=relayElapsedMs();
-  var current=enabled?relay.legs[relay.currentLeg]||{}:{};
-  var rows=enabled?relay.legs.map(function(leg,i){
+  var current=relay.legs[relay.currentLeg]||{};
+  var rows=relay.legs.map(function(leg,i){
     var split=relay.splits[i];
     var label=split?fmt(split.ms):(relay.on&&i===relay.currentLeg?fmt(relayCurrentLegMs()):'--');
     return '<div class="erow" onclick="openRelayLegPicker('+i+')" style="min-height:42px"><span class="elbl"><b>Leg '+(i+1)+'</b><br><small style="color:#777">'+ex(leg.name||'Select runner')+'</small></span><span style="font-weight:800;color:'+(split?'#0a7a44':'#777')+'">'+ex(label)+'</span></div>';
-  }).join(''):'';
+  }).join('');
   var saved=relay.saved&&relay.saved.length?relay.saved.filter(function(run){return !run.meetSynced;}).length:0;
   return '<div class="lsec" style="margin-top:8px">'+
-    '<div class="erow" style="min-height:42px"><span class="elbl"><b>Relay</b><br><small style="color:#777">'+(enabled?'Timing one relay team'+(current.name?' · Current: '+ex(current.name):''):'Off for this race')+'</small></span><button type="button" class="sbtn'+(enabled?' on':'')+'" onclick="toggleRelayMode(event)">'+(enabled?'On':'Off')+'</button></div>'+
-    (enabled?'<div class="erow" style="min-height:42px"><span class="elbl"><b>Total</b><br><small style="color:#777">'+(saved?saved+' relay result ready to save':'Lap records each leg split')+'</small></span><span id="relay-total-live" style="font-weight:900;color:#111">'+ex(fmt(total))+'</span></div><div class="erow" style="min-height:42px"><span class="elbl"><b>Current Leg</b><br><small style="color:#777">'+ex(current.name||'Select runner')+'</small></span><span id="relay-leg-live" style="font-weight:900;color:#111">'+ex(fmt(relayCurrentLegMs()))+'</span></div>'+rows:'')+
-  '</div>';
+    '<div class="erow" style="min-height:42px"><span class="elbl"><b>Total</b><br><small style="color:#777">'+(saved?saved+' relay result ready to save':'Lap records each leg split')+'</small></span><span id="relay-total-live" style="font-weight:900;color:#111">'+ex(fmt(total))+'</span></div>'+
+    '<div class="erow" style="min-height:42px"><span class="elbl"><b>Current Leg</b><br><small style="color:#777">'+ex(current.name||'Select runner')+'</small></span><span id="relay-leg-live" style="font-weight:900;color:#111">'+ex(fmt(relayCurrentLegMs()))+'</span></div>'+
+    rows+
+  '</div><button class="mbtn c" onclick="disableRelayMode()" style="margin-top:8px;color:#c00">Turn Off Relay</button>';
 }
 function relayPanelHtml(){return'';}
 function openRelayControls(){
   if(!CL||CL.type!=='meet')return;
+  enableRelayMode();
+  save();
+  rr();
   renderRelayControls();
   sm('m-relay');
 }
@@ -1926,8 +1931,15 @@ function groupSyncSummaryHtml(){
 function updateTrayActions(){
   var sortLabel=document.getElementById('tray-sort-label');
   var sumLabel=document.getElementById('tray-sum-label');
-  if(sortLabel)sortLabel.textContent=CL&&CL.type==='meet'?'Field':'Sort';
-  if(sumLabel)sumLabel.textContent=CL&&CL.type==='meet'?'Relay':'Sum';
+  var sortIcon=document.getElementById('tray-sort-icon');
+  var sumIcon=document.getElementById('tray-sum-icon');
+  var planBtn=document.getElementById('tray-plan-btn');
+  var meet=CL&&CL.type==='meet';
+  if(sortLabel)sortLabel.textContent=meet?'Field':'Sort';
+  if(sumLabel)sumLabel.textContent=meet?'Relay':'Sum';
+  if(sortIcon)sortIcon.innerHTML=meet?'<path d="M12 3v18"/><path d="M8 7h8"/><path d="M9 12h6"/><path d="M10 17h4"/><path d="M5 21h14"/>':'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
+  if(sumIcon)sumIcon.innerHTML=meet?'<path d="M4 17c3-5 6-5 8 0s5 5 8 0"/><path d="M4 7c3 5 6 5 8 0s5-5 8 0"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/>':'<path d="M18 4H6l6 8-6 8h12"/>';
+  if(planBtn)planBtn.hidden=!!meet;
 }
 function traySortAction(){
   if(CL&&CL.type==='meet'){openFieldCapture();return;}
@@ -2111,6 +2123,23 @@ function targetFromVisibleRunnerRow(r){
 function relayEnabled(){
   return !!(CL&&CL.type==='meet'&&CL.relay&&CL.relay.enabled);
 }
+function enableRelayMode(){
+  if(!CL||CL.type!=='meet')return;
+  CL.relay=normalizeRelayState(CL.relay);
+  CL.relay.enabled=1;
+  CL.cfg.laps=1;
+  CL.cfg.multiple=1;
+  CL.cfg.splits=1;
+}
+function disableRelayMode(){
+  if(!CL||CL.type!=='meet')return;
+  CL.relay=normalizeRelayState(CL.relay);
+  if(CL.relay.on)stopRelay(false);
+  CL.relay.enabled=0;
+  save();
+  hm('m-relay');
+  rr();
+}
 function relayElapsedMs(){
   if(!CL||!CL.relay)return 0;
   var relay=CL.relay;
@@ -2127,14 +2156,8 @@ function toggleRelayMode(event){
   if(event)event.stopPropagation();
   if(!CL||CL.type!=='meet')return;
   CL.relay=normalizeRelayState(CL.relay);
-  CL.relay.enabled=CL.relay.enabled?0:1;
-  if(CL.relay.enabled){
-    CL.cfg.laps=1;
-    CL.cfg.multiple=1;
-    CL.cfg.splits=1;
-  }else if(CL.relay.on){
-    stopRelay(false);
-  }
+  if(CL.relay.enabled)disableRelayMode();
+  else enableRelayMode();
   save();rr();
 }
 function openRelayLegPicker(index){

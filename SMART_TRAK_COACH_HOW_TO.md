@@ -348,14 +348,13 @@ For relays:
 1. Open **Meets**.
 2. Select the meet.
 3. Select the relay event.
-4. Tap **Relay** in the bottom tray.
-5. Turn **Relay** on.
-6. Tap each leg and select the active athlete running that leg.
-7. Tap **Start** to begin one relay clock.
-8. Tap **Lap** at each exchange to capture the split and move to the next runner.
-9. Tap **Finish Relay** or **Stop** after the final leg.
-10. Tap **Save** or **Sync** when the relay result is ready.
-11. Confirm the relay result in SMART Trak.
+4. Tap **Relay** in the bottom tray to open relay timing.
+5. Tap each leg and select the active athlete running that leg.
+6. Tap **Start** to begin one relay clock.
+7. Tap **Lap** at each exchange to capture the split and move to the next runner.
+8. Tap **Finish Relay** or **Stop** after the final leg.
+9. Tap **Save** or **Sync** when the relay result is ready.
+10. Confirm the relay result in SMART Trak.
 
 The synced relay result includes the relay type, total result, meet name/date, runner names, and splits by runner.
 
