@@ -1635,6 +1635,7 @@ function loadDashboard(){
     recentMeetRows=result.data.recentMeetResults||[];
     recentTrainingRows=result.data.recentTrainingSyncs||[];
     trainingGroups=results[1].ok?(results[1].data.groups||[]):[];
+    annotateDashboardRosterGroups();
     lastLoadedAt=result.data.generatedAt||new Date().toISOString();
     els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
     els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
@@ -1922,7 +1923,7 @@ function renderRows(){
   var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&athleteMatchesDashboardSearch(row,query);}),tableSorts.roster,rosterSortValue);
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
   var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.meet,meetSortValue);
-  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||recentTrainingSearchText(row).indexOf(query)>=0||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.training,trainingSortValue);
+  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||trainingRowMatchesSearch(row,query)||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.training,trainingSortValue);
   var completedRows=completedVolumeRows(trainingRows,meetRows);
   var volumeRows=sortRows(groupVolumeByAthlete(completedRows),tableSorts.volume,volumeSortValue);
   var trainingGroups=sortRows(groupTrainingByAthlete(trainingRows),tableSorts.training,trainingGroupSortValue);
@@ -3655,6 +3656,39 @@ function updateDashboardTopStats(){
   els.previousWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekVolumeMiles);},0));
 }
 
+function annotateDashboardRosterGroups(){
+  var namesByKey={};
+  (trainingGroups||[]).forEach(function(group){
+    if(!group||group.archived||!group.name)return;
+    (Array.isArray(group.athletes)?group.athletes:[]).forEach(function(athlete){
+      athleteRosterKeys(athlete).forEach(function(key){
+        if(!namesByKey[key])namesByKey[key]=[];
+        if(namesByKey[key].indexOf(group.name)<0)namesByKey[key].push(group.name);
+      });
+    });
+  });
+  dashboardRows=(dashboardRows||[]).map(function(row){
+    var names=[];
+    athleteRosterKeys(row).forEach(function(key){
+      (namesByKey[key]||[]).forEach(function(name){
+        if(names.indexOf(name)<0)names.push(name);
+      });
+    });
+    return Object.assign({},row,{groups:names});
+  });
+}
+
+function athleteRosterKeys(row){
+  var keys=[];
+  [row&&row.contactId,row&&row.id,row&&row.smartcoachAthleteId].forEach(function(value){
+    value=String(value||'').trim().toLowerCase();
+    if(value&&keys.indexOf(value)<0)keys.push(value);
+  });
+  var name=String(row&&row.name||row&&row.athleteName||'').trim().toLowerCase();
+  if(name&&keys.indexOf(name)<0)keys.push(name);
+  return keys;
+}
+
 function manualMileageGroupName(){
   var scope=els.manualMileageScope.value||'athlete';
   if(scope==='group')return els.manualMileageGroup.value||'Manual Mileage';
@@ -4550,6 +4584,11 @@ function findDashboardAthleteForTraining(row){
   });
 }
 
+function rosterGroupSearchTextForTraining(row){
+  var athlete=findDashboardAthleteForTraining(row)||{};
+  return (Array.isArray(athlete.groups)?athlete.groups:[]).join(' ').toLowerCase();
+}
+
 function athleteMatchesDashboardSearch(row,query){
   if(!query)return true;
   return searchText(row).indexOf(query)>=0 || athleteActivitySearchText(row).indexOf(query)>=0;
@@ -4571,6 +4610,7 @@ function athleteActivitySearchText(row){
 function searchText(row){
   return [
     row.name,row.smartcoachAthleteId,row.status,
+    Array.isArray(row.groups)?row.groups.join(' '):'',
     row.currentFitness&&row.currentFitness.label,
     row.latestMeet&&row.latestMeet.meetName,row.latestMeet&&row.latestMeet.event,row.latestMeet&&row.latestMeet.resultDisplay,
     row.latestTraining&&row.latestTraining.groupName,row.latestTraining&&row.latestTraining.workoutType,row.latestTraining&&row.latestTraining.workoutPrescription
@@ -4583,6 +4623,10 @@ function recentMeetSearchText(row){
 
 function recentTrainingSearchText(row){
   return [row.athleteName,row.groupName,row.workoutType,row.workoutPrescription,row.completedVolume,row.plannedVolume,row.totalTimeDisplay,row.plannedTarget,row.targetDifference,row.plannedEffort,row.currentFitnessSnapshot,row.weather,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
+}
+
+function trainingRowMatchesSearch(row,query){
+  return recentTrainingSearchText(row).indexOf(query)>=0 || rosterGroupSearchTextForTraining(row).indexOf(query)>=0;
 }
 
 function athleteDetailButton(row){
