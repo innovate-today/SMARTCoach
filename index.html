@@ -3772,8 +3772,8 @@ function renderFieldCapture(){
   if(flight){
     flight.innerHTML=event&&event.competitors.length?event.competitors.map(function(item,index){
       var last=fieldLastAttemptText(item);
-      var best=fieldIsVertical(event.eventName)?'':item.resultDisplay?'Best '+item.resultDisplay:'No best';
-      return '<div class="rrow" style="min-height:128px;padding:12px 10px;border-bottom:1px solid #ddd"><button type="button" class="rname rpick" onclick="openFieldAttempt('+index+')" style="width:42%;text-align:left">'+ex(item.athleteName||'Athlete')+'</button><button class="sbtn" onclick="openFieldAttempt('+index+')" style="min-width:92px">Attempt</button><button class="ibtn" onclick="openFieldAttemptInfo('+index+')">i</button><button class="delbtn" onclick="removeFieldCompetitor('+index+')">&times;</button><div style="font-size:42px;font-weight:900;line-height:1.1;margin-left:84px;color:#111">'+ex(last||'--')+'</div><div style="font-size:13px;color:#586985;margin-left:86px">'+ex(best||'')+'</div></div>';
+      var best=fieldIsVertical(event.eventName)?(item.resultDisplay||'--'):(item.resultDisplay||'--');
+      return '<div class="rrow" style="min-height:128px;padding:12px 10px;border-bottom:1px solid #ddd"><button type="button" class="rname rpick" onclick="openFieldAttempt('+index+')" style="width:40%;text-align:left">'+ex(item.athleteName||'Athlete')+'</button><button class="sbtn" onclick="openFieldAttempt('+index+')" style="min-width:92px">Attempt</button><button class="ibtn" onclick="openFieldAttemptInfo('+index+')" style="margin-left:4px">i</button><button class="delbtn" onclick="removeFieldCompetitor('+index+')">&times;</button><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 8px 0 84px"><div><div style="font-size:12px;font-weight:800;color:#586985;text-transform:uppercase">Last</div><div style="font-size:32px;font-weight:900;line-height:1.1;color:#111">'+ex(last||'--')+'</div></div><div><div style="font-size:12px;font-weight:800;color:#586985;text-transform:uppercase">Best</div><div style="font-size:32px;font-weight:900;line-height:1.1;color:#111">'+ex(best)+'</div></div></div></div>';
     }).join(''):'<div style="padding:20px;text-align:center;color:#777;font-size:16px">Tap + to add athletes to this event.</div>';
   }
   if(message)message.textContent=readyFieldResults().length?readyFieldResults().length+' field result ready to save.':'';
@@ -3801,6 +3801,8 @@ function openFieldAttempt(index){
   var mark=document.getElementById('fa-mark');
   var status=document.getElementById('fa-status');
   var wind=document.getElementById('fa-wind-row');
+  var edit=document.getElementById('fa-edit-index');
+  var btn=document.getElementById('fa-save-btn');
   if(title)title.textContent=fieldIsVertical(event.eventName)?event.eventName+' Attempt':event.eventName+' Attempt';
   if(name)name.textContent=competitor.athleteName||'Athlete';
   if(mark)mark.value='';
@@ -3808,11 +3810,14 @@ function openFieldAttempt(index){
     status.innerHTML=fieldIsVertical(event.eventName)?'<option>Make</option><option>Miss</option><option>Pass</option>':'<option>Legal</option><option>Foul</option><option>Pass</option>';
   }
   if(wind)wind.style.display=fieldIsVertical(event.eventName)?'none':'';
+  if(edit)edit.value='-1';
+  if(btn)btn.textContent='Add Attempt';
   document.getElementById('fa-wind').value=competitor.wind||'';
   document.getElementById('fa-notes').value=competitor.notes||'';
   document.getElementById('fa-status-text').textContent='';
   save();
   sm('m-field-attempt');
+  setTimeout(function(){var input=document.getElementById('fa-mark');if(input)input.focus();},250);
 }
 function addFieldAttempt(){
   var event=activeFieldEvent();
@@ -3822,14 +3827,27 @@ function addFieldAttempt(){
   var status=(document.getElementById('fa-status')&&document.getElementById('fa-status').value||'Legal').trim();
   var wind=(document.getElementById('fa-wind')&&document.getElementById('fa-wind').value||'').trim();
   var notes=(document.getElementById('fa-notes')&&document.getElementById('fa-notes').value||'').trim();
+  var editIndex=Number(document.getElementById('fa-edit-index')&&document.getElementById('fa-edit-index').value);
   if((status==='Legal'||status==='Make')&&!mark){setFieldAttemptStatus('Enter the mark/height for this attempt.','bad');return;}
   competitor.wind=wind;
   competitor.notes=notes;
-  competitor.attempts.push({number:competitor.attempts.length+1,mark:mark,status:status,ts:new Date().toISOString()});
+  if(editIndex>=0&&competitor.attempts[editIndex]){
+    competitor.attempts[editIndex].mark=mark;
+    competitor.attempts[editIndex].status=status;
+    competitor.attempts[editIndex].ts=new Date().toISOString();
+  }else{
+    competitor.attempts.push({number:competitor.attempts.length+1,mark:mark,status:status,ts:new Date().toISOString()});
+  }
   if((status==='Legal'||status==='Make')&&mark)competitor.resultDisplay=mark;
+  else{
+    var lastLegal=[].concat(competitor.attempts).reverse().find(function(attempt){return attempt.status==='Legal'||attempt.status==='Make';});
+    competitor.resultDisplay=lastLegal&&lastLegal.mark||'';
+  }
   save();
   renderFieldCapture();
-  setFieldAttemptStatus('Attempt added.','good');
+  setFieldAttemptStatus(editIndex>=0?'Attempt updated.':'Attempt added.','good');
+  document.getElementById('fa-edit-index').value='-1';
+  document.getElementById('fa-save-btn').textContent='Add Attempt';
   document.getElementById('fa-mark').value='';
 }
 function saveCapturedFieldResult(){
@@ -3891,11 +3909,30 @@ function openFieldAttemptInfo(index){
   if(list){
     list.innerHTML=competitor.attempts&&competitor.attempts.length?competitor.attempts.map(function(attempt,i){
       var label=attempt.status+(attempt.mark?' · '+attempt.mark:'');
-      return '<div class="sync-athlete"><span class="sync-athlete-main"><b>Attempt '+(i+1)+'</b><small>'+ex(label)+'</small></span><button type="button" class="sbtn" onclick="removeFieldAttempt('+i+')">Delete</button></div>';
+      return '<div class="sync-athlete"><span class="sync-athlete-main"><b>Attempt '+(i+1)+'</b><small>'+ex(label)+'</small></span><button type="button" class="sbtn" onclick="editFieldAttempt('+i+')">Edit</button><button type="button" class="sbtn" onclick="removeFieldAttempt('+i+')">Delete</button></div>';
     }).join(''):'<div style="font-size:16px;color:#777;padding:16px;background:#fff">No attempts captured.</div>';
   }
   save();
   sm('m-field-attempts');
+}
+function editFieldAttempt(index){
+  var event=activeFieldEvent();
+  var competitor=activeFieldCompetitor();
+  var attempt=competitor&&competitor.attempts&&competitor.attempts[index];
+  if(!event||!competitor||!attempt)return;
+  hm('m-field-attempts');
+  openFieldAttempt((event.competitors||[]).indexOf(competitor));
+  setTimeout(function(){
+    var mark=document.getElementById('fa-mark');
+    var status=document.getElementById('fa-status');
+    var edit=document.getElementById('fa-edit-index');
+    var btn=document.getElementById('fa-save-btn');
+    if(mark)mark.value=attempt.mark||'';
+    if(status)status.value=attempt.status||'Legal';
+    if(edit)edit.value=String(index);
+    if(btn)btn.textContent='Save Correction';
+    if(mark)mark.focus();
+  },260);
 }
 function removeFieldAttempt(index){
   var competitor=activeFieldCompetitor();
@@ -4966,8 +5003,8 @@ document.addEventListener('touchstart',function(e){
 <div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="clearAthleteTrainingPlan()" style="display:none;margin-top:8px">Use Group Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-field-events"><div class="msh"><div class="mhd"></div><div class="mttl">Field Events</div><button class="mbtn" type="button" onclick="addFieldEvent()" style="background:#2B4FCC">+ Add Field Event</button><div class="lsec" id="fe-list" style="margin-top:8px"></div><button class="mbtn c" onclick="hm('m-field-events')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h" id="m-field-capture"><div class="msh"><div class="mhd"></div><div class="mttl" id="fc-title">Field Event</div><div id="fc-athlete-list" style="padding:0 0 8px"></div><div id="fc-status" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" onclick="openFieldAthletePicker()" style="background:#2B4FCC">+ Add Athlete</button><button class="mbtn" onclick="saveCapturedFieldResult()" style="margin-top:8px;background:#2B4FCC">Save Flight Results</button><button class="mbtn c" onclick="clearFieldCaptureDraft()" style="margin-top:8px">Clear Flight Draft</button><button class="mbtn c" onclick="removeFieldEvent()" style="margin-top:8px;color:#c00">Delete Field Event</button><button class="mbtn c" onclick="hm('m-field-capture');renderFieldEvents();sm('m-field-events')" style="margin-top:8px">Back to Field Events</button><button class="mbtn c" onclick="hm('m-field-capture')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
-<div class="mover h" id="m-field-attempt"><div class="msh"><div class="mhd"></div><div class="mttl" id="fa-title">Add Attempt</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><div class="sinp" id="fa-athlete" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Attempt</label><input id="fa-mark" class="sinp" type="text" placeholder="Example: 18-6" autocomplete="off"/></div><div class="srow"><label class="slbl">Status</label><select id="fa-status" class="sinp"><option>Legal</option><option>Foul</option><option>Pass</option></select></div><div class="srow" id="fa-wind-row"><label class="slbl">Wind</label><input id="fa-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="fa-notes" class="sinp" type="text" placeholder="Optional notes" autocomplete="off"/></div></div><div id="fa-status-text" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" onclick="addFieldAttempt()" style="background:#2B4FCC">Add Attempt</button><button class="mbtn c" onclick="hm('m-field-attempt')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-field-capture"><div class="msh"><div class="mhd"></div><div class="mttl" id="fc-title">Field Event</div><button class="mbtn" onclick="saveCapturedFieldResult()" style="background:#2B4FCC">Save Flight Results</button><div id="fc-status" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><div id="fc-athlete-list" style="padding:0 0 8px;max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div><button class="mbtn" onclick="openFieldAthletePicker()" style="background:#2B4FCC">+ Add Athlete</button><button class="mbtn c" onclick="clearFieldCaptureDraft()" style="margin-top:8px">Clear Flight Draft</button><button class="mbtn c" onclick="removeFieldEvent()" style="margin-top:8px;color:#c00">Delete Field Event</button><button class="mbtn c" onclick="hm('m-field-capture');renderFieldEvents();sm('m-field-events')" style="margin-top:8px">Back to Field Events</button><button class="mbtn c" onclick="hm('m-field-capture')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
+<div class="mover h" id="m-field-attempt"><div class="msh"><div class="mhd"></div><div class="mttl" id="fa-title">Add Attempt</div><input id="fa-edit-index" type="hidden" value="-1"/><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Athlete</label><div class="sinp" id="fa-athlete" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Attempt</label><input id="fa-mark" class="sinp" type="text" inputmode="decimal" pattern="[0-9.\\-]*" placeholder="Example: 18-6" autocomplete="off"/></div><div class="srow"><label class="slbl">Status</label><select id="fa-status" class="sinp"><option>Legal</option><option>Foul</option><option>Pass</option></select></div><div class="srow" id="fa-wind-row"><label class="slbl">Wind</label><input id="fa-wind" class="sinp" type="text" inputmode="decimal" pattern="[0-9.\\-]*" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="fa-notes" class="sinp" type="text" placeholder="Optional notes" autocomplete="off"/></div></div><div id="fa-status-text" style="font-size:12px;color:#555;text-align:center;padding:4px 12px;min-height:16px"></div><button class="mbtn" id="fa-save-btn" onclick="addFieldAttempt()" style="background:#2B4FCC">Add Attempt</button><button class="mbtn c" onclick="hm('m-field-attempt')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-field-attempts"><div class="msh"><div class="mhd"></div><div class="mttl" id="fai-title">Attempts</div><div id="fai-list" style="padding:0 12px 8px"></div><button class="mbtn c" onclick="hm('m-field-attempts')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-meet-save"><div class="msh"><div class="mhd"></div><div class="mttl">Save Meet Results</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Result Type</label><select id="ms-result-type" class="sinp" onchange="syncMeetResultType()"><option value="individual">Individual</option><option value="relay">Relay</option><option value="field">Field Event</option></select></div><div id="ms-athletes" class="sync-athletes"></div><div class="srow"><label class="slbl">Meet</label><div class="sinp" id="ms-meet" style="border:none;background:transparent;font-weight:700"></div></div><div class="srow"><label class="slbl">Event</label><input id="ms-event" type="hidden" value="400m"/><button type="button" id="ms-event-display" class="sinp picker-control" onclick="openMeetSaveEventPicker()">400m</button></div><div class="srow"><label class="slbl">Date</label><div class="sinp" id="ms-date" style="border:none;background:transparent;font-weight:700"></div></div><div id="ms-relay-fields" style="display:none"><div class="srow"><label class="slbl">Relay Team</label><input id="ms-relay-team" class="sinp" type="text" placeholder="Example: Boys A" autocomplete="off"/></div><div class="srow"><label class="slbl">Total Time</label><input id="ms-relay-result" class="sinp" type="text" placeholder="Example: 3:20.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 1</label><select id="ms-relay-runner-1" class="sinp"></select></div><div class="srow"><label class="slbl">Split 1</label><input id="ms-relay-split-1" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 2</label><select id="ms-relay-runner-2" class="sinp"></select></div><div class="srow"><label class="slbl">Split 2</label><input id="ms-relay-split-2" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 3</label><select id="ms-relay-runner-3" class="sinp"></select></div><div class="srow"><label class="slbl">Split 3</label><input id="ms-relay-split-3" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div><div class="srow"><label class="slbl">Runner 4</label><select id="ms-relay-runner-4" class="sinp"></select></div><div class="srow"><label class="slbl">Split 4</label><input id="ms-relay-split-4" class="sinp" type="text" placeholder="Example: 50.0" autocomplete="off"/></div></div><div id="ms-field-fields" style="display:none"><div class="srow"><label class="slbl">Athlete</label><select id="ms-field-athlete" class="sinp"></select></div><div class="srow"><label class="slbl">Mark</label><input id="ms-field-result" class="sinp" type="text" placeholder="Example: 18-6" autocomplete="off"/></div><div class="srow"><label class="slbl">Attempts</label><input id="ms-field-attempts" class="sinp" type="text" placeholder="Example: 18-6, foul, 19-1" autocomplete="off"/></div><div class="srow"><label class="slbl">Video</label><input id="ms-field-video" class="sinp" type="url" placeholder="Optional video URL" autocomplete="off"/></div></div><div class="srow"><label class="slbl">Wind</label><input id="ms-wind" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Notes</label><input id="ms-notes" class="sinp" type="text" placeholder="Optional race notes" autocomplete="off"/></div></div><div id="ms-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="ms-btn" onclick="submitCapturedMeetResults()" style="background:#2B4FCC">Save Meet Results</button><button class="mbtn c" onclick="hm('m-meet-save')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
 <div class="mover h" id="m-sync"><div class="msh"><div class="mhd"></div><div class="mttl">Sync to SMART Trak</div><div style="padding:0 4px 4px"><div id="sy-athletes" class="sync-athletes"></div><div id="sy-plan-summary"></div><div id="sy-manual-fields"><div class="srow" id="sy-row-season"><label class="slbl">Season</label><input id="sy-season" type="hidden" value="Spring"/><button type="button" id="sy-season-display" class="sinp picker-control" onclick="openSeasonPicker()">Spring</button></div><div class="srow" id="sy-row-phase"><label class="slbl">Phase</label><input id="sy-phase" type="hidden" value="GPP"/><button type="button" id="sy-phase-display" class="sinp picker-control" onclick="openPhasePicker()">GPP</button></div><div class="srow" id="sy-row-wtype"><label class="slbl">Workout Type</label><input id="sy-wtype" type="hidden" value=""/><button type="button" id="sy-wtype-display" class="sinp picker-control" onclick="openWorkoutTypePicker()">Select Workout Type</button></div></div><div class="srow" id="sy-row-meet-event"><label class="slbl">Event</label><input id="sy-meet-event" type="hidden" value="400m"/><button type="button" id="sy-meet-event-display" class="sinp picker-control" onclick="openSyncMeetEventPicker()">400m</button></div><div class="srow"><label class="slbl">Surface</label><input id="sy-surf" type="hidden" value=""/><button type="button" id="sy-surf-display" class="sinp picker-control" onclick="openSurfacePicker()">Select Surface</button></div><div class="srow"><label class="slbl">Weather</label><input id="sy-weather" class="sinp" type="text" placeholder="Optional" autocomplete="off"/></div><div class="srow"><label class="slbl">Volume</label><input id="sy-volume" class="sinp" type="text" placeholder="Optional completed volume" autocomplete="off"/></div></div><div id="sy-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="sy-btn" onclick="doSMARTTraKSync()" style="background:#2B4FCC">Sync to SMART Trak</button><button class="mbtn c" onclick="hm('m-sync')" style="margin-top:8px">Close</button><div style="height:6px"></div></div></div>
