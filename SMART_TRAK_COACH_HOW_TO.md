@@ -23,6 +23,8 @@ Only active athletes count toward the Pro athlete limit. Archive or mark graduat
 
 Coach codes can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Change Code** on the Dashboard to change their own current code. Support can also reset codes from account setup. Changing a saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
 
+Support can find saved subscribers in `/onboarding.html` under **Subscriber Accounts**. Use **Load Subscribers**, search by account key, plan, or status, then use **Load** to pull the account into setup or **Copy Key** when a password/code reset is needed.
+
 ## SMART Trak Dashboard
 
 Use the Dashboard as the daily coaching home base. It shows roster status, training volume, current fitness, recent meet results, completed workouts, and athlete progress.

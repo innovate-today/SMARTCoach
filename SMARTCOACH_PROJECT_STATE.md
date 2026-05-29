@@ -973,6 +973,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 168. SaaS plan enforcement started: shared plan definitions now cover Essential, Pro 25, Pro 100, and Pro 200 with the latest prices; onboarding exposes those tiers; Essential now requires an active code and one active device session; Pro athlete creation/reactivation is capped by active-athlete plan limit; the how-to guide documents the plan/pricing/limit rules.
 169. Coach-code reset guard added: changing saved coach access codes through account setup is limited to 2 changes per month per account, with reset history stored on the account record. Saved code changes also increment a coach-code session version so old signed Pro sessions no longer unlock access. Generate Coach Codes now warns that saving changed codes counts toward the monthly reset limit.
 170. Dashboard now has a coach-facing **Change Code** button. A coach can enter the current code plus a new code to replace only their own code, keep other coach codes intact, consume one monthly reset, get a fresh session, and invalidate older signed sessions.
+171. Onboarding now has a **Subscriber Accounts** support list. It scans saved account registry records, shows account key, plan, subscription, coach-code count, setup readiness, and update time without exposing secrets. Support can search, load an account into setup, copy the account key, or open SMART Trak for that subscriber.
 
 ## Known Good Test Flow
 

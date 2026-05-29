@@ -107,8 +107,16 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .registrycards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .registryrow{display:grid;grid-template-columns:180px 1fr;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;font-size:13px}
 .registryrow b{color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:11px}
+.subscriberbar{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+.subscribertable{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.subscribertable th,.subscribertable td{border-bottom:1px solid var(--line);padding:10px 11px;text-align:left;vertical-align:top;font-size:13px}
+.subscribertable th{background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+.subscribertable tr:last-child td{border-bottom:0}
+.subscribertable button{padding:7px 9px;font-size:12px}
+.subscribertable code{color:#102a70;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:normal;word-break:break-word}
+.subscriberactions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.automationgrid,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
-@media(max-width:760px){.lookupgrid,.connectiongrid,.registrycards,.registryrow,.signoffgrid{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
+@media(max-width:760px){.lookupgrid,.connectiongrid,.registrycards,.registryrow,.signoffgrid,.subscriberbar{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
 </style>
 </head>
 <body>
@@ -171,6 +179,21 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div id="accountKeyWarning" class="setupnote" hidden><b>Account keys do not match</b>The setup form and account lookup are pointing at different customers. Match the account keys before saving or running live checks.</div>
       <div id="status" class="status"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Subscriber Accounts</h2></div>
+    <div class="panelbody">
+      <div class="subscriberbar">
+        <div class="field">
+          <label for="subscriberSearch">Search Subscribers</label>
+          <input id="subscriberSearch" type="text" placeholder="Account key, plan, or status" autocomplete="off">
+        </div>
+        <button id="subscriberLoadBtn" type="button" class="secondary" onclick="loadSubscribers()">Load Subscribers</button>
+        <button type="button" class="secondary" onclick="clearSubscriberSearch()">Clear</button>
+      </div>
+      <div id="subscriberResult" class="registrybox"><div class="empty">Load subscribers to find an account key for support or code resets.</div></div>
     </div>
   </section>
 
@@ -541,11 +564,13 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 var currentEnvironment=[];
 var currentSetup=null;
 var currentSystemHealth=null;
+var subscriberAccounts=[];
 prefillFromUrl();
 bindAccountKeyWarning();
 bindLiveSmokeChecklist();
 bindLiveSmokeSignoff();
 bindPostLaunchChecklist();
+bindSubscriberSearch();
 function generateAccountKey(){
   var input=document.getElementById('accountKey');
   var raw=input.value.trim();
@@ -939,6 +964,95 @@ function systemReadinessBlockerText(){
   if(currentSystemHealth.launchReady)return '';
   var blockers=currentSystemHealth.launchBlockers||[];
   return blockers.length?'System is not ready for launch: '+blockers.join('; '):'System is not ready for launch yet.';
+}
+function bindSubscriberSearch(){
+  var search=document.getElementById('subscriberSearch');
+  if(search)search.addEventListener('input',renderSubscribers);
+}
+function loadSubscribers(){
+  var secret=document.getElementById('automationSecret').value.trim();
+  var box=document.getElementById('subscriberResult');
+  if(!secret){
+    setStatus('Enter the automation secret before loading subscribers.','bad');
+    return;
+  }
+  rememberAutomationSecret(secret);
+  box.innerHTML='<div class="empty">Loading subscriber accounts...</div>';
+  document.getElementById('subscriberLoadBtn').disabled=true;
+  fetch('/api/smart-trak/account-registry?action=list&limit=500',{
+    cache:'no-store',
+    headers:{'X-SMARTCoach-Automation-Secret':secret}
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok){
+      throw new Error((result.data&&result.data.error)||'Could not load subscribers.');
+    }
+    subscriberAccounts=result.data&&result.data.accounts||[];
+    renderSubscribers();
+    setStatus('Subscriber accounts loaded.','good');
+  }).catch(function(error){
+    box.innerHTML='<div class="empty">'+esc(error.message||'Could not load subscribers.')+'</div>';
+    setStatus(error.message||'Could not load subscribers.','bad');
+  }).finally(function(){
+    document.getElementById('subscriberLoadBtn').disabled=false;
+  });
+}
+function renderSubscribers(){
+  var box=document.getElementById('subscriberResult');
+  if(!box)return;
+  var query=String((document.getElementById('subscriberSearch')||{}).value||'').trim().toLowerCase();
+  var rows=(subscriberAccounts||[]).filter(function(account){
+    if(!query)return true;
+    return [account.accountKey,planLabel(account.productPlan),account.subscriptionStatus,account.billingCadence,account.lastUpdateSource].filter(Boolean).join(' ').toLowerCase().indexOf(query)>=0;
+  });
+  if(!subscriberAccounts.length){
+    box.innerHTML='<div class="empty">Load subscribers to find an account key for support or code resets.</div>';
+    return;
+  }
+  if(!rows.length){
+    box.innerHTML='<div class="empty">No subscriber accounts match this search.</div>';
+    return;
+  }
+  box.innerHTML='<table class="subscribertable"><thead><tr><th>Account</th><th>Plan</th><th>Subscription</th><th>Coach Codes</th><th>Setup</th><th>Updated</th><th>Actions</th></tr></thead><tbody>'+
+    rows.map(function(account){
+      var sub=[account.subscriptionStatus||'not tracked',account.billingCadence,account.subscriptionAmount?('$'+account.subscriptionAmount):''].filter(Boolean).join(' / ');
+      return '<tr>'+
+        '<td><code>'+esc(account.accountKey||'')+'</code></td>'+
+        '<td>'+esc(planLabel(account.productPlan))+'</td>'+
+        '<td>'+esc(sub)+'</td>'+
+        '<td>'+esc((account.coachAccessCodesConfigured||0)+' of '+(account.coachSeats||1))+'</td>'+
+        '<td>'+esc(account.setupReady?'Ready':'Needs setup')+'</td>'+
+        '<td>'+esc(shortDateTime(account.updatedAt))+'</td>'+
+        '<td><div class="subscriberactions">'+
+          '<button type="button" data-subscriber-load="'+esc(account.accountKey||'')+'">Load</button>'+
+          '<button type="button" class="secondary" data-subscriber-copy="'+esc(account.accountKey||'')+'">Copy Key</button>'+
+          '<a class="linkbtn secondary" href="'+esc('/dashboard.html?account='+encodeURIComponent(account.accountKey||''))+'" target="_blank" rel="noopener">Open</a>'+
+        '</div></td>'+
+      '</tr>';
+    }).join('')+'</tbody></table>';
+  bindSubscriberActions();
+}
+function bindSubscriberActions(){
+  document.querySelectorAll('[data-subscriber-load]').forEach(function(btn){
+    btn.addEventListener('click',function(){loadSubscriberAccount(btn.getAttribute('data-subscriber-load')||'');});
+  });
+  document.querySelectorAll('[data-subscriber-copy]').forEach(function(btn){
+    btn.addEventListener('click',function(){copyText(btn.getAttribute('data-subscriber-copy')||'','Account key copied.');});
+  });
+}
+function loadSubscriberAccount(account){
+  account=cleanAccountKey(account);
+  if(!account)return;
+  document.getElementById('accountKey').value=account;
+  document.getElementById('lookupAccountKey').value=account;
+  renderAccountKeyWarning();
+  lookupAccount();
+}
+function clearSubscriberSearch(){
+  var search=document.getElementById('subscriberSearch');
+  if(search)search.value='';
+  renderSubscribers();
 }
 function lookupAccount(){
   var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');

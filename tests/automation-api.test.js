@@ -946,6 +946,79 @@ async function testRegistryLookupHidesSecrets() {
   }
 }
 
+async function testRegistryListSubscribers() {
+  const previousFetch = global.fetch;
+  const records = {
+    "smartcoach:account:alpha": {
+      accountKey: "alpha",
+      productPlan: "pro25",
+      token: "private-alpha",
+      locationId: "loc-alpha",
+      coachSeats: 1,
+      coachAccessCodes: ["alpha-code"],
+      requireCoachAccess: true,
+      subscription: { status: "active", billingCadence: "monthly", amount: "45.00" },
+      updatedAt: "2026-05-22T12:00:00.000Z",
+    },
+    "smartcoach:account:bravo": {
+      accountKey: "bravo",
+      productPlan: "essential",
+      coachSeats: 1,
+      coachAccessCodes: ["bravo-code"],
+      requireCoachAccess: true,
+      subscription: { status: "active", billingCadence: "annual", amount: "100.00" },
+      updatedAt: "2026-05-23T12:00:00.000Z",
+    },
+  };
+
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/scan/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: ["0", Object.keys(records).concat(["smartcoach:account:alpha:records:index"])] }),
+      };
+    }
+    if (text.includes("/get/")) {
+      const key = decodeURIComponent(text.split("/get/")[1] || "");
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: JSON.stringify(records[key]) }),
+      };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "GET",
+        query: { route: "account-registry", action: "list" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.count, 2);
+      assert.deepStrictEqual(res.body.accounts.map((item) => item.accountKey), ["bravo", "alpha"]);
+      assert.strictEqual(res.body.accounts[0].productPlan, "essential");
+      assert.strictEqual(res.body.accounts[1].coachAccessCodesConfigured, 1);
+      assert.strictEqual(JSON.stringify(res.body).includes("private-alpha"), false);
+      assert.strictEqual(JSON.stringify(res.body).includes("alpha-code"), false);
+      assert.strictEqual(JSON.stringify(res.body).includes("bravo-code"), false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountStatusReportsDeviceUnlock() {
   await withEnv({
     SMARTCOACH_PRODUCT_PLAN_UNLOCK: "pro",
@@ -1023,6 +1096,7 @@ async function testAccountStatusReportsDeviceUnlock() {
   await testParentEmailReleaseGate();
   await testCoachAccessRateLimit();
   await testRegistryLookupHidesSecrets();
+  await testRegistryListSubscribers();
   await testAccountStatusReportsDeviceUnlock();
   console.log("automation API dry-run and Stripe idempotency tests passed");
 })().catch((error) => {

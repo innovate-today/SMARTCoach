@@ -30,7 +30,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -847,6 +847,17 @@ async function accountRegistry(req, res) {
   }
 
   try {
+    const action = cleanSetupText(firstQueryValue(req.query && req.query.action));
+    if (action === "list") {
+      const result = await listAccountRecords({ limit: firstQueryValue(req.query && req.query.limit) });
+      res.status(200).json({
+        success: true,
+        registry: { configured: !!result.configured },
+        accounts: result.accounts || [],
+        count: result.count || 0,
+      });
+      return;
+    }
     const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key)));
     if (!accountKey) throw httpError(400, "Account key is required.");
     const result = await loadAccountRecord(accountKey);
