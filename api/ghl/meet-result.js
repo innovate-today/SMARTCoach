@@ -60,6 +60,30 @@ module.exports = async function handler(req, res) {
       return;
     }
     const contact = await findOrCreateContact({ token, locationId, meetResult });
+    if (meetResult.resultType === "field") {
+      const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
+      const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
+      if (duplicate && !meetResult.forceDuplicateSync) {
+        throw httpError(409, "This field result appears to have already been saved.");
+      }
+      const record = await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records`,
+        method: "POST",
+        body: { locationId, properties },
+      });
+      await addMeetResultNote({ token, contactId: contact.id, meetResult });
+      res.status(200).json({
+        success: true,
+        athlete: meetResult.athleteName,
+        contactId: contact.id,
+        recordId: record.id || (record.record && record.record.id) || null,
+        sourceRecordId: properties.source_record_id,
+        field: true,
+        records: [],
+      });
+      return;
+    }
     const seasonSourceRecordId = buildSeasonSourceRecordId({ contactId: contact.id, meetResult });
     const existingSeasonRecord = await findObjectRecord({
       token,
@@ -134,7 +158,8 @@ function normalizeMeetResult(payload) {
 
   const meetDate = payload.meetDate ? new Date(payload.meetDate) : new Date();
   const resultDisplay = clean(payload.resultDisplay);
-  const resultType = clean(payload.resultType).toLowerCase() === "relay" ? "relay" : "individual";
+  const requestedType = clean(payload.resultType).toLowerCase();
+  const resultType = requestedType === "relay" ? "relay" : requestedType === "field" ? "field" : "individual";
   const relayType = clean(payload.relayType || payload.event);
   const relayTeamName = clean(payload.relayTeamName);
   const athleteName = resultType === "relay" ? clean(payload.athleteName || relayTeamName || `${relayType || "Relay"} Team`) : clean(payload.athleteName);
@@ -161,8 +186,10 @@ function normalizeMeetResult(payload) {
     resultType,
     relayType,
     relayTeamName,
-    isPr: resultType !== "relay" && truthy(payload.isPr),
-    isSeasonBest: resultType !== "relay" && truthy(payload.isSeasonBest),
+    isPr: resultType === "individual" && truthy(payload.isPr),
+    isSeasonBest: resultType === "individual" && truthy(payload.isSeasonBest),
+    fieldAttempts: clean(payload.fieldAttempts),
+    fieldVideo: clean(payload.fieldVideo),
     coachRaceNotes: clean(payload.coachRaceNotes),
     sourceRecordId: clean(payload.sourceRecordId),
     forceDuplicateSync: payload.forceDuplicateSync === true,
@@ -268,6 +295,14 @@ function buildMeetResultProperties({ contactId, meetResult }) {
 }
 
 function meetResultNotes(meetResult) {
+  if (meetResult.resultType === "field") {
+    return [
+      "Result Type: Field",
+      meetResult.fieldAttempts ? `Field Attempts: ${singleLine(meetResult.fieldAttempts)}` : "",
+      meetResult.fieldVideo ? `Video: ${meetResult.fieldVideo}` : "",
+      meetResult.coachRaceNotes,
+    ].filter(Boolean).join("\n");
+  }
   if (meetResult.resultType !== "relay") return meetResult.coachRaceNotes;
   return [
     "Result Type: Relay",
@@ -275,6 +310,10 @@ function meetResultNotes(meetResult) {
     meetResult.relayTeamName ? `Relay Team: ${meetResult.relayTeamName}` : "",
     meetResult.coachRaceNotes,
   ].filter(Boolean).join("\n");
+}
+
+function singleLine(value) {
+  return clean(value).split(/\r?\n/).map((line) => line.trim()).filter(Boolean).join("; ");
 }
 
 async function addMeetResultNote({ token, contactId, meetResult }) {

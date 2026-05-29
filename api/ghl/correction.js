@@ -168,20 +168,25 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     isSeasonBest: yesText(prop(props, "is_season_best")) ? "Yes" : "No",
     resultType: noteValue(previousNote, "Result Type") || "Individual",
     relayTeamName: noteValue(previousNote, "Relay Team"),
+    fieldAttempts: noteValue(previousNote, "Field Attempts"),
+    fieldVideo: noteValue(previousNote, "Video"),
     splitsJson: prop(props, "splits_json"),
     notes: stripMeetSystemNoteLines(previousNote),
   };
   const isRelay = clean(updates.resultType).toLowerCase() === "relay" || clean(previousValues.resultType).toLowerCase() === "relay";
+  const isField = clean(updates.resultType).toLowerCase() === "field" || clean(previousValues.resultType).toLowerCase() === "field";
   const nextValues = {
     meetName: clean(updates.meetName) || previousValues.meetName,
     meetDate: clean(updates.meetDate) || previousValues.meetDate,
     event: clean(updates.event) || previousValues.event,
     resultDisplay: clean(updates.resultDisplay) || previousValues.resultDisplay,
     wind: clean(updates.wind),
-    isPr: isRelay ? "No" : clean(updates.isPr) ? yesText(updates.isPr) ? "Yes" : "No" : previousValues.isPr,
-    isSeasonBest: isRelay ? "No" : clean(updates.isSeasonBest) ? yesText(updates.isSeasonBest) ? "Yes" : "No" : previousValues.isSeasonBest,
-    resultType: isRelay ? "Relay" : "Individual",
+    isPr: isRelay || isField ? "No" : clean(updates.isPr) ? yesText(updates.isPr) ? "Yes" : "No" : previousValues.isPr,
+    isSeasonBest: isRelay || isField ? "No" : clean(updates.isSeasonBest) ? yesText(updates.isSeasonBest) ? "Yes" : "No" : previousValues.isSeasonBest,
+    resultType: isRelay ? "Relay" : isField ? "Field" : "Individual",
     relayTeamName: isRelay ? clean(updates.relayTeamName) || previousValues.relayTeamName : "",
+    fieldAttempts: isField ? singleLine(updates.fieldAttempts) || previousValues.fieldAttempts : "",
+    fieldVideo: isField ? clean(updates.fieldVideo) || previousValues.fieldVideo : "",
     splitsJson: isRelay ? normalizeSplitsJson(updates.splitsJson || previousValues.splitsJson) : "",
     notes: clean(updates.notes),
   };
@@ -195,19 +200,26 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     isSeasonBest: "SB",
     resultType: "Result Type",
     relayTeamName: "Relay Team",
+    fieldAttempts: "Field Attempts",
+    fieldVideo: "Video",
     splitsJson: "Relay Splits",
     notes: "Notes",
   });
   if (!changes.length) throw httpError(400, "No correction changes were provided.");
 
   const resultMs = nextValues.resultDisplay ? parseTimeToMs(nextValues.resultDisplay) : null;
-  if (nextValues.resultDisplay && !resultMs) throw httpError(400, "Enter result like 58.2, 4:52.3, or 18:04.5.");
+  if (nextValues.resultDisplay && !resultMs && !isField) throw httpError(400, "Enter result like 58.2, 4:52.3, or 18:04.5.");
 
   const correctionTime = new Date().toISOString();
   const nextNote = replaceMeetNoteLines(previousNote, isRelay ? {
     "Result Type": "Relay",
     "Relay Type": nextValues.event,
     "Relay Team": nextValues.relayTeamName,
+    Wind: nextValues.wind,
+  } : isField ? {
+    "Result Type": "Field",
+    "Field Attempts": nextValues.fieldAttempts,
+    Video: nextValues.fieldVideo,
     Wind: nextValues.wind,
   } : {
     Wind: nextValues.wind,
@@ -641,7 +653,7 @@ function stripSystemNoteLines(note) {
 function stripMeetSystemNoteLines(note) {
   return clean(note).split(/\r?\n/).filter((line) => {
     if (isCorrectionLine(line)) return false;
-    return !/^(Wind|Result Type|Relay Type|Relay Team|Event|Splits):/i.test(line.trim());
+    return !/^(Wind|Result Type|Relay Type|Relay Team|Field Attempts|Video|Event|Splits):/i.test(line.trim());
   }).join("\n");
 }
 
@@ -900,6 +912,10 @@ function safeJson(text) {
 
 function clean(value) {
   return String(value || "").trim();
+}
+
+function singleLine(value) {
+  return clean(value).split(/\r?\n/).map((line) => line.trim()).filter(Boolean).join("; ");
 }
 
 function httpError(statusCode, message) {

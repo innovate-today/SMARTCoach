@@ -265,6 +265,17 @@ Relay results:
 
 Relay results save as a team result with named splits. They do not create PB/SB athlete-best updates for individual runners.
 
+Field event results:
+
+1. Change **Result Type** to **Field Event**.
+2. Choose the event, such as `High Jump`, `Long Jump`, `Triple Jump`, `Pole Vault`, `Shot Put`, `Discus`, `Javelin`, or `Hammer`.
+3. Select the athlete.
+4. Enter the official mark.
+5. Add attempts, video link, wind, and notes when useful.
+6. Save the field result.
+
+Field event results save to meet results and attach to the athlete, meet, and date. They are meet-only records and do not create automatic PB/SB athlete-best updates yet. On the Dashboard, click the athlete name on a field-result row to see the mark, attempts, video, meet, and date. Use **Edit** to correct the mark, attempts, video, meet, event, or notes.
+
 ## Log Miles
 
 Use Log Miles for manual mileage entries that were not timed in the app.
@@ -347,6 +358,17 @@ For relays:
 
 The synced relay result includes the relay type, total result, meet name/date, runner names, and splits by runner.
 
+For field events from the SMARTCoach Pro Mobile App:
+
+1. Open **Meets**.
+2. Select the meet.
+3. Open **Save Meet Results**.
+4. Change **Result Type** to **Field Event**.
+5. Select the athlete and field event.
+6. Enter the official mark.
+7. Add attempts, video link, wind, or notes when useful.
+8. Save to SMART Trak.
+
 ## SMART Trak Relay Support
 
 Relay events are available in event dropdowns across SMARTCoach Pro and SMART Trak, including mobile meet timing, Log Race Result, Training Calendar, Records, Track Simulator, and plan setup tools.
@@ -362,6 +384,23 @@ Common relay events:
 - `Other Relay`
 
 Relay results can be reviewed from Dashboard Recent Meet Results and Meet History. On the Dashboard, click the relay row to view details such as relay type, total result, meet, date, and splits by runner. Use **Edit** on a relay result to correct the relay event, team name, total time, runner names, or splits. Use **Void** if the saved relay result should no longer count in SMART Trak reporting.
+
+## SMART Trak Field Event Support
+
+Field events are available in meet-result event dropdowns across SMARTCoach Pro and SMART Trak, including the SMARTCoach Pro Mobile App, Dashboard Log Race Result, Training Calendar Log Race Result, Records, Track Simulator, and plan setup tools.
+
+Supported field events:
+
+- `High Jump`
+- `Long Jump`
+- `Triple Jump`
+- `Pole Vault`
+- `Shot Put`
+- `Discus`
+- `Javelin`
+- `Hammer`
+
+Field results are designed for meets. Save the athlete, event, mark, attempts, video link, notes, meet name, and meet date. They appear in Dashboard Recent Meet Results and Meet History. Dashboard field-result detail shows the mark, attempts, video, meet, and date.
 
 ## SMARTCoach Pro Mobile App: Archive
 

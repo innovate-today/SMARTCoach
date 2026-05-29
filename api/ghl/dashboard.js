@@ -363,6 +363,8 @@ function normalizeMeetResult(record) {
     resultType,
     relayType: noteValue(coachRaceNotes, "Relay Type"),
     relayTeamName: noteValue(coachRaceNotes, "Relay Team"),
+    fieldAttempts: noteValue(coachRaceNotes, "Field Attempts"),
+    fieldVideo: noteValue(coachRaceNotes, "Video"),
     coachRaceNotes,
     correctionDate: noteValue(coachRaceNotes, "Correction Date"),
     correctionReason: noteValue(coachRaceNotes, "Correction Reason"),

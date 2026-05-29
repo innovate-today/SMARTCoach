@@ -1378,6 +1378,14 @@ function standardEventOptions() {
     "Sprint Medley",
     "Distance Medley",
     "Other Relay",
+    "High Jump",
+    "Long Jump",
+    "Triple Jump",
+    "Pole Vault",
+    "Shot Put",
+    "Discus",
+    "Javelin",
+    "Hammer",
     "Other",
   ].map((event) => ({ label: event, value: event }));
 }

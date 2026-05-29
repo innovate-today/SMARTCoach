@@ -584,8 +584,8 @@ tr:last-child td{border-bottom:0}
           <select id="raceResultAthlete"><option value="">Select athlete</option></select>
         </div>
         <div class="field">
-          <label for="raceResultType">Result Type <span class="fieldinfo" tabindex="0" data-tip="Relay results save one team result with named leg splits.">i</span></label>
-          <select id="raceResultType"><option value="individual">Individual</option><option value="relay">Relay</option></select>
+          <label for="raceResultType">Result Type <span class="fieldinfo" tabindex="0" data-tip="Choose individual, relay, or field event. Relay and field details are saved with the meet result.">i</span></label>
+          <select id="raceResultType"><option value="individual">Individual</option><option value="relay">Relay</option><option value="field">Field Event</option></select>
         </div>
         <div class="field" id="raceResultRelayTeamWrap" hidden>
           <label for="raceResultRelayTeam">Relay Team</label>
@@ -620,8 +620,19 @@ tr:last-child td{border-bottom:0}
           <div class="relayleg"><select id="raceResultRelayName3"><option value="">Runner 3</option></select><input id="raceResultRelaySplit3" type="text" placeholder="Split"></div>
           <div class="relayleg"><select id="raceResultRelayName4"><option value="">Runner 4</option></select><input id="raceResultRelaySplit4" type="text" placeholder="Split"></div>
         </div>
+        <div class="relaylegs" id="raceResultFieldFields" hidden>
+          <h3>Field Event Details</h3>
+          <div class="field full">
+            <label for="raceResultAttempts">Attempts</label>
+            <textarea id="raceResultAttempts" placeholder="Example: 18-6, foul, 19-1, pass, 19-4, foul"></textarea>
+          </div>
+          <div class="field full">
+            <label for="raceResultVideo">Video Link</label>
+            <input id="raceResultVideo" type="url" placeholder="Optional video URL">
+          </div>
+        </div>
         <div class="field">
-          <label for="raceResultResult">Result <span class="fieldinfo" tabindex="0" data-tip="Enter the official result time, such as 12:21.0 or 19:08.">i</span></label>
+          <label for="raceResultResult">Result <span class="fieldinfo" tabindex="0" data-tip="Enter the official time or field mark, such as 12:21.0, 19:08, 5-10, or 42-3.5.">i</span></label>
           <input id="raceResultResult" type="text" placeholder="Example: 19:08">
         </div>
         <div class="field">
@@ -773,6 +784,17 @@ tr:last-child td{border-bottom:0}
           <div class="relayleg"><select id="meetCorrectionRelayName2"><option value="">Runner 2</option></select><input id="meetCorrectionRelaySplit2" type="text" placeholder="Split"></div>
           <div class="relayleg"><select id="meetCorrectionRelayName3"><option value="">Runner 3</option></select><input id="meetCorrectionRelaySplit3" type="text" placeholder="Split"></div>
           <div class="relayleg"><select id="meetCorrectionRelayName4"><option value="">Runner 4</option></select><input id="meetCorrectionRelaySplit4" type="text" placeholder="Split"></div>
+        </div>
+        <div class="relaylegs" id="meetCorrectionFieldFields" hidden>
+          <h3>Field Event Details</h3>
+          <div class="field full">
+            <label for="meetCorrectionAttempts">Attempts</label>
+            <textarea id="meetCorrectionAttempts" placeholder="Example: 18-6, foul, 19-1, pass, 19-4, foul"></textarea>
+          </div>
+          <div class="field full">
+            <label for="meetCorrectionVideo">Video Link</label>
+            <input id="meetCorrectionVideo" type="url" placeholder="Optional video URL">
+          </div>
         </div>
         <div class="field">
           <label for="meetCorrectionResult">Result</label>
@@ -953,7 +975,9 @@ var meetCorrectionRow=null;
 var voidRequest=null;
 var meetManagerEditingId='';
 var lastLoadedAt='';
-var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay','Other'];
+var FIELD_EVENT_OPTIONS=['High Jump','Long Jump','Triple Jump','Pole Vault','Shot Put','Discus','Javelin','Hammer'];
+var RELAY_EVENT_OPTIONS=['4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
+var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS,['Other']);
 var activeTab='roster';
 var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
@@ -1235,6 +1259,9 @@ var els={
   raceResultRelayTeamWrap:document.getElementById('raceResultRelayTeamWrap'),
   raceResultRelayTeam:document.getElementById('raceResultRelayTeam'),
   raceResultRelayLegs:document.getElementById('raceResultRelayLegs'),
+  raceResultFieldFields:document.getElementById('raceResultFieldFields'),
+  raceResultAttempts:document.getElementById('raceResultAttempts'),
+  raceResultVideo:document.getElementById('raceResultVideo'),
   raceResultEvent:document.getElementById('raceResultEvent'),
   raceResultResult:document.getElementById('raceResultResult'),
   raceResultWind:document.getElementById('raceResultWind'),
@@ -1270,6 +1297,9 @@ var els={
   meetCorrectionNotes:document.getElementById('meetCorrectionNotes'),
   meetCorrectionStatus:document.getElementById('meetCorrectionStatus'),
   meetCorrectionSave:document.getElementById('meetCorrectionSave'),
+  meetCorrectionFieldFields:document.getElementById('meetCorrectionFieldFields'),
+  meetCorrectionAttempts:document.getElementById('meetCorrectionAttempts'),
+  meetCorrectionVideo:document.getElementById('meetCorrectionVideo'),
   voidModal:document.getElementById('voidModal'),
   voidTitle:document.getElementById('voidTitle'),
   voidClose:document.getElementById('voidClose'),
@@ -1390,6 +1420,12 @@ document.addEventListener('click',function(event){
   if(relayDetailButton){
     event.preventDefault();
     openRelayResultDetail(relayDetailButton);
+    return;
+  }
+  var fieldDetailButton=event.target.closest&&event.target.closest('[data-field-detail]');
+  if(fieldDetailButton){
+    event.preventDefault();
+    openFieldResultDetail(fieldDetailButton);
     return;
   }
   var voidMeetButton=event.target.closest&&event.target.closest('[data-void-meet]');
@@ -2522,26 +2558,29 @@ function syncRaceResultSport(){
   if(!els.raceResultEvent)return;
   var current=els.raceResultEvent.value;
   var sport=els.raceResultSport.value||'track';
-  var relay=els.raceResultType&&els.raceResultType.value==='relay';
-  var relayEvents=['4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
-  var events=relay?[''].concat(relayEvents):(sport==='cross_country'?['','2 Mile','3200m','5K']:['','100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(relayEvents));
+  var type=els.raceResultType&&els.raceResultType.value||'individual';
+  var events=type==='relay'?[''].concat(RELAY_EVENT_OPTIONS):type==='field'?[''].concat(FIELD_EVENT_OPTIONS):(sport==='cross_country'?['','2 Mile','3200m','5K']:[''].concat(MEET_EVENT_OPTIONS.filter(function(eventName){return eventName!=='Other';})));
   els.raceResultEvent.innerHTML=events.map(function(eventName){
     return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
   }).join('');
   if(current&&events.indexOf(current)>=0)els.raceResultEvent.value=current;
 }
 function syncRaceResultType(){
-  var relay=els.raceResultType&&els.raceResultType.value==='relay';
+  var type=els.raceResultType&&els.raceResultType.value||'individual';
+  var relay=type==='relay';
+  var field=type==='field';
   if(els.raceResultAthlete){
     els.raceResultAthlete.disabled=relay;
     if(relay)els.raceResultAthlete.value='';
   }
   if(els.raceResultRelayTeamWrap)els.raceResultRelayTeamWrap.hidden=!relay;
   if(els.raceResultRelayLegs)els.raceResultRelayLegs.hidden=!relay;
+  if(els.raceResultFieldFields)els.raceResultFieldFields.hidden=!field;
   if(els.raceResultBest){
-    els.raceResultBest.disabled=relay;
-    if(relay)els.raceResultBest.value='none';
+    els.raceResultBest.disabled=relay||field;
+    if(relay||field)els.raceResultBest.value='none';
   }
+  if(els.raceResultResult)els.raceResultResult.placeholder=field?'Example: 18-6 or 42-3.5':'Example: 19:08';
   syncRaceResultSport();
 }
 function relayLegsPayload(){
@@ -2576,7 +2615,9 @@ function raceResultSeasonFromDate(value){
 
 function saveRaceResult(){
   var athlete=selectedRaceResultAthlete();
-  var isRelay=els.raceResultType&&els.raceResultType.value==='relay';
+  var resultType=els.raceResultType&&els.raceResultType.value||'individual';
+  var isRelay=resultType==='relay';
+  var isField=resultType==='field';
   var meet=selectedRaceResultMeet();
   var manualMeet=(els.raceResultMeet.value||'')==='__new__';
   var meetName=manualMeet?(els.raceResultMeetName.value||'').trim():(meet&&meet.name||'');
@@ -2585,6 +2626,8 @@ function saveRaceResult(){
   var resultDisplay=(els.raceResultResult.value||'').trim();
   var relayLegs=relayLegsPayload();
   var relayTeam=(els.raceResultRelayTeam&&els.raceResultRelayTeam.value||'').trim();
+  var fieldAttempts=(els.raceResultAttempts&&els.raceResultAttempts.value||'').trim();
+  var fieldVideo=(els.raceResultVideo&&els.raceResultVideo.value||'').trim();
   if(!isRelay&&!athlete){setRaceResultStatus('Select an athlete.','bad');return;}
   if(!meetName){setRaceResultStatus('Select a meet or enter a meet name.','bad');return;}
   if(!eventName){setRaceResultStatus('Select an event.','bad');return;}
@@ -2592,8 +2635,9 @@ function saveRaceResult(){
   if(isRelay&&relayLegs.length<2){setRaceResultStatus('Add at least two relay legs.','bad');return;}
   var best=els.raceResultBest.value||'none';
   var seasonParts=raceResultSeasonFromDate(date);
+  var coachNotes=(els.raceResultNotes.value||'').trim();
   var payload={
-    resultType:isRelay?'relay':'individual',
+    resultType:isRelay?'relay':isField?'field':'individual',
     relayType:isRelay?eventName:'',
     relayTeamName:isRelay?(relayTeam||eventName+' Relay'):'',
     athleteName:isRelay?(relayTeam||eventName+' Relay'):(athlete.name||''),
@@ -2607,10 +2651,12 @@ function saveRaceResult(){
     event:eventName,
     resultDisplay:resultDisplay,
     wind:els.raceResultWind.value,
-    isPr:!isRelay&&(best==='pb'||best==='both'),
-    isSeasonBest:!isRelay&&(best==='sb'||best==='both'),
+    isPr:!isRelay&&!isField&&(best==='pb'||best==='both'),
+    isSeasonBest:!isRelay&&!isField&&(best==='sb'||best==='both'),
     splitsJson:isRelay?JSON.stringify(relayLegs):'',
-    coachRaceNotes:els.raceResultNotes.value
+    coachRaceNotes:coachNotes,
+    fieldAttempts:fieldAttempts,
+    fieldVideo:fieldVideo
   };
   els.raceResultSave.disabled=true;
   setRaceResultStatus('Saving race result...','');
@@ -2636,6 +2682,8 @@ function saveRaceResult(){
       if(name)name.value='';
       if(split)split.value='';
     }
+    if(els.raceResultAttempts)els.raceResultAttempts.value='';
+    if(els.raceResultVideo)els.raceResultVideo.value='';
     els.raceResultResult.value='';
     els.raceResultWind.value='';
     els.raceResultBest.value='none';
@@ -2990,8 +3038,9 @@ function openMeetCorrectionModal(button){
   syncMeetCorrectionRelayFields();
   renderMeetCorrectionRelayOptions();
   populateMeetCorrectionRelayFields(meetCorrectionRow);
+  populateMeetCorrectionFieldFields(meetCorrectionRow);
   els.meetCorrectionBest.value=meetCorrectionRow.isPr&&meetCorrectionRow.isSeasonBest?'both':meetCorrectionRow.isPr?'pb':meetCorrectionRow.isSeasonBest?'sb':'none';
-  if(isRelayResult(meetCorrectionRow))els.meetCorrectionBest.value='none';
+  if(isRelayResult(meetCorrectionRow)||isFieldResult(meetCorrectionRow))els.meetCorrectionBest.value='none';
   els.meetCorrectionReason.value='';
   els.meetCorrectionNotes.value=meetCorrectionNotesFromRow(meetCorrectionRow);
   setMeetCorrectionStatus('Corrections are saved to SMART Trak notes.','');
@@ -3015,13 +3064,19 @@ function renderMeetCorrectionEventOptions(current){
 
 function syncMeetCorrectionRelayFields(){
   var relay=isRelayResult(meetCorrectionRow)||isRelayEvent(els.meetCorrectionEvent&&els.meetCorrectionEvent.value);
+  var field=isFieldResult(meetCorrectionRow)||isFieldEvent(els.meetCorrectionEvent&&els.meetCorrectionEvent.value);
   if(els.meetCorrectionRelayFields)els.meetCorrectionRelayFields.hidden=!relay;
   if(els.meetCorrectionRelayTeamWrap)els.meetCorrectionRelayTeamWrap.hidden=!relay;
-  if(els.meetCorrectionBest)els.meetCorrectionBest.disabled=relay;
+  if(els.meetCorrectionFieldFields)els.meetCorrectionFieldFields.hidden=!field;
+  if(els.meetCorrectionBest)els.meetCorrectionBest.disabled=relay||field;
 }
 
 function isRelayEvent(value){
   return /^(4x|sprint medley|distance medley|other relay)/i.test(String(value||'').trim());
+}
+
+function isFieldEvent(value){
+  return FIELD_EVENT_OPTIONS.indexOf(String(value||'').trim())>=0;
 }
 
 function renderMeetCorrectionRelayOptions(){
@@ -3050,6 +3105,11 @@ function populateMeetCorrectionRelayFields(row){
   }
 }
 
+function populateMeetCorrectionFieldFields(row){
+  if(els.meetCorrectionAttempts)els.meetCorrectionAttempts.value=fieldNoteValue(row,'Field Attempts');
+  if(els.meetCorrectionVideo)els.meetCorrectionVideo.value=fieldNoteValue(row,'Video');
+}
+
 function meetCorrectionRelayPayload(){
   var rows=[];
   for(var i=1;i<=4;i+=1){
@@ -3071,6 +3131,7 @@ function saveMeetCorrection(){
   }
   var best=els.meetCorrectionBest.value||'none';
   var relay=isRelayResult(meetCorrectionRow)||isRelayEvent(els.meetCorrectionEvent.value);
+  var field=isFieldResult(meetCorrectionRow)||isFieldEvent(els.meetCorrectionEvent.value);
   var relaySplits=relay?meetCorrectionRelayPayload():[];
   if(relay&&relaySplits.length<2){
     setMeetCorrectionStatus('Add at least two relay legs.','error');
@@ -3096,12 +3157,14 @@ function saveMeetCorrection(){
         event:els.meetCorrectionEvent.value,
         resultDisplay:els.meetCorrectionResult.value,
         wind:els.meetCorrectionWind.value,
-        isPr:!relay&&(best==='pb'||best==='both')?'yes':'no',
-        isSeasonBest:!relay&&(best==='sb'||best==='both')?'yes':'no',
+        isPr:!relay&&!field&&(best==='pb'||best==='both')?'yes':'no',
+        isSeasonBest:!relay&&!field&&(best==='sb'||best==='both')?'yes':'no',
         notes:els.meetCorrectionNotes.value,
-        resultType:relay?'relay':'individual',
+        resultType:relay?'relay':field?'field':'individual',
         relayTeamName:relay?els.meetCorrectionRelayTeam.value:'',
-        splitsJson:relay?JSON.stringify(relaySplits):''
+        splitsJson:relay?JSON.stringify(relaySplits):'',
+        fieldAttempts:field&&els.meetCorrectionAttempts?els.meetCorrectionAttempts.value:'',
+        fieldVideo:field&&els.meetCorrectionVideo?els.meetCorrectionVideo.value:''
       }
     })
   }).then(function(res){
@@ -3114,12 +3177,14 @@ function saveMeetCorrection(){
       event:els.meetCorrectionEvent.value,
       resultDisplay:els.meetCorrectionResult.value,
       wind:els.meetCorrectionWind.value,
-      isPr:!relay&&(best==='pb'||best==='both'),
-      isSeasonBest:!relay&&(best==='sb'||best==='both'),
+      isPr:!relay&&!field&&(best==='pb'||best==='both'),
+      isSeasonBest:!relay&&!field&&(best==='sb'||best==='both'),
       notes:els.meetCorrectionNotes.value,
-      resultType:relay?'relay':'individual',
+      resultType:relay?'relay':field?'field':'individual',
       relayTeamName:relay?els.meetCorrectionRelayTeam.value:'',
-      splitsText:relay?JSON.stringify(relaySplits):''
+      splitsText:relay?JSON.stringify(relaySplits):'',
+      fieldAttempts:field&&els.meetCorrectionAttempts?els.meetCorrectionAttempts.value:'',
+      fieldVideo:field&&els.meetCorrectionVideo?els.meetCorrectionVideo.value:''
     },reason);
     setMeetCorrectionStatus('Correction saved.','success');
     closeMeetCorrectionModal();
@@ -3147,6 +3212,8 @@ function applyMeetCorrectionLocally(row,updates,reason){
       resultType:updates.resultType||item.resultType,
       relayType:updates.resultType==='relay'?updates.event:item.relayType,
       relayTeamName:updates.relayTeamName||item.relayTeamName,
+      fieldAttempts:updates.fieldAttempts||item.fieldAttempts||'',
+      fieldVideo:updates.fieldVideo||item.fieldVideo||'',
       splitsText:updates.splitsText||item.splitsText,
       coachRaceNotes:updates.notes||'',
       corrected:true,
@@ -3197,8 +3264,10 @@ function meetCorrectionPreviousPayload(row){
     wind:row.wind||'',
     isPr:row.isPr?'yes':'no',
     isSeasonBest:row.isSeasonBest?'yes':'no',
-    resultType:isRelayResult(row)?'relay':'individual',
+    resultType:isRelayResult(row)?'relay':isFieldResult(row)?'field':'individual',
     relayTeamName:row.relayTeamName||'',
+    fieldAttempts:fieldNoteValue(row,'Field Attempts'),
+    fieldVideo:fieldNoteValue(row,'Video'),
     splitsJson:row.splitsText||'',
     notes:meetCorrectionNotesFromRow(row),
     coachRaceNotes:row.coachRaceNotes||''
@@ -3207,7 +3276,7 @@ function meetCorrectionPreviousPayload(row){
 
 function meetCorrectionNotesFromRow(row){
   return String(row.coachRaceNotes||'').split(/\r?\n/).filter(function(line){
-    return !/^(Wind|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+    return !/^(Wind|Result Type|Relay Type|Relay Team|Field Attempts|Video|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
   }).join('\n');
 }
 
@@ -3827,8 +3896,9 @@ function sumVolumeRows(rows,key){
 
 function recentMeetHtml(row){
   var relay=isRelayResult(row);
+  var field=isFieldResult(row);
   return '<tr>'+
-    '<td>'+(relay?relayDetailButton(row):athleteDetailButton(row))+'</td>'+
+    '<td>'+(relay?relayDetailButton(row):field?fieldDetailButton(row):athleteDetailButton(row))+'</td>'+
     '<td>'+mainLine(row.meetName||'No meet')+'</td>'+
     '<td>'+mainLine(row.event||'')+'</td>'+
     '<td>'+mainLine(row.resultDisplay||'')+'</td>'+
@@ -3841,8 +3911,14 @@ function recentMeetHtml(row){
 function isRelayResult(row){
   return String(row&&row.resultType||'').toLowerCase()==='relay' || /result type:\s*relay/i.test(String(row&&row.coachRaceNotes||'')) || /"name"\s*:/.test(String(row&&row.splitsText||''));
 }
+function isFieldResult(row){
+  return String(row&&row.resultType||'').toLowerCase()==='field' || /result type:\s*field/i.test(String(row&&row.coachRaceNotes||'')) || FIELD_EVENT_OPTIONS.indexOf(String(row&&row.event||''))>=0;
+}
 function relayDetailButton(row){
   return '<button class="namebtn" data-relay-detail="1" data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" type="button">'+esc(row.relayTeamName||row.athleteName||row.event||'Relay Team')+'</button><div class="muted">View details</div>';
+}
+function fieldDetailButton(row){
+  return '<button class="namebtn" data-field-detail="1" data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" type="button">'+esc(row.athleteName||'Field Athlete')+'</button><div class="muted">View details</div>';
 }
 function openRelayResultDetail(button){
   var recordId=button.getAttribute('data-record-id')||'';
@@ -3863,6 +3939,43 @@ function openRelayResultDetail(button){
     '<h3 class="section-title">Splits By Runner</h3>'+
     detailList(splits.map(function(split){return mainLine((split.name||split.label)+': '+split.time);}), 'No relay splits saved.');
   els.athleteModal.hidden=false;
+}
+
+function openFieldResultDetail(button){
+  var recordId=button.getAttribute('data-record-id')||'';
+  var sourceId=button.getAttribute('data-source-record-id')||'';
+  var row=recentMeetRows.find(function(item){
+    return (recordId&&String(item.recordId||'')===recordId)||(sourceId&&String(item.sourceRecordId||'')===sourceId);
+  });
+  if(!row)return;
+  var attempts=fieldNoteValue(row,'Field Attempts');
+  var video=fieldNoteValue(row,'Video');
+  var coachNotes=meetCorrectionNotesFromRow(row).split(/\r?\n/).filter(function(line){
+    return !/^(Result Type|Field Attempts|Video):/i.test(line.trim());
+  }).join('\n');
+  els.athleteModalTitle.textContent=row.athleteName||row.event||'Field Result';
+  els.athleteModalBody.innerHTML=
+    '<div class="detailgrid">'+
+      detailCard('Field Event',row.event||'Field event','')+
+      detailCard('Result / Mark',row.resultDisplay||'No mark','')+
+      detailCard('Meet',row.meetName||'Unlisted meet',formatDate(row.meetDate)||'')+
+      detailCard('Date',formatDate(row.meetDate)||'Not set','')+
+    '</div>'+
+    '<h3 class="section-title">Attempts</h3>'+
+    detailList(attempts.split(/\s*[;,]\s*|\r?\n/).filter(Boolean).map(function(item,index){return mainLine('Attempt '+(index+1)+': '+item);}), 'No attempts saved.')+
+    (video?'<h3 class="section-title">Video</h3><div class="detail-list"><a href="'+esc(video)+'" target="_blank" rel="noopener">'+esc(video)+'</a></div>':'')+
+    (coachNotes?'<h3 class="section-title">Notes</h3><div class="detail-list">'+esc(coachNotes).replace(/\n/g,'<br>')+'</div>':'');
+  els.athleteModal.hidden=false;
+}
+
+function fieldNoteValue(row,label){
+  var direct=label==='Field Attempts'?row.fieldAttempts:label==='Video'?row.fieldVideo:'';
+  if(direct)return direct;
+  var prefix=label+':';
+  var line=String(row&&row.coachRaceNotes||'').split(/\r?\n/).find(function(item){
+    return item.trim().toLowerCase().indexOf(prefix.toLowerCase())===0;
+  });
+  return line?line.slice(prefix.length).trim():'';
 }
 
 function meetActionButtons(row){

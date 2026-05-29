@@ -974,6 +974,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 169. Coach-code reset guard added: changing saved coach access codes through account setup is limited to 2 changes per month per account, with reset history stored on the account record. Saved code changes also increment a coach-code session version so old signed Pro sessions no longer unlock access. Generate Coach Codes now warns that saving changed codes counts toward the monthly reset limit.
 170. Dashboard now has a coach-facing **Change Code** button. A coach can enter the current code plus a new code to replace only their own code, keep other coach codes intact, consume one monthly reset, get a fresh session, and invalidate older signed sessions.
 171. Onboarding now has a **Subscriber Accounts** support list. It scans saved account registry records, shows account key, plan, subscription, coach-code count, setup readiness, and update time without exposing secrets. Support can search, load an account into setup, copy the account key, or open SMART Trak for that subscriber.
+172. Field event support started for meet results. Dashboard Log Race Result, Training Calendar Log Race Result, and the SMARTCoach Pro Mobile App Save Meet Results modal now support **Field Event** results for High Jump, Long Jump, Triple Jump, Pole Vault, Shot Put, Discus, Javelin, and Hammer. Field results attach to an athlete, meet, and date, save official mark, attempts, video link, wind, and notes through the existing meet-result sync route, and Dashboard field rows can be opened for mark/attempt/video detail and edited later. Field events were also added to Records, Track Simulator, and plan event dropdowns.
 
 ## Known Good Test Flow
 
@@ -991,12 +992,13 @@ Use this as the current launch regression test:
 10. Confirm Dashboard volume, completed workout details, splits, athlete latest training, and Training Calendar status update after sync.
 11. Log one standalone race result and confirm Dashboard, Meet History, and athlete bests update.
 12. Log one relay result from SMART Trak and one relay result from mobile meet timing; confirm relay detail/edit support shows relay type, total time, runners, and splits.
-13. Add multiple Records rows for the same event/gender with different marks and confirm only the best stays current after refresh.
-14. Load My Season Bests in Track Simulator and My Season Best in XC Simulator, load saved fields, and score both simulated meets.
-15. Search Weather by city and city/state, save a location, refresh, and confirm current/hourly/daily forecast cards render.
-16. Trigger the GHL Subscription Payload once and confirm account lookup shows the recent account update without exposing private tokens or coach access codes.
-17. Confirm parent email controls remain hidden/off for initial rollout.
-18. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.
+13. Add one field event result from Dashboard Log Race Result and one from the SMARTCoach Pro Mobile App Save Meet Results modal. Confirm Dashboard and Meet History show the field mark, and Dashboard detail/edit shows attempts and video.
+14. Add multiple Records rows for the same event/gender with different marks and confirm only the best stays current after refresh.
+15. Load My Season Bests in Track Simulator and My Season Best in XC Simulator, load saved fields, and score both simulated meets.
+16. Search Weather by city and city/state, save a location, refresh, and confirm current/hourly/daily forecast cards render.
+17. Trigger the GHL Subscription Payload once and confirm account lookup shows the recent account update without exposing private tokens or coach access codes.
+18. Confirm parent email controls remain hidden/off for initial rollout.
+19. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.
 
 ## Notes For Future Codex Sessions
 
