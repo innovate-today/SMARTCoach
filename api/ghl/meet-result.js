@@ -61,6 +61,15 @@ module.exports = async function handler(req, res) {
     }
     const contact = await findOrCreateContact({ token, locationId, meetResult });
     if (meetResult.resultType === "field") {
+      const existingFieldResults = await findMeetResultRecordsForAthleteEvent({
+        token,
+        locationId,
+        contactId: contact.id,
+        event: meetResult.event,
+      });
+      const autoFlags = calculateFieldMeetResultFlags({ existingFieldResults, meetResult });
+      meetResult.isSeasonBest = meetResult.isSeasonBest || autoFlags.isSeasonBest;
+      meetResult.isPr = meetResult.isPr || autoFlags.isPr;
       const properties = buildMeetResultProperties({ contactId: contact.id, meetResult });
       const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
       if (duplicate && !meetResult.forceDuplicateSync) {
@@ -80,6 +89,8 @@ module.exports = async function handler(req, res) {
         recordId: record.id || (record.record && record.record.id) || null,
         sourceRecordId: properties.source_record_id,
         field: true,
+        isPr: meetResult.isPr,
+        isSeasonBest: meetResult.isSeasonBest,
         records: [],
       });
       return;
@@ -186,8 +197,8 @@ function normalizeMeetResult(payload) {
     resultType,
     relayType,
     relayTeamName,
-    isPr: resultType === "individual" && truthy(payload.isPr),
-    isSeasonBest: resultType === "individual" && truthy(payload.isSeasonBest),
+    isPr: resultType !== "relay" && truthy(payload.isPr),
+    isSeasonBest: resultType !== "relay" && truthy(payload.isSeasonBest),
     fieldAttempts: clean(payload.fieldAttempts),
     fieldVideo: clean(payload.fieldVideo),
     coachRaceNotes: clean(payload.coachRaceNotes),
@@ -386,6 +397,30 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId }) {
   }
 }
 
+async function findMeetResultRecordsForAthleteEvent({ token, locationId, contactId, event }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records/search`,
+      method: "POST",
+      body: {
+        locationId,
+        page: 1,
+        pageLimit: 100,
+      },
+    });
+    const wantedEvent = optionValue(event);
+    return recordsFromResult(result).filter((item) => {
+      const props = recordProperties(item);
+      return recordValue(props, "athlete_contact") === contactId
+        && optionValue(recordValue(props, "event")) === wantedEvent;
+    });
+  } catch (error) {
+    if (error.statusCode && error.statusCode >= 500) throw error;
+    return [];
+  }
+}
+
 async function upsertSeasonRecord({ token, locationId, contactId, meetResult, existing, sourceRecordId }) {
   const properties = buildSeasonRecordProperties({ contactId, meetResult, existing, sourceRecordId });
 
@@ -573,6 +608,53 @@ function calculateMeetResultFlags({ existingSeasonRecord, athleteBestLookup, mee
   const isSeasonBest = hasResult && (!seasonBestMs || meetResult.resultMs < seasonBestMs);
   const isPr = !!(athleteBestLookup && athleteBestLookup.available) && hasResult && (!existingPbMs || meetResult.resultMs < existingPbMs);
   return { isSeasonBest, isPr };
+}
+
+function calculateFieldMeetResultFlags({ existingFieldResults, meetResult }) {
+  const currentMark = parseFieldMarkToComparableValue(meetResult.resultDisplay);
+  if (!currentMark) return { isSeasonBest: false, isPr: false };
+  const sourceRecordId = meetResult.sourceRecordId || "";
+  let bestEver = 0;
+  let seasonBest = 0;
+
+  (existingFieldResults || []).forEach((record) => {
+    const props = recordProperties(record);
+    const existingSourceRecordId = recordValue(props, "source_record_id");
+    if (sourceRecordId && existingSourceRecordId === sourceRecordId) return;
+    const value = parseFieldMarkToComparableValue(recordValue(props, "result_display"));
+    if (!value) return;
+    bestEver = Math.max(bestEver, value);
+    if (sameMeetResultSeason(props, meetResult)) seasonBest = Math.max(seasonBest, value);
+  });
+
+  return {
+    isSeasonBest: !seasonBest || currentMark > seasonBest,
+    isPr: !bestEver || currentMark > bestEver,
+  };
+}
+
+function sameMeetResultSeason(props, meetResult) {
+  const existingSeason = optionValue(recordValue(props, "season"));
+  const currentSeason = optionValue(meetResult.season);
+  const existingYear = Number(recordValue(props, "season_year")) || yearFromDateValue(recordValue(props, "meet_date"));
+  return existingSeason === currentSeason && existingYear === meetResult.meetDate.getFullYear();
+}
+
+function parseFieldMarkToComparableValue(value) {
+  const raw = clean(value).toLowerCase();
+  if (!raw || /^(nh|nm|dns|dnf|foul|pass|p|x)$/i.test(raw)) return 0;
+  const text = raw.replace(/,/g, "").replace(/\s+/g, "");
+  const metersMatch = text.match(/^(\d+(?:\.\d+)?)m$/);
+  if (metersMatch) return Number(metersMatch[1]) * 39.37007874;
+  const feetInchesMatch = text.match(/^(\d+(?:\.\d+)?)(?:'|ft|-)(\d+(?:\.\d+)?)?("?|in)?$/);
+  if (feetInchesMatch) return (Number(feetInchesMatch[1]) || 0) * 12 + (Number(feetInchesMatch[2]) || 0);
+  const number = Number(text.replace(/[^\d.]/g, ""));
+  return Number.isFinite(number) && number > 0 ? number * 12 : 0;
+}
+
+function yearFromDateValue(value) {
+  const match = clean(value).match(/^(\d{4})/);
+  return match ? Number(match[1]) || 0 : 0;
 }
 
 async function upsertAthleteBest({ token, locationId, contactId, meetResult, existing, sourceRecordId, meetResultSourceRecordId }) {
@@ -912,7 +994,12 @@ function recordProperties(record) {
 }
 
 function recordValue(props, key) {
-  const keys = [key, `custom_objects.athlete_bests.${key}`];
+  const keys = [
+    key,
+    `custom_objects.athlete_bests.${key}`,
+    `custom_objects.meet_results.${key}`,
+    `custom_objects.season_records.${key}`,
+  ];
   if (Array.isArray(props)) {
     for (const candidate of keys) {
       const field = props.find((item) => item && (item.key === candidate || item.fieldKey === candidate || item.id === candidate || item.fieldId === candidate || item.customFieldId === candidate));

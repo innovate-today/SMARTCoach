@@ -274,7 +274,7 @@ Field event results:
 5. Add attempts, video link, wind, and notes when useful.
 6. Save the field result.
 
-Field event results save to meet results and attach to the athlete, meet, and date. They are meet-only records and do not create automatic PB/SB athlete-best updates yet. On the Dashboard, click the athlete name on a field-result row to see the mark, attempts, video, meet, and date. Use **Edit** to correct the mark, attempts, video, meet, event, or notes.
+Field event results save to meet results and attach to the athlete, meet, and date. SMART Trak automatically marks a field result as PB when the mark is the athlete's best saved mark for that event, and SB when it is the athlete's best saved mark for that event in the current season. On the Dashboard, click the athlete name on a field-result row to see the mark, attempts, video, meet, and date. Use **Edit** to correct the mark, attempts, video, meet, event, or notes.
 
 ## Log Miles
 
@@ -408,7 +408,7 @@ Supported field events:
 - `Javelin`
 - `Hammer`
 
-Field results are designed for meets. Save the athlete, event, mark, attempts, video link, notes, meet name, and meet date. They appear in Dashboard Recent Meet Results and Meet History. Dashboard field-result detail shows the mark, attempts, video, meet, and date.
+Field results are designed for meets. Save the athlete, event, mark, attempts, notes, optional wind, optional video link, meet name, and meet date. They appear in Dashboard Recent Meet Results and Meet History. Dashboard field-result detail shows the mark, attempts, video, meet, and date. SMART Trak compares saved marks for the same athlete and event and automatically adds PB/SB when the mark is an athlete's best ever or best in the current season.
 
 ## SMARTCoach Pro Mobile App: Archive
 

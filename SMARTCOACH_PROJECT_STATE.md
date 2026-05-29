@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-05-27
+Last updated: 2026-05-29
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -984,6 +984,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 179. Field-event mobile sheets are now full-height screens. Field attempt review rows use larger attempt/mark text with smaller edit/delete buttons, the field attempt modal closes after adding or correcting an attempt, Settings includes a feet/inches vs meters field-mark preference, and vertical jumps require an explicit **Result** selection of O/X/P instead of defaulting to a make.
 180. Cleaned up SMARTCoach Pro Mobile App vertical jump attempt history. Each height now shows as one score-sheet style row with a fixed height column and tappable O/X/P chips for editing, plus compact delete controls underneath so rows no longer wrap into crowded edit/delete button clusters.
 181. Mobile field-event flight Save now reads **Save to SMART Trak** and attempts to sync directly to SMART Trak Meet Results in one step. If SMART Trak is unavailable or the request fails, the field results remain saved on the device with a retry message telling the coach to tap **Results** later.
+182. SMART Trak meet-result sync now auto-tags field event marks as PB/SB when the saved mark is the athlete's best saved mark for that field event ever or in the current season. This applies to field results saved from SMARTCoach Pro Mobile App and desktop Log Race Result.
 
 ## Known Good Test Flow
 

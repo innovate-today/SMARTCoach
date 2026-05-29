@@ -2714,8 +2714,8 @@ function applyRaceResultLocally(payload,result){
     relayTeamName:payload.relayTeamName||'',
     splitsText:payload.splitsJson||'',
     wind:payload.wind||'',
-    isPr:!!payload.isPr,
-    isSeasonBest:!!payload.isSeasonBest,
+    isPr:!!(result.isPr||payload.isPr),
+    isSeasonBest:!!(result.isSeasonBest||payload.isSeasonBest),
     syncedAt:syncedAt
   };
   recentMeetRows=recentMeetRows.filter(function(item){
