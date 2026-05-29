@@ -508,6 +508,78 @@ async function testCoachCodeResetLimit() {
   }
 }
 
+async function testCoachSelfServiceCodeReset() {
+  const previousFetch = global.fetch;
+  const existing = {
+    accountKey: "self-reset-school",
+    productPlan: "pro25",
+    token: "saved-token",
+    locationId: "saved-location",
+    coachSeats: 2,
+    coachAccessCodes: ["coach-one", "coach-two"],
+    parentEmailCoachAccess: [true, false],
+    requireCoachAccess: true,
+    subscription: { status: "active", billingCadence: "monthly", amount: "45.00" },
+    coachCodeVersion: 1,
+    coachCodeChangeHistory: [],
+  };
+  let savedRecord = null;
+
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: JSON.stringify(existing) }),
+      };
+    }
+    if (text.includes("/set/")) {
+      const encodedPayload = text.split("/set/")[1].split("/").slice(1).join("/");
+      savedRecord = JSON.parse(decodeURIComponent(encodedPayload));
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "OK" }),
+      };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_SESSION_SECRET: "session-secret",
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-code-reset" },
+        headers: {},
+        body: {
+          accountKey: "self-reset-school",
+          currentCode: "coach-one",
+          newCode: "coach-one-new",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.coachIndex, 0);
+      assert.ok(res.body.sessionToken);
+      assert.ok(savedRecord);
+      assert.deepStrictEqual(savedRecord.coachAccessCodes, ["coach-one-new", "coach-two"]);
+      assert.strictEqual(savedRecord.coachCodeVersion, 2);
+      assert.strictEqual(savedRecord.coachCodeChangeHistory.length, 1);
+      assert.strictEqual(savedRecord.coachCodeChangeHistory[0].source, "coach-self-service");
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountSetupSyncsGhlAccountKeyCustomValue() {
   const previousFetch = global.fetch;
   let savedRecord = null;
@@ -944,6 +1016,7 @@ async function testAccountStatusReportsDeviceUnlock() {
   await testInvalidStripeWebhookDoesNotTouchRegistry();
   await testPartialAutomationPreservesSavedConnection();
   await testCoachCodeResetLimit();
+  await testCoachSelfServiceCodeReset();
   await testAccountSetupSyncsGhlAccountKeyCustomValue();
   await testAutomationSubscriptionStatusAliases();
   await testAutomationHealthLaunchReady();

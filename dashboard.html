@@ -230,6 +230,7 @@ tr:last-child td{border-bottom:0}
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
+        <button id="changeCodeBtn" class="secondary" type="button">Change Code</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
       </div>
@@ -876,6 +877,35 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<div id="codeModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
+    <div class="modalhead">
+      <h2 id="codeTitle">Change Coach Code</h2>
+      <button id="codeClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field full">
+          <label for="currentCoachCode">Current Code</label>
+          <input id="currentCoachCode" type="password" placeholder="Current active code" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="newCoachCode">New Code</label>
+          <input id="newCoachCode" type="password" placeholder="At least 6 characters" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="confirmCoachCode">Confirm New Code</label>
+          <input id="confirmCoachCode" type="password" placeholder="Re-enter new code" autocomplete="off">
+        </div>
+      </div>
+      <div class="small" style="margin-top:8px">Coach codes can be changed 2 times per month. After saving, old coach-code access and old signed sessions stop working.</div>
+      <div class="modalactions">
+        <div id="codeStatus" class="modalstatus"></div>
+        <button id="codeSave" type="button">Save New Code</button>
+      </div>
+    </div>
+  </section>
+</div>
 <div id="accountModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
     <div class="modalhead">
@@ -1161,6 +1191,14 @@ var els={
   manageMeetsSectionBtn:document.getElementById('manageMeetsSectionBtn'),
   raceResultBtn:document.getElementById('raceResultBtn'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
+  changeCodeBtn:document.getElementById('changeCodeBtn'),
+  codeModal:document.getElementById('codeModal'),
+  codeClose:document.getElementById('codeClose'),
+  currentCoachCode:document.getElementById('currentCoachCode'),
+  newCoachCode:document.getElementById('newCoachCode'),
+  confirmCoachCode:document.getElementById('confirmCoachCode'),
+  codeSave:document.getElementById('codeSave'),
+  codeStatus:document.getElementById('codeStatus'),
   accountBtn:document.getElementById('accountBtn'),
   accountModal:document.getElementById('accountModal'),
   accountClose:document.getElementById('accountClose'),
@@ -1403,6 +1441,9 @@ els.manageMeetsBtn.addEventListener('click',openMeetManager);
 els.manageMeetsSectionBtn.addEventListener('click',openMeetManager);
 els.raceResultBtn.addEventListener('click',openRaceResult);
 els.manualMileageBtn.addEventListener('click',openManualMileage);
+els.changeCodeBtn.addEventListener('click',openCodeModal);
+els.codeClose.addEventListener('click',closeCodeModal);
+els.codeSave.addEventListener('click',saveCoachCode);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
 els.accountRefresh.addEventListener('click',refreshAppVersion);
@@ -1659,6 +1700,64 @@ function appVersion(){
 
 function closeAccountSettings(){
   els.accountModal.hidden=true;
+}
+
+function openCodeModal(){
+  els.currentCoachCode.value='';
+  els.newCoachCode.value='';
+  els.confirmCoachCode.value='';
+  els.codeStatus.textContent='';
+  els.codeStatus.style.color='';
+  els.codeSave.disabled=false;
+  els.codeModal.hidden=false;
+  setTimeout(function(){els.currentCoachCode.focus();},50);
+}
+
+function closeCodeModal(){
+  els.codeModal.hidden=true;
+}
+
+function saveCoachCode(){
+  var currentCode=els.currentCoachCode.value.trim();
+  var newCode=els.newCoachCode.value.trim();
+  var confirmCode=els.confirmCoachCode.value.trim();
+  if(!currentCode||!newCode){
+    els.codeStatus.textContent='Current code and new code are required.';
+    els.codeStatus.style.color='#b00000';
+    return;
+  }
+  if(newCode!==confirmCode){
+    els.codeStatus.textContent='New code and confirmation do not match.';
+    els.codeStatus.style.color='#b00000';
+    return;
+  }
+  els.codeSave.disabled=true;
+  els.codeStatus.textContent='Saving new code...';
+  els.codeStatus.style.color='#64748b';
+  fetch('/api/smart-trak/account-code-reset',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),currentCode:currentCode,newCode:newCode})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok){
+      throw new Error((result.data&&result.data.error)||'Could not change coach code.');
+    }
+    setSmartCoachSession(result.data&&result.data.sessionToken||'');
+    setSmartCoachAccessCode('');
+    els.codeStatus.textContent='Coach code changed. Use the new code from now on.';
+    els.codeStatus.style.color='#08783c';
+    els.currentCoachCode.value='';
+    els.newCoachCode.value='';
+    els.confirmCoachCode.value='';
+    setTimeout(function(){closeCodeModal();loadDashboard();},700);
+  }).catch(function(error){
+    els.codeStatus.textContent=error.message||'Could not change coach code.';
+    els.codeStatus.style.color='#b00000';
+  }).finally(function(){
+    els.codeSave.disabled=false;
+  });
 }
 
 function saveAccountSettings(){

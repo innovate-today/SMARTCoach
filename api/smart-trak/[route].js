@@ -76,6 +76,10 @@ module.exports = async function handler(req, res) {
     return accountSession(req, res);
   }
 
+  if (route === "account-code-reset") {
+    return accountCodeReset(req, res);
+  }
+
   if (!selected) {
     res.status(404).json({ error: "SMART Trak endpoint not found." });
     return;
@@ -949,6 +953,99 @@ async function accountSession(req, res) {
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not create coach session." });
+  }
+}
+
+async function accountCodeReset(req, res) {
+  setSessionHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const accountKey = normalizeSetupAccountKey(
+      firstPayloadValue(payload, ["accountKey", "account", "tenant", "key"]) ||
+        firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+    ) || "default";
+    const currentCode = cleanSetupText(firstPayloadValue(payload, ["currentCode", "accessCode", "coachAccessCode", "code"]));
+    const newCode = cleanSetupText(firstPayloadValue(payload, ["newCode", "newAccessCode", "newCoachAccessCode"]));
+    if (!currentCode || !newCode) throw httpError(400, "Current code and new code are required.");
+    if (newCode.length < 6) throw httpError(400, "New code must be at least 6 characters.");
+    if (safeEqual(currentCode, newCode)) throw httpError(400, "New code must be different from the current code.");
+
+    const result = await attachRegistryAccountForKey(req, accountKey);
+    const existing = result && result.found && result.record ? result.record : null;
+    if (!existing) throw httpError(404, "Account registry record was not found. Save Account Setup before changing coach codes.");
+
+    const access = coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: existing }, currentCode);
+    if (!access.allowed) {
+      res.status(access.statusCode || 401).json(access);
+      return;
+    }
+
+    const coachSeats = normalizeSetupCoachSeats(existing.coachSeats || access.coachSeats || 1, existing.productPlan);
+    const currentCodes = normalizeSetupCoachCodes(existing.coachAccessCodes || [], accountKey, coachSeats, existing.productPlan);
+    if (!currentCodes.length) throw httpError(503, "No active coach code is configured for this account.");
+    const coachIndex = currentCodes.findIndex((code) => safeEqual(code, currentCode));
+    if (coachIndex < 0) throw httpError(401, "Current coach code was not accepted.");
+    if (currentCodes.some((code, index) => index !== coachIndex && safeEqual(code, newCode))) {
+      throw httpError(400, "New code is already assigned to another coach.");
+    }
+
+    const nextCodes = currentCodes.slice();
+    nextCodes[coachIndex] = newCode;
+    const coachCodeChange = coachCodeChangeState(existing, nextCodes, { source: "coach-self-service" });
+    const nextCoachCodeVersion = (Number(existing.coachCodeVersion) || 0) + 1;
+    const sessionId = crypto.randomBytes(12).toString("hex");
+    const parentEmailAllowed = parentEmailFeatureReleased() && !!(Array.isArray(existing.parentEmailCoachAccess) && existing.parentEmailCoachAccess[coachIndex]);
+    const session = createCoachSession(accountKey, { coachIndex, parentEmailAllowed, sessionId, coachCodeVersion: nextCoachCodeVersion });
+    if (!session) {
+      res.status(500).json({
+        error: "SMART Trak session signing is not configured.",
+        sessionSecretRequired: true,
+      });
+      return;
+    }
+
+    const updated = {
+      ...existing,
+      accountKey,
+      coachAccessCodes: nextCodes,
+      coachCodeChangeHistory: coachCodeChange.history,
+      lastCoachCodeChange: coachCodeChange.latest || existing.lastCoachCodeChange || null,
+      coachCodeVersion: nextCoachCodeVersion,
+    };
+    if (existing.productPlan === "essential") {
+      updated.essentialActiveSession = {
+        sessionId,
+        coachIndex,
+        createdAt: new Date().toISOString(),
+        expiresAt: session.expiresAt,
+        expiresAtIso: session.expiresAtIso,
+      };
+    }
+    const registry = await saveAccountRecord(accountKey, updated);
+    res.status(200).json({
+      success: true,
+      accountKey,
+      productPlan: normalizeSetupProductPlan(existing.productPlan),
+      coachIndex,
+      coachCodeVersion: nextCoachCodeVersion,
+      sessionToken: session.token,
+      expiresAt: session.expiresAt,
+      expiresAtIso: session.expiresAtIso,
+      registry,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not change coach code." });
   }
 }
 
