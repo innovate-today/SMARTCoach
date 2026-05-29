@@ -368,10 +368,11 @@ For field events from the SMARTCoach Pro Mobile App:
 6. Tap **+ Add Athlete** to add every athlete in that flight.
 7. Tap **Attempt** on an athlete row to record that athlete's attempt.
 8. For horizontal jumps and throws, enter the distance or choose Foul/Pass. Best mark is shown on the athlete row.
-9. For high jump and pole vault, enter the height and choose **O**, **X**, or **P**. The attempts page groups attempts by height, such as `5-6 X X O`.
+9. For high jump and pole vault, enter the height and choose **O**, **X**, or **P**. The athlete row shows the current height and the attempt pattern at that height, such as `X X O`.
 10. Tap **i** on an athlete row to review, edit, or delete that athlete's attempts.
-11. Tap **Save Flight Results** to queue all athletes in the flight locally.
-12. Tap **Results** in the bottom tray to save queued field results to SMART Trak.
+11. Use the small **-** or **.** buttons beside the mark field if the phone keyboard does not show those characters.
+12. Tap **Save** to queue all athletes in the flight locally.
+13. Tap **Results** in the bottom tray to save queued field results to SMART Trak.
 
 You can also enter a field result directly from **Save Meet Results** by changing **Result Type** to **Field Event**. Use the live **Field** tray button when you need to capture marks during the event.
 
