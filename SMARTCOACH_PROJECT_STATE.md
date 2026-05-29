@@ -698,7 +698,7 @@ Community/media:
 
 Field events:
 
-- Future idea: meets-only field event tracking across SMARTCoach Pro Mobile App and SMART Trak.
+- Initial meets-only field event tracking is implemented across SMARTCoach Pro Mobile App and SMART Trak.
 - Supported event targets: high jump, long jump, triple jump, pole vault, shot put, discus, javelin, and hammer, with possible later expansion for indoor weight throw, turbo jav, and multi-event support.
 - Keep field events in meet-result workflows first, not daily training workouts:
   - SMARTCoach Pro Mobile App Meet section
@@ -706,11 +706,11 @@ Field events:
   - Meet History
   - Athlete detail modal
   - Records
-  - Track Simulator later
-- Add field result type alongside Race and Relay. Field result forms should capture athlete, event, mark, attempts, notes, optional wind for long/triple, optional place, and optional video URL.
+  - Track Simulator
+- Field result type exists alongside Race and Relay. Field result forms capture athlete, event, mark, attempts, notes, optional wind, and optional video URL.
 - Start video support as a URL field rather than file upload. Coaches can link Hudl, YouTube unlisted, Google Drive, iCloud, or similar services before SMARTCoach owns file storage.
 - Attempt tracking:
-  - Throws and horizontal jumps can start with attempts text/json for attempts 1-6, foul flags, marks, wind, and notes.
+  - SMARTCoach Pro Mobile App meet groups can capture legal/foul/pass attempts during the event.
   - High jump and pole vault can later use height rows with make/miss/pass sequences such as O, XO, XXO, XXX.
 - Meet History columns can remain mostly the same. Field rows show the mark in Result and open a detail modal with event, mark, attempts, wind, notes, video link, meet, and date.
 - Records support must compare field marks as higher/farther is better, while running events still use lower time is better.
@@ -797,7 +797,7 @@ These are intentionally not blocking the current launch path unless the user re-
 - Plan Builder full-plan review/spreadsheet-style adjustment remains future work.
 - SMARTCoach Pro help button/assistant remains future work for instructions, subscription questions, and how-to guidance.
 - Athlete-facing training calendar initial portal is implemented; future work is richer coach calendar response summaries, optional approval, and athlete access management controls.
-- Field-event tracking remains future work for jumps, throws, attempts, video, and notes.
+- Field-event tracking initial support is implemented; future work is deeper vertical-jump height progression, place/scoring, and richer field-event analytics.
 
 ## Recent Launch Cleanup Log
 
@@ -975,6 +975,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 170. Dashboard now has a coach-facing **Change Code** button. A coach can enter the current code plus a new code to replace only their own code, keep other coach codes intact, consume one monthly reset, get a fresh session, and invalidate older signed sessions.
 171. Onboarding now has a **Subscriber Accounts** support list. It scans saved account registry records, shows account key, plan, subscription, coach-code count, setup readiness, and update time without exposing secrets. Support can search, load an account into setup, copy the account key, or open SMART Trak for that subscriber.
 172. Field event support started for meet results. Dashboard Log Race Result, Training Calendar Log Race Result, and the SMARTCoach Pro Mobile App Save Meet Results modal now support **Field Event** results for High Jump, Long Jump, Triple Jump, Pole Vault, Shot Put, Discus, Javelin, and Hammer. Field results attach to an athlete, meet, and date, save official mark, attempts, video link, wind, and notes through the existing meet-result sync route, and Dashboard field rows can be opened for mark/attempt/video detail and edited later. Field events were also added to Records, Track Simulator, and plan event dropdowns.
+173. Added live field-event capture inside SMARTCoach Pro Mobile App meet groups. The bottom tray now changes unused Sort/Sum actions to **Field** and **Results** during meets. **Field** opens a capture modal for selecting field event and athlete, recording legal/foul/pass attempts during the event, adding best mark, wind, video, and notes, then queueing the field result locally. **Results** saves queued field results to SMART Trak through the existing meet-result route and marks them saved locally.
 
 ## Known Good Test Flow
 

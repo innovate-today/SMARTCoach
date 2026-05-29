@@ -362,12 +362,15 @@ For field events from the SMARTCoach Pro Mobile App:
 
 1. Open **Meets**.
 2. Select the meet.
-3. Open **Save Meet Results**.
-4. Change **Result Type** to **Field Event**.
-5. Select the athlete and field event.
-6. Enter the official mark.
-7. Add attempts, video link, wind, or notes when useful.
-8. Save to SMART Trak.
+3. Tap **Field** in the bottom tray.
+4. Select the field event and athlete.
+5. Capture each attempt as it happens, including legal marks, fouls, or passes.
+6. Enter or confirm the best official mark.
+7. Add wind, video link, or notes when useful.
+8. Tap **Save Field Result** to queue the result locally.
+9. Tap **Results** in the bottom tray to save queued field results to SMART Trak.
+
+You can also enter a field result directly from **Save Meet Results** by changing **Result Type** to **Field Event**. Use the live **Field** tray button when you need to capture marks during the event.
 
 ## SMART Trak Relay Support
 
