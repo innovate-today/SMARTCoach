@@ -143,7 +143,7 @@ async function listActiveAthletes({ token, locationId }) {
 
   return (result.contacts || [])
     .map((contact) => normalizeContact(contact, { genderFieldIds }))
-    .filter((athlete) => athlete.smartcoachRosterMember)
+    .filter((athlete) => athlete.smartcoachRosterMember && !athlete.excludedSystemContact)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -305,6 +305,7 @@ function normalizeContact(contact, options = {}) {
   const smartcoachAthleteId = existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID);
   const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
   const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
+  const excludedSystemContact = isExcludedSystemContact(tags);
   const inferredSmartCoachAthlete = Boolean(smartcoachAthleteId || hasAthleteTag);
   const smartcoachActive = isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && inferredSmartCoachAthlete);
   return {
@@ -314,9 +315,17 @@ function normalizeContact(contact, options = {}) {
     smartcoachActive,
     smartcoachActiveValue,
     smartcoachAthleteId,
-    smartcoachRosterMember: smartcoachActive || inferredSmartCoachAthlete,
+    smartcoachRosterMember: !excludedSystemContact && (smartcoachActive || inferredSmartCoachAthlete),
+    excludedSystemContact,
     tags,
   };
+}
+
+function isExcludedSystemContact(tags) {
+  return (Array.isArray(tags) ? tags : []).some((tag) => {
+    const value = clean(tag).toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+    return value === "live chat";
+  });
 }
 
 function contactGender(contact, genderFieldIds = []) {

@@ -996,6 +996,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 189. Restored relay timing controls inside the SMARTCoach Pro Mobile App Relay sheet. The sheet now includes Start/Stop, Lap/Finish, and Reset controls directly above the relay leg list, and the old Turn Off Relay button is no longer shown there.
 190. SMART Trak relay result sync now auto-tags **SB** when the relay time is the fastest saved result for that relay event in the current season. Relay results do not use PB tags.
 191. Kept `SMART_TRAK_COACH_HOW_TO.md` coach-facing by removing implementation/vendor wording from SMARTCoach Help. The guide now describes SMARTCoach Help as in-app product/workflow help without naming the underlying live-chat provider or AI setup.
+192. Contacts tagged `live chat` are excluded from SMARTCoach athlete/roster loaders so temporary help-chat contacts do not appear on Athletes, Dashboard, app athlete pickers, or Athlete Calendar lookup while the cleanup automation waits to delete them.
 
 ## Known Good Test Flow
 
