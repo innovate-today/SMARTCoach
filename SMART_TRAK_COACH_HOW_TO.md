@@ -491,7 +491,7 @@ Athlete notes sync into the completed workout/performance note. They are also ad
 
 ## SMARTCoach Help
 
-SMART Trak desktop pages include the SMARTCoach Help widget powered by GHL Conversation AI and the SMARTCoach knowledge base. Use it when a coach needs quick how-to help inside SMART Trak.
+SMART Trak desktop pages include SMARTCoach Help. Use it when a coach needs quick how-to help inside SMART Trak.
 
 Good questions to ask:
 
@@ -502,7 +502,7 @@ Good questions to ask:
 - How do I save meet results?
 - Why is an athlete or group missing?
 
-The help assistant should answer product and workflow questions from the SMARTCoach knowledge base. Billing questions are not part of SMARTCoach Help.
+SMARTCoach Help should answer product and workflow questions. Billing questions are not part of SMARTCoach Help.
 
 ## Quick Troubleshooting
 
