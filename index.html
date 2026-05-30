@@ -2840,8 +2840,8 @@ function preferredFitnessEvents(text){
 }
 function chooseFitness(profile,rule){
   var bests=(profile&&profile.bests||[]).map(function(b){
-    var display=b.seasonBestDisplay||b.personalBestDisplay||b.lastResultDisplay||'';
-    return{event:normalizeEventLabel(b.event),display:display,ms:parseMs(display),meters:eventDistance(b.event),date:b.seasonBestDate||b.personalBestDate||b.lastResultDate||''};
+    var display=b.lastResultDisplay||b.seasonBestDisplay||b.personalBestDisplay||'';
+    return{event:normalizeEventLabel(b.event),display:display,ms:parseMs(display),meters:eventDistance(b.event),date:b.lastResultDate||b.seasonBestDate||b.personalBestDate||''};
   }).filter(function(b){return b.event&&b.display&&b.ms&&b.meters;});
   if(!bests.length)return null;
   var current=bests.filter(function(b){return !isFutureDateText(b.date);});
@@ -2938,6 +2938,7 @@ function renderAthleteProfile(p){
   html+=profileSection('Today',athleteTodayRows(CE,p));
   html+=profileSection('Current Fitness',(p.bests||[]).map(function(b){
     var lines=[];
+    if(b.lastResultDisplay)lines.push('Current '+b.lastResultDisplay+(b.lastResultDate?' ('+b.lastResultDate+')':''));
     if(b.personalBestDisplay)lines.push('PB '+b.personalBestDisplay+(b.personalBestMeet?' - '+b.personalBestMeet:'')+(b.personalBestDate?' ('+b.personalBestDate+')':''));
     if(b.seasonBestDisplay)lines.push('SB '+b.seasonBestDisplay+(b.seasonBestMeet?' - '+b.seasonBestMeet:'')+(b.seasonBestDate?' ('+b.seasonBestDate+')':''));
     return '<div class="profile-row"><b>'+ex(b.event)+'</b><small>'+ex(lines.join(' · ')||'No bests yet')+'</small></div>';
