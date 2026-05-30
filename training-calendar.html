@@ -155,7 +155,9 @@ button.compact{padding:6px 9px;font-size:12px}
 .manual-row-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f4f4f5;border-bottom:1px solid var(--line);padding:9px 10px}
 .manual-row-title{font-size:18px;font-weight:900;color:#64748b}
 .manual-row-grid{display:grid;grid-template-columns:76px 170px 190px 210px auto;gap:10px;align-items:end;padding:12px 10px}
-.manual-row-grid label,.compactgrid label{display:block;margin-bottom:5px}
+.manual-row-grid label,.manual-rest-grid label,.manual-set-rest label,.compactgrid label{display:block;margin-bottom:5px}
+.manual-rest-grid{display:grid;grid-template-columns:220px 1fr;gap:10px;align-items:end;padding:12px 10px}
+.manual-set-rest{border-top:1px solid var(--line);padding:12px 10px}
 .inline-control{display:flex;align-items:center;gap:6px}
 .mini-input{max-width:86px;text-align:right;color:#111827;font-size:18px;font-weight:900}
 .mini-select{max-width:140px}
@@ -203,7 +205,7 @@ button.compact{padding:6px 9px;font-size:12px}
   .viewtabs{grid-template-columns:1fr}
   .detailgrid{grid-template-columns:1fr}
   .activitychooser{grid-template-columns:1fr}
-  .compactgrid,.manual-row-grid{grid-template-columns:1fr}
+  .compactgrid,.manual-row-grid,.manual-rest-grid{grid-template-columns:1fr}
   .mini-input,.mini-select{max-width:none}
   .status{text-align:left}
   .calendar.weekscroll{max-height:70vh;min-height:320px}
@@ -444,6 +446,7 @@ button.compact{padding:6px 9px;font-size:12px}
           <div id="qualityRows" style="margin-top:12px"></div>
           <div class="builder-links">
             <button id="addQualitySetBtn" class="builder-link" type="button">Add Set</button>
+            <button id="addQualityRestBtn" class="builder-link" type="button">Add Rest Set</button>
             <button id="addQualityRepeatBtn" class="builder-link" type="button">Add Repeating Sets</button>
             <button id="clearQualityBtn" class="builder-link" type="button">Clear</button>
           </div>
@@ -678,6 +681,7 @@ var els={
   addQualityCooldownUnit:document.getElementById('addQualityCooldownUnit'),
   qualityRows:document.getElementById('qualityRows'),
   addQualitySetBtn:document.getElementById('addQualitySetBtn'),
+  addQualityRestBtn:document.getElementById('addQualityRestBtn'),
   addQualityRepeatBtn:document.getElementById('addQualityRepeatBtn'),
   clearQualityBtn:document.getElementById('clearQualityBtn'),
   addActivitySummary:document.getElementById('addActivitySummary'),
@@ -2182,6 +2186,15 @@ function addQualityRow(values){
   var row=document.createElement('div');
   row.className='manual-row';
   row.setAttribute('data-quality-row',kind);
+  if(kind==='rest'){
+    row.innerHTML='<div class="manual-row-head"><div class="manual-row-title">Rest Set</div><button class="ghost" data-remove-quality-row type="button">Remove</button></div>'+
+      '<div class="manual-rest-grid">'+
+        '<div><label>Duration</label><div class="inline-control"><input data-field="restValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.restValue||3)+'"><select data-field="restUnit" class="mini-select">'+recoveryUnitOptions(values.restUnit||'min jog')+'</select></div></div>'+
+      '</div>';
+    els.qualityRows.appendChild(row);
+    renderAddActivitySummary();
+    return;
+  }
   row.innerHTML='<div class="manual-row-head"><div class="manual-row-title">'+(kind==='repeat'?'Repeating Sets':'Set')+'</div><button class="ghost" data-remove-quality-row type="button">Remove</button></div>'+
     (kind==='repeat'?'<div class="inline-control" style="padding:12px 10px;color:#64748b"><input data-field="repeatCount" class="mini-input" type="number" min="1" step="1" value="'+esc(values.repeatCount||3)+'"><span>x</span></div>':'')+
     '<div class="manual-row-grid">'+
@@ -2189,7 +2202,8 @@ function addQualityRow(values){
       '<div><label>Distance</label><div class="inline-control"><input data-field="distanceValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.distanceValue||1)+'"><select data-field="distanceUnit" class="mini-select">'+distanceUnitOptions(values.distanceUnit||'mi')+'</select></div></div>'+
       '<div><label>Effort</label><select data-field="effort">'+effortOptions(values.effort||'Threshold')+'</select></div>'+
       '<div><label>Recovery Between Reps</label><div class="inline-control"><input data-field="recoveryValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.recoveryValue||1)+'"><select data-field="recoveryUnit" class="mini-select">'+recoveryUnitOptions(values.recoveryUnit||'min jog')+'</select></div></div>'+
-    '</div>';
+    '</div>'+
+    (kind==='repeat'?'<div class="manual-set-rest"><label>Recovery Between Sets</label><div class="inline-control"><input data-field="setRecoveryValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.setRecoveryValue||0)+'"><select data-field="setRecoveryUnit" class="mini-select">'+recoveryUnitOptions(values.setRecoveryUnit||'min jog')+'</select></div></div>':'');
   els.qualityRows.appendChild(row);
   renderAddActivitySummary();
 }
@@ -2206,15 +2220,23 @@ function collectQualityRows(){
     item.repeatCount=Number(item.repeatCount||1);
     item.distanceValue=Number(item.distanceValue||0);
     item.recoveryValue=Number(item.recoveryValue||0);
+    item.setRecoveryValue=Number(item.setRecoveryValue||0);
+    item.restValue=Number(item.restValue||0);
     return item;
   });
 }
 function qualityBlockLine(block){
+  if(block.kind==='rest')return 'Rest: '+distanceLabel(block.restValue,block.restUnit);
   var inner=block.reps+' x '+distanceLabel(block.distanceValue,block.distanceUnit)+' @ '+block.effort;
   return block.kind==='repeat'?block.repeatCount+' x ('+inner+')':inner;
 }
 function qualityRecoveryLine(block){
+  if(block.kind==='rest')return '';
   return distanceLabel(block.recoveryValue,block.recoveryUnit)+' recovery between reps';
+}
+function qualitySetRecoveryLine(block){
+  if(block.kind!=='repeat'||!Number(block.setRecoveryValue||0))return '';
+  return distanceLabel(block.setRecoveryValue,block.setRecoveryUnit)+' recovery between sets';
 }
 function parseDistanceMiles(text){
   var value=String(text||'').trim().toLowerCase();
@@ -2246,8 +2268,12 @@ function renderAddActivitySummary(){
   var blocks=collectQualityRows();
   var total=unitMiles(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value)+unitMiles(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value);
   var blockHtml=blocks.map(function(block){
+    if(block.kind==='rest'){
+      return '<br><br><b>Rest Set</b>'+esc(qualityBlockLine(block));
+    }
     total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);
-    return '<br><br><b>'+(block.kind==='repeat'?'Repeat '+block.repeatCount+' times':'Set')+'</b>'+esc(qualityBlockLine(block))+'<br>'+esc(qualityRecoveryLine(block));
+    var setRecovery=qualitySetRecoveryLine(block);
+    return '<br><br><b>'+(block.kind==='repeat'?'Repeat '+block.repeatCount+' times':'Set')+'</b>'+esc(qualityBlockLine(block))+'<br>'+esc(qualityRecoveryLine(block))+(setRecovery?'<br>'+esc(setRecovery):'');
   }).join('');
   els.addActivitySummaryBody.innerHTML='<b>Warmup</b>'+esc(warm)+blockHtml+'<br><br><b>Cooldown</b>'+esc(cool)+
     '<div class="summary-total">'+esc(formatMiles(total)||'Volume not set')+'</div>';
@@ -2282,19 +2308,34 @@ function buildAddDayActivityValues(){
     var blocks=collectQualityRows();
     var qLines=[];
     qLines.push('Warmup: '+distanceLabel(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value));
-    blocks.forEach(function(block){qLines.push(qualityBlockLine(block)+' / '+qualityRecoveryLine(block));});
+    blocks.forEach(function(block){
+      if(block.kind==='rest'){
+        qLines.push(qualityBlockLine(block));
+        return;
+      }
+      var line=qualityBlockLine(block)+' / '+qualityRecoveryLine(block);
+      var setRecovery=qualitySetRecoveryLine(block);
+      if(setRecovery)line+=' / '+setRecovery;
+      qLines.push(line);
+    });
     qLines.push('Cooldown: '+distanceLabel(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value));
     if(details)qLines.push(details);
-    var first=blocks[0]||{effort:'Threshold'};
-    var mainSet=blocks[0]?qualityBlockLine(blocks[0]):'Quality session';
+    var workBlocks=blocks.filter(function(block){return block.kind!=='rest';});
+    var first=workBlocks[0]||{effort:'Threshold'};
+    var mainSet=workBlocks[0]?qualityBlockLine(workBlocks[0]):'Quality session';
     var total=unitMiles(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value)+unitMiles(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value);
-    blocks.forEach(function(block){total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);});
+    workBlocks.forEach(function(block){total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);});
     return {
       dayType:'Workout',
       title:title||(mainSet||'Quality session'),
       workoutType:type||first.effort,
       plannedVolume:volume||(total?formatMiles(total)+' total':'Quality session'),
-      targetSplits:target||blocks.map(function(block){return qualityBlockLine(block)+' with '+qualityRecoveryLine(block);}).join('; '),
+      targetSplits:target||blocks.map(function(block){
+        if(block.kind==='rest')return qualityBlockLine(block);
+        var line=qualityBlockLine(block)+' with '+qualityRecoveryLine(block);
+        var setRecovery=qualitySetRecoveryLine(block);
+        return setRecovery?line+' and '+setRecovery:line;
+      }).join('; '),
       details:qLines.join('\n')
     };
   }
@@ -3083,6 +3124,7 @@ function init(){
     els.easyStridesFields.hidden=true;
   });
   els.addQualitySetBtn.addEventListener('click',function(){addQualityRow({kind:'set'});});
+  els.addQualityRestBtn.addEventListener('click',function(){addQualityRow({kind:'rest'});});
   els.addQualityRepeatBtn.addEventListener('click',function(){addQualityRow({kind:'repeat',distanceValue:200,distanceUnit:'m',recoveryValue:5,recoveryUnit:'min jog'});});
   els.clearQualityBtn.addEventListener('click',seedQualityRows);
   els.qualityRows.addEventListener('input',renderAddActivitySummary);
