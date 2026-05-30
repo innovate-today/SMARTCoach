@@ -1016,6 +1016,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 193. Dashboard Training Load / Completed Workouts search now includes saved roster group membership, not only group names recorded on completed workout rows. Searching groups like Middle School, High School, MS Distance, or HS Sprints now pulls matching athletes/workouts more reliably.
 194. Training Calendar manual Quality Session builder now supports rest inside workouts. Coaches can add a standalone Rest Set row and repeating-set blocks now include Recovery Between Sets, with summary/details/target text preserving both recovery between reps and rest between repeated sets.
 195. Training Calendar Quality Session recovery/rest dropdowns now match the fuller manual-workout recovery list: min/sec/m/mi/km jog or walk, plus `sec rest`.
+196. SMARTCoach Pro Mobile App plan/workout sheet is now full-screen. The app now treats group-assigned manual Training Calendar workouts as runnable SMART Trak Calendar workouts, auto-attaching the next upcoming workout to the matching timing group and showing those calendar workouts in the selector. The hidden SMARTCoach Training Groups roster record is filtered out of the training-plan selector.
 
 ## Known Good Test Flow
 
