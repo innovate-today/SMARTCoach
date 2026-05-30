@@ -882,6 +882,9 @@ function fmt(ms){
 function parseMs(v){
   var text=String(v||'').trim().toLowerCase().replace(/s$/,'');
   if(!text)return 0;
+  var timeToken=text.match(/\d+(?::\d{1,2}){1,2}(?:\.\d+)?/);
+  if(timeToken)text=timeToken[0];
+  else if(text.indexOf('/')>=0)text=text.split('/')[0].trim();
   var parts=text.split(':').map(function(p){return p.trim();});
   if(!parts.length||parts.some(function(p){return p===''||isNaN(Number(p));}))return 0;
   if(parts.length===1)return Math.round(Number(parts[0])*1000);

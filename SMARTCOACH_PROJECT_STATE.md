@@ -1020,6 +1020,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 197. SMARTCoach Pro Mobile App target calculations now preserve the planned rep distance from manual calendar workouts when the workout text has reps but no explicit target percent. Examples such as `3 x 1 mi @ Threshold`, `3 x 1 mile @ Threshold`, and `2 x 200 m @ Threshold` now calculate the target from the actual rep distance instead of falling back to the generic 400m rule.
 198. SMARTCoach Pro Mobile App current-fitness target selection now matches Dashboard current fitness: athlete targets prefer the Athlete Best `last_result_display` / `last_result_date` before season best or personal best, so manually changed current fitness values flow into mobile target calculations.
 199. SMARTCoach Pro Mobile App current-fitness reads are now fresher after Athlete Setup changes: the athlete-profile API sends `Cache-Control: no-store`, the app profile cache is shortened, and sync target calculations force a fresh athlete profile instead of reusing a cached target for the same workout plan.
+200. SMARTCoach Pro Mobile App time parsing now supports pace/formatted current-fitness text such as `7:09/mile` or `1600m 7:09`, extracting the actual clock time before calculating targets so current-fitness paces no longer become tiny second-based target ranges.
 
 ## Known Good Test Flow
 
