@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1780146400000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1780147907000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1780146400000 -->
-<!-- v1780146400000 -->
+<!-- build:1780147907000 -->
+<!-- v1780147907000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -378,7 +378,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TP_READY=false, MT_READY=false, accountPromptShown=false;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false;
 
 function smartCoachAccountKey(){
   try{
@@ -976,6 +976,46 @@ function findAthleteByName(name){
   }
   return null;
 }
+function activeAthleteKeys(athlete){
+  var keys=[];
+  [athlete&&athlete.id,athlete&&athlete.contactId,athlete&&athlete.smartcoachAthleteId,athlete&&athlete.name].forEach(function(value){
+    value=String(value||'').trim().toLowerCase();
+    if(value&&keys.indexOf(value)<0)keys.push(value);
+  });
+  return keys;
+}
+function activeAthleteForRunner(runner){
+  if(!AR_READY)return null;
+  var runnerKeys={};
+  [runner&&runner.contactId,runner&&runner.smartcoachAthleteId,runner&&runner.name].forEach(function(value){
+    value=String(value||'').trim().toLowerCase();
+    if(value)runnerKeys[value]=true;
+  });
+  for(var i=0;i<AR.length;i++){
+    if(activeAthleteKeys(AR[i]).some(function(key){return runnerKeys[key];}))return AR[i];
+  }
+  return null;
+}
+function isActiveRosterRunner(runner){
+  return !AR_READY||!!activeAthleteForRunner(runner);
+}
+function reconcileGroupsWithActiveAthletes(){
+  if(!AR_READY)return false;
+  var changed=false;
+  logs.forEach(function(log){
+    if((log.type||'training')!=='training'||!log.sharedGroupId)return;
+    var next=(log.runners||[]).filter(isActiveRosterRunner);
+    if(next.length!==log.runners.length){
+      log.runners=next;
+      changed=true;
+    }
+  });
+  if(changed&&CL&&CL.sharedGroupId){
+    var updated=logs.find(function(item){return item.id===CL.id;});
+    if(updated)CL=updated;
+  }
+  return changed;
+}
 function renderAthleteList(){
   var dl=document.getElementById('athletes-list');
   if(!dl)return;
@@ -1002,12 +1042,13 @@ function loadTrainingPlans(){
 }
 function loadSharedGroups(){
   if(!isProPlan()){SG=[];return;}
-  fetch('/api/smart-trak/groups').then(function(r){
+  fetch('/api/smart-trak/groups?v='+Date.now(),{cache:'no-store'}).then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Groups unavailable');
     SG=(result.data&&result.data.groups)||[];
     mergeSharedGroupsIntoLogs();
+    reconcileGroupsWithActiveAthletes();
     save();
     rl();
     if(CL)rr();
@@ -1041,7 +1082,7 @@ function mergeSharedGroupRunners(log,athletes){
     if(key)existing[key]=r;
   });
   var next=[];
-  athletes.forEach(function(athlete){
+  athletes.filter(isActiveRosterRunner).forEach(function(athlete){
     var key=String(athlete.contactId||athlete.name||'').trim().toLowerCase();
     var r=existing[key]||mkR();
     if(r.name!==athlete.name||r.contactId!==athlete.contactId||r.smartcoachAthleteId!==(athlete.smartcoachAthleteId||''))changed=true;
@@ -1051,7 +1092,7 @@ function mergeSharedGroupRunners(log,athletes){
     next.push(r);
   });
   (log.runners||[]).forEach(function(r){
-    if((r.saved||[]).length&&next.indexOf(r)<0)next.push(r);
+    if((r.saved||[]).length&&next.indexOf(r)<0&&isActiveRosterRunner(r))next.push(r);
   });
   if(next.length!==log.runners.length)changed=true;
   log.runners=next;
@@ -1310,9 +1351,10 @@ function sharedGroupsPayload(){
       seasonYear:group.seasonYear||currentSeason().year,
       archived:!!group.archived,
       athletes:(group.runners||[]).map(function(r){
-        var a=findAthleteByName(r.name)||{};
-        return {contactId:r.contactId||a.id||'',smartcoachAthleteId:r.smartcoachAthleteId||a.smartcoachAthleteId||'',name:r.name||a.name||''};
-      }).filter(function(a){return a.contactId||Boolean(a.name&&!/^Runner \d+$/i.test(a.name));})
+        var a=activeAthleteForRunner(r)||findAthleteByName(r.name)||{};
+        if(AR_READY&&!a.id&&!a.contactId&&!a.smartcoachAthleteId)return null;
+        return {contactId:r.contactId||a.id||a.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||a.smartcoachAthleteId||'',name:r.name||a.name||''};
+      }).filter(function(a){return a&&(a.contactId||Boolean(a.name&&!/^Runner \d+$/i.test(a.name)));})
     };
   });
   return groups;
@@ -1354,7 +1396,7 @@ function activeTrainingPlans(plans){
 }
 function loadProData(){
   if(!isProPlan()){
-    AR=[];TP=[];MT=[];TPD={};CD=[];TP_READY=false;MT_READY=false;
+    AR=[];TP=[];MT=[];TPD={};CD=[];TP_READY=false;MT_READY=false;AR_READY=false;
     renderAthleteList();
     renderMeetOptions();
     return;
@@ -1460,14 +1502,18 @@ function openAthletePicker(id){
   });
 }
 function loadAthletes(){
-  if(!isProPlan()){AR=[];renderAthleteList();return;}
-  fetch('/api/smart-trak/athletes').then(function(r){
+  if(!isProPlan()){AR=[];AR_READY=false;renderAthleteList();return;}
+  fetch('/api/smart-trak/athletes?v='+Date.now(),{cache:'no-store'}).then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Roster unavailable');
     AR=(result.data&&result.data.athletes)||[];
+    AR_READY=true;
     renderAthleteList();
+    var pruned=reconcileGroupsWithActiveAthletes();
+    if(pruned)save();
     applyAutoPlansToCurrentGroup();
+    if(pruned)rl();
     if(CL)rr();
   if(CL&&CL.type==='meet'){
     var meetSave=document.getElementById('m-meet-save');
@@ -1477,7 +1523,7 @@ function loadAthletes(){
       updateMeetBestHints();
     }
   }
-  }).catch(function(){AR=[];renderAthleteList();});
+  }).catch(function(){AR=[];AR_READY=false;renderAthleteList();});
 }
 function handleAthleteSelect(id,el){
   if(el.value==='__add_athlete__'){
