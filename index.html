@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1780144147000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1780146400000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1780144147000 -->
-<!-- v1780144147000 -->
+<!-- build:1780146400000 -->
+<!-- v1780146400000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -2860,11 +2860,20 @@ function chooseFitness(profile,rule){
   var current=bests.filter(function(b){return !isFutureDateText(b.date);});
   bests=current.length?current:bests;
   var preferred=(rule&&rule.preferred||[]).map(normalizeEventLabel);
-  for(var i=0;i<preferred.length;i++){
-    var match=bests.filter(function(b){return b.event.toLowerCase()===preferred[i].toLowerCase();}).sort(function(a,b){return String(b.date).localeCompare(String(a.date));})[0];
-    if(match)return match;
-  }
-  return bests.sort(function(a,b){return String(b.date).localeCompare(String(a.date));})[0];
+  return bests.sort(function(a,b){
+    var byDate=fitnessDateValue(b)-fitnessDateValue(a);
+    if(byDate)return byDate;
+    return preferredFitnessIndex(a,preferred)-preferredFitnessIndex(b,preferred);
+  })[0];
+}
+function fitnessDateValue(item){
+  var d=new Date(item&&item.date||'');
+  return isNaN(d.getTime())?0:d.getTime();
+}
+function preferredFitnessIndex(item,preferred){
+  var event=String(item&&item.event||'').toLowerCase();
+  var index=(preferred||[]).map(function(value){return String(value||'').toLowerCase();}).indexOf(event);
+  return index<0?999:index;
 }
 function isFutureDateText(value){
   if(!value)return false;
