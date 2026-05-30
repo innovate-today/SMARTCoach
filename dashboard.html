@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="app-version" content="dashboard-1777173146407">
+<meta name="app-version" content="dashboard-1780144712000">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SMART Trak Dashboard</title>
 <style>
@@ -981,6 +981,8 @@ var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H',
 var activeTab='roster';
 var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
+var fitnessRefreshKey='smartcoachFitnessUpdatedAt';
+var lastFitnessRefreshSignal='';
 function smartCoachAccountKey(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -1621,9 +1623,11 @@ function loadDashboard(){
   els.status.textContent='Loading dashboard...';
   els.lastUpdated.textContent='Updating...';
   els.refreshBtn.disabled=true;
+  var stamp=Date.now();
+  var fetchOptions={cache:'no-store',headers:{'Cache-Control':'no-store'}};
   return Promise.all([
-    fetch('/api/smart-trak/dashboard').then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
-    fetch('/api/smart-trak/groups').then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};})
+    fetch('/api/smart-trak/dashboard?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
+    fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};})
   ]).then(function(results){
     var result=results[0];
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
@@ -1670,6 +1674,19 @@ function loadDashboard(){
     if(els.refreshBtn)els.refreshBtn.disabled=false;
   });
 }
+function refreshDashboardAfterFitnessChange(signal){
+  signal=String(signal||'');
+  if(!signal||signal===lastFitnessRefreshSignal)return;
+  lastFitnessRefreshSignal=signal;
+  if(document.hidden)return;
+  loadDashboard();
+}
+window.addEventListener('storage',function(event){
+  if(event.key===fitnessRefreshKey)refreshDashboardAfterFitnessChange(event.newValue);
+});
+window.addEventListener('focus',function(){
+  try{refreshDashboardAfterFitnessChange(localStorage.getItem(fitnessRefreshKey)||'');}catch(e){}
+});
 function openPendingDashboardAction(){
   if(!pendingDashboardAction)return;
   var action=pendingDashboardAction;

@@ -536,7 +536,7 @@ function saveFitnessRows(){
   }
   if(!rows.length){setFitnessStatus('Enter at least one current fitness time.','warn');return;}
   setFitnessStatus('Saving current fitness...',null);
-  fetch('/api/smart-trak/athlete-best',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:rows})}).then(function(r){
+  fetch('/api/smart-trak/athlete-best',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({rows:rows})}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Fitness save failed');
@@ -547,8 +547,12 @@ function saveFitnessRows(){
       var reason=skipped[0]&&skipped[0].reason?skipped[0].reason:'No fitness rows were saved.';
       throw new Error(reason);
     }
+    notifyFitnessChanged();
     setFitnessStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
   }).catch(function(e){setFitnessStatus('Error: '+e.message,'bad');});
+}
+function notifyFitnessChanged(){
+  try{localStorage.setItem('smartcoachFitnessUpdatedAt',String(Date.now()));}catch(e){}
 }
 function collectFitnessRows(){
   captureFitnessDraftValues();
