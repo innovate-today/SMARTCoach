@@ -1017,6 +1017,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 194. Training Calendar manual Quality Session builder now supports rest inside workouts. Coaches can add a standalone Rest Set row and repeating-set blocks now include Recovery Between Sets, with summary/details/target text preserving both recovery between reps and rest between repeated sets.
 195. Training Calendar Quality Session recovery/rest dropdowns now match the fuller manual-workout recovery list: min/sec/m/mi/km jog or walk, plus `sec rest`.
 196. SMARTCoach Pro Mobile App plan/workout sheet is now full-screen. The app now treats group-assigned manual Training Calendar workouts as runnable SMART Trak Calendar workouts, auto-attaching the next upcoming workout to the matching timing group and showing those calendar workouts in the selector. The hidden SMARTCoach Training Groups roster record is filtered out of the training-plan selector.
+197. SMARTCoach Pro Mobile App target calculations now preserve the planned rep distance from manual calendar workouts when the workout text has reps but no explicit target percent. Examples such as `3 x 1 mi @ Threshold`, `3 x 1 mile @ Threshold`, and `2 x 200 m @ Threshold` now calculate the target from the actual rep distance instead of falling back to the generic 400m rule.
 
 ## Known Good Test Flow
 

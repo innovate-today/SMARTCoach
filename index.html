@@ -2802,21 +2802,30 @@ function entryTargetHtml(plan,profile,run){
 }
 function workoutPrescription(plan,rule){
   var source=[plan.trainingPlanDayTitle,plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].join(' ');
-  var m=source.match(/(\d+)\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:m|k)|1\s*mile|2\s*mile|half marathon|marathon)/i);
+  var m=source.match(/(\d+)\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)/i);
   if(m)return m[1]+' x '+normalizeEventLabel(m[2]);
   if(rule&&rule.repLabel)return rule.repLabel;
   return plan.trainingPlanDayTitle||'Workout';
 }
 function parseTargetRule(text,workoutType){
   var source=String(text||'');
-  var m=source.match(/([0-9]+(?:\.[0-9]+)?\s*(?:m|k)|1\s*mile|2\s*mile|half marathon|marathon)\s+target:\s*([0-9]+)\s*-\s*([0-9]+)%/i);
+  var m=source.match(/([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\s+target:\s*([0-9]+)\s*-\s*([0-9]+)%/i);
   if(m)return{repLabel:normalizeEventLabel(m[1]),repMeters:eventDistance(m[1]),low:Number(m[2])/100,high:Number(m[3])/100,preferred:preferredFitnessEvents(source)};
-  var rep=source.match(/\b\d+\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:m|k)|1\s*mile|2\s*mile|half marathon|marathon)\b/i);
+  var rep=source.match(/\b\d+\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\b/i);
   var pct=source.match(/([0-9]+)\s*-\s*([0-9]+)%/);
   if(rep&&pct)return{repLabel:normalizeEventLabel(rep[1]),repMeters:eventDistance(rep[1]),low:Number(pct[1])/100,high:Number(pct[2])/100,preferred:preferredFitnessEvents(source)};
-  var rule=paceRule(workoutType||'');
+  var rule=paceRule(workoutType||effortFromTargetText(source)||'');
   if(!rule||!rule.distance)return null;
+  if(rep){
+    var repLabel=normalizeEventLabel(rep[1]);
+    return{repLabel:repLabel,repMeters:eventDistance(repLabel),low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source)};
+  }
   return{repLabel:rule.distance+'m',repMeters:rule.distance,low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source)};
+}
+function effortFromTargetText(text){
+  var source=String(text||'');
+  var match=source.match(/@\s*([A-Za-z][A-Za-z\s-]*?)(?:\s*(?:\/|;|\n|\)|$))/);
+  return match?match[1].trim():'';
 }
 function preferredFitnessEvents(text){
   var found=[],source=String(text||'').toLowerCase();
@@ -2886,7 +2895,15 @@ function recoveryText(text,range){
 function normalizeEventLabel(event){
   var key=String(event||'').trim().toLowerCase().replace(/\s+/g,' ');
   var map={'1 mile':'1 Mile','mile':'1 Mile','2 mile':'2 Mile','2 miles':'2 Mile','5k':'5K','3k':'3K','10k':'10K','half marathon':'Half Marathon','marathon':'Marathon'};
-  return map[key]||String(event||'').trim();
+  if(map[key])return map[key];
+  var metric=key.match(/^([0-9]+(?:\.[0-9]+)?)\s*(mi|mile|miles|km|k|m)$/);
+  if(metric){
+    var amount=metric[1],unit=metric[2];
+    if(unit==='m')return amount+'m';
+    if(unit==='k'||unit==='km')return amount+'K';
+    return amount==='1'?'1 Mile':amount+' Mile';
+  }
+  return String(event||'').trim();
 }
 function clrLaps(){
   if(!CE)return;
@@ -2961,6 +2978,11 @@ function paceRule(workout){
   var rules={
     'Acceleration':{label:'Acceleration',distance:30,low:.95,high:1},
     'Max Velocity':{label:'Max Velocity',distance:60,low:.95,high:1},
+    'Threshold':{label:'Threshold',distance:1000,low:.82,high:.88},
+    'Interval':{label:'Interval',distance:400,low:.88,high:.95},
+    'Repetition':{label:'Repetition',distance:200,low:.93,high:1},
+    'Fast Reps':{label:'Fast Reps',distance:150,low:.93,high:1},
+    'Hills':{label:'Hills',distance:60,low:.90,high:.98},
     'Speed Endurance I':{label:'Speed Endurance I',distance:150,low:.88,high:.95},
     'Special Endurance I':{label:'Special Endurance I',distance:300,low:.85,high:.90},
     'Special Endurance II':{label:'Special Endurance II',distance:500,low:.80,high:.88},
@@ -2978,6 +3000,14 @@ function paceRule(workout){
 function eventDistance(event){
   var key=normalizeEventLabel(event);
   var map={'100m':100,'100H':100,'110H':110,'200m':200,'300m':300,'300H':300,'400m':400,'400H':400,'600m':600,'800m':800,'1500m':1500,'1600m':1600,'1 Mile':1609.34,'3K':3000,'3200m':3200,'2 Mile':3218.69,'4K':4000,'5K':5000,'8K':8000,'10K':10000,'15K':15000,'Half Marathon':21097.5,'Marathon':42195};
+  if(map[key])return map[key];
+  var metric=String(key||'').match(/^([0-9]+(?:\.[0-9]+)?)\s*(m|K|Mile)$/);
+  if(metric){
+    var amount=Number(metric[1])||0;
+    if(metric[2]==='m')return amount;
+    if(metric[2]==='K')return amount*1000;
+    return amount*1609.34;
+  }
   return map[key]||0;
 }
 function runnerPlan(r){
@@ -4898,7 +4928,7 @@ function commonSyncPlanValue(ctx,key,fallback){
 }
 function explicitRepDistance(plan){
   var source=[plan&&plan.trainingPlanDayTitle,plan&&plan.trainingPlanDayDetails,plan&&plan.trainingPlanDayTargetSplits].join(' ');
-  var match=source.match(/\b\d+\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:m|k)|1\s*mile|2\s*mile|half marathon|marathon)\b/i);
+  var match=source.match(/\b\d+\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\b/i);
   if(!match)return null;
   return{label:normalizeEventLabel(match[1]),meters:eventDistance(match[1])};
 }
