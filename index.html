@@ -2236,10 +2236,9 @@ function runnerPlannedTarget(r){
   if(!plan.trainingPlanDayTitle&&!plan.trainingPlanDayTargetSplits&&!plan.trainingPlanDayDetails)return Promise.resolve({});
   var matched=findAthleteByName(r.name)||{};
   var contactId=r.contactId||matched.id||'';
-  if(cachedTargetMatchesPlan(r.cachedPlannedTarget,plan))return Promise.resolve(r.cachedPlannedTarget);
   clearCachedPlanTarget(r);
   if(!contactId)return Promise.resolve(targetFromVisibleRunnerRow(r));
-  return athleteProfile(contactId,r.name).then(function(profile){
+  return athleteProfile(contactId,r.name,true).then(function(profile){
     var target=plannedTargetData(plan,profile);
     if(target&&target.plannedTargetRange)r.cachedPlannedTarget=target;
     return target||targetFromVisibleRunnerRow(r);
@@ -2762,9 +2761,10 @@ function renderEntryTargets(r){
   });
 }
 function athleteProfile(contactId,name){
+  var forceFresh=arguments.length>2&&arguments[2];
   var key=contactId+'|'+String(name||'').toLowerCase();
   var cached=APC[key];
-  if(cached&&cached.ts&&Date.now()-cached.ts<30000)return Promise.resolve(cached.profile);
+  if(!forceFresh&&cached&&cached.ts&&Date.now()-cached.ts<5000)return Promise.resolve(cached.profile);
   return fetch('/api/smart-trak/athlete-profile?contactId='+encodeURIComponent(contactId)+'&athleteName='+encodeURIComponent(name||'')+'&t='+Date.now(),{cache:'no-store'}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){

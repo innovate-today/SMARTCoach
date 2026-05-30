@@ -1019,6 +1019,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 196. SMARTCoach Pro Mobile App plan/workout sheet is now full-screen. The app now treats group-assigned manual Training Calendar workouts as runnable SMART Trak Calendar workouts, auto-attaching the next upcoming workout to the matching timing group and showing those calendar workouts in the selector. The hidden SMARTCoach Training Groups roster record is filtered out of the training-plan selector.
 197. SMARTCoach Pro Mobile App target calculations now preserve the planned rep distance from manual calendar workouts when the workout text has reps but no explicit target percent. Examples such as `3 x 1 mi @ Threshold`, `3 x 1 mile @ Threshold`, and `2 x 200 m @ Threshold` now calculate the target from the actual rep distance instead of falling back to the generic 400m rule.
 198. SMARTCoach Pro Mobile App current-fitness target selection now matches Dashboard current fitness: athlete targets prefer the Athlete Best `last_result_display` / `last_result_date` before season best or personal best, so manually changed current fitness values flow into mobile target calculations.
+199. SMARTCoach Pro Mobile App current-fitness reads are now fresher after Athlete Setup changes: the athlete-profile API sends `Cache-Control: no-store`, the app profile cache is shortened, and sync target calculations force a fresh athlete profile instead of reusing a cached target for the same workout plan.
 
 ## Known Good Test Flow
 

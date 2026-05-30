@@ -60,6 +60,7 @@ const FIELD_LABELS = {
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
+  res.setHeader("Cache-Control", "no-store, max-age=0");
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
