@@ -4,6 +4,9 @@ const {
   registryHealth,
   saveAccountRecord,
   loadAccountRecord,
+  mirrorSchoolRecords,
+  loadSchoolRecordsMirror,
+  schoolRecordsMirrorStatus,
 } = require("../lib/account-registry");
 
 function withEnv(overrides, fn) {
@@ -120,9 +123,71 @@ async function testUpstashAliasesAndCustomPrefix() {
   }
 }
 
+async function testSchoolRecordsMirrorManifestFallback() {
+  const previousFetch = global.fetch;
+  const store = {};
+  const setMembers = {};
+  global.fetch = async (url) => {
+    const text = String(url);
+    const parts = text.replace("https://registry.example/", "").split("/").map(decodeURIComponent);
+    const command = parts[0];
+    if (command === "set") {
+      store[parts[1]] = parts.slice(2).join("/");
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
+    if (command === "get") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: store[parts[1]] || null }) };
+    }
+    if (command === "sadd") {
+      setMembers[parts[1]] = setMembers[parts[1]] || new Set();
+      setMembers[parts[1]].add(parts[2]);
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: 1 }) };
+    }
+    if (command === "smembers") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: [] }) };
+    }
+    if (command === "scan") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: ["0", []] }) };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+      SMARTCOACH_REGISTRY_PREFIX: undefined,
+    }, async () => {
+      const records = [
+        { recordId: "rec_1", sourceRecordId: "src_1", gender: "Boys", sport: "Track", event: "400m", resultDisplay: "49.50", athleteName: "A Runner", recordDate: "2026-04-01", isCurrent: true },
+        { recordId: "rec_2", sourceRecordId: "src_2", gender: "Girls", sport: "Track", event: "400m", resultDisplay: "57.20", athleteName: "B Runner", recordDate: "2026-04-01", isCurrent: true },
+        { recordId: "rec_3", sourceRecordId: "src_3", gender: "Boys", sport: "Track", event: "800m", resultDisplay: "1:58.10", athleteName: "C Runner", recordDate: "2026-04-02", isCurrent: true },
+        { recordId: "rec_4", sourceRecordId: "src_4", gender: "Girls", sport: "Track", event: "800m", resultDisplay: "2:18.90", athleteName: "D Runner", recordDate: "2026-04-02", isCurrent: true },
+      ];
+
+      const saved = await mirrorSchoolRecords("records-school", records);
+      assert.strictEqual(saved.saved, true);
+      assert.strictEqual(saved.count, 4);
+
+      const loaded = await loadSchoolRecordsMirror("records-school");
+      assert.strictEqual(loaded.length, 4);
+      assert.deepStrictEqual(loaded.map((item) => item.recordId).sort(), ["rec_1", "rec_2", "rec_3", "rec_4"]);
+
+      const status = await schoolRecordsMirrorStatus("records-school");
+      assert.strictEqual(status.indexCount, 0);
+      assert.strictEqual(status.scanCount, 0);
+      assert.strictEqual(status.manifestCount, 4);
+      assert.strictEqual(status.loadCount, 4);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 (async () => {
   await testVercelKvAliases();
   await testUpstashAliasesAndCustomPrefix();
+  await testSchoolRecordsMirrorManifestFallback();
   console.log("account registry alias tests passed");
 })().catch((error) => {
   console.error(error);

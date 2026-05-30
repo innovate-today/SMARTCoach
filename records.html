@@ -47,6 +47,8 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .toolnote{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;color:#334155;font-size:13px;line-height:1.4}
 .recordform{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:12px}
 .recordform .wide{grid-column:span 2}
+.recordform .relay-fields{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:10px}
+.recordform .relay-fields[hidden]{display:none}
 .recordform label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
 .recordform .checkrow{display:flex;align-items:center;gap:8px;color:#172033;text-transform:none;letter-spacing:0;font-size:14px}
 .recordform input[type=checkbox]{width:auto}
@@ -141,7 +143,7 @@ tr:last-child td{border-bottom:0}
     <select id="eventFilter"><option value="all">All events</option></select>
     <select id="statusFilter">
       <option value="all">All records</option>
-      <option value="current">Current records</option>
+      <option value="current" selected>Current records</option>
       <option value="historical">Historical records</option>
     </select>
     <button id="clearBtn" class="ghost" type="button">Reset View</button>
@@ -181,6 +183,12 @@ tr:last-child td{border-bottom:0}
         <label>Record Holder
           <input id="singleAthlete" type="text" placeholder="Athlete name">
         </label>
+        <div id="singleRelayFields" class="relay-fields" hidden>
+          <label>Leg 1<input id="singleRelayLeg1" type="text" placeholder="Runner 1"></label>
+          <label>Leg 2<input id="singleRelayLeg2" type="text" placeholder="Runner 2"></label>
+          <label>Leg 3<input id="singleRelayLeg3" type="text" placeholder="Runner 3"></label>
+          <label>Leg 4<input id="singleRelayLeg4" type="text" placeholder="Runner 4"></label>
+        </div>
         <label>Meet
           <input id="singleMeet" type="text" placeholder="Meet name">
         </label>
@@ -222,7 +230,7 @@ tr:last-child td{border-bottom:0}
         <button id="downloadBulkTemplateBtn" class="secondary" type="button">Download Template</button>
         <input id="bulkFile" type="file" accept=".csv,.tsv,.txt">
       </div>
-      <textarea id="bulkText" placeholder="Gender,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;Girls,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record"></textarea>
+      <textarea id="bulkText" placeholder="Gender,Sport,Event,Result,Athlete,Leg 1,Leg 2,Leg 3,Leg 4,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;Girls,Track,3200m,10:52.4,Avery Womble,,,,,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record&#10;Boys,Track,4x400m,3:24.18,,Marcus Moore,Jay Smith,Eli Jones,Chris Hall,District,2026-04-03,Spring,2026,,,"></textarea>
       <div class="bulkactions">
         <div class="left">
           <button id="previewBulkBtn" type="button">Preview Records</button>
@@ -295,6 +303,12 @@ tr:last-child td{border-bottom:0}
         <label>Record Holder
           <input id="editAthlete" type="text">
         </label>
+        <div id="editRelayFields" class="relay-fields" hidden>
+          <label>Leg 1<input id="editRelayLeg1" type="text"></label>
+          <label>Leg 2<input id="editRelayLeg2" type="text"></label>
+          <label>Leg 3<input id="editRelayLeg3" type="text"></label>
+          <label>Leg 4<input id="editRelayLeg4" type="text"></label>
+        </div>
         <label>Meet
           <input id="editMeet" type="text">
         </label>
@@ -339,6 +353,8 @@ var SPORTS=['Track','Cross Country','Road'];
 var EVENTS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay','High Jump','Long Jump','Triple Jump','Pole Vault','Shot Put','Discus','Javelin','Hammer','Other'];
 var SEASONS=['Spring','Summer','Fall','Winter','Offseason'];
 var PLACEHOLDER_VALUES={unlisted:true,unknown:true,'n/a':true,na:true,'unlisted event':true,'no result':true};
+var HIGHER_IS_BETTER_EVENTS={'high jump':true,'long jump':true,'triple jump':true,'pole vault':true,'shot put':true,'discus':true,'javelin':true,'hammer':true};
+var RELAY_EVENTS={'4x100m':true,'4x200m':true,'4x400m':true,'4x800m':true,'sprint medley':true,'distance medley':true,'other relay':true};
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -379,6 +395,11 @@ var els={
   singleEvent:document.getElementById('singleEvent'),
   singleResult:document.getElementById('singleResult'),
   singleAthlete:document.getElementById('singleAthlete'),
+  singleRelayFields:document.getElementById('singleRelayFields'),
+  singleRelayLeg1:document.getElementById('singleRelayLeg1'),
+  singleRelayLeg2:document.getElementById('singleRelayLeg2'),
+  singleRelayLeg3:document.getElementById('singleRelayLeg3'),
+  singleRelayLeg4:document.getElementById('singleRelayLeg4'),
   singleMeet:document.getElementById('singleMeet'),
   singleDate:document.getElementById('singleDate'),
   singleSeason:document.getElementById('singleSeason'),
@@ -401,6 +422,11 @@ var els={
   editEvent:document.getElementById('editEvent'),
   editResult:document.getElementById('editResult'),
   editAthlete:document.getElementById('editAthlete'),
+  editRelayFields:document.getElementById('editRelayFields'),
+  editRelayLeg1:document.getElementById('editRelayLeg1'),
+  editRelayLeg2:document.getElementById('editRelayLeg2'),
+  editRelayLeg3:document.getElementById('editRelayLeg3'),
+  editRelayLeg4:document.getElementById('editRelayLeg4'),
   editMeet:document.getElementById('editMeet'),
   editDate:document.getElementById('editDate'),
   editSeason:document.getElementById('editSeason'),
@@ -493,8 +519,24 @@ function recordValue(row){
   var parts=recordNameParts(row);
   return parts.length>=4?parts.slice(3).join(' - '):'';
 }
+function isRelayEvent(eventName){return !!RELAY_EVENTS[String(eventName||'').trim().toLowerCase()];}
+function relayLegs(row){
+  var direct=[row&&row.relayLeg1,row&&row.relayLeg2,row&&row.relayLeg3,row&&row.relayLeg4].map(cleanDisplayValue);
+  if(direct.some(Boolean))return direct;
+  var notes=String(row&&row.recordNotes||'');
+  return [1,2,3,4].map(function(num){
+    var match=notes.match(new RegExp('^Relay Leg '+num+':\\s*(.+)$','im'));
+    return match?cleanDisplayValue(match[1]):'';
+  });
+}
+function relayDisplay(row){
+  return relayLegs(row).filter(Boolean).join(' / ');
+}
+function holderDisplay(row){
+  return isRelayEvent(recordEvent(row))?(relayDisplay(row)||row.athleteName||''):row.athleteName||'';
+}
 function recordHasDisplayData(row){
-  return !!(recordEvent(row)||recordValue(row)||cleanDisplayValue(row&&row.athleteName)||cleanDisplayValue(row&&row.meetName)||cleanDisplayValue(row&&row.recordDate));
+  return !!(recordEvent(row)||recordValue(row)||cleanDisplayValue(row&&row.athleteName)||relayDisplay(row)||cleanDisplayValue(row&&row.meetName)||cleanDisplayValue(row&&row.recordDate));
 }
 function formatDate(value){
   if(!value)return '';
@@ -542,6 +584,7 @@ function recordIdentity(row){
     recordEvent(row),
     recordValue(row),
     row&&row.athleteName||'',
+    relayDisplay(row),
     row&&row.recordDate||''
   ].filter(Boolean).join('|').toLowerCase();
 }
@@ -637,6 +680,10 @@ function clearSingleRecordForm(){
   els.singleEvent.value='400m';
   els.singleResult.value='';
   els.singleAthlete.value='';
+  els.singleRelayLeg1.value='';
+  els.singleRelayLeg2.value='';
+  els.singleRelayLeg3.value='';
+  els.singleRelayLeg4.value='';
   els.singleMeet.value='';
   els.singleDate.value=todayValue();
   els.singleSeason.value='Spring';
@@ -645,6 +692,20 @@ function clearSingleRecordForm(){
   els.singlePreviousHolder.value='';
   els.singleNotes.value='';
   els.singleCurrent.checked=true;
+  updateRelayFields('single');
+}
+function relayPayload(prefix){
+  return {
+    relayLeg1:els[prefix+'RelayLeg1'].value.trim(),
+    relayLeg2:els[prefix+'RelayLeg2'].value.trim(),
+    relayLeg3:els[prefix+'RelayLeg3'].value.trim(),
+    relayLeg4:els[prefix+'RelayLeg4'].value.trim()
+  };
+}
+function updateRelayFields(prefix){
+  var relay=isRelayEvent(els[prefix+'Event'].value);
+  els[prefix+'RelayFields'].hidden=!relay;
+  els[prefix+'Athlete'].placeholder=relay?'Optional relay team name':'Athlete name';
 }
 function recordPayload(prefix){
   var isEdit=prefix==='edit';
@@ -658,6 +719,10 @@ function recordPayload(prefix){
     event:els[prefix+'Event'].value,
     resultDisplay:els[prefix+'Result'].value.trim(),
     athleteName:els[prefix+'Athlete'].value.trim(),
+    relayLeg1:relayPayload(prefix).relayLeg1,
+    relayLeg2:relayPayload(prefix).relayLeg2,
+    relayLeg3:relayPayload(prefix).relayLeg3,
+    relayLeg4:relayPayload(prefix).relayLeg4,
     meetName:els[prefix+'Meet'].value.trim(),
     recordDate:els[prefix+'Date'].value,
     season:els[prefix+'Season'].value,
@@ -680,6 +745,10 @@ function normalizedRecordFromPayload(payload,existing){
     resultDisplay:payload.resultDisplay,
     resultMs:parseResultMs(payload.resultDisplay),
     athleteName:payload.athleteName,
+    relayLeg1:payload.relayLeg1,
+    relayLeg2:payload.relayLeg2,
+    relayLeg3:payload.relayLeg3,
+    relayLeg4:payload.relayLeg4,
     meetName:payload.meetName,
     recordDate:payload.recordDate,
     season:payload.season,
@@ -707,7 +776,6 @@ function saveSingleRecord(){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be saved.');
     var created=result.data&&result.data.created&&result.data.created[0]||{};
     var local=normalizedRecordFromPayload(Object.assign({},payload,{recordId:created.recordId||'',sourceRecordId:created.sourceRecordId||payload.sourceRecordId}));
-    retireLocalCurrentRecords(local,local.recordId);
     upsertCachedRecords([local]);
     renderOptions();
     render();
@@ -730,6 +798,12 @@ function openRecordEdit(id){
   setSelect(els.editEvent,recordEvent(editingRecord),EVENTS);
   els.editResult.value=editingRecord.resultDisplay||editingRecord.resultMark||'';
   els.editAthlete.value=editingRecord.athleteName||'';
+  var legs=relayLegs(editingRecord);
+  els.editRelayLeg1.value=legs[0]||'';
+  els.editRelayLeg2.value=legs[1]||'';
+  els.editRelayLeg3.value=legs[2]||'';
+  els.editRelayLeg4.value=legs[3]||'';
+  updateRelayFields('edit');
   els.editMeet.value=editingRecord.meetName||'';
   els.editDate.value=dateOnly(editingRecord.recordDate)||todayValue();
   setSelect(els.editSeason,editingRecord.season,SEASONS);
@@ -766,7 +840,6 @@ function saveRecordEdit(){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
     if(!result.ok)throw new Error(result.data&&result.data.error||'Record could not be updated.');
     var updated=normalizedRecordFromPayload(payload,editingRecord);
-    retireLocalCurrentRecords(updated,editingRecord.recordId);
     replaceCachedRecord(editingRecord,updated);
     renderOptions();
     render();
@@ -816,7 +889,7 @@ function deleteRecord(){
   });
 }
 function searchText(row){
-  return [row.recordName,row.gender,row.sport,recordEvent(row),recordValue(row),row.athleteName,row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
+  return [row.recordName,row.gender,row.sport,recordEvent(row),recordValue(row),row.athleteName,relayDisplay(row),row.meetName,row.season,row.seasonYear,row.previousRecordHolder,row.previousRecordDisplay].filter(Boolean).join(' ').toLowerCase();
 }
 function setBulkStatus(text,type){
   els.bulkStatus.textContent=text||'';
@@ -839,13 +912,13 @@ function recordHeaderMap(cols){
   var map={};
   cols.forEach(function(col,index){
     var key=String(col||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',record_owner:'recordScope',owner:'recordScope',gender:'gender',division:'gender',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
+    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',record_owner:'recordScope',owner:'recordScope',gender:'gender',division:'gender',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',relay_team:'athleteName',team:'athleteName',leg_1:'relayLeg1',leg1:'relayLeg1',runner_1:'relayLeg1',runner1:'relayLeg1',leg_2:'relayLeg2',leg2:'relayLeg2',runner_2:'relayLeg2',runner2:'relayLeg2',leg_3:'relayLeg3',leg3:'relayLeg3',runner_3:'relayLeg3',runner3:'relayLeg3',leg_4:'relayLeg4',leg4:'relayLeg4',runner_4:'relayLeg4',runner4:'relayLeg4',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
     if(normalized)map[normalized]=index;
   });
   return map.gender!=null||map.event!=null||map.recordType!=null?map:{};
 }
 function normalizeBulkRecord(values,index){
-  var row={recordType:'School Record',recordScope:'School',gender:values.gender||'Unlisted',sport:values.sport||'Track',event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
+  var row={recordType:'School Record',recordScope:'School',gender:values.gender||'Unlisted',sport:values.sport||'Track',event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',relayLeg1:values.relayLeg1||'',relayLeg2:values.relayLeg2||'',relayLeg3:values.relayLeg3||'',relayLeg4:values.relayLeg4||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
   if(!row.seasonYear&&row.recordDate)row.seasonYear=row.recordDate.slice(0,4);
   row.rowNumber=index+1;
   return row;
@@ -860,16 +933,16 @@ function parseBulkRecords(text){
     var cols=splitRecordLine(line);
     if(Object.keys(headers).length){
       var value=function(key){return headers[key]!=null?cols[headers[key]]||'':'';};
-      return normalizeBulkRecord({recordType:value('recordType'),recordScope:value('recordScope'),gender:value('gender'),sport:value('sport'),event:value('event'),resultDisplay:value('resultDisplay'),resultMark:value('resultMark'),athleteName:value('athleteName'),meetName:value('meetName'),recordDate:value('recordDate'),season:value('season'),seasonYear:value('seasonYear'),previousRecordDisplay:value('previousRecordDisplay'),previousRecordHolder:value('previousRecordHolder'),recordNotes:value('recordNotes')},index);
+      return normalizeBulkRecord({recordType:value('recordType'),recordScope:value('recordScope'),gender:value('gender'),sport:value('sport'),event:value('event'),resultDisplay:value('resultDisplay'),resultMark:value('resultMark'),athleteName:value('athleteName'),relayLeg1:value('relayLeg1'),relayLeg2:value('relayLeg2'),relayLeg3:value('relayLeg3'),relayLeg4:value('relayLeg4'),meetName:value('meetName'),recordDate:value('recordDate'),season:value('season'),seasonYear:value('seasonYear'),previousRecordDisplay:value('previousRecordDisplay'),previousRecordHolder:value('previousRecordHolder'),recordNotes:value('recordNotes')},index);
     }
-    return normalizeBulkRecord({gender:cols[0],sport:cols[1],event:cols[2],resultDisplay:cols[3],athleteName:cols[4],meetName:cols[5],recordDate:cols[6],season:cols[7],seasonYear:cols[8],previousRecordDisplay:cols[9],previousRecordHolder:cols[10],recordNotes:cols[11]},index);
+    return normalizeBulkRecord({gender:cols[0],sport:cols[1],event:cols[2],resultDisplay:cols[3],athleteName:cols[4],relayLeg1:cols[5],relayLeg2:cols[6],relayLeg3:cols[7],relayLeg4:cols[8],meetName:cols[9],recordDate:cols[10],season:cols[11],seasonYear:cols[12],previousRecordDisplay:cols[13],previousRecordHolder:cols[14],recordNotes:cols[15]},index);
   }).filter(function(row){return row.recordType||row.event||row.resultDisplay||row.athleteName;});
 }
 function downloadBulkTemplate(){
   var csv=[
-    'Gender,Sport,Event,Result,Athlete,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
-    'Girls,Track,3200m,10:52.4,Avery Womble,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
-    'Boys,Cross Country,5K,18:22.1,Marcus Moore,State,2026-10-31,Fall,2026,,,'
+    'Gender,Sport,Event,Result,Athlete,Leg 1,Leg 2,Leg 3,Leg 4,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
+    'Girls,Track,3200m,10:52.4,Avery Womble,,,,,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
+    'Boys,Track,4x400m,3:24.18,,Marcus Moore,Jay Smith,Eli Jones,Chris Hall,District,2026-04-03,Spring,2026,,,'
   ].join('\n');
   var blob=new Blob([csv],{type:'text/csv'});
   var url=URL.createObjectURL(blob);
@@ -894,7 +967,7 @@ function renderBulkPreview(){
     return;
   }
   els.bulkPreview.hidden=false;
-  els.bulkPreview.innerHTML='<table><thead><tr><th>Gender</th><th>Event</th><th>Result</th><th>Record Holder</th><th>Meet</th><th>Date</th><th>Season</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.gender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
+  els.bulkPreview.innerHTML='<table><thead><tr><th>Gender</th><th>Event</th><th>Result</th><th>Record Holder</th><th>Relay Runners</th><th>Meet</th><th>Date</th><th>Season</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.gender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(relayDisplay(row))+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
   setBulkStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):bulkRows.length+' records ready to save.',issues.length?'bad':'good');
 }
 function saveBulkRecords(){
@@ -914,7 +987,6 @@ function saveBulkRecords(){
       var saved=created[index]||{};
       return normalizedRecordFromPayload(Object.assign({},row,{recordId:saved.recordId||'',sourceRecordId:saved.sourceRecordId||row.sourceRecordId}));
     });
-    localRows.forEach(function(row){retireLocalCurrentRecords(row,row.recordId);});
     upsertCachedRecords(localRows);
     renderOptions();
     render();
@@ -949,7 +1021,7 @@ function renderOptions(){
   fillSelect(els.typeFilter,'All record types',Object.keys(types).sort());
   fillSelect(els.eventFilter,'All events',Object.keys(events).sort());
 }
-function baseRecordsForBoards(){
+function filteredBaseRecords(){
   var query=String(els.search.value||'').trim().toLowerCase();
   var gender=els.genderFilter.value;
   var type=els.typeFilter.value;
@@ -965,21 +1037,14 @@ function baseRecordsForBoards(){
 }
 function filteredRecords(){
   var status=els.statusFilter.value;
-  var base=baseRecordsForBoards().filter(recordIsUsable);
-  var currentKeys=currentRecordKeys(base);
+  var base=filteredBaseRecords().filter(recordIsUsable);
+  var currentKeys=currentRecordKeys(records.filter(recordIsUsable));
   return base.filter(function(row){
     var isCurrent=!!currentKeys[recordIdentity(row)];
     if(status==='current'&&!isCurrent)return false;
     if(status==='historical'&&isCurrent)return false;
     return true;
   });
-}
-function filtersAreDefault(){
-  return !String(els.search.value||'').trim() &&
-    els.genderFilter.value==='all' &&
-    els.typeFilter.value==='all' &&
-    els.eventFilter.value==='all' &&
-    els.statusFilter.value==='all';
 }
 function recordBoardKey(row){
   return [
@@ -989,17 +1054,6 @@ function recordBoardKey(row){
     String(recordEvent(row)||'').trim().toLowerCase(),
     String(row&&row.gender||'Unlisted').trim().toLowerCase()
   ].join('|');
-}
-function retireLocalCurrentRecords(record,excludeId){
-  if(!record||!record.isCurrent)return;
-  var key=recordBoardKey(record);
-  if(!key)return;
-  records=records.map(function(row){
-    if(!row||!row.isCurrent)return row;
-    if(excludeId&&String(row.recordId||'')===String(excludeId))return row;
-    if(recordBoardKey(row)!==key)return row;
-    return Object.assign({},row,{isCurrent:false});
-  });
 }
 function sortRecords(list){
   var key=recordSort.key;
@@ -1012,7 +1066,7 @@ function sortRecords(list){
   });
 }
 function compareRecordValue(a,b,key){
-  if(key==='result')return (a.resultMs||parseResultMs(a.resultDisplay))-(b.resultMs||parseResultMs(b.resultDisplay));
+  if(key==='result')return comparePerformanceForSort(a,b);
   if(key==='date')return String(a.recordDate||'').localeCompare(String(b.recordDate||''));
   if(key==='gender')return String(a.gender||'').localeCompare(String(b.gender||''));
   if(key==='type')return String(a.recordType||'').localeCompare(String(b.recordType||''));
@@ -1031,8 +1085,45 @@ function updateSortButtons(){
 function recordIsUsable(row){
   return !!(row&&typeof row==='object'&&recordHasDisplayData(row));
 }
-function recordScore(row){
-  return Number(row&&row.resultMs)||parseResultMs(recordValue(row))||Number.POSITIVE_INFINITY;
+function eventHigherIsBetter(eventName){
+  return !!HIGHER_IS_BETTER_EVENTS[String(eventName||'').trim().toLowerCase()];
+}
+function parseFieldMark(value){
+  var text=String(value||'').trim().toLowerCase();
+  if(!text)return 0;
+  text=text.replace(/[^\d.'"-]/g,'');
+  if(text.indexOf('-')>-1){
+    var dash=text.split('-');
+    var feet=Number(dash[0])||0;
+    var inches=Number(String(dash[1]||'').replace(/"/g,''))||0;
+    return feet*12+inches;
+  }
+  if(text.indexOf("'")>-1){
+    var parts=text.split("'");
+    return (Number(parts[0])||0)*12+(Number(String(parts[1]||'').replace(/"/g,''))||0);
+  }
+  return Number(text)||0;
+}
+function recordPerformanceValue(row){
+  var value=recordValue(row);
+  return eventHigherIsBetter(recordEvent(row))?parseFieldMark(value):(Number(row&&row.resultMs)||parseResultMs(value)||0);
+}
+function comparePerformanceForSort(a,b){
+  var av=recordPerformanceValue(a);
+  var bv=recordPerformanceValue(b);
+  if(av&&bv)return av-bv;
+  if(av&&!bv)return -1;
+  if(!av&&bv)return 1;
+  return 0;
+}
+function recordBeats(a,b){
+  var av=recordPerformanceValue(a);
+  var bv=recordPerformanceValue(b);
+  if(av&&bv)return eventHigherIsBetter(recordEvent(a))?av>bv:av<bv;
+  if(av&&!bv)return true;
+  if(!av&&bv)return false;
+  if(!!a.isCurrent!==!!b.isCurrent)return !!a.isCurrent;
+  return String(a.recordDate||'')>String(b.recordDate||'');
 }
 function currentRecordKeys(list){
   var boards={};
@@ -1040,9 +1131,7 @@ function currentRecordKeys(list){
     var key=recordBoardKey(row);
     if(!key)return;
     var existing=boards[key];
-    var score=recordScore(row);
-    var existingScore=existing?recordScore(existing):Number.POSITIVE_INFINITY;
-    if(!existing||score<existingScore||(score===existingScore&&String(row.recordDate||'')>String(existing.recordDate||''))){
+    if(!existing||recordBeats(row,existing)){
       boards[key]=row;
     }
   });
@@ -1060,7 +1149,7 @@ function recordRowHtml(row,currentKeys){
     '<td><div class="name">'+esc(eventName)+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
     '<td>'+esc(row.gender||'Unlisted')+'</td>'+
     '<td><b>'+esc(value)+'</b></td>'+
-    '<td>'+esc(row.athleteName||'')+'</td>'+
+    '<td>'+esc(holderDisplay(row))+'</td>'+
     '<td>'+esc(row.meetName||'')+'</td>'+
     '<td>'+esc(formatDate(row.recordDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
     '<td>'+status+'</td>'+
@@ -1069,9 +1158,6 @@ function recordRowHtml(row,currentKeys){
 }
 function render(){
   var list=filteredRecords();
-  if(filtersAreDefault()&&list.length<records.length){
-    list=sortRecords(records.filter(recordIsUsable));
-  }
   var currentKeys=currentRecordKeys(records.filter(recordIsUsable));
   var events={};
   var athletes={};
@@ -1108,7 +1194,7 @@ function loadRecords(){
       els.genderFilter.value='all';
       els.typeFilter.value='all';
       els.eventFilter.value='all';
-      els.statusFilter.value='all';
+      els.statusFilter.value='current';
       firstRecordsLoad=false;
     }
     render();
@@ -1138,7 +1224,7 @@ function showRecordsDebug(debug){
   var mirrorCount=Number(debug.mirrorCount||0);
   var mergedCount=Number(debug.mergedCount||0);
   var registryState=mirror.configured===false?'off':'on';
-  var detail='Records source: GHL '+ghlCount+', mirror '+mirrorCount+', merged '+mergedCount+'. Registry '+registryState+', index '+Number(mirror.indexCount||0)+', scan '+Number(mirror.scanCount||0)+', load '+Number(mirror.loadCount||0)+'.';
+  var detail='Records source: GHL '+ghlCount+', mirror '+mirrorCount+', merged '+mergedCount+'. Registry '+registryState+', index '+Number(mirror.indexCount||0)+', manifest '+Number(mirror.manifestCount||0)+', scan '+Number(mirror.scanCount||0)+', load '+Number(mirror.loadCount||0)+'.';
   var text=String(pendingRecordsSourcePrefix||'Records loaded. ');
   pendingRecordsSourcePrefix='';
   if(mirror.error)text+=mirror.error;
@@ -1212,6 +1298,8 @@ function init(){
   els.refreshBtn.addEventListener('click',loadRecords);
   els.saveSingleBtn.addEventListener('click',saveSingleRecord);
   els.clearSingleBtn.addEventListener('click',clearSingleRecordForm);
+  els.singleEvent.addEventListener('change',function(){updateRelayFields('single');});
+  els.editEvent.addEventListener('change',function(){updateRelayFields('edit');});
   els.recordEditClose.addEventListener('click',closeRecordEdit);
   els.recordEditSave.addEventListener('click',saveRecordEdit);
   els.recordDeleteBtn.addEventListener('click',deleteRecord);
@@ -1247,7 +1335,7 @@ function init(){
     els.genderFilter.value='all';
     els.typeFilter.value='all';
     els.eventFilter.value='all';
-    els.statusFilter.value='all';
+    els.statusFilter.value='current';
     recordSort={key:'event',dir:'asc'};
     render();
   });

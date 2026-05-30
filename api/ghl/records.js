@@ -4,6 +4,7 @@ const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { mirrorSchoolRecords, loadSchoolRecordsMirror, schoolRecordsMirrorStatus } = require("../../lib/account-registry");
+const HIGHER_IS_BETTER_EVENTS = new Set(["high_jump", "long_jump", "triple_jump", "pole_vault", "shot_put", "discus", "javelin", "hammer"]);
 
 const FIELD_IDS = {
   record: ["ftIsXzZszu3s0cfJ55MU"],
@@ -369,6 +370,10 @@ function normalizeRecordPayload(row) {
     resultMs: Number(row && row.resultMs) || parseTimeToMs(resultDisplay) || null,
     resultMark: clean(row && row.resultMark),
     athleteName: clean(row && row.athleteName),
+    relayLeg1: clean(row && row.relayLeg1),
+    relayLeg2: clean(row && row.relayLeg2),
+    relayLeg3: clean(row && row.relayLeg3),
+    relayLeg4: clean(row && row.relayLeg4),
     meetName: clean(row && row.meetName),
     recordDate,
     season: clean(row && row.season),
@@ -414,7 +419,9 @@ async function listRecords({ token, locationId }) {
 
 function normalizeRecord(record, fallbackProperties) {
   const props = fallbackProperties || recordProperties(record);
+  const notes = prop(props, "record_notes");
   const fallback = deriveRecordFromName(prop(props, "record") || recordName(record));
+  const relayLegs = extractRelayLegs(notes);
   return {
     recordId: objectRecordId(record),
     recordName: prop(props, "record") || recordName(record),
@@ -428,6 +435,10 @@ function normalizeRecord(record, fallbackProperties) {
     resultMark: prop(props, "result_mark"),
     athleteContact: prop(props, "athlete_contact"),
     athleteName: prop(props, "athlete_name_snapshot") || fallback.athleteName,
+    relayLeg1: relayLegs[0],
+    relayLeg2: relayLegs[1],
+    relayLeg3: relayLegs[2],
+    relayLeg4: relayLegs[3],
     meetName: prop(props, "meet_name"),
     meetRecordId: prop(props, "meet_record_id"),
     meetResultId: prop(props, "meet_result_id"),
@@ -437,7 +448,7 @@ function normalizeRecord(record, fallbackProperties) {
     isCurrent: yes(prop(props, "is_current")),
     previousRecordDisplay: prop(props, "previous_record_display"),
     previousRecordHolder: prop(props, "previous_record_holder"),
-    recordNotes: prop(props, "record_notes"),
+    recordNotes: notes,
     sourceSystem: prop(props, "source_system"),
     sourceRecordId: prop(props, "source_record_id"),
     syncedAt: recordTimestamp(record),
@@ -642,6 +653,21 @@ function parseTimeToMs(value) {
   return null;
 }
 
+function parseFieldMark(value) {
+  let text = clean(value).toLowerCase();
+  if (!text) return 0;
+  text = text.replace(/[^\d.'"-]/g, "");
+  if (text.includes("-")) {
+    const [feet, inches] = text.split("-");
+    return (Number(feet) || 0) * 12 + (Number(String(inches || "").replace(/"/g, "")) || 0);
+  }
+  if (text.includes("'")) {
+    const [feet, inches] = text.split("'");
+    return (Number(feet) || 0) * 12 + (Number(String(inches || "").replace(/"/g, "")) || 0);
+  }
+  return Number(text) || 0;
+}
+
 function recordTimeMsFromProperties(properties) {
   return Number(properties && properties.result_ms) || parseTimeToMs(properties && properties.result_display) || 0;
 }
@@ -650,12 +676,25 @@ function recordTimeMs(record) {
   return Number(record && record.resultMs) || parseTimeToMs(record && record.resultDisplay) || 0;
 }
 
+function recordPerformanceValue(record) {
+  const event = optionValue(record && record.event);
+  const display = clean(record && (record.resultDisplay || record.resultMark));
+  return HIGHER_IS_BETTER_EVENTS.has(event) ? parseFieldMark(display) : recordTimeMs(record);
+}
+
+function propertiesPerformanceValue(properties) {
+  const event = optionValue(properties && properties.event);
+  const display = clean(properties && (properties.result_display || properties.result_mark));
+  return HIGHER_IS_BETTER_EVENTS.has(event) ? parseFieldMark(display) : recordTimeMsFromProperties(properties);
+}
+
 function newRecordIsBetter(properties, existingRecord) {
-  const newMs = recordTimeMsFromProperties(properties);
-  const existingMs = recordTimeMs(existingRecord);
-  if (newMs && existingMs) return newMs < existingMs;
-  if (newMs && !existingMs) return true;
-  if (!newMs && existingMs) return false;
+  const higherIsBetter = HIGHER_IS_BETTER_EVENTS.has(optionValue(properties && properties.event));
+  const newValue = propertiesPerformanceValue(properties);
+  const existingValue = recordPerformanceValue(existingRecord);
+  if (newValue && existingValue) return higherIsBetter ? newValue > existingValue : newValue < existingValue;
+  if (newValue && !existingValue) return true;
+  if (!newValue && existingValue) return false;
   return true;
 }
 
@@ -702,9 +741,21 @@ function appendRetiredNote(note, newProperties) {
 function composeRecordNotes(note, row) {
   const gender = clean(row && row.gender);
   const scope = optionValue(row && row.recordScope);
-  const lines = clean(note).split("\n").filter((line) => !/^Gender:/i.test(clean(line)));
+  const relayLegs = [row && row.relayLeg1, row && row.relayLeg2, row && row.relayLeg3, row && row.relayLeg4].map(clean);
+  const lines = clean(note).split("\n").filter((line) => !/^Gender:/i.test(clean(line)) && !/^Relay Leg [1-4]:/i.test(clean(line)));
+  for (let index = relayLegs.length - 1; index >= 0; index -= 1) {
+    if (relayLegs[index]) lines.unshift(`Relay Leg ${index + 1}: ${relayLegs[index]}`);
+  }
   if (gender && scope !== "athlete") lines.unshift(`Gender: ${gender}`);
   return lines.join("\n").trim();
+}
+
+function extractRelayLegs(note) {
+  const text = clean(note);
+  return [1, 2, 3, 4].map((num) => {
+    const match = text.match(new RegExp(`^Relay Leg ${num}:\\s*(.+)$`, "im"));
+    return match ? clean(match[1]) : "";
+  });
 }
 
 function extractRecordGender(note) {

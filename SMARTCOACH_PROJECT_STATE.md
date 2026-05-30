@@ -43,6 +43,21 @@ Latest handoff:
 - Latest pushed code commit before this state update: `9e1bfcf Clean up future planning list`.
 - Latest local commit when this handoff was checked: `9e1bfcf Clean up future planning list`.
 - Repo was pushed to `main` after the future-planning cleanup.
+- Marketing/sales website work is now in progress:
+  - `/sales.html` is the public marketing page for SMARTCoach Pro, SMARTCoach Essential, and SMART Trak.
+  - The page uses real product screenshots from SMART Trak and SMARTCoach instead of CSS mockup imagery.
+  - The page uses current product truth: Essential stopwatch-only pricing, Pro 25/100/200 pricing, active-athlete limits, coach-code limits, SMART Trak as the desktop command center, Training Calendar as the primary day-to-day workflow, and SaaS account setup wording.
+  - `vercel.json` now keeps private app/support HTML pages noindexed/no-cache while leaving `sales.html` available as the public sales page.
+- Records retention fix in progress after user reported on 2026-05-30 that the Records page was only keeping 2 records again:
+  - Durable school-record mirror now writes a JSON manifest key in customer account storage in addition to per-record item keys and the Redis set index.
+  - Records mirror loading now unions the set index, manifest, and scanned item keys, so records can still load if one registry discovery path misses entries.
+  - The manifest bootstraps from existing index/scan results when updated, helping accounts with existing mirrored per-record keys.
+  - Records diagnostics tooltip now includes manifest count.
+  - Added regression coverage where SMEMBERS and SCAN return no records but four school records still load through the manifest.
+  - Records page display logic was simplified to a running list: every saved row remains visible, and Current/Historical is derived from the best saved result for the same sport + event + gender.
+  - Removed local current-record mutation during save/edit flows so the page no longer carries separate board/history state in the browser.
+  - Records API comparison now treats field events as higher/farther is better while race events remain lower time is better.
+  - Relay support was added to Records: relay events show Leg 1-4 fields in Quick Add/Edit, bulk import supports Leg 1-4 columns, relay rows display all four runners, search matches relay runners, and the API stores relay legs as structured record-note lines while preserving them in the durable mirror.
 - Latest docs/state maintenance in progress: keep `SMART_TRAK_COACH_HOW_TO.md` and this file updated after each feature or fix so new chats can resume without reconstructing history.
 - Recent regression status: docs-only updates need `git diff --check`; code changes should continue to use `npm test` before push when practical.
 - Weather page is now part of SMART Trak:
@@ -137,6 +152,7 @@ git push origin main:main
 - `weather.html`: live weather page with saved locations, current conditions, hourly forecast, and daily forecast.
 - `athlete-calendar.html`: athlete-facing calendar portal for assigned workout completion, modification, and skip submissions.
 - `onboarding.html`: account setup helper.
+- `sales.html`: public marketing/sales page for SMARTCoach Pro, SMARTCoach Essential, and SMART Trak.
 
 ## Backend Endpoints
 
