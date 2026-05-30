@@ -1021,6 +1021,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 198. SMARTCoach Pro Mobile App current-fitness target selection now matches Dashboard current fitness: athlete targets prefer the Athlete Best `last_result_display` / `last_result_date` before season best or personal best, so manually changed current fitness values flow into mobile target calculations.
 199. SMARTCoach Pro Mobile App current-fitness reads are now fresher after Athlete Setup changes: the athlete-profile API sends `Cache-Control: no-store`, the app profile cache is shortened, and sync target calculations force a fresh athlete profile instead of reusing a cached target for the same workout plan.
 200. SMARTCoach Pro Mobile App time parsing now supports pace/formatted current-fitness text such as `7:09/mile` or `1600m 7:09`, extracting the actual clock time before calculating targets so current-fitness paces no longer become tiny second-based target ranges.
+201. SMARTCoach Pro Mobile App current-fitness parsing now also treats decimal pace text such as `7.09/mile` or `7.09` on 1600m/mile fitness rows as `7:09` instead of `7.09` seconds, and the app version/build stamp was bumped so phones can confirm the refreshed bundle.
 
 ## Known Good Test Flow
 

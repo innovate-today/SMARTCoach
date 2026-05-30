@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1779819150000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1780144147000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1777173146407 -->
-<!-- v1777173146407 -->
+<!-- build:1780144147000 -->
+<!-- v1780144147000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -891,6 +891,15 @@ function parseMs(v){
   if(parts.length===2)return Math.round((Number(parts[0])*60+Number(parts[1]))*1000);
   if(parts.length===3)return Math.round((Number(parts[0])*3600+Number(parts[1])*60+Number(parts[2]))*1000);
   return 0;
+}
+function parseFitnessMs(display,event){
+  var text=String(display||'').trim().toLowerCase();
+  var meters=eventDistance(event);
+  var decimalPace=text.match(/(\d{1,2})\.(\d{2})(?=\s*(?:\/|per\s+)?(?:mi|mile|miles|km|k)?\b|$)/);
+  if(decimalPace&&(text.indexOf('/')>=0||text.indexOf('per ')>=0||meters>=800)){
+    return Math.round((Number(decimalPace[1])*60+Number(decimalPace[2]))*1000);
+  }
+  return parseMs(display);
 }
 function tstr(ts){
   if(!ts)return'-';
@@ -2843,8 +2852,9 @@ function preferredFitnessEvents(text){
 }
 function chooseFitness(profile,rule){
   var bests=(profile&&profile.bests||[]).map(function(b){
+    var event=normalizeEventLabel(b.event);
     var display=b.lastResultDisplay||b.seasonBestDisplay||b.personalBestDisplay||'';
-    return{event:normalizeEventLabel(b.event),display:display,ms:parseMs(display),meters:eventDistance(b.event),date:b.lastResultDate||b.seasonBestDate||b.personalBestDate||''};
+    return{event:event,display:display,ms:parseFitnessMs(display,event),meters:eventDistance(event),date:b.lastResultDate||b.seasonBestDate||b.personalBestDate||''};
   }).filter(function(b){return b.event&&b.display&&b.ms&&b.meters;});
   if(!bests.length)return null;
   var current=bests.filter(function(b){return !isFutureDateText(b.date);});
