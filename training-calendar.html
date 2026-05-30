@@ -2178,7 +2178,9 @@ function distanceUnitOptions(selected){
   return ['mi','km','m'].map(function(value){return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';}).join('');
 }
 function recoveryUnitOptions(selected){
-  return ['min jog','m walk','m jog','sec rest'].map(function(value){return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';}).join('');
+  var aliases={'min jog':'min (jog)','min walk':'min (walk)','sec jog':'sec (jog)','sec walk':'sec (walk)','m jog':'m (jog)','m walk':'m (walk)','mi jog':'mi (jog)','mi walk':'mi (walk)','km jog':'km (jog)','km walk':'km (walk)'};
+  selected=aliases[selected]||selected||'min (jog)';
+  return ['min (jog)','min (walk)','sec (jog)','sec (walk)','sec rest','m (jog)','m (walk)','mi (jog)','mi (walk)','km (jog)','km (walk)'].map(function(value){return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';}).join('');
 }
 function addQualityRow(values){
   values=values||{};
@@ -2189,7 +2191,7 @@ function addQualityRow(values){
   if(kind==='rest'){
     row.innerHTML='<div class="manual-row-head"><div class="manual-row-title">Rest Set</div><button class="ghost" data-remove-quality-row type="button">Remove</button></div>'+
       '<div class="manual-rest-grid">'+
-        '<div><label>Duration</label><div class="inline-control"><input data-field="restValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.restValue||3)+'"><select data-field="restUnit" class="mini-select">'+recoveryUnitOptions(values.restUnit||'min jog')+'</select></div></div>'+
+        '<div><label>Duration</label><div class="inline-control"><input data-field="restValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.restValue||3)+'"><select data-field="restUnit" class="mini-select">'+recoveryUnitOptions(values.restUnit||'min (jog)')+'</select></div></div>'+
       '</div>';
     els.qualityRows.appendChild(row);
     renderAddActivitySummary();
@@ -2201,9 +2203,9 @@ function addQualityRow(values){
       '<div><label>Reps</label><input data-field="reps" class="mini-input" type="number" min="1" step="1" value="'+esc(values.reps||2)+'"></div>'+
       '<div><label>Distance</label><div class="inline-control"><input data-field="distanceValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.distanceValue||1)+'"><select data-field="distanceUnit" class="mini-select">'+distanceUnitOptions(values.distanceUnit||'mi')+'</select></div></div>'+
       '<div><label>Effort</label><select data-field="effort">'+effortOptions(values.effort||'Threshold')+'</select></div>'+
-      '<div><label>Recovery Between Reps</label><div class="inline-control"><input data-field="recoveryValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.recoveryValue||1)+'"><select data-field="recoveryUnit" class="mini-select">'+recoveryUnitOptions(values.recoveryUnit||'min jog')+'</select></div></div>'+
+      '<div><label>Recovery Between Reps</label><div class="inline-control"><input data-field="recoveryValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.recoveryValue||1)+'"><select data-field="recoveryUnit" class="mini-select">'+recoveryUnitOptions(values.recoveryUnit||'min (jog)')+'</select></div></div>'+
     '</div>'+
-    (kind==='repeat'?'<div class="manual-set-rest"><label>Recovery Between Sets</label><div class="inline-control"><input data-field="setRecoveryValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.setRecoveryValue||0)+'"><select data-field="setRecoveryUnit" class="mini-select">'+recoveryUnitOptions(values.setRecoveryUnit||'min jog')+'</select></div></div>':'');
+    (kind==='repeat'?'<div class="manual-set-rest"><label>Recovery Between Sets</label><div class="inline-control"><input data-field="setRecoveryValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.setRecoveryValue||0)+'"><select data-field="setRecoveryUnit" class="mini-select">'+recoveryUnitOptions(values.setRecoveryUnit||'min (jog)')+'</select></div></div>':'');
   els.qualityRows.appendChild(row);
   renderAddActivitySummary();
 }
@@ -3125,7 +3127,7 @@ function init(){
   });
   els.addQualitySetBtn.addEventListener('click',function(){addQualityRow({kind:'set'});});
   els.addQualityRestBtn.addEventListener('click',function(){addQualityRow({kind:'rest'});});
-  els.addQualityRepeatBtn.addEventListener('click',function(){addQualityRow({kind:'repeat',distanceValue:200,distanceUnit:'m',recoveryValue:5,recoveryUnit:'min jog'});});
+  els.addQualityRepeatBtn.addEventListener('click',function(){addQualityRow({kind:'repeat',distanceValue:200,distanceUnit:'m',recoveryValue:5,recoveryUnit:'min (jog)'});});
   els.clearQualityBtn.addEventListener('click',seedQualityRows);
   els.qualityRows.addEventListener('input',renderAddActivitySummary);
   els.qualityRows.addEventListener('change',renderAddActivitySummary);
