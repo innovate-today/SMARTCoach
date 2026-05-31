@@ -7,6 +7,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../lib/ghl-account");
+const { normalizeProductPlan, planDefinition, suggestedSubscriptionAmount } = require("../lib/smartcoach-plans");
 
 function withEnv(overrides, fn) {
   const previous = {};
@@ -54,6 +55,11 @@ withEnv({
   SMARTCOACH_SUBSCRIPTION_STATUS_TEST: "active",
   SMARTCOACH_SESSION_SECRET: "test-session-secret",
 }, () => {
+  assert.strictEqual(normalizeProductPlan("SMARTCoach Pro Unlimited"), "proUnlimited");
+  assert.strictEqual(planDefinition("pro200").monthlyAmount, "135.00");
+  assert.strictEqual(planDefinition("pro200").annualAmount, "1350.00");
+  assert.strictEqual(planDefinition("custom").activeAthleteLimit, null);
+  assert.strictEqual(suggestedSubscriptionAmount("custom", "monthly"), "Custom");
   assert.strictEqual(subscriptionAccessAllowed({ status: "" }), true);
   assert.strictEqual(subscriptionAccessAllowed({ status: "active" }), true);
   assert.strictEqual(subscriptionAccessAllowed({ status: "trialing" }), true);

@@ -324,14 +324,14 @@ function accountSetup(req, res) {
       value: String(coachSeats),
       required: true,
       label: "Coach seats",
-      description: isProPlan(productPlan) ? "Pro accounts allow up to 10 coach access codes. Keep coach count tight to protect clean data." : "Essential allows one active device session at a time.",
+      description: isProPlan(productPlan) ? "Pro accounts use one shared coach code and include up to 10 assistant coach seats. Keep staff access tight to protect clean data." : "Essential allows one active device session at a time.",
     },
     {
       key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
       value: suggestedCoachAccessCodes(accountKey, coachSeats, productPlan).join(","),
       required: true,
       label: "Coach access codes",
-      description: isProPlan(productPlan) ? `Give coach codes only to active staff. This account is set for ${coachSeats} coach${coachSeats === 1 ? "" : "es"}.` : "Essential requires an active code and allows one active device at a time.",
+      description: isProPlan(productPlan) ? `Share the coach code only with active staff. This account is set for ${coachSeats} assistant coach seat${coachSeats === 1 ? "" : "s"}.` : "Essential requires an active code and allows one active device at a time.",
     },
     {
       key: `SMARTCOACH_REQUIRE_COACH_ACCESS_${suffix}`,
@@ -531,7 +531,7 @@ async function accountAutomationHealth(req, res) {
     productionWarnings.push("Set SMARTCOACH_ADMIN_SETUP_CODE so internal customer setup field generation requires a setup code.");
   }
   if (!coachAccessEnforcementConfigured) {
-    productionWarnings.push("Set SMARTCOACH_REQUIRE_COACH_ACCESS=true after Pro accounts have coach access codes.");
+    productionWarnings.push("Set SMARTCOACH_REQUIRE_COACH_ACCESS=true after Pro accounts have a shared coach code.");
   }
   if (!registryStatus.configured) {
     productionWarnings.push("Connect the durable account registry so Stripe and setup automation survive deployments.");
@@ -1023,7 +1023,7 @@ async function accountCodeReset(req, res) {
 
     const result = await attachRegistryAccountForKey(req, accountKey);
     const existing = result && result.found && result.record ? result.record : null;
-    if (!existing) throw httpError(404, "Account registry record was not found. Save Account Setup before changing coach codes.");
+    if (!existing) throw httpError(404, "Account registry record was not found. Save Account Setup before changing the shared coach code.");
 
     const access = coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: existing }, currentCode);
     if (!access.allowed) {
@@ -1374,14 +1374,14 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
       value: String(account.coachSeats || 1),
       required: true,
       label: "Coach seats",
-      description: isProPlan(account.productPlan) ? "Pro accounts can have up to 10 coach codes. Keep coach count tight to protect clean data." : "Essential allows one active device session at a time.",
+      description: isProPlan(account.productPlan) ? "Pro accounts use one shared coach code and include up to 10 assistant coach seats. Keep staff access tight to protect clean data." : "Essential allows one active device session at a time.",
     },
     {
       key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
       value: (account.coachAccessCodes || []).join(","),
       required: true,
       label: "Coach access codes",
-      description: isProPlan(account.productPlan) ? `Give codes only to active staff. This account is set for ${account.coachSeats || 1} coach${(account.coachSeats || 1) === 1 ? "" : "es"}.` : "Essential requires an active code and allows one active device at a time.",
+      description: isProPlan(account.productPlan) ? `Share the code only with active staff. This account is set for ${account.coachSeats || 1} assistant coach seat${(account.coachSeats || 1) === 1 ? "" : "s"}.` : "Essential requires an active code and allows one active device at a time.",
     },
     {
       key: `SMARTCOACH_REQUIRE_COACH_ACCESS_${suffix}`,
@@ -1789,6 +1789,6 @@ function suggestedAccessCode(accountKey) {
 }
 
 function suggestedCoachAccessCodes(accountKey, coachSeats, productPlan) {
-  const count = normalizeSetupCoachSeats(coachSeats, productPlan);
-  return Array.from({ length: count }, (_, index) => `${suggestedAccessCode(accountKey)}-c${index + 1}`);
+  normalizeSetupCoachSeats(coachSeats, productPlan);
+  return [suggestedAccessCode(accountKey)];
 }

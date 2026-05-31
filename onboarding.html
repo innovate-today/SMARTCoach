@@ -149,6 +149,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
             <option value="pro25">SMARTCoach Pro 25</option>
             <option value="pro100">SMARTCoach Pro 100</option>
             <option value="pro200">SMARTCoach Pro 200</option>
+            <option value="proUnlimited">SMARTCoach Pro Unlimited (Custom)</option>
             <option value="essential">SMARTCoach Essential</option>
           </select>
         </div>
@@ -175,7 +176,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div class="formactions">
         <button type="button" class="secondary" onclick="generateAccountKey()">Generate Account Key</button>
-        <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Coach Codes</button>
+        <button type="button" class="secondary" onclick="generateCoachCodes()">Generate Shared Code</button>
       </div>
       <div id="accountKeyWarning" class="setupnote" hidden><b>Account keys do not match</b>The setup form and account lookup are pointing at different customers. Match the account keys before saving or running live checks.</div>
       <div id="status" class="status"></div>
@@ -313,8 +314,8 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="privateIntegrationToken" type="password" placeholder="Leave blank to preserve saved token" autocomplete="off">
         </div>
         <div class="field">
-          <label for="coachAccessCodes">Coach Access Codes</label>
-          <input id="coachAccessCodes" type="text" placeholder="Generate codes, then give one to each coach" autocomplete="off">
+          <label for="coachAccessCodes">Shared Coach Code</label>
+          <input id="coachAccessCodes" type="text" placeholder="Generate or paste the one shared code" autocomplete="off">
         </div>
         <div class="field">
           <label for="parentEmailCoachAccess">Future Parent Email Coaches</label>
@@ -325,7 +326,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="logoUrl" type="text" placeholder="Optional customer logo URL" autocomplete="off">
         </div>
       </div>
-      <div class="setupnote"><b>Coach codes are intentional</b>Generate or paste coach access codes before saving a new Pro account. Blank coach-code fields preserve saved codes on existing accounts, but a new Pro account with no code stays setup-incomplete.</div>
+      <div class="setupnote"><b>Coach code is intentional</b>Generate or paste the shared coach code before saving a new Pro account. Blank coach-code fields preserve the saved code on existing accounts, but a new Pro account with no code stays setup-incomplete.</div>
       <div class="status">Use these fields only for internal setup or support. Blank connection fields preserve the saved customer account value.</div>
     </div>
   </section>
@@ -444,7 +445,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="payloadbox">
           <strong>GHL Subscription Payload</strong>
-          <span>Use this JSON body when GHL updates SMART Trak after subscription changes. Setup secrets and coach codes are intentionally not included.</span>
+          <span>Use this JSON body when GHL updates SMART Trak after subscription changes. Setup secrets and the shared coach code are intentionally not included.</span>
           <pre id="automationPayloadText"></pre>
           <button type="button" class="secondary" onclick="copyPayload('automation')">Copy GHL Subscription Payload</button>
         </div>
@@ -496,7 +497,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div id="liveSmokeChecklist" class="checklist">
         <label class="checkrow"><input type="checkbox"><span><b>1. System check is ready<em class="checkbadge warn">Required</em></b><span>Run Check System with the automation secret. The result should say Ready for initial rollout and show no launch blockers.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup preview passes<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, coach seats, subscription status, and coach codes before saving.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup preview passes<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, assistant coach seats, subscription status, and shared coach code before saving.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>3. Customer account record is saved<em class="checkbadge warn">Required</em></b><span>Save the account setup, then use Lookup Account to confirm subscription, coach seats, connection fields, and recent update history are present.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>4. Customer dashboard opens<em class="checkbadge warn">Required</em></b><span>Open the customer SMART Trak link with the account key. Confirm the coach access prompt accepts the correct code and rejects a wrong code.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>5. Core coach pages load real data<em class="checkbadge warn">Required</em></b><span>Check Dashboard, Athletes, Training Calendar, Athlete Setup, and Upload/Paste Plan. The pages should load the customer roster and should not show setup-needed errors.</span></span></label>
@@ -504,7 +505,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label class="checkrow"><input type="checkbox"><span><b>7. Stopwatch sync saves<em class="checkbadge warn">Required</em></b><span>Time one harmless app workout, sync it, then confirm Dashboard volume, completed workout details, splits, and Training Calendar status update in SMART Trak.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>8. Standalone race result saves<em class="checkbadge warn">Required</em></b><span>Log one race result from SMART Trak without using the stopwatch app. Confirm Dashboard, Meet History, and athlete bests update.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>9. Simulators score<em class="checkbadge warn">Required</em></b><span>Load Track Simulator My Season Bests and XC Simulator My Season Best, load saved fields, and score simulated meets with complete results.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>10. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL Subscription Payload workflow or manually save status changes. Active or trialing should allow SMART Trak; blocked billing statuses should block it clearly. Setup secrets and coach codes should stay out of the copied GHL payload.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>10. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL Subscription Payload workflow or manually save status changes. Active or trialing should allow SMART Trak; blocked billing statuses should block it clearly. Setup secrets and the shared coach code should stay out of the copied GHL payload.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>11. Activation record is saved<em class="checkbadge warn">Required</em></b><span>After system readiness, saved customer setup, and launch sign-off are complete, use Copy Activation Record and save the support note. This item is marked complete when the copy succeeds.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>12. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless the parent communication feature is intentionally turned on later.</span></span></label>
       </div>
@@ -596,13 +597,9 @@ function generateCoachCodes(){
   if(plan==='essential'){
     seats=1;
   }
-  var codes=[];
-  for(var i=0;i<seats;i++){
-    codes.push('sc-'+account.slice(0,10)+'-'+randomCode(6)+'-c'+(i+1));
-  }
-  document.getElementById('coachAccessCodes').value=codes.join(',');
+  document.getElementById('coachAccessCodes').value='sc-'+account.slice(0,10)+'-'+randomCode(8);
   clearActivationHandoffIfSetupChanged(document.getElementById('coachAccessCodes'));
-  setStatus(seats+' coach access code'+(seats===1?'':'s')+' generated. Give codes only to active staff and keep a support copy. Saving changed codes counts toward the 2-per-month reset limit.','good');
+  setStatus('Shared coach code generated for up to '+seats+' assistant coach seat'+(seats===1?'':'s')+'. Share it only with active staff and keep a support copy. Saving a changed code counts toward the 2-per-month reset limit.','good');
   refreshActiveSetupDisplays();
 }
 function cleanAccountKey(value){
@@ -1036,14 +1033,14 @@ function renderSubscribers(){
     box.innerHTML='<div class="empty">No subscriber accounts match this search.</div>';
     return;
   }
-  box.innerHTML='<table class="subscribertable"><thead><tr><th>Account</th><th>Plan</th><th>Subscription</th><th>Coach Codes</th><th>Setup</th><th>Updated</th><th>Actions</th></tr></thead><tbody>'+
+  box.innerHTML='<table class="subscribertable"><thead><tr><th>Account</th><th>Plan</th><th>Subscription</th><th>Staff Access</th><th>Setup</th><th>Updated</th><th>Actions</th></tr></thead><tbody>'+
     rows.map(function(account){
       var sub=[account.subscriptionStatus||'not tracked',account.billingCadence,account.subscriptionAmount?('$'+account.subscriptionAmount):''].filter(Boolean).join(' / ');
       return '<tr>'+
         '<td><code>'+esc(account.accountKey||'')+'</code></td>'+
         '<td>'+esc(planLabel(account.productPlan))+'</td>'+
         '<td>'+esc(sub)+'</td>'+
-        '<td>'+esc((account.coachAccessCodesConfigured||0)+' of '+(account.coachSeats||1))+'</td>'+
+        '<td>'+esc((account.coachAccessCodesConfigured?'Code saved':'Missing')+' / '+(account.coachSeats||1)+' seat'+((account.coachSeats||1)===1?'':'s'))+'</td>'+
         '<td>'+esc(account.setupReady?'Ready':'Needs setup')+'</td>'+
         '<td>'+esc(shortDateTime(account.updatedAt))+'</td>'+
         '<td><div class="subscriberactions">'+
@@ -1141,7 +1138,7 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Location ID</b><span>'+esc(maskValue(record.locationId))+'</span></div>'+
     '<div class="registryrow"><b>Token</b><span>'+esc(secretStatus(record.token))+'</span></div>'+
     '<div class="registryrow"><b>GHL account_key</b><span>'+esc(ghlCustomValueLookupLabel(data.ghlCustomValueSync,record))+'</span></div>'+
-    '<div class="registryrow"><b>Coach Codes</b><span>'+esc(coachCodesSummary(record))+'</span></div>'+
+    '<div class="registryrow"><b>Shared Coach Code</b><span>'+esc(coachCodesSummary(record))+'</span></div>'+
     '<div class="registryrow"><b>Future Parent Email Coaches</b><span>'+esc(parentEmailCoachAccessLabel(record.parentEmailCoachAccess))+'</span></div>'+
     '<div class="registryrow"><b>Logo URL</b><span>'+esc(record.logoUrl?maskValue(record.logoUrl):'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
@@ -1236,7 +1233,7 @@ function accountNextAction(data,record){
   if(missing.length)return 'Add missing setup: '+missing.map(function(item){return item.label||item.key||item;}).join(', ')+'.';
   if(!(record.locationId&&record.token)&&data.crmConfigured===false)return 'Add the customer Location ID and Private Integration Token.';
   var codeCount=Number(data.coachAccessCodesConfigured)||((record.coachAccessCodes||[]).length)||(record.accessCode?1:0);
-  if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste coach access codes, then save the account setup.';
+  if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste the shared coach code, then save the account setup.';
   if(data.accessReady===false)return 'Finish account setup, then check customer access again.';
   if(data.deviceAccessReady===false)return 'Account is ready. Enter a coach access code on this browser or phone to unlock coach data.';
   var smoke=smokeValidationProgress();
@@ -1607,10 +1604,10 @@ function renderReadiness(data){
   }
   if(configured){
     title.textContent='SMART Trak account ready';
-    detail.textContent='The SMART Trak connection is configured. Coach access is limited by the configured coach codes.';
+    detail.textContent='The SMART Trak connection is configured. Coach access is limited by the shared coach code.';
   }else{
     title.textContent='SMART Trak setup needed';
-    detail.textContent='Add the location ID, private integration token, coach seats, and coach access codes, then use Save Account Setup and check again.';
+    detail.textContent='Add the location ID, private integration token, assistant coach seats, and shared coach code, then use Save Account Setup and check again.';
   }
 }
 function checkSetupStatus(){
@@ -2114,7 +2111,7 @@ function renderLiveSmokeSummary(){
   box.className='readybar '+(complete?'good':'warn');
   box.querySelector('b').textContent=complete?'Live smoke test complete':'Live smoke test not complete';
   box.querySelector('span').textContent=complete
-    ?'All required live validation checks are marked complete for this account. Keep the account key, coach codes, and support notes with the customer record.'
+    ?'All required live validation checks are marked complete for this account. Keep the account key, shared coach code, and support notes with the customer record.'
     :done+' of '+total+' required live validation checks complete. Finish every required check before sending the coach invite.';
   renderActivationHandoffStatus();
 }
@@ -2187,8 +2184,8 @@ function copyCustomLink(){
 function coachAccessCodeLines(){
   var raw=(document.getElementById('coachAccessCodes')||{}).value||'';
   var codes=raw.split(',').map(function(code){return code.trim();}).filter(Boolean);
-  if(!codes.length)return ['Coach access code: Use the code assigned during SMARTCoach setup.'];
-  return ['Coach access code: Use the individual coach code assigned to you.'];
+  if(!codes.length)return ['Coach access code: Use the shared coach code assigned during SMARTCoach setup.'];
+  return ['Coach access code: Use the shared coach code from your head coach.'];
 }
 function copyCoachInvite(){
   var data=setupForActiveAccount();
@@ -2402,10 +2399,10 @@ function renderChecklist(data){
       status:signals.registrySaved?'No deploy needed':'Fallback deploy only'
     },
     {
-      title:'Give each coach one access code',
+      title:'Set staff access',
       body:plan==='essential'
         ?'Essential needs one active coach code. Only one device session stays active at a time.'
-        :'Use the Coach access codes field for active staff only. Pro allows up to 10 coaches, but fewer coaches keeps synced data cleaner. Active athlete limits are enforced by SMARTCoach.',
+        :'Use one shared coach code for active staff only. Pro includes up to 10 assistant coach seats, but fewer syncing devices keeps team data cleaner. Active athlete limits are enforced by SMARTCoach.',
       state:signals.coachCodesReady?'good':'bad',
       status:signals.coachCodesReady?'Codes saved':'Missing codes'
     },
@@ -2449,7 +2446,7 @@ function activationSteps(data){
     },
     {
       title:'Test setup first',
-      body:'Use Test Setup First for '+account+' before saving. Fix missing location ID, private integration token, coach codes, or subscription status.'
+      body:'Use Test Setup First for '+account+' before saving. Fix missing location ID, private integration token, shared coach code, or subscription status.'
     },
     {
       title:'Save the account record',
@@ -2668,7 +2665,7 @@ function accountSetupBlockerText(data){
   if(!signals.registrySaved)return 'Save and verify the customer account record before copying the activation record or coach invite.';
   if(!signals.subscriptionAllowed)return signals.subscriptionBlockedReason;
   if(!signals.crmReady)return 'Add the customer Location ID and Private Integration Token before copying the activation record or coach invite.';
-  if(!signals.coachCodesReady)return 'Generate and save coach access codes before copying the activation record or coach invite.';
+  if(!signals.coachCodesReady)return 'Generate and save the shared coach code before copying the activation record or coach invite.';
   if(!signals.accountConfigured)return 'Confirm the customer account status is configured before copying the activation record or coach invite.';
   return '';
 }
@@ -2702,7 +2699,7 @@ function setSetupActionResult(text,type){
   el.className='actionresult'+(type?' '+type:'');
 }
 function planLabel(value){
-  var map={essential:'Essential',pro25:'Pro 25',pro100:'Pro 100',pro200:'Pro 200',pro:'Pro 25'};
+  var map={essential:'Essential',pro25:'Pro 25',pro100:'Pro 100',pro200:'Pro 200',proUnlimited:'Pro Unlimited (Custom)',pro:'Pro 25'};
   return map[normalizePlanValue(value)]||'Pro 25';
 }
 function coachSeatsLabel(data){
@@ -2714,6 +2711,7 @@ function normalizePlanValue(value){
   if(raw==='essential'||raw==='smartcoach essential')return 'essential';
   if(raw==='pro 100'||raw==='smartcoach pro 100'||raw==='100'||raw==='pro100')return 'pro100';
   if(raw==='pro 200'||raw==='smartcoach pro 200'||raw==='200'||raw==='pro200')return 'pro200';
+  if(raw==='pro unlimited'||raw==='smartcoach pro unlimited'||raw==='unlimited'||raw==='custom'||raw==='pro custom'||raw==='prounlimited')return 'proUnlimited';
   return 'pro25';
 }
 function subscriptionLabel(data){

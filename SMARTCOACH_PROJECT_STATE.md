@@ -100,12 +100,13 @@ Latest SaaS/account setup truth:
 - The GHL workflow payload should send billing/account fields only: `eventType`, `accountKey`, `locationId`, `plan`, `coachSeats`, `subscriptionStatus`, `billingCadence`, `source`, and `automationSecret` or the automation secret query parameter. Do not send private integration tokens or coach codes in the recurring subscription payload.
 - After a new GHL sub-account exists, support still has to open `/onboarding.html`, load the account key, enter that sub-account's Location ID and Private Integration Token, generate/paste coach access code(s), and click Save Account Setup.
 - Save Account Setup was confirmed to update the GHL custom value `account_key`; the confirmation message should say the value was updated.
-- Current plan breakdown: Essential is $10/month or $100/year; Pro 25 is $45/month or $450/year; Pro 100 is $75/month or $750/year; Pro 200 is $135/month or $1350/year.
+- Current plan breakdown: Essential is $10/month or $100/year; Pro 25 is $45/month or $450/year; Pro 100 is $75/month or $750/year; Pro 200 is $135/month or $1350/year; Pro Unlimited is a Custom/manual offer for programs that need unlimited active athletes.
+- Pro 25, Pro 100, and Pro 200 can use GHL's 7-day trial. A credit card is required at signup. GHL controls trial expiration and sends SMARTCoach `trialing`, then `active` after the day-7 payment or a blocked status such as `canceled`/`past_due` if payment does not complete.
 - Essential is stopwatch-only, requires an active code, and allows one active device session at a time. A new Essential login displaces the previous active device session.
-- Pro plans enforce active-athlete limits in SMARTCoach code: Pro 25 has 25 active athletes, Pro 100 has 100, and Pro 200 has 200. Inactive/archived athletes do not count; delete should be reserved for mistakes/duplicates.
-- Pro coach access allows up to 10 coach codes. The account owner is responsible for distributing codes, and schools should keep coach count low to protect clean synced data.
-- Coach codes can be changed by support through onboarding/Save Account Setup, or by a coach from the Dashboard **Change Code** button when they know their current code. Code resets are limited to 2 times per month per account. A saved code change increments the coach-code session version so old signed Pro sessions stop unlocking access. Recurring subscription payloads should not include coach codes, so billing updates do not count as resets.
-- A single coach access code can unlock both desktop SMART Trak and the SMARTCoach Pro Mobile App for the same coach/device workflow. The seat limit is about allowed coach codes, not counting the desktop and phone as two separate coaches.
+- Pro plans enforce active-athlete limits in SMARTCoach code: Pro 25 has 25 active athletes, Pro 100 has 100, Pro 200 has 200, and Pro Unlimited has no active-athlete cap. Inactive/archived athletes do not count; delete should be reserved for mistakes/duplicates.
+- Pro coach access uses one shared coach code with up to 10 assistant coach seats. The account owner is responsible for sharing the code only with active staff, and schools should keep staff/device access tight to protect clean synced data.
+- The shared coach code can be changed by support through onboarding/Save Account Setup, or by a coach from the Dashboard **Staff Access** button when they know the current code. Code resets are limited to 2 times per month per account. A saved code change increments the coach-code session version so old signed Pro sessions stop unlocking access. Recurring subscription payloads should not include coach codes, so billing updates do not count as resets.
+- A single shared coach access code can unlock both desktop SMART Trak and the SMARTCoach Pro Mobile App for the same coach/device workflow. Staff Access shows device-usage counts so head coaches can spot unexpected syncing activity.
 
 Latest product direction:
 
@@ -180,7 +181,7 @@ Status: mostly complete and tested.
 Implemented:
 
 - Account-specific environment variables plus customer account storage records.
-- Product plan gating: Essential, Pro 25, Pro 100, and Pro 200.
+- Product plan gating: Essential, Pro 25, Pro 100, Pro 200, and Pro Unlimited.
 - Pro setup-needed state if plan is Pro but CRM variables are missing; Essential setup requires an active coach code.
 - Coach access-code protection for SMART Trak pages/API data, with signed browser sessions after a valid code is entered.
 - Setup helper page for generating Vercel variable names and customer links.
@@ -1029,6 +1030,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 206. `SMART_TRAK_COACH_HOW_TO.md` now documents Staff Access, explains that Pro accounts use a shared coach code with up to 10 assistant coach seats, and tells head coaches to rotate the code if device activity is higher than expected.
 207. Staff Access was moved out of a main Dashboard card and into the shared coach-code modal. The old **Change Code** button now reads **Staff Access**, uses the quieter utility-action styling, and opens the device-usage summary plus code-change form.
 208. The how-to guide now reflects the quieter Dashboard placement for Staff Access after Refresh and clarifies that Assistant coach seats shows the up-to-10 staff allowance.
+209. SMARTCoach Pro Unlimited was added as a Custom/manual Pro plan with unlimited active athletes, the shared Pro 200 amount was corrected to $135/month and $1350/year, and onboarding/marketing/docs now describe GHL-owned 7-day Pro trials with credit card required and cancellation/export guidance that tells coaches to export before cancelling.
 
 ## Known Good Test Flow
 

@@ -58,9 +58,9 @@ Optional subscription tracking fallback variables:
 - `SMARTCOACH_STRIPE_SUBSCRIPTION_ID_LINCOLNTRACK=sub_...`
 - `SMARTCOACH_SUBSCRIPTION_NOTES_LINCOLNTRACK=optional internal notes`
 
-These fields are for internal subscription tracking. In the current launch path, store them in customer account storage through `/onboarding.html` or the GHL Subscription Payload instead of adding per-customer Vercel variables. Only the safe summary fields are returned through account status. Athlete limits remain controlled in GHL.
+These fields are for internal subscription tracking. In the current launch path, store them in customer account storage through `/onboarding.html` or the GHL Subscription Payload instead of adding per-customer Vercel variables. Only the safe summary fields are returned through account status. Active-athlete limits are enforced by the SMARTCoach plan definition.
 
-SMART Trak Pro access is allowed when subscription status is blank, `active`, or `trialing`. Setting the status to `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, or `unpaid` blocks Pro SMART Trak API access for that account. Blank status is currently allowed so existing customer accounts are not accidentally locked out during migration.
+SMART Trak Pro access is allowed when subscription status is blank, `active`, or `trialing`. Setting the status to `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, or `unpaid` blocks Pro SMART Trak API access for that account. Blank status is currently allowed so existing customer accounts are not accidentally locked out during migration. GHL owns the 7-day trial clock: a credit card is required at checkout, GHL sends `trialing` during the trial, then sends `active` after the day-7 payment or `canceled`/failed-payment status if billing does not complete.
 
 Account status separates setup readiness from access readiness. A customer can be fully configured while still showing `accessReady: false` when the subscription status is blocking Pro access. The same response includes `subscriptionBlockedReason` so support can see the plain-language reason immediately.
 
@@ -76,37 +76,38 @@ Pro fallback accounts need all three:
 - `GHL_PRIVATE_INTEGRATION_TOKEN_LINCOLNTRACK=...`
 - `GHL_LOCATION_ID_LINCOLNTRACK=...`
 
-Coach seat fallback variables for Pro accounts:
+Coach/staff access fallback variables for Pro accounts:
 
 - `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=1`
-- `SMARTCOACH_COACH_ACCESS_CODES_LINCOLNTRACK=coach_code_1`
+- `SMARTCOACH_COACH_ACCESS_CODES_LINCOLNTRACK=shared_coach_code`
 - `SMARTCOACH_REQUIRE_COACH_ACCESS_LINCOLNTRACK=true`
 
-Use `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=3` and three comma-separated codes when the customer has the assistant coach add-on:
+Use `SMARTCOACH_COACH_SEATS_LINCOLNTRACK=3` when the head coach plans to share the one coach code with three assistant coaches:
 
-- `SMARTCOACH_COACH_ACCESS_CODES_LINCOLNTRACK=coach_code_1,coach_code_2,coach_code_3`
+- `SMARTCOACH_COACH_ACCESS_CODES_LINCOLNTRACK=shared_coach_code`
 
-Each coach should receive one coach access code. Athlete limits are intentionally not enforced here; those stay controlled by GHL.
+Each Pro account uses one shared coach code. The seat value is the allowed assistant coach count, not the number of separate codes. Active athlete limits are enforced by SMARTCoach plan code.
 
-Automation does not silently create coach access codes for a new Pro account. Generate codes in `/onboarding.html` and save them with **Save Account Setup**, then give one code to each coach. Do not put coach codes in the recurring GHL subscription payload. A Pro account with coach access required and no saved coach code stays setup-incomplete.
+Automation does not silently create the shared coach code for a new Pro account. Generate or paste the code in `/onboarding.html` and save it with **Save Account Setup**, then give the code only to active staff. Do not put coach codes in the recurring GHL subscription payload. A Pro account with coach access required and no saved coach code stays setup-incomplete.
 
 Legacy access-code support:
 
 - `SMARTCOACH_ACCESS_CODE_LINCOLNTRACK=...`
 
-Existing accounts that only use `SMARTCOACH_ACCESS_CODE_*` still work. New customer account records should use coach seats and coach access codes saved through `/onboarding.html`.
+Existing accounts that only use `SMARTCOACH_ACCESS_CODE_*` still work. New customer account records should use assistant coach seats and the shared coach code saved through `/onboarding.html`.
 
 Recommended production security:
 
 - `SMARTCOACH_REQUIRE_COACH_ACCESS=true`
 
-Use the global setting after all active Pro accounts have coach access codes, or use the account-specific `SMARTCOACH_REQUIRE_COACH_ACCESS_ACCOUNTKEY=true` during migration. When required access is enabled, SMART Trak blocks a Pro account that has no coach access code configured instead of leaving the dashboard open.
+Use the global setting after all active Pro accounts have a shared coach code, or use the account-specific `SMARTCOACH_REQUIRE_COACH_ACCESS_ACCOUNTKEY=true` during migration. When required access is enabled, SMART Trak blocks a Pro account that has no coach access code configured instead of leaving the dashboard open.
 
 Use the setup helper endpoint to generate the exact variables for a new account:
 
 - `/api/smart-trak/account-setup?account=lincolntrack&plan=essential`
 - `/api/smart-trak/account-setup?account=lincolntrack&plan=pro`
 - `/api/smart-trak/account-setup?account=lincolntrack&plan=pro&coachSeats=3`
+- `/api/smart-trak/account-setup?account=lincolntrack&plan=proUnlimited&coachSeats=10`
 
 The helper does not expose secrets. It only returns the variable names that need to be added in Vercel.
 
@@ -116,9 +117,9 @@ The same setup helper is available as a simple internal page:
 
 The setup helper shows each production setup field as a separate Name and Value pair, plus the one SMART Trak link that should be added to the customer sub-account as a custom link or iframe. It also includes account-key and coach-code generators, copy-ready Stripe metadata, automation endpoint URLs, recommended Stripe webhook events, subscription-only automation payloads, an internal system readiness check, plus an internal account lookup panel that can verify a saved customer account record with the automation secret and load the customer subscription fields back into the setup form.
 
-Use **Test Setup First** before saving a customer account. It validates the account payload, subscription status, coach seats, coach codes, and generated setup fields without writing to customer account storage.
+Use **Test Setup First** before saving a customer account. It validates the account payload, subscription status, assistant coach seats, shared coach code, and generated setup fields without writing to customer account storage.
 
-Use **Save Account Setup** when a customer subscription or SMART Trak connection needs to be manually corrected before or after Stripe/GHL automation runs. Blank connection fields preserve the saved location ID, private integration token, coach access codes, and logo URL.
+Use **Save Account Setup** when a customer subscription or SMART Trak connection needs to be manually corrected before or after Stripe/GHL automation runs. Blank connection fields preserve the saved location ID, private integration token, shared coach code, and logo URL.
 
 Use **Check System** before launch. It reports one overall launch readiness result, launch blockers, and a plain-language checklist for:
 
@@ -144,15 +145,15 @@ The Activation Runbook includes a handoff status strip that follows the same acc
 
 Use **Copy Activation Record** after the customer passes the live smoke validation checks and launch sign-off is stamped. It creates an internal-only support-note summary with the account key, plan, coach seats, subscription, Stripe IDs, account/setup/access state, recent account update, live smoke-test progress, launch sign-off, activation-record copied time, final activation-record copied time, coach-invite reminder or copied time, post-launch follow-up progress, next action, and customer link. The copied time is saved locally per account only after the copy succeeds, and the activation-record checklist item is marked complete automatically, so next-action guidance can confirm the internal activation note was saved before the coach invite is sent. If launch validation is still in progress, use **Copy Smoke Status** instead. The next action will continue pointing to the live smoke test, launch sign-off, activation record, coach invite, post-launch phone follow-up, and the final activation record after follow-up is complete. Once the coach invite is copied and first login, first sync, and phone bulk archive are checked, the post-launch line says the account is ready for the final activation record and the copied note is titled `SMARTCoach Final Activation Record`; after that final note is copied, the handoff status moves to normal support monitoring.
 
-Use **Copy Coach Invite** from the Customer Links section after launch validation is complete. It will not copy until the live smoke-test checklist is complete, the launch sign-off is stamped, and the activation record has been copied. It creates a short coach-facing note with the SMARTCoach link, account key, a simple Dashboard/Athletes/Training Calendar starting path, and coach access-code instructions for the purchased plan, including where to enter the account key and coach code on the phone app. Give each coach only their own assigned code rather than sharing the full saved code list in a copied invite. Essential invites also tell the coach where to enter the account key for stopwatch-only access. The copied time and post-launch follow-up checks are saved locally per account, update the follow-up summary, and appear in later activation records.
+Use **Copy Coach Invite** from the Customer Links section after launch validation is complete. It will not copy until the live smoke-test checklist is complete, the launch sign-off is stamped, and the activation record has been copied. It creates a short coach-facing note with the SMARTCoach link, account key, a simple Dashboard/Athletes/Training Calendar starting path, and coach access-code instructions for the purchased plan, including where to enter the account key and coach code on the phone app. Share the code only with active staff. Essential invites also tell the coach where to enter the account key for stopwatch-only access. The copied time and post-launch follow-up checks are saved locally per account, update the follow-up summary, and appear in later activation records.
 
 Initial rollout should keep parent email tools off globally. Do not set `SMARTCOACH_PARENT_EMAIL_FEATURE_ENABLED=true` until parent communication is ready to release.
 
 Regression tests verify that coach-specific parent email settings stay hidden while the global parent email release gate is off.
 
-The setup checklist also shows ready/missing/warning badges based on the current customer account signals, so support can see whether the account record, subscription, coach codes, and account configuration are ready.
+The setup checklist also shows ready/missing/warning badges based on the current customer account signals, so support can see whether the account record, subscription, shared coach code, and account configuration are ready.
 
-Automation, Stripe webhook, and protected account lookup responses hide private integration tokens and coach access-code values. The internal lookup can still verify that secrets are saved by showing `Saved` and saved counts instead of exposing the actual values. **Load Into Form** appears only for a saved customer account record or setup preview, not for a not-found account. If a setup row shows `Saved value hidden`, do not paste that text or `__hidden__` into Vercel; only replace the value when intentionally rotating the token or coach codes.
+Automation, Stripe webhook, and protected account lookup responses hide private integration tokens and coach access-code values. The internal lookup can still verify that secrets are saved by showing `Saved` and saved counts instead of exposing the actual values. **Load Into Form** appears only for a saved customer account record or setup preview, not for a not-found account. If a setup row shows `Saved value hidden`, do not paste that text or `__hidden__` into Vercel; only replace the value when intentionally rotating the token or shared coach code.
 
 Optional internal setup protection:
 
@@ -189,7 +190,7 @@ Legacy `/api/ghl/*` SMART Trak routes also attach customer account storage befor
 
 ## Automation Intake
 
-Recommended launch flow: let GHL handle Stripe payments/subscriptions through its native Stripe integration, then have a GHL workflow call SMART Trak's protected account automation endpoint when a customer buys, renews, fails payment, or cancels. SMART Trak should not be the payment processor; it should only receive the subscription/access result and update the customer account record.
+Recommended launch flow: let GHL handle Stripe payments/subscriptions through its native Stripe integration, including the 7-day credit-card-required Pro trial, then have a GHL workflow call SMART Trak's protected account automation endpoint when a customer starts a trial, pays, renews, fails payment, or cancels. SMART Trak should not be the payment processor or trial timer; it should only receive the subscription/access result and update the customer account record.
 
 Set this secret before connecting GHL automations:
 
@@ -222,6 +223,8 @@ Example payload:
 
 Plain boundary: the GHL Subscription Payload is for subscription/access updates only. It can send the account key, product plan, coach seats, subscription status, billing cadence, amount, renewal date, and Stripe customer/subscription IDs. It should not send location ID, private integration token, setup code, automation secret, session secret, or coach access codes. Those setup values stay in `/onboarding.html` -> **Save Account Setup** or Vercel production secrets.
 
+For Pro trials, GHL should send `trialing` at signup and keep the payment method on file. At the end of day 7, GHL should send `active` after a successful charge or `canceled`/`past_due` if payment fails according to the SaaS plan behavior. SMARTCoach does not auto-expire trials on its own.
+
 For the recommended GHL workflow action, use:
 
 - Method: `POST`
@@ -233,7 +236,7 @@ Send the customer's SMARTCoach account key plus subscription fields from the GHL
 
 Subscription status accepts the internal values `active`, `trialing`, `past_due`, `paused`, `canceled`, `incomplete`, `incomplete_expired`, and `unpaid`. Common workflow wording such as `paid`, `payment failed`, `failed payment`, `cancelled`, `pending`, and `not paid` is normalized automatically. Unknown status text is treated as `incomplete` so access is not accidentally left open.
 
-The endpoint validates the automation secret, normalizes the account data, saves it to customer account storage when storage variables are configured, and returns the exact setup fields needed for the account. The recommended GHL subscription workflow should send only subscription/billing fields for the same `accountKey`; SMART Trak merges those updates into the existing customer account record so the customer's location ID, token, coach seats, and coach access codes are preserved.
+The endpoint validates the automation secret, normalizes the account data, saves it to customer account storage when storage variables are configured, and returns the exact setup fields needed for the account. The recommended GHL subscription workflow should send only subscription/billing fields for the same `accountKey`; SMART Trak merges those updates into the existing customer account record so the customer's location ID, token, assistant coach seats, and shared coach code are preserved.
 
 Missing or wrong automation secrets are rejected before customer account storage is read or written.
 
@@ -300,7 +303,7 @@ Repeated Stripe events with the same Stripe event ID are treated as already hand
 
 For automated onboarding/subscription updates, add small persistent customer account storage. The current implementation supports a Vercel KV / Upstash Redis REST store.
 
-Plain meaning: this is where SMART Trak saves each customer account record after purchase. It stores the account key, subscription status, coach seats, coach access codes, SMART Trak connection, and optional logo URL. With customer account storage connected, adding a new customer does not require new Vercel variables or a redeploy.
+Plain meaning: this is where SMART Trak saves each customer account record after purchase. It stores the account key, subscription status, assistant coach seat count, shared coach code, SMART Trak connection, and optional logo URL. With customer account storage connected, adding a new customer does not require new Vercel variables or a redeploy.
 
 Add these Vercel environment variables:
 
@@ -323,7 +326,7 @@ The `/onboarding.html` page also shows these account storage field names in **Cu
 
 The `/onboarding.html` page also includes **Launch Security Values** with copy-ready field names and safe value notes for `SMARTCOACH_ADMIN_SETUP_CODE`, `SMARTCOACH_AUTOMATION_SECRET`, `SMARTCOACH_STRIPE_WEBHOOK_SECRET`, `SMARTCOACH_SESSION_SECRET`, and `SMARTCOACH_REQUIRE_COACH_ACCESS`. The parent-email rollout row is intentionally a hold note only: keep parent email tools off for initial rollout. Use **Generate Launch Secrets** there to create separate setup, automation, and session secret values, then **Copy Security Values** to paste the generated values into Vercel before running **Check System** for launch readiness. After the values are saved in Vercel, use **Clear Generated Secrets** so those one-time values are no longer visible on the setup screen.
 
-When customer account storage is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. Trusted setup can save plan, coach seats, coach access codes, location ID, token, and logo URL without adding a new Vercel variable for each customer update. The recurring GHL Subscription Payload should remain limited to subscription/access fields.
+When customer account storage is configured, `POST /api/smart-trak/account-automation` saves the normalized account record automatically. SMART Trak uses that saved record as the runtime account source before falling back to account-specific Vercel environment variables. Trusted setup can save plan, assistant coach seats, the shared coach code, location ID, token, and logo URL without adding a new Vercel variable for each customer update. The recurring GHL Subscription Payload should remain limited to subscription/access fields.
 
 Each saved customer account record also stores a small `lastAutomationEvent` stamp and a short `automationEventHistory` list with recent update source, event type, optional Stripe event/object IDs, and received time. This is shown in the internal account lookup to help troubleshoot whether recent changes came from **Save Account Setup**, GHL automation, or a Stripe webhook.
 

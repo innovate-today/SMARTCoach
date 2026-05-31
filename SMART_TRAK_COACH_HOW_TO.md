@@ -12,16 +12,21 @@ This guide explains how coaches use SMART Trak and the SMARTCoach Pro Mobile App
 
 ## Plans And Limits
 
-SMARTCoach has four customer plans:
+SMARTCoach has five customer plans:
 
 1. **Essential**: $10/month or $100/year. Stopwatch-only access. Requires an active coach code and allows one active device session at a time.
 2. **Pro 25**: $45/month or $450/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 25 active athletes.
 3. **Pro 100**: $75/month or $750/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 100 active athletes.
 4. **Pro 200**: $135/month or $1350/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 200 active athletes.
+5. **Pro Unlimited**: Custom/manual offer. SMARTCoach Pro Mobile App plus SMART Trak for programs that need unlimited active athletes.
 
 Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. Pro accounts can include up to 10 assistant coach seats using the shared coach code, but schools should keep staff access tight because more devices syncing data increases the chance of messy records.
 
 The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. Support can also reset the code from account setup. Changing the saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
+
+Pro plans can be sold with a 7-day trial through GHL. A credit card is required at signup. GHL controls the trial, charges the card after day 7, and sends SMARTCoach the subscription status. `trialing` and `active` allow access; canceled or failed-payment statuses block access.
+
+Before cancelling, export the data you want to keep from SMART Trak. SMARTCoach keeps cancelled account data for 12 months in case the program returns, but cancelled accounts lose access, so the coach should export before cancellation and contact support if help is needed.
 
 Support can find saved subscribers in `/onboarding.html` under **Subscriber Accounts**. Use **Load Subscribers**, search by account key, plan, or status, then use **Load** to pull the account into setup or **Copy Key** when a password/code reset is needed.
 

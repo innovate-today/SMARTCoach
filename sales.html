@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMARTCoach Pro | Stopwatch, SMART Trak, and Team Training Tools</title>
+<meta name="description" content="SMARTCoach Pro combines a meet and practice stopwatch with SMART Trak, a desktop command center for rosters, training calendars, meet results, records, and team scoring.">
+<style>
+:root{
+  --blue:#2B4FCC;
+  --blue-dark:#102a70;
+  --ink:#111827;
+  --muted:#64748b;
+  --line:#dbe3ef;
+  --bg:#eef3f9;
+  --panel:#ffffff;
+  --soft:#f8fafc;
+  --green:#0a7a44;
+  --amber:#b45309;
+  --red:#b91c1c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:inherit}
+.site{overflow:hidden}
+.nav{position:fixed;top:0;left:0;right:0;z-index:40;background:rgba(238,243,249,.94);border-bottom:1px solid rgba(219,227,239,.92);backdrop-filter:blur(14px)}
+.nav-inner{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:900;color:var(--blue-dark)}
+.brand img{width:42px;height:42px;object-fit:contain}
+.brand span{font-size:18px}
+.nav-links{display:flex;align-items:center;gap:18px;color:#334155;font-size:14px;font-weight:800}
+.nav-links a{text-decoration:none}
+.nav-links a:hover{color:var(--blue)}
+.nav-cta{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 13px;border-radius:8px;background:var(--blue);color:#fff;text-decoration:none;font-weight:900}
+.hero{position:relative;min-height:92vh;padding:106px 20px 56px;background:#dfe8f4;display:flex;align-items:flex-end}
+.hero:before{content:"";position:absolute;inset:0;background:rgba(238,243,249,.14);pointer-events:none}
+.hero-stage{position:absolute;inset:70px 0 0;overflow:hidden}
+.real-shot{display:block;width:100%;height:100%;object-fit:cover}
+.desktop-shot{position:absolute;right:max(22px,5vw);top:44px;width:min(760px,60vw);aspect-ratio:1265/720;border:1px solid rgba(148,163,184,.6);border-radius:8px;background:#fff;box-shadow:0 28px 80px rgba(15,23,42,.24);overflow:hidden}
+.phone-shot{position:absolute;left:min(1080px,76vw);top:250px;width:230px;aspect-ratio:417/766;border-radius:34px;background:#111827;border:8px solid #111827;box-shadow:0 28px 70px rgba(15,23,42,.3);overflow:hidden}
+.hero-copy{position:relative;z-index:2;width:min(760px,100%);max-width:1180px;margin:0 auto;color:var(--ink)}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid rgba(148,163,184,.7);border-radius:999px;background:rgba(255,255,255,.82);font-size:13px;font-weight:900;color:var(--blue-dark)}
+h1{font-size:76px;line-height:.96;margin:18px 0 16px;max-width:820px;letter-spacing:0}
+.hero-copy p{font-size:23px;line-height:1.35;max-width:720px;margin:0 0 22px;color:#334155}
+.hero-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;text-shadow:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 16px;border-radius:8px;font-weight:900;text-decoration:none;border:1px solid transparent}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.secondary{background:#fff;color:var(--blue-dark);border-color:#fff}
+.section{padding:76px 20px}
+.section.white{background:#fff}
+.section.soft{background:var(--soft)}
+.wrap{max-width:1180px;margin:0 auto}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:28px}
+.section-head h2{font-size:46px;line-height:1.04;margin:0;letter-spacing:0;max-width:720px}
+.section-head p{color:var(--muted);font-size:17px;line-height:1.5;margin:0;max-width:410px}
+.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px;box-shadow:0 12px 30px rgba(15,23,42,.06)}
+.card h3{font-size:24px;margin:0 0 8px}
+.card p{color:var(--muted);line-height:1.5;margin:0 0 16px}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;background:#eef3ff;color:var(--blue-dark);margin-bottom:14px}
+.card ul,.feature-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.card li,.feature-list li{position:relative;padding-left:18px;color:#334155;line-height:1.4}
+.card li:before,.feature-list li:before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--green)}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.step{border:1px solid var(--line);border-radius:8px;background:#fff;padding:18px}
+.num{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-weight:900;margin-bottom:12px}
+.step h3{font-size:18px;margin:0 0 8px}
+.step p{color:var(--muted);line-height:1.45;margin:0}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:center}
+.screen-card{border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;box-shadow:0 14px 36px rgba(15,23,42,.08)}
+.screen-card img{display:block;width:100%;height:auto}
+.shot-caption{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border-top:1px solid var(--line);color:#475569;font-size:13px;font-weight:800;background:#fff}
+.feature-copy h2{font-size:42px;line-height:1.06;margin:0 0 14px;letter-spacing:0}
+.feature-copy p{font-size:17px;line-height:1.55;color:var(--muted);margin:0 0 18px}
+.pricing{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.price-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.price-card.featured{border-color:var(--blue);box-shadow:0 14px 34px rgba(43,79,204,.16)}
+.price-card h3{font-size:20px;margin:0}
+.price{font-size:34px;font-weight:950;line-height:1}
+.price span{font-size:14px;color:var(--muted);font-weight:800}
+.year{color:var(--muted);font-weight:800;font-size:13px}
+.price-card p{color:var(--muted);line-height:1.45;margin:0}
+.price-card .btn{margin-top:auto;width:100%}
+.price-card .btn.secondary{background:#f8fafc;border-color:var(--line);color:var(--blue-dark)}
+.truth{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.truth-box{background:#111827;color:#fff;border-radius:8px;padding:24px}
+.truth-box h2{font-size:32px;line-height:1.1;margin:0 0 12px}
+.truth-box p{color:#cbd5e1;line-height:1.55;margin:0 0 16px}
+.truth-box li{color:#e2e8f0}
+.truth-box li:before{background:#38bdf8}
+.quote{background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px}
+.quote b{display:block;font-size:21px;line-height:1.25;margin-bottom:10px}
+.quote p{color:var(--muted);line-height:1.55;margin:0}
+.gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.gallery .screen-card img{aspect-ratio:16/9;object-fit:cover;object-position:top}
+.gallery .phone-card{display:grid;grid-template-columns:auto 1fr;align-items:center;background:#111827}
+.gallery .phone-card img{width:150px;aspect-ratio:417/766;object-fit:cover}
+.gallery .phone-card .shot-caption{height:100%;align-items:flex-start;justify-content:center;flex-direction:column;border-top:0;border-left:1px solid #1f2937;background:#fff}
+.cta{background:#102a70;color:#fff;padding:64px 20px}
+.cta .wrap{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.cta h2{font-size:46px;line-height:1.04;margin:0 0 8px}
+.cta p{color:#dbeafe;margin:0;line-height:1.5;max-width:720px}
+.footer{padding:28px 20px;background:#0f172a;color:#cbd5e1}
+.footer .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.footer a{color:#fff;text-decoration:none;font-weight:800}
+@media (max-width:920px){
+  .nav-links a:not(.nav-cta){display:none}
+  .hero{min-height:860px;align-items:flex-end}
+  .desktop-shot{width:720px;right:-250px;top:54px}
+  .phone-shot{right:auto;left:20px;top:250px}
+  .hero-copy{margin-bottom:0}
+  h1{font-size:56px}
+  .section-head h2,.cta h2{font-size:38px}
+  .feature-copy h2{font-size:36px}
+  .product-grid,.flow,.pricing,.split,.truth,.gallery{grid-template-columns:1fr}
+  .gallery .phone-card{grid-template-columns:1fr}
+  .gallery .phone-card img{width:100%;max-height:520px;object-fit:contain;background:#111827}
+  .gallery .phone-card .shot-caption{height:auto;border-left:0;border-top:1px solid var(--line)}
+  .section-head{display:block}
+  .section-head p{margin-top:12px}
+  .cta .wrap{display:block}
+  .cta .btn{margin-top:20px}
+}
+@media (max-width:620px){
+  .nav-inner{padding:10px 14px}
+  .brand span{font-size:16px}
+  .nav-cta{min-height:34px;padding:8px 10px;font-size:13px}
+  .hero{padding:96px 16px 42px;min-height:820px}
+  .desktop-shot{width:650px;right:-360px;top:70px}
+  .phone-shot{width:200px;left:14px;top:300px}
+  h1{font-size:44px}
+  .hero-copy p{font-size:18px}
+  .section-head h2,.cta h2{font-size:32px}
+  .feature-copy h2{font-size:30px}
+  .section{padding:56px 16px}
+}
+</style>
+</head>
+<body>
+<div class="site">
+  <nav class="nav" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a class="brand" href="#top"><img src="/assets/smart-logo.png" alt="SMARTCoach"><span>SMARTCoach Pro</span></a>
+      <div class="nav-links">
+        <a href="#products">Products</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#pricing">Pricing</a>
+        <a class="nav-cta" href="#pricing">Choose Plan</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="hero-stage" aria-hidden="true">
+      <div class="desktop-shot">
+        <img class="real-shot" src="/assets/marketing/dashboard-real.jpg" alt="">
+      </div>
+      <div class="phone-shot">
+        <img class="real-shot" src="/assets/marketing/stopwatch-app-loaded.jpg" alt="">
+      </div>
+    </div>
+    <div class="hero-copy">
+      <div class="eyebrow">Built for track and cross country coaches</div>
+      <h1>SMARTCoach Pro</h1>
+      <p>Time practice and meets on your phone, then run the season from SMART Trak: rosters, training calendars, meet results, records, simulators, and cleaner coach data in one workflow.</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#pricing">See pricing</a>
+        <a class="btn secondary" href="#products">Compare products</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section white" id="products">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Three ways to talk about the product.</h2>
+        <p>SMARTCoach is the mobile stopwatch. SMART Trak is the desktop command center. SMARTCoach Pro puts them together for teams that want synced data.</p>
+      </div>
+      <div class="product-grid">
+        <article class="card">
+          <span class="badge">Stopwatch only</span>
+          <h3>SMARTCoach Essential</h3>
+          <p>A clean mobile timing app for coaches who want reliable practice and meet timing without the desktop system.</p>
+          <ul>
+            <li>Training and meet timing on one active device session</li>
+            <li>Groups, splits, field marks, relays, and archive cleanup</li>
+            <li>Active code required for the device</li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="badge">Best fit for teams</span>
+          <h3>SMARTCoach Pro</h3>
+          <p>The mobile app plus SMART Trak, so the work captured at practice and meets lands where coaches can review and manage it.</p>
+          <ul>
+            <li>SMARTCoach Pro Mobile App with SMART Trak sync</li>
+            <li>Pro 25, Pro 100, Pro 200, and Pro Unlimited tiers</li>
+            <li>One shared coach code with up to 10 assistant coach seats</li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="badge">Desktop command center</span>
+          <h3>SMART Trak</h3>
+          <p>The coach workspace for rosters, training plans, calendars, results, records, and scoring simulators.</p>
+          <ul>
+            <li>Dashboard, Athletes, Training Calendar, and Meet History</li>
+            <li>Records, Weather, Track Simulator, and XC Simulator</li>
+            <li>Runs inside the customer account custom menu link</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section soft" id="workflow">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>From workout plan to saved performance record.</h2>
+        <p>The current product direction keeps one-day coaching work on the Training Calendar and uses the phone app where coaches actually time athletes.</p>
+      </div>
+      <div class="flow">
+        <article class="step"><div class="num">1</div><h3>Set up athletes</h3><p>Add active athletes, organize training groups, and store current fitness marks for target calculations.</p></article>
+        <article class="step"><div class="num">2</div><h3>Plan the day</h3><p>Use Training Calendar for workouts, races, rest days, notes, and drag-to-reschedule changes.</p></article>
+        <article class="step"><div class="num">3</div><h3>Time on the phone</h3><p>Capture splits, rep/rest work, relay legs, field attempts, and meet results in SMARTCoach Pro Mobile App.</p></article>
+        <article class="step"><div class="num">4</div><h3>Review in SMART Trak</h3><p>Sync completed work back to the dashboard, meet history, athlete profiles, and season reports.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section white">
+    <div class="wrap split">
+      <div class="screen-card" aria-label="Training Calendar visual">
+        <img src="/assets/marketing/training-calendar-real.jpg" alt="SMART Trak Training Calendar screenshot">
+        <div class="shot-caption"><span>Real SMART Trak screen</span><span>Training Calendar</span></div>
+      </div>
+      <div class="feature-copy">
+        <h2>Coach-facing tools without a data mess.</h2>
+        <p>SMART Trak is built around the real season rhythm: update the roster, set fitness, build or import plans, log mileage, capture race results, and keep records separate from everyday meet entry.</p>
+        <ul class="feature-list">
+          <li>Training Calendar is the home for one-day workouts, races, rest/off days, and notes.</li>
+          <li>Upload/Paste Plan handles full-plan upload and paste workflows.</li>
+          <li>Auto Build Plan creates a draft plan for coach review and adjustment.</li>
+          <li>Track and XC simulators use saved fields and SMART Trak season bests.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section soft">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Actual product screens, not concept art.</h2>
+        <p>The sales story should show the app coaches will use: SMART Trak pages on desktop and SMARTCoach on the phone.</p>
+      </div>
+      <div class="gallery">
+        <figure class="screen-card">
+          <img src="/assets/marketing/records-real.jpg" alt="SMART Trak Records page screenshot">
+          <figcaption class="shot-caption"><span>SMART Trak</span><span>Records</span></figcaption>
+        </figure>
+        <figure class="screen-card">
+          <img src="/assets/marketing/xc-simulator-real.jpg" alt="SMART Trak XC Simulator screenshot">
+          <figcaption class="shot-caption"><span>SMART Trak</span><span>XC Simulator</span></figcaption>
+        </figure>
+        <figure class="screen-card phone-card">
+          <img src="/assets/marketing/stopwatch-training-phone.jpg" alt="SMARTCoach stopwatch app screenshot">
+          <figcaption class="shot-caption"><span>SMARTCoach</span><span>Phone App</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section soft" id="pricing">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Pricing that follows team size.</h2>
+        <p>Only active athletes count toward Pro limits. Archived, graduated, inactive, or quit athletes do not count toward the active-athlete cap. Pro trials run through GHL for 7 days with a credit card required.</p>
+      </div>
+      <div class="pricing">
+        <article class="price-card">
+          <h3>Essential</h3>
+          <div class="price">$10 <span>/ mo</span></div>
+          <div class="year">$100 yearly</div>
+          <p>Stopwatch-only subscription with one active device session at a time.</p>
+          <a class="btn secondary" href="#setup">Start with Essential</a>
+        </article>
+        <article class="price-card featured">
+          <h3>Pro 25</h3>
+          <div class="price">$45 <span>/ mo</span></div>
+          <div class="year">$450 yearly</div>
+          <p>SMARTCoach Pro plus SMART Trak for up to 25 active athletes.</p>
+          <a class="btn primary" href="#setup">Choose Pro 25</a>
+        </article>
+        <article class="price-card">
+          <h3>Pro 100</h3>
+          <div class="price">$75 <span>/ mo</span></div>
+          <div class="year">$750 yearly</div>
+          <p>For full programs with up to 100 active athletes.</p>
+          <a class="btn secondary" href="#setup">Choose Pro 100</a>
+        </article>
+        <article class="price-card">
+          <h3>Pro 200</h3>
+          <div class="price">$135 <span>/ mo</span></div>
+          <div class="year">$1350 yearly</div>
+          <p>For larger schools or clubs with up to 200 active athletes.</p>
+          <a class="btn secondary" href="#setup">Choose Pro 200</a>
+        </article>
+        <article class="price-card">
+          <h3>Pro Unlimited</h3>
+          <div class="price">Custom</div>
+          <div class="year">Manual offer</div>
+          <p>For programs that need unlimited active athletes and a custom setup conversation.</p>
+          <a class="btn secondary" href="#setup">Talk About Unlimited</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section white" id="setup">
+    <div class="wrap truth">
+      <div class="truth-box">
+        <h2>Account setup is built for SaaS rollout.</h2>
+        <p>Purchases provision the customer account first. Support completes the SMART Trak connection, saves the shared coach code, and validates the account before the coach invite goes out. Pro trials are handled by GHL with a credit card required at signup.</p>
+        <ul class="feature-list">
+          <li>GHL SaaS provisions the sub-account and applies the SMARTCoach snapshot.</li>
+          <li>The account custom value powers the SMART Trak custom menu link.</li>
+          <li>Recurring subscription updates send billing/access fields only.</li>
+          <li>Private integration tokens and coach codes stay out of billing payloads.</li>
+          <li>GHL sends trialing during the 7-day trial, then active or blocked billing status after payment.</li>
+        </ul>
+      </div>
+      <div class="quote">
+        <b>What coaches should hear:</b>
+        <p>SMARTCoach Pro gives your staff one shared coach-code workflow for desktop SMART Trak and the mobile app. Keep the code limited to active staff so synced team data stays clean.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap">
+      <div>
+        <h2>Ready to sell SMARTCoach Pro clearly?</h2>
+        <p>Use this page as the public product story: Essential for stopwatch-only, Pro for teams, and SMART Trak as the coach command center behind the subscription.</p>
+      </div>
+      <a class="btn secondary" href="#top">Back to top</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div>SMARTCoach Pro, SMARTCoach Essential, and SMART Trak</div>
+      <div><a href="/index.html">Open SMARTCoach</a></div>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
