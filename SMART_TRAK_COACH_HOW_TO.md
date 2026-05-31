@@ -41,12 +41,12 @@ How to use it:
 5. Click **Show workouts** under an athlete to see completed workout details.
 6. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
-The Dashboard includes a **Staff Access** button. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
+The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
 
 How to use Staff Access:
 
 1. Click **Staff Access** on the Dashboard.
-2. Check **Assistant coach seats** to confirm the staff allowance for the account.
+2. Check **Assistant coach seats** to confirm the account allows up to 10 assistant coach seats.
 3. Check **Active devices** to see how many devices have used the shared coach code in the last 30 days.
 4. Check **Seen this week** to see how many devices have been active recently.
 5. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.

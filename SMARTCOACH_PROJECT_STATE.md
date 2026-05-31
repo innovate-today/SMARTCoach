@@ -1028,6 +1028,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 205. SMART Trak now tracks shared coach-code device usage without exposing the code. Staff Access shows assistant coach seat allowance, active devices seen in the last 30 days, devices seen this week, and last device activity. Device usage updates when a coach unlocks with the shared code and when a device uploads/saves SMART Trak data.
 206. `SMART_TRAK_COACH_HOW_TO.md` now documents Staff Access, explains that Pro accounts use a shared coach code with up to 10 assistant coach seats, and tells head coaches to rotate the code if device activity is higher than expected.
 207. Staff Access was moved out of a main Dashboard card and into the shared coach-code modal. The old **Change Code** button now reads **Staff Access**, uses the quieter utility-action styling, and opens the device-usage summary plus code-change form.
+208. The how-to guide now reflects the quieter Dashboard placement for Staff Access after Refresh and clarifies that Assistant coach seats shows the up-to-10 staff allowance.
 
 ## Known Good Test Flow
 
