@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1780147910000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1780147911000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1780147910000 -->
+<!-- build:1780147911000 -->
 <!-- v1780147907000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -3087,6 +3087,15 @@ function athleteTodayRows(r,profile){
   if(details)rows.push('<div class="profile-row"><b>Workout Notes</b><small style="white-space:pre-wrap">'+ex(details)+'</small></div>');
   return rows;
 }
+function coachVisiblePlanText(value){
+  return String(value||'').split(/\r?\n/).filter(function(line){
+    var text=line.trim();
+    return !/^Copied on Training Calendar from /i.test(text)&&
+      !/^Adjusted in SMART Trak:/i.test(text)&&
+      !/^Status changed to /i.test(text)&&
+      !/^Removed from calendar:/i.test(text);
+  }).join('\n').trim();
+}
 function profileSection(title,rows){
   if(!rows||!rows.length)return '<div class="profile-sec"><h4>'+ex(title)+'</h4><div class="profile-row">No data yet</div></div>';
   return '<div class="profile-sec"><h4>'+ex(title)+'</h4>'+rows.join('')+'</div>';
@@ -3381,7 +3390,7 @@ function renderTrainingPlanDetail(plan,days,loading){
     if(!plan.selectedDay&&upcoming.length)plan.selectedDay=upcoming[0];
     scheduleHtml=upcoming.map(function(d,di){
       var detail=[d.dayType,d.workoutType,d.energySystem,d.plannedVolume].filter(Boolean).join(' · ');
-      var body=[d.details,d.targetSplits,d.coachNotes].filter(Boolean).join('\n\n');
+      var body=coachVisiblePlanText([d.details,d.targetSplits,d.coachNotes].filter(Boolean).join('\n\n'));
       var active=plan.selectedDay&&plan.selectedDay.id===d.id;
       return '<div class="profile-row" style="'+(active?'border-left:3px solid #2B4FCC;padding-left:8px':'')+'"><b>'+ex((d.date?d.date+' - ':'')+(d.title||'Workout'))+'</b><small>'+ex(detail)+'</small>'+(body?'<small style="white-space:pre-wrap">'+ex(body)+'</small>':'')+'<button style="margin-top:6px;border:1px solid #2B4FCC;background:'+(active?'#2B4FCC':'#fff')+';color:'+(active?'#fff':'#2B4FCC')+';border-radius:8px;padding:6px 10px;font-weight:700" onclick="selectTrainingPlanDay('+TP.indexOf(plan)+','+di+')">'+(active?'Selected':'Use this workout')+'</button></div>';
     }).join('');

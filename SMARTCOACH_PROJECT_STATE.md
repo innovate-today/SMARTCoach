@@ -1037,6 +1037,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 213. SMARTCoach Pro Mobile App easy-run targets now recognize calendar labels and target text like `Easy run`, `Recovery run`, and `Conversational` as Easy/Recovery Run instead of falling through to the generic 400m interval rule. Easy and long-run targets now display as pace per mile from current fitness, and the app version stamp was bumped so phones can confirm the refreshed bundle.
 214. SMARTCoach Pro Mobile App Sync to SMART Trak sheet is now full-screen with a scrollable body, so larger groups can review all selected runners while the Sync and Close buttons stay fixed at the bottom. The sync logic still sends every checked runner in the list.
 215. SMARTCoach Pro Mobile App now allows native pinch-to-zoom by relaxing the mobile viewport from locked scaling to user-scalable up to 5x, making modal/bottom sheets easier for coaches to enlarge on phones.
+216. SMARTCoach Pro Mobile App workout selector now hides coach/audit meta notes such as `Copied on Training Calendar from...` from the visible workout text while preserving those notes in SMART Trak.
 
 ## Known Good Test Flow
 
