@@ -281,6 +281,17 @@ tr:last-child td{border-bottom:0}
         <div class="metric" data-filter="sb"><b id="meetSbCount">--</b><span>New SBs</span></div>
       </div>
     </div>
+    <div class="breakdown" id="staffAccessPanel">
+      <div class="summary-head">
+        <h2>Staff Access</h2>
+        <div id="staffAccessLastSeen" class="breakrange">No device activity yet</div>
+      </div>
+      <div class="breakgrid">
+        <div class="metric"><b id="staffAccessSeats">--</b><span>Assistant coach seats</span></div>
+        <div class="metric"><b id="staffAccessActiveDevices">--</b><span>Active devices</span></div>
+        <div class="metric"><b id="staffAccessWeekDevices">--</b><span>Seen this week</span></div>
+      </div>
+    </div>
   </section>
 
   <section class="bar">
@@ -1009,6 +1020,28 @@ function accessCodeStorageKey(){
 function sessionStorageKey(){
   return 'sc_session_'+smartCoachAccountKey();
 }
+function deviceStorageKey(){
+  return 'sc_device_'+smartCoachAccountKey();
+}
+function smartCoachDeviceId(){
+  try{
+    var key=deviceStorageKey();
+    var id=localStorage.getItem(key)||'';
+    if(!id){
+      id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
+      localStorage.setItem(key,id);
+    }
+    return id;
+  }catch(e){
+    return 'dev_'+Date.now().toString(36);
+  }
+}
+function smartCoachDeviceLabel(){
+  var ua=navigator.userAgent||'';
+  var browser=/CriOS|Chrome/i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':/Firefox/i.test(ua)?'Firefox':/Edg/i.test(ua)?'Edge':'Browser';
+  var device=/iPhone/i.test(ua)?'iPhone':/iPad/i.test(ua)?'iPad':/Android/i.test(ua)?'Android':/Macintosh|Mac OS/i.test(ua)?'Mac':/Windows/i.test(ua)?'Windows':'Device';
+  return device+' '+browser;
+}
 function smartCoachAccessCode(){
   try{return localStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
 }
@@ -1177,6 +1210,8 @@ function applyAdminTools(){
       if(session)headers.set('X-SMARTCoach-Session',session);
       var accessCode=smartCoachAccessCode();
       if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
+      headers.set('X-SMARTCoach-Device-Id',smartCoachDeviceId());
+      headers.set('X-SMARTCoach-Device-Label',smartCoachDeviceLabel());
       init.headers=headers;
     }
     return nativeFetch(input,init);
@@ -1232,6 +1267,11 @@ var els={
   productPlan:document.getElementById('productPlan'),
   appVersion:document.getElementById('appVersion'),
   accountSummary:document.getElementById('accountSummary'),
+  staffAccessPanel:document.getElementById('staffAccessPanel'),
+  staffAccessSeats:document.getElementById('staffAccessSeats'),
+  staffAccessActiveDevices:document.getElementById('staffAccessActiveDevices'),
+  staffAccessWeekDevices:document.getElementById('staffAccessWeekDevices'),
+  staffAccessLastSeen:document.getElementById('staffAccessLastSeen'),
   accountStatus:document.getElementById('accountStatus'),
   accountRefresh:document.getElementById('accountRefresh'),
   accountSave:document.getElementById('accountSave'),
@@ -1627,7 +1667,8 @@ function loadDashboard(){
   var fetchOptions={cache:'no-store',headers:{'Cache-Control':'no-store'}};
   return Promise.all([
     fetch('/api/smart-trak/dashboard?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
-    fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};})
+    fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
+    checkSmartCoachAccount().catch(function(){return{ok:false,data:{}};})
   ]).then(function(results){
     var result=results[0];
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
@@ -1639,6 +1680,7 @@ function loadDashboard(){
     recentMeetRows=result.data.recentMeetResults||[];
     recentTrainingRows=result.data.recentTrainingSyncs||[];
     trainingGroups=results[1].ok?(results[1].data.groups||[]):[];
+    renderStaffAccess(results[2]&&results[2].data||{});
     annotateDashboardRosterGroups();
     lastLoadedAt=result.data.generatedAt||new Date().toISOString();
     els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
@@ -1716,7 +1758,7 @@ function submitDashboardAccessCode(){
   fetch('/api/smart-trak/account-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code})
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code,deviceId:smartCoachDeviceId(),deviceLabel:smartCoachDeviceLabel()})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -1858,6 +1900,17 @@ function renderAccountSummary(data,fallbackPlan){
   var accessText=pro?'SMART Trak access code: '+(access?'On':'Off'):'SMART Trak access code: Not needed';
   els.accountSummary.className='accountsummary '+(accessReady&&deviceUnlocked?'good':'bad');
   els.accountSummary.innerHTML='<b>'+esc(title)+'</b><span>'+esc(detail)+'</span><br><span>'+esc(accessText)+'</span>';
+  renderStaffAccess(data||{});
+}
+
+function renderStaffAccess(data){
+  if(!els.staffAccessPanel)return;
+  var usage=data&&data.coachDeviceUsage||{};
+  var seats=Number(data&&data.coachSeats)||10;
+  els.staffAccessSeats.textContent='Up to '+seats;
+  els.staffAccessActiveDevices.textContent=usage.activeDevices!=null?usage.activeDevices:'0';
+  els.staffAccessWeekDevices.textContent=usage.devicesSeenThisWeek!=null?usage.devicesSeenThisWeek:'0';
+  els.staffAccessLastSeen.textContent=usage.lastSeenAt?'Last device activity '+formatDateTime(usage.lastSeenAt):'No device activity yet';
 }
 
 function refreshAppVersion(){

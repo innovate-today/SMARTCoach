@@ -416,6 +416,28 @@ function accessCodeStorageKey(){
 function sessionStorageKey(){
   return 'sc_session_'+smartCoachAccountKey();
 }
+function deviceStorageKey(){
+  return 'sc_device_'+smartCoachAccountKey();
+}
+function smartCoachDeviceId(){
+  try{
+    var key=deviceStorageKey();
+    var id=localStorage.getItem(key)||'';
+    if(!id){
+      id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
+      localStorage.setItem(key,id);
+    }
+    return id;
+  }catch(e){
+    return 'dev_'+Date.now().toString(36);
+  }
+}
+function smartCoachDeviceLabel(){
+  var ua=navigator.userAgent||'';
+  var browser=/CriOS|Chrome/i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':/Firefox/i.test(ua)?'Firefox':/Edg/i.test(ua)?'Edge':'Browser';
+  var device=/iPhone/i.test(ua)?'iPhone':/iPad/i.test(ua)?'iPad':/Android/i.test(ua)?'Android':/Macintosh|Mac OS/i.test(ua)?'Mac':/Windows/i.test(ua)?'Windows':'Device';
+  return device+' '+browser;
+}
 function accessCodeCookieName(){
   return accessCodeStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');
 }
@@ -617,7 +639,7 @@ function createSmartCoachSession(accessCode){
   return fetch('/api/smart-trak/account-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code})
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code,deviceId:smartCoachDeviceId(),deviceLabel:smartCoachDeviceLabel()})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -643,6 +665,8 @@ function createSmartCoachSession(accessCode){
       if(session)headers.set('X-SMARTCoach-Session',session);
       var accessCode=smartCoachAccessCode();
       if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
+      headers.set('X-SMARTCoach-Device-Id',smartCoachDeviceId());
+      headers.set('X-SMARTCoach-Device-Label',smartCoachDeviceLabel());
       init.headers=headers;
     }
     return nativeFetch(input,init);

@@ -100,7 +100,7 @@ Latest SaaS/account setup truth:
 - The GHL workflow payload should send billing/account fields only: `eventType`, `accountKey`, `locationId`, `plan`, `coachSeats`, `subscriptionStatus`, `billingCadence`, `source`, and `automationSecret` or the automation secret query parameter. Do not send private integration tokens or coach codes in the recurring subscription payload.
 - After a new GHL sub-account exists, support still has to open `/onboarding.html`, load the account key, enter that sub-account's Location ID and Private Integration Token, generate/paste coach access code(s), and click Save Account Setup.
 - Save Account Setup was confirmed to update the GHL custom value `account_key`; the confirmation message should say the value was updated.
-- Current plan breakdown: Essential is $10/month or $100/year; Pro 25 is $45/month or $450/year; Pro 100 is $75/month or $750/year; Pro 200 is $150/month or $1500/year.
+- Current plan breakdown: Essential is $10/month or $100/year; Pro 25 is $45/month or $450/year; Pro 100 is $75/month or $750/year; Pro 200 is $135/month or $1350/year.
 - Essential is stopwatch-only, requires an active code, and allows one active device session at a time. A new Essential login displaces the previous active device session.
 - Pro plans enforce active-athlete limits in SMARTCoach code: Pro 25 has 25 active athletes, Pro 100 has 100, and Pro 200 has 200. Inactive/archived athletes do not count; delete should be reserved for mistakes/duplicates.
 - Pro coach access allows up to 10 coach codes. The account owner is responsible for distributing codes, and schools should keep coach count low to protect clean synced data.
@@ -1025,6 +1025,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 202. Athlete Setup now signals saved current-fitness changes to any open Dashboard, and Dashboard reloads with cache-busted no-store requests so completed-workout current-fitness columns use refreshed Athlete Best values instead of a stale dashboard response.
 203. SMARTCoach Pro Mobile App current-fitness selection now chooses the newest non-future Athlete Best row first, so a newly saved 1 Mile current fitness from Athlete Setup overrides an older race-derived 5K row; workout-preferred events only break same-date ties.
 204. SMARTCoach Pro Mobile App now reconciles shared training groups against the live SMART Trak athlete roster. If a GHL contact is deleted or no longer returned by the athlete endpoint, the app removes that runner from synced training groups after refresh and no longer writes the stale runner back into the shared group record.
+205. SMART Trak now tracks shared coach-code device usage without exposing the code. Dashboard shows a Staff Access panel with assistant coach seat allowance, active devices seen in the last 30 days, devices seen this week, and last device activity. Device usage updates when a coach unlocks with the shared code and when a device uploads/saves SMART Trak data.
 
 ## Known Good Test Flow
 

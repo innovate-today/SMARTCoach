@@ -30,7 +30,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -91,9 +91,26 @@ module.exports = async function handler(req, res) {
 
   await attachRegistryAccount(req);
   if (!requireProPlan(req, res)) return;
+  if (["sync-session", "meet-result", "manual-mileage", "correction"].includes(route)) {
+    await recordRequestCoachDevice(req).catch(() => {});
+  }
 
   return selected(req, res);
 };
+
+async function recordRequestCoachDevice(req) {
+  const { accountKey, coachCodeVersion } = getGhlContext(req);
+  const deviceId = cleanSetupText(headerValue(req, "x-smartcoach-device-id"));
+  if (!deviceId) return;
+  const session = coachSessionFromRequest(req, accountKey);
+  const validSession = coachSessionVersionAllowed(session, coachCodeVersion) ? session : null;
+  await recordCoachDeviceSession(accountKey, {
+    deviceId,
+    deviceLabel: cleanSetupText(headerValue(req, "x-smartcoach-device-label")),
+    userAgent: headerValue(req, "user-agent"),
+    coachIndex: validSession && Number(validSession.coachIndex) || 0,
+  });
+}
 
 async function accountStatus(req, res) {
   if (req.method === "OPTIONS") {
@@ -128,6 +145,7 @@ async function accountStatus(req, res) {
   const coachAccessRequired = !proPlan || configuredCoachCodes > 0 || !!requireCoachAccess;
   const coachAccessUnlocked = !coachAccessRequired || (proPlan ? !!currentCoachSession : essentialSessionActive) || accessCodeAccepted;
   const deviceAccessReady = configured && subscriptionAllowed && coachAccessUnlocked;
+  const coachDeviceUsage = configured ? await loadCoachDeviceUsage(accountKey) : undefined;
   const missing = [];
   if (proPlan && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (proPlan && !locationId) missing.push({ label: "Location ID", key: locationKey });
@@ -151,6 +169,7 @@ async function accountStatus(req, res) {
       parentEmailAllowed: parentEmailFeatureReleased() && !!currentCoachSession.parentEmailAllowed,
     } : null,
     coachSessionActive: proPlan ? !!currentCoachSession : essentialSessionActive,
+    coachDeviceUsage,
     coachAccessUnlocked,
     coachAccessCodeAccepted: accessCodeAccepted,
     parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(currentCoachSession && currentCoachSession.parentEmailAllowed),
@@ -951,6 +970,15 @@ async function accountSession(req, res) {
         },
       });
     }
+    const deviceId = cleanSetupText(firstPayloadValue(payload, ["deviceId", "clientDeviceId"]));
+    const deviceLabel = cleanSetupText(firstPayloadValue(payload, ["deviceLabel", "deviceName"]));
+    const usage = await recordCoachDeviceSession(accountKey, {
+      deviceId,
+      deviceLabel,
+      userAgent: headerValue(req, "user-agent"),
+      coachIndex: access.coachIndex || 0,
+      expiresAtIso: session.expiresAtIso,
+    }).catch((error) => ({ saved: false, error: error.message || "Device usage could not be saved." }));
     res.status(200).json({
       success: true,
       accountKey,
@@ -961,6 +989,7 @@ async function accountSession(req, res) {
       sessionToken: session.token,
       expiresAt: session.expiresAt,
       expiresAtIso: session.expiresAtIso,
+      coachDeviceUsageUpdated: !!(usage && usage.saved),
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not create coach session." });
