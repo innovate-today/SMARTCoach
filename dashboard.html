@@ -452,7 +452,11 @@ tr:last-child td{border-bottom:0}
         <label for="accessCodeInput">Access Code</label>
         <input id="accessCodeInput" type="password" placeholder="Enter access code" autocomplete="off">
       </div>
-      <div class="small" style="margin-top:8px">This protects roster, training, and meet data if a dashboard link is copied outside SMART Trak.</div>
+      <label class="checkline" style="display:flex;align-items:center;gap:8px;margin-top:10px;color:#334155;font-size:14px;font-weight:700">
+        <input id="rememberDeviceInput" type="checkbox" checked>
+        <span>Remember this device for 7 days</span>
+      </label>
+      <div class="small" style="margin-top:8px">Use this only on devices used by authorized coaching staff. Changing the shared coach code still removes old access immediately.</div>
       <div class="modalactions">
         <div id="accessStatus" class="modalstatus"></div>
         <button id="accessSubmit" type="button">Unlock Dashboard</button>
@@ -1025,6 +1029,9 @@ function accessCodeStorageKey(){
 function sessionStorageKey(){
   return 'sc_session_'+smartCoachAccountKey();
 }
+function rememberedSessionStorageKey(){
+  return 'sc_session_remembered_'+smartCoachAccountKey();
+}
 function deviceStorageKey(){
   return 'sc_device_'+smartCoachAccountKey();
 }
@@ -1054,12 +1061,24 @@ function setSmartCoachAccessCode(value){
   try{localStorage.setItem(accessCodeStorageKey(),String(value||'').trim());}catch(e){}
 }
 function smartCoachSession(){
-  try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
+  try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){
+    try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}
+  }
 }
-function setSmartCoachSession(value){
+function setSmartCoachSession(value,remember){
   try{
-    if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
-    else sessionStorage.removeItem(sessionStorageKey());
+    if(value){
+      if(remember){
+        localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());
+        sessionStorage.removeItem(sessionStorageKey());
+      }else{
+        sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
+        localStorage.removeItem(rememberedSessionStorageKey());
+      }
+    }else{
+      sessionStorage.removeItem(sessionStorageKey());
+      localStorage.removeItem(rememberedSessionStorageKey());
+    }
   }catch(e){}
 }
 function productPlan(){
@@ -1251,6 +1270,7 @@ var els={
   athleteModalClose:document.getElementById('athleteModalClose'),
   accessModal:document.getElementById('accessModal'),
   accessCodeInput:document.getElementById('accessCodeInput'),
+  rememberDeviceInput:document.getElementById('rememberDeviceInput'),
   accessStatus:document.getElementById('accessStatus'),
   accessSubmit:document.getElementById('accessSubmit'),
   manageMeetsBtn:document.getElementById('manageMeetsBtn'),
@@ -1746,6 +1766,7 @@ function showDashboardAccessCode(data){
   els.accessStatus.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';
   els.accessStatus.style.color='#64748b';
   els.accessCodeInput.value='';
+  if(els.rememberDeviceInput)els.rememberDeviceInput.checked=true;
   els.accessModal.hidden=false;
   setTimeout(function(){els.accessCodeInput.focus();},50);
 }
@@ -1767,7 +1788,7 @@ function submitDashboardAccessCode(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(result.ok&&result.data&&result.data.sessionToken){
-      setSmartCoachSession(result.data.sessionToken);
+      setSmartCoachSession(result.data.sessionToken,!els.rememberDeviceInput||els.rememberDeviceInput.checked);
       setSmartCoachAccessCode('');
       els.accessModal.hidden=true;
       loadDashboard();
@@ -1845,7 +1866,7 @@ function saveCoachCode(){
     if(!result.ok){
       throw new Error((result.data&&result.data.error)||'Could not change coach code.');
     }
-    setSmartCoachSession(result.data&&result.data.sessionToken||'');
+    setSmartCoachSession(result.data&&result.data.sessionToken||'',true);
     setSmartCoachAccessCode('');
     els.codeStatus.textContent='Coach code changed. Use the new code from now on.';
     els.codeStatus.style.color='#08783c';

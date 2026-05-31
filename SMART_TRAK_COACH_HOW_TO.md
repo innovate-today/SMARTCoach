@@ -56,6 +56,8 @@ How to use Staff Access:
 4. Check **Seen this week** to see how many devices have been active recently.
 5. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
 
+When a coach enters the shared code, they can choose **Remember this device for 7 days**. This reduces repeated code entry on trusted staff devices. Changing the shared coach code still removes old access immediately.
+
 Volume miles means completed training and race volume converted into miles for the current filters. Quality session work reps count toward actual quality volume. Recovery between reps does not count unless it is entered as actual running or walking distance.
 
 ## Athletes Page

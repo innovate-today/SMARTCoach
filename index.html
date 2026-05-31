@@ -366,6 +366,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="srow"><label class="slbl">Plan</label><input id="product-plan" type="hidden" value="pro"/><button type="button" id="product-plan-display" class="sinp picker-control" onclick="openProductPlanPicker()">SMARTCoach Pro</button></div>
       <div class="srow"><label class="slbl">Field Marks</label><select id="field-mark-unit" class="sinp"><option value="feet">Feet / inches</option><option value="meters">Meters</option></select></div>
       <div class="srow h" id="access-code-row"><label class="slbl">Access Code</label><input id="access-code" class="sinp" type="password" placeholder="Required for SMART Trak" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
+      <label id="remember-device-row" style="display:none;align-items:center;gap:8px;margin:8px 16px 0;color:#555;font-size:13px;text-align:left">
+        <input id="remember-device" type="checkbox" checked style="width:18px;height:18px">
+        <span>Remember this device for 7 days</span>
+      </label>
       <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use <b>default</b> for this SMARTCoach account. Customer accounts use the account key created during SMART Trak setup.</div>
       <div id="account-summary" style="margin:8px 16px 0;border:1px solid #e5e5ea;border-radius:8px;background:#fff;padding:9px 10px;text-align:left;font-size:12px;line-height:1.35;color:#555"></div>
       <div id="app-version" style="font-size:11px;color:#777;text-align:center;padding:7px 0 0;min-height:16px"></div>
@@ -416,6 +420,9 @@ function accessCodeStorageKey(){
 function sessionStorageKey(){
   return 'sc_session_'+smartCoachAccountKey();
 }
+function rememberedSessionStorageKey(){
+  return 'sc_session_remembered_'+smartCoachAccountKey();
+}
 function deviceStorageKey(){
   return 'sc_device_'+smartCoachAccountKey();
 }
@@ -459,17 +466,31 @@ function setSmartCoachAccessCode(value){
   writeSmartCoachCookie(accessCodeCookieName(),code);
 }
 function smartCoachSession(){
-  try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
+  try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){
+    try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}
+  }
 }
-function setSmartCoachSession(value){
+function setSmartCoachSession(value,remember){
   try{
-    if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
-    else sessionStorage.removeItem(sessionStorageKey());
+    if(value){
+      if(remember){
+        localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());
+        sessionStorage.removeItem(sessionStorageKey());
+      }else{
+        sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
+        localStorage.removeItem(rememberedSessionStorageKey());
+      }
+    }else{
+      sessionStorage.removeItem(sessionStorageKey());
+      localStorage.removeItem(rememberedSessionStorageKey());
+    }
   }catch(e){}
 }
 function showAccessCodeRow(show){
   var row=document.getElementById('access-code-row');
   if(row)row.classList.toggle('h',!show);
+  var remember=document.getElementById('remember-device-row');
+  if(remember)remember.style.display=show?'flex':'none';
 }
 function adminToolsVisible(){
   try{
@@ -494,6 +515,7 @@ function openAccountSettings(){
   var planInput=document.getElementById('product-plan');
   var planDisplay=document.getElementById('product-plan-display');
   var accessInput=document.getElementById('access-code');
+  var rememberInput=document.getElementById('remember-device');
   var fieldUnit=document.getElementById('field-mark-unit');
   var status=document.getElementById('account-status');
   var version=document.getElementById('app-version');
@@ -501,6 +523,7 @@ function openAccountSettings(){
   if(planInput)planInput.value=productPlan();
   if(planDisplay)planDisplay.textContent=productPlanLabel(productPlan());
   if(accessInput)accessInput.value=smartCoachAccessCode();
+  if(rememberInput)rememberInput.checked=true;
   if(fieldUnit)fieldUnit.value=fieldMarkUnit();
   showAccessCodeRow(true);
   if(status){status.textContent='Checking account...';status.style.color='#555';}
@@ -542,7 +565,7 @@ function saveAccountSettings(){
         throw err;
       }
       renderAccountSummary(result.data,plan);
-      return createSmartCoachSession(accessValue).then(function(created){
+      return createSmartCoachSession(accessValue, !rememberInput || rememberInput.checked).then(function(created){
         if(result.data&&result.data.accessCodeRequired&&!created&&!smartCoachSession()){
           throw new Error('Enter the active coach code to use SMARTCoach Essential on this device.');
         }
@@ -567,7 +590,7 @@ function saveAccountSettings(){
       throw blocked;
     }
     renderAccountSummary(result.data,plan);
-    return createSmartCoachSession(accessValue).then(function(created){
+    return createSmartCoachSession(accessValue, !rememberInput || rememberInput.checked).then(function(created){
       if(result.data&&result.data.accessCodeRequired&&!created&&!smartCoachSession()){
         throw new Error('Enter the coach access code to unlock SMART Trak on this phone.');
       }
@@ -633,7 +656,7 @@ function smartCoachApiHeaders(extra){
   if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
   return headers;
 }
-function createSmartCoachSession(accessCode){
+function createSmartCoachSession(accessCode,remember){
   var code=String(accessCode||'').trim();
   if(!code)return Promise.resolve(false);
   return fetch('/api/smart-trak/account-session',{
@@ -644,7 +667,7 @@ function createSmartCoachSession(accessCode){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(result.ok&&result.data&&result.data.sessionToken){
-      setSmartCoachSession(result.data.sessionToken);
+      setSmartCoachSession(result.data.sessionToken,remember);
       setSmartCoachAccessCode('');
       return true;
     }

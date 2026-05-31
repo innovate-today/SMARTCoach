@@ -539,7 +539,7 @@ Subscription/customer management:
 - Dashboard now exchanges a valid coach access code for a temporary session token and stops sending the raw code on each dashboard request when a session exists.
 - Mobile stopwatch app now exposes the Account button on the Groups screen and prompts for a coach access code when the selected account requires SMART Trak access.
 - Mobile Account settings now distinguish missing account keys, missing setup fields, missing coach codes, and subscription-blocked access so phone testing points to the right setup fix.
-- Coach session length is configurable with `SMARTCOACH_SESSION_TTL_SECONDS`, defaulting to 12 hours and clamped between 15 minutes and 7 days.
+- Coach session length is configurable with `SMARTCOACH_SESSION_TTL_SECONDS`, defaulting to 7 days and clamped between 15 minutes and 7 days. SMART Trak and the phone app show **Remember this device for 7 days** when the coach enters the shared code.
 - Added regression coverage so signed coach sessions cannot be reused across customer accounts and expire after the session window.
 - Added server-side throttling for coach session/access-code attempts so repeated bad codes pause before another login attempt is accepted.
 - Added optional required coach-access enforcement with `SMARTCOACH_REQUIRE_COACH_ACCESS` or account-specific `SMARTCOACH_REQUIRE_COACH_ACCESS_ACCOUNTKEY`. This blocks Pro SMART Trak access if a customer account has no coach access code configured.
@@ -1031,6 +1031,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 207. Staff Access was moved out of a main Dashboard card and into the shared coach-code modal. The old **Change Code** button now reads **Staff Access**, uses the quieter utility-action styling, and opens the device-usage summary plus code-change form.
 208. The how-to guide now reflects the quieter Dashboard placement for Staff Access after Refresh and clarifies that Assistant coach seats shows the up-to-10 staff allowance.
 209. SMARTCoach Pro Unlimited was added as a Custom/manual Pro plan with unlimited active athletes, the shared Pro 200 amount was corrected to $135/month and $1350/year, and onboarding/marketing/docs now describe GHL-owned 7-day Pro trials with credit card required and cancellation/export guidance that tells coaches to export before cancelling.
+210. Coach access now defaults to a 7-day signed session. SMART Trak and the phone app show **Remember this device for 7 days**, storing the signed session on trusted devices while shared-code resets still invalidate old sessions immediately.
 
 ## Known Good Test Flow
 

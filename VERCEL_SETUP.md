@@ -168,11 +168,11 @@ Regression tests verify setup fields cannot be generated without the correct set
 Coach session signing:
 
 - `SMARTCOACH_SESSION_SECRET`
-- `SMARTCOACH_SESSION_TTL_SECONDS` optional, defaults to `43200` seconds / 12 hours
+- `SMARTCOACH_SESSION_TTL_SECONDS` optional, defaults to `604800` seconds / 7 days
 
 When this is set, SMART Trak can exchange a valid coach access code for a short-lived signed session token. The browser can then use the temporary session instead of sending the raw coach access code on every request. If this is not set, the server falls back to `SMARTCOACH_AUTOMATION_SECRET` or `SMARTCOACH_ADMIN_SETUP_CODE` for signing if either exists. Production should use a dedicated `SMARTCOACH_SESSION_SECRET` so coach sessions do not share automation/setup secrets.
 
-Session length can be adjusted with `SMARTCOACH_SESSION_TTL_SECONDS`. Values are clamped between 15 minutes and 7 days. The recommended production value is the default 12 hours, which usually covers a practice day without leaving long-lived access sitting in the browser.
+Session length can be adjusted with `SMARTCOACH_SESSION_TTL_SECONDS`. Values are clamped between 15 minutes and 7 days. The recommended production value is the default 7 days, matching the coach-facing **Remember this device for 7 days** option.
 
 Regression tests verify signed coach sessions cannot be reused for another account and expire after their allowed session window.
 

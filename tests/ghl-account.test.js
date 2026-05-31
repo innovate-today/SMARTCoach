@@ -4,6 +4,7 @@ const {
   coachCodeAllowed,
   createCoachSession,
   verifyCoachSession,
+  coachSessionTtlSeconds,
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../lib/ghl-account");
@@ -54,12 +55,14 @@ withEnv({
   SMARTCOACH_REQUIRE_COACH_ACCESS_TEST: "true",
   SMARTCOACH_SUBSCRIPTION_STATUS_TEST: "active",
   SMARTCOACH_SESSION_SECRET: "test-session-secret",
+  SMARTCOACH_SESSION_TTL_SECONDS: undefined,
 }, () => {
   assert.strictEqual(normalizeProductPlan("SMARTCoach Pro Unlimited"), "proUnlimited");
   assert.strictEqual(planDefinition("pro200").monthlyAmount, "135.00");
   assert.strictEqual(planDefinition("pro200").annualAmount, "1350.00");
   assert.strictEqual(planDefinition("custom").activeAthleteLimit, null);
   assert.strictEqual(suggestedSubscriptionAmount("custom", "monthly"), "Custom");
+  assert.strictEqual(coachSessionTtlSeconds(), 7 * 24 * 60 * 60);
   assert.strictEqual(subscriptionAccessAllowed({ status: "" }), true);
   assert.strictEqual(subscriptionAccessAllowed({ status: "active" }), true);
   assert.strictEqual(subscriptionAccessAllowed({ status: "trialing" }), true);
