@@ -430,6 +430,7 @@ function normalizePerformanceRecord(record) {
     completedVolumeMiles: effectiveVolume.miles || parseVolumeToMiles(completedVolume),
     plannedVolumeMiles: parseVolumeToMiles(plannedVolume),
     currentFitnessSnapshot: noteValue(coachNote, "Current fitness"),
+    athleteNote: noteValue(coachNote, "Athlete note") || noteValue(coachNote, "Athlete notes"),
     weather: noteValue(coachNote, "Weather"),
     correctionDate: noteValue(coachNote, "Correction Date"),
     correctionReason: noteValue(coachNote, "Correction Reason"),

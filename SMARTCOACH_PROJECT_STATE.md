@@ -1038,6 +1038,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 214. SMARTCoach Pro Mobile App Sync to SMART Trak sheet is now full-screen with a scrollable body, so larger groups can review all selected runners while the Sync and Close buttons stay fixed at the bottom. The sync logic still sends every checked runner in the list.
 215. SMARTCoach Pro Mobile App now allows native pinch-to-zoom by relaxing the mobile viewport from locked scaling to user-scalable up to 5x, making modal/bottom sheets easier for coaches to enlarge on phones.
 216. SMARTCoach Pro Mobile App workout selector now hides coach/audit meta notes such as `Copied on Training Calendar from...` from the visible workout text while preserving those notes in SMART Trak.
+217. Dashboard Completed Workouts now surfaces athlete-submitted Athlete Calendar notes as an explicit **Athlete Note** column in the expanded workout detail table and includes the same field in training CSV export.
 
 ## Known Good Test Flow
 

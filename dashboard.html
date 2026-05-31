@@ -2186,7 +2186,7 @@ function exportMeetCsv(){
 
 function exportTrainingCsv(){
   var rows=visibleTrainingRows;
-  var headers=['Athlete','Group','Workout','Workout Details','Completed Volume','Completed Miles','Planned Volume','Planned Miles','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Weather','Rep','Total Time','Splits','Session Date','Synced'];
+  var headers=['Athlete','Group','Workout','Workout Details','Completed Volume','Completed Miles','Planned Volume','Planned Miles','Current Fitness','Fitness Date','Planned Target','Target Difference','Planned Effort','Athlete Note','Weather','Rep','Total Time','Splits','Session Date','Synced'];
   var csv=[headers].concat(rows.map(function(row){
     var athlete=findDashboardAthleteForTraining(row)||{};
     var fitness=athlete.currentFitness||{};
@@ -2204,6 +2204,7 @@ function exportTrainingCsv(){
       row.plannedTarget||'',
       row.targetDifference||'',
       row.plannedEffort||'',
+      row.athleteNote||'',
       row.weather||'',
       row.repNumber||'',
       row.totalTimeDisplay||'',
@@ -4191,7 +4192,7 @@ function trainingTargetSummaryHtml(summary){
 function trainingWorkoutDetailTable(rows){
   if(!rows.length)return '<div class="muted">No completed workouts.</div>';
   return '<table><thead><tr>'+
-    '<th>Group '+headerInfo('Group where this workout was recorded.')+'</th><th>Workout '+headerInfo('Workout name and workout type.')+'</th><th>Volume '+headerInfo('Completed and planned volume for this entry.')+'</th><th>Target Review '+headerInfo('Rep/rest review against the saved target. Rep chips: red = faster than target, green = on target, yellow = slower than target. Rest chips are neutral.')+'</th><th>Total / Splits '+headerInfo('Total elapsed time plus split count. For rep/rest workouts, target review uses work reps instead of total time.')+'</th><th>Date '+headerInfo('Workout date.')+'</th><th>Status '+headerInfo('Original, corrected, or voided status.')+'</th><th>Saved '+headerInfo('Date this entry was saved into SMART Trak.')+'</th><th>Actions '+headerInfo('Edit or void saved training entries when corrections are needed.')+'</th>'+
+    '<th>Group '+headerInfo('Group where this workout was recorded.')+'</th><th>Workout '+headerInfo('Workout name and workout type.')+'</th><th>Volume '+headerInfo('Completed and planned volume for this entry.')+'</th><th>Target Review '+headerInfo('Rep/rest review against the saved target. Rep chips: red = faster than target, green = on target, yellow = slower than target. Rest chips are neutral.')+'</th><th>Total / Splits '+headerInfo('Total elapsed time plus split count. For rep/rest workouts, target review uses work reps instead of total time.')+'</th><th>Athlete Note '+headerInfo('Notes the athlete submitted from their Athlete Calendar when marking the workout complete, modified, or skipped.')+'</th><th>Date '+headerInfo('Workout date.')+'</th><th>Status '+headerInfo('Original, corrected, or voided status.')+'</th><th>Saved '+headerInfo('Date this entry was saved into SMART Trak.')+'</th><th>Actions '+headerInfo('Edit or void saved training entries when corrections are needed.')+'</th>'+
     '</tr></thead><tbody>'+rows.map(function(row){
       return '<tr>'+
         '<td>'+mainLine(row.groupName||'')+'</td>'+
@@ -4199,6 +4200,7 @@ function trainingWorkoutDetailTable(rows){
         '<td>'+volumeCellHtml(row)+'</td>'+
         '<td>'+targetReviewHtml(row)+'</td>'+
         '<td>'+mainLine(row.totalTimeDisplay||'')+subLine(splitCountText(row))+'</td>'+
+        '<td>'+(row.athleteNote?mainLine(row.athleteNote):'<span class="muted">No note</span>')+'</td>'+
         '<td>'+mainLine(formatDate(row.sessionDate)||'')+'</td>'+
         '<td>'+correctionStatusHtml(row)+'</td>'+
         '<td>'+mainLine(row.syncedAt?formatDateTime(row.syncedAt):'')+'</td>'+
