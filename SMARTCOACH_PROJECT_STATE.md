@@ -1033,6 +1033,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 209. SMARTCoach Pro Unlimited was added as a Custom/manual Pro plan with unlimited active athletes, the shared Pro 200 amount was corrected to $135/month and $1350/year, and onboarding/marketing/docs now describe GHL-owned 7-day Pro trials with credit card required and cancellation/export guidance that tells coaches to export before cancelling.
 210. Coach access now defaults to a 7-day signed session. SMART Trak and the phone app show **Remember this device for 7 days**, storing the signed session on trusted devices while shared-code resets still invalidate old sessions immediately.
 211. Training Calendar Add Calendar Day now lets coaches select multiple active training groups with checkboxes. Saving creates one matching calendar workout per selected group in the same save, so coaches can assign the same Easy Run, Quality Session, Race, or Rest Day to several groups at once.
+212. Training Calendar edits now use the same coach-facing modal as Add Calendar Day. Coaches see the familiar Easy Run, Quality Session, Race, and Rest Day layout when adjusting a workout, while the save path still updates the selected calendar item only so edits do not create duplicate workouts.
 
 ## Known Good Test Flow
 

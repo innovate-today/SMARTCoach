@@ -424,6 +424,8 @@ button.compact{padding:6px 9px;font-size:12px}
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
         <div id="addDayWorkoutTypeField" class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Choose the effort or race type for this activity.">i</span></label><select id="addDayWorkoutType"><option value="">Select effort / type</option></select></div>
         <div class="field"><label>Groups <span class="fieldinfo info-left" tabindex="0" data-tip="Choose one or more active training groups. Each selected group gets its own calendar workout.">i</span></label><div id="addDayGroup" class="groupchecklist" aria-label="Training groups"></div></div>
+        <div id="addDayStatusField" class="field" hidden><label for="addDayStatusSelect">Status <span class="fieldinfo" tabindex="0" data-tip="Update the calendar status for this workout.">i</span></label><select id="addDayStatusSelect"><option>Draft</option><option>Approved</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select></div>
+        <div id="addDayAthleteField" class="field" hidden><label for="addDayAthlete">Athlete <span class="fieldinfo info-left" tabindex="0" data-tip="Shown for athlete-specific calendar days.">i</span></label><input id="addDayAthlete" type="text" placeholder="Optional athlete"></div>
         <div id="addDayVolumeField" class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional override. Easy Run volume is also calculated from the distance below.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles"></div>
         <div id="addDayTargetField" class="field"><label for="addDayTarget">Target <span class="fieldinfo info-left" tabindex="0" data-tip="Optional override. Leave blank to use the standard target for this activity.">i</span></label><input id="addDayTarget" type="text" placeholder="Example: Conversational"></div>
         <div id="easyActivityFields" class="activitysection" hidden>
@@ -459,6 +461,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <div id="addActivitySummary" class="activitysummary" hidden><div class="activitysummary-title">Quality Session Summary</div><div id="addActivitySummaryBody" class="activitysummary-body"></div></div>
         <div id="addDayDetailsField" class="field full"><label for="addDayDetails">Details <span class="fieldinfo" tabindex="0" data-tip="Workout instructions, race notes, warmup, cooldown, or reminders.">i</span></label><textarea id="addDayDetails" placeholder="Add the session details"></textarea></div>
         <div class="field full"><label for="addDayNotes">Coach Notes <span class="fieldinfo" tabindex="0" data-tip="Optional private planning context.">i</span></label><textarea id="addDayNotes" placeholder="Optional coach notes"></textarea></div>
+        <div id="addDayReasonField" class="field full" hidden><label for="addDayReason">Reason <span class="fieldinfo" tabindex="0" data-tip="Required for edits so the adjustment has context.">i</span></label><input id="addDayReason" type="text" placeholder="Required"></div>
       </div>
       <div class="modalactions">
         <div id="addDayStatus" class="modalstatus">Save as a manual calendar entry, or connect it to a saved plan.</div>
@@ -582,6 +585,8 @@ var selectedPlanIds=[];
 var selectedBulkDayIds=[];
 var includePastPlans=false;
 var addDayMode='easy';
+var calendarEditDay=null;
+var calendarEditBuilderDirty=false;
 var draggedDayId='';
 var copiedCalendarDay=null;
 var els={
@@ -665,6 +670,10 @@ var els={
   addDayWorkoutTypeField:document.getElementById('addDayWorkoutTypeField'),
   addDayWorkoutType:document.getElementById('addDayWorkoutType'),
   addDayGroup:document.getElementById('addDayGroup'),
+  addDayStatusField:document.getElementById('addDayStatusField'),
+  addDayStatusSelect:document.getElementById('addDayStatusSelect'),
+  addDayAthleteField:document.getElementById('addDayAthleteField'),
+  addDayAthlete:document.getElementById('addDayAthlete'),
   addDayVolumeField:document.getElementById('addDayVolumeField'),
   addDayVolume:document.getElementById('addDayVolume'),
   addDayTargetField:document.getElementById('addDayTargetField'),
@@ -693,6 +702,8 @@ var els={
   addActivitySummaryBody:document.getElementById('addActivitySummaryBody'),
   addDayDetails:document.getElementById('addDayDetails'),
   addDayNotes:document.getElementById('addDayNotes'),
+  addDayReasonField:document.getElementById('addDayReasonField'),
+  addDayReason:document.getElementById('addDayReason'),
   addDayStatus:document.getElementById('addDayStatus'),
   addDaySave:document.getElementById('addDaySave'),
   manualMileageModal:document.getElementById('manualMileageModal'),
@@ -1566,21 +1577,7 @@ function fullText(label,value){
 }
 function openEditModal(){
   if(!activeDay)return;
-  renderGroupSelect(els.editGroup,activeDay.groupName||'');
-  els.editDate.value=String(activeDay.date||'').slice(0,10);
-  setSelectValue(els.editDayType,activeDay.dayType||'Workout');
-  setSelectValue(els.editSport,sportFromDay(activeDay));
-  els.editTitle.value=activeDay.title||'';
-  els.editWorkoutType.value=activeDay.workoutType||'';
-  setSelectValue(els.editStatus,activeDay.status||'Draft');
-  els.editAthlete.value=activeDay.athleteName||'';
-  els.editVolume.value=activeDay.plannedVolume||'';
-  els.editTarget.value=activeDay.targetSplits||'';
-  els.editDetails.value=activeDay.details||'';
-  els.editNotes.value=stripCalendarMetaLines(stripAdjustmentLines(activeDay.coachNotes||''));
-  els.editReason.value='';
-  setDayEditStatus(isManagedMeetCalendarDay(activeDay)?'Meet changes save to Manage Meets and update the calendar.':'Adjustments are saved to SMART Trak.','');
-  els.dayEditModal.hidden=false;
+  openAddDayModal(activeDay.date||todayInputValue(),inferCalendarActivityMode(activeDay),activeDay);
 }
 function closeEditModal(){
   els.dayEditModal.hidden=true;
@@ -2037,9 +2034,33 @@ function setDayEditStatus(text,type){
   els.dayEditStatus.textContent=text||'';
   els.dayEditStatus.style.color=type==='error'?'var(--bad)':type==='success'?'var(--good)':'';
 }
-function openAddDayModal(dateValue,mode){
+function inferCalendarActivityMode(day){
+  var dayType=String(day&&day.dayType||'').toLowerCase();
+  var workoutType=String(day&&day.workoutType||'').toLowerCase();
+  var title=String(day&&day.title||'').toLowerCase();
+  if(dayType.indexOf('off')>=0||workoutType.indexOf('off')>=0||title.indexOf('rest day')>=0)return 'off';
+  if(dayType.indexOf('meet')>=0||workoutType.indexOf('race')>=0)return 'race';
+  if(dayType.indexOf('recovery')>=0||workoutType.indexOf('easy')>=0||workoutType.indexOf('long run')>=0)return 'easy';
+  return 'quality';
+}
+function planIdForDay(day){
+  var id=String(day&&day.trainingPlanId||day&&day.planId||'');
+  var plan=plans.find(function(item){return planAliases(item).indexOf(id)>=0;});
+  return plan ? planId(plan) : id;
+}
+function parseDistanceParts(text,fallbackValue,fallbackUnit){
+  var value=String(text||'').trim().toLowerCase();
+  var match=value.match(/([\d.]+)\s*(mi|km|m|min|sec)?/);
+  return {
+    value:match ? match[1] : String(fallbackValue||''),
+    unit:match&&match[2] ? match[2] : (fallbackUnit||'mi')
+  };
+}
+function openAddDayModal(dateValue,mode,editDay){
+  calendarEditDay=editDay||null;
+  calendarEditBuilderDirty=false;
   renderAddDayPlans();
-  renderAddDayGroupSelect([]);
+  renderAddDayGroupSelect(editDay?[editDay.groupName||'']:[]);
   addDayMode=mode||'easy';
   els.addDayDate.value=String(dateValue||todayInputValue()).slice(0,10);
   setSelectValue(els.addDayType,'Workout');
@@ -2050,6 +2071,12 @@ function openAddDayModal(dateValue,mode){
   els.addDayTarget.value='';
   els.addDayDetails.value='';
   els.addDayNotes.value='';
+  els.addDayReason.value='';
+  els.addDayStatusField.hidden=!calendarEditDay;
+  els.addDayAthleteField.hidden=!(calendarEditDay&&calendarEditDay.athleteName);
+  els.addDayReasonField.hidden=!calendarEditDay;
+  els.addDayPlan.disabled=!!calendarEditDay;
+  els.addDaySave.textContent=calendarEditDay?'Save Adjustment':'Save Calendar Day';
   els.addEasyDistance.value='5';
   els.addEasyUnit.value='mi';
   els.easyStridesFields.hidden=true;
@@ -2062,13 +2089,47 @@ function openAddDayModal(dateValue,mode){
   els.addQualityCooldownUnit.value='mi';
   seedQualityRows();
   els.addDayPlan.value='';
+  if(calendarEditDay){
+    var parts=parseDistanceParts(calendarEditDay.plannedVolume,'5','mi');
+    els.addDayDate.value=String(calendarEditDay.date||dateValue||todayInputValue()).slice(0,10);
+    els.addDayPlan.value=planIdForDay(calendarEditDay);
+    setSelectValue(els.addDayType,calendarEditDay.dayType||'Workout');
+    setSelectValue(els.addDaySport,sportFromDay(calendarEditDay));
+    els.addDayTitleInput.value=calendarEditDay.title||'';
+    els.addDayWorkoutType.value=calendarEditDay.workoutType||'';
+    setSelectValue(els.addDayStatusSelect,calendarEditDay.status||'Draft');
+    els.addDayAthlete.value=calendarEditDay.athleteName||'';
+    els.addDayVolume.value=calendarEditDay.plannedVolume||'';
+    els.addDayTarget.value=calendarEditDay.targetSplits||'';
+    els.addDayDetails.value=calendarEditDay.details||'';
+    els.addDayNotes.value=stripCalendarMetaLines(stripAdjustmentLines(calendarEditDay.coachNotes||''));
+    els.addEasyDistance.value=parts.value||'5';
+    els.addEasyUnit.value=parts.unit||'mi';
+  }
   syncAddDayPlanFields();
   setAddDayMode(addDayMode);
-  setAddDayStatus('Save as a manual calendar entry, or connect it to a saved plan.','');
+  if(calendarEditDay){
+    setSelectValue(els.addDayType,calendarEditDay.dayType||'Workout');
+    setSelectValue(els.addDaySport,sportFromDay(calendarEditDay));
+    ensureSelectValue(els.addDayWorkoutType,calendarEditDay.workoutType||'');
+    setSelectValue(els.addDayStatusSelect,calendarEditDay.status||'Draft');
+    els.addDayTitleInput.value=calendarEditDay.title||els.addDayTitleInput.value;
+    els.addDayVolume.value=calendarEditDay.plannedVolume||els.addDayVolume.value;
+    els.addDayTarget.value=calendarEditDay.targetSplits||els.addDayTarget.value;
+    els.addDayDetails.value=calendarEditDay.details||els.addDayDetails.value;
+  }
+  setAddDayStatus(calendarEditDay?'Adjustments update this calendar workout only.':'Save as a manual calendar entry, or connect it to a saved plan.','');
   els.addDayModal.hidden=false;
 }
 function closeAddDayModal(){
   els.addDayModal.hidden=true;
+  calendarEditDay=null;
+  calendarEditBuilderDirty=false;
+  els.addDayPlan.disabled=false;
+  els.addDaySave.textContent='Save Calendar Day';
+  els.addDayStatusField.hidden=true;
+  els.addDayAthleteField.hidden=true;
+  els.addDayReasonField.hidden=true;
 }
 function renderAddDayPlans(){
   var current=els.addDayPlan.value;
@@ -2084,13 +2145,16 @@ function selectedAddDayPlan(){
   return plans.find(function(plan){return planId(plan)===id || planAliases(plan).indexOf(id)>=0;})||null;
 }
 function syncAddDayPlanFields(){
+  if(calendarEditDay)return;
   var plan=selectedAddDayPlan();
   if(!plan)return;
   if(!selectedAddDayGroups().length)selectAddDayGroups([planSubject(plan)]);
   setSelectValue(els.addDaySport,sportFromPlan(plan));
 }
 function setActivityTypeOptions(options,selected){
-  els.addDayWorkoutType.innerHTML='<option value="">Select effort / type</option>'+options.map(function(value){
+  var list=options.slice();
+  if(selected&&list.indexOf(selected)===-1)list.unshift(selected);
+  els.addDayWorkoutType.innerHTML='<option value="">Select effort / type</option>'+list.map(function(value){
     return '<option>'+esc(value)+'</option>';
   }).join('');
   setSelectValue(els.addDayWorkoutType,selected||'');
@@ -2285,6 +2349,9 @@ function renderAddActivitySummary(){
   els.addActivitySummaryBody.innerHTML='<b>Warmup</b>'+esc(warm)+blockHtml+'<br><br><b>Cooldown</b>'+esc(cool)+
     '<div class="summary-total">'+esc(formatMiles(total)||'Volume not set')+'</div>';
 }
+function markCalendarEditBuilderDirty(){
+  if(calendarEditDay)calendarEditBuilderDirty=true;
+}
 function buildAddDayActivityValues(){
   var details=els.addDayDetails.value.trim();
   var title=els.addDayTitleInput.value.trim();
@@ -2368,6 +2435,115 @@ function buildAddDayActivityValues(){
   }
   return {dayType:els.addDayType.value,title:title,workoutType:type,plannedVolume:volume,targetSplits:target,details:details};
 }
+function selectedEditGroupName(){
+  var groups=selectedAddDayGroups();
+  return groups[0]||calendarEditDay&&calendarEditDay.groupName||'';
+}
+function buildCalendarEditActivityValues(){
+  var generated=buildAddDayActivityValues();
+  var useGenerated=calendarEditBuilderDirty||inferCalendarActivityMode(calendarEditDay)!==addDayMode;
+  return {
+    date:els.addDayDate.value,
+    dayType:generated.dayType||els.addDayType.value,
+    title:els.addDayTitleInput.value.trim()||generated.title||calendarEditDay&&calendarEditDay.title||'',
+    workoutType:els.addDayWorkoutType.value.trim()||generated.workoutType||calendarEditDay&&calendarEditDay.workoutType||'',
+    energySystem:calendarEditDay&&calendarEditDay.energySystem||'',
+    status:els.addDayStatusSelect.value||calendarEditDay&&calendarEditDay.status||'Scheduled',
+    groupName:selectedEditGroupName(),
+    athleteName:els.addDayAthlete.value.trim()||calendarEditDay&&calendarEditDay.athleteName||'',
+    plannedVolume:useGenerated ? (generated.plannedVolume||els.addDayVolume.value.trim()) : els.addDayVolume.value.trim(),
+    targetSplits:useGenerated ? (generated.targetSplits||els.addDayTarget.value.trim()) : els.addDayTarget.value.trim(),
+    details:useGenerated ? (generated.details||els.addDayDetails.value.trim()) : els.addDayDetails.value.trim(),
+    coachNotes:coachNotesWithSport(els.addDayNotes.value,els.addDaySport.value)
+  };
+}
+function saveManagedMeetCalendarEditFromAdd(reason,updates){
+  var meet=managedMeetForCalendarDay(calendarEditDay)||{};
+  var recordId=calendarEditDay.linkedMeetId||meet.id||'';
+  if(!recordId){
+    setAddDayStatus('This meet is missing its saved meet id. Open Manage Meets and update it there.','error');
+    return;
+  }
+  var date=updates.date||calendarEditDay.date||todayInputValue();
+  var parsed=parseCalendarDate(date);
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  var payload={
+    recordId:recordId,
+    meetName:updates.title||meet.name||calendarEditDay.title||'Meet',
+    meetDate:date,
+    season:seasonFromDate(date)||meet.season||'Spring',
+    seasonYear:String(isNaN(parsed.getTime())?new Date().getFullYear():parsed.getFullYear()),
+    status:updates.status||meet.status||calendarEditDay.status||'Scheduled'
+  };
+  els.addDaySave.disabled=true;
+  setAddDayStatus('Saving meet changes...','');
+  fetch('/api/smart-trak/meets',{method:'PATCH',headers:headers,body:JSON.stringify(payload)}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save meet changes.');
+    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,season:payload.season,seasonYear:payload.seasonYear,status:payload.status},result.data&&result.data.meet||{});
+    upsertCalendarMeet(saved);
+    activeDay=meetCalendarDay(saved);
+    renderOptions();
+    render();
+    els.status.textContent='Meet updated on calendar.';
+    closeAddDayModal();
+    closeDayModal();
+  }).catch(function(error){
+    setAddDayStatus(error.message||'Could not save meet changes.','error');
+  }).finally(function(){
+    els.addDaySave.disabled=false;
+  });
+}
+function saveCalendarDayEditFromAddModal(){
+  if(!calendarEditDay)return;
+  var reason=els.addDayReason.value.trim();
+  if(!reason){
+    setAddDayStatus('Reason is required so the adjustment has context.','error');
+    return;
+  }
+  var updates=buildCalendarEditActivityValues();
+  if(isManagedMeetCalendarDay(calendarEditDay)){
+    saveManagedMeetCalendarEditFromAdd(reason,updates);
+    return;
+  }
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.addDaySave.disabled=true;
+  setAddDayStatus('Saving adjustment...','');
+  fetch('/api/smart-trak/training-plan',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'updateDay',
+      dayId:calendarEditDay.id||'',
+      reason:reason,
+      updates:updates
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save adjustment.');
+    var updated=Object.assign({},calendarEditDay,updates,{
+      coachNotes:[updates.coachNotes,'Adjusted in SMART Trak: '+reason].filter(Boolean).join('\n')
+    });
+    days=days.map(function(day){
+      return day.id===calendarEditDay.id||day.sourceRecordId===calendarEditDay.sourceRecordId ? updated : day;
+    });
+    activeDay=updated;
+    selectedBulkDayIds=selectedBulkDayIds.filter(function(id){return id!==dayKey(updated);});
+    renderOptions();
+    render();
+    els.status.textContent='Plan day updated.';
+    closeAddDayModal();
+    closeDayModal();
+  }).catch(function(error){
+    setAddDayStatus(error.message||'Could not save adjustment.','error');
+  }).finally(function(){
+    els.addDaySave.disabled=false;
+  });
+}
 function createMeetForCalendarDay(plan,day){
   if(day.dayType!=='Meet')return Promise.resolve(null);
   var headers=apiHeaders();
@@ -2399,6 +2575,10 @@ function seasonFromDate(value){
   return 'Spring';
 }
 function saveAddedCalendarDay(){
+  if(calendarEditDay){
+    saveCalendarDayEditFromAddModal();
+    return;
+  }
   var plan=selectedAddDayPlan();
   var activity=buildAddDayActivityValues();
   var title=activity.title;
@@ -2501,6 +2681,20 @@ function setSelectValue(select,value){
     return item.value.toLowerCase()===wanted||item.text.toLowerCase()===wanted;
   });
   if(option)select.value=option.value;
+}
+function ensureSelectValue(select,value){
+  if(!value)return;
+  var wanted=String(value||'').toLowerCase();
+  var option=Array.prototype.slice.call(select.options).find(function(item){
+    return item.value.toLowerCase()===wanted||item.text.toLowerCase()===wanted;
+  });
+  if(!option){
+    option=document.createElement('option');
+    option.textContent=value;
+    option.value=value;
+    select.appendChild(option);
+  }
+  select.value=option.value;
 }
 function todayInputValue(){
   var date=new Date();
@@ -3144,7 +3338,14 @@ function init(){
   els.addDayChooser.addEventListener('click',function(event){
     var button=event.target.closest&&event.target.closest('[data-add-activity-mode]');
     if(!button)return;
+    if(calendarEditDay&&button.getAttribute('data-add-activity-mode')!==addDayMode)calendarEditBuilderDirty=true;
     setAddDayMode(button.getAttribute('data-add-activity-mode')||'easy');
+  });
+  els.addDayGroup.addEventListener('change',function(event){
+    if(!calendarEditDay||!event.target.matches('input[type="checkbox"]')||!event.target.checked)return;
+    Array.prototype.slice.call(els.addDayGroup.querySelectorAll('input[type="checkbox"]')).forEach(function(input){
+      if(input!==event.target)input.checked=false;
+    });
   });
   els.addDayPlan.addEventListener('change',function(){
     selectAddDayGroups([]);
@@ -3156,20 +3357,29 @@ function init(){
   });
   els.addDaySave.addEventListener('click',saveAddedCalendarDay);
   els.addEasyStridesBtn.addEventListener('click',function(){
+    markCalendarEditBuilderDirty();
     els.easyStridesFields.hidden=false;
   });
   els.removeEasyStridesBtn.addEventListener('click',function(){
+    markCalendarEditBuilderDirty();
     els.easyStridesFields.hidden=true;
   });
-  els.addQualitySetBtn.addEventListener('click',function(){addQualityRow({kind:'set'});});
-  els.addQualityRestBtn.addEventListener('click',function(){addQualityRow({kind:'rest'});});
-  els.addQualityRepeatBtn.addEventListener('click',function(){addQualityRow({kind:'repeat',distanceValue:200,distanceUnit:'m',recoveryValue:5,recoveryUnit:'min (jog)'});});
-  els.clearQualityBtn.addEventListener('click',seedQualityRows);
+  [els.addEasyDistance,els.addEasyUnit].forEach(function(input){
+    input.addEventListener('input',markCalendarEditBuilderDirty);
+    input.addEventListener('change',markCalendarEditBuilderDirty);
+  });
+  els.addQualitySetBtn.addEventListener('click',function(){markCalendarEditBuilderDirty();addQualityRow({kind:'set'});});
+  els.addQualityRestBtn.addEventListener('click',function(){markCalendarEditBuilderDirty();addQualityRow({kind:'rest'});});
+  els.addQualityRepeatBtn.addEventListener('click',function(){markCalendarEditBuilderDirty();addQualityRow({kind:'repeat',distanceValue:200,distanceUnit:'m',recoveryValue:5,recoveryUnit:'min (jog)'});});
+  els.clearQualityBtn.addEventListener('click',function(){markCalendarEditBuilderDirty();seedQualityRows();});
   els.qualityRows.addEventListener('input',renderAddActivitySummary);
   els.qualityRows.addEventListener('change',renderAddActivitySummary);
+  els.qualityRows.addEventListener('input',markCalendarEditBuilderDirty);
+  els.qualityRows.addEventListener('change',markCalendarEditBuilderDirty);
   els.qualityRows.addEventListener('click',function(event){
     var button=event.target.closest&&event.target.closest('[data-remove-quality-row]');
     if(!button)return;
+    markCalendarEditBuilderDirty();
     button.closest('[data-quality-row]').remove();
     if(!els.qualityRows.children.length)addQualityRow({kind:'set'});
     renderAddActivitySummary();
@@ -3177,6 +3387,8 @@ function init(){
   [els.addQualityWarmupValue,els.addQualityWarmupUnit,els.addQualityCooldownValue,els.addQualityCooldownUnit].forEach(function(input){
     input.addEventListener('input',renderAddActivitySummary);
     input.addEventListener('change',renderAddActivitySummary);
+    input.addEventListener('input',markCalendarEditBuilderDirty);
+    input.addEventListener('change',markCalendarEditBuilderDirty);
   });
   els.approveDraftsBtn.addEventListener('click',function(){
     updateVisibleDayStatus('Approved',isDraftDay,'Coach approved visible draft plan days from SMART Trak Training Calendar.');
