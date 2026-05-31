@@ -1034,6 +1034,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 210. Coach access now defaults to a 7-day signed session. SMART Trak and the phone app show **Remember this device for 7 days**, storing the signed session on trusted devices while shared-code resets still invalidate old sessions immediately.
 211. Training Calendar Add Calendar Day now lets coaches select multiple active training groups with checkboxes. Saving creates one matching calendar workout per selected group in the same save, so coaches can assign the same Easy Run, Quality Session, Race, or Rest Day to several groups at once.
 212. Training Calendar edits now use the same coach-facing modal as Add Calendar Day. Coaches see the familiar Easy Run, Quality Session, Race, and Rest Day layout when adjusting a workout, while the save path still updates the selected calendar item only so edits do not create duplicate workouts.
+213. SMARTCoach Pro Mobile App easy-run targets now recognize calendar labels like `Easy run`, `Recovery run`, and `Conversational` as Easy/Recovery Run instead of falling through to the generic 400m interval rule. Easy and long-run targets now display as pace per mile from current fitness.
 
 ## Known Good Test Flow
 

@@ -2909,6 +2909,7 @@ function workoutPrescription(plan,rule){
   var source=[plan.trainingPlanDayTitle,plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].join(' ');
   var m=source.match(/(\d+)\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)/i);
   if(m)return m[1]+' x '+normalizeEventLabel(m[2]);
+  if(rule&&rule.suffix&&plan.trainingPlanDayTitle)return plan.trainingPlanDayTitle;
   if(rule&&rule.repLabel)return rule.repLabel;
   return plan.trainingPlanDayTitle||'Workout';
 }
@@ -2925,7 +2926,7 @@ function parseTargetRule(text,workoutType){
     var repLabel=normalizeEventLabel(rep[1]);
     return{repLabel:repLabel,repMeters:eventDistance(repLabel),low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source)};
   }
-  return{repLabel:rule.distance+'m',repMeters:rule.distance,low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source)};
+  return{repLabel:rule.repLabel||rule.distance+'m',repMeters:rule.distance,low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source),suffix:rule.suffix||''};
 }
 function effortFromTargetText(text){
   var source=String(text||'');
@@ -2985,7 +2986,7 @@ function targetRangeDataFromFitness(rule,fitness){
   var base=fitness.ms/fitness.meters*rule.repMeters;
   var fast=Math.round(base/rule.high);
   var slow=Math.round(base/rule.low);
-  return{fast:fast,slow:slow,display:fmt(fast)+'-'+fmt(slow)};
+  return{fast:fast,slow:slow,display:fmt(fast)+'-'+fmt(slow)+(rule.suffix||'')};
 }
 function plannedActualDiffText(actualMs,minMs,maxMs){
   if(!actualMs||!minMs||!maxMs)return'';
@@ -3091,6 +3092,7 @@ function profileSection(title,rows){
   return '<div class="profile-sec"><h4>'+ex(title)+'</h4>'+rows.join('')+'</div>';
 }
 function paceRule(workout){
+  workout=normalizeWorkoutType(workout);
   var rules={
     'Acceleration':{label:'Acceleration',distance:30,low:.95,high:1},
     'Max Velocity':{label:'Max Velocity',distance:60,low:.95,high:1},
@@ -3106,12 +3108,21 @@ function paceRule(workout){
     'Intensive Tempo':{label:'Intensive Tempo',distance:400,low:.75,high:.82},
     'Extensive Tempo':{label:'Extensive Tempo',distance:400,low:.65,high:.75},
     'Lactate Threshold':{label:'Lactate Threshold',distance:1000,low:.82,high:.88},
-    'Easy/Recovery Run':{label:'Easy/Recovery Run',distance:400,low:.60,high:.70},
-    'Long Run':{label:'Long Run',distance:400,low:.60,high:.72},
+    'Easy/Recovery Run':{label:'Easy/Recovery Run',repLabel:'Easy pace',distance:1609.34,low:.60,high:.70,suffix:' /mi'},
+    'Long Run':{label:'Long Run',repLabel:'Long run pace',distance:1609.34,low:.60,high:.72,suffix:' /mi'},
     'Aerobic Power':{label:'Aerobic Power',distance:800,low:.78,high:.86},
     'Hill Sprints':{label:'Hill Sprints',distance:60,low:.90,high:.98}
   };
   return rules[workout]||{label:workout,distance:400,low:.75,high:.85};
+}
+function normalizeWorkoutType(workout){
+  var value=String(workout||'').trim();
+  var key=value.toLowerCase().replace(/[\s_-]+/g,' ');
+  if(!key)return value;
+  if(key==='easy'||key==='easy run'||key==='recovery'||key==='recovery run'||key==='easy recovery run'||key==='easy/recovery run'||key==='conversational')return'Easy/Recovery Run';
+  if(key==='long'||key==='long run')return'Long Run';
+  if(key==='lactate threshold')return'Lactate Threshold';
+  return value;
 }
 function eventDistance(event){
   var key=normalizeEventLabel(event);
