@@ -31,6 +31,8 @@ button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;fon
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
 button.ghost{background:#eef2f7;color:#172033}
+button.quiet-action{background:transparent;color:#64748b;border:1px solid #dbe3ef;font-weight:700}
+button.quiet-action:hover{background:#f8fafc;color:#334155}
 button.danger{background:#fee2e2;color:#991b1b}
 button.compact{padding:6px 8px;font-size:12px;border-radius:7px}
 button:disabled{opacity:.55;cursor:not-allowed}
@@ -233,9 +235,9 @@ tr:last-child td{border-bottom:0}
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
-        <button id="changeCodeBtn" class="utility-action" type="button">Staff Access</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
+        <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
     </div>
   </section>
@@ -1909,8 +1911,7 @@ function renderAccountSummary(data,fallbackPlan){
 function renderStaffAccess(data){
   if(!els.staffAccessSeats)return;
   var usage=data&&data.coachDeviceUsage||{};
-  var seats=Number(data&&data.coachSeats)||10;
-  els.staffAccessSeats.textContent='Up to '+seats;
+  els.staffAccessSeats.textContent='Up to 10';
   els.staffAccessActiveDevices.textContent=usage.activeDevices!=null?usage.activeDevices:'0';
   els.staffAccessWeekDevices.textContent=usage.devicesSeenThisWeek!=null?usage.devicesSeenThisWeek:'0';
   els.staffAccessLastSeen.textContent=usage.lastSeenAt?'Last device activity '+formatDateTime(usage.lastSeenAt):'No device activity yet';
