@@ -165,6 +165,9 @@ tr:last-child td{border-bottom:0}
 .accountsummary b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
 .accountsummary.good{border-color:#bbf7d0;background:#f0fdf4}.accountsummary.good b{color:#08783c}
 .accountsummary.bad{border-color:#fecaca;background:#fef2f2}.accountsummary.bad b{color:#b00000}
+.accesspanel{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:12px;margin-bottom:14px}
+.accesspanel h3{font-size:14px;line-height:1.2;margin:0}
+.accesspanel .summary-head{margin-bottom:9px}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
 .detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
@@ -230,7 +233,7 @@ tr:last-child td{border-bottom:0}
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
-        <button id="changeCodeBtn" class="secondary" type="button">Change Code</button>
+        <button id="changeCodeBtn" class="utility-action" type="button">Staff Access</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
       </div>
@@ -279,17 +282,6 @@ tr:last-child td{border-bottom:0}
         <div class="metric"><b id="meetSyncCount">--</b><span>Recent results</span></div>
         <div class="metric" data-filter="pb"><b id="meetPbCount">--</b><span>New PBs</span></div>
         <div class="metric" data-filter="sb"><b id="meetSbCount">--</b><span>New SBs</span></div>
-      </div>
-    </div>
-    <div class="breakdown" id="staffAccessPanel">
-      <div class="summary-head">
-        <h2>Staff Access</h2>
-        <div id="staffAccessLastSeen" class="breakrange">No device activity yet</div>
-      </div>
-      <div class="breakgrid">
-        <div class="metric"><b id="staffAccessSeats">--</b><span>Assistant coach seats</span></div>
-        <div class="metric"><b id="staffAccessActiveDevices">--</b><span>Active devices</span></div>
-        <div class="metric"><b id="staffAccessWeekDevices">--</b><span>Seen this week</span></div>
       </div>
     </div>
   </section>
@@ -913,10 +905,21 @@ tr:last-child td{border-bottom:0}
 <div id="codeModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
     <div class="modalhead">
-      <h2 id="codeTitle">Change Coach Code</h2>
+      <h2 id="codeTitle">Staff Access</h2>
       <button id="codeClose" class="ghost" type="button">Close</button>
     </div>
     <div class="modalbody">
+      <section class="accesspanel" aria-label="Coach code device usage">
+        <div class="summary-head">
+          <h3>Coach Code Usage</h3>
+          <div id="staffAccessLastSeen" class="breakrange">No device activity yet</div>
+        </div>
+        <div class="breakgrid">
+          <div class="metric"><b id="staffAccessSeats">--</b><span>Assistant coach seats</span></div>
+          <div class="metric"><b id="staffAccessActiveDevices">--</b><span>Active devices</span></div>
+          <div class="metric"><b id="staffAccessWeekDevices">--</b><span>Seen this week</span></div>
+        </div>
+      </section>
       <div class="formgrid">
         <div class="field full">
           <label for="currentCoachCode">Current Code</label>
@@ -931,7 +934,7 @@ tr:last-child td{border-bottom:0}
           <input id="confirmCoachCode" type="password" placeholder="Re-enter new code" autocomplete="off">
         </div>
       </div>
-      <div class="small" style="margin-top:8px">Coach codes can be changed 2 times per month. After saving, old coach-code access and old signed sessions stop working.</div>
+      <div class="small" style="margin-top:8px">The shared coach code can be changed 2 times per month. After saving, old coach-code access and old signed sessions stop working.</div>
       <div class="modalactions">
         <div id="codeStatus" class="modalstatus"></div>
         <button id="codeSave" type="button">Save New Code</button>
@@ -1267,7 +1270,6 @@ var els={
   productPlan:document.getElementById('productPlan'),
   appVersion:document.getElementById('appVersion'),
   accountSummary:document.getElementById('accountSummary'),
-  staffAccessPanel:document.getElementById('staffAccessPanel'),
   staffAccessSeats:document.getElementById('staffAccessSeats'),
   staffAccessActiveDevices:document.getElementById('staffAccessActiveDevices'),
   staffAccessWeekDevices:document.getElementById('staffAccessWeekDevices'),
@@ -1805,6 +1807,7 @@ function openCodeModal(){
   els.codeStatus.textContent='';
   els.codeStatus.style.color='';
   els.codeSave.disabled=false;
+  checkSmartCoachAccount().then(function(result){renderStaffAccess(result.data||{});}).catch(function(){});
   els.codeModal.hidden=false;
   setTimeout(function(){els.currentCoachCode.focus();},50);
 }
@@ -1904,7 +1907,7 @@ function renderAccountSummary(data,fallbackPlan){
 }
 
 function renderStaffAccess(data){
-  if(!els.staffAccessPanel)return;
+  if(!els.staffAccessSeats)return;
   var usage=data&&data.coachDeviceUsage||{};
   var seats=Number(data&&data.coachSeats)||10;
   els.staffAccessSeats.textContent='Up to '+seats;
