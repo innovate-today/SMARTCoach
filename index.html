@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1780147907000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1780147908000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1780147907000 -->
+<!-- build:1780147908000 -->
 <!-- v1780147907000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -2920,7 +2920,7 @@ function parseTargetRule(text,workoutType){
   var rep=source.match(/\b\d+\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\b/i);
   var pct=source.match(/([0-9]+)\s*-\s*([0-9]+)%/);
   if(rep&&pct)return{repLabel:normalizeEventLabel(rep[1]),repMeters:eventDistance(rep[1]),low:Number(pct[1])/100,high:Number(pct[2])/100,preferred:preferredFitnessEvents(source)};
-  var rule=paceRule(workoutType||effortFromTargetText(source)||'');
+  var rule=paceRule(workoutType||effortFromTargetText(source)||source);
   if(!rule||!rule.distance)return null;
   if(rep){
     var repLabel=normalizeEventLabel(rep[1]);
@@ -3119,6 +3119,7 @@ function normalizeWorkoutType(workout){
   var value=String(workout||'').trim();
   var key=value.toLowerCase().replace(/[\s_-]+/g,' ');
   if(!key)return value;
+  if(key.indexOf('conversational')>=0||key.indexOf('easy run')>=0||key.indexOf('recovery run')>=0)return'Easy/Recovery Run';
   if(key==='easy'||key==='easy run'||key==='recovery'||key==='recovery run'||key==='easy recovery run'||key==='easy/recovery run'||key==='conversational')return'Easy/Recovery Run';
   if(key==='long'||key==='long run')return'Long Run';
   if(key==='lactate threshold')return'Lactate Threshold';
