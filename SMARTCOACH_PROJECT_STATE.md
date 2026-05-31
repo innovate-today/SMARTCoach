@@ -1025,7 +1025,9 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 202. Athlete Setup now signals saved current-fitness changes to any open Dashboard, and Dashboard reloads with cache-busted no-store requests so completed-workout current-fitness columns use refreshed Athlete Best values instead of a stale dashboard response.
 203. SMARTCoach Pro Mobile App current-fitness selection now chooses the newest non-future Athlete Best row first, so a newly saved 1 Mile current fitness from Athlete Setup overrides an older race-derived 5K row; workout-preferred events only break same-date ties.
 204. SMARTCoach Pro Mobile App now reconciles shared training groups against the live SMART Trak athlete roster. If a GHL contact is deleted or no longer returned by the athlete endpoint, the app removes that runner from synced training groups after refresh and no longer writes the stale runner back into the shared group record.
-205. SMART Trak now tracks shared coach-code device usage without exposing the code. Dashboard shows a Staff Access panel with assistant coach seat allowance, active devices seen in the last 30 days, devices seen this week, and last device activity. Device usage updates when a coach unlocks with the shared code and when a device uploads/saves SMART Trak data.
+205. SMART Trak now tracks shared coach-code device usage without exposing the code. Staff Access shows assistant coach seat allowance, active devices seen in the last 30 days, devices seen this week, and last device activity. Device usage updates when a coach unlocks with the shared code and when a device uploads/saves SMART Trak data.
+206. `SMART_TRAK_COACH_HOW_TO.md` now documents Staff Access, explains that Pro accounts use a shared coach code with up to 10 assistant coach seats, and tells head coaches to rotate the code if device activity is higher than expected.
+207. Staff Access was moved out of a main Dashboard card and into the shared coach-code modal. The old **Change Code** button now reads **Staff Access**, uses the quieter utility-action styling, and opens the device-usage summary plus code-change form.
 
 ## Known Good Test Flow
 

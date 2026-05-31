@@ -17,11 +17,11 @@ SMARTCoach has four customer plans:
 1. **Essential**: $10/month or $100/year. Stopwatch-only access. Requires an active coach code and allows one active device session at a time.
 2. **Pro 25**: $45/month or $450/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 25 active athletes.
 3. **Pro 100**: $75/month or $750/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 100 active athletes.
-4. **Pro 200**: $150/month or $1500/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 200 active athletes.
+4. **Pro 200**: $135/month or $1350/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 200 active athletes.
 
-Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. Pro accounts can have up to 10 coach codes, but schools should keep the active coach list tight because more coaches syncing data increases the chance of messy records.
+Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. Pro accounts can include up to 10 assistant coach seats using the shared coach code, but schools should keep staff access tight because more devices syncing data increases the chance of messy records.
 
-Coach codes can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Change Code** on the Dashboard to change their own current code. Support can also reset codes from account setup. Changing a saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
+The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. Support can also reset the code from account setup. Changing the saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
 
 Support can find saved subscribers in `/onboarding.html` under **Subscriber Accounts**. Use **Load Subscribers**, search by account key, plan, or status, then use **Load** to pull the account into setup or **Copy Key** when a password/code reset is needed.
 
@@ -40,6 +40,16 @@ How to use it:
    - **Training Load** shows volume by athlete and completed workouts.
 5. Click **Show workouts** under an athlete to see completed workout details.
 6. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
+
+The Dashboard includes a **Staff Access** button. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
+
+How to use Staff Access:
+
+1. Click **Staff Access** on the Dashboard.
+2. Check **Assistant coach seats** to confirm the staff allowance for the account.
+3. Check **Active devices** to see how many devices have used the shared coach code in the last 30 days.
+4. Check **Seen this week** to see how many devices have been active recently.
+5. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
 
 Volume miles means completed training and race volume converted into miles for the current filters. Quality session work reps count toward actual quality volume. Recovery between reps does not count unless it is entered as actual running or walking distance.
 
