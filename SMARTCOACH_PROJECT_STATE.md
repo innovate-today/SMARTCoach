@@ -1035,6 +1035,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 211. Training Calendar Add Calendar Day now lets coaches select multiple active training groups with checkboxes. Saving creates one matching calendar workout per selected group in the same save, so coaches can assign the same Easy Run, Quality Session, Race, or Rest Day to several groups at once.
 212. Training Calendar edits now use the same coach-facing modal as Add Calendar Day. Coaches see the familiar Easy Run, Quality Session, Race, and Rest Day layout when adjusting a workout, while the save path still updates the selected calendar item only so edits do not create duplicate workouts.
 213. SMARTCoach Pro Mobile App easy-run targets now recognize calendar labels and target text like `Easy run`, `Recovery run`, and `Conversational` as Easy/Recovery Run instead of falling through to the generic 400m interval rule. Easy and long-run targets now display as pace per mile from current fitness, and the app version stamp was bumped so phones can confirm the refreshed bundle.
+214. SMARTCoach Pro Mobile App Sync to SMART Trak sheet is now full-screen with a scrollable body, so larger groups can review all selected runners while the Sync and Close buttons stay fixed at the bottom. The sync logic still sends every checked runner in the list.
 
 ## Known Good Test Flow
 
