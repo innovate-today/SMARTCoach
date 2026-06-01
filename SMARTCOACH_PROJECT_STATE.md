@@ -827,6 +827,15 @@ These are intentionally not blocking the current launch path unless the user re-
 - Community/media remains future work, but GHL Community is not the default path because it requires a domain; prefer a lightweight in-app highlights/feed or share-card approach first.
 - Future SMART Trak product modules are parked: Attendance Trak, Equipment Trak, Docu Trak, Community Trak, and Ideas Trak.
 
+Attendance Trak:
+
+- Initial mobile-first attendance tracking is implemented inside the SMARTCoach Pro Mobile App group screen.
+- Training groups now have an **Attend** tray action that opens a full-screen Attendance sheet for the current group and date.
+- Attendance supports multiple checkpoints per day, starting with **Practice Start** and allowing additions such as **Weight Room**.
+- Each athlete can be marked Present, Late, Excused, or Absent per checkpoint, with a Mark All Present shortcut.
+- When a runner is marked absent and later records a timed workout on the same day, the first checkpoint auto-updates to Late with an audit note. If the runner was unmarked, workout activity auto-marks Present.
+- Current scope is local mobile attendance workflow. Future work should sync attendance to SMART Trak, add desktop Attendance Trak reporting/editing, and add eligibility/absence summaries.
+
 ## Recent Launch Cleanup Log
 
 Completed or intentionally narrowed items from the launch cleanup pass:
@@ -1052,6 +1061,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 219. SMARTCoach Pro Mobile App settings save now reads the **Remember this device for 7 days** checkbox inside the save handler, fixing the `rememberInput` error that stopped account/code validation before login could complete.
 220. SMARTCoach Pro Mobile App Training groups no longer move into Archive just because the automatic season changed, such as Spring 2026 to Summer 2026 on June 1. Active training groups stay on the Training tab until the coach explicitly archives them.
 221. SMARTCoach Pro Mobile App group tabs no longer use hard-coded season boundaries for visibility. Training shows active training groups, Meets shows active meet groups, and Archive shows only groups/meets the coach explicitly archived; automatic Spring/Summer/Fall/Winter labels remain only defaults/metadata.
+222. Attendance Trak started in the SMARTCoach Pro Mobile App: training groups have an **Attend** tray action with date-based attendance sheets, multiple checkpoints, Present/Late/Excused/Absent marks, Mark All Present, and workout-aware auto-updates from Absent to Late or blank to Present.
 
 ## Known Good Test Flow
 
