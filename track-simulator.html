@@ -297,10 +297,11 @@ function embeddedMode(){try{var p=new URLSearchParams(window.location.search||''
 function pageUrl(path){var url=new URL(path,window.location.origin);var key=accountKey();if(key&&key!=='default')url.searchParams.set('account',key);if(embeddedMode())url.searchParams.set('embed','1');return url.pathname+url.search;}
 function accessStorageKey(){return 'sc_access_'+accountKey();}
 function sessionStorageKey(){return 'sc_session_'+accountKey();}
+function rememberedSessionStorageKey(){return 'sc_session_remembered_'+accountKey();}
 function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
 function setAccessCode(value){try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
-function sessionToken(){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}}
-function setSessionToken(value){try{if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());else sessionStorage.removeItem(sessionStorageKey());}catch(e){}}
+function sessionToken(){try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}}
+function setSessionToken(value){try{if(value){localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());sessionStorage.removeItem(sessionStorageKey());}else{sessionStorage.removeItem(sessionStorageKey());localStorage.removeItem(rememberedSessionStorageKey());}}catch(e){}}
 function apiHeaders(){var h={'X-SMARTCoach-Account':accountKey()};var s=sessionToken();var c=accessCode();if(s)h['X-SMARTCoach-Session']=s;if(c&&!s)h['X-SMARTCoach-Access-Code']=c;return h;}
 function defaultBrandLogo(){return '/assets/smart-logo.png';}
 function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}

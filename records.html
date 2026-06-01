@@ -462,6 +462,7 @@ function pageUrl(path){
 }
 function accessStorageKey(){return 'sc_access_'+accountKey();}
 function sessionStorageKey(){return 'sc_session_'+accountKey();}
+function rememberedSessionStorageKey(){return 'sc_session_remembered_'+accountKey();}
 function recordsCacheKey(){return 'sc_records_cache_'+accountKey();}
 function accessCookieName(){return accessStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');}
 function getCookie(name){
@@ -482,10 +483,10 @@ function setAccessCode(value){
   setCookie(accessCookieName(),code);
 }
 function sessionToken(){
-  try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
+  try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}
 }
 function setSessionToken(value){
-  try{if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());else sessionStorage.removeItem(sessionStorageKey());}catch(e){}
+  try{if(value){localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());sessionStorage.removeItem(sessionStorageKey());}else{sessionStorage.removeItem(sessionStorageKey());localStorage.removeItem(rememberedSessionStorageKey());}}catch(e){}
 }
 function apiHeaders(){
   var headers={'X-SMARTCoach-Account':accountKey()};

@@ -227,13 +227,14 @@ var els={
 function smartCoachAccountKey(){try{var p=new URLSearchParams(location.search||'');var v=(p.get('account')||localStorage.getItem('sc_account')||'default').trim();return v||'default';}catch(e){return 'default';}}
 function accessStorageKey(){return 'sc_access_'+smartCoachAccountKey();}
 function sessionStorageKey(){return 'sc_session_'+smartCoachAccountKey();}
+function rememberedSessionStorageKey(){return 'sc_session_remembered_'+smartCoachAccountKey();}
 function parentEmailToolsEnabled(){return !!parentEmailToolsAllowed;}
 function tableColspan(){return parentEmailToolsEnabled()?8:7;}
 function syncEmailToolVisibility(){var enabled=parentEmailToolsEnabled();els.emailToolsToggleBtn.hidden=!enabled;els.emailToolsToggleBtn.disabled=true;els.emailParentsBtn.hidden=!enabled;els.copyParentsBtn.hidden=!enabled;els.selectAthleteHeader.hidden=!enabled;if(!enabled)selectedAthleteIds={};if(els.detailEmailParentsBtn)els.detailEmailParentsBtn.hidden=!enabled;}
 function smartCoachAccessCode(){try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
 function setSmartCoachAccessCode(value){try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
-function smartCoachSession(){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}}
-function setSmartCoachSession(value){try{if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());else sessionStorage.removeItem(sessionStorageKey());}catch(e){}}
+function smartCoachSession(){try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}}
+function setSmartCoachSession(value){try{if(value){localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());sessionStorage.removeItem(sessionStorageKey());}else{sessionStorage.removeItem(sessionStorageKey());localStorage.removeItem(rememberedSessionStorageKey());}}catch(e){}}
 function smartCoachHeaders(){var headers={'Content-Type':'application/json','X-SMARTCoach-Account':smartCoachAccountKey()};var session=smartCoachSession();var code=smartCoachAccessCode();if(session)headers['X-SMARTCoach-Session']=session;if(code&&!session)headers['X-SMARTCoach-Access-Code']=code;return headers;}
 function pageUrl(path){var params=new URLSearchParams(location.search||'');params.set('account',smartCoachAccountKey());var q=params.toString();return path+(q?'?'+q:'');}
 function apiUrl(path){return path+(path.indexOf('?')>=0?'&':'?')+'account='+encodeURIComponent(smartCoachAccountKey())+'&t='+Date.now();}

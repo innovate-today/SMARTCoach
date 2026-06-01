@@ -168,16 +168,24 @@ function accessCodeStorageKey(){
 function sessionStorageKey(){
   return 'sc_session_'+smartCoachAccountKey();
 }
+function rememberedSessionStorageKey(){
+  return 'sc_session_remembered_'+smartCoachAccountKey();
+}
 function smartCoachAccessCode(){
   try{return localStorage.getItem(accessCodeStorageKey())||'';}catch(e){return '';}
 }
 function smartCoachSession(){
-  try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(e){return '';}
+  try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}
 }
 function setSmartCoachSession(value){
   try{
-    if(value)sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
-    else sessionStorage.removeItem(sessionStorageKey());
+    if(value){
+      localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());
+      sessionStorage.removeItem(sessionStorageKey());
+    }else{
+      sessionStorage.removeItem(sessionStorageKey());
+      localStorage.removeItem(rememberedSessionStorageKey());
+    }
   }catch(e){}
 }
 function setSmartCoachAccessCode(value){
