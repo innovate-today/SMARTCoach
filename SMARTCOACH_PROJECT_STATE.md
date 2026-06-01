@@ -1040,6 +1040,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 216. SMARTCoach Pro Mobile App workout selector now hides coach/audit meta notes such as `Copied on Training Calendar from...` from the visible workout text while preserving those notes in SMART Trak.
 217. Dashboard Completed Workouts now surfaces athlete-submitted Athlete Calendar notes as an explicit **Athlete Note** column in the expanded workout detail table and includes the same field in training CSV export.
 218. SMART Trak coach access sessions are now shared consistently across pages. Athletes, Training Calendar, Plans, Meet History, Records, and Simulators read the same 7-day remembered session created from Dashboard/SMARTCoach access, so coaches are not asked for the code again when moving between pages.
+219. SMARTCoach Pro Mobile App settings save now reads the **Remember this device for 7 days** checkbox inside the save handler, fixing the `rememberInput` error that stopped account/code validation before login could complete.
 
 ## Known Good Test Flow
 
