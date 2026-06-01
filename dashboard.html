@@ -224,6 +224,7 @@ tr:last-child td{border-bottom:0}
       <div class="action-row">
         <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
         <a id="athletesLink" class="linkbtn secondary" href="/athletes.html">Athletes</a>
+        <a id="attendanceLink" class="linkbtn secondary" href="/attendance.html">Attendance</a>
         <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
         <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
         <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
@@ -1174,6 +1175,8 @@ function applySmartCoachLinks(){
   if(dashboard)dashboard.href=smartCoachPageUrl('/dashboard.html');
   var athletesLink=document.getElementById('athletesLink');
   if(athletesLink)athletesLink.href=smartCoachPageUrl('/athletes.html');
+  var attendance=document.getElementById('attendanceLink');
+  if(attendance)attendance.href=smartCoachPageUrl('/attendance.html');
   var meetHistory=document.getElementById('meetHistoryLink');
   if(meetHistory)meetHistory.href=smartCoachPageUrl('/meet-history.html');
   var records=document.getElementById('recordsLink');

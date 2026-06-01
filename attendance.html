@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="app-version" content="attendance-1780147917000">
+<title>SMART Trak Attendance</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309;--bad:#b91c1c;--purple:#6d28d9}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1480px;margin:0 auto;padding:20px 18px 32px}
+body.embedded .page{max-width:none;padding:16px 18px 28px}
+.top{position:sticky;top:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:0 12px 28px rgba(15,23,42,.08)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}.mark{width:58px;height:58px;display:grid;place-items:center;flex:0 0 58px}.mark img{display:block;max-width:58px;max-height:58px;object-fit:contain}
+h1{font-size:24px;line-height:1.15;margin:0}.sub{font-size:14px;color:var(--muted);margin-top:4px;font-weight:500}.updated{display:inline-flex;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:800;padding:7px 10px}
+.actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}.action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px;line-height:1.15}
+button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.utility,.linkbtn.utility{background:#f8fafc;color:#334155;border:1px solid var(--line)}button:disabled{opacity:.55;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}.stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px}.stat b{display:block;font-size:24px;line-height:1;color:#0f172a}.stat span{display:block;margin-top:5px;color:var(--muted);font-size:13px;font-weight:800}
+.bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px;flex-wrap:wrap}.field{display:grid;gap:4px}.field label{font-size:12px;font-weight:900;color:#475569}.field input,.field select{border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px;min-width:150px}.field.search{flex:1;min-width:260px}.field.search input{width:100%}.barstatus{font-size:13px;color:var(--muted);font-weight:800;margin-left:auto}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}.tablewrap{overflow:auto;max-height:calc(100vh - 335px)}table{width:100%;border-collapse:collapse;min-width:1100px}th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}td{font-size:14px}.name{font-weight:900;color:#102a70}.muted{color:var(--muted);font-size:12px;margin-top:2px}.empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}.status{border:1px solid var(--line);border-radius:8px;background:#fff;font:800 14px inherit;padding:8px 10px}.note{width:100%;min-width:220px;border:1px solid var(--line);border-radius:8px;background:#fff;font:14px inherit;padding:8px 10px}.pill{display:inline-flex;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#e8eefc;color:#173891}.pill.present{background:#dcfce7;color:var(--good)}.pill.late{background:#ffedd5;color:var(--warn)}.pill.absent{background:#fee2e2;color:var(--bad)}.pill.excused{background:#ede9fe;color:var(--purple)}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:10px;z-index:40;overflow:auto}.modalpanel{width:min(620px,100%);background:#fff;border-radius:10px;border:1px solid var(--line);box-shadow:0 18px 45px rgba(15,23,42,.2);overflow:hidden}.modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}.modalhead h2{font-size:20px;margin:0}.modalbody{padding:14px 16px}.modalbody input{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:15px inherit;padding:10px 12px}.modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px}.modalstatus{color:var(--muted);font-size:13px;font-weight:800;margin-right:auto}
+@media(max-width:860px){.page{padding:14px 10px 24px}.top{align-items:flex-start;flex-direction:column}.actions{width:100%;align-items:stretch}.action-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.bar{align-items:stretch;flex-direction:column}.field,.field.search{width:100%;min-width:0}.field input,.field select{width:100%}.barstatus{margin-left:0}.tablewrap{max-height:none}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>Attendance Trak</h1>
+        <div class="sub">Review, edit, export, and audit practice attendance from the SMARTCoach app.</div>
+        <div id="lastUpdated" class="updated">Last updated --</div>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="action-row">
+        <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
+        <a id="athletesLink" class="linkbtn secondary" href="/athletes.html">Athletes</a>
+        <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
+      </div>
+      <div class="action-row">
+        <button id="refreshBtn" class="utility" type="button">Refresh</button>
+        <button id="exportBtn" class="utility" type="button">Export CSV</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><b id="statPresent">0</b><span>Present</span></div>
+    <div class="stat"><b id="statLate">0</b><span>Late</span></div>
+    <div class="stat"><b id="statAbsent">0</b><span>Absent</span></div>
+    <div class="stat"><b id="statExcused">0</b><span>Excused</span></div>
+    <div class="stat"><b id="statTotal">0</b><span>Total marks</span></div>
+  </section>
+
+  <section class="bar">
+    <div class="field"><label for="startDate">Start</label><input id="startDate" type="date"></div>
+    <div class="field"><label for="endDate">End</label><input id="endDate" type="date"></div>
+    <div class="field"><label for="groupFilter">Group</label><select id="groupFilter"><option value="all">All groups</option></select></div>
+    <div class="field"><label for="statusFilter">Status</label><select id="statusFilter"><option value="all">All statuses</option><option value="present">Present</option><option value="late">Late</option><option value="absent">Absent</option><option value="excused">Excused</option></select></div>
+    <div class="field search"><label for="search">Search</label><input id="search" type="search" placeholder="Search athlete, group, note"></div>
+    <div id="barStatus" class="barstatus">Loading attendance...</div>
+  </section>
+
+  <section class="panel">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Date</th><th>Athlete</th><th>Group</th><th>Checkpoint</th><th>Status</th><th>Note</th><th>Source</th><th>Updated</th><th>Action</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="9" class="empty">Loading attendance...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<section id="accessModal" class="modal" hidden>
+  <div class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
+    <div class="modalhead"><h2 id="accessTitle">SMART Trak Access</h2></div>
+    <div class="modalbody">
+      <label class="field"><span>Access Code</span><input id="accessCode" type="password" placeholder="Enter access code" autocomplete="off"></label>
+      <div class="modalactions">
+        <div id="accessStatus" class="modalstatus">Enter the access code for this SMART Trak account.</div>
+        <button id="accessSubmit" type="button">Unlock Attendance</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+var attendance=[],filtered=[],groups=[];
+var els={lastUpdated:document.getElementById('lastUpdated'),rows:document.getElementById('rows'),barStatus:document.getElementById('barStatus'),startDate:document.getElementById('startDate'),endDate:document.getElementById('endDate'),groupFilter:document.getElementById('groupFilter'),statusFilter:document.getElementById('statusFilter'),search:document.getElementById('search'),accessModal:document.getElementById('accessModal'),accessCode:document.getElementById('accessCode'),accessSubmit:document.getElementById('accessSubmit'),accessStatus:document.getElementById('accessStatus')};
+function smartCoachAccountKey(){try{var p=new URLSearchParams(location.search||'');var v=(p.get('account')||localStorage.getItem('sc_account')||'default').trim();return v||'default';}catch(e){return 'default';}}
+function accessStorageKey(){return 'sc_access_'+smartCoachAccountKey();}
+function sessionStorageKey(){return 'sc_session_'+smartCoachAccountKey();}
+function rememberedSessionStorageKey(){return 'sc_session_remembered_'+smartCoachAccountKey();}
+function smartCoachAccessCode(){try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
+function setSmartCoachAccessCode(value){try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
+function smartCoachSession(){try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}}
+function setSmartCoachSession(value){try{if(value){localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());sessionStorage.removeItem(sessionStorageKey());}else{sessionStorage.removeItem(sessionStorageKey());localStorage.removeItem(rememberedSessionStorageKey());}}catch(e){}}
+function smartCoachHeaders(){var headers={'Content-Type':'application/json','X-SMARTCoach-Account':smartCoachAccountKey()};var session=smartCoachSession();var code=smartCoachAccessCode();if(session)headers['X-SMARTCoach-Session']=session;if(code&&!session)headers['X-SMARTCoach-Access-Code']=code;return headers;}
+function pageUrl(path){var params=new URLSearchParams(location.search||'');params.set('account',smartCoachAccountKey());var q=params.toString();return path+(q?'?'+q:'');}
+function apiUrl(path){return path+(path.indexOf('?')>=0?'&':'?')+'account='+encodeURIComponent(smartCoachAccountKey())+'&t='+Date.now();}
+function init(){document.body.classList.toggle('embedded',new URLSearchParams(location.search||'').get('embed')==='1');['dashboardLink','athletesLink','trainingCalendarLink'].forEach(function(id){var el=document.getElementById(id);if(el)el.href=pageUrl(el.getAttribute('href'));});setDefaultDates();document.getElementById('refreshBtn').addEventListener('click',loadAttendance);document.getElementById('exportBtn').addEventListener('click',exportCsv);[els.startDate,els.endDate].forEach(function(el){el.addEventListener('change',loadAttendance);});[els.groupFilter,els.statusFilter,els.search].forEach(function(el){el.addEventListener('input',render);el.addEventListener('change',render);});els.accessSubmit.addEventListener('click',submitAccess);els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});ensureAccountAccess().then(function(ok){if(ok)loadAttendance();});}
+function setDefaultDates(){var end=new Date();var start=new Date();start.setDate(end.getDate()-30);els.startDate.value=isoDate(start);els.endDate.value=isoDate(end);}
+function ensureAccountAccess(){return fetch(apiUrl('/api/smart-trak/account-status'),{cache:'no-store',headers:smartCoachHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){applyBrandLogo(result.data&&result.data.logoUrl);if(result.data&&result.data.accessReady===false){showAccessBlocked(result.data);return false;}return true;}).catch(function(){applyBrandLogo('');return true;});}
+function loadAttendance(){els.barStatus.textContent='Loading attendance...';var path='/api/smart-trak/attendance?start='+encodeURIComponent(els.startDate.value||'')+'&end='+encodeURIComponent(els.endDate.value||'');return fetch(apiUrl(path),{cache:'no-store',headers:smartCoachHeaders()}).then(jsonResult).then(function(data){els.accessModal.hidden=true;attendance=data.attendance||[];groups=unique(attendance.map(function(row){return row.groupName;}).filter(Boolean)).sort();renderGroupFilter();els.lastUpdated.textContent='Last updated '+formatDateTime(new Date());render();}).catch(function(error){if(error.accessCodeRequired){showAccessPrompt(error);return;}els.barStatus.textContent='Could not load attendance: '+error.message;els.rows.innerHTML='<tr><td colspan="9" class="empty">Could not load attendance.</td></tr>';});}
+function renderGroupFilter(){var current=els.groupFilter.value;var options=['<option value="all">All groups</option>'].concat(groups.map(function(name){return '<option value="'+escAttr(name)+'">'+esc(name)+'</option>';}));els.groupFilter.innerHTML=options.join('');els.groupFilter.value=groups.indexOf(current)>=0?current:'all';}
+function render(){var q=norm(els.search.value),group=els.groupFilter.value,status=els.statusFilter.value;filtered=attendance.filter(function(row){if(group!=='all'&&row.groupName!==group)return false;if(status!=='all'&&row.status!==status)return false;if(q&&[row.athleteName,row.groupName,row.checkpointName,row.note,row.source].join(' ').toLowerCase().indexOf(q)<0)return false;return true;});renderStats(filtered);els.barStatus.textContent=filtered.length+' attendance mark'+(filtered.length===1?'':'s')+' in view';if(!filtered.length){els.rows.innerHTML='<tr><td colspan="9" class="empty">No attendance marks match this view.</td></tr>';return;}els.rows.innerHTML=filtered.map(rowHtml).join('');}
+function rowHtml(row){return '<tr data-id="'+escAttr(row.id)+'"><td>'+esc(row.date)+'</td><td><span class="name">'+esc(row.athleteName)+'</span></td><td>'+esc(row.groupName)+'</td><td>'+esc(row.checkpointName)+'</td><td><select class="status" data-status><option value="present" '+sel(row.status,'present')+'>Present</option><option value="late" '+sel(row.status,'late')+'>Late</option><option value="excused" '+sel(row.status,'excused')+'>Excused</option><option value="absent" '+sel(row.status,'absent')+'>Absent</option></select><div class="muted"><span class="pill '+escAttr(row.status)+'">'+esc(statusLabel(row.status))+'</span></div></td><td><input class="note" data-note value="'+escAttr(row.note||'')+'" placeholder="Optional note"></td><td>'+esc(row.source||'coach')+'</td><td>'+esc(formatShort(row.updatedAt))+'</td><td><button class="utility" type="button" data-save="'+escAttr(row.id)+'">Save</button></td></tr>';}
+document.addEventListener('click',function(event){var btn=event.target.closest&&event.target.closest('[data-save]');if(btn)saveRow(btn.getAttribute('data-save'),btn);});
+function saveRow(id,btn){var tr=document.querySelector('tr[data-id="'+cssEscape(id)+'"]');var row=attendance.find(function(item){return item.id===id;});if(!tr||!row)return;var next=Object.assign({},row,{status:tr.querySelector('[data-status]').value,note:tr.querySelector('[data-note]').value,updatedAt:new Date().toISOString(),source:'desktop'});btn.disabled=true;btn.textContent='Saving...';fetch(apiUrl('/api/smart-trak/attendance'),{method:'PATCH',headers:smartCoachHeaders(),body:JSON.stringify({records:[next]})}).then(jsonResult).then(function(){var index=attendance.findIndex(function(item){return item.id===id;});if(index>=0)attendance[index]=next;render();}).catch(function(error){els.barStatus.textContent='Could not save attendance: '+error.message;}).finally(function(){btn.disabled=false;btn.textContent='Save';});}
+function renderStats(rows){var counts={present:0,late:0,absent:0,excused:0};rows.forEach(function(row){if(counts[row.status]!==undefined)counts[row.status]++;});document.getElementById('statPresent').textContent=counts.present;document.getElementById('statLate').textContent=counts.late;document.getElementById('statAbsent').textContent=counts.absent;document.getElementById('statExcused').textContent=counts.excused;document.getElementById('statTotal').textContent=rows.length;}
+function exportCsv(){var cols=['date','athleteName','groupName','checkpointName','status','note','source','updatedAt'];var lines=[cols.join(',')].concat(filtered.map(function(row){return cols.map(function(col){return csv(row[col]);}).join(',');}));var blob=new Blob([lines.join('\n')],{type:'text/csv'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='smart-trak-attendance.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url);},250);}
+function submitAccess(){var code=els.accessCode.value.trim();if(!code){els.accessStatus.textContent='Enter the access code to continue.';els.accessStatus.style.color='#b91c1c';return;}setSmartCoachAccessCode(code);els.accessStatus.textContent='Checking access...';els.accessStatus.style.color='#64748b';fetch('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code})}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){if(result.ok&&result.data&&result.data.sessionToken){setSmartCoachSession(result.data.sessionToken);setSmartCoachAccessCode('');ensureAccountAccess().then(function(){loadAttendance();});return;}setSmartCoachAccessCode('');els.accessStatus.textContent=(result.data&&result.data.error)||'Access code was not accepted.';els.accessStatus.style.color='#b91c1c';}).catch(function(){setSmartCoachAccessCode('');els.accessStatus.textContent='Access could not be checked. Try again.';els.accessStatus.style.color='#b91c1c';});}
+function showAccessBlocked(data){var message=(data&&data.subscriptionBlockedReason)||(data&&data.error)||'SMART Trak access is blocked for this account.';els.lastUpdated.textContent='Access blocked';els.barStatus.textContent=message;els.rows.innerHTML='<tr><td colspan="9" class="empty">'+esc(message)+'</td></tr>';els.accessStatus.textContent=message;els.accessStatus.style.color='#b91c1c';els.accessSubmit.disabled=true;els.accessCode.disabled=true;els.accessModal.hidden=false;}
+function showAccessPrompt(error){els.lastUpdated.textContent='Access required';els.barStatus.textContent='Access code required.';els.rows.innerHTML='<tr><td colspan="9" class="empty">Enter the access code to view attendance.</td></tr>';els.accessStatus.textContent='Enter the access code for '+((error.data&&error.data.accountKey)||'this account')+'.';els.accessStatus.style.color='#64748b';els.accessCode.value='';els.accessModal.hidden=false;setTimeout(function(){els.accessCode.focus();},50);}
+function jsonResult(response){return response.json().then(function(data){if(!response.ok){var error=new Error(data.error||'Request failed');error.accessCodeRequired=!!(data&&data.accessCodeRequired);error.data=data;throw error;}return data;});}
+function defaultBrandLogo(){return '/assets/smart-logo.png';}
+function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
+function sel(a,b){return a===b?'selected':'';}
+function statusLabel(value){return value?value.charAt(0).toUpperCase()+value.slice(1):'Unmarked';}
+function isoDate(date){return date.toISOString().slice(0,10);}
+function formatDateTime(date){return date.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
+function formatShort(value){var date=new Date(value);return Number.isNaN(date.getTime())?'':formatDateTime(date);}
+function unique(list){var seen={};return list.filter(function(item){var key=norm(item);if(!key||seen[key])return false;seen[key]=true;return true;});}
+function csv(value){var text=String(value||'');return /[",\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;}
+function norm(value){return String(value||'').trim().toLowerCase();}
+function esc(value){return String(value||'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
+function escAttr(value){return esc(value).replace(/\\/g,'\\\\');}
+function cssEscape(value){if(window.CSS&&CSS.escape)return CSS.escape(value);return String(value||'').replace(/"/g,'\\"');}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+<script src="/assets/smartcoach-help-widget.js"></script>
+</body>
+</html>

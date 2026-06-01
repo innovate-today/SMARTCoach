@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1780147916000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1780147917000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1780147916000 -->
-<!-- v1780147916000 -->
+<!-- build:1780147917000 -->
+<!-- v1780147917000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -2192,7 +2192,42 @@ function renameAttendanceCheckpoint(cpIndex){
 }
 function saveAttendanceAndClose(){
   save();
-  hm('m-attendance');
+  syncAttendanceToSmartTrak().then(function(){
+    hm('m-attendance');
+  }).catch(function(error){
+    var summary=document.getElementById('att-summary');
+    if(summary)summary.textContent='Attendance saved on this device, but SMART Trak sync failed: '+(error&&error.message?error.message:'try again');
+  });
+}
+function syncAttendanceToSmartTrak(){
+  if(!CL)return Promise.resolve(false);
+  var day=ensureAttendanceDay(attendanceDate());
+  var summary=document.getElementById('att-summary');
+  if(summary)summary.textContent='Saving attendance to SMART Trak...';
+  return fetch(smartCoachApiUrl('/api/smart-trak/attendance'),{
+    method:'POST',
+    headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
+    body:JSON.stringify(attendancePayload(day))
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Attendance sync failed.');
+    if(summary)summary.textContent='Saved '+(result.data&&result.data.count||0)+' attendance mark'+((result.data&&result.data.count)===1?'':'s')+' to SMART Trak.';
+    return result.data;
+  });
+}
+function attendancePayload(day){
+  return {
+    date:day&&day.date||attendanceDate(),
+    groupId:String(CL.sharedGroupId||CL.id||''),
+    groupName:CL.name||'Training Group',
+    runners:(CL.runners||[]).map(function(r){
+      return{runnerId:r.id,contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',name:r.name||''};
+    }),
+    checkpoints:(day&&day.checkpoints||[]).map(function(cp){
+      return{id:cp.id,name:cp.name,records:cp.records||{}};
+    })
+  };
 }
 function markWorkoutAttendance(r){
   if(!CL||CL.type==='meet'||!r)return;

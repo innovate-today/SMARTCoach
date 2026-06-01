@@ -9,6 +9,7 @@ const handlers = {
   "athlete-calendar": require("../../lib/athlete-calendar"),
   "athlete-profile": require("../ghl/athlete-profile"),
   athletes: require("../ghl/athletes"),
+  attendance: require("../ghl/attendance"),
   dashboard: require("../ghl/dashboard"),
   groups: require("../../lib/ghl-groups"),
   "manual-mileage": require("../ghl/manual-mileage"),
