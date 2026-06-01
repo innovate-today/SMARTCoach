@@ -712,6 +712,14 @@ Community/media:
 
 - GHL Community is not the preferred default path because it requires a domain.
 - Future idea: build a simple SMART Trak team highlights or achievement feed, attach PR/record media links to athlete profiles, create coach-controlled share cards, or support a different community approach that does not depend on GHL Community unless domain/community setup becomes worthwhile.
+- Future product-module idea: **Community Trak** as a subscriber community for coaching discussions, best practices, resource sharing, program-building ideas, Q&A, and networking. This could become a major retention tool because coaches learn from each other as much as from software.
+
+Future SMART Trak product modules:
+
+- **Attendance Trak**: program accountability module for daily attendance, excused absences, unexcused absences, attendance reports, and eligibility monitoring.
+- **Equipment Trak**: inventory-management module for uniforms, warmups, watches, timing chips, issued equipment, and returns tracking.
+- **Docu Trak**: compliance-management module for physicals, medical forms, goal sheets, team agreements, parent acknowledgements, and missing-document alerts.
+- **Ideas Trak**: product-feedback module where coaches can submit ideas, vote on features, comment on suggestions, view the roadmap, and join beta testing.
 
 Field events:
 
@@ -817,6 +825,7 @@ These are intentionally not blocking the current launch path unless the user re-
 - Athlete-facing training calendar initial portal is implemented; future work is richer coach calendar response summaries, optional approval, review filters, and athlete access management controls.
 - Field-event tracking initial support is implemented; future work is deeper vertical-jump height progression, place/scoring, and richer field-event analytics.
 - Community/media remains future work, but GHL Community is not the default path because it requires a domain; prefer a lightweight in-app highlights/feed or share-card approach first.
+- Future SMART Trak product modules are parked: Attendance Trak, Equipment Trak, Docu Trak, Community Trak, and Ideas Trak.
 
 ## Recent Launch Cleanup Log
 
