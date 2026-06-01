@@ -1042,6 +1042,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 218. SMART Trak coach access sessions are now shared consistently across pages. Athletes, Training Calendar, Plans, Meet History, Records, and Simulators read the same 7-day remembered session created from Dashboard/SMARTCoach access, so coaches are not asked for the code again when moving between pages.
 219. SMARTCoach Pro Mobile App settings save now reads the **Remember this device for 7 days** checkbox inside the save handler, fixing the `rememberInput` error that stopped account/code validation before login could complete.
 220. SMARTCoach Pro Mobile App Training groups no longer move into Archive just because the automatic season changed, such as Spring 2026 to Summer 2026 on June 1. Active training groups stay on the Training tab until the coach explicitly archives them.
+221. SMARTCoach Pro Mobile App group tabs no longer use hard-coded season boundaries for visibility. Training shows active training groups, Meets shows active meet groups, and Archive shows only groups/meets the coach explicitly archived; automatic Spring/Summer/Fall/Winter labels remain only defaults/metadata.
 
 ## Known Good Test Flow
 
