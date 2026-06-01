@@ -1064,6 +1064,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 222. Attendance Trak started in the SMARTCoach Pro Mobile App: training groups have an **Attend** tray action with date-based attendance sheets, multiple checkpoints, Present/Late/Excused/Absent marks, Mark All Present, and workout-aware auto-updates from Absent to Late or blank to Present.
 223. SMARTCoach Pro Mobile App Groups screen now supports the daily attendance workflow directly: tap **Attend**, choose the training group, and complete attendance. The main Groups tray no longer shows Delete; permanent Delete is only available from the Archive tab and asks which archived group to remove.
 224. Attendance Trak now syncs saved mobile attendance into SMART Trak account storage. Desktop SMART Trak has a new **Attendance** page for date/group/status filtering, status/note edits, summary counts, and CSV export, and the Athletes page detail modal shows each athlete's recent attendance results with a link to the full report.
+225. Attendance Trak is now treated as an Athletes-page workflow instead of a main Dashboard destination. The Dashboard nav no longer shows Attendance, Attendance Trak adds an attendance percentage card, and row corrections use an **Update** action for edited status/notes.
 
 ## Known Good Test Flow
 
