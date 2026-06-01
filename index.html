@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1780147915000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1780147916000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1780147915000 -->
-<!-- v1780147915000 -->
+<!-- build:1780147916000 -->
+<!-- v1780147916000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -5695,6 +5695,7 @@ document.addEventListener('touchstart',function(e){
   prepareFeedbackAudio();
   var t=e.target;
   if(t.closest&&t.closest('.picker-row'))return;
+  if(t.closest&&t.closest('#m-attendance'))return;
   if(t.tagName==='BUTTON'||t.classList.contains('blnk')||t.classList.contains('ibtn')||t.classList.contains('tog')){
     e.preventDefault();t.click();
   }
