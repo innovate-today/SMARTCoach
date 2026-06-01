@@ -9,7 +9,6 @@ const handlers = {
   "athlete-calendar": require("../../lib/athlete-calendar"),
   "athlete-profile": require("../ghl/athlete-profile"),
   athletes: require("../ghl/athletes"),
-  attendance: require("../ghl/attendance"),
   dashboard: require("../ghl/dashboard"),
   groups: require("../../lib/ghl-groups"),
   "manual-mileage": require("../ghl/manual-mileage"),
@@ -31,7 +30,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -81,6 +80,13 @@ module.exports = async function handler(req, res) {
     return accountCodeReset(req, res);
   }
 
+  if (route === "attendance") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    await recordRequestCoachDevice(req).catch(() => {});
+    return accountAttendance(req, res);
+  }
+
   if (!selected) {
     res.status(404).json({ error: "SMART Trak endpoint not found." });
     return;
@@ -111,6 +117,99 @@ async function recordRequestCoachDevice(req) {
     userAgent: headerValue(req, "user-agent"),
     coachIndex: validSession && Number(validSession.coachIndex) || 0,
   });
+}
+
+async function accountAttendance(req, res) {
+  setAttendanceCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    if (req.method === "GET") {
+      const attendance = await loadAttendanceRecords(accountKey, {
+        start: firstQueryValue(req.query && req.query.start),
+        end: firstQueryValue(req.query && req.query.end),
+        group: firstQueryValue(req.query && req.query.group),
+        groupId: firstQueryValue(req.query && req.query.groupId),
+        athleteId: firstQueryValue(req.query && (req.query.athleteId || req.query.contactId)),
+        athleteName: firstQueryValue(req.query && req.query.athleteName),
+        status: firstQueryValue(req.query && req.query.status),
+      });
+      res.status(200).json({ success: true, attendance, count: attendance.length });
+      return;
+    }
+
+    if (req.method === "POST" || req.method === "PATCH") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      const records = attendanceRecordsFromPayload(payload);
+      if (!records.length) {
+        res.status(400).json({ error: "No attendance records were provided." });
+        return;
+      }
+      const saved = await saveAttendanceRecords(accountKey, records);
+      res.status(200).json({ success: !!saved.saved, attendance: records, ...saved });
+      return;
+    }
+
+    res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Attendance save failed." });
+  }
+}
+
+function attendanceRecordsFromPayload(payload) {
+  if (Array.isArray(payload && payload.records)) return payload.records;
+  const date = cleanSetupText(payload && payload.date).slice(0, 10);
+  const groupId = cleanSetupText(payload && payload.groupId);
+  const groupName = cleanSetupText(payload && payload.groupName);
+  const runners = Array.isArray(payload && payload.runners) ? payload.runners : [];
+  const runnerByKey = {};
+  runners.forEach((runner) => {
+    const item = runner || {};
+    [item.runnerId, item.id, item.contactId, item.smartcoachAthleteId, item.name].map(cleanSetupText).filter(Boolean).forEach((key) => {
+      runnerByKey[String(key)] = item;
+    });
+  });
+  const out = [];
+  (Array.isArray(payload && payload.checkpoints) ? payload.checkpoints : []).forEach((checkpoint, cpIndex) => {
+    const cp = checkpoint || {};
+    const checkpointId = cleanSetupText(cp.id) || `checkpoint_${cpIndex + 1}`;
+    const checkpointName = cleanSetupText(cp.name) || (cpIndex ? `Checkpoint ${cpIndex + 1}` : "Practice Start");
+    const records = cp.records && typeof cp.records === "object" ? cp.records : {};
+    Object.keys(records).forEach((runnerKey) => {
+      const row = records[runnerKey] || {};
+      const runner = runnerByKey[runnerKey] || row || {};
+      const status = cleanSetupText(row.status).toLowerCase();
+      if (!status) return;
+      out.push({
+        date,
+        groupId,
+        groupName,
+        checkpointId,
+        checkpointName,
+        athleteId: cleanSetupText(runner.contactId || runner.smartcoachAthleteId || runner.id || runner.runnerId || runnerKey),
+        contactId: cleanSetupText(runner.contactId),
+        smartcoachAthleteId: cleanSetupText(runner.smartcoachAthleteId),
+        athleteName: cleanSetupText(runner.name || row.athleteName),
+        status,
+        note: cleanSetupText(row.note),
+        source: cleanSetupText(row.source) || "coach",
+        updatedAt: cleanSetupText(row.updatedAt) || new Date().toISOString(),
+      });
+    });
+  });
+  return out;
+}
+
+function setAttendanceCorsHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label");
 }
 
 async function accountStatus(req, res) {
