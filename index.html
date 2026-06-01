@@ -1831,10 +1831,9 @@ function visibleGroups(){
   return logs.filter(function(l){
     var type=l.type||'training';
     var currentOrUpcomingMeet=type==='meet'&&(isCurrentGroup(l)||isUpcomingMeetGroup(l));
-    if(GV==='archive')return !!l.archived||(!isCurrentGroup(l)&&!isUpcomingMeetGroup(l));
+    if(GV==='archive')return !!l.archived;
     if(l.archived)return false;
     if(GV==='meets')return currentOrUpcomingMeet;
-    if(!isCurrentGroup(l))return false;
     return type!=='meet';
   });
 }
