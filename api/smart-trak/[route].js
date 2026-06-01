@@ -87,6 +87,12 @@ module.exports = async function handler(req, res) {
     return accountAttendance(req, res);
   }
 
+  if (route === "docu-trak") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountDocuTrak(req, res);
+  }
+
   if (!selected) {
     res.status(404).json({ error: "SMART Trak endpoint not found." });
     return;
@@ -210,6 +216,159 @@ function setAttendanceCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label");
+}
+
+async function accountDocuTrak(req, res) {
+  setDocuTrakCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    if (req.method === "GET") {
+      const existing = await loadAccountRecord(accountKey);
+      res.status(200).json({ success: true, ...normalizeDocuTrak(existing && existing.record && existing.record.docuTrak) });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      res.status(404).json({ error: "Account registry record was not found." });
+      return;
+    }
+
+    const current = normalizeDocuTrak(existing.record.docuTrak);
+    const action = cleanSetupText(payload.action || payload.mode).toLowerCase();
+    if (action === "save-items") {
+      current.items = normalizeDocuItems(payload.items);
+    } else if (action === "save-athlete") {
+      const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
+      const athleteName = cleanSetupText(payload.athleteName || payload.name);
+      const athleteKey = docuAthleteKey(athleteId, athleteName);
+      if (!athleteKey) throw httpError(400, "Athlete is required.");
+      current.records[athleteKey] = {
+        athleteId,
+        athleteName,
+        updatedAt: new Date().toISOString(),
+        items: normalizeDocuAthleteItems(payload.items || payload.records),
+      };
+    } else {
+      throw httpError(400, "Docu Trak action is required.");
+    }
+
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      docuTrak: current,
+      lastDocuTrakSync: { savedAt: new Date().toISOString(), action },
+    });
+    res.status(200).json({ success: true, ...current });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Docu Trak save failed." });
+  }
+}
+
+function normalizeDocuTrak(source) {
+  const value = source && typeof source === "object" ? source : {};
+  return {
+    items: normalizeDocuItems(value.items),
+    records: normalizeDocuRecords(value.records),
+  };
+}
+
+function normalizeDocuItems(items) {
+  const source = Array.isArray(items) && items.length ? items : defaultDocuItems();
+  const seen = new Set();
+  return source.map((item, index) => {
+    const raw = typeof item === "string" ? { name: item } : item || {};
+    const name = cleanSetupText(raw.name || raw.label || raw.title);
+    if (!name) return null;
+    const id = normalizeDocuItemId(raw.id || name || `item_${index + 1}`);
+    if (!id || seen.has(id)) return null;
+    seen.add(id);
+    return {
+      id,
+      name,
+      required: raw.required === false ? false : true,
+      active: raw.active === false ? false : true,
+      dueDate: cleanSetupText(raw.dueDate).slice(0, 10),
+    };
+  }).filter(Boolean);
+}
+
+function defaultDocuItems() {
+  return [
+    { id: "physical", name: "Physical", required: true, active: true },
+    { id: "goals_form", name: "Goals Form", required: true, active: true },
+    { id: "guidelines_expectations", name: "Guidelines / Expectations", required: true, active: true },
+  ];
+}
+
+function normalizeDocuRecords(records) {
+  const out = {};
+  const source = records && typeof records === "object" ? records : {};
+  Object.keys(source).forEach((key) => {
+    const row = source[key] || {};
+    const athleteKey = normalizeDocuRecordKey(key);
+    if (!athleteKey) return;
+    out[athleteKey] = {
+      athleteId: cleanSetupText(row.athleteId),
+      athleteName: cleanSetupText(row.athleteName),
+      updatedAt: cleanSetupText(row.updatedAt),
+      items: normalizeDocuAthleteItems(row.items),
+    };
+  });
+  return out;
+}
+
+function normalizeDocuAthleteItems(items) {
+  const out = {};
+  const source = items && typeof items === "object" ? items : {};
+  Object.keys(source).forEach((id) => {
+    const itemId = normalizeDocuItemId(id);
+    if (!itemId) return;
+    const item = source[id] || {};
+    out[itemId] = {
+      status: normalizeDocuStatus(item.status),
+      receivedDate: cleanSetupText(item.receivedDate || item.date).slice(0, 10),
+      note: cleanSetupText(item.note || item.notes).slice(0, 800),
+      updatedAt: cleanSetupText(item.updatedAt) || new Date().toISOString(),
+    };
+  });
+  return out;
+}
+
+function normalizeDocuStatus(value) {
+  const status = cleanSetupText(value).toLowerCase().replace(/[^a-z]+/g, "_").replace(/^_+|_+$/g, "");
+  if (["complete", "missing", "waived", "not_required"].includes(status)) return status;
+  return "missing";
+}
+
+function docuAthleteKey(athleteId, athleteName) {
+  return normalizeDocuRecordKey(athleteId || athleteName);
+}
+
+function normalizeDocuRecordKey(value) {
+  return cleanSetupText(value).toLowerCase().replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 120);
+}
+
+function normalizeDocuItemId(value) {
+  return cleanSetupText(value).toLowerCase().replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
+}
+
+function setDocuTrakCorsHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code");
 }
 
 async function accountStatus(req, res) {
