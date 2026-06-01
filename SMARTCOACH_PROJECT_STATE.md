@@ -1065,6 +1065,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 223. SMARTCoach Pro Mobile App Groups screen now supports the daily attendance workflow directly: tap **Attend**, choose the training group, and complete attendance. The main Groups tray no longer shows Delete; permanent Delete is only available from the Archive tab and asks which archived group to remove.
 224. Attendance Trak now syncs saved mobile attendance into SMART Trak account storage. Desktop SMART Trak has a new **Attendance** page for date/group/status filtering, status/note edits, summary counts, and CSV export, and the Athletes page detail modal shows each athlete's recent attendance results with a link to the full report.
 225. Attendance Trak is now treated as an Athletes-page workflow instead of a main Dashboard destination. The Dashboard nav no longer shows Attendance, Attendance Trak adds an attendance percentage card, and row corrections use an **Update** action for edited status/notes.
+226. Attendance Trak desktop filtering now includes a dedicated Checkpoint dropdown so coaches can isolate marks from Practice Start, Weight Room, or any renamed attendance checkpoint.
 
 ## Known Good Test Flow
 
