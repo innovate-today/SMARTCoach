@@ -410,17 +410,26 @@ async function accountEquipmentTrak(req, res) {
     const action = cleanSetupText(payload.action || payload.mode).toLowerCase();
     if (action === "save-items") {
       current.items = normalizeEquipmentItems(payload.items);
+    } else if (action === "save-inventory") {
+      current.inventory = normalizeEquipmentInventory(payload.inventory || payload.items);
     } else if (action === "save-athlete") {
       const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
       const athleteName = cleanSetupText(payload.athleteName || payload.name);
       const athleteKey = docuAthleteKey(athleteId, athleteName);
       if (!athleteKey) throw httpError(400, "Athlete is required.");
+      const previous = current.records[athleteKey];
       current.records[athleteKey] = {
         athleteId,
         athleteName,
         updatedAt: new Date().toISOString(),
         items: normalizeEquipmentAthleteItems(payload.items || payload.records),
       };
+      const duplicate = duplicateIssuedEquipment(current.records);
+      if (duplicate) {
+        if (previous) current.records[athleteKey] = previous;
+        else delete current.records[athleteKey];
+        throw httpError(409, `${duplicate.itemId} #${duplicate.number} is already issued to ${duplicate.firstAthlete}.`);
+      }
     } else {
       throw httpError(400, "Equipment Trak action is required.");
     }
@@ -441,6 +450,7 @@ function normalizeEquipmentTrak(source) {
   return {
     items: normalizeEquipmentItems(value.items),
     records: normalizeEquipmentRecords(value.records),
+    inventory: normalizeEquipmentInventory(value.inventory),
   };
 }
 
@@ -509,6 +519,66 @@ function normalizeEquipmentAthleteItems(items) {
     };
   });
   return out;
+}
+
+function normalizeEquipmentInventory(inventory) {
+  const source = Array.isArray(inventory) ? inventory : [];
+  return source.map((entry, index) => {
+    const raw = entry || {};
+    const itemId = normalizeDocuItemId(raw.itemId || raw.equipmentItemId || raw.item || raw.itemName);
+    const itemName = cleanSetupText(raw.itemName || raw.name || raw.item).slice(0, 120);
+    if (!itemId && !itemName) return null;
+    const trackingType = normalizeInventoryTrackingType(raw.trackingType || raw.type);
+    const quantity = Math.max(0, parseInt(raw.quantity, 10) || 0);
+    const startNumber = cleanSetupText(raw.startNumber || raw.start || raw.from).slice(0, 40);
+    const endNumber = cleanSetupText(raw.endNumber || raw.end || raw.to).slice(0, 40);
+    return {
+      id: normalizeDocuItemId(raw.id || `${itemId || itemName}_${index + 1}`) || `inventory_${index + 1}`,
+      program: cleanSetupText(raw.program || raw.sport || raw.season).slice(0, 80),
+      group: cleanSetupText(raw.group || raw.team || raw.gender).slice(0, 80),
+      itemId,
+      itemName,
+      trackingType,
+      size: cleanSetupText(raw.size).slice(0, 80),
+      startNumber,
+      endNumber,
+      quantity: trackingType === "numbered" ? inventoryRangeCount(startNumber, endNumber) : quantity,
+      note: cleanSetupText(raw.note || raw.notes).slice(0, 800),
+      active: raw.active === false ? false : true,
+      updatedAt: cleanSetupText(raw.updatedAt) || new Date().toISOString(),
+    };
+  }).filter(Boolean);
+}
+
+function normalizeInventoryTrackingType(value) {
+  const type = cleanSetupText(value).toLowerCase().replace(/[^a-z]+/g, "_").replace(/^_+|_+$/g, "");
+  if (["numbered", "size_quantity", "count"].includes(type)) return type;
+  return "numbered";
+}
+
+function inventoryRangeCount(start, end) {
+  const a = parseInt(cleanSetupText(start), 10);
+  const b = parseInt(cleanSetupText(end), 10);
+  if (Number.isFinite(a) && Number.isFinite(b) && b >= a) return b - a + 1;
+  return start ? 1 : 0;
+}
+
+function duplicateIssuedEquipment(records) {
+  const seen = {};
+  Object.keys(records || {}).forEach((athleteKey) => {
+    const record = records[athleteKey] || {};
+    Object.keys(record.items || {}).forEach((itemId) => {
+      const item = record.items[itemId] || {};
+      if (item.status !== "issued" || !item.number) return;
+      const key = `${normalizeDocuItemId(itemId)}::${cleanSetupText(item.number).toLowerCase()}`;
+      if (!seen[key]) {
+        seen[key] = { itemId, number: item.number, firstAthlete: record.athleteName || athleteKey };
+      } else if (!seen[key].duplicate) {
+        seen[key].duplicate = true;
+      }
+    });
+  });
+  return Object.keys(seen).map((key) => seen[key]).find((row) => row.duplicate) || null;
 }
 
 function normalizeEquipmentStatus(value) {

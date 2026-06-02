@@ -140,7 +140,10 @@ The Athletes table shows a quick Docs summary for each athlete, such as how many
 
 ## Equipment Trak
 
-Use Equipment Trak to replace the paper clipboard for issued team gear. Equipment Trak lives inside the athlete detail modal on the Athletes page.
+Use Equipment Trak to replace the paper clipboard for program gear. Equipment Trak has two coach-facing parts:
+
+- **Equipment Issued**: who has what, what still needs to be returned, and what is lost or damaged.
+- **Equipment Inventory**: what the program owns, including numbered ranges and size quantities.
 
 Common items include:
 
@@ -161,6 +164,23 @@ How to set up Equipment Trak:
 5. Turn on **Size** for items where the coach needs to track a size.
 6. Turn on **Number / ID** for numbered items such as watches, warmups, chips, or bags.
 7. Click **Save Equipment Trak Setup**.
+
+How to set up Equipment Inventory:
+
+1. Open **Athletes**.
+2. Click **Equipment Trak** in the top toolbar.
+3. Open **Equipment Inventory**.
+4. Click **Add Inventory**.
+5. Enter the program or season, such as Track or Cross Country.
+6. Choose the item, group, and tracking type.
+7. Use **Numbered** for items with unique numbers, such as backpacks, watches, warmups, or timing chips. Enter the start and end number.
+8. Use **Size Qty** for items counted by size, such as shorts, singlets, or warmup tops.
+9. Use **Count** for simple items where only the total matters.
+10. Click **Save Inventory**.
+
+Example: Track Girls Backpacks can be entered as **Numbered**, start **1**, end **45**. Track Boys Backpacks can be entered as **Numbered**, start **46**, end **90**.
+
+Important: a numbered item that is currently issued cannot be issued to a second athlete with the same item number. Mark the item returned, lost / damaged, or not issued before reassigning that number.
 
 How to run equipment issue day:
 
@@ -184,26 +204,27 @@ How to update an athlete:
 
 The Athletes table shows a quick Equipment summary for each athlete, including how many items are currently issued and still need to be returned.
 
-How to use Inventory Reports:
+How to use Equipment Trak reports:
 
 1. Open **Athletes**.
-2. Click **Inventory Reports**.
-3. Use the status filter to view **Issued**, **Needs Return**, **Returned**, **Lost / Damaged**, **Not Issued**, or **Not Required** equipment.
-4. Use the item filter when you only want one item type, such as watches, backpacks, warmups, or uniform tops.
+2. Click **Equipment Trak** in the top toolbar.
+3. Use **Equipment Issued** to view issued gear, needs return, returned gear, and lost / damaged gear.
+4. Use the status and item filters when you only want one report type or one item type.
 5. Search by item, number / ID, athlete name, size, or note.
-6. Use the summary cards to see quick totals for issued gear, gear that needs return, returned gear, and lost / damaged gear.
-7. Click **Export CSV** when you need a spreadsheet list for collection day or follow-up.
-8. Click the athlete name in the report results to open that athlete's Equipment Trak record.
+6. Click **Export CSV** when you need a spreadsheet list for collection day or follow-up.
+7. Click the athlete name in the report results to open that athlete's Equipment Trak record.
+8. Use **Equipment Inventory** to see total owned, available, issued, and lost / damaged counts by inventory batch.
 
-Example: if you find a backpack labeled **17**, open **Inventory Reports** and search **17** to see which athlete has that backpack assigned.
+Example: if you find a backpack labeled **17**, open **Equipment Trak**, choose **Equipment Issued**, and search **17** to see which athlete has that backpack assigned.
 
 End-of-season return workflow:
 
-1. Open **Inventory Reports**.
-2. Choose **Needs Return**.
-3. Filter by item type if needed.
-4. Export the list or work directly from the screen.
-5. As gear is returned, open each athlete and mark the item **Returned** with the returned date.
+1. Open **Equipment Trak**.
+2. Choose **Equipment Issued**.
+3. Choose **Needs Return**.
+4. Filter by item type if needed.
+5. Export the list or work directly from the screen.
+6. As gear is returned, open each athlete and mark the item **Returned** with the returned date.
 
 ## Training Calendar
 
