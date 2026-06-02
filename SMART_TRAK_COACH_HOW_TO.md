@@ -62,7 +62,7 @@ Volume miles means completed training and race volume converted into miles for t
 
 ## Athletes Page
 
-Use the Athletes page to manage the roster, parent contact information, training groups, and coach notes.
+Use the Athletes page to manage the roster, parent contact information, training groups, coach notes, Attendance Trak summaries, and Docu Trak.
 
 How to use it:
 
@@ -72,8 +72,68 @@ How to use it:
 4. Assign the athlete to training groups.
 5. Click an athlete name to review details.
 6. Use **Edit** to update roster information.
+7. Use **Docu Trak** to review or update that athlete's document checklist.
+8. Review the Attendance summary cards in the athlete detail view when you need a quick attendance snapshot.
 
 Use **Class Year** instead of grade so the coach does not have to update every athlete each school year.
+
+## Attendance Trak
+
+Use Attendance Trak to track daily practice attendance, late arrivals, excused absences, unexcused absences, and checkpoint attendance such as weight room attendance after practice.
+
+How to use it in the SMARTCoach Pro Mobile App:
+
+1. Open the SMARTCoach Pro Mobile App.
+2. Tap **Attend** from the Groups tray.
+3. Choose the group.
+4. Set the date.
+5. Mark athletes **Present**, **Late**, **Excused**, or **Absent**.
+6. Add a checkpoint when attendance needs to be taken more than once in the same day, such as **Practice Start** and **Weight Room**.
+7. Save attendance so it syncs to SMART Trak.
+
+How to review it in SMART Trak:
+
+1. Open **Athletes** for a quick athlete-specific summary.
+2. Click the athlete name or **Docu Trak** to open the athlete detail modal.
+3. Review the Attendance cards for **Present**, **Late**, **Absent**, **Excused**, and **Attendance %**.
+4. Open **Attendance** when you need the full attendance report, filters, edits, checkpoint view, or CSV export.
+
+If an athlete was first marked absent but later appears in a workout session, SMARTCoach can update that attendance mark from absent to a more accurate workout-aware status.
+
+## Docu Trak
+
+Use Docu Trak to track athlete documents, forms, acknowledgements, and eligibility checks. Docu Trak does not require coaches to upload documents. It is designed to show whether each item has been received, waived, not required, or is still missing.
+
+Common items include:
+
+- Physical
+- Goals Form
+- Parent Guidelines / Expectations
+- Athlete Guidelines / Expectations
+- Team Agreement
+- Parent Acknowledgement
+- Eligibility Check
+
+How to set up Docu Trak:
+
+1. Open **Athletes**.
+2. Click **Docu Trak** on any athlete row.
+3. In the Docu Trak section, click **Setup**.
+4. Use **Add Requirement** to add the items your program tracks.
+5. Use the **Required** checkbox for items that every athlete should complete.
+6. Use **Remove** for items your program does not track.
+7. Click **Save Docu Trak Setup**.
+
+How to update an athlete:
+
+1. Open **Athletes**.
+2. Click **Docu Trak** on the athlete row.
+3. In the Docu Trak section, set each item to **Missing**, **Complete**, **Waived**, or **Not Required**.
+4. Add a received date when helpful.
+5. Add an optional note or form link when helpful.
+6. Click **Save Docu Trak**.
+
+The Athletes table shows a quick Docs summary for each athlete, such as how many checklist items are complete and how many are still missing.
 
 ## Training Calendar
 
