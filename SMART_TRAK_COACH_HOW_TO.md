@@ -184,15 +184,26 @@ How to update an athlete:
 
 The Athletes table shows a quick Equipment summary for each athlete, including how many items are currently issued and still need to be returned.
 
-How to look up found equipment:
+How to use Inventory Reports:
 
 1. Open **Athletes**.
-2. Click **Equipment Lookup**.
-3. Search by item, number / ID, athlete name, size, or note.
-4. Use the status filter when you only want issued, returned, lost / damaged, not issued, or not required items.
-5. Click the athlete name in the lookup results to open that athlete's Equipment Trak record.
+2. Click **Inventory Reports**.
+3. Use the status filter to view **Issued**, **Needs Return**, **Returned**, **Lost / Damaged**, **Not Issued**, or **Not Required** equipment.
+4. Use the item filter when you only want one item type, such as watches, backpacks, warmups, or uniform tops.
+5. Search by item, number / ID, athlete name, size, or note.
+6. Use the summary cards to see quick totals for issued gear, gear that needs return, returned gear, and lost / damaged gear.
+7. Click **Export CSV** when you need a spreadsheet list for collection day or follow-up.
+8. Click the athlete name in the report results to open that athlete's Equipment Trak record.
 
-Example: if you find a backpack labeled **17**, open **Equipment Lookup** and search **17** to see which athlete has that backpack assigned.
+Example: if you find a backpack labeled **17**, open **Inventory Reports** and search **17** to see which athlete has that backpack assigned.
+
+End-of-season return workflow:
+
+1. Open **Inventory Reports**.
+2. Choose **Needs Return**.
+3. Filter by item type if needed.
+4. Export the list or work directly from the screen.
+5. As gear is returned, open each athlete and mark the item **Returned** with the returned date.
 
 ## Training Calendar
 
