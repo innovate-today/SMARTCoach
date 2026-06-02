@@ -172,6 +172,16 @@ How to update an athlete:
 
 The Athletes table shows a quick Equipment summary for each athlete, including how many items are currently issued and still need to be returned.
 
+How to look up found equipment:
+
+1. Open **Athletes**.
+2. Click **Equipment Lookup**.
+3. Search by item, number / ID, athlete name, size, or note.
+4. Use the status filter when you only want issued, returned, lost / damaged, not issued, or not required items.
+5. Click the athlete name in the lookup results to open that athlete's Equipment Trak record.
+
+Example: if you find a backpack labeled **17**, open **Equipment Lookup** and search **17** to see which athlete has that backpack assigned.
+
 ## Training Calendar
 
 Use the Training Calendar as the main place to add one-day workouts, races, rest days, and notes. This page is where a coach should build the week.
