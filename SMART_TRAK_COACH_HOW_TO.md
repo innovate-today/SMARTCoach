@@ -162,6 +162,18 @@ How to set up Equipment Trak:
 6. Turn on **Number / ID** for numbered items such as watches, warmups, chips, or bags.
 7. Click **Save Equipment Trak Setup**.
 
+How to run equipment issue day:
+
+1. Set up the equipment list before athletes arrive. Add the same columns you would normally write on the clipboard, such as uniform top size, uniform shorts size, warmup number, watch number, timing chip, stretch strap, or backpack.
+2. Open **Athletes** and keep the page available on a laptop or tablet at the issue table.
+3. As each athlete receives gear, click **Equipment Trak** on that athlete's row.
+4. Mark each issued item as **Issued**.
+5. Enter the size for sized items and the number / ID for numbered items.
+6. Add the issued date. Use notes for anything unusual, such as exchanged size, missing item, damaged item, or parent pickup.
+7. Click **Save Equipment Trak** before moving to the next athlete.
+
+Tip: one coach can call out items while another coach enters them. This keeps the same rhythm as the paper clipboard, but the record is searchable later.
+
 How to update an athlete:
 
 1. Open **Athletes**.
