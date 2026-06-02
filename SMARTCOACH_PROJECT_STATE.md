@@ -1070,6 +1070,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 228. Docu Trak setup is now coach-facing: the Athletes table has a per-athlete **Docu Trak** action that opens the detail modal, and the Docu Trak card has a **Setup** button with row-based add/remove requirements instead of a one-item-per-line text box.
 229. Athlete detail attendance now stays summary-only: compact cards show Present, Late, Absent, Excused, and Attendance %, with the full row list left on the Attendance Trak page.
 230. `SMART_TRAK_COACH_HOW_TO.md` is updated for completed Attendance Trak and Docu Trak workflows: Athletes detail shows attendance summary cards, the full attendance report lives on Attendance, and Docu Trak uses row-based setup plus per-athlete checklist saves from the Athletes page.
+231. Attendance Trak now supports **Checked Out** for meet-day or parent checkout checkpoints. Mobile attendance, SMART Trak Attendance filters/editing, athlete detail summary cards, and attendance percentage math treat Checked Out as an accounted-for status rather than an absence.
 
 ## Known Good Test Flow
 

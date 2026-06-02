@@ -79,7 +79,7 @@ Use **Class Year** instead of grade so the coach does not have to update every a
 
 ## Attendance Trak
 
-Use Attendance Trak to track daily practice attendance, late arrivals, excused absences, unexcused absences, and checkpoint attendance such as weight room attendance after practice.
+Use Attendance Trak to track daily practice attendance, late arrivals, meet-day checkouts, excused absences, unexcused absences, and checkpoint attendance such as weight room attendance after practice.
 
 How to use it in the SMARTCoach Pro Mobile App:
 
@@ -87,16 +87,18 @@ How to use it in the SMARTCoach Pro Mobile App:
 2. Tap **Attend** from the Groups tray.
 3. Choose the group.
 4. Set the date.
-5. Mark athletes **Present**, **Late**, **Excused**, or **Absent**.
-6. Add a checkpoint when attendance needs to be taken more than once in the same day, such as **Practice Start** and **Weight Room**.
+5. Mark athletes **Present**, **Late**, **Checked Out**, **Excused**, or **Absent**.
+6. Add a checkpoint when attendance needs to be taken more than once in the same day, such as **Practice Start**, **Weight Room**, or **Meet Checkout**.
 7. Save attendance so it syncs to SMART Trak.
 
 How to review it in SMART Trak:
 
 1. Open **Athletes** for a quick athlete-specific summary.
 2. Click the athlete name or **Docu Trak** to open the athlete detail modal.
-3. Review the Attendance cards for **Present**, **Late**, **Absent**, **Excused**, and **Attendance %**.
+3. Review the Attendance cards for **Present**, **Late**, **Checked Out**, **Absent**, **Excused**, and **Attendance %**.
 4. Open **Attendance** when you need the full attendance report, filters, edits, checkpoint view, or CSV export.
+
+For meet days, create a checkout checkpoint such as **Meet Checkout** or **Parent Checkout**. Mark an athlete **Checked Out** when they leave with a parent or guardian after checking out with a coach. Checked Out is treated as accounted-for attendance in the attendance percentage, not as an absence.
 
 If an athlete was first marked absent but later appears in a workout session, SMARTCoach can update that attendance mark from absent to a more accurate workout-aware status.
 
