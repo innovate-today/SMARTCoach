@@ -44,6 +44,15 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .stat b{display:block;font-size:24px;line-height:1.1;white-space:nowrap}
 .stat span{display:block;color:var(--muted);font-size:13px;margin-top:0;text-align:right}
 .stat .small{margin-top:4px}
+.range-stat{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:76px}
+.range-label{display:flex;align-items:center;gap:8px;color:#334155;font-size:13px;font-weight:800}
+.range-icon{position:relative;display:inline-flex;align-items:flex-end;gap:2px;width:16px;height:16px;color:var(--blue)}
+.range-icon:before,.range-icon:after,.range-icon span{content:"";display:block;width:3px;border-radius:999px;background:currentColor}
+.range-icon:before{height:7px;opacity:.7}
+.range-icon span{height:12px}
+.range-icon:after{height:9px;opacity:.85}
+.range-select{min-width:150px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#172033;font:800 14px inherit;padding:9px 34px 9px 12px}
+.range-stat .small{text-align:left;margin-top:4px}
 .breakdowns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .breakdown{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .breakdown[data-tab-target],.loadstrip[data-tab-target]{cursor:pointer}
@@ -190,6 +199,8 @@ tr:last-child td{border-bottom:0}
   .action-row,.modal-action-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .actions button,.actions .linkbtn{text-align:center}
   .stats,.breakdowns{grid-template-columns:1fr}
+  .range-stat{align-items:flex-start;flex-direction:column}
+  .range-select{width:100%}
   .loadstrip{grid-template-columns:1fr}
   .loadstrip .breakgrid{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
   .breakgrid{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
@@ -243,7 +254,18 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <section class="stats">
-    <div class="stat"><div class="statline"><b id="currentWeekVolume">--</b><span>This week volume</span></div><span class="small">completed miles</span></div>
+    <div class="stat range-stat">
+      <div>
+        <label class="range-label" for="activityRange"><span class="range-icon" aria-hidden="true"><span></span></span>Activity range</label>
+        <span class="small">Training and meet summaries</span>
+      </div>
+      <select id="activityRange" class="range-select" aria-label="Activity range">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="all">All activity</option>
+      </select>
+    </div>
     <div class="stat"><div class="statline"><b id="previousWeekVolume">--</b><span>Previous week volume</span></div><span class="small">completed miles</span></div>
     <div class="stat"><div class="statline"><b id="athleteCount">--</b><span>Active athletes</span></div></div>
     <div class="stat"><div class="statline"><b id="currentWeekRuns">--</b><span>Current week workouts</span></div><span id="currentWeekRange" class="small">--</span></div>
@@ -303,12 +325,6 @@ tr:last-child td{border-bottom:0}
       <option value="corrected_meets">Corrected meet results</option>
       <option value="pb">Recent new PBs</option>
       <option value="sb">Recent new SBs</option>
-    </select>
-    <select id="activityRange" class="filter">
-      <option value="7">Last 7 days</option>
-      <option value="30" selected>Last 30 days</option>
-      <option value="90">Last 90 days</option>
-      <option value="all">All activity</option>
     </select>
     <select id="seasonFilter" class="filter">
       <option value="current" selected>Current season</option>
@@ -1711,7 +1727,7 @@ function loadDashboard(){
     els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
     els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
     if(els.previousWeekRuns)els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
-    els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
+    if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
     els.previousWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.previousWeekVolumeMiles);
     renderManualMileageAthletes();
     renderManualMileageGroups();
@@ -1963,7 +1979,7 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   els.athleteCount.textContent=active;
   els.currentWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}).length;
   if(els.previousWeekRuns)els.previousWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date()));}).length;
-  els.currentWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)));
+  if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)));
   els.previousWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())));
   els.rosterActive.textContent=active;
   els.rosterFitness.textContent=withFitness;
@@ -3748,7 +3764,7 @@ function updateDashboardTopStats(){
   els.athleteCount.textContent=dashboardRows.length;
   els.currentWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekRuns);},0);
   if(els.previousWeekRuns)els.previousWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekRuns);},0);
-  els.currentWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekVolumeMiles);},0));
+  if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekVolumeMiles);},0));
   els.previousWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekVolumeMiles);},0));
 }
 
