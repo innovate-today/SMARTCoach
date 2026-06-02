@@ -17,6 +17,7 @@ const htmlFiles = [
   "athlete-calendar.html",
   "onboarding.html",
   "live-launch-validation.html",
+  "sales.html",
 ];
 const jsonFiles = [
   "package.json",

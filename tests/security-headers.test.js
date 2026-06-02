@@ -42,7 +42,11 @@ async function testApiSecurityHeaders() {
 
 function testVercelHtmlSecurityHeaders() {
   const config = JSON.parse(fs.readFileSync("vercel.json", "utf8"));
-  const requiredSources = new Set(["/", "/(.*).html"]);
+  const publicHtml = new Set(["sales.html"]);
+  const privateHtmlSources = fs.readdirSync(".")
+    .filter((file) => file.endsWith(".html") && !publicHtml.has(file))
+    .map((file) => `/${file}`);
+  const requiredSources = new Set(["/", ...privateHtmlSources]);
   const requiredHeaders = {
     "cache-control": /no-store/,
     "x-robots-tag": /noindex/,
