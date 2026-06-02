@@ -1071,6 +1071,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 229. Athlete detail attendance now stays summary-only: compact cards show Present, Late, Absent, Excused, and Attendance %, with the full row list left on the Attendance Trak page.
 230. `SMART_TRAK_COACH_HOW_TO.md` is updated for completed Attendance Trak and Docu Trak workflows: Athletes detail shows attendance summary cards, the full attendance report lives on Attendance, and Docu Trak uses row-based setup plus per-athlete checklist saves from the Athletes page.
 231. Attendance Trak now supports **Checked Out** for meet-day or parent checkout checkpoints. Mobile attendance, SMART Trak Attendance filters/editing, athlete detail summary cards, and attendance percentage math treat Checked Out as an accounted-for status rather than an absence.
+232. Equipment Trak started on the SMART Trak Athletes page. Coaches can define account-specific issued equipment items, choose whether each item tracks size and/or number/ID, then mark each athlete Not Issued, Issued, Returned, Lost / Damaged, or Not Required with size, number, issued date, returned date, and notes from the athlete detail modal.
 
 ## Known Good Test Flow
 

@@ -93,6 +93,12 @@ module.exports = async function handler(req, res) {
     return accountDocuTrak(req, res);
   }
 
+  if (route === "equipment-trak") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountEquipmentTrak(req, res);
+  }
+
   if (!selected) {
     res.status(404).json({ error: "SMART Trak endpoint not found." });
     return;
@@ -369,6 +375,146 @@ function setDocuTrakCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code");
+}
+
+async function accountEquipmentTrak(req, res) {
+  setDocuTrakCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    if (req.method === "GET") {
+      const existing = await loadAccountRecord(accountKey);
+      res.status(200).json({ success: true, ...normalizeEquipmentTrak(existing && existing.record && existing.record.equipmentTrak) });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      res.status(404).json({ error: "Account registry record was not found." });
+      return;
+    }
+
+    const current = normalizeEquipmentTrak(existing.record.equipmentTrak);
+    const action = cleanSetupText(payload.action || payload.mode).toLowerCase();
+    if (action === "save-items") {
+      current.items = normalizeEquipmentItems(payload.items);
+    } else if (action === "save-athlete") {
+      const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
+      const athleteName = cleanSetupText(payload.athleteName || payload.name);
+      const athleteKey = docuAthleteKey(athleteId, athleteName);
+      if (!athleteKey) throw httpError(400, "Athlete is required.");
+      current.records[athleteKey] = {
+        athleteId,
+        athleteName,
+        updatedAt: new Date().toISOString(),
+        items: normalizeEquipmentAthleteItems(payload.items || payload.records),
+      };
+    } else {
+      throw httpError(400, "Equipment Trak action is required.");
+    }
+
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      equipmentTrak: current,
+      lastEquipmentTrakSync: { savedAt: new Date().toISOString(), action },
+    });
+    res.status(200).json({ success: true, ...current });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Equipment Trak save failed." });
+  }
+}
+
+function normalizeEquipmentTrak(source) {
+  const value = source && typeof source === "object" ? source : {};
+  return {
+    items: normalizeEquipmentItems(value.items),
+    records: normalizeEquipmentRecords(value.records),
+  };
+}
+
+function normalizeEquipmentItems(items) {
+  const source = Array.isArray(items) && items.length ? items : defaultEquipmentItems();
+  const seen = new Set();
+  return source.map((item, index) => {
+    const raw = typeof item === "string" ? { name: item } : item || {};
+    const name = cleanSetupText(raw.name || raw.label || raw.title);
+    if (!name) return null;
+    const id = normalizeDocuItemId(raw.id || name || `item_${index + 1}`);
+    if (!id || seen.has(id)) return null;
+    seen.add(id);
+    return {
+      id,
+      name,
+      active: raw.active === false ? false : true,
+      trackSize: raw.trackSize === false ? false : true,
+      trackNumber: raw.trackNumber === false ? false : true,
+    };
+  }).filter(Boolean);
+}
+
+function defaultEquipmentItems() {
+  return [
+    { id: "uniform_top", name: "Uniform Top", active: true, trackSize: true, trackNumber: false },
+    { id: "uniform_shorts", name: "Uniform Shorts", active: true, trackSize: true, trackNumber: false },
+    { id: "warmup", name: "Warmup", active: true, trackSize: true, trackNumber: true },
+    { id: "watch", name: "Watch", active: true, trackSize: false, trackNumber: true },
+    { id: "stretch_strap", name: "Stretch Strap", active: true, trackSize: false, trackNumber: false },
+  ];
+}
+
+function normalizeEquipmentRecords(records) {
+  const out = {};
+  const source = records && typeof records === "object" ? records : {};
+  Object.keys(source).forEach((key) => {
+    const row = source[key] || {};
+    const athleteKey = normalizeDocuRecordKey(key);
+    if (!athleteKey) return;
+    out[athleteKey] = {
+      athleteId: cleanSetupText(row.athleteId),
+      athleteName: cleanSetupText(row.athleteName),
+      updatedAt: cleanSetupText(row.updatedAt),
+      items: normalizeEquipmentAthleteItems(row.items),
+    };
+  });
+  return out;
+}
+
+function normalizeEquipmentAthleteItems(items) {
+  const out = {};
+  const source = items && typeof items === "object" ? items : {};
+  Object.keys(source).forEach((id) => {
+    const itemId = normalizeDocuItemId(id);
+    if (!itemId) return;
+    const item = source[id] || {};
+    out[itemId] = {
+      status: normalizeEquipmentStatus(item.status),
+      size: cleanSetupText(item.size).slice(0, 80),
+      number: cleanSetupText(item.number || item.itemNumber || item.inventoryId).slice(0, 80),
+      issuedDate: cleanSetupText(item.issuedDate || item.date).slice(0, 10),
+      returnedDate: cleanSetupText(item.returnedDate || item.returnDate).slice(0, 10),
+      note: cleanSetupText(item.note || item.notes).slice(0, 800),
+      updatedAt: cleanSetupText(item.updatedAt) || new Date().toISOString(),
+    };
+  });
+  return out;
+}
+
+function normalizeEquipmentStatus(value) {
+  const status = cleanSetupText(value).toLowerCase().replace(/[^a-z]+/g, "_").replace(/^_+|_+$/g, "");
+  if (["not_issued", "issued", "returned", "lost_damaged", "not_required"].includes(status)) return status;
+  return "not_issued";
 }
 
 async function accountStatus(req, res) {

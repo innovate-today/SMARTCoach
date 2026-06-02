@@ -62,7 +62,7 @@ Volume miles means completed training and race volume converted into miles for t
 
 ## Athletes Page
 
-Use the Athletes page to manage the roster, parent contact information, training groups, coach notes, Attendance Trak summaries, and Docu Trak.
+Use the Athletes page to manage the roster, parent contact information, training groups, coach notes, Attendance Trak summaries, Docu Trak, and Equipment Trak.
 
 How to use it:
 
@@ -73,7 +73,8 @@ How to use it:
 5. Click an athlete name to review details.
 6. Use **Edit** to update roster information.
 7. Use **Docu Trak** to review or update that athlete's document checklist.
-8. Review the Attendance summary cards in the athlete detail view when you need a quick attendance snapshot.
+8. Use **Equipment Trak** to review or update issued equipment.
+9. Review the Attendance summary cards in the athlete detail view when you need a quick attendance snapshot.
 
 Use **Class Year** instead of grade so the coach does not have to update every athlete each school year.
 
@@ -136,6 +137,40 @@ How to update an athlete:
 6. Click **Save Docu Trak**.
 
 The Athletes table shows a quick Docs summary for each athlete, such as how many checklist items are complete and how many are still missing.
+
+## Equipment Trak
+
+Use Equipment Trak to replace the paper clipboard for issued team gear. Equipment Trak lives inside the athlete detail modal on the Athletes page.
+
+Common items include:
+
+- Uniform Top
+- Uniform Shorts
+- Warmup
+- Watch
+- Timing Chip
+- Stretch Strap
+- Backpack or Spike Bag
+
+How to set up Equipment Trak:
+
+1. Open **Athletes**.
+2. Click **Equipment Trak** on any athlete row.
+3. In the Equipment Trak section, click **Setup**.
+4. Use **Add Equipment** to add the items your program issues.
+5. Turn on **Size** for items where the coach needs to track a size.
+6. Turn on **Number / ID** for numbered items such as watches, warmups, chips, or bags.
+7. Click **Save Equipment Trak Setup**.
+
+How to update an athlete:
+
+1. Open **Athletes**.
+2. Click **Equipment Trak** on the athlete row.
+3. In the Equipment Trak section, set each item to **Not Issued**, **Issued**, **Returned**, **Lost / Damaged**, or **Not Required**.
+4. Add size, number / ID, issued date, returned date, and notes when helpful.
+5. Click **Save Equipment Trak**.
+
+The Athletes table shows a quick Equipment summary for each athlete, including how many items are currently issued and still need to be returned.
 
 ## Training Calendar
 
