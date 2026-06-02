@@ -48,6 +48,10 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .range-label{display:flex;align-items:center;gap:8px;color:#334155;font-size:13px;font-weight:800}
 .range-select{min-width:150px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#172033;font:800 14px inherit;padding:9px 34px 9px 12px}
 .range-stat .small{text-align:left;margin-top:4px}
+.range-controls{display:grid;gap:7px;justify-items:end}
+.range-custom{display:flex;align-items:center;gap:6px}
+.range-custom span{color:var(--muted);font-size:12px;font-weight:800}
+.range-custom input{width:128px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#172033;font:700 12px inherit;padding:8px 9px}
 .breakdowns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .breakdown{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
 .breakdown[data-tab-target],.loadstrip[data-tab-target]{cursor:pointer}
@@ -196,6 +200,9 @@ tr:last-child td{border-bottom:0}
   .stats,.breakdowns{grid-template-columns:1fr}
   .range-stat{align-items:flex-start;flex-direction:column}
   .range-select{width:100%}
+  .range-controls{width:100%;justify-items:stretch}
+  .range-custom{display:grid;grid-template-columns:1fr auto 1fr}
+  .range-custom input{width:100%}
   .loadstrip{grid-template-columns:1fr}
   .loadstrip .breakgrid{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
   .breakgrid{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
@@ -254,12 +261,20 @@ tr:last-child td{border-bottom:0}
         <label class="range-label" for="activityRange">Activity range</label>
         <span id="activityRangeDates" class="small">--</span>
       </div>
-      <select id="activityRange" class="range-select" aria-label="Activity range">
-        <option value="7">Last 7 days</option>
-        <option value="30" selected>Last 30 days</option>
-        <option value="90">Last 90 days</option>
-        <option value="all">All activity</option>
-      </select>
+      <div class="range-controls">
+        <select id="activityRange" class="range-select" aria-label="Activity range">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="custom">Custom range</option>
+          <option value="all">All activity</option>
+        </select>
+        <div id="customActivityRange" class="range-custom" hidden>
+          <input id="activityStartDate" type="date" aria-label="Activity range start date">
+          <span>to</span>
+          <input id="activityEndDate" type="date" aria-label="Activity range end date">
+        </div>
+      </div>
     </div>
     <div class="stat"><div class="statline"><b id="previousWeekVolume">--</b><span>Previous week volume</span></div><span class="small">completed miles</span></div>
     <div class="stat"><div class="statline"><b id="athleteCount">--</b><span>Active athletes</span></div></div>
@@ -1403,6 +1418,9 @@ var els={
   quickFilter:document.getElementById('quickFilter'),
   activityRange:document.getElementById('activityRange'),
   activityRangeDates:document.getElementById('activityRangeDates'),
+  customActivityRange:document.getElementById('customActivityRange'),
+  activityStartDate:document.getElementById('activityStartDate'),
+  activityEndDate:document.getElementById('activityEndDate'),
   seasonFilter:document.getElementById('seasonFilter'),
   volumeRangeLabel:document.getElementById('volumeRangeLabel'),
   volumeSubtabCount:document.getElementById('volumeSubtabCount'),
@@ -1454,7 +1472,12 @@ els.quickFilter.addEventListener('change',function(){
   if(els.quickFilter.value==='corrected_training')setTrainingSubtab('workouts');
   renderRows();
 });
-els.activityRange.addEventListener('change',renderRows);
+els.activityRange.addEventListener('change',function(){
+  syncActivityRangeControls(true);
+  renderRows();
+});
+els.activityStartDate.addEventListener('input',renderRows);
+els.activityEndDate.addEventListener('input',renderRows);
 els.seasonFilter.addEventListener('change',renderRows);
 els.exportCurrentBtn.addEventListener('click',exportCurrentViewCsv);
 els.tabs.forEach(function(tab){
@@ -1584,6 +1607,9 @@ els.resetViewBtn.addEventListener('click',function(){
   els.search.value='';
   els.quickFilter.value='all';
   els.activityRange.value='30';
+  els.activityStartDate.value='';
+  els.activityEndDate.value='';
+  syncActivityRangeControls(false);
   els.seasonFilter.value='current';
   activeTab='roster';
   setActiveTab(activeTab);
@@ -2026,6 +2052,7 @@ function renderSeasonFilterOptions(){
 }
 
 function renderRows(){
+  syncActivityRangeControls(false);
   var query=els.search.value.trim().toLowerCase();
   var filter=els.quickFilter.value||'all';
   var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&athleteMatchesDashboardSearch(row,query);}),tableSorts.roster,rosterSortValue);
@@ -2239,7 +2266,7 @@ function defaultTableSorts(){
 }
 function saveView(){
   try{
-    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,seasonFilter:els.seasonFilter.value,activeTab:activeTab,activeTrainingSubtab:activeTrainingSubtab,sorts:tableSorts}));
+    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,activityStartDate:els.activityStartDate.value,activityEndDate:els.activityEndDate.value,seasonFilter:els.seasonFilter.value,activeTab:activeTab,activeTrainingSubtab:activeTrainingSubtab,sorts:tableSorts}));
   }catch(e){}
 }
 function restoreView(){
@@ -2248,11 +2275,14 @@ function restoreView(){
     if(raw.search)els.search.value=raw.search;
     if(raw.filter)els.quickFilter.value=raw.filter;
     if(raw.activityRange)els.activityRange.value=raw.activityRange;
+    if(raw.activityStartDate)els.activityStartDate.value=raw.activityStartDate;
+    if(raw.activityEndDate)els.activityEndDate.value=raw.activityEndDate;
     if(raw.seasonFilter)els.seasonFilter.value=raw.seasonFilter;
     if(raw.activeTab)activeTab=raw.activeTab;
     if(raw.activeTrainingSubtab)activeTrainingSubtab=raw.activeTrainingSubtab;
     if(raw.sorts&&typeof raw.sorts==='object')tableSorts=mergeSorts(defaultTableSorts(),raw.sorts);
   }catch(e){}
+  syncActivityRangeControls(false);
 }
 function mergeSorts(base,saved){
   Object.keys(base).forEach(function(key){
@@ -2381,16 +2411,43 @@ function matchesTrainingFilter(row,filter,visibleNames){
   if(filter==='missing_fitness'||filter==='no_training_this_week'||filter==='pb'||filter==='sb'||filter==='corrected_meets')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   return true;
 }
-function matchesActivityRange(row,type){
+function syncActivityRangeControls(fillDefault){
+  var custom=(els.activityRange.value||'30')==='custom';
+  els.customActivityRange.hidden=!custom;
+  if(custom&&fillDefault&&!els.activityStartDate.value&&!els.activityEndDate.value){
+    var end=new Date();
+    end.setHours(0,0,0,0);
+    var start=addDashboardDays(end,-29);
+    els.activityStartDate.value=dateInputValue(start);
+    els.activityEndDate.value=dateInputValue(end);
+  }
+}
+function activityRangeBounds(){
   var value=els.activityRange.value||'30';
-  if(value==='all')return true;
+  if(value==='all')return null;
+  if(value==='custom'){
+    var customStart=parseDateInput(els.activityStartDate.value);
+    var customEnd=parseDateInput(els.activityEndDate.value);
+    if(customStart&&customEnd&&customStart>customEnd){
+      var swap=customStart;
+      customStart=customEnd;
+      customEnd=swap;
+    }
+    return {start:customStart,end:customEnd};
+  }
   var days=Number(value)||30;
+  var end=new Date();
+  end.setHours(0,0,0,0);
+  return {start:addDashboardDays(end,-days+1),end:end};
+}
+function matchesActivityRange(row,type){
+  var bounds=activityRangeBounds();
+  if(!bounds)return true;
   var date=parseActivityDate(type==='meet'?row.meetDate||row.syncedAt:row.sessionDate||row.syncedAt);
   if(!date)return false;
-  var start=new Date();
-  start.setHours(0,0,0,0);
-  start.setDate(start.getDate()-days+1);
-  return date>=start;
+  if(bounds.start&&date<bounds.start)return false;
+  if(bounds.end&&date>bounds.end)return false;
+  return true;
 }
 
 function matchesSeasonFilter(row,type){
@@ -2403,11 +2460,19 @@ function matchesSeasonFilter(row,type){
 
 function activityRangeLabel(){
   var value=els.activityRange.value||'30';
+  if(value==='custom')return activityDateRangeLabel();
   return value==='all'?'all activity':'last '+value+' days';
 }
 function activityDateRangeLabel(){
   var value=els.activityRange.value||'30';
   if(value==='all')return 'All dates';
+  if(value==='custom'){
+    var bounds=activityRangeBounds();
+    if(bounds&&bounds.start&&bounds.end)return rangeLabel(bounds.start,bounds.end);
+    if(bounds&&bounds.start)return 'From '+formatShortDate(bounds.start);
+    if(bounds&&bounds.end)return 'Through '+formatShortDate(bounds.end);
+    return 'Choose dates';
+  }
   var days=Number(value)||30;
   var end=new Date();
   end.setHours(0,0,0,0);
@@ -4776,6 +4841,21 @@ function formatDate(value){
 }
 function formatShortDate(date){
   return date.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+function dateInputValue(date){
+  var year=date.getFullYear();
+  var month=String(date.getMonth()+1).padStart(2,'0');
+  var day=String(date.getDate()).padStart(2,'0');
+  return year+'-'+month+'-'+day;
+}
+function parseDateInput(value){
+  if(!value)return null;
+  var plain=plainDateValue(value);
+  if(!plain)return null;
+  var date=new Date(Number(plain.slice(0,4)),Number(plain.slice(5,7))-1,Number(plain.slice(8,10)));
+  if(isNaN(date.getTime()))return null;
+  date.setHours(0,0,0,0);
+  return date;
 }
 function formatDateTime(value){
   var date=new Date(value);

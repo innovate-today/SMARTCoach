@@ -36,15 +36,16 @@ Use the Dashboard as the daily coaching home base. It shows roster status, train
 
 How to use it:
 
-1. Review the top cards for this week volume, previous week volume, active athletes, and current week workouts.
+1. Review the top cards for the activity range, previous week volume, active athletes, and current week workouts.
 2. Use the search box to find one athlete or group.
-3. Use the filters to narrow the view by athlete group, activity type, or season.
-4. Use the main tabs:
+3. Use **Activity range** for quick ranges such as Last 7 days, Last 30 days, or Last 90 days. Choose **Custom range** when you need exact start and end dates.
+4. Use the filters to narrow the view by athlete group, activity type, or season.
+5. Use the main tabs:
    - **Roster Overview** shows each athlete's current fitness, latest meet result, latest training, weekly volume, and status.
    - **Recent Meet Results** shows saved race results and PB/SB updates.
    - **Training Load** shows volume by athlete and completed workouts.
-5. Click **Show workouts** under an athlete to see completed workout details.
-6. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
+6. Click **Show workouts** under an athlete to see completed workout details.
+7. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
 The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
 
