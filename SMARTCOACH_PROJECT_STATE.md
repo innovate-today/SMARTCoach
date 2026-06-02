@@ -1075,6 +1075,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 233. Equipment Trak now includes an **Equipment Lookup** modal on the Athletes page so coaches can search found gear by item, number/ID, athlete, size, status, issued/returned dates, or notes. The Athletes table equipment badge now says **needs return** for currently issued gear instead of implying it was returned.
 234. Equipment Lookup has been expanded into **Inventory Reports** on the Athletes page. Coaches can view summary cards for issued, needs return, returned, and lost/damaged equipment, filter by status and item type, search found gear, click into an athlete's Equipment Trak record, and export the current report to CSV.
 235. Equipment Trak now separates **Equipment Issued** from true **Equipment Inventory**. Inventory batches can track numbered ranges, size quantities, and simple counts; reports show total, available, issued, and lost/damaged counts. Numbered gear cannot be actively issued to two athletes with the same item number.
+236. Equipment Trak reports now support sortable columns in both **Equipment Issued** and **Equipment Inventory**. Issued can sort by athlete, item, status, size, number/ID, dates, and notes; Inventory can sort by program, item, group, type, size, range/quantity, total, issued, available, and lost/damaged counts.
 
 ## Known Good Test Flow
 

@@ -215,6 +215,11 @@ How to use Equipment Trak reports:
 7. Click the athlete name in the report results to open that athlete's Equipment Trak record.
 8. Use **Equipment Inventory** to see total owned, available, issued, and lost / damaged counts by inventory batch.
 
+Sorting reports:
+
+- In **Equipment Issued**, click any column header to sort by athlete, item, status, size, number / ID, issued date, returned date, or notes. Click again to reverse the order.
+- In **Equipment Inventory**, click any column header to sort by program, item, group, type, size, range / quantity, total, issued, available, or lost / damaged. Sizes sort in the expected order: **S**, **M**, **L**, **XL**, **XXL**.
+
 Example: if you find a backpack labeled **17**, open **Equipment Trak**, choose **Equipment Issued**, and search **17** to see which athlete has that backpack assigned.
 
 End-of-season return workflow:
