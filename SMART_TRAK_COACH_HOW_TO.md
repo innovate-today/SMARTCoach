@@ -171,8 +171,8 @@ How to set up Equipment Inventory:
 2. Click **Equipment Trak** in the top toolbar.
 3. Open **Equipment Inventory**.
 4. Click **Add Inventory**.
-5. Enter the program or season, such as Track or Cross Country.
-6. Choose the item, group, and tracking type.
+5. Choose the program: **Track**, **Cross Country**, or **General**.
+6. Choose the item, group (**Girls** or **Boys**), size when needed (**S**, **M**, **L**, **XL**, or **XXL**), and tracking type.
 7. Use **Numbered** for items with unique numbers, such as backpacks, watches, warmups, or timing chips. Enter the start and end number.
 8. Use **Size Qty** for items counted by size, such as shorts, singlets, or warmup tops.
 9. Use **Count** for simple items where only the total matters.
