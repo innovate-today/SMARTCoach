@@ -252,7 +252,7 @@ tr:last-child td{border-bottom:0}
     <div class="stat range-stat">
       <div>
         <label class="range-label" for="activityRange">Activity range</label>
-        <span class="small">Training and meet summaries</span>
+        <span id="activityRangeDates" class="small">--</span>
       </div>
       <select id="activityRange" class="range-select" aria-label="Activity range">
         <option value="7">Last 7 days</option>
@@ -1402,6 +1402,7 @@ var els={
   clearSearchBtn:document.getElementById('clearSearchBtn'),
   quickFilter:document.getElementById('quickFilter'),
   activityRange:document.getElementById('activityRange'),
+  activityRangeDates:document.getElementById('activityRangeDates'),
   seasonFilter:document.getElementById('seasonFilter'),
   volumeRangeLabel:document.getElementById('volumeRangeLabel'),
   volumeSubtabCount:document.getElementById('volumeSubtabCount'),
@@ -1972,6 +1973,7 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   var currentWeekAthletes=uniqueAthleteCount(trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}));
   var rangeText='Showing '+seasonRangeLabel()+' · '+activityRangeLabel();
   els.athleteCount.textContent=active;
+  els.activityRangeDates.textContent=activityDateRangeLabel();
   els.currentWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}).length;
   if(els.previousWeekRuns)els.previousWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date()));}).length;
   if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)));
@@ -2402,6 +2404,15 @@ function matchesSeasonFilter(row,type){
 function activityRangeLabel(){
   var value=els.activityRange.value||'30';
   return value==='all'?'all activity':'last '+value+' days';
+}
+function activityDateRangeLabel(){
+  var value=els.activityRange.value||'30';
+  if(value==='all')return 'All dates';
+  var days=Number(value)||30;
+  var end=new Date();
+  end.setHours(0,0,0,0);
+  var start=addDashboardDays(end,-days+1);
+  return rangeLabel(start,end);
 }
 function seasonRangeLabel(){
   var value=els.seasonFilter.value||'current';
