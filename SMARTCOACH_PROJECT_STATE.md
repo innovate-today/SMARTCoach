@@ -1089,6 +1089,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 247. The SMARTCoach app coach picker now always includes **Not Listed**. Choosing it does not save a coach identity, keeps the device unassigned for Staff Access warnings, and allows the prompt to return on the next login/identify cycle so the head coach can add the missing coach or rotate the code.
 248. **Not Listed** no longer suppresses the coach identity prompt for the rest of the app session. It only prevents an immediate reopen after the tap, so a refresh or later account check asks **Which Coach Are You?** again whenever the device still has no saved coach name.
 249. SMARTCoach app Refresh now sets an explicit one-time coach-identity check before reloading. After the refreshed account status returns, the app forces **Which Coach Are You?** if the device is unlocked but still has no saved coach name.
+250. SMARTCoach app coach picker now uses its own HTML escape helper instead of the desktop-only `esc()` helper, fixing the settings/account check crash that hid the access-code entry row.
 
 ## Known Good Test Flow
 

@@ -542,6 +542,11 @@ function setSelectedCoachIdentity(coach){
     else localStorage.removeItem(coachIdentityStorageKey());
   }catch(e){}
 }
+function htmlEscape(value){
+  return String(value==null?'':value).replace(/[&<>"']/g,function(char){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char];
+  });
+}
 function normalizeCoachStaffForApp(items){
   var seen={};
   return (Array.isArray(items)?items:[]).map(function(item,index){
@@ -582,7 +587,7 @@ function renderCoachSelect(){
   var current=selectedCoachIdentity();
   select.innerHTML='<option value="">Select coach</option>'+STAFF.map(function(coach){
     var selected=current&&(current.id===coach.id||String(current.name||'').toLowerCase()===String(coach.name||'').toLowerCase())?' selected':'';
-    return '<option value="'+esc(coach.id)+'"'+selected+'>'+esc(coach.name)+'</option>';
+    return '<option value="'+htmlEscape(coach.id)+'"'+selected+'>'+htmlEscape(coach.name)+'</option>';
   }).join('')+'<option value="__not_listed__">Not Listed</option>';
 }
 function saveDeviceCoach(){
