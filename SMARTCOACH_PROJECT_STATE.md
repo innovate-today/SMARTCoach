@@ -1087,6 +1087,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 245. SMARTCoach app account unlock now re-checks account status after a successful coach-code session is created, so devices that were already entering or refreshing an active code still receive the **Which Coach Are You?** prompt when no coach name has been saved on that device.
 246. Staff Access now warns the head coach when the shared code has been used by active devices that have not selected a coach name. The warning gives the coach the practical choice to add missing coach names or rotate the shared code if the activity looks unexpected.
 247. The SMARTCoach app coach picker now always includes **Not Listed**. Choosing it does not save a coach identity, keeps the device unassigned for Staff Access warnings, and allows the prompt to return on the next login/identify cycle so the head coach can add the missing coach or rotate the code.
+248. **Not Listed** no longer suppresses the coach identity prompt for the rest of the app session. It only prevents an immediate reopen after the tap, so a refresh or later account check asks **Which Coach Are You?** again whenever the device still has no saved coach name.
 
 ## Known Good Test Flow
 

@@ -460,7 +460,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledged=false;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
 
 function smartCoachAccountKey(){
   try{
@@ -564,7 +564,8 @@ function selectedCoachIsValid(coach){
   return STAFF.some(function(item){return String(item.id||'')===String(coach.id||'')||String(item.name||'').toLowerCase()===String(coach.name||'').toLowerCase();});
 }
 function maybePromptForDeviceCoach(data){
-  if(!data||data.productPlan==='essential'||!data.deviceAccessReady||coachNotListedAcknowledged)return;
+  if(!data||data.productPlan==='essential'||!data.deviceAccessReady)return;
+  if(coachNotListedAcknowledgedAt&&Date.now()-coachNotListedAcknowledgedAt<1000)return;
   var coach=selectedCoachIdentity();
   if(selectedCoachIsValid(coach))return;
   renderCoachSelect();
@@ -590,7 +591,7 @@ function saveDeviceCoach(){
   var id=select&&select.value||'';
   if(id==='__not_listed__'){
     setSelectedCoachIdentity(null);
-    coachNotListedAcknowledged=true;
+    coachNotListedAcknowledgedAt=Date.now();
     if(status){status.textContent='Not listed selected.';status.style.color='#92400e';}
     checkSmartCoachAccount(smartCoachAccountKey()).catch(function(){});
     setTimeout(function(){hm('m-coach-select');},250);
@@ -601,7 +602,7 @@ function saveDeviceCoach(){
     if(status){status.textContent='Choose your coach name to continue.';status.style.color='#c00';}
     return;
   }
-  coachNotListedAcknowledged=false;
+  coachNotListedAcknowledgedAt=0;
   setSelectedCoachIdentity(coach);
   if(status){status.textContent='Saved.';status.style.color='#0a7a44';}
   checkSmartCoachAccount(smartCoachAccountKey()).then(function(result){updateCoachStaffFromAccount(result.data||{});}).catch(function(){});
