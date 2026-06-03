@@ -145,6 +145,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .eq-grid .sinp{font-size:13px;padding:8px}
 .eq-note{grid-column:1/-1}
 .eq-empty{padding:18px;color:#777;text-align:center;background:#fff;border-radius:10px}
+.eq-card{background:#fff;border:1px solid #d1d5db;border-radius:12px;margin:0 0 16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.eq-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;background:#050505;color:#fff}
+.eq-head .att-name,.eq-head .att-small{color:#fff}
+.eq-head .att-small{opacity:.82}
+.eq-item.filled{background:#f0fdf4;border-left:5px solid #15803d}
+.eq-item.blank{background:#fff}
+.eq-item-title{font-size:15px;font-weight:800;color:#222;margin-bottom:7px}
 </style>
 </head>
 <body>
@@ -366,7 +373,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     </div>
     <div id="eq-summary" class="bulk-status"></div>
     <div id="eq-list" class="builder-box"></div>
-    <button class="mbtn" onclick="saveEquipmentSheet()">Save Equipment</button>
+    <button class="mbtn" id="eq-save-btn" onclick="saveEquipmentSheet()">Save Equipment</button>
     <button class="mbtn c" onclick="hm('m-equipment')">Close</button>
     <div style="height:8px"></div>
   </div>
@@ -2359,7 +2366,7 @@ function renderEquipment(){
   if(!items.length){list.innerHTML='<div class="eq-empty">Set up Equipment Trak in SMART Trak first.</div>';return;}
   list.innerHTML=runners.map(function(r,runnerIndex){
     var record=equipmentRecordForRunner(r);
-    return '<div class="att-card"><div class="att-head"><div><div class="att-name">'+ex(r.name)+'</div><div class="att-small">'+equipmentRunnerSummary(record,items)+'</div></div><button class="att-btn" onclick="saveEquipmentRunner('+runnerIndex+')">Save</button></div>'+
+    return '<div class="eq-card"><div class="eq-head"><div><div class="att-name">'+ex(r.name)+'</div><div class="att-small">'+equipmentRunnerSummary(record,items)+'</div></div></div>'+
       items.map(function(item,itemIndex){return equipmentItemHtml(runnerIndex,itemIndex,item,record.items&&record.items[equipmentItemId(item.id)]||{});}).join('')+'</div>';
   }).join('');
   if(summary)summary.textContent=(EQUIP.loaded?'Ready':'Using default items until Equipment Trak loads')+' · '+runners.length+' athletes · '+items.length+' item'+(items.length===1?'':'s');
@@ -2378,13 +2385,30 @@ function equipmentItemHtml(runnerIndex,itemIndex,item,row){
   var itemId=equipmentItemId(item.id||item.name||('item_'+itemIndex));
   var prefix='eq-'+runnerIndex+'-'+itemIndex;
   var status=row.status||'not_issued';
-  return '<div class="eq-item"><div class="att-athlete">'+ex(item.name||'Equipment')+'</div><div class="eq-grid">'+
-    '<select class="sinp" id="'+prefix+'-status">'+equipmentStatusOptions(status)+'</select>'+
-    (item.trackSize!==false?'<select class="sinp" id="'+prefix+'-size">'+equipmentSizeOptions(row.size||'')+'</select>':'<input class="sinp" id="'+prefix+'-size" value="'+ex(row.size||'')+'" placeholder="Size optional"/>')+
-    (item.trackNumber!==false?'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# / ID"/>':'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# optional"/>')+
-    '<input class="sinp eq-note" id="'+prefix+'-note" value="'+ex(row.note||'')+'" placeholder="Note"/>'+
+  var filled=equipmentRowHasValue(row);
+  return '<div class="eq-item '+(filled?'filled':'blank')+'" id="'+prefix+'-wrap"><div class="eq-item-title">'+ex(item.name||'Equipment')+'</div><div class="eq-grid">'+
+    '<select class="sinp" id="'+prefix+'-status" onchange="equipmentFieldChanged('+runnerIndex+','+itemIndex+')">'+equipmentStatusOptions(status)+'</select>'+
+    (item.trackSize!==false?'<select class="sinp" id="'+prefix+'-size" onchange="equipmentFieldChanged('+runnerIndex+','+itemIndex+')">'+equipmentSizeOptions(row.size||'')+'</select>':'<input class="sinp" id="'+prefix+'-size" value="'+ex(row.size||'')+'" placeholder="Size optional" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>')+
+    (item.trackNumber!==false?'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# / ID" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>':'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# optional" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>')+
+    '<input class="sinp eq-note" id="'+prefix+'-note" value="'+ex(row.note||'')+'" placeholder="Note" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>'+
     '<input type="hidden" id="'+prefix+'-item" value="'+ex(itemId)+'"/>'+
   '</div></div>';
+}
+function equipmentRowHasValue(row){
+  row=row||{};
+  return !!(row.status&&row.status!=='not_issued'||row.size||row.number||row.note);
+}
+function equipmentFieldChanged(runnerIndex,itemIndex){
+  var prefix='eq-'+runnerIndex+'-'+itemIndex;
+  var wrap=document.getElementById(prefix+'-wrap');
+  if(!wrap)return;
+  var filled=equipmentRowHasValue({
+    status:equipmentInput(prefix,'status'),
+    size:equipmentInput(prefix,'size'),
+    number:equipmentInput(prefix,'number'),
+    note:equipmentInput(prefix,'note')
+  });
+  wrap.className='eq-item '+(filled?'filled':'blank');
 }
 function equipmentInput(prefix,field){
   var el=document.getElementById(prefix+'-'+field);
@@ -2410,12 +2434,12 @@ function readEquipmentRunnerItems(runnerIndex){
   });
   return out;
 }
-function saveEquipmentRunner(runnerIndex,itemsOverride){
+function saveEquipmentRunner(runnerIndex,itemsOverride,silent){
   if(!CL)return Promise.resolve(false);
   var runner=(CL.runners||[])[runnerIndex];
   if(!runner)return Promise.resolve(false);
   var summary=document.getElementById('eq-summary');
-  if(summary)summary.textContent='Saving '+(runner.name||'athlete')+'...';
+  if(summary&&!silent)summary.textContent='Saving '+(runner.name||'athlete')+'...';
   return fetch(smartCoachApiUrl('/api/smart-trak/equipment-trak'),{
     method:'POST',
     headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
@@ -2433,8 +2457,8 @@ function saveEquipmentRunner(runnerIndex,itemsOverride){
     EQUIP.records=result.data.records||EQUIP.records;
     EQUIP.inventory=Array.isArray(result.data.inventory)?result.data.inventory:EQUIP.inventory;
     EQUIP.loaded=true;
-    if(summary)summary.textContent='Saved '+(runner.name||'athlete')+'.';
-    renderEquipment();
+    if(summary&&!silent)summary.textContent='Saved '+(runner.name||'athlete')+'.';
+    if(!silent)renderEquipment();
     return result.data;
   }).catch(function(error){
     if(summary)summary.textContent='Could not save '+(runner.name||'athlete')+': '+(error&&error.message?error.message:'try again');
@@ -2445,17 +2469,25 @@ function saveEquipmentSheet(){
   if(!CL)return;
   var runners=CL.runners||[];
   var summary=document.getElementById('eq-summary');
+  var btn=document.getElementById('eq-save-btn');
+  if(!runners.length){if(summary)summary.textContent='No athletes to save.';return;}
   var sheetItems=runners.map(function(runner,index){return readEquipmentRunnerItems(index);});
   var chain=Promise.resolve(),saved=0;
+  if(btn){btn.disabled=true;btn.textContent='Saving...';}
   runners.forEach(function(runner,index){
     chain=chain.then(function(){
       if(summary)summary.textContent='Saving '+(index+1)+' of '+runners.length+'...';
-      return saveEquipmentRunner(index,sheetItems[index]).then(function(){saved++;});
+      return saveEquipmentRunner(index,sheetItems[index],true).then(function(){saved++;});
     });
   });
   chain.then(function(){
     if(summary)summary.textContent='Saved equipment for '+saved+' athlete'+(saved===1?'':'s')+' to SMART Trak.';
-  }).catch(function(){});
+    if(btn){btn.disabled=false;btn.textContent='Save Equipment';}
+    renderEquipment();
+  }).catch(function(error){
+    if(btn){btn.disabled=false;btn.textContent='Save Equipment';}
+    alert('Equipment save stopped: '+(error&&error.message?error.message:'try again'));
+  });
 }
 function markWorkoutAttendance(r){
   if(!CL||CL.type==='meet'||!r)return;
