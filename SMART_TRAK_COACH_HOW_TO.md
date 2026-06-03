@@ -190,10 +190,11 @@ How to run equipment issue day:
 1. Set up the equipment list before athletes arrive. Add the same columns you would normally write on the clipboard, such as uniform top size, uniform shorts size, warmup number, watch number, timing chip, stretch strap, or backpack.
 2. Open **Athletes**, click **Equipment Trak**, then choose **Issue Sheet**.
 3. Filter by group when needed so the sheet matches the clipboard line.
-4. Work down the rows. Each athlete is one row, and each equipment item is a column.
+4. Click **Athlete**, **Grade**, or **Groups** to sort the sheet in the order you need.
 5. Mark issued items as **Issued**, then enter the size or number / ID.
-6. Use notes for anything unusual, such as exchanged size, missing item, damaged item, or parent pickup.
-7. Click **Save Row** for one athlete or **Save Issue Sheet** to save the visible sheet.
+6. Use the size dropdown for sized items.
+7. Use notes for anything unusual, such as exchanged size, missing item, damaged item, or parent pickup.
+8. Click **Save Row** for one athlete or **Save Issue Sheet** to save the visible sheet.
 
 Tip: one coach can call out items while another coach enters them. This keeps the same rhythm as the paper clipboard, but the record is searchable later.
 
