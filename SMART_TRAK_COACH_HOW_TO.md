@@ -198,6 +198,17 @@ How to run equipment issue day:
 
 Tip: one coach can call out items while another coach enters them. This keeps the same rhythm as the paper clipboard, but the record is searchable later.
 
+How to use Equipment Trak from the SMARTCoach app:
+
+1. Open the SMARTCoach app and make sure the coach account is connected.
+2. On the Groups screen, tap **Equip**.
+3. Choose the training group you are issuing equipment to.
+4. For each athlete, mark each item **Issued**, **Returned**, **Lost / Damaged**, **Not Required**, or **Not Issued**.
+5. Enter sizes, numbers / IDs, or notes as needed.
+6. Tap **Save** on one athlete card or **Save Equipment** to save the whole visible group to SMART Trak.
+
+Use the app workflow when you want to work from a phone or iPad on equipment issue day. Use the desktop **Issue Sheet** when you want the wider spreadsheet-style view.
+
 How to update an athlete:
 
 1. Open **Athletes**.

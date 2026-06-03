@@ -1080,6 +1080,8 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 238. Equipment Inventory setup now has faster row-entry controls: coaches can copy a single inventory row or use **Copy Girls to Boys** to duplicate all current Girls inventory rows as Boys rows, then adjust quantities or number ranges before saving.
 239. Equipment Trak now includes an **Issue Sheet** tab for equipment handout day. The sheet shows one athlete per row with configured equipment items as columns, supports search/group filtering, row saves, and full visible sheet saves while preserving duplicate numbered-item protection.
 240. Equipment Trak Issue Sheet now uses size dropdowns and sortable row headers for Athlete, Grade, and Groups so coaches can work the sheet in grade/group order on equipment issue day.
+241. The SMARTCoach mobile app Groups tray now uses **Add / Account / Refresh / Attend / Equip / Archive**. The previous Plan shortcut was removed from the Groups tray because plan selection happens after a group is opened.
+242. The SMARTCoach mobile app now includes an **Equip** workflow for equipment issue day. Coaches choose a training group, update each athlete's Equipment Trak items from mobile cards, and save one athlete or the full visible group back to SMART Trak while preserving duplicate numbered-item protection.
 
 ## Known Good Test Flow
 
