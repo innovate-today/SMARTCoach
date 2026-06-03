@@ -383,7 +383,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div id="eq-summary" class="bulk-status"></div>
     <div id="eq-list" class="builder-box"></div>
     <button class="mbtn" id="eq-save-btn" onclick="saveEquipmentSheet()">Save Equipment</button>
-    <button class="mbtn c" onclick="hm('m-equipment')">Close</button>
+    <button class="mbtn c" onclick="closeEquipment()">Close</button>
     <div style="height:8px"></div>
   </div>
 </div>
@@ -2294,6 +2294,13 @@ function openEquipment(){
   sm('m-equipment');
   renderEquipment();
   loadEquipmentTrak(false);
+}
+function closeEquipment(){
+  var search=document.getElementById('eq-search');
+  var results=document.getElementById('eq-results');
+  if(search)search.value='';
+  if(results)results.innerHTML='';
+  hm('m-equipment');
 }
 function loadEquipmentTrak(force){
   var summary=document.getElementById('eq-summary');
