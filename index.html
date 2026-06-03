@@ -2325,18 +2325,21 @@ function equipmentRecordKey(value){
 function equipmentItemId(value){
   return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80);
 }
+function equipmentRunnerAthleteId(r){
+  return r&&String(r.contactId||r.smartcoachAthleteId||r.name||r.id||'');
+}
 function equipmentRecordForRunner(r){
   var records=EQUIP.records||{};
   var candidates=[
-    r.smartcoachAthleteId,
     r.contactId,
-    r.id,
-    r.name
+    r.smartcoachAthleteId,
+    r.name,
+    r.id
   ].map(equipmentRecordKey).filter(Boolean);
   for(var i=0;i<candidates.length;i++){
     if(records[candidates[i]])return records[candidates[i]];
   }
-  return{athleteId:r.smartcoachAthleteId||r.contactId||String(r.id||''),athleteName:r.name||'',items:{}};
+  return{athleteId:equipmentRunnerAthleteId(r),athleteName:r.name||'',items:{}};
 }
 function equipmentStatusLabel(value){
   return({not_issued:'Not Issued',issued:'Issued',returned:'Returned',lost_damaged:'Lost / Damaged',not_required:'Not Required'})[value]||'Not Issued';
@@ -2445,7 +2448,9 @@ function saveEquipmentRunner(runnerIndex,itemsOverride,silent){
     headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
     body:JSON.stringify({
       action:'save-athlete',
-      athleteId:runner.smartcoachAthleteId||runner.contactId||String(runner.id||''),
+      athleteId:equipmentRunnerAthleteId(runner),
+      contactId:runner.contactId||'',
+      smartcoachAthleteId:runner.smartcoachAthleteId||'',
       athleteName:runner.name||'',
       items:itemsOverride||readEquipmentRunnerItems(runnerIndex)
     })

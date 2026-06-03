@@ -414,12 +414,19 @@ async function accountEquipmentTrak(req, res) {
       current.inventory = normalizeEquipmentInventory(payload.inventory || payload.items);
     } else if (action === "save-athlete") {
       const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
+      const contactId = cleanSetupText(payload.contactId);
+      const smartcoachAthleteId = cleanSetupText(payload.smartcoachAthleteId);
       const athleteName = cleanSetupText(payload.athleteName || payload.name);
       const athleteKey = docuAthleteKey(athleteId, athleteName);
       if (!athleteKey) throw httpError(400, "Athlete is required.");
       const previous = current.records[athleteKey];
+      equipmentAthleteAliasKeys({ athleteId, contactId, smartcoachAthleteId, athleteName }).forEach((key) => {
+        if (key && key !== athleteKey) delete current.records[key];
+      });
       current.records[athleteKey] = {
         athleteId,
+        contactId,
+        smartcoachAthleteId,
         athleteName,
         updatedAt: new Date().toISOString(),
         items: normalizeEquipmentAthleteItems(payload.items || payload.records),
@@ -484,6 +491,17 @@ function defaultEquipmentItems() {
   ];
 }
 
+function equipmentAthleteAliasKeys(row) {
+  const source = row || {};
+  return [
+    source.athleteId,
+    source.contactId,
+    source.smartcoachAthleteId,
+    source.athleteName,
+    source.name,
+  ].map(normalizeDocuRecordKey).filter(Boolean);
+}
+
 function normalizeEquipmentRecords(records) {
   const out = {};
   const source = records && typeof records === "object" ? records : {};
@@ -493,6 +511,8 @@ function normalizeEquipmentRecords(records) {
     if (!athleteKey) return;
     out[athleteKey] = {
       athleteId: cleanSetupText(row.athleteId),
+      contactId: cleanSetupText(row.contactId),
+      smartcoachAthleteId: cleanSetupText(row.smartcoachAthleteId),
       athleteName: cleanSetupText(row.athleteName),
       updatedAt: cleanSetupText(row.updatedAt),
       items: normalizeEquipmentAthleteItems(row.items),
