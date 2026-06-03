@@ -213,6 +213,37 @@ async function testAutomationDoesNotGenerateCoachCodes() {
   });
 }
 
+async function testAutomationPreservesProUnlimitedPlan() {
+  await withEnv({
+    SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+    SMARTCOACH_REGISTRY_REST_URL: undefined,
+    SMARTCOACH_REGISTRY_REST_TOKEN: undefined,
+  }, async () => {
+    const res = mockRes();
+    await handler({
+      method: "POST",
+      query: { route: "account-automation-dry-run" },
+      headers: { "x-smartcoach-automation-secret": "automation-secret" },
+      body: {
+        accountKey: "unlimited-school",
+        productPlan: "proUnlimited",
+        coachSeats: "10",
+        privateIntegrationToken: "pit",
+        locationId: "loc",
+        coachAccessCodes: "coach-code",
+        subscriptionStatus: "active",
+      },
+    }, res);
+
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.strictEqual(res.body.productPlan, "proUnlimited");
+    assert.strictEqual(res.body.productPlanLabel, "SMARTCoach Pro Unlimited");
+    assert.strictEqual(res.body.activeAthleteLimit, null);
+    assert.strictEqual(res.body.subscription.amount, "Custom");
+  });
+}
+
 async function testDuplicateStripeWebhookDoesNotSaveAgain() {
   const previousFetch = global.fetch;
   const eventId = "evt_duplicate_123";
@@ -1085,6 +1116,7 @@ async function testAccountStatusReportsDeviceUnlock() {
   await testAccountSetupCodeProtection();
   await testAutomationSecretRequiredBeforeRegistry();
   await testAutomationDoesNotGenerateCoachCodes();
+  await testAutomationPreservesProUnlimitedPlan();
   await testDuplicateStripeWebhookDoesNotSaveAgain();
   await testInvalidStripeWebhookDoesNotTouchRegistry();
   await testPartialAutomationPreservesSavedConnection();
