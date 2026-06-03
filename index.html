@@ -563,9 +563,9 @@ function selectedCoachIsValid(coach){
   if(!STAFF.length)return false;
   return STAFF.some(function(item){return String(item.id||'')===String(coach.id||'')||String(item.name||'').toLowerCase()===String(coach.name||'').toLowerCase();});
 }
-function maybePromptForDeviceCoach(data){
+function maybePromptForDeviceCoach(data,force){
   if(!data||data.productPlan==='essential'||!data.deviceAccessReady)return;
-  if(coachNotListedAcknowledgedAt&&Date.now()-coachNotListedAcknowledgedAt<1000)return;
+  if(!force&&coachNotListedAcknowledgedAt&&Date.now()-coachNotListedAcknowledgedAt<1000)return;
   var coach=selectedCoachIdentity();
   if(selectedCoachIsValid(coach))return;
   renderCoachSelect();
@@ -809,6 +809,7 @@ function renderAccountSummary(data,fallbackPlan){
   box.innerHTML='<b style="display:block;color:'+(good?'#0a7a44':accessReady?'#b45309':'#b00000')+'">'+title+'</b><span style="display:block;margin-top:3px">'+detail+'</span><span style="display:block;margin-top:3px">'+accessText+'</span>';
 }
 function refreshAppVersion(){
+  try{sessionStorage.setItem('sc_force_coach_identity_check','1');}catch(e){}
   var url=new URL(window.location.href);
   url.searchParams.set('v',Date.now());
   window.location.replace(url.toString());
@@ -926,12 +927,21 @@ function syncProductPlanFromAccount(){
     applyPlanMode();
     maybePromptForCoachAccess(result.data);
     updateCoachStaffFromAccount(result.data);
+    runForcedCoachIdentityCheck(result.data);
     return productPlan();
   }).catch(function(){
     accountStatus=null;
     applyPlanMode();
     return productPlan();
   });
+}
+function runForcedCoachIdentityCheck(data){
+  var force=false;
+  try{
+    force=sessionStorage.getItem('sc_force_coach_identity_check')==='1';
+    sessionStorage.removeItem('sc_force_coach_identity_check');
+  }catch(e){}
+  if(force)maybePromptForDeviceCoach(data,true);
 }
 function maybePromptForCoachAccess(data){
   if(accountPromptShown||!data||data.productPlan==='essential')return;
