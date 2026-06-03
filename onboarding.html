@@ -1408,9 +1408,12 @@ function registryPayloadFromForm(){
   var account=cleanAccountKey(document.getElementById('accountKey').value.trim());
   document.getElementById('accountKey').value=account;
   document.getElementById('lookupAccountKey').value=account;
+  var plan=document.getElementById('plan').value;
+  var billingCadence=document.getElementById('billingCadence').value;
+  var subscriptionAmount=normalizedSubscriptionAmountForPlan(plan,billingCadence,document.getElementById('subscriptionAmount').value.trim());
   return {
     accountKey:account,
-    productPlan:document.getElementById('plan').value,
+    productPlan:plan,
     coachSeats:document.getElementById('coachSeats').value,
     locationId:document.getElementById('locationId').value.trim(),
     privateIntegrationToken:document.getElementById('privateIntegrationToken').value.trim(),
@@ -1420,8 +1423,8 @@ function registryPayloadFromForm(){
     updateSource:'manual-onboarding',
     eventType:'manual_registry_update',
     subscriptionStatus:document.getElementById('subscriptionStatus').value,
-    billingCadence:document.getElementById('billingCadence').value,
-    subscriptionAmount:document.getElementById('subscriptionAmount').value.trim(),
+    billingCadence:billingCadence,
+    subscriptionAmount:subscriptionAmount,
     renewalDate:document.getElementById('renewalDate').value.trim(),
     stripeCustomerId:document.getElementById('stripeCustomerId').value.trim(),
     stripeSubscriptionId:document.getElementById('stripeSubscriptionId').value.trim(),
@@ -1436,7 +1439,7 @@ function generateSetup(){
   var coachSeats=document.getElementById('coachSeats').value;
   var subscriptionStatus=document.getElementById('subscriptionStatus').value;
   var billingCadence=document.getElementById('billingCadence').value;
-  var subscriptionAmount=document.getElementById('subscriptionAmount').value.trim();
+  var subscriptionAmount=normalizedSubscriptionAmountForPlan(plan,billingCadence,document.getElementById('subscriptionAmount').value.trim());
   var renewalDate=document.getElementById('renewalDate').value.trim();
   var stripeCustomerId=document.getElementById('stripeCustomerId').value.trim();
   var stripeSubscriptionId=document.getElementById('stripeSubscriptionId').value.trim();
@@ -2713,6 +2716,24 @@ function normalizePlanValue(value){
   if(raw==='pro 200'||raw==='smartcoach pro 200'||raw==='200'||raw==='pro200')return 'pro200';
   if(raw==='pro unlimited'||raw==='smartcoach pro unlimited'||raw==='unlimited'||raw==='custom'||raw==='pro custom'||raw==='prounlimited')return 'proUnlimited';
   return 'pro25';
+}
+function normalizedSubscriptionAmountForPlan(plan,cadence,amount){
+  var value=String(amount||'').trim();
+  if(normalizePlanValue(plan)==='proUnlimited'&&(!value||isStandardSubscriptionAmount(value)))return 'Custom';
+  return value||suggestedSubscriptionAmountForPlan(plan,cadence);
+}
+function suggestedSubscriptionAmountForPlan(plan,cadence){
+  var annual=String(cadence||'').toLowerCase()==='annual';
+  var key=normalizePlanValue(plan);
+  if(key==='essential')return annual?'100.00':'10.00';
+  if(key==='pro100')return annual?'750.00':'75.00';
+  if(key==='pro200')return annual?'1350.00':'135.00';
+  if(key==='proUnlimited')return 'Custom';
+  return annual?'450.00':'45.00';
+}
+function isStandardSubscriptionAmount(value){
+  var amount=String(value||'').trim().replace(/^\$/,'');
+  return ['10','10.00','100','100.00','45','45.00','450','450.00','75','75.00','750','750.00','135','135.00','1350','1350.00'].indexOf(amount)>=0;
 }
 function subscriptionLabel(data){
   var sub=(data&&data.subscription)||{};

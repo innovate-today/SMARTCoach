@@ -232,6 +232,7 @@ async function testAutomationPreservesProUnlimitedPlan() {
         locationId: "loc",
         coachAccessCodes: "coach-code",
         subscriptionStatus: "active",
+        subscriptionAmount: "45.00",
       },
     }, res);
 

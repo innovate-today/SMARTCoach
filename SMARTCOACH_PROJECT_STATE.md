@@ -1093,6 +1093,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 251. Attendance Trak reporting now surfaces selected coach identity as **Coach / Source**. The Attendance page search and CSV export include coach names, while rows without a selected coach fall back to the generic source.
 252. Shared SMARTCoach Groups storage now writes compact group JSON instead of pretty-printed roster blocks. This preserves group/athlete membership while keeping Select All and larger rosters under the platform's 12,000-character record limit.
 253. Account setup now preserves the exact `proUnlimited` plan key from the onboarding dropdown instead of normalizing it back to Pro 25, so SMARTCoach Pro Unlimited saves as a custom unlimited-athlete Pro account.
+254. Account setup now clears stale standard-plan billing amounts when switching an account to SMARTCoach Pro Unlimited. If the saved amount is an old tier amount such as 45.00, Unlimited saves the subscription amount as Custom.
 
 ## Known Good Test Flow
 

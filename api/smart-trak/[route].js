@@ -1749,10 +1749,11 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const stripeCustomerValue = firstAutomationValue(payload, ["stripeCustomerId", "customerId", "customer"]);
   const stripeSubscriptionValue = firstAutomationValue(payload, ["stripeSubscriptionId", "subscriptionId", "subscription"]);
   const notesValue = firstAutomationValue(payload, ["subscriptionNotes", "notes"]);
+  const billingCadence = billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly";
   const subscription = {
     status: statusValue ? normalizeSetupSubscriptionStatus(statusValue) : existingSubscription.status || "active",
-    billingCadence: billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly",
-    amount: amountValue ? normalizeMoneyAmount(amountValue) : existingSubscription.amount || suggestedSubscriptionAmount(productPlan, coachSeats, billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly"),
+    billingCadence,
+    amount: normalizeSetupSubscriptionAmount(productPlan, billingCadence, amountValue ? normalizeMoneyAmount(amountValue) : existingSubscription.amount),
     renewalDate: renewalValue ? normalizeDateValue(renewalValue) : existingSubscription.renewalDate || "",
     stripeCustomerId: cleanSetupText(stripeCustomerValue || existingSubscription.stripeCustomerId),
     stripeSubscriptionId: cleanSetupText(stripeSubscriptionValue || existingSubscription.stripeSubscriptionId),
@@ -2120,6 +2121,19 @@ function parentEmailAccessIndexes(value) {
 
 function suggestedSubscriptionAmount(productPlan, coachSeatsValue, billingCadence) {
   return planSubscriptionAmount(productPlan, billingCadence);
+}
+
+function normalizeSetupSubscriptionAmount(productPlan, billingCadence, amount) {
+  const value = cleanSetupText(amount);
+  if (productPlan === "proUnlimited" && (!value || isStandardPlanAmount(value))) {
+    return suggestedSubscriptionAmount(productPlan, null, billingCadence);
+  }
+  return value || suggestedSubscriptionAmount(productPlan, null, billingCadence);
+}
+
+function isStandardPlanAmount(value) {
+  const amount = cleanSetupText(value).replace(/^\$/, "");
+  return ["10", "10.00", "100", "100.00", "45", "45.00", "450", "450.00", "75", "75.00", "750", "750.00", "135", "135.00", "1350", "1350.00"].includes(amount);
 }
 
 function setupAdminAllowed(req) {
