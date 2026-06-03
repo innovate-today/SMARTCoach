@@ -209,6 +209,8 @@ How to use Equipment Trak from the SMARTCoach app:
 
 Use the app workflow when you want to work from a phone or iPad on equipment issue day. Use the desktop **Issue Sheet** when you want the wider spreadsheet-style view.
 
+The SMARTCoach app also includes an Equipment Trak search box. Use it when you find an item and need to identify the athlete quickly. Example: search **backpack 45** to find the athlete assigned that backpack number. Number / ID fields on the app open the phone's number keyboard.
+
 How to update an athlete:
 
 1. Open **Athletes**.

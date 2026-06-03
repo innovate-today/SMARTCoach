@@ -152,6 +152,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .eq-item.filled{background:#f0fdf4;border-left:5px solid #15803d}
 .eq-item.blank{background:#fff}
 .eq-item-title{font-size:15px;font-weight:800;color:#222;margin-bottom:7px}
+.eq-search{margin:0 12px 8px}
+.eq-search input{width:100%;box-sizing:border-box;font-size:16px;border:1px solid var(--G2);border-radius:10px;padding:10px 12px;font-family:inherit;background:#fff;color:#111}
+.eq-results{margin:0 12px 10px;background:#fff;border:1px solid #d1d5db;border-radius:10px;overflow:hidden}
+.eq-result{padding:10px 12px;border-bottom:0.5px solid #e5e5ea}
+.eq-result:last-child{border-bottom:none}
+.eq-result b{display:block;font-size:15px;color:#111}
+.eq-result small{display:block;margin-top:2px;font-size:12px;color:#666;line-height:1.3}
 </style>
 </head>
 <body>
@@ -371,6 +378,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <button class="mbtn c" onclick="openEquipmentPicker()">Change Group</button>
       <button class="mbtn c" onclick="loadEquipmentTrak(true)">Refresh</button>
     </div>
+    <div class="eq-search"><input id="eq-search" type="search" placeholder="Search item, #, athlete" oninput="renderEquipmentLookup()"/></div>
+    <div id="eq-results"></div>
     <div id="eq-summary" class="bulk-status"></div>
     <div id="eq-list" class="builder-box"></div>
     <button class="mbtn" id="eq-save-btn" onclick="saveEquipmentSheet()">Save Equipment</button>
@@ -2302,6 +2311,7 @@ function loadEquipmentTrak(force){
     EQUIP.inventory=Array.isArray(result.data.inventory)?result.data.inventory:[];
     EQUIP.loaded=true;
     renderEquipment();
+    renderEquipmentLookup();
     return EQUIP;
   }).catch(function(error){
     if(summary)summary.textContent='Equipment Trak could not load: '+(error&&error.message?error.message:'try again');
@@ -2341,6 +2351,11 @@ function equipmentRecordForRunner(r){
   }
   return{athleteId:equipmentRunnerAthleteId(r),athleteName:r.name||'',items:{}};
 }
+function equipmentItemById(){
+  var byId={};
+  equipmentActiveItems().forEach(function(item){byId[equipmentItemId(item.id)]=item;});
+  return byId;
+}
 function equipmentStatusLabel(value){
   return({not_issued:'Not Issued',issued:'Issued',returned:'Returned',lost_damaged:'Lost / Damaged',not_required:'Not Required'})[value]||'Not Issued';
 }
@@ -2373,6 +2388,33 @@ function renderEquipment(){
       items.map(function(item,itemIndex){return equipmentItemHtml(runnerIndex,itemIndex,item,record.items&&record.items[equipmentItemId(item.id)]||{});}).join('')+'</div>';
   }).join('');
   if(summary)summary.textContent=(EQUIP.loaded?'Ready':'Using default items until Equipment Trak loads')+' · '+runners.length+' athletes · '+items.length+' item'+(items.length===1?'':'s');
+  renderEquipmentLookup();
+}
+function renderEquipmentLookup(){
+  var results=document.getElementById('eq-results');
+  var input=document.getElementById('eq-search');
+  if(!results||!input)return;
+  var q=String(input.value||'').trim().toLowerCase();
+  if(!q){results.innerHTML='';return;}
+  var terms=q.split(/\s+/).filter(Boolean);
+  var items=equipmentItemById(),rows=[];
+  Object.keys(EQUIP.records||{}).forEach(function(key){
+    var record=EQUIP.records[key]||{};
+    Object.keys(record.items||{}).forEach(function(itemId){
+      var row=record.items[itemId]||{};
+      var item=items[equipmentItemId(itemId)]||{name:itemId};
+      if(row.status==='not_issued'&&!row.size&&!row.number&&!row.note)return;
+      var hay=[record.athleteName,key,item.name,itemId,row.status,row.size,row.number,row.note,row.issuedDate,row.returnedDate].join(' ').toLowerCase();
+      if(terms.every(function(term){return hay.indexOf(term)>=0;})){
+        rows.push({athlete:record.athleteName||key,item:item.name||itemId,status:row.status||'not_issued',size:row.size||'',number:row.number||'',note:row.note||''});
+      }
+    });
+  });
+  if(!rows.length){results.innerHTML='<div class="eq-results"><div class="eq-result"><b>No match found</b><small>Try the item name, number, size, or athlete name.</small></div></div>';return;}
+  results.innerHTML='<div class="eq-results">'+rows.slice(0,12).map(function(row){
+    var detail=[equipmentStatusLabel(row.status),row.size?('Size '+row.size):'',row.number?('# '+row.number):'',row.note].filter(Boolean).join(' · ');
+    return '<div class="eq-result"><b>'+ex(row.athlete)+' - '+ex(row.item)+'</b><small>'+ex(detail||'Equipment record')+'</small></div>';
+  }).join('')+'</div>';
 }
 function equipmentRunnerSummary(record,items){
   var issued=0,needsReturn=0;
@@ -2392,7 +2434,7 @@ function equipmentItemHtml(runnerIndex,itemIndex,item,row){
   return '<div class="eq-item '+(filled?'filled':'blank')+'" id="'+prefix+'-wrap"><div class="eq-item-title">'+ex(item.name||'Equipment')+'</div><div class="eq-grid">'+
     '<select class="sinp" id="'+prefix+'-status" onchange="equipmentFieldChanged('+runnerIndex+','+itemIndex+')">'+equipmentStatusOptions(status)+'</select>'+
     (item.trackSize!==false?'<select class="sinp" id="'+prefix+'-size" onchange="equipmentFieldChanged('+runnerIndex+','+itemIndex+')">'+equipmentSizeOptions(row.size||'')+'</select>':'<input class="sinp" id="'+prefix+'-size" value="'+ex(row.size||'')+'" placeholder="Size optional" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>')+
-    (item.trackNumber!==false?'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# / ID" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>':'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# optional" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>')+
+    (item.trackNumber!==false?'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# / ID" inputmode="numeric" pattern="[0-9]*" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>':'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# optional" inputmode="numeric" pattern="[0-9]*" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>')+
     '<input class="sinp eq-note" id="'+prefix+'-note" value="'+ex(row.note||'')+'" placeholder="Note" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>'+
     '<input type="hidden" id="'+prefix+'-item" value="'+ex(itemId)+'"/>'+
   '</div></div>';
@@ -2463,6 +2505,7 @@ function saveEquipmentRunner(runnerIndex,itemsOverride,silent){
     EQUIP.inventory=Array.isArray(result.data.inventory)?result.data.inventory:EQUIP.inventory;
     EQUIP.loaded=true;
     if(summary&&!silent)summary.textContent='Saved '+(runner.name||'athlete')+'.';
+    renderEquipmentLookup();
     if(!silent)renderEquipment();
     return result.data;
   }).catch(function(error){

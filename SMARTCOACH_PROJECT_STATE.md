@@ -1082,6 +1082,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 240. Equipment Trak Issue Sheet now uses size dropdowns and sortable row headers for Athlete, Grade, and Groups so coaches can work the sheet in grade/group order on equipment issue day.
 241. The SMARTCoach mobile app Groups tray now uses **Add / Account / Refresh / Attend / Equip / Archive**. The previous Plan shortcut was removed from the Groups tray because plan selection happens after a group is opened.
 242. The SMARTCoach mobile app now includes an **Equip** workflow for equipment issue day. Coaches choose a training group, update each athlete's Equipment Trak items from mobile cards, and save one athlete or the full visible group back to SMART Trak while preserving duplicate numbered-item protection.
+243. Mobile Equipment Trak now includes a quick lookup search for found gear. Coaches can search by item name, number / ID, athlete, size, status, or note, such as **backpack 45**, and numbered equipment inputs request the phone number keyboard.
 
 ## Known Good Test Flow
 
