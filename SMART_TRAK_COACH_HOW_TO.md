@@ -188,12 +188,12 @@ Important: a numbered item that is currently issued cannot be issued to a second
 How to run equipment issue day:
 
 1. Set up the equipment list before athletes arrive. Add the same columns you would normally write on the clipboard, such as uniform top size, uniform shorts size, warmup number, watch number, timing chip, stretch strap, or backpack.
-2. Open **Athletes** and keep the page available on a laptop or tablet at the issue table.
-3. As each athlete receives gear, click **Equipment Trak** on that athlete's row.
-4. Mark each issued item as **Issued**.
-5. Enter the size for sized items and the number / ID for numbered items.
-6. Add the issued date. Use notes for anything unusual, such as exchanged size, missing item, damaged item, or parent pickup.
-7. Click **Save Equipment Trak** before moving to the next athlete.
+2. Open **Athletes**, click **Equipment Trak**, then choose **Issue Sheet**.
+3. Filter by group when needed so the sheet matches the clipboard line.
+4. Work down the rows. Each athlete is one row, and each equipment item is a column.
+5. Mark issued items as **Issued**, then enter the size or number / ID.
+6. Use notes for anything unusual, such as exchanged size, missing item, damaged item, or parent pickup.
+7. Click **Save Row** for one athlete or **Save Issue Sheet** to save the visible sheet.
 
 Tip: one coach can call out items while another coach enters them. This keeps the same rhythm as the paper clipboard, but the record is searchable later.
 
@@ -212,11 +212,12 @@ How to use Equipment Trak reports:
 1. Open **Athletes**.
 2. Click **Equipment Trak** in the top toolbar.
 3. Use **Equipment Issued** to view issued gear, needs return, returned gear, and lost / damaged gear.
-4. Use the status and item filters when you only want one report type or one item type.
-5. Search by item, number / ID, athlete name, size, or note.
-6. Click **Export CSV** when you need a spreadsheet list for collection day or follow-up.
-7. Click the athlete name in the report results to open that athlete's Equipment Trak record.
-8. Use **Equipment Inventory** to see total owned, available, issued, and lost / damaged counts by inventory batch.
+4. Use **Issue Sheet** when you want the clipboard-style view with athlete names down the left and equipment items across the top.
+5. Use the status and item filters when you only want one report type or one item type.
+6. Search by item, number / ID, athlete name, size, or note.
+7. Click **Export CSV** when you need a spreadsheet list for collection day or follow-up.
+8. Click the athlete name in the report results to open that athlete's Equipment Trak record.
+9. Use **Equipment Inventory** to see total owned, available, issued, and lost / damaged counts by inventory batch.
 
 Sorting reports:
 
