@@ -1091,6 +1091,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 249. SMARTCoach app Refresh now sets an explicit one-time coach-identity check before reloading. After the refreshed account status returns, the app forces **Which Coach Are You?** if the device is unlocked but still has no saved coach name.
 250. SMARTCoach app coach picker now uses its own HTML escape helper instead of the desktop-only `esc()` helper, fixing the settings/account check crash that hid the access-code entry row.
 251. Attendance Trak reporting now surfaces selected coach identity as **Coach / Source**. The Attendance page search and CSV export include coach names, while rows without a selected coach fall back to the generic source.
+252. Shared SMARTCoach Groups storage now writes compact group JSON instead of pretty-printed roster blocks. This preserves group/athlete membership while keeping Select All and larger rosters under the platform's 12,000-character record limit.
 
 ## Known Good Test Flow
 
