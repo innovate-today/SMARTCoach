@@ -178,6 +178,10 @@ tr:last-child td{border-bottom:0}
 .accesspanel{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:12px;margin-bottom:14px}
 .accesspanel h3{font-size:14px;line-height:1.2;margin:0}
 .accesspanel .summary-head{margin-bottom:9px}
+.staff-list{display:grid;gap:8px;margin-top:10px}
+.staff-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.staff-row input{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px}
+.staff-row button{padding:9px 11px}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
 .detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
@@ -952,6 +956,18 @@ tr:last-child td{border-bottom:0}
           <div class="metric"><b id="staffAccessWeekDevices">--</b><span>Seen this week</span></div>
         </div>
       </section>
+      <section class="accesspanel" aria-label="Staff coach list">
+        <div class="summary-head">
+          <h3>Coaches</h3>
+          <div class="breakrange">Names appear in the SMARTCoach app.</div>
+        </div>
+        <div id="staffList" class="staff-list"></div>
+        <div class="modalactions">
+          <div id="staffStatus" class="modalstatus"></div>
+          <button id="staffAdd" class="ghost" type="button">Add Coach</button>
+          <button id="staffSave" type="button">Save Coaches</button>
+        </div>
+      </section>
       <div class="formgrid">
         <div class="field full">
           <label for="currentCoachCode">Current Code</label>
@@ -1011,6 +1027,7 @@ var recentTrainingRows=[];
 var trainingGroups=[];
 var meetManagerRows=[];
 var raceResultMeetRows=[];
+var coachStaff=[];
 var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
@@ -1322,6 +1339,10 @@ var els={
   staffAccessActiveDevices:document.getElementById('staffAccessActiveDevices'),
   staffAccessWeekDevices:document.getElementById('staffAccessWeekDevices'),
   staffAccessLastSeen:document.getElementById('staffAccessLastSeen'),
+  staffList:document.getElementById('staffList'),
+  staffStatus:document.getElementById('staffStatus'),
+  staffAdd:document.getElementById('staffAdd'),
+  staffSave:document.getElementById('staffSave'),
   accountStatus:document.getElementById('accountStatus'),
   accountRefresh:document.getElementById('accountRefresh'),
   accountSave:document.getElementById('accountSave'),
@@ -1581,6 +1602,8 @@ els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.changeCodeBtn.addEventListener('click',openCodeModal);
 els.codeClose.addEventListener('click',closeCodeModal);
 els.codeSave.addEventListener('click',saveCoachCode);
+if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff.push({id:'',name:'',active:true});renderStaffList();});
+if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
 els.accountRefresh.addEventListener('click',refreshAppVersion);
@@ -1974,6 +1997,78 @@ function renderStaffAccess(data){
   els.staffAccessActiveDevices.textContent=usage.activeDevices!=null?usage.activeDevices:'0';
   els.staffAccessWeekDevices.textContent=usage.devicesSeenThisWeek!=null?usage.devicesSeenThisWeek:'0';
   els.staffAccessLastSeen.textContent=usage.lastSeenAt?'Last device activity '+formatDateTime(usage.lastSeenAt):'No device activity yet';
+  coachStaff=normalizeStaffForView(data&&data.coachStaff||coachStaff||[]);
+  renderStaffList();
+}
+
+function normalizeStaffForView(items){
+  var seen={};
+  return (Array.isArray(items)?items:[]).map(function(item,index){
+    var raw=typeof item==='string'?{name:item}:item||{};
+    var name=String(raw.name||raw.coachName||raw.label||'').trim();
+    if(!name)return null;
+    var id=String(raw.id||raw.coachId||name||('coach_'+(index+1))).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_');
+    if(!id)id='coach_'+(index+1);
+    if(seen[id])return null;
+    seen[id]=true;
+    return{id:id,name:name,active:raw.active===false?false:true,role:String(raw.role||'').trim(),updatedAt:raw.updatedAt||''};
+  }).filter(Boolean).slice(0,25);
+}
+
+function renderStaffList(){
+  if(!els.staffList)return;
+  if(!coachStaff.length){
+    els.staffList.innerHTML='<div class="small">Add coach names so the SMARTCoach app can label saves and syncs.</div>';
+    return;
+  }
+  els.staffList.innerHTML=coachStaff.map(function(item,index){
+    return '<div class="staff-row" data-staff-row="'+index+'"><input type="text" value="'+esc(item.name||'')+'" placeholder="Coach name" autocomplete="off"><button class="ghost" type="button" data-remove-staff="'+index+'">Remove</button></div>';
+  }).join('');
+  Array.prototype.forEach.call(els.staffList.querySelectorAll('[data-remove-staff]'),function(button){
+    button.addEventListener('click',function(){
+      var index=Number(button.getAttribute('data-remove-staff'));
+      coachStaff.splice(index,1);
+      renderStaffList();
+    });
+  });
+}
+
+function collectStaffRows(){
+  var rows=els.staffList?Array.prototype.slice.call(els.staffList.querySelectorAll('[data-staff-row]')):[];
+  var seen={};
+  return rows.map(function(row,index){
+    var input=row.querySelector('input');
+    var current=coachStaff[index]||{};
+    var name=String(input&&input.value||'').trim();
+    if(!name)return null;
+    var id=String(current.id||name).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_')||('coach_'+(index+1));
+    if(seen[id])return null;
+    seen[id]=true;
+    return{id:id,name:name,active:true,role:current.role||'',updatedAt:new Date().toISOString()};
+  }).filter(Boolean).slice(0,25);
+}
+
+function saveStaffList(){
+  if(!els.staffSave)return;
+  var staff=collectStaffRows();
+  els.staffSave.disabled=true;
+  if(els.staffStatus){els.staffStatus.textContent='Saving coach names...';els.staffStatus.style.color='#64748b';}
+  fetch('/api/smart-trak/account-staff?account='+encodeURIComponent(smartCoachAccountKey()),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({coachStaff:staff})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save coach names.');
+    coachStaff=normalizeStaffForView(result.data&&result.data.coachStaff||staff);
+    renderStaffList();
+    if(els.staffStatus){els.staffStatus.textContent='Coach names saved.';els.staffStatus.style.color='#08783c';}
+  }).catch(function(error){
+    if(els.staffStatus){els.staffStatus.textContent=error.message||'Could not save coach names.';els.staffStatus.style.color='#b00000';}
+  }).finally(function(){
+    els.staffSave.disabled=false;
+  });
 }
 
 function refreshAppVersion(){

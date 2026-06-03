@@ -55,9 +55,12 @@ How to use Staff Access:
 2. Check **Assistant coach seats** to confirm the account allows up to 10 assistant coach seats.
 3. Check **Active devices** to see how many devices have used the shared coach code in the last 30 days.
 4. Check **Seen this week** to see how many devices have been active recently.
-5. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
+5. Add coach names in the **Coaches** section and click **Save Coaches**.
+6. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
 
 When a coach enters the shared code, they can choose **Remember this device for 7 days**. This reduces repeated code entry on trusted staff devices. Changing the shared coach code still removes old access immediately.
+
+When the SMARTCoach app sees saved coach names and a trusted device has not picked one yet, it opens **Select Coach** and asks **Which Coach Are You?**. The selected name is remembered on that device for the current account and is used to label saves and syncs, including attendance activity.
 
 Volume miles means completed training and race volume converted into miles for the current filters. Quality session work reps count toward actual quality volume. Recovery between reps does not count unless it is entered as actual running or walking distance.
 

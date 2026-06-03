@@ -444,8 +444,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
 </div>
 
+<!-- COACH SELECT MODAL -->
+<div class="mover h" id="m-coach-select">
+  <div class="msh">
+    <div class="mhd"></div>
+    <div class="mttl">Select Coach</div>
+    <div style="padding:0 18px 4px;font-size:20px;font-weight:700;text-align:center;color:#111">Which Coach Are You?</div>
+    <div style="padding:0 18px 12px;font-size:14px;line-height:1.4;text-align:center;color:#777">This helps SMARTCoach label saves and syncs.</div>
+    <div style="padding:0 4px 4px">
+      <div class="srow"><label class="slbl">Coach</label><select id="coach-select" class="sinp"></select></div>
+    </div>
+    <div id="coach-select-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div>
+    <button class="mbtn" onclick="saveDeviceCoach()" style="background:#2B4FCC">Continue</button>
+  </div>
+</div>
+
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false;
 
 function smartCoachAccountKey(){
   try{
@@ -510,6 +525,78 @@ function smartCoachDeviceLabel(){
   var browser=/CriOS|Chrome/i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':/Firefox/i.test(ua)?'Firefox':/Edg/i.test(ua)?'Edge':'Browser';
   var device=/iPhone/i.test(ua)?'iPhone':/iPad/i.test(ua)?'iPad':/Android/i.test(ua)?'Android':/Macintosh|Mac OS/i.test(ua)?'Mac':/Windows/i.test(ua)?'Windows':'Device';
   return device+' '+browser;
+}
+function coachIdentityStorageKey(){
+  return 'sc_coach_identity_'+smartCoachAccountKey();
+}
+function selectedCoachIdentity(){
+  try{
+    var raw=localStorage.getItem(coachIdentityStorageKey())||'';
+    var data=raw?JSON.parse(raw):null;
+    return data&&data.name?{id:String(data.id||'').trim(),name:String(data.name||'').trim()}:null;
+  }catch(e){return null;}
+}
+function setSelectedCoachIdentity(coach){
+  try{
+    if(coach&&coach.name)localStorage.setItem(coachIdentityStorageKey(),JSON.stringify({id:coach.id||'',name:coach.name||''}));
+    else localStorage.removeItem(coachIdentityStorageKey());
+  }catch(e){}
+}
+function normalizeCoachStaffForApp(items){
+  var seen={};
+  return (Array.isArray(items)?items:[]).map(function(item,index){
+    var raw=typeof item==='string'?{name:item}:item||{};
+    var name=String(raw.name||raw.coachName||raw.label||'').trim();
+    if(!name||raw.active===false)return null;
+    var id=String(raw.id||raw.coachId||name||('coach_'+(index+1))).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_')||('coach_'+(index+1));
+    if(seen[id])return null;
+    seen[id]=true;
+    return{id:id,name:name};
+  }).filter(Boolean).slice(0,25);
+}
+function updateCoachStaffFromAccount(data){
+  STAFF=normalizeCoachStaffForApp(data&&data.coachStaff||[]);
+  maybePromptForDeviceCoach(data);
+}
+function selectedCoachIsValid(coach){
+  if(!coach||!coach.name)return false;
+  if(!STAFF.length)return true;
+  return STAFF.some(function(item){return String(item.id||'')===String(coach.id||'')||String(item.name||'').toLowerCase()===String(coach.name||'').toLowerCase();});
+}
+function maybePromptForDeviceCoach(data){
+  if(!data||data.productPlan==='essential'||!data.deviceAccessReady||!STAFF.length)return;
+  var coach=selectedCoachIdentity();
+  if(selectedCoachIsValid(coach))return;
+  renderCoachSelect();
+  if(!coachPromptShown){
+    coachPromptShown=true;
+    setTimeout(function(){sm('m-coach-select');},250);
+  }else{
+    sm('m-coach-select');
+  }
+}
+function renderCoachSelect(){
+  var select=document.getElementById('coach-select');
+  if(!select)return;
+  var current=selectedCoachIdentity();
+  select.innerHTML='<option value="">Select coach</option>'+STAFF.map(function(coach){
+    var selected=current&&(current.id===coach.id||String(current.name||'').toLowerCase()===String(coach.name||'').toLowerCase())?' selected':'';
+    return '<option value="'+esc(coach.id)+'"'+selected+'>'+esc(coach.name)+'</option>';
+  }).join('');
+}
+function saveDeviceCoach(){
+  var select=document.getElementById('coach-select');
+  var status=document.getElementById('coach-select-status');
+  var id=select&&select.value||'';
+  var coach=STAFF.find(function(item){return item.id===id;});
+  if(!coach){
+    if(status){status.textContent='Choose your coach name to continue.';status.style.color='#c00';}
+    return;
+  }
+  setSelectedCoachIdentity(coach);
+  if(status){status.textContent='Saved.';status.style.color='#0a7a44';}
+  checkSmartCoachAccount(smartCoachAccountKey()).then(function(result){updateCoachStaffFromAccount(result.data||{});}).catch(function(){});
+  setTimeout(function(){hm('m-coach-select');},250);
 }
 function accessCodeCookieName(){
   return accessCodeStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');
@@ -604,6 +691,7 @@ function openAccountSettings(){
   sm('m-account');
   checkSmartCoachAccount(smartCoachAccountKey()).then(function(result){
     renderAccountSummary(result.data,productPlan());
+    updateCoachStaffFromAccount(result.data);
     if(status){status.textContent=result.data&&result.data.deviceAccessReady?productPlanLabel(productPlan())+' is active.':'Enter the coach access code, then tap Save Settings.';status.style.color=result.data&&result.data.deviceAccessReady?'#0a7a44':'#555';}
   }).catch(function(error){
     renderAccountSummary(error&&error.data?error.data:{productPlan:productPlan(),configured:false},productPlan());
@@ -642,6 +730,7 @@ function saveAccountSettings(){
         if(result.data&&result.data.accessCodeRequired&&!created&&!smartCoachSession()){
           throw new Error('Enter the active coach code to use SMARTCoach Essential on this device.');
         }
+        updateCoachStaffFromAccount(result.data);
         if(status){status.textContent='Account set to '+key+' and SMARTCoach Essential is active.';status.style.color='#0a7a44';}
       });
     }).catch(function(error){
@@ -667,6 +756,7 @@ function saveAccountSettings(){
       if(result.data&&result.data.accessCodeRequired&&!created&&!smartCoachSession()){
         throw new Error('Enter the coach access code to unlock SMART Trak on this phone.');
       }
+      updateCoachStaffFromAccount(result.data);
       if(status){status.textContent='Account set to '+key+' and '+productPlanLabel(plan)+' is active.';status.style.color='#0a7a44';}
       loadProData();
     });
@@ -727,6 +817,9 @@ function smartCoachApiHeaders(extra){
   if(session)headers.set('X-SMARTCoach-Session',session);
   var accessCode=smartCoachAccessCode();
   if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
+  var coach=selectedCoachIdentity();
+  if(coach&&coach.id)headers.set('X-SMARTCoach-Coach-Id',coach.id);
+  if(coach&&coach.name)headers.set('X-SMARTCoach-Coach-Name',coach.name);
   return headers;
 }
 function createSmartCoachSession(accessCode,remember){
@@ -761,6 +854,9 @@ function createSmartCoachSession(accessCode,remember){
       if(session)headers.set('X-SMARTCoach-Session',session);
       var accessCode=smartCoachAccessCode();
       if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
+      var coach=selectedCoachIdentity();
+      if(coach&&coach.id)headers.set('X-SMARTCoach-Coach-Id',coach.id);
+      if(coach&&coach.name)headers.set('X-SMARTCoach-Coach-Name',coach.name);
       headers.set('X-SMARTCoach-Device-Id',smartCoachDeviceId());
       headers.set('X-SMARTCoach-Device-Label',smartCoachDeviceLabel());
       init.headers=headers;
@@ -814,6 +910,7 @@ function syncProductPlanFromAccount(){
     if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
     applyPlanMode();
     maybePromptForCoachAccess(result.data);
+    updateCoachStaffFromAccount(result.data);
     return productPlan();
   }).catch(function(){
     accountStatus=null;
@@ -2268,10 +2365,13 @@ function syncAttendanceToSmartTrak(){
   });
 }
 function attendancePayload(day){
+  var coach=selectedCoachIdentity()||{};
   return {
     date:day&&day.date||attendanceDate(),
     groupId:String(CL.sharedGroupId||CL.id||''),
     groupName:CL.name||'Training Group',
+    coachId:coach.id||'',
+    coachName:coach.name||'',
     runners:(CL.runners||[]).map(function(r){
       return{runnerId:r.id,contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',name:r.name||''};
     }),
@@ -5837,6 +5937,7 @@ function doSMARTTraKSync(forceDuplicateSync){
   status.textContent='Sending session securely...';status.style.color='#555';status.style.fontWeight='400';
 
   Promise.all(selectedRunners.map(function(r){return runnerPlannedTarget(r);})).then(function(targets){
+    var coach=selectedCoachIdentity()||{};
     targets.forEach(function(target,i){
       Object.assign(athletes[i],target||{});
     });
@@ -5852,6 +5953,8 @@ function doSMARTTraKSync(forceDuplicateSync){
       surface:surf,
       weather:weather,
       completedVolume:completedVolume,
+      coachId:coach.id||'',
+      coachName:coach.name||'',
       sessionDate:new Date().toISOString(),
       trainingPlanId:commonSyncPlanValue(syncPlan,'trainingPlanId',CL.trainingPlanId),
       trainingPlanSourceId:commonSyncPlanValue(syncPlan,'trainingPlanSourceId',CL.trainingPlanSourceId),

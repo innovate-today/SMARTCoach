@@ -80,6 +80,10 @@ module.exports = async function handler(req, res) {
     return accountCodeReset(req, res);
   }
 
+  if (route === "account-staff") {
+    return accountStaff(req, res);
+  }
+
   if (route === "attendance") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -126,6 +130,8 @@ async function recordRequestCoachDevice(req) {
   await recordCoachDeviceSession(accountKey, {
     deviceId,
     deviceLabel: cleanSetupText(headerValue(req, "x-smartcoach-device-label")),
+    coachId: cleanSetupText(headerValue(req, "x-smartcoach-coach-id")),
+    coachName: cleanSetupText(headerValue(req, "x-smartcoach-coach-name")),
     userAgent: headerValue(req, "user-agent"),
     coachIndex: validSession && Number(validSession.coachIndex) || 0,
   });
@@ -211,6 +217,8 @@ function attendanceRecordsFromPayload(payload) {
         status,
         note: cleanSetupText(row.note),
         source: cleanSetupText(row.source) || "coach",
+        coachId: cleanSetupText(row.coachId || payload.coachId),
+        coachName: cleanSetupText(row.coachName || payload.coachName),
         updatedAt: cleanSetupText(row.updatedAt) || new Date().toISOString(),
       });
     });
@@ -640,7 +648,9 @@ async function accountStatus(req, res) {
   const coachAccessRequired = !proPlan || configuredCoachCodes > 0 || !!requireCoachAccess;
   const coachAccessUnlocked = !coachAccessRequired || (proPlan ? !!currentCoachSession : essentialSessionActive) || accessCodeAccepted;
   const deviceAccessReady = configured && subscriptionAllowed && coachAccessUnlocked;
+  if (deviceAccessReady) await recordRequestCoachDevice(req).catch(() => {});
   const coachDeviceUsage = configured ? await loadCoachDeviceUsage(accountKey) : undefined;
+  const coachStaff = normalizeCoachStaff(registry.record && registry.record.coachStaff);
   const missing = [];
   if (proPlan && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (proPlan && !locationId) missing.push({ label: "Location ID", key: locationKey });
@@ -665,6 +675,7 @@ async function accountStatus(req, res) {
     } : null,
     coachSessionActive: proPlan ? !!currentCoachSession : essentialSessionActive,
     coachDeviceUsage,
+    coachStaff,
     coachAccessUnlocked,
     coachAccessCodeAccepted: accessCodeAccepted,
     parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(currentCoachSession && currentCoachSession.parentEmailAllowed),
@@ -686,6 +697,76 @@ async function accountStatus(req, res) {
     missingSetupFields: configured ? [] : missing,
     error: configured ? subscriptionBlockedReason || (!coachAccessUnlocked ? "Active coach code needed." : undefined) : `SMARTCoach account "${accountKey}" is not configured.`,
   });
+}
+
+async function accountStaff(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    if (req.method === "GET") {
+      res.status(200).json({ success: true, accountKey, coachStaff: normalizeCoachStaff(existing.record.coachStaff) });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
+    const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    if (!sessionAllowed && !codeAllowed) {
+      throw httpError(401, "Active coach access is required to update staff.");
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const coachStaff = normalizeCoachStaff(payload.coachStaff || payload.staff || payload.coaches);
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      coachStaff,
+      lastStaffSync: { savedAt: new Date().toISOString(), count: coachStaff.length },
+    });
+    res.status(200).json({ success: true, accountKey, coachStaff });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Staff save failed." });
+  }
+}
+
+function normalizeCoachStaff(items) {
+  const source = Array.isArray(items) ? items : [];
+  const seen = new Set();
+  return source.map((item, index) => {
+    const raw = typeof item === "string" ? { name: item } : item || {};
+    const name = cleanSetupText(raw.name || raw.coachName || raw.label).slice(0, 120);
+    if (!name) return null;
+    const id = normalizeDocuRecordKey(raw.id || raw.coachId || name || `coach_${index + 1}`) || `coach_${index + 1}`;
+    if (seen.has(id)) return null;
+    seen.add(id);
+    return {
+      id,
+      name,
+      active: raw.active === false ? false : true,
+      role: cleanSetupText(raw.role).slice(0, 80),
+      updatedAt: cleanSetupText(raw.updatedAt) || new Date().toISOString(),
+    };
+  }).filter(Boolean).slice(0, 25);
 }
 
 function essentialSessionMatches(session, accountRecord) {

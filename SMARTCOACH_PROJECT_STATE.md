@@ -1083,6 +1083,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 241. The SMARTCoach mobile app Groups tray now uses **Add / Account / Refresh / Attend / Equip / Archive**. The previous Plan shortcut was removed from the Groups tray because plan selection happens after a group is opened.
 242. The SMARTCoach mobile app now includes an **Equip** workflow for equipment issue day. Coaches choose a training group, update each athlete's Equipment Trak items from mobile cards, and save one athlete or the full visible group back to SMART Trak while preserving duplicate numbered-item protection.
 243. Mobile Equipment Trak now includes a quick lookup search for found gear. Coaches can search by item name, number / ID, athlete, size, status, or note, such as **backpack 45**, and numbered equipment inputs request the phone number keyboard.
+244. Staff Access now includes a coach-name list for shared-code accounts. The SMARTCoach app prompts unlocked devices with **Select Coach** / **Which Coach Are You?**, remembers the selected coach per account/device, and sends that coach label with app saves and syncs so future reports can show who completed activity such as workout syncs and meet-day checkouts.
 
 ## Known Good Test Flow
 
