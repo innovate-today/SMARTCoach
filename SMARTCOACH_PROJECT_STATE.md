@@ -1077,6 +1077,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 235. Equipment Trak now separates **Equipment Issued** from true **Equipment Inventory**. Inventory batches can track numbered ranges, size quantities, and simple counts; reports show total, available, issued, and lost/damaged counts. Numbered gear cannot be actively issued to two athletes with the same item number.
 236. Equipment Trak reports now support sortable columns in both **Equipment Issued** and **Equipment Inventory**. Issued can sort by athlete, item, status, size, number/ID, dates, and notes; Inventory can sort by program, item, group, type, size, range/quantity, total, issued, available, and lost/damaged counts.
 237. Dashboard Activity range now supports preset ranges plus a **Custom range** with exact start and end dates. The selected range drives dashboard summaries, meet rows, training rows, volume reporting, exports, and saved dashboard view state.
+238. Equipment Inventory setup now has faster row-entry controls: coaches can copy a single inventory row or use **Copy Girls to Boys** to duplicate all current Girls inventory rows as Boys rows, then adjust quantities or number ranges before saving.
 
 ## Known Good Test Flow
 

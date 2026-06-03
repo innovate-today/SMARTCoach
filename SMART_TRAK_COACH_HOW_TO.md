@@ -177,7 +177,9 @@ How to set up Equipment Inventory:
 7. Use **Numbered** for items with unique numbers, such as backpacks, watches, warmups, or timing chips. Enter the start and end number.
 8. Use **Size Qty** for items counted by size, such as shorts, singlets, or warmup tops.
 9. Use **Count** for simple items where only the total matters.
-10. Click **Save Inventory**.
+10. Use **Copy** on a row when another inventory line is almost the same.
+11. Use **Copy Girls to Boys** when the boys inventory should start from the same list as the girls inventory, then adjust any boys number ranges or quantities before saving.
+12. Click **Save Inventory**.
 
 Example: Track Girls Backpacks can be entered as **Numbered**, start **1**, end **45**. Track Boys Backpacks can be entered as **Numbered**, start **46**, end **90**.
 
