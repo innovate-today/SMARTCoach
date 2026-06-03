@@ -460,7 +460,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledged=false;
 
 function smartCoachAccountKey(){
   try{
@@ -560,11 +560,11 @@ function updateCoachStaffFromAccount(data){
 }
 function selectedCoachIsValid(coach){
   if(!coach||!coach.name)return false;
-  if(!STAFF.length)return true;
+  if(!STAFF.length)return false;
   return STAFF.some(function(item){return String(item.id||'')===String(coach.id||'')||String(item.name||'').toLowerCase()===String(coach.name||'').toLowerCase();});
 }
 function maybePromptForDeviceCoach(data){
-  if(!data||data.productPlan==='essential'||!data.deviceAccessReady||!STAFF.length)return;
+  if(!data||data.productPlan==='essential'||!data.deviceAccessReady||coachNotListedAcknowledged)return;
   var coach=selectedCoachIdentity();
   if(selectedCoachIsValid(coach))return;
   renderCoachSelect();
@@ -582,17 +582,26 @@ function renderCoachSelect(){
   select.innerHTML='<option value="">Select coach</option>'+STAFF.map(function(coach){
     var selected=current&&(current.id===coach.id||String(current.name||'').toLowerCase()===String(coach.name||'').toLowerCase())?' selected':'';
     return '<option value="'+esc(coach.id)+'"'+selected+'>'+esc(coach.name)+'</option>';
-  }).join('');
+  }).join('')+'<option value="__not_listed__">Not Listed</option>';
 }
 function saveDeviceCoach(){
   var select=document.getElementById('coach-select');
   var status=document.getElementById('coach-select-status');
   var id=select&&select.value||'';
+  if(id==='__not_listed__'){
+    setSelectedCoachIdentity(null);
+    coachNotListedAcknowledged=true;
+    if(status){status.textContent='Not listed selected.';status.style.color='#92400e';}
+    checkSmartCoachAccount(smartCoachAccountKey()).catch(function(){});
+    setTimeout(function(){hm('m-coach-select');},250);
+    return;
+  }
   var coach=STAFF.find(function(item){return item.id===id;});
   if(!coach){
     if(status){status.textContent='Choose your coach name to continue.';status.style.color='#c00';}
     return;
   }
+  coachNotListedAcknowledged=false;
   setSelectedCoachIdentity(coach);
   if(status){status.textContent='Saved.';status.style.color='#0a7a44';}
   checkSmartCoachAccount(smartCoachAccountKey()).then(function(result){updateCoachStaffFromAccount(result.data||{});}).catch(function(){});

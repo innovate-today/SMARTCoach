@@ -1086,6 +1086,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 244. Staff Access now includes a coach-name list for shared-code accounts. The SMARTCoach app prompts unlocked devices with **Select Coach** / **Which Coach Are You?**, remembers the selected coach per account/device, and sends that coach label with app saves and syncs so future reports can show who completed activity such as workout syncs and meet-day checkouts.
 245. SMARTCoach app account unlock now re-checks account status after a successful coach-code session is created, so devices that were already entering or refreshing an active code still receive the **Which Coach Are You?** prompt when no coach name has been saved on that device.
 246. Staff Access now warns the head coach when the shared code has been used by active devices that have not selected a coach name. The warning gives the coach the practical choice to add missing coach names or rotate the shared code if the activity looks unexpected.
+247. The SMARTCoach app coach picker now always includes **Not Listed**. Choosing it does not save a coach identity, keeps the device unassigned for Staff Access warnings, and allows the prompt to return on the next login/identify cycle so the head coach can add the missing coach or rotate the code.
 
 ## Known Good Test Flow
 

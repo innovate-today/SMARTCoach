@@ -62,7 +62,9 @@ If Staff Access shows an **unassigned devices** warning, the shared code has bee
 
 When a coach enters the shared code, they can choose **Remember this device for 7 days**. This reduces repeated code entry on trusted staff devices. Changing the shared coach code still removes old access immediately.
 
-When the SMARTCoach app sees saved coach names and a trusted device has not picked one yet, it opens **Select Coach** and asks **Which Coach Are You?**. The selected name is remembered on that device for the current account and is used to label saves and syncs, including attendance activity.
+When the SMARTCoach app sees a trusted device that has not picked a coach name yet, it opens **Select Coach** and asks **Which Coach Are You?**. The list includes saved coach names plus **Not Listed**. A selected coach name is remembered on that device for the current account and is used to label saves and syncs, including attendance activity.
+
+If a coach chooses **Not Listed**, SMARTCoach does not save that as a coach name. The device stays unassigned, Staff Access shows the unassigned-device warning for the head coach, and the app will ask again the next time that device needs to identify the coach.
 
 Volume miles means completed training and race volume converted into miles for the current filters. Quality session work reps count toward actual quality volume. Recovery between reps does not count unless it is entered as actual running or walking distance.
 
