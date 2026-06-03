@@ -58,6 +58,8 @@ How to use Staff Access:
 5. Add coach names in the **Coaches** section and click **Save Coaches**.
 6. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
 
+If Staff Access shows an **unassigned devices** warning, the shared code has been used by one or more devices that have not selected a coach name yet. This usually means either a coach name still needs to be added in the **Coaches** section, or someone unexpected has the shared code. Add the missing coach name if the device belongs to staff, or change the coach code if the activity is unexpected.
+
 When a coach enters the shared code, they can choose **Remember this device for 7 days**. This reduces repeated code entry on trusted staff devices. Changing the shared coach code still removes old access immediately.
 
 When the SMARTCoach app sees saved coach names and a trusted device has not picked one yet, it opens **Select Coach** and asks **Which Coach Are You?**. The selected name is remembered on that device for the current account and is used to label saves and syncs, including attendance activity.

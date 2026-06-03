@@ -178,6 +178,8 @@ tr:last-child td{border-bottom:0}
 .accesspanel{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:12px;margin-bottom:14px}
 .accesspanel h3{font-size:14px;line-height:1.2;margin:0}
 .accesspanel .summary-head{margin-bottom:9px}
+.staff-warning{border:1px solid #fed7aa;background:#fff7ed;color:#92400e;border-radius:8px;padding:10px 11px;margin-top:10px;font-size:13px;line-height:1.35}
+.staff-warning b{display:block;color:#9a3412;margin-bottom:3px}
 .staff-list{display:grid;gap:8px;margin-top:10px}
 .staff-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .staff-row input{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px}
@@ -955,6 +957,7 @@ tr:last-child td{border-bottom:0}
           <div class="metric"><b id="staffAccessActiveDevices">--</b><span>Active devices</span></div>
           <div class="metric"><b id="staffAccessWeekDevices">--</b><span>Seen this week</span></div>
         </div>
+        <div id="staffAccessWarning" class="staff-warning" hidden></div>
       </section>
       <section class="accesspanel" aria-label="Staff coach list">
         <div class="summary-head">
@@ -1339,6 +1342,7 @@ var els={
   staffAccessActiveDevices:document.getElementById('staffAccessActiveDevices'),
   staffAccessWeekDevices:document.getElementById('staffAccessWeekDevices'),
   staffAccessLastSeen:document.getElementById('staffAccessLastSeen'),
+  staffAccessWarning:document.getElementById('staffAccessWarning'),
   staffList:document.getElementById('staffList'),
   staffStatus:document.getElementById('staffStatus'),
   staffAdd:document.getElementById('staffAdd'),
@@ -1998,7 +2002,22 @@ function renderStaffAccess(data){
   els.staffAccessWeekDevices.textContent=usage.devicesSeenThisWeek!=null?usage.devicesSeenThisWeek:'0';
   els.staffAccessLastSeen.textContent=usage.lastSeenAt?'Last device activity '+formatDateTime(usage.lastSeenAt):'No device activity yet';
   coachStaff=normalizeStaffForView(data&&data.coachStaff||coachStaff||[]);
+  renderStaffAccessWarning(usage);
   renderStaffList();
+}
+
+function renderStaffAccessWarning(usage){
+  if(!els.staffAccessWarning)return;
+  var count=Number(usage&&usage.unassignedDevices)||0;
+  if(!count){
+    els.staffAccessWarning.hidden=true;
+    els.staffAccessWarning.innerHTML='';
+    return;
+  }
+  var noun=count===1?'device that has':'devices that have';
+  var last=usage&&usage.unassignedLastSeenAt?' Last seen '+formatDateTime(usage.unassignedLastSeenAt)+'.':'';
+  els.staffAccessWarning.hidden=false;
+  els.staffAccessWarning.innerHTML='<b>'+count+' unassigned '+(count===1?'device':'devices')+'</b>The shared coach code was used by '+count+' '+noun+' not selected a coach name yet.'+last+' Add missing coach names, or change the coach code if this activity is unexpected.';
 }
 
 function normalizeStaffForView(items){
