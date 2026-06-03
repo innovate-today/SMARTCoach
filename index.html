@@ -486,6 +486,9 @@ function sessionStorageKey(){
 function rememberedSessionStorageKey(){
   return 'sc_session_remembered_'+smartCoachAccountKey();
 }
+function sessionCookieName(){
+  return rememberedSessionStorageKey().replace(/[^a-zA-Z0-9_-]/g,'_');
+}
 function deviceStorageKey(){
   return 'sc_device_'+smartCoachAccountKey();
 }
@@ -517,8 +520,11 @@ function readSmartCoachCookie(name){
     return match?decodeURIComponent(match[1]):'';
   }catch(e){return '';}
 }
-function writeSmartCoachCookie(name,value){
-  try{document.cookie=name+'='+encodeURIComponent(value||'')+'; path=/; max-age=31536000; SameSite=Lax';}catch(e){}
+function writeSmartCoachCookie(name,value,maxAge){
+  try{document.cookie=name+'='+encodeURIComponent(value||'')+'; path=/; max-age='+(maxAge||31536000)+'; SameSite=Lax';}catch(e){}
+}
+function clearSmartCoachCookie(name){
+  try{document.cookie=name+'=; path=/; max-age=0; SameSite=Lax';}catch(e){}
 }
 function smartCoachAccessCode(){
   try{return localStorage.getItem(accessCodeStorageKey())||readSmartCoachCookie(accessCodeCookieName())||'';}catch(e){return readSmartCoachCookie(accessCodeCookieName())||'';}
@@ -529,8 +535,8 @@ function setSmartCoachAccessCode(value){
   writeSmartCoachCookie(accessCodeCookieName(),code);
 }
 function smartCoachSession(){
-  try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){
-    try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}
+  try{return localStorage.getItem(rememberedSessionStorageKey())||readSmartCoachCookie(sessionCookieName())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){
+    try{return readSmartCoachCookie(sessionCookieName())||sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return readSmartCoachCookie(sessionCookieName())||'';}
   }
 }
 function setSmartCoachSession(value,remember){
@@ -538,14 +544,17 @@ function setSmartCoachSession(value,remember){
     if(value){
       if(remember){
         localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());
+        writeSmartCoachCookie(sessionCookieName(),String(value||'').trim(),7*24*60*60);
         sessionStorage.removeItem(sessionStorageKey());
       }else{
         sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
         localStorage.removeItem(rememberedSessionStorageKey());
+        clearSmartCoachCookie(sessionCookieName());
       }
     }else{
       sessionStorage.removeItem(sessionStorageKey());
       localStorage.removeItem(rememberedSessionStorageKey());
+      clearSmartCoachCookie(sessionCookieName());
     }
   }catch(e){}
 }
