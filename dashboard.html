@@ -1602,7 +1602,7 @@ els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.changeCodeBtn.addEventListener('click',openCodeModal);
 els.codeClose.addEventListener('click',closeCodeModal);
 els.codeSave.addEventListener('click',saveCoachCode);
-if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff.push({id:'',name:'',active:true});renderStaffList();});
+if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff=collectStaffRows(true);coachStaff.push({id:'',name:'',active:true});renderStaffList();});
 if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
@@ -2027,20 +2027,21 @@ function renderStaffList(){
   Array.prototype.forEach.call(els.staffList.querySelectorAll('[data-remove-staff]'),function(button){
     button.addEventListener('click',function(){
       var index=Number(button.getAttribute('data-remove-staff'));
+      coachStaff=collectStaffRows(true);
       coachStaff.splice(index,1);
       renderStaffList();
     });
   });
 }
 
-function collectStaffRows(){
+function collectStaffRows(keepBlankRows){
   var rows=els.staffList?Array.prototype.slice.call(els.staffList.querySelectorAll('[data-staff-row]')):[];
   var seen={};
   return rows.map(function(row,index){
     var input=row.querySelector('input');
     var current=coachStaff[index]||{};
     var name=String(input&&input.value||'').trim();
-    if(!name)return null;
+    if(!name)return keepBlankRows?{id:current.id||'',name:'',active:true,role:current.role||'',updatedAt:current.updatedAt||''}:null;
     var id=String(current.id||name).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_')||('coach_'+(index+1));
     if(seen[id])return null;
     seen[id]=true;
