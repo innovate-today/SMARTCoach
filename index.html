@@ -756,9 +756,14 @@ function saveAccountSettings(){
       if(result.data&&result.data.accessCodeRequired&&!created&&!smartCoachSession()){
         throw new Error('Enter the coach access code to unlock SMART Trak on this phone.');
       }
-      updateCoachStaffFromAccount(result.data);
       if(status){status.textContent='Account set to '+key+' and '+productPlanLabel(plan)+' is active.';status.style.color='#0a7a44';}
       loadProData();
+      return checkSmartCoachAccount(key).then(function(fresh){
+        if(fresh&&fresh.data){
+          accountStatus=fresh.data;
+          updateCoachStaffFromAccount(fresh.data);
+        }
+      });
     });
   }).catch(function(error){
     renderAccountSummary(error&&error.data?error.data:{productPlan:plan,configured:false},plan);

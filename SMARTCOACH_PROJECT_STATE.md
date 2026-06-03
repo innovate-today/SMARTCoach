@@ -1084,6 +1084,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 242. The SMARTCoach mobile app now includes an **Equip** workflow for equipment issue day. Coaches choose a training group, update each athlete's Equipment Trak items from mobile cards, and save one athlete or the full visible group back to SMART Trak while preserving duplicate numbered-item protection.
 243. Mobile Equipment Trak now includes a quick lookup search for found gear. Coaches can search by item name, number / ID, athlete, size, status, or note, such as **backpack 45**, and numbered equipment inputs request the phone number keyboard.
 244. Staff Access now includes a coach-name list for shared-code accounts. The SMARTCoach app prompts unlocked devices with **Select Coach** / **Which Coach Are You?**, remembers the selected coach per account/device, and sends that coach label with app saves and syncs so future reports can show who completed activity such as workout syncs and meet-day checkouts.
+245. SMARTCoach app account unlock now re-checks account status after a successful coach-code session is created, so devices that were already entering or refreshing an active code still receive the **Which Coach Are You?** prompt when no coach name has been saved on that device.
 
 ## Known Good Test Flow
 
