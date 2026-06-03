@@ -105,7 +105,8 @@ How to review it in SMART Trak:
 1. Open **Athletes** for a quick athlete-specific summary.
 2. Click the athlete name or **Docu Trak** to open the athlete detail modal.
 3. Review the Attendance cards for **Present**, **Late**, **Absent**, **Excused**, **Checked Out**, and **Attendance %**.
-4. Open **Attendance** when you need the full attendance report, filters, edits, checkpoint view, or CSV export.
+4. Open **Attendance** when you need the full attendance report, filters, edits, checkpoint view, coach/source view, or CSV export.
+5. Use **Coach / Source** to see which coach/device saved the attendance mark. If a coach selected their name in the SMARTCoach app, that coach name appears as the source. If no coach name was selected, the row falls back to the generic source.
 
 For meet days, create a checkout checkpoint such as **Meet Checkout** or **Parent Checkout**. Mark an athlete **Checked Out** when they leave with a parent or guardian after checking out with a coach. Checked Out is treated as accounted-for attendance in the attendance percentage, not as an absence.
 
