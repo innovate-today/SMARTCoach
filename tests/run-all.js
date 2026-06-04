@@ -107,6 +107,20 @@ function checkStandaloneRaceResultSaveScope() {
   console.log("standalone race result save scope ok");
 }
 
+function checkDashboardActivityRangeLayout() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const required = [
+    ".range-stat{display:grid;grid-template-columns:minmax(0,1fr)",
+    ".range-controls{display:grid;gap:7px;justify-items:stretch;width:100%}",
+    ".range-custom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)",
+    ".range-custom input{width:100%;min-width:0",
+  ];
+  required.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);
+  });
+  console.log("dashboard activity range layout ok");
+}
+
 function checkMeetHistorySportToolbarFilter() {
   const html = fs.readFileSync("meet-history.html", "utf8");
   const bar = html.match(/<section class="bar">([\s\S]*?)<\/section>/);
@@ -242,6 +256,7 @@ checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
 checkStandaloneRaceResultSaveScope();
+checkDashboardActivityRangeLayout();
 checkMeetHistorySportToolbarFilter();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
