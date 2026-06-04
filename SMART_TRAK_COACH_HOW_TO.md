@@ -415,6 +415,8 @@ How to use it:
 
 Athletic.net Import supports copied **Results Grid** text for cross country and copied **Event Records** text for track and field. Results Grid imports use the Race Distances line and Meet List to map results to the correct event and meet. Event Records imports support sprint/distance events, hurdles, relays, and field marks. Relay imports save the relay time and list runner names in the notes.
 
+If Athletic.net cuts off meet names in an Event Records copy, paste the season calendar or meet reference list below the records before previewing. SMART Trak uses the matching meet dates to replace shortened meet names with the full calendar meet names, including multi-day meets such as Apr 30-May 1.
+
 ## Track Simulator
 
 Use the Track Simulator for track meet planning and projected team scoring.

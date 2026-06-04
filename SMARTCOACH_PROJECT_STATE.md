@@ -1120,6 +1120,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 278. Athletic.net Results Grid import now handles copied Meet List rows with checkbox/icon columns or a combined Meet List/Key header, so meet dates do not fall back into the Meet column. Grade detection also tolerates hidden initials/avatar columns so historical class year is still inferred.
 279. Athletic.net Results Grid import no longer treats plain grade numbers as result cells. This prevents row shifts where the athlete preview becomes a time/result and keeps grade/class-year inference intact. Meet List parsing also supports date-only lines followed by the meet name on the next line.
 280. Meet History Athletic.net Import now supports Athletic.net **Event Records** text for track and field seasons. It reads Mens/Womens sections, event headers, track times, field marks, PB flags, dates, meet names, grades/class years, and relay blocks with runner names. Event names normalize to SMART Trak-style labels such as 100m, 400m, Shot Put, High Jump, and 4x100 Relay. The coach guide documents Results Grid and Event Records imports.
+281. Athletic.net Event Records imports now support a pasted season calendar/meet reference list below the records. When Athletic.net cuts off meet names in the copied records, SMART Trak uses the result date to replace the shortened name with the full calendar meet name. The reference parser handles separate date/name lines and multi-day date ranges such as Apr 30-May 1 pointing to one meet.
 
 ## Known Good Test Flow
 
