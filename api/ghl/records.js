@@ -109,7 +109,7 @@ module.exports = async function handler(req, res) {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       const deleted = await deleteRecords({ token, locationId, payload });
       const mirror = await mirrorRecordsBestEffort(accountKey, [], { deleteIds: deleted.deleteIds });
-      res.status(200).json({ success: true, deletedCount: deleted.deletedCount, mirror });
+      res.status(200).json({ success: true, deletedCount: deleted.deletedCount, skippedCount: deleted.skippedCount, mirror });
       return;
     }
 
@@ -328,15 +328,24 @@ async function deleteRecords({ token, locationId, payload }) {
   const deleteIds = [...directIds, ...sourceIds].filter(Boolean);
   if (!deleteIds.length) throw httpError(400, "Record ID is required.");
   let deletedCount = 0;
+  let skippedCount = 0;
   for (const recordId of directIds) {
-    await ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
-      method: "DELETE",
-    });
-    deletedCount += 1;
+    try {
+      await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
+        method: "DELETE",
+      });
+      deletedCount += 1;
+    } catch (error) {
+      if (error && error.statusCode === 404) {
+        skippedCount += 1;
+        continue;
+      }
+      throw error;
+    }
   }
-  return { deletedCount, deleteIds };
+  return { deletedCount, skippedCount, deleteIds };
 }
 
 function buildRecordProperties(row) {

@@ -957,8 +957,12 @@ function confirmDeleteAllRecords(){
     renderOptions();
     render();
     renderBulkPreview();
-    pendingRecordsSourcePrefix='Deleted '+(result.data.deletedCount||count)+' records. ';
-    setBulkStatus('Deleted '+(result.data.deletedCount||count)+' records. You can upload the corrected file now.','good');
+    var skipped=Number(result.data&&result.data.skippedCount)||0;
+    var deleted=Number(result.data&&result.data.deletedCount)||0;
+    var message='Cleared '+count+' loaded records.';
+    if(deleted||skipped)message+=' Deleted '+deleted+' live rows'+(skipped?'; '+skipped+' were already gone.':'.');
+    pendingRecordsSourcePrefix=message+' ';
+    setBulkStatus(message+' You can upload the corrected file now.','good');
   }).catch(function(error){
     setBulkStatus(error.message||'Records could not be deleted.','bad');
   }).finally(function(){
