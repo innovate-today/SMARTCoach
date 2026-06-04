@@ -140,6 +140,7 @@ async function recordRequestCoachDevice(req) {
   await recordCoachDeviceSession(accountKey, {
     deviceId,
     deviceLabel: cleanSetupText(headerValue(req, "x-smartcoach-device-label")),
+    deviceSource: cleanSetupText(headerValue(req, "x-smartcoach-device-source")) || "app",
     coachId: cleanSetupText(headerValue(req, "x-smartcoach-coach-id")),
     coachName: cleanSetupText(headerValue(req, "x-smartcoach-coach-name")),
     userAgent: headerValue(req, "user-agent"),
@@ -2029,15 +2030,19 @@ async function accountSession(req, res) {
         },
       });
     }
-    const deviceId = cleanSetupText(firstPayloadValue(payload, ["deviceId", "clientDeviceId"]));
-    const deviceLabel = cleanSetupText(firstPayloadValue(payload, ["deviceLabel", "deviceName"]));
-    const usage = await recordCoachDeviceSession(accountKey, {
-      deviceId,
-      deviceLabel,
-      userAgent: headerValue(req, "user-agent"),
-      coachIndex: access.coachIndex || 0,
-      expiresAtIso: session.expiresAtIso,
-    }).catch((error) => ({ saved: false, error: error.message || "Device usage could not be saved." }));
+    const deviceSource = cleanSetupText(firstPayloadValue(payload, ["deviceSource", "source", "client"])).toLowerCase();
+    const deviceId = deviceSource === "app" ? cleanSetupText(firstPayloadValue(payload, ["deviceId", "clientDeviceId"])) : "";
+    const deviceLabel = deviceSource === "app" ? cleanSetupText(firstPayloadValue(payload, ["deviceLabel", "deviceName"])) : "";
+    const usage = deviceId
+      ? await recordCoachDeviceSession(accountKey, {
+        deviceId,
+        deviceLabel,
+        deviceSource,
+        userAgent: headerValue(req, "user-agent"),
+        coachIndex: access.coachIndex || 0,
+        expiresAtIso: session.expiresAtIso,
+      }).catch((error) => ({ saved: false, error: error.message || "Device usage could not be saved." }))
+      : { saved: false, skipped: true, reason: "Desktop sessions are not counted as coach devices." };
     res.status(200).json({
       success: true,
       accountKey,
@@ -2492,6 +2497,8 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     accountOwnerName: cleanSetupText(ownerNameValue || existing.accountOwnerName),
     accountOwnerContactId: cleanSetupText(ownerContactIdValue || existing.accountOwnerContactId),
     coachCodeRecovery: existing.coachCodeRecovery || null,
+    coachStaff: normalizeCoachStaff(existing.coachStaff),
+    lastStaffSync: existing.lastStaffSync || null,
     coachCodeChangeHistory: coachCodeChange.history,
     lastCoachCodeChange: coachCodeChange.latest || existing.lastCoachCodeChange || null,
     coachCodeVersion: coachCodeChange.changed && !options.dryRun ? (Number(existing.coachCodeVersion) || 0) + 1 : Number(existing.coachCodeVersion) || 0,

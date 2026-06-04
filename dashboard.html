@@ -1290,8 +1290,6 @@ function applyAdminTools(){
       if(session)headers.set('X-SMARTCoach-Session',session);
       var accessCode=smartCoachAccessCode();
       if(accessCode&&!session)headers.set('X-SMARTCoach-Access-Code',accessCode);
-      headers.set('X-SMARTCoach-Device-Id',smartCoachDeviceId());
-      headers.set('X-SMARTCoach-Device-Label',smartCoachDeviceLabel());
       init.headers=headers;
     }
     return nativeFetch(input,init);
@@ -1861,7 +1859,7 @@ function submitDashboardAccessCode(){
   fetch('/api/smart-trak/account-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code,deviceId:smartCoachDeviceId(),deviceLabel:smartCoachDeviceLabel()})
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code,deviceSource:'desktop'})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){

@@ -849,7 +849,7 @@ function createSmartCoachSession(accessCode,remember){
   return fetch('/api/smart-trak/account-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code,deviceId:smartCoachDeviceId(),deviceLabel:smartCoachDeviceLabel()})
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code,deviceId:smartCoachDeviceId(),deviceLabel:smartCoachDeviceLabel(),deviceSource:'app'})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -880,6 +880,7 @@ function createSmartCoachSession(accessCode,remember){
       if(coach&&coach.name)headers.set('X-SMARTCoach-Coach-Name',coach.name);
       headers.set('X-SMARTCoach-Device-Id',smartCoachDeviceId());
       headers.set('X-SMARTCoach-Device-Label',smartCoachDeviceLabel());
+      headers.set('X-SMARTCoach-Device-Source','app');
       init.headers=headers;
     }
     return nativeFetch(input,init);

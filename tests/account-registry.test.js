@@ -7,6 +7,8 @@ const {
   mirrorSchoolRecords,
   loadSchoolRecordsMirror,
   schoolRecordsMirrorStatus,
+  recordCoachDeviceSession,
+  loadCoachDeviceUsage,
 } = require("../lib/account-registry");
 
 function withEnv(overrides, fn) {
@@ -184,10 +186,58 @@ async function testSchoolRecordsMirrorManifestFallback() {
   }
 }
 
+async function testCoachDeviceUsageCountsAppDevicesOnly() {
+  const previousFetch = global.fetch;
+  const store = {};
+  const setMembers = {};
+  global.fetch = async (url) => {
+    const text = String(url);
+    const parts = text.replace("https://registry.example/", "").split("/").map(decodeURIComponent);
+    const command = parts[0];
+    if (command === "set") {
+      store[parts[1]] = parts.slice(2).join("/");
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
+    if (command === "get") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: store[parts[1]] || null }) };
+    }
+    if (command === "sadd") {
+      setMembers[parts[1]] = setMembers[parts[1]] || new Set();
+      setMembers[parts[1]].add(parts[2]);
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: 1 }) };
+    }
+    if (command === "smembers") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: Array.from(setMembers[parts[1]] || []) }) };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+      SMARTCOACH_REGISTRY_PREFIX: undefined,
+    }, async () => {
+      await recordCoachDeviceSession("device-school", { deviceId: "desktop_1", deviceLabel: "Mac Safari", userAgent: "Macintosh" });
+      await recordCoachDeviceSession("device-school", { deviceId: "app_1", deviceLabel: "iPhone Safari", deviceSource: "app", coachName: "Moore" });
+      await recordCoachDeviceSession("device-school", { deviceId: "app_2", deviceLabel: "iPad Safari", deviceSource: "app" });
+
+      const usage = await loadCoachDeviceUsage("device-school");
+      assert.strictEqual(usage.activeDevices, 2);
+      assert.strictEqual(usage.devicesSeenThisWeek, 2);
+      assert.strictEqual(usage.unassignedDevices, 1);
+      assert.deepStrictEqual(usage.devices.map((device) => device.deviceId).sort(), ["app_1", "app_2"]);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 (async () => {
   await testVercelKvAliases();
   await testUpstashAliasesAndCustomPrefix();
   await testSchoolRecordsMirrorManifestFallback();
+  await testCoachDeviceUsageCountsAppDevicesOnly();
   console.log("account registry alias tests passed");
 })().catch((error) => {
   console.error(error);
