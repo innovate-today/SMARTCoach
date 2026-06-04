@@ -1110,6 +1110,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 268. Coach access remembered-device wording now uses 30 days in the SMARTCoach app, SMART Trak access modal, and coach guide.
 269. Records bulk import no longer requires an exact date. Gender, event, result, and year are required; Date remains optional. Year-only date values are treated as the season year instead of being converted into a fake January 1 record date.
 270. Records Tools now includes a guarded **Delete All Records** action for clearing a bad import before a fresh upload. It requires a confirmation and typed `DELETE ALL`, deletes GHL rows when record IDs are available, clears mirrored record IDs/source IDs, and clears the local Records cache.
+271. Records bulk import now supports both relay-aware templates with Leg 1-4 columns and simpler templates without relay-leg columns. In the simpler layout, Meet, Date, Season, Year, Previous Record, Previous Holder, and Notes no longer shift into relay runner fields.
 
 ## Known Good Test Flow
 

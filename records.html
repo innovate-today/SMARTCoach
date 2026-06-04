@@ -994,7 +994,7 @@ function recordHeaderMap(cols){
   var map={};
   cols.forEach(function(col,index){
     var key=String(col||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',record_owner:'recordScope',owner:'recordScope',gender:'gender',division:'gender',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',relay_team:'athleteName',team:'athleteName',leg_1:'relayLeg1',leg1:'relayLeg1',runner_1:'relayLeg1',runner1:'relayLeg1',leg_2:'relayLeg2',leg2:'relayLeg2',runner_2:'relayLeg2',runner2:'relayLeg2',leg_3:'relayLeg3',leg3:'relayLeg3',runner_3:'relayLeg3',runner3:'relayLeg3',leg_4:'relayLeg4',leg4:'relayLeg4',runner_4:'relayLeg4',runner4:'relayLeg4',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
+    var normalized={record_type:'recordType',type:'recordType',record_scope:'recordScope',scope:'recordScope',record_owner:'recordScope',owner:'recordScope',gender:'gender',division:'gender',sport:'sport',event:'event',result:'resultDisplay',result_display:'resultDisplay',mark:'resultMark',result_mark:'resultMark',athlete:'athleteName',athlete_name:'athleteName',relay_team:'athleteName',team:'athleteName',leg_1:'relayLeg1',leg1:'relayLeg1',relay_leg_1:'relayLeg1',runner_1:'relayLeg1',runner1:'relayLeg1',leg_2:'relayLeg2',leg2:'relayLeg2',relay_leg_2:'relayLeg2',runner_2:'relayLeg2',runner2:'relayLeg2',leg_3:'relayLeg3',leg3:'relayLeg3',relay_leg_3:'relayLeg3',runner_3:'relayLeg3',runner3:'relayLeg3',leg_4:'relayLeg4',leg4:'relayLeg4',relay_leg_4:'relayLeg4',runner_4:'relayLeg4',runner4:'relayLeg4',meet:'meetName',meet_name:'meetName',date:'recordDate',record_date:'recordDate',season:'season',year:'seasonYear',season_year:'seasonYear',previous_record:'previousRecordDisplay',previous_rec:'previousRecordDisplay',previous_record_display:'previousRecordDisplay',previous_holder:'previousRecordHolder',previous_hold:'previousRecordHolder',previous_record_holder:'previousRecordHolder',notes:'recordNotes',record_notes:'recordNotes'}[key];
     if(normalized)map[normalized]=index;
   });
   return map.gender!=null||map.event!=null||map.recordType!=null?map:{};
@@ -1004,6 +1004,12 @@ function normalizeBulkRecord(values,index){
   if(!row.seasonYear&&row.recordDate)row.seasonYear=row.recordDate.slice(0,4);
   row.rowNumber=index+1;
   return row;
+}
+function normalizeBulkRecordFromColumns(cols,index){
+  if(cols.length<=12){
+    return normalizeBulkRecord({gender:cols[0],sport:cols[1],event:cols[2],resultDisplay:cols[3],athleteName:cols[4],meetName:cols[5],recordDate:cols[6],season:cols[7],seasonYear:cols[8],previousRecordDisplay:cols[9],previousRecordHolder:cols[10],recordNotes:cols[11]},index);
+  }
+  return normalizeBulkRecord({gender:cols[0],sport:cols[1],event:cols[2],resultDisplay:cols[3],athleteName:cols[4],relayLeg1:cols[5],relayLeg2:cols[6],relayLeg3:cols[7],relayLeg4:cols[8],meetName:cols[9],recordDate:cols[10],season:cols[11],seasonYear:cols[12],previousRecordDisplay:cols[13],previousRecordHolder:cols[14],recordNotes:cols[15]},index);
 }
 function parseBulkRecords(text){
   var lines=String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
@@ -1017,7 +1023,7 @@ function parseBulkRecords(text){
       var value=function(key){return headers[key]!=null?cols[headers[key]]||'':'';};
       return normalizeBulkRecord({recordType:value('recordType'),recordScope:value('recordScope'),gender:value('gender'),sport:value('sport'),event:value('event'),resultDisplay:value('resultDisplay'),resultMark:value('resultMark'),athleteName:value('athleteName'),relayLeg1:value('relayLeg1'),relayLeg2:value('relayLeg2'),relayLeg3:value('relayLeg3'),relayLeg4:value('relayLeg4'),meetName:value('meetName'),recordDate:value('recordDate'),season:value('season'),seasonYear:value('seasonYear'),previousRecordDisplay:value('previousRecordDisplay'),previousRecordHolder:value('previousRecordHolder'),recordNotes:value('recordNotes')},index);
     }
-    return normalizeBulkRecord({gender:cols[0],sport:cols[1],event:cols[2],resultDisplay:cols[3],athleteName:cols[4],relayLeg1:cols[5],relayLeg2:cols[6],relayLeg3:cols[7],relayLeg4:cols[8],meetName:cols[9],recordDate:cols[10],season:cols[11],seasonYear:cols[12],previousRecordDisplay:cols[13],previousRecordHolder:cols[14],recordNotes:cols[15]},index);
+    return normalizeBulkRecordFromColumns(cols,index);
   }).filter(function(row){return row.recordType||row.event||row.resultDisplay||row.athleteName;});
 }
 function downloadBulkTemplate(){
