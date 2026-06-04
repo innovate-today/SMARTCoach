@@ -612,8 +612,10 @@ async function accountEquipmentTrak(req, res) {
     const action = cleanSetupText(payload.action || payload.mode).toLowerCase();
     if (action === "save-items") {
       current.items = normalizeEquipmentItems(payload.items);
+      setActiveEquipmentSeason(current, { items: current.items, records: current.records, inventory: current.inventory });
     } else if (action === "save-inventory") {
       current.inventory = normalizeEquipmentInventory(payload.inventory || payload.items);
+      setActiveEquipmentSeason(current, { items: current.items, records: current.records, inventory: current.inventory });
     } else if (action === "save-athlete") {
       const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
       const contactId = cleanSetupText(payload.contactId);
@@ -639,6 +641,36 @@ async function accountEquipmentTrak(req, res) {
         else delete current.records[athleteKey];
         throw httpError(409, `${duplicate.itemId} #${duplicate.number} is already issued to ${duplicate.firstAthlete}.`);
       }
+      setActiveEquipmentSeason(current, { items: current.items, records: current.records, inventory: current.inventory });
+    } else if (action === "start-season") {
+      const pool = normalizeEquipmentPool(payload.inventoryPool || payload.pool || payload.sport);
+      const nextSeason = normalizeEquipmentSeason({
+        id: payload.seasonId,
+        name: payload.seasonName || payload.name,
+        sport: payload.sport,
+        seasonYear: payload.seasonYear || payload.year,
+        inventoryPool: pool,
+        items: selectedEquipmentItems(current.items, payload.copyItemIds),
+        inventory: selectedEquipmentInventory(current.inventory, payload.copyInventory),
+        records: outstandingEquipmentRecordsForPool(current.seasons, pool),
+        active: true,
+        archived: false,
+        createdAt: new Date().toISOString(),
+      }, current.seasons.length + 1);
+      if (!nextSeason.id) throw httpError(400, "Season name is required.");
+      current.seasons = current.seasons.map((season) => ({ ...season, active: false, archived: true }));
+      current.seasons.push(nextSeason);
+      current.activeSeasonId = nextSeason.id;
+      current.items = nextSeason.items;
+      current.records = nextSeason.records;
+      current.inventory = nextSeason.inventory;
+    } else if (action === "update-season") {
+      updateActiveEquipmentSeason(current, {
+        name: payload.seasonName || payload.name,
+        sport: payload.sport,
+        seasonYear: payload.seasonYear || payload.year,
+        inventoryPool: payload.inventoryPool || payload.pool,
+      });
     } else {
       throw httpError(400, "Equipment Trak action is required.");
     }
@@ -656,11 +688,142 @@ async function accountEquipmentTrak(req, res) {
 
 function normalizeEquipmentTrak(source) {
   const value = source && typeof source === "object" ? source : {};
+  const legacyItems = normalizeEquipmentItems(value.items);
+  const legacyRecords = normalizeEquipmentRecords(value.records);
+  const legacyInventory = normalizeEquipmentInventory(value.inventory);
+  let seasons = normalizeEquipmentSeasons(value.seasons);
+  let activeSeasonId = normalizeDocuItemId(value.activeSeasonId || value.currentSeasonId);
+  if (!seasons.length) {
+    const fallback = defaultEquipmentSeason(legacyItems, legacyRecords, legacyInventory);
+    seasons = [fallback];
+    activeSeasonId = fallback.id;
+  }
+  let activeSeason = seasons.find((season) => season.id === activeSeasonId) || seasons.find((season) => season.active) || seasons[0];
+  activeSeasonId = activeSeason && activeSeason.id ? activeSeason.id : "";
+  seasons = seasons.map((season) => ({ ...season, active: season.id === activeSeasonId, archived: season.id === activeSeasonId ? false : !!season.archived }));
+  activeSeason = seasons.find((season) => season.id === activeSeasonId) || seasons[0] || defaultEquipmentSeason(legacyItems, legacyRecords, legacyInventory);
   return {
-    items: normalizeEquipmentItems(value.items),
-    records: normalizeEquipmentRecords(value.records),
-    inventory: normalizeEquipmentInventory(value.inventory),
+    activeSeasonId,
+    seasons,
+    items: activeSeason.items,
+    records: activeSeason.records,
+    inventory: activeSeason.inventory,
   };
+}
+
+function normalizeEquipmentSeasons(seasons) {
+  const source = Array.isArray(seasons) ? seasons : [];
+  const seen = new Set();
+  return source.map((season, index) => normalizeEquipmentSeason(season, index + 1)).filter((season) => {
+    if (!season.id || seen.has(season.id)) return false;
+    seen.add(season.id);
+    return true;
+  });
+}
+
+function normalizeEquipmentSeason(season, index) {
+  const raw = season && typeof season === "object" ? season : {};
+  const sport = cleanSetupText(raw.sport || "General").slice(0, 80);
+  const seasonYear = cleanSetupText(raw.seasonYear || raw.year).slice(0, 10);
+  const inventoryPool = normalizeEquipmentPool(raw.inventoryPool || raw.pool || sport);
+  const name = cleanSetupText(raw.name || [seasonYear, sport].filter(Boolean).join(" ") || `Season ${index}`).slice(0, 120);
+  const id = normalizeDocuItemId(raw.id || name || `season_${index}`);
+  return {
+    id,
+    name,
+    sport,
+    seasonYear,
+    inventoryPool,
+    active: raw.active === true,
+    archived: raw.archived === true,
+    createdAt: cleanSetupText(raw.createdAt),
+    items: normalizeEquipmentItems(raw.items),
+    records: normalizeEquipmentRecords(raw.records),
+    inventory: normalizeEquipmentInventory(raw.inventory),
+  };
+}
+
+function defaultEquipmentSeason(items, records, inventory) {
+  const year = new Date().getFullYear();
+  return {
+    id: `season_${year}_general`,
+    name: `${year} General`,
+    sport: "General",
+    seasonYear: String(year),
+    inventoryPool: "General",
+    active: true,
+    archived: false,
+    createdAt: "",
+    items,
+    records,
+    inventory,
+  };
+}
+
+function normalizeEquipmentPool(value) {
+  const text = cleanSetupText(value || "General").toLowerCase();
+  if (text.includes("cross")) return "Cross Country";
+  if (text.includes("track")) return "Track";
+  return "General";
+}
+
+function setActiveEquipmentSeason(current, changes) {
+  const id = current.activeSeasonId || (current.seasons[0] && current.seasons[0].id);
+  current.seasons = current.seasons.map((season) => (
+    season.id === id ? { ...season, ...changes, active: true, archived: false } : season
+  ));
+  current.activeSeasonId = id;
+}
+
+function updateActiveEquipmentSeason(current, changes) {
+  const id = current.activeSeasonId || (current.seasons[0] && current.seasons[0].id);
+  const name = cleanSetupText(changes.name).slice(0, 120);
+  if (!id || !name) throw httpError(400, "Season name is required.");
+  const sport = cleanSetupText(changes.sport || "General").slice(0, 80);
+  const seasonYear = cleanSetupText(changes.seasonYear).slice(0, 10);
+  const inventoryPool = normalizeEquipmentPool(changes.inventoryPool || sport);
+  current.seasons = current.seasons.map((season) => (
+    season.id === id ? { ...season, name, sport, seasonYear, inventoryPool, active: true, archived: false } : season
+  ));
+  current.activeSeasonId = id;
+  const activeSeason = current.seasons.find((season) => season.id === id);
+  if (activeSeason) {
+    current.items = activeSeason.items;
+    current.records = activeSeason.records;
+    current.inventory = activeSeason.inventory;
+  }
+}
+
+function selectedEquipmentItems(items, ids) {
+  const source = normalizeEquipmentItems(items);
+  const selected = Array.isArray(ids) ? ids.map(normalizeDocuItemId).filter(Boolean) : [];
+  if (!selected.length) return source;
+  const keep = new Set(selected);
+  return source.filter((item) => keep.has(item.id));
+}
+
+function selectedEquipmentInventory(inventory, copyInventory) {
+  if (copyInventory === false) return [];
+  return normalizeEquipmentInventory(inventory);
+}
+
+function outstandingEquipmentRecordsForPool(seasons, pool) {
+  const out = {};
+  (Array.isArray(seasons) ? seasons : []).forEach((season) => {
+    if (normalizeEquipmentPool(season.inventoryPool || season.sport) !== pool) return;
+    Object.keys(season.records || {}).forEach((athleteKey) => {
+      const record = season.records[athleteKey] || {};
+      const items = {};
+      Object.keys(record.items || {}).forEach((itemId) => {
+        const item = record.items[itemId] || {};
+        if (item.status === "issued" || item.status === "lost_damaged") items[itemId] = item;
+      });
+      if (Object.keys(items).length) {
+        out[athleteKey] = { ...record, items, updatedAt: record.updatedAt || new Date().toISOString() };
+      }
+    });
+  });
+  return out;
 }
 
 function normalizeEquipmentItems(items) {

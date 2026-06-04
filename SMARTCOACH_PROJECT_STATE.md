@@ -1099,6 +1099,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 257. New customer accounts no longer load snapshot-seeded Training, Meet, or Archive groups. For named SMARTCoach accounts, Groups and scheduled Meets now read/write account-scoped registry data; copied hidden GHL system records are ignored unless using the default/dev account fallback. The phone app also prunes locally cached shared training groups when Refresh receives a blank/new account group list.
 258. Docu Trak now supports season rollover. Account Docu Trak records include an active season plus archived prior seasons; the Athletes page Docu Trak Setup modal shows the active season, can start a new sport/year season, copies selected requirements forward, and resets athlete document statuses for the new season.
 259. Docu Trak Setup now lets coaches edit the current season's sport, year, and season name without starting a new season or resetting athlete document statuses.
+260. Equipment Trak now supports season rollover with an inventory-pool choice. Coaches can start a new Equipment season, copy the inventory list forward, and carry forward only still-issued or lost/damaged gear from the same pool. This lets schools keep Cross Country and Track inventories separate, while schools that share gear can use the General pool to keep numbered items blocked across programs.
 
 ## Known Good Test Flow
 

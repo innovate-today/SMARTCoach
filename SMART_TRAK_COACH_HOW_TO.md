@@ -215,6 +215,21 @@ Example: Track Girls Backpacks can be entered as **Numbered**, start **1**, end 
 
 Important: a numbered item that is currently issued cannot be issued to a second athlete with the same item number. Mark the item returned, lost / damaged, or not issued before reassigning that number.
 
+How to start a new Equipment Trak season:
+
+1. Open **Athletes**.
+2. Click **Equipment Trak** in the top toolbar.
+3. In **Equipment Season**, confirm the current season name, sport, year, and inventory pool.
+4. Use **Track** or **Cross Country** as the inventory pool when those programs have separate gear.
+5. Use **General** as the inventory pool when the same gear is shared across programs.
+6. In **Start New Equipment Season**, enter the next season name, sport, year, and inventory pool.
+7. Leave **Copy inventory list** checked when the new season should use the same inventory batches.
+8. Click **Start New Season**.
+
+When a new Equipment Trak season starts, returned and not-issued records reset for the new season. Gear that is still **Issued** or marked **Lost / Damaged** carries forward only when the new season uses the same inventory pool.
+
+Example: if **Cross Country Backpack #35** was not returned in the 2026 Cross Country season, it cannot be issued again in the 2027 Cross Country season when both seasons use the **Cross Country** inventory pool. If your Track backpacks are a separate inventory, use the **Track** inventory pool for Track, and Track Backpack #35 can still be issued there. If your school shares the same backpacks across Track and Cross Country, use the **General** inventory pool so the number stays blocked across both programs.
+
 How to run equipment issue day:
 
 1. Set up the equipment list before athletes arrive. Add the same columns you would normally write on the clipboard, such as uniform top size, uniform shorts size, warmup number, watch number, timing chip, stretch strap, or backpack.
