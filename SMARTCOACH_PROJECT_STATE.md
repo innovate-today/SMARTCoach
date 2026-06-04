@@ -1112,6 +1112,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 270. Records Tools now includes a guarded **Delete All Records** action for clearing a bad import before a fresh upload. It requires a confirmation and typed `DELETE ALL`, deletes GHL rows when record IDs are available, clears mirrored record IDs/source IDs, and clears the local Records cache.
 271. Records bulk import now supports both relay-aware templates with Leg 1-4 columns and simpler templates without relay-leg columns. In the simpler layout, Meet, Date, Season, Year, Previous Record, Previous Holder, and Notes no longer shift into relay runner fields.
 272. Records table and bulk import preview now show Sport as its own column so Track and Cross Country records remain visually distinct after import.
+273. Records bulk import no longer silently defaults missing Sport values to Track. Bulk Import now includes a Sport for blank rows selector, and the Records API/registry preserve blank sport values instead of converting them to Track.
 
 ## Known Good Test Flow
 

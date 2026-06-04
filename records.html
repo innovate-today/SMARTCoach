@@ -58,7 +58,8 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .bulkhelp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .bulkhelp div{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:9px 10px;color:#334155;font-size:13px;line-height:1.35}
 .bulkhelp b{display:block;color:#111827;margin-bottom:2px}
-.bulkfile{display:grid;grid-template-columns:auto minmax(240px,1fr);gap:10px;align-items:center}
+.bulkfile{display:grid;grid-template-columns:220px auto minmax(240px,1fr);gap:10px;align-items:end}
+.bulkfile label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
 textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;min-height:130px;resize:vertical;line-height:1.45}
 .bulkactions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .bulkactions .left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -239,6 +240,9 @@ tr:last-child td{border-bottom:0}
         <div><b>3. Save</b>Records are saved to SMART Trak and appear immediately.</div>
       </div>
       <div class="bulkfile">
+        <label>Sport for blank rows
+          <select id="bulkDefaultSport"></select>
+        </label>
         <button id="downloadBulkTemplateBtn" class="secondary" type="button">Download Template</button>
         <input id="bulkFile" type="file" accept=".csv,.tsv,.txt">
       </div>
@@ -249,7 +253,7 @@ tr:last-child td{border-bottom:0}
           <button id="saveBulkBtn" class="secondary" type="button" disabled>Save Records</button>
           <button id="clearBulkBtn" class="ghost" type="button">Clear</button>
         </div>
-        <span class="hint">Required: gender, event, result, year. Exact date is optional.</span>
+        <span class="hint">Required: gender, sport, event, result, year. Exact date is optional. If your sheet has no Sport column, choose a sport above.</span>
       </div>
       <div id="bulkPreview" class="bulkpreview" hidden></div>
     </div>
@@ -395,6 +399,7 @@ var els={
   bulkBody:document.getElementById('bulkBody'),
   bulkStatus:document.getElementById('bulkStatus'),
   downloadBulkTemplateBtn:document.getElementById('downloadBulkTemplateBtn'),
+  bulkDefaultSport:document.getElementById('bulkDefaultSport'),
   bulkFile:document.getElementById('bulkFile'),
   bulkText:document.getElementById('bulkText'),
   previewBulkBtn:document.getElementById('previewBulkBtn'),
@@ -605,7 +610,7 @@ function recordIdentity(row){
     row&&row.recordType||'School Record',
     row&&row.recordScope||'School',
     row&&row.gender||'Unlisted',
-    row&&row.sport||'Track',
+    row&&row.sport||'',
     recordEvent(row),
     recordValue(row),
     row&&row.athleteName||'',
@@ -684,6 +689,7 @@ function fillStaticSelects(){
   els.singleRecordScope.innerHTML=optionList(RECORD_SCOPES,'School');
   els.singleGender.innerHTML=optionList(GENDERS,'Boys');
   els.singleSport.innerHTML=optionList(SPORTS,'Track');
+  els.bulkDefaultSport.innerHTML='<option value="">Choose sport...</option>'+optionList(SPORTS,'');
   els.singleEvent.innerHTML=optionList(EVENTS,'400m');
   els.singleSeason.innerHTML=optionList(SEASONS,'Spring');
   els.editRecordType.innerHTML=optionList(RECORD_TYPES,'School Record');
@@ -1001,7 +1007,8 @@ function recordHeaderMap(cols){
   return map.gender!=null||map.event!=null||map.recordType!=null?map:{};
 }
 function normalizeBulkRecord(values,index){
-  var row={recordType:'School Record',recordScope:'School',gender:values.gender||'Unlisted',sport:values.sport||'Track',event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',relayLeg1:values.relayLeg1||'',relayLeg2:values.relayLeg2||'',relayLeg3:values.relayLeg3||'',relayLeg4:values.relayLeg4||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||yearOnlyValue(values.recordDate)||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
+  var sport=String(values.sport||'').trim()||(els.bulkDefaultSport?els.bulkDefaultSport.value:'');
+  var row={recordType:'School Record',recordScope:'School',gender:values.gender||'Unlisted',sport:sport,event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',relayLeg1:values.relayLeg1||'',relayLeg2:values.relayLeg2||'',relayLeg3:values.relayLeg3||'',relayLeg4:values.relayLeg4||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||yearOnlyValue(values.recordDate)||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
   if(!row.seasonYear&&row.recordDate)row.seasonYear=row.recordDate.slice(0,4);
   row.rowNumber=index+1;
   return row;
@@ -1044,7 +1051,7 @@ function downloadBulkTemplate(){
   setTimeout(function(){URL.revokeObjectURL(url);},500);
 }
 function bulkIssues(rows){
-  return rows.filter(function(row){return !row.gender||!row.event||(!row.resultDisplay&&!row.resultMark)||!row.seasonYear;}).map(function(row){return row.rowNumber;});
+  return rows.filter(function(row){return !row.gender||!row.sport||!row.event||(!row.resultDisplay&&!row.resultMark)||!row.seasonYear;}).map(function(row){return row.rowNumber;});
 }
 function renderBulkPreview(){
   var issues=bulkIssues(bulkRows);
@@ -1484,6 +1491,12 @@ function init(){
     els.saveBulkBtn.disabled=true;
     els.bulkPreview.hidden=true;
     setBulkStatus('Paste records, preview, then save.','');
+  });
+  els.bulkDefaultSport.addEventListener('change',function(){
+    if(els.bulkText.value){
+      bulkRows=parseBulkRecords(els.bulkText.value);
+      renderBulkPreview();
+    }
   });
   els.clearBulkBtn.addEventListener('click',function(){
     bulkRows=[];
