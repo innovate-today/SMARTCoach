@@ -32,7 +32,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .card:hover{box-shadow:0 10px 24px rgba(15,23,42,.14);transform:translateY(-1px)}
 .card b{display:block;font-size:24px;line-height:1.1}
 .card span{display:block;color:var(--muted);font-size:13px;margin-top:5px}
-.bar{display:grid;grid-template-columns:1fr 210px 190px 190px auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
+.bar{display:grid;grid-template-columns:1fr 170px 210px 190px 190px auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
 input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .status{color:var(--muted);font-size:13px;text-align:right;min-width:150px}
 .importpanel{background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;overflow:hidden}
@@ -161,6 +161,11 @@ tr:last-child td{border-bottom:0}
 
   <section class="bar">
     <input id="search" type="search" placeholder="Search meets, athletes, events, or results" autocomplete="off">
+    <select id="sportFilter">
+      <option value="all">All sports</option>
+      <option value="Track">Track</option>
+      <option value="Cross Country">Cross Country</option>
+    </select>
     <select id="seasonFilter"><option value="all">All seasons</option></select>
     <select id="eventFilter"><option value="all">All events</option></select>
     <select id="athleteFilter"><option value="all">All athletes</option></select>
@@ -314,6 +319,7 @@ var els={
   athleteCount:document.getElementById('athleteCount'),
   bestCount:document.getElementById('bestCount'),
   search:document.getElementById('search'),
+  sportFilter:document.getElementById('sportFilter'),
   seasonFilter:document.getElementById('seasonFilter'),
   eventFilter:document.getElementById('eventFilter'),
   athleteFilter:document.getElementById('athleteFilter'),
@@ -441,8 +447,22 @@ function seasonText(row){
   }
   return 'Unlisted';
 }
+function sportText(row){
+  var explicit=String(row&&row.sport||'').replace(/\s+/g,' ').trim();
+  if(/^(xc|cross country)$/i.test(explicit))return 'Cross Country';
+  if(/^(track|track and field|track & field)$/i.test(explicit))return 'Track';
+  if(explicit)return explicit;
+  var notes=String(row&&row.coachRaceNotes||row&&row.notes||'');
+  if(/Athletic\.net Event Records import/i.test(notes))return 'Track';
+  if(/Athletic\.net (full season table|Season Bests|Results Grid) import/i.test(notes))return 'Cross Country';
+  var event=String(row&&row.event||'');
+  if(/relay|hurdles|shot put|discus|jump|vault|javelin/i.test(event))return 'Track';
+  if(/^(60m|100m|200m|300m|400m|800m|1500m|1600m|3000m|3200m|5000m|10000m)$/i.test(event.trim()))return 'Track';
+  if(/^(5k|3k|2 mile|4k|6k|8k|10k)$/i.test(event.trim()))return 'Cross Country';
+  return 'Unlisted';
+}
 function searchText(row){
-  return [row.name,row.meetName,row.athleteName,row.athleteGender,row.event,row.resultDisplay,row.season,row.seasonYear,row.status].filter(Boolean).join(' ').toLowerCase();
+  return [row.name,row.meetName,row.athleteName,row.athleteGender,sportText(row),row.event,row.resultDisplay,row.season,row.seasonYear,row.status].filter(Boolean).join(' ').toLowerCase();
 }
 function allMeetGroups(){
   var groups={};
@@ -461,11 +481,13 @@ function allMeetGroups(){
 }
 function filteredGroups(){
   var query=String(els.search.value||'').trim().toLowerCase();
+  var sport=els.sportFilter.value;
   var season=els.seasonFilter.value;
   var event=els.eventFilter.value;
   var athlete=els.athleteFilter.value;
   return allMeetGroups().map(function(group){
     var results=group.results.filter(function(row){
+      if(sport!=='all'&&sportText(row)!==sport)return false;
       if(event!=='all'&&row.event!==event)return false;
       if(athlete!=='all'&&row.athleteName!==athlete)return false;
       if(query&&searchText(row).indexOf(query)===-1&&searchText(group).indexOf(query)===-1)return false;
@@ -473,8 +495,9 @@ function filteredGroups(){
     });
     var groupSeason=seasonText(group);
     var matchesSeason=season==='all'||groupSeason===season||String(group.seasonYear||'')===season;
+    var matchesSport=sport==='all'||results.length>0;
     var groupMatchesQuery=!query||searchText(group).indexOf(query)>=0;
-    var keep=matchesSeason&&(results.length||groupMatchesQuery);
+    var keep=matchesSeason&&matchesSport&&(results.length||groupMatchesQuery);
     return keep?Object.assign({},group,{results:results}):null;
   }).filter(Boolean);
 }
@@ -1553,6 +1576,7 @@ function init(){
     setImportStatus('Paste rows, upload a CSV/TSV, or use a screenshot as reference.','');
   });
   els.search.addEventListener('input',render);
+  els.sportFilter.addEventListener('change',render);
   els.seasonFilter.addEventListener('change',render);
   els.eventFilter.addEventListener('change',render);
   els.athleteFilter.addEventListener('change',render);
@@ -1565,6 +1589,7 @@ function init(){
   });
   els.clearBtn.addEventListener('click',function(){
     els.search.value='';
+    els.sportFilter.value='all';
     els.seasonFilter.value='all';
     els.eventFilter.value='all';
     els.athleteFilter.value='all';

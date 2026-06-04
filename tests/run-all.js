@@ -107,6 +107,24 @@ function checkStandaloneRaceResultSaveScope() {
   console.log("standalone race result save scope ok");
 }
 
+function checkMeetHistorySportToolbarFilter() {
+  const html = fs.readFileSync("meet-history.html", "utf8");
+  const bar = html.match(/<section class="bar">([\s\S]*?)<\/section>/);
+  if (!bar || !bar[1].includes('id="sportFilter"')) {
+    throw new Error("Meet History sport filter must be in the top filter bar.");
+  }
+  const required = [
+    "sportFilter:document.getElementById('sportFilter')",
+    "els.sportFilter.addEventListener('change',render)",
+    "if(sport!=='all'&&sportText(row)!==sport)return false;",
+    "els.sportFilter.value='all';",
+  ];
+  required.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Meet History sport toolbar filter missing ${text}`);
+  });
+  console.log("Meet History sport toolbar filter ok");
+}
+
 function stubElement(value = "") {
   return {
     value,
@@ -177,6 +195,7 @@ checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
 checkStandaloneRaceResultSaveScope();
+checkMeetHistorySportToolbarFilter();
 checkAthleticEventRecordsCalendarRanges();
 
 console.log("SMARTCoach regression checks passed");
