@@ -390,7 +390,7 @@ Use Meet History to review race results, compare athletes, and track progress ac
 
 How to use it:
 
-1. Filter by season, gender, meet, event, or athlete.
+1. Filter by sport, season, meet, event, or athlete.
 2. Review fastest results by event.
 3. Use athlete progression to see improvement over time.
 4. Check PB and SB updates.
@@ -398,6 +398,8 @@ How to use it:
 6. Select a meet in the Meets column to show only that meet's results. Select a compare row to compare the same meet across dates.
 
 Fastest by event should separate boys and girls so results are compared correctly.
+
+Use the **Sport** filter to switch between Track and Cross Country history when seasons are listed only by year or older imported rows do not have detailed season labels.
 
 ### Import Historical Meet Results
 

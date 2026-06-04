@@ -107,6 +107,26 @@ function checkStandaloneRaceResultSaveScope() {
   console.log("standalone race result save scope ok");
 }
 
+function checkMeetHistorySportFilter() {
+  const html = fs.readFileSync("meet-history.html", "utf8");
+  const required = [
+    'id="sportFilter"',
+    "sportFilter:document.getElementById('sportFilter')",
+    "els.sportFilter.addEventListener('change',render)",
+    "fillSelect(els.sportFilter,'All sports'",
+    "['Track','Cross Country'].forEach",
+    "if(/^(xc|cross country)$/i.test(text))return 'Cross Country';",
+    "Athletic\\.net Event Records import",
+    "return explicit==='Unlisted'?inferSport(row):explicit;",
+    "if(sport!=='all'&&sportText(row)!==sport)return false;",
+    'data-sort="sport"',
+  ];
+  required.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Meet History sport filter missing ${text}`);
+  });
+  console.log("Meet History sport filter wiring ok");
+}
+
 function stubElement(value = "") {
   return {
     value,
@@ -177,6 +197,7 @@ checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
 checkStandaloneRaceResultSaveScope();
+checkMeetHistorySportFilter();
 checkAthleticEventRecordsCalendarRanges();
 
 console.log("SMARTCoach regression checks passed");
