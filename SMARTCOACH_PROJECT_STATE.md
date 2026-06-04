@@ -1101,6 +1101,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 259. Docu Trak Setup now lets coaches edit the current season's sport, year, and season name without starting a new season or resetting athlete document statuses.
 260. Equipment Trak now supports season rollover with an inventory-pool choice. Coaches can start a new Equipment season, copy the inventory list forward, and carry forward only still-issued or lost/damaged gear from the same pool. This lets schools keep Cross Country and Track inventories separate, while schools that share gear can use the General pool to keep numbered items blocked across programs.
 261. Equipment Inventory rows now include sharing rules for numbered gear: **Separate sport** vs **Shared sports** and **Separate gender** vs **Shared genders**. Saved issued items carry sport/gender context, so schools can support duplicate numbers such as Girls Backpack #2 and Boys Backpack #2 when those are separate physical items, while still blocking duplicates when a backpack pool is shared.
+262. Equipment Trak normalization now recovers older saved inventory rows when the active equipment season has an empty inventory list. This protects inventory entered before the season/sharing-rule structure from disappearing in the coach-facing view.
 
 ## Known Good Test Flow
 

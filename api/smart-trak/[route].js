@@ -702,6 +702,11 @@ function normalizeEquipmentTrak(source) {
   activeSeasonId = activeSeason && activeSeason.id ? activeSeason.id : "";
   seasons = seasons.map((season) => ({ ...season, active: season.id === activeSeasonId, archived: season.id === activeSeasonId ? false : !!season.archived }));
   activeSeason = seasons.find((season) => season.id === activeSeasonId) || seasons[0] || defaultEquipmentSeason(legacyItems, legacyRecords, legacyInventory);
+  const fallbackInventory = legacyInventory.length ? legacyInventory : firstNonEmptyEquipmentInventory(seasons);
+  if ((!activeSeason.inventory || !activeSeason.inventory.length) && fallbackInventory.length) {
+    activeSeason = { ...activeSeason, inventory: fallbackInventory };
+    seasons = seasons.map((season) => (season.id === activeSeason.id ? activeSeason : season));
+  }
   return {
     activeSeasonId,
     seasons,
@@ -709,6 +714,11 @@ function normalizeEquipmentTrak(source) {
     records: activeSeason.records,
     inventory: activeSeason.inventory,
   };
+}
+
+function firstNonEmptyEquipmentInventory(seasons) {
+  const found = (Array.isArray(seasons) ? seasons : []).find((season) => Array.isArray(season.inventory) && season.inventory.length);
+  return found ? normalizeEquipmentInventory(found.inventory) : [];
 }
 
 function normalizeEquipmentSeasons(seasons) {
