@@ -136,6 +136,18 @@ How to set up Docu Trak:
 6. Use **Remove** for items your program does not track.
 7. Click **Save Docu Trak Setup**.
 
+How to start a new Docu Trak season:
+
+1. Open **Athletes**.
+2. Click **Docu Trak** on any athlete row.
+3. Click **Setup**.
+4. In **Start New Season**, choose the sport and year.
+5. Confirm or edit the season name, such as **2027 Track** or **2027 Cross Country**.
+6. Check the requirements that should carry forward from the current season.
+7. Click **Start New Season**.
+
+Starting a new season archives the previous Docu Trak season and creates a fresh checklist for the new season. The requirement names can carry forward, but athlete statuses reset for the new season so old completions do not accidentally count for the next team cycle.
+
 How to update an athlete:
 
 1. Open **Athletes**.

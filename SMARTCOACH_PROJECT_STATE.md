@@ -1097,6 +1097,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 255. Completed-workout corrections now update the SMART Trak training mirror as well as the live GHL performance record. This prevents edited Training Load / Completed Workouts rows from temporarily duplicating on screen or reverting to stale mirror data after refresh.
 256. Weather saved locations now persist to the SMARTCoach account record instead of only device local storage, with local storage as a fallback. Hourly and daily forecast cards also use condition-based tinting for clear, cloudy, fog, rain, heavy rain, storm, and snow days.
 257. New customer accounts no longer load snapshot-seeded Training, Meet, or Archive groups. For named SMARTCoach accounts, Groups and scheduled Meets now read/write account-scoped registry data; copied hidden GHL system records are ignored unless using the default/dev account fallback. The phone app also prunes locally cached shared training groups when Refresh receives a blank/new account group list.
+258. Docu Trak now supports season rollover. Account Docu Trak records include an active season plus archived prior seasons; the Athletes page Docu Trak Setup modal shows the active season, can start a new sport/year season, copies selected requirements forward, and resets athlete document statuses for the new season.
 
 ## Known Good Test Flow
 

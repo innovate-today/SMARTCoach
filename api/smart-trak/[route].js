@@ -271,6 +271,10 @@ async function accountDocuTrak(req, res) {
     const action = cleanSetupText(payload.action || payload.mode).toLowerCase();
     if (action === "save-items") {
       current.items = normalizeDocuItems(payload.items);
+      setActiveDocuSeason(current, {
+        items: current.items,
+        records: current.records,
+      });
     } else if (action === "save-athlete") {
       const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
       const athleteName = cleanSetupText(payload.athleteName || payload.name);
@@ -282,6 +286,28 @@ async function accountDocuTrak(req, res) {
         updatedAt: new Date().toISOString(),
         items: normalizeDocuAthleteItems(payload.items || payload.records),
       };
+      setActiveDocuSeason(current, {
+        items: current.items,
+        records: current.records,
+      });
+    } else if (action === "start-season") {
+      const nextSeason = normalizeDocuSeason({
+        id: payload.seasonId,
+        name: payload.seasonName || payload.name,
+        sport: payload.sport,
+        seasonYear: payload.seasonYear || payload.year,
+        items: selectedDocuItems(current.items, payload.copyItemIds),
+        records: {},
+        active: true,
+        archived: false,
+        createdAt: new Date().toISOString(),
+      }, current.seasons.length + 1);
+      if (!nextSeason.id) throw httpError(400, "Season name is required.");
+      current.seasons = current.seasons.map((season) => ({ ...season, active: false, archived: true }));
+      current.seasons.push(nextSeason);
+      current.activeSeasonId = nextSeason.id;
+      current.items = nextSeason.items;
+      current.records = {};
     } else {
       throw httpError(400, "Docu Trak action is required.");
     }
@@ -299,10 +325,85 @@ async function accountDocuTrak(req, res) {
 
 function normalizeDocuTrak(source) {
   const value = source && typeof source === "object" ? source : {};
+  const legacyItems = normalizeDocuItems(value.items);
+  const legacyRecords = normalizeDocuRecords(value.records);
+  let seasons = normalizeDocuSeasons(value.seasons);
+  let activeSeasonId = normalizeDocuItemId(value.activeSeasonId || value.currentSeasonId);
+  if (!seasons.length) {
+    const fallback = defaultDocuSeason(legacyItems, legacyRecords);
+    seasons = [fallback];
+    activeSeasonId = fallback.id;
+  }
+  let activeSeason = seasons.find((season) => season.id === activeSeasonId) || seasons.find((season) => season.active) || seasons[0];
+  activeSeasonId = activeSeason && activeSeason.id ? activeSeason.id : "";
+  seasons = seasons.map((season) => ({ ...season, active: season.id === activeSeasonId, archived: season.id === activeSeasonId ? false : !!season.archived }));
+  activeSeason = seasons.find((season) => season.id === activeSeasonId) || seasons[0] || defaultDocuSeason(legacyItems, legacyRecords);
   return {
-    items: normalizeDocuItems(value.items),
-    records: normalizeDocuRecords(value.records),
+    activeSeasonId,
+    seasons,
+    items: activeSeason.items,
+    records: activeSeason.records,
   };
+}
+
+function normalizeDocuSeasons(seasons) {
+  const source = Array.isArray(seasons) ? seasons : [];
+  const seen = new Set();
+  return source.map((season, index) => normalizeDocuSeason(season, index + 1)).filter((season) => {
+    if (!season.id || seen.has(season.id)) return false;
+    seen.add(season.id);
+    return true;
+  });
+}
+
+function normalizeDocuSeason(season, index) {
+  const raw = season && typeof season === "object" ? season : {};
+  const sport = cleanSetupText(raw.sport || "General").slice(0, 80);
+  const seasonYear = cleanSetupText(raw.seasonYear || raw.year).slice(0, 10);
+  const name = cleanSetupText(raw.name || [seasonYear, sport].filter(Boolean).join(" ") || `Season ${index}`).slice(0, 120);
+  const id = normalizeDocuItemId(raw.id || name || `season_${index}`);
+  return {
+    id,
+    name,
+    sport,
+    seasonYear,
+    active: raw.active === true,
+    archived: raw.archived === true,
+    createdAt: cleanSetupText(raw.createdAt),
+    items: normalizeDocuItems(raw.items),
+    records: normalizeDocuRecords(raw.records),
+  };
+}
+
+function defaultDocuSeason(items, records) {
+  const year = new Date().getFullYear();
+  return {
+    id: `season_${year}_general`,
+    name: `${year} General`,
+    sport: "General",
+    seasonYear: String(year),
+    active: true,
+    archived: false,
+    createdAt: "",
+    items,
+    records,
+  };
+}
+
+function setActiveDocuSeason(current, changes) {
+  const id = current.activeSeasonId || (current.seasons[0] && current.seasons[0].id);
+  current.seasons = current.seasons.map((season) => (
+    season.id === id ? { ...season, ...changes, active: true, archived: false } : season
+  ));
+  current.activeSeasonId = id;
+}
+
+function selectedDocuItems(items, ids) {
+  const source = normalizeDocuItems(items);
+  const selected = Array.isArray(ids) ? ids.map(normalizeDocuItemId).filter(Boolean) : [];
+  if (!selected.length) return source;
+  const keep = new Set(selected);
+  return source.filter((item) => keep.has(item.id));
 }
 
 function normalizeDocuItems(items) {
