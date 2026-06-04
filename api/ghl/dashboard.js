@@ -371,6 +371,8 @@ function normalizeMeetResult(record) {
     resultDisplay: prop(props, "result_display"),
     resultMs: Number(prop(props, "result_ms")) || 0,
     meetDate: prop(props, "meet_date"),
+    season: labelValue(prop(props, "season")) || prop(props, "season"),
+    seasonYear: Number(prop(props, "season_year")) || yearFromDateValue(prop(props, "meet_date")),
     sport: labelValue(prop(props, "sport")) || prop(props, "sport"),
     wind: prop(props, "wind"),
     isPr: yes(prop(props, "is_pr")),

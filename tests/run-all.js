@@ -141,6 +141,7 @@ function checkHistoricalMeetResultsLoadUnmatched() {
 
 function checkMeetHistoryUnlistedSeasonYearFallback() {
   const html = fs.readFileSync("meet-history.html", "utf8");
+  const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const api = fs.readFileSync("api/ghl/meet-result.js", "utf8");
   const requiredHtml = [
     "if(/^(unlisted|unspecified)$/i.test(season))season='';",
@@ -149,12 +150,20 @@ function checkMeetHistoryUnlistedSeasonYearFallback() {
   const requiredApi = [
     "const rawSeason = clean(row && row.season);",
     "const season = rawSeason && !/^(unlisted|unspecified)$/i.test(rawSeason) ? rawSeason : String(seasonYear);",
+    "seasonYear: Number(props.season_year) || yearFromDateValue(props.meet_date),",
+  ];
+  const requiredDashboardApi = [
+    'season: labelValue(prop(props, "season")) || prop(props, "season"),',
+    'seasonYear: Number(prop(props, "season_year")) || yearFromDateValue(prop(props, "meet_date")),',
   ];
   requiredHtml.forEach((text) => {
     if (!html.includes(text)) throw new Error(`Meet History year fallback missing ${text}`);
   });
   requiredApi.forEach((text) => {
     if (!api.includes(text)) throw new Error(`historical import season normalization missing ${text}`);
+  });
+  requiredDashboardApi.forEach((text) => {
+    if (!dashboardApi.includes(text)) throw new Error(`dashboard meet-result season response missing ${text}`);
   });
   console.log("Meet History unlisted season year fallback ok");
 }

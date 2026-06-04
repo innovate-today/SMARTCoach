@@ -522,6 +522,8 @@ function normalizeHistoryImportCreatedRow(record) {
     resultDisplay: props.result_display || "",
     resultMs: Number(props.result_ms) || 0,
     meetDate: props.meet_date || "",
+    season: props.season || "",
+    seasonYear: Number(props.season_year) || yearFromDateValue(props.meet_date),
     sport: props.sport || "",
     wind: props.wind || "",
     isPr: props.is_pr === "Yes",
