@@ -452,6 +452,8 @@ function normalizeHistoryImportRow(row) {
   const rawDate = clean(row && (row.meetDate || row.date));
   const date = rawDate ? new Date(rawDate) : null;
   const seasonYear = Number(row && (row.seasonYear || row.year)) || (date && validDate(date) ? date.getFullYear() : new Date().getFullYear());
+  const rawSeason = clean(row && row.season);
+  const season = rawSeason && !/^(unlisted|unspecified)$/i.test(rawSeason) ? rawSeason : String(seasonYear);
   return {
     rowNumber: Number(row && row.rowNumber) || 0,
     athleteName: clean(row && (row.athleteName || row.athlete)),
@@ -460,7 +462,7 @@ function normalizeHistoryImportRow(row) {
     classYear: clean(row && (row.classYear || row.gradYear || row.graduationYear)),
     meetName: clean(row && (row.meetName || row.meet)),
     meetDate: rawDate,
-    season: clean(row && row.season) || "Unspecified",
+    season,
     seasonYear,
     sport: clean(row && row.sport) || "Cross Country",
     event: clean(row && row.event),

@@ -139,6 +139,26 @@ function checkHistoricalMeetResultsLoadUnmatched() {
   console.log("historical meet imports load unmatched ok");
 }
 
+function checkMeetHistoryUnlistedSeasonYearFallback() {
+  const html = fs.readFileSync("meet-history.html", "utf8");
+  const api = fs.readFileSync("api/ghl/meet-result.js", "utf8");
+  const requiredHtml = [
+    "if(/^(unlisted|unspecified)$/i.test(season))season='';",
+    "if(seasonYear)return seasonYear;",
+  ];
+  const requiredApi = [
+    "const rawSeason = clean(row && row.season);",
+    "const season = rawSeason && !/^(unlisted|unspecified)$/i.test(rawSeason) ? rawSeason : String(seasonYear);",
+  ];
+  requiredHtml.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Meet History year fallback missing ${text}`);
+  });
+  requiredApi.forEach((text) => {
+    if (!api.includes(text)) throw new Error(`historical import season normalization missing ${text}`);
+  });
+  console.log("Meet History unlisted season year fallback ok");
+}
+
 function stubElement(value = "") {
   return {
     value,
@@ -211,6 +231,7 @@ checkLiveValidationPage();
 checkStandaloneRaceResultSaveScope();
 checkMeetHistorySportToolbarFilter();
 checkHistoricalMeetResultsLoadUnmatched();
+checkMeetHistoryUnlistedSeasonYearFallback();
 checkAthleticEventRecordsCalendarRanges();
 
 console.log("SMARTCoach regression checks passed");

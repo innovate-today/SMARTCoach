@@ -440,7 +440,11 @@ function resultMeetKey(row){
   return meetKey(row.meetName,row.meetDate);
 }
 function seasonText(row){
-  if(row.season&&row.seasonYear)return row.season+' '+row.seasonYear;
+  var season=String(row&&row.season||'').trim();
+  var seasonYear=String(row&&row.seasonYear||'').trim();
+  if(/^(unlisted|unspecified)$/i.test(season))season='';
+  if(season&&seasonYear)return season+' '+seasonYear;
+  if(seasonYear)return seasonYear;
   if(row.meetDate){
     var d=new Date(row.meetDate);
     if(!isNaN(d.getTime()))return String(d.getFullYear());
