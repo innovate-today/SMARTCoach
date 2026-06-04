@@ -2300,16 +2300,14 @@ async function findOrCreateAccountOwnerContact({ token, locationId, ownerEmail, 
 async function sendCoachCodeRecoveryEmail({ token, accountKey, contactId, ownerEmail, temporaryCode, expiresAt }) {
   if (!contactId) throw httpError(400, "Account owner contact is required for recovery email.");
   const expiration = new Date(expiresAt).toLocaleString("en-US", { timeZone: "America/Chicago" });
-  const message = [
-    "A SMARTCoach shared coach code reset was requested.",
-    "",
-    `Account: ${accountKey}`,
-    `Temporary recovery code: ${temporaryCode}`,
-    `Expires: ${expiration} Central`,
-    "",
-    "Enter this temporary code in Staff Access, then choose a new shared coach code your staff can remember.",
-    "If you did not request this reset, change the shared coach code from Staff Access or contact support@smartcoach-pro.com.",
-  ].join("\n");
+  const html = [
+    "<p>A SMARTCoach shared coach code reset was requested.</p>",
+    `<p><strong>Account:</strong> ${escapeHtml(accountKey)}<br>`,
+    `<strong>Temporary recovery code:</strong> ${escapeHtml(temporaryCode)}<br>`,
+    `<strong>Expires:</strong> ${escapeHtml(expiration)} Central</p>`,
+    "<p>Enter this temporary code in Staff Access, then choose a new shared coach code your staff can remember.</p>",
+    "<p>If you did not request this reset, change the shared coach code from Staff Access or contact support@smartcoach-pro.com.</p>",
+  ].join("");
   await ghlRequest({
     token,
     path: "/conversations/messages",
@@ -2319,9 +2317,18 @@ async function sendCoachCodeRecoveryEmail({ token, accountKey, contactId, ownerE
       contactId,
       emailTo: ownerEmail,
       subject: "SMARTCoach shared coach code reset",
-      message,
+      html,
     },
   });
+}
+
+function escapeHtml(value) {
+  return cleanSetupText(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function generateRecoveryCode() {
