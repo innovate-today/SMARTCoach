@@ -3,7 +3,7 @@ const GHL_VERSION = "2021-07-28";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
-const { mirrorSchoolRecords, loadSchoolRecordsMirror, schoolRecordsMirrorStatus } = require("../../lib/account-registry");
+const { mirrorSchoolRecords, loadSchoolRecordsMirror, loadSchoolRecordsDeletedIds, schoolRecordsMirrorStatus } = require("../../lib/account-registry");
 const HIGHER_IS_BETTER_EVENTS = new Set(["high_jump", "long_jump", "triple_jump", "pole_vault", "shot_put", "discus", "javelin", "hammer"]);
 
 const FIELD_IDS = {
@@ -113,7 +113,8 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    const ghlRecords = await listRecords({ token, locationId });
+    const deletedIds = await loadRecordsDeletedIdsBestEffort(accountKey);
+    const ghlRecords = filterDeletedRecords(await listRecords({ token, locationId }), deletedIds);
     const mirroredRecords = await loadRecordsMirrorBestEffort(accountKey);
     const records = mergeNormalizedRecords(ghlRecords, mirroredRecords);
     res.status(200).json({
@@ -124,6 +125,7 @@ module.exports = async function handler(req, res) {
         ghlCount: ghlRecords.length,
         mirrorCount: mirroredRecords.length,
         mergedCount: records.length,
+        deletedCount: deletedIds.length,
         mirrorStatus: await mirrorStatusBestEffort(accountKey),
       },
     });
@@ -152,6 +154,22 @@ async function loadRecordsMirrorBestEffort(accountKey) {
   } catch (error) {
     return [];
   }
+}
+
+async function loadRecordsDeletedIdsBestEffort(accountKey) {
+  try {
+    return await loadSchoolRecordsDeletedIds(accountKey);
+  } catch (error) {
+    return [];
+  }
+}
+
+function filterDeletedRecords(records, deletedIds) {
+  const deleted = new Set((deletedIds || []).map(clean).filter(Boolean));
+  if (!deleted.size) return records;
+  return (records || []).filter((record) => {
+    return !deleted.has(clean(record && record.recordId)) && !deleted.has(clean(record && record.sourceRecordId));
+  });
 }
 
 async function mirrorStatusBestEffort(accountKey) {
@@ -309,6 +327,7 @@ function recordPropertiesFromRecord(record) {
 
 async function deleteRecords({ token, locationId, payload }) {
   const rows = Array.isArray(payload && payload.records) ? payload.records : [payload || {}];
+  const bulk = Array.isArray(payload && payload.records);
   const directIds = new Set();
   const sourceIds = new Set();
   rows.forEach((row) => {
@@ -327,6 +346,7 @@ async function deleteRecords({ token, locationId, payload }) {
   }
   const deleteIds = [...directIds, ...sourceIds].filter(Boolean);
   if (!deleteIds.length) throw httpError(400, "Record ID is required.");
+  if (bulk) return { deletedCount: 0, skippedCount: directIds.size, deleteIds };
   let deletedCount = 0;
   let skippedCount = 0;
   for (const recordId of directIds) {
