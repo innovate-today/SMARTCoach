@@ -1159,6 +1159,12 @@ function clean(value) {
   return String(value || "").trim();
 }
 
+function noteValue(note, label) {
+  const prefix = `${label}:`;
+  const line = clean(note).split(/\r?\n/).find((item) => item.trim().toLowerCase().startsWith(prefix.toLowerCase()));
+  return line ? clean(line.slice(prefix.length)) : "";
+}
+
 function safeJson(text) {
   try { return JSON.parse(text); } catch (error) { return { message: text }; }
 }
