@@ -179,7 +179,7 @@ tr:last-child td{border-bottom:0}
     <div id="importBody" class="importbody" hidden>
       <div class="importmode">
         <button id="importPasteMode" class="active" type="button" data-import-mode="paste">Paste Spreadsheet</button>
-        <button id="importAthleticMode" type="button" data-import-mode="athletic">Athletic.net Results Grid</button>
+        <button id="importAthleticMode" type="button" data-import-mode="athletic">Athletic.net Import</button>
         <button id="importFileMode" type="button" data-import-mode="file">Upload Spreadsheet</button>
         <button id="importImageMode" type="button" data-import-mode="image">Screenshot / Photo</button>
       </div>
@@ -628,7 +628,7 @@ function setImportMode(mode){
   els.importFileRow.hidden=importMode!=='file';
   els.importImageRow.hidden=importMode!=='image';
   if(importMode==='image')setImportStatus('Screenshot/photo OCR is not configured yet. Upload the image for reference, then paste rows before previewing.','warn');
-  else if(importMode==='athletic')setImportStatus('Paste the Athletic.net Results Grid table, preview, then save.','');
+  else if(importMode==='athletic')setImportStatus('Paste Athletic.net Results Grid or Event Records text, preview, then save.','');
   else setImportStatus('Paste rows, preview, then save.','');
 }
 function parseCsvLine(line){
@@ -718,7 +718,7 @@ function athleticSubscriptToDigit(value){
   return String(value||'').replace(/[\u2080-\u2089]/g,function(ch){return String(ch.charCodeAt(0)-0x2080);});
 }
 function isAthleticImportText(text){
-  return /season bests/i.test(text||'')||/results grid/i.test(text||'')||/\bshow only\b/i.test(text||'')||/\brace distances\b/i.test(text||'')||/\bmeet list\b/i.test(text||'');
+  return /event records/i.test(text||'')||/season bests/i.test(text||'')||/results grid/i.test(text||'')||/\bshow only\b/i.test(text||'')||/\brace distances\b/i.test(text||'')||/\bmeet list\b/i.test(text||'');
 }
 function athleticDateLabel(value){
   var match=String(value||'').trim().match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2}$/i);
@@ -784,6 +784,130 @@ function athleticMeetMap(lines,seasonYear){
 }
 function athleticNameKey(value){
   return String(value||'').toLowerCase().replace(/[^a-z\s()'-]/g,' ').replace(/\s+/g,' ').trim();
+}
+function normalizeTrackEventName(value){
+  var text=String(value||'').replace(/\s+/g,' ').trim();
+  if(!text)return '';
+  if(/^4x\d+/i.test(text))return text.replace(/\s+Relay$/i,' Relay');
+  var lower=text.toLowerCase().replace(/,/g,'');
+  var meter=lower.match(/^(\d+)\s*(meter|meters)$/);
+  if(meter)return meter[1]+'m';
+  var hurdle=lower.match(/^(\d+m)\s+hurdles\b/i);
+  if(hurdle)return hurdle[1]+' Hurdles';
+  if(/^shot put\b/i.test(text))return 'Shot Put';
+  if(/^discus\b/i.test(text))return 'Discus';
+  if(/^high jump\b/i.test(text))return 'High Jump';
+  if(/^pole vault\b/i.test(text))return 'Pole Vault';
+  if(/^long jump\b/i.test(text))return 'Long Jump';
+  if(/^triple jump\b/i.test(text))return 'Triple Jump';
+  return text.replace(/\s+-\s+.*$/,'');
+}
+function athleticResultRegex(){
+  return "(?:\\d{1,2}:\\d{2}(?::\\d{2})?(?:\\.\\d+)?|\\d{1,3}'\\s*\\d{1,2}(?:\\.\\d+)?\\\"?|\\d{1,3}'\\s*\\d{1,2}\\\"?|\\d{1,3}'|\\d{1,3}(?:\\.\\d+)?)";
+}
+function athleticEventRecordsRow(line){
+  var text=String(line||'').replace(/\s+/g,' ').trim();
+  var pattern=new RegExp("^(\\d+)\\.\\s+(?:(\\d{1,2})\\s+)?(\\d{1,2}|--)\\s+(.+?)\\s+("+athleticResultRegex()+")\\s*(PB|PR|SB)?\\s+([A-Za-z]{3,9}\\s+\\d{1,2})\\s+(.+)$","i");
+  var match=text.match(pattern);
+  if(!match)return null;
+  return {
+    place:match[1],
+    age:match[2]||'',
+    grade:match[3]==='--'?'':match[3],
+    athleteName:match[4].trim(),
+    resultDisplay:match[5].trim(),
+    flag:match[6]||'',
+    dateText:match[7],
+    meetName:match[8].trim()
+  };
+}
+function athleticRelayLeg(line){
+  var text=String(line||'').replace(/\s+/g,' ').trim();
+  if(!text||/^\d+\.$/.test(text))return null;
+  var match=text.match(/^(?:(\d{1,2})\s+)?(\d{1,2}|--)\s+(.+)$/);
+  if(!match)return null;
+  return {age:match[1]||'',grade:match[2]==='--'?'':match[2],name:match[3].trim()};
+}
+function athleticRelayResult(line){
+  var text=String(line||'').replace(/\s+/g,' ').trim();
+  var pattern=new RegExp("^("+athleticResultRegex()+")\\s*(PB|PR|SB)?\\s+([A-Za-z]{3,9}\\s+\\d{1,2})\\s+(.+)$","i");
+  var match=text.match(pattern);
+  if(!match)return null;
+  return {resultDisplay:match[1].trim(),flag:match[2]||'',dateText:match[3],meetName:match[4].trim()};
+}
+function athleticEventRecordsEvent(line){
+  var text=String(line||'').replace(/\s+/g,' ').trim();
+  if(!text||/^(mens|men|boys|womens|women|girls)$/i.test(text))return '';
+  if(/^\d+\./.test(text)||athleticEventRecordsRow(text)||athleticRelayResult(text)||athleticRelayLeg(text))return '';
+  if(/\bEvent Records\b/i.test(text)||/\bSeason Calendar\b/i.test(text)||/^\+ Add A Meet/i.test(text))return '';
+  if(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),/i.test(text))return '';
+  if(/^[A-Za-z]{3,9}\s+\d{1,2}\s+/i.test(text))return '';
+  return text;
+}
+function parseAthleticEventRecordsRows(text){
+  if(!/event records/i.test(text||''))return [];
+  var rawLines=String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
+  var yearMatch=String(text||'').match(/\b(19|20)\d{2}\b(?=\s+Event\s+Records)/i);
+  var defaultYear=Number(els.importDefaultYear.value)||new Date().getFullYear();
+  var seasonYear=yearMatch?Number(yearMatch[0]):defaultYear;
+  var sport='Track';
+  var gender=els.importDefaultGender.value||'';
+  var event='';
+  var pendingRelay=null;
+  var rows=[];
+  function pushRow(raw,extraNotes){
+    var meetDate=importDateOnly(raw.dateText,seasonYear);
+    var season=importSeasonForDate(meetDate)||els.importDefaultSeason.value||'Spring';
+    rows.push(normalizeImportRow({
+      season:season,
+      seasonYear:seasonYear,
+      sport:sport,
+      meetName:raw.meetName,
+      meetDate:meetDate,
+      athleteGender:gender,
+      event:normalizeTrackEventName(event),
+      athleteName:raw.athleteName,
+      grade:raw.grade||'',
+      classYear:inferClassYearFromGrade(raw.grade,seasonYear,season),
+      resultDisplay:raw.resultDisplay,
+      place:raw.place||'',
+      isPr:/^(PB|PR)$/i.test(raw.flag||'')?'Yes':'',
+      isSeasonBest:'Yes',
+      notes:['Athletic.net Event Records import',extraNotes||''].filter(Boolean).join('\n')
+    },rows.length));
+  }
+  rawLines.forEach(function(line){
+    var cleanLine=line.replace(/[^\x00-\x7F]/g,' ').replace(/\s+/g,' ').trim();
+    if(/^(men|mens|boys)$/i.test(cleanLine)){gender='Boys';pendingRelay=null;return;}
+    if(/^(women|womens|girls)$/i.test(cleanLine)){gender='Girls';pendingRelay=null;return;}
+    var eventName=athleticEventRecordsEvent(cleanLine);
+    if(eventName){event=eventName;pendingRelay=null;return;}
+    if(!event)return;
+    var row=athleticEventRecordsRow(cleanLine);
+    if(row){pushRow(row,'');pendingRelay=null;return;}
+    var relayPlace=cleanLine.match(/^(\d+)\.$/);
+    if(relayPlace&&/^4x/i.test(event)){pendingRelay={place:relayPlace[1],legs:[]};return;}
+    if(pendingRelay){
+      var result=athleticRelayResult(cleanLine);
+      if(result){
+        var legNames=pendingRelay.legs.map(function(leg){return leg.name;}).filter(Boolean);
+        pushRow({
+          place:pendingRelay.place,
+          grade:'',
+          athleteName:legNames.length?legNames.join(', '):'Relay Team',
+          resultDisplay:result.resultDisplay,
+          flag:result.flag,
+          dateText:result.dateText,
+          meetName:result.meetName
+        },legNames.length?'Relay legs: '+legNames.join(', '):'Relay legs: Relay Team');
+        pendingRelay=null;
+        return;
+      }
+      var leg=athleticRelayLeg(cleanLine);
+      if(leg)pendingRelay.legs.push(leg);
+    }
+  });
+  return dedupeImportRows(rows);
 }
 function athleticGradeLookup(lines){
   var lookup={};
@@ -911,6 +1035,8 @@ function parseAthleticNetRows(text){
   var seasonYearMatch=String(text||'').match(/\b(19|20)\d{2}\b(?=\s+(Season\s+Bests|Results\s+Grid))/i);
   var defaultYear=Number(els.importDefaultYear.value)||new Date().getFullYear();
   var seasonYear=seasonYearMatch?Number(seasonYearMatch[0]):defaultYear;
+  var eventRecordsRows=parseAthleticEventRecordsRows(text);
+  if(eventRecordsRows.length)return eventRecordsRows;
   var tableRows=parseAthleticSeasonTableRows(text,tableLines,seasonYear);
   if(tableRows.length)return dedupeImportRows(tableRows);
   var sport=els.importDefaultSport.value||'Cross Country';

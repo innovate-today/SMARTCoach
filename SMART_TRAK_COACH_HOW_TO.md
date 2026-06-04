@@ -399,6 +399,22 @@ How to use it:
 
 Fastest by event should separate boys and girls so results are compared correctly.
 
+### Import Historical Meet Results
+
+Use **Import History** when starting SMART Trak with older results from a spreadsheet or Athletic.net.
+
+How to use it:
+
+1. Open **Meet History**.
+2. Click **Import History**.
+3. Choose **Paste Spreadsheet**, **Upload Spreadsheet**, or **Athletic.net Import**.
+4. Set the default sport, season, gender, year, and event when the pasted source does not include those fields.
+5. Paste the rows and click **Preview History**.
+6. Review athlete, grade, class year, event, result, date, meet, and PB/SB columns.
+7. Click **Save History** after the preview looks correct.
+
+Athletic.net Import supports copied **Results Grid** text for cross country and copied **Event Records** text for track and field. Results Grid imports use the Race Distances line and Meet List to map results to the correct event and meet. Event Records imports support sprint/distance events, hurdles, relays, and field marks. Relay imports save the relay time and list runner names in the notes.
+
 ## Track Simulator
 
 Use the Track Simulator for track meet planning and projected team scoring.
