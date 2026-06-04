@@ -359,6 +359,7 @@ function normalizeMeetResult(record) {
     recordId: record && record.id ? record.id : "",
     sourceRecordId: prop(props, "source_record_id"),
     athleteName: prop(props, "athlete_name_snapshot"),
+    athleteGender: noteValue(coachRaceNotes, "Gender"),
     meetName: prop(props, "meet_name"),
     event: prop(props, "event"),
     resultDisplay: prop(props, "result_display"),
