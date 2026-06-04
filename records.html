@@ -260,8 +260,9 @@ tr:last-child td{border-bottom:0}
     <table>
       <thead>
         <tr>
-          <th><button class="sortbtn active asc" data-sort="event" type="button">Event</button></th>
           <th><button class="sortbtn" data-sort="gender" type="button">Gender</button><span class="headinfo" tabindex="0" data-tip="Records are separated by gender so boys and girls can each have their own school record for the same event.">i</span></th>
+          <th><button class="sortbtn" data-sort="sport" type="button">Sport</button></th>
+          <th><button class="sortbtn active asc" data-sort="event" type="button">Event</button></th>
           <th><button class="sortbtn" data-sort="result" type="button">Record</button></th>
           <th><button class="sortbtn" data-sort="athlete" type="button">Record Holder</button></th>
           <th><button class="sortbtn" data-sort="meet" type="button">Meet</button></th>
@@ -1055,7 +1056,7 @@ function renderBulkPreview(){
     return;
   }
   els.bulkPreview.hidden=false;
-  els.bulkPreview.innerHTML='<table><thead><tr><th>Gender</th><th>Event</th><th>Result</th><th>Record Holder</th><th>Relay Runners</th><th>Meet</th><th>Exact Date</th><th>Season / Year</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.gender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(relayDisplay(row))+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
+  els.bulkPreview.innerHTML='<table><thead><tr><th>Gender</th><th>Sport</th><th>Event</th><th>Result</th><th>Record Holder</th><th>Relay Runners</th><th>Meet</th><th>Exact Date</th><th>Season / Year</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.gender)+'</td><td>'+esc(row.sport||'')+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(relayDisplay(row))+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
   setBulkStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):bulkRows.length+' records ready to save.',issues.length?'bad':'good');
 }
 function saveBulkRecords(){
@@ -1157,6 +1158,7 @@ function compareRecordValue(a,b,key){
   if(key==='result')return comparePerformanceForSort(a,b);
   if(key==='date')return String(a.recordDate||'').localeCompare(String(b.recordDate||''));
   if(key==='gender')return String(a.gender||'').localeCompare(String(b.gender||''));
+  if(key==='sport')return String(a.sport||'').localeCompare(String(b.sport||''));
   if(key==='type')return String(a.recordType||'').localeCompare(String(b.recordType||''));
   if(key==='athlete')return String(a.athleteName||'').localeCompare(String(b.athleteName||''));
   if(key==='meet')return String(a.meetName||'').localeCompare(String(b.meetName||''));
@@ -1234,8 +1236,9 @@ function recordRowHtml(row,currentKeys){
   var key=recordIdentity(row);
   var status=currentKeys&&currentKeys[key]?'<span class="pill good">Current</span>':'<span class="pill warn">Historical</span>';
   return '<tr>'+
-    '<td><div class="name">'+esc(eventName)+'</div><div class="muted">'+esc(row.sport||'')+'</div></td>'+
     '<td>'+esc(row.gender||'Unlisted')+'</td>'+
+    '<td>'+esc(row.sport||'')+'</td>'+
+    '<td><div class="name">'+esc(eventName)+'</div></td>'+
     '<td><b>'+esc(value)+'</b></td>'+
     '<td>'+esc(holderDisplay(row))+'</td>'+
     '<td>'+esc(row.meetName||'')+'</td>'+
