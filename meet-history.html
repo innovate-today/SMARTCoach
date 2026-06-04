@@ -147,6 +147,7 @@ tr:last-child td{border-bottom:0}
       <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
       <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
       <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
+      <button id="openImportTopBtn" class="utility-action" type="button">Import History</button>
       <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
     </div>
   </section>
@@ -296,6 +297,7 @@ var els={
   accessSubmit:document.getElementById('accessSubmit'),
   accessStatus:document.getElementById('accessStatus'),
   dashboardLink:document.getElementById('dashboardLink'),
+  openImportTopBtn:document.getElementById('openImportTopBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   lastUpdated:document.getElementById('lastUpdated'),
   meetCount:document.getElementById('meetCount'),
@@ -786,7 +788,7 @@ function saveImportRows(){
   headers['Content-Type']='application/json';
   els.saveImportBtn.disabled=true;
   setImportStatus('Saving meet history...','');
-  fetch('/api/ghl/meet-history-import',{method:'POST',headers:headers,body:JSON.stringify({results:importRows})}).then(function(res){
+  fetch('/api/ghl/meet-result',{method:'POST',headers:headers,body:JSON.stringify({historyImport:true,results:importRows})}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
@@ -1062,6 +1064,14 @@ function init(){
   if(xcSimulatorLink)xcSimulatorLink.href=pageUrl('/xc-simulator.html');
   els.importDefaultYear.value=new Date().getFullYear();
   els.refreshBtn.addEventListener('click',loadMeetHistory);
+  els.openImportTopBtn.addEventListener('click',function(){
+    if(els.importBody.hidden){
+      els.importBody.hidden=false;
+      els.toggleImportBtn.textContent='Hide Import';
+    }
+    els.importBody.scrollIntoView({behavior:'smooth',block:'start'});
+    setImportStatus('Paste rows, upload a CSV/TSV, or use a screenshot as reference.','');
+  });
   els.search.addEventListener('input',render);
   els.seasonFilter.addEventListener('change',render);
   els.eventFilter.addEventListener('change',render);

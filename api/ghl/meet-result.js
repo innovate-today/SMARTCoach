@@ -35,6 +35,11 @@ module.exports = async function handler(req, res) {
 
   try {
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    if (payload && payload.historyImport === true && Array.isArray(payload.results)) {
+      const imported = await saveMeetHistoryImport({ token, locationId, rows: payload.results });
+      res.status(200).json(imported);
+      return;
+    }
     const meetResult = normalizeMeetResult(payload);
     if (meetResult.resultType === "relay") {
       const existingRelayResults = await findMeetResultRecordsForRelayEvent({
@@ -405,6 +410,133 @@ async function findDuplicateMeetResult({ token, locationId, sourceRecordId }) {
     if (error.statusCode && error.statusCode >= 500) throw error;
     return null;
   }
+}
+
+async function saveMeetHistoryImport({ token, locationId, rows }) {
+  if (!rows.length) throw httpError(400, "Preview meet history rows before saving.");
+  const created = [];
+  const skipped = [];
+  for (const raw of rows) {
+    const row = normalizeHistoryImportRow(raw);
+    if (!row.athleteName || !row.meetName || !row.event || !row.resultDisplay || !row.meetDate) {
+      skipped.push({ rowNumber: row.rowNumber, reason: "Missing required fields." });
+      continue;
+    }
+    const properties = buildHistoryImportProperties(row);
+    const duplicate = await findDuplicateMeetResult({ token, locationId, sourceRecordId: properties.source_record_id });
+    if (duplicate) {
+      skipped.push({ rowNumber: row.rowNumber, reason: "Duplicate already saved." });
+      continue;
+    }
+    const result = await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(MEET_RESULT_SCHEMA_KEY)}/records`,
+      method: "POST",
+      body: { locationId, properties },
+    });
+    created.push(normalizeHistoryImportCreatedRow({
+      id: result && (result.id || result._id || result.recordId || (result.record && (result.record.id || result.record._id || result.record.recordId))),
+      properties,
+    }));
+  }
+  return {
+    success: true,
+    createdCount: created.length,
+    skippedCount: skipped.length,
+    created,
+    skipped,
+  };
+}
+
+function normalizeHistoryImportRow(row) {
+  const rawDate = clean(row && (row.meetDate || row.date));
+  const date = rawDate ? new Date(rawDate) : null;
+  const seasonYear = Number(row && (row.seasonYear || row.year)) || (date && validDate(date) ? date.getFullYear() : new Date().getFullYear());
+  return {
+    rowNumber: Number(row && row.rowNumber) || 0,
+    athleteName: clean(row && (row.athleteName || row.athlete)),
+    athleteGender: clean(row && (row.athleteGender || row.gender)),
+    grade: clean(row && row.grade),
+    meetName: clean(row && (row.meetName || row.meet)),
+    meetDate: rawDate,
+    season: clean(row && row.season) || "Unspecified",
+    seasonYear,
+    sport: clean(row && row.sport) || "Cross Country",
+    event: clean(row && row.event),
+    resultDisplay: clean(row && (row.resultDisplay || row.result || row.mark)),
+    resultMs: Number(row && row.resultMs) || parseTimeToMs(row && (row.resultDisplay || row.result || row.mark)) || null,
+    place: clean(row && row.place),
+    isPr: truthy(row && (row.isPr || row.pr)),
+    isSeasonBest: row && typeof row.isSeasonBest !== "undefined" ? truthy(row.isSeasonBest) : true,
+    notes: clean(row && row.notes),
+    sourceRecordId: clean(row && row.sourceRecordId),
+  };
+}
+
+function buildHistoryImportProperties(row) {
+  const sourceRecordId = row.sourceRecordId || buildHistoryImportSourceRecordId(row);
+  const notes = [
+    "Result Type: Historical Import",
+    row.grade ? `Grade: ${row.grade}` : "",
+    row.athleteGender ? `Gender: ${row.athleteGender}` : "",
+    row.place ? `Place: ${row.place}` : "",
+    row.notes,
+  ].filter(Boolean).join("\n");
+  return compactProperties({
+    meet_result: `${row.athleteName} - ${row.event} - ${row.resultDisplay} - ${row.meetName}`,
+    athlete_contact: "",
+    athlete_name_snapshot: row.athleteName,
+    meet_name: row.meetName,
+    meet_record_id: "",
+    meet_date: row.meetDate,
+    season: optionValue(row.season),
+    season_year: row.seasonYear,
+    sport: sportValue(row.sport),
+    event: row.event,
+    result_display: row.resultDisplay,
+    result_ms: row.resultMs,
+    wind: "",
+    splits_json: "",
+    is_pr: row.isPr ? "Yes" : "No",
+    is_season_best: row.isSeasonBest ? "Yes" : "No",
+    coach_race_notes: notes,
+    source_system: "smartcoach_history_import",
+    source_record_id: sourceRecordId,
+  });
+}
+
+function normalizeHistoryImportCreatedRow(record) {
+  const props = record.properties || {};
+  const notes = clean(props.coach_race_notes);
+  return {
+    recordId: clean(record.id),
+    sourceRecordId: props.source_record_id || "",
+    athleteName: props.athlete_name_snapshot || "",
+    athleteGender: noteValue(notes, "Gender"),
+    meetName: props.meet_name || "",
+    event: props.event || "",
+    resultDisplay: props.result_display || "",
+    resultMs: Number(props.result_ms) || 0,
+    meetDate: props.meet_date || "",
+    sport: props.sport || "",
+    wind: props.wind || "",
+    isPr: props.is_pr === "Yes",
+    isSeasonBest: props.is_season_best === "Yes",
+    coachRaceNotes: notes,
+    syncedAt: new Date().toISOString(),
+  };
+}
+
+function buildHistoryImportSourceRecordId(row) {
+  return [
+    "mhi",
+    row.seasonYear,
+    slugValue(row.athleteName),
+    slugValue(row.meetDate),
+    slugValue(row.event),
+    slugValue(row.meetName),
+    slugValue(row.resultDisplay),
+  ].filter(Boolean).join("_");
 }
 
 async function findMeetResultRecordsForAthleteEvent({ token, locationId, contactId, event }) {

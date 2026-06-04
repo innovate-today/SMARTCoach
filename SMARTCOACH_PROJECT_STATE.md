@@ -1114,7 +1114,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 272. Records table and bulk import preview now show Sport as its own column so Track and Cross Country records remain visually distinct after import.
 273. Records bulk import no longer silently defaults missing Sport values to Track. Bulk Import now includes a Sport for blank rows selector, and the Records API/registry preserve blank sport values instead of converting them to Track.
 274. Records bulk import now skips exact duplicate pasted rows during preview, keeps a clear records-saved message after Save, and renders the saved records immediately from the successful save response instead of requiring a manual refresh.
-275. Meet History now has an Import Meet History panel for onboarding historical results. Coaches can paste spreadsheet rows, upload CSV/TSV/text exports, use screenshot/photo upload as a reference path, preview rows, skip exact duplicate pasted rows, and save historical results without creating active athletes. Imported gender is stored in notes and read back for event comparisons.
+275. Meet History now has a top **Import History** button plus an Import Meet History panel for onboarding historical results. Coaches can paste spreadsheet rows, upload CSV/TSV/text exports, use screenshot/photo upload as a reference path, preview rows, skip exact duplicate pasted rows, and save historical results without creating active athletes. Imported gender is stored in notes and read back for event comparisons. The save action reuses the existing meet-result API route so it does not add another Vercel serverless function.
 
 ## Known Good Test Flow
 
