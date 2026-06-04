@@ -3163,26 +3163,31 @@ function saveCorrection(){
 function applyTrainingCorrectionLocally(row,updates,reason){
   if(!row)return;
   var correctedAt=new Date().toISOString();
-  var updatedRow=null;
-  recentTrainingRows=recentTrainingRows.map(function(item){
-    if(!sameSavedEntry(item,row))return item;
-    updatedRow=Object.assign({},item,{
-      sessionDate:updates.sessionDate||item.sessionDate,
-      workoutType:updates.workoutType||item.workoutType,
-      surface:updates.surface||item.surface,
-      completedVolume:updates.completedVolume||item.completedVolume,
-      completedVolumeMiles:completedVolumeMiles(Object.assign({},item,{completedVolume:updates.completedVolume})),
-      totalTimeDisplay:updates.time||item.totalTimeDisplay,
-      weather:updates.weather||'',
-      coachNote:updates.notes||'',
-      corrected:true,
-      correctionDate:correctedAt,
-      correctionReason:reason
-    });
-    return updatedRow;
+  var originalKey=trainingRowKey(row);
+  var sourceRow=recentTrainingRows.find(function(item){
+    return trainingRowKey(item)===originalKey||sameSavedEntry(item,row);
+  })||row;
+  var updatedRow=Object.assign({},sourceRow,{
+    sessionDate:updates.sessionDate||sourceRow.sessionDate,
+    workoutType:updates.workoutType||sourceRow.workoutType,
+    surface:updates.surface||sourceRow.surface,
+    completedVolume:updates.completedVolume||sourceRow.completedVolume,
+    completedVolumeMiles:completedVolumeMiles(Object.assign({},sourceRow,{completedVolume:updates.completedVolume})),
+    totalTimeDisplay:updates.time||sourceRow.totalTimeDisplay,
+    weather:updates.weather||'',
+    coachNote:updates.notes||'',
+    corrected:true,
+    correctionDate:correctedAt,
+    correctionReason:reason
   });
+  recentTrainingRows=recentTrainingRows.filter(function(item){
+    return trainingRowKey(item)!==originalKey&&!sameSavedEntry(item,row);
+  });
+  recentTrainingRows.unshift(updatedRow);
   if(updatedRow){
     updateAthleteLatestTraining(updatedRow,row);
+    updateDashboardTopStats();
+    updateBreakdowns();
     renderRows();
   }
 }

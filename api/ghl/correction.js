@@ -5,6 +5,7 @@ const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { mirrorTrainingRecords } = require("../../lib/account-registry");
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
   meet_result: ["Khq47asHEk0tRieDVUBg"],
@@ -63,7 +64,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { token, locationId } = getGhlContext(req);
+  const { token, locationId, accountKey } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak corrections are not configured on the server." });
@@ -101,7 +102,7 @@ module.exports = async function handler(req, res) {
         res.status(200).json(result);
         return;
       }
-      const result = await editPerformanceRecord({ token, locationId, contactId, athleteName, reason, record, props, payload });
+      const result = await editPerformanceRecord({ token, locationId, accountKey, contactId, athleteName, reason, record, props, payload });
       res.status(200).json(result);
       return;
     }
@@ -127,6 +128,19 @@ module.exports = async function handler(req, res) {
       },
     });
 
+    let trainingMirror = null;
+    if (!isMeetResult) {
+      trainingMirror = await mirrorCorrectedTrainingRecord({
+        accountKey,
+        record,
+        props,
+        contactId,
+        athleteName,
+        coachNote: nextNote,
+        syncedAt: correctionTime,
+      });
+    }
+
     if (contactId) {
       await addCorrectionNote({
         token,
@@ -149,7 +163,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    res.status(200).json({ success: true, action: "voided", recordId: record.id, recordType: isMeetResult ? "meet" : "training" });
+    res.status(200).json({ success: true, action: "voided", recordId: record.id, recordType: isMeetResult ? "meet" : "training", trainingMirror });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Correction failed." });
   }
@@ -277,7 +291,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
   return { success: true, action: "edited", recordType: "meet", recordId: record.id, changes, linkedRecords };
 }
 
-async function editPerformanceRecord({ token, locationId, contactId, athleteName, reason, record, props, payload }) {
+async function editPerformanceRecord({ token, locationId, accountKey, contactId, athleteName, reason, record, props, payload }) {
   const updates = payload.updates && typeof payload.updates === "object" ? payload.updates : {};
   const previousNote = prop(props, "coach_note");
   const previousValues = {
@@ -327,6 +341,18 @@ async function editPerformanceRecord({ token, locationId, contactId, athleteName
     },
   });
 
+  const trainingMirror = await mirrorCorrectedTrainingRecord({
+    accountKey,
+    record,
+    props,
+    contactId,
+    athleteName,
+    nextValues,
+    coachNote: nextNote,
+    totalMs,
+    syncedAt: correctionTime,
+  });
+
   await addCorrectionNote({
     token,
     contactId,
@@ -341,7 +367,7 @@ async function editPerformanceRecord({ token, locationId, contactId, athleteName
     }),
   });
 
-  return { success: true, action: "edited", recordId: record.id, changes };
+  return { success: true, action: "edited", recordId: record.id, changes, trainingMirror };
 }
 
 async function addCorrectionNote({ token, contactId, body }) {
@@ -351,6 +377,40 @@ async function addCorrectionNote({ token, contactId, body }) {
     method: "POST",
     body: { body },
   });
+}
+
+async function mirrorCorrectedTrainingRecord({ accountKey, record, props, contactId, athleteName, nextValues, coachNote, totalMs, syncedAt }) {
+  if (!accountKey) return { saved: false, reason: "No account key." };
+  const values = nextValues || {};
+  const sourceRecordId = prop(props, "source_record_id");
+  const properties = {
+    performance_record: prop(props, "performance_record") || [athleteName, values.workoutType || prop(props, "workout_type")].filter(Boolean).join(" - "),
+    athlete_contact: contactId || prop(props, "athlete_contact"),
+    athlete_name_snapshot: athleteName || prop(props, "athlete_name_snapshot"),
+    source_session_id: prop(props, "source_session_id"),
+    source_record_id: sourceRecordId,
+    group_name: prop(props, "group_name"),
+    session_date: values.sessionDate || prop(props, "session_date"),
+    workout_type: values.workoutType ? workoutTypeValue(values.workoutType) : prop(props, "workout_type"),
+    surface: values.surface ? optionValue(values.surface) : prop(props, "surface"),
+    rep_number: prop(props, "rep_number"),
+    total_time_display: Object.prototype.hasOwnProperty.call(values, "time") ? values.time : prop(props, "total_time_display"),
+    total_time_ms: totalMs || prop(props, "total_time_ms"),
+    splits_json: prop(props, "splits_json"),
+    coach_note: coachNote,
+  };
+
+  try {
+    return await mirrorTrainingRecords(accountKey, [{
+      recordId: record && record.id,
+      sourceRecordId,
+      syncedAt,
+      updatedAt: syncedAt,
+      properties: compactProperties(properties),
+    }]);
+  } catch (error) {
+    return { saved: false, error: error.message || "Training mirror could not be updated." };
+  }
 }
 
 async function updateLinkedMeetRecords({ token, locationId, contactId, athleteName, record, props, nextValues, resultMs, correctionTime, reason }) {
