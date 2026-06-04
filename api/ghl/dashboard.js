@@ -27,6 +27,8 @@ const FIELD_IDS = {
   result_display: ["Cu9h6mq2X6uPSQG6IraM"],
   result_ms: ["tqdu89hWLwfdiylZzxqj"],
   meet_date: ["rYZUhun2ynmK8MNsYgph"],
+  season: ["E7WkU0NjC48zZzSNMlMJ"],
+  season_year: ["jImFId2bLt2Hhox7TTDR"],
   sport: ["NFlleoMtJlvlB1KAOqpR", "rgFknLe8077zfXPF5i9I"],
   wind: ["sYR9reCyygQaHH3x88DR"],
   is_pr: ["XMvKfEECN6PCcA0TKwzN"],

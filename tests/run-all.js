@@ -153,6 +153,8 @@ function checkMeetHistoryUnlistedSeasonYearFallback() {
     "seasonYear: Number(props.season_year) || yearFromDateValue(props.meet_date),",
   ];
   const requiredDashboardApi = [
+    'season: ["E7WkU0NjC48zZzSNMlMJ"],',
+    'season_year: ["jImFId2bLt2Hhox7TTDR"],',
     'season: labelValue(prop(props, "season")) || prop(props, "season"),',
     'seasonYear: Number(prop(props, "season_year")) || yearFromDateValue(prop(props, "meet_date")),',
   ];
