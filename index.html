@@ -1316,6 +1316,19 @@ function loadSharedGroups(){
 }
 function mergeSharedGroupsIntoLogs(){
   var cs=currentSeason(),changed=false;
+  var activeSharedIds={};
+  SG.filter(function(group){return (group.type||'training')==='training'&&!group.archived;}).forEach(function(group){
+    if(group.id)activeSharedIds[group.id]=true;
+  });
+  var before=logs.length;
+  logs=logs.filter(function(log){
+    if((log.type||'training')!=='training'||!log.sharedGroupId)return true;
+    return !!activeSharedIds[log.sharedGroupId];
+  });
+  if(logs.length!==before){
+    changed=true;
+    if(CL&&CL.sharedGroupId&&!activeSharedIds[CL.sharedGroupId])CL=null;
+  }
   SG.filter(function(group){return (group.type||'training')==='training'&&!group.archived;}).forEach(function(group){
     var log=logs.find(function(item){return item.sharedGroupId&&item.sharedGroupId===group.id;})||
       logs.find(function(item){return (item.type||'training')==='training'&&String(item.name||'').trim().toLowerCase()===String(group.name||'').trim().toLowerCase();});

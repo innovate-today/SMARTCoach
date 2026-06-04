@@ -3,6 +3,7 @@ const GHL_VERSION = "2021-07-28";
 const MEET_SCHEMA_KEY = "custom_objects.meets";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { loadAccountRecord, saveAccountRecord } = require("../../lib/account-registry");
 const FIELD_IDS = {
   meet: ["L6DjPWvVI13p6C1tgUz2"],
   meet_date: ["8dcV6Nl25E96qicqRWUg"],
@@ -26,7 +27,7 @@ module.exports = async function handler(req, res) {
 
   if (!requireProPlan(req, res)) return;
 
-  const { token, locationId } = getGhlContext(req);
+  const { token, locationId, accountKey } = getGhlContext(req);
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak meets are not configured on the server." });
@@ -35,28 +36,28 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      const result = await listMeets({ token, locationId });
+      const result = await listMeets({ token, locationId, accountKey });
       res.status(200).json({ success: true, meets: result.meets, objectAvailable: true });
       return;
     }
 
     if (req.method === "POST") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-      const meet = await createMeet({ token, locationId, payload });
+      const meet = await createMeet({ token, locationId, accountKey, payload });
       res.status(200).json({ success: true, meet });
       return;
     }
 
     if (req.method === "PATCH") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-      const meet = await updateMeet({ token, locationId, payload });
+      const meet = await updateMeet({ token, locationId, accountKey, payload });
       res.status(200).json({ success: true, meet });
       return;
     }
 
     if (req.method === "DELETE") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-      await deleteMeet({ token, payload });
+      await deleteMeet({ token, accountKey, payload });
       res.status(200).json({ success: true });
       return;
     }
@@ -77,7 +78,11 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code, X-SMARTCoach-Session");
 }
 
-async function listMeets({ token, locationId }) {
+async function listMeets({ token, locationId, accountKey }) {
+  if (accountKey && accountKey !== "default") {
+    return { meets: await loadAccountMeets(accountKey) };
+  }
+
   const records = [];
   for (let page = 1; page <= 10; page += 1) {
     const result = await optionalGhlFetch({
@@ -109,13 +114,27 @@ async function listMeets({ token, locationId }) {
   };
 }
 
-async function createMeet({ token, locationId, payload }) {
+async function createMeet({ token, locationId, accountKey, payload }) {
   const name = clean(payload && payload.meetName);
   const date = clean(payload && payload.meetDate);
   const season = clean(payload && payload.season) || currentSeason().season;
   const seasonYear = Number(payload && payload.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : currentSeason().year);
 
   if (!name) throw httpError(400, "Meet name is required.");
+
+  if (accountKey && accountKey !== "default") {
+    const meet = normalizeAccountMeet({
+      id: clean(payload && payload.recordId) || `meet_${Date.now()}_${slugValue(name)}`,
+      name,
+      date,
+      season,
+      seasonYear,
+      status: clean(payload && payload.status) || "Scheduled",
+      location: clean(payload && payload.location),
+    });
+    await upsertAccountMeet(accountKey, meet);
+    return meet;
+  }
 
   const properties = {
     meet: name,
@@ -137,7 +156,7 @@ async function createMeet({ token, locationId, payload }) {
   return normalizeMeet(record.record || record, properties);
 }
 
-async function updateMeet({ token, locationId, payload }) {
+async function updateMeet({ token, locationId, accountKey, payload }) {
   const recordId = clean(payload && payload.recordId);
   if (!recordId) throw httpError(400, "Meet record ID is required.");
 
@@ -146,6 +165,22 @@ async function updateMeet({ token, locationId, payload }) {
   const season = clean(payload && payload.season);
   const seasonYear = Number(payload && payload.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : undefined);
   const status = clean(payload && payload.status);
+
+  if (accountKey && accountKey !== "default") {
+    const existing = (await loadAccountMeets(accountKey)).find((meet) => meet.id === recordId) || {};
+    const meet = normalizeAccountMeet({
+      ...existing,
+      id: recordId,
+      name: name || existing.name,
+      date: date || existing.date,
+      season: season || existing.season,
+      seasonYear: seasonYear || existing.seasonYear,
+      status: status || existing.status,
+    });
+    if (!meet.name) throw httpError(400, "Meet name is required.");
+    await upsertAccountMeet(accountKey, meet);
+    return meet;
+  }
 
   const properties = {};
   if (name) properties.meet = name;
@@ -166,14 +201,70 @@ async function updateMeet({ token, locationId, payload }) {
   return normalizeMeet(record.record || record, properties);
 }
 
-async function deleteMeet({ token, payload }) {
+async function deleteMeet({ token, accountKey, payload }) {
   const recordId = clean(payload && payload.recordId);
   if (!recordId) throw httpError(400, "Meet record ID is required.");
+  if (accountKey && accountKey !== "default") {
+    const existing = await loadAccountMeets(accountKey);
+    await saveAccountMeets(accountKey, existing.filter((meet) => meet.id !== recordId));
+    return;
+  }
   await ghlFetch({
     token,
     path: `/objects/${encodeURIComponent(MEET_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
     method: "DELETE",
   });
+}
+
+async function loadAccountMeets(accountKey) {
+  const existing = await loadAccountRecord(accountKey);
+  const rows = existing && existing.record && existing.record.smartcoachMeets;
+  return normalizeAccountMeets(rows && rows.meets);
+}
+
+async function upsertAccountMeet(accountKey, meet) {
+  const existing = await loadAccountMeets(accountKey);
+  const rows = existing.filter((item) => item.id !== meet.id);
+  rows.push(meet);
+  await saveAccountMeets(accountKey, rows);
+}
+
+async function saveAccountMeets(accountKey, meets) {
+  const existing = await loadAccountRecord(accountKey);
+  if (!existing.configured || !existing.found || !existing.record) {
+    throw httpError(404, "Account registry record was not found.");
+  }
+  const updatedAt = new Date().toISOString();
+  await saveAccountRecord(accountKey, {
+    ...existing.record,
+    smartcoachMeets: { meets: normalizeAccountMeets(meets), updatedAt },
+    lastMeetsSync: { savedAt: updatedAt, count: normalizeAccountMeets(meets).length },
+  });
+}
+
+function normalizeAccountMeets(meets) {
+  return (Array.isArray(meets) ? meets : []).map(normalizeAccountMeet).filter((meet) => meet.name).sort((a, b) => {
+    return String(a.date || "").localeCompare(String(b.date || "")) || a.name.localeCompare(b.name);
+  });
+}
+
+function normalizeAccountMeet(meet) {
+  const row = meet || {};
+  const name = clean(row.name || row.meetName);
+  const date = dateOnlyText(row.date || row.meetDate);
+  const season = clean(row.season) || (date ? seasonForDate(date).season : "");
+  const seasonYear = Number(row.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null);
+  const status = clean(row.status) || "Scheduled";
+  return {
+    id: clean(row.id || row.recordId) || `meet_${Date.now()}_${slugValue(name)}`,
+    name,
+    date,
+    season,
+    seasonYear,
+    location: clean(row.location),
+    status,
+    archived: isArchivedStatus(status),
+  };
 }
 
 async function ghlFetch({ token, path, method, body }) {
