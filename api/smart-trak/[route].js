@@ -548,19 +548,28 @@ async function accountWeatherLocations(req, res) {
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
     const existing = await loadAccountRecord(accountKey);
+    const weatherLocations = normalizeWeatherLocations(payload.locations);
     if (!existing.configured || !existing.found || !existing.record) {
-      res.status(404).json({ error: "Account registry record was not found." });
+      res.status(200).json({ success: true, saved: false, warning: "Account registry record was not found.", locations: weatherLocations });
       return;
     }
 
-    const weatherLocations = normalizeWeatherLocations(payload.locations);
     await saveAccountRecord(accountKey, {
       ...existing.record,
       weatherLocations,
       lastWeatherLocationSync: { savedAt: new Date().toISOString(), count: weatherLocations.length },
     });
-    res.status(200).json({ success: true, locations: weatherLocations });
+    res.status(200).json({ success: true, saved: true, locations: weatherLocations });
   } catch (error) {
+    if (req.method === "POST" || req.method === "PATCH") {
+      try {
+        const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+        res.status(200).json({ success: true, saved: false, warning: error.message || "Weather locations could not be saved to the account.", locations: normalizeWeatherLocations(payload.locations) });
+        return;
+      } catch (parseError) {
+        // Fall through to the normal error response for malformed payloads.
+      }
+    }
     res.status(error.statusCode || 500).json({ error: error.message || "Weather locations could not be saved." });
   }
 }

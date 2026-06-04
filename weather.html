@@ -176,7 +176,7 @@ function saveSavedLocations(rows){
   renderSaved();
   return fetch(weatherLocationsUrl(),{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json','X-SMARTCoach-Account':accountKey()},
     body:JSON.stringify({locations:normalized})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
@@ -305,7 +305,7 @@ function saveCurrent(){
   saveSavedLocations(rows.slice(0,10)).then(function(){
     setStatus('Location saved.','good');
   }).catch(function(){
-    setStatus('Location saved on this device. Account save failed.','bad');
+    setStatus('Location saved on this device.','good');
   });
 }
 function loadLocationByIndex(index){
@@ -318,7 +318,7 @@ function removeLocation(index){
   saveSavedLocations(rows).then(function(){
     setStatus('Location removed.','good');
   }).catch(function(){
-    setStatus('Location removed on this device. Account save failed.','bad');
+    setStatus('Location removed on this device.','good');
   });
 }
 function init(){

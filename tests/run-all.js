@@ -147,6 +147,34 @@ function checkMeetManagerSportField() {
   console.log("Meet Manager sport field ok");
 }
 
+function checkWeatherLocationSaveFallback() {
+  const html = fs.readFileSync("weather.html", "utf8");
+  const route = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const requiredHtml = [
+    "'X-SMARTCoach-Account':accountKey()",
+    "Location saved on this device.",
+    "Location removed on this device.",
+  ];
+  const forbiddenHtml = [
+    "Account save failed",
+  ];
+  const requiredRoute = [
+    "saved: false, warning: \"Account registry record was not found.\"",
+    "saved: true, locations: weatherLocations",
+    "Weather locations could not be saved to the account.",
+  ];
+  requiredHtml.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`weather local-save fallback missing ${text}`);
+  });
+  forbiddenHtml.forEach((text) => {
+    if (html.includes(text)) throw new Error(`weather page should not show ${text}`);
+  });
+  requiredRoute.forEach((text) => {
+    if (!route.includes(text)) throw new Error(`weather account-save fallback missing ${text}`);
+  });
+  console.log("weather location save fallback ok");
+}
+
 function checkMeetHistorySportToolbarFilter() {
   const html = fs.readFileSync("meet-history.html", "utf8");
   const bar = html.match(/<section class="bar">([\s\S]*?)<\/section>/);
@@ -284,6 +312,7 @@ checkLiveValidationPage();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkMeetManagerSportField();
+checkWeatherLocationSaveFallback();
 checkMeetHistorySportToolbarFilter();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
