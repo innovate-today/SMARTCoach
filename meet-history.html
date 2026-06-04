@@ -783,6 +783,10 @@ function athleticMeetMap(lines,seasonYear){
   return map;
 }
 function athleticTableRowInfo(cols,header){
+  var gradeFromText=function(value){
+    var match=String(value||'').trim().match(/(?:^|\s)([6-9]|1[0-2])(?:\s|$)/);
+    return match?match[1]:'';
+  };
   var athleteIndex=header.findIndex(function(col){return /^athlete$/i.test(col);});
   var gradeIndex=header.findIndex(function(col){return /^gr$/i.test(col)||/^grade$/i.test(col);});
   var offset=cols.length>header.length?cols.length-header.length:0;
@@ -802,7 +806,7 @@ function athleticTableRowInfo(cols,header){
   }
   var grade=cols[gradeIndex]||'';
   if(!/^\d{1,2}$/.test(String(grade||'').trim())){
-    grade=(cols.slice(0,Math.max(athleteCol,1)).find(function(col){return /^\d{1,2}$/.test(String(col||'').trim());})||'').trim();
+    grade=gradeFromText(cols.slice(0,Math.max(athleteCol,1)).join(' '));
   }
   var firstDateIndex=header.findIndex(function(col){return !!athleticDateLabel(col);});
   var resultShift=firstResultIndex>=0&&firstDateIndex>=0?firstResultIndex-firstDateIndex:offset;
@@ -829,7 +833,7 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
       header=cols;
       return;
     }
-    if(!header||cols.length<4)return;
+    if(!header||cols.length<3)return;
     var rowInfo=athleticTableRowInfo(cols,header);
     var athleteName=rowInfo.athleteName;
     var grade=rowInfo.grade;
