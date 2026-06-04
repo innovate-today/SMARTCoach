@@ -296,7 +296,7 @@ tr:last-child td{border-bottom:0}
     <div class="breakgrid">
       <div class="metric"><b id="trainingVolumeCount">--</b><span>Volume miles</span></div>
       <div class="metric"><b id="trainingMonthVolume">--</b><span>This month miles</span></div>
-      <div class="metric"><b id="trainingSyncCount">--</b><span>Completed workouts</span></div>
+      <div class="metric"><b id="trainingSyncCount">--</b><span>Avg per workout</span></div>
       <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
       <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
       <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Active this week</span></div>
@@ -2127,7 +2127,7 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   els.meetPbCount.textContent=meetRows.filter(function(row){return row.isPr;}).length;
   els.meetSbCount.textContent=meetRows.filter(function(row){return row.isSeasonBest;}).length;
   els.trainingRangeLabel.textContent=rangeText;
-  els.trainingSyncCount.textContent=trainingRows.length;
+  els.trainingSyncCount.textContent=formatMiles(trainingRows.length?sumTrainingVolume(volumeRows)/trainingRows.length:0);
   els.trainingVolumeCount.textContent=formatMiles(sumTrainingVolume(volumeRows));
   els.trainingMonthVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfCurrentMonthDate(),startOfNextMonthDate()));
   els.trainingOnTargetCount.textContent=trainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
