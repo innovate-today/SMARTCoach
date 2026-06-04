@@ -787,9 +787,21 @@ function athleticNameKey(value){
 }
 function athleticGradeLookup(lines){
   var lookup={};
+  var pendingGrade='';
   lines.forEach(function(line){
     var text=String(line||'').replace(/[^\x00-\x7F]/g,' ').replace(/\s+/g,' ').trim();
     if(!text||athleticDateLabel(text)||/\brace distances\b/i.test(text)||/\bmeet list\b/i.test(text))return;
+    var pending=text.match(/^([6-9]|1[0-2])(?:\s+\d{1,2})?(?:\s+[A-Z]{1,4})?$/);
+    if(pending){pendingGrade=pending[1];return;}
+    if(pendingGrade){
+      var pendingName=text.match(/^(.+?)\s+\d{1,2}:\d{2}/);
+      if(pendingName&&/[A-Za-z]/.test(pendingName[1])){
+        lookup[athleticNameKey(pendingName[1])]=pendingGrade;
+        pendingGrade='';
+        return;
+      }
+      if(/^[A-Z]{1,4}$/.test(text))return;
+    }
     var compact=text.match(/^([6-9]|1[0-2])(?:\s+\d{1,2})?\s+(?:[A-Z]{1,4}\s+)?(.+?)\s+\d{1,2}:\d{2}/);
     if(compact){
       lookup[athleticNameKey(compact[2])]=compact[1];
