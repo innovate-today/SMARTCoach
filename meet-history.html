@@ -179,7 +179,7 @@ tr:last-child td{border-bottom:0}
     <div id="importBody" class="importbody" hidden>
       <div class="importmode">
         <button id="importPasteMode" class="active" type="button" data-import-mode="paste">Paste Spreadsheet</button>
-        <button id="importAthleticMode" type="button" data-import-mode="athletic">Athletic.net Paste</button>
+        <button id="importAthleticMode" type="button" data-import-mode="athletic">Athletic.net Results Grid</button>
         <button id="importFileMode" type="button" data-import-mode="file">Upload Spreadsheet</button>
         <button id="importImageMode" type="button" data-import-mode="image">Screenshot / Photo</button>
       </div>
@@ -198,6 +198,13 @@ tr:last-child td{border-bottom:0}
             <option>Winter</option>
             <option>Summer</option>
             <option>Offseason</option>
+          </select>
+        </label>
+        <label>Default Gender
+          <select id="importDefaultGender">
+            <option value="">Use pasted gender</option>
+            <option value="Boys">Boys</option>
+            <option value="Girls">Girls</option>
           </select>
         </label>
         <label>Default Year
@@ -320,6 +327,7 @@ var els={
   importImageMode:document.getElementById('importImageMode'),
   importDefaultSport:document.getElementById('importDefaultSport'),
   importDefaultSeason:document.getElementById('importDefaultSeason'),
+  importDefaultGender:document.getElementById('importDefaultGender'),
   importDefaultYear:document.getElementById('importDefaultYear'),
   importDefaultEvent:document.getElementById('importDefaultEvent'),
   importFileRow:document.getElementById('importFileRow'),
@@ -620,7 +628,7 @@ function setImportMode(mode){
   els.importFileRow.hidden=importMode!=='file';
   els.importImageRow.hidden=importMode!=='image';
   if(importMode==='image')setImportStatus('Screenshot/photo OCR is not configured yet. Upload the image for reference, then paste rows before previewing.','warn');
-  else if(importMode==='athletic')setImportStatus('Paste the Athletic.net Season Bests page text, preview, then save.','');
+  else if(importMode==='athletic')setImportStatus('Paste the Athletic.net Results Grid table, preview, then save.','');
   else setImportStatus('Paste rows, preview, then save.','');
 }
 function parseCsvLine(line){
@@ -710,7 +718,7 @@ function athleticSubscriptToDigit(value){
   return String(value||'').replace(/[\u2080-\u2089]/g,function(ch){return String(ch.charCodeAt(0)-0x2080);});
 }
 function isAthleticImportText(text){
-  return /season bests/i.test(text||'')||/\bshow only\b/i.test(text||'')||/\brace distances\b/i.test(text||'')||/\bmeet list\b/i.test(text||'');
+  return /season bests/i.test(text||'')||/results grid/i.test(text||'')||/\bshow only\b/i.test(text||'')||/\brace distances\b/i.test(text||'')||/\bmeet list\b/i.test(text||'');
 }
 function athleticDateLabel(value){
   var match=String(value||'').trim().match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2}$/i);
@@ -760,6 +768,7 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
   var raceDistances=athleticRaceDistances(lines);
   var meetMap=athleticMeetMap(lines,seasonYear);
   var sport=els.importDefaultSport.value||'Cross Country';
+  var defaultGender=els.importDefaultGender.value||'';
   var defaultSeason=els.importDefaultSeason.value||'Fall';
   var rows=[];
   var header=null;
@@ -768,8 +777,8 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
     if(/\brace distances\b/i.test(line))header=null;
     if(!line||/\brace distances\b/i.test(line)||/\bmeet list\b/i.test(line)||/^key$/i.test(line))return;
     var genderLine=line.replace(/[^\x00-\x7F]/g,'').trim();
-    if(/^(women|womens|girls)$/i.test(genderLine)){currentGender='Girls';return;}
-    if(/^(men|mens|boys)$/i.test(genderLine)){currentGender='Boys';return;}
+    if(/^(women|womens|girls)$/i.test(genderLine)||/\bwomens?\b/i.test(genderLine)&&!/\bmens?\b/i.test(genderLine)){currentGender='Girls';return;}
+    if(/^(men|mens|boys)$/i.test(genderLine)||/\bmens?\b/i.test(genderLine)&&!/\bwomens?\b/i.test(genderLine)){currentGender='Boys';return;}
     var cols=String(line).indexOf('\t')>=0?String(line).split(/\t/).map(function(col){return col.trim();}):[];
     if(cols.length>=4&&cols.some(function(col){return /^athlete$/i.test(col);})&&cols.some(athleticDateLabel)){
       header=cols;
@@ -799,7 +808,7 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
         sport:sport,
         meetName:meet.name,
         meetDate:meet.date,
-        athleteGender:currentGender,
+        athleteGender:currentGender||defaultGender,
         event:event,
         athleteName:athleteName,
         grade:grade,
@@ -817,15 +826,16 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
 function parseAthleticNetRows(text){
   var tableLines=String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
   var rawLines=tableLines.map(function(line){return line.replace(/\s+/g,' ').trim();}).filter(Boolean);
-  var seasonYearMatch=String(text||'').match(/\b(19|20)\d{2}\b(?=\s+Season\s+Bests)/i);
+  var seasonYearMatch=String(text||'').match(/\b(19|20)\d{2}\b(?=\s+(Season\s+Bests|Results\s+Grid))/i);
   var defaultYear=Number(els.importDefaultYear.value)||new Date().getFullYear();
   var seasonYear=seasonYearMatch?Number(seasonYearMatch[0]):defaultYear;
   var tableRows=parseAthleticSeasonTableRows(text,tableLines,seasonYear);
   if(tableRows.length)return dedupeImportRows(tableRows);
   var sport=els.importDefaultSport.value||'Cross Country';
   var defaultSeason=els.importDefaultSeason.value||'Fall';
+  var defaultGender=els.importDefaultGender.value||'';
   var event=els.importDefaultEvent.value||'';
-  var gender='';
+  var gender=defaultGender;
   var pendingGrade='';
   var pendingPlace='';
   var rows=[];
@@ -838,8 +848,8 @@ function parseAthleticNetRows(text){
       pendingPlace='';
       return;
     }
-    if(/^(women|womens|girls)$/i.test(cleanLine)){gender='Girls';return;}
-    if(/^(men|mens|boys)$/i.test(cleanLine)){gender='Boys';return;}
+    if(/^(women|womens|girls)$/i.test(cleanLine)||/\bwomens?\b/i.test(cleanLine)&&!/\bmens?\b/i.test(cleanLine)){gender='Girls';return;}
+    if(/^(men|mens|boys)$/i.test(cleanLine)||/\bmens?\b/i.test(cleanLine)&&!/\bwomens?\b/i.test(cleanLine)){gender='Boys';return;}
     if(/^gr\s+age\s+athlete\s+mark\s+date\s+meet$/i.test(cleanLine)||/^gr\s+athlete\s+mark\s+date\s+meet$/i.test(cleanLine))return;
     var gradeLine=cleanLine.match(/^(\d+)\.\s+(\d{1,2})(?:\s+\d{1,2})?$/);
     if(gradeLine){
@@ -886,7 +896,7 @@ function normalizeImportRow(values,index){
     sport:values.sport||els.importDefaultSport.value||'Cross Country',
     meetName:values.meetName||'',
     meetDate:meetDate,
-    athleteGender:normalizeImportGender(values.athleteGender),
+    athleteGender:normalizeImportGender(values.athleteGender||els.importDefaultGender.value),
     event:values.event||els.importDefaultEvent.value||'',
     athleteName:values.athleteName||'',
     grade:values.grade||'',
@@ -1329,7 +1339,7 @@ function init(){
     els.importPreview.hidden=true;
     setImportStatus('Paste rows, preview, then save.','');
   });
-  [els.importDefaultSport,els.importDefaultSeason,els.importDefaultYear,els.importDefaultEvent].forEach(function(input){
+  [els.importDefaultSport,els.importDefaultSeason,els.importDefaultGender,els.importDefaultYear,els.importDefaultEvent].forEach(function(input){
     input.addEventListener('change',function(){
       if(els.importText.value){
         importRows=parseImportRows(els.importText.value);
