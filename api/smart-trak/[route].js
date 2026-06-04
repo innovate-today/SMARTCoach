@@ -635,7 +635,7 @@ async function accountEquipmentTrak(req, res) {
         updatedAt: new Date().toISOString(),
         items: normalizeEquipmentAthleteItems(payload.items || payload.records),
       };
-      const duplicate = duplicateIssuedEquipment(current.records);
+      const duplicate = duplicateIssuedEquipment(current.records, current.inventory);
       if (duplicate) {
         if (previous) current.records[athleteKey] = previous;
         else delete current.records[athleteKey];
@@ -897,6 +897,8 @@ function normalizeEquipmentAthleteItems(items) {
       status: normalizeEquipmentStatus(item.status),
       size: cleanSetupText(item.size).slice(0, 80),
       number: cleanSetupText(item.number || item.itemNumber || item.inventoryId).slice(0, 80),
+      program: normalizeEquipmentPool(item.program || item.sport || item.inventoryPool),
+      group: normalizeEquipmentGroup(item.group || item.gender || item.team),
       issuedDate: cleanSetupText(item.issuedDate || item.date).slice(0, 10),
       returnedDate: cleanSetupText(item.returnedDate || item.returnDate).slice(0, 10),
       note: cleanSetupText(item.note || item.notes).slice(0, 800),
@@ -921,6 +923,8 @@ function normalizeEquipmentInventory(inventory) {
       id: normalizeDocuItemId(raw.id || `${itemId || itemName}_${index + 1}`) || `inventory_${index + 1}`,
       program: cleanSetupText(raw.program || raw.sport || raw.season).slice(0, 80),
       group: cleanSetupText(raw.group || raw.team || raw.gender).slice(0, 80),
+      programScope: normalizeInventoryScope(raw.programScope || raw.sportScope),
+      groupScope: normalizeInventoryScope(raw.groupScope || raw.genderScope),
       itemId,
       itemName,
       trackingType,
@@ -941,6 +945,18 @@ function normalizeInventoryTrackingType(value) {
   return "numbered";
 }
 
+function normalizeInventoryScope(value) {
+  const text = cleanSetupText(value || "separate").toLowerCase();
+  return text.includes("shared") ? "shared" : "separate";
+}
+
+function normalizeEquipmentGroup(value) {
+  const text = cleanSetupText(value || "General").toLowerCase();
+  if (text.includes("girl") || text.includes("female")) return "Girls";
+  if (text.includes("boy") || text.includes("male")) return "Boys";
+  return "General";
+}
+
 function inventoryRangeCount(start, end) {
   const a = parseInt(cleanSetupText(start), 10);
   const b = parseInt(cleanSetupText(end), 10);
@@ -948,22 +964,53 @@ function inventoryRangeCount(start, end) {
   return start ? 1 : 0;
 }
 
-function duplicateIssuedEquipment(records) {
+function duplicateIssuedEquipment(records, inventory) {
   const seen = {};
   Object.keys(records || {}).forEach((athleteKey) => {
     const record = records[athleteKey] || {};
     Object.keys(record.items || {}).forEach((itemId) => {
       const item = record.items[itemId] || {};
       if (item.status !== "issued" || !item.number) return;
-      const key = `${normalizeDocuItemId(itemId)}::${cleanSetupText(item.number).toLowerCase()}`;
-      if (!seen[key]) {
-        seen[key] = { itemId, number: item.number, firstAthlete: record.athleteName || athleteKey };
-      } else if (!seen[key].duplicate) {
-        seen[key].duplicate = true;
-      }
+      equipmentDuplicateKeys(itemId, item, inventory).forEach((key) => {
+        if (!seen[key]) {
+          seen[key] = { itemId, number: item.number, firstAthlete: record.athleteName || athleteKey };
+        } else if (!seen[key].duplicate) {
+          seen[key].duplicate = true;
+        }
+      });
     });
   });
   return Object.keys(seen).map((key) => seen[key]).find((row) => row.duplicate) || null;
+}
+
+function equipmentDuplicateKeys(itemId, item, inventory) {
+  const normalizedItemId = normalizeDocuItemId(itemId);
+  const number = normalizeEquipmentNumber(item.number);
+  if (!normalizedItemId || !number) return [];
+  const matches = normalizeEquipmentInventory(inventory).filter((row) => (
+    row.itemId === normalizedItemId
+    && row.trackingType === "numbered"
+    && inventoryNumberInRange(item.number, row)
+  ));
+  if (!matches.length) return [`${normalizedItemId}::global::all::all::${number}`];
+  return matches.map((row) => {
+    const program = row.programScope === "shared" ? "all" : cleanSetupText(item.program || row.program || "General").toLowerCase();
+    const group = row.groupScope === "shared" ? "all" : cleanSetupText(item.group || row.group || "General").toLowerCase();
+    return `${normalizedItemId}::${program}::${group}::${number}`;
+  });
+}
+
+function normalizeEquipmentNumber(value) {
+  return cleanSetupText(value).toLowerCase().replace(/^0+([0-9]+)$/, "$1");
+}
+
+function inventoryNumberInRange(number, row) {
+  const n = parseInt(cleanSetupText(number), 10);
+  const a = parseInt(cleanSetupText(row && row.startNumber), 10);
+  const b = parseInt(cleanSetupText(row && row.endNumber), 10);
+  if (!Number.isFinite(n) || !Number.isFinite(a)) return normalizeEquipmentNumber(number) === normalizeEquipmentNumber(row && row.startNumber);
+  if (!Number.isFinite(b)) return n === a;
+  return n >= a && n <= b;
 }
 
 function normalizeEquipmentStatus(value) {

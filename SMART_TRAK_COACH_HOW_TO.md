@@ -203,17 +203,26 @@ How to set up Equipment Inventory:
 3. Open **Equipment Inventory**.
 4. Click **Add Inventory**.
 5. Choose the program: **Track**, **Cross Country**, or **General**.
-6. Choose the item, group (**Girls** or **Boys**), size when needed (**S**, **M**, **L**, **XL**, or **XXL**), and tracking type.
-7. Use **Numbered** for items with unique numbers, such as backpacks, watches, warmups, or timing chips. Enter the start and end number.
-8. Use **Size Qty** for items counted by size, such as shorts, singlets, or warmup tops.
-9. Use **Count** for simple items where only the total matters.
-10. Use **Copy** on a row when another inventory line is almost the same.
-11. Use **Copy Girls to Boys** when the boys inventory should start from the same list as the girls inventory, then adjust any boys number ranges or quantities before saving.
-12. Click **Save Inventory**.
+6. Choose whether that inventory row is **Separate sport** or **Shared sports**.
+7. Choose the item, group (**Girls** or **Boys**), and whether that row is **Separate gender** or **Shared genders**.
+8. Choose the size when needed (**S**, **M**, **L**, **XL**, or **XXL**) and tracking type.
+9. Use **Numbered** for items with unique numbers, such as backpacks, watches, warmups, or timing chips. Enter the start and end number.
+10. Use **Size Qty** for items counted by size, such as shorts, singlets, or warmup tops.
+11. Use **Count** for simple items where only the total matters.
+12. Use **Copy** on a row when another inventory line is almost the same.
+13. Use **Copy Girls to Boys** when the boys inventory should start from the same list as the girls inventory, then adjust boys number ranges, quantities, or sharing rules before saving.
+14. Click **Save Inventory**.
 
 Example: Track Girls Backpacks can be entered as **Numbered**, start **1**, end **45**. Track Boys Backpacks can be entered as **Numbered**, start **46**, end **90**.
 
-Important: a numbered item that is currently issued cannot be issued to a second athlete with the same item number. Mark the item returned, lost / damaged, or not issued before reassigning that number.
+Sharing rules decide what counts as the same numbered item:
+
+- Use **Separate gender** when Girls Backpack #2 and Boys Backpack #2 are different physical items.
+- Use **Shared genders** when Backpack #2 is one shared item that could belong to either a boy or a girl, but not both.
+- Use **Separate sport** when Track Backpack #2 and Cross Country Backpack #2 are different physical items.
+- Use **Shared sports** when Backpack #2 is the same physical item across Track and Cross Country.
+
+Important: a numbered item that is currently issued cannot be issued to a second athlete inside the same sharing rule. Mark the item returned, lost / damaged, or not issued before reassigning that number.
 
 How to start a new Equipment Trak season:
 
