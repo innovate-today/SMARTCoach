@@ -753,13 +753,23 @@ function athleticMeetMap(lines,seasonYear){
   var inList=false;
   lines.forEach(function(line){
     var text=line.replace(/[^\x00-\x7F]/g,' ').replace(/\s+/g,' ').trim();
-    if(/^meet list$/i.test(text)){inList=true;return;}
-    if(/^key$/i.test(text)){inList=false;return;}
+    if(/^meet list\b/i.test(text)){inList=true;return;}
+    if(/^key\b/i.test(text)){inList=false;return;}
     if(!inList)return;
-    var match=text.match(/^((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2})\s+(.+)$/i);
+    var cols=String(line).indexOf('\t')>=0?String(line).split(/\t/).map(function(col){return col.replace(/[^\x00-\x7F]/g,' ').replace(/\s+/g,' ').trim();}).filter(Boolean):[];
+    if(cols.length>=2){
+      var dateCol=cols.findIndex(function(col){return !!athleticDateLabel(col);});
+      if(dateCol>=0&&cols[dateCol+1]){
+        var dateLabel=athleticDateLabel(cols[dateCol]);
+        map[dateLabel]={date:importDateOnly(dateLabel,seasonYear),name:cols[dateCol+1].trim()};
+        return;
+      }
+    }
+    var match=text.match(/^.*?((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2})\s+(.+)$/i);
     if(!match)return;
     var label=match[1].replace(/^Sept\b/i,'Sep');
-    map[label]={date:importDateOnly(label,seasonYear),name:match[2].trim()};
+    var name=match[2].replace(/\b0:00\b.*$/,'').trim();
+    if(name)map[label]={date:importDateOnly(label,seasonYear),name:name};
   });
   return map;
 }
@@ -793,6 +803,9 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
     if(/^[A-Z]{1,4}$/.test(cols[athleteCol]||'')&&cols[athleteCol+1])athleteCol+=1;
     var athleteName=cols[athleteCol]||'';
     var grade=cols[gradeIndex]||'';
+    if(!/^\d{1,2}$/.test(String(grade||'').trim())){
+      grade=(cols.slice(0,Math.min(cols.length,4)).find(function(col){return /^\d{1,2}$/.test(String(col||'').trim());})||'').trim();
+    }
     if(!athleteName)return;
     header.forEach(function(label,index){
       var dateLabel=athleticDateLabel(label);
