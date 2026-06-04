@@ -318,6 +318,14 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="coachAccessCodes" type="text" placeholder="Generate or paste the one shared code" autocomplete="off">
         </div>
         <div class="field">
+          <label for="accountOwnerEmail">Account Owner Email</label>
+          <input id="accountOwnerEmail" type="email" placeholder="Used for code recovery" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="accountOwnerPhone">Account Owner Phone</label>
+          <input id="accountOwnerPhone" type="tel" placeholder="Optional future text recovery" autocomplete="off">
+        </div>
+        <div class="field">
           <label for="parentEmailCoachAccess">Future Parent Email Coaches</label>
           <input id="parentEmailCoachAccess" type="text" placeholder="Optional future release only, e.g. 1 or 1,3" autocomplete="off">
         </div>
@@ -625,6 +633,8 @@ function setupForActiveAccount(){
   var privateIntegrationToken=((document.getElementById('privateIntegrationToken')||{}).value||'').trim();
   var coachAccessCodes=((document.getElementById('coachAccessCodes')||{}).value||'').trim();
   var coachAccessCodeCount=coachAccessCodes.split(',').map(function(code){return code.trim();}).filter(Boolean).length;
+  var accountOwnerEmail=((document.getElementById('accountOwnerEmail')||{}).value||'').trim();
+  var accountOwnerPhone=((document.getElementById('accountOwnerPhone')||{}).value||'').trim();
   var subscription={
     status:(document.getElementById('subscriptionStatus')||{}).value||'active',
     billingCadence:(document.getElementById('billingCadence')||{}).value||'monthly',
@@ -643,6 +653,8 @@ function setupForActiveAccount(){
     coachSeats:coachSeats,
     crmConfigured:!!(locationId&&privateIntegrationToken),
     coachAccessCodesConfigured:coachAccessCodeCount,
+    accountOwnerEmail:accountOwnerEmail,
+    accountOwnerPhone:accountOwnerPhone,
     parentEmailCoachAccess:((document.getElementById('parentEmailCoachAccess')||{}).value||'').trim(),
     logoUrl:((document.getElementById('logoUrl')||{}).value||'').trim(),
     subscription:subscription,
@@ -712,7 +724,7 @@ function bindAccountKeyWarning(){
       refreshActiveSetupDisplays();
     });
   }
-  ['locationId','privateIntegrationToken','coachAccessCodes','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
+  ['locationId','privateIntegrationToken','coachAccessCodes','accountOwnerEmail','accountOwnerPhone','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
     var input=document.getElementById(id);
     if(!input)return;
     input.dataset.previousSetupValue=input.value||'';
@@ -775,7 +787,7 @@ function rememberCurrentSetupFieldValues(){
     var input=document.getElementById(id);
     if(input)input.dataset.previousAccountKey=cleanAccountKey(input.value);
   });
-  ['plan','coachSeats','locationId','privateIntegrationToken','coachAccessCodes','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
+  ['plan','coachSeats','locationId','privateIntegrationToken','coachAccessCodes','accountOwnerEmail','accountOwnerPhone','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
     var input=document.getElementById(id);
     if(input)input.dataset.previousSetupValue=input.value||'';
   });
@@ -1139,6 +1151,8 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Token</b><span>'+esc(secretStatus(record.token))+'</span></div>'+
     '<div class="registryrow"><b>GHL account_key</b><span>'+esc(ghlCustomValueLookupLabel(data.ghlCustomValueSync,record))+'</span></div>'+
     '<div class="registryrow"><b>Shared Coach Code</b><span>'+esc(coachCodesSummary(record))+'</span></div>'+
+    '<div class="registryrow"><b>Account Owner Email</b><span>'+esc(record.accountOwnerEmail||'--')+'</span></div>'+
+    '<div class="registryrow"><b>Account Owner Phone</b><span>'+esc(record.accountOwnerPhone||'--')+'</span></div>'+
     '<div class="registryrow"><b>Future Parent Email Coaches</b><span>'+esc(parentEmailCoachAccessLabel(record.parentEmailCoachAccess))+'</span></div>'+
     '<div class="registryrow"><b>Logo URL</b><span>'+esc(record.logoUrl?maskValue(record.logoUrl):'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
@@ -1165,6 +1179,8 @@ function renderLookupResult(data){
     subscriptionAccessAllowed:data.subscriptionAccessAllowed,
     subscriptionBlockedReason:data.subscriptionBlockedReason||'',
     coachAccessCodesConfigured:(record.coachAccessCodes||[]).length||(record.accessCode?1:0),
+    accountOwnerEmail:record.accountOwnerEmail||'',
+    accountOwnerPhone:record.accountOwnerPhone||'',
     parentEmailCoachAccess:record.parentEmailCoachAccess||[],
     subscription:sub,
     logoUrl:record.logoUrl||'',
@@ -1190,6 +1206,8 @@ function fillFormFromLookup(){
   document.getElementById('locationId').value='';
   document.getElementById('privateIntegrationToken').value='';
   document.getElementById('coachAccessCodes').value='';
+  document.getElementById('accountOwnerEmail').value=currentSetup.accountOwnerEmail||'';
+  document.getElementById('accountOwnerPhone').value=currentSetup.accountOwnerPhone||'';
   document.getElementById('parentEmailCoachAccess').value=parentEmailCoachAccessInputValue(currentSetup.parentEmailCoachAccess);
   document.getElementById('logoUrl').value=currentSetup.logoUrl||'';
   if(sub.status)document.getElementById('subscriptionStatus').value=sub.status;
@@ -1418,6 +1436,8 @@ function registryPayloadFromForm(){
     locationId:document.getElementById('locationId').value.trim(),
     privateIntegrationToken:document.getElementById('privateIntegrationToken').value.trim(),
     coachAccessCodes:document.getElementById('coachAccessCodes').value.trim(),
+    accountOwnerEmail:document.getElementById('accountOwnerEmail').value.trim(),
+    accountOwnerPhone:document.getElementById('accountOwnerPhone').value.trim(),
     parentEmailCoachAccess:document.getElementById('parentEmailCoachAccess').value.trim(),
     logoUrl:document.getElementById('logoUrl').value.trim(),
     updateSource:'manual-onboarding',

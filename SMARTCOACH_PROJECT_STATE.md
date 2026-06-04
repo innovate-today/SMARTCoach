@@ -1105,6 +1105,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 263. Equipment Trak archived seasons are now reachable from the Equipment Trak modal. The season header shows buttons for archived seasons, and opening one activates that season so issued gear, issue sheet, and inventory all switch together.
 264. Equipment Trak recovery now also restores older issued records and item definitions when the opened/active season is empty. POST responses return the normalized recovered season so opening an archived season or refreshing the modal does not show a blank shell while older data still exists.
 265. Staff Access now includes a lost-code recovery path. Coaches can replace the shared coach code with either the current code or the protected recovery/setup code; the old code is never displayed, and successful recovery still increments the coach-code session version so old signed sessions stop working.
+266. Staff Access can now send a short-lived temporary shared-code recovery code to the saved account owner email. The head coach enters that temporary code, then creates a new memorable shared coach code; SMARTCoach stores only a hash of the temporary code, expires it after 30 minutes, and marks it used after a successful reset. Account setup now stores account owner email/phone for this recovery workflow.
 
 ## Known Good Test Flow
 

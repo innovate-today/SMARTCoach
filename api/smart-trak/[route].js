@@ -80,6 +80,10 @@ module.exports = async function handler(req, res) {
     return accountCodeReset(req, res);
   }
 
+  if (route === "account-code-recovery") {
+    return accountCodeRecovery(req, res);
+  }
+
   if (route === "account-staff") {
     return accountStaff(req, res);
   }
@@ -1259,6 +1263,8 @@ function accountSetup(req, res) {
   const requestedCoachSeats = firstQueryValue(req.query && (req.query.coachSeats || req.query.coaches || req.query.seats)) || "1";
   const coachSeats = normalizeSetupCoachSeats(requestedCoachSeats, productPlan);
   const subscription = setupSubscriptionFromQuery(req.query || {}, productPlan);
+  const ownerEmail = cleanEmail(firstQueryValue(req.query && (req.query.accountOwnerEmail || req.query.ownerEmail || req.query.headCoachEmail)));
+  const ownerPhone = cleanPhone(firstQueryValue(req.query && (req.query.accountOwnerPhone || req.query.ownerPhone || req.query.headCoachPhone)));
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const { token, locationId } = getGhlContext({ query: { account: accountKey }, headers: {} });
   const configured = !!(token && locationId);
@@ -1364,6 +1370,21 @@ function accountSetup(req, res) {
       required: true,
       label: "Require coach access",
       description: "Blocks SMARTCoach until this account has an active coach access code configured.",
+    },
+    {
+      key: `SMARTCOACH_ACCOUNT_OWNER_EMAIL_${suffix}`,
+      value: ownerEmail,
+      required: false,
+      recommended: true,
+      label: "Account owner email",
+      description: "Used to send a temporary recovery code when the shared coach code is lost.",
+    },
+    {
+      key: `SMARTCOACH_ACCOUNT_OWNER_PHONE_${suffix}`,
+      value: ownerPhone,
+      required: false,
+      label: "Account owner phone",
+      description: "Optional future SMS recovery contact for this customer.",
     }
   );
   if (isProPlan(productPlan)) {
@@ -1829,8 +1850,21 @@ function publicAccountRecord(account) {
     token: source.token ? "__hidden__" : "",
     accessCode: source.accessCode ? "__hidden__" : "",
     coachAccessCodes: Array.isArray(source.coachAccessCodes) ? source.coachAccessCodes.map(() => "__hidden__") : [],
+    coachCodeRecovery: source.coachCodeRecovery ? publicCoachCodeRecovery(source.coachCodeRecovery) : undefined,
     essentialActiveSession: source.essentialActiveSession ? { active: true, expiresAtIso: source.essentialActiveSession.expiresAtIso || "" } : undefined,
     privateIntegrationToken: undefined,
+  };
+}
+
+function publicCoachCodeRecovery(recovery) {
+  const source = recovery || {};
+  return {
+    requestedAt: cleanSetupText(source.requestedAt),
+    expiresAt: cleanSetupText(source.expiresAt),
+    delivery: cleanSetupText(source.delivery),
+    sentTo: maskEmail(cleanSetupText(source.sentTo)),
+    status: cleanSetupText(source.status),
+    usedAt: cleanSetupText(source.usedAt),
   };
 }
 
@@ -2044,13 +2078,15 @@ async function accountCodeReset(req, res) {
     const recoveryCode = cleanSetupText(firstPayloadValue(payload, ["recoveryCode", "setupCode", "ownerRecoveryCode"]));
     const newCode = cleanSetupText(firstPayloadValue(payload, ["newCode", "newAccessCode", "newCoachAccessCode"]));
     if ((!currentCode && !recoveryCode) || !newCode) throw httpError(400, "Current code or recovery code and new code are required.");
-    if (newCode.length < 6) throw httpError(400, "New code must be at least 6 characters.");
+    validateNewCoachCode(newCode, accountKey);
 
     const result = await attachRegistryAccountForKey(req, accountKey);
     const existing = result && result.found && result.record ? result.record : null;
     if (!existing) throw httpError(404, "Account registry record was not found. Save Account Setup before changing the shared coach code.");
 
-    const recoveryAllowed = !!recoveryCode && setupRecoveryCodeAllowed(recoveryCode);
+    const temporaryRecoveryAllowed = !!recoveryCode && coachTemporaryRecoveryCodeAllowed(existing, accountKey, recoveryCode);
+    const setupRecoveryAllowed = !!recoveryCode && setupRecoveryCodeAllowed(recoveryCode);
+    const recoveryAllowed = temporaryRecoveryAllowed || setupRecoveryAllowed;
     const access = recoveryAllowed
       ? { allowed: true, coachIndex: 0, coachSeats: existing.coachSeats, coachCodeVersion: existing.coachCodeVersion }
       : coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: existing }, currentCode);
@@ -2090,6 +2126,7 @@ async function accountCodeReset(req, res) {
       ...existing,
       accountKey,
       coachAccessCodes: nextCodes,
+      coachCodeRecovery: temporaryRecoveryAllowed ? { ...(existing.coachCodeRecovery || {}), usedAt: new Date().toISOString(), status: "used" } : existing.coachCodeRecovery || null,
       coachCodeChangeHistory: coachCodeChange.history,
       lastCoachCodeChange: coachCodeChange.latest || existing.lastCoachCodeChange || null,
       coachCodeVersion: nextCoachCodeVersion,
@@ -2111,6 +2148,7 @@ async function accountCodeReset(req, res) {
       coachIndex,
       coachCodeVersion: nextCoachCodeVersion,
       recoveryUsed: recoveryAllowed,
+      temporaryRecoveryUsed: temporaryRecoveryAllowed,
       sessionToken: session.token,
       expiresAt: session.expiresAt,
       expiresAtIso: session.expiresAtIso,
@@ -2118,6 +2156,203 @@ async function accountCodeReset(req, res) {
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not change coach code." });
+  }
+}
+
+async function accountCodeRecovery(req, res) {
+  setSessionHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const accountKey = normalizeSetupAccountKey(
+      firstPayloadValue(payload, ["accountKey", "account", "tenant", "key"]) ||
+        firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+    ) || "default";
+    const result = await attachRegistryAccountForKey(req, accountKey);
+    const existing = result && result.found && result.record ? result.record : null;
+    if (!existing) throw httpError(404, "Account registry record was not found.");
+    if (!isProPlan(existing.productPlan)) throw httpError(400, "Code recovery is available for SMARTCoach Pro accounts.");
+
+    const ownerEmail = cleanEmail(existing.accountOwnerEmail);
+    if (!ownerEmail) throw httpError(400, "Account owner email is not saved yet. Add it in Account Setup or contact support.");
+    if (!existing.token || !existing.locationId) throw httpError(503, "SMART Trak connection is not configured for this account.");
+    const lastRequestedAt = Date.parse(existing.coachCodeRecovery && existing.coachCodeRecovery.requestedAt || "");
+    if (Number.isFinite(lastRequestedAt) && Date.now() - lastRequestedAt < 60 * 1000) {
+      throw httpError(429, "A temporary code was just sent. Wait a minute before requesting another one.");
+    }
+
+    const temporaryCode = generateRecoveryCode();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 30 * 60 * 1000);
+    const recovery = {
+      requestedAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      tokenHash: recoveryCodeHash(accountKey, temporaryCode),
+      delivery: "email",
+      sentTo: ownerEmail,
+      status: "pending",
+    };
+
+    const contact = await findOrCreateAccountOwnerContact({
+      token: existing.token,
+      locationId: existing.locationId,
+      ownerEmail,
+      ownerPhone: existing.accountOwnerPhone,
+      ownerName: existing.accountOwnerName,
+      ownerContactId: existing.accountOwnerContactId,
+    });
+    await saveAccountRecord(accountKey, {
+      ...existing,
+      accountKey,
+      accountOwnerContactId: contact.id || existing.accountOwnerContactId || "",
+      coachCodeRecovery: recovery,
+    });
+    await sendCoachCodeRecoveryEmail({
+      token: existing.token,
+      accountKey,
+      contactId: contact.id,
+      ownerEmail,
+      temporaryCode,
+      expiresAt: recovery.expiresAt,
+    });
+
+    recovery.status = "sent";
+    const updated = {
+      ...existing,
+      accountKey,
+      accountOwnerContactId: contact.id || existing.accountOwnerContactId || "",
+      coachCodeRecovery: recovery,
+      lastCoachCodeRecovery: {
+        requestedAt: recovery.requestedAt,
+        expiresAt: recovery.expiresAt,
+        delivery: recovery.delivery,
+        sentTo: ownerEmail,
+        status: recovery.status,
+      },
+    };
+    const registry = await saveAccountRecord(accountKey, updated);
+    res.status(200).json({
+      success: true,
+      accountKey,
+      delivery: "email",
+      sentTo: maskEmail(ownerEmail),
+      expiresAt: recovery.expiresAt,
+      registry,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not send a temporary recovery code." });
+  }
+}
+
+async function findOrCreateAccountOwnerContact({ token, locationId, ownerEmail, ownerPhone, ownerName, ownerContactId }) {
+  if (ownerContactId) {
+    try {
+      const existing = await ghlRequest({ token, path: `/contacts/${encodeURIComponent(ownerContactId)}` });
+      const contact = existing.contact || existing;
+      if (contact && contact.id) return contact;
+    } catch (error) {
+      // Fall through to email lookup when a saved contact id no longer exists.
+    }
+  }
+
+  const found = await ghlRequest({
+    token,
+    path: `/contacts/?locationId=${encodeURIComponent(locationId)}&query=${encodeURIComponent(ownerEmail)}&limit=10`,
+  });
+  const match = (found.contacts || []).find((contact) => {
+    const emails = [contact.email, contact.emailLowerCase, contact.primaryEmail].map(cleanEmail).filter(Boolean);
+    return emails.some((email) => safeEqual(email, ownerEmail));
+  });
+  if (match && match.id) return match;
+
+  const names = cleanSetupText(ownerName || ownerEmail.split("@")[0]).split(/\s+/).filter(Boolean);
+  const firstName = names.shift() || "SMARTCoach";
+  const lastName = names.join(" ") || "Owner";
+  const created = await ghlRequest({
+    token,
+    path: "/contacts/",
+    method: "POST",
+    body: {
+      locationId,
+      firstName,
+      lastName,
+      email: ownerEmail,
+      phone: cleanPhone(ownerPhone),
+      source: "SMARTCoach",
+      tags: ["smartcoach-account-owner"],
+    },
+  });
+  const contact = created.contact || created;
+  if (!contact || !contact.id) throw httpError(502, "SMARTCoach could not create an owner contact for recovery email.");
+  return contact;
+}
+
+async function sendCoachCodeRecoveryEmail({ token, accountKey, contactId, ownerEmail, temporaryCode, expiresAt }) {
+  if (!contactId) throw httpError(400, "Account owner contact is required for recovery email.");
+  const expiration = new Date(expiresAt).toLocaleString("en-US", { timeZone: "America/Chicago" });
+  const message = [
+    "A SMARTCoach shared coach code reset was requested.",
+    "",
+    `Account: ${accountKey}`,
+    `Temporary recovery code: ${temporaryCode}`,
+    `Expires: ${expiration} Central`,
+    "",
+    "Enter this temporary code in Staff Access, then choose a new shared coach code your staff can remember.",
+    "If you did not request this reset, change the shared coach code from Staff Access or contact support@smartcoach-pro.com.",
+  ].join("\n");
+  await ghlRequest({
+    token,
+    path: "/conversations/messages",
+    method: "POST",
+    body: {
+      type: "Email",
+      contactId,
+      emailTo: ownerEmail,
+      subject: "SMARTCoach shared coach code reset",
+      message,
+    },
+  });
+}
+
+function generateRecoveryCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  const bytes = crypto.randomBytes(8);
+  for (const byte of bytes) code += alphabet[byte % alphabet.length];
+  return code.slice(0, 8);
+}
+
+function recoveryCodeHash(accountKey, code) {
+  const secret = cleanSetupText(process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE || "smartcoach-recovery");
+  return crypto.createHash("sha256").update(`${secret}:${accountKey}:${cleanSetupText(code).toUpperCase()}`).digest("hex");
+}
+
+function coachTemporaryRecoveryCodeAllowed(account, accountKey, providedCode) {
+  const recovery = account && account.coachCodeRecovery || {};
+  const provided = cleanSetupText(providedCode);
+  if (!provided || !recovery.tokenHash || recovery.status === "used") return false;
+  const expiresAt = Date.parse(recovery.expiresAt || "");
+  if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
+  return safeEqual(recovery.tokenHash, recoveryCodeHash(accountKey, provided));
+}
+
+function validateNewCoachCode(newCode, accountKey) {
+  const value = cleanSetupText(newCode);
+  if (value.length < 6) throw httpError(400, "New code must be at least 6 characters.");
+  const normalized = value.toLowerCase().replace(/\s+/g, "");
+  const blocked = new Set(["123456", "password", "coach", "smartcoach", "smarttrak", "track", "xcountry"]);
+  if (blocked.has(normalized) || normalized === cleanSetupText(accountKey).toLowerCase()) {
+    throw httpError(400, "Choose a more specific shared code that your staff can remember.");
   }
 }
 
@@ -2223,6 +2458,10 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const tokenValue = firstAutomationValue(payload, ["ghlToken", "privateIntegrationToken", "token"]);
   const locationValue = firstAutomationValue(payload, ["locationId", "ghlLocationId"]);
   const logoValue = firstAutomationValue(payload, ["logoUrl", "brandLogoUrl", "schoolLogoUrl"]);
+  const ownerEmailValue = firstAutomationValue(payload, ["accountOwnerEmail", "ownerEmail", "headCoachEmail", "coachEmail", "email"]);
+  const ownerPhoneValue = firstAutomationValue(payload, ["accountOwnerPhone", "ownerPhone", "headCoachPhone", "coachPhone", "phone"]);
+  const ownerNameValue = firstAutomationValue(payload, ["accountOwnerName", "ownerName", "headCoachName", "coachName", "name"]);
+  const ownerContactIdValue = firstAutomationValue(payload, ["accountOwnerContactId", "ownerContactId", "headCoachContactId", "coachContactId"]);
   const requireCoachAccessValue = firstAutomationValue(payload, ["requireCoachAccess", "coachAccessRequired", "requireAccessCode"]);
   const requireCoachAccess = normalizeSetupBoolean(requireCoachAccessValue, existing.requireCoachAccess !== undefined ? existing.requireCoachAccess : true);
   const event = automationEventSummary(payload, options);
@@ -2238,6 +2477,11 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     requireCoachAccess,
     subscription,
     logoUrl: cleanSetupText(logoValue || existing.logoUrl),
+    accountOwnerEmail: cleanEmail(ownerEmailValue || existing.accountOwnerEmail),
+    accountOwnerPhone: cleanPhone(ownerPhoneValue || existing.accountOwnerPhone),
+    accountOwnerName: cleanSetupText(ownerNameValue || existing.accountOwnerName),
+    accountOwnerContactId: cleanSetupText(ownerContactIdValue || existing.accountOwnerContactId),
+    coachCodeRecovery: existing.coachCodeRecovery || null,
     coachCodeChangeHistory: coachCodeChange.history,
     lastCoachCodeChange: coachCodeChange.latest || existing.lastCoachCodeChange || null,
     coachCodeVersion: coachCodeChange.changed && !options.dryRun ? (Number(existing.coachCodeVersion) || 0) + 1 : Number(existing.coachCodeVersion) || 0,
@@ -2422,6 +2666,21 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
       required: true,
       label: "Require coach access",
       description: "Blocks SMARTCoach until this account has an active coach access code configured.",
+    },
+    {
+      key: `SMARTCOACH_ACCOUNT_OWNER_EMAIL_${suffix}`,
+      value: account.accountOwnerEmail || "",
+      required: false,
+      recommended: true,
+      label: "Account owner email",
+      description: "Used for shared code recovery. The old coach code is never shown; the owner receives a temporary reset code.",
+    },
+    {
+      key: `SMARTCOACH_ACCOUNT_OWNER_PHONE_${suffix}`,
+      value: account.accountOwnerPhone || "",
+      required: false,
+      label: "Account owner phone",
+      description: "Optional future SMS recovery contact for this customer.",
     }
   );
   if (includeCrm) {
@@ -2531,6 +2790,25 @@ function normalizeDateValue(value) {
 
 function cleanSetupText(value) {
   return String(value || "").trim();
+}
+
+function cleanEmail(value) {
+  const email = cleanSetupText(value).toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "";
+}
+
+function cleanPhone(value) {
+  return cleanSetupText(value).replace(/[^\d+]/g, "").slice(0, 24);
+}
+
+function maskEmail(value) {
+  const email = cleanEmail(value);
+  if (!email) return "";
+  const parts = email.split("@");
+  const name = parts[0] || "";
+  const domain = parts[1] || "";
+  if (name.length <= 2) return `${name.slice(0, 1)}***@${domain}`;
+  return `${name.slice(0, 2)}***@${domain}`;
 }
 
 function normalizeSetupCoachCodes(value, accountKey, coachSeats, productPlan) {

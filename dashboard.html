@@ -157,6 +157,9 @@ tr:last-child td{border-bottom:0}
 .field label{font-size:12px;font-weight:800;color:#475569}
 .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 .field textarea{min-height:78px;resize:vertical}
+.inline-action-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.inline-action-row input{min-width:0}
+.inline-action-row button{white-space:nowrap}
 .relaylegs{grid-column:1/-1;display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}
 .relaylegs h3{font-size:13px;margin:0;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 .relayleg{display:grid;grid-template-columns:1fr 140px;gap:8px}
@@ -977,19 +980,22 @@ tr:last-child td{border-bottom:0}
           <input id="currentCoachCode" type="password" placeholder="Current active code, if known" autocomplete="off">
         </div>
         <div class="field full">
-          <label for="recoveryCoachCode">Recovery Code</label>
-          <input id="recoveryCoachCode" type="password" placeholder="Only use if the current code is lost" autocomplete="off">
+          <label for="recoveryCoachCode">Temporary / Recovery Code</label>
+          <div class="inline-action-row">
+            <input id="recoveryCoachCode" type="password" placeholder="Enter emailed temporary code" autocomplete="off">
+            <button id="codeRecoverySend" class="ghost" type="button">Send Temporary Code</button>
+          </div>
         </div>
         <div class="field">
           <label for="newCoachCode">New Code</label>
-          <input id="newCoachCode" type="password" placeholder="At least 6 characters" autocomplete="off">
+          <input id="newCoachCode" type="password" placeholder="Create a code staff can remember" autocomplete="off">
         </div>
         <div class="field">
           <label for="confirmCoachCode">Confirm New Code</label>
           <input id="confirmCoachCode" type="password" placeholder="Re-enter new code" autocomplete="off">
         </div>
       </div>
-      <div class="small" style="margin-top:8px">Use the current code for normal staff changes. If the current code is lost, use the recovery code or contact support. The shared coach code can be changed 2 times per month. After saving, old coach-code access and old signed sessions stop working.</div>
+      <div class="small" style="margin-top:8px">Use the current code for normal staff changes. If it is lost, send a temporary code to the account owner email, enter it here, then create a new shared coach code your staff can remember. The shared coach code can be changed 2 times per month. After saving, old coach-code access and old signed sessions stop working.</div>
       <div class="modalactions">
         <div id="codeStatus" class="modalstatus"></div>
         <button id="codeSave" type="button">Save New Code</button>
@@ -1332,6 +1338,7 @@ var els={
   codeClose:document.getElementById('codeClose'),
   currentCoachCode:document.getElementById('currentCoachCode'),
   recoveryCoachCode:document.getElementById('recoveryCoachCode'),
+  codeRecoverySend:document.getElementById('codeRecoverySend'),
   newCoachCode:document.getElementById('newCoachCode'),
   confirmCoachCode:document.getElementById('confirmCoachCode'),
   codeSave:document.getElementById('codeSave'),
@@ -1611,6 +1618,7 @@ els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.changeCodeBtn.addEventListener('click',openCodeModal);
 els.codeClose.addEventListener('click',closeCodeModal);
 els.codeSave.addEventListener('click',saveCoachCode);
+if(els.codeRecoverySend)els.codeRecoverySend.addEventListener('click',sendTemporaryCoachCode);
 if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff=collectStaffRows(true);coachStaff.push({id:'',name:'',active:true});renderStaffList();});
 if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
 els.accountBtn.addEventListener('click',openAccountSettings);
@@ -1908,6 +1916,33 @@ function openCodeModal(){
 
 function closeCodeModal(){
   els.codeModal.hidden=true;
+}
+
+function sendTemporaryCoachCode(){
+  if(!els.codeRecoverySend)return;
+  els.codeRecoverySend.disabled=true;
+  els.codeStatus.textContent='Sending temporary code to the account owner...';
+  els.codeStatus.style.color='#64748b';
+  fetch('/api/smart-trak/account-code-recovery',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),channel:'email'})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok){
+      throw new Error((result.data&&result.data.error)||'Could not send a temporary code.');
+    }
+    var sentTo=result.data&&result.data.sentTo?(' to '+result.data.sentTo):'';
+    els.codeStatus.textContent='Temporary code sent'+sentTo+'. Enter it here, then choose a new shared coach code.';
+    els.codeStatus.style.color='#08783c';
+    els.recoveryCoachCode.focus();
+  }).catch(function(error){
+    els.codeStatus.textContent=error.message||'Could not send a temporary code.';
+    els.codeStatus.style.color='#b00000';
+  }).finally(function(){
+    els.codeRecoverySend.disabled=false;
+  });
 }
 
 function saveCoachCode(){
