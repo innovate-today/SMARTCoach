@@ -782,6 +782,31 @@ function athleticMeetMap(lines,seasonYear){
   });
   return map;
 }
+function athleticNameKey(value){
+  return String(value||'').toLowerCase().replace(/[^a-z\s()'-]/g,' ').replace(/\s+/g,' ').trim();
+}
+function athleticGradeLookup(lines){
+  var lookup={};
+  lines.forEach(function(line){
+    var text=String(line||'').replace(/[^\x00-\x7F]/g,' ').replace(/\s+/g,' ').trim();
+    if(!text||athleticDateLabel(text)||/\brace distances\b/i.test(text)||/\bmeet list\b/i.test(text))return;
+    var compact=text.match(/^([6-9]|1[0-2])(?:\s+\d{1,2})?\s+(?:[A-Z]{1,4}\s+)?(.+?)\s+\d{1,2}:\d{2}/);
+    if(compact){
+      lookup[athleticNameKey(compact[2])]=compact[1];
+      return;
+    }
+    var parts=String(line).indexOf('\t')>=0?String(line).split(/\t/).map(function(col){return col.replace(/[^\x00-\x7F]/g,' ').replace(/\s+/g,' ').trim();}).filter(Boolean):text.split(/\s{2,}/).map(function(col){return col.trim();}).filter(Boolean);
+    var grade='';
+    var name='';
+    parts.forEach(function(part,index){
+      var gradeMatch=String(part||'').match(/(?:^|\s)([6-9]|1[0-2])(?:\s|$)/);
+      if(gradeMatch&&!grade)grade=gradeMatch[1];
+      if(!name&&index>0&&/[A-Za-z]/.test(part)&&!/^[A-Z]{1,4}$/.test(part)&&!athleticResultParts(part)&&!/^(Gr|Age|Athlete)$/i.test(part))name=part;
+    });
+    if(grade&&name)lookup[athleticNameKey(name)]=grade;
+  });
+  return lookup;
+}
 function athleticTableRowInfo(cols,header){
   var gradeFromText=function(value){
     var match=String(value||'').trim().match(/(?:^|\s)([6-9]|1[0-2])(?:\s|$)/);
@@ -816,6 +841,7 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
   var lines=rawLines||String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
   var raceDistances=athleticRaceDistances(lines);
   var meetMap=athleticMeetMap(lines,seasonYear);
+  var gradeLookup=athleticGradeLookup(lines);
   var sport=els.importDefaultSport.value||'Cross Country';
   var defaultGender=els.importDefaultGender.value||'';
   var defaultSeason=els.importDefaultSeason.value||'Fall';
@@ -836,7 +862,7 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
     if(!header||cols.length<3)return;
     var rowInfo=athleticTableRowInfo(cols,header);
     var athleteName=rowInfo.athleteName;
-    var grade=rowInfo.grade;
+    var grade=rowInfo.grade||gradeLookup[athleticNameKey(athleteName)]||'';
     if(!athleteName)return;
     header.forEach(function(label,index){
       var dateLabel=athleticDateLabel(label);
