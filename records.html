@@ -361,6 +361,7 @@ tr:last-child td{border-bottom:0}
 <script>
 var records=[];
 var bulkRows=[];
+var bulkDuplicateCount=0;
 var recordSort={key:'event',dir:'asc'};
 var editingRecord=null;
 var RECORD_TYPES=['School Record'];
@@ -1019,13 +1020,46 @@ function normalizeBulkRecordFromColumns(cols,index){
   }
   return normalizeBulkRecord({gender:cols[0],sport:cols[1],event:cols[2],resultDisplay:cols[3],athleteName:cols[4],relayLeg1:cols[5],relayLeg2:cols[6],relayLeg3:cols[7],relayLeg4:cols[8],meetName:cols[9],recordDate:cols[10],season:cols[11],seasonYear:cols[12],previousRecordDisplay:cols[13],previousRecordHolder:cols[14],recordNotes:cols[15]},index);
 }
+function bulkRecordKey(row){
+  return [
+    row.gender,
+    row.sport,
+    row.event,
+    row.resultDisplay||row.resultMark,
+    row.athleteName,
+    row.relayLeg1,
+    row.relayLeg2,
+    row.relayLeg3,
+    row.relayLeg4,
+    row.meetName,
+    row.recordDate,
+    row.season,
+    row.seasonYear,
+    row.previousRecordDisplay,
+    row.previousRecordHolder,
+    row.recordNotes
+  ].map(function(value){return String(value||'').trim().toLowerCase();}).join('|');
+}
+function dedupeBulkRows(rows){
+  var seen={};
+  bulkDuplicateCount=0;
+  return rows.filter(function(row){
+    var key=bulkRecordKey(row);
+    if(seen[key]){
+      bulkDuplicateCount+=1;
+      return false;
+    }
+    seen[key]=true;
+    return true;
+  });
+}
 function parseBulkRecords(text){
   var lines=String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
   if(!lines.length)return[];
   var first=splitRecordLine(lines[0]);
   var headers=recordHeaderMap(first);
   if(Object.keys(headers).length)lines.shift();
-  return lines.map(function(line,index){
+  var rows=lines.map(function(line,index){
     var cols=splitRecordLine(line);
     if(Object.keys(headers).length){
       var value=function(key){return headers[key]!=null?cols[headers[key]]||'':'';};
@@ -1033,6 +1067,7 @@ function parseBulkRecords(text){
     }
     return normalizeBulkRecordFromColumns(cols,index);
   }).filter(function(row){return row.recordType||row.event||row.resultDisplay||row.athleteName;});
+  return dedupeBulkRows(rows);
 }
 function downloadBulkTemplate(){
   var csv=[
@@ -1064,7 +1099,8 @@ function renderBulkPreview(){
   }
   els.bulkPreview.hidden=false;
   els.bulkPreview.innerHTML='<table><thead><tr><th>Gender</th><th>Sport</th><th>Event</th><th>Result</th><th>Record Holder</th><th>Relay Runners</th><th>Meet</th><th>Exact Date</th><th>Season / Year</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.gender)+'</td><td>'+esc(row.sport||'')+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(relayDisplay(row))+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
-  setBulkStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):bulkRows.length+' records ready to save.',issues.length?'bad':'good');
+  var duplicateNote=bulkDuplicateCount?' '+bulkDuplicateCount+' duplicate pasted row'+(bulkDuplicateCount===1?' was':'s were')+' skipped.':'';
+  setBulkStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):bulkRows.length+' records ready to save.'+duplicateNote,issues.length?'bad':'good');
 }
 function saveBulkRecords(){
   var issues=bulkIssues(bulkRows);
@@ -1086,12 +1122,14 @@ function saveBulkRecords(){
     upsertCachedRecords(localRows);
     renderOptions();
     render();
-    setBulkStatus('Saved '+(result.data.createdCount||bulkRows.length)+' records.','good');
+    var savedCount=result.data.createdCount||localRows.length||bulkRows.length;
     bulkRows=[];
     els.bulkText.value='';
-    renderBulkPreview();
-    pendingRecordsSourcePrefix='Saved '+(result.data.createdCount||localRows.length)+' records. ';
-    return loadRecords();
+    els.bulkPreview.hidden=true;
+    els.bulkPreview.innerHTML='';
+    els.saveBulkBtn.disabled=true;
+    els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
+    setBulkStatus('Records saved: '+savedCount+'. They are shown below.','good');
   }).catch(function(error){
     els.saveBulkBtn.disabled=false;
     setBulkStatus(error.message||'Records could not be saved.','bad');
@@ -1488,6 +1526,7 @@ function init(){
   });
   els.bulkText.addEventListener('input',function(){
     bulkRows=[];
+    bulkDuplicateCount=0;
     els.saveBulkBtn.disabled=true;
     els.bulkPreview.hidden=true;
     setBulkStatus('Paste records, preview, then save.','');
@@ -1500,6 +1539,7 @@ function init(){
   });
   els.clearBulkBtn.addEventListener('click',function(){
     bulkRows=[];
+    bulkDuplicateCount=0;
     els.bulkText.value='';
     renderBulkPreview();
   });

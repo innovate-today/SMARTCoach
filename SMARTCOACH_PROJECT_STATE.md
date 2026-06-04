@@ -1113,6 +1113,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 271. Records bulk import now supports both relay-aware templates with Leg 1-4 columns and simpler templates without relay-leg columns. In the simpler layout, Meet, Date, Season, Year, Previous Record, Previous Holder, and Notes no longer shift into relay runner fields.
 272. Records table and bulk import preview now show Sport as its own column so Track and Cross Country records remain visually distinct after import.
 273. Records bulk import no longer silently defaults missing Sport values to Track. Bulk Import now includes a Sport for blank rows selector, and the Records API/registry preserve blank sport values instead of converting them to Track.
+274. Records bulk import now skips exact duplicate pasted rows during preview, keeps a clear records-saved message after Save, and renders the saved records immediately from the successful save response instead of requiring a manual refresh.
 
 ## Known Good Test Flow
 
