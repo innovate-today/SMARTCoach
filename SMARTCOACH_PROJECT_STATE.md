@@ -105,7 +105,7 @@ Latest SaaS/account setup truth:
 - Essential is stopwatch-only, requires an active code, and allows one active device session at a time. A new Essential login displaces the previous active device session.
 - Pro plans enforce active-athlete limits in SMARTCoach code: Pro 25 has 25 active athletes, Pro 100 has 100, Pro 200 has 200, and Pro Unlimited has no active-athlete cap. Inactive/archived athletes do not count; delete should be reserved for mistakes/duplicates.
 - Pro coach access uses one shared coach code with up to 10 assistant coach seats. The account owner is responsible for sharing the code only with active staff, and schools should keep staff/device access tight to protect clean synced data.
-- The shared coach code can be changed by support through onboarding/Save Account Setup, or by a coach from the Dashboard **Staff Access** button when they know the current code. Code resets are limited to 2 times per month per account. A saved code change increments the coach-code session version so old signed Pro sessions stop unlocking access. Recurring subscription payloads should not include coach codes, so billing updates do not count as resets.
+- The shared coach code can be changed by support through onboarding/Save Account Setup, by a coach from the Dashboard **Staff Access** button when they know the current code, or by using the protected recovery code when the current code is lost. Code resets are limited to 2 times per month per account. A saved code change increments the coach-code session version so old signed Pro sessions stop unlocking access. Recurring subscription payloads should not include coach codes, so billing updates do not count as resets.
 - A single shared coach access code can unlock both desktop SMART Trak and the SMARTCoach Pro Mobile App for the same coach/device workflow. Staff Access shows device-usage counts so head coaches can spot unexpected syncing activity.
 
 Latest product direction:
@@ -1104,6 +1104,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 262. Equipment Trak normalization now recovers older saved inventory rows when the active equipment season has an empty inventory list. This protects inventory entered before the season/sharing-rule structure from disappearing in the coach-facing view.
 263. Equipment Trak archived seasons are now reachable from the Equipment Trak modal. The season header shows buttons for archived seasons, and opening one activates that season so issued gear, issue sheet, and inventory all switch together.
 264. Equipment Trak recovery now also restores older issued records and item definitions when the opened/active season is empty. POST responses return the normalized recovered season so opening an archived season or refreshing the modal does not show a blank shell while older data still exists.
+265. Staff Access now includes a lost-code recovery path. Coaches can replace the shared coach code with either the current code or the protected recovery/setup code; the old code is never displayed, and successful recovery still increments the coach-code session version so old signed sessions stop working.
 
 ## Known Good Test Flow
 

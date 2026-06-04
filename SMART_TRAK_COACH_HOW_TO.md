@@ -22,7 +22,7 @@ SMARTCoach has five customer plans:
 
 Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. Pro accounts can include up to 10 assistant coach seats using the shared coach code, but schools should keep staff access tight because more devices syncing data increases the chance of messy records.
 
-The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. Support can also reset the code from account setup. Changing the saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
+The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. If the current code is lost, use the recovery code or contact support so the code can be reset without knowing the old code. Support can also reset the code from account setup. Changing the saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
 
 Pro plans can be sold with a 7-day trial through GHL. A credit card is required at signup. GHL controls the trial, charges the card after day 7, and sends SMARTCoach the subscription status. `trialing` and `active` allow access; canceled or failed-payment statuses block access.
 
@@ -57,6 +57,8 @@ How to use Staff Access:
 4. Check **Seen this week** to see how many devices have been active recently.
 5. Add coach names in the **Coaches** section and click **Save Coaches**.
 6. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
+
+If the current shared coach code is lost, open **Staff Access**, leave **Current Code** blank, enter the recovery code, and save a new shared coach code. This does not reveal the old code; it replaces it and invalidates old signed sessions. If you do not have the recovery code, contact support.
 
 If Staff Access shows an **unassigned devices** warning, the shared code has been used by one or more devices that have not selected a coach name yet. This usually means either a coach name still needs to be added in the **Coaches** section, or someone unexpected has the shared code. Add the missing coach name if the device belongs to staff, or change the coach code if the activity is unexpected.
 

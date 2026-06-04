@@ -2041,16 +2041,19 @@ async function accountCodeReset(req, res) {
         firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
     ) || "default";
     const currentCode = cleanSetupText(firstPayloadValue(payload, ["currentCode", "accessCode", "coachAccessCode", "code"]));
+    const recoveryCode = cleanSetupText(firstPayloadValue(payload, ["recoveryCode", "setupCode", "ownerRecoveryCode"]));
     const newCode = cleanSetupText(firstPayloadValue(payload, ["newCode", "newAccessCode", "newCoachAccessCode"]));
-    if (!currentCode || !newCode) throw httpError(400, "Current code and new code are required.");
+    if ((!currentCode && !recoveryCode) || !newCode) throw httpError(400, "Current code or recovery code and new code are required.");
     if (newCode.length < 6) throw httpError(400, "New code must be at least 6 characters.");
-    if (safeEqual(currentCode, newCode)) throw httpError(400, "New code must be different from the current code.");
 
     const result = await attachRegistryAccountForKey(req, accountKey);
     const existing = result && result.found && result.record ? result.record : null;
     if (!existing) throw httpError(404, "Account registry record was not found. Save Account Setup before changing the shared coach code.");
 
-    const access = coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: existing }, currentCode);
+    const recoveryAllowed = !!recoveryCode && setupRecoveryCodeAllowed(recoveryCode);
+    const access = recoveryAllowed
+      ? { allowed: true, coachIndex: 0, coachSeats: existing.coachSeats, coachCodeVersion: existing.coachCodeVersion }
+      : coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: existing }, currentCode);
     if (!access.allowed) {
       res.status(access.statusCode || 401).json(access);
       return;
@@ -2059,15 +2062,18 @@ async function accountCodeReset(req, res) {
     const coachSeats = normalizeSetupCoachSeats(existing.coachSeats || access.coachSeats || 1, existing.productPlan);
     const currentCodes = normalizeSetupCoachCodes(existing.coachAccessCodes || [], accountKey, coachSeats, existing.productPlan);
     if (!currentCodes.length) throw httpError(503, "No active coach code is configured for this account.");
-    const coachIndex = currentCodes.findIndex((code) => safeEqual(code, currentCode));
+    const coachIndex = recoveryAllowed ? 0 : currentCodes.findIndex((code) => safeEqual(code, currentCode));
     if (coachIndex < 0) throw httpError(401, "Current coach code was not accepted.");
+    if (currentCodes.some((code) => safeEqual(code, newCode))) {
+      throw httpError(400, "New code must be different from the current code.");
+    }
     if (currentCodes.some((code, index) => index !== coachIndex && safeEqual(code, newCode))) {
       throw httpError(400, "New code is already assigned to another coach.");
     }
 
     const nextCodes = currentCodes.slice();
     nextCodes[coachIndex] = newCode;
-    const coachCodeChange = coachCodeChangeState(existing, nextCodes, { source: "coach-self-service" });
+    const coachCodeChange = coachCodeChangeState(existing, nextCodes, { source: recoveryAllowed ? "coach-recovery" : "coach-self-service" });
     const nextCoachCodeVersion = (Number(existing.coachCodeVersion) || 0) + 1;
     const sessionId = crypto.randomBytes(12).toString("hex");
     const parentEmailAllowed = parentEmailFeatureReleased() && !!(Array.isArray(existing.parentEmailCoachAccess) && existing.parentEmailCoachAccess[coachIndex]);
@@ -2104,6 +2110,7 @@ async function accountCodeReset(req, res) {
       productPlan: normalizeSetupProductPlan(existing.productPlan),
       coachIndex,
       coachCodeVersion: nextCoachCodeVersion,
+      recoveryUsed: recoveryAllowed,
       sessionToken: session.token,
       expiresAt: session.expiresAt,
       expiresAtIso: session.expiresAtIso,
@@ -2590,6 +2597,12 @@ function setupAdminAllowed(req) {
   if (!expected) return true;
   const provided = String((req.headers && (req.headers["x-smartcoach-setup-code"] || req.headers["X-SMARTCoach-Setup-Code"])) || firstQueryValue(req.query && req.query.setupCode) || "").trim();
   return provided && safeEqual(provided, expected);
+}
+
+function setupRecoveryCodeAllowed(providedCode) {
+  const expected = String(process.env.SMARTCOACH_ADMIN_SETUP_CODE || "").trim();
+  const provided = cleanSetupText(providedCode);
+  return !!(expected && provided && safeEqual(provided, expected));
 }
 
 function automationAllowed(req) {

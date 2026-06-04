@@ -974,7 +974,11 @@ tr:last-child td{border-bottom:0}
       <div class="formgrid">
         <div class="field full">
           <label for="currentCoachCode">Current Code</label>
-          <input id="currentCoachCode" type="password" placeholder="Current active code" autocomplete="off">
+          <input id="currentCoachCode" type="password" placeholder="Current active code, if known" autocomplete="off">
+        </div>
+        <div class="field full">
+          <label for="recoveryCoachCode">Recovery Code</label>
+          <input id="recoveryCoachCode" type="password" placeholder="Only use if the current code is lost" autocomplete="off">
         </div>
         <div class="field">
           <label for="newCoachCode">New Code</label>
@@ -985,7 +989,7 @@ tr:last-child td{border-bottom:0}
           <input id="confirmCoachCode" type="password" placeholder="Re-enter new code" autocomplete="off">
         </div>
       </div>
-      <div class="small" style="margin-top:8px">The shared coach code can be changed 2 times per month. After saving, old coach-code access and old signed sessions stop working.</div>
+      <div class="small" style="margin-top:8px">Use the current code for normal staff changes. If the current code is lost, use the recovery code or contact support. The shared coach code can be changed 2 times per month. After saving, old coach-code access and old signed sessions stop working.</div>
       <div class="modalactions">
         <div id="codeStatus" class="modalstatus"></div>
         <button id="codeSave" type="button">Save New Code</button>
@@ -1327,6 +1331,7 @@ var els={
   codeModal:document.getElementById('codeModal'),
   codeClose:document.getElementById('codeClose'),
   currentCoachCode:document.getElementById('currentCoachCode'),
+  recoveryCoachCode:document.getElementById('recoveryCoachCode'),
   newCoachCode:document.getElementById('newCoachCode'),
   confirmCoachCode:document.getElementById('confirmCoachCode'),
   codeSave:document.getElementById('codeSave'),
@@ -1890,6 +1895,7 @@ function closeAccountSettings(){
 
 function openCodeModal(){
   els.currentCoachCode.value='';
+  els.recoveryCoachCode.value='';
   els.newCoachCode.value='';
   els.confirmCoachCode.value='';
   els.codeStatus.textContent='';
@@ -1906,10 +1912,11 @@ function closeCodeModal(){
 
 function saveCoachCode(){
   var currentCode=els.currentCoachCode.value.trim();
+  var recoveryCode=els.recoveryCoachCode.value.trim();
   var newCode=els.newCoachCode.value.trim();
   var confirmCode=els.confirmCoachCode.value.trim();
-  if(!currentCode||!newCode){
-    els.codeStatus.textContent='Current code and new code are required.';
+  if((!currentCode&&!recoveryCode)||!newCode){
+    els.codeStatus.textContent='Enter the current code or recovery code, then enter a new code.';
     els.codeStatus.style.color='#b00000';
     return;
   }
@@ -1924,7 +1931,7 @@ function saveCoachCode(){
   fetch('/api/smart-trak/account-code-reset',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({accountKey:smartCoachAccountKey(),currentCode:currentCode,newCode:newCode})
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),currentCode:currentCode,recoveryCode:recoveryCode,newCode:newCode})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -1936,6 +1943,7 @@ function saveCoachCode(){
     els.codeStatus.textContent='Coach code changed. Use the new code from now on.';
     els.codeStatus.style.color='#08783c';
     els.currentCoachCode.value='';
+    els.recoveryCoachCode.value='';
     els.newCoachCode.value='';
     els.confirmCoachCode.value='';
     setTimeout(function(){closeCodeModal();loadDashboard();},700);
