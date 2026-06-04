@@ -1108,6 +1108,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 266. Staff Access can now send a short-lived temporary shared-code recovery code to the saved account owner email. The head coach enters that temporary code, then creates a new memorable shared coach code; SMARTCoach stores only a hash of the temporary code, expires it after 30 minutes, and marks it used after a successful reset. Account setup now stores account owner email/phone for this recovery workflow.
 267. Added `/account-access.html` as a self-service access-code recovery page for Essential app-only accounts and Pro shared-code accounts. Coaches enter the account key, send a temporary code to the saved account owner email, then create a new memorable access code without seeing the old code. Successful reset creates a fresh signed session and invalidates old sessions.
 268. Coach access remembered-device wording now uses 30 days in the SMARTCoach app, SMART Trak access modal, and coach guide.
+269. Records bulk import no longer requires an exact date. Gender, event, result, and year are required; Date remains optional. Year-only date values are treated as the season year instead of being converted into a fake January 1 record date.
 
 ## Known Good Test Flow
 

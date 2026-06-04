@@ -192,7 +192,7 @@ tr:last-child td{border-bottom:0}
         <label>Meet
           <input id="singleMeet" type="text" placeholder="Meet name">
         </label>
-        <label>Date
+        <label>Date (optional)
           <input id="singleDate" type="date">
         </label>
         <label>Season
@@ -237,7 +237,7 @@ tr:last-child td{border-bottom:0}
           <button id="saveBulkBtn" class="secondary" type="button" disabled>Save Records</button>
           <button id="clearBulkBtn" class="ghost" type="button">Clear</button>
         </div>
-        <span class="hint">Required: gender, event, result, date.</span>
+        <span class="hint">Required: gender, event, result, year. Exact date is optional.</span>
       </div>
       <div id="bulkPreview" class="bulkpreview" hidden></div>
     </div>
@@ -312,7 +312,7 @@ tr:last-child td{border-bottom:0}
         <label>Meet
           <input id="editMeet" type="text">
         </label>
-        <label>Date
+        <label>Date (optional)
           <input id="editDate" type="date">
         </label>
         <label>Season
@@ -553,10 +553,16 @@ function formatDate(value){
 function dateOnly(value){
   var text=String(value||'').trim();
   if(!text)return '';
+  if(/^\d{4}$/.test(text))return '';
   if(/^\d{4}-\d{2}-\d{2}$/.test(text))return text;
   var date=new Date(text);
-  if(isNaN(date.getTime()))return text;
+  if(isNaN(date.getTime()))return '';
   return date.toISOString().slice(0,10);
+}
+function yearOnlyValue(value){
+  var text=String(value||'').trim();
+  var match=text.match(/\b(19|20|21)\d{2}\b/);
+  return match?match[0]:'';
 }
 function formatDateTime(value){
   var date=new Date(value);
@@ -686,7 +692,7 @@ function clearSingleRecordForm(){
   els.singleRelayLeg3.value='';
   els.singleRelayLeg4.value='';
   els.singleMeet.value='';
-  els.singleDate.value=todayValue();
+  els.singleDate.value='';
   els.singleSeason.value='Spring';
   els.singleYear.value=new Date().getFullYear();
   els.singlePreviousRecord.value='';
@@ -762,8 +768,8 @@ function normalizedRecordFromPayload(payload,existing){
 }
 function saveSingleRecord(){
   var payload=recordPayload('single');
-  if(!payload.gender||!payload.event||!payload.resultDisplay||!payload.recordDate){
-    setBulkStatus('Gender, event, result, and date are required.','bad');
+  if(!payload.gender||!payload.event||!payload.resultDisplay||!payload.seasonYear){
+    setBulkStatus('Gender, event, result, and year are required. Exact date is optional.','bad');
     return;
   }
   var headers=apiHeaders();
@@ -806,7 +812,7 @@ function openRecordEdit(id){
   els.editRelayLeg4.value=legs[3]||'';
   updateRelayFields('edit');
   els.editMeet.value=editingRecord.meetName||'';
-  els.editDate.value=dateOnly(editingRecord.recordDate)||todayValue();
+  els.editDate.value=dateOnly(editingRecord.recordDate)||'';
   setSelect(els.editSeason,editingRecord.season,SEASONS);
   els.editYear.value=editingRecord.seasonYear||new Date().getFullYear();
   els.editPreviousRecord.value=editingRecord.previousRecordDisplay||'';
@@ -827,8 +833,8 @@ function setRecordEditStatus(text,type){
 function saveRecordEdit(){
   if(!editingRecord)return;
   var payload=recordPayload('edit');
-  if(!payload.gender||!payload.event||!payload.resultDisplay||!payload.recordDate){
-    setRecordEditStatus('Gender, event, result, and date are required.','bad');
+  if(!payload.gender||!payload.event||!payload.resultDisplay||!payload.seasonYear){
+    setRecordEditStatus('Gender, event, result, and year are required. Exact date is optional.','bad');
     return;
   }
   var headers=apiHeaders();
@@ -919,7 +925,7 @@ function recordHeaderMap(cols){
   return map.gender!=null||map.event!=null||map.recordType!=null?map:{};
 }
 function normalizeBulkRecord(values,index){
-  var row={recordType:'School Record',recordScope:'School',gender:values.gender||'Unlisted',sport:values.sport||'Track',event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',relayLeg1:values.relayLeg1||'',relayLeg2:values.relayLeg2||'',relayLeg3:values.relayLeg3||'',relayLeg4:values.relayLeg4||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
+  var row={recordType:'School Record',recordScope:'School',gender:values.gender||'Unlisted',sport:values.sport||'Track',event:values.event||'',resultDisplay:values.resultDisplay||'',resultMark:values.resultMark||'',athleteName:values.athleteName||'',relayLeg1:values.relayLeg1||'',relayLeg2:values.relayLeg2||'',relayLeg3:values.relayLeg3||'',relayLeg4:values.relayLeg4||'',meetName:values.meetName||'',recordDate:dateOnly(values.recordDate)||'',season:values.season||'',seasonYear:values.seasonYear||yearOnlyValue(values.recordDate)||'',previousRecordDisplay:values.previousRecordDisplay||'',previousRecordHolder:values.previousRecordHolder||'',recordNotes:values.recordNotes||''};
   if(!row.seasonYear&&row.recordDate)row.seasonYear=row.recordDate.slice(0,4);
   row.rowNumber=index+1;
   return row;
@@ -956,7 +962,7 @@ function downloadBulkTemplate(){
   setTimeout(function(){URL.revokeObjectURL(url);},500);
 }
 function bulkIssues(rows){
-  return rows.filter(function(row){return !row.gender||!row.event||(!row.resultDisplay&&!row.resultMark)||!row.recordDate;}).map(function(row){return row.rowNumber;});
+  return rows.filter(function(row){return !row.gender||!row.event||(!row.resultDisplay&&!row.resultMark)||!row.seasonYear;}).map(function(row){return row.rowNumber;});
 }
 function renderBulkPreview(){
   var issues=bulkIssues(bulkRows);
@@ -968,7 +974,7 @@ function renderBulkPreview(){
     return;
   }
   els.bulkPreview.hidden=false;
-  els.bulkPreview.innerHTML='<table><thead><tr><th>Gender</th><th>Event</th><th>Result</th><th>Record Holder</th><th>Relay Runners</th><th>Meet</th><th>Date</th><th>Season</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.gender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(relayDisplay(row))+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
+  els.bulkPreview.innerHTML='<table><thead><tr><th>Gender</th><th>Event</th><th>Result</th><th>Record Holder</th><th>Relay Runners</th><th>Meet</th><th>Exact Date</th><th>Season / Year</th></tr></thead><tbody>'+bulkRows.map(function(row){return '<tr><td>'+esc(row.gender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay||row.resultMark)+'</b></td><td>'+esc(row.athleteName)+'</td><td>'+esc(relayDisplay(row))+'</td><td>'+esc(row.meetName)+'</td><td>'+esc(row.recordDate)+'</td><td>'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</td></tr>';}).join('')+'</tbody></table>';
   setBulkStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):bulkRows.length+' records ready to save.',issues.length?'bad':'good');
 }
 function saveBulkRecords(){

@@ -462,12 +462,14 @@ How to use it:
 1. Open **Records Tools**.
 2. Add one record manually or import records in bulk.
 3. Use Boys or Girls for the gender.
-4. Choose the event, enter the record, record holder, meet, date, season, and year.
+4. Choose the event, enter the record, record holder, meet, season, and year. Exact date is optional when only the record year is known.
 5. Review the current record board.
 6. Use **Edit** to correct a saved record.
 7. Use **Delete** only when a row should be removed from the record board.
 
 Records are shown as direct table rows. If more than one current row exists for the same event and gender, the fastest or best row should be current and the others should be historical.
+
+For bulk import, the required fields are gender, event, result, and year. Use the Date column only when the exact date is known.
 
 The Records page is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
 

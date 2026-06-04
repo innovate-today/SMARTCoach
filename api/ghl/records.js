@@ -330,7 +330,7 @@ function buildRecordProperties(row) {
   if (!normalized.recordScope) throw httpError(400, "Record scope is required.");
   if (!normalized.event) throw httpError(400, "Event is required.");
   if (!normalized.resultDisplay && !normalized.resultMark) throw httpError(400, "Result is required.");
-  if (!normalized.recordDate) throw httpError(400, "Date is required.");
+  if (!normalized.recordDate && !normalized.seasonYear) throw httpError(400, "Year is required. Exact date is optional.");
 
   return compactProperties({
     record: recordName,
@@ -357,8 +357,10 @@ function buildRecordProperties(row) {
 }
 
 function normalizeRecordPayload(row) {
-  const recordDate = dateOnly(row && (row.recordDate || row.date));
+  const rawDate = clean(row && (row.recordDate || row.date));
+  const recordDate = dateOnly(rawDate);
   const resultDisplay = clean(row && (row.resultDisplay || row.result));
+  const seasonYear = Number(row && row.seasonYear) || yearOnlyValue(rawDate) || (recordDate ? Number(recordDate.slice(0, 4)) : null);
   return {
     recordName: clean(row && row.recordName),
     recordType: clean(row && row.recordType) || "School Record",
@@ -377,7 +379,7 @@ function normalizeRecordPayload(row) {
     meetName: clean(row && row.meetName),
     recordDate,
     season: clean(row && row.season),
-    seasonYear: Number(row && row.seasonYear) || (recordDate ? Number(recordDate.slice(0, 4)) : null),
+    seasonYear,
     isCurrent: row && typeof row.isCurrent !== "undefined" ? yes(row.isCurrent) : true,
     previousRecordDisplay: clean(row && row.previousRecordDisplay),
     previousRecordHolder: clean(row && row.previousRecordHolder),
@@ -638,9 +640,15 @@ function optionValue(value) {
 function dateOnly(value) {
   const text = clean(value);
   if (!text) return "";
+  if (/^\d{4}$/.test(text)) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
   const date = new Date(text);
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+}
+
+function yearOnlyValue(value) {
+  const match = clean(value).match(/\b(19|20|21)\d{2}\b/);
+  return match ? Number(match[0]) : null;
 }
 
 function parseTimeToMs(value) {
