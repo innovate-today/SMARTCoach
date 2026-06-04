@@ -63,6 +63,9 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .bulkactions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .bulkactions .left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .bulkstatus{color:var(--muted);font-size:13px;font-weight:800}
+.deleteconfirm{border:1px solid #fecaca;border-radius:8px;background:#fff7f7;padding:10px;margin-top:10px;color:#7f1d1d;font-size:13px;font-weight:800;line-height:1.4}
+.deleteconfirm .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.deleteconfirm input{min-width:220px;flex:1;border:1px solid #fecaca;border-radius:8px;padding:10px;font:14px inherit}
 .hint{color:var(--muted);font-size:13px;line-height:1.45}
 .bulkpreview{border:1px solid var(--line);border-radius:8px;overflow:auto;background:#fff;max-height:280px}
 .bulkpreview table{min-width:980px}
@@ -220,6 +223,14 @@ tr:last-child td{border-bottom:0}
       <div class="recordformactions">
         <button id="toggleBulkBtn" class="ghost" type="button">Open Bulk Import</button>
         <button id="deleteAllRecordsBtn" class="danger" type="button">Delete All Records</button>
+      </div>
+      <div id="deleteAllConfirm" class="deleteconfirm" hidden>
+        This clears every record currently loaded for this account. Use it only before a corrected fresh upload.
+        <div class="row">
+          <input id="deleteAllConfirmInput" type="text" placeholder="Type DELETE ALL">
+          <button id="confirmDeleteAllBtn" class="danger" type="button">Confirm Delete All</button>
+          <button id="cancelDeleteAllBtn" class="ghost" type="button">Cancel</button>
+        </div>
       </div>
     <div id="bulkBody" class="bulkgrid" hidden>
       <div class="bulkhelp">
@@ -412,6 +423,10 @@ var els={
   saveSingleBtn:document.getElementById('saveSingleBtn'),
   clearSingleBtn:document.getElementById('clearSingleBtn'),
   deleteAllRecordsBtn:document.getElementById('deleteAllRecordsBtn'),
+  deleteAllConfirm:document.getElementById('deleteAllConfirm'),
+  deleteAllConfirmInput:document.getElementById('deleteAllConfirmInput'),
+  confirmDeleteAllBtn:document.getElementById('confirmDeleteAllBtn'),
+  cancelDeleteAllBtn:document.getElementById('cancelDeleteAllBtn'),
   recordEditModal:document.getElementById('recordEditModal'),
   recordEditClose:document.getElementById('recordEditClose'),
   recordEditStatus:document.getElementById('recordEditStatus'),
@@ -906,17 +921,27 @@ function deleteRecord(){
 }
 function deleteAllRecords(){
   if(!records.length){setBulkStatus('No records to delete.','');return;}
+  els.deleteAllConfirm.hidden=false;
+  els.deleteAllConfirmInput.value='';
+  setBulkStatus('Type DELETE ALL to confirm deleting '+records.length+' records.','warn');
+  setTimeout(function(){els.deleteAllConfirmInput.focus();},50);
+}
+function cancelDeleteAllRecords(){
+  els.deleteAllConfirm.hidden=true;
+  els.deleteAllConfirmInput.value='';
+  setBulkStatus('Bulk delete cancelled.','warn');
+}
+function confirmDeleteAllRecords(){
+  if(!records.length){setBulkStatus('No records to delete.','');return;}
   var count=records.length;
-  var first=window.confirm('Delete all '+count+' records from this account? This is meant for clearing a bad import before uploading again.');
-  if(!first)return;
-  var typed=window.prompt('Type DELETE ALL to confirm bulk deletion.');
-  if(String(typed||'').trim().toUpperCase()!=='DELETE ALL'){
+  if(String(els.deleteAllConfirmInput.value||'').trim().toUpperCase()!=='DELETE ALL'){
     setBulkStatus('Bulk delete cancelled.','warn');
     return;
   }
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
   els.deleteAllRecordsBtn.disabled=true;
+  els.confirmDeleteAllBtn.disabled=true;
   setBulkStatus('Deleting '+count+' records...','');
   fetch('/api/ghl/records',{method:'DELETE',headers:headers,body:JSON.stringify({records:records.map(recordDeletePayload)})}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
@@ -927,6 +952,8 @@ function deleteAllRecords(){
     bulkRows=[];
     els.bulkText.value='';
     saveCachedRecords(records);
+    els.deleteAllConfirm.hidden=true;
+    els.deleteAllConfirmInput.value='';
     renderOptions();
     render();
     renderBulkPreview();
@@ -936,6 +963,7 @@ function deleteAllRecords(){
     setBulkStatus(error.message||'Records could not be deleted.','bad');
   }).finally(function(){
     els.deleteAllRecordsBtn.disabled=false;
+    els.confirmDeleteAllBtn.disabled=false;
   });
 }
 function searchText(row){
@@ -1349,6 +1377,8 @@ function init(){
   els.saveSingleBtn.addEventListener('click',saveSingleRecord);
   els.clearSingleBtn.addEventListener('click',clearSingleRecordForm);
   els.deleteAllRecordsBtn.addEventListener('click',deleteAllRecords);
+  els.confirmDeleteAllBtn.addEventListener('click',confirmDeleteAllRecords);
+  els.cancelDeleteAllBtn.addEventListener('click',cancelDeleteAllRecords);
   els.singleEvent.addEventListener('change',function(){updateRelayFields('single');});
   els.editEvent.addEventListener('change',function(){updateRelayFields('edit');});
   els.recordEditClose.addEventListener('click',closeRecordEdit);
