@@ -2109,7 +2109,10 @@ async function accountCodeReset(req, res) {
 
     const nextCodes = currentCodes.slice();
     nextCodes[coachIndex] = newCode;
-    const coachCodeChange = coachCodeChangeState(existing, nextCodes, { source: recoveryAllowed ? "coach-recovery" : "coach-self-service" });
+    const coachCodeChange = coachCodeChangeState(existing, nextCodes, {
+      source: recoveryAllowed ? "coach-recovery" : "coach-self-service",
+      bypassMonthlyLimit: recoveryAllowed,
+    });
     const nextCoachCodeVersion = (Number(existing.coachCodeVersion) || 0) + 1;
     const sessionId = crypto.randomBytes(12).toString("hex");
     const parentEmailAllowed = parentEmailFeatureReleased() && !!(Array.isArray(existing.parentEmailCoachAccess) && existing.parentEmailCoachAccess[coachIndex]);
@@ -2506,7 +2509,7 @@ function coachCodeChangeState(existing, nextCodes, options = {}) {
   }
   const monthKey = new Date().toISOString().slice(0, 7);
   const monthlyChanges = history.filter((item) => String(item && item.month || "").slice(0, 7) === monthKey);
-  if (monthlyChanges.length >= 2) {
+  if (!options.bypassMonthlyLimit && monthlyChanges.length >= 2) {
     throw httpError(429, "Coach code reset limit reached for this month. Coach codes can be changed 2 times per month.");
   }
   const latest = {

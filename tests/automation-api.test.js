@@ -616,6 +616,92 @@ async function testCoachSelfServiceCodeReset() {
   }
 }
 
+async function testCoachRecoveryBypassesMonthlyResetLimit() {
+  const previousFetch = global.fetch;
+  const month = new Date().toISOString().slice(0, 7);
+  const secret = "session-secret";
+  const accountKey = "recovery-limit-school";
+  const recoveryCode = "TEMP1234";
+  const tokenHash = crypto.createHash("sha256").update(`${secret}:${accountKey}:${recoveryCode}`).digest("hex");
+  const existing = {
+    accountKey,
+    productPlan: "pro25",
+    token: "saved-token",
+    locationId: "saved-location",
+    coachSeats: 1,
+    coachAccessCodes: ["old-code"],
+    parentEmailCoachAccess: [false],
+    requireCoachAccess: true,
+    subscription: { status: "active", billingCadence: "monthly", amount: "45.00" },
+    coachCodeVersion: 3,
+    coachCodeRecovery: {
+      requestedAt: `${month}-15T12:00:00.000Z`,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      tokenHash,
+      status: "sent",
+      delivery: "email",
+      sentTo: "coach@example.com",
+    },
+    coachCodeChangeHistory: [
+      { changedAt: `${month}-01T12:00:00.000Z`, month, source: "manual-onboarding" },
+      { changedAt: `${month}-10T12:00:00.000Z`, month, source: "manual-onboarding" },
+    ],
+  };
+  let savedRecord = null;
+
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: JSON.stringify(existing) }),
+      };
+    }
+    if (text.includes("/set/")) {
+      const encodedPayload = text.split("/set/")[1].split("/").slice(1).join("/");
+      savedRecord = JSON.parse(decodeURIComponent(encodedPayload));
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "OK" }),
+      };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_SESSION_SECRET: secret,
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-code-reset" },
+        headers: {},
+        body: {
+          accountKey,
+          recoveryCode,
+          newCode: "coach-new-safe",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.temporaryRecoveryUsed, true);
+      assert.ok(savedRecord);
+      assert.deepStrictEqual(savedRecord.coachAccessCodes, ["coach-new-safe"]);
+      assert.strictEqual(savedRecord.coachCodeRecovery.status, "used");
+      assert.strictEqual(savedRecord.coachCodeVersion, 4);
+      assert.strictEqual(savedRecord.coachCodeChangeHistory[0].source, "coach-recovery");
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testAccountSetupSyncsGhlAccountKeyCustomValue() {
   const previousFetch = global.fetch;
   let savedRecord = null;
@@ -1127,6 +1213,7 @@ async function testAccountStatusReportsDeviceUnlock() {
   await testPartialAutomationPreservesSavedConnection();
   await testCoachCodeResetLimit();
   await testCoachSelfServiceCodeReset();
+  await testCoachRecoveryBypassesMonthlyResetLimit();
   await testAccountSetupSyncsGhlAccountKeyCustomValue();
   await testAutomationSubscriptionStatusAliases();
   await testAutomationHealthLaunchReady();
