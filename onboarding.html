@@ -1512,10 +1512,11 @@ function generateSetup(){
 function registryPayloadWarning(payload){
   payload=payload||{};
   if((payload.productPlan||'pro')==='essential')return '';
+  var saved=(currentSetup&&currentSetup.accountRegistryRecord)||{};
   var missing=[];
-  if(!String(payload.locationId||'').trim())missing.push('Location ID');
-  if(!String(payload.privateIntegrationToken||payload.token||'').trim())missing.push('Private integration token');
-  if(!String(payload.coachAccessCodes||'').trim())missing.push('Coach access code');
+  if(!String(payload.locationId||saved.locationId||'').trim())missing.push('Location ID');
+  if(!String(payload.privateIntegrationToken||payload.token||saved.token||'').trim())missing.push('Private integration token');
+  if(!String(payload.coachAccessCodes||'').trim()&&!((saved.coachAccessCodes||[]).length||saved.accessCode))missing.push('Coach access code');
   if(!missing.length)return '';
   return 'This Pro account is missing '+missing.join(', ')+'. The coach will not be able to open SMART Trak until this is completed. Coach codes are not created automatically.';
 }
