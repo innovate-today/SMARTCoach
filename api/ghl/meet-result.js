@@ -457,6 +457,7 @@ function normalizeHistoryImportRow(row) {
     athleteName: clean(row && (row.athleteName || row.athlete)),
     athleteGender: clean(row && (row.athleteGender || row.gender)),
     grade: clean(row && row.grade),
+    classYear: clean(row && (row.classYear || row.gradYear || row.graduationYear)),
     meetName: clean(row && (row.meetName || row.meet)),
     meetDate: rawDate,
     season: clean(row && row.season) || "Unspecified",
@@ -477,7 +478,8 @@ function buildHistoryImportProperties(row) {
   const sourceRecordId = row.sourceRecordId || buildHistoryImportSourceRecordId(row);
   const notes = [
     "Result Type: Historical Import",
-    row.grade ? `Grade: ${row.grade}` : "",
+    row.grade ? `Historical Grade: ${row.grade}` : "",
+    row.classYear ? `Class Year: ${row.classYear}` : "",
     row.athleteGender ? `Gender: ${row.athleteGender}` : "",
     row.place ? `Place: ${row.place}` : "",
     row.notes,
