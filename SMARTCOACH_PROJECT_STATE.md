@@ -1118,6 +1118,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 276. Meet History Import now includes an **Athletic.net Paste** mode for Season Bests text. It reads event headers such as 2 Miles and 5,000 Meters, gender sections, grade, athlete, mark, date, and meet from Athletic.net's copied layout, then infers historical class year from the season year/grade so a Fall 2023 9th grader is saved as class of 2027.
 277. Athletic.net Meet History Import also supports the Athletic.net **Results Grid** layout with athlete rows and meet-date columns. The importer cross-references the Meet List to convert date columns into meet names/dates, reads Race Distances to map subscripted result cells to events such as 2 Mile or 5000m, skips Athletic.net initials/avatar columns, infers gender from pasted Mens/Womens tab text when present, and provides a Default Gender fallback when the pasted grid starts at the table.
 278. Athletic.net Results Grid import now handles copied Meet List rows with checkbox/icon columns or a combined Meet List/Key header, so meet dates do not fall back into the Meet column. Grade detection also tolerates hidden initials/avatar columns so historical class year is still inferred.
+279. Athletic.net Results Grid import no longer treats plain grade numbers as result cells. This prevents row shifts where the athlete preview becomes a time/result and keeps grade/class-year inference intact. Meet List parsing also supports date-only lines followed by the meet name on the next line.
 
 ## Known Good Test Flow
 

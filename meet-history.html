@@ -726,7 +726,7 @@ function athleticDateLabel(value){
 }
 function athleticResultParts(value){
   var text=athleticSubscriptToDigit(value).replace(/\s+/g,' ').trim();
-  var result=text.match(/(\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?|\d{1,2}(?:\.\d+)?)/);
+  var result=text.match(/(\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?|\d{1,2}\.\d+)/);
   if(!result)return null;
   var after=text.slice(result.index+result[0].length).trim();
   var distanceIndex=(after.match(/\b([1-9])\b/)||[])[1]||'';
@@ -751,10 +751,11 @@ function athleticRaceDistances(lines){
 function athleticMeetMap(lines,seasonYear){
   var map={};
   var inList=false;
+  var pendingDate='';
   lines.forEach(function(line){
     var text=line.replace(/[^\x00-\x7F]/g,' ').replace(/\s+/g,' ').trim();
-    if(/^meet list\b/i.test(text)){inList=true;return;}
-    if(/^key\b/i.test(text)){inList=false;return;}
+    if(/^meet list\b/i.test(text)){inList=true;pendingDate='';return;}
+    if(/^key\b/i.test(text)){inList=false;pendingDate='';return;}
     if(!inList)return;
     var cols=String(line).indexOf('\t')>=0?String(line).split(/\t/).map(function(col){return col.replace(/[^\x00-\x7F]/g,' ').replace(/\s+/g,' ').trim();}).filter(Boolean):[];
     if(cols.length>=2){
@@ -762,8 +763,16 @@ function athleticMeetMap(lines,seasonYear){
       if(dateCol>=0&&cols[dateCol+1]){
         var dateLabel=athleticDateLabel(cols[dateCol]);
         map[dateLabel]={date:importDateOnly(dateLabel,seasonYear),name:cols[dateCol+1].trim()};
+        pendingDate='';
         return;
       }
+    }
+    var dateOnly=athleticDateLabel(text);
+    if(dateOnly){pendingDate=dateOnly;return;}
+    if(pendingDate&&text&&!/\b0:00\b/i.test(text)){
+      map[pendingDate]={date:importDateOnly(pendingDate,seasonYear),name:text};
+      pendingDate='';
+      return;
     }
     var match=text.match(/^.*?((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2})\s+(.+)$/i);
     if(!match)return;
@@ -772,6 +781,32 @@ function athleticMeetMap(lines,seasonYear){
     if(name)map[label]={date:importDateOnly(label,seasonYear),name:name};
   });
   return map;
+}
+function athleticTableRowInfo(cols,header){
+  var athleteIndex=header.findIndex(function(col){return /^athlete$/i.test(col);});
+  var gradeIndex=header.findIndex(function(col){return /^gr$/i.test(col)||/^grade$/i.test(col);});
+  var offset=cols.length>header.length?cols.length-header.length:0;
+  var athleteCol=athleteIndex>=0?athleteIndex:2;
+  if(offset&&cols[athleteCol+offset])athleteCol+=offset;
+  if(/^[A-Z]{1,4}$/.test(cols[athleteCol]||'')&&cols[athleteCol+1])athleteCol+=1;
+  var athleteName=cols[athleteCol]||'';
+  var firstResultIndex=cols.findIndex(function(col){return !!athleticResultParts(col);});
+  if(firstResultIndex>=0&&(!athleteName||athleticResultParts(athleteName))){
+    for(var i=firstResultIndex-1;i>=0;i-=1){
+      var candidate=String(cols[i]||'').trim();
+      if(!candidate||/^\d{1,2}$/.test(candidate)||/^[A-Z]{1,4}$/.test(candidate)||athleticResultParts(candidate))continue;
+      athleteName=candidate;
+      athleteCol=i;
+      break;
+    }
+  }
+  var grade=cols[gradeIndex]||'';
+  if(!/^\d{1,2}$/.test(String(grade||'').trim())){
+    grade=(cols.slice(0,Math.max(athleteCol,1)).find(function(col){return /^\d{1,2}$/.test(String(col||'').trim());})||'').trim();
+  }
+  var firstDateIndex=header.findIndex(function(col){return !!athleticDateLabel(col);});
+  var resultShift=firstResultIndex>=0&&firstDateIndex>=0?firstResultIndex-firstDateIndex:offset;
+  return {athleteName:athleteName,athleteCol:athleteCol,grade:grade,offset:offset,resultShift:resultShift};
 }
 function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
   var lines=rawLines||String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
@@ -795,22 +830,14 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
       return;
     }
     if(!header||cols.length<4)return;
-    var athleteIndex=header.findIndex(function(col){return /^athlete$/i.test(col);});
-    var gradeIndex=header.findIndex(function(col){return /^gr$/i.test(col)||/^grade$/i.test(col);});
-    var offset=cols.length>header.length?cols.length-header.length:0;
-    var athleteCol=athleteIndex>=0?athleteIndex:2;
-    if(offset&&cols[athleteCol+offset])athleteCol+=offset;
-    if(/^[A-Z]{1,4}$/.test(cols[athleteCol]||'')&&cols[athleteCol+1])athleteCol+=1;
-    var athleteName=cols[athleteCol]||'';
-    var grade=cols[gradeIndex]||'';
-    if(!/^\d{1,2}$/.test(String(grade||'').trim())){
-      grade=(cols.slice(0,Math.min(cols.length,4)).find(function(col){return /^\d{1,2}$/.test(String(col||'').trim());})||'').trim();
-    }
+    var rowInfo=athleticTableRowInfo(cols,header);
+    var athleteName=rowInfo.athleteName;
+    var grade=rowInfo.grade;
     if(!athleteName)return;
     header.forEach(function(label,index){
       var dateLabel=athleticDateLabel(label);
       if(!dateLabel)return;
-      var parts=athleticResultParts(cols[index+offset]||cols[index]||'');
+      var parts=athleticResultParts(cols[index+rowInfo.resultShift]||cols[index+rowInfo.offset]||cols[index]||'');
       if(!parts)return;
       var meet=meetMap[dateLabel]||{date:importDateOnly(dateLabel,seasonYear),name:dateLabel};
       var season=importSeasonForDate(meet.date)||defaultSeason;
