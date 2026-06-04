@@ -176,11 +176,12 @@ async function accountAttendance(req, res) {
     if (req.method === "POST" || req.method === "PATCH") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       const records = attendanceRecordsFromPayload(payload);
-      if (!records.length) {
+      const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
+      if (!records.length && !deleteIds.length) {
         res.status(400).json({ error: "No attendance records were provided." });
         return;
       }
-      const saved = await saveAttendanceRecords(accountKey, records);
+      const saved = await saveAttendanceRecords(accountKey, records, { deleteIds });
       res.status(200).json({ success: !!saved.saved, attendance: records, ...saved });
       return;
     }
