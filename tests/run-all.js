@@ -125,6 +125,20 @@ function checkMeetHistorySportToolbarFilter() {
   console.log("Meet History sport toolbar filter ok");
 }
 
+function checkHistoricalMeetResultsLoadUnmatched() {
+  const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  const required = [
+    "isHistoricalMeetResult(result)",
+    'resultType).toLowerCase() === "historical import"',
+    'startsWith("mhi_")',
+    "Athletic\\.net|historical",
+  ];
+  required.forEach((text) => {
+    if (!api.includes(text)) throw new Error(`dashboard must include unmatched historical meet imports: ${text}`);
+  });
+  console.log("historical meet imports load unmatched ok");
+}
+
 function stubElement(value = "") {
   return {
     value,
@@ -196,6 +210,7 @@ checkPageScripts();
 checkLiveValidationPage();
 checkStandaloneRaceResultSaveScope();
 checkMeetHistorySportToolbarFilter();
+checkHistoricalMeetResultsLoadUnmatched();
 checkAthleticEventRecordsCalendarRanges();
 
 console.log("SMARTCoach regression checks passed");

@@ -238,11 +238,17 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
   meetRecords.forEach((record) => {
     if (isVoidedMeetResult(record)) return;
     const result = normalizeMeetResult(record);
-    if (!isRelayMeetResult(result)) return;
+    if (!isRelayMeetResult(result) && !isHistoricalMeetResult(result)) return;
     if (result.recordId && matchedRecordIds.has(result.recordId)) return;
     rows.push(result);
   });
   return rows.sort(sortMeetSyncDesc);
+}
+
+function isHistoricalMeetResult(result) {
+  return clean(result && result.resultType).toLowerCase() === "historical import" ||
+    clean(result && result.sourceRecordId).toLowerCase().startsWith("mhi_") ||
+    /Athletic\.net|historical/i.test(clean(result && result.coachRaceNotes));
 }
 
 function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords }) {
