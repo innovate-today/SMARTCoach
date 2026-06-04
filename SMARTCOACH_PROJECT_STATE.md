@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-05-29
+Last updated: 2026-06-04
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,9 +40,9 @@ Current launch status:
 
 Latest handoff:
 
-- Latest pushed code commit before this state update: `9e1bfcf Clean up future planning list`.
-- Latest local commit when this handoff was checked: `9e1bfcf Clean up future planning list`.
-- Repo was pushed to `main` after the future-planning cleanup.
+- Latest pushed code commit before this state update: `1bd9ed4 Use Athletic.net meet references in imports`.
+- Latest local commit when this handoff was checked: `1bd9ed4 Use Athletic.net meet references in imports`.
+- Repo was pushed to `main` after the Athletic.net meet-reference import cleanup.
 - Marketing/sales website work is now in progress:
   - `/sales.html` is the public marketing page for SMARTCoach Pro, SMARTCoach Essential, and SMART Trak.
   - The page uses real product screenshots from SMART Trak and SMARTCoach instead of CSS mockup imagery.
@@ -1121,6 +1121,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 279. Athletic.net Results Grid import no longer treats plain grade numbers as result cells. This prevents row shifts where the athlete preview becomes a time/result and keeps grade/class-year inference intact. Meet List parsing also supports date-only lines followed by the meet name on the next line.
 280. Meet History Athletic.net Import now supports Athletic.net **Event Records** text for track and field seasons. It reads Mens/Womens sections, event headers, track times, field marks, PB flags, dates, meet names, grades/class years, and relay blocks with runner names. Event names normalize to SMART Trak-style labels such as 100m, 400m, Shot Put, High Jump, and 4x100 Relay. The coach guide documents Results Grid and Event Records imports.
 281. Athletic.net Event Records imports now support a pasted season calendar/meet reference list below the records. When Athletic.net cuts off meet names in the copied records, SMART Trak uses the result date to replace the shortened name with the full calendar meet name. The reference parser handles separate date/name lines and multi-day date ranges such as Apr 30-May 1 pointing to one meet.
+282. Athletic.net Event Records meet-reference parsing now also handles compact no-weekday multi-day ranges such as `Apr 30-May 1`, so a result dated Apr 30 can repair a shortened meet name from that calendar entry. Added a regression check in `tests/run-all.js`; `npm test` passed on 2026-06-04.
 
 ## Known Good Test Flow
 

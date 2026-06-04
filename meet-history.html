@@ -792,6 +792,15 @@ function athleticCalendarDateLabels(text){
     if(label&&labels.indexOf(label)===-1)labels.push(label);
   }
   if(!labels.length){
+    var range=clean.match(/^((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2})\s*(?:-|to)\s*((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2})$/i);
+    if(range){
+      [range[1],range[2]].forEach(function(value){
+        var label=athleticDateLabel(value);
+        if(label&&labels.indexOf(label)===-1)labels.push(label);
+      });
+    }
+  }
+  if(!labels.length){
     var direct=athleticDateLabel(clean.replace(/\s+-\s*$/,''));
     if(direct)labels.push(direct);
   }

@@ -107,6 +107,65 @@ function checkStandaloneRaceResultSaveScope() {
   console.log("standalone race result save scope ok");
 }
 
+function stubElement(value = "") {
+  return {
+    value,
+    textContent: "",
+    innerHTML: "",
+    hidden: false,
+    disabled: false,
+    style: {},
+    dataset: {},
+    classList: { add() {}, remove() {}, toggle() {} },
+    appendChild() {},
+    setAttribute() {},
+    addEventListener() {},
+    removeEventListener() {},
+    querySelectorAll() { return []; },
+    querySelector() { return null; },
+  };
+}
+
+function checkAthleticEventRecordsCalendarRanges() {
+  const html = fs.readFileSync("meet-history.html", "utf8");
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\ninit\(\);\s*$/, "");
+  const ids = [...html.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
+  const elements = {};
+  ids.forEach((id) => { elements[id] = stubElement(); });
+  elements.importDefaultYear.value = "2026";
+  elements.importDefaultSeason.value = "Spring";
+  elements.importDefaultGender.value = "Boys";
+  elements.importDefaultSport.value = "Track";
+  elements.importDefaultEvent.value = "100m";
+
+  const runner = new Function("document", "window", "navigator", "fetch", "alert", "confirm", "URL", "URLSearchParams", `${script}
+const sample = \`2026 Event Records
+Mens
+100 Meters
+1. 12 11 John Doe 10.99 PB Apr 30 Spartan...
+Season Calendar
+Apr 30-May 1
+Spartan Invitational at Valley High School\`;
+return parseAthleticNetRows(sample);`);
+  const doc = {
+    body: stubElement(),
+    getElementById(id) { return elements[id] || stubElement(); },
+    querySelectorAll() { return []; },
+    querySelector() { return null; },
+    addEventListener() {},
+    createElement() { return stubElement(); },
+  };
+  const rows = runner(doc, {
+    location: { search: "", href: "https://app.smartcoach-pro.com/meet-history.html", origin: "https://app.smartcoach-pro.com" },
+    addEventListener() {},
+    localStorage: { getItem() {}, setItem() {}, removeItem() {} },
+  }, { clipboard: null }, () => Promise.resolve({ ok: false, json: () => Promise.resolve({}) }), () => {}, () => true, URL, URLSearchParams);
+  if (!rows.length || rows[0].meetName !== "Spartan Invitational at Valley High School") {
+    throw new Error("Athletic.net Event Records import must repair compact multi-day calendar meet names.");
+  }
+  console.log("Athletic.net compact calendar range import ok");
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
@@ -118,5 +177,6 @@ checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
 checkStandaloneRaceResultSaveScope();
+checkAthleticEventRecordsCalendarRanges();
 
 console.log("SMARTCoach regression checks passed");
