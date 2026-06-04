@@ -682,7 +682,7 @@ async function accountEquipmentTrak(req, res) {
       equipmentTrak: current,
       lastEquipmentTrakSync: { savedAt: new Date().toISOString(), action },
     });
-    res.status(200).json({ success: true, ...current });
+    res.status(200).json({ success: true, ...normalizeEquipmentTrak(current) });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Equipment Trak save failed." });
   }
@@ -704,11 +704,19 @@ function normalizeEquipmentTrak(source) {
   activeSeasonId = activeSeason && activeSeason.id ? activeSeason.id : "";
   seasons = seasons.map((season) => ({ ...season, active: season.id === activeSeasonId, archived: season.id === activeSeasonId ? false : !!season.archived }));
   activeSeason = seasons.find((season) => season.id === activeSeasonId) || seasons[0] || defaultEquipmentSeason(legacyItems, legacyRecords, legacyInventory);
+  const fallbackItems = legacyItems.length ? legacyItems : firstNonEmptyEquipmentItems(seasons);
+  const fallbackRecords = Object.keys(legacyRecords).length ? legacyRecords : firstNonEmptyEquipmentRecords(seasons);
   const fallbackInventory = legacyInventory.length ? legacyInventory : firstNonEmptyEquipmentInventory(seasons);
+  if ((!activeSeason.items || !activeSeason.items.length) && fallbackItems.length) {
+    activeSeason = { ...activeSeason, items: fallbackItems };
+  }
+  if ((!activeSeason.records || !Object.keys(activeSeason.records).length) && Object.keys(fallbackRecords).length) {
+    activeSeason = { ...activeSeason, records: fallbackRecords };
+  }
   if ((!activeSeason.inventory || !activeSeason.inventory.length) && fallbackInventory.length) {
     activeSeason = { ...activeSeason, inventory: fallbackInventory };
-    seasons = seasons.map((season) => (season.id === activeSeason.id ? activeSeason : season));
   }
+  seasons = seasons.map((season) => (season.id === activeSeason.id ? activeSeason : season));
   return {
     activeSeasonId,
     seasons,
@@ -716,6 +724,16 @@ function normalizeEquipmentTrak(source) {
     records: activeSeason.records,
     inventory: activeSeason.inventory,
   };
+}
+
+function firstNonEmptyEquipmentItems(seasons) {
+  const found = (Array.isArray(seasons) ? seasons : []).find((season) => Array.isArray(season.items) && season.items.length);
+  return found ? normalizeEquipmentItems(found.items) : [];
+}
+
+function firstNonEmptyEquipmentRecords(seasons) {
+  const found = (Array.isArray(seasons) ? seasons : []).find((season) => season.records && Object.keys(season.records).length);
+  return found ? normalizeEquipmentRecords(found.records) : {};
 }
 
 function firstNonEmptyEquipmentInventory(seasons) {
