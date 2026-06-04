@@ -22,7 +22,7 @@ SMARTCoach has five customer plans:
 
 Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. Pro accounts can include up to 10 assistant coach seats using the shared coach code, but schools should keep staff access tight because more devices syncing data increases the chance of messy records.
 
-The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. If the current code is lost, click **Send Temporary Code** to email a temporary recovery code to the saved account owner, then enter that temporary code and create a new shared code the staff can remember. The old code is never displayed. Support can also reset the code from account setup when needed. Changing the saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
+The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. If the current code is lost, click **Send Temporary Code** to email a temporary recovery code to the saved account owner, then enter that temporary code and create a new shared code the staff can remember. The old code is never displayed. Essential app-only coaches can use **Account Access** from the app settings or `/account-access.html` to email a temporary recovery code and create a new app access code. Support can also reset the code from account setup when needed. Changing the saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
 
 Pro plans can be sold with a 7-day trial through GHL. A credit card is required at signup. GHL controls the trial, charges the card after day 7, and sends SMARTCoach the subscription status. `trialing` and `active` allow access; canceled or failed-payment statuses block access.
 
@@ -62,7 +62,7 @@ If the current shared coach code is lost, open **Staff Access**, click **Send Te
 
 If Staff Access shows an **unassigned devices** warning, the shared code has been used by one or more devices that have not selected a coach name yet. This usually means either a coach name still needs to be added in the **Coaches** section, or someone unexpected has the shared code. Add the missing coach name if the device belongs to staff, or change the coach code if the activity is unexpected.
 
-When a coach enters the shared code, they can choose **Remember this device for 7 days**. This reduces repeated code entry on trusted staff devices. Changing the shared coach code still removes old access immediately.
+When a coach enters the shared code, they can choose **Remember this device for 30 days**. Each trusted device stays signed in while it is active, but changing the shared coach code still removes old access immediately.
 
 When the SMARTCoach app sees a trusted device that has not picked a coach name yet, it opens **Select Coach** and asks **Which Coach Are You?**. The list includes saved coach names plus **Not Listed**. A selected coach name is remembered on that device for the current account and is used to label saves and syncs, including attendance activity.
 

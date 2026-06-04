@@ -440,8 +440,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="srow h" id="access-code-row"><label class="slbl">Access Code</label><input id="access-code" class="sinp" type="password" placeholder="Required for SMART Trak" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <label id="remember-device-row" style="display:none;align-items:center;gap:8px;margin:8px 16px 0;color:#555;font-size:13px;text-align:left">
         <input id="remember-device" type="checkbox" checked style="width:18px;height:18px">
-        <span>Remember this device for 7 days</span>
+        <span>Remember this device for 30 days</span>
       </label>
+      <div style="padding:6px 16px 0;text-align:left;font-size:12px"><a href="#" onclick="openAccountAccessPage();return false;" style="color:#2B4FCC;font-weight:700;text-decoration:none">Forgot or change access code?</a></div>
       <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use <b>default</b> for this SMARTCoach account. Customer accounts use the account key created during SMART Trak setup.</div>
       <div id="account-summary" style="margin:8px 16px 0;border:1px solid #e5e5ea;border-radius:8px;background:#fff;padding:9px 10px;text-align:left;font-size:12px;line-height:1.35;color:#555"></div>
       <div id="app-version" style="font-size:11px;color:#777;text-align:center;padding:7px 0 0;min-height:16px"></div>
@@ -490,6 +491,10 @@ function setSmartCoachAccountKey(value){
   var key=cleanAccountKey(value);
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
+}
+function openAccountAccessPage(){
+  var key=smartCoachAccountKey();
+  window.location.href='/account-access.html?account='+encodeURIComponent(key);
 }
 function clearAccountUrlOverride(){
   try{

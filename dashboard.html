@@ -489,9 +489,10 @@ tr:last-child td{border-bottom:0}
       </div>
       <label class="checkline" style="display:flex;align-items:center;gap:8px;margin-top:10px;color:#334155;font-size:14px;font-weight:700">
         <input id="rememberDeviceInput" type="checkbox" checked>
-        <span>Remember this device for 7 days</span>
+        <span>Remember this device for 30 days</span>
       </label>
       <div class="small" style="margin-top:8px">Use this only on devices used by authorized coaching staff. Changing the shared coach code still removes old access immediately.</div>
+      <div class="small" style="margin-top:8px"><a href="#" onclick="openAccountAccessPage();return false;" style="color:#2B4FCC;font-weight:800;text-decoration:none">Forgot or change access code?</a></div>
       <div class="modalactions">
         <div id="accessStatus" class="modalstatus"></div>
         <button id="accessSubmit" type="button">Unlock Dashboard</button>
@@ -1078,6 +1079,10 @@ function setSmartCoachAccountKey(value){
   var key=cleanAccountKey(value);
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
+}
+function openAccountAccessPage(){
+  var key=smartCoachAccountKey();
+  window.location.href='/account-access.html?account='+encodeURIComponent(key);
 }
 function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();

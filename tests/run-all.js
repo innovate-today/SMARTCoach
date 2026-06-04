@@ -15,6 +15,7 @@ const htmlFiles = [
   "xc-simulator.html",
   "weather.html",
   "athlete-calendar.html",
+  "account-access.html",
   "onboarding.html",
   "live-launch-validation.html",
   "sales.html",

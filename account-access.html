@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMARTCoach Account Access</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--good:#08783c;--bad:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:760px;margin:0 auto;padding:24px 16px 36px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 34px rgba(15,23,42,.08);overflow:hidden}
+.head{display:flex;align-items:center;gap:12px;padding:18px;border-bottom:1px solid var(--line)}
+.logo{width:52px;height:52px;object-fit:contain;flex:0 0 52px}
+h1{font-size:25px;line-height:1.15;margin:0}.sub{color:var(--muted);font-size:14px;margin-top:5px;line-height:1.4}
+.body{padding:18px}.section{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px;background:#fbfdff}
+.section h2{font-size:16px;margin:0 0 8px}.grid{display:grid;gap:10px}.field{display:grid;gap:5px}.field label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;color:#475569}
+.field input{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:16px inherit;padding:11px 12px}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font:800 15px inherit;padding:11px 14px;min-height:42px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+button.secondary,.linkbtn.secondary{background:#e2e8f0;color:#172033}button:disabled{opacity:.55;cursor:not-allowed}
+.status{font-size:14px;font-weight:800;color:var(--muted);line-height:1.4;margin-top:10px}.status.good{color:var(--good)}.status.bad{color:var(--bad)}
+.small{font-size:13px;color:var(--muted);line-height:1.45}.hide{display:none!important}
+@media(max-width:620px){.head{align-items:flex-start}.actions{display:grid}.actions button,.actions .linkbtn{width:100%}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="card">
+    <div class="head">
+      <img class="logo" data-brand-logo src="/assets/smart-logo.png" alt="SMARTCoach">
+      <div>
+        <h1>Account Access</h1>
+        <div class="sub">Reset a SMARTCoach Essential app code or SMARTCoach Pro shared coach code using the account owner email.</div>
+      </div>
+    </div>
+    <div class="body">
+      <section class="section">
+        <h2>1. Find Account</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="accountKey">Account Key</label>
+            <input id="accountKey" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Example: sc-2026-school">
+          </div>
+        </div>
+        <div class="actions">
+          <button id="checkAccountBtn" type="button">Check Account</button>
+        </div>
+        <div id="accountStatus" class="status">Enter the account key for the SMARTCoach account.</div>
+      </section>
+
+      <section class="section">
+        <h2>2. Send Temporary Code</h2>
+        <p class="small">A temporary recovery code will be emailed to the account owner saved during setup. The current coach code is never shown.</p>
+        <div class="actions">
+          <button id="sendCodeBtn" type="button">Send Temporary Code</button>
+        </div>
+        <div id="sendStatus" class="status"></div>
+      </section>
+
+      <section class="section">
+        <h2>3. Set New Code</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="recoveryCode">Temporary Recovery Code</label>
+            <input id="recoveryCode" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="Enter emailed code">
+          </div>
+          <div class="field">
+            <label for="newCode">New Access Code</label>
+            <input id="newCode" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+          </div>
+          <div class="field">
+            <label for="confirmCode">Confirm New Code</label>
+            <input id="confirmCode" type="password" autocomplete="new-password" placeholder="Re-enter new code">
+          </div>
+        </div>
+        <div class="actions">
+          <button id="saveCodeBtn" type="button">Save New Code</button>
+          <a id="openAppLink" class="linkbtn secondary" href="/">Open SMARTCoach App</a>
+          <a id="openDashboardLink" class="linkbtn secondary hide" href="/dashboard.html">Open SMART Trak</a>
+        </div>
+        <div id="saveStatus" class="status"></div>
+      </section>
+    </div>
+  </section>
+</main>
+<script>
+var els={accountKey:document.getElementById('accountKey'),checkAccountBtn:document.getElementById('checkAccountBtn'),sendCodeBtn:document.getElementById('sendCodeBtn'),saveCodeBtn:document.getElementById('saveCodeBtn'),recoveryCode:document.getElementById('recoveryCode'),newCode:document.getElementById('newCode'),confirmCode:document.getElementById('confirmCode'),accountStatus:document.getElementById('accountStatus'),sendStatus:document.getElementById('sendStatus'),saveStatus:document.getElementById('saveStatus'),openAppLink:document.getElementById('openAppLink'),openDashboardLink:document.getElementById('openDashboardLink')};
+function init(){var params=new URLSearchParams(location.search||'');var account=params.get('account')||localStorage.getItem('sc_account')||'';els.accountKey.value=account;syncLinks();els.checkAccountBtn.addEventListener('click',checkAccount);els.sendCodeBtn.addEventListener('click',sendTemporaryCode);els.saveCodeBtn.addEventListener('click',saveNewCode);els.accountKey.addEventListener('input',syncLinks);if(account)checkAccount();}
+function accountKey(){return String(els.accountKey.value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');}
+function syncLinks(){var key=accountKey();var query=key?'?account='+encodeURIComponent(key):'';els.openAppLink.href='/' + query;els.openDashboardLink.href='/dashboard.html' + query;}
+function setStatus(el,message,type){el.textContent=message||'';el.className='status '+(type||'');}
+function checkAccount(){var key=accountKey();syncLinks();if(!key){setStatus(els.accountStatus,'Enter an account key.','bad');return;}els.checkAccountBtn.disabled=true;setStatus(els.accountStatus,'Checking account...','');fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(jsonResult).then(function(data){localStorage.setItem('sc_account',key);applyBrandLogo(data.logoUrl);var plan=data.productPlanLabel||data.productPlan||'SMARTCoach';var ready=data.configured?'Account found.':'Account setup is not complete.';var owner=data.accountOwnerEmail?' Account owner email is saved.':'';setStatus(els.accountStatus,ready+' '+plan+'.'+owner,data.configured?'good':'bad');els.openDashboardLink.classList.toggle('hide',data.productPlan==='essential');}).catch(function(error){setStatus(els.accountStatus,error.message||'Account could not be checked.','bad');}).finally(function(){els.checkAccountBtn.disabled=false;});}
+function sendTemporaryCode(){var key=accountKey();if(!key){setStatus(els.sendStatus,'Enter an account key first.','bad');return;}els.sendCodeBtn.disabled=true;setStatus(els.sendStatus,'Sending temporary code...','');fetch('/api/smart-trak/account-code-recovery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:key,channel:'email'})}).then(jsonResult).then(function(data){setStatus(els.sendStatus,'Temporary code sent'+(data.sentTo?' to '+data.sentTo:'')+'. It expires in 30 minutes.','good');els.recoveryCode.focus();}).catch(function(error){setStatus(els.sendStatus,error.message||'Could not send temporary code.','bad');}).finally(function(){els.sendCodeBtn.disabled=false;});}
+function saveNewCode(){var key=accountKey(),recovery=String(els.recoveryCode.value||'').trim(),next=String(els.newCode.value||'').trim(),confirm=String(els.confirmCode.value||'').trim();if(!key||!recovery||!next){setStatus(els.saveStatus,'Enter the account key, temporary code, and new access code.','bad');return;}if(next!==confirm){setStatus(els.saveStatus,'New code and confirmation do not match.','bad');return;}els.saveCodeBtn.disabled=true;setStatus(els.saveStatus,'Saving new access code...','');fetch('/api/smart-trak/account-code-reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:key,recoveryCode:recovery,newCode:next})}).then(jsonResult).then(function(data){storeSession(key,data.sessionToken);els.recoveryCode.value='';els.newCode.value='';els.confirmCode.value='';setStatus(els.saveStatus,'Access code changed. Use the new code from now on.','good');}).catch(function(error){setStatus(els.saveStatus,error.message||'Could not change access code.','bad');}).finally(function(){els.saveCodeBtn.disabled=false;});}
+function storeSession(key,token){try{localStorage.setItem('sc_account',key);localStorage.removeItem('sc_access_'+key);if(token){localStorage.setItem('sc_session_remembered_'+key,token);sessionStorage.removeItem('sc_session_'+key);}}catch(e){}}
+function jsonResult(response){return response.json().then(function(data){if(!response.ok)throw new Error(data.error||'Request failed.');return data;});}
+function defaultBrandLogo(){return '/assets/smart-logo.png';}
+function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo();};});}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>

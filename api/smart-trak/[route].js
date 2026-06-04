@@ -2215,11 +2215,10 @@ async function accountCodeRecovery(req, res) {
     const result = await attachRegistryAccountForKey(req, accountKey);
     const existing = result && result.found && result.record ? result.record : null;
     if (!existing) throw httpError(404, "Account registry record was not found.");
-    if (!isProPlan(existing.productPlan)) throw httpError(400, "Code recovery is available for SMARTCoach Pro accounts.");
 
     const ownerEmail = cleanEmail(existing.accountOwnerEmail);
     if (!ownerEmail) throw httpError(400, "Account owner email is not saved yet. Add it in Account Setup or contact support.");
-    if (!existing.token || !existing.locationId) throw httpError(503, "SMART Trak connection is not configured for this account.");
+    if (!existing.token || !existing.locationId) throw httpError(503, "Email recovery is not configured for this account. Contact support to reset the coach code.");
     const lastRequestedAt = Date.parse(existing.coachCodeRecovery && existing.coachCodeRecovery.requestedAt || "");
     if (Number.isFinite(lastRequestedAt) && Date.now() - lastRequestedAt < 60 * 1000) {
       throw httpError(429, "A temporary code was just sent. Wait a minute before requesting another one.");
@@ -2254,6 +2253,7 @@ async function accountCodeRecovery(req, res) {
     await sendCoachCodeRecoveryEmail({
       token: existing.token,
       accountKey,
+      productPlan: existing.productPlan,
       contactId: contact.id,
       ownerEmail,
       temporaryCode,
@@ -2331,16 +2331,19 @@ async function findOrCreateAccountOwnerContact({ token, locationId, ownerEmail, 
   return contact;
 }
 
-async function sendCoachCodeRecoveryEmail({ token, accountKey, contactId, ownerEmail, temporaryCode, expiresAt }) {
+async function sendCoachCodeRecoveryEmail({ token, accountKey, productPlan, contactId, ownerEmail, temporaryCode, expiresAt }) {
   if (!contactId) throw httpError(400, "Account owner contact is required for recovery email.");
   const expiration = new Date(expiresAt).toLocaleString("en-US", { timeZone: "America/Chicago" });
+  const essential = normalizeSetupProductPlan(productPlan) === "essential";
   const html = [
-    "<p>A SMARTCoach shared coach code reset was requested.</p>",
+    `<p>A SMARTCoach ${essential ? "Essential app access code" : "shared coach code"} reset was requested.</p>`,
     `<p><strong>Account:</strong> ${escapeHtml(accountKey)}<br>`,
     `<strong>Temporary recovery code:</strong> ${escapeHtml(temporaryCode)}<br>`,
     `<strong>Expires:</strong> ${escapeHtml(expiration)} Central</p>`,
-    "<p>Enter this temporary code in Staff Access, then choose a new shared coach code your staff can remember.</p>",
-    "<p>If you did not request this reset, change the shared coach code from Staff Access or contact support@smartcoach-pro.com.</p>",
+    essential
+      ? "<p>Enter this temporary code on the SMARTCoach Account Access page, then choose a new app access code you can remember.</p>"
+      : "<p>Enter this temporary code in Staff Access, then choose a new shared coach code your staff can remember.</p>",
+    "<p>If you did not request this reset, contact support@smartcoach-pro.com.</p>",
   ].join("");
   await ghlRequest({
     token,
@@ -2350,7 +2353,7 @@ async function sendCoachCodeRecoveryEmail({ token, accountKey, contactId, ownerE
       type: "Email",
       contactId,
       emailTo: ownerEmail,
-      subject: "SMARTCoach shared coach code reset",
+      subject: essential ? "SMARTCoach Essential access code reset" : "SMARTCoach shared coach code reset",
       html,
     },
   });
