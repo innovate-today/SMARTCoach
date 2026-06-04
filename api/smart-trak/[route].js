@@ -1103,6 +1103,27 @@ async function accountStatus(req, res) {
   const coachAccessRequired = !proPlan || configuredCoachCodes > 0 || !!requireCoachAccess;
   const coachAccessUnlocked = !coachAccessRequired || (proPlan ? !!currentCoachSession : essentialSessionActive) || accessCodeAccepted;
   const deviceAccessReady = configured && subscriptionAllowed && coachAccessUnlocked;
+  const refreshedSession = currentCoachSession
+    ? createCoachSession(accountKey, {
+      coachIndex: Number(currentCoachSession.coachIndex) || 0,
+      parentEmailAllowed: !!currentCoachSession.parentEmailAllowed,
+      sessionId: cleanSetupText(currentCoachSession.sessionId),
+      coachCodeVersion,
+    })
+    : null;
+  if (refreshedSession && productPlan === "essential" && essentialSessionActive && registry.record) {
+    await saveAccountRecord(accountKey, {
+      ...registry.record,
+      essentialActiveSession: {
+        ...(registry.record.essentialActiveSession || {}),
+        sessionId: cleanSetupText(currentCoachSession.sessionId),
+        coachIndex: Number(currentCoachSession.coachIndex) || 0,
+        expiresAt: refreshedSession.expiresAt,
+        expiresAtIso: refreshedSession.expiresAtIso,
+        refreshedAt: new Date().toISOString(),
+      },
+    }).catch(() => {});
+  }
   if (deviceAccessReady) await recordRequestCoachDevice(req).catch(() => {});
   const coachDeviceUsage = configured ? await loadCoachDeviceUsage(accountKey) : undefined;
   const coachStaff = normalizeCoachStaff(registry.record && registry.record.coachStaff);
@@ -1129,6 +1150,10 @@ async function accountStatus(req, res) {
       parentEmailAllowed: parentEmailFeatureReleased() && !!currentCoachSession.parentEmailAllowed,
     } : null,
     coachSessionActive: proPlan ? !!currentCoachSession : essentialSessionActive,
+    sessionToken: refreshedSession && refreshedSession.token || undefined,
+    expiresAt: refreshedSession && refreshedSession.expiresAt || undefined,
+    expiresAtIso: refreshedSession && refreshedSession.expiresAtIso || undefined,
+    sessionRefreshed: !!refreshedSession,
     coachDeviceUsage,
     coachStaff,
     coachAccessUnlocked,

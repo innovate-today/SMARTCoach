@@ -1137,6 +1137,14 @@ function setSmartCoachSession(value,remember){
     }
   }catch(e){}
 }
+function refreshRememberedCoachSession(data){
+  if(!data||!data.sessionToken)return;
+  try{
+    if(localStorage.getItem(rememberedSessionStorageKey())){
+      setSmartCoachSession(data.sessionToken,true);
+    }
+  }catch(e){}
+}
 function productPlan(){
   try{
     var fromUrl=productPlanOverride();
@@ -2141,7 +2149,7 @@ function refreshAppVersion(){
 function checkSmartCoachAccount(){
   var key=smartCoachAccountKey();
   return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(res){
-    return res.json().then(function(data){return{ok:res.ok,data:data};});
+    return res.json().then(function(data){refreshRememberedCoachSession(data);return{ok:res.ok,data:data};});
   });
 }
 

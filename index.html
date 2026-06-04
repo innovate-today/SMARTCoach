@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1780147920000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1780147923000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1780147920000 -->
-<!-- v1780147920000 -->
+<!-- build:1780147923000 -->
+<!-- v1780147923000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -655,7 +655,7 @@ function setSmartCoachSession(value,remember){
     if(value){
       if(remember){
         localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());
-        writeSmartCoachCookie(sessionCookieName(),String(value||'').trim(),7*24*60*60);
+        writeSmartCoachCookie(sessionCookieName(),String(value||'').trim(),30*24*60*60);
         sessionStorage.removeItem(sessionStorageKey());
       }else{
         sessionStorage.setItem(sessionStorageKey(),String(value||'').trim());
@@ -666,6 +666,14 @@ function setSmartCoachSession(value,remember){
       sessionStorage.removeItem(sessionStorageKey());
       localStorage.removeItem(rememberedSessionStorageKey());
       clearSmartCoachCookie(sessionCookieName());
+    }
+  }catch(e){}
+}
+function refreshRememberedCoachSession(data){
+  if(!data||!data.sessionToken)return;
+  try{
+    if(localStorage.getItem(rememberedSessionStorageKey())||readSmartCoachCookie(sessionCookieName())){
+      setSmartCoachSession(data.sessionToken,true);
     }
   }catch(e){}
 }
@@ -832,7 +840,7 @@ function checkSmartCoachAccount(accountKey){
   var key=cleanAccountKey(accountKey||smartCoachAccountKey());
   var url='/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now();
   return fetch(url,{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(r){
-    return r.json().then(function(data){return{ok:r.ok,data:data};});
+    return r.json().then(function(data){refreshRememberedCoachSession(data);return{ok:r.ok,data:data};});
   });
 }
 function smartCoachApiUrl(path){
@@ -961,7 +969,10 @@ function runForcedCoachIdentityCheck(data){
 function maybePromptForCoachAccess(data){
   if(accountPromptShown||!data||data.productPlan==='essential')return;
   if(data.accessReady===false)return;
-  if(data.accessCodeRequired&&!smartCoachSession()&&!smartCoachAccessCode()){
+  if(data.accessCodeRequired&&smartCoachSession()&&data.coachSessionActive===false&&data.deviceAccessReady===false){
+    setSmartCoachSession('',true);
+  }
+  if(data.accessCodeRequired&&data.deviceAccessReady===false&&!smartCoachAccessCode()){
     accountPromptShown=true;
     setTimeout(function(){
       openAccountSettings();

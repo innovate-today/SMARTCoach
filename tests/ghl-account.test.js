@@ -62,7 +62,7 @@ withEnv({
   assert.strictEqual(planDefinition("pro200").annualAmount, "1350.00");
   assert.strictEqual(planDefinition("custom").activeAthleteLimit, null);
   assert.strictEqual(suggestedSubscriptionAmount("custom", "monthly"), "Custom");
-  assert.strictEqual(coachSessionTtlSeconds(), 7 * 24 * 60 * 60);
+  assert.strictEqual(coachSessionTtlSeconds(), 30 * 24 * 60 * 60);
   assert.strictEqual(subscriptionAccessAllowed({ status: "" }), true);
   assert.strictEqual(subscriptionAccessAllowed({ status: "active" }), true);
   assert.strictEqual(subscriptionAccessAllowed({ status: "trialing" }), true);

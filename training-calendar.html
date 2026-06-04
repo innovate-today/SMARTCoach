@@ -792,6 +792,7 @@ function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}c
 function setAccessCode(value){try{localStorage.setItem(accessStorageKey(),String(value||'').trim());}catch(e){}}
 function sessionToken(){try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}}
 function setSessionToken(value){try{if(value){localStorage.setItem(rememberedSessionStorageKey(),String(value||'').trim());sessionStorage.removeItem(sessionStorageKey());}else{sessionStorage.removeItem(sessionStorageKey());localStorage.removeItem(rememberedSessionStorageKey());}}catch(e){}}
+function refreshRememberedSession(data){if(!data||!data.sessionToken)return;try{if(localStorage.getItem(rememberedSessionStorageKey()))setSessionToken(data.sessionToken);}catch(e){}}
 function apiHeaders(){
   var headers={'X-SMARTCoach-Account':accountKey()};
   var session=sessionToken();
@@ -3227,8 +3228,8 @@ function showAccess(data){
   setTimeout(function(){els.accessCode.focus();},50);
 }
 function ensureAccountAccess(){
-  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':accountKey()}}).then(function(res){
-    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+    return res.json().then(function(data){refreshRememberedSession(data);return{ok:res.ok,data:data};});
   }).then(function(result){
     applyBrandLogo(result.data&&result.data.logoUrl);
     if(result.data&&result.data.accessReady===false){
