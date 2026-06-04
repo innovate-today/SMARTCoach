@@ -239,6 +239,13 @@ When a new Equipment Trak season starts, returned and not-issued records reset f
 
 Example: if **Cross Country Backpack #35** was not returned in the 2026 Cross Country season, it cannot be issued again in the 2027 Cross Country season when both seasons use the **Cross Country** inventory pool. If your Track backpacks are a separate inventory, use the **Track** inventory pool for Track, and Track Backpack #35 can still be issued there. If your school shares the same backpacks across Track and Cross Country, use the **General** inventory pool so the number stays blocked across both programs.
 
+How to open an archived Equipment Trak season:
+
+1. Open **Athletes**.
+2. Click **Equipment Trak** in the top toolbar.
+3. In **Equipment Season**, click **Open** next to the archived season name.
+4. The selected season becomes the active Equipment Trak view, including issued gear, issue sheet, and inventory.
+
 How to run equipment issue day:
 
 1. Set up the equipment list before athletes arrive. Add the same columns you would normally write on the clipboard, such as uniform top size, uniform shorts size, warmup number, watch number, timing chip, stretch strap, or backpack.

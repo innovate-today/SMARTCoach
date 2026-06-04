@@ -671,6 +671,8 @@ async function accountEquipmentTrak(req, res) {
         seasonYear: payload.seasonYear || payload.year,
         inventoryPool: payload.inventoryPool || payload.pool,
       });
+    } else if (action === "activate-season") {
+      activateEquipmentSeason(current, payload.seasonId || payload.id);
     } else {
       throw httpError(400, "Equipment Trak action is required.");
     }
@@ -802,6 +804,21 @@ function updateActiveEquipmentSeason(current, changes) {
     current.records = activeSeason.records;
     current.inventory = activeSeason.inventory;
   }
+}
+
+function activateEquipmentSeason(current, seasonId) {
+  const id = normalizeDocuItemId(seasonId);
+  if (!id || !(current.seasons || []).some((season) => season.id === id)) {
+    throw httpError(404, "Equipment season was not found.");
+  }
+  current.seasons = current.seasons.map((season) => (
+    season.id === id ? { ...season, active: true, archived: false } : { ...season, active: false, archived: true }
+  ));
+  current.activeSeasonId = id;
+  const activeSeason = current.seasons.find((season) => season.id === id);
+  current.items = activeSeason.items;
+  current.records = activeSeason.records;
+  current.inventory = activeSeason.inventory;
 }
 
 function selectedEquipmentItems(items, ids) {
