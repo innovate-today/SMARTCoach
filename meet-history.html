@@ -476,7 +476,9 @@ function allMeetGroups(){
   });
   meetResults.forEach(function(result){
     var key=resultMeetKey(result);
-    if(!groups[key])groups[key]={key:key,name:result.meetName||'Unlisted meet',date:result.meetDate,season:'',seasonYear:'',status:'Completed',results:[]};
+    if(!groups[key])groups[key]={key:key,name:result.meetName||'Unlisted meet',date:result.meetDate,season:result.season||'',seasonYear:result.seasonYear||'',status:'Completed',results:[]};
+    if(!groups[key].season&&result.season)groups[key].season=result.season;
+    if(!groups[key].seasonYear&&result.seasonYear)groups[key].seasonYear=result.seasonYear;
     groups[key].results.push(result);
   });
   return Object.keys(groups).map(function(key){return groups[key];}).sort(function(a,b){
@@ -492,13 +494,14 @@ function filteredGroups(){
   return allMeetGroups().map(function(group){
     var results=group.results.filter(function(row){
       if(sport!=='all'&&sportText(row)!==sport)return false;
+      if(season!=='all'&&seasonText(row)!==season&&String(row.seasonYear||'')!==season)return false;
       if(event!=='all'&&row.event!==event)return false;
       if(athlete!=='all'&&row.athleteName!==athlete)return false;
       if(query&&searchText(row).indexOf(query)===-1&&searchText(group).indexOf(query)===-1)return false;
       return true;
     });
     var groupSeason=seasonText(group);
-    var matchesSeason=season==='all'||groupSeason===season||String(group.seasonYear||'')===season;
+    var matchesSeason=season==='all'||groupSeason===season||String(group.seasonYear||'')===season||results.length>0;
     var matchesSport=sport==='all'||results.length>0;
     var groupMatchesQuery=!query||searchText(group).indexOf(query)>=0;
     var keep=matchesSeason&&matchesSport&&(results.length||groupMatchesQuery);

@@ -146,6 +146,8 @@ function checkMeetHistoryUnlistedSeasonYearFallback() {
   const requiredHtml = [
     "if(/^(unlisted|unspecified)$/i.test(season))season='';",
     "if(seasonYear)return seasonYear;",
+    "season:result.season||'',seasonYear:result.seasonYear||''",
+    "if(season!=='all'&&seasonText(row)!==season&&String(row.seasonYear||'')!==season)return false;",
   ];
   const requiredApi = [
     "const rawSeason = clean(row && row.season);",
