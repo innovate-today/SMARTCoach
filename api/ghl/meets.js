@@ -117,6 +117,7 @@ async function listMeets({ token, locationId, accountKey }) {
 async function createMeet({ token, locationId, accountKey, payload }) {
   const name = clean(payload && payload.meetName);
   const date = clean(payload && payload.meetDate);
+  const sport = clean(payload && payload.sport) || "Track";
   const season = clean(payload && payload.season) || currentSeason().season;
   const seasonYear = Number(payload && payload.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : currentSeason().year);
 
@@ -127,6 +128,7 @@ async function createMeet({ token, locationId, accountKey, payload }) {
       id: clean(payload && payload.recordId) || `meet_${Date.now()}_${slugValue(name)}`,
       name,
       date,
+      sport,
       season,
       seasonYear,
       status: clean(payload && payload.status) || "Scheduled",
@@ -162,6 +164,7 @@ async function updateMeet({ token, locationId, accountKey, payload }) {
 
   const name = clean(payload && payload.meetName);
   const date = clean(payload && payload.meetDate);
+  const sport = clean(payload && payload.sport);
   const season = clean(payload && payload.season);
   const seasonYear = Number(payload && payload.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : undefined);
   const status = clean(payload && payload.status);
@@ -173,6 +176,7 @@ async function updateMeet({ token, locationId, accountKey, payload }) {
       id: recordId,
       name: name || existing.name,
       date: date || existing.date,
+      sport: sport || existing.sport,
       season: season || existing.season,
       seasonYear: seasonYear || existing.seasonYear,
       status: status || existing.status,
@@ -254,11 +258,13 @@ function normalizeAccountMeet(meet) {
   const date = dateOnlyText(row.date || row.meetDate);
   const season = clean(row.season) || (date ? seasonForDate(date).season : "");
   const seasonYear = Number(row.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null);
+  const sport = labelValue(row.sport) || "Track";
   const status = clean(row.status) || "Scheduled";
   return {
     id: clean(row.id || row.recordId) || `meet_${Date.now()}_${slugValue(name)}`,
     name,
     date,
+    sport,
     season,
     seasonYear,
     location: clean(row.location),
@@ -297,6 +303,7 @@ function normalizeMeet(record, fallbackProperties) {
   const props = fallbackProperties || recordProperties(record);
   const meetName = fieldValue(props.meet) || prop(props, "meet") || recordName(record);
   const date = dateOnlyText(fieldValue(props.meet_date) || fieldValue(props.date) || prop(props, "meet_date") || prop(props, "date"));
+  const sport = fieldValue(props.sport) || prop(props, "sport");
   const season = fieldValue(props.season) || prop(props, "season");
   const seasonYear = fieldValue(props.season_year) || prop(props, "season_year");
   const status = fieldValue(props.status) || prop(props, "status");
@@ -305,6 +312,7 @@ function normalizeMeet(record, fallbackProperties) {
     id: record && record.id ? record.id : clean(prop(props, "source_record_id")),
     name: clean(meetName),
     date,
+    sport: labelValue(sport) || "Track",
     season: labelValue(season) || (date ? seasonForDate(date).season : ""),
     seasonYear: Number(seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : null),
     location: clean(prop(props, "location")),
@@ -403,6 +411,13 @@ function fieldValue(value) {
 
 function optionValue(value) {
   return clean(value).toLowerCase().replace(/&/g, "and").replace(/\+/g, "plus").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function sportValue(value) {
+  const normalized = optionValue(value);
+  if (normalized.indexOf("cross") === 0 || normalized === "xc") return "cross_country";
+  if (normalized.indexOf("track") === 0) return "track";
+  return normalized || "track";
 }
 
 function slugValue(value) {

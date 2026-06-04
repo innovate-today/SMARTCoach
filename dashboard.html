@@ -915,6 +915,14 @@ tr:last-child td{border-bottom:0}
           <input id="meetManagerDate" type="date">
         </div>
         <div class="field">
+          <label for="meetManagerSport">Sport</label>
+          <select id="meetManagerSport">
+            <option value="">Select sport</option>
+            <option value="Track">Track</option>
+            <option value="Cross Country">Cross Country</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="meetManagerSeason">Season</label>
           <select id="meetManagerSeason">
             <option>Spring</option>
@@ -1452,6 +1460,7 @@ var els={
   meetManagerClose:document.getElementById('meetManagerClose'),
   meetManagerName:document.getElementById('meetManagerName'),
   meetManagerDate:document.getElementById('meetManagerDate'),
+  meetManagerSport:document.getElementById('meetManagerSport'),
   meetManagerSeason:document.getElementById('meetManagerSeason'),
   meetManagerYear:document.getElementById('meetManagerYear'),
   meetManagerStatusSelect:document.getElementById('meetManagerStatusSelect'),
@@ -3100,6 +3109,7 @@ function ensureRaceResultMeet(payload,seasonParts){
     body:JSON.stringify({
       meetName:payload.meetName,
       meetDate:payload.meetDate,
+      sport:payload.sport,
       season:payload.season||seasonParts.season,
       seasonYear:seasonParts.seasonYear,
       status:'Completed'
@@ -3666,6 +3676,7 @@ function clearMeetManagerForm(){
   els.meetManagerDate.value=todayInputValue();
   var key=seasonKeyForDate(new Date());
   var parts=key.split('-');
+  setSelectValue(els.meetManagerSport,'Track');
   setSelectValue(els.meetManagerSeason,capitalize(parts[1]||'Spring'));
   els.meetManagerYear.value=parts[0]||new Date().getFullYear();
   setSelectValue(els.meetManagerStatusSelect,'Scheduled');
@@ -3700,7 +3711,7 @@ function renderManagedMeets(){
   }).map(function(meet){
     var archived=/archived/i.test(meet.status||'');
     return '<div class="meet-card'+(archived?' archived':'')+'">'+
-      '<div><b>'+esc(meet.name||'Unnamed meet')+'</b><span>'+esc([formatDate(meet.date),meet.season,meet.seasonYear,meet.status||'Scheduled'].filter(Boolean).join(' · '))+'</span></div>'+
+      '<div><b>'+esc(meet.name||'Unnamed meet')+'</b><span>'+esc([formatDate(meet.date),meet.sport,meet.season,meet.seasonYear,meet.status||'Scheduled'].filter(Boolean).join(' · '))+'</span></div>'+
       '<div class="meet-actions">'+
         '<button class="ghost compact" data-edit-managed-meet="'+esc(meet.id||'')+'" type="button">Edit</button>'+
         (archived?'<button class="ghost compact" data-restore-managed-meet="'+esc(meet.id||'')+'" type="button">Restore</button>':'<button class="ghost compact" data-archive-managed-meet="'+esc(meet.id||'')+'" type="button">Archive</button>')+
@@ -3719,6 +3730,7 @@ function editManagedMeetForm(id){
   meetManagerEditingId=meet.id||'';
   els.meetManagerName.value=meet.name||'';
   els.meetManagerDate.value=meet.date?dateInputValue(meet.date):todayInputValue();
+  setSelectValue(els.meetManagerSport,meet.sport||'Track');
   setSelectValue(els.meetManagerSeason,meet.season||'Spring');
   els.meetManagerYear.value=meet.seasonYear||new Date().getFullYear();
   setSelectValue(els.meetManagerStatusSelect,meet.status||'Scheduled');
@@ -3736,6 +3748,7 @@ function saveManagedMeet(){
     recordId:meetManagerEditingId,
     meetName:name,
     meetDate:els.meetManagerDate.value,
+    sport:els.meetManagerSport.value,
     season:els.meetManagerSeason.value,
     seasonYear:els.meetManagerYear.value,
     status:els.meetManagerStatusSelect.value
@@ -3780,6 +3793,7 @@ function updateManagedMeetStatus(id,status){
       recordId:id,
       meetName:meet.name,
       meetDate:meet.date,
+      sport:meet.sport,
       season:meet.season,
       seasonYear:meet.seasonYear,
       status:status

@@ -121,6 +121,32 @@ function checkDashboardActivityRangeLayout() {
   console.log("dashboard activity range layout ok");
 }
 
+function checkMeetManagerSportField() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/ghl/meets.js", "utf8");
+  const requiredHtml = [
+    'id="meetManagerSport"',
+    "meetManagerSport:document.getElementById('meetManagerSport')",
+    "setSelectValue(els.meetManagerSport,'Track')",
+    "setSelectValue(els.meetManagerSport,meet.sport||'Track')",
+    "sport:els.meetManagerSport.value",
+    "sport:payload.sport",
+  ];
+  const requiredApi = [
+    "const sport = clean(payload && payload.sport) || \"Track\";",
+    "sport: sport || existing.sport,",
+    "sport,",
+    "const sport = labelValue(row.sport) || \"Track\";",
+  ];
+  requiredHtml.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Meet Manager sport field missing ${text}`);
+  });
+  requiredApi.forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Meets API sport persistence missing ${text}`);
+  });
+  console.log("Meet Manager sport field ok");
+}
+
 function checkMeetHistorySportToolbarFilter() {
   const html = fs.readFileSync("meet-history.html", "utf8");
   const bar = html.match(/<section class="bar">([\s\S]*?)<\/section>/);
@@ -257,6 +283,7 @@ checkPageScripts();
 checkLiveValidationPage();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
+checkMeetManagerSportField();
 checkMeetHistorySportToolbarFilter();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
