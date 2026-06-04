@@ -148,6 +148,16 @@ How to start a new Docu Trak season:
 
 Starting a new season archives the previous Docu Trak season and creates a fresh checklist for the new season. The requirement names can carry forward, but athlete statuses reset for the new season so old completions do not accidentally count for the next team cycle.
 
+How to rename the current Docu Trak season:
+
+1. Open **Athletes**.
+2. Click **Docu Trak** on any athlete row.
+3. Click **Setup**.
+4. In **Active Season**, edit the sport, year, or season name.
+5. Click **Save Season Name**.
+
+Renaming the current season does not reset athlete document statuses. Use it only to correct the label for the season you are already tracking.
+
 How to update an athlete:
 
 1. Open **Athletes**.

@@ -308,6 +308,12 @@ async function accountDocuTrak(req, res) {
       current.activeSeasonId = nextSeason.id;
       current.items = nextSeason.items;
       current.records = {};
+    } else if (action === "update-season") {
+      updateActiveDocuSeason(current, {
+        name: payload.seasonName || payload.name,
+        sport: payload.sport,
+        seasonYear: payload.seasonYear || payload.year,
+      });
     } else {
       throw httpError(400, "Docu Trak action is required.");
     }
@@ -404,6 +410,25 @@ function selectedDocuItems(items, ids) {
   if (!selected.length) return source;
   const keep = new Set(selected);
   return source.filter((item) => keep.has(item.id));
+}
+
+function updateActiveDocuSeason(current, changes) {
+  const id = current.activeSeasonId || (current.seasons[0] && current.seasons[0].id);
+  const name = cleanSetupText(changes.name).slice(0, 120);
+  if (!id || !name) throw httpError(400, "Season name is required.");
+  const sport = cleanSetupText(changes.sport || "General").slice(0, 80);
+  const seasonYear = cleanSetupText(changes.seasonYear).slice(0, 10);
+  current.seasons = current.seasons.map((season) => (
+    season.id === id
+      ? { ...season, name, sport, seasonYear, active: true, archived: false }
+      : season
+  ));
+  current.activeSeasonId = id;
+  const activeSeason = current.seasons.find((season) => season.id === id);
+  if (activeSeason) {
+    current.items = activeSeason.items;
+    current.records = activeSeason.records;
+  }
 }
 
 function normalizeDocuItems(items) {
