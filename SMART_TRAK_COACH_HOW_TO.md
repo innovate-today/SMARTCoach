@@ -466,10 +466,13 @@ How to use it:
 5. Review the current record board.
 6. Use **Edit** to correct a saved record.
 7. Use **Delete** only when a row should be removed from the record board.
+8. Use **Delete All Records** only when clearing a bad import before uploading a corrected file.
 
 Records are shown as direct table rows. If more than one current row exists for the same event and gender, the fastest or best row should be current and the others should be historical.
 
 For bulk import, the required fields are gender, event, result, and year. Use the Date column only when the exact date is known.
+
+If an import uses the wrong sport, date, or other shared fields across many rows, open **Records Tools**, click **Delete All Records**, confirm the warning, and upload the corrected file again.
 
 The Records page is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
 

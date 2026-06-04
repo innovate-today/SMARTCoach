@@ -107,9 +107,9 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "DELETE") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-      await deleteRecord({ token, payload });
-      const mirror = await mirrorRecordsBestEffort(accountKey, [], { deleteIds: [clean(payload && payload.recordId), clean(payload && payload.sourceRecordId)] });
-      res.status(200).json({ success: true, mirror });
+      const deleted = await deleteRecords({ token, locationId, payload });
+      const mirror = await mirrorRecordsBestEffort(accountKey, [], { deleteIds: deleted.deleteIds });
+      res.status(200).json({ success: true, deletedCount: deleted.deletedCount, mirror });
       return;
     }
 
@@ -307,14 +307,36 @@ function recordPropertiesFromRecord(record) {
   });
 }
 
-async function deleteRecord({ token, payload }) {
-  const recordId = clean(payload && payload.recordId);
-  if (!recordId) throw httpError(400, "Record ID is required.");
-  await ghlFetch({
-    token,
-    path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
-    method: "DELETE",
+async function deleteRecords({ token, locationId, payload }) {
+  const rows = Array.isArray(payload && payload.records) ? payload.records : [payload || {}];
+  const directIds = new Set();
+  const sourceIds = new Set();
+  rows.forEach((row) => {
+    const recordId = clean(row && row.recordId);
+    const sourceRecordId = clean(row && row.sourceRecordId);
+    if (recordId) directIds.add(recordId);
+    if (sourceRecordId) sourceIds.add(sourceRecordId);
   });
+  if (sourceIds.size) {
+    const existing = await listRecords({ token, locationId });
+    existing.forEach((record) => {
+      if (record && record.recordId && sourceIds.has(clean(record.sourceRecordId))) {
+        directIds.add(record.recordId);
+      }
+    });
+  }
+  const deleteIds = [...directIds, ...sourceIds].filter(Boolean);
+  if (!deleteIds.length) throw httpError(400, "Record ID is required.");
+  let deletedCount = 0;
+  for (const recordId of directIds) {
+    await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(recordId)}`,
+      method: "DELETE",
+    });
+    deletedCount += 1;
+  }
+  return { deletedCount, deleteIds };
 }
 
 function buildRecordProperties(row) {

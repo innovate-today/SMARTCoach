@@ -219,6 +219,7 @@ tr:last-child td{border-bottom:0}
       </div>
       <div class="recordformactions">
         <button id="toggleBulkBtn" class="ghost" type="button">Open Bulk Import</button>
+        <button id="deleteAllRecordsBtn" class="danger" type="button">Delete All Records</button>
       </div>
     <div id="bulkBody" class="bulkgrid" hidden>
       <div class="bulkhelp">
@@ -410,6 +411,7 @@ var els={
   singleCurrent:document.getElementById('singleCurrent'),
   saveSingleBtn:document.getElementById('saveSingleBtn'),
   clearSingleBtn:document.getElementById('clearSingleBtn'),
+  deleteAllRecordsBtn:document.getElementById('deleteAllRecordsBtn'),
   recordEditModal:document.getElementById('recordEditModal'),
   recordEditClose:document.getElementById('recordEditClose'),
   recordEditStatus:document.getElementById('recordEditStatus'),
@@ -640,6 +642,13 @@ function replaceCachedRecord(original,updated){
 function removeCachedRecord(id){
   records=records.filter(function(row){return String(row.recordId||'')!==String(id||'')&&String(row.sourceRecordId||'')!==String(id||'');});
   saveCachedRecords(records);
+}
+function recordDeletePayload(row){
+  return {
+    recordId:String(row&&row.recordId||''),
+    sourceRecordId:String(row&&row.sourceRecordId||''),
+    identity:recordIdentity(row)
+  };
 }
 function findRecordByKey(key){
   return records.find(function(row){
@@ -893,6 +902,40 @@ function deleteRecord(){
     setRecordEditStatus(error.message||'Record could not be deleted.','bad');
   }).finally(function(){
     els.recordDeleteBtn.disabled=false;
+  });
+}
+function deleteAllRecords(){
+  if(!records.length){setBulkStatus('No records to delete.','');return;}
+  var count=records.length;
+  var first=window.confirm('Delete all '+count+' records from this account? This is meant for clearing a bad import before uploading again.');
+  if(!first)return;
+  var typed=window.prompt('Type DELETE ALL to confirm bulk deletion.');
+  if(String(typed||'').trim().toUpperCase()!=='DELETE ALL'){
+    setBulkStatus('Bulk delete cancelled.','warn');
+    return;
+  }
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.deleteAllRecordsBtn.disabled=true;
+  setBulkStatus('Deleting '+count+' records...','');
+  fetch('/api/ghl/records',{method:'DELETE',headers:headers,body:JSON.stringify({records:records.map(recordDeletePayload)})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Records could not be deleted.');
+    records=[];
+    bulkRows=[];
+    els.bulkText.value='';
+    saveCachedRecords(records);
+    renderOptions();
+    render();
+    renderBulkPreview();
+    pendingRecordsSourcePrefix='Deleted '+(result.data.deletedCount||count)+' records. ';
+    setBulkStatus('Deleted '+(result.data.deletedCount||count)+' records. You can upload the corrected file now.','good');
+  }).catch(function(error){
+    setBulkStatus(error.message||'Records could not be deleted.','bad');
+  }).finally(function(){
+    els.deleteAllRecordsBtn.disabled=false;
   });
 }
 function searchText(row){
@@ -1305,6 +1348,7 @@ function init(){
   els.refreshBtn.addEventListener('click',loadRecords);
   els.saveSingleBtn.addEventListener('click',saveSingleRecord);
   els.clearSingleBtn.addEventListener('click',clearSingleRecordForm);
+  els.deleteAllRecordsBtn.addEventListener('click',deleteAllRecords);
   els.singleEvent.addEventListener('change',function(){updateRelayFields('single');});
   els.editEvent.addEventListener('change',function(){updateRelayFields('edit');});
   els.recordEditClose.addEventListener('click',closeRecordEdit);

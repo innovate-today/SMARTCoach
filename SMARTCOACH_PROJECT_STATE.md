@@ -1109,6 +1109,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 267. Added `/account-access.html` as a self-service access-code recovery page for Essential app-only accounts and Pro shared-code accounts. Coaches enter the account key, send a temporary code to the saved account owner email, then create a new memorable access code without seeing the old code. Successful reset creates a fresh signed session and invalidates old sessions.
 268. Coach access remembered-device wording now uses 30 days in the SMARTCoach app, SMART Trak access modal, and coach guide.
 269. Records bulk import no longer requires an exact date. Gender, event, result, and year are required; Date remains optional. Year-only date values are treated as the season year instead of being converted into a fake January 1 record date.
+270. Records Tools now includes a guarded **Delete All Records** action for clearing a bad import before a fresh upload. It requires a confirmation and typed `DELETE ALL`, deletes GHL rows when record IDs are available, clears mirrored record IDs/source IDs, and clears the local Records cache.
 
 ## Known Good Test Flow
 
