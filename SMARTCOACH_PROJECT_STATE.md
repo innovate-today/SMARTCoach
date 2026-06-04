@@ -1095,6 +1095,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 253. Account setup now preserves the exact `proUnlimited` plan key from the onboarding dropdown instead of normalizing it back to Pro 25, so SMARTCoach Pro Unlimited saves as a custom unlimited-athlete Pro account.
 254. Account setup now clears stale standard-plan billing amounts when switching an account to SMARTCoach Pro Unlimited. If the saved amount is an old tier amount such as 45.00, Unlimited saves the subscription amount as Custom.
 255. Completed-workout corrections now update the SMART Trak training mirror as well as the live GHL performance record. This prevents edited Training Load / Completed Workouts rows from temporarily duplicating on screen or reverting to stale mirror data after refresh.
+256. Weather saved locations now persist to the SMARTCoach account record instead of only device local storage, with local storage as a fallback. Hourly and daily forecast cards also use condition-based tinting for clear, cloudy, fog, rain, heavy rain, storm, and snow days.
 
 ## Known Good Test Flow
 

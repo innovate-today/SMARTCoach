@@ -42,7 +42,22 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .metric b{display:block;font-size:18px}
 .metric span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .forecastgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
-.daycard,.hourcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px;min-width:0}
+.daycard,.hourcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px;min-width:0;position:relative;overflow:hidden}
+.daycard:before,.hourcard:before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:#cbd5e1}
+.weather-clear{background:#fff8d8;border-color:#f0d46a}
+.weather-clear:before{background:#f5c842}
+.weather-cloud{background:#f7f9fc;border-color:#cbd5e1}
+.weather-cloud:before{background:#94a3b8}
+.weather-fog{background:#f4f4f5;border-color:#d4d4d8}
+.weather-fog:before{background:#a1a1aa}
+.weather-rain{background:#edf6ff;border-color:#91c8ff}
+.weather-rain:before{background:#246bfe}
+.weather-heavy-rain{background:#e6f0ff;border-color:#5d94ff}
+.weather-heavy-rain:before{background:#174ecf}
+.weather-storm{background:#fff0f0;border-color:#ff9d9d}
+.weather-storm:before{background:#dc2626}
+.weather-snow{background:#f0fbff;border-color:#a7e6ff}
+.weather-snow:before{background:#38bdf8}
 .daycard b,.hourcard b{display:block;font-size:14px}
 .daycard .hi{font-size:20px;font-weight:950;margin-top:6px}
 .daycard .lo,.hourcard span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
@@ -113,6 +128,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 <script>
 var currentLocation=null;
 var weatherData=null;
+var weatherLocationsReady=false;
 var els={
   dashboardLink:document.getElementById('dashboardLink'),
   calendarLink:document.getElementById('calendarLink'),
@@ -134,13 +150,59 @@ function embeddedMode(){try{var p=new URLSearchParams(window.location.search||''
 function pageUrl(path){var url=new URL(path,window.location.origin);var key=accountKey();if(key&&key!=='default')url.searchParams.set('account',key);if(embeddedMode())url.searchParams.set('embed','1');return url.pathname+url.search;}
 function storageKey(){return 'sc_weather_locations_'+accountKey();}
 function activeKey(){return 'sc_weather_active_'+accountKey();}
+function weatherLocationsUrl(){var url=new URL('/api/smart-trak/weather-locations',window.location.origin);var key=accountKey();if(key&&key!=='default')url.searchParams.set('account',key);return url.pathname+url.search;}
 function esc(value){return String(value||'').replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
 function savedLocations(){try{return JSON.parse(localStorage.getItem(storageKey())||'[]');}catch(e){return [];}}
 function setSavedLocations(rows){try{localStorage.setItem(storageKey(),JSON.stringify(rows||[]));}catch(e){}}
+function loadSavedLocations(){
+  return fetch(weatherLocationsUrl()).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Saved locations could not load.');
+    var rows=Array.isArray(result.data&&result.data.locations)?result.data.locations:[];
+    setSavedLocations(rows);
+    weatherLocationsReady=true;
+    renderSaved();
+    return rows;
+  }).catch(function(){
+    weatherLocationsReady=true;
+    renderSaved();
+    return savedLocations();
+  });
+}
+function saveSavedLocations(rows){
+  var normalized=(rows||[]).slice(0,10);
+  setSavedLocations(normalized);
+  renderSaved();
+  return fetch(weatherLocationsUrl(),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({locations:normalized})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Saved locations could not save.');
+    var serverRows=Array.isArray(result.data&&result.data.locations)?result.data.locations:normalized;
+    setSavedLocations(serverRows);
+    renderSaved();
+    return serverRows;
+  });
+}
 function setStatus(text,type){els.status.textContent=text||'';els.status.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';}
 function weatherLabel(code){
   var map={0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Cloudy',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',95:'Thunderstorm',96:'Thunderstorm with hail',99:'Thunderstorm with hail'};
   return map[Number(code)]||'Forecast';
+}
+function weatherTheme(code,precip){
+  var n=Number(code);
+  if(n===0||n===1)return 'weather-clear';
+  if(n===2||n===3)return 'weather-cloud';
+  if(n===45||n===48)return 'weather-fog';
+  if(n===95||n===96||n===99)return 'weather-storm';
+  if(n===65||n===82||Number(precip)>=70)return 'weather-heavy-rain';
+  if((n>=51&&n<=65)||(n>=80&&n<=82))return 'weather-rain';
+  if(n>=71&&n<=75)return 'weather-snow';
+  return 'weather-cloud';
 }
 var US_STATES={al:'Alabama',ak:'Alaska',az:'Arizona',ar:'Arkansas',ca:'California',co:'Colorado',ct:'Connecticut',de:'Delaware',fl:'Florida',ga:'Georgia',hi:'Hawaii',id:'Idaho',il:'Illinois',in:'Indiana',ia:'Iowa',ks:'Kansas',ky:'Kentucky',la:'Louisiana',me:'Maine',md:'Maryland',ma:'Massachusetts',mi:'Michigan',mn:'Minnesota',ms:'Mississippi',mo:'Missouri',mt:'Montana',ne:'Nebraska',nv:'Nevada',nh:'New Hampshire',nj:'New Jersey',nm:'New Mexico',ny:'New York',nc:'North Carolina',nd:'North Dakota',oh:'Ohio',ok:'Oklahoma',or:'Oregon',pa:'Pennsylvania',ri:'Rhode Island',sc:'South Carolina',sd:'South Dakota',tn:'Tennessee',tx:'Texas',ut:'Utah',vt:'Vermont',va:'Virginia',wa:'Washington',wv:'West Virginia',wi:'Wisconsin',wy:'Wyoming',dc:'District of Columbia'};
 function parseLocationQuery(value){
@@ -168,6 +230,7 @@ function formatTime(value){var d=new Date(value);return d.toLocaleTimeString([],
 function formatDay(value){var d=new Date(value+'T00:00:00');return d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});}
 function renderSaved(){
   var rows=savedLocations();
+  if(!weatherLocationsReady){els.savedLocations.innerHTML='<span class="status">Loading saved locations...</span>';return;}
   els.savedLocations.innerHTML=rows.length?rows.map(function(row,index){
     return '<span class="chip"><span role="button" tabindex="0" onclick="loadLocationByIndex('+index+')">'+esc(row.name)+'</span><button type="button" title="Remove" onclick="removeLocation('+index+')">x</button></span>';
   }).join(''):'<span class="status">No saved locations yet.</span>';
@@ -223,22 +286,27 @@ function renderHourly(){
   var rows=(h.time||[]).map(function(time,index){return{time:time,index:index,date:new Date(time).getTime()};}).filter(function(row){return row.date>=now-3600000;}).slice(0,12);
   els.hourlyBody.innerHTML=rows.map(function(row){
     var i=row.index;
-    return '<div class="hourcard"><b>'+esc(formatTime(h.time[i]))+'</b><span>'+esc(weatherLabel(h.weather_code[i]))+'</span><div class="hi">'+Math.round(h.temperature_2m[i])+'°</div><span>Feels '+Math.round(h.apparent_temperature[i])+'°</span><span>Rain '+Math.round(h.precipitation_probability[i]||0)+'%</span><span>Wind '+Math.round(h.wind_speed_10m[i]||0)+' mph</span></div>';
+    var precip=Math.round(h.precipitation_probability[i]||0);
+    return '<div class="hourcard '+weatherTheme(h.weather_code[i],precip)+'"><b>'+esc(formatTime(h.time[i]))+'</b><span>'+esc(weatherLabel(h.weather_code[i]))+'</span><div class="hi">'+Math.round(h.temperature_2m[i])+'°</div><span>Feels '+Math.round(h.apparent_temperature[i])+'°</span><span>Rain '+precip+'%</span><span>Wind '+Math.round(h.wind_speed_10m[i]||0)+' mph</span></div>';
   }).join('');
 }
 function renderDaily(){
   var d=weatherData&&weatherData.daily||{};
   els.dailyBody.innerHTML=(d.time||[]).slice(0,7).map(function(day,index){
-    return '<div class="daycard"><b>'+esc(formatDay(day))+'</b><span>'+esc(weatherLabel(d.weather_code[index]))+'</span><div class="hi">'+Math.round(d.temperature_2m_max[index])+'°</div><div class="lo">Low '+Math.round(d.temperature_2m_min[index])+'°</div><span>Rain '+Math.round(d.precipitation_probability_max[index]||0)+'%</span><span>Wind '+Math.round(d.wind_speed_10m_max[index]||0)+' mph</span></div>';
+    var precip=Math.round(d.precipitation_probability_max[index]||0);
+    return '<div class="daycard '+weatherTheme(d.weather_code[index],precip)+'"><b>'+esc(formatDay(day))+'</b><span>'+esc(weatherLabel(d.weather_code[index]))+'</span><div class="hi">'+Math.round(d.temperature_2m_max[index])+'°</div><div class="lo">Low '+Math.round(d.temperature_2m_min[index])+'°</div><span>Rain '+precip+'%</span><span>Wind '+Math.round(d.wind_speed_10m_max[index]||0)+' mph</span></div>';
   }).join('');
 }
 function saveCurrent(){
   if(!currentLocation){setStatus('Load a location before saving.','bad');return;}
   var rows=savedLocations().filter(function(row){return row.name!==currentLocation.name;});
   rows.unshift(currentLocation);
-  setSavedLocations(rows.slice(0,10));
-  renderSaved();
-  setStatus('Location saved.','good');
+  setStatus('Saving location...','');
+  saveSavedLocations(rows.slice(0,10)).then(function(){
+    setStatus('Location saved.','good');
+  }).catch(function(){
+    setStatus('Location saved on this device. Account save failed.','bad');
+  });
 }
 function loadLocationByIndex(index){
   var row=savedLocations()[index];
@@ -247,8 +315,11 @@ function loadLocationByIndex(index){
 function removeLocation(index){
   var rows=savedLocations();
   rows.splice(index,1);
-  setSavedLocations(rows);
-  renderSaved();
+  saveSavedLocations(rows).then(function(){
+    setStatus('Location removed.','good');
+  }).catch(function(){
+    setStatus('Location removed on this device. Account save failed.','bad');
+  });
 }
 function init(){
   document.body.classList.toggle('embedded',embeddedMode());
@@ -260,6 +331,7 @@ function init(){
   els.refreshBtn.addEventListener('click',function(){if(currentLocation)loadWeather(currentLocation);});
   els.locationInput.addEventListener('keydown',function(event){if(event.key==='Enter')searchLocation();});
   renderSaved();
+  loadSavedLocations();
   try{currentLocation=JSON.parse(localStorage.getItem(activeKey())||'null');}catch(e){currentLocation=null;}
   if(currentLocation)loadWeather(currentLocation);
 }

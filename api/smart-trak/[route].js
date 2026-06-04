@@ -103,6 +103,12 @@ module.exports = async function handler(req, res) {
     return accountEquipmentTrak(req, res);
   }
 
+  if (route === "weather-locations") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountWeatherLocations(req, res);
+  }
+
   if (!selected) {
     res.status(404).json({ error: "SMART Trak endpoint not found." });
     return;
@@ -383,6 +389,68 @@ function setDocuTrakCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code");
+}
+
+async function accountWeatherLocations(req, res) {
+  setDocuTrakCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    if (req.method === "GET") {
+      const existing = await loadAccountRecord(accountKey);
+      const weatherLocations = normalizeWeatherLocations(existing && existing.record && existing.record.weatherLocations);
+      res.status(200).json({ success: true, locations: weatherLocations });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      res.status(404).json({ error: "Account registry record was not found." });
+      return;
+    }
+
+    const weatherLocations = normalizeWeatherLocations(payload.locations);
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      weatherLocations,
+      lastWeatherLocationSync: { savedAt: new Date().toISOString(), count: weatherLocations.length },
+    });
+    res.status(200).json({ success: true, locations: weatherLocations });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Weather locations could not be saved." });
+  }
+}
+
+function normalizeWeatherLocations(locations) {
+  const seen = new Set();
+  return (Array.isArray(locations) ? locations : []).map((location) => {
+    const row = location || {};
+    const name = cleanSetupText(row.name).slice(0, 120);
+    const latitude = Number(row.latitude);
+    const longitude = Number(row.longitude);
+    if (!name || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+    const key = `${name.toLowerCase()}|${latitude.toFixed(4)}|${longitude.toFixed(4)}`;
+    if (seen.has(key)) return null;
+    seen.add(key);
+    return {
+      name,
+      latitude,
+      longitude,
+      timezone: cleanSetupText(row.timezone || "auto").slice(0, 80) || "auto",
+    };
+  }).filter(Boolean).slice(0, 10);
 }
 
 async function accountEquipmentTrak(req, res) {
