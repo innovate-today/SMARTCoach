@@ -439,6 +439,10 @@ function meetNameKey(name){
 function resultMeetKey(row){
   return meetKey(row.meetName,row.meetDate);
 }
+function meetDateSortValue(value){
+  var date=new Date(value);
+  return isNaN(date.getTime()) ? Number.MAX_SAFE_INTEGER : date.getTime();
+}
 function seasonText(row){
   var season=String(row&&row.season||'').trim();
   var seasonYear=String(row&&row.seasonYear||'').trim();
@@ -482,7 +486,7 @@ function allMeetGroups(){
     groups[key].results.push(result);
   });
   return Object.keys(groups).map(function(key){return groups[key];}).sort(function(a,b){
-    return String(b.date||'').localeCompare(String(a.date||'')) || String(a.name||'').localeCompare(String(b.name||''));
+    return meetDateSortValue(a.date)-meetDateSortValue(b.date) || String(a.name||'').localeCompare(String(b.name||''));
   });
 }
 function filteredGroups(){
