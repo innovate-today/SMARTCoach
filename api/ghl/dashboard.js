@@ -595,7 +595,7 @@ function parseSplitLines(text) {
 function workSplitCount(row, splits) {
   if (!splits.length) return 0;
   const hasRecoverySplit = splits.some((split) => split.kind === "recovery" || split.kind === "rest");
-  if (!hasRecoveryPattern(row) && !hasRecoverySplit) return splits.length;
+  if (!hasRepRestPattern(row) && !hasRecoverySplit) return splits.length;
   return splits.filter((split, index) => {
     const kind = splitKind(row, index, splits);
     return kind === "work" || kind === "rep";
@@ -604,13 +604,13 @@ function workSplitCount(row, splits) {
 
 function splitKind(row, index, splits) {
   if (splits[index] && splits[index].kind) return splits[index].kind;
-  if (!hasRecoveryPattern(row) || splits.length < 2) return "lap";
+  if (!hasRepRestPattern(row) || splits.length < 2) return "lap";
   return index % 2 === 0 ? "work" : "recovery";
 }
 
-function hasRecoveryPattern(row) {
+function hasRepRestPattern(row) {
   const text = [row && row.workoutPrescription, row && row.coachNote, row && row.plannedVolume, row && row.completedVolume, row && row.plannedEffort, row && row.workoutType].filter(Boolean).join(" ").toLowerCase();
-  return /(recover|recovery|rest|jog|walk)/.test(text);
+  return /\b\d+(?:\s*[-–]\s*\d+)?\s*(?:x|×)\s*\d/.test(text) && /(recover|recovery|rest|jog|walk)/.test(text);
 }
 
 function convertVolumeToMiles(amount, unit) {

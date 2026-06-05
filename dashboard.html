@@ -4822,7 +4822,7 @@ function splitTargetChipsHtml(row){
 
 function workSplitCount(row,splits){
   var hasRecoverySplit=splits.some(function(split){return split.kind==='recovery'||split.kind==='rest';});
-  if(!hasRecoveryPattern(row)&&!hasRecoverySplit)return splits.length;
+  if(!hasRepRestPattern(row)&&!hasRecoverySplit)return splits.length;
   return splits.filter(function(split,index){
     var kind=splitKind(row,index,splits);
     return kind==='work'||kind==='rep';
@@ -4831,13 +4831,13 @@ function workSplitCount(row,splits){
 
 function splitKind(row,index,splits){
   if(splits[index]&&splits[index].kind)return splits[index].kind;
-  if(!hasRecoveryPattern(row)||splits.length<2)return 'lap';
+  if(!hasRepRestPattern(row)||splits.length<2)return 'lap';
   return index%2===0?'work':'recovery';
 }
 
-function hasRecoveryPattern(row){
+function hasRepRestPattern(row){
   var text=[row.workoutPrescription,row.coachNote,row.plannedTarget,row.workoutType].filter(Boolean).join(' ').toLowerCase();
-  return /(recover|recovery|rest|jog|walk)/.test(text);
+  return /\b\d+(?:\s*[-–]\s*\d+)?\s*(?:x|×)\s*\d/.test(text) && /(recover|recovery|rest|jog|walk)/.test(text);
 }
 
 function parseSplitLines(text){

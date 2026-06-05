@@ -193,6 +193,28 @@ function checkTrainingCalendarQualityEditParsing() {
   console.log("Training Calendar quality edit parser ok");
 }
 
+function checkDashboardPlainLapSplitsStayLaps() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  const required = [
+    "function hasRepRestPattern(row)",
+    "if(!hasRepRestPattern(row)||splits.length<2)return 'lap';",
+    "return /\\b\\d+(?:\\s*[-–]\\s*\\d+)?\\s*(?:x|×)\\s*\\d/.test(text) && /(recover|recovery|rest|jog|walk)/.test(text);",
+  ];
+  const requiredApi = [
+    "function hasRepRestPattern(row)",
+    'if (!hasRepRestPattern(row) || splits.length < 2) return "lap";',
+    "return /\\b\\d+(?:\\s*[-–]\\s*\\d+)?\\s*(?:x|×)\\s*\\d/.test(text) && /(recover|recovery|rest|jog|walk)/.test(text);",
+  ];
+  required.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`dashboard plain lap split guard missing ${text}`);
+  });
+  requiredApi.forEach((text) => {
+    if (!api.includes(text)) throw new Error(`dashboard API plain lap split guard missing ${text}`);
+  });
+  console.log("dashboard plain lap split guard ok");
+}
+
 function checkMeetHistorySportToolbarFilter() {
   const html = fs.readFileSync("meet-history.html", "utf8");
   const bar = html.match(/<section class="bar">([\s\S]*?)<\/section>/);
@@ -332,6 +354,7 @@ checkDashboardActivityRangeLayout();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
+checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
