@@ -246,6 +246,25 @@ function checkMeetHistoryMeetListChronological() {
   console.log("Meet History chronological meet list ok");
 }
 
+function checkMeetHistoryPerformanceCaches() {
+  const html = fs.readFileSync("meet-history.html", "utf8");
+  const required = [
+    "var meetGroupCache=null;",
+    "var priorResultCache=null;",
+    "function invalidateMeetHistoryCache()",
+    "if(meetGroupCache)return meetGroupCache;",
+    "priorResultCache=buildPriorResultCache();",
+    "function buildPriorResultCache()",
+    "if(row&&row._searchText)return row._searchText;",
+    "searchRenderTimer=setTimeout(render,120);",
+    "invalidateMeetHistoryCache();",
+  ];
+  required.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Meet History performance cache missing ${text}`);
+  });
+  console.log("Meet History performance cache ok");
+}
+
 function checkHistoricalMeetResultsLoadUnmatched() {
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const required = [
@@ -370,6 +389,7 @@ checkTrainingCalendarQualityEditParsing();
 checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
+checkMeetHistoryPerformanceCaches();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkAthleticEventRecordsCalendarRanges();
