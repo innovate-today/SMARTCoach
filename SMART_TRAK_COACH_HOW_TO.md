@@ -331,6 +331,8 @@ How to use it:
 
 To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.
 
+To edit a workout already on the calendar, open the workout and click **Edit**. Quality Session edits reopen with the saved warmup, reps, distance, effort, recovery, cooldown, details, and target text so the coach can adjust the actual workout instead of rebuilding it from scratch.
+
 To copy a workout already on the calendar:
 
 1. Click the copy icon on the workout card, or open the workout and click **Copy**.
