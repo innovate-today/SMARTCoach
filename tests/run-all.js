@@ -175,6 +175,24 @@ function checkWeatherLocationSaveFallback() {
   console.log("weather location save fallback ok");
 }
 
+function checkTrainingCalendarQualityEditParsing() {
+  const html = fs.readFileSync("training-calendar.html", "utf8");
+  const required = [
+    "function parseQualityDistanceLine(line)",
+    "function hydrateQualityBuilderFromDay(day)",
+    "hydrateQualityBuilderFromDay(calendarEditDay);",
+    "distanceValue:match[3],",
+    "distanceUnit:normalizeQualityDistanceUnit(match[4]),",
+    "effort:String(match[5]||'Threshold').trim(),",
+    "recoveryUnit:normalizeQualityRecoveryUnit(recovery&&recovery[2]||'min (jog)')",
+    "if(/^mi\\b|^mile/.test(value))return 'mi ('+movement+')';",
+  ];
+  required.forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Training Calendar quality edit parser missing ${text}`);
+  });
+  console.log("Training Calendar quality edit parser ok");
+}
+
 function checkMeetHistorySportToolbarFilter() {
   const html = fs.readFileSync("meet-history.html", "utf8");
   const bar = html.match(/<section class="bar">([\s\S]*?)<\/section>/);
@@ -313,6 +331,7 @@ checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
+checkTrainingCalendarQualityEditParsing();
 checkMeetHistorySportToolbarFilter();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();

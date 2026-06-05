@@ -2058,6 +2058,63 @@ function parseDistanceParts(text,fallbackValue,fallbackUnit){
     unit:match&&match[2] ? match[2] : (fallbackUnit||'mi')
   };
 }
+function normalizeQualityDistanceUnit(unit){
+  var value=String(unit||'').toLowerCase().replace(/\./g,'').trim();
+  if(/^k/.test(value))return 'km';
+  if(/^mi|^mile/.test(value))return 'mi';
+  if(/^m|^meter/.test(value))return 'm';
+  return 'mi';
+}
+function normalizeQualityRecoveryUnit(unit){
+  var value=String(unit||'').toLowerCase().replace(/\./g,'').replace(/\s+/g,' ').trim();
+  var movement=value.indexOf('walk')>=0?'walk':value.indexOf('rest')>=0?'rest':'jog';
+  if(/^sec|^second/.test(value))return movement==='rest'?'sec rest':'sec ('+movement+')';
+  if(/^mi\b|^mile/.test(value))return 'mi ('+movement+')';
+  if(/^m\b|^meter/.test(value))return 'm ('+movement+')';
+  if(/^k|^kilometer/.test(value))return 'km ('+movement+')';
+  return 'min ('+movement+')';
+}
+function parseQualityDistanceLine(line){
+  var match=String(line||'').match(/(?:(\d+)\s*x\s*\(\s*)?(\d+)\s*x\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters)\s*@\s*([^\/;\n]+?)(?=\s+(?:with|\/)|\s*;|\s*$)/i);
+  if(!match)return null;
+  var recovery=String(line||'').match(/(?:with|\/)\s*([\d.]+)\s*((?:minute|minutes|min|second|seconds|sec|mile|miles|mi|kilometer|kilometers|km|meter|meters|m)(?:\s*\([^)]*\)|\s+(?:jog|walk|rest))?)(?=\s+recovery|\s*$)/i);
+  return {
+    kind:match[1]?'repeat':'set',
+    repeatCount:match[1]||1,
+    reps:match[2],
+    distanceValue:match[3],
+    distanceUnit:normalizeQualityDistanceUnit(match[4]),
+    effort:String(match[5]||'Threshold').trim(),
+    recoveryValue:recovery&&recovery[1]||1,
+    recoveryUnit:normalizeQualityRecoveryUnit(recovery&&recovery[2]||'min (jog)')
+  };
+}
+function hydrateQualityBuilderFromDay(day){
+  if(!day||inferCalendarActivityMode(day)!=='quality')return;
+  var source=[day.details,day.targetSplits].filter(Boolean).join('\n');
+  if(!source)return;
+  var warmup=source.match(/Warmup:\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters)\b/i);
+  var cooldown=source.match(/Cooldown:\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters)\b/i);
+  var parsedRows=[];
+  String(source).split(/\r?\n|;/).forEach(function(line){
+    var parsed=parseQualityDistanceLine(line);
+    if(parsed)parsedRows.push(parsed);
+  });
+  if(warmup){
+    els.addQualityWarmupValue.value=warmup[1];
+    setSelectValue(els.addQualityWarmupUnit,normalizeQualityDistanceUnit(warmup[2]));
+  }
+  if(cooldown){
+    els.addQualityCooldownValue.value=cooldown[1];
+    setSelectValue(els.addQualityCooldownUnit,normalizeQualityDistanceUnit(cooldown[2]));
+  }
+  if(parsedRows.length){
+    els.qualityRows.innerHTML='';
+    addQualityRow(parsedRows[0]);
+  }else{
+    renderAddActivitySummary();
+  }
+}
 function openAddDayModal(dateValue,mode,editDay){
   calendarEditDay=editDay||null;
   calendarEditBuilderDirty=false;
@@ -2119,6 +2176,7 @@ function openAddDayModal(dateValue,mode,editDay){
     els.addDayVolume.value=calendarEditDay.plannedVolume||els.addDayVolume.value;
     els.addDayTarget.value=calendarEditDay.targetSplits||els.addDayTarget.value;
     els.addDayDetails.value=calendarEditDay.details||els.addDayDetails.value;
+    hydrateQualityBuilderFromDay(calendarEditDay);
   }
   setAddDayStatus(calendarEditDay?'Adjustments update this calendar workout only.':'Save as a manual calendar entry, or connect it to a saved plan.','');
   els.addDayModal.hidden=false;
