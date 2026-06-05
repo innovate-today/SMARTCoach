@@ -265,6 +265,26 @@ function checkMeetHistoryPerformanceCaches() {
   console.log("Meet History performance cache ok");
 }
 
+function checkPageSearchDebounces() {
+  const pages = [
+    ["records.html", "els.search.addEventListener('input',scheduleSearchRender);", "searchRenderTimer=setTimeout(render,120);"],
+    ["attendance.html", "els.search.addEventListener('input',scheduleSearchRender);", "searchRenderTimer=setTimeout(render,120);"],
+    ["dashboard.html", "els.search.addEventListener('input',scheduleRowsRender);", "searchRenderTimer=setTimeout(renderRows,120);"],
+    ["training-calendar.html", "els.search.addEventListener('input',scheduleSearchRender);", "searchRenderTimer=setTimeout(render,120);"],
+    ["athletes.html", "els.equipmentLookupSearch.addEventListener('input',scheduleEquipmentLookupRender);", "equipmentLookupTimer=setTimeout(renderEquipmentLookup,120);"],
+  ];
+  pages.forEach(([file, listener, timer]) => {
+    const html = fs.readFileSync(file, "utf8");
+    if (!html.includes(listener)) throw new Error(`${file} heavy search listener is not debounced`);
+    if (!html.includes(timer)) throw new Error(`${file} heavy search timer is missing`);
+  });
+  const records = fs.readFileSync("records.html", "utf8");
+  if (!records.includes("function filteredRecords(currentKeys)")) {
+    throw new Error("records current-record status should reuse the render currentKeys map.");
+  }
+  console.log("page search debounce checks ok");
+}
+
 function checkHistoricalMeetResultsLoadUnmatched() {
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const required = [
@@ -390,6 +410,7 @@ checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
 checkMeetHistoryPerformanceCaches();
+checkPageSearchDebounces();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkAthleticEventRecordsCalendarRanges();

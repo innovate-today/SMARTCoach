@@ -360,6 +360,7 @@ tr:last-child td{border-bottom:0}
 
 <script>
 var records=[];
+var searchRenderTimer=null;
 var bulkRows=[];
 var bulkDuplicateCount=0;
 var recordSort={key:'event',dir:'asc'};
@@ -1169,10 +1170,10 @@ function filteredBaseRecords(){
     return true;
   }));
 }
-function filteredRecords(){
+function filteredRecords(currentKeys){
   var status=els.statusFilter.value;
   var base=filteredBaseRecords().filter(recordIsUsable);
-  var currentKeys=currentRecordKeys(records.filter(recordIsUsable));
+  currentKeys=currentKeys||currentRecordKeys(records.filter(recordIsUsable));
   return base.filter(function(row){
     var isCurrent=!!currentKeys[recordIdentity(row)];
     if(status==='current'&&!isCurrent)return false;
@@ -1293,8 +1294,8 @@ function recordRowHtml(row,currentKeys){
   '</tr>';
 }
 function render(){
-  var list=filteredRecords();
   var currentKeys=currentRecordKeys(records.filter(recordIsUsable));
+  var list=filteredRecords(currentKeys);
   var events={};
   var athletes={};
   list.forEach(function(row){
@@ -1310,6 +1311,10 @@ function render(){
   updateSortButtons();
   els.rows.innerHTML=list.map(function(row){return recordRowHtml(row,currentKeys);}).join('');
   els.empty.hidden=!!list.length;
+}
+function scheduleSearchRender(){
+  clearTimeout(searchRenderTimer);
+  searchRenderTimer=setTimeout(render,120);
 }
 function loadRecords(){
   els.refreshBtn.disabled=true;
@@ -1457,7 +1462,7 @@ function init(){
       return;
     }
   });
-  els.search.addEventListener('input',render);
+  els.search.addEventListener('input',scheduleSearchRender);
   els.genderFilter.addEventListener('change',render);
   els.typeFilter.addEventListener('change',render);
   els.eventFilter.addEventListener('change',render);

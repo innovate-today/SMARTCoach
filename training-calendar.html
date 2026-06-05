@@ -566,6 +566,7 @@ button.compact{padding:6px 9px;font-size:12px}
 <script>
 var plans=[];
 var days=[];
+var searchRenderTimer=null;
 var mileageAthletes=[];
 var mileageTrainingRows=[];
 var trainingGroups=[];
@@ -1209,6 +1210,10 @@ function render(){
   els.calendar.classList.toggle('listscroll',viewMode==='list');
   els.calendar.innerHTML=viewMode==='list'?renderListView(list):renderWeekView(list);
   els.empty.hidden=!!list.length||viewMode==='week';
+}
+function scheduleSearchRender(){
+  clearTimeout(searchRenderTimer);
+  searchRenderTimer=setTimeout(render,120);
 }
 function renderMixBar(counts){
   els.mixBar.hidden=mixHidden;
@@ -3533,7 +3538,7 @@ function init(){
   els.statusFilter.addEventListener('change',render);
   els.dateFilter.addEventListener('change',render);
   els.bulkStatusBtn.addEventListener('click',bulkUpdateVisibleStatus);
-  els.search.addEventListener('input',render);
+  els.search.addEventListener('input',scheduleSearchRender);
   els.mixShowBtn.addEventListener('click',function(){
     mixHidden=false;
     saveMixPreference();
