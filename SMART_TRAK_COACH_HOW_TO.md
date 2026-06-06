@@ -489,6 +489,8 @@ How to use it on SMART Trak desktop:
 
 Keep Trak notes can be up to 4,000 characters. There is no separate title field; write the full briefing in the note box.
 
+When Keep Trak opens on desktop, notes older than 30 days appear in a cleanup message. The old notes are selected by default so coaches can delete all selected notes, uncheck notes they want to keep, or choose **Not Now**.
+
 How to use it on the SMARTCoach app:
 
 1. Open **Keep** from the Groups toolbar.

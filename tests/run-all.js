@@ -338,6 +338,11 @@ function checkKeepTrakFeature() {
     ".top{position:sticky",
     "maxlength=\"4000\"",
     "charCount",
+    "id=\"cleanupPanel\"",
+    "function cleanupCutoffDate()",
+    "return addDays(todayISO(),-30);",
+    "function deleteSelectedCleanupNotes()",
+    "Delete Selected",
   ].forEach((text) => {
     if (!desktop.includes(text)) throw new Error(`desktop Keep Trak missing ${text}`);
   });

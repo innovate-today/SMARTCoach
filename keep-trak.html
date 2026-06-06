@@ -45,6 +45,14 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
 .notebody{white-space:pre-wrap;line-height:1.45;padding:12px;font-size:14px}
 .noteactions{display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px}
 .empty{padding:22px;text-align:center;color:var(--muted)}
+.cleanup{border-color:#f4c56f;background:#fff8df}
+.cleanup .panelhead{background:#fff1bd;border-bottom-color:#f4c56f}
+.cleanup-list{display:grid;gap:8px;margin:10px 0}
+.cleanup-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;border:1px solid #f4c56f;border-radius:8px;background:#fff;padding:10px}
+.cleanup-row input{width:18px;height:18px;margin-top:2px;accent-color:var(--blue)}
+.cleanup-row b{display:block;font-size:14px}
+.cleanup-row span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.cleanup-actions{display:flex;gap:8px;flex-wrap:wrap}
 .today-badge{display:inline-flex;align-items:center;border-radius:999px;background:#e8efff;color:#173891;padding:3px 8px;font-size:11px;font-weight:900;margin-left:6px}
 @media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%;justify-content:stretch}.actions a,.actions button{text-align:center;flex:1}.layout{grid-template-columns:1fr}.toolbar,.formgrid{grid-template-columns:1fr}}
 </style>
@@ -80,6 +88,19 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
     </div>
   </section>
 
+  <section id="cleanupPanel" class="panel cleanup" hidden>
+    <div class="panelhead"><h2>30-Day Cleanup</h2><span id="cleanupStatus" class="status"></span></div>
+    <div class="panelbody">
+      <div class="status">These Keep Trak notes are more than 30 days old. Select the ones you want to delete.</div>
+      <div id="cleanupList" class="cleanup-list"></div>
+      <div class="cleanup-actions">
+        <button id="cleanupDeleteBtn" class="danger" type="button">Delete Selected</button>
+        <button id="cleanupSelectBtn" class="secondary" type="button">Select All</button>
+        <button id="cleanupSkipBtn" class="ghost" type="button">Not Now</button>
+      </div>
+    </div>
+  </section>
+
   <section class="layout">
     <section class="panel">
       <div class="panelhead"><h2>Add / Edit Note</h2><span id="editStatus" class="status">New note</span></div>
@@ -108,6 +129,7 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
 
 <script>
 var notes=[];
+var cleanupNotes=[];
 var editingId='';
 var els={
   dashboardLink:document.getElementById('dashboardLink'),
@@ -126,6 +148,12 @@ var els={
   rangeStatus:document.getElementById('rangeStatus'),
   editStatus:document.getElementById('editStatus'),
   charCount:document.getElementById('charCount'),
+  cleanupPanel:document.getElementById('cleanupPanel'),
+  cleanupStatus:document.getElementById('cleanupStatus'),
+  cleanupList:document.getElementById('cleanupList'),
+  cleanupDeleteBtn:document.getElementById('cleanupDeleteBtn'),
+  cleanupSelectBtn:document.getElementById('cleanupSelectBtn'),
+  cleanupSkipBtn:document.getElementById('cleanupSkipBtn'),
   listTitle:document.getElementById('listTitle'),
   notesList:document.getElementById('notesList'),
   lastUpdated:document.getElementById('lastUpdated')
@@ -141,6 +169,7 @@ function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}c
 function sessionToken(){try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}}
 function apiHeaders(extra){var headers=extra||{};headers['X-SMARTCoach-Account']=accountKey();var session=sessionToken();var code=accessCode();if(session)headers['X-SMARTCoach-Session']=session;if(code&&!session)headers['X-SMARTCoach-Access-Code']=code;return headers;}
 function keepTrakUrl(){var url=new URL('/api/smart-trak/keep-trak',window.location.origin);var key=accountKey();if(key&&key!=='default')url.searchParams.set('account',key);url.searchParams.set('date',els.dateInput.value||todayISO());return url.pathname+url.search;}
+function keepTrakAllUrl(){var url=new URL('/api/smart-trak/keep-trak',window.location.origin);var key=accountKey();if(key&&key!=='default')url.searchParams.set('account',key);return url.pathname+url.search;}
 function todayISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function addDays(value,days){var parts=String(value||todayISO()).split('-').map(Number);var d=new Date(parts[0],parts[1]-1,parts[2]);d.setDate(d.getDate()+days);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
@@ -220,6 +249,58 @@ function updateCharCount(){
   els.charCount.textContent=count+' / 4000';
   els.charCount.style.color=count>3800?'#b45309':'var(--muted)';
 }
+function cleanupCutoffDate(){
+  return addDays(todayISO(),-30);
+}
+function loadCleanupNotes(){
+  return fetch(keepTrakAllUrl(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Keep Trak cleanup could not load.');
+    var cutoff=cleanupCutoffDate();
+    cleanupNotes=(Array.isArray(result.data&&result.data.notes)?result.data.notes:[]).filter(function(note){
+      return note&&note.id&&note.date&&note.date<cutoff;
+    });
+    renderCleanupPrompt();
+  }).catch(function(){
+    cleanupNotes=[];
+    renderCleanupPrompt();
+  });
+}
+function renderCleanupPrompt(){
+  if(!cleanupNotes.length){
+    els.cleanupPanel.hidden=true;
+    return;
+  }
+  els.cleanupPanel.hidden=false;
+  els.cleanupStatus.textContent=cleanupNotes.length+' older than 30 days';
+  els.cleanupList.innerHTML=cleanupNotes.map(function(note){
+    var detail=[formatDate(note.date),note.coachName||'Coach',note.completed?'Completed':'Open'].join(' · ');
+    return '<label class="cleanup-row"><input type="checkbox" data-cleanup-id="'+esc(note.id)+'" checked><span><b>'+esc(noteDisplayTitle(note))+'</b><span>'+esc(detail)+'</span><span>'+esc(String(note.body||note.title||'').slice(0,180))+'</span></span></label>';
+  }).join('');
+}
+function selectedCleanupIds(){
+  return Array.prototype.slice.call(els.cleanupList.querySelectorAll('input[data-cleanup-id]:checked')).map(function(input){return input.getAttribute('data-cleanup-id');}).filter(Boolean);
+}
+function selectAllCleanupNotes(){
+  Array.prototype.slice.call(els.cleanupList.querySelectorAll('input[data-cleanup-id]')).forEach(function(input){input.checked=true;});
+}
+function skipCleanupPrompt(){
+  els.cleanupPanel.hidden=true;
+}
+function deleteSelectedCleanupNotes(){
+  var ids=selectedCleanupIds();
+  if(!ids.length){els.cleanupStatus.textContent='Select at least one note to delete.';return;}
+  if(!confirm('Delete '+ids.length+' Keep Trak note'+(ids.length===1?'':'s')+' older than 30 days?'))return;
+  els.cleanupStatus.textContent='Deleting selected notes...';
+  saveNotes([],ids).then(function(){
+    cleanupNotes=cleanupNotes.filter(function(note){return ids.indexOf(note.id)<0;});
+    renderCleanupPrompt();
+    return loadNotes();
+  }).catch(function(error){
+    els.cleanupStatus.textContent=error&&error.message?error.message:'Cleanup delete failed.';
+  });
+}
 function toggleNote(id,completed){
   var note=notes.find(function(item){return item.id===id;});
   if(!note)return;
@@ -261,9 +342,13 @@ function init(){
   els.dateInput.addEventListener('change',function(){clearForm();loadNotes();});
   els.saveBtn.addEventListener('click',saveNote);
   els.clearBtn.addEventListener('click',clearForm);
+  els.cleanupDeleteBtn.addEventListener('click',deleteSelectedCleanupNotes);
+  els.cleanupSelectBtn.addEventListener('click',selectAllCleanupNotes);
+  els.cleanupSkipBtn.addEventListener('click',skipCleanupPrompt);
   els.bodyInput.addEventListener('input',updateCharCount);
   updateCharCount();
   loadNotes();
+  loadCleanupNotes();
 }
 init();
 </script>
