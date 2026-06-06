@@ -1138,6 +1138,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 296. Meet History performance was improved for large historical imports. The page now caches grouped meets and prior-result comparison lookups between data loads, caches row search text, invalidates those caches after fresh loads/import saves, and debounces search input so large histories do not re-filter/re-render on every keystroke. Added regression coverage in `tests/run-all.js`; `npm test` passed on 2026-06-05.
 297. The same typed-search performance guard was extended across the larger coach-facing pages: Records, Attendance, Dashboard, Training Calendar, and the Athletes Equipment Lookup now debounce heavy table rebuilds while typing. Records also reuses the current-record status map inside one render instead of calculating it twice. Added regression coverage in `tests/run-all.js`; `npm test` passed on 2026-06-05.
 298. Field event no-mark saves are supported. Long Jump, Triple Jump, Shot Put, Discus, Javelin, and Hammer can save an athlete with all foul/pass attempts as `NM`, while High Jump and Pole Vault continue to save all-miss/pass results as `NH`. The mobile field-flight flow, mobile Save Meet Results field form, Dashboard Log Race Result, Training Calendar Log Race Result, and meet-result API all accept this no-legal-attempt path. Added regression coverage in `tests/run-all.js`; `npm test` passed on 2026-06-05.
+299. Keep Trak was added as an account-backed practice briefing notes workflow. Desktop `/keep-trak.html` lets coaches create, edit, complete/reopen, and delete notes; the SMARTCoach mobile app adds a **Keep** action on the Groups toolbar for create/view/complete without delete. Notes store in the account registry under `keepTrakNotes`, are capped at 1500 records per account, and incomplete notes from earlier dates carry forward until completed. Dashboard and Training Calendar link to Keep Trak, `vercel.json` marks the page noindex/no-cache, and `SMART_TRAK_COACH_HOW_TO.md` documents the workflow.
 
 ## Known Good Test Flow
 
@@ -1147,7 +1148,7 @@ Use this as the current launch regression test:
 2. For a live Pro test account, run Test Setup First, then Save Account Setup.
 3. Lookup the account and confirm the customer account record is saved with subscription, coach seats, SMART Trak connection, and coach access-code readiness.
 4. Check Customer Access and confirm account access, account source, SMART Trak connection, and device/coach-code status.
-5. Open Dashboard, Athletes, Training Calendar, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Meet History, Records, Track Simulator, XC Simulator, and Weather with the customer account key.
+5. Open Dashboard, Athletes, Training Calendar, Keep Trak, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Meet History, Records, Track Simulator, XC Simulator, and Weather with the customer account key.
 6. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
 7. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
 8. Create or import a plan, build a training group, assign the plan to a group or selected athletes, and confirm the Training Calendar shows the plan days.
@@ -1159,6 +1160,7 @@ Use this as the current launch regression test:
 14. Add multiple Records rows for the same event/gender with different marks and confirm only the best stays current after refresh.
 15. Load My Season Bests in Track Simulator and My Season Best in XC Simulator, load saved fields, and score both simulated meets.
 16. Search Weather by city and city/state, save a location, refresh, and confirm current/hourly/daily forecast cards render.
+16a. Add one Keep Trak note on desktop, confirm it appears on the SMARTCoach app Keep view, mark it complete on the app, and confirm it is greyed out after refresh.
 17. Trigger the GHL Subscription Payload once and confirm account lookup shows the recent account update without exposing private tokens or coach access codes.
 18. Confirm parent email controls remain hidden/off for initial rollout.
 19. Complete live smoke-test checks, stamp launch sign-off, copy the activation record, copy the coach invite, and complete the post-launch first-login/first-sync/bulk-archive follow-up.

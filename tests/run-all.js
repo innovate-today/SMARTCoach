@@ -10,6 +10,7 @@ const htmlFiles = [
   "plan-import.html",
   "plan-builder.html",
   "meet-history.html",
+  "keep-trak.html",
   "records.html",
   "track-simulator.html",
   "xc-simulator.html",
@@ -315,6 +316,43 @@ function checkFieldNoMarkResultsAllowed() {
   console.log("field no-mark result support ok");
 }
 
+function checkKeepTrakFeature() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  const desktop = fs.readFileSync("keep-trak.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
+  [
+    "id=\"m-keep-trak\"",
+    "function openKeepTrak()",
+    "function loadKeepTrak()",
+    "function toggleKeepTrakNote(id,completed)",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile Keep Trak missing ${text}`);
+  });
+  [
+    "/api/smart-trak/keep-trak",
+    "function deleteNote(id)",
+    "Open notes from earlier days carry forward until completed.",
+  ].forEach((text) => {
+    if (!desktop.includes(text)) throw new Error(`desktop Keep Trak missing ${text}`);
+  });
+  if (!dashboard.includes("keepTrakLink") || !calendar.includes("keepTrakLink")) {
+    throw new Error("Keep Trak coach navigation link missing.");
+  }
+  [
+    'route === "keep-trak"',
+    "function accountKeepTrak",
+    "saveKeepTrakNotes",
+    "loadKeepTrakNotes",
+  ].forEach((text) => {
+    if (!api.includes(text) && !registry.includes(text)) throw new Error(`Keep Trak backend missing ${text}`);
+  });
+  if (!registry.includes(".slice(-1500)")) throw new Error("Keep Trak registry storage must stay capped.");
+  console.log("Keep Trak feature ok");
+}
+
 function checkHistoricalMeetResultsLoadUnmatched() {
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const required = [
@@ -442,6 +480,7 @@ checkMeetHistoryMeetListChronological();
 checkMeetHistoryPerformanceCaches();
 checkPageSearchDebounces();
 checkFieldNoMarkResultsAllowed();
+checkKeepTrakFeature();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkAthleticEventRecordsCalendarRanges();

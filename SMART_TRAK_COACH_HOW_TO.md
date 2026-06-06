@@ -473,6 +473,30 @@ How to use it:
 
 Saved locations stay in that SMARTCoach account's browser.
 
+## Keep Trak
+
+Use Keep Trak for daily team briefing notes: reminders, deadlines, practice changes, meet camp cleanup notes, weather talking points, character lessons, or anything another coach may need to add before practice.
+
+How to use it on SMART Trak desktop:
+
+1. Open **Keep Trak** from Dashboard or Training Calendar.
+2. Choose the date for the briefing.
+3. Enter the coach name and note.
+4. Click **Save Note**.
+5. Use **Edit** to update a note.
+6. Use **Complete** after the note has been addressed.
+7. Use **Delete** only from desktop when a note should be removed.
+
+How to use it on the SMARTCoach app:
+
+1. Open **Keep** from the Groups toolbar.
+2. Choose the date if needed.
+3. Enter the coach name and note.
+4. Tap **Save Note**.
+5. Tap **Complete** once the note has been addressed.
+
+Completed notes stay visible but are greyed out on the app. The app does not include a delete button. Open notes from earlier days carry forward until completed, so a reminder written at a meet can still appear at the next practice.
+
 ## Records
 
 Use Records as the school record board. It is meant to display official records entered by the coach.

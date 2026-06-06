@@ -30,7 +30,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -93,6 +93,13 @@ module.exports = async function handler(req, res) {
     if (!requireProPlan(req, res)) return;
     await recordRequestCoachDevice(req).catch(() => {});
     return accountAttendance(req, res);
+  }
+
+  if (route === "keep-trak") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    await recordRequestCoachDevice(req).catch(() => {});
+    return accountKeepTrak(req, res);
   }
 
   if (route === "docu-trak") {
@@ -242,6 +249,54 @@ function setAttendanceCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label");
+}
+
+async function accountKeepTrak(req, res) {
+  setKeepTrakCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    if (req.method === "GET") {
+      const notes = await loadKeepTrakNotes(accountKey, {
+        date: firstQueryValue(req.query && req.query.date),
+        start: firstQueryValue(req.query && req.query.start),
+        end: firstQueryValue(req.query && req.query.end),
+        includeCompleted: firstQueryValue(req.query && req.query.includeCompleted),
+        includeArchived: firstQueryValue(req.query && req.query.includeArchived),
+      });
+      res.status(200).json({ success: true, notes, count: notes.length });
+      return;
+    }
+
+    if (req.method === "POST" || req.method === "PATCH") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      const notes = Array.isArray(payload.notes) ? payload.notes : payload.note ? [payload.note] : [];
+      const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
+      if (!notes.length && !deleteIds.length) {
+        res.status(400).json({ error: "No Keep Trak notes were provided." });
+        return;
+      }
+      const saved = await saveKeepTrakNotes(accountKey, notes, { deleteIds });
+      res.status(200).json({ success: !!saved.saved, ...saved });
+      return;
+    }
+
+    res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Keep Trak save failed." });
+  }
+}
+
+function setKeepTrakCorsHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label, X-SMARTCoach-Coach-Id, X-SMARTCoach-Coach-Name");
 }
 
 async function accountDocuTrak(req, res) {

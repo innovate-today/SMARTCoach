@@ -234,6 +234,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
+        <a id="keepTrakLink" class="linkbtn modal-action" href="/keep-trak.html">Keep Trak</a>
         <a id="weatherLink" class="linkbtn modal-action" href="/weather.html">Weather</a>
         <button id="approveDraftsBtn" class="modal-action" type="button" hidden>Approve Drafts</button>
         <button id="scheduleApprovedBtn" class="modal-action" type="button" hidden>Schedule Approved</button>
@@ -597,6 +598,7 @@ var els={
   accessSubmit:document.getElementById('accessSubmit'),
   accessStatus:document.getElementById('accessStatus'),
   dashboardLink:document.getElementById('dashboardLink'),
+  keepTrakLink:document.getElementById('keepTrakLink'),
   weatherLink:document.getElementById('weatherLink'),
 	  planImportLink:document.getElementById('planImportLink'),
 	  planSetupLink:document.getElementById('planSetupLink'),
@@ -3397,6 +3399,7 @@ function init(){
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
   loadMixPreference();
   els.dashboardLink.href=pageUrl('/dashboard.html');
+  els.keepTrakLink.href=pageUrl('/keep-trak.html');
   els.weatherLink.href=pageUrl('/weather.html');
   els.planImportLink.href=pageUrl('/plan-import.html');
   els.planSetupLink.href=pageUrl('/plan-setup.html');

@@ -144,6 +144,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-attendance .att-actions{padding:10px 12px}
 #m-attendance .att-note{margin:0;padding:0 12px 10px}
 #m-attendance .att-head{border-bottom:1px solid #d8dee7}
+#m-keep-trak .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+#m-keep-trak .mhd,#m-keep-trak .mttl,#m-keep-trak .srow,#m-keep-trak .bulk-status,#m-keep-trak .mbtn{flex-shrink:0}
+#keep-list{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}
+.keep-card{background:#fff;border:1px solid #d8dee7;border-radius:12px;margin:0 0 12px;overflow:hidden}
+.keep-card.done{background:#eef1f6;color:#667085}
+.keep-card.done .keep-body{text-decoration:none;color:#667085}
+.keep-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#050505;color:#fff}
+.keep-card.done .keep-head{background:#64748b}
+.keep-title{font-size:15px;font-weight:900;line-height:1.2}
+.keep-meta{font-size:11px;opacity:.82;margin-top:2px}
+.keep-body{white-space:pre-wrap;font-size:14px;line-height:1.35;color:#222;padding:12px}
+.keep-actions{display:flex;gap:8px;padding:0 12px 12px}
+.keep-actions .att-btn{flex:1;font-size:13px;padding:10px 8px}
 </style>
 <style>
 #m-equipment .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
@@ -214,6 +227,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <button class="tbtn" id="groups-tray-account-btn" onclick="openAccountSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Account</span></button>
     <button class="tbtn" id="groups-tray-refresh-btn" onclick="refreshAppVersion()"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M18 2v4h-4"/><path d="M6 22v-4h4"/></svg><span>Refresh</span></button>
     <button class="tbtn" id="groups-tray-attendance-btn" onclick="openAttendancePicker()"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M9 2h6v4H9z"/><path d="M6 4H5a2 2 0 0 0-2 2v14h18V6a2 2 0 0 0-2-2h-1"/><path d="M7 11l2 2 4-4"/><path d="M7 17h10"/></svg><span>Attend</span></button>
+    <button class="tbtn pro-only" id="groups-tray-keep-btn" onclick="openKeepTrak()"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg><span>Keep</span></button>
     <button class="tbtn pro-only" id="groups-tray-equipment-btn" onclick="openEquipmentPicker()"><svg viewBox="0 0 24 24"><path d="M6 7h12l1 13H5z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/><path d="M9 13h6"/><path d="M9 17h4"/></svg><span>Equip</span></button>
     <button class="tbtn" id="groups-tray-archive-btn" onclick="openBulkArchive()"><svg viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M5 7l1 13h12l1-13"/><path d="M9 11h6"/><path d="M8 4h8l1 3H7z"/></svg><span>Archive</span></button>
     <button class="tbtn" id="groups-tray-delete-btn" onclick="delGroup()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
@@ -374,6 +388,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div id="att-list" class="builder-box"></div>
     <button class="mbtn" onclick="saveAttendanceAndClose()">Save Attendance</button>
     <button class="mbtn c" onclick="hm('m-attendance')">Close</button>
+    <div style="height:8px"></div>
+  </div>
+</div>
+
+<!-- KEEP TRAK MODAL -->
+<div class="mover h" id="m-keep-trak">
+  <div class="msh">
+    <div class="mhd"></div>
+    <div class="mttl">Keep Trak</div>
+    <div class="srow"><span class="slbl">Date</span><input class="sinp" id="keep-date" type="date" onchange="loadKeepTrak()"/></div>
+    <div class="srow"><span class="slbl">Coach</span><input class="sinp" id="keep-coach" type="text" placeholder="Coach name" autocomplete="off"/></div>
+    <div class="srow" style="align-items:flex-start"><span class="slbl">Note</span><textarea class="sinp ta" id="keep-body" placeholder="Practice briefing, reminders, deadlines, character lesson, meet notes..."></textarea></div>
+    <button class="mbtn" onclick="saveKeepTrakNote()">Save Note</button>
+    <div id="keep-status" class="bulk-status"></div>
+    <div id="keep-list" class="builder-box"></div>
+    <button class="mbtn c" onclick="hm('m-keep-trak')">Close</button>
     <div style="height:8px"></div>
   </div>
 </div>
@@ -2109,6 +2139,7 @@ function updateGroupsTrayActions(){
     account:document.getElementById('groups-tray-account-btn'),
     refresh:document.getElementById('groups-tray-refresh-btn'),
     attendance:document.getElementById('groups-tray-attendance-btn'),
+    keep:document.getElementById('groups-tray-keep-btn'),
     equipment:document.getElementById('groups-tray-equipment-btn'),
     archive:document.getElementById('groups-tray-archive-btn'),
     del:document.getElementById('groups-tray-delete-btn')
@@ -2116,7 +2147,7 @@ function updateGroupsTrayActions(){
   Object.keys(buttons).forEach(function(key){if(buttons[key])buttons[key].hidden=false;});
   if(buttons.del)buttons.del.hidden=GV!=='archive';
   if(GV==='archive'){
-    ['add','account','refresh','attendance','equipment','archive'].forEach(function(key){if(buttons[key])buttons[key].hidden=true;});
+    ['add','account','refresh','attendance','keep','equipment','archive'].forEach(function(key){if(buttons[key])buttons[key].hidden=true;});
   }
 }
 function oGroup(id){
@@ -2448,6 +2479,118 @@ function attendancePayload(day){
       return{id:cp.id,name:cp.name,records:cp.records||{}};
     })
   };
+}
+var KEEP_TRAK={notes:[]};
+function keepTrakDate(){
+  var input=document.getElementById('keep-date');
+  return input&&input.value?input.value:todayISO();
+}
+function keepTrakCoachName(){
+  var input=document.getElementById('keep-coach');
+  var coach=selectedCoachIdentity()||{};
+  return input&&input.value.trim()?input.value.trim():(coach.name||'Coach');
+}
+function openKeepTrak(){
+  if(!isProPlan()){alert('Keep Trak is available with SMARTCoach Pro.');return;}
+  var date=document.getElementById('keep-date');
+  var coachInput=document.getElementById('keep-coach');
+  var coach=selectedCoachIdentity()||{};
+  if(date&&!date.value)date.value=todayISO();
+  if(coachInput&&!coachInput.value)coachInput.value=coach.name||'';
+  sm('m-keep-trak');
+  loadKeepTrak();
+}
+function loadKeepTrak(){
+  var status=document.getElementById('keep-status');
+  if(status)status.textContent='Loading Keep Trak...';
+  return fetch(smartCoachApiUrl('/api/smart-trak/keep-trak')+'&date='+encodeURIComponent(keepTrakDate()),{
+    cache:'no-store',
+    headers:smartCoachApiHeaders()
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Keep Trak could not load.');
+    KEEP_TRAK.notes=Array.isArray(result.data.notes)?result.data.notes:[];
+    renderKeepTrak();
+  }).catch(function(error){
+    KEEP_TRAK.notes=[];
+    renderKeepTrak();
+    if(status)status.textContent='Keep Trak could not load: '+(error&&error.message?error.message:'try again');
+  });
+}
+function renderKeepTrak(){
+  var list=document.getElementById('keep-list');
+  var status=document.getElementById('keep-status');
+  if(!list)return;
+  var notes=KEEP_TRAK.notes||[];
+  if(!notes.length){
+    list.innerHTML='<div class="eq-empty">No briefing notes for this day.</div>';
+    if(status)status.textContent='Open notes from earlier days will carry forward until completed.';
+    return;
+  }
+  list.innerHTML=notes.map(function(note){
+    var complete=!!note.completed;
+    var title=note.title||firstKeepTrakLine(note.body)||'Briefing note';
+    var meta=[formatKeepTrakDate(note.date),note.coachName||'Coach',complete?'Completed':'Open'].filter(Boolean).join(' · ');
+    return '<div class="keep-card '+(complete?'done':'')+'"><div class="keep-head"><div><div class="keep-title">'+ex(title)+'</div><div class="keep-meta">'+ex(meta)+'</div></div></div><div class="keep-body">'+ex(note.body||note.title||'')+'</div><div class="keep-actions"><button class="att-btn '+(complete?'':'on')+'" onclick="toggleKeepTrakNote(\''+keepTrakJs(note.id)+'\','+(!complete)+')">'+(complete?'Reopen':'Complete')+'</button></div></div>';
+  }).join('');
+  if(status)status.textContent=notes.filter(function(note){return !note.completed;}).length+' open · '+notes.length+' total';
+}
+function keepTrakJs(value){
+  return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+function firstKeepTrakLine(text){
+  return String(text||'').split(/\n/).map(function(line){return line.trim();}).filter(Boolean)[0]||'';
+}
+function formatKeepTrakDate(value){
+  var parts=String(value||'').split('-').map(Number);
+  if(parts.length!==3)return value||'';
+  var date=new Date(parts[0],parts[1]-1,parts[2]);
+  if(isNaN(date.getTime()))return value||'';
+  return date.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+function saveKeepTrakNote(){
+  var bodyEl=document.getElementById('keep-body');
+  var status=document.getElementById('keep-status');
+  var body=bodyEl&&bodyEl.value?bodyEl.value.trim():'';
+  if(!body){if(status)status.textContent='Write a note first.';return;}
+  var coach=selectedCoachIdentity()||{};
+  var note={id:'keep_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),date:keepTrakDate(),body:body,title:firstKeepTrakLine(body).slice(0,120),coachId:coach.id||'',coachName:keepTrakCoachName(),completed:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  if(status)status.textContent='Saving Keep Trak...';
+  return saveKeepTrakNotes([note]).then(function(){
+    if(bodyEl)bodyEl.value='';
+    return loadKeepTrak();
+  }).catch(function(error){
+    if(status)status.textContent='Keep Trak could not save: '+(error&&error.message?error.message:'try again');
+  });
+}
+function toggleKeepTrakNote(id,completed){
+  var note=(KEEP_TRAK.notes||[]).find(function(item){return item.id===id;});
+  var status=document.getElementById('keep-status');
+  if(!note)return;
+  var coach=selectedCoachIdentity()||{};
+  note.completed=!!completed;
+  note.completedAt=completed?new Date().toISOString():'';
+  note.completedBy=completed?keepTrakCoachName():'';
+  note.coachId=note.coachId||coach.id||'';
+  note.updatedAt=new Date().toISOString();
+  if(status)status.textContent='Updating Keep Trak...';
+  return saveKeepTrakNotes([note]).then(loadKeepTrak).catch(function(error){
+    if(status)status.textContent='Keep Trak could not update: '+(error&&error.message?error.message:'try again');
+  });
+}
+function saveKeepTrakNotes(notes){
+  return fetch(smartCoachApiUrl('/api/smart-trak/keep-trak'),{
+    method:'POST',
+    headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
+    body:JSON.stringify({notes:notes})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Keep Trak save failed.');
+    if(result.data&&result.data.success===false)throw new Error(result.data.reason||'Keep Trak did not save to SMART Trak.');
+    return result.data;
+  });
 }
 function equipmentGroups(){
   return logs.filter(function(group){return group&&!group.archived&&(group.type||'training')==='training';});
@@ -6245,6 +6388,7 @@ document.addEventListener('touchstart',function(e){
   var t=e.target;
   if(t.closest&&t.closest('.picker-row'))return;
   if(t.closest&&t.closest('#m-attendance'))return;
+  if(t.closest&&t.closest('#m-keep-trak'))return;
   if(t.tagName==='BUTTON'||t.classList.contains('blnk')||t.classList.contains('ibtn')||t.classList.contains('tog')){
     e.preventDefault();t.click();
   }
