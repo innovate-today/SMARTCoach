@@ -2530,7 +2530,7 @@ function renderKeepTrak(){
   }
   list.innerHTML=notes.map(function(note){
     var complete=!!note.completed;
-    var title=note.title||firstKeepTrakLine(note.body)||'Briefing note';
+    var title=keepTrakDisplayTitle(note);
     var meta=[formatKeepTrakDate(note.date),note.coachName||'Coach',complete?'Completed':'Open'].filter(Boolean).join(' · ');
     return '<div class="keep-card '+(complete?'done':'')+'"><div class="keep-head"><div><div class="keep-title">'+ex(title)+'</div><div class="keep-meta">'+ex(meta)+'</div></div></div><div class="keep-body">'+ex(note.body||note.title||'')+'</div><div class="keep-actions"><button class="att-btn '+(complete?'':'on')+'" onclick="toggleKeepTrakNote(\''+keepTrakJs(note.id)+'\','+(!complete)+')">'+(complete?'Reopen':'Complete')+'</button></div></div>';
   }).join('');
@@ -2541,6 +2541,12 @@ function keepTrakJs(value){
 }
 function firstKeepTrakLine(text){
   return String(text||'').split(/\n/).map(function(line){return line.trim();}).filter(Boolean)[0]||'';
+}
+function keepTrakDisplayTitle(note){
+  var title=String(note&&note.title||'').trim();
+  var bodyFirst=firstKeepTrakLine(note&&note.body||'');
+  if(title&&title!==bodyFirst)return title;
+  return 'Briefing note';
 }
 function formatKeepTrakDate(value){
   var parts=String(value||'').split('-').map(Number);
@@ -2555,7 +2561,7 @@ function saveKeepTrakNote(){
   var body=bodyEl&&bodyEl.value?bodyEl.value.trim():'';
   if(!body){if(status)status.textContent='Write a note first.';return;}
   var coach=selectedCoachIdentity()||{};
-  var note={id:'keep_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),date:keepTrakDate(),body:body,title:firstKeepTrakLine(body).slice(0,120),coachId:coach.id||'',coachName:keepTrakCoachName(),completed:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var note={id:'keep_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),date:keepTrakDate(),body:body,title:'',coachId:coach.id||'',coachName:keepTrakCoachName(),completed:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(status)status.textContent='Saving Keep Trak...';
   return saveKeepTrakNotes([note]).then(function(){
     if(bodyEl)bodyEl.value='';

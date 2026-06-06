@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SMART Trak Keep Trak</title>
+<title>Keep Trak</title>
 <style>
 :root{--blue:#2b4fcc;--line:#d6dfec;--muted:#52627a;--bg:#eef3f9;--panel:#fff;--ink:#111827;--good:#08783c;--bad:#b91c1c}
 *{box-sizing:border-box}
@@ -54,8 +54,8 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
     <div class="brand">
       <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
-        <h1>SMART Trak Keep Trak</h1>
-        <div class="sub">Practice briefing notes, reminders, updates, and coach follow-through.</div>
+        <h1>Keep Trak</h1>
+        <div class="sub">Practice briefing notes, reminders, and updates.</div>
         <div id="lastUpdated" class="updated">Loading Keep Trak...</div>
       </div>
     </div>
@@ -150,6 +150,12 @@ function js(value){return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"
 function formatDate(value){var parts=String(value||'').split('-').map(Number);if(parts.length!==3)return value||'';var d=new Date(parts[0],parts[1]-1,parts[2]);if(isNaN(d.getTime()))return value||'';return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});}
 function formatDateTime(value){var d=value?new Date(value):new Date();if(isNaN(d.getTime()))d=new Date();return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 function firstLine(text){return String(text||'').split(/\n/).map(function(line){return line.trim();}).filter(Boolean)[0]||'';}
+function noteDisplayTitle(note){
+  var title=String(note&&note.title||'').trim();
+  var bodyFirst=firstLine(note&&note.body||'');
+  if(title&&title!==bodyFirst)return title;
+  return 'Briefing note';
+}
 function setStatus(text,type){els.status.textContent=text||'';els.status.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';}
 function loadNotes(){
   setStatus('Loading Keep Trak...');
@@ -178,7 +184,7 @@ function render(){
     return;
   }
   els.notesList.innerHTML=notes.map(function(note){
-    var title=note.title||firstLine(note.body)||'Briefing note';
+    var title=noteDisplayTitle(note);
     var meta=[formatDate(note.date),note.coachName||'Coach',note.completed?'Completed':'Open'].join(' · ');
     return '<article class="note '+(note.completed?'completed':'')+'"><div class="notehead"><div><div class="notetitle">'+esc(title)+'</div><div class="notemeta">'+esc(meta)+'</div></div></div><div class="notebody">'+esc(note.body||note.title||'')+'</div><div class="noteactions"><button class="secondary" type="button" onclick="editNote(\''+js(note.id)+'\')">Edit</button><button class="secondary" type="button" onclick="toggleNote(\''+js(note.id)+'\','+(!note.completed)+')">'+(note.completed?'Reopen':'Complete')+'</button><button class="danger" type="button" onclick="deleteNote(\''+js(note.id)+'\')">Delete</button></div></article>';
   }).join('');
@@ -202,7 +208,7 @@ function editNote(id){
 function notePayload(overrides){
   var existing=editingId?notes.find(function(item){return item.id===editingId;})||{}:{};
   var body=els.bodyInput.value.trim();
-  var title=els.titleInput.value.trim()||firstLine(body).slice(0,120);
+  var title=els.titleInput.value.trim();
   return Object.assign({},existing,{
     id:editingId||'keep_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),
     date:existing.date||els.dateInput.value||todayISO(),
