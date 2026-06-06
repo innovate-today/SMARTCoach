@@ -1143,6 +1143,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 301. Keep Trak desktop header is sticky, the desktop Title field was removed, and both desktop/mobile note textareas enforce the 4,000-character note limit that the registry already normalizes. The desktop note form now shows a live character counter. `SMART_TRAK_COACH_HOW_TO.md` documents the limit and no-title workflow.
 302. Keep Trak desktop now checks for notes older than 30 days on page open and shows a 30-Day Cleanup panel when any exist. Old notes are selected by default; coaches can delete selected notes, select all, or dismiss with Not Now. The cleanup uses the existing Keep Trak delete path instead of adding another endpoint.
 303. Keep Trak desktop delete actions now use an in-page confirmation dialog instead of the browser-native embedded-page alert, so the message can say **Delete Keep Trak note?** or **Delete old Keep Trak notes?** with SMART Trak-styled Cancel/Delete buttons. Regression coverage rejects `confirm()` on `keep-trak.html`; `npm test` passed on 2026-06-06.
+304. Keep Trak notes now support quick plain-text bullets on both desktop and the SMARTCoach app. The **Add Bullet** control inserts a `- ` line at the cursor so coaches can keep one daily note with talking points/checklists instead of creating multiple notes. The coach guide documents the workflow.
 
 ## Known Good Test Flow
 

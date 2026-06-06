@@ -33,6 +33,8 @@ input,textarea{width:100%;border:1px solid var(--line);border-radius:8px;backgro
 textarea{min-height:132px;resize:vertical;line-height:1.45}
 .formgrid{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
 .labelrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.note-tools{display:flex;justify-content:flex-end;margin-top:8px}
+.note-tools button{padding:7px 10px}
 .status{font-size:13px;font-weight:900;color:var(--muted)}
 .layout{display:grid;grid-template-columns:360px 1fr;gap:14px}
 .daylist{display:grid;gap:8px}
@@ -120,6 +122,7 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
         <label style="margin-top:10px"><span class="labelrow"><span>Briefing Note</span><span id="charCount" class="status">0 / 4000</span></span>
           <textarea id="bodyInput" maxlength="4000" placeholder="Team briefing, reminder, practice change, deadline, weather note, character lesson..."></textarea>
         </label>
+        <div class="note-tools"><button id="bulletBtn" class="secondary" type="button">Add Bullet</button></div>
         <button id="saveBtn" type="button" style="margin-top:10px;width:100%">Save Note</button>
       </div>
     </section>
@@ -159,6 +162,7 @@ var els={
   dateInput:document.getElementById('dateInput'),
   coachInput:document.getElementById('coachInput'),
   bodyInput:document.getElementById('bodyInput'),
+  bulletBtn:document.getElementById('bulletBtn'),
   saveBtn:document.getElementById('saveBtn'),
   clearBtn:document.getElementById('clearBtn'),
   status:document.getElementById('status'),
@@ -270,6 +274,22 @@ function updateCharCount(){
   var count=(els.bodyInput.value||'').length;
   els.charCount.textContent=count+' / 4000';
   els.charCount.style.color=count>3800?'#b45309':'var(--muted)';
+}
+function insertBulletIntoField(field,onChange){
+  if(!field)return;
+  var value=field.value||'';
+  var start=field.selectionStart==null?value.length:field.selectionStart;
+  var end=field.selectionEnd==null?start:field.selectionEnd;
+  var prefix=start>0&&value[start-1]!=='\n'?'\n':'';
+  var insert=prefix+'- ';
+  field.value=value.slice(0,start)+insert+value.slice(end);
+  var next=start+insert.length;
+  field.focus();
+  field.setSelectionRange(next,next);
+  if(onChange)onChange();
+}
+function addBriefingBullet(){
+  insertBulletIntoField(els.bodyInput,updateCharCount);
 }
 function cleanupCutoffDate(){
   return addDays(todayISO(),-30);
@@ -383,6 +403,7 @@ function init(){
   els.dateInput.addEventListener('change',function(){clearForm();loadNotes();});
   els.saveBtn.addEventListener('click',saveNote);
   els.clearBtn.addEventListener('click',clearForm);
+  els.bulletBtn.addEventListener('click',addBriefingBullet);
   els.cleanupDeleteBtn.addEventListener('click',deleteSelectedCleanupNotes);
   els.cleanupSelectBtn.addEventListener('click',selectAllCleanupNotes);
   els.cleanupSkipBtn.addEventListener('click',skipCleanupPrompt);

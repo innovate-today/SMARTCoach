@@ -400,6 +400,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="keep-date" type="date" onchange="loadKeepTrak()"/></div>
     <div class="srow"><span class="slbl">Coach</span><input class="sinp" id="keep-coach" type="text" placeholder="Coach name" autocomplete="off"/></div>
     <div class="srow" style="align-items:flex-start"><span class="slbl">Note</span><textarea class="sinp ta" id="keep-body" maxlength="4000" placeholder="Practice briefing, reminders, deadlines, character lesson, meet notes..."></textarea></div>
+    <div class="bulk-actions"><button class="mbtn c" onclick="addKeepTrakBullet()">Add Bullet</button></div>
     <button class="mbtn" onclick="saveKeepTrakNote()">Save Note</button>
     <div id="keep-status" class="bulk-status"></div>
     <div id="keep-list" class="builder-box"></div>
@@ -2547,6 +2548,19 @@ function keepTrakDisplayTitle(note){
   var bodyFirst=firstKeepTrakLine(note&&note.body||'');
   if(title&&title!==bodyFirst)return title;
   return 'Briefing note';
+}
+function addKeepTrakBullet(){
+  var field=document.getElementById('keep-body');
+  if(!field)return;
+  var value=field.value||'';
+  var start=field.selectionStart==null?value.length:field.selectionStart;
+  var end=field.selectionEnd==null?start:field.selectionEnd;
+  var prefix=start>0&&value[start-1]!=='\n'?'\n':'';
+  var insert=prefix+'- ';
+  field.value=value.slice(0,start)+insert+value.slice(end);
+  var next=start+insert.length;
+  field.focus();
+  field.setSelectionRange(next,next);
 }
 function formatKeepTrakDate(value){
   var parts=String(value||'').split('-').map(Number);

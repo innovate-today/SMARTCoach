@@ -489,6 +489,8 @@ How to use it on SMART Trak desktop:
 
 Keep Trak notes can be up to 4,000 characters. There is no separate title field; write the full briefing in the note box.
 
+Use **Add Bullet** when one daily briefing note needs a quick checklist or talking-points list. Bullets save as plain text so they sync cleanly between desktop and the SMARTCoach app.
+
 When Keep Trak opens on desktop, notes older than 30 days appear in a cleanup message. The old notes are selected by default so coaches can delete all selected notes, uncheck notes they want to keep, or choose **Not Now**.
 
 How to use it on the SMARTCoach app:
@@ -496,8 +498,9 @@ How to use it on the SMARTCoach app:
 1. Open **Keep** from the Groups toolbar.
 2. Choose the date if needed.
 3. Enter the coach name and note.
-4. Tap **Save Note**.
-5. Tap **Complete** once the note has been addressed.
+4. Tap **Add Bullet** when the note needs checklist-style lines.
+5. Tap **Save Note**.
+6. Tap **Complete** once the note has been addressed.
 
 Completed notes stay visible but are greyed out on the app. The app does not include a delete button. Open notes from earlier days carry forward until completed, so a reminder written at a meet can still appear at the next practice.
 

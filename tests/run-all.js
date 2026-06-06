@@ -328,6 +328,8 @@ function checkKeepTrakFeature() {
     "function openKeepTrak()",
     "function loadKeepTrak()",
     "function toggleKeepTrakNote(id,completed)",
+    "function addKeepTrakBullet()",
+    "Add Bullet",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile Keep Trak missing ${text}`);
   });
@@ -346,6 +348,8 @@ function checkKeepTrakFeature() {
     "id=\"confirmOverlay\"",
     "function openConfirm(title,message,okLabel,onConfirm)",
     "Delete Keep Trak note?",
+    "id=\"bulletBtn\"",
+    "function addBriefingBullet()",
   ].forEach((text) => {
     if (!desktop.includes(text)) throw new Error(`desktop Keep Trak missing ${text}`);
   });
