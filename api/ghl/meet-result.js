@@ -183,9 +183,10 @@ function normalizeMeetResult(payload) {
   if (!payload || typeof payload !== "object") throw httpError(400, "Missing meet result payload.");
 
   const meetDate = payload.meetDate ? new Date(payload.meetDate) : new Date();
-  const resultDisplay = clean(payload.resultDisplay);
   const requestedType = clean(payload.resultType).toLowerCase();
   const resultType = requestedType === "relay" ? "relay" : requestedType === "field" ? "field" : "individual";
+  const fieldAttempts = clean(payload.fieldAttempts);
+  const resultDisplay = clean(payload.resultDisplay) || (resultType === "field" && fieldAttemptsShowNoLegalMark(payload.event, fieldAttempts) ? fieldNoMarkResult(payload.event) : "");
   const relayType = clean(payload.relayType || payload.event);
   const relayTeamName = clean(payload.relayTeamName);
   const athleteName = resultType === "relay" ? clean(payload.athleteName || relayTeamName || `${relayType || "Relay"} Team`) : clean(payload.athleteName);
@@ -214,12 +215,26 @@ function normalizeMeetResult(payload) {
     relayTeamName,
     isPr: resultType !== "relay" && truthy(payload.isPr),
     isSeasonBest: truthy(payload.isSeasonBest),
-    fieldAttempts: clean(payload.fieldAttempts),
+    fieldAttempts,
     fieldVideo: clean(payload.fieldVideo),
     coachRaceNotes: clean(payload.coachRaceNotes),
     sourceRecordId: clean(payload.sourceRecordId),
     forceDuplicateSync: payload.forceDuplicateSync === true,
   };
+}
+
+function fieldNoMarkResult(eventName) {
+  return /high jump|pole vault/i.test(clean(eventName)) ? "NH" : "NM";
+}
+
+function fieldAttemptsShowNoLegalMark(eventName, text) {
+  const parts = clean(text).split(/[;,]/).map((part) => part.replace(/^\s*attempt\s+\d+\s*:\s*/i, "").trim().toLowerCase()).filter(Boolean);
+  if (!parts.length) return false;
+  return parts.every((part) => {
+    if (/^(foul|pass|miss|x|p|no mark|nm|nh)$/.test(part)) return true;
+    if (/^(legal|make|o)\b/.test(part)) return false;
+    return /\b(foul|pass|miss)\b/.test(part);
+  });
 }
 
 async function findOrCreateContact({ token, locationId, meetResult }) {

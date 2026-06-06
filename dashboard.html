@@ -3000,7 +3000,10 @@ function saveRaceResult(){
   if(!isRelay&&!athlete){setRaceResultStatus('Select an athlete.','bad');return;}
   if(!meetName){setRaceResultStatus('Select a meet or enter a meet name.','bad');return;}
   if(!eventName){setRaceResultStatus('Select an event.','bad');return;}
-  if(!resultDisplay){setRaceResultStatus('Enter the race result.','bad');return;}
+  if(!resultDisplay){
+    if(isField&&fieldAttemptsShowNoLegalMark(eventName,fieldAttempts))resultDisplay=fieldNoMarkResult(eventName);
+    else{setRaceResultStatus(isField?'Enter the field mark, or enter foul/pass attempts for a no-mark result.':'Enter the race result.','bad');return;}
+  }
   if(isRelay&&relayLegs.length<2){setRaceResultStatus('Add at least two relay legs.','bad');return;}
   var best=els.raceResultBest.value||'none';
   var seasonParts=raceResultSeasonFromDate(date);
@@ -3107,6 +3110,20 @@ function applyRaceResultLocally(payload,result){
   renderRows();
 }
 
+function fieldNoMarkResult(eventName){
+  return /high jump|pole vault/i.test(String(eventName||''))?'NH':'NM';
+}
+function fieldAttemptsShowNoLegalMark(eventName,text){
+  var parts=String(text||'').split(/[;,]/).map(function(part){
+    return part.replace(/^\s*attempt\s+\d+\s*:\s*/i,'').trim().toLowerCase();
+  }).filter(Boolean);
+  if(!parts.length)return false;
+  return parts.every(function(part){
+    if(/^(foul|pass|miss|x|p|no mark|nm|nh)$/.test(part))return true;
+    if(/^(legal|make|o)\b/.test(part))return false;
+    return /\b(foul|pass|miss)\b/.test(part);
+  });
+}
 function ensureRaceResultMeet(payload,seasonParts){
   if(payload.meetRecordId)return Promise.resolve(payload);
   return fetch('/api/smart-trak/meets',{

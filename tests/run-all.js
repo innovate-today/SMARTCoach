@@ -285,6 +285,36 @@ function checkPageSearchDebounces() {
   console.log("page search debounce checks ok");
 }
 
+function checkFieldNoMarkResultsAllowed() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const api = fs.readFileSync("api/ghl/meet-result.js", "utf8");
+  const requiredMobile = [
+    "function fieldNoMarkResult(eventName)",
+    "function fieldAttemptHasLegalMark(attempt)",
+    "item.resultDisplay=fieldNoMarkResult(event.eventName);",
+    "fieldAttemptsShowNoLegalMark(eventName,attempts)",
+  ];
+  requiredMobile.forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile field no-mark support missing ${text}`);
+  });
+  [dashboard, calendar].forEach((html, index) => {
+    const file = index === 0 ? "dashboard.html" : "training-calendar.html";
+    if (!html.includes("function fieldNoMarkResult(eventName)")) throw new Error(`${file} no-mark helper missing`);
+    if (!html.includes("fieldAttemptsShowNoLegalMark(eventName,fieldAttempts)")) throw new Error(`${file} no-mark attempts fallback missing`);
+  });
+  const requiredApi = [
+    "fieldAttemptsShowNoLegalMark(payload.event, fieldAttempts) ? fieldNoMarkResult(payload.event) : \"\"",
+    "function fieldNoMarkResult(eventName)",
+    "function fieldAttemptsShowNoLegalMark(eventName, text)",
+  ];
+  requiredApi.forEach((text) => {
+    if (!api.includes(text)) throw new Error(`API field no-mark support missing ${text}`);
+  });
+  console.log("field no-mark result support ok");
+}
+
 function checkHistoricalMeetResultsLoadUnmatched() {
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const required = [
@@ -411,6 +441,7 @@ checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
 checkMeetHistoryPerformanceCaches();
 checkPageSearchDebounces();
+checkFieldNoMarkResultsAllowed();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkAthleticEventRecordsCalendarRanges();

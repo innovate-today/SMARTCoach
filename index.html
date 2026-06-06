@@ -4753,6 +4753,12 @@ function readyFieldResults(){
 function fieldCompetitorHasWork(item){
   return !!(item&&(item.resultDisplay||(item.attempts&&item.attempts.length)||item.wind||item.notes));
 }
+function fieldNoMarkResult(eventName){
+  return fieldIsVertical(eventName)?'NH':'NM';
+}
+function fieldAttemptHasLegalMark(attempt){
+  return !!(attempt&&(attempt.status==='Legal'||attempt.status==='Make')&&attempt.mark);
+}
 function activeFieldEvent(){
   if(!CL)return null;
   CL.field=normalizeFieldState(CL.field);
@@ -5010,11 +5016,9 @@ function saveCapturedFieldResult(){
   if(!event){setFieldCaptureStatus('Add a field event first.','bad');return;}
   var competitors=(event.competitors||[]).filter(function(item){return fieldCompetitorHasWork(item)&&!fieldCompetitorIsQueued(event,item);});
   if(!competitors.length){setFieldCaptureStatus('Capture attempts or best marks before saving flight results.','bad');return;}
-  if(fieldIsVertical(event.eventName)){
-    competitors.forEach(function(item){
-      if(!item.resultDisplay&&item.attempts&&item.attempts.length&&item.attempts.every(function(attempt){return attempt.status!=='Make';}))item.resultDisplay='NH';
-    });
-  }
+  competitors.forEach(function(item){
+    if(!item.resultDisplay&&item.attempts&&item.attempts.length&&!item.attempts.some(fieldAttemptHasLegalMark))item.resultDisplay=fieldNoMarkResult(event.eventName);
+  });
   var missing=competitors.find(function(item){return !item.resultDisplay;});
   if(missing){setFieldCaptureStatus('Enter the best official mark for '+missing.athleteName+'.','bad');return;}
   var ts=new Date().toISOString();
@@ -5550,7 +5554,10 @@ function submitCapturedFieldMeetResult(forceDuplicateSync){
   var notes=document.getElementById('ms-notes').value.trim();
   if(!athleteName){status.textContent='Select an athlete before saving field results.';status.style.color='#c00';status.style.fontWeight='700';return;}
   if(!eventName){status.textContent='Select an event before saving field results.';status.style.color='#c00';status.style.fontWeight='700';return;}
-  if(!result){status.textContent='Enter the field mark before saving.';status.style.color='#c00';status.style.fontWeight='700';return;}
+  if(!result){
+    if(fieldAttemptsShowNoLegalMark(eventName,attempts))result=fieldNoMarkResult(eventName);
+    else{status.textContent='Enter the field mark before saving, or enter foul/pass attempts for a no-mark result.';status.style.color='#c00';status.style.fontWeight='700';return;}
+  }
   var sourceId=['mobile-field',CL.id||CL.meetRecordId||CL.meetName||'meet',athleteName,eventName,CL.meetDate||'',result,forceDuplicateSync?Date.now():''].join(':');
   var payload={
     resultType:'field',
@@ -5653,6 +5660,17 @@ function fieldResultPayloads(queue,forceDuplicateSync){
         forceDuplicateSync:forceDuplicateSync===true
       }
     };
+  });
+}
+function fieldAttemptsShowNoLegalMark(eventName,text){
+  var parts=String(text||'').split(/[;,]/).map(function(part){
+    return part.replace(/^\s*attempt\s+\d+\s*:\s*/i,'').trim().toLowerCase();
+  }).filter(Boolean);
+  if(!parts.length)return false;
+  return parts.every(function(part){
+    if(/^(foul|pass|miss|x|p|no mark|nm|nh)$/.test(part))return true;
+    if(/^(legal|make|o)\b/.test(part))return false;
+    return /\b(foul|pass|miss)\b/.test(part);
   });
 }
 function syncFieldResultQueue(queue,forceDuplicateSync){
