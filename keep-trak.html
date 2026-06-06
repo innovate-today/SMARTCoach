@@ -53,6 +53,12 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
 .cleanup-row b{display:block;font-size:14px}
 .cleanup-row span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .cleanup-actions{display:flex;gap:8px;flex-wrap:wrap}
+.confirm-overlay{position:fixed;inset:0;z-index:100;background:rgba(15,23,42,.45);display:grid;place-items:center;padding:20px}
+.confirm-overlay[hidden]{display:none}
+.confirm-box{width:min(460px,100%);background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 22px 60px rgba(15,23,42,.3);padding:18px}
+.confirm-box h2{font-size:19px;margin:0 0 8px}
+.confirm-box p{margin:0;color:#435574;font-size:14px;line-height:1.45}
+.confirm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 .today-badge{display:inline-flex;align-items:center;border-radius:999px;background:#e8efff;color:#173891;padding:3px 8px;font-size:11px;font-weight:900;margin-left:6px}
 @media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%;justify-content:stretch}.actions a,.actions button{text-align:center;flex:1}.layout{grid-template-columns:1fr}.toolbar,.formgrid{grid-template-columns:1fr}}
 </style>
@@ -126,11 +132,22 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
     </section>
   </section>
 </main>
+<div id="confirmOverlay" class="confirm-overlay" hidden>
+  <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Delete Keep Trak Note?</h2>
+    <p id="confirmMessage">This note will be removed from Keep Trak.</p>
+    <div class="confirm-actions">
+      <button id="confirmCancelBtn" class="secondary" type="button">Cancel</button>
+      <button id="confirmOkBtn" class="danger" type="button">Delete</button>
+    </div>
+  </div>
+</div>
 
 <script>
 var notes=[];
 var cleanupNotes=[];
 var editingId='';
+var confirmAction=null;
 var els={
   dashboardLink:document.getElementById('dashboardLink'),
   calendarLink:document.getElementById('calendarLink'),
@@ -154,6 +171,11 @@ var els={
   cleanupDeleteBtn:document.getElementById('cleanupDeleteBtn'),
   cleanupSelectBtn:document.getElementById('cleanupSelectBtn'),
   cleanupSkipBtn:document.getElementById('cleanupSkipBtn'),
+  confirmOverlay:document.getElementById('confirmOverlay'),
+  confirmTitle:document.getElementById('confirmTitle'),
+  confirmMessage:document.getElementById('confirmMessage'),
+  confirmCancelBtn:document.getElementById('confirmCancelBtn'),
+  confirmOkBtn:document.getElementById('confirmOkBtn'),
   listTitle:document.getElementById('listTitle'),
   notesList:document.getElementById('notesList'),
   lastUpdated:document.getElementById('lastUpdated')
@@ -291,14 +313,15 @@ function skipCleanupPrompt(){
 function deleteSelectedCleanupNotes(){
   var ids=selectedCleanupIds();
   if(!ids.length){els.cleanupStatus.textContent='Select at least one note to delete.';return;}
-  if(!confirm('Delete '+ids.length+' Keep Trak note'+(ids.length===1?'':'s')+' older than 30 days?'))return;
-  els.cleanupStatus.textContent='Deleting selected notes...';
-  saveNotes([],ids).then(function(){
-    cleanupNotes=cleanupNotes.filter(function(note){return ids.indexOf(note.id)<0;});
-    renderCleanupPrompt();
-    return loadNotes();
-  }).catch(function(error){
-    els.cleanupStatus.textContent=error&&error.message?error.message:'Cleanup delete failed.';
+  openConfirm('Delete old Keep Trak notes?','This will delete '+ids.length+' selected note'+(ids.length===1?'':'s')+' older than 30 days. Notes you unchecked will stay in Keep Trak.','Delete Selected',function(){
+    els.cleanupStatus.textContent='Deleting selected notes...';
+    saveNotes([],ids).then(function(){
+      cleanupNotes=cleanupNotes.filter(function(note){return ids.indexOf(note.id)<0;});
+      renderCleanupPrompt();
+      return loadNotes();
+    }).catch(function(error){
+      els.cleanupStatus.textContent=error&&error.message?error.message:'Cleanup delete failed.';
+    });
   });
 }
 function toggleNote(id,completed){
@@ -310,8 +333,26 @@ function toggleNote(id,completed){
   saveNotes([note]).then(loadNotes).catch(function(error){setStatus(error&&error.message?error.message:'Keep Trak could not update.','bad');});
 }
 function deleteNote(id){
-  if(!confirm('Delete this Keep Trak note?'))return;
-  saveNotes([],[id]).then(function(){if(editingId===id)clearForm();return loadNotes();}).catch(function(error){setStatus(error&&error.message?error.message:'Keep Trak could not delete.','bad');});
+  openConfirm('Delete Keep Trak note?','This will remove the selected briefing note from Keep Trak.','Delete Note',function(){
+    saveNotes([],[id]).then(function(){if(editingId===id)clearForm();return loadNotes();}).catch(function(error){setStatus(error&&error.message?error.message:'Keep Trak could not delete.','bad');});
+  });
+}
+function openConfirm(title,message,okLabel,onConfirm){
+  confirmAction=typeof onConfirm==='function'?onConfirm:null;
+  els.confirmTitle.textContent=title||'Confirm Action';
+  els.confirmMessage.textContent=message||'Are you sure?';
+  els.confirmOkBtn.textContent=okLabel||'Confirm';
+  els.confirmOverlay.hidden=false;
+  els.confirmCancelBtn.focus();
+}
+function closeConfirm(){
+  confirmAction=null;
+  els.confirmOverlay.hidden=true;
+}
+function runConfirmAction(){
+  var action=confirmAction;
+  closeConfirm();
+  if(action)action();
 }
 function saveNotes(rows,deleteIds){
   setStatus('Saving Keep Trak...');
@@ -345,6 +386,9 @@ function init(){
   els.cleanupDeleteBtn.addEventListener('click',deleteSelectedCleanupNotes);
   els.cleanupSelectBtn.addEventListener('click',selectAllCleanupNotes);
   els.cleanupSkipBtn.addEventListener('click',skipCleanupPrompt);
+  els.confirmCancelBtn.addEventListener('click',closeConfirm);
+  els.confirmOkBtn.addEventListener('click',runConfirmAction);
+  els.confirmOverlay.addEventListener('click',function(event){if(event.target===els.confirmOverlay)closeConfirm();});
   els.bodyInput.addEventListener('input',updateCharCount);
   updateCharCount();
   loadNotes();

@@ -1142,6 +1142,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 300. Keep Trak copy/display cleanup: the desktop page title now reads **Keep Trak** instead of **SMART Trak Keep Trak**, the subtitle removes coach follow-through wording, and mobile note cards no longer repeat the note's first line in both the black header and white body. New mobile notes save without an auto-generated duplicate title, and older duplicate-title notes render with the generic **Briefing note** header. `npm test` passed on 2026-06-06.
 301. Keep Trak desktop header is sticky, the desktop Title field was removed, and both desktop/mobile note textareas enforce the 4,000-character note limit that the registry already normalizes. The desktop note form now shows a live character counter. `SMART_TRAK_COACH_HOW_TO.md` documents the limit and no-title workflow.
 302. Keep Trak desktop now checks for notes older than 30 days on page open and shows a 30-Day Cleanup panel when any exist. Old notes are selected by default; coaches can delete selected notes, select all, or dismiss with Not Now. The cleanup uses the existing Keep Trak delete path instead of adding another endpoint.
+303. Keep Trak desktop delete actions now use an in-page confirmation dialog instead of the browser-native embedded-page alert, so the message can say **Delete Keep Trak note?** or **Delete old Keep Trak notes?** with SMART Trak-styled Cancel/Delete buttons. Regression coverage rejects `confirm()` on `keep-trak.html`; `npm test` passed on 2026-06-06.
 
 ## Known Good Test Flow
 

@@ -343,9 +343,13 @@ function checkKeepTrakFeature() {
     "return addDays(todayISO(),-30);",
     "function deleteSelectedCleanupNotes()",
     "Delete Selected",
+    "id=\"confirmOverlay\"",
+    "function openConfirm(title,message,okLabel,onConfirm)",
+    "Delete Keep Trak note?",
   ].forEach((text) => {
     if (!desktop.includes(text)) throw new Error(`desktop Keep Trak missing ${text}`);
   });
+  if (desktop.includes("confirm(")) throw new Error("desktop Keep Trak should use the in-page confirmation dialog.");
   if (desktop.includes("titleInput")) throw new Error("desktop Keep Trak should not show a title field.");
   if (!mobile.includes("id=\"keep-body\" maxlength=\"4000\"")) throw new Error("mobile Keep Trak note limit missing.");
   if (!dashboard.includes("keepTrakLink") || !calendar.includes("keepTrakLink")) {
