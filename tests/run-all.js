@@ -371,6 +371,20 @@ function checkKeepTrakFeature() {
   console.log("Keep Trak feature ok");
 }
 
+function checkGroupsTrayAddHidden() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  if (!mobile.includes('id="groups-tray-add-btn" onclick="addGroupForView()" hidden')) {
+    throw new Error("Groups tray Add button should be hidden because top Add is available.");
+  }
+  if (!mobile.includes("if(buttons.add)buttons.add.hidden=true;")) {
+    throw new Error("Groups tray Add button should stay hidden when tray actions refresh.");
+  }
+  if (!mobile.includes("id=\"groups-tray-archive-btn\"")) {
+    throw new Error("Groups tray Archive button should remain available.");
+  }
+  console.log("Groups tray Add hidden ok");
+}
+
 function checkHistoricalMeetResultsLoadUnmatched() {
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const required = [
@@ -499,6 +513,7 @@ checkMeetHistoryPerformanceCaches();
 checkPageSearchDebounces();
 checkFieldNoMarkResultsAllowed();
 checkKeepTrakFeature();
+checkGroupsTrayAddHidden();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkAthleticEventRecordsCalendarRanges();
