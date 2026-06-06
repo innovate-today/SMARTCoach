@@ -504,8 +504,6 @@ How to use it on the SMARTCoach app:
 
 Completed notes stay visible but are greyed out on the app. The app does not include a delete button. Open notes from earlier days carry forward until completed, so a reminder written at a meet can still appear at the next practice.
 
-On the SMARTCoach app Groups screen, use the top-left **Add** button to create a group or meet. The bottom toolbar is kept for daily tools such as Account, Refresh, Attend, Keep, Equip, and Archive.
-
 ## Records
 
 Use Records as the school record board. It is meant to display official records entered by the coach.
