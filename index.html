@@ -399,7 +399,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mttl">Keep Trak</div>
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="keep-date" type="date" onchange="loadKeepTrak()"/></div>
     <div class="srow"><span class="slbl">Coach</span><input class="sinp" id="keep-coach" type="text" placeholder="Coach name" autocomplete="off"/></div>
-    <div class="srow" style="align-items:flex-start"><span class="slbl">Note</span><textarea class="sinp ta" id="keep-body" placeholder="Practice briefing, reminders, deadlines, character lesson, meet notes..."></textarea></div>
+    <div class="srow" style="align-items:flex-start"><span class="slbl">Note</span><textarea class="sinp ta" id="keep-body" maxlength="4000" placeholder="Practice briefing, reminders, deadlines, character lesson, meet notes..."></textarea></div>
     <button class="mbtn" onclick="saveKeepTrakNote()">Save Note</button>
     <div id="keep-status" class="bulk-status"></div>
     <div id="keep-list" class="builder-box"></div>

@@ -487,6 +487,8 @@ How to use it on SMART Trak desktop:
 6. Use **Complete** after the note has been addressed.
 7. Use **Delete** only from desktop when a note should be removed.
 
+Keep Trak notes can be up to 4,000 characters. There is no separate title field; write the full briefing in the note box.
+
 How to use it on the SMARTCoach app:
 
 1. Open **Keep** from the Groups toolbar.

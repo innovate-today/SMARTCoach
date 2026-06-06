@@ -15,7 +15,7 @@ button.ghost,.linkbtn.ghost{background:#eef2f7;color:#172033}
 button.danger{background:#fee2e2;color:#b91c1c}
 button:disabled{opacity:.55;cursor:not-allowed}
 .page{max-width:1440px;margin:0 auto;padding:18px 26px 34px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;box-shadow:0 8px 22px rgba(15,23,42,.08)}
+.top{position:sticky;top:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;box-shadow:0 8px 22px rgba(15,23,42,.08)}
 .brand{display:flex;align-items:center;gap:14px}
 .mark{width:62px;height:62px;border-radius:10px;display:grid;place-items:center;overflow:hidden}
 .mark img{width:58px;height:58px;object-fit:contain}
@@ -31,7 +31,8 @@ h1{font-size:26px;line-height:1.05;margin:0 0 3px}
 label{display:grid;gap:5px;font-size:12px;font-weight:900;text-transform:uppercase;color:#435066;letter-spacing:.03em}
 input,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 textarea{min-height:132px;resize:vertical;line-height:1.45}
-.formgrid{display:grid;grid-template-columns:220px 1fr auto;gap:10px;align-items:end}
+.formgrid{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+.labelrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .status{font-size:13px;font-weight:900;color:var(--muted)}
 .layout{display:grid;grid-template-columns:360px 1fr;gap:14px}
 .daylist{display:grid;gap:8px}
@@ -87,13 +88,10 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
           <label>Coach
             <input id="coachInput" type="text" placeholder="Coach name" autocomplete="off">
           </label>
-          <label>Title
-            <input id="titleInput" type="text" placeholder="Optional title" autocomplete="off">
-          </label>
           <button id="clearBtn" class="ghost" type="button">Clear</button>
         </div>
-        <label style="margin-top:10px">Briefing Note
-          <textarea id="bodyInput" placeholder="Team briefing, reminder, practice change, deadline, weather note, character lesson..."></textarea>
+        <label style="margin-top:10px"><span class="labelrow"><span>Briefing Note</span><span id="charCount" class="status">0 / 4000</span></span>
+          <textarea id="bodyInput" maxlength="4000" placeholder="Team briefing, reminder, practice change, deadline, weather note, character lesson..."></textarea>
         </label>
         <button id="saveBtn" type="button" style="margin-top:10px;width:100%">Save Note</button>
       </div>
@@ -121,13 +119,13 @@ var els={
   todayBtn:document.getElementById('todayBtn'),
   dateInput:document.getElementById('dateInput'),
   coachInput:document.getElementById('coachInput'),
-  titleInput:document.getElementById('titleInput'),
   bodyInput:document.getElementById('bodyInput'),
   saveBtn:document.getElementById('saveBtn'),
   clearBtn:document.getElementById('clearBtn'),
   status:document.getElementById('status'),
   rangeStatus:document.getElementById('rangeStatus'),
   editStatus:document.getElementById('editStatus'),
+  charCount:document.getElementById('charCount'),
   listTitle:document.getElementById('listTitle'),
   notesList:document.getElementById('notesList'),
   lastUpdated:document.getElementById('lastUpdated')
@@ -149,13 +147,7 @@ function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,funct
 function js(value){return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 function formatDate(value){var parts=String(value||'').split('-').map(Number);if(parts.length!==3)return value||'';var d=new Date(parts[0],parts[1]-1,parts[2]);if(isNaN(d.getTime()))return value||'';return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});}
 function formatDateTime(value){var d=value?new Date(value):new Date();if(isNaN(d.getTime()))d=new Date();return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
-function firstLine(text){return String(text||'').split(/\n/).map(function(line){return line.trim();}).filter(Boolean)[0]||'';}
-function noteDisplayTitle(note){
-  var title=String(note&&note.title||'').trim();
-  var bodyFirst=firstLine(note&&note.body||'');
-  if(title&&title!==bodyFirst)return title;
-  return 'Briefing note';
-}
+function noteDisplayTitle(){return 'Briefing note';}
 function setStatus(text,type){els.status.textContent=text||'';els.status.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';}
 function loadNotes(){
   setStatus('Loading Keep Trak...');
@@ -191,28 +183,27 @@ function render(){
 }
 function clearForm(){
   editingId='';
-  els.titleInput.value='';
   els.bodyInput.value='';
   els.editStatus.textContent='New note';
+  updateCharCount();
 }
 function editNote(id){
   var note=notes.find(function(item){return item.id===id;});
   if(!note)return;
   editingId=id;
   els.coachInput.value=note.coachName||els.coachInput.value;
-  els.titleInput.value=note.title||'';
   els.bodyInput.value=note.body||'';
   els.editStatus.textContent='Editing '+formatDate(note.date);
+  updateCharCount();
   els.bodyInput.focus();
 }
 function notePayload(overrides){
   var existing=editingId?notes.find(function(item){return item.id===editingId;})||{}:{};
   var body=els.bodyInput.value.trim();
-  var title=els.titleInput.value.trim();
   return Object.assign({},existing,{
     id:editingId||'keep_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),
     date:existing.date||els.dateInput.value||todayISO(),
-    title:title,
+    title:'',
     body:body,
     coachName:els.coachInput.value.trim()||existing.coachName||'Coach',
     updatedAt:new Date().toISOString(),
@@ -220,9 +211,14 @@ function notePayload(overrides){
   },overrides||{});
 }
 function saveNote(){
-  if(!els.bodyInput.value.trim()&&!els.titleInput.value.trim()){setStatus('Write a note first.','bad');return;}
+  if(!els.bodyInput.value.trim()){setStatus('Write a note first.','bad');return;}
   var payload=notePayload();
   saveNotes([payload]).then(function(){clearForm();return loadNotes();}).catch(function(error){setStatus(error&&error.message?error.message:'Keep Trak could not save.','bad');});
+}
+function updateCharCount(){
+  var count=(els.bodyInput.value||'').length;
+  els.charCount.textContent=count+' / 4000';
+  els.charCount.style.color=count>3800?'#b45309':'var(--muted)';
 }
 function toggleNote(id,completed){
   var note=notes.find(function(item){return item.id===id;});
@@ -265,6 +261,8 @@ function init(){
   els.dateInput.addEventListener('change',function(){clearForm();loadNotes();});
   els.saveBtn.addEventListener('click',saveNote);
   els.clearBtn.addEventListener('click',clearForm);
+  els.bodyInput.addEventListener('input',updateCharCount);
+  updateCharCount();
   loadNotes();
 }
 init();

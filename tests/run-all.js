@@ -335,9 +335,14 @@ function checkKeepTrakFeature() {
     "/api/smart-trak/keep-trak",
     "function deleteNote(id)",
     "Open notes from earlier days carry forward until completed.",
+    ".top{position:sticky",
+    "maxlength=\"4000\"",
+    "charCount",
   ].forEach((text) => {
     if (!desktop.includes(text)) throw new Error(`desktop Keep Trak missing ${text}`);
   });
+  if (desktop.includes("titleInput")) throw new Error("desktop Keep Trak should not show a title field.");
+  if (!mobile.includes("id=\"keep-body\" maxlength=\"4000\"")) throw new Error("mobile Keep Trak note limit missing.");
   if (!dashboard.includes("keepTrakLink") || !calendar.includes("keepTrakLink")) {
     throw new Error("Keep Trak coach navigation link missing.");
   }
