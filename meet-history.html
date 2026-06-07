@@ -24,6 +24,8 @@ h1{font-size:24px;line-height:1.15;margin:0}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.ghost{background:#eef2f7;color:#172033}
+button.danger{background:#fee2e2;color:#991b1b}
+button.compact{padding:6px 8px;font-size:12px;border-radius:7px}
 button:disabled{opacity:.55;cursor:not-allowed}
 .actions .primary-nav{background:var(--blue);color:#fff}
 .actions .utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line);margin-left:4px}
@@ -120,6 +122,19 @@ tr:last-child td{border-bottom:0}
 .progressioncard{border:1px solid #edf1f7;border-radius:8px;background:#fbfdff;padding:9px 10px;min-width:230px;max-width:280px;flex:0 0 auto}
 .progressioncard b{display:block;font-size:14px}
 .progressioncard span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;z-index:90;overflow:auto}
+.modal[hidden]{display:none}
+.modalpanel{width:min(760px,100%);background:#fff;border-radius:10px;border:1px solid var(--line);box-shadow:0 18px 45px rgba(15,23,42,.2);overflow:hidden}
+.modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.modalhead h2{font-size:20px;margin:0}
+.modalbody{padding:16px 18px 20px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:grid;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+.modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
+.modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
+.rowactions{display:flex;gap:6px;flex-wrap:wrap}
 .empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
 .access{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
 .access h1{font-size:24px;margin-bottom:8px}
@@ -135,6 +150,9 @@ tr:last-child td{border-bottom:0}
   .importdefaults,.importfile{grid-template-columns:1fr}
   .split{grid-template-columns:1fr}
   .meet-summary{grid-template-columns:1fr 1fr}
+  .formgrid{grid-template-columns:1fr}
+  .modalactions{align-items:stretch;flex-direction:column}
+  .modalstatus{margin-right:0}
   .status{text-align:left}
 }
 </style>
@@ -296,6 +314,7 @@ tr:last-child td{border-bottom:0}
               <th><button class="sortbtn" data-sort="best" type="button">Best</button></th>
               <th><button class="sortbtn" data-sort="date" type="button">Date</button></th>
               <th><button class="sortbtn" data-sort="synced" type="button">Synced</button></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="resultRows"></tbody>
@@ -305,6 +324,102 @@ tr:last-child td{border-bottom:0}
     </section>
   </section>
 </main>
+
+<div id="historyEditModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="historyEditTitle">
+    <div class="modalhead">
+      <h2 id="historyEditTitle">Edit Meet History Result</h2>
+      <button id="historyEditClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="formgrid">
+        <div class="field">
+          <label for="historyEditAthlete">Athlete</label>
+          <input id="historyEditAthlete" type="text" disabled>
+        </div>
+        <div class="field">
+          <label for="historyEditMeetDate">Meet Date</label>
+          <input id="historyEditMeetDate" type="date">
+        </div>
+        <div class="field full">
+          <label for="historyEditMeetName">Meet Name</label>
+          <input id="historyEditMeetName" type="text" placeholder="Meet name">
+        </div>
+        <div class="field">
+          <label for="historyEditSport">Sport</label>
+          <select id="historyEditSport">
+            <option>Cross Country</option>
+            <option>Track</option>
+            <option>Road</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="historyEditSeason">Season</label>
+          <select id="historyEditSeason">
+            <option>Fall</option>
+            <option>Spring</option>
+            <option>Winter</option>
+            <option>Summer</option>
+            <option>Offseason</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="historyEditSeasonYear">Season Year</label>
+          <input id="historyEditSeasonYear" type="number" min="1900" max="2100">
+        </div>
+        <div class="field">
+          <label for="historyEditEvent">Event</label>
+          <input id="historyEditEvent" type="text" placeholder="Example: 2 Mile or 5000m">
+        </div>
+        <div class="field">
+          <label for="historyEditResult">Result</label>
+          <input id="historyEditResult" type="text" placeholder="Example: 18:04.5">
+        </div>
+        <div class="field">
+          <label for="historyEditBest">New Best</label>
+          <select id="historyEditBest">
+            <option value="none">No PB/SB</option>
+            <option value="pb">PB only</option>
+            <option value="sb">SB only</option>
+            <option value="both">PB and SB</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="historyEditReason">Reason</label>
+          <input id="historyEditReason" type="text" placeholder="Required, e.g. Correct Athletic.net import mapping">
+        </div>
+        <div class="field full">
+          <label for="historyEditNotes">Notes</label>
+          <textarea id="historyEditNotes" placeholder="Optional coach notes"></textarea>
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="historyEditStatus" class="modalstatus">Corrections are saved with an audit note.</div>
+        <button id="historyEditSave" type="button">Save Correction</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="historyVoidModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="historyVoidTitle">
+    <div class="modalhead">
+      <h2 id="historyVoidTitle">Void Meet History Result</h2>
+      <button id="historyVoidClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p id="historyVoidLabel" class="sub"></p>
+      <div class="field">
+        <label for="historyVoidReason">Reason</label>
+        <input id="historyVoidReason" type="text" placeholder="Required, e.g. Duplicate imported from wrong meet">
+      </div>
+      <div class="modalactions">
+        <div id="historyVoidStatus" class="modalstatus">Voiding keeps an audit note and hides the row after refresh.</div>
+        <button id="historyVoidSave" class="danger" type="button">Void Result</button>
+      </div>
+    </div>
+  </section>
+</div>
 
 <section id="accessPanel" class="access" hidden>
   <h1>SMART Trak Access Required</h1>
@@ -329,6 +444,8 @@ var resultSort={key:'athlete',dir:'asc'};
 var searchRenderTimer=null;
 var filteredGroupsCache=null;
 var filteredGroupsCacheKey='';
+var historyEditRow=null;
+var historyVoidRow=null;
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -376,6 +493,27 @@ var els={
   clearImportBtn:document.getElementById('clearImportBtn'),
   importStatus:document.getElementById('importStatus'),
   importPreview:document.getElementById('importPreview'),
+  historyEditModal:document.getElementById('historyEditModal'),
+  historyEditClose:document.getElementById('historyEditClose'),
+  historyEditAthlete:document.getElementById('historyEditAthlete'),
+  historyEditMeetDate:document.getElementById('historyEditMeetDate'),
+  historyEditMeetName:document.getElementById('historyEditMeetName'),
+  historyEditSport:document.getElementById('historyEditSport'),
+  historyEditSeason:document.getElementById('historyEditSeason'),
+  historyEditSeasonYear:document.getElementById('historyEditSeasonYear'),
+  historyEditEvent:document.getElementById('historyEditEvent'),
+  historyEditResult:document.getElementById('historyEditResult'),
+  historyEditBest:document.getElementById('historyEditBest'),
+  historyEditReason:document.getElementById('historyEditReason'),
+  historyEditNotes:document.getElementById('historyEditNotes'),
+  historyEditStatus:document.getElementById('historyEditStatus'),
+  historyEditSave:document.getElementById('historyEditSave'),
+  historyVoidModal:document.getElementById('historyVoidModal'),
+  historyVoidClose:document.getElementById('historyVoidClose'),
+  historyVoidLabel:document.getElementById('historyVoidLabel'),
+  historyVoidReason:document.getElementById('historyVoidReason'),
+  historyVoidStatus:document.getElementById('historyVoidStatus'),
+  historyVoidSave:document.getElementById('historyVoidSave'),
   meetList:document.getElementById('meetList'),
   meetListCount:document.getElementById('meetListCount'),
   meetEmpty:document.getElementById('meetEmpty'),
@@ -640,6 +778,224 @@ function resultIdentity(row){
 }
 function sameResult(a,b){
   return resultIdentity(a)===resultIdentity(b);
+}
+function rowKey(row){return resultIdentity(row);}
+function findResultRowByKey(key){
+  return meetResults.find(function(row){return rowKey(row)===key;})||null;
+}
+function dateInputValue(value){
+  var text=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(text))return text;
+  var date=new Date(text);
+  return isNaN(date.getTime())?'':date.toISOString().slice(0,10);
+}
+function ensureSelectValue(select,value){
+  if(!select)return;
+  value=String(value||'').trim();
+  if(value&&![].slice.call(select.options).some(function(option){return option.value===value||option.textContent===value;})){
+    var option=document.createElement('option');
+    option.value=value;
+    option.textContent=value;
+    select.insertBefore(option,select.firstChild);
+  }
+  if(value)select.value=value;
+}
+function historyNotesFromRow(row){
+  return String(row&&row.coachRaceNotes||'').split(/\r?\n/).filter(function(line){
+    return !/^(Result Type|Historical Grade|Class Year|Gender|Place|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+  }).join('\n').trim();
+}
+function historyPreviousPayload(row){
+  return {
+    meetName:row.meetName||'',
+    meetDate:row.meetDate||'',
+    event:row.event||'',
+    resultDisplay:row.resultDisplay||'',
+    wind:row.wind||'',
+    isPr:row.isPr?'Yes':'No',
+    isSeasonBest:row.isSeasonBest?'Yes':'No',
+    sport:row.sport||'',
+    season:row.season||'',
+    seasonYear:row.seasonYear||'',
+    notes:historyNotesFromRow(row)
+  };
+}
+function setHistoryEditStatus(text,type){
+  els.historyEditStatus.textContent=text||'';
+  els.historyEditStatus.style.color=type==='error'?'var(--bad)':type==='success'?'var(--good)':'var(--muted)';
+}
+function setHistoryVoidStatus(text,type){
+  els.historyVoidStatus.textContent=text||'';
+  els.historyVoidStatus.style.color=type==='error'?'var(--bad)':type==='success'?'var(--good)':'var(--muted)';
+}
+function openHistoryEdit(rowKeyValue){
+  historyEditRow=findResultRowByKey(rowKeyValue);
+  if(!historyEditRow){
+    alert('Could not find this saved result.');
+    return;
+  }
+  els.historyEditAthlete.value=historyEditRow.athleteName||'';
+  els.historyEditMeetDate.value=dateInputValue(historyEditRow.meetDate);
+  els.historyEditMeetName.value=historyEditRow.meetName||'';
+  ensureSelectValue(els.historyEditSport,sportText(historyEditRow)||'Cross Country');
+  ensureSelectValue(els.historyEditSeason,historyEditRow.season||'');
+  els.historyEditSeasonYear.value=historyEditRow.seasonYear||yearFromDateText(historyEditRow.meetDate)||'';
+  els.historyEditEvent.value=historyEditRow.event||'';
+  els.historyEditResult.value=historyEditRow.resultDisplay||'';
+  els.historyEditBest.value=historyEditRow.isPr&&historyEditRow.isSeasonBest?'both':historyEditRow.isPr?'pb':historyEditRow.isSeasonBest?'sb':'none';
+  els.historyEditReason.value='';
+  els.historyEditNotes.value=historyNotesFromRow(historyEditRow);
+  setHistoryEditStatus('Corrections are saved with an audit note.','');
+  els.historyEditModal.hidden=false;
+}
+function closeHistoryEdit(){
+  els.historyEditModal.hidden=true;
+  historyEditRow=null;
+}
+function saveHistoryEdit(){
+  if(!historyEditRow)return;
+  var reason=els.historyEditReason.value.trim();
+  if(!reason){
+    setHistoryEditStatus('Reason is required so the correction has context.','error');
+    return;
+  }
+  var best=els.historyEditBest.value||'none';
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.historyEditSave.disabled=true;
+  setHistoryEditStatus('Saving correction...','');
+  fetch('/api/smart-trak/correction',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'edit',
+      recordType:'meet',
+      recordId:historyEditRow.recordId||'',
+      sourceRecordId:historyEditRow.sourceRecordId||'',
+      contactId:historyEditRow.contactId||'',
+      athleteName:historyEditRow.athleteName||'',
+      reason:reason,
+      previous:historyPreviousPayload(historyEditRow),
+      updates:{
+        meetDate:els.historyEditMeetDate.value,
+        meetName:els.historyEditMeetName.value,
+        sport:els.historyEditSport.value,
+        season:els.historyEditSeason.value,
+        seasonYear:els.historyEditSeasonYear.value,
+        event:els.historyEditEvent.value,
+        resultDisplay:els.historyEditResult.value,
+        isPr:best==='pb'||best==='both'?'yes':'no',
+        isSeasonBest:best==='sb'||best==='both'?'yes':'no',
+        notes:els.historyEditNotes.value,
+        resultType:'historical import'
+      }
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Correction failed.');
+    applyHistoryEditLocally(historyEditRow,{
+      meetDate:els.historyEditMeetDate.value,
+      meetName:els.historyEditMeetName.value,
+      sport:els.historyEditSport.value,
+      season:els.historyEditSeason.value,
+      seasonYear:Number(els.historyEditSeasonYear.value)||'',
+      event:els.historyEditEvent.value,
+      resultDisplay:els.historyEditResult.value,
+      isPr:best==='pb'||best==='both',
+      isSeasonBest:best==='sb'||best==='both',
+      notes:els.historyEditNotes.value
+    },reason);
+    setHistoryEditStatus('Correction saved.','success');
+    closeHistoryEdit();
+  }).catch(function(error){
+    setHistoryEditStatus(error.message||'Could not save correction.','error');
+  }).finally(function(){
+    els.historyEditSave.disabled=false;
+  });
+}
+function applyHistoryEditLocally(row,updates,reason){
+  var correctedAt=new Date().toISOString();
+  meetResults=meetResults.map(function(item){
+    if(!sameResult(item,row))return item;
+    return enrichMeetHistoryRow(Object.assign({},item,updates,{
+      corrected:true,
+      correctionDate:correctedAt,
+      correctionReason:reason,
+      coachRaceNotes:updates.notes||item.coachRaceNotes||''
+    }));
+  });
+  invalidateMeetHistoryCache();
+  renderOptions();
+  render();
+  if(!els.auditPanel.hidden)renderDataAudit();
+}
+function openHistoryVoid(rowKeyValue){
+  historyVoidRow=findResultRowByKey(rowKeyValue);
+  if(!historyVoidRow){
+    alert('Could not find this saved result.');
+    return;
+  }
+  els.historyVoidLabel.textContent=[historyVoidRow.athleteName,historyVoidRow.event,historyVoidRow.resultDisplay,historyVoidRow.meetName].filter(Boolean).join(' - ');
+  els.historyVoidReason.value='';
+  setHistoryVoidStatus('Voiding keeps an audit note and hides the row after refresh.','');
+  els.historyVoidModal.hidden=false;
+}
+function closeHistoryVoid(){
+  els.historyVoidModal.hidden=true;
+  historyVoidRow=null;
+}
+function saveHistoryVoid(){
+  if(!historyVoidRow)return;
+  var reason=els.historyVoidReason.value.trim();
+  if(!reason){
+    setHistoryVoidStatus('Reason is required so the correction has context.','error');
+    return;
+  }
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.historyVoidSave.disabled=true;
+  setHistoryVoidStatus('Voiding result...','');
+  fetch('/api/smart-trak/correction',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'void',
+      recordType:'meet',
+      recordId:historyVoidRow.recordId||'',
+      sourceRecordId:historyVoidRow.sourceRecordId||'',
+      contactId:historyVoidRow.contactId||'',
+      athleteName:historyVoidRow.athleteName||'',
+      reason:reason,
+      previous:historyPreviousPayload(historyVoidRow)
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Void failed.');
+    var row=historyVoidRow;
+    meetResults=meetResults.filter(function(item){return !sameResult(item,row);});
+    invalidateMeetHistoryCache();
+    renderOptions();
+    render();
+    if(!els.auditPanel.hidden)renderDataAudit();
+    setHistoryVoidStatus('Result voided.','success');
+    closeHistoryVoid();
+  }).catch(function(error){
+    setHistoryVoidStatus(error.message||'Could not void result.','error');
+  }).finally(function(){
+    els.historyVoidSave.disabled=false;
+  });
+}
+function historyActionButtons(row){
+  if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
+  var key=esc(rowKey(row));
+  return '<div class="rowactions">'+
+    '<button class="ghost compact" type="button" data-history-edit="'+key+'">Edit</button>'+
+    '<button class="danger compact" type="button" data-history-void="'+key+'">Void</button>'+
+  '</div>';
 }
 function selectedEventRankMap(results){
   var groups={};
@@ -1642,6 +1998,7 @@ function render(){
       '<td>'+(flags.join('')||'<span class="muted">No new best</span>')+'</td>'+
       '<td>'+esc(formatDate(row.meetDate))+'</td>'+
       '<td>'+esc(formatDateTime(row.syncedAt))+'</td>'+
+      '<td>'+historyActionButtons(row)+'</td>'+
     '</tr>';
   }).join('');
   els.resultEmpty.hidden=!!results.length;
@@ -1788,6 +2145,19 @@ function init(){
     selectedGroupKey=selectedGroupKey===key?'all':key;
     render();
   });
+  els.resultRows.addEventListener('click',function(event){
+    var edit=event.target.closest&&event.target.closest('[data-history-edit]');
+    if(edit){
+      openHistoryEdit(edit.getAttribute('data-history-edit')||'');
+      return;
+    }
+    var voidButton=event.target.closest&&event.target.closest('[data-history-void]');
+    if(voidButton)openHistoryVoid(voidButton.getAttribute('data-history-void')||'');
+  });
+  els.historyEditClose.addEventListener('click',closeHistoryEdit);
+  els.historyEditSave.addEventListener('click',saveHistoryEdit);
+  els.historyVoidClose.addEventListener('click',closeHistoryVoid);
+  els.historyVoidSave.addEventListener('click',saveHistoryVoid);
   els.toggleImportBtn.addEventListener('click',function(){
     var open=els.importBody.hidden;
     els.importBody.hidden=!open;

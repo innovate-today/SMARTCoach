@@ -86,7 +86,7 @@ module.exports = async function handler(req, res) {
     const schemaKey = isMeetResult ? MEET_RESULT_SCHEMA_KEY : PERFORMANCE_RECORD_SCHEMA_KEY;
 
     const relayCorrection = isMeetResult && (clean(payload.updates && payload.updates.resultType).toLowerCase() === "relay" || clean(payload.previous && payload.previous.resultType).toLowerCase() === "relay");
-    if (!contactId && !relayCorrection) throw httpError(400, "Missing athlete contact.");
+    if (!contactId && !isMeetResult && !relayCorrection) throw httpError(400, "Missing athlete contact.");
     if (!recordId && !sourceRecordId) throw httpError(400, isMeetResult ? "Missing meet result." : "Missing performance record.");
 
     const record = recordId
@@ -178,6 +178,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     event: prop(props, "event"),
     resultDisplay: prop(props, "result_display"),
     wind: prop(props, "wind"),
+    sport: prop(props, "sport"),
+    season: prop(props, "season"),
+    seasonYear: String(prop(props, "season_year") || ""),
     isPr: yesText(prop(props, "is_pr")) ? "Yes" : "No",
     isSeasonBest: yesText(prop(props, "is_season_best")) ? "Yes" : "No",
     resultType: noteValue(previousNote, "Result Type") || "Individual",
@@ -195,6 +198,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     event: clean(updates.event) || previousValues.event,
     resultDisplay: clean(updates.resultDisplay) || previousValues.resultDisplay,
     wind: clean(updates.wind),
+    sport: clean(updates.sport) || previousValues.sport,
+    season: clean(updates.season) || previousValues.season,
+    seasonYear: clean(updates.seasonYear) || previousValues.seasonYear,
     isPr: isRelay || isField ? "No" : clean(updates.isPr) ? yesText(updates.isPr) ? "Yes" : "No" : previousValues.isPr,
     isSeasonBest: isRelay || isField ? "No" : clean(updates.isSeasonBest) ? yesText(updates.isSeasonBest) ? "Yes" : "No" : previousValues.isSeasonBest,
     resultType: isRelay ? "Relay" : isField ? "Field" : "Individual",
@@ -210,6 +216,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     event: "Event",
     resultDisplay: "Result",
     wind: "Wind",
+    sport: "Sport",
+    season: "Season",
+    seasonYear: "Season Year",
     isPr: "PB",
     isSeasonBest: "SB",
     resultType: "Result Type",
@@ -251,6 +260,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
         result_display: nextValues.resultDisplay,
         ...(resultMs ? { result_ms: resultMs } : {}),
         wind: nextValues.wind,
+        sport: optionValue(nextValues.sport),
+        season: optionValue(nextValues.season),
+        season_year: Number(nextValues.seasonYear) || "",
         is_pr: nextValues.isPr,
         is_season_best: nextValues.isSeasonBest,
         splits_json: nextValues.splitsJson,
@@ -554,6 +566,9 @@ function previousProps(previous, recordType) {
       event: clean(data.event),
       result_display: clean(data.resultDisplay),
       wind: clean(data.wind),
+      sport: clean(data.sport),
+      season: clean(data.season),
+      season_year: clean(data.seasonYear),
       is_pr: clean(data.isPr),
       is_season_best: clean(data.isSeasonBest),
       splits_json: clean(data.splitsJson),

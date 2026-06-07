@@ -305,6 +305,39 @@ function checkMeetHistoryDataAudit() {
   console.log("Meet History data audit ok");
 }
 
+function checkMeetHistoryImportedResultCorrections() {
+  const html = fs.readFileSync("meet-history.html", "utf8");
+  const api = fs.readFileSync("api/ghl/correction.js", "utf8");
+  [
+    'id="historyEditModal"',
+    'id="historyVoidModal"',
+    "<th>Actions</th>",
+    "function openHistoryEdit(rowKeyValue)",
+    "function saveHistoryEdit()",
+    "function openHistoryVoid(rowKeyValue)",
+    "function saveHistoryVoid()",
+    "fetch('/api/smart-trak/correction'",
+    "sport:els.historyEditSport.value",
+    "seasonYear:els.historyEditSeasonYear.value",
+    "resultType:'historical import'",
+    "historyActionButtons(row)",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Meet History imported result corrections missing ${text}`);
+  });
+  [
+    'if (!contactId && !isMeetResult && !relayCorrection) throw httpError(400, "Missing athlete contact.");',
+    'sport: prop(props, "sport")',
+    'season: prop(props, "season")',
+    'seasonYear: String(prop(props, "season_year") || "")',
+    'sport: optionValue(nextValues.sport)',
+    'season_year: Number(nextValues.seasonYear) || ""',
+    'sport: clean(data.sport)',
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Correction API imported history support missing ${text}`);
+  });
+  console.log("Meet History imported result corrections ok");
+}
+
 function checkPageSearchDebounces() {
   const pages = [
     ["records.html", "els.search.addEventListener('input',scheduleSearchRender);", "searchRenderTimer=setTimeout(render,120);"],
@@ -639,6 +672,7 @@ checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
 checkMeetHistoryPerformanceCaches();
 checkMeetHistoryDataAudit();
+checkMeetHistoryImportedResultCorrections();
 checkPageSearchDebounces();
 checkFieldNoMarkResultsAllowed();
 checkKeepTrakFeature();
