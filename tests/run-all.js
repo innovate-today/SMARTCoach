@@ -229,8 +229,10 @@ function checkMeetHistorySportToolbarFilter() {
     "els.sportFilter.value='all';",
     "function canonicalSport(value)",
     "function crossCountryContext(row)",
+    "function trackOnlyEvent(row)",
     "function sportFromEvent(row)",
     "var fallDate=month>=8&&month<=11;",
+    "if(crossCountryContext(row)&&!trackOnlyEvent(row))return 'Cross Country';",
     "if(eventSport&&explicit&&eventSport!==explicit)",
     "meetResults=normalizeMeetHistoryRows",
   ];
@@ -266,6 +268,8 @@ function checkMeetHistoryPerformanceCaches() {
     "var filteredGroupsCache=null;",
     "if(filteredGroupsCache&&filteredGroupsCacheKey===cacheKey)return filteredGroupsCache;",
     "row._resultMs=parseResultMs(row.resultDisplay);",
+    "function meetHistoryDuplicateKey(row)",
+    "if(seen[key])return false;",
     "searchRenderTimer=setTimeout(render,120);",
     "invalidateMeetHistoryCache();",
   ];

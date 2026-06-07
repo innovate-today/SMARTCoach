@@ -468,6 +468,10 @@ function crossCountryContext(row){
   var month=isNaN(date.getTime())?0:date.getMonth()+1;
   return /\b(xc|cross country|jamboree|course|district championship|state championship)\b/i.test(meet+' '+notes) || /fall/i.test(season) || (month>=8&&month<=11);
 }
+function trackOnlyEvent(row){
+  var text=[row&&row.event,row&&row.coachRaceNotes,row&&row.notes].filter(Boolean).join(' ');
+  return /relay|hurdles|shot put|discus|jump|vault|javelin|hammer|Athletic\.net Event Records import/i.test(text);
+}
 function sportFromEvent(row){
   var event=String(row&&row.event||'').replace(/\s+/g,' ').trim();
   var season=String(row&&row.season||row&&row._seasonText||'').toLowerCase();
@@ -476,10 +480,11 @@ function sportFromEvent(row){
   var month=isNaN(date.getTime())?0:date.getMonth()+1;
   var fallDate=month>=8&&month<=11;
   if(!event)return '';
-  if(/relay|hurdles|shot put|discus|jump|vault|javelin|hammer/i.test(event))return 'Track';
+  if(trackOnlyEvent(row))return 'Track';
   if(/Athletic\.net Event Records import/i.test(notes))return 'Track';
   if(/^(5k|4k|6k|8k|10k|2 mile|2 miles|3k)$/i.test(event))return 'Cross Country';
   if((/fall/i.test(season)||fallDate||crossCountryContext(row))&&/^(5000m|5,?000 meters?|3200m|2 mile|2 miles)$/i.test(event))return 'Cross Country';
+  if(crossCountryContext(row)&&!trackOnlyEvent(row))return 'Cross Country';
   if(/^(60m|100m|200m|300m|400m|800m|1500m|1600m|3000m|3200m|5000m|10000m)$/i.test(event))return 'Track';
   return '';
 }
@@ -512,7 +517,7 @@ function sportText(row){
   var eventSport=sportFromEvent(row);
   if(eventSport&&explicit&&eventSport!==explicit){
     if(eventSport==='Cross Country')return 'Cross Country';
-    if(/relay|hurdles|shot put|discus|jump|vault|javelin|hammer|Athletic\.net Event Records import/i.test([row&&row.event,row&&row.coachRaceNotes,row&&row.notes].filter(Boolean).join(' ')))return 'Track';
+    if(trackOnlyEvent(row))return 'Track';
   }
   if(explicit==='Cross Country'||explicit==='Track')return explicit;
   if(explicit)return explicit;
@@ -543,7 +548,23 @@ function enrichMeetHistoryRow(row){
   return row;
 }
 function normalizeMeetHistoryRows(rows){
-  return (Array.isArray(rows)?rows:[]).map(function(row){return enrichMeetHistoryRow(row);});
+  var seen={};
+  return (Array.isArray(rows)?rows:[]).map(function(row){return enrichMeetHistoryRow(row);}).filter(function(row){
+    var key=meetHistoryDuplicateKey(row);
+    if(seen[key])return false;
+    seen[key]=true;
+    return true;
+  });
+}
+function meetHistoryDuplicateKey(row){
+  return [
+    row&&row.athleteName,
+    row&&row.athleteGender,
+    row&&row.meetName,
+    row&&row.meetDate,
+    row&&row.event,
+    row&&row.resultDisplay
+  ].map(function(value){return String(value||'').toLowerCase().replace(/\s+/g,' ').trim();}).join('|');
 }
 function invalidateMeetHistoryCache(){
   meetGroupCache=null;
