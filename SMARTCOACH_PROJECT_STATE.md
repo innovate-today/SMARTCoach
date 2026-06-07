@@ -1149,6 +1149,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 307. SMARTCoach app Keep modal layout cleanup: **Add Bullet** and **Save Note** now sit on the same row, while note-card **Complete** uses a green action style and **Reopen** uses a neutral style so those actions no longer look like the primary save button.
 308. SMARTCoach app Attendance now gives each checkpoint its own **Mark All Present** action in the checkpoint header. The shortcut fills only that checkpoint, so added checkpoints such as Weight Room or Meet Checkout can be marked present independently from Practice Start. Regression coverage and the coach how-to were updated.
 309. SMARTCoach app Attendance checkpoint readability was improved: checkpoint headers now render as black bars with white text, while athlete rows use gray name bars with black text so added checkpoints stand apart from the athlete list.
+310. Meet History now normalizes loaded and newly imported rows into cached view fields before filtering/rendering. Sport filtering recovers Track/Cross Country from saved sport values, Athletic.net import notes, event type, and Fall distance context; season filtering recovers year labels from saved `seasonYear` or meet date and date-based season inference now wins over stale import defaults. Meet History also caches filtered groups and parsed result times to reduce repeated work on larger imported datasets.
 
 ## Known Good Test Flow
 

@@ -227,6 +227,10 @@ function checkMeetHistorySportToolbarFilter() {
     "els.sportFilter.addEventListener('change',render)",
     "if(sport!=='all'&&sportText(row)!==sport)return false;",
     "els.sportFilter.value='all';",
+    "function canonicalSport(value)",
+    "function sportFromEvent(row)",
+    "var fallDate=month>=8&&month<=11;",
+    "meetResults=normalizeMeetHistoryRows",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`Meet History sport toolbar filter missing ${text}`);
@@ -257,6 +261,9 @@ function checkMeetHistoryPerformanceCaches() {
     "priorResultCache=buildPriorResultCache();",
     "function buildPriorResultCache()",
     "if(row&&row._searchText)return row._searchText;",
+    "var filteredGroupsCache=null;",
+    "if(filteredGroupsCache&&filteredGroupsCacheKey===cacheKey)return filteredGroupsCache;",
+    "row._resultMs=parseResultMs(row.resultDisplay);",
     "searchRenderTimer=setTimeout(render,120);",
     "invalidateMeetHistoryCache();",
   ];
@@ -437,6 +444,9 @@ function checkMeetHistoryUnlistedSeasonYearFallback() {
     "if(seasonYear)return seasonYear;",
     "season:result.season||'',seasonYear:result.seasonYear||''",
     "if(season!=='all'&&seasonText(row)!==season&&String(row.seasonYear||'')!==season)return false;",
+    "function inferredSeasonText(row)",
+    "var season=values.season||importSeasonForDate(meetDate)||els.importDefaultSeason.value;",
+    "row._seasonText=inferredSeasonText(row);",
   ];
   const requiredApi = [
     "const rawSeason = clean(row && row.season);",
