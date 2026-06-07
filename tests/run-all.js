@@ -329,6 +329,9 @@ function checkKeepTrakFeature() {
     "function loadKeepTrak()",
     "function toggleKeepTrakNote(id,completed)",
     "function addKeepTrakBullet()",
+    "function setKeepTrakDay(offset)",
+    "Yesterday",
+    "Tomorrow",
     "Add Bullet",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile Keep Trak missing ${text}`);
@@ -350,6 +353,10 @@ function checkKeepTrakFeature() {
     "Delete Keep Trak note?",
     "id=\"bulletBtn\"",
     "function addBriefingBullet()",
+    "id=\"dayRail\"",
+    "function renderDayRail()",
+    "id=\"noteFormPanel\"",
+    "id=\"addNoteBtn\"",
   ].forEach((text) => {
     if (!desktop.includes(text)) throw new Error(`desktop Keep Trak missing ${text}`);
   });

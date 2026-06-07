@@ -1145,6 +1145,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 303. Keep Trak desktop delete actions now use an in-page confirmation dialog instead of the browser-native embedded-page alert, so the message can say **Delete Keep Trak note?** or **Delete old Keep Trak notes?** with SMART Trak-styled Cancel/Delete buttons. Regression coverage rejects `confirm()` on `keep-trak.html`; `npm test` passed on 2026-06-06.
 304. Keep Trak notes now support quick plain-text bullets on both desktop and the SMARTCoach app. The **Add Bullet** control inserts a `- ` line at the cursor so coaches can keep one daily note with talking points/checklists instead of creating multiple notes. The coach guide documents the workflow.
 305. SMARTCoach app Groups tray cleanup: the duplicate bottom-tray **Add** button is hidden because the top-left **Add** action already creates groups/meets. Archive remains in the tray for active Training/Meets views, keeping the toolbar focused on daily actions.
+306. Keep Trak light-mode layout moved closer to the original proposed design without changing storage/API behavior. Desktop now has day cards, a day header, and Add Note buttons that reveal the Add/Edit panel; the SMARTCoach app Keep modal now includes Yesterday/Today/Tomorrow quick date buttons. The guide documents the new date-selection flow.
 
 ## Known Good Test Flow
 

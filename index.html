@@ -397,6 +397,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="msh">
     <div class="mhd"></div>
     <div class="mttl">Keep Trak</div>
+    <div class="bulk-actions"><button class="mbtn c" onclick="setKeepTrakDay(-1)">Yesterday</button><button class="mbtn c" onclick="setKeepTrakDay(0)">Today</button><button class="mbtn c" onclick="setKeepTrakDay(1)">Tomorrow</button></div>
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="keep-date" type="date" onchange="loadKeepTrak()"/></div>
     <div class="srow"><span class="slbl">Coach</span><input class="sinp" id="keep-coach" type="text" placeholder="Coach name" autocomplete="off"/></div>
     <div class="srow" style="align-items:flex-start"><span class="slbl">Note</span><textarea class="sinp ta" id="keep-body" maxlength="4000" placeholder="Practice briefing, reminders, deadlines, character lesson, meet notes..."></textarea></div>
@@ -2486,6 +2487,16 @@ var KEEP_TRAK={notes:[]};
 function keepTrakDate(){
   var input=document.getElementById('keep-date');
   return input&&input.value?input.value:todayISO();
+}
+function keepTrakRelativeDate(offset){
+  var d=new Date();
+  d.setDate(d.getDate()+Number(offset||0));
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function setKeepTrakDay(offset){
+  var input=document.getElementById('keep-date');
+  if(input)input.value=keepTrakRelativeDate(offset);
+  loadKeepTrak();
 }
 function keepTrakCoachName(){
   var input=document.getElementById('keep-coach');

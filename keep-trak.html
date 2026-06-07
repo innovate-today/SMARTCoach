@@ -27,7 +27,7 @@ h1{font-size:26px;line-height:1.05;margin:0 0 3px}
 .panelhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
 .panelhead h2{font-size:18px;margin:0}
 .panelbody{padding:14px 16px}
-.toolbar{display:grid;grid-template-columns:auto auto auto 1fr auto;gap:10px;align-items:end}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
 label{display:grid;gap:5px;font-size:12px;font-weight:900;text-transform:uppercase;color:#435066;letter-spacing:.03em}
 input,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}
 textarea{min-height:132px;resize:vertical;line-height:1.45}
@@ -36,7 +36,16 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
 .note-tools{display:flex;justify-content:flex-end;margin-top:8px}
 .note-tools button{padding:7px 10px}
 .status{font-size:13px;font-weight:900;color:var(--muted)}
-.layout{display:grid;grid-template-columns:360px 1fr;gap:14px}
+.keep-layout{display:grid;grid-template-columns:160px minmax(0,1fr);gap:14px;align-items:start}
+.dayrail{display:grid;gap:8px;position:sticky;top:124px}
+.daycard{border:1px solid var(--line);border-radius:8px;background:#fff;text-align:left;color:var(--ink);padding:12px;min-height:72px}
+.daycard.active{border-color:var(--blue);background:#eef4ff;color:#173891}
+.daycard b{display:block;font-size:14px;margin-bottom:3px}
+.daycard span{display:block;color:var(--muted);font-size:12px;line-height:1.35}
+.note-main{display:grid;gap:14px}
+.note-day-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.note-day-head h2{font-size:25px;margin:0}
+.note-form-panel[hidden]{display:none}
 .daylist{display:grid;gap:8px}
 .note{border:1px solid var(--line);border-radius:8px;background:#fbfdff;overflow:hidden}
 .note.completed{background:#f1f5f9;color:#64748b}
@@ -62,7 +71,7 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
 .confirm-box p{margin:0;color:#435574;font-size:14px;line-height:1.45}
 .confirm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 .today-badge{display:inline-flex;align-items:center;border-radius:999px;background:#e8efff;color:#173891;padding:3px 8px;font-size:11px;font-weight:900;margin-left:6px}
-@media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%;justify-content:stretch}.actions a,.actions button{text-align:center;flex:1}.layout{grid-template-columns:1fr}.toolbar,.formgrid{grid-template-columns:1fr}}
+@media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%;justify-content:stretch}.actions a,.actions button{text-align:center;flex:1}.keep-layout{grid-template-columns:1fr}.dayrail{grid-template-columns:repeat(3,minmax(0,1fr));position:static}.toolbar,.formgrid{grid-template-columns:1fr}.note-day-head{align-items:flex-start;flex-direction:column}.note-day-head button{width:100%}}
 </style>
 </head>
 <body>
@@ -80,19 +89,17 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
       <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
       <a id="calendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
       <a id="weatherLink" class="linkbtn secondary" href="/weather.html">Weather</a>
+      <button id="addNoteBtn" type="button">+ Add Note</button>
       <button id="refreshBtn" class="ghost" type="button">Refresh</button>
     </div>
   </section>
 
   <section class="panel">
     <div class="panelbody toolbar">
-      <button id="prevBtn" class="secondary" type="button">Previous</button>
       <label>Date
         <input id="dateInput" type="date">
       </label>
-      <button id="todayBtn" class="secondary" type="button">Today</button>
       <div id="rangeStatus" class="status"></div>
-      <button id="nextBtn" class="secondary" type="button">Next</button>
     </div>
   </section>
 
@@ -109,8 +116,14 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
     </div>
   </section>
 
-  <section class="layout">
-    <section class="panel">
+  <section class="keep-layout">
+    <aside id="dayRail" class="dayrail"></aside>
+    <section class="note-main">
+      <div class="note-day-head">
+        <h2 id="listTitle">Notes</h2>
+        <button id="inlineAddNoteBtn" class="secondary" type="button">+ Add Note</button>
+      </div>
+    <section id="noteFormPanel" class="panel note-form-panel" hidden>
       <div class="panelhead"><h2>Add / Edit Note</h2><span id="editStatus" class="status">New note</span></div>
       <div class="panelbody">
         <div class="formgrid">
@@ -128,10 +141,11 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
     </section>
 
     <section class="panel">
-      <div class="panelhead"><h2 id="listTitle">Notes</h2><span id="status" class="status"></span></div>
+      <div class="panelhead"><h2>Briefing Notes</h2><span id="status" class="status"></span></div>
       <div class="panelbody">
         <div id="notesList" class="daylist"></div>
       </div>
+    </section>
     </section>
   </section>
 </main>
@@ -155,11 +169,12 @@ var els={
   dashboardLink:document.getElementById('dashboardLink'),
   calendarLink:document.getElementById('calendarLink'),
   weatherLink:document.getElementById('weatherLink'),
+  addNoteBtn:document.getElementById('addNoteBtn'),
+  inlineAddNoteBtn:document.getElementById('inlineAddNoteBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
-  prevBtn:document.getElementById('prevBtn'),
-  nextBtn:document.getElementById('nextBtn'),
-  todayBtn:document.getElementById('todayBtn'),
   dateInput:document.getElementById('dateInput'),
+  dayRail:document.getElementById('dayRail'),
+  noteFormPanel:document.getElementById('noteFormPanel'),
   coachInput:document.getElementById('coachInput'),
   bodyInput:document.getElementById('bodyInput'),
   bulletBtn:document.getElementById('bulletBtn'),
@@ -222,7 +237,8 @@ function loadNotes(){
 }
 function render(){
   var date=els.dateInput.value||todayISO();
-  els.listTitle.innerHTML='Notes for '+esc(formatDate(date))+(date===todayISO()?'<span class="today-badge">Today</span>':'');
+  renderDayRail();
+  els.listTitle.innerHTML=esc(formatWeekdayDate(date))+(date===todayISO()?'<span class="today-badge">Today</span>':'');
   var open=notes.filter(function(note){return !note.completed;}).length;
   els.rangeStatus.textContent='Open notes from earlier days carry forward until completed.';
   setStatus(open+' open · '+notes.length+' total');
@@ -236,15 +252,55 @@ function render(){
     return '<article class="note '+(note.completed?'completed':'')+'"><div class="notehead"><div><div class="notetitle">'+esc(title)+'</div><div class="notemeta">'+esc(meta)+'</div></div></div><div class="notebody">'+esc(note.body||note.title||'')+'</div><div class="noteactions"><button class="secondary" type="button" onclick="editNote(\''+js(note.id)+'\')">Edit</button><button class="secondary" type="button" onclick="toggleNote(\''+js(note.id)+'\','+(!note.completed)+')">'+(note.completed?'Reopen':'Complete')+'</button><button class="danger" type="button" onclick="deleteNote(\''+js(note.id)+'\')">Delete</button></div></article>';
   }).join('');
 }
+function formatWeekdayDate(value){
+  var parts=String(value||'').split('-').map(Number);
+  if(parts.length!==3)return value||'';
+  var d=new Date(parts[0],parts[1]-1,parts[2]);
+  if(isNaN(d.getTime()))return value||'';
+  return d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+}
+function notesForDate(date){
+  return notes.filter(function(note){return note.date===date||(!note.completed&&note.date<date);});
+}
+function dayLabel(date,index){
+  if(date===todayISO())return 'Today';
+  if(index===0)return 'Yesterday';
+  if(index===2)return 'Tomorrow';
+  return formatWeekdayDate(date);
+}
+function renderDayRail(){
+  var selected=els.dateInput.value||todayISO();
+  var days=[addDays(todayISO(),-1),todayISO(),addDays(todayISO(),1)];
+  els.dayRail.innerHTML=days.map(function(date,index){
+    var rows=notesForDate(date);
+    var open=rows.filter(function(note){return !note.completed;}).length;
+    var summary=open?open+' open':rows.length?rows.length+' planned':'No notes';
+    return '<button class="daycard '+(date===selected?'active':'')+'" type="button" onclick="selectKeepTrakDay(\''+js(date)+'\')"><b>'+esc(dayLabel(date,index))+'</b><span>'+esc(formatDate(date))+'</span><span>'+esc(summary)+'</span></button>';
+  }).join('');
+}
+function selectKeepTrakDay(date){
+  els.dateInput.value=date;
+  clearForm();
+  loadNotes();
+}
 function clearForm(){
   editingId='';
   els.bodyInput.value='';
   els.editStatus.textContent='New note';
   updateCharCount();
 }
+function showNoteForm(){
+  els.noteFormPanel.hidden=false;
+  els.bodyInput.focus();
+}
+function startNewNote(){
+  clearForm();
+  showNoteForm();
+}
 function editNote(id){
   var note=notes.find(function(item){return item.id===id;});
   if(!note)return;
+  showNoteForm();
   editingId=id;
   els.coachInput.value=note.coachName||els.coachInput.value;
   els.bodyInput.value=note.body||'';
@@ -268,7 +324,7 @@ function notePayload(overrides){
 function saveNote(){
   if(!els.bodyInput.value.trim()){setStatus('Write a note first.','bad');return;}
   var payload=notePayload();
-  saveNotes([payload]).then(function(){clearForm();return loadNotes();}).catch(function(error){setStatus(error&&error.message?error.message:'Keep Trak could not save.','bad');});
+  saveNotes([payload]).then(function(){clearForm();els.noteFormPanel.hidden=true;return loadNotes();}).catch(function(error){setStatus(error&&error.message?error.message:'Keep Trak could not save.','bad');});
 }
 function updateCharCount(){
   var count=(els.bodyInput.value||'').length;
@@ -396,10 +452,10 @@ function init(){
   els.calendarLink.href=pageUrl('/training-calendar.html');
   els.weatherLink.href=pageUrl('/weather.html');
   els.dateInput.value=todayISO();
+  renderDayRail();
+  els.addNoteBtn.addEventListener('click',startNewNote);
+  els.inlineAddNoteBtn.addEventListener('click',startNewNote);
   els.refreshBtn.addEventListener('click',loadNotes);
-  els.prevBtn.addEventListener('click',function(){changeDay(-1);});
-  els.nextBtn.addEventListener('click',function(){changeDay(1);});
-  els.todayBtn.addEventListener('click',function(){els.dateInput.value=todayISO();clearForm();loadNotes();});
   els.dateInput.addEventListener('change',function(){clearForm();loadNotes();});
   els.saveBtn.addEventListener('click',saveNote);
   els.clearBtn.addEventListener('click',clearForm);

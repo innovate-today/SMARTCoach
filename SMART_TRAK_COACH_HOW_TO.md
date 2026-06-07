@@ -480,12 +480,13 @@ Use Keep Trak for daily team briefing notes: reminders, deadlines, practice chan
 How to use it on SMART Trak desktop:
 
 1. Open **Keep Trak** from Dashboard or Training Calendar.
-2. Choose the date for the briefing.
-3. Enter the coach name and note.
-4. Click **Save Note**.
-5. Use **Edit** to update a note.
-6. Use **Complete** after the note has been addressed.
-7. Use **Delete** only from desktop when a note should be removed.
+2. Use the day cards or date picker to choose the briefing date.
+3. Click **Add Note**.
+4. Enter the coach name and note.
+5. Click **Save Note**.
+6. Use **Edit** to update a note.
+7. Use **Complete** after the note has been addressed.
+8. Use **Delete** only from desktop when a note should be removed.
 
 Keep Trak notes can be up to 4,000 characters. There is no separate title field; write the full briefing in the note box.
 
@@ -496,7 +497,7 @@ When Keep Trak opens on desktop, notes older than 30 days appear in a cleanup me
 How to use it on the SMARTCoach app:
 
 1. Open **Keep** from the Groups toolbar.
-2. Choose the date if needed.
+2. Use **Yesterday**, **Today**, or **Tomorrow**, or choose the date if needed.
 3. Enter the coach name and note.
 4. Tap **Add Bullet** when the note needs checklist-style lines.
 5. Tap **Save Note**.
