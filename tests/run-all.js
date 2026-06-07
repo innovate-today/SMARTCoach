@@ -228,8 +228,10 @@ function checkMeetHistorySportToolbarFilter() {
     "if(sport!=='all'&&sportText(row)!==sport)return false;",
     "els.sportFilter.value='all';",
     "function canonicalSport(value)",
+    "function crossCountryContext(row)",
     "function sportFromEvent(row)",
     "var fallDate=month>=8&&month<=11;",
+    "if(eventSport&&explicit&&eventSport!==explicit)",
     "meetResults=normalizeMeetHistoryRows",
   ];
   required.forEach((text) => {
