@@ -381,6 +381,22 @@ function checkKeepTrakFeature() {
   console.log("Keep Trak feature ok");
 }
 
+function checkAttendanceCheckpointMarkAll() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "function attendanceMarkCheckpointAll(cpIndex,status)",
+    "attendanceMarkCheckpointAll('+cpIndex+'",
+    "att-head-actions",
+    "Mark All Present",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`checkpoint Mark All Present missing ${text}`);
+  });
+  if (mobile.includes("onclick=\"attendanceMarkAll('present')\"")) {
+    throw new Error("Attendance should not use one global Mark All Present button.");
+  }
+  console.log("attendance checkpoint Mark All Present ok");
+}
+
 function checkGroupsTrayAddHidden() {
   const mobile = fs.readFileSync("index.html", "utf8");
   if (!mobile.includes('id="groups-tray-add-btn" onclick="addGroupForView()" hidden')) {
@@ -523,6 +539,7 @@ checkMeetHistoryPerformanceCaches();
 checkPageSearchDebounces();
 checkFieldNoMarkResultsAllowed();
 checkKeepTrakFeature();
+checkAttendanceCheckpointMarkAll();
 checkGroupsTrayAddHidden();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();

@@ -144,6 +144,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-attendance .att-actions{padding:10px 12px}
 #m-attendance .att-note{margin:0;padding:0 12px 10px}
 #m-attendance .att-head{border-bottom:1px solid #d8dee7}
+#m-attendance .att-head-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+#m-attendance .att-head-actions .att-btn{white-space:nowrap;padding:8px 9px}
 #m-keep-trak .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
 #m-keep-trak .mhd,#m-keep-trak .mttl,#m-keep-trak .srow,#m-keep-trak .bulk-status,#m-keep-trak .mbtn,#m-keep-trak .keep-compose-actions{flex-shrink:0}
 #keep-list{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}
@@ -385,7 +387,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mttl" id="att-title">Attendance</div>
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="att-date" type="date" onchange="renderAttendance()"/></div>
     <div class="bulk-actions">
-      <button class="mbtn c" onclick="attendanceMarkAll('present')">Mark All Present</button>
       <button class="mbtn c" onclick="addAttendanceCheckpoint()">Add Checkpoint</button>
     </div>
     <div id="att-summary" class="bulk-status"></div>
@@ -2368,7 +2369,7 @@ function renderAttendance(){
   if(!runners.length){list.innerHTML='<div style="padding:18px;color:#777;text-align:center;background:#fff">Add athletes to this group first.</div>';return;}
   list.innerHTML=day.checkpoints.map(function(cp,cpIndex){
     var counts=attendanceCounts(cp,runners);
-    return '<div class="att-card"><div class="att-head"><div><div class="att-name">'+ex(cp.name)+'</div><div class="att-small">'+counts.present+' present · '+counts.late+' late · '+counts.checked_out+' checked out · '+counts.absent+' absent · '+counts.excused+' excused</div></div><button class="att-btn" onclick="renameAttendanceCheckpoint('+cpIndex+')">Rename</button></div>'+
+    return '<div class="att-card"><div class="att-head"><div><div class="att-name">'+ex(cp.name)+'</div><div class="att-small">'+counts.present+' present · '+counts.late+' late · '+counts.checked_out+' checked out · '+counts.absent+' absent · '+counts.excused+' excused</div></div><div class="att-head-actions"><button class="att-btn" onclick="attendanceMarkCheckpointAll('+cpIndex+',\'present\')">Mark All Present</button><button class="att-btn" onclick="renameAttendanceCheckpoint('+cpIndex+')">Rename</button></div></div>'+
       runners.map(function(r){return attendanceRunnerHtml(cp,r,cpIndex);}).join('')+'</div>';
   }).join('');
   if(summary)summary.textContent=attendanceSummary(day,runners);
@@ -2420,6 +2421,21 @@ function attendanceMarkAll(status){
       rec.source='coach';
       if(rec.note&&rec.note.indexOf('Auto-updated from workout activity')===0)rec.note='';
     });
+  });
+  save();
+  renderAttendance();
+}
+function attendanceMarkCheckpointAll(cpIndex,status){
+  if(!CL)return;
+  var day=ensureAttendanceDay(attendanceDate());
+  var cp=day.checkpoints[cpIndex];
+  if(!cp)return;
+  (CL.runners||[]).forEach(function(r){
+    var rec=attendanceRecord(cp,r);
+    rec.status=status;
+    rec.updatedAt=new Date().toISOString();
+    rec.source='coach';
+    if(rec.note&&rec.note.indexOf('Auto-updated from workout activity')===0)rec.note='';
   });
   save();
   renderAttendance();
