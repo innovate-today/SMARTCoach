@@ -145,8 +145,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-attendance .att-note{margin:0;padding:0 12px 10px}
 #m-attendance .att-head{border-bottom:1px solid #d8dee7}
 #m-keep-trak .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
-#m-keep-trak .mhd,#m-keep-trak .mttl,#m-keep-trak .srow,#m-keep-trak .bulk-status,#m-keep-trak .mbtn{flex-shrink:0}
+#m-keep-trak .mhd,#m-keep-trak .mttl,#m-keep-trak .srow,#m-keep-trak .bulk-status,#m-keep-trak .mbtn,#m-keep-trak .keep-compose-actions{flex-shrink:0}
 #keep-list{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}
+#m-keep-trak .keep-compose-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px;margin-top:10px}
+#m-keep-trak .keep-compose-actions .mbtn{width:100%;margin:0;padding:14px 10px}
 .keep-card{background:#fff;border:1px solid #d8dee7;border-radius:12px;margin:0 0 12px;overflow:hidden}
 .keep-card.done{background:#eef1f6;color:#667085}
 .keep-card.done .keep-body{text-decoration:none;color:#667085}
@@ -157,6 +159,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .keep-body{white-space:pre-wrap;font-size:14px;line-height:1.35;color:#222;padding:12px}
 .keep-actions{display:flex;gap:8px;padding:0 12px 12px}
 .keep-actions .att-btn{flex:1;font-size:13px;padding:10px 8px}
+.keep-actions .keep-complete{background:#ecfdf3;border-color:#8ed8a8;color:#08783c}
+.keep-actions .keep-reopen{background:#f1f5f9;border-color:#cbd5e1;color:#334155}
 </style>
 <style>
 #m-equipment .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
@@ -401,8 +405,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="keep-date" type="date" onchange="loadKeepTrak()"/></div>
     <div class="srow"><span class="slbl">Coach</span><input class="sinp" id="keep-coach" type="text" placeholder="Coach name" autocomplete="off"/></div>
     <div class="srow" style="align-items:flex-start"><span class="slbl">Note</span><textarea class="sinp ta" id="keep-body" maxlength="4000" placeholder="Practice briefing, reminders, deadlines, character lesson, meet notes..."></textarea></div>
-    <div class="bulk-actions"><button class="mbtn c" onclick="addKeepTrakBullet()">Add Bullet</button></div>
-    <button class="mbtn" onclick="saveKeepTrakNote()">Save Note</button>
+    <div class="keep-compose-actions"><button class="mbtn c" onclick="addKeepTrakBullet()">Add Bullet</button><button class="mbtn" onclick="saveKeepTrakNote()">Save Note</button></div>
     <div id="keep-status" class="bulk-status"></div>
     <div id="keep-list" class="builder-box"></div>
     <button class="mbtn c" onclick="hm('m-keep-trak')">Close</button>
@@ -2545,7 +2548,7 @@ function renderKeepTrak(){
     var complete=!!note.completed;
     var title=keepTrakDisplayTitle(note);
     var meta=[formatKeepTrakDate(note.date),note.coachName||'Coach',complete?'Completed':'Open'].filter(Boolean).join(' · ');
-    return '<div class="keep-card '+(complete?'done':'')+'"><div class="keep-head"><div><div class="keep-title">'+ex(title)+'</div><div class="keep-meta">'+ex(meta)+'</div></div></div><div class="keep-body">'+ex(note.body||note.title||'')+'</div><div class="keep-actions"><button class="att-btn '+(complete?'':'on')+'" onclick="toggleKeepTrakNote(\''+keepTrakJs(note.id)+'\','+(!complete)+')">'+(complete?'Reopen':'Complete')+'</button></div></div>';
+    return '<div class="keep-card '+(complete?'done':'')+'"><div class="keep-head"><div><div class="keep-title">'+ex(title)+'</div><div class="keep-meta">'+ex(meta)+'</div></div></div><div class="keep-body">'+ex(note.body||note.title||'')+'</div><div class="keep-actions"><button class="att-btn '+(complete?'keep-reopen':'keep-complete')+'" onclick="toggleKeepTrakNote(\''+keepTrakJs(note.id)+'\','+(!complete)+')">'+(complete?'Reopen':'Complete')+'</button></div></div>';
   }).join('');
   if(status)status.textContent=notes.filter(function(note){return !note.completed;}).length+' open · '+notes.length+' total';
 }

@@ -333,6 +333,9 @@ function checkKeepTrakFeature() {
     "Yesterday",
     "Tomorrow",
     "Add Bullet",
+    "keep-compose-actions",
+    "keep-complete",
+    "keep-reopen",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile Keep Trak missing ${text}`);
   });
