@@ -439,6 +439,11 @@ function esc(value){
 }
 function formatDate(value){
   if(!value)return '';
+  var dateOnly=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(dateOnly){
+    var localDate=new Date(Number(dateOnly[1]),Number(dateOnly[2])-1,Number(dateOnly[3]));
+    return localDate.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  }
   var date=new Date(value);
   if(isNaN(date.getTime()))return value;
   return date.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
@@ -888,7 +893,7 @@ function athleticMeetMap(lines,seasonYear){
       var dateCol=cols.findIndex(function(col){return !!athleticDateLabel(col);});
       if(dateCol>=0&&cols[dateCol+1]){
         var dateLabel=athleticDateLabel(cols[dateCol]);
-        map[dateLabel]={date:importDateOnly(dateLabel,seasonYear),name:cols[dateCol+1].trim()};
+        if(!map[dateLabel])map[dateLabel]={date:importDateOnly(dateLabel,seasonYear),name:cols[dateCol+1].trim()};
         pendingDate='';
         return;
       }
@@ -896,7 +901,7 @@ function athleticMeetMap(lines,seasonYear){
     var dateOnly=athleticDateLabel(text);
     if(dateOnly){pendingDate=dateOnly;return;}
     if(pendingDate&&text&&!/\b0:00\b/i.test(text)){
-      map[pendingDate]={date:importDateOnly(pendingDate,seasonYear),name:text};
+      if(!map[pendingDate])map[pendingDate]={date:importDateOnly(pendingDate,seasonYear),name:text};
       pendingDate='';
       return;
     }
@@ -904,7 +909,7 @@ function athleticMeetMap(lines,seasonYear){
     if(!match)return;
     var label=match[1].replace(/^Sept\b/i,'Sep');
     var name=match[2].replace(/\b0:00\b.*$/,'').trim();
-    if(name)map[label]={date:importDateOnly(label,seasonYear),name:name};
+    if(name&&!map[label])map[label]={date:importDateOnly(label,seasonYear),name:name};
   });
   return map;
 }

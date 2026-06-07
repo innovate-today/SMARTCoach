@@ -562,6 +562,62 @@ return parseAthleticNetRows(sample);`);
   console.log("Athletic.net compact calendar range import ok");
 }
 
+function checkAthleticResultsGridDuplicateMeetDates() {
+  const html = fs.readFileSync("meet-history.html", "utf8");
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\ninit\(\);\s*$/, "");
+  const ids = [...html.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
+  const elements = {};
+  ids.forEach((id) => { elements[id] = stubElement(); });
+  elements.importDefaultYear.value = "2022";
+  elements.importDefaultSeason.value = "Fall";
+  elements.importDefaultGender.value = "Boys";
+  elements.importDefaultSport.value = "Cross Country";
+  elements.importDefaultEvent.value = "";
+
+  const runner = new Function("document", "window", "navigator", "fetch", "alert", "confirm", "URL", "URLSearchParams", `${script}
+const sample = [
+  '2022 Results Grid',
+  'Mens',
+  'Gr\\tAthlete\\tAug 11\\tAug 20\\tAug 27\\tSep 10',
+  '10\\tBen Davis\\t12:36.0 2\\t21:01.9 3\\t20:33.5 3\\t19:59.8 3',
+  'Race Distances: 1 3200 Meters | 2 2 Miles | 3 5000 Meters',
+  'Meet List',
+  'Aug 11\\tArl. Houston Texans 2 Miles Meet',
+  'Aug 20\\tWaxahachie Woodhouse Invitational',
+  'Aug 20\\tSouthlake Carroll 3200',
+  'Aug 27\\tSouthlake Carroll Invitational',
+  'Sep 10\\tUTA Region II Preview Meet',
+  'Key'
+].join('\\n');
+return { rows: parseAthleticNetRows(sample), formattedDate: formatDate('2022-08-20') };`);
+  const doc = {
+    body: stubElement(),
+    getElementById(id) { return elements[id] || stubElement(); },
+    querySelectorAll() { return []; },
+    querySelector() { return null; },
+    addEventListener() {},
+    createElement() { return stubElement(); },
+  };
+  const result = runner(doc, {
+    location: { search: "", href: "https://app.smartcoach-pro.com/meet-history.html", origin: "https://app.smartcoach-pro.com" },
+    addEventListener() {},
+    localStorage: { getItem() {}, setItem() {}, removeItem() {} },
+  }, { clipboard: null }, () => Promise.resolve({ ok: false, json: () => Promise.resolve({}) }), () => {}, () => true, URL, URLSearchParams);
+  const rows = result.rows;
+  const aug20 = rows.find((row) => row.resultDisplay === "21:01.9");
+  const sep10 = rows.find((row) => row.resultDisplay === "19:59.8");
+  if (!aug20 || aug20.meetName !== "Waxahachie Woodhouse Invitational" || aug20.meetDate !== "2022-08-20") {
+    throw new Error("Athletic.net Results Grid duplicate date should keep the first Aug 20 meet.");
+  }
+  if (!sep10 || sep10.meetName !== "UTA Region II Preview Meet" || sep10.meetDate !== "2022-09-10") {
+    throw new Error("Athletic.net Results Grid should map later date columns to the matching Meet List row.");
+  }
+  if (!/Aug\s+20/.test(result.formattedDate)) {
+    throw new Error("Meet History date-only display should not shift by timezone.");
+  }
+  console.log("Athletic.net Results Grid duplicate meet dates ok");
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
@@ -591,5 +647,6 @@ checkGroupsTrayAddHidden();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkAthleticEventRecordsCalendarRanges();
+checkAthleticResultsGridDuplicateMeetDates();
 
 console.log("SMARTCoach regression checks passed");
