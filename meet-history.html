@@ -460,42 +460,6 @@ function canonicalSport(value){
   if(/^(track|track and field)$/i.test(text)||/\btrack\b/i.test(text))return 'Track';
   return text;
 }
-function sportFromMeetDate(row){
-  var date=new Date(row&&row.meetDate);
-  if(isNaN(date.getTime()))return '';
-  var month=date.getMonth()+1;
-  if(month>=8&&month<=11)return 'Cross Country';
-  if(month>=2&&month<=5)return 'Track';
-  return '';
-}
-function crossCountryContext(row){
-  var meet=String(row&&row.meetName||row&&row.name||'');
-  var notes=String(row&&row.coachRaceNotes||row&&row.notes||'');
-  var season=String(row&&row.season||row&&row._seasonText||'');
-  var date=new Date(row&&row.meetDate);
-  var month=isNaN(date.getTime())?0:date.getMonth()+1;
-  return /\b(xc|cross country|jamboree|course|district championship|state championship)\b/i.test(meet+' '+notes) || /fall/i.test(season) || (month>=8&&month<=11);
-}
-function trackOnlyEvent(row){
-  var text=[row&&row.event,row&&row.coachRaceNotes,row&&row.notes].filter(Boolean).join(' ');
-  return /relay|hurdles|shot put|discus|jump|vault|javelin|hammer|Athletic\.net Event Records import/i.test(text);
-}
-function sportFromEvent(row){
-  var event=String(row&&row.event||'').replace(/\s+/g,' ').trim();
-  var season=String(row&&row.season||row&&row._seasonText||'').toLowerCase();
-  var notes=String(row&&row.coachRaceNotes||row&&row.notes||'');
-  var date=new Date(row&&row.meetDate);
-  var month=isNaN(date.getTime())?0:date.getMonth()+1;
-  var fallDate=month>=8&&month<=11;
-  if(!event)return '';
-  if(trackOnlyEvent(row))return 'Track';
-  if(/Athletic\.net Event Records import/i.test(notes))return 'Track';
-  if(/^(5k|4k|6k|8k|10k|2 mile|2 miles|3k)$/i.test(event))return 'Cross Country';
-  if((/fall/i.test(season)||fallDate||crossCountryContext(row))&&/^(5000m|5,?000 meters?|3200m|2 mile|2 miles)$/i.test(event))return 'Cross Country';
-  if(crossCountryContext(row)&&!trackOnlyEvent(row))return 'Cross Country';
-  if(/^(60m|100m|200m|300m|400m|800m|1500m|1600m|3000m|3200m|5000m|10000m)$/i.test(event))return 'Track';
-  return '';
-}
 function inferredSeasonText(row){
   var season=String(row&&row.season||'').trim();
   var seasonYear=Number(row&&row.seasonYear)||yearFromDateText(row&&row.meetDate);
@@ -522,22 +486,8 @@ function seasonText(row){
 function sportText(row){
   if(row&&row._sportText)return row._sportText;
   var explicit=canonicalSport(row&&row.sport);
-  var eventSport=sportFromEvent(row);
-  var dateSport=sportFromMeetDate(row);
-  var notes=String(row&&row.coachRaceNotes||row&&row.notes||'');
-  if(dateSport==='Cross Country'&&!trackOnlyEvent(row))return 'Cross Country';
-  if(dateSport==='Track')return 'Track';
-  if(/Athletic\.net (full season table|Season Bests|Results Grid) import/i.test(notes)&&!trackOnlyEvent(row)){
-    return 'Cross Country';
-  }
-  if(/Athletic\.net Event Records import/i.test(notes))return 'Track';
-  if(eventSport&&explicit&&eventSport!==explicit){
-    if(eventSport==='Cross Country')return 'Cross Country';
-    if(trackOnlyEvent(row))return 'Track';
-  }
   if(explicit==='Cross Country'||explicit==='Track')return explicit;
   if(explicit)return explicit;
-  if(eventSport)return eventSport;
   return 'Unlisted';
 }
 function searchText(row){
@@ -559,23 +509,7 @@ function enrichMeetHistoryRow(row){
   return row;
 }
 function normalizeMeetHistoryRows(rows){
-  var seen={};
-  return (Array.isArray(rows)?rows:[]).map(function(row){return enrichMeetHistoryRow(row);}).filter(function(row){
-    var key=meetHistoryDuplicateKey(row);
-    if(seen[key])return false;
-    seen[key]=true;
-    return true;
-  });
-}
-function meetHistoryDuplicateKey(row){
-  return [
-    row&&row.athleteName,
-    row&&row.athleteGender,
-    row&&row.meetName,
-    row&&row.meetDate,
-    row&&row.event,
-    row&&row.resultDisplay
-  ].map(function(value){return String(value||'').toLowerCase().replace(/\s+/g,' ').trim();}).join('|');
+  return (Array.isArray(rows)?rows:[]).map(function(row){return enrichMeetHistoryRow(row);});
 }
 function invalidateMeetHistoryCache(){
   meetGroupCache=null;
@@ -1208,7 +1142,7 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
   var raceDistances=athleticRaceDistances(lines);
   var meetMap=athleticMeetMap(lines,seasonYear);
   var gradeLookup=athleticGradeLookup(lines);
-  var sport='Cross Country';
+  var sport=els.importDefaultSport.value||'Cross Country';
   var defaultGender=els.importDefaultGender.value||'';
   var defaultSeason=els.importDefaultSeason.value||'Fall';
   var rows=[];
@@ -1269,7 +1203,7 @@ function parseAthleticNetRows(text){
   if(eventRecordsRows.length)return eventRecordsRows;
   var tableRows=parseAthleticSeasonTableRows(text,tableLines,seasonYear);
   if(tableRows.length)return dedupeImportRows(tableRows);
-  var sport='Cross Country';
+  var sport=els.importDefaultSport.value||'Cross Country';
   var defaultSeason=els.importDefaultSeason.value||'Fall';
   var defaultGender=els.importDefaultGender.value||'';
   var event=els.importDefaultEvent.value||'';
