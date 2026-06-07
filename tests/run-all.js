@@ -97,6 +97,20 @@ function checkLiveValidationPage() {
   console.log("live launch validation links ok");
 }
 
+function checkAccountStatusLocationVerification() {
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  [
+    "expectedLocationId",
+    "x-smartcoach-expected-location",
+    "locationCheck",
+    "matches: !!resolvedLocationId && safeEqual(resolvedLocationId, expectedLocationId)",
+    "function maskLocationId(value)",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`account status location verification missing ${text}`);
+  });
+  console.log("account status location verification ok");
+}
+
 function checkStandaloneRaceResultSaveScope() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   if (!html.includes("var savedPayload=null;")) {
@@ -540,6 +554,7 @@ jsFilesUnder("api").concat(jsFilesUnder("lib"), jsFilesUnder("tests")).forEach((
 checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
+checkAccountStatusLocationVerification();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkMeetManagerSportField();

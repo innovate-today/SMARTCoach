@@ -1159,6 +1159,8 @@ async function accountStatus(req, res) {
   const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
   const providedAccessCode = String(headerValue(req, "x-smartcoach-access-code") || "").trim();
   const accessCodeAccepted = !!(providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code)));
+  const expectedLocationId = cleanSetupText(firstQueryValue(req.query && (req.query.expectedLocationId || req.query.locationId)) || headerValue(req, "x-smartcoach-expected-location"));
+  const resolvedLocationId = cleanSetupText(locationId);
   const crmConfigured = !!(token && locationId);
   const coachAccessConfigured = (!requireCoachAccess && proPlan) || configuredCoachCodes > 0;
   const configured = proPlan ? (crmConfigured && coachAccessConfigured) : coachAccessConfigured;
@@ -1236,6 +1238,11 @@ async function accountStatus(req, res) {
       updatedAt: registry.record && registry.record.updatedAt || "",
       error: registry.error || undefined,
     },
+    locationCheck: expectedLocationId ? {
+      expected: maskLocationId(expectedLocationId),
+      resolved: maskLocationId(resolvedLocationId),
+      matches: !!resolvedLocationId && safeEqual(resolvedLocationId, expectedLocationId),
+    } : undefined,
     logoUrl: logoUrl || "",
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
@@ -2900,6 +2907,13 @@ function normalizeDateValue(value) {
 
 function cleanSetupText(value) {
   return String(value || "").trim();
+}
+
+function maskLocationId(value) {
+  const text = cleanSetupText(value);
+  if (!text) return "";
+  if (text.length <= 8) return text;
+  return `${text.slice(0, 4)}...${text.slice(-4)}`;
 }
 
 function cleanEmail(value) {
