@@ -1156,6 +1156,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 314. Meet History sport recovery now includes the current data-specific season windows: result rows dated August-November classify as Cross Country, while rows dated February-May classify as Track. The date rule is checked before saved sport labels, so older rows saved with the wrong sport can still filter correctly.
 315. Meet History cleanup assumptions were rolled back to restart from raw saved data. The page no longer infers sport from date/event/import notes, no longer forces Athletic.net Results Grid imports to Cross Country, and no longer suppresses exact duplicate rows in the view. Sport filtering now reflects the saved sport value only, while cached search/result fields remain for page performance.
 316. Account Status now supports optional location verification with `expectedLocationId` / `locationId` query input or the `X-SMARTCoach-Expected-Location` header. The response returns a masked expected/resolved location and a boolean match flag without exposing tokens, so live Meet History investigations can confirm whether the current account maps to the intended GHL location before touching imported result data.
+317. Meet History now includes a coach-facing **Data Audit** button for raw import troubleshooting. The audit panel summarizes loaded result rows by saved sport value, date window, import note type, season, top events, top meets, duplicate candidates, scheduled meet count, and active account key without changing filters or saved data.
 
 ## Known Good Test Flow
 

@@ -287,6 +287,24 @@ function checkMeetHistoryPerformanceCaches() {
   console.log("Meet History performance cache ok");
 }
 
+function checkMeetHistoryDataAudit() {
+  const html = fs.readFileSync("meet-history.html", "utf8");
+  [
+    "id=\"auditBtn\"",
+    "id=\"auditPanel\"",
+    "Meet History Data Audit",
+    "function renderDataAudit()",
+    "function duplicateCandidateCount(rows)",
+    "Saved Sport Values",
+    "Date Windows",
+    "Import Notes",
+    "Raw loaded results",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Meet History data audit missing ${text}`);
+  });
+  console.log("Meet History data audit ok");
+}
+
 function checkPageSearchDebounces() {
   const pages = [
     ["records.html", "els.search.addEventListener('input',scheduleSearchRender);", "searchRenderTimer=setTimeout(render,120);"],
@@ -564,6 +582,7 @@ checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
 checkMeetHistoryPerformanceCaches();
+checkMeetHistoryDataAudit();
 checkPageSearchDebounces();
 checkFieldNoMarkResultsAllowed();
 checkKeepTrakFeature();

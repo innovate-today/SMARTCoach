@@ -54,6 +54,14 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .importpreview table{min-width:1080px}
 .importpreview th{position:sticky;top:0}
 .imagehint{border:1px solid #fed7aa;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:800;padding:10px 12px}
+.auditgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.auditcard{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px}
+.auditcard b{display:block;font-size:20px}
+.auditcard span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.auditlist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.auditblock{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px 12px}
+.auditblock h3{font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#475569;margin:0 0 8px}
+.auditblock div{font-size:13px;color:#172033;margin-top:4px}
 .split{display:grid;grid-template-columns:minmax(260px,300px) minmax(620px,1fr);gap:14px;align-items:start}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .split>.panel:first-child{overflow:visible}
@@ -148,6 +156,7 @@ tr:last-child td{border-bottom:0}
       <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
       <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
       <button id="openImportTopBtn" class="utility-action" type="button">Import History</button>
+      <button id="auditBtn" class="utility-action" type="button">Data Audit</button>
       <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
     </div>
   </section>
@@ -171,6 +180,17 @@ tr:last-child td{border-bottom:0}
     <select id="athleteFilter"><option value="all">All athletes</option></select>
     <button id="clearBtn" class="ghost" type="button">Reset View</button>
     <div id="status" class="status">Loading meet history...</div>
+  </section>
+
+  <section id="auditPanel" class="importpanel" hidden>
+    <div class="importhead">
+      <div>
+        <h2>Meet History Data Audit</h2>
+        <span>Raw loaded result counts for troubleshooting imports and filters.</span>
+      </div>
+      <button id="closeAuditBtn" class="ghost" type="button">Close</button>
+    </div>
+    <div id="auditBody" class="importbody"></div>
   </section>
 
   <section class="importpanel">
@@ -317,6 +337,10 @@ var els={
   accessStatus:document.getElementById('accessStatus'),
   dashboardLink:document.getElementById('dashboardLink'),
   openImportTopBtn:document.getElementById('openImportTopBtn'),
+  auditBtn:document.getElementById('auditBtn'),
+  auditPanel:document.getElementById('auditPanel'),
+  auditBody:document.getElementById('auditBody'),
+  closeAuditBtn:document.getElementById('closeAuditBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   lastUpdated:document.getElementById('lastUpdated'),
   meetCount:document.getElementById('meetCount'),
@@ -1427,6 +1451,73 @@ function renderMeetSummary(results){
 function summaryCard(value,label){
   return '<div class="meet-summary-card"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>';
 }
+function auditMonthBucket(row){
+  var date=new Date(row&&row.meetDate);
+  if(isNaN(date.getTime()))return 'No date';
+  var month=date.getMonth()+1;
+  if(month>=8&&month<=11)return 'Aug-Nov';
+  if(month>=2&&month<=5)return 'Feb-May';
+  return 'Other dates';
+}
+function auditImportType(row){
+  var notes=String(row&&row.coachRaceNotes||row&&row.notes||'');
+  if(/Athletic\.net Event Records import/i.test(notes))return 'Athletic Event Records';
+  if(/Athletic\.net full season table import/i.test(notes))return 'Athletic Results Grid';
+  if(/Athletic\.net Season Bests import/i.test(notes))return 'Athletic Season Bests';
+  if(/Historical Import/i.test(notes))return 'Historical Import';
+  return 'No import note';
+}
+function incrementCount(map,key){
+  key=String(key||'Blank').trim()||'Blank';
+  map[key]=(map[key]||0)+1;
+}
+function countMapHtml(title,map,limit){
+  var rows=Object.keys(map).sort(function(a,b){return map[b]-map[a]||a.localeCompare(b);}).slice(0,limit||12);
+  return '<div class="auditblock"><h3>'+esc(title)+'</h3>'+(rows.length?rows.map(function(key){
+    return '<div><b>'+esc(map[key])+'</b> '+esc(key)+'</div>';
+  }).join(''):'<div>No rows</div>')+'</div>';
+}
+function duplicateCandidateCount(rows){
+  var seen={},dupes=0;
+  rows.forEach(function(row){
+    var key=[row.athleteName,row.athleteGender,row.meetName,row.meetDate,row.event,row.resultDisplay].map(function(value){return String(value||'').toLowerCase().replace(/\s+/g,' ').trim();}).join('|');
+    if(seen[key])dupes+=1;
+    else seen[key]=true;
+  });
+  return dupes;
+}
+function renderDataAudit(){
+  var sport={},months={},imports={},events={},meets={},seasons={};
+  meetResults.forEach(function(row){
+    incrementCount(sport,canonicalSport(row.sport)||'Blank');
+    incrementCount(months,auditMonthBucket(row));
+    incrementCount(imports,auditImportType(row));
+    incrementCount(events,row.event||'Blank');
+    incrementCount(meets,row.meetName||'Blank');
+    incrementCount(seasons,seasonText(row));
+  });
+  var dupes=duplicateCandidateCount(meetResults);
+  els.auditBody.innerHTML='<div class="auditgrid">'+[
+    '<div class="auditcard"><b>'+esc(meetResults.length)+'</b><span>Raw loaded results</span></div>',
+    '<div class="auditcard"><b>'+esc(scheduledMeets.length)+'</b><span>Loaded scheduled meets</span></div>',
+    '<div class="auditcard"><b>'+esc(dupes)+'</b><span>Duplicate result candidates</span></div>',
+    '<div class="auditcard"><b>'+esc(accountKey())+'</b><span>Account key in use</span></div>'
+  ].join('')+'</div><div class="auditlist">'+[
+    countMapHtml('Saved Sport Values',sport),
+    countMapHtml('Date Windows',months),
+    countMapHtml('Import Notes',imports),
+    countMapHtml('Seasons',seasons),
+    countMapHtml('Top Events',events),
+    countMapHtml('Top Meets',meets)
+  ].join('')+'</div>';
+}
+function toggleDataAudit(){
+  els.auditPanel.hidden=!els.auditPanel.hidden;
+  if(!els.auditPanel.hidden){
+    renderDataAudit();
+    els.auditPanel.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
 function renderEventLeaders(results){
   var leaders={};
   results.forEach(function(row){
@@ -1570,6 +1661,7 @@ function loadMeetHistory(){
     els.lastUpdated.textContent='Last updated '+formatDateTime(dashboard.data.generatedAt||new Date().toISOString());
     renderOptions();
     render();
+    if(!els.auditPanel.hidden)renderDataAudit();
   }).catch(function(error){
     meetResults=[];
     scheduledMeets=[];
@@ -1649,6 +1741,8 @@ function init(){
   if(xcSimulatorLink)xcSimulatorLink.href=pageUrl('/xc-simulator.html');
   els.importDefaultYear.value=new Date().getFullYear();
   els.refreshBtn.addEventListener('click',loadMeetHistory);
+  els.auditBtn.addEventListener('click',toggleDataAudit);
+  els.closeAuditBtn.addEventListener('click',function(){els.auditPanel.hidden=true;});
   els.openImportTopBtn.addEventListener('click',function(){
     if(els.importBody.hidden){
       els.importBody.hidden=false;
