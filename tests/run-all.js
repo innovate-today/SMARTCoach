@@ -388,6 +388,9 @@ function checkAttendanceCheckpointMarkAll() {
     "attendanceMarkCheckpointAll('+cpIndex+'",
     "att-head-actions",
     "Mark All Present",
+    "#m-attendance .att-head{background:#050505",
+    "#m-attendance .att-head .att-name,#m-attendance .att-head .att-small{color:#fff}",
+    "#m-attendance .att-athlete{font-size:15px;font-weight:900;color:#111827;background:#e5e7eb",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`checkpoint Mark All Present missing ${text}`);
   });

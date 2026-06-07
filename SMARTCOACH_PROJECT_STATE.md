@@ -1148,6 +1148,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 306. Keep Trak light-mode layout moved closer to the original proposed design without changing storage/API behavior. Desktop now has day cards, a day header, and Add Note buttons that reveal the Add/Edit panel; the SMARTCoach app Keep modal now includes Yesterday/Today/Tomorrow quick date buttons. The guide documents the new date-selection flow.
 307. SMARTCoach app Keep modal layout cleanup: **Add Bullet** and **Save Note** now sit on the same row, while note-card **Complete** uses a green action style and **Reopen** uses a neutral style so those actions no longer look like the primary save button.
 308. SMARTCoach app Attendance now gives each checkpoint its own **Mark All Present** action in the checkpoint header. The shortcut fills only that checkpoint, so added checkpoints such as Weight Room or Meet Checkout can be marked present independently from Practice Start. Regression coverage and the coach how-to were updated.
+309. SMARTCoach app Attendance checkpoint readability was improved: checkpoint headers now render as black bars with white text, while athlete rows use gray name bars with black text so added checkpoints stand apart from the athlete list.
 
 ## Known Good Test Flow
 
