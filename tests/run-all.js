@@ -232,8 +232,10 @@ function checkMeetHistorySportToolbarFilter() {
     "function trackOnlyEvent(row)",
     "function sportFromEvent(row)",
     "var fallDate=month>=8&&month<=11;",
+    "Athletic\\.net (full season table|Season Bests|Results Grid) import/i.test(notes)&&!trackOnlyEvent(row)",
     "if(crossCountryContext(row)&&!trackOnlyEvent(row))return 'Cross Country';",
     "if(eventSport&&explicit&&eventSport!==explicit)",
+    "var sport='Cross Country';",
     "meetResults=normalizeMeetHistoryRows",
   ];
   required.forEach((text) => {

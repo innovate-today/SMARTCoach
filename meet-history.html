@@ -515,17 +515,17 @@ function sportText(row){
   if(row&&row._sportText)return row._sportText;
   var explicit=canonicalSport(row&&row.sport);
   var eventSport=sportFromEvent(row);
+  var notes=String(row&&row.coachRaceNotes||row&&row.notes||'');
+  if(/Athletic\.net (full season table|Season Bests|Results Grid) import/i.test(notes)&&!trackOnlyEvent(row)){
+    return 'Cross Country';
+  }
+  if(/Athletic\.net Event Records import/i.test(notes))return 'Track';
   if(eventSport&&explicit&&eventSport!==explicit){
     if(eventSport==='Cross Country')return 'Cross Country';
     if(trackOnlyEvent(row))return 'Track';
   }
   if(explicit==='Cross Country'||explicit==='Track')return explicit;
   if(explicit)return explicit;
-  var notes=String(row&&row.coachRaceNotes||row&&row.notes||'');
-  if(/Athletic\.net Event Records import/i.test(notes))return 'Track';
-  if(/Athletic\.net (full season table|Season Bests|Results Grid) import/i.test(notes)){
-    return sportFromEvent(row)||(/fall/i.test(seasonText(row))?'Cross Country':'Unlisted');
-  }
   if(eventSport)return eventSport;
   return 'Unlisted';
 }
@@ -1197,7 +1197,7 @@ function parseAthleticSeasonTableRows(text,rawLines,seasonYear){
   var raceDistances=athleticRaceDistances(lines);
   var meetMap=athleticMeetMap(lines,seasonYear);
   var gradeLookup=athleticGradeLookup(lines);
-  var sport=els.importDefaultSport.value||'Cross Country';
+  var sport='Cross Country';
   var defaultGender=els.importDefaultGender.value||'';
   var defaultSeason=els.importDefaultSeason.value||'Fall';
   var rows=[];
@@ -1258,7 +1258,7 @@ function parseAthleticNetRows(text){
   if(eventRecordsRows.length)return eventRecordsRows;
   var tableRows=parseAthleticSeasonTableRows(text,tableLines,seasonYear);
   if(tableRows.length)return dedupeImportRows(tableRows);
-  var sport=els.importDefaultSport.value||'Cross Country';
+  var sport='Cross Country';
   var defaultSeason=els.importDefaultSeason.value||'Fall';
   var defaultGender=els.importDefaultGender.value||'';
   var event=els.importDefaultEvent.value||'';
