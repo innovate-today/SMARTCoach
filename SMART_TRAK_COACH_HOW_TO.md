@@ -97,11 +97,12 @@ How to use it in the SMARTCoach Pro Mobile App:
 1. Open the SMARTCoach Pro Mobile App.
 2. Tap **Attend** from the Groups tray.
 3. Choose the group.
-4. Set the date.
-5. Mark athletes **Present**, **Late**, **Checked Out**, **Excused**, or **Absent**.
-6. Add a checkpoint when attendance needs to be taken more than once in the same day, such as **Practice Start**, **Weight Room**, or **Meet Checkout**.
-7. Use **Mark All Present** inside any checkpoint when everyone at that checkpoint should be marked present.
-8. Save attendance so it syncs to SMART Trak.
+4. Set the date, sport, and season.
+5. Use **Cross Country**, **Track**, **Fall**, **Off Season Track**, **Winter**, **Spring**, **Summer**, or another saved season label when attendance needs to be separated.
+6. Mark athletes **Present**, **Late**, **Checked Out**, **Excused**, or **Absent**.
+7. Add a checkpoint when attendance needs to be taken more than once in the same day, such as **Practice Start**, **Weight Room**, or **Meet Checkout**.
+8. Use **Mark All Present** inside any checkpoint when everyone at that checkpoint should be marked present.
+9. Save attendance so it syncs to SMART Trak.
 
 How to review it in SMART Trak:
 
@@ -110,8 +111,13 @@ How to review it in SMART Trak:
 3. Review the Attendance cards for **Present**, **Late**, **Absent**, **Excused**, **Checked Out**, and **Attendance %**.
 4. Open **Attendance** when you need the full attendance report, filters, edits, checkpoint view, coach/source view, or CSV export.
 5. Use **Coach / Source** to see which coach/device saved the attendance mark. If a coach selected their name in the SMARTCoach app, that coach name appears as the source. If no coach name was selected, the row falls back to the generic source.
+6. Use the **Sport** and **Season** filters when Cross Country and Off Season Track are happening at the same time.
+7. Edit the row's date, sport, season, status, or note when an attendance mark needs a correction, then click **Update**.
+8. Use **Delete** only when one attendance mark should be removed. SMART Trak shows a confirmation message with the athlete, date, season, group, and checkpoint before deleting.
 
 For meet days, create a checkout checkpoint such as **Meet Checkout** or **Parent Checkout**. Mark an athlete **Checked Out** when they leave with a parent or guardian after checking out with a coach. Checked Out is treated as accounted-for attendance in the attendance percentage, not as an absence.
+
+Attendance is saved with the sport, season, and season year selected at the time it is created. This helps separate fall Cross Country attendance from athletes who are training in Off Season Track during the same dates. At the end of Cross Country season, continue using the season label that matches how your team is organized.
 
 If an athlete was first marked absent but later appears in a workout session, SMARTCoach can update that attendance mark from absent to a more accurate workout-aware status.
 
@@ -502,7 +508,9 @@ How to use it on the SMARTCoach app:
 3. Enter the coach name and note.
 4. Tap **Add Bullet** when the note needs checklist-style lines.
 5. Tap **Save Note**.
-6. Tap **Complete** once the note has been addressed.
+6. Tap **Edit** when a saved note needs to be changed.
+7. Update the note, coach, or date, then tap **Save Edit**.
+8. Tap **Complete** once the note has been addressed.
 
 Completed notes stay visible but are greyed out on the app. The app does not include a delete button. Open notes from earlier days carry forward until completed, so a reminder written at a meet can still appear at the next practice.
 
