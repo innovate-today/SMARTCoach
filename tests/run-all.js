@@ -180,6 +180,27 @@ function checkDashboardWhatsNew() {
   console.log("Dashboard What's New ok");
 }
 
+function checkPlanImportMultiGroupAssignment() {
+  const html = fs.readFileSync("plan-import.html", "utf8");
+  [
+    'id="additionalGroups"',
+    "Also Assign To",
+    "function renderAdditionalGroups()",
+    "function selectedAdditionalGroups()",
+    "function selectedAssignedGroups()",
+    "function rowsForAssignedGroup(groupName)",
+    "var assignedGroups=selectedAssignedGroups();",
+    "Additional groups are only available when creating a new plan.",
+    "groupsToSave.map(function(groupName,index)",
+    "days:append?rows:rowsForAssignedGroup(groupName)",
+    "next.planName=els.planName.value+' - '+groupName",
+    "Saved to '+savedGroups+' group",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Upload/Paste Plan multi-group assignment missing ${text}`);
+  });
+  console.log("Upload/Paste Plan multi-group assignment ok");
+}
+
 function checkMeetManagerSportField() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/meets.js", "utf8");
@@ -779,6 +800,7 @@ checkAccountOwnerExcludedFromAthletes();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkDashboardWhatsNew();
+checkPlanImportMultiGroupAssignment();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();

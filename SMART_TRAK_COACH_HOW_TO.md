@@ -364,9 +364,13 @@ How to use it:
 
 1. Choose **Upload File** if the plan is in a spreadsheet or text file.
 2. Choose **Paste Plan** if the coach already has a written plan.
-3. Review the preview table before saving.
-4. Save the plan days.
-5. Open Training Calendar to confirm the plan appears correctly.
+3. Select the main **Assigned Group**.
+4. Use **Also Assign To** only when the same uploaded or pasted plan should create matching calendar days for additional groups.
+5. Review the preview table before saving.
+6. Save the plan days.
+7. Open Training Calendar to confirm the plan appears correctly.
+
+Most uploads should use one assigned group. When extra groups are checked, SMART Trak saves the same plan days separately for each selected group so each group has its own calendar entries.
 
 ## Athlete Setup
 
