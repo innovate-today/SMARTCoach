@@ -431,6 +431,10 @@ function checkKeepTrakFeature() {
     "function openKeepTrak()",
     "function loadKeepTrak()",
     "function toggleKeepTrakNote(id,completed)",
+    "function editKeepTrakNote(id)",
+    "function clearKeepTrakEditor()",
+    "KEEP_TRAK={notes:[],editingId:''}",
+    "Save Edit",
     "function addKeepTrakBullet()",
     "function setKeepTrakDay(offset)",
     "Yesterday",
@@ -501,6 +505,57 @@ function checkAttendanceCheckpointMarkAll() {
     throw new Error("Attendance should not use one global Mark All Present button.");
   }
   console.log("attendance checkpoint Mark All Present ok");
+}
+
+function checkAttendanceSeasonAttachment() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  const desktop = fs.readFileSync("attendance.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
+  [
+    'id="att-sport"',
+    'id="att-season"',
+    "function attendanceSport()",
+    "function attendanceSeason()",
+    "sport:attendanceSport()",
+    "season:attendanceSeason()",
+    "Off Season Track",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile attendance season attachment missing ${text}`);
+  });
+  [
+    'id="sportFilter"',
+    'id="seasonFilter"',
+    "function attendanceSeasonLabel(row)",
+    "data-sport",
+    "data-season",
+    "sport:tr.querySelector('[data-sport]').value",
+    "season:seasonParts.season",
+    "seasonYear:seasonParts.seasonYear",
+    "'sport','season','seasonYear'",
+  ].forEach((text) => {
+    if (!desktop.includes(text)) throw new Error(`desktop attendance season attachment missing ${text}`);
+  });
+  [
+    "sport: firstQueryValue(req.query && req.query.sport)",
+    "season: firstQueryValue(req.query && req.query.season)",
+    "const sport = cleanSetupText(payload && payload.sport);",
+    "seasonYear",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`attendance API season attachment missing ${text}`);
+  });
+  [
+    "const sport = clean(filters.sport).toLowerCase();",
+    "sport: clean(record.sport)",
+    "season: clean(record.season)",
+    "seasonYear: Number(record.seasonYear) || null",
+    "item.sport",
+    "item.season",
+    "item.seasonYear",
+  ].forEach((text) => {
+    if (!registry.includes(text)) throw new Error(`attendance registry season attachment missing ${text}`);
+  });
+  console.log("attendance season attachment ok");
 }
 
 function checkGroupsTrayAddHidden() {
@@ -709,6 +764,7 @@ checkPageSearchDebounces();
 checkFieldNoMarkResultsAllowed();
 checkKeepTrakFeature();
 checkAttendanceCheckpointMarkAll();
+checkAttendanceSeasonAttachment();
 checkGroupsTrayAddHidden();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();

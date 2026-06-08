@@ -172,6 +172,8 @@ async function accountAttendance(req, res) {
         end: firstQueryValue(req.query && req.query.end),
         group: firstQueryValue(req.query && req.query.group),
         groupId: firstQueryValue(req.query && req.query.groupId),
+        sport: firstQueryValue(req.query && req.query.sport),
+        season: firstQueryValue(req.query && req.query.season),
         athleteId: firstQueryValue(req.query && (req.query.athleteId || req.query.contactId)),
         athleteName: firstQueryValue(req.query && req.query.athleteName),
         status: firstQueryValue(req.query && req.query.status),
@@ -204,6 +206,9 @@ function attendanceRecordsFromPayload(payload) {
   const date = cleanSetupText(payload && payload.date).slice(0, 10);
   const groupId = cleanSetupText(payload && payload.groupId);
   const groupName = cleanSetupText(payload && payload.groupName);
+  const sport = cleanSetupText(payload && payload.sport);
+  const season = cleanSetupText(payload && payload.season);
+  const seasonYear = Number(payload && payload.seasonYear) || null;
   const runners = Array.isArray(payload && payload.runners) ? payload.runners : [];
   const runnerByKey = {};
   runners.forEach((runner) => {
@@ -227,6 +232,9 @@ function attendanceRecordsFromPayload(payload) {
         date,
         groupId,
         groupName,
+        sport,
+        season,
+        seasonYear,
         checkpointId,
         checkpointName,
         athleteId: cleanSetupText(runner.contactId || runner.smartcoachAthleteId || runner.id || runner.runnerId || runnerKey),

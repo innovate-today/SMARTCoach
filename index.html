@@ -387,6 +387,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl" id="att-title">Attendance</div>
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="att-date" type="date" onchange="renderAttendance()"/></div>
+    <div class="srow"><span class="slbl">Sport</span><select class="sinp" id="att-sport"><option>Cross Country</option><option>Track</option></select></div>
+    <div class="srow"><span class="slbl">Season</span><select class="sinp" id="att-season"><option>Fall</option><option>Off Season Track</option><option>Winter</option><option>Spring</option><option>Summer</option></select></div>
     <div class="bulk-actions">
       <button class="mbtn c" onclick="addAttendanceCheckpoint()">Add Checkpoint</button>
     </div>
@@ -407,7 +409,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="keep-date" type="date" onchange="loadKeepTrak()"/></div>
     <div class="srow"><span class="slbl">Coach</span><input class="sinp" id="keep-coach" type="text" placeholder="Coach name" autocomplete="off"/></div>
     <div class="srow" style="align-items:flex-start"><span class="slbl">Note</span><textarea class="sinp ta" id="keep-body" maxlength="4000" placeholder="Practice briefing, reminders, deadlines, character lesson, meet notes..."></textarea></div>
-    <div class="keep-compose-actions"><button class="mbtn c" onclick="addKeepTrakBullet()">Add Bullet</button><button class="mbtn" onclick="saveKeepTrakNote()">Save Note</button></div>
+    <div class="keep-compose-actions"><button class="mbtn c" onclick="addKeepTrakBullet()">Add Bullet</button><button class="mbtn" id="keep-save-btn" onclick="saveKeepTrakNote()">Save Note</button></div>
+    <button class="mbtn c" id="keep-new-btn" onclick="clearKeepTrakEditor()" style="display:none">New Note</button>
     <div id="keep-status" class="bulk-status"></div>
     <div id="keep-list" class="builder-box"></div>
     <button class="mbtn c" onclick="hm('m-keep-trak')">Close</button>
@@ -2316,6 +2319,35 @@ function attendanceDate(){
   var input=document.getElementById('att-date');
   return input&&input.value?input.value:todayISO();
 }
+function attendanceSport(){
+  var input=document.getElementById('att-sport');
+  return input&&input.value?input.value:(CL&&CL.type==='meet'?'Track':'Cross Country');
+}
+function attendanceSeason(){
+  var input=document.getElementById('att-season');
+  return input&&input.value?input.value:(CL&&CL.season?CL.season:currentSeason().season);
+}
+function ensureSelectOption(select,value){
+  if(!select||!value)return;
+  var exists=[].slice.call(select.options||[]).some(function(option){return option.value===value;});
+  if(!exists){
+    var option=document.createElement('option');
+    option.value=value;
+    option.textContent=value;
+    select.insertBefore(option,select.firstChild);
+  }
+}
+function setAttendanceDefaultsFromGroup(){
+  var sport=document.getElementById('att-sport');
+  var season=document.getElementById('att-season');
+  var text=[CL&&CL.name,CL&&CL.season,CL&&CL.trainingPlanSeason].filter(Boolean).join(' ').toLowerCase();
+  if(sport)sport.value=/cross|xc/.test(text)?'Cross Country':'Track';
+  if(season){
+    var value=CL&&CL.season||currentSeason().season;
+    ensureSelectOption(season,value);
+    season.value=value;
+  }
+}
 function ensureAttendanceDay(date){
   if(!CL) return null;
   CL.attendance=normalizeAttendanceState(CL.attendance);
@@ -2354,6 +2386,7 @@ function openAttendance(){
   if(!CL||CL.type==='meet')return;
   var input=document.getElementById('att-date');
   if(input)input.value=todayISO();
+  setAttendanceDefaultsFromGroup();
   ensureAttendanceDay(attendanceDate());
   renderAttendance();
   sm('m-attendance');
@@ -2491,6 +2524,9 @@ function attendancePayload(day){
   var coach=selectedCoachIdentity()||{};
   return {
     date:day&&day.date||attendanceDate(),
+    sport:attendanceSport(),
+    season:attendanceSeason(),
+    seasonYear:CL&&CL.seasonYear||currentSeason().year,
     groupId:String(CL.sharedGroupId||CL.id||''),
     groupName:CL.name||'Training Group',
     coachId:coach.id||'',
@@ -2503,7 +2539,7 @@ function attendancePayload(day){
     })
   };
 }
-var KEEP_TRAK={notes:[]};
+var KEEP_TRAK={notes:[],editingId:''};
 function keepTrakDate(){
   var input=document.getElementById('keep-date');
   return input&&input.value?input.value:todayISO();
@@ -2565,7 +2601,7 @@ function renderKeepTrak(){
     var complete=!!note.completed;
     var title=keepTrakDisplayTitle(note);
     var meta=[formatKeepTrakDate(note.date),note.coachName||'Coach',complete?'Completed':'Open'].filter(Boolean).join(' · ');
-    return '<div class="keep-card '+(complete?'done':'')+'"><div class="keep-head"><div><div class="keep-title">'+ex(title)+'</div><div class="keep-meta">'+ex(meta)+'</div></div></div><div class="keep-body">'+ex(note.body||note.title||'')+'</div><div class="keep-actions"><button class="att-btn '+(complete?'keep-reopen':'keep-complete')+'" onclick="toggleKeepTrakNote(\''+keepTrakJs(note.id)+'\','+(!complete)+')">'+(complete?'Reopen':'Complete')+'</button></div></div>';
+    return '<div class="keep-card '+(complete?'done':'')+'"><div class="keep-head"><div><div class="keep-title">'+ex(title)+'</div><div class="keep-meta">'+ex(meta)+'</div></div></div><div class="keep-body">'+ex(note.body||note.title||'')+'</div><div class="keep-actions"><button class="att-btn" onclick="editKeepTrakNote(\''+keepTrakJs(note.id)+'\')">Edit</button><button class="att-btn '+(complete?'keep-reopen':'keep-complete')+'" onclick="toggleKeepTrakNote(\''+keepTrakJs(note.id)+'\','+(!complete)+')">'+(complete?'Reopen':'Complete')+'</button></div></div>';
   }).join('');
   if(status)status.textContent=notes.filter(function(note){return !note.completed;}).length+' open · '+notes.length+' total';
 }
@@ -2594,6 +2630,33 @@ function addKeepTrakBullet(){
   field.focus();
   field.setSelectionRange(next,next);
 }
+function clearKeepTrakEditor(){
+  KEEP_TRAK.editingId='';
+  var body=document.getElementById('keep-body');
+  var saveBtn=document.getElementById('keep-save-btn');
+  var newBtn=document.getElementById('keep-new-btn');
+  if(body)body.value='';
+  if(saveBtn)saveBtn.textContent='Save Note';
+  if(newBtn)newBtn.style.display='none';
+}
+function editKeepTrakNote(id){
+  var note=(KEEP_TRAK.notes||[]).find(function(item){return item.id===id;});
+  var body=document.getElementById('keep-body');
+  var coach=document.getElementById('keep-coach');
+  var date=document.getElementById('keep-date');
+  var saveBtn=document.getElementById('keep-save-btn');
+  var newBtn=document.getElementById('keep-new-btn');
+  var status=document.getElementById('keep-status');
+  if(!note||!body)return;
+  KEEP_TRAK.editingId=note.id||'';
+  body.value=note.body||note.title||'';
+  if(coach)coach.value=note.coachName||coach.value||'';
+  if(date&&note.date)date.value=note.date;
+  if(saveBtn)saveBtn.textContent='Save Edit';
+  if(newBtn)newBtn.style.display='';
+  if(status)status.textContent='Editing Keep Trak note.';
+  body.focus();
+}
 function formatKeepTrakDate(value){
   var parts=String(value||'').split('-').map(Number);
   if(parts.length!==3)return value||'';
@@ -2607,10 +2670,11 @@ function saveKeepTrakNote(){
   var body=bodyEl&&bodyEl.value?bodyEl.value.trim():'';
   if(!body){if(status)status.textContent='Write a note first.';return;}
   var coach=selectedCoachIdentity()||{};
-  var note={id:'keep_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),date:keepTrakDate(),body:body,title:'',coachId:coach.id||'',coachName:keepTrakCoachName(),completed:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var existing=KEEP_TRAK.editingId?(KEEP_TRAK.notes||[]).find(function(item){return item.id===KEEP_TRAK.editingId;})||{}:{};
+  var note=Object.assign({},existing,{id:existing.id||'keep_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),date:keepTrakDate(),body:body,title:'',coachId:coach.id||existing.coachId||'',coachName:keepTrakCoachName(),completed:!!existing.completed,createdAt:existing.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
   if(status)status.textContent='Saving Keep Trak...';
   return saveKeepTrakNotes([note]).then(function(){
-    if(bodyEl)bodyEl.value='';
+    clearKeepTrakEditor();
     return loadKeepTrak();
   }).catch(function(error){
     if(status)status.textContent='Keep Trak could not save: '+(error&&error.message?error.message:'try again');
