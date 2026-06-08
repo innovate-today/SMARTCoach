@@ -55,15 +55,6 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .importpreview{border:1px solid var(--line);border-radius:8px;overflow:auto;background:#fff;max-height:300px}
 .importpreview table{min-width:1080px}
 .importpreview th{position:sticky;top:0}
-.imagehint{border:1px solid #fed7aa;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:800;padding:10px 12px}
-.auditgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.auditcard{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px}
-.auditcard b{display:block;font-size:20px}
-.auditcard span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
-.auditlist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
-.auditblock{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px 12px}
-.auditblock h3{font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#475569;margin:0 0 8px}
-.auditblock div{font-size:13px;color:#172033;margin-top:4px}
 .split{display:grid;grid-template-columns:minmax(260px,300px) minmax(620px,1fr);gap:14px;align-items:start}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .split>.panel:first-child{overflow:visible}
@@ -174,7 +165,6 @@ tr:last-child td{border-bottom:0}
       <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
       <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
       <button id="openImportTopBtn" class="utility-action" type="button">Import History</button>
-      <button id="auditBtn" class="utility-action" type="button">Data Audit</button>
       <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
     </div>
   </section>
@@ -200,17 +190,6 @@ tr:last-child td{border-bottom:0}
     <div id="status" class="status">Loading meet history...</div>
   </section>
 
-  <section id="auditPanel" class="importpanel" hidden>
-    <div class="importhead">
-      <div>
-        <h2>Meet History Data Audit</h2>
-        <span>Raw loaded result counts for troubleshooting imports and filters.</span>
-      </div>
-      <button id="closeAuditBtn" class="ghost" type="button">Close</button>
-    </div>
-    <div id="auditBody" class="importbody"></div>
-  </section>
-
   <section class="importpanel">
     <div class="importhead">
       <div>
@@ -220,12 +199,6 @@ tr:last-child td{border-bottom:0}
       <button id="toggleImportBtn" class="ghost" type="button">Open Import</button>
     </div>
     <div id="importBody" class="importbody" hidden>
-      <div class="importmode">
-        <button id="importPasteMode" class="active" type="button" data-import-mode="paste">Paste Spreadsheet</button>
-        <button id="importAthleticMode" type="button" data-import-mode="athletic">Athletic.net Import</button>
-        <button id="importFileMode" type="button" data-import-mode="file">Upload Spreadsheet</button>
-        <button id="importImageMode" type="button" data-import-mode="image">Screenshot / Photo</button>
-      </div>
       <div class="importdefaults">
         <label>Default Sport
           <select id="importDefaultSport">
@@ -257,17 +230,11 @@ tr:last-child td{border-bottom:0}
           <input id="importDefaultEvent" type="text" placeholder="Example: 5K or 2 Mile">
         </label>
       </div>
-      <div id="importFileRow" class="importfile" hidden>
+      <div id="importFileRow" class="importfile">
         <label>Spreadsheet File
           <input id="importFile" type="file" accept=".csv,.tsv,.txt">
         </label>
         <div class="muted">CSV, TSV, or copied spreadsheet text works best. Export XLSX files to CSV first.</div>
-      </div>
-      <div id="importImageRow" class="importfile" hidden>
-        <label>Screenshot or Photo
-          <input id="importImage" type="file" accept="image/*">
-        </label>
-        <div class="imagehint">Screenshot/photo reading needs OCR. Upload the image for reference, then paste the extracted rows below before previewing.</div>
       </div>
       <textarea id="importText" placeholder="Season,Year,Sport,Meet,Date,Gender,Event,Athlete,Grade,Class Year,Result,Place,PR,SB,Notes&#10;Fall,2023,Cross Country,TAPPS 6A District,Oct 19,Girls,2 Mile,Eliot Brookshire,11,2025,12:36.6,,Yes,Yes,"></textarea>
       <div class="importactions">
@@ -386,7 +353,7 @@ tr:last-child td{border-bottom:0}
         </div>
         <div class="field full">
           <label for="historyEditReason">Reason</label>
-          <input id="historyEditReason" type="text" placeholder="Required, e.g. Correct Athletic.net import mapping">
+          <input id="historyEditReason" type="text" placeholder="Required, e.g. Correct imported result">
         </div>
         <div class="field full">
           <label for="historyEditNotes">Notes</label>
@@ -438,7 +405,6 @@ var meetGroupCache=null;
 var priorResultCache=null;
 var importRows=[];
 var importDuplicateCount=0;
-var importMode='paste';
 var selectedGroupKey='all';
 var resultSort={key:'athlete',dir:'asc'};
 var searchRenderTimer=null;
@@ -454,10 +420,6 @@ var els={
   accessStatus:document.getElementById('accessStatus'),
   dashboardLink:document.getElementById('dashboardLink'),
   openImportTopBtn:document.getElementById('openImportTopBtn'),
-  auditBtn:document.getElementById('auditBtn'),
-  auditPanel:document.getElementById('auditPanel'),
-  auditBody:document.getElementById('auditBody'),
-  closeAuditBtn:document.getElementById('closeAuditBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   lastUpdated:document.getElementById('lastUpdated'),
   meetCount:document.getElementById('meetCount'),
@@ -473,19 +435,13 @@ var els={
   status:document.getElementById('status'),
   toggleImportBtn:document.getElementById('toggleImportBtn'),
   importBody:document.getElementById('importBody'),
-  importPasteMode:document.getElementById('importPasteMode'),
-  importAthleticMode:document.getElementById('importAthleticMode'),
-  importFileMode:document.getElementById('importFileMode'),
-  importImageMode:document.getElementById('importImageMode'),
   importDefaultSport:document.getElementById('importDefaultSport'),
   importDefaultSeason:document.getElementById('importDefaultSeason'),
   importDefaultGender:document.getElementById('importDefaultGender'),
   importDefaultYear:document.getElementById('importDefaultYear'),
   importDefaultEvent:document.getElementById('importDefaultEvent'),
   importFileRow:document.getElementById('importFileRow'),
-  importImageRow:document.getElementById('importImageRow'),
   importFile:document.getElementById('importFile'),
-  importImage:document.getElementById('importImage'),
   importText:document.getElementById('importText'),
   downloadImportTemplateBtn:document.getElementById('downloadImportTemplateBtn'),
   previewImportBtn:document.getElementById('previewImportBtn'),
@@ -929,7 +885,6 @@ function applyHistoryEditLocally(row,updates,reason){
   invalidateMeetHistoryCache();
   renderOptions();
   render();
-  if(!els.auditPanel.hidden)renderDataAudit();
 }
 function openHistoryVoid(rowKeyValue){
   historyVoidRow=findResultRowByKey(rowKeyValue);
@@ -980,7 +935,6 @@ function saveHistoryVoid(){
     invalidateMeetHistoryCache();
     renderOptions();
     render();
-    if(!els.auditPanel.hidden)renderDataAudit();
     setHistoryVoidStatus('Result voided.','success');
     closeHistoryVoid();
   }).catch(function(error){
@@ -1105,18 +1059,6 @@ function fillSelect(select,label,values){
 function setImportStatus(text,type){
   els.importStatus.textContent=text||'';
   els.importStatus.style.color=type==='bad'?'var(--bad)':type==='good'?'var(--good)':type==='warn'?'var(--warn)':'var(--muted)';
-}
-function setImportMode(mode){
-  importMode=mode||'paste';
-  ['paste','athletic','file','image'].forEach(function(value){
-    var button=value==='paste'?els.importPasteMode:value==='athletic'?els.importAthleticMode:value==='file'?els.importFileMode:els.importImageMode;
-    button.classList.toggle('active',value===importMode);
-  });
-  els.importFileRow.hidden=importMode!=='file';
-  els.importImageRow.hidden=importMode!=='image';
-  if(importMode==='image')setImportStatus('Screenshot/photo OCR is not configured yet. Upload the image for reference, then paste rows before previewing.','warn');
-  else if(importMode==='athletic')setImportStatus('Paste Athletic.net Results Grid or Event Records text, preview, then save.','');
-  else setImportStatus('Paste rows, preview, then save.','');
 }
 function parseCsvLine(line){
   var out=[];
@@ -1687,7 +1629,6 @@ function dedupeImportRows(rows){
   });
 }
 function parseImportRows(text){
-  if(importMode==='athletic'||isAthleticImportText(text))return parseAthleticNetRows(text);
   var lines=String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
   if(!lines.length)return[];
   var first=splitImportLine(lines[0]);
@@ -1811,73 +1752,6 @@ function renderMeetSummary(results){
 }
 function summaryCard(value,label){
   return '<div class="meet-summary-card"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>';
-}
-function auditMonthBucket(row){
-  var date=new Date(row&&row.meetDate);
-  if(isNaN(date.getTime()))return 'No date';
-  var month=date.getMonth()+1;
-  if(month>=8&&month<=11)return 'Aug-Nov';
-  if(month>=2&&month<=5)return 'Feb-May';
-  return 'Other dates';
-}
-function auditImportType(row){
-  var notes=String(row&&row.coachRaceNotes||row&&row.notes||'');
-  if(/Athletic\.net Event Records import/i.test(notes))return 'Athletic Event Records';
-  if(/Athletic\.net full season table import/i.test(notes))return 'Athletic Results Grid';
-  if(/Athletic\.net Season Bests import/i.test(notes))return 'Athletic Season Bests';
-  if(/Historical Import/i.test(notes))return 'Historical Import';
-  return 'No import note';
-}
-function incrementCount(map,key){
-  key=String(key||'Blank').trim()||'Blank';
-  map[key]=(map[key]||0)+1;
-}
-function countMapHtml(title,map,limit){
-  var rows=Object.keys(map).sort(function(a,b){return map[b]-map[a]||a.localeCompare(b);}).slice(0,limit||12);
-  return '<div class="auditblock"><h3>'+esc(title)+'</h3>'+(rows.length?rows.map(function(key){
-    return '<div><b>'+esc(map[key])+'</b> '+esc(key)+'</div>';
-  }).join(''):'<div>No rows</div>')+'</div>';
-}
-function duplicateCandidateCount(rows){
-  var seen={},dupes=0;
-  rows.forEach(function(row){
-    var key=[row.athleteName,row.athleteGender,row.meetName,row.meetDate,row.event,row.resultDisplay].map(function(value){return String(value||'').toLowerCase().replace(/\s+/g,' ').trim();}).join('|');
-    if(seen[key])dupes+=1;
-    else seen[key]=true;
-  });
-  return dupes;
-}
-function renderDataAudit(){
-  var sport={},months={},imports={},events={},meets={},seasons={};
-  meetResults.forEach(function(row){
-    incrementCount(sport,canonicalSport(row.sport)||'Blank');
-    incrementCount(months,auditMonthBucket(row));
-    incrementCount(imports,auditImportType(row));
-    incrementCount(events,row.event||'Blank');
-    incrementCount(meets,row.meetName||'Blank');
-    incrementCount(seasons,seasonText(row));
-  });
-  var dupes=duplicateCandidateCount(meetResults);
-  els.auditBody.innerHTML='<div class="auditgrid">'+[
-    '<div class="auditcard"><b>'+esc(meetResults.length)+'</b><span>Raw loaded results</span></div>',
-    '<div class="auditcard"><b>'+esc(scheduledMeets.length)+'</b><span>Loaded scheduled meets</span></div>',
-    '<div class="auditcard"><b>'+esc(dupes)+'</b><span>Duplicate result candidates</span></div>',
-    '<div class="auditcard"><b>'+esc(accountKey())+'</b><span>Account key in use</span></div>'
-  ].join('')+'</div><div class="auditlist">'+[
-    countMapHtml('Saved Sport Values',sport),
-    countMapHtml('Date Windows',months),
-    countMapHtml('Import Notes',imports),
-    countMapHtml('Seasons',seasons),
-    countMapHtml('Top Events',events),
-    countMapHtml('Top Meets',meets)
-  ].join('')+'</div>';
-}
-function toggleDataAudit(){
-  els.auditPanel.hidden=!els.auditPanel.hidden;
-  if(!els.auditPanel.hidden){
-    renderDataAudit();
-    els.auditPanel.scrollIntoView({behavior:'smooth',block:'start'});
-  }
 }
 function renderEventLeaders(results){
   var leaders={};
@@ -2023,7 +1897,6 @@ function loadMeetHistory(){
     els.lastUpdated.textContent='Last updated '+formatDateTime(dashboard.data.generatedAt||new Date().toISOString());
     renderOptions();
     render();
-    if(!els.auditPanel.hidden)renderDataAudit();
   }).catch(function(error){
     meetResults=[];
     scheduledMeets=[];
@@ -2103,15 +1976,13 @@ function init(){
   if(xcSimulatorLink)xcSimulatorLink.href=pageUrl('/xc-simulator.html');
   els.importDefaultYear.value=new Date().getFullYear();
   els.refreshBtn.addEventListener('click',loadMeetHistory);
-  els.auditBtn.addEventListener('click',toggleDataAudit);
-  els.closeAuditBtn.addEventListener('click',function(){els.auditPanel.hidden=true;});
   els.openImportTopBtn.addEventListener('click',function(){
     if(els.importBody.hidden){
       els.importBody.hidden=false;
       els.toggleImportBtn.textContent='Hide Import';
     }
     els.importBody.scrollIntoView({behavior:'smooth',block:'start'});
-    setImportStatus('Paste rows, upload a CSV/TSV, or use a screenshot as reference.','');
+    setImportStatus('Paste spreadsheet rows or upload a CSV/TSV template.','');
   });
   els.search.addEventListener('input',function(){
     clearTimeout(searchRenderTimer);
@@ -2162,10 +2033,7 @@ function init(){
     var open=els.importBody.hidden;
     els.importBody.hidden=!open;
     els.toggleImportBtn.textContent=open?'Hide Import':'Open Import';
-    setImportStatus(open?'Paste rows, upload a CSV/TSV, or use a screenshot as reference.':'Import hidden.','');
-  });
-  document.querySelectorAll('[data-import-mode]').forEach(function(button){
-    button.addEventListener('click',function(){setImportMode(button.getAttribute('data-import-mode')||'paste');});
+    setImportStatus(open?'Paste spreadsheet rows or upload a CSV/TSV template.':'Import hidden.','');
   });
   els.downloadImportTemplateBtn.addEventListener('click',downloadImportTemplate);
   els.previewImportBtn.addEventListener('click',function(){
@@ -2178,7 +2046,6 @@ function init(){
     importDuplicateCount=0;
     els.importText.value='';
     els.importFile.value='';
-    els.importImage.value='';
     renderImportPreview();
   });
   els.importText.addEventListener('input',function(){
@@ -2209,11 +2076,6 @@ function init(){
       renderImportPreview();
       setImportStatus('File could not be read. Export the spreadsheet to CSV or TSV and try again.','bad');
     });
-  });
-  els.importImage.addEventListener('change',function(){
-    var file=els.importImage.files&&els.importImage.files[0];
-    if(!file)return;
-    setImportStatus(file.name+' selected. OCR is not configured yet, so paste the extracted rows before previewing.','warn');
   });
   els.accessSubmit.addEventListener('click',submitAccess);
   els.accessCode.addEventListener('keydown',function(event){

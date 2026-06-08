@@ -287,22 +287,31 @@ function checkMeetHistoryPerformanceCaches() {
   console.log("Meet History performance cache ok");
 }
 
-function checkMeetHistoryDataAudit() {
+function checkMeetHistoryImportOnlySpreadsheet() {
   const html = fs.readFileSync("meet-history.html", "utf8");
-  [
-    "id=\"auditBtn\"",
-    "id=\"auditPanel\"",
+  const removed = [
+    'id="auditBtn"',
+    'id="auditPanel"',
     "Meet History Data Audit",
-    "function renderDataAudit()",
-    "function duplicateCandidateCount(rows)",
-    "Saved Sport Values",
-    "Date Windows",
-    "Import Notes",
-    "Raw loaded results",
-  ].forEach((text) => {
-    if (!html.includes(text)) throw new Error(`Meet History data audit missing ${text}`);
+    'id="importAthleticMode"',
+    "Athletic.net Import",
+    'id="importImageMode"',
+    'id="importImage"',
+    "Screenshot / Photo",
+    "isAthleticImportText(text))return parseAthleticNetRows(text)",
+  ];
+  removed.forEach((text) => {
+    if (html.includes(text)) throw new Error(`Meet History should not expose unreliable import/audit control: ${text}`);
   });
-  console.log("Meet History data audit ok");
+  [
+    "Spreadsheet File",
+    'id="importFile"',
+    "Paste spreadsheet rows or upload a CSV/TSV template.",
+    "function parseImportRows(text)",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Meet History spreadsheet import missing ${text}`);
+  });
+  console.log("Meet History spreadsheet-only import ok");
 }
 
 function checkMeetHistoryImportedResultCorrections() {
@@ -671,7 +680,7 @@ checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
 checkMeetHistoryPerformanceCaches();
-checkMeetHistoryDataAudit();
+checkMeetHistoryImportOnlySpreadsheet();
 checkMeetHistoryImportedResultCorrections();
 checkPageSearchDebounces();
 checkFieldNoMarkResultsAllowed();
@@ -680,7 +689,5 @@ checkAttendanceCheckpointMarkAll();
 checkGroupsTrayAddHidden();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
-checkAthleticEventRecordsCalendarRanges();
-checkAthleticResultsGridDuplicateMeetDates();
 
 console.log("SMARTCoach regression checks passed");
