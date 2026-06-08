@@ -375,7 +375,7 @@ function normalizeContact(contact, options = {}) {
 function isExcludedSystemContact(tags) {
   return (Array.isArray(tags) ? tags : []).some((tag) => {
     const value = clean(tag).toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
-    return value === "live chat";
+    return value === "live chat" || value === "smartcoach account owner";
   });
 }
 

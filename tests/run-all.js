@@ -111,6 +111,28 @@ function checkAccountStatusLocationVerification() {
   console.log("account status location verification ok");
 }
 
+function checkAccountOwnerExcludedFromAthletes() {
+  const files = [
+    "api/ghl/athletes.js",
+    "api/ghl/dashboard.js",
+    "lib/athlete-calendar.js",
+  ];
+  files.forEach((file) => {
+    const source = fs.readFileSync(file, "utf8");
+    if (!source.includes('value === "smartcoach account owner"')) {
+      throw new Error(`${file} must exclude smartcoach-account-owner contacts from athlete rosters.`);
+    }
+    if (!source.includes("function isExcludedSystemContact(tags)")) {
+      throw new Error(`${file} missing system contact exclusion helper.`);
+    }
+  });
+  const accountApi = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  if (!accountApi.includes('tags: ["smartcoach-account-owner"]')) {
+    throw new Error("account owner recovery contact tag changed; update roster exclusion test.");
+  }
+  console.log("account owner roster exclusion ok");
+}
+
 function checkStandaloneRaceResultSaveScope() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   if (!html.includes("var savedPayload=null;")) {
@@ -671,6 +693,7 @@ checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
 checkAccountStatusLocationVerification();
+checkAccountOwnerExcludedFromAthletes();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkMeetManagerSportField();
