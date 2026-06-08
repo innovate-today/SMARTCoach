@@ -22,6 +22,9 @@ body.embedded .admin-mode-badge{display:none}
 .mark{width:64px;height:64px;display:grid;place-items:center;flex:0 0 64px}
 .mark img{display:block;max-width:64px;max-height:64px;object-fit:contain}
 h1{font-size:24px;line-height:1.15;margin:0}
+.title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.whats-new-btn{position:relative;display:inline-flex;align-items:center;gap:6px;border:1px solid #bfd0ef;background:#fff;color:#173891;border-radius:999px;font-size:12px;font-weight:900;line-height:1;padding:7px 10px;min-height:0}
+.whats-new-btn:hover{background:#eef4ff}.whats-new-dot{width:8px;height:8px;border-radius:50%;background:#2B4FCC;box-shadow:0 0 0 3px rgba(43,79,204,.14)}.whats-new-count{border-radius:999px;background:#dbeafe;color:#173891;padding:2px 6px;font-size:11px}
 .sub{font-size:14px;color:var(--muted);margin-top:4px}
 .updated{display:inline-flex;align-items:center;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:700;padding:7px 10px}
 .actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
@@ -175,6 +178,7 @@ tr:last-child td{border-bottom:0}
 .meet-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
 .modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
+.whats-new-panel{width:min(620px,100%)}.whats-new-intro{color:#475569;font-size:14px;line-height:1.45;margin:0 0 12px}.release-list{display:grid;gap:10px}.release-group{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}.release-group h3{font-size:14px;margin:0 0 8px;color:#0f172a}.release-group ul{margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.45}.release-group li+li{margin-top:4px}.release-badge{display:inline-flex;align-items:center;border-radius:999px;background:#dbeafe;color:#173891;padding:3px 8px;font-size:12px;font-weight:900;margin-bottom:10px}
 .accountsummary{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 11px;margin-top:10px;color:var(--muted);font-size:13px;line-height:1.35}
 .accountsummary b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
 .accountsummary.good{border-color:#bbf7d0;background:#f0fdf4}.accountsummary.good b{color:#08783c}
@@ -238,7 +242,14 @@ tr:last-child td{border-bottom:0}
     <div class="brand">
       <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
-        <h1>SMART Trak Dashboard</h1>
+        <div class="title-row">
+          <h1>SMART Trak Dashboard</h1>
+          <button id="whatsNewBtn" class="whats-new-btn" type="button" aria-haspopup="dialog">
+            <span id="whatsNewDot" class="whats-new-dot" aria-hidden="true"></span>
+            <span>What's New</span>
+            <span id="whatsNewCount" class="whats-new-count">New</span>
+          </button>
+        </div>
         <div class="sub">Roster, training volume, current fitness, and recent results.</div>
         <div id="lastUpdated" class="updated">Last updated --</div>
       </div>
@@ -479,6 +490,23 @@ tr:last-child td{border-bottom:0}
     <a id="setupPreviewLink" class="linkbtn secondary admin-only" hidden href="/dashboard.html?admin=1&plan=pro">Admin Preview</a>
   </div>
 </section>
+<div id="whatsNewModal" class="modal" hidden>
+  <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="whatsNewTitle">
+    <div class="modalhead">
+      <h2 id="whatsNewTitle">What's New</h2>
+      <button id="whatsNewClose" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="release-badge">Latest SMART Trak updates</div>
+      <p class="whats-new-intro">Recent coach tools added to SMART Trak and the SMARTCoach Pro Mobile App.</p>
+      <div id="whatsNewList" class="release-list"></div>
+      <div class="modalactions">
+        <div id="whatsNewStatus" class="modalstatus"></div>
+        <button id="whatsNewSeenBtn" type="button">Mark All Seen</button>
+      </div>
+    </div>
+  </section>
+</div>
 <div id="accessModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
     <div class="modalhead">
@@ -1065,6 +1093,13 @@ var meetManagerEditingId='';
 var lastLoadedAt='';
 var FIELD_EVENT_OPTIONS=['High Jump','Long Jump','Triple Jump','Pole Vault','Shot Put','Discus','Javelin','Hammer'];
 var RELAY_EVENT_OPTIONS=['4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
+var WHATS_NEW_VERSION='2026-06-08-keep-attendance-meet-history';
+var WHATS_NEW_ITEMS=[
+  {area:'Keep Trak',items:['SMARTCoach app notes can now be edited with Save Edit.','Add Bullet keeps one daily briefing note organized as talking points.','Desktop cleanup helps remove notes older than 30 days.']},
+  {area:'Attendance Trak',items:['Attendance now saves sport, season, and season year.','Desktop Attendance can filter, edit, and export sport and season fields.','Each checkpoint has its own Mark All Present action, and delete uses a cleaner confirmation.']},
+  {area:'Meet History',items:['Imports now use the reliable spreadsheet/template path only.','Imported historical rows can be corrected or voided from Meet History.']},
+  {area:'Coach Access',items:['Account owner recovery contacts are kept out of athlete rosters.','Staff Access still shows device activity without exposing coach codes.']}
+];
 var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS,['Other']);
 var activeTab='roster';
 var activeTrainingSubtab='volume';
@@ -1090,6 +1125,44 @@ function setSmartCoachAccountKey(value){
   var key=cleanAccountKey(value);
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
+}
+function whatsNewStorageKey(){
+  return 'smartcoachWhatsNewSeen_'+smartCoachAccountKey();
+}
+function whatsNewSeenVersion(){
+  try{return localStorage.getItem(whatsNewStorageKey())||'';}catch(e){return '';}
+}
+function whatsNewUnreadCount(){
+  return whatsNewSeenVersion()===WHATS_NEW_VERSION?0:WHATS_NEW_ITEMS.reduce(function(total,group){return total+(group.items||[]).length;},0);
+}
+function renderWhatsNewButton(){
+  if(!els.whatsNewBtn)return;
+  var count=whatsNewUnreadCount();
+  els.whatsNewDot.hidden=!count;
+  els.whatsNewCount.hidden=!count;
+  els.whatsNewCount.textContent=count?count+' New':'';
+}
+function renderWhatsNewList(){
+  els.whatsNewList.innerHTML=WHATS_NEW_ITEMS.map(function(group){
+    var items=(group.items||[]).map(function(item){return '<li>'+esc(item)+'</li>';}).join('');
+    return '<section class="release-group"><h3>'+esc(group.area)+'</h3><ul>'+items+'</ul></section>';
+  }).join('');
+}
+function openWhatsNew(){
+  renderWhatsNewList();
+  renderWhatsNewButton();
+  var count=whatsNewUnreadCount();
+  els.whatsNewStatus.textContent=count?count+' unread update'+(count===1?'':'s'):'All updates seen';
+  els.whatsNewModal.hidden=false;
+  els.whatsNewClose.focus();
+}
+function closeWhatsNew(){
+  els.whatsNewModal.hidden=true;
+}
+function markWhatsNewSeen(){
+  try{localStorage.setItem(whatsNewStorageKey(),WHATS_NEW_VERSION);}catch(e){}
+  renderWhatsNewButton();
+  els.whatsNewStatus.textContent='All updates marked seen.';
 }
 function openAccountAccessPage(){
   var key=smartCoachAccountKey();
@@ -1475,6 +1548,14 @@ var els={
   status:document.getElementById('status'),
   filterState:document.getElementById('filterState'),
   lastUpdated:document.getElementById('lastUpdated'),
+  whatsNewBtn:document.getElementById('whatsNewBtn'),
+  whatsNewDot:document.getElementById('whatsNewDot'),
+  whatsNewCount:document.getElementById('whatsNewCount'),
+  whatsNewModal:document.getElementById('whatsNewModal'),
+  whatsNewClose:document.getElementById('whatsNewClose'),
+  whatsNewList:document.getElementById('whatsNewList'),
+  whatsNewStatus:document.getElementById('whatsNewStatus'),
+  whatsNewSeenBtn:document.getElementById('whatsNewSeenBtn'),
   search:document.getElementById('search'),
   clearSearchBtn:document.getElementById('clearSearchBtn'),
   quickFilter:document.getElementById('quickFilter'),
@@ -1518,7 +1599,17 @@ var els={
 };
 setupTableScrollbars();
 initHeaderTooltips();
+renderWhatsNewButton();
 els.refreshBtn.addEventListener('click',loadDashboard);
+els.whatsNewBtn.addEventListener('click',openWhatsNew);
+els.whatsNewClose.addEventListener('click',closeWhatsNew);
+els.whatsNewSeenBtn.addEventListener('click',markWhatsNewSeen);
+els.whatsNewModal.addEventListener('click',function(event){
+  if(event.target===els.whatsNewModal)closeWhatsNew();
+});
+document.addEventListener('keydown',function(event){
+  if(event.key==='Escape'&&!els.whatsNewModal.hidden)closeWhatsNew();
+});
 els.accessSubmit.addEventListener('click',submitDashboardAccessCode);
 els.accessCodeInput.addEventListener('keydown',function(event){
   if(event.key==='Enter')submitDashboardAccessCode();

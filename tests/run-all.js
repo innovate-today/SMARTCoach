@@ -158,6 +158,28 @@ function checkDashboardActivityRangeLayout() {
   console.log("dashboard activity range layout ok");
 }
 
+function checkDashboardWhatsNew() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  [
+    'id="whatsNewBtn"',
+    "What's New",
+    "var WHATS_NEW_VERSION=",
+    "var WHATS_NEW_ITEMS=",
+    "function whatsNewStorageKey()",
+    "function whatsNewUnreadCount()",
+    "function openWhatsNew()",
+    "function markWhatsNewSeen()",
+    "smartcoachWhatsNewSeen_",
+    "Keep Trak",
+    "Attendance Trak",
+    "Meet History",
+    "Mark All Seen",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Dashboard What's New missing ${text}`);
+  });
+  console.log("Dashboard What's New ok");
+}
+
 function checkMeetManagerSportField() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/meets.js", "utf8");
@@ -756,6 +778,7 @@ checkAccountStatusLocationVerification();
 checkAccountOwnerExcludedFromAthletes();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
+checkDashboardWhatsNew();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
