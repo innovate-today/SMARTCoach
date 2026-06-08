@@ -533,9 +533,14 @@ function checkAttendanceSeasonAttachment() {
     "season:seasonParts.season",
     "seasonYear:seasonParts.seasonYear",
     "'sport','season','seasonYear'",
+    'id="confirmOverlay"',
+    "function openConfirm(title,message,detail,okLabel,onConfirm)",
+    "Delete attendance mark?",
+    "formatLongDate(row.date)",
   ].forEach((text) => {
     if (!desktop.includes(text)) throw new Error(`desktop attendance season attachment missing ${text}`);
   });
+  if (desktop.includes("confirm(")) throw new Error("desktop Attendance should use the in-page confirmation dialog.");
   [
     "sport: firstQueryValue(req.query && req.query.sport)",
     "season: firstQueryValue(req.query && req.query.season)",
