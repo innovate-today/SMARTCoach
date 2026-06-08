@@ -386,19 +386,43 @@ function bugTrakWebhookUrl() {
 async function notifyBugTrak(report, accountKey) {
   const url = bugTrakWebhookUrl();
   if (!url) return { sent: false, configured: false, reason: "Bug Trak webhook is not configured." };
+  const payload = bugTrakWebhookPayload(report, accountKey);
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      source: "SMARTCoach Bug Trak",
-      accountKey,
-      report,
-      submittedAt: new Date().toISOString(),
-    }),
+    body: JSON.stringify(payload),
   });
   const text = await response.text();
   if (!response.ok) throw httpError(response.status, text || `Bug Trak webhook failed with ${response.status}.`);
   return { sent: true, configured: true, status: response.status };
+}
+
+function bugTrakWebhookPayload(report, accountKey) {
+  const item = report || {};
+  const submittedAt = new Date().toISOString();
+  return {
+    source: "SMARTCoach Bug Trak",
+    accountKey,
+    bugAccountKey: accountKey,
+    bugReportId: cleanSetupText(item.id),
+    bugType: "bug",
+    bugStatus: cleanSetupText(item.status) || "New",
+    bugUrgency: cleanSetupText(item.urgency),
+    bugArea: cleanSetupText(item.area),
+    bugSummary: cleanSetupText(item.summary),
+    bugDetails: cleanSetupText(item.details),
+    bugExpected: cleanSetupText(item.expected),
+    bugPage: cleanSetupText(item.page),
+    bugPageTitle: cleanSetupText(item.pageTitle),
+    bugCoachName: cleanSetupText(item.coachName),
+    bugCoachEmail: cleanSetupText(item.coachEmail),
+    bugDeviceLabel: cleanSetupText(item.deviceLabel),
+    bugUserAgent: cleanSetupText(item.userAgent),
+    bugCreatedAt: cleanSetupText(item.createdAt),
+    bugSubmittedAt: submittedAt,
+    submittedAt,
+    report: item,
+  };
 }
 
 function setBugTrakCorsHeaders(res) {

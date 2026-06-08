@@ -843,7 +843,7 @@ How to use it:
 5. Add coach name or email if follow-up is needed.
 6. Click **Send Bug Report**.
 
-Bug Trak sends the account key, current page, page title, device/browser context, urgency, and report details. Reports are saved to the customer account record. If the Bug Trak notification webhook is configured, the report also sends an immediate support notification.
+Bug Trak sends the account key, current page, page title, device/browser context, urgency, and report details. Reports are saved to the customer account record. If the Bug Trak notification webhook is configured, the report also sends an immediate support notification. The webhook sends flat fields such as `bugSummary`, `bugDetails`, `bugUrgency`, `bugArea`, `bugPage`, `bugCoachName`, and `bugCoachEmail` so GHL workflows can use them directly.
 
 ## Quick Troubleshooting
 

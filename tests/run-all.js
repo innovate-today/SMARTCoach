@@ -202,6 +202,10 @@ function checkBugTrakDesktopFeedback() {
     "function normalizeBugTrakPayload(payload, req, accountKey)",
     "SMARTCOACH_BUGTRAK_WEBHOOK_URL",
     "async function notifyBugTrak(report, accountKey)",
+    "function bugTrakWebhookPayload(report, accountKey)",
+    "bugSummary: cleanSetupText(item.summary)",
+    "bugUrgency: cleanSetupText(item.urgency)",
+    "bugPage: cleanSetupText(item.page)",
     "saveBugTrakReport(accountKey, report)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Bug Trak API missing ${text}`);
