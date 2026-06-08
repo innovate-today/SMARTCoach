@@ -180,6 +180,50 @@ function checkDashboardWhatsNew() {
   console.log("Dashboard What's New ok");
 }
 
+function checkBugTrakDesktopFeedback() {
+  const widget = fs.readFileSync("assets/smartcoach-help-widget.js", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
+  [
+    "smartcoach-bugtrak-btn",
+    "Bug Trak",
+    "smartcoachBugTrakForm",
+    "Send Bug Report",
+    "fetch('/api/smart-trak/bug-trak?account='",
+    "page:location.href",
+    "@media(max-width:760px){.smartcoach-bugtrak-btn,.smartcoach-bugtrak-overlay{display:none!important}}",
+  ].forEach((text) => {
+    if (!widget.includes(text)) throw new Error(`Bug Trak desktop widget missing ${text}`);
+  });
+  [
+    'if (route === "bug-trak")',
+    "return accountBugTrak(req, res);",
+    "async function accountBugTrak(req, res)",
+    "function normalizeBugTrakPayload(payload, req, accountKey)",
+    "SMARTCOACH_BUGTRAK_WEBHOOK_URL",
+    "async function notifyBugTrak(report, accountKey)",
+    "saveBugTrakReport(accountKey, report)",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Bug Trak API missing ${text}`);
+  });
+  [
+    "async function saveBugTrakReport(accountKey, report)",
+    "async function loadBugTrakReports(accountKey, filters = {})",
+    "function normalizeBugTrakReport(report)",
+    "bugTrakReports",
+    "lastBugTrakReport",
+    ".slice(-500)",
+    "saveBugTrakReport,",
+    "loadBugTrakReports,",
+  ].forEach((text) => {
+    if (!registry.includes(text)) throw new Error(`Bug Trak registry missing ${text}`);
+  });
+  if (api.includes("WHATS_NEW_ITEMS") || widget.includes("WHATS_NEW_ITEMS")) {
+    throw new Error("Bug Trak should not update Dashboard What's New without approval.");
+  }
+  console.log("Bug Trak desktop feedback ok");
+}
+
 function checkPlanImportMultiGroupAssignment() {
   const html = fs.readFileSync("plan-import.html", "utf8");
   [
@@ -800,6 +844,7 @@ checkAccountOwnerExcludedFromAthletes();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkDashboardWhatsNew();
+checkBugTrakDesktopFeedback();
 checkPlanImportMultiGroupAssignment();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();

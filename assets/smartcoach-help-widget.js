@@ -8,7 +8,27 @@
     'div[class*="lc-"]',
     'div[class*="leadconnector"]',
     'div[class*="chat-widget"]'
-  ].join(',') + '{z-index:2147483647!important;}';
+  ].join(',') + '{z-index:2147483647!important;}' +
+    '.smartcoach-bugtrak-btn{position:fixed;left:18px;bottom:18px;z-index:2147483000;border:1px solid #bfd0ef;border-radius:999px;background:#fff;color:#173891;font:800 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:9px 12px;box-shadow:0 14px 32px rgba(15,23,42,.18);cursor:pointer}' +
+    '.smartcoach-bugtrak-btn:hover{background:#eef4ff}' +
+    '.smartcoach-bugtrak-overlay{position:fixed;inset:0;z-index:2147483001;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;overflow:auto}' +
+    '.smartcoach-bugtrak-overlay[hidden]{display:none!important}' +
+    '.smartcoach-bugtrak-panel{width:min(560px,100%);background:#fff;border:1px solid #dbe3ef;border-radius:10px;box-shadow:0 22px 60px rgba(15,23,42,.28);overflow:hidden;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}' +
+    '.smartcoach-bugtrak-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #dbe3ef}' +
+    '.smartcoach-bugtrak-head h2{font-size:20px;line-height:1.2;margin:0}' +
+    '.smartcoach-bugtrak-body{display:grid;gap:11px;padding:14px 16px 16px}' +
+    '.smartcoach-bugtrak-intro{color:#526481;font-size:13px;line-height:1.4;margin:0}' +
+    '.smartcoach-bugtrak-grid{display:grid;grid-template-columns:1fr 150px;gap:10px}' +
+    '.smartcoach-bugtrak-field{display:grid;gap:5px}' +
+    '.smartcoach-bugtrak-field label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}' +
+    '.smartcoach-bugtrak-field input,.smartcoach-bugtrak-field select,.smartcoach-bugtrak-field textarea{width:100%;border:1px solid #dbe3ef;border-radius:8px;background:#fff;color:#111827;font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:9px 10px}' +
+    '.smartcoach-bugtrak-field textarea{min-height:92px;resize:vertical;line-height:1.4}' +
+    '.smartcoach-bugtrak-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:2px}' +
+    '.smartcoach-bugtrak-status{margin-right:auto;color:#526481;font-size:13px;font-weight:800}' +
+    '.smartcoach-bugtrak-actions button,.smartcoach-bugtrak-close{border:0;border-radius:8px;background:#2B4FCC;color:#fff;font:800 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:8px 11px;cursor:pointer}' +
+    '.smartcoach-bugtrak-actions .secondary,.smartcoach-bugtrak-close{background:#dde3ed;color:#172033}' +
+    '.smartcoach-bugtrak-actions button:disabled{opacity:.55;cursor:not-allowed}' +
+    '@media(max-width:760px){.smartcoach-bugtrak-btn,.smartcoach-bugtrak-overlay{display:none!important}}';
   var style = document.createElement('style');
   style.setAttribute('data-smartcoach-help-widget','1');
   style.textContent = css;
@@ -25,4 +45,118 @@
   script.setAttribute('data-widget-id','6a1785dc1b5a98ef9df8eae9');
   script.async = true;
   document.head.appendChild(script);
+  function accountKey(){
+    try{
+      var params=new URLSearchParams(window.location.search||'');
+      var value=(params.get('account')||localStorage.getItem('sc_account')||'default').trim();
+      return value||'default';
+    }catch(e){return 'default';}
+  }
+  function storageValue(key){
+    try{return localStorage.getItem(key)||sessionStorage.getItem(key)||'';}catch(e){return '';}
+  }
+  function sessionToken(){
+    var account=accountKey();
+    return storageValue('sc_session_remembered_'+account)||storageValue('sc_session_'+account);
+  }
+  function accessCode(){
+    try{return localStorage.getItem('sc_access_'+accountKey())||'';}catch(e){return '';}
+  }
+  function deviceId(){
+    try{
+      var key='sc_bugtrak_device_'+accountKey();
+      var value=localStorage.getItem(key)||'';
+      if(!value){
+        value='desk_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9);
+        localStorage.setItem(key,value);
+      }
+      return value;
+    }catch(e){return 'desk_'+Date.now().toString(36);}
+  }
+  function deviceLabel(){
+    var ua=navigator.userAgent||'';
+    var browser=/CriOS|Chrome/i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':/Firefox/i.test(ua)?'Firefox':/Edg/i.test(ua)?'Edge':'Browser';
+    var device=/Macintosh|Mac OS/i.test(ua)?'Mac':/Windows/i.test(ua)?'Windows':/Linux/i.test(ua)?'Linux':'Desktop';
+    return device+' '+browser;
+  }
+  function headers(){
+    var out={'Content-Type':'application/json','X-SMARTCoach-Account':accountKey(),'X-SMARTCoach-Device-Id':deviceId(),'X-SMARTCoach-Device-Label':deviceLabel(),'X-SMARTCoach-Device-Source':'desktop'};
+    var session=sessionToken();
+    var code=accessCode();
+    if(session)out['X-SMARTCoach-Session']=session;
+    if(code&&!session)out['X-SMARTCoach-Access-Code']=code;
+    return out;
+  }
+  function pageArea(){
+    var title=document.title||'SMART Trak';
+    if(/Attendance/i.test(title))return 'Attendance Trak';
+    if(/Keep/i.test(title))return 'Keep Trak';
+    if(/Meet History/i.test(title))return 'Meet History';
+    if(/Training Calendar/i.test(title))return 'Training Calendar';
+    if(/Dashboard/i.test(title))return 'Dashboard';
+    if(/Records/i.test(title))return 'Records';
+    if(/Weather/i.test(title))return 'Weather';
+    return title.replace(/^SMART Trak\s*/i,'').trim()||'SMART Trak';
+  }
+  function createBugTrak(){
+    if(document.getElementById('smartcoachBugTrakBtn'))return;
+    var button=document.createElement('button');
+    button.id='smartcoachBugTrakBtn';
+    button.className='smartcoach-bugtrak-btn';
+    button.type='button';
+    button.textContent='Bug Trak';
+    var overlay=document.createElement('div');
+    overlay.id='smartcoachBugTrakOverlay';
+    overlay.className='smartcoach-bugtrak-overlay';
+    overlay.hidden=true;
+    overlay.innerHTML='<section class="smartcoach-bugtrak-panel" role="dialog" aria-modal="true" aria-labelledby="smartcoachBugTrakTitle"><div class="smartcoach-bugtrak-head"><h2 id="smartcoachBugTrakTitle">Bug Trak</h2><button class="smartcoach-bugtrak-close" type="button" data-bugtrak-close>Close</button></div><form id="smartcoachBugTrakForm" class="smartcoach-bugtrak-body"><p class="smartcoach-bugtrak-intro">Report something broken or incorrect. Bug Trak sends the page and account context with your report.</p><div class="smartcoach-bugtrak-grid"><div class="smartcoach-bugtrak-field"><label for="smartcoachBugArea">Area</label><input id="smartcoachBugArea" name="area" type="text"></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugUrgency">Urgency</label><select id="smartcoachBugUrgency" name="urgency"><option>Medium</option><option>Low</option><option>High</option><option>Blocking</option></select></div></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugSummary">What is wrong?</label><input id="smartcoachBugSummary" name="summary" type="text" maxlength="180" required placeholder="Example: Attendance delete did not remove the row"></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugDetails">Details</label><textarea id="smartcoachBugDetails" name="details" maxlength="4000" required placeholder="What were you doing? What happened?"></textarea></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugExpected">Expected result</label><textarea id="smartcoachBugExpected" name="expected" maxlength="2000" placeholder="What should have happened?"></textarea></div><div class="smartcoach-bugtrak-grid"><div class="smartcoach-bugtrak-field"><label for="smartcoachBugCoach">Coach name</label><input id="smartcoachBugCoach" name="coachName" type="text" maxlength="120"></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugEmail">Email</label><input id="smartcoachBugEmail" name="coachEmail" type="email" maxlength="180"></div></div><div class="smartcoach-bugtrak-actions"><div id="smartcoachBugStatus" class="smartcoach-bugtrak-status"></div><button class="secondary" type="button" data-bugtrak-close>Cancel</button><button id="smartcoachBugSubmit" type="submit">Send Bug Report</button></div></form></section>';
+    document.body.appendChild(button);
+    document.body.appendChild(overlay);
+    var form=overlay.querySelector('#smartcoachBugTrakForm');
+    var status=overlay.querySelector('#smartcoachBugStatus');
+    var submit=overlay.querySelector('#smartcoachBugSubmit');
+    function open(){
+      overlay.hidden=false;
+      overlay.querySelector('#smartcoachBugArea').value=pageArea();
+      status.textContent='';
+      setTimeout(function(){overlay.querySelector('#smartcoachBugSummary').focus();},30);
+    }
+    function close(){overlay.hidden=true;}
+    button.addEventListener('click',open);
+    overlay.addEventListener('click',function(event){if(event.target===overlay)close();});
+    overlay.querySelectorAll('[data-bugtrak-close]').forEach(function(node){node.addEventListener('click',close);});
+    document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!overlay.hidden)close();});
+    form.addEventListener('submit',function(event){
+      event.preventDefault();
+      var payload={
+        accountKey:accountKey(),
+        area:form.area.value,
+        urgency:form.urgency.value,
+        summary:form.summary.value,
+        details:form.details.value,
+        expected:form.expected.value,
+        coachName:form.coachName.value,
+        coachEmail:form.coachEmail.value,
+        page:location.href,
+        pageTitle:document.title||'',
+        deviceLabel:deviceLabel(),
+        userAgent:navigator.userAgent||''
+      };
+      if(!payload.summary.trim()&&!payload.details.trim()){status.textContent='Add what went wrong before sending.';return;}
+      submit.disabled=true;
+      status.textContent='Sending bug report...';
+      fetch('/api/smart-trak/bug-trak?account='+encodeURIComponent(accountKey()),{method:'POST',headers:headers(),body:JSON.stringify(payload)}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){
+        if(!result.ok)throw new Error(result.data&&result.data.error||'Bug report could not be sent.');
+        status.textContent=result.data&&result.data.notification&&result.data.notification.sent?'Bug report sent.':'Bug report saved. Notification webhook is not configured yet.';
+        form.reset();
+        setTimeout(close,900);
+      }).catch(function(error){
+        status.textContent=error.message||'Bug report could not be sent.';
+      }).finally(function(){
+        submit.disabled=false;
+      });
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',createBugTrak);
+  else createBugTrak();
 })();

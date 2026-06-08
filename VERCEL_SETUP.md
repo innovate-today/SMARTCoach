@@ -12,6 +12,7 @@ At minimum, production should have:
 - `SMARTCOACH_SESSION_SECRET`
 - `SMARTCOACH_REQUIRE_COACH_ACCESS=true`
 - `SMARTCOACH_STRIPE_WEBHOOK_SECRET` if direct Stripe webhooks are enabled
+- `SMARTCOACH_BUGTRAK_WEBHOOK_URL` if beta Bug Trak reports should trigger an immediate GHL workflow/internal notification
 
 Default environment variables are still supported for the original/default SMARTCoach Pro account or migration fallback:
 

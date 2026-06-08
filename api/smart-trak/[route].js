@@ -30,7 +30,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -100,6 +100,13 @@ module.exports = async function handler(req, res) {
     if (!requireProPlan(req, res)) return;
     await recordRequestCoachDevice(req).catch(() => {});
     return accountKeepTrak(req, res);
+  }
+
+  if (route === "bug-trak") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    await recordRequestCoachDevice(req).catch(() => {});
+    return accountBugTrak(req, res);
   }
 
   if (route === "docu-trak") {
@@ -304,6 +311,99 @@ async function accountKeepTrak(req, res) {
 function setKeepTrakCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label, X-SMARTCoach-Coach-Id, X-SMARTCoach-Coach-Name");
+}
+
+async function accountBugTrak(req, res) {
+  setBugTrakCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    if (req.method === "GET") {
+      const reports = await loadBugTrakReports(accountKey, {
+        status: firstQueryValue(req.query && req.query.status),
+      });
+      res.status(200).json({ success: true, reports, count: reports.length });
+      return;
+    }
+
+    if (req.method === "POST") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      const report = normalizeBugTrakPayload(payload, req, accountKey);
+      if (!report) {
+        res.status(400).json({ error: "Bug summary or details are required." });
+        return;
+      }
+      const saved = await saveBugTrakReport(accountKey, report);
+      const notification = await notifyBugTrak(saved.report || report, accountKey).catch((error) => ({
+        sent: false,
+        configured: !!bugTrakWebhookUrl(),
+        error: error.message || "Bug Trak notification failed.",
+      }));
+      res.status(200).json({ success: !!saved.saved, notification, ...saved });
+      return;
+    }
+
+    res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Bug Trak report failed." });
+  }
+}
+
+function normalizeBugTrakPayload(payload, req, accountKey) {
+  const source = payload || {};
+  const summary = cleanSetupText(source.summary || source.title).slice(0, 180);
+  const details = cleanSetupText(source.details || source.description || source.body).slice(0, 4000);
+  if (!summary && !details) return null;
+  return {
+    id: cleanSetupText(source.id),
+    accountKey,
+    area: cleanSetupText(source.area),
+    urgency: cleanSetupText(source.urgency) || "Medium",
+    summary,
+    details,
+    expected: cleanSetupText(source.expected),
+    page: cleanSetupText(source.page),
+    pageTitle: cleanSetupText(source.pageTitle),
+    coachName: cleanSetupText(source.coachName || headerValue(req, "x-smartcoach-coach-name")),
+    coachEmail: cleanSetupText(source.coachEmail),
+    deviceLabel: cleanSetupText(source.deviceLabel || headerValue(req, "x-smartcoach-device-label")),
+    userAgent: cleanSetupText(source.userAgent || headerValue(req, "user-agent")),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function bugTrakWebhookUrl() {
+  return cleanSetupText(process.env.SMARTCOACH_BUGTRAK_WEBHOOK_URL || process.env.BUGTRAK_WEBHOOK_URL);
+}
+
+async function notifyBugTrak(report, accountKey) {
+  const url = bugTrakWebhookUrl();
+  if (!url) return { sent: false, configured: false, reason: "Bug Trak webhook is not configured." };
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      source: "SMARTCoach Bug Trak",
+      accountKey,
+      report,
+      submittedAt: new Date().toISOString(),
+    }),
+  });
+  const text = await response.text();
+  if (!response.ok) throw httpError(response.status, text || `Bug Trak webhook failed with ${response.status}.`);
+  return { sent: true, configured: true, status: response.status };
+}
+
+function setBugTrakCorsHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label, X-SMARTCoach-Coach-Id, X-SMARTCoach-Coach-Name");
 }
 

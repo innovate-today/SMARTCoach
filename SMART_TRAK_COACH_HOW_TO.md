@@ -830,6 +830,21 @@ Good questions to ask:
 
 SMARTCoach Help should answer product and workflow questions. Billing questions are not part of SMARTCoach Help.
 
+## Bug Trak
+
+During beta, SMART Trak desktop pages include a small **Bug Trak** button. Use Bug Trak when something is broken, saving incorrectly, syncing incorrectly, missing, or confusing enough that support should review it.
+
+How to use it:
+
+1. Click **Bug Trak** from a SMART Trak desktop page.
+2. Confirm the area and urgency.
+3. Enter what went wrong.
+4. Add what should have happened if that is clear.
+5. Add coach name or email if follow-up is needed.
+6. Click **Send Bug Report**.
+
+Bug Trak sends the account key, current page, page title, device/browser context, urgency, and report details. Reports are saved to the customer account record. If the Bug Trak notification webhook is configured, the report also sends an immediate support notification.
+
 ## Quick Troubleshooting
 
 If athletes do not show:
