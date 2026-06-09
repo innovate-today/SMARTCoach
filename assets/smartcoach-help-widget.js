@@ -18,6 +18,9 @@
     '.smartcoach-bugtrak-head h2{font-size:20px;line-height:1.2;margin:0}' +
     '.smartcoach-bugtrak-body{display:grid;gap:11px;padding:14px 16px 16px}' +
     '.smartcoach-bugtrak-intro{color:#526481;font-size:13px;line-height:1.4;margin:0}' +
+    '.smartcoach-feedback-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}' +
+    '.smartcoach-feedback-tab{border:1px solid #dbe3ef;border-radius:8px;background:#f5f7fb;color:#172033;font:900 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:10px;cursor:pointer}' +
+    '.smartcoach-feedback-tab.active{border-color:#2B4FCC;background:#eef4ff;color:#173891}' +
     '.smartcoach-bugtrak-grid{display:grid;grid-template-columns:1fr 150px;gap:10px}' +
     '.smartcoach-bugtrak-field{display:grid;gap:5px}' +
     '.smartcoach-bugtrak-field label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}' +
@@ -99,36 +102,53 @@
     return title.replace(/^SMART Trak\s*/i,'').trim()||'SMART Trak';
   }
   function createBugTrak(){
-    if(document.getElementById('smartcoachBugTrakBtn'))return;
+    if(document.getElementById('smartcoachFeedbackBtn'))return;
     var button=document.createElement('button');
-    button.id='smartcoachBugTrakBtn';
+    button.id='smartcoachFeedbackBtn';
     button.className='smartcoach-bugtrak-btn';
     button.type='button';
-    button.textContent='Bug Trak';
+    button.textContent='Feedback';
     var overlay=document.createElement('div');
     overlay.id='smartcoachBugTrakOverlay';
     overlay.className='smartcoach-bugtrak-overlay';
     overlay.hidden=true;
-    overlay.innerHTML='<section class="smartcoach-bugtrak-panel" role="dialog" aria-modal="true" aria-labelledby="smartcoachBugTrakTitle"><div class="smartcoach-bugtrak-head"><h2 id="smartcoachBugTrakTitle">Bug Trak</h2><button class="smartcoach-bugtrak-close" type="button" data-bugtrak-close>Close</button></div><form id="smartcoachBugTrakForm" class="smartcoach-bugtrak-body"><p class="smartcoach-bugtrak-intro">Report something broken or incorrect. Bug Trak sends the page and account context with your report.</p><div class="smartcoach-bugtrak-grid"><div class="smartcoach-bugtrak-field"><label for="smartcoachBugArea">Area</label><input id="smartcoachBugArea" name="area" type="text"></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugUrgency">Urgency</label><select id="smartcoachBugUrgency" name="urgency"><option>Medium</option><option>Low</option><option>High</option><option>Blocking</option></select></div></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugSummary">What is wrong?</label><input id="smartcoachBugSummary" name="summary" type="text" maxlength="180" required placeholder="Example: Attendance delete did not remove the row"></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugDetails">Details</label><textarea id="smartcoachBugDetails" name="details" maxlength="4000" required placeholder="What were you doing? What happened?"></textarea></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugExpected">Expected result</label><textarea id="smartcoachBugExpected" name="expected" maxlength="2000" placeholder="What should have happened?"></textarea></div><div class="smartcoach-bugtrak-grid"><div class="smartcoach-bugtrak-field"><label for="smartcoachBugCoach">Coach name</label><input id="smartcoachBugCoach" name="coachName" type="text" maxlength="120"></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugEmail">Email</label><input id="smartcoachBugEmail" name="coachEmail" type="email" maxlength="180"></div></div><div class="smartcoach-bugtrak-actions"><div id="smartcoachBugStatus" class="smartcoach-bugtrak-status"></div><button class="secondary" type="button" data-bugtrak-close>Cancel</button><button id="smartcoachBugSubmit" type="submit">Send Bug Report</button></div></form></section>';
+    overlay.innerHTML='<section class="smartcoach-bugtrak-panel" role="dialog" aria-modal="true" aria-labelledby="smartcoachBugTrakTitle"><div class="smartcoach-bugtrak-head"><h2 id="smartcoachBugTrakTitle">Feedback</h2><button class="smartcoach-bugtrak-close" type="button" data-bugtrak-close>Close</button></div><form id="smartcoachBugTrakForm" class="smartcoach-bugtrak-body"><p id="smartcoachFeedbackIntro" class="smartcoach-bugtrak-intro">Send a beta bug report or product idea with the current page and account context.</p><div class="smartcoach-feedback-tabs"><button id="smartcoachBugMode" class="smartcoach-feedback-tab active" type="button" data-feedback-mode="bug">Bug Trak</button><button id="smartcoachIdeaMode" class="smartcoach-feedback-tab" type="button" data-feedback-mode="idea">Idea Trak</button></div><div class="smartcoach-bugtrak-grid"><div class="smartcoach-bugtrak-field"><label for="smartcoachBugArea">Area</label><input id="smartcoachBugArea" name="area" type="text"></div><div id="smartcoachUrgencyField" class="smartcoach-bugtrak-field"><label for="smartcoachBugUrgency">Urgency</label><select id="smartcoachBugUrgency" name="urgency"><option>Medium</option><option>Low</option><option>High</option><option>Blocking</option></select></div></div><div class="smartcoach-bugtrak-field"><label id="smartcoachSummaryLabel" for="smartcoachBugSummary">What is wrong?</label><input id="smartcoachBugSummary" name="summary" type="text" maxlength="180" required placeholder="Example: Attendance delete did not remove the row"></div><div class="smartcoach-bugtrak-field"><label id="smartcoachDetailsLabel" for="smartcoachBugDetails">Details</label><textarea id="smartcoachBugDetails" name="details" maxlength="4000" required placeholder="What were you doing? What happened?"></textarea></div><div id="smartcoachExpectedField" class="smartcoach-bugtrak-field"><label id="smartcoachExpectedLabel" for="smartcoachBugExpected">Expected result</label><textarea id="smartcoachBugExpected" name="expected" maxlength="2000" placeholder="What should have happened?"></textarea></div><div class="smartcoach-bugtrak-grid"><div class="smartcoach-bugtrak-field"><label for="smartcoachBugCoach">Coach name</label><input id="smartcoachBugCoach" name="coachName" type="text" maxlength="120"></div><div class="smartcoach-bugtrak-field"><label for="smartcoachBugEmail">Email</label><input id="smartcoachBugEmail" name="coachEmail" type="email" maxlength="180"></div></div><div class="smartcoach-bugtrak-actions"><div id="smartcoachBugStatus" class="smartcoach-bugtrak-status"></div><button class="secondary" type="button" data-bugtrak-close>Cancel</button><button id="smartcoachBugSubmit" type="submit">Send Bug Report</button></div></form></section>';
     document.body.appendChild(button);
     document.body.appendChild(overlay);
     var form=overlay.querySelector('#smartcoachBugTrakForm');
     var status=overlay.querySelector('#smartcoachBugStatus');
     var submit=overlay.querySelector('#smartcoachBugSubmit');
+    var mode='bug';
+    function setMode(nextMode){
+      mode=nextMode==='idea'?'idea':'bug';
+      overlay.querySelectorAll('[data-feedback-mode]').forEach(function(node){node.classList.toggle('active',node.getAttribute('data-feedback-mode')===mode);});
+      overlay.querySelector('#smartcoachUrgencyField').hidden=mode==='idea';
+      overlay.querySelector('#smartcoachExpectedField').hidden=mode==='idea';
+      overlay.querySelector('#smartcoachFeedbackIntro').textContent=mode==='idea'?'Share a product idea or workflow improvement. Ideas save privately for beta review.':'Report something broken or incorrect. Bug Trak sends the page and account context with your report.';
+      overlay.querySelector('#smartcoachSummaryLabel').textContent=mode==='idea'?'Idea':'What is wrong?';
+      overlay.querySelector('#smartcoachDetailsLabel').textContent=mode==='idea'?'Why it helps':'Details';
+      overlay.querySelector('#smartcoachBugSummary').placeholder=mode==='idea'?'Example: Add a weekly attendance eligibility summary':'Example: Attendance delete did not remove the row';
+      overlay.querySelector('#smartcoachBugDetails').placeholder=mode==='idea'?'What would this help you or other coaches do?':'What were you doing? What happened?';
+      submit.textContent=mode==='idea'?'Send Idea':'Send Bug Report';
+      status.textContent='';
+    }
     function open(){
       overlay.hidden=false;
       overlay.querySelector('#smartcoachBugArea').value=pageArea();
+      setMode('bug');
       status.textContent='';
       setTimeout(function(){overlay.querySelector('#smartcoachBugSummary').focus();},30);
     }
     function close(){overlay.hidden=true;}
     button.addEventListener('click',open);
+    overlay.querySelectorAll('[data-feedback-mode]').forEach(function(node){node.addEventListener('click',function(){setMode(node.getAttribute('data-feedback-mode'));});});
     overlay.addEventListener('click',function(event){if(event.target===overlay)close();});
     overlay.querySelectorAll('[data-bugtrak-close]').forEach(function(node){node.addEventListener('click',close);});
     document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!overlay.hidden)close();});
     form.addEventListener('submit',function(event){
       event.preventDefault();
       var payload={
+        type:mode,
         accountKey:accountKey(),
         area:form.area.value,
         urgency:form.urgency.value,
@@ -142,16 +162,16 @@
         deviceLabel:deviceLabel(),
         userAgent:navigator.userAgent||''
       };
-      if(!payload.summary.trim()&&!payload.details.trim()){status.textContent='Add what went wrong before sending.';return;}
+      if(!payload.summary.trim()&&!payload.details.trim()){status.textContent=mode==='idea'?'Add the idea before sending.':'Add what went wrong before sending.';return;}
       submit.disabled=true;
-      status.textContent='Sending bug report...';
+      status.textContent=mode==='idea'?'Sending idea...':'Sending bug report...';
       fetch('/api/smart-trak/bug-trak?account='+encodeURIComponent(accountKey()),{method:'POST',headers:headers(),body:JSON.stringify(payload)}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){
-        if(!result.ok)throw new Error(result.data&&result.data.error||'Bug report could not be sent.');
-        status.textContent=result.data&&result.data.notification&&result.data.notification.sent?'Bug report sent.':'Bug report saved. Notification webhook is not configured yet.';
+        if(!result.ok)throw new Error(result.data&&result.data.error||(mode==='idea'?'Idea could not be sent.':'Bug report could not be sent.'));
+        status.textContent=mode==='idea'?'Idea saved.':result.data&&result.data.notification&&result.data.notification.sent?'Bug report sent.':'Bug report saved. Notification webhook is not configured yet.';
         form.reset();
         setTimeout(close,900);
       }).catch(function(error){
-        status.textContent=error.message||'Bug report could not be sent.';
+        status.textContent=error.message||(mode==='idea'?'Idea could not be sent.':'Bug report could not be sent.');
       }).finally(function(){
         submit.disabled=false;
       });

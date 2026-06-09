@@ -337,15 +337,18 @@ async function accountBugTrak(req, res) {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       const report = normalizeBugTrakPayload(payload, req, accountKey);
       if (!report) {
-        res.status(400).json({ error: "Bug summary or details are required." });
+        res.status(400).json({ error: "Feedback summary or details are required." });
         return;
       }
       const saved = await saveBugTrakReport(accountKey, report);
-      const notification = await notifyBugTrak(saved.report || report, accountKey).catch((error) => ({
-        sent: false,
-        configured: !!bugTrakWebhookUrl(),
-        error: error.message || "Bug Trak notification failed.",
-      }));
+      const savedReport = saved.report || report;
+      const notification = savedReport.type === "idea"
+        ? { sent: false, configured: !!bugTrakWebhookUrl(), reason: "Idea Trak is saved for beta review without immediate notification." }
+        : await notifyBugTrak(savedReport, accountKey).catch((error) => ({
+          sent: false,
+          configured: !!bugTrakWebhookUrl(),
+          error: error.message || "Bug Trak notification failed.",
+        }));
       res.status(200).json({ success: !!saved.saved, notification, ...saved });
       return;
     }
@@ -358,14 +361,16 @@ async function accountBugTrak(req, res) {
 
 function normalizeBugTrakPayload(payload, req, accountKey) {
   const source = payload || {};
+  const type = cleanSetupText(source.type).toLowerCase() === "idea" ? "idea" : "bug";
   const summary = cleanSetupText(source.summary || source.title).slice(0, 180);
   const details = cleanSetupText(source.details || source.description || source.body).slice(0, 4000);
   if (!summary && !details) return null;
   return {
     id: cleanSetupText(source.id),
+    type,
     accountKey,
     area: cleanSetupText(source.area),
-    urgency: cleanSetupText(source.urgency) || "Medium",
+    urgency: type === "idea" ? "Low" : cleanSetupText(source.urgency) || "Medium",
     summary,
     details,
     expected: cleanSetupText(source.expected),
@@ -400,7 +405,9 @@ async function notifyBugTrak(report, accountKey) {
 function bugTrakWebhookPayload(report, accountKey) {
   const item = report || {};
   const submittedAt = new Date().toISOString();
-  const title = `Bug Trak: ${cleanSetupText(item.urgency) || "New"} - ${cleanSetupText(item.area) || "SMART Trak"}`;
+  const type = cleanSetupText(item.type).toLowerCase() === "idea" ? "idea" : "bug";
+  const label = type === "idea" ? "Idea Trak" : "Bug Trak";
+  const title = `${label}: ${cleanSetupText(item.urgency) || "New"} - ${cleanSetupText(item.area) || "SMART Trak"}`;
   const body = [
     `Account: ${accountKey}`,
     `Coach: ${[cleanSetupText(item.coachName), cleanSetupText(item.coachEmail)].filter(Boolean).join(" ") || "Not provided"}`,
@@ -408,19 +415,19 @@ function bugTrakWebhookPayload(report, accountKey) {
     `Page: ${cleanSetupText(item.pageTitle) || "Not provided"}`,
     `URL: ${cleanSetupText(item.page) || "Not provided"}`,
     "",
-    "Issue:",
+    type === "idea" ? "Idea:" : "Issue:",
     cleanSetupText(item.summary) || "Not provided",
     "",
     "Details:",
     cleanSetupText(item.details) || "Not provided",
     "",
-    "Expected:",
+    type === "idea" ? "Why it helps:" : "Expected:",
     cleanSetupText(item.expected) || "Not provided",
     "",
     `Submitted: ${submittedAt}`,
   ].join("\n");
   return {
-    source: "SMARTCoach Bug Trak",
+    source: type === "idea" ? "SMARTCoach Idea Trak" : "SMARTCoach Bug Trak",
     accountKey,
     title,
     message: body,
@@ -436,7 +443,7 @@ function bugTrakWebhookPayload(report, accountKey) {
     bugNotificationText: `${title}\n\n${body}`,
     bugAccountKey: accountKey,
     bugReportId: cleanSetupText(item.id),
-    bugType: "bug",
+    bugType: type,
     bugStatus: cleanSetupText(item.status) || "New",
     bugUrgency: cleanSetupText(item.urgency),
     bugArea: cleanSetupText(item.area),

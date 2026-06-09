@@ -830,20 +830,33 @@ Good questions to ask:
 
 SMARTCoach Help should answer product and workflow questions. Billing questions are not part of SMARTCoach Help.
 
-## Bug Trak
+## Feedback, Bug Trak, And Idea Trak
 
-During beta, SMART Trak desktop pages include a small **Bug Trak** button. Use Bug Trak when something is broken, saving incorrectly, syncing incorrectly, missing, or confusing enough that support should review it.
+During beta, SMART Trak desktop pages include a small **Feedback** button. Feedback opens two choices:
 
-How to use it:
+- **Bug Trak**: use this when something is broken, saving incorrectly, syncing incorrectly, missing, or confusing enough that support should review it.
+- **Idea Trak**: use this for product ideas, workflow improvements, or "it would help if..." suggestions.
 
-1. Click **Bug Trak** from a SMART Trak desktop page.
-2. Confirm the area and urgency.
-3. Enter what went wrong.
-4. Add what should have happened if that is clear.
+How to send a bug report:
+
+1. Click **Feedback** from a SMART Trak desktop page.
+2. Choose **Bug Trak**.
+3. Confirm the area and urgency.
+4. Enter what went wrong.
+5. Add what should have happened if that is clear.
+6. Add coach name or email if follow-up is needed.
+7. Click **Send Bug Report**.
+
+How to send an idea:
+
+1. Click **Feedback** from a SMART Trak desktop page.
+2. Choose **Idea Trak**.
+3. Enter the idea.
+4. Add why it would help.
 5. Add coach name or email if follow-up is needed.
-6. Click **Send Bug Report**.
+6. Click **Send Idea**.
 
-Bug Trak sends the account key, current page, page title, device/browser context, urgency, and report details. Reports are saved for support review, and beta support can be notified immediately when notifications are configured.
+Feedback sends the account key, current page, page title, device/browser context, and report details. Bug reports are saved for support review, and beta support can be notified immediately when notifications are configured. Ideas are saved privately for beta review.
 
 ## Quick Troubleshooting
 
