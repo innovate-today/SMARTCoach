@@ -14,7 +14,7 @@ At minimum, production should have:
 - `SMARTCOACH_STRIPE_WEBHOOK_SECRET` if direct Stripe webhooks are enabled
 - `SMARTCOACH_BUGTRAK_WEBHOOK_URL` if beta Bug Trak reports should trigger an immediate GHL workflow/internal notification
 
-Bug Trak webhook payloads include notification-ready fields `bugNotificationTitle`, `bugNotificationBody`, and `bugNotificationText`. Use those in GHL Internal Notification first. The payload also includes flat fields such as `bugSummary`, `bugDetails`, `bugExpected`, `bugUrgency`, `bugArea`, `bugPage`, `bugPageTitle`, `bugCoachName`, `bugCoachEmail`, and `bugAccountKey`, plus the original nested `report` object for compatibility.
+Bug Trak webhook payloads include notification-ready plain text fields. In a GHL Internal Notification, use `text` or `notificationText` as the message body first, and use `title` or `notificationTitle` only for the notification title. If a selected value renders as `[object Object]`, it is an object from the webhook picker rather than a plain text value; switch to `text`, `notificationText`, or `bugTrakText`. The payload also includes flat fields such as `bugSummary`, `bugDetails`, `bugExpected`, `bugUrgency`, `bugArea`, `bugPage`, `bugPageTitle`, `bugCoachName`, `bugCoachEmail`, and `bugAccountKey`, plus the original nested `report` object for compatibility.
 
 Default environment variables are still supported for the original/default SMARTCoach Pro account or migration fallback:
 

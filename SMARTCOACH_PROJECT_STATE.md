@@ -1170,6 +1170,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 328. Bug Trak webhook notifications now include flat GHL-friendly top-level fields (`bugSummary`, `bugDetails`, `bugExpected`, `bugUrgency`, `bugArea`, `bugPage`, `bugCoachName`, `bugCoachEmail`, etc.) while still keeping the nested `report` object. This lets GHL workflow notifications use field-picker values directly instead of depending on nested `report.*` paths.
 329. Bug Trak webhook payloads now also include prebuilt notification strings: `bugNotificationTitle`, `bugNotificationBody`, and `bugNotificationText`. These are intended for GHL Internal Notification actions when individual webhook fields render as `[object Object]`.
 330. Coach how-to guide cleanup: setup-only Bug Trak/GHL field names were removed from `SMART_TRAK_COACH_HOW_TO.md`. The how-to should stay coach-facing; implementation/setup details belong in `VERCEL_SETUP.md` or project state.
+331. Bug Trak webhook payloads now include extra plain-text aliases (`title`, `message`, `text`, `notificationTitle`, `notificationBody`, `notificationText`, `bugTrakTitle`, `bugTrakMessage`, and `bugTrakText`) so GHL Internal Notification actions can use a simple string field when the webhook picker renders object values as `[object Object]`. Setup guidance stays in `VERCEL_SETUP.md`, not the coach how-to.
 
 ## Known Good Test Flow
 
