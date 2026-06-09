@@ -173,11 +173,19 @@ function checkDashboardWhatsNew() {
     "Keep Trak",
     "Attendance Trak",
     "Meet History",
+    "Feedback",
     "Bug Trak",
-    "Desktop pages now include Bug Trak for beta issue reports.",
+    "Idea Trak",
+    "Desktop pages now include one Feedback button with Bug Trak and Idea Trak.",
     "Mark All Seen",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Dashboard What's New missing ${text}`);
+  });
+  [
+    "Account owner recovery contacts are kept out of athlete rosters.",
+    "Staff Access still shows device activity without exposing coach codes.",
+  ].forEach((text) => {
+    if (html.includes(text)) throw new Error(`Dashboard What's New includes non-coach-facing text: ${text}`);
   });
   console.log("Dashboard What's New ok");
 }

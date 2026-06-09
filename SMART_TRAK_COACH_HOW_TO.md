@@ -22,13 +22,11 @@ SMARTCoach has five customer plans:
 
 Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. Pro accounts can include up to 10 assistant coach seats using the shared coach code, but schools should keep staff access tight because more devices syncing data increases the chance of messy records.
 
-The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. If the current code is lost, click **Send Temporary Code** to email a temporary recovery code to the saved account owner, then enter that temporary code and create a new shared code the staff can remember. The old code is never displayed. Essential app-only coaches can use **Account Access** from the app settings or `/account-access.html` to email a temporary recovery code and create a new app access code. Support can also reset the code from account setup when needed. Changing the saved coach code invalidates old coach-code access and old signed coach sessions, so coaches must use the new active code.
+The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. If the current code is lost, click **Send Temporary Code** to email a temporary recovery code to the saved account owner, then enter that temporary code and create a new shared code the staff can remember. The old code is never displayed. Essential app-only coaches can use **Account Access** from the app settings or `/account-access.html` to email a temporary recovery code and create a new app access code. Support can also help reset the code when needed. Changing the saved coach code removes old coach-code access and remembered device access, so coaches must use the new active code.
 
-Pro plans can be sold with a 7-day trial through GHL. A credit card is required at signup. GHL controls the trial, charges the card after day 7, and sends SMARTCoach the subscription status. `trialing` and `active` allow access; canceled or failed-payment statuses block access.
+Pro plans can include a 7-day trial with a credit card required at signup. After the trial, access continues only when the subscription is active. Canceled or failed-payment accounts lose access until billing is corrected.
 
 Before cancelling, export the data you want to keep from SMART Trak. SMARTCoach keeps cancelled account data for 12 months in case the program returns, but cancelled accounts lose access, so the coach should export before cancellation and contact support if help is needed.
-
-Support can find saved subscribers in `/onboarding.html` under **Subscriber Accounts**. Use **Load Subscribers**, search by account key, plan, or status, then use **Load** to pull the account into setup or **Copy Key** when a password/code reset is needed.
 
 ## SMART Trak Dashboard
 
@@ -47,7 +45,7 @@ How to use it:
 6. Click **Show workouts** under an athlete to see completed workout details.
 7. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
-The Dashboard title includes a small **What's New** button. Use it to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Meet History updates, Bug Trak beta reporting, and coach access improvements. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
+The Dashboard title includes a small **What's New** button. Use it to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
 
 The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
 
@@ -60,7 +58,7 @@ How to use Staff Access:
 5. Add coach names in the **Coaches** section and click **Save Coaches**.
 6. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
 
-If the current shared coach code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new shared coach code. This does not reveal the old code; it replaces it and invalidates old signed sessions. If the account owner email is not saved or the message does not arrive, contact support.
+If the current shared coach code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new shared coach code. This does not reveal the old code; it replaces it and removes old remembered device access. If the account owner email is not saved or the message does not arrive, contact support.
 
 If Staff Access shows an **unassigned devices** warning, the shared code has been used by one or more devices that have not selected a coach name yet. This usually means either a coach name still needs to be added in the **Coaches** section, or someone unexpected has the shared code. Add the missing coach name if the device belongs to staff, or change the coach code if the activity is unexpected.
 
@@ -182,7 +180,7 @@ The Athletes table shows a quick Docs summary for each athlete, such as how many
 
 ## Equipment Trak
 
-Use Equipment Trak to replace the paper clipboard for program gear. Equipment Trak has two coach-facing parts:
+Use Equipment Trak to replace the paper clipboard for program gear. Equipment Trak has two main parts:
 
 - **Equipment Issued**: who has what, what still needs to be returned, and what is lost or damaged.
 - **Equipment Inventory**: what the program owns, including numbered ranges and size quantities.
@@ -856,7 +854,7 @@ How to send an idea:
 5. Add coach name or email if follow-up is needed.
 6. Click **Send Idea**.
 
-Feedback sends the account key, current page, page title, device/browser context, and report details. Bug reports are saved for support review, and beta support can be notified immediately when notifications are configured. Ideas are saved privately for beta review.
+Feedback sends the current page context and report details so support can review the note faster. Bug reports are saved for support review, and beta support can be notified immediately when notifications are configured. Ideas are saved privately for beta review.
 
 ## Quick Troubleshooting
 

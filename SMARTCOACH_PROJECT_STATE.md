@@ -1174,6 +1174,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 332. Bug Trak GHL setup note updated with the confirmed working Internal Notification template using flat `{{inboundWebhookRequest.bug...}}` merge fields. This remains setup documentation only and was not added to the coach how-to.
 333. Bug Trak was added to the Dashboard **What's New** drawer after explicit user approval. The What's New version was bumped so coaches see the new beta reporting item, and the coach how-to now mentions Bug Trak beta reporting in the Dashboard What's New description.
 334. Desktop feedback now uses one **Feedback** button instead of a standalone Bug Trak button. The modal has **Bug Trak** and **Idea Trak** choices: bug reports keep the existing immediate notification path, while Idea Trak phase 1 saves private `idea` feedback records to the account for beta review without triggering an urgent bug notification. `PROJECT_PLAN.md` now carries Idea Trak phase 2 for a future approved idea board with upvotes/statuses.
+335. Dashboard **What's New** was corrected to stay coach-facing: the internal Coach Access/account-owner recovery items were removed, Feedback now lists Bug Trak and Idea Trak together, and regression coverage blocks those removed internal Coach Access messages from returning. The coach how-to was also quick-cleaned to remove setup/provider wording from the plan/trial section and to describe Feedback without account-key/device technical details.
 
 ## Known Good Test Flow
 
