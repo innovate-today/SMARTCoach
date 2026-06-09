@@ -171,12 +171,19 @@ function checkDashboardActivityRangeLayout() {
     "Completed this week",
     "No completed workout",
     "workouts · '+rangeLabel(currentStart,currentEnd)",
+    'id="rosterAttendanceRate"',
+    "<span>Attendance</span>",
+    "recentAttendanceRows=result",
+    "function attendanceRateText(rows)",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);
   });
   if (html.includes('id="athleteCount"') || html.includes("<span>Active athletes</span>")) {
     throw new Error("dashboard top summary should show planned/completed volume instead of the old Active athletes card.");
+  }
+  if (html.includes('id="rosterFitness"') || html.includes('id="rosterMissingFitness"') || html.includes("<span>With fitness</span>") || html.includes("<span>Missing fitness</span>")) {
+    throw new Error("dashboard roster summary should show attendance instead of the old fitness summary cards.");
   }
   console.log("dashboard activity range layout ok");
 }

@@ -333,8 +333,7 @@ tr:last-child td{border-bottom:0}
       <h2>Roster Summary</h2>
       <div class="breakgrid">
         <div class="metric" data-filter="all"><b id="rosterActive">--</b><span>Active</span></div>
-        <div class="metric"><b id="rosterFitness">--</b><span>With fitness</span></div>
-        <div class="metric" data-filter="missing_fitness"><b id="rosterMissingFitness">--</b><span>Missing fitness</span></div>
+        <div class="metric"><b id="rosterAttendanceRate">--</b><span>Attendance</span></div>
       </div>
     </div>
     <div class="breakdown" data-tab-target="meet">
@@ -1085,6 +1084,7 @@ var searchRenderTimer=null;
 var accountStatus=null;
 var recentMeetRows=[];
 var recentTrainingRows=[];
+var recentAttendanceRows=[];
 var trainingGroups=[];
 var meetManagerRows=[];
 var raceResultMeetRows=[];
@@ -1592,8 +1592,7 @@ var els={
   meetViewCount:document.getElementById('meetViewCount'),
   trainingViewCount:document.getElementById('trainingViewCount'),
   rosterActive:document.getElementById('rosterActive'),
-  rosterFitness:document.getElementById('rosterFitness'),
-  rosterMissingFitness:document.getElementById('rosterMissingFitness'),
+  rosterAttendanceRate:document.getElementById('rosterAttendanceRate'),
   meetRangeLabel:document.getElementById('meetRangeLabel'),
   meetSyncCount:document.getElementById('meetSyncCount'),
   meetPbCount:document.getElementById('meetPbCount'),
@@ -1897,6 +1896,7 @@ function loadDashboard(){
   return Promise.all([
     fetch('/api/smart-trak/dashboard?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
     fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
+    fetch('/api/smart-trak/attendance?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{attendance:[]}};}),
     checkSmartCoachAccount().catch(function(){return{ok:false,data:{}};})
   ]).then(function(results){
     var result=results[0];
@@ -1909,7 +1909,8 @@ function loadDashboard(){
     recentMeetRows=result.data.recentMeetResults||[];
     recentTrainingRows=result.data.recentTrainingSyncs||[];
     trainingGroups=results[1].ok?(results[1].data.groups||[]):[];
-    renderStaffAccess(results[2]&&results[2].data||{});
+    recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
+    renderStaffAccess(results[3]&&results[3].data||{});
     annotateDashboardRosterGroups();
     lastLoadedAt=result.data.generatedAt||new Date().toISOString();
     els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
@@ -1928,6 +1929,7 @@ function loadDashboard(){
     dashboardRows=[];
     recentMeetRows=[];
     recentTrainingRows=[];
+    recentAttendanceRows=[];
     trainingGroups=[];
     els.rows.innerHTML='';
     els.recentMeetRows.innerHTML='';
@@ -2279,7 +2281,10 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   trainingRows=trainingRows||recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training');});
   volumeRows=volumeRows||completedVolumeRows(trainingRows,meetRows);
   var active=rows.length;
-  var withFitness=rows.filter(function(row){return row.currentFitness&&row.currentFitness.label;}).length;
+  var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
+  var attendanceRows=recentAttendanceRows.filter(function(row){
+    return matchesSeasonFilter(row,'attendance')&&matchesActivityRange(row,'attendance')&&visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
+  });
   var currentWeekAthletes=uniqueAthleteCount(trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}));
   var rangeText='Showing '+seasonRangeLabel()+' · '+activityRangeLabel();
   updatePlannedCompletedVolumeCard(trainingRows);
@@ -2289,8 +2294,7 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)));
   els.previousWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())));
   els.rosterActive.textContent=active;
-  els.rosterFitness.textContent=withFitness;
-  els.rosterMissingFitness.textContent=Math.max(0,active-withFitness);
+  if(els.rosterAttendanceRate)els.rosterAttendanceRate.textContent=attendanceRateText(attendanceRows);
   els.meetRangeLabel.textContent=rangeText;
   els.meetSyncCount.textContent=meetRows.length;
   els.meetPbCount.textContent=meetRows.filter(function(row){return row.isPr;}).length;
@@ -2728,10 +2732,15 @@ function activityRangeBounds(){
   end.setHours(0,0,0,0);
   return {start:addDashboardDays(end,-days+1),end:end};
 }
+function activityDateValue(row,type){
+  if(type==='meet')return row.meetDate||row.syncedAt;
+  if(type==='attendance')return row.date||row.syncedAt||row.updatedAt;
+  return row.sessionDate||row.syncedAt;
+}
 function matchesActivityRange(row,type){
   var bounds=activityRangeBounds();
   if(!bounds)return true;
-  var date=parseActivityDate(type==='meet'?row.meetDate||row.syncedAt:row.sessionDate||row.syncedAt);
+  var date=parseActivityDate(activityDateValue(row,type));
   if(!date)return false;
   if(bounds.start&&date<bounds.start)return false;
   if(bounds.end&&date>bounds.end)return false;
@@ -2741,9 +2750,20 @@ function matchesActivityRange(row,type){
 function matchesSeasonFilter(row,type){
   var value=els.seasonFilter.value||'current';
   if(value==='all')return true;
-  var date=parseActivityDate(type==='meet'?row.meetDate||row.syncedAt:row.sessionDate||row.syncedAt);
+  var date=parseActivityDate(activityDateValue(row,type));
   if(!date)return false;
   return seasonKeyForDate(date)===seasonFilterValue(value);
+}
+
+function attendanceRateText(rows){
+  var counts={present:0,late:0,checked_out:0,absent:0};
+  (rows||[]).forEach(function(row){
+    var status=String(row&&row.status||'').toLowerCase().replace(/\s+/g,'_');
+    if(counts[status]!==undefined)counts[status]+=1;
+  });
+  var attended=counts.present+counts.late+counts.checked_out;
+  var required=attended+counts.absent;
+  return required?Math.round((attended/required)*100)+'%':'0%';
 }
 
 function activityRangeLabel(){

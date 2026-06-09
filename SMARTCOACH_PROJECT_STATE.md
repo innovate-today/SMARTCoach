@@ -1179,6 +1179,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 337. Dashboard top summary now replaces the old **Active athletes** card with **Planned / completed** volume for the selected dashboard range. The planned side sums visible training rows' planned volume, and the completed side sums visible completed training volume. The coach how-to and regression coverage were updated.
 338. Feedback-created support contacts are now guarded out of athlete rosters. Athletes, Dashboard, and Athlete Calendar exclude `support@smartcoach-pro.com` plus `smartcoach-feedback`, `smartcoach-bug-trak`, and `smartcoach-idea-trak` tagged contacts so GHL notification/email side effects cannot appear as athletes. Bug/Idea webhook payloads also include feedback tags and `excludeFromAthletes: true` for workflow tagging.
 339. Dashboard planned/completed volume display was cleaned up so the top summary card shows planned miles on one row, completed miles on the next row, and the selected range as a smaller line underneath. Regression coverage now checks the separated row layout.
+340. Dashboard Roster Summary now removes the old **With fitness** and **Missing fitness** summary cards and replaces them with an **Attendance** percentage card. The percentage uses the same Attendance Trak rule: Present, Late, and Checked Out count as attended; Absent counts against the rate; Excused is excluded from the denominator. Regression coverage prevents the old fitness summary cards from returning.
 
 ## Known Good Test Flow
 
