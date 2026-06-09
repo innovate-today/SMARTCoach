@@ -47,7 +47,7 @@ How to use it:
 6. Click **Show workouts** under an athlete to see completed workout details.
 7. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
-The Dashboard title includes a small **What's New** button. Use it to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Meet History updates, and coach access improvements. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
+The Dashboard title includes a small **What's New** button. Use it to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Meet History updates, Bug Trak beta reporting, and coach access improvements. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
 
 The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
 

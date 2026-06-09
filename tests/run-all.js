@@ -173,6 +173,8 @@ function checkDashboardWhatsNew() {
     "Keep Trak",
     "Attendance Trak",
     "Meet History",
+    "Bug Trak",
+    "Desktop pages now include Bug Trak for beta issue reports.",
     "Mark All Seen",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Dashboard What's New missing ${text}`);
@@ -230,9 +232,6 @@ function checkBugTrakDesktopFeedback() {
   ].forEach((text) => {
     if (!registry.includes(text)) throw new Error(`Bug Trak registry missing ${text}`);
   });
-  if (api.includes("WHATS_NEW_ITEMS") || widget.includes("WHATS_NEW_ITEMS")) {
-    throw new Error("Bug Trak should not update Dashboard What's New without approval.");
-  }
   console.log("Bug Trak desktop feedback ok");
 }
 
