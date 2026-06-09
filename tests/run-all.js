@@ -175,6 +175,10 @@ function checkDashboardActivityRangeLayout() {
     "<span>Attendance</span>",
     "recentAttendanceRows=result",
     "function attendanceRateText(rows)",
+    'placeholder="Search athletes or groups"',
+    "function athleteMatchesDashboardSearch(row,query)",
+    "row.name,row.smartcoachAthleteId",
+    "Array.isArray(row.groups)?row.groups.join(' '):''",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);
@@ -184,6 +188,9 @@ function checkDashboardActivityRangeLayout() {
   }
   if (html.includes('id="rosterFitness"') || html.includes('id="rosterMissingFitness"') || html.includes("<span>With fitness</span>") || html.includes("<span>Missing fitness</span>")) {
     throw new Error("dashboard roster summary should show attendance instead of the old fitness summary cards.");
+  }
+  if (html.includes("athleteActivitySearchText") || html.includes("trainingRowMatchesSearch(row,query)") || html.includes("recentTrainingSearchText(row)") || html.includes("rosterGroupSearchTextForTraining")) {
+    throw new Error("dashboard search should stay athlete/group-only, not activity/workout/event text.");
   }
   console.log("dashboard activity range layout ok");
 }

@@ -2345,8 +2345,8 @@ function renderRows(){
   var filter=els.quickFilter.value||'all';
   var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&athleteMatchesDashboardSearch(row,query);}),tableSorts.roster,rosterSortValue);
   var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});
-  var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||recentMeetSearchText(row).indexOf(query)>=0||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.meet,meetSortValue);
-  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||trainingRowMatchesSearch(row,query)||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.training,trainingSortValue);
+  var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.meet,meetSortValue);
+  var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.training,trainingSortValue);
   var completedRows=completedVolumeRows(trainingRows,meetRows);
   var volumeRows=sortRows(groupVolumeByAthlete(completedRows),tableSorts.volume,volumeSortValue);
   var trainingGroups=sortRows(groupTrainingByAthlete(trainingRows),tableSorts.training,trainingGroupSortValue);
@@ -5129,49 +5129,20 @@ function findDashboardAthleteForTraining(row){
   });
 }
 
-function rosterGroupSearchTextForTraining(row){
-  var athlete=findDashboardAthleteForTraining(row)||{};
-  return (Array.isArray(athlete.groups)?athlete.groups:[]).join(' ').toLowerCase();
-}
-
 function athleteMatchesDashboardSearch(row,query){
   if(!query)return true;
-  return searchText(row).indexOf(query)>=0 || athleteActivitySearchText(row).indexOf(query)>=0;
-}
-
-function athleteActivitySearchText(row){
-  var name=String(row&&row.name||'').toLowerCase();
-  var contactId=String(row&&row.contactId||'');
-  var items=[];
-  recentTrainingRows.forEach(function(item){
-    if(String(item.contactId||'')===contactId || String(item.athleteName||'').toLowerCase()===name)items.push(recentTrainingSearchText(item));
-  });
-  recentMeetRows.forEach(function(item){
-    if(String(item.contactId||'')===contactId || String(item.athleteName||'').toLowerCase()===name)items.push(recentMeetSearchText(item));
-  });
-  return items.join(' ');
+  return searchText(row).indexOf(query)>=0;
 }
 
 function searchText(row){
   return [
-    row.name,row.smartcoachAthleteId,row.status,
-    Array.isArray(row.groups)?row.groups.join(' '):'',
-    row.currentFitness&&row.currentFitness.label,
-    row.latestMeet&&row.latestMeet.meetName,row.latestMeet&&row.latestMeet.event,row.latestMeet&&row.latestMeet.resultDisplay,
-    row.latestTraining&&row.latestTraining.groupName,row.latestTraining&&row.latestTraining.workoutType,row.latestTraining&&row.latestTraining.workoutPrescription
+    row.name,row.smartcoachAthleteId,
+    Array.isArray(row.groups)?row.groups.join(' '):''
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
 function recentMeetSearchText(row){
   return [row.athleteName,row.meetName,row.event,row.resultDisplay,flagText(row),row.meetDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
-}
-
-function recentTrainingSearchText(row){
-  return [row.athleteName,row.groupName,row.workoutType,row.workoutPrescription,row.completedVolume,row.plannedVolume,row.totalTimeDisplay,row.plannedTarget,row.targetDifference,row.plannedEffort,row.currentFitnessSnapshot,row.weather,row.sessionDate,row.syncedAt].filter(Boolean).join(' ').toLowerCase();
-}
-
-function trainingRowMatchesSearch(row,query){
-  return recentTrainingSearchText(row).indexOf(query)>=0 || rosterGroupSearchTextForTraining(row).indexOf(query)>=0;
 }
 
 function athleteDetailButton(row){
