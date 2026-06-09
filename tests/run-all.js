@@ -192,6 +192,9 @@ function checkDashboardActivityRangeLayout() {
     "function closeSimulatorModal()",
     'id="trackSimulatorLink"',
     'id="xcSimulatorLink"',
+    "@media(max-width:1180px)",
+    ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}",
+    ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);
@@ -229,6 +232,9 @@ function checkDashboardActivityRangeLayout() {
   const actionRowHtml = actionRowMatch ? actionRowMatch[1] : "";
   if (actionRowHtml.includes('id="trackSimulatorLink"') || actionRowHtml.includes('id="xcSimulatorLink"')) {
     throw new Error("dashboard header should use one Simulator button, with Track/XC links inside the chooser modal.");
+  }
+  if (html.includes(".action-row,.modal-action-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}")) {
+    throw new Error("dashboard header action rows should stay two horizontal rows instead of becoming a multi-row grid.");
   }
   console.log("dashboard activity range layout ok");
 }
