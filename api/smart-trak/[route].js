@@ -400,9 +400,31 @@ async function notifyBugTrak(report, accountKey) {
 function bugTrakWebhookPayload(report, accountKey) {
   const item = report || {};
   const submittedAt = new Date().toISOString();
+  const title = `Bug Trak: ${cleanSetupText(item.urgency) || "New"} - ${cleanSetupText(item.area) || "SMART Trak"}`;
+  const body = [
+    `Account: ${accountKey}`,
+    `Coach: ${[cleanSetupText(item.coachName), cleanSetupText(item.coachEmail)].filter(Boolean).join(" ") || "Not provided"}`,
+    "",
+    `Page: ${cleanSetupText(item.pageTitle) || "Not provided"}`,
+    `URL: ${cleanSetupText(item.page) || "Not provided"}`,
+    "",
+    "Issue:",
+    cleanSetupText(item.summary) || "Not provided",
+    "",
+    "Details:",
+    cleanSetupText(item.details) || "Not provided",
+    "",
+    "Expected:",
+    cleanSetupText(item.expected) || "Not provided",
+    "",
+    `Submitted: ${submittedAt}`,
+  ].join("\n");
   return {
     source: "SMARTCoach Bug Trak",
     accountKey,
+    bugNotificationTitle: title,
+    bugNotificationBody: body,
+    bugNotificationText: `${title}\n\n${body}`,
     bugAccountKey: accountKey,
     bugReportId: cleanSetupText(item.id),
     bugType: "bug",
