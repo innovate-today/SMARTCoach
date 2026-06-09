@@ -320,7 +320,7 @@ tr:last-child td{border-bottom:0}
       <div class="breakgrid">
         <div class="metric" data-filter="all"><b id="rosterActive">--</b><span>Active</span></div>
         <div class="metric"><b id="rosterAttendanceRate">--</b><span>Attendance</span></div>
-        <div class="metric"><b id="rosterDocuStatus">--</b><span>Docu Trak</span></div>
+        <div class="metric"><b id="rosterDocuStatus">--</b><span id="rosterDocuDetail">Docu Trak docs</span></div>
       </div>
     </div>
     <div class="breakdown" data-tab-target="meet">
@@ -1582,6 +1582,7 @@ var els={
   rosterActive:document.getElementById('rosterActive'),
   rosterAttendanceRate:document.getElementById('rosterAttendanceRate'),
   rosterDocuStatus:document.getElementById('rosterDocuStatus'),
+  rosterDocuDetail:document.getElementById('rosterDocuDetail'),
   meetRangeLabel:document.getElementById('meetRangeLabel'),
   meetSyncCount:document.getElementById('meetSyncCount'),
   meetPbCount:document.getElementById('meetPbCount'),
@@ -2285,7 +2286,7 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   if(els.previousWeekVolume)els.previousWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())));
   if(els.rosterActive)els.rosterActive.textContent=active;
   if(els.rosterAttendanceRate)els.rosterAttendanceRate.textContent=attendanceRateText(attendanceRows);
-  if(els.rosterDocuStatus)els.rosterDocuStatus.textContent=docuStatusText(rows);
+  updateDocuStatusCard(rows);
   els.meetRangeLabel.textContent=rangeText;
   els.meetSyncCount.textContent=meetRows.length;
   els.meetPbCount.textContent=meetRows.filter(function(row){return row.isPr;}).length;
@@ -2753,9 +2754,15 @@ function attendanceRateText(rows){
   return required?Math.round((attended/required)*100)+'%':'0%';
 }
 
-function docuStatusText(rows){
+function updateDocuStatusCard(rows){
+  var summary=docuStatusSummary(rows);
+  if(els.rosterDocuStatus)els.rosterDocuStatus.textContent=summary.missing+' missing';
+  if(els.rosterDocuDetail)els.rosterDocuDetail.textContent=summary.total?('Docu Trak · '+summary.complete+'/'+summary.total+' complete'):'Docu Trak docs';
+}
+
+function docuStatusSummary(rows){
   var items=Array.isArray(docuItems)?docuItems:[];
-  if(!items.length)return 'Docs 0/0 · 0 missing';
+  if(!items.length)return {complete:0,total:0,missing:0};
   var complete=0;
   var missing=0;
   (rows||[]).forEach(function(row){
@@ -2767,7 +2774,7 @@ function docuStatusText(rows){
       else missing+=1;
     });
   });
-  return 'Docs '+complete+'/'+(items.length*(rows||[]).length)+' · '+missing+' missing';
+  return {complete:complete,total:items.length*(rows||[]).length,missing:missing};
 }
 
 function docuRecordForDashboardAthlete(row){
