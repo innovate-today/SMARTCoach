@@ -133,6 +133,12 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 .meet-card.archived{opacity:.68}
 .meet-card span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .meet-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.custom-table{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.custom-table th,.custom-table td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;font-size:13px;vertical-align:middle}
+.custom-table th{background:#f8fafc;color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:12px}
+.custom-table tr:last-child td{border-bottom:0}
+.custom-table input{max-width:86px;padding:8px 9px;font-weight:850;text-align:right}
+.custom-note{margin:0 0 12px;color:#475569;font-size:13px;line-height:1.4;font-weight:700}
 button.compact{padding:6px 9px;font-size:12px}
 .activitychooser{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .activitychoice{background:#fff;color:#172033;border:1px solid var(--line);text-align:left;padding:12px;border-radius:8px;display:grid;gap:3px;min-height:74px}
@@ -244,6 +250,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <a id="planSetupLink" class="linkbtn secondary" href="/plan-setup.html">Athlete Setup</a>
         <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
         <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
+        <button id="trainingCustomBtn" class="secondary" type="button">Training Customization</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
       </div>
     </div>
@@ -564,6 +571,27 @@ button.compact{padding:6px 9px;font-size:12px}
   </section>
 </div>
 
+<div id="trainingCustomModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="trainingCustomTitle">
+    <div class="modalhead">
+      <h2 id="trainingCustomTitle">Training Customization</h2>
+      <button id="trainingCustomClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="custom-note">Adjust the percent ranges used for calculated workout targets. Current defaults are loaded below; saved changes apply to this SMART Trak account.</p>
+      <table class="custom-table">
+        <thead><tr><th>Effort</th><th>Based on</th><th>Low %</th><th>High %</th></tr></thead>
+        <tbody id="trainingCustomRows"></tbody>
+      </table>
+      <div class="modalactions">
+        <div id="trainingCustomStatus" class="modalstatus">Current percentages loaded.</div>
+        <button id="trainingCustomReset" class="ghost" type="button">Reset Defaults</button>
+        <button id="trainingCustomSave" type="button">Save Customization</button>
+      </div>
+    </div>
+  </section>
+</div>
+
 <script>
 var plans=[];
 var days=[];
@@ -586,6 +614,7 @@ var mixHidden=false;
 var selectedPlanIds=[];
 var selectedBulkDayIds=[];
 var includePastPlans=false;
+var trainingCustomization=null;
 var addDayMode='easy';
 var calendarEditDay=null;
 var calendarEditBuilderDirty=false;
@@ -603,6 +632,7 @@ var els={
 	  planImportLink:document.getElementById('planImportLink'),
 	  planSetupLink:document.getElementById('planSetupLink'),
 	  planBuilderLink:document.getElementById('planBuilderLink'),
+  trainingCustomBtn:document.getElementById('trainingCustomBtn'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
   approveDraftsBtn:document.getElementById('approveDraftsBtn'),
   scheduleApprovedBtn:document.getElementById('scheduleApprovedBtn'),
@@ -757,7 +787,13 @@ var els={
   meetManagerStatus:document.getElementById('meetManagerStatus'),
   meetManagerClear:document.getElementById('meetManagerClear'),
   meetManagerSave:document.getElementById('meetManagerSave'),
-  meetManagerList:document.getElementById('meetManagerList')
+  meetManagerList:document.getElementById('meetManagerList'),
+  trainingCustomModal:document.getElementById('trainingCustomModal'),
+  trainingCustomClose:document.getElementById('trainingCustomClose'),
+  trainingCustomRows:document.getElementById('trainingCustomRows'),
+  trainingCustomStatus:document.getElementById('trainingCustomStatus'),
+  trainingCustomReset:document.getElementById('trainingCustomReset'),
+  trainingCustomSave:document.getElementById('trainingCustomSave')
 };
 function accountKey(){
   try{
@@ -803,6 +839,139 @@ function apiHeaders(){
   if(session)headers['X-SMARTCoach-Session']=session;
   if(code&&!session)headers['X-SMARTCoach-Access-Code']=code;
   return headers;
+}
+function defaultTrainingCustomizationRules(){
+  return [
+    {key:'Easy/Recovery Run',label:'Easy / Recovery Run',repMeters:1609.34,low:60,high:70,suffix:'/mi'},
+    {key:'Long Run',label:'Long Run',repMeters:1609.34,low:60,high:72,suffix:'/mi'},
+    {key:'Threshold',label:'Threshold',repMeters:1000,low:82,high:88},
+    {key:'Lactate Threshold',label:'Lactate Threshold',repMeters:1000,low:82,high:88},
+    {key:'Interval',label:'Interval',repMeters:400,low:88,high:95},
+    {key:'Repetition',label:'Repetition',repMeters:200,low:93,high:100},
+    {key:'Fast Reps',label:'Fast Reps',repMeters:150,low:93,high:100},
+    {key:'Intensive Tempo',label:'Intensive Tempo',repMeters:400,low:75,high:82},
+    {key:'Extensive Tempo',label:'Extensive Tempo',repMeters:400,low:65,high:75},
+    {key:'Acceleration',label:'Acceleration',repMeters:30,low:95,high:100},
+    {key:'Max Velocity',label:'Max Velocity',repMeters:60,low:95,high:100},
+    {key:'Speed Endurance I',label:'Speed Endurance I',repMeters:150,low:88,high:95},
+    {key:'Special Endurance I',label:'Special Endurance I',repMeters:300,low:85,high:90},
+    {key:'Special Endurance II',label:'Special Endurance II',repMeters:500,low:80,high:88},
+    {key:'Lactate Tolerance',label:'Lactate Tolerance',repMeters:300,low:82,high:88},
+    {key:'Aerobic Power',label:'Aerobic Power',repMeters:800,low:78,high:86},
+    {key:'Hills',label:'Hills',repMeters:60,low:90,high:98},
+    {key:'Hill Sprints',label:'Hill Sprints',repMeters:60,low:90,high:98}
+  ];
+}
+function normalizeTrainingCustomization(source){
+  var defaults=defaultTrainingCustomizationRules();
+  var incoming=source&&Array.isArray(source.rules)?source.rules:[];
+  var byKey={};
+  incoming.forEach(function(rule){
+    if(rule&&rule.key)byKey[String(rule.key)]=rule;
+  });
+  return {
+    version:1,
+    updatedAt:source&&source.updatedAt||new Date().toISOString(),
+    rules:defaults.map(function(base){
+      var saved=byKey[base.key]||{};
+      var low=clampPercent(saved.low||saved.lowPercent||base.low);
+      var high=clampPercent(saved.high||saved.highPercent||base.high);
+      return Object.assign({},base,{low:Math.min(low,high),high:Math.max(low,high)});
+    })
+  };
+}
+function clampPercent(value){
+  var number=Number(value);
+  if(!isFinite(number))return 1;
+  return Math.max(1,Math.min(150,Math.round(number)));
+}
+function trainingRuleBasis(rule){
+  var meters=Number(rule&&rule.repMeters)||0;
+  if(Math.abs(meters-1609.34)<1)return '1 mile '+(rule.suffix||'');
+  return Math.round(meters)+'m';
+}
+function openTrainingCustomization(){
+  els.trainingCustomModal.hidden=false;
+  renderTrainingCustomization();
+  loadTrainingCustomization();
+}
+function closeTrainingCustomization(){
+  els.trainingCustomModal.hidden=true;
+}
+function renderTrainingCustomization(){
+  var config=normalizeTrainingCustomization(trainingCustomization);
+  trainingCustomization=config;
+  els.trainingCustomRows.innerHTML=config.rules.map(function(rule,index){
+    return '<tr data-training-rule="'+index+'">'+
+      '<td><b>'+esc(rule.label)+'</b></td>'+
+      '<td>'+esc(trainingRuleBasis(rule))+'</td>'+
+      '<td><input data-custom-field="low" type="number" min="1" max="150" step="1" value="'+esc(rule.low)+'"></td>'+
+      '<td><input data-custom-field="high" type="number" min="1" max="150" step="1" value="'+esc(rule.high)+'"></td>'+
+    '</tr>';
+  }).join('');
+}
+function setTrainingCustomStatus(text,type){
+  els.trainingCustomStatus.textContent=text||'';
+  els.trainingCustomStatus.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--good)':'var(--muted)';
+}
+function loadTrainingCustomization(){
+  setTrainingCustomStatus('Loading saved percentages...','');
+  fetch('/api/smart-trak/training-customization?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Saved percentages could not be loaded.');
+    trainingCustomization=normalizeTrainingCustomization(result.data&&result.data.trainingCustomization);
+    renderTrainingCustomization();
+    setTrainingCustomStatus('Current percentages loaded.','ok');
+  }).catch(function(error){
+    trainingCustomization=normalizeTrainingCustomization(null);
+    renderTrainingCustomization();
+    setTrainingCustomStatus((error&&error.message)||'Showing default percentages.','bad');
+  });
+}
+function collectTrainingCustomization(){
+  var config=normalizeTrainingCustomization(trainingCustomization);
+  Array.prototype.slice.call(els.trainingCustomRows.querySelectorAll('[data-training-rule]')).forEach(function(row){
+    var index=Number(row.getAttribute('data-training-rule'));
+    var rule=config.rules[index];
+    if(!rule)return;
+    var lowInput=row.querySelector('[data-custom-field="low"]');
+    var highInput=row.querySelector('[data-custom-field="high"]');
+    var low=clampPercent(lowInput&&lowInput.value);
+    var high=clampPercent(highInput&&highInput.value);
+    rule.low=Math.min(low,high);
+    rule.high=Math.max(low,high);
+  });
+  config.updatedAt=new Date().toISOString();
+  return config;
+}
+function saveTrainingCustomization(){
+  var config=collectTrainingCustomization();
+  trainingCustomization=config;
+  renderTrainingCustomization();
+  els.trainingCustomSave.disabled=true;
+  setTrainingCustomStatus('Saving percentages...','');
+  fetch('/api/smart-trak/training-customization?account='+encodeURIComponent(accountKey()),{
+    method:'POST',
+    headers:Object.assign({'Content-Type':'application/json'},apiHeaders()),
+    body:JSON.stringify({trainingCustomization:config})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Percentages could not be saved.');
+    trainingCustomization=normalizeTrainingCustomization(result.data&&result.data.trainingCustomization);
+    renderTrainingCustomization();
+    setTrainingCustomStatus('Training customization saved.','ok');
+  }).catch(function(error){
+    setTrainingCustomStatus((error&&error.message)||'Percentages could not be saved.','bad');
+  }).finally(function(){
+    els.trainingCustomSave.disabled=false;
+  });
+}
+function resetTrainingCustomization(){
+  trainingCustomization=normalizeTrainingCustomization(null);
+  renderTrainingCustomization();
+  setTrainingCustomStatus('Defaults restored. Click Save Customization to apply them.','');
 }
 function esc(value){
   return String(value==null?'':value).replace(/[&<>"']/g,function(char){
@@ -3405,6 +3574,10 @@ function init(){
   els.planSetupLink.href=pageUrl('/plan-setup.html');
   els.planBuilderLink.href=pageUrl('/plan-builder.html');
   els.refreshBtn.addEventListener('click',loadCalendar);
+  els.trainingCustomBtn.addEventListener('click',openTrainingCustomization);
+  els.trainingCustomClose.addEventListener('click',closeTrainingCustomization);
+  els.trainingCustomSave.addEventListener('click',saveTrainingCustomization);
+  els.trainingCustomReset.addEventListener('click',resetTrainingCustomization);
   els.manualMileageBtn.addEventListener('click',openManualMileage);
   els.manualMileageClose.addEventListener('click',closeManualMileage);
   els.manualMileageScope.addEventListener('change',updateManualMileageScope);

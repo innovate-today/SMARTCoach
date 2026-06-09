@@ -354,6 +354,8 @@ Use the status tools when a group of days needs to be changed:
 
 The **Visible Mix** shows how the calendar is balanced across workouts, meets/races, recovery, off/travel, and other days.
 
+Use **Training Customization** when your program wants target paces based on different effort percentages. The table shows the current percent range for each effort, such as Easy / Recovery Run, Threshold, Interval, Repetition, Tempo, and speed work. Edit the low and high percentages, then click **Save Customization**. Click **Reset Defaults** to return the table to the built-in SMART Trak percentages.
+
 ## Upload/Paste Plan
 
 Use Upload/Paste Plan for full plans, not one-day workout entry. One-day workouts, races, rest days, and notes should be added on the Training Calendar.

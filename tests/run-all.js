@@ -430,6 +430,40 @@ function checkTrainingCalendarQualityEditParsing() {
   console.log("Training Calendar quality edit parser ok");
 }
 
+function checkTrainingCustomization() {
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const app = fs.readFileSync("index.html", "utf8");
+  const route = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  [
+    'id="trainingCustomBtn"',
+    'id="trainingCustomModal"',
+    "function defaultTrainingCustomizationRules()",
+    "Easy / Recovery Run",
+    "Lactate Threshold",
+    "Save Customization",
+    "fetch('/api/smart-trak/training-customization?account='",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Training Calendar customization UI missing ${text}`);
+  });
+  [
+    'route === "training-customization"',
+    "function accountTrainingCustomization",
+    "trainingCustomization: normalizeTrainingCustomization",
+    "lastTrainingCustomizationSync",
+  ].forEach((text) => {
+    if (!route.includes(text)) throw new Error(`Training customization API missing ${text}`);
+  });
+  [
+    "TRAINING_CUSTOMIZATION=null",
+    "applyTrainingCustomization(data&&data.trainingCustomization)",
+    "function applyCustomPaceRules(rules)",
+    "applyCustomPaceRules(rules);",
+  ].forEach((text) => {
+    if (!app.includes(text)) throw new Error(`SMARTCoach app customization target support missing ${text}`);
+  });
+  console.log("Training customization ok");
+}
+
 function checkDashboardPlainLapSplitsStayLaps() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -962,6 +996,7 @@ checkPlanImportMultiGroupAssignment();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
+checkTrainingCustomization();
 checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();

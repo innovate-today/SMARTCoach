@@ -510,7 +510,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
 
 function smartCoachAccountKey(){
   try{
@@ -885,7 +885,7 @@ function checkSmartCoachAccount(accountKey){
   var key=cleanAccountKey(accountKey||smartCoachAccountKey());
   var url='/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now();
   return fetch(url,{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(r){
-    return r.json().then(function(data){refreshRememberedCoachSession(data);return{ok:r.ok,data:data};});
+    return r.json().then(function(data){refreshRememberedCoachSession(data);applyTrainingCustomization(data&&data.trainingCustomization);return{ok:r.ok,data:data};});
   });
 }
 function smartCoachApiUrl(path){
@@ -4111,7 +4111,29 @@ function paceRule(workout){
     'Aerobic Power':{label:'Aerobic Power',distance:800,low:.78,high:.86},
     'Hill Sprints':{label:'Hill Sprints',distance:60,low:.90,high:.98}
   };
+  applyCustomPaceRules(rules);
   return rules[workout]||{label:workout,distance:400,low:.75,high:.85};
+}
+function applyTrainingCustomization(source){
+  if(!source||!Array.isArray(source.rules))return;
+  TRAINING_CUSTOMIZATION=source;
+}
+function applyCustomPaceRules(rules){
+  var custom=TRAINING_CUSTOMIZATION&&Array.isArray(TRAINING_CUSTOMIZATION.rules)?TRAINING_CUSTOMIZATION.rules:[];
+  custom.forEach(function(item){
+    if(!item||!item.key)return;
+    var key=normalizeWorkoutType(item.key);
+    var current=rules[key]||{label:item.label||key,distance:Number(item.repMeters)||400};
+    var low=Number(item.low),high=Number(item.high);
+    if(!isFinite(low)||!isFinite(high))return;
+    rules[key]=Object.assign({},current,{
+      label:item.label||current.label||key,
+      distance:Number(item.repMeters)||current.distance||400,
+      low:Math.max(0.01,Math.min(low,high)/100),
+      high:Math.max(0.01,Math.max(low,high)/100),
+      suffix:item.suffix||current.suffix||''
+    });
+  });
 }
 function normalizeWorkoutType(workout){
   var value=String(workout||'').trim();

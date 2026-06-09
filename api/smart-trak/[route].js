@@ -88,6 +88,12 @@ module.exports = async function handler(req, res) {
     return accountStaff(req, res);
   }
 
+  if (route === "training-customization") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountTrainingCustomization(req, res);
+  }
+
   if (route === "attendance") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -1397,6 +1403,7 @@ async function accountStatus(req, res) {
     sessionRefreshed: !!refreshedSession,
     coachDeviceUsage,
     coachStaff,
+    trainingCustomization: normalizeTrainingCustomization(registry.record && registry.record.trainingCustomization),
     coachAccessUnlocked,
     coachAccessCodeAccepted: accessCodeAccepted,
     parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(currentCoachSession && currentCoachSession.parentEmailAllowed),
@@ -1423,6 +1430,130 @@ async function accountStatus(req, res) {
     missingSetupFields: configured ? [] : missing,
     error: configured ? subscriptionBlockedReason || (!coachAccessUnlocked ? "Active coach code needed." : undefined) : `SMARTCoach account "${accountKey}" is not configured.`,
   });
+}
+
+async function accountTrainingCustomization(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    if (req.method === "GET") {
+      res.status(200).json({
+        success: true,
+        accountKey,
+        trainingCustomization: normalizeTrainingCustomization(existing.record.trainingCustomization),
+      });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
+    const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    if (!sessionAllowed && !codeAllowed) {
+      throw httpError(401, "Active coach access is required to update training customization.");
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const customization = normalizeTrainingCustomization(payload.trainingCustomization || payload);
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      trainingCustomization: customization,
+      lastTrainingCustomizationSync: {
+        savedAt: new Date().toISOString(),
+        count: customization.rules.length,
+      },
+    });
+    res.status(200).json({ success: true, accountKey, trainingCustomization: customization });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Training customization save failed." });
+  }
+}
+
+function defaultTrainingCustomizationRules() {
+  return [
+    { key: "Easy/Recovery Run", label: "Easy / Recovery Run", repMeters: 1609.34, low: 60, high: 70, suffix: "/mi" },
+    { key: "Long Run", label: "Long Run", repMeters: 1609.34, low: 60, high: 72, suffix: "/mi" },
+    { key: "Threshold", label: "Threshold", repMeters: 1000, low: 82, high: 88 },
+    { key: "Lactate Threshold", label: "Lactate Threshold", repMeters: 1000, low: 82, high: 88 },
+    { key: "Interval", label: "Interval", repMeters: 400, low: 88, high: 95 },
+    { key: "Repetition", label: "Repetition", repMeters: 200, low: 93, high: 100 },
+    { key: "Fast Reps", label: "Fast Reps", repMeters: 150, low: 93, high: 100 },
+    { key: "Intensive Tempo", label: "Intensive Tempo", repMeters: 400, low: 75, high: 82 },
+    { key: "Extensive Tempo", label: "Extensive Tempo", repMeters: 400, low: 65, high: 75 },
+    { key: "Acceleration", label: "Acceleration", repMeters: 30, low: 95, high: 100 },
+    { key: "Max Velocity", label: "Max Velocity", repMeters: 60, low: 95, high: 100 },
+    { key: "Speed Endurance I", label: "Speed Endurance I", repMeters: 150, low: 88, high: 95 },
+    { key: "Special Endurance I", label: "Special Endurance I", repMeters: 300, low: 85, high: 90 },
+    { key: "Special Endurance II", label: "Special Endurance II", repMeters: 500, low: 80, high: 88 },
+    { key: "Lactate Tolerance", label: "Lactate Tolerance", repMeters: 300, low: 82, high: 88 },
+    { key: "Aerobic Power", label: "Aerobic Power", repMeters: 800, low: 78, high: 86 },
+    { key: "Hills", label: "Hills", repMeters: 60, low: 90, high: 98 },
+    { key: "Hill Sprints", label: "Hill Sprints", repMeters: 60, low: 90, high: 98 },
+  ];
+}
+
+function normalizeTrainingCustomization(source) {
+  const input = source && typeof source === "object" ? source : {};
+  const incoming = Array.isArray(input.rules) ? input.rules : [];
+  const byKey = new Map();
+  incoming.forEach((rule) => {
+    const item = normalizeTrainingCustomizationRule(rule);
+    if (item) byKey.set(item.key, item);
+  });
+  const rules = defaultTrainingCustomizationRules().map((base) => {
+    const saved = byKey.get(base.key);
+    return saved ? { ...base, ...saved, key: base.key, label: base.label, suffix: base.suffix || saved.suffix || "" } : base;
+  });
+  return {
+    version: 1,
+    updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
+    rules,
+  };
+}
+
+function normalizeTrainingCustomizationRule(rule) {
+  if (!rule || typeof rule !== "object") return null;
+  const key = cleanSetupText(rule.key || rule.label);
+  if (!key) return null;
+  const low = clampPercent(rule.lowPercent || rule.low || rule.min || rule.minPercent);
+  const high = clampPercent(rule.highPercent || rule.high || rule.max || rule.maxPercent);
+  if (!low || !high) return null;
+  const orderedLow = Math.min(low, high);
+  const orderedHigh = Math.max(low, high);
+  return {
+    key,
+    label: cleanSetupText(rule.label) || key,
+    repMeters: Number(rule.repMeters || rule.distance || rule.distanceMeters) || 400,
+    low: orderedLow,
+    high: orderedHigh,
+    suffix: cleanSetupText(rule.suffix),
+  };
+}
+
+function clampPercent(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.max(1, Math.min(150, Math.round(number)));
 }
 
 async function accountStaff(req, res) {
