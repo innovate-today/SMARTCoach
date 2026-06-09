@@ -169,7 +169,7 @@ function checkDashboardActivityRangeLayout() {
     "function sumPlannedTrainingVolume(rows)",
     "function updatePlannedCompletedVolumeCard(trainingRows)",
     "Completed workout entries",
-    "Athletes completed this week",
+    "Athletes completed workouts this week",
     "Athletes without completed workout",
     "this week · '+rangeLabel(currentStart,currentEnd)",
     'id="rosterAttendanceRate"',
