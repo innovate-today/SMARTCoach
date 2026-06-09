@@ -300,7 +300,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="stat"><div class="statline"><b id="previousWeekVolume">--</b><span>Previous week volume</span></div><span class="small">completed miles</span></div>
     <div class="stat"><div class="statline"><b id="athleteCount">--</b><span>Active athletes</span></div></div>
-    <div class="stat"><div class="statline"><b id="currentWeekRuns">--</b><span>Current week workouts</span></div><span id="currentWeekRange" class="small">--</span></div>
+    <div class="stat"><div class="statline"><b id="currentWeekRuns">--</b><span>Completed this week</span></div><span id="currentWeekRange" class="small">workouts · --</span></div>
     <span id="previousWeekRange" class="small" hidden>--</span>
   </section>
 
@@ -315,8 +315,8 @@ tr:last-child td{border-bottom:0}
       <div class="metric"><b id="trainingSyncCount">--</b><span>Avg per workout</span></div>
       <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
       <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
-      <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Active this week</span></div>
-      <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>No workout this week</span></div>
+      <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Completed this week</span></div>
+      <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>No completed workout</span></div>
     </div>
   </section>
 
@@ -350,7 +350,7 @@ tr:last-child td{border-bottom:0}
     <select id="quickFilter" class="filter">
       <option value="all">All athletes</option>
       <option value="missing_fitness">Missing current fitness</option>
-      <option value="no_training_this_week">No workout this week</option>
+      <option value="no_training_this_week">No completed workout</option>
       <option value="training_on_target">Training on target</option>
       <option value="training_needs_review">Training outside target</option>
       <option value="corrected_training">Corrected workouts</option>
@@ -2301,7 +2301,7 @@ function updateWeekRanges(){
   var currentEnd=addDashboardDays(currentStart,6);
   var previousStart=addDashboardDays(currentStart,-7);
   var previousEnd=addDashboardDays(currentStart,-1);
-  els.currentWeekRange.textContent=rangeLabel(currentStart,currentEnd);
+  els.currentWeekRange.textContent='workouts · '+rangeLabel(currentStart,currentEnd);
   els.previousWeekRange.textContent=rangeLabel(previousStart,previousEnd);
 }
 

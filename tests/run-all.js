@@ -151,6 +151,9 @@ function checkDashboardActivityRangeLayout() {
     ".range-controls{display:grid;gap:7px;justify-items:stretch;width:100%}",
     ".range-custom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)",
     ".range-custom input{width:100%;min-width:0",
+    "Completed this week",
+    "No completed workout",
+    "workouts · '+rangeLabel(currentStart,currentEnd)",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);
