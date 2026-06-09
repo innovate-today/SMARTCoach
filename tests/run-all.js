@@ -151,6 +151,10 @@ function checkDashboardActivityRangeLayout() {
     ".range-controls{display:grid;gap:7px;justify-items:stretch;width:100%}",
     ".range-custom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)",
     ".range-custom input{width:100%;min-width:0",
+    "plannedCompletedVolume",
+    "Planned / completed",
+    "function sumPlannedTrainingVolume(rows)",
+    "function updatePlannedCompletedVolumeCard(trainingRows)",
     "Completed this week",
     "No completed workout",
     "workouts · '+rangeLabel(currentStart,currentEnd)",
@@ -158,6 +162,9 @@ function checkDashboardActivityRangeLayout() {
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);
   });
+  if (html.includes('id="athleteCount"') || html.includes("<span>Active athletes</span>")) {
+    throw new Error("dashboard top summary should show planned/completed volume instead of the old Active athletes card.");
+  }
   console.log("dashboard activity range layout ok");
 }
 

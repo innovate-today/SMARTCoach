@@ -299,7 +299,7 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
     <div class="stat"><div class="statline"><b id="previousWeekVolume">--</b><span>Previous week volume</span></div><span class="small">completed miles</span></div>
-    <div class="stat"><div class="statline"><b id="athleteCount">--</b><span>Active athletes</span></div></div>
+    <div class="stat"><div class="statline"><b id="plannedCompletedVolume">--</b><span>Planned / completed</span></div><span id="plannedCompletedRange" class="small">selected range</span></div>
     <div class="stat"><div class="statline"><b id="currentWeekRuns">--</b><span>Completed this week</span></div><span id="currentWeekRange" class="small">workouts · --</span></div>
     <span id="previousWeekRange" class="small" hidden>--</span>
   </section>
@@ -1571,7 +1571,8 @@ var els={
   resetViewBtn:document.getElementById('resetViewBtn'),
   exportCurrentBtn:document.getElementById('exportCurrentBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
-  athleteCount:document.getElementById('athleteCount'),
+  plannedCompletedVolume:document.getElementById('plannedCompletedVolume'),
+  plannedCompletedRange:document.getElementById('plannedCompletedRange'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
   previousWeekRuns:document.getElementById('previousWeekRuns'),
   currentWeekVolume:document.getElementById('currentWeekVolume'),
@@ -1903,7 +1904,6 @@ function loadDashboard(){
     annotateDashboardRosterGroups();
     lastLoadedAt=result.data.generatedAt||new Date().toISOString();
     els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
-    els.athleteCount.textContent=(result.data.totals&&result.data.totals.athletes)||dashboardRows.length;
     els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
     if(els.previousWeekRuns)els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
     if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
@@ -2273,7 +2273,7 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   var withFitness=rows.filter(function(row){return row.currentFitness&&row.currentFitness.label;}).length;
   var currentWeekAthletes=uniqueAthleteCount(trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}));
   var rangeText='Showing '+seasonRangeLabel()+' · '+activityRangeLabel();
-  els.athleteCount.textContent=active;
+  updatePlannedCompletedVolumeCard(trainingRows);
   els.activityRangeDates.textContent=activityDateRangeLabel();
   els.currentWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}).length;
   if(els.previousWeekRuns)els.previousWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date()));}).length;
@@ -4143,7 +4143,7 @@ function updateDashboardAthleteAfterTrainingAdd(row){
 }
 
 function updateDashboardTopStats(){
-  els.athleteCount.textContent=dashboardRows.length;
+  updatePlannedCompletedVolumeCard(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training');}));
   els.currentWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekRuns);},0);
   if(els.previousWeekRuns)els.previousWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekRuns);},0);
   if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekVolumeMiles);},0));
@@ -4699,6 +4699,21 @@ function volumeCellHtml(row){
 
 function sumTrainingVolume(rows){
   return (rows||[]).reduce(function(sum,row){return sum+completedVolumeMiles(row);},0);
+}
+
+function sumPlannedTrainingVolume(rows){
+  return (rows||[]).reduce(function(sum,row){return sum+plannedVolumeMiles(row);},0);
+}
+
+function plannedVolumeMiles(row){
+  return num(row&&row.plannedVolumeMiles)||parseCompletedMiles(row&&row.plannedVolume);
+}
+
+function updatePlannedCompletedVolumeCard(trainingRows){
+  var planned=sumPlannedTrainingVolume(trainingRows||[]);
+  var completed=sumTrainingVolume(trainingRows||[]);
+  if(els.plannedCompletedVolume)els.plannedCompletedVolume.textContent=formatMiles(planned)+' / '+formatMiles(completed);
+  if(els.plannedCompletedRange)els.plannedCompletedRange.textContent=activityRangeLabel();
 }
 
 function completedVolumeRows(trainingRows,meetRows){

@@ -34,7 +34,7 @@ Use the Dashboard as the daily coaching home base. It shows roster status, train
 
 How to use it:
 
-1. Review the top cards for the activity range, previous week volume, active athletes, and current week workouts.
+1. Review the top cards for the activity range, previous week completed volume, planned/completed volume for the selected range, and completed workouts this week.
 2. Use the search box to find one athlete or group.
 3. Use **Activity range** for quick ranges such as Last 7 days, Last 30 days, or Last 90 days. Choose **Custom range** when you need exact start and end dates.
 4. Use the filters to narrow the view by athlete group, activity type, or season.
