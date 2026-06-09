@@ -346,7 +346,7 @@ function normalizeContact(contact, options = {}) {
   const smartcoachAthleteId = existingCustomFieldValueByIdsOrNames(contact, fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID), ATHLETE_FIELD_ALIASES.smartcoachAthleteId);
   const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
   const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
-  const excludedSystemContact = isExcludedSystemContact(tags);
+  const excludedSystemContact = isExcludedSystemContact(tags) || isSmartCoachSupportContact(contact);
   const smartcoachActive = isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && Boolean(smartcoachAthleteId || hasAthleteTag));
   return {
     id: contact.id,
@@ -375,8 +375,17 @@ function normalizeContact(contact, options = {}) {
 function isExcludedSystemContact(tags) {
   return (Array.isArray(tags) ? tags : []).some((tag) => {
     const value = clean(tag).toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
-    return value === "live chat" || value === "smartcoach account owner";
+    return value === "live chat" ||
+      value === "smartcoach account owner" ||
+      value === "smartcoach feedback" ||
+      value === "smartcoach bug trak" ||
+      value === "smartcoach idea trak";
   });
+}
+
+function isSmartCoachSupportContact(contact) {
+  const emails = [contact && contact.email, contact && contact.emailLowerCase, contact && contact.primaryEmail].map(clean).map((email) => email.toLowerCase());
+  return emails.some((email) => email === "support@smartcoach-pro.com");
 }
 
 function classYearFromTags(contact) {

@@ -313,7 +313,7 @@ function normalizeContact(contact, options = {}) {
   const smartcoachAthleteId = existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID);
   const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
   const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
-  const excludedSystemContact = isExcludedSystemContact(tags);
+  const excludedSystemContact = isExcludedSystemContact(tags) || isSmartCoachSupportContact(contact);
   const inferredSmartCoachAthlete = Boolean(smartcoachAthleteId || hasAthleteTag);
   const smartcoachActive = isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && inferredSmartCoachAthlete);
   return {
@@ -332,8 +332,17 @@ function normalizeContact(contact, options = {}) {
 function isExcludedSystemContact(tags) {
   return (Array.isArray(tags) ? tags : []).some((tag) => {
     const value = clean(tag).toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
-    return value === "live chat" || value === "smartcoach account owner";
+    return value === "live chat" ||
+      value === "smartcoach account owner" ||
+      value === "smartcoach feedback" ||
+      value === "smartcoach bug trak" ||
+      value === "smartcoach idea trak";
   });
+}
+
+function isSmartCoachSupportContact(contact) {
+  const emails = [contact && contact.email, contact && contact.emailLowerCase, contact && contact.primaryEmail].map(clean).map((email) => email.toLowerCase());
+  return emails.some((email) => email === "support@smartcoach-pro.com");
 }
 
 function contactGender(contact, genderFieldIds = []) {

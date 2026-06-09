@@ -122,6 +122,15 @@ function checkAccountOwnerExcludedFromAthletes() {
     if (!source.includes('value === "smartcoach account owner"')) {
       throw new Error(`${file} must exclude smartcoach-account-owner contacts from athlete rosters.`);
     }
+    [
+      'value === "smartcoach feedback"',
+      'value === "smartcoach bug trak"',
+      'value === "smartcoach idea trak"',
+      'support@smartcoach-pro.com',
+      "function isSmartCoachSupportContact(contact)",
+    ].forEach((text) => {
+      if (!source.includes(text)) throw new Error(`${file} must exclude support/feedback contacts from athlete rosters.`);
+    });
     if (!source.includes("function isExcludedSystemContact(tags)")) {
       throw new Error(`${file} missing system contact exclusion helper.`);
     }
@@ -242,6 +251,8 @@ function checkBugTrakDesktopFeedback() {
     "bugNotificationText: `${title}\\n\\n${body}`",
     "bugSummary: cleanSetupText(item.summary)",
     "bugType: type",
+    "contactTags: feedbackTags",
+    "excludeFromAthletes: true",
     "bugUrgency: cleanSetupText(item.urgency)",
     "bugPage: cleanSetupText(item.page)",
     "saveBugTrakReport(accountKey, report)",

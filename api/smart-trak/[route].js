@@ -407,6 +407,7 @@ function bugTrakWebhookPayload(report, accountKey) {
   const submittedAt = new Date().toISOString();
   const type = cleanSetupText(item.type).toLowerCase() === "idea" ? "idea" : "bug";
   const label = type === "idea" ? "Idea Trak" : "Bug Trak";
+  const feedbackTags = ["smartcoach-feedback", type === "idea" ? "smartcoach-idea-trak" : "smartcoach-bug-trak"];
   const title = `${label}: ${cleanSetupText(item.urgency) || "New"} - ${cleanSetupText(item.area) || "SMART Trak"}`;
   const body = [
     `Account: ${accountKey}`,
@@ -429,6 +430,10 @@ function bugTrakWebhookPayload(report, accountKey) {
   return {
     source: type === "idea" ? "SMARTCoach Idea Trak" : "SMARTCoach Bug Trak",
     accountKey,
+    contactTags: feedbackTags,
+    feedbackTags,
+    feedbackContactType: type === "idea" ? "idea feedback" : "bug feedback",
+    excludeFromAthletes: true,
     title,
     message: body,
     text: `${title}\n\n${body}`,
