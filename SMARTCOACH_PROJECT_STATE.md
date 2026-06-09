@@ -1169,6 +1169,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 327. Desktop-only **Bug Trak** was added for beta feedback. The shared desktop help widget now shows a small Bug Trak button that opens a report form with area, urgency, summary, details, expected result, and optional coach contact fields. Reports post to `/api/smart-trak/bug-trak`, save to the customer account record under `bugTrakReports`, and optionally forward to `SMARTCOACH_BUGTRAK_WEBHOOK_URL` so a GHL workflow can create an immediate internal notification. This was not added to What's New; future What's New additions require explicit approval.
 328. Bug Trak webhook notifications now include flat GHL-friendly top-level fields (`bugSummary`, `bugDetails`, `bugExpected`, `bugUrgency`, `bugArea`, `bugPage`, `bugCoachName`, `bugCoachEmail`, etc.) while still keeping the nested `report` object. This lets GHL workflow notifications use field-picker values directly instead of depending on nested `report.*` paths.
 329. Bug Trak webhook payloads now also include prebuilt notification strings: `bugNotificationTitle`, `bugNotificationBody`, and `bugNotificationText`. These are intended for GHL Internal Notification actions when individual webhook fields render as `[object Object]`.
+330. Coach how-to guide cleanup: setup-only Bug Trak/GHL field names were removed from `SMART_TRAK_COACH_HOW_TO.md`. The how-to should stay coach-facing; implementation/setup details belong in `VERCEL_SETUP.md` or project state.
 
 ## Known Good Test Flow
 
