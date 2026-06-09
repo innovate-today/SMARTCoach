@@ -153,6 +153,7 @@ tr:last-child td{border-bottom:0}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;z-index:20;overflow:auto}
 .modal[hidden]{display:none}
 .modalpanel{width:min(760px,100%);background:#fff;border-radius:10px;border:1px solid var(--line);box-shadow:0 18px 45px rgba(15,23,42,.2);overflow:hidden}
+.simulator-panel{width:min(420px,100%)}
 .modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .modalhead h2{font-size:20px;margin:0}
 .modalbody{padding:16px 18px 20px}
@@ -261,8 +262,7 @@ tr:last-child td{border-bottom:0}
         <a id="athletesLink" class="linkbtn secondary" href="/athletes.html">Athletes</a>
         <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
         <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
-        <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
-        <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
+        <button id="simulatorBtn" class="secondary" type="button">Simulator</button>
         <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
         <a id="keepTrakLink" class="linkbtn secondary" href="/keep-trak.html">Keep Trak</a>
         <a id="weatherLink" class="linkbtn secondary" href="/weather.html">Weather</a>
@@ -277,6 +277,21 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
   </section>
+
+<div id="simulatorModal" class="modal" hidden>
+  <section class="modalpanel simulator-panel" role="dialog" aria-modal="true" aria-labelledby="simulatorTitle">
+    <div class="modalhead">
+      <h2 id="simulatorTitle">Simulator</h2>
+      <button id="simulatorClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="breakgrid">
+        <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
+        <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
+      </div>
+    </div>
+  </section>
+</div>
 
   <section class="stats">
     <div class="stat range-stat">
@@ -1161,6 +1176,14 @@ function markWhatsNewSeen(){
   renderWhatsNewButton();
   els.whatsNewStatus.textContent='All updates marked seen.';
 }
+function openSimulatorModal(){
+  applySmartCoachLinks();
+  els.simulatorModal.hidden=false;
+  els.simulatorClose.focus();
+}
+function closeSimulatorModal(){
+  els.simulatorModal.hidden=true;
+}
 function openAccountAccessPage(){
   var key=smartCoachAccountKey();
   window.location.href='/account-access.html?account='+encodeURIComponent(key);
@@ -1553,6 +1576,9 @@ var els={
   whatsNewList:document.getElementById('whatsNewList'),
   whatsNewStatus:document.getElementById('whatsNewStatus'),
   whatsNewSeenBtn:document.getElementById('whatsNewSeenBtn'),
+  simulatorBtn:document.getElementById('simulatorBtn'),
+  simulatorModal:document.getElementById('simulatorModal'),
+  simulatorClose:document.getElementById('simulatorClose'),
   search:document.getElementById('search'),
   clearSearchBtn:document.getElementById('clearSearchBtn'),
   quickFilter:document.getElementById('quickFilter'),
@@ -1602,8 +1628,14 @@ els.whatsNewSeenBtn.addEventListener('click',markWhatsNewSeen);
 els.whatsNewModal.addEventListener('click',function(event){
   if(event.target===els.whatsNewModal)closeWhatsNew();
 });
+els.simulatorBtn.addEventListener('click',openSimulatorModal);
+els.simulatorClose.addEventListener('click',closeSimulatorModal);
+els.simulatorModal.addEventListener('click',function(event){
+  if(event.target===els.simulatorModal)closeSimulatorModal();
+});
 document.addEventListener('keydown',function(event){
   if(event.key==='Escape'&&!els.whatsNewModal.hidden)closeWhatsNew();
+  if(event.key==='Escape'&&!els.simulatorModal.hidden)closeSimulatorModal();
 });
 els.accessSubmit.addEventListener('click',submitDashboardAccessCode);
 els.accessCodeInput.addEventListener('keydown',function(event){

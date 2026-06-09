@@ -186,6 +186,12 @@ function checkDashboardActivityRangeLayout() {
     "function athleteMatchesDashboardSearch(row,query)",
     "row.name,row.smartcoachAthleteId",
     "Array.isArray(row.groups)?row.groups.join(' '):''",
+    'id="simulatorBtn"',
+    'id="simulatorModal"',
+    "function openSimulatorModal()",
+    "function closeSimulatorModal()",
+    'id="trackSimulatorLink"',
+    'id="xcSimulatorLink"',
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);
@@ -218,6 +224,11 @@ function checkDashboardActivityRangeLayout() {
   }
   if (html.includes("athleteActivitySearchText") || html.includes("trainingRowMatchesSearch(row,query)") || html.includes("recentTrainingSearchText(row)") || html.includes("rosterGroupSearchTextForTraining")) {
     throw new Error("dashboard search should stay athlete/group-only, not activity/workout/event text.");
+  }
+  const actionRowMatch = html.match(/<div class="action-row">([\s\S]*?)<\/div>/);
+  const actionRowHtml = actionRowMatch ? actionRowMatch[1] : "";
+  if (actionRowHtml.includes('id="trackSimulatorLink"') || actionRowHtml.includes('id="xcSimulatorLink"')) {
+    throw new Error("dashboard header should use one Simulator button, with Track/XC links inside the chooser modal.");
   }
   console.log("dashboard activity range layout ok");
 }
