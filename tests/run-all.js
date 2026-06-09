@@ -160,20 +160,22 @@ function checkDashboardActivityRangeLayout() {
     ".range-controls{display:grid;gap:7px;justify-items:stretch;width:100%}",
     ".range-custom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)",
     ".range-custom input{width:100%;min-width:0",
-    ".volume-compare{display:grid;gap:6px}",
-    ".volume-compare-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:26px}",
+    ".stats .loadstrip{margin-bottom:0}",
+    ".loadstrip .breakgrid{grid-template-columns:repeat(5,minmax(108px,1fr))}",
+    "Training Load Summary",
     'id="plannedVolumeValue"',
     'id="completedVolumeValue"',
     "<span>Planned volume</span>",
     "<span>Completed volume</span>",
+    "Avg miles per athlete",
     "function sumPlannedTrainingVolume(rows)",
     "function updatePlannedCompletedVolumeCard(trainingRows)",
-    "Completed workout entries",
-    "Athletes completed workouts this week",
-    "Athletes without completed workout",
-    "this week · '+rangeLabel(currentStart,currentEnd)",
     'id="rosterAttendanceRate"',
     "<span>Attendance</span>",
+    'id="rosterDocuStatus"',
+    "<span>Docu Trak</span>",
+    "fetch('/api/smart-trak/docu-trak?v='+stamp",
+    "function docuStatusText(rows)",
     "recentAttendanceRows=result",
     "function attendanceRateText(rows)",
     'placeholder="Search athletes or groups"',
@@ -190,8 +192,25 @@ function checkDashboardActivityRangeLayout() {
   if (html.includes('id="rosterFitness"') || html.includes('id="rosterMissingFitness"') || html.includes("<span>With fitness</span>") || html.includes("<span>Missing fitness</span>")) {
     throw new Error("dashboard roster summary should show attendance instead of the old fitness summary cards.");
   }
-  if (html.includes("<span>Completed this week</span>") || html.includes("<span>No completed workout</span>") || html.includes("workouts · '+rangeLabel(currentStart,currentEnd)")) {
-    throw new Error("dashboard workout summary labels should clearly distinguish entries from athletes.");
+  [
+    'id="previousWeekVolume"',
+    'id="currentWeekRuns"',
+    'id="trainingVolumeCount"',
+    'id="trainingMonthVolume"',
+    'id="trainingAthletesThisWeek"',
+    'id="trainingMissingThisWeek"',
+    "<span>Previous week volume</span>",
+    "<span>Completed workout entries</span>",
+    "<span>Volume miles</span>",
+    "<span>This month miles</span>",
+    "<span>Athletes completed workouts this week</span>",
+    "<span>Athletes without completed workout</span>",
+    "<span>Avg per workout</span>",
+  ].forEach((text) => {
+    if (html.includes(text)) throw new Error(`dashboard should remove redundant summary card/control: ${text}`);
+  });
+  if (html.indexOf('id="plannedVolumeValue"') > html.indexOf('id="completedVolumeValue"') || html.indexOf('id="completedVolumeValue"') > html.indexOf('id="trainingSyncCount"')) {
+    throw new Error("dashboard Training Load Summary cards should start Planned, Completed, Avg miles per athlete.");
   }
   if (html.includes("athleteActivitySearchText") || html.includes("trainingRowMatchesSearch(row,query)") || html.includes("recentTrainingSearchText(row)") || html.includes("rosterGroupSearchTextForTraining")) {
     throw new Error("dashboard search should stay athlete/group-only, not activity/workout/event text.");

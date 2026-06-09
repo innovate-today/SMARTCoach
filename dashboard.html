@@ -41,16 +41,12 @@ button.compact{padding:6px 8px;font-size:12px;border-radius:7px}
 button:disabled{opacity:.55;cursor:not-allowed}
 .actions .primary-nav{background:var(--blue);color:#fff}
 .actions .utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line)}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:minmax(230px,.55fr) minmax(0,1.45fr);gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
 .statline{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:28px}
 .stat b{display:block;font-size:24px;line-height:1.1;white-space:nowrap}
 .stat span{display:block;color:var(--muted);font-size:13px;margin-top:0;text-align:right}
 .stat .small{margin-top:4px}
-.volume-compare{display:grid;gap:6px}
-.volume-compare-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:26px}
-.volume-compare-row span{font-size:13px}
-.volume-compare .small{font-size:12px;text-align:right}
 .range-stat{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:10px;min-height:104px}
 .range-stat>div:first-child{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .range-label{display:flex;align-items:center;gap:8px;color:#334155;font-size:13px;font-weight:800}
@@ -74,7 +70,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .loadstrip{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:14px}
 .loadstrip h2{font-size:15px;line-height:1.2;margin:0}
 .loadstrip .breakrange{margin:3px 0 0}
-.loadstrip .breakgrid{grid-template-columns:repeat(7,minmax(108px,1fr))}
+.stats .loadstrip{margin-bottom:0}
+.loadstrip .breakgrid{grid-template-columns:repeat(5,minmax(108px,1fr))}
 .metric{border:1px solid #edf1f7;border-radius:8px;padding:9px 10px;background:#fbfdff}
 .metric[data-filter]{cursor:pointer}
 .metric[data-filter]:hover{border-color:#b9c7dc;background:#f4f7fc}
@@ -302,30 +299,19 @@ tr:last-child td{border-bottom:0}
         </div>
       </div>
     </div>
-    <div class="stat"><div class="statline"><b id="previousWeekVolume">--</b><span>Previous week volume</span></div><span class="small">completed miles</span></div>
-    <div class="stat volume-compare">
-      <div class="volume-compare-row"><b id="plannedVolumeValue">--</b><span>Planned volume</span></div>
-      <div class="volume-compare-row"><b id="completedVolumeValue">--</b><span>Completed volume</span></div>
-      <span id="plannedCompletedRange" class="small">selected range</span>
-    </div>
-    <div class="stat"><div class="statline"><b id="currentWeekRuns">--</b><span>Completed workout entries</span></div><span id="currentWeekRange" class="small">this week · --</span></div>
-    <span id="previousWeekRange" class="small" hidden>--</span>
-  </section>
-
-  <section class="loadstrip" data-tab-target="training">
-    <div>
-      <h2>Training Load Summary</h2>
-      <div id="trainingRangeLabel" class="breakrange">Showing last 30 days</div>
-    </div>
-    <div class="breakgrid">
-      <div class="metric"><b id="trainingVolumeCount">--</b><span>Volume miles</span></div>
-      <div class="metric"><b id="trainingMonthVolume">--</b><span>This month miles</span></div>
-      <div class="metric"><b id="trainingSyncCount">--</b><span>Avg per workout</span></div>
-      <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
-      <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
-      <div class="metric"><b id="trainingAthletesThisWeek">--</b><span>Athletes completed workouts this week</span></div>
-      <div class="metric" data-filter="no_training_this_week"><b id="trainingMissingThisWeek">--</b><span>Athletes without completed workout</span></div>
-    </div>
+    <section class="loadstrip" data-tab-target="training">
+      <div>
+        <h2>Training Load Summary</h2>
+        <div id="trainingRangeLabel" class="breakrange">Showing last 30 days</div>
+      </div>
+      <div class="breakgrid">
+        <div class="metric"><b id="plannedVolumeValue">--</b><span>Planned volume</span></div>
+        <div class="metric"><b id="completedVolumeValue">--</b><span>Completed volume</span></div>
+        <div class="metric"><b id="trainingSyncCount">--</b><span>Avg miles per athlete</span></div>
+        <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
+        <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
+      </div>
+    </section>
   </section>
 
   <section class="breakdowns">
@@ -334,6 +320,7 @@ tr:last-child td{border-bottom:0}
       <div class="breakgrid">
         <div class="metric" data-filter="all"><b id="rosterActive">--</b><span>Active</span></div>
         <div class="metric"><b id="rosterAttendanceRate">--</b><span>Attendance</span></div>
+        <div class="metric"><b id="rosterDocuStatus">--</b><span>Docu Trak</span></div>
       </div>
     </div>
     <div class="breakdown" data-tab-target="meet">
@@ -1085,6 +1072,8 @@ var accountStatus=null;
 var recentMeetRows=[];
 var recentTrainingRows=[];
 var recentAttendanceRows=[];
+var docuItems=[];
+var docuRecords={};
 var trainingGroups=[];
 var meetManagerRows=[];
 var raceResultMeetRows=[];
@@ -1581,7 +1570,6 @@ var els={
   refreshBtn:document.getElementById('refreshBtn'),
   plannedVolumeValue:document.getElementById('plannedVolumeValue'),
   completedVolumeValue:document.getElementById('completedVolumeValue'),
-  plannedCompletedRange:document.getElementById('plannedCompletedRange'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
   previousWeekRuns:document.getElementById('previousWeekRuns'),
   currentWeekVolume:document.getElementById('currentWeekVolume'),
@@ -1593,18 +1581,15 @@ var els={
   trainingViewCount:document.getElementById('trainingViewCount'),
   rosterActive:document.getElementById('rosterActive'),
   rosterAttendanceRate:document.getElementById('rosterAttendanceRate'),
+  rosterDocuStatus:document.getElementById('rosterDocuStatus'),
   meetRangeLabel:document.getElementById('meetRangeLabel'),
   meetSyncCount:document.getElementById('meetSyncCount'),
   meetPbCount:document.getElementById('meetPbCount'),
   meetSbCount:document.getElementById('meetSbCount'),
   trainingRangeLabel:document.getElementById('trainingRangeLabel'),
   trainingSyncCount:document.getElementById('trainingSyncCount'),
-  trainingVolumeCount:document.getElementById('trainingVolumeCount'),
-  trainingMonthVolume:document.getElementById('trainingMonthVolume'),
   trainingOnTargetCount:document.getElementById('trainingOnTargetCount'),
-  trainingReviewCount:document.getElementById('trainingReviewCount'),
-  trainingAthletesThisWeek:document.getElementById('trainingAthletesThisWeek'),
-  trainingMissingThisWeek:document.getElementById('trainingMissingThisWeek')
+  trainingReviewCount:document.getElementById('trainingReviewCount')
 };
 setupTableScrollbars();
 initHeaderTooltips();
@@ -1897,6 +1882,7 @@ function loadDashboard(){
     fetch('/api/smart-trak/dashboard?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
     fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
     fetch('/api/smart-trak/attendance?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{attendance:[]}};}),
+    fetch('/api/smart-trak/docu-trak?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{items:[],records:{}}};}),
     checkSmartCoachAccount().catch(function(){return{ok:false,data:{}};})
   ]).then(function(results){
     var result=results[0];
@@ -1910,14 +1896,16 @@ function loadDashboard(){
     recentTrainingRows=result.data.recentTrainingSyncs||[];
     trainingGroups=results[1].ok?(results[1].data.groups||[]):[];
     recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
-    renderStaffAccess(results[3]&&results[3].data||{});
+    docuItems=results[3].ok?(results[3].data.items||[]):[];
+    docuRecords=results[3].ok?(results[3].data.records||{}):{};
+    renderStaffAccess(results[4]&&results[4].data||{});
     annotateDashboardRosterGroups();
     lastLoadedAt=result.data.generatedAt||new Date().toISOString();
     els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
-    els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
+    if(els.currentWeekRuns)els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
     if(els.previousWeekRuns)els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
     if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
-    els.previousWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.previousWeekVolumeMiles);
+    if(els.previousWeekVolume)els.previousWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.previousWeekVolumeMiles);
     renderManualMileageAthletes();
     renderManualMileageGroups();
     renderSeasonFilterOptions();
@@ -1930,6 +1918,8 @@ function loadDashboard(){
     recentMeetRows=[];
     recentTrainingRows=[];
     recentAttendanceRows=[];
+    docuItems=[];
+    docuRecords={};
     trainingGroups=[];
     els.rows.innerHTML='';
     els.recentMeetRows.innerHTML='';
@@ -2285,28 +2275,25 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   var attendanceRows=recentAttendanceRows.filter(function(row){
     return matchesSeasonFilter(row,'attendance')&&matchesActivityRange(row,'attendance')&&visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   });
-  var currentWeekAthletes=uniqueAthleteCount(trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}));
   var rangeText='Showing '+seasonRangeLabel()+' · '+activityRangeLabel();
+  var completedMiles=sumTrainingVolume(trainingRows);
   updatePlannedCompletedVolumeCard(trainingRows);
   els.activityRangeDates.textContent=activityDateRangeLabel();
-  els.currentWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}).length;
+  if(els.currentWeekRuns)els.currentWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}).length;
   if(els.previousWeekRuns)els.previousWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date()));}).length;
   if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)));
-  els.previousWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())));
-  els.rosterActive.textContent=active;
+  if(els.previousWeekVolume)els.previousWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())));
+  if(els.rosterActive)els.rosterActive.textContent=active;
   if(els.rosterAttendanceRate)els.rosterAttendanceRate.textContent=attendanceRateText(attendanceRows);
+  if(els.rosterDocuStatus)els.rosterDocuStatus.textContent=docuStatusText(rows);
   els.meetRangeLabel.textContent=rangeText;
   els.meetSyncCount.textContent=meetRows.length;
   els.meetPbCount.textContent=meetRows.filter(function(row){return row.isPr;}).length;
   els.meetSbCount.textContent=meetRows.filter(function(row){return row.isSeasonBest;}).length;
   els.trainingRangeLabel.textContent=rangeText;
-  els.trainingSyncCount.textContent=formatMiles(trainingRows.length?sumTrainingVolume(volumeRows)/trainingRows.length:0);
-  els.trainingVolumeCount.textContent=formatMiles(sumTrainingVolume(volumeRows));
-  els.trainingMonthVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfCurrentMonthDate(),startOfNextMonthDate()));
+  els.trainingSyncCount.textContent=formatMiles(active?completedMiles/active:0);
   els.trainingOnTargetCount.textContent=trainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
   els.trainingReviewCount.textContent=trainingRows.filter(isOutsideTarget).length;
-  els.trainingAthletesThisWeek.textContent=currentWeekAthletes;
-  els.trainingMissingThisWeek.textContent=Math.max(0,active-currentWeekAthletes);
 }
 
 function updateWeekRanges(){
@@ -2314,8 +2301,8 @@ function updateWeekRanges(){
   var currentEnd=addDashboardDays(currentStart,6);
   var previousStart=addDashboardDays(currentStart,-7);
   var previousEnd=addDashboardDays(currentStart,-1);
-  els.currentWeekRange.textContent='this week · '+rangeLabel(currentStart,currentEnd);
-  els.previousWeekRange.textContent=rangeLabel(previousStart,previousEnd);
+  if(els.currentWeekRange)els.currentWeekRange.textContent='this week · '+rangeLabel(currentStart,currentEnd);
+  if(els.previousWeekRange)els.previousWeekRange.textContent=rangeLabel(previousStart,previousEnd);
 }
 
 function renderSeasonFilterOptions(){
@@ -2764,6 +2751,41 @@ function attendanceRateText(rows){
   var attended=counts.present+counts.late+counts.checked_out;
   var required=attended+counts.absent;
   return required?Math.round((attended/required)*100)+'%':'0%';
+}
+
+function docuStatusText(rows){
+  var items=Array.isArray(docuItems)?docuItems:[];
+  if(!items.length)return 'Docs 0/0 · 0 missing';
+  var complete=0;
+  var missing=0;
+  (rows||[]).forEach(function(row){
+    var record=docuRecordForDashboardAthlete(row);
+    items.forEach(function(item){
+      var saved=record.items&&record.items[item.id]||{};
+      var status=String(saved.status||'missing').toLowerCase();
+      if(status==='complete'||status==='waived'||status==='not_required')complete+=1;
+      else missing+=1;
+    });
+  });
+  return 'Docs '+complete+'/'+(items.length*(rows||[]).length)+' · '+missing+' missing';
+}
+
+function docuRecordForDashboardAthlete(row){
+  var records=docuRecords&&typeof docuRecords==='object'?docuRecords:{};
+  var keys=[
+    docuRecordKey(row&&row.contactId),
+    docuRecordKey(row&&row.id),
+    docuRecordKey(row&&row.name),
+    docuRecordKey(row&&row.athleteName)
+  ].filter(Boolean);
+  for(var i=0;i<keys.length;i+=1){
+    if(records[keys[i]])return records[keys[i]];
+  }
+  return {};
+}
+
+function docuRecordKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,120);
 }
 
 function activityRangeLabel(){
@@ -4173,10 +4195,10 @@ function updateDashboardAthleteAfterTrainingAdd(row){
 
 function updateDashboardTopStats(){
   updatePlannedCompletedVolumeCard(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training');}));
-  els.currentWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekRuns);},0);
+  if(els.currentWeekRuns)els.currentWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekRuns);},0);
   if(els.previousWeekRuns)els.previousWeekRuns.textContent=dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekRuns);},0);
   if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.currentWeekVolumeMiles);},0));
-  els.previousWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekVolumeMiles);},0));
+  if(els.previousWeekVolume)els.previousWeekVolume.textContent=formatMiles(dashboardRows.reduce(function(sum,row){return sum+num(row.previousWeekVolumeMiles);},0));
 }
 
 function annotateDashboardRosterGroups(){
@@ -4743,7 +4765,6 @@ function updatePlannedCompletedVolumeCard(trainingRows){
   var completed=sumTrainingVolume(trainingRows||[]);
   if(els.plannedVolumeValue)els.plannedVolumeValue.textContent=formatMiles(planned);
   if(els.completedVolumeValue)els.completedVolumeValue.textContent=formatMiles(completed);
-  if(els.plannedCompletedRange)els.plannedCompletedRange.textContent=activityRangeLabel();
 }
 
 function completedVolumeRows(trainingRows,meetRows){
