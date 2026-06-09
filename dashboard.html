@@ -47,6 +47,10 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .stat b{display:block;font-size:24px;line-height:1.1;white-space:nowrap}
 .stat span{display:block;color:var(--muted);font-size:13px;margin-top:0;text-align:right}
 .stat .small{margin-top:4px}
+.volume-compare{display:grid;gap:6px}
+.volume-compare-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:26px}
+.volume-compare-row span{font-size:13px}
+.volume-compare .small{font-size:12px;text-align:right}
 .range-stat{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:10px;min-height:104px}
 .range-stat>div:first-child{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .range-label{display:flex;align-items:center;gap:8px;color:#334155;font-size:13px;font-weight:800}
@@ -299,7 +303,11 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
     <div class="stat"><div class="statline"><b id="previousWeekVolume">--</b><span>Previous week volume</span></div><span class="small">completed miles</span></div>
-    <div class="stat"><div class="statline"><b id="plannedCompletedVolume">--</b><span>Planned / completed</span></div><span id="plannedCompletedRange" class="small">selected range</span></div>
+    <div class="stat volume-compare">
+      <div class="volume-compare-row"><b id="plannedVolumeValue">--</b><span>Planned</span></div>
+      <div class="volume-compare-row"><b id="completedVolumeValue">--</b><span>Completed</span></div>
+      <span id="plannedCompletedRange" class="small">selected range</span>
+    </div>
     <div class="stat"><div class="statline"><b id="currentWeekRuns">--</b><span>Completed this week</span></div><span id="currentWeekRange" class="small">workouts · --</span></div>
     <span id="previousWeekRange" class="small" hidden>--</span>
   </section>
@@ -1571,7 +1579,8 @@ var els={
   resetViewBtn:document.getElementById('resetViewBtn'),
   exportCurrentBtn:document.getElementById('exportCurrentBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
-  plannedCompletedVolume:document.getElementById('plannedCompletedVolume'),
+  plannedVolumeValue:document.getElementById('plannedVolumeValue'),
+  completedVolumeValue:document.getElementById('completedVolumeValue'),
   plannedCompletedRange:document.getElementById('plannedCompletedRange'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
   previousWeekRuns:document.getElementById('previousWeekRuns'),
@@ -4712,7 +4721,8 @@ function plannedVolumeMiles(row){
 function updatePlannedCompletedVolumeCard(trainingRows){
   var planned=sumPlannedTrainingVolume(trainingRows||[]);
   var completed=sumTrainingVolume(trainingRows||[]);
-  if(els.plannedCompletedVolume)els.plannedCompletedVolume.textContent=formatMiles(planned)+' / '+formatMiles(completed);
+  if(els.plannedVolumeValue)els.plannedVolumeValue.textContent=formatMiles(planned);
+  if(els.completedVolumeValue)els.completedVolumeValue.textContent=formatMiles(completed);
   if(els.plannedCompletedRange)els.plannedCompletedRange.textContent=activityRangeLabel();
 }
 

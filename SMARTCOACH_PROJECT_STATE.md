@@ -1178,6 +1178,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 336. Dashboard current-week workout labels were clarified to reflect the actual calculation. The top card and Training Load summary now say completed workouts (`Completed this week`, `No completed workout`) because the values are calculated from completed/synced Performance Records, not scheduled Training Calendar plan days. Regression coverage checks the coach-facing labels.
 337. Dashboard top summary now replaces the old **Active athletes** card with **Planned / completed** volume for the selected dashboard range. The planned side sums visible training rows' planned volume, and the completed side sums visible completed training volume. The coach how-to and regression coverage were updated.
 338. Feedback-created support contacts are now guarded out of athlete rosters. Athletes, Dashboard, and Athlete Calendar exclude `support@smartcoach-pro.com` plus `smartcoach-feedback`, `smartcoach-bug-trak`, and `smartcoach-idea-trak` tagged contacts so GHL notification/email side effects cannot appear as athletes. Bug/Idea webhook payloads also include feedback tags and `excludeFromAthletes: true` for workflow tagging.
+339. Dashboard planned/completed volume display was cleaned up so the top summary card shows planned miles on one row, completed miles on the next row, and the selected range as a smaller line underneath. Regression coverage now checks the separated row layout.
 
 ## Known Good Test Flow
 
