@@ -164,13 +164,14 @@ function checkDashboardActivityRangeLayout() {
     ".volume-compare-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:26px}",
     'id="plannedVolumeValue"',
     'id="completedVolumeValue"',
-    "<span>Planned</span>",
-    "<span>Completed</span>",
+    "<span>Planned volume</span>",
+    "<span>Completed volume</span>",
     "function sumPlannedTrainingVolume(rows)",
     "function updatePlannedCompletedVolumeCard(trainingRows)",
-    "Completed this week",
-    "No completed workout",
-    "workouts · '+rangeLabel(currentStart,currentEnd)",
+    "Completed workout entries",
+    "Athletes completed this week",
+    "Athletes without completed workout",
+    "this week · '+rangeLabel(currentStart,currentEnd)",
     'id="rosterAttendanceRate"',
     "<span>Attendance</span>",
     "recentAttendanceRows=result",
@@ -188,6 +189,9 @@ function checkDashboardActivityRangeLayout() {
   }
   if (html.includes('id="rosterFitness"') || html.includes('id="rosterMissingFitness"') || html.includes("<span>With fitness</span>") || html.includes("<span>Missing fitness</span>")) {
     throw new Error("dashboard roster summary should show attendance instead of the old fitness summary cards.");
+  }
+  if (html.includes("<span>Completed this week</span>") || html.includes("<span>No completed workout</span>") || html.includes("workouts · '+rangeLabel(currentStart,currentEnd)")) {
+    throw new Error("dashboard workout summary labels should clearly distinguish entries from athletes.");
   }
   if (html.includes("athleteActivitySearchText") || html.includes("trainingRowMatchesSearch(row,query)") || html.includes("recentTrainingSearchText(row)") || html.includes("rosterGroupSearchTextForTraining")) {
     throw new Error("dashboard search should stay athlete/group-only, not activity/workout/event text.");
