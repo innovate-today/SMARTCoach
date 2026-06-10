@@ -296,13 +296,12 @@ function checkHowToGuidePage() {
     if (!html.includes(text)) throw new Error(`How To guide page missing ${text}`);
   });
   [
-    'id="howToLink"',
-    'href="/how-to.html"',
-    "How To",
-    "if(howTo)howTo.href=smartCoachPageUrl('/how-to.html');",
+    'id="dashboardLink"',
+    'href="/dashboard.html"',
   ].forEach((text) => {
-    if (!dashboard.includes(text)) throw new Error(`Dashboard How To link missing ${text}`);
+    if (!dashboard.includes(text)) throw new Error(`Dashboard guide navigation missing ${text}`);
   });
+  if (dashboard.includes('id="howToLink"')) throw new Error("How To guide should not live in the Dashboard action row.");
   console.log("How To guide page ok");
 }
 
@@ -392,6 +391,10 @@ function checkBugTrakDesktopFeedback() {
     "Idea Trak",
     "data-feedback-mode=\"idea\"",
     "smartcoachBugTrakForm",
+    "smartcoachHowToLink",
+    "Open How To Guide",
+    "function smartCoachPageUrl(path)",
+    "if(howTo)howTo.href=smartCoachPageUrl('/how-to.html');",
     "Send Bug Report",
     "Send Idea",
     "Idea saved.",
