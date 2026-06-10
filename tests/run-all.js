@@ -1018,6 +1018,31 @@ function checkMobileGroupStorageAccountScoped() {
   console.log("mobile group storage account scoping ok");
 }
 
+function checkMobileAccountSwitch() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    'onclick="switchSmartCoachAccount()"',
+    ">Switch Account</button>",
+    "function switchSmartCoachAccount()",
+    "function clearAccountAccessForKey(accountKey)",
+    "localStorage.removeItem('sc_account');",
+    "url.searchParams.delete('account');",
+    "url.searchParams.delete('tenant');",
+    "window.location.replace(url.pathname+(url.search||'')+(url.hash||''));",
+    "Saved groups stay with each account.",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile account switch missing ${text}`);
+  });
+  [
+    "localStorage.removeItem('sc1')",
+    "localStorage.removeItem('sc1_lid')",
+    "localStorage.removeItem('sc1_rid')",
+  ].forEach((text) => {
+    if (mobile.includes(text)) throw new Error(`mobile account switch should not delete account group data: ${text}`);
+  });
+  console.log("mobile account switch ok");
+}
+
 function checkHistoricalMeetResultsLoadUnmatched() {
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const required = [
@@ -1220,6 +1245,7 @@ checkAttendanceCheckpointMarkAll();
 checkAttendanceSeasonAttachment();
 checkGroupsTrayAddHidden();
 checkMobileGroupStorageAccountScoped();
+checkMobileAccountSwitch();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 

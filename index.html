@@ -490,6 +490,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     </div>
     <button class="mbtn" onclick="saveAccountSettings()">Save Settings</button>
     <button class="mbtn c" onclick="refreshAppVersion()" style="margin-top:8px">Refresh App</button>
+    <button class="mbtn c" onclick="switchSmartCoachAccount()" style="margin-top:8px">Switch Account</button>
     <button class="mbtn c" onclick="hm('m-account')" style="margin-top:8px">Close</button>
   </div>
 </div>
@@ -569,6 +570,43 @@ function clearAccountUrlOverride(){
     });
     if(changed)window.history.replaceState(null,'',url.pathname+(url.search||'')+(url.hash||''));
   }catch(e){}
+}
+function accountCookieNameFor(storageKey){
+  return String(storageKey||'').replace(/[^a-zA-Z0-9_-]/g,'_');
+}
+function clearAccountAccessForKey(accountKey){
+  var key=cleanAccountKey(accountKey);
+  try{
+    localStorage.removeItem('sc_access_'+key);
+    localStorage.removeItem('sc_session_remembered_'+key);
+    localStorage.removeItem('sc_coach_identity_'+key);
+    sessionStorage.removeItem('sc_session_'+key);
+  }catch(e){}
+  clearSmartCoachCookie(accountCookieNameFor('sc_access_'+key));
+  clearSmartCoachCookie(accountCookieNameFor('sc_session_remembered_'+key));
+}
+function switchSmartCoachAccount(){
+  var current=smartCoachAccountKey();
+  if(!confirm('Switch accounts on this phone? Saved groups stay with each account.')){
+    return;
+  }
+  clearAccountAccessForKey(current);
+  try{
+    localStorage.removeItem('sc_account');
+    sessionStorage.removeItem('sc_force_coach_identity_check');
+  }catch(e){}
+  accountStatus=null;
+  accountPromptShown=false;
+  coachPromptShown=false;
+  STAFF=[];
+  try{
+    var url=new URL(window.location.href);
+    url.searchParams.delete('account');
+    url.searchParams.delete('tenant');
+    window.location.replace(url.pathname+(url.search||'')+(url.hash||''));
+  }catch(e){
+    window.location.reload();
+  }
 }
 function accessCodeStorageKey(){
   return 'sc_access_'+smartCoachAccountKey();
