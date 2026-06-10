@@ -552,6 +552,7 @@ function checkAthleteCalendarBulkEmailLinks() {
     'id="emailCalendarLinksBtn"',
     "Email Calendar Links",
     'id="calendarEmailModal"',
+    'id="calendarEmailDirectLink"',
     "Email Athlete Calendar Links",
     "coach's normal email app or provider",
     "function calendarEmailSourceAthletes()",
@@ -564,16 +565,19 @@ function checkAthleteCalendarBulkEmailLinks() {
     "function setupCalendarEmailTools()",
     "document.addEventListener('DOMContentLoaded',setupCalendarEmailTools);",
     "fetch(apiUrl('/api/smart-trak/athletes?action=calendarLink&athleteId='",
-    "window.location.href=calendarEmailMailto(item);",
+    "ui.direct.href=href;",
+    "ui.direct.click();",
+    "If no email window opens, click Open Draft for",
     "mailto:",
     "Download CSV",
+    "Open Draft Link",
     "Open Next Draft",
     "Missing athlete email",
     "smartcoach-athlete-calendar-email-links.csv",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Athlete Calendar bulk email links missing ${text}`);
   });
-  if (html.includes("fetch('/api/smart-trak/calendar-email") || html.includes("sendCalendarEmail")) {
+  if (html.includes("fetch('/api/smart-trak/calendar-email") || html.includes("sendCalendarEmail") || html.includes("window.location.href=calendarEmailMailto")) {
     throw new Error("Athlete Calendar bulk email links should use the coach email provider, not server-sent email.");
   }
   [
