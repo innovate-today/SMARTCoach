@@ -34,7 +34,7 @@ Use the Dashboard as the daily coaching home base. It shows roster status, train
 
 How to use it:
 
-1. Review the top cards for the activity range, previous week completed volume, planned/completed volume for the selected range, and completed workouts this week.
+1. Review the top cards for the activity range and Training Load Summary: planned volume, completed volume, average miles per athlete, on-target workouts, and outside-target workouts.
 2. Use the search box to find one athlete or group.
 3. Use **Activity range** for quick ranges such as Last 7 days, Last 30 days, or Last 90 days. Choose **Custom range** when you need exact start and end dates.
 4. Use the filters to narrow the view by athlete group, activity type, or season.
@@ -46,6 +46,8 @@ How to use it:
 7. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
 The Dashboard title includes a small **What's New** button. Use it to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Training Customization, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
+
+Use **Customize Dashboard** when a coach wants to hide optional tools they do not use every day. Keep Trak, Attendance Trak, Equipment Trak, Docu Trak, Weather, Records, and Simulators can be turned off for the Dashboard view. Hiding a tool only removes its dashboard shortcut or summary card; the tool's saved data stays in SMART Trak, direct page links still work, and **Show All** can turn everything back on.
 
 The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
 

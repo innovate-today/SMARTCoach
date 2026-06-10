@@ -5,6 +5,7 @@ const htmlFiles = [
   "index.html",
   "dashboard.html",
   "athletes.html",
+  "attendance.html",
   "training-calendar.html",
   "plan-setup.html",
   "plan-import.html",
@@ -272,6 +273,80 @@ function checkDashboardWhatsNew() {
     if (html.includes(text)) throw new Error(`Dashboard What's New includes non-coach-facing text: ${text}`);
   });
   console.log("Dashboard What's New ok");
+}
+
+function checkDashboardToolPreferences() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const directPages = [
+    "keep-trak.html",
+    "attendance.html",
+    "athletes.html",
+    "records.html",
+    "weather.html",
+    "track-simulator.html",
+    "xc-simulator.html",
+  ];
+  directPages.forEach((file) => {
+    if (!fs.existsSync(file)) throw new Error(`hidden dashboard tools must still load directly by URL: ${file}`);
+  });
+  [
+    'id="dashboardPrefsBtn"',
+    "Customize Dashboard",
+    'id="dashboardPrefsModal"',
+    'id="dashboardPrefsList"',
+    "function defaultDashboardPreferences()",
+    "function normalizeDashboardPreferences(source)",
+    "function dashboardToolVisible(key)",
+    "function applyDashboardPreferences(source)",
+    "function renderDashboardPrefsList()",
+    "function collectDashboardPreferences()",
+    "function resetDashboardPreferences()",
+    "function saveDashboardPreferences()",
+    "fetch('/api/smart-trak/dashboard-preferences?account='",
+    "Hidden tools keep their saved data and can still be opened directly by URL.",
+    "Preferences only change dashboard visibility.",
+    "node.hidden=!dashboardToolVisible(key);",
+    'data-dashboard-tool="keepTrak"',
+    'data-dashboard-tool="attendanceTrak"',
+    'data-dashboard-tool="docuTrak"',
+    'data-dashboard-tool="weather"',
+    'data-dashboard-tool="records"',
+    'data-dashboard-tool="simulators"',
+    "equipmentTrak:true",
+    "Show All",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`dashboard tool preferences missing ${text}`);
+  });
+  [
+    "fetch('/api/smart-trak/attendance?v='+stamp",
+    "fetch('/api/smart-trak/docu-trak?v='+stamp",
+    "recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];",
+    "docuItems=results[3].ok?(results[3].data.items||[]):[];",
+    "if(els.rosterAttendanceRate)els.rosterAttendanceRate.textContent=attendanceRateText(attendanceRows);",
+    "updateDocuStatusCard(rows);",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`dashboard hidden tools must not remove summary data flow: ${text}`);
+  });
+  [
+    'if (route === "dashboard-preferences")',
+    "return accountDashboardPreferences(req, res);",
+    "async function accountDashboardPreferences(req, res)",
+    "dashboardPreferences: normalizeDashboardPreferences",
+    "function defaultDashboardVisibleTools()",
+    "function normalizeDashboardPreferences(source)",
+    "lastDashboardPreferencesSync",
+    "keepTrak: true",
+    "attendanceTrak: true",
+    "equipmentTrak: true",
+    "docuTrak: true",
+    "weather: true",
+    "records: true",
+    "simulators: true",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`dashboard preferences API missing ${text}`);
+  });
+  console.log("dashboard tool preferences ok");
 }
 
 function checkBugTrakDesktopFeedback() {
@@ -994,6 +1069,7 @@ checkAccountOwnerExcludedFromAthletes();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkDashboardWhatsNew();
+checkDashboardToolPreferences();
 checkBugTrakDesktopFeedback();
 checkPlanImportMultiGroupAssignment();
 checkMeetManagerSportField();

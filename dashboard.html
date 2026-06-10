@@ -181,6 +181,7 @@ tr:last-child td{border-bottom:0}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
 .modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
 .whats-new-panel{width:min(620px,100%)}.whats-new-intro{color:#475569;font-size:14px;line-height:1.45;margin:0 0 12px}.release-list{display:grid;gap:10px}.release-group{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}.release-group h3{font-size:14px;margin:0 0 8px;color:#0f172a}.release-group ul{margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.45}.release-group li+li{margin-top:4px}.release-badge{display:inline-flex;align-items:center;border-radius:999px;background:#dbeafe;color:#173891;padding:3px 8px;font-size:12px;font-weight:900;margin-bottom:10px}
+.dashboard-pref-list{display:grid;gap:8px}.dashboard-pref-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px 12px}.dashboard-pref-row b{display:block;font-size:14px;color:#0f172a}.dashboard-pref-row small{display:block;color:#64748b;font-size:12px;line-height:1.35;margin-top:2px}.dashboard-pref-row input{width:18px;height:18px;accent-color:var(--blue);flex:0 0 auto;margin-top:3px}
 .accountsummary{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 11px;margin-top:10px;color:var(--muted);font-size:13px;line-height:1.35}
 .accountsummary b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
 .accountsummary.good{border-color:#bbf7d0;background:#f0fdf4}.accountsummary.good b{color:#08783c}
@@ -257,6 +258,7 @@ tr:last-child td{border-bottom:0}
             <span>What's New</span>
             <span id="whatsNewCount" class="whats-new-count">New</span>
           </button>
+          <button id="dashboardPrefsBtn" class="whats-new-btn" type="button" aria-haspopup="dialog">Customize Dashboard</button>
         </div>
         <div class="sub">Roster, training volume, current fitness, and recent results.</div>
         <div id="lastUpdated" class="updated">Last updated --</div>
@@ -268,10 +270,10 @@ tr:last-child td{border-bottom:0}
         <a id="athletesLink" class="linkbtn secondary" href="/athletes.html">Athletes</a>
         <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
         <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
-        <button id="simulatorBtn" class="secondary" type="button">Simulator</button>
-        <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
-        <a id="keepTrakLink" class="linkbtn secondary" href="/keep-trak.html">Keep Trak</a>
-        <a id="weatherLink" class="linkbtn secondary" href="/weather.html">Weather</a>
+        <button id="simulatorBtn" class="secondary" type="button" data-dashboard-tool="simulators">Simulator</button>
+        <a id="recordsLink" class="linkbtn secondary" href="/records.html" data-dashboard-tool="records">Records</a>
+        <a id="keepTrakLink" class="linkbtn secondary" href="/keep-trak.html" data-dashboard-tool="keepTrak">Keep Trak</a>
+        <a id="weatherLink" class="linkbtn secondary" href="/weather.html" data-dashboard-tool="weather">Weather</a>
       </div>
       <div class="modal-action-row">
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
@@ -292,8 +294,8 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="modalbody">
       <div class="breakgrid">
-        <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
-        <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
+        <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html" data-dashboard-tool="simulators">Track Simulator</a>
+        <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html" data-dashboard-tool="simulators">XC Simulator</a>
       </div>
     </div>
   </section>
@@ -340,8 +342,8 @@ tr:last-child td{border-bottom:0}
       <h2>Roster Summary</h2>
       <div class="breakgrid">
         <div class="metric" data-filter="all"><b id="rosterActive">--</b><span>Active</span></div>
-        <div class="metric"><b id="rosterAttendanceRate">--</b><span>Attendance</span></div>
-        <div class="metric"><b id="rosterDocuStatus">--</b><span id="rosterDocuDetail">Docu Trak docs</span></div>
+        <div class="metric" data-dashboard-tool="attendanceTrak"><b id="rosterAttendanceRate">--</b><span>Attendance</span></div>
+        <div class="metric" data-dashboard-tool="docuTrak"><b id="rosterDocuStatus">--</b><span id="rosterDocuDetail">Docu Trak docs</span></div>
       </div>
     </div>
     <div class="breakdown" data-tab-target="meet">
@@ -518,6 +520,23 @@ tr:last-child td{border-bottom:0}
       <div class="modalactions">
         <div id="whatsNewStatus" class="modalstatus"></div>
         <button id="whatsNewSeenBtn" type="button">Mark All Seen</button>
+      </div>
+    </div>
+  </section>
+</div>
+<div id="dashboardPrefsModal" class="modal" hidden>
+  <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="dashboardPrefsTitle">
+    <div class="modalhead">
+      <h2 id="dashboardPrefsTitle">Customize Dashboard</h2>
+      <button id="dashboardPrefsClose" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="whats-new-intro">Choose which optional tools show on this dashboard. Hidden tools keep their saved data and can still be opened directly by URL.</p>
+      <div id="dashboardPrefsList" class="dashboard-pref-list"></div>
+      <div class="modalactions">
+        <div id="dashboardPrefsStatus" class="modalstatus">Preferences only change dashboard visibility.</div>
+        <button id="dashboardPrefsReset" class="secondary" type="button">Show All</button>
+        <button id="dashboardPrefsSave" type="button">Save Preferences</button>
       </div>
     </div>
   </section>
@@ -1095,6 +1114,7 @@ var recentTrainingRows=[];
 var recentAttendanceRows=[];
 var docuItems=[];
 var docuRecords={};
+var dashboardPreferences=null;
 var trainingGroups=[];
 var meetManagerRows=[];
 var raceResultMeetRows=[];
@@ -1182,6 +1202,107 @@ function markWhatsNewSeen(){
   try{localStorage.setItem(whatsNewStorageKey(),WHATS_NEW_VERSION);}catch(e){}
   renderWhatsNewButton();
   els.whatsNewStatus.textContent='All updates marked seen.';
+}
+function defaultDashboardPreferences(){
+  return {
+    version:1,
+    visibleTools:{
+      keepTrak:true,
+      attendanceTrak:true,
+      equipmentTrak:true,
+      docuTrak:true,
+      weather:true,
+      records:true,
+      simulators:true
+    }
+  };
+}
+var DASHBOARD_TOOL_OPTIONS=[
+  {key:'keepTrak',label:'Keep Trak',description:'Practice briefing notes shortcut.'},
+  {key:'attendanceTrak',label:'Attendance Trak',description:'Attendance summary card and dashboard shortcut visibility.'},
+  {key:'equipmentTrak',label:'Equipment Trak',description:'Reserved for dashboard equipment shortcuts; saved equipment data is unchanged.'},
+  {key:'docuTrak',label:'Docu Trak',description:'Docu Trak missing-docs card in Roster Summary.'},
+  {key:'weather',label:'Weather',description:'Weather shortcut in the dashboard header.'},
+  {key:'records',label:'Records',description:'Records shortcut in the dashboard header.'},
+  {key:'simulators',label:'Simulators',description:'Simulator chooser in the dashboard header.'}
+];
+function normalizeDashboardPreferences(source){
+  var defaults=defaultDashboardPreferences();
+  var input=source&&typeof source==='object'?source:{};
+  var raw=input.visibleTools&&typeof input.visibleTools==='object'?input.visibleTools:input;
+  Object.keys(defaults.visibleTools).forEach(function(key){
+    if(Object.prototype.hasOwnProperty.call(raw,key))defaults.visibleTools[key]=raw[key]!==false;
+  });
+  defaults.updatedAt=input.updatedAt||new Date().toISOString();
+  return defaults;
+}
+function dashboardToolVisible(key){
+  var prefs=normalizeDashboardPreferences(dashboardPreferences);
+  return prefs.visibleTools[key]!==false;
+}
+function applyDashboardPreferences(source){
+  dashboardPreferences=normalizeDashboardPreferences(source||dashboardPreferences);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-dashboard-tool]'),function(node){
+    var key=node.getAttribute('data-dashboard-tool')||'';
+    node.hidden=!dashboardToolVisible(key);
+  });
+}
+function renderDashboardPrefsList(){
+  var prefs=normalizeDashboardPreferences(dashboardPreferences);
+  els.dashboardPrefsList.innerHTML=DASHBOARD_TOOL_OPTIONS.map(function(tool){
+    var checked=prefs.visibleTools[tool.key]!==false?' checked':'';
+    return '<label class="dashboard-pref-row"><span><b>'+esc(tool.label)+'</b><small>'+esc(tool.description)+'</small></span><input type="checkbox" data-dashboard-pref="'+esc(tool.key)+'"'+checked+'></label>';
+  }).join('');
+}
+function collectDashboardPreferences(){
+  var prefs=defaultDashboardPreferences();
+  Array.prototype.forEach.call(els.dashboardPrefsList.querySelectorAll('[data-dashboard-pref]'),function(input){
+    prefs.visibleTools[input.getAttribute('data-dashboard-pref')]=input.checked;
+  });
+  prefs.updatedAt=new Date().toISOString();
+  return prefs;
+}
+function openDashboardPrefs(){
+  renderDashboardPrefsList();
+  els.dashboardPrefsStatus.textContent='Preferences only change dashboard visibility.';
+  els.dashboardPrefsStatus.style.color='#64748b';
+  els.dashboardPrefsModal.hidden=false;
+  els.dashboardPrefsClose.focus();
+}
+function closeDashboardPrefs(){
+  els.dashboardPrefsModal.hidden=true;
+}
+function resetDashboardPreferences(){
+  dashboardPreferences=defaultDashboardPreferences();
+  renderDashboardPrefsList();
+  applyDashboardPreferences(dashboardPreferences);
+  els.dashboardPrefsStatus.textContent='All optional tools are visible. Click Save Preferences to keep this setting.';
+  els.dashboardPrefsStatus.style.color='#08783c';
+}
+function saveDashboardPreferences(){
+  var prefs=collectDashboardPreferences();
+  dashboardPreferences=prefs;
+  applyDashboardPreferences(prefs);
+  els.dashboardPrefsSave.disabled=true;
+  els.dashboardPrefsStatus.textContent='Saving preferences...';
+  els.dashboardPrefsStatus.style.color='#64748b';
+  fetch('/api/smart-trak/dashboard-preferences?account='+encodeURIComponent(smartCoachAccountKey()),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({dashboardPreferences:prefs})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save dashboard preferences.');
+    applyDashboardPreferences(result.data&&result.data.dashboardPreferences||prefs);
+    els.dashboardPrefsStatus.textContent='Dashboard preferences saved.';
+    els.dashboardPrefsStatus.style.color='#08783c';
+  }).catch(function(error){
+    els.dashboardPrefsStatus.textContent=error.message||'Could not save dashboard preferences.';
+    els.dashboardPrefsStatus.style.color='#b00000';
+  }).finally(function(){
+    els.dashboardPrefsSave.disabled=false;
+  });
 }
 function openSimulatorModal(){
   applySmartCoachLinks();
@@ -1583,6 +1704,13 @@ var els={
   whatsNewList:document.getElementById('whatsNewList'),
   whatsNewStatus:document.getElementById('whatsNewStatus'),
   whatsNewSeenBtn:document.getElementById('whatsNewSeenBtn'),
+  dashboardPrefsBtn:document.getElementById('dashboardPrefsBtn'),
+  dashboardPrefsModal:document.getElementById('dashboardPrefsModal'),
+  dashboardPrefsClose:document.getElementById('dashboardPrefsClose'),
+  dashboardPrefsList:document.getElementById('dashboardPrefsList'),
+  dashboardPrefsStatus:document.getElementById('dashboardPrefsStatus'),
+  dashboardPrefsReset:document.getElementById('dashboardPrefsReset'),
+  dashboardPrefsSave:document.getElementById('dashboardPrefsSave'),
   simulatorBtn:document.getElementById('simulatorBtn'),
   simulatorModal:document.getElementById('simulatorModal'),
   simulatorClose:document.getElementById('simulatorClose'),
@@ -1628,12 +1756,20 @@ var els={
 setupTableScrollbars();
 initHeaderTooltips();
 renderWhatsNewButton();
+applyDashboardPreferences(defaultDashboardPreferences());
 els.refreshBtn.addEventListener('click',loadDashboard);
 els.whatsNewBtn.addEventListener('click',openWhatsNew);
 els.whatsNewClose.addEventListener('click',closeWhatsNew);
 els.whatsNewSeenBtn.addEventListener('click',markWhatsNewSeen);
 els.whatsNewModal.addEventListener('click',function(event){
   if(event.target===els.whatsNewModal)closeWhatsNew();
+});
+els.dashboardPrefsBtn.addEventListener('click',openDashboardPrefs);
+els.dashboardPrefsClose.addEventListener('click',closeDashboardPrefs);
+els.dashboardPrefsReset.addEventListener('click',resetDashboardPreferences);
+els.dashboardPrefsSave.addEventListener('click',saveDashboardPreferences);
+els.dashboardPrefsModal.addEventListener('click',function(event){
+  if(event.target===els.dashboardPrefsModal)closeDashboardPrefs();
 });
 els.simulatorBtn.addEventListener('click',openSimulatorModal);
 els.simulatorClose.addEventListener('click',closeSimulatorModal);
@@ -1642,6 +1778,7 @@ els.simulatorModal.addEventListener('click',function(event){
 });
 document.addEventListener('keydown',function(event){
   if(event.key==='Escape'&&!els.whatsNewModal.hidden)closeWhatsNew();
+  if(event.key==='Escape'&&!els.dashboardPrefsModal.hidden)closeDashboardPrefs();
   if(event.key==='Escape'&&!els.simulatorModal.hidden)closeSimulatorModal();
 });
 els.accessSubmit.addEventListener('click',submitDashboardAccessCode);
@@ -2301,7 +2438,11 @@ function refreshAppVersion(){
 function checkSmartCoachAccount(){
   var key=smartCoachAccountKey();
   return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(res){
-    return res.json().then(function(data){refreshRememberedCoachSession(data);return{ok:res.ok,data:data};});
+    return res.json().then(function(data){
+      refreshRememberedCoachSession(data);
+      applyDashboardPreferences(data&&data.dashboardPreferences);
+      return{ok:res.ok,data:data};
+    });
   });
 }
 

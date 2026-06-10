@@ -94,6 +94,12 @@ module.exports = async function handler(req, res) {
     return accountTrainingCustomization(req, res);
   }
 
+  if (route === "dashboard-preferences") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountDashboardPreferences(req, res);
+  }
+
   if (route === "attendance") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -1404,6 +1410,7 @@ async function accountStatus(req, res) {
     coachDeviceUsage,
     coachStaff,
     trainingCustomization: normalizeTrainingCustomization(registry.record && registry.record.trainingCustomization),
+    dashboardPreferences: normalizeDashboardPreferences(registry.record && registry.record.dashboardPreferences),
     coachAccessUnlocked,
     coachAccessCodeAccepted: accessCodeAccepted,
     parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(currentCoachSession && currentCoachSession.parentEmailAllowed),
@@ -1430,6 +1437,89 @@ async function accountStatus(req, res) {
     missingSetupFields: configured ? [] : missing,
     error: configured ? subscriptionBlockedReason || (!coachAccessUnlocked ? "Active coach code needed." : undefined) : `SMARTCoach account "${accountKey}" is not configured.`,
   });
+}
+
+async function accountDashboardPreferences(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    if (req.method === "GET") {
+      res.status(200).json({
+        success: true,
+        accountKey,
+        dashboardPreferences: normalizeDashboardPreferences(existing.record.dashboardPreferences),
+      });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
+    const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    if (!sessionAllowed && !codeAllowed) {
+      throw httpError(401, "Active coach access is required to update dashboard preferences.");
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const dashboardPreferences = normalizeDashboardPreferences(payload.dashboardPreferences || payload);
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      dashboardPreferences,
+      lastDashboardPreferencesSync: {
+        savedAt: new Date().toISOString(),
+        visibleTools: Object.keys(dashboardPreferences.visibleTools).filter((key) => dashboardPreferences.visibleTools[key]),
+      },
+    });
+    res.status(200).json({ success: true, accountKey, dashboardPreferences });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Dashboard preferences save failed." });
+  }
+}
+
+function defaultDashboardVisibleTools() {
+  return {
+    keepTrak: true,
+    attendanceTrak: true,
+    equipmentTrak: true,
+    docuTrak: true,
+    weather: true,
+    records: true,
+    simulators: true,
+  };
+}
+
+function normalizeDashboardPreferences(source) {
+  const input = source && typeof source === "object" ? source : {};
+  const raw = input.visibleTools && typeof input.visibleTools === "object" ? input.visibleTools : input;
+  const visibleTools = defaultDashboardVisibleTools();
+  Object.keys(visibleTools).forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(raw, key)) visibleTools[key] = raw[key] !== false;
+  });
+  return {
+    version: 1,
+    updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
+    visibleTools,
+  };
 }
 
 async function accountTrainingCustomization(req, res) {
