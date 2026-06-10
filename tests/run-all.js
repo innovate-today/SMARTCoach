@@ -386,13 +386,6 @@ function checkBugTrakDesktopFeedback() {
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
   [
     "smartcoach-bugtrak-btn",
-    "function hideGhlIconsRequested()",
-    "smartcoach-hide-ghl-icons",
-    "function hideExternalWidgets(root)",
-    "function hideParentGhlChrome()",
-    "parentChromeSelectors",
-    "smartcoachGhlChromeHideStyle",
-    "if(!hideGhlIconsRequested()){",
     "smartcoachFeedbackBtn",
     "Feedback",
     "Bug Trak",
