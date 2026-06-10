@@ -995,6 +995,9 @@ function checkMobileGroupStorageAccountScoped() {
     "function accountStorageKey(base)",
     "function getAccountStorage(base)",
     "function setAccountStorage(base,value)",
+    "function legacyPhoneGroupStorage()",
+    'onclick="recoverLegacyPhoneGroups()"',
+    ">Recover Phone Groups</button>",
     "return suffix==='default'?base:(base+'_'+suffix);",
     "if(account==='default')return localStorage.getItem(base);",
     "if(localStorage.getItem(base+'_account')===account)return localStorage.getItem(base);",
@@ -1009,12 +1012,20 @@ function checkMobileGroupStorageAccountScoped() {
   });
   [
     "localStorage.setItem('sc1',JSON.stringify(s))",
-    "localStorage.getItem('sc1')",
     "localStorage.getItem('sc1_lid'",
     "localStorage.getItem('sc1_rid'",
   ].forEach((text) => {
     if (mobile.includes(text)) throw new Error(`mobile group storage should not use unscoped storage directly: ${text}`);
   });
+  const legacyStart = mobile.indexOf("function legacyPhoneGroupStorage()");
+  const legacyEnd = mobile.indexOf("function normalizeStoredRunner", legacyStart);
+  const legacyBlock = legacyStart >= 0 && legacyEnd > legacyStart ? mobile.slice(legacyStart, legacyEnd) : "";
+  if (!legacyBlock.includes("localStorage.getItem('sc1')||''")) {
+    throw new Error("legacy phone group recovery should be the only direct old sc1 reader");
+  }
+  if (!mobile.includes("Recover older phone groups into the current account? This will merge missing groups and athletes, not delete anything.")) {
+    throw new Error("legacy phone group recovery should require coach confirmation");
+  }
   console.log("mobile group storage account scoping ok");
 }
 
