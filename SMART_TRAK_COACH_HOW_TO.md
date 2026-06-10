@@ -804,7 +804,7 @@ How to use it:
 
 Athlete links are unique to each athlete. Athletes do not need the coach access code.
 
-To send links in bulk, filter the Athletes page first if needed, then click **Email Calendar Links**. SMART Trak prepares one personalized draft for each active athlete in the current view who has an athlete email saved. Click **Open Next Draft** to open each message in the coach's normal email app or provider. If the browser blocks the draft, click the visible **Open Draft for athlete** link that appears. Use **Copy Messages** or **Download CSV** when the coach wants to paste the messages into another email workflow or mail merge.
+To send links in bulk, filter the Athletes page first if needed, then click **Email Calendar Links**. SMART Trak prepares one personalized draft for each active athlete in the current view who has an athlete email saved. Choose the coach's **Email Provider**: Default mail app, Gmail, Outlook, or Yahoo Mail. Click **Open Next Draft** to open each message. If the browser blocks the draft, click the visible **Open Draft for athlete** link that appears, or switch the provider to Gmail/Outlook/Yahoo. Use **Copy Messages** or **Download CSV** when the coach wants to paste the messages into another email workflow or mail merge.
 
 Athlete notes sync into the completed workout/performance note. They are also added to the linked Training Calendar workout's coach notes as **Athlete note:** so coaches can open the calendar workout and read what the athlete submitted.
 

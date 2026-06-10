@@ -553,12 +553,23 @@ function checkAthleteCalendarBulkEmailLinks() {
     "Email Calendar Links",
     'id="calendarEmailModal"',
     'id="calendarEmailDirectLink"',
+    'id="calendarEmailProvider"',
+    "Email Provider",
+    "Default mail app",
+    "Gmail",
+    "Outlook",
+    "Yahoo Mail",
     "Email Athlete Calendar Links",
     "coach's normal email app or provider",
     "function calendarEmailSourceAthletes()",
     "return sortAthletes(filteredAthletes()).filter(function(a){return a.smartcoachActive;});",
     "function validEmail(value)",
     "return 'mailto:'+String(item.email||'').trim()+'?subject='",
+    "function calendarEmailProvider()",
+    "function calendarEmailDraftUrl(item)",
+    "https://mail.google.com/mail/?view=cm&fs=1",
+    "https://outlook.office.com/mail/deeplink/compose",
+    "https://compose.mail.yahoo.com/",
     "function openCalendarEmailModal()",
     "function openNextCalendarEmailDraft()",
     "function copyCalendarEmailMessages()",
@@ -567,8 +578,9 @@ function checkAthleteCalendarBulkEmailLinks() {
     "document.addEventListener('DOMContentLoaded',setupCalendarEmailTools);",
     "fetch(apiUrl('/api/smart-trak/athletes?action=calendarLink&athleteId='",
     "ui.direct.href=href;",
+    "ui.direct.target=provider==='mailto'?'':'_blank';",
     "ui.direct.click();",
-    "If no email window opens, click Open Draft for",
+    "choose Gmail/Outlook/Yahoo",
     "mailto:",
     "Download CSV",
     "Open Draft Link",
@@ -583,7 +595,7 @@ function checkAthleteCalendarBulkEmailLinks() {
   }
   const directLink = html.match(/<a id="calendarEmailDirectLink"[^>]*>/);
   if (!directLink || directLink[0].includes('target="_blank"')) {
-    throw new Error("Athlete Calendar draft link should not open mailto in a blank browser tab.");
+    throw new Error("Athlete Calendar draft link markup should not force mailto into a blank browser tab.");
   }
   [
     'clean(req.query && req.query.action) === "calendarLink"',
