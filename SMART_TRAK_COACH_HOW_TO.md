@@ -51,6 +51,8 @@ Use **Customize Dashboard** when a coach wants to hide optional tools they do no
 
 The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
 
+The Dashboard also includes a **How To** button. Use it to open the latest coach guide inside SMART Trak. The web guide is generated from the same how-to text used for support and chat prompts, so it stays current when the guide is updated.
+
 How to use Staff Access:
 
 1. Click **Staff Access** on the Dashboard.

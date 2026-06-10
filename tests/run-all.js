@@ -16,6 +16,7 @@ const htmlFiles = [
   "track-simulator.html",
   "xc-simulator.html",
   "weather.html",
+  "how-to.html",
   "athlete-calendar.html",
   "account-access.html",
   "onboarding.html",
@@ -276,6 +277,33 @@ function checkDashboardWhatsNew() {
     if (html.includes(text)) throw new Error(`Dashboard What's New includes non-coach-facing text: ${text}`);
   });
   console.log("Dashboard What's New ok");
+}
+
+function checkHowToGuidePage() {
+  const html = fs.readFileSync("how-to.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  [
+    "SMART Trak How To Guide",
+    "Coach-facing guide for SMART Trak and the SMARTCoach Pro mobile app.",
+    "fetch('/SMART_TRAK_COACH_HOW_TO.md?t='",
+    "function renderMarkdown(markdown)",
+    "id=\"tocBody\"",
+    "id=\"guideBody\"",
+    "Open Text Guide",
+    "printBtn",
+    "smartcoach-help-widget.js",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`How To guide page missing ${text}`);
+  });
+  [
+    'id="howToLink"',
+    'href="/how-to.html"',
+    "How To",
+    "if(howTo)howTo.href=smartCoachPageUrl('/how-to.html');",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Dashboard How To link missing ${text}`);
+  });
+  console.log("How To guide page ok");
 }
 
 function checkDashboardToolPreferences() {
@@ -1144,6 +1172,7 @@ checkAccountOwnerExcludedFromAthletes();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkDashboardWhatsNew();
+checkHowToGuidePage();
 checkDashboardToolPreferences();
 checkBugTrakDesktopFeedback();
 checkPlanImportMultiGroupAssignment();

@@ -280,6 +280,7 @@ tr:last-child td{border-bottom:0}
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
+        <a id="howToLink" class="linkbtn utility-action" href="/how-to.html">How To</a>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
@@ -1490,6 +1491,8 @@ function applySmartCoachLinks(){
   if(xcSimulator)xcSimulator.href=smartCoachPageUrl('/xc-simulator.html');
   var trainingCalendar=document.getElementById('trainingCalendarLink');
   if(trainingCalendar)trainingCalendar.href=smartCoachPageUrl('/training-calendar.html');
+  var howTo=document.getElementById('howToLink');
+  if(howTo)howTo.href=smartCoachPageUrl('/how-to.html');
   var planImport=document.getElementById('planImportLink');
   if(planImport)planImport.href=smartCoachPageUrl('/plan-import.html');
   var planSetup=document.getElementById('planSetupLink');
