@@ -134,15 +134,15 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.util
     <div class="modalbody">
       <div class="formsection">
         <div class="sectiontitle">Draft Queue</div>
-        <div class="importhelp">SMART Trak creates one personalized draft per active athlete with a saved athlete email. The draft opens in the coach's normal email app or provider.</div>
+        <div class="importhelp">SMART Trak creates one personalized draft per active athlete with a saved athlete email. Gmail opens by default; coaches can switch to Outlook, Yahoo Mail, or their default mail app.</div>
         <div class="formgrid three" style="margin-bottom:10px">
           <div class="field">
             <label for="calendarEmailProvider">Email Provider</label>
             <select id="calendarEmailProvider">
-              <option value="mailto">Default mail app</option>
-              <option value="gmail">Gmail</option>
+              <option value="gmail" selected>Gmail</option>
               <option value="outlook">Outlook</option>
               <option value="yahoo">Yahoo Mail</option>
+              <option value="mailto">Default mail app</option>
             </select>
           </div>
         </div>
@@ -551,7 +551,7 @@ function calendarEmailSourceAthletes(){return sortAthletes(filteredAthletes()).f
 function calendarEmailBody(item){return 'Hi '+(item.firstName||item.name||'')+',\n\nHere is your SMARTCoach Athlete Calendar link:\n'+item.url+'\n\nUse this link to view assigned workouts and submit Complete, Modify, or Skip updates.\n\nCoach';}
 function calendarEmailSubject(){return 'Your SMARTCoach Athlete Calendar Link';}
 function calendarEmailMailto(item){return 'mailto:'+String(item.email||'').trim()+'?subject='+encodeURIComponent(calendarEmailSubject())+'&body='+encodeURIComponent(calendarEmailBody(item));}
-function calendarEmailProvider(){var ui=calendarEmailElements();return ui.provider&&ui.provider.value||'mailto';}
+function calendarEmailProvider(){var ui=calendarEmailElements();return ui.provider&&ui.provider.value||'gmail';}
 function calendarEmailDraftUrl(item){var subject=calendarEmailSubject();var body=calendarEmailBody(item);var to=String(item.email||'').trim();var provider=calendarEmailProvider();if(provider==='gmail')return 'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);if(provider==='outlook')return 'https://outlook.office.com/mail/deeplink/compose?to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);if(provider==='yahoo')return 'https://compose.mail.yahoo.com/?to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);return calendarEmailMailto(item);}
 function openCalendarEmailModal(){var ui=calendarEmailElements();calendarEmailQueue=[];calendarEmailIndex=0;ui.modal.hidden=false;ui.rows.innerHTML='';ui.summary.innerHTML='';ui.status.textContent='Creating athlete calendar email queue...';ui.next.disabled=true;ui.copy.disabled=true;ui.csv.disabled=true;if(ui.direct)ui.direct.hidden=true;var source=calendarEmailSourceAthletes();var missing=source.filter(function(a){return !validEmail(a.email);});var targets=source.filter(function(a){return validEmail(a.email);});if(!source.length){ui.status.textContent='No active athletes in this view.';renderCalendarEmailQueue(missing);return;}if(!targets.length){ui.status.textContent='No active athletes in this view have athlete emails saved.';renderCalendarEmailQueue(missing);return;}targets.reduce(function(chain,athlete){return chain.then(function(){return fetch(apiUrl('/api/smart-trak/athletes?action=calendarLink&athleteId='+encodeURIComponent(athlete.id)),{cache:'no-store',headers:smartCoachHeaders()}).then(jsonResult).then(function(data){calendarEmailQueue.push({athleteId:athlete.id,name:athlete.name||'Athlete',firstName:athlete.firstName||String(athlete.name||'').split(/\s+/)[0]||'',email:validEmail(athlete.email),url:new URL(data.url,location.origin).toString()});ui.status.textContent='Prepared '+calendarEmailQueue.length+' of '+targets.length+' calendar email drafts...';});});},Promise.resolve()).then(function(){renderCalendarEmailQueue(missing);ui.status.textContent='Prepared '+calendarEmailQueue.length+' draft'+(calendarEmailQueue.length===1?'':'s')+(missing.length?' · '+missing.length+' active athlete'+(missing.length===1?' is':'s are')+' missing athlete email.':'.');}).catch(function(error){renderCalendarEmailQueue(missing);ui.status.textContent='Could not prepare every link: '+friendlyApiError(error);});}
 function closeCalendarEmailModal(){calendarEmailElements().modal.hidden=true;}
