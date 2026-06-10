@@ -558,6 +558,7 @@ function checkAthleteCalendarBulkEmailLinks() {
     "function calendarEmailSourceAthletes()",
     "return sortAthletes(filteredAthletes()).filter(function(a){return a.smartcoachActive;});",
     "function validEmail(value)",
+    "return 'mailto:'+String(item.email||'').trim()+'?subject='",
     "function openCalendarEmailModal()",
     "function openNextCalendarEmailDraft()",
     "function copyCalendarEmailMessages()",
@@ -579,6 +580,10 @@ function checkAthleteCalendarBulkEmailLinks() {
   });
   if (html.includes("fetch('/api/smart-trak/calendar-email") || html.includes("sendCalendarEmail") || html.includes("window.location.href=calendarEmailMailto")) {
     throw new Error("Athlete Calendar bulk email links should use the coach email provider, not server-sent email.");
+  }
+  const directLink = html.match(/<a id="calendarEmailDirectLink"[^>]*>/);
+  if (!directLink || directLink[0].includes('target="_blank"')) {
+    throw new Error("Athlete Calendar draft link should not open mailto in a blank browser tab.");
   }
   [
     'clean(req.query && req.query.action) === "calendarLink"',
