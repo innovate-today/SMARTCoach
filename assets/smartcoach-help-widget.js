@@ -1,14 +1,47 @@
 (function(){
   if (window.SMARTCoachHelpWidgetLoaded) return;
   window.SMARTCoachHelpWidgetLoaded = true;
-  var css = [
+  function embeddedMode(){
+    try{
+      var params=new URLSearchParams(window.location.search||'');
+      return params.get('embed')==='1'||params.get('iframe')==='1'||params.get('embedded')==='1';
+    }catch(e){return false;}
+  }
+  function hideGhlIconsRequested(){
+    try{
+      var params=new URLSearchParams(window.location.search||'');
+      return embeddedMode()||params.get('hideGhlIcons')==='1'||params.get('hideGhlChrome')==='1';
+    }catch(e){return embeddedMode();}
+  }
+  var externalWidgetSelectors = [
     'iframe[src*="leadconnectorhq.com"]',
     'iframe[src*="chat-widget"]',
     'div[id*="lc_chat"]',
     'div[class*="lc-"]',
     'div[class*="leadconnector"]',
     'div[class*="chat-widget"]'
-  ].join(',') + '{z-index:2147483647!important;}' +
+  ].join(',');
+  var parentChromeSelectors = [
+    '[aria-label*="Phone" i]',
+    '[aria-label*="Call" i]',
+    '[aria-label*="Announcement" i]',
+    '[aria-label*="Notification" i]',
+    '[aria-label*="Help" i]',
+    '[aria-label*="Ask AI" i]',
+    '[title*="Phone" i]',
+    '[title*="Call" i]',
+    '[title*="Announcement" i]',
+    '[title*="Notification" i]',
+    '[title*="Help" i]',
+    '[title*="Ask AI" i]',
+    '[data-testid*="phone" i]',
+    '[data-testid*="call" i]',
+    '[data-testid*="announcement" i]',
+    '[data-testid*="notification" i]',
+    '[data-testid*="help" i]'
+  ].join(',');
+  var scopedExternalWidgetSelectors = externalWidgetSelectors.split(',').map(function(selector){return 'body.smartcoach-hide-ghl-icons '+selector;}).join(',');
+  var css = scopedExternalWidgetSelectors + '{display:none!important;visibility:hidden!important;pointer-events:none!important;}' +
     '.smartcoach-bugtrak-btn{position:fixed;left:18px;bottom:18px;z-index:2147483000;border:1px solid #bfd0ef;border-radius:999px;background:#fff;color:#173891;font:800 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:9px 12px;box-shadow:0 14px 32px rgba(15,23,42,.18);cursor:pointer}' +
     '.smartcoach-bugtrak-btn:hover{background:#eef4ff}' +
     '.smartcoach-bugtrak-overlay{position:fixed;inset:0;z-index:2147483001;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;overflow:auto}' +
@@ -36,18 +69,52 @@
   style.setAttribute('data-smartcoach-help-widget','1');
   style.textContent = css;
   document.head.appendChild(style);
-  function liftWidget(){
-    Array.prototype.slice.call(document.querySelectorAll('iframe[src*="leadconnectorhq.com"],iframe[src*="chat-widget"],div[id*="lc_chat"],div[class*="lc-"],div[class*="leadconnector"],div[class*="chat-widget"]')).forEach(function(node){
-      node.style.zIndex = '2147483647';
+  if(hideGhlIconsRequested()){
+    document.body.classList.add('smartcoach-hide-ghl-icons');
+    document.documentElement.classList.add('smartcoach-hide-ghl-icons');
+  }
+  function hideExternalWidgets(root){
+    if(!hideGhlIconsRequested())return;
+    root=root||document;
+    Array.prototype.slice.call(root.querySelectorAll(externalWidgetSelectors)).forEach(function(node){
+      if(node.closest&&node.closest('.smartcoach-bugtrak-overlay'))return;
+      node.style.setProperty('display','none','important');
+      node.style.setProperty('visibility','hidden','important');
+      node.style.setProperty('pointer-events','none','important');
     });
   }
-  setInterval(liftWidget,1000);
-  var script = document.createElement('script');
-  script.src = 'https://beta.leadconnectorhq.com/loader.js';
-  script.setAttribute('data-resources-url','https://beta.leadconnectorhq.com/chat-widget/loader.js');
-  script.setAttribute('data-widget-id','6a1785dc1b5a98ef9df8eae9');
-  script.async = true;
-  document.head.appendChild(script);
+  function hideParentGhlChrome(){
+    if(!hideGhlIconsRequested())return;
+    try{
+      if(!window.parent||window.parent===window||!window.parent.document)return;
+      var parentDocument=window.parent.document;
+      if(!parentDocument.getElementById('smartcoachGhlChromeHideStyle')){
+        var parentStyle=parentDocument.createElement('style');
+        parentStyle.id='smartcoachGhlChromeHideStyle';
+        parentStyle.textContent=parentChromeSelectors+'{display:none!important;visibility:hidden!important;pointer-events:none!important;}';
+        parentDocument.head.appendChild(parentStyle);
+      }
+      Array.prototype.slice.call(parentDocument.querySelectorAll(parentChromeSelectors)).forEach(function(node){
+        node.style.setProperty('display','none','important');
+        node.style.setProperty('visibility','hidden','important');
+        node.style.setProperty('pointer-events','none','important');
+      });
+    }catch(e){}
+  }
+  function hideGhlChrome(){
+    hideExternalWidgets(document);
+    hideParentGhlChrome();
+  }
+  setInterval(hideGhlChrome,1000);
+  hideGhlChrome();
+  if(!hideGhlIconsRequested()){
+    var script = document.createElement('script');
+    script.src = 'https://beta.leadconnectorhq.com/loader.js';
+    script.setAttribute('data-resources-url','https://beta.leadconnectorhq.com/chat-widget/loader.js');
+    script.setAttribute('data-widget-id','6a1785dc1b5a98ef9df8eae9');
+    script.async = true;
+    document.head.appendChild(script);
+  }
   function accountKey(){
     try{
       var params=new URLSearchParams(window.location.search||'');
