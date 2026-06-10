@@ -988,6 +988,36 @@ function checkGroupsTrayAddHidden() {
   console.log("Groups tray Add hidden ok");
 }
 
+function checkMobileGroupStorageAccountScoped() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "function accountStorageSuffix()",
+    "function accountStorageKey(base)",
+    "function getAccountStorage(base)",
+    "function setAccountStorage(base,value)",
+    "return suffix==='default'?base:(base+'_'+suffix);",
+    "if(account==='default')return localStorage.getItem(base);",
+    "if(localStorage.getItem(base+'_account')===account)return localStorage.getItem(base);",
+    "setAccountStorage('sc1',JSON.stringify(s));",
+    "setAccountStorage('sc1_lid',String(lid));",
+    "setAccountStorage('sc1_rid',String(rid));",
+    "var d=getAccountStorage('sc1');",
+    "lid=parseInt(getAccountStorage('sc1_lid')||'10');",
+    "rid=parseInt(getAccountStorage('sc1_rid')||'10');",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile group storage account scoping missing ${text}`);
+  });
+  [
+    "localStorage.setItem('sc1',JSON.stringify(s))",
+    "localStorage.getItem('sc1')",
+    "localStorage.getItem('sc1_lid'",
+    "localStorage.getItem('sc1_rid'",
+  ].forEach((text) => {
+    if (mobile.includes(text)) throw new Error(`mobile group storage should not use unscoped storage directly: ${text}`);
+  });
+  console.log("mobile group storage account scoping ok");
+}
+
 function checkHistoricalMeetResultsLoadUnmatched() {
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const required = [
@@ -1189,6 +1219,7 @@ checkKeepTrakFeature();
 checkAttendanceCheckpointMarkAll();
 checkAttendanceSeasonAttachment();
 checkGroupsTrayAddHidden();
+checkMobileGroupStorageAccountScoped();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 

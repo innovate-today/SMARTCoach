@@ -532,6 +532,30 @@ function setSmartCoachAccountKey(value){
   try{localStorage.setItem('sc_account',key);}catch(e){}
   return key;
 }
+function accountStorageSuffix(){
+  return cleanAccountKey(smartCoachAccountKey());
+}
+function accountStorageKey(base){
+  var suffix=accountStorageSuffix();
+  return suffix==='default'?base:(base+'_'+suffix);
+}
+function getAccountStorage(base){
+  try{
+    var key=accountStorageKey(base);
+    var value=localStorage.getItem(key);
+    if(value!==null&&value!==undefined)return value;
+    var account=accountStorageSuffix();
+    if(account==='default')return localStorage.getItem(base);
+    if(localStorage.getItem(base+'_account')===account)return localStorage.getItem(base);
+  }catch(e){}
+  return null;
+}
+function setAccountStorage(base,value){
+  try{
+    localStorage.setItem(accountStorageKey(base),String(value));
+    localStorage.setItem(base+'_account',accountStorageSuffix());
+  }catch(e){}
+}
 function openAccountAccessPage(){
   var key=smartCoachAccountKey();
   window.location.href='/account-access.html?account='+encodeURIComponent(key);
@@ -1033,9 +1057,9 @@ function save(){
         return{id:r.id,name:r.name,note:r.note||'',hook:r.hook||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayType:r.trainingPlanDayType||'',trainingPlanDayDate:r.trainingPlanDayDate||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:r.trainingPlanDayLinkedMeetId||'',saved:r.saved||[]};
       })};
     });
-    localStorage.setItem('sc1',JSON.stringify(s));
-    localStorage.setItem('sc1_lid',String(lid));
-    localStorage.setItem('sc1_rid',String(rid));
+    setAccountStorage('sc1',JSON.stringify(s));
+    setAccountStorage('sc1_lid',String(lid));
+    setAccountStorage('sc1_rid',String(rid));
   }catch(e){}
 }
 function defaultCfg(){
@@ -1133,7 +1157,7 @@ function normalizeCfg(cfg){
 }
 function load(){
   try{
-    var d=localStorage.getItem('sc1');
+    var d=getAccountStorage('sc1');
     if(d){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
@@ -1144,8 +1168,8 @@ function load(){
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
           })};
       });
-      lid=parseInt(localStorage.getItem('sc1_lid')||'10');
-      rid=parseInt(localStorage.getItem('sc1_rid')||'10');
+      lid=parseInt(getAccountStorage('sc1_lid')||'10');
+      rid=parseInt(getAccountStorage('sc1_rid')||'10');
     }
   }catch(e){}
   if(!logs.length){
