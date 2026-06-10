@@ -489,9 +489,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div id="account-status" style="font-size:12px;color:#555;text-align:center;padding:8px 0 0;min-height:18px"></div>
     </div>
     <button class="mbtn" onclick="saveAccountSettings()">Save Settings</button>
-    <button class="mbtn c" onclick="recoverLegacyPhoneGroups()" style="margin-top:8px">Recover Phone Groups</button>
     <button class="mbtn c" onclick="refreshAppVersion()" style="margin-top:8px">Refresh App</button>
-    <button class="mbtn c" onclick="switchSmartCoachAccount()" style="margin-top:8px">Switch Account</button>
+    <button class="mbtn c" onclick="logOutSmartCoachAccount()" style="margin-top:8px">Log Out</button>
     <button class="mbtn c" onclick="hm('m-account')" style="margin-top:8px">Close</button>
   </div>
 </div>
@@ -558,82 +557,6 @@ function setAccountStorage(base,value){
     localStorage.setItem(base+'_account',accountStorageSuffix());
   }catch(e){}
 }
-function legacyPhoneGroupStorage(){
-  try{
-    var raw=localStorage.getItem('sc1')||'';
-    if(!raw)return '';
-    var owner=cleanAccountKey(localStorage.getItem('sc1_account')||'');
-    var current=accountStorageSuffix();
-    if(owner&&owner!=='default'&&owner!==current)return '';
-    return raw;
-  }catch(e){
-    return '';
-  }
-}
-function normalizeStoredRunner(r){
-  r=r||{};
-  return {id:r.id||rid++,name:r.name||'',note:r.note||'',hook:r.hook||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayType:r.trainingPlanDayType||'',trainingPlanDayDate:r.trainingPlanDayDate||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:r.trainingPlanDayLinkedMeetId||'',saved:r.saved||[],on:false,el:0,t0:0,le:0,lt:0,laps:[]};
-}
-function normalizeStoredGroup(l){
-  l=l||{};
-  var meta=normalizeGroupMeta(l);
-  return {id:l.id||lid++,sharedGroupId:l.sharedGroupId||'',name:l.name||'Group',type:meta.type,season:meta.season,seasonYear:meta.seasonYear,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:normalizeCfg(l.cfg),runners:(l.runners||[]).map(normalizeStoredRunner)};
-}
-function mergeRecoveredGroup(group){
-  var match=logs.find(function(item){
-    if(group.sharedGroupId&&item.sharedGroupId===group.sharedGroupId)return true;
-    return (item.type||'training')===(group.type||'training')&&String(item.name||'').trim().toLowerCase()===String(group.name||'').trim().toLowerCase();
-  });
-  if(!match){
-    logs.unshift(group);
-    return true;
-  }
-  var changed=false,existing={};
-  (match.runners||[]).forEach(function(r){
-    var key=String(r.contactId||r.smartcoachAthleteId||r.name||'').trim().toLowerCase();
-    if(key)existing[key]=true;
-  });
-  (group.runners||[]).forEach(function(r){
-    var key=String(r.contactId||r.smartcoachAthleteId||r.name||'').trim().toLowerCase();
-    if(key&&!existing[key]){
-      match.runners.push(r);
-      existing[key]=true;
-      changed=true;
-    }
-  });
-  ['trainingPlanId','trainingPlanSourceId','trainingPlanTitle','trainingPlanDescription','trainingPlanSeason','trainingPlanPhase','trainingPlanDayId','trainingPlanDaySourceId','trainingPlanDayTitle','trainingPlanDayType','trainingPlanDayDate','trainingPlanDayWorkoutType','trainingPlanDayEnergySystem','trainingPlanDayTargetSplits','trainingPlanDayDetails','trainingPlanDayPlannedVolume','trainingPlanDayLinkedMeetId'].forEach(function(key){
-    if(!match[key]&&group[key]){match[key]=group[key];changed=true;}
-  });
-  return changed;
-}
-function recoverLegacyPhoneGroups(){
-  var status=document.getElementById('account-status');
-  var raw=legacyPhoneGroupStorage();
-  if(!raw){
-    if(status){status.textContent='No older phone groups were found on this device.';status.style.color='#92400e';}
-    return;
-  }
-  if(!confirm('Recover older phone groups into the current account? This will merge missing groups and athletes, not delete anything.')){
-    return;
-  }
-  try{
-    var recovered=JSON.parse(raw);
-    if(!Array.isArray(recovered))throw new Error('Saved phone groups were not readable.');
-    var changed=false,count=0;
-    recovered.map(normalizeStoredGroup).forEach(function(group){
-      if(mergeRecoveredGroup(group)){changed=true;count++;}
-    });
-    if(changed){
-      save();
-      queueSharedGroupsSave();
-      rl();
-      if(CL)rr();
-    }
-    if(status){status.textContent=changed?'Recovered '+count+' phone group'+(count===1?'':'s')+' into '+smartCoachAccountKey()+'.':'Those phone groups were already in this account.';status.style.color=changed?'#0a7a44':'#555';}
-  }catch(e){
-    if(status){status.textContent='Could not recover phone groups: '+e.message;status.style.color='#c00';}
-  }
-}
 function openAccountAccessPage(){
   var key=smartCoachAccountKey();
   window.location.href='/account-access.html?account='+encodeURIComponent(key);
@@ -662,14 +585,13 @@ function clearAccountAccessForKey(accountKey){
   clearSmartCoachCookie(accountCookieNameFor('sc_access_'+key));
   clearSmartCoachCookie(accountCookieNameFor('sc_session_remembered_'+key));
 }
-function switchSmartCoachAccount(){
+function logOutSmartCoachAccount(){
   var current=smartCoachAccountKey();
-  if(!confirm('Switch accounts on this phone? Saved groups stay with each account.')){
+  if(!confirm('Log out of SMARTCoach on this phone? Saved groups stay on this device.')){
     return;
   }
   clearAccountAccessForKey(current);
   try{
-    localStorage.removeItem('sc_account');
     sessionStorage.removeItem('sc_force_coach_identity_check');
   }catch(e){}
   accountStatus=null;
@@ -678,8 +600,6 @@ function switchSmartCoachAccount(){
   STAFF=[];
   try{
     var url=new URL(window.location.href);
-    url.searchParams.delete('account');
-    url.searchParams.delete('tenant');
     window.location.replace(url.pathname+(url.search||'')+(url.hash||''));
   }catch(e){
     window.location.reload();

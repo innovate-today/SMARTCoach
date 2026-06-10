@@ -995,9 +995,6 @@ function checkMobileGroupStorageAccountScoped() {
     "function accountStorageKey(base)",
     "function getAccountStorage(base)",
     "function setAccountStorage(base,value)",
-    "function legacyPhoneGroupStorage()",
-    'onclick="recoverLegacyPhoneGroups()"',
-    ">Recover Phone Groups</button>",
     "return suffix==='default'?base:(base+'_'+suffix);",
     "if(account==='default')return localStorage.getItem(base);",
     "if(localStorage.getItem(base+'_account')===account)return localStorage.getItem(base);",
@@ -1011,47 +1008,44 @@ function checkMobileGroupStorageAccountScoped() {
     if (!mobile.includes(text)) throw new Error(`mobile group storage account scoping missing ${text}`);
   });
   [
+    "Recover Phone Groups",
+    "recoverLegacyPhoneGroups",
+    "legacyPhoneGroupStorage",
     "localStorage.setItem('sc1',JSON.stringify(s))",
+    "localStorage.getItem('sc1')",
     "localStorage.getItem('sc1_lid'",
     "localStorage.getItem('sc1_rid'",
   ].forEach((text) => {
     if (mobile.includes(text)) throw new Error(`mobile group storage should not use unscoped storage directly: ${text}`);
   });
-  const legacyStart = mobile.indexOf("function legacyPhoneGroupStorage()");
-  const legacyEnd = mobile.indexOf("function normalizeStoredRunner", legacyStart);
-  const legacyBlock = legacyStart >= 0 && legacyEnd > legacyStart ? mobile.slice(legacyStart, legacyEnd) : "";
-  if (!legacyBlock.includes("localStorage.getItem('sc1')||''")) {
-    throw new Error("legacy phone group recovery should be the only direct old sc1 reader");
-  }
-  if (!mobile.includes("Recover older phone groups into the current account? This will merge missing groups and athletes, not delete anything.")) {
-    throw new Error("legacy phone group recovery should require coach confirmation");
-  }
   console.log("mobile group storage account scoping ok");
 }
 
-function checkMobileAccountSwitch() {
+function checkMobileAccountLogout() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
-    'onclick="switchSmartCoachAccount()"',
-    ">Switch Account</button>",
-    "function switchSmartCoachAccount()",
+    'onclick="logOutSmartCoachAccount()"',
+    ">Log Out</button>",
+    "function logOutSmartCoachAccount()",
     "function clearAccountAccessForKey(accountKey)",
+    "Log out of SMARTCoach on this phone? Saved groups stay on this device.",
+    "window.location.replace(url.pathname+(url.search||'')+(url.hash||''));",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile account logout missing ${text}`);
+  });
+  [
+    "switchSmartCoachAccount",
+    ">Switch Account</button>",
     "localStorage.removeItem('sc_account');",
     "url.searchParams.delete('account');",
     "url.searchParams.delete('tenant');",
-    "window.location.replace(url.pathname+(url.search||'')+(url.hash||''));",
-    "Saved groups stay with each account.",
-  ].forEach((text) => {
-    if (!mobile.includes(text)) throw new Error(`mobile account switch missing ${text}`);
-  });
-  [
     "localStorage.removeItem('sc1')",
     "localStorage.removeItem('sc1_lid')",
     "localStorage.removeItem('sc1_rid')",
   ].forEach((text) => {
-    if (mobile.includes(text)) throw new Error(`mobile account switch should not delete account group data: ${text}`);
+    if (mobile.includes(text)) throw new Error(`mobile account logout should not delete account selection or group data: ${text}`);
   });
-  console.log("mobile account switch ok");
+  console.log("mobile account logout ok");
 }
 
 function checkHistoricalMeetResultsLoadUnmatched() {
@@ -1256,7 +1250,7 @@ checkAttendanceCheckpointMarkAll();
 checkAttendanceSeasonAttachment();
 checkGroupsTrayAddHidden();
 checkMobileGroupStorageAccountScoped();
-checkMobileAccountSwitch();
+checkMobileAccountLogout();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 
