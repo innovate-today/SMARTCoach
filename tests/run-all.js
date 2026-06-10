@@ -545,6 +545,47 @@ function checkTrainingCustomization() {
   console.log("Training customization ok");
 }
 
+function checkAthleteCalendarBulkEmailLinks() {
+  const html = fs.readFileSync("athletes.html", "utf8");
+  const api = fs.readFileSync("api/ghl/athletes.js", "utf8");
+  [
+    'id="emailCalendarLinksBtn"',
+    "Email Calendar Links",
+    'id="calendarEmailModal"',
+    "Email Athlete Calendar Links",
+    "coach's normal email app or provider",
+    "function calendarEmailSourceAthletes()",
+    "return sortAthletes(filteredAthletes()).filter(function(a){return a.smartcoachActive;});",
+    "function validEmail(value)",
+    "function openCalendarEmailModal()",
+    "function openNextCalendarEmailDraft()",
+    "function copyCalendarEmailMessages()",
+    "function downloadCalendarEmailCsv()",
+    "function setupCalendarEmailTools()",
+    "document.addEventListener('DOMContentLoaded',setupCalendarEmailTools);",
+    "fetch(apiUrl('/api/smart-trak/athletes?action=calendarLink&athleteId='",
+    "window.location.href=calendarEmailMailto(item);",
+    "mailto:",
+    "Download CSV",
+    "Open Next Draft",
+    "Missing athlete email",
+    "smartcoach-athlete-calendar-email-links.csv",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Athlete Calendar bulk email links missing ${text}`);
+  });
+  if (html.includes("fetch('/api/smart-trak/calendar-email") || html.includes("sendCalendarEmail")) {
+    throw new Error("Athlete Calendar bulk email links should use the coach email provider, not server-sent email.");
+  }
+  [
+    'clean(req.query && req.query.action) === "calendarLink"',
+    "athleteAccessCode(accountKey, athlete.id)",
+    "`/athlete-calendar.html?account=${encodeURIComponent(accountKey)}&athlete=${encodeURIComponent(athlete.id)}&code=${encodeURIComponent(code)}`",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Athlete Calendar link API missing ${text}`);
+  });
+  console.log("Athlete Calendar bulk email links ok");
+}
+
 function checkDashboardPlainLapSplitsStayLaps() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -1079,6 +1120,7 @@ checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
 checkTrainingCustomization();
+checkAthleteCalendarBulkEmailLinks();
 checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
