@@ -483,7 +483,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <button class="mbtn" onclick="saveAccountSettings()">Save Settings</button>
     <button class="mbtn c" onclick="refreshAppVersion()" style="margin-top:8px">Refresh App</button>
     <button class="mbtn c" onclick="logOutSmartCoachAccount()" style="margin-top:8px">Log Out</button>
-    <button class="mbtn c" onclick="hm('m-account')" style="margin-top:8px">Close</button>
+    <button class="mbtn c" onclick="closeAccountSettings()" style="margin-top:8px">Close</button>
   </div>
 </div>
 
@@ -1074,6 +1074,13 @@ function applyPlanMode(){
   document.body.classList.toggle('plan-essential',!isProPlan());
   if(!isProPlan()&&GV==='meets')GV='training';
 }
+function accountDeviceAccessReady(){
+  if(productPlanOverride())return true;
+  if(!hasSmartCoachAccountSelection())return false;
+  if(!accountStatus)return false;
+  if(accountStatus.accessReady===false)return false;
+  return !accountStatus.accessCodeRequired||!!accountStatus.deviceAccessReady;
+}
 function syncProductPlanFromAccount(){
   if(productPlanOverride())return Promise.resolve(productPlan());
   if(!hasSmartCoachAccountSelection()){
@@ -1104,6 +1111,20 @@ function promptForAccountAccessNeeded(){
     var status=document.getElementById('account-status');
     if(status){status.textContent='Enter your account key and coach access code to continue.';status.style.color='#555';}
   },350);
+}
+function closeAccountSettings(){
+  var status=document.getElementById('account-status');
+  if(!hasSmartCoachAccountSelection()){
+    if(status){status.textContent='Enter your account key and coach access code to continue.';status.style.color='#555';}
+    sm('m-account');
+    return;
+  }
+  if(accountStatus&&accountStatus.accessCodeRequired&&accountStatus.deviceAccessReady===false){
+    if(status){status.textContent='Enter the coach access code to unlock SMARTCoach on this phone.';status.style.color='#555';}
+    sm('m-account');
+    return;
+  }
+  hm('m-account');
 }
 function runForcedCoachIdentityCheck(data){
   var force=false;
@@ -6621,7 +6642,7 @@ function syncSavedRecordCount(synced){
 }
 
 applyPlanMode();applyAdminTools();load();rl();
-syncProductPlanFromAccount().then(function(){rl();if(hasSmartCoachAccountSelection()||productPlanOverride())loadProData();});
+syncProductPlanFromAccount().then(function(){rl();if(accountDeviceAccessReady())loadProData();});
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
   prepareFeedbackAudio();

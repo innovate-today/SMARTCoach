@@ -1202,6 +1202,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 360. SMARTCoach mobile app timing/detail header now uses **Back** instead of **Groups**, removes the logo from the center title area, and applies a long-title layout so meet names have more room before the Share button.
 361. Coach how-to Meet History import instructions now match the current spreadsheet-only import workflow. The guide no longer lists Athletic.net Import as an available option and tells coaches to use spreadsheet/template rows for Athletic.net-sourced results.
 362. SMARTCoach mobile app bare-entry behavior now stops on Account access instead of silently opening the default app shell. If a coach opens `app.smartcoach-pro.com` without an account link or remembered account, the app opens Account settings and asks for the school account key plus coach access code before loading SMART Trak data.
+363. SMARTCoach mobile app Account settings is now blocking when account access is missing or locked. The Close button no longer drops a coach into Training/Meets/Archive without an account key/access code, and SMART Trak data loading waits until device access is ready.
 
 ## Known Good Test Flow
 
