@@ -1271,15 +1271,6 @@ function load(){
       rid=parseInt(getAccountStorage('sc1_rid')||'10');
     }
   }catch(e){}
-  if(!logs.length){
-    var cs=currentSeason();
-    logs=[
-      {id:lid++,name:'Workout 1',type:'training',season:cs.season,seasonYear:cs.year,cfg:defaultCfg(),attendance:defaultAttendanceState(),runners:[]},
-      {id:lid++,name:'Workout 2',type:'training',season:cs.season,seasonYear:cs.year,cfg:defaultCfg(),attendance:defaultAttendanceState(),runners:[]},
-      {id:lid++,name:'Workout 3',type:'training',season:cs.season,seasonYear:cs.year,cfg:defaultCfg(),attendance:defaultAttendanceState(),runners:[]}
-    ];
-    save();
-  }
 }
 function currentSeason(){
   var d=new Date(),m=d.getMonth()+1,y=d.getFullYear(),s='Spring';
