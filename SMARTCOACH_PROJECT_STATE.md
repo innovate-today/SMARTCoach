@@ -1200,6 +1200,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 358. SMARTCoach mobile app Account settings now includes **Log Out** instead of account-switch/recovery controls. Logging out clears the current account's access code, signed session, and selected coach identity on that phone, then reloads the same account link without deleting account-scoped groups/archive data or the selected account key.
 359. SMARTCoach mobile app home header now says **SMARTCoach** instead of **Groups**, since the screen is the app home for training, meets, archive, and daily tools.
 360. SMARTCoach mobile app timing/detail header now uses **Back** instead of **Groups**, removes the logo from the center title area, and applies a long-title layout so meet names have more room before the Share button.
+361. Coach how-to Meet History import instructions now match the current spreadsheet-only import workflow. The guide no longer lists Athletic.net Import as an available option and tells coaches to use spreadsheet/template rows for Athletic.net-sourced results.
 
 ## Known Good Test Flow
 

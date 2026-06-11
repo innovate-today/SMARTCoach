@@ -282,6 +282,7 @@ function checkDashboardWhatsNew() {
 function checkHowToGuidePage() {
   const html = fs.readFileSync("how-to.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     "SMART Trak How To Guide",
     "Coach-facing guide for SMART Trak and the SMARTCoach Pro mobile app.",
@@ -302,6 +303,20 @@ function checkHowToGuidePage() {
     if (!dashboard.includes(text)) throw new Error(`Dashboard guide navigation missing ${text}`);
   });
   if (dashboard.includes('id="howToLink"')) throw new Error("How To guide should not live in the Dashboard action row.");
+  [
+    "Use **Import History** when starting SMART Trak with older results from a spreadsheet, CSV, TSV, or the SMART Trak template.",
+    "Paste spreadsheet rows into the import box, or upload a CSV/TSV/template file.",
+    "Athletic.net copy/paste import is no longer available because it was not reliable enough for coach-facing use.",
+  ].forEach((text) => {
+    if (!guide.includes(text)) throw new Error(`How To guide Meet History import wording missing ${text}`);
+  });
+  [
+    "Choose **Paste Spreadsheet**, **Upload Spreadsheet**, or **Athletic.net Import**.",
+    "Athletic.net Import supports copied",
+    "paste the season calendar or meet reference list below the records",
+  ].forEach((text) => {
+    if (guide.includes(text)) throw new Error(`How To guide still describes removed Athletic.net import flow: ${text}`);
+  });
   console.log("How To guide page ok");
 }
 
