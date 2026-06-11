@@ -475,7 +475,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <span>Remember this device for 30 days</span>
       </label>
       <div style="padding:6px 16px 0;text-align:left;font-size:12px"><a href="#" onclick="openAccountAccessPage();return false;" style="color:#2B4FCC;font-weight:700;text-decoration:none">Forgot or change access code?</a></div>
-      <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use <b>default</b> for this SMARTCoach account. Customer accounts use the account key created during SMART Trak setup.</div>
+      <div style="padding:6px 16px 0;color:#777;font-size:12px;line-height:1.35">Use the account key from your school&apos;s SMARTCoach setup, then enter the coach access code for this device.</div>
       <div id="account-summary" style="margin:8px 16px 0;border:1px solid #e5e5ea;border-radius:8px;background:#fff;padding:9px 10px;text-align:left;font-size:12px;line-height:1.35;color:#555"></div>
       <div id="app-version" style="font-size:11px;color:#777;text-align:center;padding:7px 0 0;min-height:16px"></div>
       <div id="account-status" style="font-size:12px;color:#555;text-align:center;padding:8px 0 0;min-height:18px"></div>
@@ -515,6 +515,22 @@ function smartCoachAccountKey(){
     return cleanAccountKey(localStorage.getItem('sc_account')||'default');
   }catch(e){
     return 'default';
+  }
+}
+function smartCoachAccountFromUrl(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    return cleanAccountKey((params.get('account')||params.get('tenant')||'').trim());
+  }catch(e){
+    return 'default';
+  }
+}
+function hasSmartCoachAccountSelection(){
+  try{
+    if(smartCoachAccountFromUrl()!=='default')return true;
+    return cleanAccountKey(localStorage.getItem('sc_account')||'')!=='default';
+  }catch(e){
+    return false;
   }
 }
 function cleanAccountKey(value){
@@ -806,13 +822,21 @@ function openAccountSettings(){
   var fieldUnit=document.getElementById('field-mark-unit');
   var status=document.getElementById('account-status');
   var version=document.getElementById('app-version');
-  if(input)input.value=smartCoachAccountKey();
+  var hasAccount=hasSmartCoachAccountSelection();
+  if(input)input.value=hasAccount?smartCoachAccountKey():'';
   if(planInput)planInput.value=productPlan();
   if(planDisplay)planDisplay.textContent=productPlanLabel(productPlan());
   if(accessInput)accessInput.value=smartCoachAccessCode();
   if(rememberInput)rememberInput.checked=true;
   if(fieldUnit)fieldUnit.value=fieldMarkUnit();
   showAccessCodeRow(true);
+  if(!hasAccount){
+    if(status){status.textContent='Enter your account key and coach access code to continue.';status.style.color='#555';}
+    renderAccountSummary({productPlan:productPlan(),configured:false,accountMissing:true},productPlan());
+    if(version)version.textContent='App version '+appVersion();
+    sm('m-account');
+    return;
+  }
   if(status){status.textContent='Checking account...';status.style.color='#555';}
   renderAccountSummary({productPlan:productPlan(),configured:false,checking:true},productPlan());
   if(version)version.textContent='App version '+appVersion();
@@ -837,6 +861,11 @@ function saveAccountSettings(){
   var rememberInput=document.getElementById('remember-device');
   var fieldUnit=document.getElementById('field-mark-unit');
   var status=document.getElementById('account-status');
+  if(input&&!String(input.value||'').trim()){
+    if(status){status.textContent='Enter your SMARTCoach account key.';status.style.color='#c00';}
+    renderAccountSummary({productPlan:productPlan(),configured:false,accountMissing:true},productPlan());
+    return;
+  }
   var key=setSmartCoachAccountKey(input&&input.value);
   var plan=setProductPlan(planInput&&planInput.value);
   var accessValue=accessInput?accessInput.value.trim():'';
@@ -910,6 +939,13 @@ function accountSettingsErrorMessage(key,error){
 function renderAccountSummary(data,fallbackPlan){
   var box=document.getElementById('account-summary');
   if(!box)return;
+  if(data&&data.accountMissing){
+    showAccessCodeRow(true);
+    box.style.borderColor='#fed7aa';
+    box.style.background='#fff7ed';
+    box.innerHTML='<b style="display:block;color:#b45309">Account access needed</b><span style="display:block;margin-top:3px">Open your school\'s SMARTCoach link, or enter your account key and coach access code.</span>';
+    return;
+  }
   var plan=(data&&data.productPlan)||fallbackPlan||productPlan();
   var pro=plan!=='essential';
   var configured=!!(data&&data.configured);
@@ -1040,6 +1076,12 @@ function applyPlanMode(){
 }
 function syncProductPlanFromAccount(){
   if(productPlanOverride())return Promise.resolve(productPlan());
+  if(!hasSmartCoachAccountSelection()){
+    accountStatus=null;
+    applyPlanMode();
+    promptForAccountAccessNeeded();
+    return Promise.resolve(productPlan());
+  }
   return checkSmartCoachAccount().then(function(result){
     accountStatus=result.data||null;
     if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
@@ -1053,6 +1095,15 @@ function syncProductPlanFromAccount(){
     applyPlanMode();
     return productPlan();
   });
+}
+function promptForAccountAccessNeeded(){
+  if(accountPromptShown)return;
+  accountPromptShown=true;
+  setTimeout(function(){
+    openAccountSettings();
+    var status=document.getElementById('account-status');
+    if(status){status.textContent='Enter your account key and coach access code to continue.';status.style.color='#555';}
+  },350);
 }
 function runForcedCoachIdentityCheck(data){
   var force=false;
@@ -6570,7 +6621,7 @@ function syncSavedRecordCount(synced){
 }
 
 applyPlanMode();applyAdminTools();load();rl();
-syncProductPlanFromAccount().then(function(){rl();loadProData();});
+syncProductPlanFromAccount().then(function(){rl();if(hasSmartCoachAccountSelection()||productPlanOverride())loadProData();});
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
 document.addEventListener('touchstart',function(e){
   prepareFeedbackAudio();

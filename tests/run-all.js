@@ -1060,6 +1060,16 @@ function checkMobileGroupStorageAccountScoped() {
 function checkMobileAccountLogout() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
+    "function smartCoachAccountFromUrl()",
+    "function hasSmartCoachAccountSelection()",
+    "function promptForAccountAccessNeeded()",
+    "if(!hasSmartCoachAccountSelection()){",
+    "promptForAccountAccessNeeded();",
+    "if(hasSmartCoachAccountSelection()||productPlanOverride())loadProData();",
+    "Account access needed",
+    "Open your school\\'s SMARTCoach link, or enter your account key and coach access code.",
+    "Enter your account key and coach access code to continue.",
+    "Use the account key from your school&apos;s SMARTCoach setup, then enter the coach access code for this device.",
     'onclick="logOutSmartCoachAccount()"',
     ">Log Out</button>",
     "function logOutSmartCoachAccount()",
@@ -1078,6 +1088,7 @@ function checkMobileAccountLogout() {
     "localStorage.removeItem('sc1')",
     "localStorage.removeItem('sc1_lid')",
     "localStorage.removeItem('sc1_rid')",
+    "Use <b>default</b> for this SMARTCoach account.",
   ].forEach((text) => {
     if (mobile.includes(text)) throw new Error(`mobile account logout should not delete account selection or group data: ${text}`);
   });
