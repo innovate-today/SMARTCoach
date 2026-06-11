@@ -982,6 +982,21 @@ function checkGroupsTrayAddHidden() {
   if (mobile.includes('<span style="color:#fff">Groups</span>')) {
     throw new Error("Mobile home header should not say Groups.");
   }
+  if (!mobile.includes(".nav-title.detail-title{min-width:0;line-height:1.22;padding:0 8px;display:block;overflow-wrap:anywhere}")) {
+    throw new Error("Mobile detail header should reserve room for long meet names.");
+  }
+  if (!mobile.includes('<div class="nav-btn" onclick="go(\'s-groups\')">&#8249; Back</div>')) {
+    throw new Error("Mobile detail header should use Back instead of Groups.");
+  }
+  if (!mobile.includes('<div class="nav-title detail-title">')) {
+    throw new Error("Mobile detail header should use the detail title layout.");
+  }
+  const detailStart = mobile.indexOf('<div class="screen" id="s-group">');
+  const detailEnd = mobile.indexOf('<!-- LOG ENTRY -->', detailStart);
+  const detailHeader = detailStart >= 0 && detailEnd > detailStart ? mobile.slice(detailStart, detailEnd) : "";
+  if (detailHeader.includes("smart-logo")) {
+    throw new Error("Mobile detail header should not include the SMART logo.");
+  }
   if (!mobile.includes('id="groups-tray-add-btn" onclick="addGroupForView()" hidden')) {
     throw new Error("Groups tray Add button should be hidden because top Add is available.");
   }

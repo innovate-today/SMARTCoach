@@ -25,6 +25,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* NAV */
 .nav{background:var(--B);padding:env(safe-area-inset-top,12px) 16px 8px;padding-top:max(env(safe-area-inset-top),12px);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;min-height:56px}
 .nav-title{font-weight:700;font-size:17px;text-align:center;flex:1;color:var(--W);letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px}
+.nav-title.detail-title{min-width:0;line-height:1.22;padding:0 8px;display:block;overflow-wrap:anywhere}
 .nav-btn{color:var(--R);font-size:17px;cursor:pointer;min-width:60px;font-weight:500;padding:4px 0;user-select:none}
 .nav-btn.r{text-align:right}
 
@@ -244,17 +245,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <!-- RUNNERS SCREEN -->
 <div class="screen" id="s-group">
   <div class="nav">
-    <div class="nav-btn" onclick="go('s-groups')">&#8249; Groups</div>
-    <div class="nav-title">
-      <svg class="smart-logo" width="24" height="24" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="70" cy="70" r="68" fill="#fff" stroke="#2B4FCC" stroke-width="4"/>
-        <circle cx="70" cy="90" r="5" fill="#2B4FCC"/>
-        <path d="M56 76 Q70 62 84 76" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
-        <path d="M46 65 Q70 40 94 65" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
-        <path d="M36 54 Q70 18 104 54" fill="none" stroke="#2B4FCC" stroke-width="6" stroke-linecap="round"/>
-        <rect x="22" y="96" width="96" height="32" rx="8" fill="#2B4FCC"/>
-        <text x="70" y="118" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="800" fill="#fff" letter-spacing="2">SMART</text>
-      </svg>
+    <div class="nav-btn" onclick="go('s-groups')">&#8249; Back</div>
+    <div class="nav-title detail-title">
       <span id="ltit" style="color:#fff">Group</span>
     </div>
     <div class="nav-btn r" id="group-action" onclick="groupPrimaryAction()">Share</div>

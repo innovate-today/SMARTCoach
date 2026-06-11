@@ -1199,6 +1199,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 357. SMARTCoach mobile app group/archive cache is now account-scoped. The previous local cache keys (`sc1`, `sc1_lid`, `sc1_rid`) were shared across accounts on the same device, so a coach opening a new account after previously logging into other accounts could see archived groups from those earlier accounts. Named accounts now read/write `sc1_<account>`, `sc1_lid_<account>`, and `sc1_rid_<account>`; only the default/dev account can read the old global keys. Regression coverage prevents direct unscoped `sc1` reads/writes from returning in `index.html`.
 358. SMARTCoach mobile app Account settings now includes **Log Out** instead of account-switch/recovery controls. Logging out clears the current account's access code, signed session, and selected coach identity on that phone, then reloads the same account link without deleting account-scoped groups/archive data or the selected account key.
 359. SMARTCoach mobile app home header now says **SMARTCoach** instead of **Groups**, since the screen is the app home for training, meets, archive, and daily tools.
+360. SMARTCoach mobile app timing/detail header now uses **Back** instead of **Groups**, removes the logo from the center title area, and applies a long-title layout so meet names have more room before the Share button.
 
 ## Known Good Test Flow
 
