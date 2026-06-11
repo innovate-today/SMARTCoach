@@ -976,6 +976,12 @@ function checkAttendanceSeasonAttachment() {
 
 function checkGroupsTrayAddHidden() {
   const mobile = fs.readFileSync("index.html", "utf8");
+  if (!mobile.includes('<span style="color:#fff">SMARTCoach</span>')) {
+    throw new Error("Mobile home header should say SMARTCoach.");
+  }
+  if (mobile.includes('<span style="color:#fff">Groups</span>')) {
+    throw new Error("Mobile home header should not say Groups.");
+  }
   if (!mobile.includes('id="groups-tray-add-btn" onclick="addGroupForView()" hidden')) {
     throw new Error("Groups tray Add button should be hidden because top Add is available.");
   }
