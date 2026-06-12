@@ -113,6 +113,20 @@ function checkAccountStatusLocationVerification() {
   console.log("account status location verification ok");
 }
 
+function checkOnboardingSubscriberPlanLoad() {
+  const html = fs.readFileSync("onboarding.html", "utf8");
+  [
+    "lookupAccount({loadIntoForm:true});",
+    "if(options.loadIntoForm){",
+    "fillFormFromLookup();",
+    "raw==='pro unlimited custom'",
+    "proUnlimited:'Pro Unlimited (Custom)'",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`onboarding subscriber plan load missing ${text}`);
+  });
+  console.log("onboarding subscriber plan load ok");
+}
+
 function checkAccountOwnerExcludedFromAthletes() {
   const files = [
     "api/ghl/athletes.js",
@@ -1403,6 +1417,7 @@ checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
 checkAccountStatusLocationVerification();
+checkOnboardingSubscriberPlanLoad();
 checkAccountOwnerExcludedFromAthletes();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();

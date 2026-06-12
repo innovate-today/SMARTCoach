@@ -1078,14 +1078,15 @@ function loadSubscriberAccount(account){
   document.getElementById('accountKey').value=account;
   document.getElementById('lookupAccountKey').value=account;
   renderAccountKeyWarning();
-  lookupAccount();
+  lookupAccount({loadIntoForm:true});
 }
 function clearSubscriberSearch(){
   var search=document.getElementById('subscriberSearch');
   if(search)search.value='';
   renderSubscribers();
 }
-function lookupAccount(){
+function lookupAccount(options){
+  options=options||{};
   var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');
   document.getElementById('lookupAccountKey').value=account;
   document.getElementById('accountKey').value=account;
@@ -1119,7 +1120,11 @@ function lookupAccount(){
       throw err;
     }
     renderLookupResult(result.data);
-    setStatus('Customer account record loaded.','good');
+    if(options.loadIntoForm){
+      fillFormFromLookup();
+    }else{
+      setStatus('Customer account record loaded.','good');
+    }
   }).catch(function(error){
     box.innerHTML='<div class="empty">'+esc(error.message||'Could not load account.')+'</div>';
     setStatus(error.message||'Could not load account.','bad');
@@ -2735,7 +2740,7 @@ function normalizePlanValue(value){
   if(raw==='essential'||raw==='smartcoach essential')return 'essential';
   if(raw==='pro 100'||raw==='smartcoach pro 100'||raw==='100'||raw==='pro100')return 'pro100';
   if(raw==='pro 200'||raw==='smartcoach pro 200'||raw==='200'||raw==='pro200')return 'pro200';
-  if(raw==='pro unlimited'||raw==='smartcoach pro unlimited'||raw==='unlimited'||raw==='custom'||raw==='pro custom'||raw==='prounlimited')return 'proUnlimited';
+  if(raw==='pro unlimited'||raw==='smartcoach pro unlimited'||raw==='unlimited'||raw==='custom'||raw==='pro unlimited custom'||raw==='pro custom'||raw==='prounlimited')return 'proUnlimited';
   return 'pro25';
 }
 function normalizedSubscriptionAmountForPlan(plan,cadence,amount){
