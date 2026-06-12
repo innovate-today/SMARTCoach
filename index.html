@@ -204,6 +204,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .partner-station-guide{margin:8px 10px 0;padding:10px 12px;border-radius:12px;background:#f7f7f9;border:1px solid #d1d5db;color:#222;font-size:13px;line-height:1.35}
 .partner-station-guide b{display:block;font-size:15px;margin-bottom:2px}
 .partner-station-guide .warn{color:#c47a00;font-weight:800}
+.partner-station-status{font-size:12px;color:#0a7a44;font-weight:800;text-align:center;padding:6px 12px 0;min-height:22px}
 .partner-mark-btn{background:#2B4FCC!important;color:#fff!important;border-color:#2B4FCC!important;min-width:116px;box-shadow:0 2px 0 rgba(0,0,0,.18)}
 .partner-mark-btn.captured{background:#0a7a44!important;border-color:#0a7a44!important;box-shadow:0 0 0 3px rgba(10,122,68,.22),0 2px 0 rgba(0,0,0,.18)}
 .partner-mark-btn.captured b,.partner-mark-btn b{display:block;font-size:17px;line-height:1}
@@ -3650,7 +3651,7 @@ function renderPartnerTimingControls(){
   var stationRows=partner.stations.map(function(item){
     var count=records.filter(function(record){return record.stationId===item.id;}).length;
     var selected=partnerSelectedStationIds().indexOf(item.id)>=0;
-    return '<button class="picker-row '+(selected?'on':'')+'" type="button" onclick="selectPartnerStation(&quot;'+ex(item.id)+'&quot;)"><b>'+(selected?'✓ ':'')+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></button>';
+    return '<button class="picker-row '+(selected?'on':'')+'" type="button" onclick="handlePartnerStationSelect(event,&quot;'+ex(item.id)+'&quot;)" ontouchend="handlePartnerStationSelect(event,&quot;'+ex(item.id)+'&quot;)"><b>'+(selected?'✓ ':'')+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></button>';
   }).join('');
   var stationGuide='';
   if(enabled){
@@ -3667,7 +3668,7 @@ function renderPartnerTimingControls(){
     (enabled?'<button class="mbtn" type="button" onclick="partnerMasterToggle()" style="background:'+(partnerRaceRunning()?'#555':'#0a7a44')+';margin-top:8px">'+(partnerRaceRunning()?'Stop Race Clock':(partner.finishAt?'Continue Race Clock':'Record Race Start'))+'</button>':'')+
     (enabled?'<button class="mbtn c" type="button" onclick="resetPartnerTimingRace()" style="margin-top:8px">Reset Race Clock</button>':'')+
     stationGuide+
-    (enabled?'<div class="mttl" style="font-size:18px;padding-top:12px">Choose My Station(s)</div><div class="picker-list" style="padding:0;max-height:none">'+stationRows+'</div>':'')+
+    (enabled?'<div class="mttl" style="font-size:18px;padding-top:12px">Choose My Station(s)</div><div class="picker-list" style="padding:0;max-height:none">'+stationRows+'</div><div id="partner-station-status" class="partner-station-status">'+ex(partnerStationStatusText())+'</div>':'')+
     (enabled?'<div id="partner-review">'+partnerReviewHtml()+'</div>':'')+
     (enabled?'<button class="mbtn" id="partner-sync-btn" type="button" onclick="syncPartnerTimingFromPanel()" style="background:#2B4FCC;margin-top:8px">Sync Partner Timing</button><div id="partner-sync-status" style="font-size:12px;color:#555;font-weight:700;text-align:center;padding:6px 12px 0"></div>':'');
 }
@@ -3679,6 +3680,18 @@ function togglePartnerTiming(){
   rr();
   renderPartnerTimingControls();
   if(partner.enabled)syncPartnerTimingSession();
+}
+function handlePartnerStationSelect(event,stationId){
+  if(event){event.preventDefault();event.stopPropagation();}
+  selectPartnerStation(stationId);
+}
+function partnerStationStatusText(){
+  var stations=partnerSelectedStations().filter(function(station){return station.id!=='start';});
+  if(!stations.length){
+    var start=partnerSelectedStations().some(function(station){return station.id==='start';});
+    return start?'Start station selected':'No station selected yet';
+  }
+  return 'Selected: '+stations.map(function(station){return station.label;}).join(', ');
 }
 function selectPartnerStation(stationId){
   var partner=ensurePartnerTiming();
@@ -3696,6 +3709,8 @@ function selectPartnerStation(stationId){
   save();
   rr();
   renderPartnerTimingControls();
+  var status=document.getElementById('partner-station-status');
+  if(status)status.textContent=partnerStationStatusText();
 }
 function recordPartnerStart(){
   var partner=ensurePartnerTiming();

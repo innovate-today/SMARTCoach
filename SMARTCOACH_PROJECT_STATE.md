@@ -1213,6 +1213,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 371. Partner Timing now supports multiple selected capture stations on one coach device. A coach can select stations such as 1600m and 4800m together, each runner row renders one **MARK [station]** button per selected station, and each button independently changes to **DONE [station]** with its captured split.
 372. Partner Timing sync is clearer and separate from normal meet-result saving. The Partner sheet now shows **Sync Partner Timing** with visible syncing/synced/error feedback, and the normal meet-result save warning now points Partner Timing users back to the Partner sync path instead of asking them to select athletes.
 373. Partner Timing race clocks can continue after an accidental stop. A stopped Partner Timing clock now shows **Continue** / **Continue Race Clock**, clears the stopped timestamp, and resumes from the original race start.
+374. Partner Timing station selection now uses a Partner-specific tap handler instead of the generic picker behavior. Station taps respond directly on phone touch events, and the panel shows a visible **Selected:** status line so the coach creating the session can confirm selected stations immediately.
 
 ## Known Good Test Flow
 
