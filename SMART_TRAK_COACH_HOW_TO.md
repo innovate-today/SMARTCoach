@@ -703,7 +703,7 @@ For Partner Timing at a cross country meet:
 11. The start coach can tap **Stop** to stop the shared race clock after the race. If the clock is stopped by mistake, tap **Continue** or **Continue Race Clock** to resume from the original start time.
 12. Tap **Reset Race Clock** if the Partner Timing race needs to be cleared and started over.
 13. Tap **Sync Partner Timing** inside the Partner Timing panel to combine split and finish taps from the other coaches. This sync does not require selecting athletes in the normal meet-result save screen.
-14. Use **Review** to check missing or duplicate taps before saving official results.
+14. Use **Review** to check missing taps or multiple taps for the same athlete/split before saving official results.
 
 Partner Timing is built for split points that are too far apart for one coach to cover. Phase 1 is sync-and-review based, so coaches should sync after the race and confirm the combined split/finish data before saving official meet results.
 
