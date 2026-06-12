@@ -1186,7 +1186,16 @@ function save(){
   }catch(e){}
 }
 function defaultCfg(){
-  return{laps:1,repRest:0,multiple:1,notes:1,splits:1,showPlan:1,showTarget:1,showSync:1,beep:1};
+  return{laps:1,repRest:0,multiple:1,notes:1,splits:1,showPlan:1,showTarget:1,showSync:1,beep:1,meetDayDefaults:0};
+}
+function meetDayCfg(){
+  var cfg=defaultCfg();
+  cfg.repRest=0;
+  cfg.showPlan=0;
+  cfg.showTarget=0;
+  cfg.showSync=0;
+  cfg.meetDayDefaults=1;
+  return cfg;
 }
 function defaultRelayState(){
   return{enabled:0,teamName:'',legs:[{name:''},{name:''},{name:''},{name:''}],on:false,elapsed:0,startAt:0,currentLeg:0,splits:[],saved:[],ts:null};
@@ -1304,6 +1313,17 @@ function normalizeCfg(cfg){
   });
   return base;
 }
+function applyMeetDayCfg(log){
+  if(!log||(log.type||'training')!=='meet')return false;
+  log.cfg=normalizeCfg(log.cfg);
+  if(log.cfg.meetDayDefaults)return false;
+  log.cfg.repRest=0;
+  log.cfg.showPlan=0;
+  log.cfg.showTarget=0;
+  log.cfg.showSync=0;
+  log.cfg.meetDayDefaults=1;
+  return true;
+}
 function load(){
   try{
     var d=getAccountStorage('sc1');
@@ -1319,6 +1339,9 @@ function load(){
       });
       lid=parseInt(getAccountStorage('sc1_lid')||'10');
       rid=parseInt(getAccountStorage('sc1_rid')||'10');
+      var changed=false;
+      logs.forEach(function(log){if(applyMeetDayCfg(log))changed=true;});
+      if(changed)save();
     }
   }catch(e){}
 }
@@ -1760,7 +1783,7 @@ function mergeCalendarMeetDaysIntoLogs(days){
     var linkedMeet=meetRecordForCalendarDay(day);
     var log=logs.find(function(item){return item.sharedGroupId===id;});
     if(!log){
-      log={id:lid++,sharedGroupId:id,name:linkedMeet&&linkedMeet.name||day.title||'Meet',type:'meet',cfg:defaultCfg(),runners:[]};
+      log={id:lid++,sharedGroupId:id,name:linkedMeet&&linkedMeet.name||day.title||'Meet',type:'meet',cfg:meetDayCfg(),runners:[]};
       logs.unshift(log);
       changed=true;
     }
@@ -1790,6 +1813,7 @@ function mergeCalendarMeetDaysIntoLogs(days){
     Object.keys(next).forEach(function(key){
       if(String(log[key]||'')!==String(next[key]||'')){log[key]=next[key];changed=true;}
     });
+    if(applyMeetDayCfg(log))changed=true;
     var runners=meetRunnersForGroup(day.groupName,log);
     if(runners.length&&runners.length!==log.runners.length){log.runners=runners;changed=true;}
     else if(runners.length){
@@ -2183,7 +2207,7 @@ function reconcileSmartTrakMeetsIntoLogs(){
     activeMeetIds[String(meet.id)]=true;
     var log=findMeetLogForRecord(meet);
     if(!log){
-      log={id:lid++,sharedGroupId:'meetrec_'+meet.id,name:meet.name,type:'meet',cfg:defaultCfg(),runners:[]};
+      log={id:lid++,sharedGroupId:'meetrec_'+meet.id,name:meet.name,type:'meet',cfg:meetDayCfg(),runners:[]};
       logs.unshift(log);
       changed=true;
     }
@@ -2207,7 +2231,8 @@ function reconcileSmartTrakMeetsIntoLogs(){
       if(key==='cfg'||key==='runners')return;
       if(String(log[key]||'')!==String(next[key]||'')){log[key]=next[key];changed=true;}
     });
-    if(!log.cfg){log.cfg=defaultCfg();changed=true;}
+    if(!log.cfg){log.cfg=meetDayCfg();changed=true;}
+    if(applyMeetDayCfg(log))changed=true;
     if(!Array.isArray(log.runners)){log.runners=[];changed=true;}
   });
   logs.forEach(function(log){
@@ -2376,7 +2401,7 @@ function createMeetGroup(){
   maybeCreateMeetRecord({meetName:meet,meetDate:date,sport:sport,season:season,seasonYear:year});
 }
 function createMeetGroupFromValues(data){
-  logs.unshift({id:lid++,name:data.eventName,type:'meet',sport:data.sport||inferMeetSport(data),season:data.season,seasonYear:data.seasonYear,meetName:data.meetName,meetDate:data.meetDate,meetRecordId:data.meetRecordId||'',eventName:data.eventName,cfg:defaultCfg(),runners:[]});
+  logs.unshift({id:lid++,name:data.eventName,type:'meet',sport:data.sport||inferMeetSport(data),season:data.season,seasonYear:data.seasonYear,meetName:data.meetName,meetDate:data.meetDate,meetRecordId:data.meetRecordId||'',eventName:data.eventName,cfg:meetDayCfg(),runners:[]});
   hm('mmg');
   document.getElementById('mg-meet').value='';
   document.getElementById('mg-event').value='400m';
@@ -5520,7 +5545,7 @@ function toggleArchiveGroup(){
 }
 function saveSets(){
   if(!CL)return;var n=document.getElementById('sn').value.trim();if(n)CL.name=n;
-  CL.cfg={laps:TC.laps,repRest:TC.repRest,multiple:TC.multiple,notes:TC.notes,splits:TC.splits,showPlan:TC.showPlan,showTarget:TC.showTarget,showSync:TC.showSync,beep:TC.beep};
+  CL.cfg={laps:TC.laps,repRest:TC.repRest,multiple:TC.multiple,notes:TC.notes,splits:TC.splits,showPlan:TC.showPlan,showTarget:TC.showTarget,showSync:TC.showSync,beep:TC.beep,meetDayDefaults:(CL.type||'training')==='meet'?1:0};
   document.getElementById('ltit').textContent=CL.name;save();queueSharedGroupsSave();go('s-group');
 }
 
