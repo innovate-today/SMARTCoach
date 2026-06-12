@@ -205,6 +205,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .partner-station-guide b{display:block;font-size:15px;margin-bottom:2px}
 .partner-station-guide .warn{color:#c47a00;font-weight:800}
 .partner-station-status{font-size:12px;color:#0a7a44;font-weight:800;text-align:center;padding:6px 12px 0;min-height:22px}
+.partner-station-choice{display:flex!important;align-items:center;gap:10px;cursor:pointer}
+.partner-station-choice input{width:22px;height:22px;accent-color:var(--R);flex:0 0 auto}
+.partner-station-choice span{display:block;min-width:0}
 .partner-mark-btn{background:#2B4FCC!important;color:#fff!important;border-color:#2B4FCC!important;min-width:116px;box-shadow:0 2px 0 rgba(0,0,0,.18)}
 .partner-mark-btn.captured{background:#0a7a44!important;border-color:#0a7a44!important;box-shadow:0 0 0 3px rgba(10,122,68,.22),0 2px 0 rgba(0,0,0,.18)}
 .partner-mark-btn.captured b,.partner-mark-btn b{display:block;font-size:17px;line-height:1}
@@ -3651,7 +3654,7 @@ function renderPartnerTimingControls(){
   var stationRows=partner.stations.map(function(item){
     var count=records.filter(function(record){return record.stationId===item.id;}).length;
     var selected=partnerSelectedStationIds().indexOf(item.id)>=0;
-    return '<button class="picker-row '+(selected?'on':'')+'" type="button" onclick="handlePartnerStationSelect(event,&quot;'+ex(item.id)+'&quot;)" ontouchend="handlePartnerStationSelect(event,&quot;'+ex(item.id)+'&quot;)"><b>'+(selected?'✓ ':'')+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></button>';
+    return '<label class="picker-row partner-station-choice '+(selected?'on':'')+'"><input type="checkbox" '+(selected?'checked':'')+' onchange="selectPartnerStationFromInput(this,&quot;'+ex(item.id)+'&quot;)"><span><b>'+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></span></label>';
   }).join('');
   var stationGuide='';
   if(enabled){
@@ -3681,10 +3684,6 @@ function togglePartnerTiming(){
   renderPartnerTimingControls();
   if(partner.enabled)syncPartnerTimingSession();
 }
-function handlePartnerStationSelect(event,stationId){
-  if(event){event.preventDefault();event.stopPropagation();}
-  selectPartnerStation(stationId);
-}
 function partnerStationStatusText(){
   var stations=partnerSelectedStations().filter(function(station){return station.id!=='start';});
   if(!stations.length){
@@ -3693,16 +3692,26 @@ function partnerStationStatusText(){
   }
   return 'Selected: '+stations.map(function(station){return station.label;}).join(', ');
 }
+function selectPartnerStationFromInput(input,stationId){
+  setPartnerStationSelected(stationId,!!(input&&input.checked));
+}
 function selectPartnerStation(stationId){
+  setPartnerStationSelected(stationId,null);
+}
+function setPartnerStationSelected(stationId,selected){
   var partner=ensurePartnerTiming();
   stationId=String(stationId||'');
   var ids=partnerSelectedStationIds();
   if(stationId==='start'){
-    ids=ids.indexOf('start')>=0?[]:['start'];
+    var hasStart=ids.indexOf('start')>=0;
+    var shouldSelect=selected===null?!hasStart:!!selected;
+    ids=shouldSelect?['start']:[];
   }else{
     ids=ids.filter(function(id){return id!=='start';});
-    if(ids.indexOf(stationId)>=0)ids=ids.filter(function(id){return id!==stationId;});
-    else ids.push(stationId);
+    var has=ids.indexOf(stationId)>=0;
+    var add=selected===null?!has:!!selected;
+    if(add&&!has)ids.push(stationId);
+    if(!add&&has)ids=ids.filter(function(id){return id!==stationId;});
   }
   partner.selectedStationIds=ids;
   partner.selectedStationId=ids[0]||'';
