@@ -3878,15 +3878,15 @@ function recordPartnerStationTap(runnerId,stationId){
   syncPartnerTimingSession();
 }
 function recordPartnerAutoTap(r,kind,tapAt){
-  if(!partnerTimingEnabled()||!r)return;
+  if(!partnerTimingEnabled()||!r)return null;
   var partner=ensurePartnerTiming();
-  if(!partner.startAt)return;
+  if(!partner.startAt)return null;
   var coach=selectedCoachIdentity()||{};
   var splitIndex=kind==='finish'||kind==='resume'?0:(r.laps||[]).length+1;
   var stationId=kind==='finish'?'finish':(kind==='resume'?'resume':'split_'+splitIndex);
   var stationLabel=kind==='finish'?'Finish':(kind==='resume'?'Resume':'Split '+splitIndex);
   var recordedAt=tapAt||new Date().toISOString();
-  partner.records.push({
+  var record={
     id:['pt',partner.id,stationId,r.contactId||r.smartcoachAthleteId||r.id,recordedAt].join('_').replace(/[^a-zA-Z0-9_:-]+/g,'_'),
     stationId:stationId,
     stationLabel:stationLabel,
@@ -3899,7 +3899,9 @@ function recordPartnerAutoTap(r,kind,tapAt){
     tapAt:recordedAt,
     deviceId:smartCoachDeviceId(),
     coachName:coach.name||'Coach'
-  });
+  };
+  partner.records.push(record);
+  return record;
 }
 function partnerStationTapsForRunner(r,stationId){
   var partner=ensurePartnerTiming();
@@ -3953,6 +3955,33 @@ function partnerSplitLapsForRunner(r,finish){
     return lap;
   }).filter(function(ms){return ms>0;});
 }
+function dedupePartnerSavedRuns(r,finish){
+  if(!r||!r.saved||!finish)return false;
+  var finishMs=partnerRecordMs(finish);
+  var finishTs=Date.parse(finish.tapAt)||0;
+  var keepIndex=-1,changed=false;
+  r.saved.forEach(function(run,index){
+    if(run&&run.partnerRecordId===finish.id)keepIndex=index;
+  });
+  if(keepIndex<0){
+    r.saved.forEach(function(run,index){
+      if(keepIndex>=0||!run||run.meetSynced)return;
+      var sameTime=Math.abs((Number(run.ms)||0)-finishMs)<1500;
+      var sameStamp=!finishTs||!run.ts||Math.abs((Number(run.ts)||0)-finishTs)<5000;
+      if(sameTime&&sameStamp){run.partnerRecordId=finish.id;keepIndex=index;changed=true;}
+    });
+  }
+  if(keepIndex<0)return changed;
+  r.saved=r.saved.filter(function(run,index){
+    if(index===keepIndex||!run)return true;
+    if(run.meetSynced)return true;
+    var sameTime=Math.abs((Number(run.ms)||0)-finishMs)<1500;
+    var sameStamp=!finishTs||!run.ts||Math.abs((Number(run.ts)||0)-finishTs)<5000;
+    if(sameTime&&sameStamp){changed=true;return false;}
+    return true;
+  });
+  return changed;
+}
 function applyPartnerTimingRecordsToRunners(){
   if(!CL||!partnerTimingEnabled())return false;
   var changed=false;
@@ -3962,6 +3991,7 @@ function applyPartnerTimingRecordsToRunners(){
     if(finish){
       var finishMs=partnerRecordMs(finish);
       var partnerLaps=partnerSplitLapsForRunner(r,finish);
+      if(dedupePartnerSavedRuns(r,finish))changed=true;
       var savedRun=(r.saved||[]).find(function(run){return run.partnerRecordId===finish.id;});
       if(partnerLaps.length){
         r.laps=partnerLaps;
@@ -4282,12 +4312,15 @@ function stopRunner(r){
   var n=now();
   stopRunnerAt(r,n);
 }
-function stopRunnerAt(r,n){
+function stopRunnerAt(r,n,opts){
   if(!r.on)return;
+  opts=opts||{};
   r.el+=n-r.t0;   /* freeze total time */
   r.le+=n-r.lt;   /* freeze current lap time */
   r.on=false;
-  r.saved.push({ms:r.el,ts:r.ts,laps:r.laps.slice(),splitLabels:savedSplitLabels(r),note:r.note});
+  var savedRun={ms:r.el,ts:r.ts,laps:r.laps.slice(),splitLabels:savedSplitLabels(r),note:r.note};
+  if(opts.partnerRecordId)savedRun.partnerRecordId=opts.partnerRecordId;
+  r.saved.push(savedRun);
   markWorkoutAttendance(r);
 }
 function startRunnerAt(r,n){
@@ -4326,7 +4359,7 @@ function togR(id){
     var nStop=now();
     var partnerTapAt=partnerTimingEnabled()?new Date().toISOString():'';
     var stopped=hookGroup(id);
-    stopped.forEach(function(x){if(x.on){recordPartnerAutoTap(x,'finish',partnerTapAt);stopRunnerAt(x,nStop);}});
+    stopped.forEach(function(x){if(x.on){var partnerRecord=recordPartnerAutoTap(x,'finish',partnerTapAt);stopRunnerAt(x,nStop,{partnerRecordId:partnerRecord&&partnerRecord.id||''});}});
     save();
     /* update display to show frozen time */
     stopped.forEach(updateRunnerControls);
@@ -5833,10 +5866,35 @@ function athleteOptions(selectedName){
   return opts.join('');
 }
 function meetSavedRunCount(r){
-  return (r.saved||[]).filter(function(s){return s&&s.meetSynced;}).length;
+  return meetRunsForSave(r,true).filter(function(entry){return entry.run&&entry.run.meetSynced;}).length;
 }
 function hasMeetSyncedRuns(r){
-  return (r.saved||[]).some(function(s){return s&&s.meetSynced;});
+  return meetRunsForSave(r,true).some(function(entry){return entry.run&&entry.run.meetSynced;});
+}
+function meetRunsForSave(r,includeSynced){
+  if(!r||!r.saved)return[];
+  if(partnerTimingEnabled()){
+    var finish=partnerActiveFinishRecord(r);
+    if(finish){
+      var entries=[];
+      (r.saved||[]).forEach(function(run,index){
+        if(run&&run.partnerRecordId===finish.id&&(includeSynced||!run.meetSynced))entries.push({run:run,index:index});
+      });
+      if(entries.length)return entries.slice(0,1);
+      var finishMs=partnerRecordMs(finish);
+      var bestIndex=-1,bestDiff=Infinity;
+      (r.saved||[]).forEach(function(run,index){
+        if(!run||run.meetSynced&&!includeSynced)return;
+        var diff=Math.abs((Number(run.ms)||0)-finishMs);
+        if(diff<bestDiff){bestDiff=diff;bestIndex=index;}
+      });
+      if(bestIndex>=0&&bestDiff<1500)return[{run:r.saved[bestIndex],index:bestIndex}];
+      return[];
+    }
+  }
+  return (r.saved||[]).map(function(run,index){return{run:run,index:index};}).filter(function(entry){
+    return entry.run&&(includeSynced||!entry.run.meetSynced);
+  });
 }
 function readyRelayRuns(){
   return CL&&CL.relay&&CL.relay.saved?CL.relay.saved.filter(function(run){return run&&!run.meetSynced;}):[];
@@ -5846,10 +5904,10 @@ function renderMeetSaveAthletes(){
   if(!box||!CL)return;
   if(selectedMeetResultType()==='relay'||selectedMeetResultType()==='field'){box.style.display='none';box.innerHTML='';return;}
   box.style.display='';
-  var rs=CL.runners.filter(function(r){return r.saved&&r.saved.length;});
+  var rs=CL.runners.filter(function(r){return meetRunsForSave(r,true).length;});
   if(!rs.length){box.innerHTML='<div style="font-size:12px;color:#777;padding:8px 12px;background:#fff">No saved meet times yet</div>';return;}
   box.innerHTML=rs.map(function(r){
-    var runs=r.saved.length;
+    var runs=meetRunsForSave(r,true).length;
     var synced=meetSavedRunCount(r);
     var note=synced?runs+' result'+(runs===1?'':'s')+' · '+synced+' already saved':runs+' result'+(runs===1?'':'s');
     return '<div class="sync-athlete"><input type="checkbox" class="ms-runner" value="'+r.id+'" data-resave="'+(synced===runs?'1':'0')+'" '+(synced===runs?'':'checked')+' onchange="handleMeetRunnerToggle(this)"><span class="sync-athlete-main">'+ex(r.name)+'<small>'+note+'</small><small id="save-state-'+r.id+'" class="save-state"></small><small id="best-hint-'+r.id+'" class="best-hint"></small></span><span class="best-flags"><label class="best-flag"><input type="checkbox" class="ms-pb" data-runner-id="'+r.id+'">PB</label><label class="best-flag"><input type="checkbox" class="ms-sb" data-runner-id="'+r.id+'">SB</label></span></div>';
@@ -6457,14 +6515,14 @@ function selectOnlyMeetRunner(runnerId){
 function selectedMeetRunners(){
   var selectedIds={};
   document.querySelectorAll('.ms-runner:checked').forEach(function(cb){selectedIds[parseInt(cb.value)]=true;});
-  return CL.runners.filter(function(r){return selectedIds[r.id]&&r.saved&&r.saved.length;});
+  return CL.runners.filter(function(r){return selectedIds[r.id]&&meetRunsForSave(r,true).length;});
 }
 function runnerMeetFlag(runnerId,kind){
   var el=document.querySelector('.ms-'+kind+'[data-runner-id="'+runnerId+'"]');
   return !!(el&&el.checked);
 }
 function fastestMeetRun(r){
-  var runs=(r.saved||[]).filter(function(s){return s&&s.ms;});
+  var runs=meetRunsForSave(r,true).map(function(entry){return entry.run;}).filter(function(s){return s&&s.ms;});
   runs.sort(function(a,b){return a.ms-b.ms;});
   return runs[0]||null;
 }
@@ -6504,6 +6562,38 @@ function loadMeetBestHint(r){
   }).catch(function(){
     hint.textContent='Could not check bests. Confirm PB/SB if true.';hint.className='best-hint warn';
   });
+}
+function postMeetResultItem(item,attempt){
+  attempt=attempt||1;
+  return fetch(smartCoachApiUrl('/api/smart-trak/meet-result'),{
+    method:'POST',
+    headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
+    body:JSON.stringify(item.payload)
+  }).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,status:r.status,data:data,item:item};});
+  }).then(function(result){
+    if(result.ok)return result;
+    if(result.status===429&&attempt<4){
+      return new Promise(function(resolve){
+        setTimeout(resolve,900*attempt);
+      }).then(function(){return postMeetResultItem(item,attempt+1);});
+    }
+    return result;
+  });
+}
+function saveMeetResultQueue(queue,onProgress){
+  var results=[];
+  return (queue||[]).reduce(function(chain,item,index){
+    return chain.then(function(){
+      if(onProgress)onProgress(index+1,queue.length);
+      return postMeetResultItem(item).then(function(result){
+        results.push(result);
+        if(index<queue.length-1){
+          return new Promise(function(resolve){setTimeout(resolve,350);});
+        }
+      });
+    });
+  },Promise.resolve()).then(function(){return results;});
 }
 function submitCapturedMeetResults(forceDuplicateSync,skipPartnerSync){
   if(!CL)return;
@@ -6563,8 +6653,8 @@ function submitCapturedMeetResults(forceDuplicateSync,skipPartnerSync){
     var matched=findAthleteByName(r.name)||findAthleteByName(r.name);
     var isPr=runnerMeetFlag(r.id,'pb');
     var isSeasonBest=runnerMeetFlag(r.id,'sb');
-    r.saved.forEach(function(s,i){
-      if(s.meetSynced&&!forceDuplicateSync)return;
+    meetRunsForSave(r,forceDuplicateSync).forEach(function(entry){
+      var s=entry.run,i=entry.index;
       queue.push({
         runnerId:r.id,
         runIndex:i,
@@ -6593,13 +6683,9 @@ function submitCapturedMeetResults(forceDuplicateSync,skipPartnerSync){
   if(!queue.length){status.textContent='Selected meet results are already saved.';status.style.color='#c47a00';return;}
   btn.textContent='Saving...';btn.disabled=true;
   status.textContent='Saving meet results...';status.style.color='#555';status.style.fontWeight='400';
-  Promise.all(queue.map(function(item){
-    return fetch(smartCoachApiUrl('/api/smart-trak/meet-result'),{
-      method:'POST',
-      headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
-      body:JSON.stringify(item.payload)
-    }).then(function(r){return r.json().then(function(data){return{ok:r.ok,status:r.status,data:data,item:item};});});
-  })).then(function(results){
+  saveMeetResultQueue(queue,function(current,total){
+    status.textContent='Saving meet result '+current+' of '+total+'...';
+  }).then(function(results){
     var failed=results.find(function(result){return !result.ok;});
     if(failed){
       var err=new Error(failed.data&&failed.data.error?failed.data.error:'Meet result save failed');
@@ -7326,13 +7412,9 @@ function submitPlanDayMeetResults(opts){
   if(!queue.length){if(status){status.textContent='Selected meet results are already saved.';status.style.color='#c47a00';}return;}
   if(btn){btn.textContent='Saving meet results...';btn.disabled=true;}
   if(status){status.textContent='Saving scheduled meet results...';status.style.color='#555';status.style.fontWeight='400';}
-  Promise.all(queue.map(function(item){
-    return fetch(smartCoachApiUrl('/api/smart-trak/meet-result'),{
-      method:'POST',
-      headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
-      body:JSON.stringify(item.payload)
-    }).then(function(r){return r.json().then(function(data){return{ok:r.ok,status:r.status,data:data,item:item};});});
-  })).then(function(results){
+  saveMeetResultQueue(queue,function(current,total){
+    if(status)status.textContent='Saving scheduled meet result '+current+' of '+total+'...';
+  }).then(function(results){
     var failed=results.find(function(result){return !result.ok;});
     if(failed){
       var err=new Error(failed.data&&failed.data.error?failed.data.error:'Meet result save failed');
