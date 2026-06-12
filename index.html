@@ -206,7 +206,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .partner-station-guide .warn{color:#c47a00;font-weight:800}
 .partner-station-status{font-size:12px;color:#0a7a44;font-weight:800;text-align:center;padding:6px 12px 0;min-height:22px}
 .partner-station-choice{display:flex!important;align-items:center;gap:10px;cursor:pointer}
-.partner-station-choice input{width:22px;height:22px;accent-color:var(--R);flex:0 0 auto}
+.partner-station-choice input{width:22px;height:22px;accent-color:var(--R);flex:0 0 auto;pointer-events:none}
 .partner-station-choice span{display:block;min-width:0}
 .partner-mark-btn{background:#2B4FCC!important;color:#fff!important;border-color:#2B4FCC!important;min-width:116px;box-shadow:0 2px 0 rgba(0,0,0,.18)}
 .partner-mark-btn.captured{background:#0a7a44!important;border-color:#0a7a44!important;box-shadow:0 0 0 3px rgba(10,122,68,.22),0 2px 0 rgba(0,0,0,.18)}
@@ -3654,7 +3654,7 @@ function renderPartnerTimingControls(){
   var stationRows=partner.stations.map(function(item){
     var count=records.filter(function(record){return record.stationId===item.id;}).length;
     var selected=partnerSelectedStationIds().indexOf(item.id)>=0;
-    return '<label class="picker-row partner-station-choice '+(selected?'on':'')+'"><input type="checkbox" '+(selected?'checked':'')+' onchange="selectPartnerStationFromInput(this,&quot;'+ex(item.id)+'&quot;)"><span><b>'+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></span></label>';
+    return '<label class="picker-row partner-station-choice '+(selected?'on':'')+'" data-partner-station-id="'+ex(item.id)+'" data-selected="'+(selected?'1':'0')+'"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-hidden="true"><span><b>'+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></span></label>';
   }).join('');
   var stationGuide='';
   if(enabled){
@@ -3694,6 +3694,20 @@ function partnerStationStatusText(){
 }
 function selectPartnerStationFromInput(input,stationId){
   setPartnerStationSelected(stationId,!!(input&&input.checked));
+}
+var lastPartnerStationTap=0;
+function handlePartnerStationChoiceEvent(event){
+  var target=event&&event.target&&event.target.closest?event.target.closest('.partner-station-choice'):null;
+  if(!target||!target.getAttribute)return false;
+  var stationId=target.getAttribute('data-partner-station-id')||'';
+  if(!stationId)return false;
+  if(event){event.preventDefault();event.stopPropagation();}
+  var nowTime=Date.now();
+  if(event&&event.type==='click'&&nowTime-lastPartnerStationTap<450)return true;
+  lastPartnerStationTap=nowTime;
+  var selected=target.getAttribute('data-selected')!=='1';
+  setPartnerStationSelected(stationId,selected);
+  return true;
 }
 function selectPartnerStation(stationId){
   setPartnerStationSelected(stationId,null);
@@ -7154,6 +7168,16 @@ function syncSavedRecordCount(synced){
 applyPlanMode();applyAdminTools();load();rl();
 syncProductPlanFromAccount().then(function(){rl();if(accountDeviceAccessReady())loadProData();});
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
+document.addEventListener('touchend',function(e){
+  if(e.target&&e.target.closest&&e.target.closest('#m-partner-timing .partner-station-choice')){
+    handlePartnerStationChoiceEvent(e);
+  }
+},{passive:false,capture:true});
+document.addEventListener('click',function(e){
+  if(e.target&&e.target.closest&&e.target.closest('#m-partner-timing .partner-station-choice')){
+    handlePartnerStationChoiceEvent(e);
+  }
+},true);
 document.addEventListener('touchstart',function(e){
   prepareFeedbackAudio();
   var t=e.target;

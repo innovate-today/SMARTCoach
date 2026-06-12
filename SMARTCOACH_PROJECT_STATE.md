@@ -1215,6 +1215,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 373. Partner Timing race clocks can continue after an accidental stop. A stopped Partner Timing clock now shows **Continue** / **Continue Race Clock**, clears the stopped timestamp, and resumes from the original race start.
 374. Partner Timing station selection now uses a Partner-specific tap handler instead of the generic picker behavior. Station taps respond directly on phone touch events, and the panel shows a visible **Selected:** status line so the coach creating the session can confirm selected stations immediately.
 375. Partner Timing station selection now uses real checkbox controls in the Partner panel instead of custom row-tap buttons. This makes selecting 1600m/3200m/4800m/Finish more reliable on phones and gives the coach an immediate checked state plus the visible **Selected:** line.
+376. Partner Timing station rows now also have a delegated row-level touch/click handler. The checkbox is visual, while the entire station row toggles selection from document-level Partner panel events, avoiding mobile webview cases where native checkbox `change` events do not fire.
 
 ## Known Good Test Flow
 
