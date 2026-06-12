@@ -3857,9 +3857,9 @@ function recordPartnerAutoTap(r,kind,tapAt){
   var partner=ensurePartnerTiming();
   if(!partner.startAt)return;
   var coach=selectedCoachIdentity()||{};
-  var splitIndex=kind==='finish'?0:(r.laps||[]).length+1;
-  var stationId=kind==='finish'?'finish':'split_'+splitIndex;
-  var stationLabel=kind==='finish'?'Finish':'Split '+splitIndex;
+  var splitIndex=kind==='finish'||kind==='resume'?0:(r.laps||[]).length+1;
+  var stationId=kind==='finish'?'finish':(kind==='resume'?'resume':'split_'+splitIndex);
+  var stationLabel=kind==='finish'?'Finish':(kind==='resume'?'Resume':'Split '+splitIndex);
   var recordedAt=tapAt||new Date().toISOString();
   partner.records.push({
     id:['pt',partner.id,stationId,r.contactId||r.smartcoachAthleteId||r.id,recordedAt].join('_').replace(/[^a-zA-Z0-9_:-]+/g,'_'),
@@ -3882,17 +3882,75 @@ function partnerStationTapsForRunner(r,stationId){
     return record.stationId===stationId&&partnerRecordMatchesRunner(record,r);
   }).sort(function(a,b){return String(a.tapAt||'').localeCompare(String(b.tapAt||''));});
 }
+function partnerRecordsForRunner(r,kind){
+  var partner=ensurePartnerTiming();
+  return (partner&&partner.records||[]).filter(function(record){
+    return (!kind||record.kind===kind)&&partnerRecordMatchesRunner(record,r);
+  }).sort(function(a,b){return String(a.tapAt||'').localeCompare(String(b.tapAt||''));});
+}
+function partnerLatestRunnerRecord(r,kind){
+  var records=partnerRecordsForRunner(r,kind);
+  return records.length?records[records.length-1]:null;
+}
+function partnerRecordMs(record){
+  var partner=ensurePartnerTiming();
+  var start=Date.parse(partner&&partner.startAt||'');
+  var tap=Date.parse(record&&record.tapAt||'');
+  if(Number.isFinite(start)&&Number.isFinite(tap)&&tap>=start)return tap-start;
+  return 0;
+}
+function partnerActiveFinishRecord(r){
+  var finish=partnerLatestRunnerRecord(r,'finish');
+  if(!finish)return null;
+  var resume=partnerLatestRunnerRecord(r,'resume');
+  if(resume&&String(resume.tapAt||'')>String(finish.tapAt||''))return null;
+  return finish;
+}
+function applyPartnerTimingRecordsToRunners(){
+  if(!CL||!partnerTimingEnabled())return false;
+  var changed=false;
+  CL.runners.forEach(function(r){
+    var finish=partnerActiveFinishRecord(r);
+    var resume=partnerLatestRunnerRecord(r,'resume');
+    if(finish){
+      var finishMs=partnerRecordMs(finish);
+      var saved=(r.saved||[]).some(function(run){return run.partnerRecordId===finish.id;});
+      if(r.on||!saved){
+        r.el=finishMs;
+        r.le=0;
+        r.on=false;
+        if(!saved)r.saved.push({ms:finishMs,ts:Date.parse(finish.tapAt)||now(),laps:(r.laps||[]).slice(),splitLabels:savedSplitLabels(r),note:r.note,partnerRecordId:finish.id});
+        changed=true;
+      }
+    }else if(resume&&partnerRaceRunning()&&!r.on){
+      var n=now();
+      r.el=partnerRaceElapsedMs();
+      r.le=0;
+      r.t0=n;
+      r.lt=n;
+      r.on=true;
+      if(!r.ts)r.ts=n;
+      changed=true;
+    }
+  });
+  return changed;
+}
 function partnerCurrentStationTap(r,stationId){
   var station=stationId?partnerStationById(stationId):partnerStation();
   if(!station)return null;
   return partnerStationTapsForRunner(r,station.id)[0]||null;
 }
 function partnerRunnerClockLive(r){
+  if(partnerActiveFinishRecord(r))return false;
+  if(partnerTimingEnabled()&&!partnerCaptureStations().length)return !!r.on;
   var stations=partnerCaptureStations();
   if(!stations.length)return partnerRaceRunning()&&!partnerCurrentStationTap(r);
   return partnerRaceRunning()&&stations.some(function(station){return !partnerCurrentStationTap(r,station.id);});
 }
 function partnerRunnerClockText(r){
+  var finish=partnerActiveFinishRecord(r);
+  if(finish)return partnerElapsedText(finish.tapAt);
+  if(partnerTimingEnabled()&&!partnerCaptureStations().length)return r.on?fmt(ge(r)):fmt(r.el);
   var stations=partnerCaptureStations();
   if(stations.length){
     var missing=stations.some(function(station){return !partnerCurrentStationTap(r,station.id);});
@@ -3945,6 +4003,7 @@ function partnerReviewHtml(){
   var stationMap={};
   (partner.records||[]).forEach(function(record){
     var id=record.stationId||'';
+    if(record.kind==='resume')return;
     if(id&&!stationMap[id])stationMap[id]={id:id,label:record.stationLabel||id,splitIndex:Number(record.splitIndex||0),kind:record.kind||''};
   });
   var stations=Object.keys(stationMap).map(function(id){return stationMap[id];}).sort(function(a,b){
@@ -4013,6 +4072,7 @@ function mergePartnerTimingSession(session){
   (session.records||[]).forEach(function(record){
     if(record&&record.id&&!byId[record.id]){partner.records.push(record);byId[record.id]=record;changed=true;}
   });
+  if(applyPartnerTimingRecordsToRunners())changed=true;
   partner.updatedAt=incomingUpdatedAt||partner.updatedAt||'';
   partner.lastSyncedAt=incomingUpdatedAt||new Date().toISOString();
   if(partner.startAt)startPartnerRunnerClocks();
@@ -4217,10 +4277,26 @@ function togR(id){
       CL.runners.forEach(function(x){if(group.indexOf(x)<0&&x.on)stopRunnerAt(x,nOutside);});
     }
     var n=now();
-    group.forEach(function(x){if(!x.on)startRunnerAt(x,n);});
+    var resumeTapAt=partnerTimingEnabled()?new Date().toISOString():'';
+    group.forEach(function(x){
+      if(!x.on){
+        if(partnerTimingEnabled()&&ensurePartnerTiming().startAt){
+          x.el=partnerRaceElapsedMs();
+          x.le=0;
+          x.t0=n;
+          x.lt=n;
+          x.on=true;
+          if(!x.ts)x.ts=n;
+          recordPartnerAutoTap(x,'resume',resumeTapAt);
+        }else{
+          startRunnerAt(x,n);
+        }
+      }
+    });
     /* update display */
     group.forEach(updateRunnerControls);
     updMB();
+    if(partnerTimingEnabled()){save();syncPartnerTimingSession();}
     tick();
   }
 }
