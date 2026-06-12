@@ -205,9 +205,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .partner-station-guide b{display:block;font-size:15px;margin-bottom:2px}
 .partner-station-guide .warn{color:#c47a00;font-weight:800}
 .partner-station-status{font-size:12px;color:#0a7a44;font-weight:800;text-align:center;padding:6px 12px 0;min-height:22px}
-.partner-station-choice{display:flex!important;align-items:center;gap:10px;cursor:pointer}
-.partner-station-choice input{width:22px;height:22px;accent-color:var(--R);flex:0 0 auto;pointer-events:none}
-.partner-station-choice span{display:block;min-width:0}
+.partner-station-buttons{padding:0 12px 4px;display:grid;gap:8px}
+.partner-station-btn{margin:0!important;background:#fff!important;color:#222!important;border:2px solid #d1d5db!important;text-align:left!important}
+.partner-station-btn.selected{background:#2B4FCC!important;color:#fff!important;border-color:#2B4FCC!important}
+.partner-station-btn small{display:block;font-size:12px;opacity:.78;margin-top:2px}
 .partner-mark-btn{background:#2B4FCC!important;color:#fff!important;border-color:#2B4FCC!important;min-width:116px;box-shadow:0 2px 0 rgba(0,0,0,.18)}
 .partner-mark-btn.captured{background:#0a7a44!important;border-color:#0a7a44!important;box-shadow:0 0 0 3px rgba(10,122,68,.22),0 2px 0 rgba(0,0,0,.18)}
 .partner-mark-btn.captured b,.partner-mark-btn b{display:block;font-size:17px;line-height:1}
@@ -3654,7 +3655,7 @@ function renderPartnerTimingControls(){
   var stationRows=partner.stations.map(function(item){
     var count=records.filter(function(record){return record.stationId===item.id;}).length;
     var selected=partnerSelectedStationIds().indexOf(item.id)>=0;
-    return '<label class="picker-row partner-station-choice '+(selected?'on':'')+'" data-partner-station-id="'+ex(item.id)+'" data-selected="'+(selected?'1':'0')+'"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-hidden="true"><span><b>'+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></span></label>';
+    return '<button class="mbtn partner-station-btn '+(selected?'selected':'')+'" type="button" onclick="selectPartnerStation(&quot;'+ex(item.id)+'&quot;)">'+(selected?'Selected ':'Select ')+ex(item.label)+'<small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></button>';
   }).join('');
   var stationGuide='';
   if(enabled){
@@ -3671,7 +3672,7 @@ function renderPartnerTimingControls(){
     (enabled?'<button class="mbtn" type="button" onclick="partnerMasterToggle()" style="background:'+(partnerRaceRunning()?'#555':'#0a7a44')+';margin-top:8px">'+(partnerRaceRunning()?'Stop Race Clock':(partner.finishAt?'Continue Race Clock':'Record Race Start'))+'</button>':'')+
     (enabled?'<button class="mbtn c" type="button" onclick="resetPartnerTimingRace()" style="margin-top:8px">Reset Race Clock</button>':'')+
     stationGuide+
-    (enabled?'<div class="mttl" style="font-size:18px;padding-top:12px">Choose My Station(s)</div><div class="picker-list" style="padding:0;max-height:none">'+stationRows+'</div><div id="partner-station-status" class="partner-station-status">'+ex(partnerStationStatusText())+'</div>':'')+
+    (enabled?'<div class="mttl" style="font-size:18px;padding-top:12px">Choose My Station(s)</div><div class="partner-station-buttons">'+stationRows+'</div><div id="partner-station-status" class="partner-station-status">'+ex(partnerStationStatusText())+'</div>':'')+
     (enabled?'<div id="partner-review">'+partnerReviewHtml()+'</div>':'')+
     (enabled?'<button class="mbtn" id="partner-sync-btn" type="button" onclick="syncPartnerTimingFromPanel()" style="background:#2B4FCC;margin-top:8px">Sync Partner Timing</button><div id="partner-sync-status" style="font-size:12px;color:#555;font-weight:700;text-align:center;padding:6px 12px 0"></div>':'');
 }
@@ -3691,23 +3692,6 @@ function partnerStationStatusText(){
     return start?'Start station selected':'No station selected yet';
   }
   return 'Selected: '+stations.map(function(station){return station.label;}).join(', ');
-}
-function selectPartnerStationFromInput(input,stationId){
-  setPartnerStationSelected(stationId,!!(input&&input.checked));
-}
-var lastPartnerStationTap=0;
-function handlePartnerStationChoiceEvent(event){
-  var target=event&&event.target&&event.target.closest?event.target.closest('.partner-station-choice'):null;
-  if(!target||!target.getAttribute)return false;
-  var stationId=target.getAttribute('data-partner-station-id')||'';
-  if(!stationId)return false;
-  if(event){event.preventDefault();event.stopPropagation();}
-  var nowTime=Date.now();
-  if(event&&event.type==='click'&&nowTime-lastPartnerStationTap<450)return true;
-  lastPartnerStationTap=nowTime;
-  var selected=target.getAttribute('data-selected')!=='1';
-  setPartnerStationSelected(stationId,selected);
-  return true;
 }
 function selectPartnerStation(stationId){
   setPartnerStationSelected(stationId,null);
@@ -7168,16 +7152,6 @@ function syncSavedRecordCount(synced){
 applyPlanMode();applyAdminTools();load();rl();
 syncProductPlanFromAccount().then(function(){rl();if(accountDeviceAccessReady())loadProData();});
 setTimeout(function(){var s=document.getElementById('splash');s.classList.add('gone');setTimeout(function(){s.style.display='none';},400);},1600);
-document.addEventListener('touchend',function(e){
-  if(e.target&&e.target.closest&&e.target.closest('#m-partner-timing .partner-station-choice')){
-    handlePartnerStationChoiceEvent(e);
-  }
-},{passive:false,capture:true});
-document.addEventListener('click',function(e){
-  if(e.target&&e.target.closest&&e.target.closest('#m-partner-timing .partner-station-choice')){
-    handlePartnerStationChoiceEvent(e);
-  }
-},true);
 document.addEventListener('touchstart',function(e){
   prepareFeedbackAudio();
   var t=e.target;
