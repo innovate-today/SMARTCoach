@@ -201,6 +201,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .partner-clock b{display:block;font-size:12px;text-transform:uppercase;color:#aeb6c8;letter-spacing:.3px}
 .partner-clock span{display:block;font-size:36px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.05;margin-top:3px}
 .partner-clock small{display:block;color:#d1d5db;font-size:12px;margin-top:4px}
+.partner-station-guide{margin:8px 10px 0;padding:10px 12px;border-radius:12px;background:#f7f7f9;border:1px solid #d1d5db;color:#222;font-size:13px;line-height:1.35}
+.partner-station-guide b{display:block;font-size:15px;margin-bottom:2px}
+.partner-station-guide .warn{color:#c47a00;font-weight:800}
+.partner-mark-btn{background:#2B4FCC!important;color:#fff!important;border-color:#2B4FCC!important;min-width:110px}
+.partner-mark-btn.captured{background:#0a7a44!important;border-color:#0a7a44!important}
 </style>
 </head>
 <body>
@@ -3350,7 +3355,7 @@ function rHTML(r){
   var status=runnerRowStatus(r);
   var statusHtml=cfg.showSync&&status?'<div class="rtarget on save-state '+status.cls+'" '+(status.action?'onclick="openRunnerStatusAction('+r.id+')"':'')+' style="display:block'+(status.action?';cursor:pointer':'')+'">'+ex(status.label)+'</div>':'';
   var partner=partnerTimingEnabled()?partnerStation():null;
-  var partnerButton=partner&&partner.id!=='start'?'<button class="sbtn" id="ptb-'+r.id+'" onclick="recordPartnerStationTap('+r.id+')" style="border-color:#2B4FCC;color:#2B4FCC">'+ex(partnerButtonLabel(r))+'</button>':'';
+  var partnerButton=partner&&partner.id!=='start'?'<button class="sbtn partner-mark-btn '+(partnerCurrentStationTap(r)?'captured':'')+'" id="ptb-'+r.id+'" onclick="recordPartnerStationTap('+r.id+')">'+ex(partnerButtonLabel(r))+'</button>':'';
   var normalButtons=partnerButton||('<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">'+ex(lapButtonLabel(r))+'</button>'+
         '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>');
   var totalText=partner?partnerRunnerClockText(r):fmt(ge(r));
@@ -3611,6 +3616,12 @@ function renderPartnerTimingControls(){
     var count=records.filter(function(record){return record.stationId===item.id;}).length;
     return '<button class="picker-row '+(partner.selectedStationId===item.id?'on':'')+'" type="button" onclick="selectPartnerStation(&quot;'+ex(item.id)+'&quot;)"><b>'+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></button>';
   }).join('');
+  var stationGuide='';
+  if(enabled){
+    if(!station)stationGuide='<div class="partner-station-guide"><b>Select your station</b><span class="warn">Choose the split or finish spot you are responsible for before the race starts.</span></div>';
+    else if(station.id==='start')stationGuide='<div class="partner-station-guide"><b>Start station selected</b>The start coach uses <b>Record Race Start</b> when the race begins. Split and finish coaches should choose 1600m, 3200m, 4800m, or Finish.</div>';
+    else stationGuide='<div class="partner-station-guide"><b>Recording station: '+ex(station.label)+'</b>Close this panel. When a runner passes your spot, tap <b>Mark '+ex(station.label)+'</b> on that runner row.</div>';
+  }
   box.innerHTML=
     '<div class="partner-banner">'+(enabled?'Partner Timing is on':'Turn on Partner Timing for this meet race')+'</div>'+
     (enabled?partnerRaceClockHtml('modal'):'')+
@@ -3619,7 +3630,8 @@ function renderPartnerTimingControls(){
     '<button class="mbtn" type="button" onclick="togglePartnerTiming()" style="background:'+(enabled?'#555':'#2B4FCC')+'">'+(enabled?'Turn Off Partner Timing':'Turn On Partner Timing')+'</button>'+
     (enabled?'<button class="mbtn" type="button" onclick="partnerMasterToggle()" style="background:'+(partnerRaceRunning()?'#555':'#0a7a44')+';margin-top:8px">'+(partnerRaceRunning()?'Stop Race Clock':(partner.finishAt?'Race Clock Stopped':'Record Race Start'))+'</button>':'')+
     (enabled?'<button class="mbtn c" type="button" onclick="resetPartnerTimingRace()" style="margin-top:8px">Reset Race Clock</button>':'')+
-    (enabled?'<div class="mttl" style="font-size:18px;padding-top:12px">My Station</div><div class="picker-list" style="padding:0;max-height:none">'+stationRows+'</div>':'')+
+    stationGuide+
+    (enabled?'<div class="mttl" style="font-size:18px;padding-top:12px">Choose My Station</div><div class="picker-list" style="padding:0;max-height:none">'+stationRows+'</div>':'')+
     (enabled?'<div id="partner-review">'+partnerReviewHtml()+'</div>':'')+
     (enabled?'<button class="mbtn" type="button" onclick="syncPartnerTimingSession()" style="background:#2B4FCC;margin-top:8px">Sync / Reload Partner Data</button>':'');
 }
@@ -3744,8 +3756,8 @@ function partnerButtonLabel(r){
   if(!station)return'Partner';
   if(!ensurePartnerTiming().startAt)return'Start?';
   var count=partnerStationTapsForRunner(r,station.id).length;
-  if(count)return station.label+' '+count;
-  return station.label;
+  if(count)return'Captured '+station.label;
+  return'Mark '+station.label;
 }
 function partnerRunnerSummary(r){
   var partner=ensurePartnerTiming(),station=partnerStation();
