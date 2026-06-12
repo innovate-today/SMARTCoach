@@ -314,8 +314,8 @@ function normalizeContact(contact, options = {}) {
   const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
   const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
   const excludedSystemContact = isExcludedSystemContact(tags) || isSmartCoachSupportContact(contact);
-  const inferredSmartCoachAthlete = Boolean(smartcoachAthleteId || hasAthleteTag);
-  const smartcoachActive = isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && inferredSmartCoachAthlete);
+  const inferredSmartCoachAthlete = hasAthleteTag;
+  const smartcoachActive = !excludedSystemContact && inferredSmartCoachAthlete && (isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && Boolean(smartcoachAthleteId || hasAthleteTag)));
   return {
     id: contact.id,
     name: contactName(contact),
@@ -323,7 +323,7 @@ function normalizeContact(contact, options = {}) {
     smartcoachActive,
     smartcoachActiveValue,
     smartcoachAthleteId,
-    smartcoachRosterMember: !excludedSystemContact && (smartcoachActive || inferredSmartCoachAthlete),
+    smartcoachRosterMember: !excludedSystemContact && inferredSmartCoachAthlete,
     excludedSystemContact,
     tags,
   };

@@ -158,6 +158,26 @@ function checkAccountOwnerExcludedFromAthletes() {
   console.log("account owner roster exclusion ok");
 }
 
+function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
+  const athletes = fs.readFileSync("api/ghl/athletes.js", "utf8");
+  const dashboard = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  [
+    "const smartcoachRosterMember = !excludedSystemContact && hasAthleteTag;",
+    ".filter((athlete) => includeContacts || athlete.smartcoachActive || athlete.smartcoachRosterMember)",
+    "const smartcoachActive = smartcoachRosterMember &&",
+  ].forEach((text) => {
+    if (!athletes.includes(text)) throw new Error(`athlete API must count only SMART Trak roster athletes: ${text}`);
+  });
+  [
+    "const inferredSmartCoachAthlete = hasAthleteTag;",
+    "const smartcoachActive = !excludedSystemContact && inferredSmartCoachAthlete &&",
+    "smartcoachRosterMember: !excludedSystemContact && inferredSmartCoachAthlete",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`dashboard roster must ignore ordinary GHL contacts: ${text}`);
+  });
+  console.log("SMART Trak athlete counts ignore GHL contacts ok");
+}
+
 function checkStandaloneRaceResultSaveScope() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   if (!html.includes("var savedPayload=null;")) {
@@ -1419,6 +1439,7 @@ checkLiveValidationPage();
 checkAccountStatusLocationVerification();
 checkOnboardingSubscriberPlanLoad();
 checkAccountOwnerExcludedFromAthletes();
+checkSmartTrakAthleteCountsIgnoreGhlContacts();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkDashboardWhatsNew();

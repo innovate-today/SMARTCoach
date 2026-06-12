@@ -130,7 +130,7 @@ async function listSmartCoachAthletes({ token, locationId, includeContacts = fal
   return uniqueContacts(contacts)
     .map((contact) => normalizeContact(contact, { rosterFieldIds }))
     .filter((athlete) => !athlete.excludedSystemContact)
-    .filter((athlete) => includeContacts || athlete.smartcoachActive || (athlete.smartcoachAthleteId && athlete.tags.indexOf("smartcoach-athlete") >= 0))
+    .filter((athlete) => includeContacts || athlete.smartcoachActive || athlete.smartcoachRosterMember)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -347,7 +347,8 @@ function normalizeContact(contact, options = {}) {
   const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
   const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
   const excludedSystemContact = isExcludedSystemContact(tags) || isSmartCoachSupportContact(contact);
-  const smartcoachActive = isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && Boolean(smartcoachAthleteId || hasAthleteTag));
+  const smartcoachRosterMember = !excludedSystemContact && hasAthleteTag;
+  const smartcoachActive = smartcoachRosterMember && (isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && Boolean(smartcoachAthleteId || hasAthleteTag)));
   return {
     id: contact.id,
     name: contactName(contact),
@@ -368,6 +369,7 @@ function normalizeContact(contact, options = {}) {
     smartcoachActiveValue,
     smartcoachAthleteId,
     tags,
+    smartcoachRosterMember,
     excludedSystemContact,
   };
 }
