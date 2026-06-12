@@ -694,9 +694,9 @@ For Partner Timing at a cross country meet:
 2. Select the meet and race group.
 3. Tap **Partner** in the bottom tray.
 4. Turn on **Partner Timing**.
-5. The coach at the start taps **Record Race Start** when the race begins.
+5. The coach at the start taps **Record Race Start** when the race begins. This starts the shared running race clock.
 6. Each assistant chooses their station, such as **1600m**, **3200m**, **4800m**, or **Finish**.
-7. Each assistant taps the athlete row only when that athlete passes their station.
+7. Each assistant watches the running race clock and taps the athlete row only when that athlete passes their station.
 8. Tap **Sync / Reload Partner Data** to combine station taps from the other coaches.
 9. Use **Review** to check missing or duplicate station taps before saving official results.
 
