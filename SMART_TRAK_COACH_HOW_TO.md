@@ -694,11 +694,13 @@ For Partner Timing at a cross country meet:
 2. Select the meet and race group.
 3. Tap **Partner** in the bottom tray.
 4. Turn on **Partner Timing**.
-5. The coach at the start taps **Record Race Start** when the race begins. This starts the shared running race clock.
+5. The coach at the start taps **Start** or **Record Race Start** when the race begins. This starts the shared running race clock.
 6. Each assistant chooses their station, such as **1600m**, **3200m**, **4800m**, or **Finish**.
-7. Each assistant watches the running race clock and taps the athlete row only when that athlete passes their station.
-8. Tap **Sync / Reload Partner Data** to combine station taps from the other coaches.
-9. Use **Review** to check missing or duplicate station taps before saving official results.
+7. Each athlete row shows the running race time. Tap the athlete row only when that athlete passes your station.
+8. The tapped athlete row freezes at that athlete's station split or finish time. Untapped athlete rows keep running.
+9. The start coach can tap **Stop** to stop the shared race clock after the race.
+10. Tap **Sync / Reload Partner Data** to combine station taps from the other coaches.
+11. Use **Review** to check missing or duplicate station taps before saving official results.
 
 Partner Timing is built for split points that are too far apart for one coach to cover. Phase 1 is sync-and-review based, so coaches should sync after the race and confirm the combined station data before saving official meet results.
 
