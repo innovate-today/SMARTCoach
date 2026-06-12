@@ -695,13 +695,13 @@ For Partner Timing at a cross country meet:
 3. Tap **Partner** in the bottom tray.
 4. Turn on **Partner Timing**.
 5. The coach at the start taps **Start** or **Record Race Start** when the race begins. This starts the shared running race clock.
-6. Each assistant chooses their station, such as **1600m**, **3200m**, **4800m**, or **Finish**.
+6. Each assistant chooses one or more stations, such as **1600m**, **3200m**, **4800m**, or **Finish**. If one coach is responsible for both 1600m and 4800m, select both stations.
 7. After choosing a station, close the Partner Timing panel and use the runner list.
-8. Each athlete row shows the running race time and a **MARK [station]** button. Tap that button only when the runner passes your station.
-9. After the tap, that same station button turns into a green **DONE [station]** button with the captured split time. The tapped athlete row freezes at that athlete's station split or finish time. Untapped athlete rows keep running.
-10. The start coach can tap **Stop** to stop the shared race clock after the race.
+8. Each athlete row shows the running race time and a **MARK [station]** button for each station selected by that coach. Tap the matching station button only when the runner passes that station.
+9. After the tap, that same station button turns into a green **DONE [station]** button with the captured split time. If the coach has another selected station for that runner, the runner clock keeps running until the remaining station is captured.
+10. The start coach can tap **Stop** to stop the shared race clock after the race. If the clock is stopped by mistake, tap **Continue** or **Continue Race Clock** to resume from the original start time.
 11. Tap **Reset Race Clock** if the Partner Timing race needs to be cleared and started over.
-12. Tap **Sync / Reload Partner Data** to combine station taps from the other coaches.
+12. Tap **Sync Partner Timing** inside the Partner Timing panel to combine station taps from the other coaches. This sync does not require selecting athletes in the normal meet-result save screen.
 13. Use **Review** to check missing or duplicate station taps before saving official results.
 
 Partner Timing is built for split points that are too far apart for one coach to cover. Phase 1 is sync-and-review based, so coaches should sync after the race and confirm the combined station data before saving official meet results.
