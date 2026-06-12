@@ -1207,6 +1207,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 365. Partner Timing phase 1 has started in the SMARTCoach mobile meet flow. Meet groups now have a Partner tray button that opens Partner Timing setup/review, default stations for Start/1600m/3200m/4800m/Finish, station-specific athlete tap capture, account-level Partner Timing sync/reload, and a review view that flags missing and duplicate station taps before official meet-result save decisions.
 366. Partner Timing now shows a shared running race clock after **Record Race Start**. The clock appears at the top of the meet runner screen and inside the Partner Timing sheet, and it keeps updating even when a station coach is not running a normal athlete stopwatch.
 367. Partner Timing race behavior was corrected to feel like normal race timing: the main **Start/Stop** button controls the shared race clock, every athlete row shows the running race time, tapping an athlete at the selected station freezes that athlete's row at the station split/finish time, and Reset clears the shared Partner Timing clock/taps across sync.
+368. Partner Timing now has a visible **Reset Race Clock** button inside the Partner Timing sheet. It uses the same reset path as the main meet-screen Reset button, clearing the shared race clock and station taps across sync.
 
 ## Known Good Test Flow
 

@@ -3618,6 +3618,7 @@ function renderPartnerTimingControls(){
     '<div class="srow"><label class="slbl">Status</label><div class="sinp" style="border:none;background:transparent">'+ex(startText+stopText)+'<br><small style="color:#777">'+records.length+' station tap'+(records.length===1?'':'s')+' captured</small></div></div>'+
     '<button class="mbtn" type="button" onclick="togglePartnerTiming()" style="background:'+(enabled?'#555':'#2B4FCC')+'">'+(enabled?'Turn Off Partner Timing':'Turn On Partner Timing')+'</button>'+
     (enabled?'<button class="mbtn" type="button" onclick="partnerMasterToggle()" style="background:'+(partnerRaceRunning()?'#555':'#0a7a44')+';margin-top:8px">'+(partnerRaceRunning()?'Stop Race Clock':(partner.finishAt?'Race Clock Stopped':'Record Race Start'))+'</button>':'')+
+    (enabled?'<button class="mbtn c" type="button" onclick="resetPartnerTimingRace()" style="margin-top:8px">Reset Race Clock</button>':'')+
     (enabled?'<div class="mttl" style="font-size:18px;padding-top:12px">My Station</div><div class="picker-list" style="padding:0;max-height:none">'+stationRows+'</div>':'')+
     (enabled?'<div id="partner-review">'+partnerReviewHtml()+'</div>':'')+
     (enabled?'<button class="mbtn" type="button" onclick="syncPartnerTimingSession()" style="background:#2B4FCC;margin-top:8px">Sync / Reload Partner Data</button>':'');
@@ -3671,6 +3672,24 @@ function partnerMasterToggle(){
   if(!partner.startAt){recordPartnerStart();return;}
   if(!partner.finishAt){stopPartnerRaceClock();return;}
   alert('This Partner Timing race clock is stopped. Use Reset if you need to clear it and start over.');
+}
+function resetPartnerTimingRace(){
+  if(!partnerTimingEnabled())return;
+  if(!confirm('Reset Partner Timing race clock and station taps for this race?'))return;
+  tapFeedback();
+  var partner=ensurePartnerTiming();
+  partner.startAt='';
+  partner.startCoach='';
+  partner.finishAt='';
+  partner.finishCoach='';
+  partner.records=[];
+  partner.lastSyncedAt='';
+  partner.resetRecords=new Date().toISOString();
+  partner.resetRecordsApplied=partner.resetRecords;
+  save();
+  rr();
+  renderPartnerTimingControls();
+  syncPartnerTimingSession();
 }
 function recordPartnerStationTap(runnerId){
   if(!partnerTimingEnabled())return;
@@ -4163,21 +4182,7 @@ function masterToggle(){
 function masterReset(){
   if(!CL)return;
   if(partnerTimingEnabled()){
-    if(!confirm('Reset Partner Timing race clock and station taps for this race?'))return;
-    tapFeedback();
-    var partner=ensurePartnerTiming();
-    partner.startAt='';
-    partner.startCoach='';
-    partner.finishAt='';
-    partner.finishCoach='';
-    partner.records=[];
-    partner.lastSyncedAt='';
-    partner.resetRecords=new Date().toISOString();
-    partner.resetRecordsApplied=partner.resetRecords;
-    save();
-    rr();
-    renderPartnerTimingControls();
-    syncPartnerTimingSession();
+    resetPartnerTimingRace();
     return;
   }
   if(!confirm('Reset all timers and saved run history for this group?'))return;
