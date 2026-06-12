@@ -3656,7 +3656,8 @@ function partnerRaceClockHtml(place){
 }
 function updatePartnerRaceClocks(){
   if(!partnerTimingEnabled())return;
-  var value=ensurePartnerTiming().startAt?fmt(partnerRaceElapsedMs()):'--:--.-';
+  var partner=ensurePartnerTiming();
+  var value=partner.startAt?fmt(partnerRaceElapsedMs()):'--:--.-';
   ['screen','modal'].forEach(function(place){
     var el=document.getElementById('partner-clock-'+place);
     if(el)el.textContent=value;
@@ -3783,6 +3784,8 @@ function stopPartnerRaceClock(){
   partner.finishAt=new Date().toISOString();
   partner.finishCoach=coach.name||'Coach';
   save();
+  updatePartnerRaceClocks();
+  updMB();
   rr();
   renderPartnerTimingControls();
   syncPartnerTimingSession();
@@ -3813,6 +3816,8 @@ function resetPartnerTimingRace(){
   partner.lastSyncedAt='';
   partner.resetRecords=new Date().toISOString();
   partner.resetRecordsApplied=partner.resetRecords;
+  if(partnerTimingSyncTimer){clearInterval(partnerTimingSyncTimer);partnerTimingSyncTimer=null;}
+  CL.runners.forEach(function(r){r.on=false;r.el=0;r.t0=0;r.le=0;r.lt=0;r.laps=[];r.saved=[];r.ts=null;});
   save();
   rr();
   renderPartnerTimingControls();
