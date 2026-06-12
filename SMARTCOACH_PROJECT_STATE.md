@@ -1218,6 +1218,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 376. Partner Timing station rows now also have a delegated row-level touch/click handler. The checkbox is visual, while the entire station row toggles selection from document-level Partner panel events, avoiding mobile webview cases where native checkbox `change` events do not fire.
 377. Partner Timing station selection was simplified again to use the app's normal large button pattern instead of checkboxes. Stations now render as **Select [station]** / **Selected [station]** buttons, using the same button interaction path as Start, Reset, and Sync.
 378. Mobile button taps now resolve the nearest enclosing `<button>` before firing `.click()`. This fixes Partner Timing station buttons when the coach taps the text or sublabel inside the button instead of the button element itself.
+379. Partner Timing station selection has been moved back to the original mobile picker-row interaction pattern that previously responded on phones. The newer multi-station selection, station status text, runner-row MARK/DONE buttons, race clock, reset/continue behavior, and sync flow remain in place; only the station chooser surface was restored to the known responsive pattern.
 
 ## Known Good Test Flow
 
