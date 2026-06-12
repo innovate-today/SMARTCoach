@@ -3652,7 +3652,7 @@ function renderPartnerTimingControls(){
   var stationRows=partner.stations.map(function(item){
     var count=records.filter(function(record){return record.stationId===item.id;}).length;
     var selected=partnerSelectedStationIds().indexOf(item.id)>=0;
-    return '<button class="picker-row partner-station-row '+(selected?'on':'')+'" type="button" onclick="selectPartnerStation(&quot;'+ex(item.id)+'&quot;)"><b>'+(selected?'Selected ':'Select ')+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></button>';
+    return '<button class="picker-row partner-station-row '+(selected?'on':'')+'" type="button" data-station-id="'+ex(item.id)+'" ontouchstart="touchPartnerStation(event,&quot;'+ex(item.id)+'&quot;)" onclick="clickPartnerStation(event,&quot;'+ex(item.id)+'&quot;)"><b>'+(selected?'Selected ':'Select ')+ex(item.label)+'</b><small>'+ex(item.distance||'Station')+(count?' · '+count+' tap'+(count===1?'':'s'):'')+'</small></button>';
   }).join('');
   var stationGuide='';
   if(enabled){
@@ -3693,6 +3693,20 @@ function partnerStationStatusText(){
 function selectPartnerStation(stationId){
   setPartnerStationSelected(stationId,null);
 }
+var partnerLastStationTouchAt=0;
+function touchPartnerStation(event,stationId){
+  partnerLastStationTouchAt=Date.now();
+  if(event){event.preventDefault();event.stopPropagation();}
+  setPartnerStationSelected(stationId,null);
+}
+function clickPartnerStation(event,stationId){
+  if(Date.now()-partnerLastStationTouchAt<800){
+    if(event){event.preventDefault();event.stopPropagation();}
+    return;
+  }
+  if(event){event.preventDefault();}
+  setPartnerStationSelected(stationId,null);
+}
 function setPartnerStationSelected(stationId,selected){
   var partner=ensurePartnerTiming();
   stationId=String(stationId||'');
@@ -3711,8 +3725,8 @@ function setPartnerStationSelected(stationId,selected){
   partner.selectedStationIds=ids;
   partner.selectedStationId=ids[0]||'';
   save();
-  rr();
   renderPartnerTimingControls();
+  rr();
   var status=document.getElementById('partner-station-status');
   if(status)status.textContent=partnerStationStatusText();
 }
