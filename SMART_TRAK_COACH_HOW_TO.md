@@ -702,10 +702,11 @@ For Partner Timing at a cross country meet:
 10. Partner Timing saves the taps as **Split 1**, **Split 2**, **Split 3**, and **Finish** with the coach name attached. Confirm the exact split distance afterward if needed.
 11. The start coach can tap **Stop** to stop the shared race clock after the race. If the clock is stopped by mistake, tap **Continue** or **Continue Race Clock** to resume from the original start time.
 12. Tap **Reset Race Clock** if the Partner Timing race needs to be cleared and started over.
-13. Tap **Sync Partner Timing** inside the Partner Timing panel to combine split and finish taps from the other coaches. This sync does not require selecting athletes in the normal meet-result save screen.
+13. Tap **Sync Partner Timing** inside the Partner Timing panel to combine split and finish taps from the other coaches.
 14. Use **Review** to check missing taps or multiple taps for the same athlete/split before saving official results.
+15. Tap **Save** or **Save Meet Results** to send the finished race results to SMART Trak Meet History.
 
-Partner Timing is built for split points that are too far apart for one coach to cover. Phase 1 is sync-and-review based, so coaches should sync after the race and confirm the combined split/finish data before saving official meet results.
+Partner Timing is built for split points that are too far apart for one coach to cover. **Sync Partner Timing** combines the coaches' taps. **Save Meet Results** creates the official SMART Trak Meet History records.
 
 For field events from the SMARTCoach Pro Mobile App:
 
