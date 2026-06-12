@@ -1220,6 +1220,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 378. Mobile button taps now resolve the nearest enclosing `<button>` before firing `.click()`. This fixes Partner Timing station buttons when the coach taps the text or sublabel inside the button instead of the button element itself.
 379. Partner Timing station selection has been moved back to the original mobile picker-row interaction pattern that previously responded on phones. The newer multi-station selection, station status text, runner-row MARK/DONE buttons, race clock, reset/continue behavior, and sync flow remain in place; only the station chooser surface was restored to the known responsive pattern.
 380. Partner Timing station rows now have a direct row-level mobile touch handler. Tapping a station updates the Partner Timing panel immediately, suppresses the follow-up browser click so the station is not toggled back off, and then refreshes the runner list so selected station MARK/DONE buttons appear after closing the panel.
+381. Partner Timing has been simplified to a record-first workflow. Coaches no longer choose stations before the race; Partner Timing keeps the normal athlete **Lap** and **Stop** buttons visible, records laps as Split 1/Split 2/Split 3 and stops as Finish with the coach name attached, and uses Review after sync to confirm missing/duplicate split or finish taps.
 
 ## Known Good Test Flow
 
