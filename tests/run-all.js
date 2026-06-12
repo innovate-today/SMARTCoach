@@ -1268,6 +1268,48 @@ return { rows: parseAthleticNetRows(sample), formattedDate: formatDate('2022-08-
   console.log("Athletic.net Results Grid duplicate meet dates ok");
 }
 
+function checkPartnerTimingPhaseOne() {
+  const html = fs.readFileSync("index.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
+  [
+    "function defaultPartnerTimingState(group)",
+    "function normalizePartnerTimingState(partner,group)",
+    "function openPartnerTiming()",
+    "function recordPartnerStationTap(runnerId)",
+    "function partnerReviewHtml()",
+    "function syncPartnerTimingSession()",
+    "function loadPartnerTimingSession()",
+    "if(partnerTimingEnabled())loadPartnerTimingSession();",
+    "id=\"m-partner-timing\"",
+    "id=\"tray-plan-label\">Plan</span>",
+    "meet?'Partner':'Plan'",
+    "/api/smart-trak/partner-timing",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Partner Timing mobile phase one missing ${text}`);
+  });
+  [
+    'if (route === "partner-timing")',
+    "return accountPartnerTiming(req, res);",
+    "async function accountPartnerTiming(req, res)",
+    "savePartnerTimingSession(accountKey, session)",
+    "loadPartnerTimingSessions(accountKey",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Partner Timing endpoint missing ${text}`);
+  });
+  [
+    "async function savePartnerTimingSession(accountKey, session)",
+    "async function loadPartnerTimingSessions(accountKey, filters = {})",
+    "function normalizePartnerTimingSession(session)",
+    "function normalizePartnerTimingRecord(record)",
+    "partnerTimingSessions",
+    "lastPartnerTimingSync",
+  ].forEach((text) => {
+    if (!registry.includes(text)) throw new Error(`Partner Timing registry storage missing ${text}`);
+  });
+  console.log("Partner Timing phase one ok");
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
@@ -1308,5 +1350,6 @@ checkMobileGroupStorageAccountScoped();
 checkMobileAccountLogout();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
+checkPartnerTimingPhaseOne();
 
 console.log("SMARTCoach regression checks passed");

@@ -688,6 +688,20 @@ For relays:
 
 The synced relay result includes the relay type, total result, meet name/date, runner names, and splits by runner.
 
+For Partner Timing at a cross country meet:
+
+1. Open **Meets**.
+2. Select the meet and race group.
+3. Tap **Partner** in the bottom tray.
+4. Turn on **Partner Timing**.
+5. The coach at the start taps **Record Race Start** when the race begins.
+6. Each assistant chooses their station, such as **1600m**, **3200m**, **4800m**, or **Finish**.
+7. Each assistant taps the athlete row only when that athlete passes their station.
+8. Tap **Sync / Reload Partner Data** to combine station taps from the other coaches.
+9. Use **Review** to check missing or duplicate station taps before saving official results.
+
+Partner Timing is built for split points that are too far apart for one coach to cover. Phase 1 is sync-and-review based, so coaches should sync after the race and confirm the combined station data before saving official meet results.
+
 For field events from the SMARTCoach Pro Mobile App:
 
 1. Open **Meets**.
