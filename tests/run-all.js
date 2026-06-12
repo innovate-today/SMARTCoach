@@ -1321,6 +1321,7 @@ function checkPartnerTimingPhaseOne() {
     "partner-station-buttons",
     "selected?'Selected ':'Select '",
     "Selected: '+stations.map",
+    "t.closest&&t.closest('button')",
     "id=\"m-partner-timing\"",
     "id=\"tray-plan-label\">Plan</span>",
     "meet?'Partner':'Plan'",

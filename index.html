@@ -7158,6 +7158,8 @@ document.addEventListener('touchstart',function(e){
   if(t.closest&&t.closest('.picker-row'))return;
   if(t.closest&&t.closest('#m-attendance'))return;
   if(t.closest&&t.closest('#m-keep-trak'))return;
+  var btn=t.closest&&t.closest('button');
+  if(btn){e.preventDefault();btn.click();return;}
   if(t.tagName==='BUTTON'||t.classList.contains('blnk')||t.classList.contains('ibtn')||t.classList.contains('tog')){
     e.preventDefault();t.click();
   }

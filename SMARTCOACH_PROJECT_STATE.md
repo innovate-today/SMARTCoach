@@ -1217,6 +1217,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 375. Partner Timing station selection now uses real checkbox controls in the Partner panel instead of custom row-tap buttons. This makes selecting 1600m/3200m/4800m/Finish more reliable on phones and gives the coach an immediate checked state plus the visible **Selected:** line.
 376. Partner Timing station rows now also have a delegated row-level touch/click handler. The checkbox is visual, while the entire station row toggles selection from document-level Partner panel events, avoiding mobile webview cases where native checkbox `change` events do not fire.
 377. Partner Timing station selection was simplified again to use the app's normal large button pattern instead of checkboxes. Stations now render as **Select [station]** / **Selected [station]** buttons, using the same button interaction path as Start, Reset, and Sync.
+378. Mobile button taps now resolve the nearest enclosing `<button>` before firing `.click()`. This fixes Partner Timing station buttons when the coach taps the text or sublabel inside the button instead of the button element itself.
 
 ## Known Good Test Flow
 
