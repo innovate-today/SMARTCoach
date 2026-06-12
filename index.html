@@ -3885,8 +3885,17 @@ function partnerStationTapsForRunner(r,stationId){
 function partnerRecordsForRunner(r,kind){
   var partner=ensurePartnerTiming();
   return (partner&&partner.records||[]).filter(function(record){
-    return (!kind||record.kind===kind)&&partnerRecordMatchesRunner(record,r);
+    return (!kind||partnerRecordKind(record)===kind)&&partnerRecordMatchesRunner(record,r);
   }).sort(function(a,b){return String(a.tapAt||'').localeCompare(String(b.tapAt||''));});
+}
+function partnerRecordKind(record){
+  var kind=String(record&&record.kind||'').toLowerCase();
+  var stationId=String(record&&record.stationId||'').toLowerCase();
+  if(kind)return kind;
+  if(stationId==='finish')return'finish';
+  if(stationId==='resume')return'resume';
+  if(stationId.indexOf('split_')===0)return'split';
+  return'';
 }
 function partnerLatestRunnerRecord(r,kind){
   var records=partnerRecordsForRunner(r,kind);
@@ -4003,8 +4012,9 @@ function partnerReviewHtml(){
   var stationMap={};
   (partner.records||[]).forEach(function(record){
     var id=record.stationId||'';
-    if(record.kind==='resume')return;
-    if(id&&!stationMap[id])stationMap[id]={id:id,label:record.stationLabel||id,splitIndex:Number(record.splitIndex||0),kind:record.kind||''};
+    var kind=partnerRecordKind(record);
+    if(kind==='resume')return;
+    if(id&&!stationMap[id])stationMap[id]={id:id,label:record.stationLabel||id,splitIndex:Number(record.splitIndex||0),kind:kind};
   });
   var stations=Object.keys(stationMap).map(function(id){return stationMap[id];}).sort(function(a,b){
     if(a.kind==='finish'&&b.kind!=='finish')return 1;
@@ -4101,9 +4111,11 @@ function setPartnerSyncStatus(text,type){
 function syncPartnerTimingFromPanel(){
   var btn=document.getElementById('partner-sync-btn');
   if(btn){btn.disabled=true;btn.textContent='Syncing Partner Timing...';}
-  setPartnerSyncStatus('Syncing Partner Timing split/finish taps...', '');
+  var before=(ensurePartnerTiming().records||[]).length;
+  setPartnerSyncStatus('Syncing '+before+' local split/finish tap'+(before===1?'':'s')+'...', '');
   syncPartnerTimingSession().then(function(ok){
-    setPartnerSyncStatus(ok?'Partner Timing synced. No athlete selection needed.':'Partner Timing could not sync. Check connection and account access.', ok?'good':'bad');
+    var after=(ensurePartnerTiming().records||[]).length;
+    setPartnerSyncStatus(ok?'Partner Timing synced. '+after+' shared tap'+(after===1?'':'s')+' loaded.':'Partner Timing could not sync. Check connection and account access.', ok?'good':'bad');
   }).finally(function(){
     if(btn){btn.disabled=false;btn.textContent='Sync Partner Timing';}
   });
