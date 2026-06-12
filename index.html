@@ -204,8 +204,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .partner-station-guide{margin:8px 10px 0;padding:10px 12px;border-radius:12px;background:#f7f7f9;border:1px solid #d1d5db;color:#222;font-size:13px;line-height:1.35}
 .partner-station-guide b{display:block;font-size:15px;margin-bottom:2px}
 .partner-station-guide .warn{color:#c47a00;font-weight:800}
-.partner-mark-btn{background:#2B4FCC!important;color:#fff!important;border-color:#2B4FCC!important;min-width:110px}
-.partner-mark-btn.captured{background:#0a7a44!important;border-color:#0a7a44!important}
+.partner-mark-btn{background:#2B4FCC!important;color:#fff!important;border-color:#2B4FCC!important;min-width:116px;box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.partner-mark-btn.captured{background:#0a7a44!important;border-color:#0a7a44!important;box-shadow:0 0 0 3px rgba(10,122,68,.22),0 2px 0 rgba(0,0,0,.18)}
+.partner-mark-btn.captured b,.partner-mark-btn b{display:block;font-size:17px;line-height:1}
+.partner-mark-btn small{display:block;font-size:11px;line-height:1.1;margin-top:3px;font-weight:800;opacity:.95}
+.runner-row.partner-just-marked{animation:partnerMarkedFlash 1.4s ease-out}
+@keyframes partnerMarkedFlash{0%{box-shadow:inset 0 0 0 999px rgba(10,122,68,.24)}100%{box-shadow:none}}
 </style>
 </head>
 <body>
@@ -3355,7 +3359,8 @@ function rHTML(r){
   var status=runnerRowStatus(r);
   var statusHtml=cfg.showSync&&status?'<div class="rtarget on save-state '+status.cls+'" '+(status.action?'onclick="openRunnerStatusAction('+r.id+')"':'')+' style="display:block'+(status.action?';cursor:pointer':'')+'">'+ex(status.label)+'</div>':'';
   var partner=partnerTimingEnabled()?partnerStation():null;
-  var partnerButton=partner&&partner.id!=='start'?'<button class="sbtn partner-mark-btn '+(partnerCurrentStationTap(r)?'captured':'')+'" id="ptb-'+r.id+'" onclick="recordPartnerStationTap('+r.id+')">'+ex(partnerButtonLabel(r))+'</button>':'';
+  var partnerTap=partner?partnerCurrentStationTap(r):null;
+  var partnerButton=partner&&partner.id!=='start'?'<button class="sbtn partner-mark-btn '+(partnerTap?'captured':'')+'" id="ptb-'+r.id+'" onclick="recordPartnerStationTap('+r.id+')" aria-pressed="'+(partnerTap?'true':'false')+'">'+partnerButtonLabel(r)+'</button>':'';
   var normalButtons=partnerButton||('<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">'+ex(lapButtonLabel(r))+'</button>'+
         '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>');
   var totalText=partner?partnerRunnerClockText(r):fmt(ge(r));
@@ -3728,6 +3733,8 @@ function recordPartnerStationTap(runnerId){
   tapFeedback();
   save();
   rr();
+  var markedRow=document.getElementById('rr-'+runnerId);
+  if(markedRow){markedRow.classList.add('partner-just-marked');setTimeout(function(){markedRow.classList.remove('partner-just-marked');},1500);}
   syncPartnerTimingSession();
 }
 function partnerStationTapsForRunner(r,stationId){
@@ -3753,11 +3760,11 @@ function partnerRunnerClockText(r){
 }
 function partnerButtonLabel(r){
   var station=partnerStation();
-  if(!station)return'Partner';
-  if(!ensurePartnerTiming().startAt)return'Start?';
-  var count=partnerStationTapsForRunner(r,station.id).length;
-  if(count)return'Captured '+station.label;
-  return'Mark '+station.label;
+  if(!station)return'<b>Partner</b>';
+  if(!ensurePartnerTiming().startAt)return'<b>Start?</b><small>Need clock</small>';
+  var taps=partnerStationTapsForRunner(r,station.id);
+  if(taps.length)return'<b>DONE '+ex(station.label)+'</b><small>'+ex(partnerElapsedText(taps[0].tapAt))+(taps.length>1?' · '+taps.length+' taps':'')+'</small>';
+  return'<b>MARK '+ex(station.label)+'</b><small>Tap at pass</small>';
 }
 function partnerRunnerSummary(r){
   var partner=ensurePartnerTiming(),station=partnerStation();

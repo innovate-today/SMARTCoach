@@ -1209,6 +1209,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 367. Partner Timing race behavior was corrected to feel like normal race timing: the main **Start/Stop** button controls the shared race clock, every athlete row shows the running race time, tapping an athlete at the selected station freezes that athlete's row at the station split/finish time, and Reset clears the shared Partner Timing clock/taps across sync.
 368. Partner Timing now has a visible **Reset Race Clock** button inside the Partner Timing sheet. It uses the same reset path as the main meet-screen Reset button, clearing the shared race clock and station taps across sync.
 369. Partner Timing station capture is clearer for assistant coaches. The Partner Timing sheet now says which station is being recorded and tells coaches to close the sheet and tap **Mark [station]** on runner rows as athletes pass.
+370. Partner Timing station tap feedback is now stronger on the runner row itself. The station button changes from **MARK [station]** to a green **DONE [station]** button with the captured split time, and the row briefly highlights after the tap.
 
 ## Known Good Test Flow
 
