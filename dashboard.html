@@ -551,14 +551,14 @@ tr:last-child td{border-bottom:0}
     <div class="modalbody">
       <p class="whats-new-intro">Create a view-only mileage challenge link for athletes or parents. Turning sharing off stops the current link from loading.</p>
       <div class="formgrid">
-        <div class="field">
-          <label for="milesBoardChallenge">Challenge Type</label>
-          <select id="milesBoardChallenge">
-            <option value="total">Total Miles</option>
-            <option value="weekly">This Week</option>
-            <option value="consistency">Consistency</option>
-            <option value="mover">Big Mover</option>
-          </select>
+        <div class="field full">
+          <label>Challenge Types</label>
+          <div id="milesBoardChallengeList" class="dashboard-pref-list">
+            <label class="dashboard-pref-row"><span><b>Total Miles</b><small>Ranks the full selected range by mileage.</small></span><input type="checkbox" data-miles-board-challenge="total"></label>
+            <label class="dashboard-pref-row"><span><b>This Week</b><small>Highlights current-week mileage inside the board.</small></span><input type="checkbox" data-miles-board-challenge="weekly"></label>
+            <label class="dashboard-pref-row"><span><b>Consistency</b><small>Rewards athletes who log the most workouts.</small></span><input type="checkbox" data-miles-board-challenge="consistency"></label>
+            <label class="dashboard-pref-row"><span><b>Big Mover</b><small>Rewards positive week-over-week mileage change.</small></span><input type="checkbox" data-miles-board-challenge="mover"></label>
+          </div>
         </div>
         <label class="checkline" style="display:flex;align-items:center;gap:8px;margin-top:26px;color:#334155;font-size:14px;font-weight:800">
           <input id="milesBoardActive" type="checkbox">
@@ -1346,15 +1346,28 @@ function saveDashboardPreferences(){
   });
 }
 function defaultMilesBoardSharing(){
-  return {active:true,challengeType:'total',tokenVersion:'1',updatedAt:new Date().toISOString()};
+  return {active:true,challengeType:'total',challengeTypes:['total'],tokenVersion:'1',updatedAt:new Date().toISOString()};
+}
+function normalizeMilesBoardChallenges(values){
+  var list=Array.isArray(values)?values:[values];
+  var seen={};
+  var out=[];
+  list.forEach(function(value){
+    var challenge=String(value||'').toLowerCase();
+    if(['total','weekly','consistency','mover'].indexOf(challenge)>=0&&!seen[challenge]){
+      seen[challenge]=true;
+      out.push(challenge);
+    }
+  });
+  return out.length?out:['total'];
 }
 function normalizeMilesBoardSharing(source){
   var input=source&&typeof source==='object'?source:{};
-  var challenge=String(input.challengeType||input.challenge||'total').toLowerCase();
-  if(['weekly','consistency','mover'].indexOf(challenge)<0)challenge='total';
+  var challenges=normalizeMilesBoardChallenges(input.challengeTypes||input.challengeType||input.challenge||'total');
   return {
     active:input.active!==false,
-    challengeType:challenge,
+    challengeType:challenges[0],
+    challengeTypes:challenges,
     tokenVersion:String(input.tokenVersion||'1'),
     updatedAt:String(input.updatedAt||''),
     resetAt:String(input.resetAt||'')
@@ -1362,7 +1375,9 @@ function normalizeMilesBoardSharing(source){
 }
 function renderMilesBoardSharing(){
   var settings=normalizeMilesBoardSharing(milesBoardSharing||defaultMilesBoardSharing());
-  if(els.milesBoardChallenge)els.milesBoardChallenge.value=settings.challengeType;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-miles-board-challenge]'),function(input){
+    input.checked=settings.challengeTypes.indexOf(input.getAttribute('data-miles-board-challenge'))>=0;
+  });
   if(els.milesBoardActive)els.milesBoardActive.checked=settings.active;
   if(els.milesBoardLinkPreview)els.milesBoardLinkPreview.value=currentMilesBoardUrl||'';
   if(els.milesBoardStatus){
@@ -1372,9 +1387,15 @@ function renderMilesBoardSharing(){
 }
 function collectMilesBoardSharing(){
   var current=normalizeMilesBoardSharing(milesBoardSharing||defaultMilesBoardSharing());
+  var selected=[];
+  Array.prototype.forEach.call(document.querySelectorAll('[data-miles-board-challenge]'),function(input){
+    if(input.checked)selected.push(input.getAttribute('data-miles-board-challenge'));
+  });
+  selected=normalizeMilesBoardChallenges(selected);
   return {
     active:!!(els.milesBoardActive&&els.milesBoardActive.checked),
-    challengeType:els.milesBoardChallenge?els.milesBoardChallenge.value:current.challengeType,
+    challengeType:selected[0]||current.challengeType,
+    challengeTypes:selected,
     tokenVersion:current.tokenVersion,
     updatedAt:new Date().toISOString()
   };
@@ -1904,7 +1925,7 @@ var els={
   dashboardPrefsSave:document.getElementById('dashboardPrefsSave'),
   milesBoardModal:document.getElementById('milesBoardModal'),
   milesBoardClose:document.getElementById('milesBoardClose'),
-  milesBoardChallenge:document.getElementById('milesBoardChallenge'),
+  milesBoardChallengeList:document.getElementById('milesBoardChallengeList'),
   milesBoardActive:document.getElementById('milesBoardActive'),
   milesBoardLinkPreview:document.getElementById('milesBoardLinkPreview'),
   milesBoardStatus:document.getElementById('milesBoardStatus'),

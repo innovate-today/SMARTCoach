@@ -1573,6 +1573,7 @@ async function accountMilesBoardLink(req, res) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(start)) params.set("start", start);
   if (/^\d{4}-\d{2}-\d{2}$/.test(end)) params.set("end", end);
   params.set("challenge", sharing.challengeType);
+  if (sharing.challengeTypes.length) params.set("challenges", sharing.challengeTypes.join(","));
   res.status(200).json({
     success: true,
     token,
@@ -1664,6 +1665,7 @@ async function accountMilesBoardSharing(req, res) {
         savedAt: next.updatedAt,
         active: next.active,
         challengeType: next.challengeType,
+        challengeTypes: next.challengeTypes,
         resetAt: next.resetAt || "",
       },
     });
@@ -1701,14 +1703,27 @@ function normalizeDashboardPreferences(source) {
 
 function normalizeMilesBoardSharing(source) {
   const input = source && typeof source === "object" ? source : {};
+  const challengeTypes = normalizeMilesBoardChallenges(input.challengeTypes || input.challengeType || input.challenge || "total");
   return {
     version: 1,
     active: input.active !== false,
-    challengeType: normalizeMilesBoardChallenge(input.challengeType || input.challenge || "total"),
+    challengeType: challengeTypes[0],
+    challengeTypes,
     tokenVersion: cleanSetupText(input.tokenVersion) || "1",
     updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
     resetAt: cleanSetupText(input.resetAt),
   };
+}
+
+function normalizeMilesBoardChallenges(values) {
+  const list = Array.isArray(values) ? values : cleanSetupText(values).split(",");
+  const seen = new Set();
+  const normalized = list.map(normalizeMilesBoardChallenge).filter(Boolean).filter((value) => {
+    if (seen.has(value)) return false;
+    seen.add(value);
+    return true;
+  });
+  return normalized.length ? normalized : ["total"];
 }
 
 function normalizeMilesBoardChallenge(value) {

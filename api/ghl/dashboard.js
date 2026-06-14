@@ -167,6 +167,7 @@ async function publicMilesBoard(req, res) {
       logoUrl,
       generatedAt: new Date().toISOString(),
       challengeType: clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total",
+      challengeTypes: Array.isArray(req.milesBoardSharing && req.milesBoardSharing.challengeTypes) ? req.milesBoardSharing.challengeTypes : [clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total"],
       range: {
         start: dateOnly(range.start),
         end: dateOnly(addDays(range.end, -1)),
