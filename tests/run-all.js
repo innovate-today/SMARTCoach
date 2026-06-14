@@ -219,6 +219,7 @@ function checkDashboardActivityRangeLayout() {
     "recentAttendanceRows=result",
     "function attendanceRateText(rows)",
     'placeholder="Search athletes or groups"',
+    "Average Volume Per Athlete",
     "function athleteMatchesDashboardSearch(row,query)",
     "row.name,row.smartcoachAthleteId",
     "Array.isArray(row.groups)?row.groups.join(' '):''",

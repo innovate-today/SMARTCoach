@@ -4647,7 +4647,7 @@ function volumeSummaryHtml(rows){
   var label=volumeRangeText().toLowerCase();
   return [
     volumeCard('Team '+label,formatMiles(total),active.length+' athlete'+(active.length===1?'':'s')+' in view'),
-    volumeCard('Average per athlete',formatMiles(average),activityRangeLabel()),
+    volumeCard('Average Volume Per Athlete',formatMiles(average),activityRangeLabel()),
     volumeCard('Highest '+label,high.athleteName?formatMiles(high.volumeMiles):'0 mi',high.athleteName||'No athlete yet'),
     volumeCard('Lowest '+label,low.athleteName?formatMiles(low.volumeMiles):'0 mi',low.athleteName||'No athlete yet')
   ].join('');

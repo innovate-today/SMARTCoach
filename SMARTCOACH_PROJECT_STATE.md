@@ -1233,6 +1233,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 391. SMARTCoach athlete counts are now gated to SMART Trak roster members instead of ordinary GHL contacts. The athlete API plan-limit check and dashboard roster normalization require the `smartcoach-athlete` tag before a contact can count as a SMART Trak athlete, while system/support contacts remain excluded. Regression coverage checks that untagged GHL contacts cannot inflate active athlete counts.
 392. SMARTCoach mobile field events now warn before **Clear Flight Draft** removes athletes and unsaved attempts. Legal field marks entered in feet/inches are normalized to quarter-inch decimal formatting on save, such as `15-0.25`, and the horizontal jumps/throws attempt info page now shows the mark as the bold top line with the attempt/status line underneath.
 393. Dashboard Training Load Summary now calculates **Avg miles per workout** as completed training volume divided by completed workout entries in the selected view. The card no longer averages completed volume by active athletes, and regression coverage checks the workout-based divisor.
+394. Dashboard Volume by Athlete summary now labels the per-athlete volume card **Average Volume Per Athlete** to make clear that it is athlete-based volume within the filtered volume view.
 
 ## Known Good Test Flow
 
