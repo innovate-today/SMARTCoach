@@ -6210,6 +6210,10 @@ function addFieldAttempt(){
   var editIndex=Number(document.getElementById('fa-edit-index')&&document.getElementById('fa-edit-index').value);
   if(fieldIsVertical(event.eventName)&&!status){setFieldAttemptStatus('Choose O, X, or P for this attempt.','bad');return;}
   if((status==='Legal'||status==='Make')&&!mark){setFieldAttemptStatus('Enter the mark/height for this attempt.','bad');return;}
+  if((status==='Legal'||status==='Make')&&mark){
+    mark=normalizeFieldMarkForSave(event.eventName,mark);
+    if(!mark){setFieldAttemptStatus('Enter marks as feet-inches with quarter inches, like 15-0.25.','bad');return;}
+  }
   competitor.wind=wind;
   competitor.notes=notes;
   if(editIndex>=0&&competitor.attempts[editIndex]){
@@ -6283,6 +6287,7 @@ function clearFieldCaptureDraft(){
   if(!CL)return;
   CL.field=normalizeFieldState(CL.field);
   var event=activeFieldEvent();
+  if(!confirm('Clear this field flight draft? This removes all athletes and unsaved attempts for this event.'))return;
   if(event){event.competitors=[];event.selectedAthleteKey='';}
   save();
   renderFieldCapture();
@@ -6318,8 +6323,7 @@ function openFieldAttemptInfo(index){
       }).join('');
     }else{
       list.innerHTML=competitor.attempts&&competitor.attempts.length?competitor.attempts.map(function(attempt,i){
-        var label=fieldAttemptCode(attempt)+(attempt.mark?' · '+attempt.mark:'');
-        return '<div class="sync-athlete" style="padding:12px 10px"><span class="sync-athlete-main"><b style="font-size:19px">Attempt '+(i+1)+'</b><small style="font-size:15px">'+ex(label)+'</small></span><button type="button" class="sbtn" style="font-size:12px;padding:5px 9px" onclick="editFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+i+')">Edit</button><button type="button" class="sbtn" style="font-size:12px;padding:5px 9px" onclick="removeFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+i+')">Delete</button></div>';
+        return '<div class="sync-athlete" style="padding:12px 10px"><span class="sync-athlete-main"><b style="font-size:21px;line-height:1.15">'+ex(fieldAttemptInfoMarkText(attempt))+'</b><small style="font-size:15px;font-weight:400">'+ex(fieldAttemptInfoDetailText(attempt,i))+'</small></span><button type="button" class="sbtn" style="font-size:12px;padding:5px 9px" onclick="editFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+i+')">Edit</button><button type="button" class="sbtn" style="font-size:12px;padding:5px 9px" onclick="removeFieldAttemptForAthlete(decodeURIComponent(\''+encodedKey+'\'),'+i+')">Delete</button></div>';
       }).join(''):'<div style="font-size:16px;color:#777;padding:16px;background:#fff">No attempts captured.</div>';
     }
   }
@@ -6333,6 +6337,50 @@ function fieldAttemptCode(attempt){
   if(attempt.status==='Pass')return'P';
   if(attempt.status==='Foul')return'Foul';
   return attempt.status||'Legal';
+}
+function fieldAttemptInfoMarkText(attempt){
+  if(!attempt)return'--';
+  if(attempt.mark)return attempt.mark;
+  return fieldAttemptCode(attempt)||'--';
+}
+function fieldAttemptInfoDetailText(attempt,index){
+  var status=fieldAttemptCode(attempt)||'Legal';
+  return 'Attempt '+(Number(index)+1)+' · '+status;
+}
+function normalizeFieldMarkForSave(eventName,mark){
+  var text=String(mark||'').trim();
+  if(!text)return'';
+  if(fieldMarkUnit()==='meters')return text;
+  return normalizeFeetInchesQuarterMark(text);
+}
+function normalizeFeetInchesQuarterMark(mark){
+  var text=String(mark||'').trim().toLowerCase().replace(/\s+/g,'');
+  text=text.replace(/[′’]/g,"'").replace(/[″"]/g,'');
+  text=text.replace(/'/g,'-');
+  text=text.replace(/[^\d.\-]/g,'');
+  if(!text)return'';
+  var parts=text.split('-').filter(function(part,index){return index===0||part!=='';});
+  var feet=0;
+  var inches=0;
+  if(parts.length>1){
+    feet=parseInt(parts[0],10);
+    inches=parseFloat(parts.slice(1).join('.'));
+  }else{
+    feet=parseInt(parts[0],10);
+    inches=0;
+  }
+  if(!isFinite(feet)||feet<0||!isFinite(inches)||inches<0)return'';
+  inches=Math.round(inches*4)/4;
+  while(inches>=12){
+    feet+=1;
+    inches-=12;
+  }
+  var inchText=String(Math.floor(inches));
+  var fraction=Number((inches-Math.floor(inches)).toFixed(2));
+  if(fraction){
+    inchText+=fraction===0.25?'.25':fraction===0.5?'.5':fraction===0.75?'.75':'';
+  }
+  return feet+'-'+inchText;
 }
 function fieldMarkValue(mark){
   mark=String(mark||'').trim().toLowerCase().replace(/[^\d.\-']/g,'');

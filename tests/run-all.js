@@ -879,6 +879,24 @@ function checkFieldNoMarkResultsAllowed() {
   console.log("field no-mark result support ok");
 }
 
+function checkMobileFieldEventCaptureControls() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "Clear this field flight draft? This removes all athletes and unsaved attempts for this event.",
+    "function normalizeFieldMarkForSave(eventName,mark)",
+    "function normalizeFeetInchesQuarterMark(mark)",
+    "Math.round(inches*4)/4",
+    "Enter marks as feet-inches with quarter inches, like 15-0.25.",
+    "function fieldAttemptInfoMarkText(attempt)",
+    "function fieldAttemptInfoDetailText(attempt,index)",
+    "font-size:21px;line-height:1.15",
+    "font-size:15px;font-weight:400",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile field event capture control missing ${text}`);
+  });
+  console.log("mobile field event capture controls ok");
+}
+
 function checkKeepTrakFeature() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const desktop = fs.readFileSync("keep-trak.html", "utf8");
@@ -1460,6 +1478,7 @@ checkMeetHistoryImportOnlySpreadsheet();
 checkMeetHistoryImportedResultCorrections();
 checkPageSearchDebounces();
 checkFieldNoMarkResultsAllowed();
+checkMobileFieldEventCaptureControls();
 checkKeepTrakFeature();
 checkAttendanceCheckpointMarkAll();
 checkAttendanceSeasonAttachment();
