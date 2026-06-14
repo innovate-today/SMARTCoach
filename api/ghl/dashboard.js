@@ -244,26 +244,36 @@ function milesBoardHighlight(rows, key, suffix) {
 function milesBoardGroupRows(rows) {
   const groups = new Map();
   rows.forEach((row) => {
-    const rowGroups = (row.groups && row.groups.length ? row.groups : ["No group"]).slice(0, 6);
-    rowGroups.forEach((groupName) => {
-      const key = clean(groupName) || "No group";
-      if (!groups.has(key)) {
-        groups.set(key, { groupName: key, athletes: 0, athletesWithMiles: 0, totalMiles: 0, workouts: 0, currentWeekMiles: 0 });
-      }
-      const group = groups.get(key);
-      group.athletes += 1;
-      if (row.totalMiles > 0) group.athletesWithMiles += 1;
-      group.totalMiles += Number(row.totalMiles) || 0;
-      group.workouts += Number(row.workouts) || 0;
-      group.currentWeekMiles += Number(row.currentWeekMiles) || 0;
-    });
+    const key = milesBoardGenderDivision(row.gender);
+    if (!groups.has(key)) {
+      groups.set(key, { groupName: key, athletes: 0, athletesWithMiles: 0, totalMiles: 0, workouts: 0, currentWeekMiles: 0 });
+    }
+    const group = groups.get(key);
+    group.athletes += 1;
+    if (row.totalMiles > 0) group.athletesWithMiles += 1;
+    group.totalMiles += Number(row.totalMiles) || 0;
+    group.workouts += Number(row.workouts) || 0;
+    group.currentWeekMiles += Number(row.currentWeekMiles) || 0;
   });
   return Array.from(groups.values()).map((group) => ({
     ...group,
     totalMiles: roundVolume(group.totalMiles),
     currentWeekMiles: roundVolume(group.currentWeekMiles),
     averagePerAthlete: group.athletes ? roundVolume(group.totalMiles / group.athletes) : 0,
-  })).sort((a, b) => b.totalMiles - a.totalMiles || b.currentWeekMiles - a.currentWeekMiles || a.groupName.localeCompare(b.groupName));
+  })).sort((a, b) => milesBoardDivisionOrder(a.groupName) - milesBoardDivisionOrder(b.groupName) || b.totalMiles - a.totalMiles || a.groupName.localeCompare(b.groupName));
+}
+
+function milesBoardGenderDivision(value) {
+  const text = clean(value).toLowerCase();
+  if (/\b(girl|girls|female|women|womens)\b/.test(text)) return "Girls";
+  if (/\b(boy|boys|male|men|mens)\b/.test(text)) return "Boys";
+  return "Unlisted";
+}
+
+function milesBoardDivisionOrder(value) {
+  if (value === "Boys") return 1;
+  if (value === "Girls") return 2;
+  return 3;
 }
 
 function uniqueStrings(values) {

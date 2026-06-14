@@ -63,7 +63,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
     <div class="tablewrap">
       <table>
         <thead><tr>
-          <th>Group</th>
+          <th>Division</th>
           <th>Total Miles</th>
           <th>This Week</th>
           <th>Athletes</th>
@@ -107,8 +107,9 @@ function sorter(a,b){var key=sortState.key;var av=key==='rank'?0:a[key],bv=key==
 function rowHtml(row,index){return '<tr><td><span class="rank">'+(index+1)+'</span></td><td><span class="name">'+esc(row.athleteName||'Athlete')+'</span><span class="small">'+esc((row.groups||[]).join(', ')||'No group')+'</span></td><td><b>'+formatMiles(row.totalMiles)+'</b></td><td>'+formatMiles(row.currentWeekMiles)+'</td><td>'+formatChange(row.weekChangeMiles)+'</td><td>'+esc(row.workouts||0)+'</td><td>'+formatMiles(row.averagePerWorkout)+'</td><td>'+esc(formatDate(row.lastLoggedDate)||'--')+'</td></tr>';}
 function renderHighlights(highlights){setHighlight('mileageLeader',highlights.mileageLeader);setHighlight('weekLeader',highlights.weekLeader);setHighlight('consistencyLeader',highlights.consistencyLeader);setHighlight('bigMover',highlights.bigMover);}
 function setHighlight(key,item){item=item||{};els[key].textContent=item.athleteName||'--';els[key+'Text'].textContent=item.label||'No miles yet';}
-function renderGroups(){var rows=groupRows.slice().sort(function(a,b){return (Number(b.totalMiles)||0)-(Number(a.totalMiles)||0)||String(a.groupName||'').localeCompare(String(b.groupName||''));});els.groupStatus.textContent=rows.length+' group'+(rows.length===1?'':'s')+' in view';els.groupRows.innerHTML=rows.length?rows.map(groupHtml).join(''):'<tr><td colspan="6" class="empty">No group totals yet.</td></tr>';}
-function groupHtml(group){return '<tr><td><span class="name">'+esc(group.groupName||'No group')+'</span></td><td><b>'+formatMiles(group.totalMiles)+'</b></td><td>'+formatMiles(group.currentWeekMiles)+'</td><td>'+esc(group.athletesWithMiles||0)+' of '+esc(group.athletes||0)+'</td><td>'+esc(group.workouts||0)+'</td><td>'+formatMiles(group.averagePerAthlete)+'</td></tr>';}
+function renderGroups(){var rows=groupRows.slice().sort(function(a,b){return divisionOrder(a.groupName)-divisionOrder(b.groupName)||(Number(b.totalMiles)||0)-(Number(a.totalMiles)||0)||String(a.groupName||'').localeCompare(String(b.groupName||''));});els.groupStatus.textContent=rows.length+' division'+(rows.length===1?'':'s')+' in view';els.groupRows.innerHTML=rows.length?rows.map(groupHtml).join(''):'<tr><td colspan="6" class="empty">No division totals yet.</td></tr>';}
+function groupHtml(group){return '<tr><td><span class="name">'+esc(group.groupName||'Unlisted')+'</span></td><td><b>'+formatMiles(group.totalMiles)+'</b></td><td>'+formatMiles(group.currentWeekMiles)+'</td><td>'+esc(group.athletesWithMiles||0)+' of '+esc(group.athletes||0)+'</td><td>'+esc(group.workouts||0)+'</td><td>'+formatMiles(group.averagePerAthlete)+'</td></tr>';}
+function divisionOrder(value){if(value==='Boys')return 1;if(value==='Girls')return 2;return 3;}
 function formatMiles(value){var n=Number(value)||0;return (Math.round(n*10)/10).toLocaleString(undefined,{maximumFractionDigits:1})+' mi';}
 function formatChange(value){var n=Math.round((Number(value)||0)*10)/10;if(n>0)return '+'+n.toLocaleString(undefined,{maximumFractionDigits:1})+' mi';if(n<0)return n.toLocaleString(undefined,{maximumFractionDigits:1})+' mi';return '0 mi';}
 function formatDate(value){if(!value)return'';var d=new Date(String(value).slice(0,10)+'T12:00:00');if(Number.isNaN(d.getTime()))return String(value);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});}

@@ -305,6 +305,8 @@ function checkMilesBoardFeature() {
     "Friendly team mileage leaderboard.",
     "Challenge Highlights",
     "Pack Challenge",
+    "<th>Division</th>",
+    "divisionOrder",
     "renderHighlights",
     "renderGroups",
   ].forEach((text) => {
@@ -327,6 +329,8 @@ function checkMilesBoardFeature() {
     "function buildMilesBoardRows",
     "function milesBoardHighlights",
     "function milesBoardGroupRows",
+    "function milesBoardGenderDivision",
+    "function milesBoardDivisionOrder",
     "averagePerWorkout",
     "previousWeekMiles",
     "weekChangeMiles",
