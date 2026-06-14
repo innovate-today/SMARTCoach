@@ -158,7 +158,8 @@ async function publicMilesBoard(req, res) {
     const start = publicBoardDate(req.query && req.query.start);
     const end = publicBoardDate(req.query && req.query.end);
     const range = normalizedBoardRange(start, end);
-    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, start: range.start, end: range.end });
+    const gameSettings = milesBoardGameSettings(req.milesBoardSharing && req.milesBoardSharing.gameSettings);
+    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, start: range.start, end: range.end, gameSettings });
     const totalMiles = roundVolume(boardRows.reduce((sum, row) => sum + row.totalMiles, 0));
     const totalWorkouts = boardRows.reduce((sum, row) => sum + row.workouts, 0);
     res.status(200).json({
@@ -168,6 +169,7 @@ async function publicMilesBoard(req, res) {
       generatedAt: new Date().toISOString(),
       challengeType: clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total",
       challengeTypes: Array.isArray(req.milesBoardSharing && req.milesBoardSharing.challengeTypes) ? req.milesBoardSharing.challengeTypes : [clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total"],
+      gameSettings,
       range: {
         start: dateOnly(range.start),
         end: dateOnly(addDays(range.end, -1)),
@@ -179,6 +181,8 @@ async function publicMilesBoard(req, res) {
         totalMiles,
         workouts: totalWorkouts,
         averagePerWorkout: totalWorkouts ? roundVolume(totalMiles / totalWorkouts) : 0,
+        teamGoalMiles: gameSettings.teamGoalMiles,
+        teamGoalProgress: gameSettings.teamGoalMiles ? Math.round((totalMiles / gameSettings.teamGoalMiles) * 100) : 0,
       },
       highlights: milesBoardHighlights(boardRows),
       groups: milesBoardGroupRows(boardRows),
@@ -189,7 +193,7 @@ async function publicMilesBoard(req, res) {
   }
 }
 
-function buildMilesBoardRows({ athletes, performanceRecords, start, end }) {
+function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSettings }) {
   return athletes.map((athlete) => {
     const training = performanceRecords
       .filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record))
@@ -224,8 +228,9 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end }) {
     };
     return {
       ...row,
-      gameScore: milesBoardGameScore(row),
-      badges: milesBoardBadges(row),
+      gameScore: milesBoardGameScore(row, gameSettings),
+      goalHit: gameSettings.athleteGoalMiles > 0 && totalMiles >= gameSettings.athleteGoalMiles,
+      badges: milesBoardBadges(row, gameSettings),
     };
   }).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
 }
@@ -254,19 +259,22 @@ function milesBoardHighlight(rows, key, suffix) {
   };
 }
 
-function milesBoardGameScore(row) {
-  const mileagePoints = Math.round(Number(row.totalMiles) || 0);
-  const workoutPoints = (Number(row.workouts) || 0) * 3;
-  const weeklyPoints = Math.round(Number(row.currentWeekMiles) || 0);
-  const moverPoints = Math.max(0, Math.round((Number(row.weekChangeMiles) || 0) * 2));
-  const consistencyBonus = (Number(row.activeDays) || 0) >= 3 ? 5 : 0;
+function milesBoardGameScore(row, settings) {
+  const gameSettings = milesBoardGameSettings(settings);
+  const mileagePoints = Math.round((Number(row.totalMiles) || 0) * gameSettings.pointsPerMile);
+  const workoutPoints = Math.round((Number(row.workouts) || 0) * gameSettings.pointsPerWorkout);
+  const weeklyPoints = Math.round((Number(row.currentWeekMiles) || 0) * gameSettings.pointsPerCurrentWeekMile);
+  const moverPoints = Math.max(0, Math.round((Number(row.weekChangeMiles) || 0) * gameSettings.pointsPerImprovementMile));
+  const consistencyBonus = (Number(row.activeDays) || 0) >= gameSettings.consistencyDays ? gameSettings.consistencyBonus : 0;
   return mileagePoints + workoutPoints + weeklyPoints + moverPoints + consistencyBonus;
 }
 
-function milesBoardBadges(row) {
+function milesBoardBadges(row, settings) {
+  const gameSettings = milesBoardGameSettings(settings);
   const badges = [];
   const totalMiles = Number(row.totalMiles) || 0;
   const workouts = Number(row.workouts) || 0;
+  if (gameSettings.athleteGoalMiles > 0 && totalMiles >= gameSettings.athleteGoalMiles) badges.push("Goal Hit");
   if (totalMiles >= 100) badges.push("100 Mile Club");
   else if (totalMiles >= 50) badges.push("50 Mile Club");
   else if (totalMiles >= 25) badges.push("25 Mile Club");
@@ -274,6 +282,27 @@ function milesBoardBadges(row) {
   if ((Number(row.currentWeekMiles) || 0) >= 10) badges.push("This Week");
   if ((Number(row.weekChangeMiles) || 0) > 0) badges.push("Big Mover");
   return badges;
+}
+
+function milesBoardGameSettings(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    challengeName: clean(input.challengeName).slice(0, 80) || "Summer Mileage Challenge",
+    teamGoalMiles: boundedBoardNumber(input.teamGoalMiles, 0, 10000),
+    athleteGoalMiles: boundedBoardNumber(input.athleteGoalMiles, 0, 1000),
+    pointsPerMile: boundedBoardNumber(input.pointsPerMile, 1, 100),
+    pointsPerWorkout: boundedBoardNumber(input.pointsPerWorkout, 3, 100),
+    pointsPerCurrentWeekMile: boundedBoardNumber(input.pointsPerCurrentWeekMile, 1, 100),
+    pointsPerImprovementMile: boundedBoardNumber(input.pointsPerImprovementMile, 2, 100),
+    consistencyDays: Math.round(boundedBoardNumber(input.consistencyDays, 3, 14)),
+    consistencyBonus: boundedBoardNumber(input.consistencyBonus, 5, 500),
+  };
+}
+
+function boundedBoardNumber(value, fallback, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return fallback;
+  return Math.min(number, max);
 }
 
 function milesBoardGroupRows(rows) {

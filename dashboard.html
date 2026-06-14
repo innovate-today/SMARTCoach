@@ -566,6 +566,42 @@ tr:last-child td{border-bottom:0}
           <span>Link active</span>
         </label>
         <div class="field full">
+          <label for="milesBoardChallengeName">Challenge Name</label>
+          <input id="milesBoardChallengeName" type="text" maxlength="80" placeholder="Summer Mileage Challenge">
+        </div>
+        <div class="field">
+          <label for="milesBoardTeamGoal">Team Goal Miles</label>
+          <input id="milesBoardTeamGoal" type="number" min="0" step="1" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label for="milesBoardAthleteGoal">Athlete Goal Miles</label>
+          <input id="milesBoardAthleteGoal" type="number" min="0" step="1" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label for="milesBoardPointsMile">Points / Mile</label>
+          <input id="milesBoardPointsMile" type="number" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label for="milesBoardPointsWorkout">Points / Workout</label>
+          <input id="milesBoardPointsWorkout" type="number" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label for="milesBoardPointsWeek">Points / This Week Mile</label>
+          <input id="milesBoardPointsWeek" type="number" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label for="milesBoardPointsImprove">Points / Improvement Mile</label>
+          <input id="milesBoardPointsImprove" type="number" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label for="milesBoardConsistencyDays">Consistency Days</label>
+          <input id="milesBoardConsistencyDays" type="number" min="0" step="1">
+        </div>
+        <div class="field">
+          <label for="milesBoardConsistencyBonus">Consistency Bonus</label>
+          <input id="milesBoardConsistencyBonus" type="number" min="0" step="1">
+        </div>
+        <div class="field full">
           <label for="milesBoardLinkPreview">Current Link</label>
           <input id="milesBoardLinkPreview" type="text" readonly placeholder="Create or copy a link">
         </div>
@@ -1347,7 +1383,29 @@ function saveDashboardPreferences(){
   });
 }
 function defaultMilesBoardSharing(){
-  return {active:true,challengeType:'total',challengeTypes:['total'],tokenVersion:'1',updatedAt:new Date().toISOString()};
+  return {active:true,challengeType:'total',challengeTypes:['total'],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
+}
+function defaultMilesBoardGameSettings(){
+  return {challengeName:'Summer Mileage Challenge',teamGoalMiles:0,athleteGoalMiles:0,pointsPerMile:1,pointsPerWorkout:3,pointsPerCurrentWeekMile:1,pointsPerImprovementMile:2,consistencyDays:3,consistencyBonus:5};
+}
+function milesBoardNumber(value,fallback,max){
+  var number=Number(value);
+  if(!isFinite(number)||number<0)return fallback;
+  return Math.min(number,max);
+}
+function normalizeMilesBoardGameSettings(source){
+  var input=source&&typeof source==='object'?source:{};
+  return {
+    challengeName:String(input.challengeName||'').trim().slice(0,80)||'Summer Mileage Challenge',
+    teamGoalMiles:milesBoardNumber(input.teamGoalMiles,0,10000),
+    athleteGoalMiles:milesBoardNumber(input.athleteGoalMiles,0,1000),
+    pointsPerMile:milesBoardNumber(input.pointsPerMile,1,100),
+    pointsPerWorkout:milesBoardNumber(input.pointsPerWorkout,3,100),
+    pointsPerCurrentWeekMile:milesBoardNumber(input.pointsPerCurrentWeekMile,1,100),
+    pointsPerImprovementMile:milesBoardNumber(input.pointsPerImprovementMile,2,100),
+    consistencyDays:Math.round(milesBoardNumber(input.consistencyDays,3,14)),
+    consistencyBonus:milesBoardNumber(input.consistencyBonus,5,500)
+  };
 }
 function normalizeMilesBoardChallenges(values){
   var list=Array.isArray(values)?values:[values];
@@ -1369,6 +1427,7 @@ function normalizeMilesBoardSharing(source){
     active:input.active!==false,
     challengeType:challenges[0],
     challengeTypes:challenges,
+    gameSettings:normalizeMilesBoardGameSettings(input.gameSettings),
     tokenVersion:String(input.tokenVersion||'1'),
     updatedAt:String(input.updatedAt||''),
     resetAt:String(input.resetAt||'')
@@ -1379,6 +1438,7 @@ function renderMilesBoardSharing(){
   Array.prototype.forEach.call(document.querySelectorAll('[data-miles-board-challenge]'),function(input){
     input.checked=settings.challengeTypes.indexOf(input.getAttribute('data-miles-board-challenge'))>=0;
   });
+  renderMilesBoardGameSettings(settings.gameSettings);
   if(els.milesBoardActive)els.milesBoardActive.checked=settings.active;
   if(els.milesBoardLinkPreview)els.milesBoardLinkPreview.value=currentMilesBoardUrl||'';
   if(els.milesBoardStatus){
@@ -1397,9 +1457,36 @@ function collectMilesBoardSharing(){
     active:!!(els.milesBoardActive&&els.milesBoardActive.checked),
     challengeType:selected[0]||current.challengeType,
     challengeTypes:selected,
+    gameSettings:collectMilesBoardGameSettings(current.gameSettings),
     tokenVersion:current.tokenVersion,
     updatedAt:new Date().toISOString()
   };
+}
+function renderMilesBoardGameSettings(settings){
+  settings=normalizeMilesBoardGameSettings(settings);
+  if(els.milesBoardChallengeName)els.milesBoardChallengeName.value=settings.challengeName;
+  if(els.milesBoardTeamGoal)els.milesBoardTeamGoal.value=settings.teamGoalMiles||'';
+  if(els.milesBoardAthleteGoal)els.milesBoardAthleteGoal.value=settings.athleteGoalMiles||'';
+  if(els.milesBoardPointsMile)els.milesBoardPointsMile.value=settings.pointsPerMile;
+  if(els.milesBoardPointsWorkout)els.milesBoardPointsWorkout.value=settings.pointsPerWorkout;
+  if(els.milesBoardPointsWeek)els.milesBoardPointsWeek.value=settings.pointsPerCurrentWeekMile;
+  if(els.milesBoardPointsImprove)els.milesBoardPointsImprove.value=settings.pointsPerImprovementMile;
+  if(els.milesBoardConsistencyDays)els.milesBoardConsistencyDays.value=settings.consistencyDays;
+  if(els.milesBoardConsistencyBonus)els.milesBoardConsistencyBonus.value=settings.consistencyBonus;
+}
+function collectMilesBoardGameSettings(fallback){
+  var current=normalizeMilesBoardGameSettings(fallback);
+  return normalizeMilesBoardGameSettings({
+    challengeName:els.milesBoardChallengeName?els.milesBoardChallengeName.value:current.challengeName,
+    teamGoalMiles:els.milesBoardTeamGoal?els.milesBoardTeamGoal.value:current.teamGoalMiles,
+    athleteGoalMiles:els.milesBoardAthleteGoal?els.milesBoardAthleteGoal.value:current.athleteGoalMiles,
+    pointsPerMile:els.milesBoardPointsMile?els.milesBoardPointsMile.value:current.pointsPerMile,
+    pointsPerWorkout:els.milesBoardPointsWorkout?els.milesBoardPointsWorkout.value:current.pointsPerWorkout,
+    pointsPerCurrentWeekMile:els.milesBoardPointsWeek?els.milesBoardPointsWeek.value:current.pointsPerCurrentWeekMile,
+    pointsPerImprovementMile:els.milesBoardPointsImprove?els.milesBoardPointsImprove.value:current.pointsPerImprovementMile,
+    consistencyDays:els.milesBoardConsistencyDays?els.milesBoardConsistencyDays.value:current.consistencyDays,
+    consistencyBonus:els.milesBoardConsistencyBonus?els.milesBoardConsistencyBonus.value:current.consistencyBonus
+  });
 }
 function openMilesBoardSharing(){
   currentMilesBoardUrl='';
@@ -1928,6 +2015,15 @@ var els={
   milesBoardClose:document.getElementById('milesBoardClose'),
   milesBoardChallengeList:document.getElementById('milesBoardChallengeList'),
   milesBoardActive:document.getElementById('milesBoardActive'),
+  milesBoardChallengeName:document.getElementById('milesBoardChallengeName'),
+  milesBoardTeamGoal:document.getElementById('milesBoardTeamGoal'),
+  milesBoardAthleteGoal:document.getElementById('milesBoardAthleteGoal'),
+  milesBoardPointsMile:document.getElementById('milesBoardPointsMile'),
+  milesBoardPointsWorkout:document.getElementById('milesBoardPointsWorkout'),
+  milesBoardPointsWeek:document.getElementById('milesBoardPointsWeek'),
+  milesBoardPointsImprove:document.getElementById('milesBoardPointsImprove'),
+  milesBoardConsistencyDays:document.getElementById('milesBoardConsistencyDays'),
+  milesBoardConsistencyBonus:document.getElementById('milesBoardConsistencyBonus'),
   milesBoardLinkPreview:document.getElementById('milesBoardLinkPreview'),
   milesBoardStatus:document.getElementById('milesBoardStatus'),
   milesBoardTurnOff:document.getElementById('milesBoardTurnOff'),

@@ -1709,10 +1709,32 @@ function normalizeMilesBoardSharing(source) {
     active: input.active !== false,
     challengeType: challengeTypes[0],
     challengeTypes,
+    gameSettings: normalizeMilesBoardGameSettings(input.gameSettings),
     tokenVersion: cleanSetupText(input.tokenVersion) || "1",
     updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
     resetAt: cleanSetupText(input.resetAt),
   };
+}
+
+function normalizeMilesBoardGameSettings(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    challengeName: cleanSetupText(input.challengeName).slice(0, 80) || "Summer Mileage Challenge",
+    teamGoalMiles: milesBoardNumber(input.teamGoalMiles, 0, 10000),
+    athleteGoalMiles: milesBoardNumber(input.athleteGoalMiles, 0, 1000),
+    pointsPerMile: milesBoardNumber(input.pointsPerMile, 1, 100),
+    pointsPerWorkout: milesBoardNumber(input.pointsPerWorkout, 3, 100),
+    pointsPerCurrentWeekMile: milesBoardNumber(input.pointsPerCurrentWeekMile, 1, 100),
+    pointsPerImprovementMile: milesBoardNumber(input.pointsPerImprovementMile, 2, 100),
+    consistencyDays: Math.round(milesBoardNumber(input.consistencyDays, 3, 14)),
+    consistencyBonus: milesBoardNumber(input.consistencyBonus, 5, 500),
+  };
+}
+
+function milesBoardNumber(value, fallback, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return fallback;
+  return Math.min(number, max);
 }
 
 function normalizeMilesBoardChallenges(values) {
