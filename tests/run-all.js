@@ -203,7 +203,7 @@ function checkDashboardActivityRangeLayout() {
     'id="completedVolumeValue"',
     "<span>Planned volume</span>",
     "<span>Completed volume</span>",
-    "Avg miles per athlete",
+    "Avg miles per workout",
     "function sumPlannedTrainingVolume(rows)",
     "function updatePlannedCompletedVolumeCard(trainingRows)",
     'id="rosterAttendanceRate"',
@@ -255,11 +255,15 @@ function checkDashboardActivityRangeLayout() {
     "<span>Athletes completed workouts this week</span>",
     "<span>Athletes without completed workout</span>",
     "<span>Avg per workout</span>",
+    "Avg miles per athlete",
   ].forEach((text) => {
     if (html.includes(text)) throw new Error(`dashboard should remove redundant summary card/control: ${text}`);
   });
   if (html.indexOf('id="plannedVolumeValue"') > html.indexOf('id="completedVolumeValue"') || html.indexOf('id="completedVolumeValue"') > html.indexOf('id="trainingSyncCount"')) {
-    throw new Error("dashboard Training Load Summary cards should start Planned, Completed, Avg miles per athlete.");
+    throw new Error("dashboard Training Load Summary cards should start Planned, Completed, Avg miles per workout.");
+  }
+  if (!html.includes("completedMiles/trainingRows.length")) {
+    throw new Error("dashboard Avg miles per workout card should divide completed volume by completed workout entries.");
   }
   if (html.includes("athleteActivitySearchText") || html.includes("trainingRowMatchesSearch(row,query)") || html.includes("recentTrainingSearchText(row)") || html.includes("rosterGroupSearchTextForTraining")) {
     throw new Error("dashboard search should stay athlete/group-only, not activity/workout/event text.");

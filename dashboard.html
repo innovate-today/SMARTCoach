@@ -330,7 +330,7 @@ tr:last-child td{border-bottom:0}
       <div class="breakgrid">
         <div class="metric"><b id="plannedVolumeValue">--</b><span>Planned volume</span></div>
         <div class="metric"><b id="completedVolumeValue">--</b><span>Completed volume</span></div>
-        <div class="metric"><b id="trainingSyncCount">--</b><span>Avg miles per athlete</span></div>
+        <div class="metric"><b id="trainingSyncCount">--</b><span>Avg miles per workout</span></div>
         <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
         <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
       </div>
@@ -2473,7 +2473,7 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   els.meetPbCount.textContent=meetRows.filter(function(row){return row.isPr;}).length;
   els.meetSbCount.textContent=meetRows.filter(function(row){return row.isSeasonBest;}).length;
   els.trainingRangeLabel.textContent=rangeText;
-  els.trainingSyncCount.textContent=formatMiles(active?completedMiles/active:0);
+  els.trainingSyncCount.textContent=formatMiles(trainingRows.length?completedMiles/trainingRows.length:0);
   els.trainingOnTargetCount.textContent=trainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
   els.trainingReviewCount.textContent=trainingRows.filter(isOutsideTarget).length;
 }
