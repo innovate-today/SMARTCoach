@@ -555,6 +555,7 @@ tr:last-child td{border-bottom:0}
           <label>Challenge Types</label>
           <div id="milesBoardChallengeList" class="dashboard-pref-list">
             <label class="dashboard-pref-row"><span><b>Total Miles</b><small>Ranks the full selected range by mileage.</small></span><input type="checkbox" data-miles-board-challenge="total"></label>
+            <label class="dashboard-pref-row"><span><b>Game Score</b><small>Adds points and badges for a friendly competition view.</small></span><input type="checkbox" data-miles-board-challenge="game"></label>
             <label class="dashboard-pref-row"><span><b>This Week</b><small>Highlights current-week mileage inside the board.</small></span><input type="checkbox" data-miles-board-challenge="weekly"></label>
             <label class="dashboard-pref-row"><span><b>Consistency</b><small>Rewards athletes who log the most workouts.</small></span><input type="checkbox" data-miles-board-challenge="consistency"></label>
             <label class="dashboard-pref-row"><span><b>Big Mover</b><small>Rewards positive week-over-week mileage change.</small></span><input type="checkbox" data-miles-board-challenge="mover"></label>
@@ -1354,7 +1355,7 @@ function normalizeMilesBoardChallenges(values){
   var out=[];
   list.forEach(function(value){
     var challenge=String(value||'').toLowerCase();
-    if(['total','weekly','consistency','mover'].indexOf(challenge)>=0&&!seen[challenge]){
+    if(['total','game','weekly','consistency','mover'].indexOf(challenge)>=0&&!seen[challenge]){
       seen[challenge]=true;
       out.push(challenge);
     }

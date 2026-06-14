@@ -1728,6 +1728,7 @@ function normalizeMilesBoardChallenges(values) {
 
 function normalizeMilesBoardChallenge(value) {
   const text = cleanSetupText(value).toLowerCase().replace(/[^a-z]/g, "");
+  if (text === "game" || text === "gamescore" || text === "points" || text === "score") return "game";
   if (text === "weekly" || text === "week" || text === "thisweek") return "weekly";
   if (text === "consistency" || text === "workouts" || text === "logs") return "consistency";
   if (text === "mover" || text === "bigmover" || text === "weekchange") return "mover";
