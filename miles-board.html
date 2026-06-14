@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak Miles Board</title>
+<style>
+:root{--blue:#2b4fcc;--ink:#111827;--muted:#52627a;--line:#d6dfec;--bg:#eef3f9;--panel:#fff;--good:#08783c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1180px;margin:0 auto;padding:18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:14px;box-shadow:0 10px 24px rgba(15,23,42,.08)}
+.brand{display:flex;align-items:center;gap:12px}.brand img{width:58px;height:58px;object-fit:contain}
+h1{font-size:26px;margin:0;line-height:1.05}.sub{font-size:14px;color:var(--muted);margin-top:4px}.updated{display:inline-flex;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:6px 10px;font-size:13px;font-weight:800;color:#334155}
+.controls{display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:14px}input{border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}button{border:0;border-radius:8px;background:#dde3ed;color:#172033;font:800 14px inherit;padding:10px 13px;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px}.card b{display:block;font-size:24px}.card span{font-size:13px;color:#52627a}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}.panelhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}.panelhead h2{font-size:18px;margin:0}.status{font-size:13px;font-weight:900;color:var(--muted)}
+table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{font-size:12px;color:#41516a;text-transform:uppercase;letter-spacing:.03em;background:#f8fbff;cursor:pointer}td{font-size:14px}.name{font-weight:900;color:#0f2a70}.small{display:block;color:#52627a;font-size:12px;margin-top:2px}.rank{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#e8eefc;color:#173891;font-weight:900}.empty{padding:24px;text-align:center;color:var(--muted)}
+@media(max-width:760px){.page{padding:12px 10px}.top{align-items:flex-start;flex-direction:column}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.controls{grid-template-columns:1fr}table{min-width:720px}.tablewrap{overflow:auto}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <img id="logo" src="/assets/smart-logo.png" alt="SMART Trak">
+      <div>
+        <h1>SMART Trak Miles Board</h1>
+        <div id="subtitle" class="sub">Friendly team mileage leaderboard.</div>
+        <div id="lastUpdated" class="updated">Loading...</div>
+      </div>
+    </div>
+    <button id="refreshBtn" type="button">Refresh</button>
+  </section>
+  <section class="controls">
+    <input id="search" type="search" placeholder="Search athlete or group" autocomplete="off">
+    <button id="clearBtn" type="button">Clear</button>
+  </section>
+  <section class="cards">
+    <div class="card"><b id="teamMiles">--</b><span>Team miles</span></div>
+    <div class="card"><b id="athletesLogging">--</b><span>Athletes logging miles</span></div>
+    <div class="card"><b id="workoutsLogged">--</b><span>Workouts logged</span></div>
+    <div class="card"><b id="averageWorkout">--</b><span>Average per workout</span></div>
+  </section>
+  <section class="panel">
+    <div class="panelhead"><h2>Leaderboard</h2><span id="status" class="status">Loading...</span></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th data-sort="rank">Rank</th>
+          <th data-sort="athleteName">Athlete</th>
+          <th data-sort="totalMiles">Total Miles</th>
+          <th data-sort="currentWeekMiles">This Week</th>
+          <th data-sort="workouts">Workouts</th>
+          <th data-sort="averagePerWorkout">Avg / Workout</th>
+          <th data-sort="lastLoggedDate">Last Logged</th>
+        </tr></thead>
+        <tbody id="rows"><tr><td colspan="7" class="empty">Loading Miles Board...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script>
+var boardRows=[],sortState={key:'totalMiles',dir:'desc'};
+var els={logo:document.getElementById('logo'),subtitle:document.getElementById('subtitle'),lastUpdated:document.getElementById('lastUpdated'),refreshBtn:document.getElementById('refreshBtn'),search:document.getElementById('search'),clearBtn:document.getElementById('clearBtn'),teamMiles:document.getElementById('teamMiles'),athletesLogging:document.getElementById('athletesLogging'),workoutsLogged:document.getElementById('workoutsLogged'),averageWorkout:document.getElementById('averageWorkout'),status:document.getElementById('status'),rows:document.getElementById('rows')};
+function params(){return new URLSearchParams(location.search||'');}
+function accountKey(){return (params().get('account')||'default').trim()||'default';}
+function token(){return (params().get('token')||'').trim();}
+function apiUrl(){var p=params();p.set('account',accountKey());p.set('token',token());p.set('v',Date.now());return '/api/smart-trak/miles-board?'+p.toString();}
+function esc(value){return String(value||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function loadBoard(){if(!token()){els.status.textContent='Miles Board link is missing its access token.';return;}els.status.textContent='Loading...';fetch(apiUrl(),{cache:'no-store'}).then(jsonResult).then(function(data){boardRows=data.rows||[];if(data.logoUrl)els.logo.src=data.logoUrl;els.subtitle.textContent='Team mileage leaderboard · '+(data.range&&data.range.label||'selected range');els.lastUpdated.textContent='Last updated '+new Date(data.generatedAt||Date.now()).toLocaleString();els.teamMiles.textContent=formatMiles(data.totals&&data.totals.totalMiles);els.athletesLogging.textContent=data.totals&&data.totals.athletesWithMiles!=null?data.totals.athletesWithMiles:'0';els.workoutsLogged.textContent=data.totals&&data.totals.workouts!=null?data.totals.workouts:'0';els.averageWorkout.textContent=formatMiles(data.totals&&data.totals.averagePerWorkout);render();}).catch(function(error){els.status.textContent=error.message||'Miles Board could not load.';els.rows.innerHTML='<tr><td colspan="7" class="empty">'+esc(els.status.textContent)+'</td></tr>';});}
+function render(){var query=els.search.value.trim().toLowerCase();var rows=boardRows.filter(function(row){return !query||[row.athleteName,(row.groups||[]).join(' ')].join(' ').toLowerCase().indexOf(query)>=0;});rows.sort(sorter);els.status.textContent=rows.length+' athlete'+(rows.length===1?'':'s')+' in view';els.rows.innerHTML=rows.length?rows.map(rowHtml).join(''):'<tr><td colspan="7" class="empty">No athletes match this view.</td></tr>';}
+function sorter(a,b){var key=sortState.key;var av=key==='rank'?0:a[key],bv=key==='rank'?0:b[key];if(key==='athleteName'||key==='lastLoggedDate'){av=String(av||'');bv=String(bv||'');return sortState.dir==='asc'?av.localeCompare(bv):bv.localeCompare(av);}av=Number(av)||0;bv=Number(bv)||0;return sortState.dir==='asc'?av-bv:bv-av;}
+function rowHtml(row,index){return '<tr><td><span class="rank">'+(index+1)+'</span></td><td><span class="name">'+esc(row.athleteName||'Athlete')+'</span><span class="small">'+esc((row.groups||[]).join(', ')||'No group')+'</span></td><td><b>'+formatMiles(row.totalMiles)+'</b></td><td>'+formatMiles(row.currentWeekMiles)+'</td><td>'+esc(row.workouts||0)+'</td><td>'+formatMiles(row.averagePerWorkout)+'</td><td>'+esc(formatDate(row.lastLoggedDate)||'--')+'</td></tr>';}
+function formatMiles(value){var n=Number(value)||0;return (Math.round(n*10)/10).toLocaleString(undefined,{maximumFractionDigits:1})+' mi';}
+function formatDate(value){if(!value)return'';var d=new Date(String(value).slice(0,10)+'T12:00:00');if(Number.isNaN(d.getTime()))return String(value);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});}
+function jsonResult(res){return res.json().catch(function(){return{};}).then(function(data){if(!res.ok)throw new Error(data.error||'Request failed.');return data;});}
+document.querySelectorAll('th[data-sort]').forEach(function(th){th.addEventListener('click',function(){var key=th.getAttribute('data-sort');sortState.dir=sortState.key===key&&sortState.dir==='desc'?'asc':'desc';sortState.key=key;render();});});
+els.refreshBtn.addEventListener('click',loadBoard);
+els.search.addEventListener('input',render);
+els.clearBtn.addEventListener('click',function(){els.search.value='';render();});
+loadBoard();
+</script>
+</body>
+</html>

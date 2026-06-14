@@ -129,6 +129,129 @@ module.exports = async function handler(req, res) {
   }
 };
 
+module.exports.publicMilesBoard = publicMilesBoard;
+
+async function publicMilesBoard(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  const { token, locationId, accountKey, logoUrl } = getGhlContext(req);
+  if (!token || !locationId) {
+    res.status(500).json({ error: "Miles Board is not configured for this account." });
+    return;
+  }
+
+  try {
+    const [athletes, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
+      listActiveAthletes({ token, locationId }),
+      searchObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
+      loadTrainingMirror(accountKey),
+    ]);
+    const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
+    const start = publicBoardDate(req.query && req.query.start);
+    const end = publicBoardDate(req.query && req.query.end);
+    const range = normalizedBoardRange(start, end);
+    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, start: range.start, end: range.end });
+    const totalMiles = roundVolume(boardRows.reduce((sum, row) => sum + row.totalMiles, 0));
+    const totalWorkouts = boardRows.reduce((sum, row) => sum + row.workouts, 0);
+    res.status(200).json({
+      success: true,
+      accountKey,
+      logoUrl,
+      generatedAt: new Date().toISOString(),
+      range: {
+        start: dateOnly(range.start),
+        end: dateOnly(addDays(range.end, -1)),
+        label: boardRangeLabel(range.start, range.end),
+      },
+      totals: {
+        athletes: boardRows.length,
+        athletesWithMiles: boardRows.filter((row) => row.totalMiles > 0).length,
+        totalMiles,
+        workouts: totalWorkouts,
+        averagePerWorkout: totalWorkouts ? roundVolume(totalMiles / totalWorkouts) : 0,
+      },
+      rows: boardRows,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Miles Board lookup failed." });
+  }
+}
+
+function buildMilesBoardRows({ athletes, performanceRecords, start, end }) {
+  return athletes.map((athlete) => {
+    const training = performanceRecords
+      .filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record))
+      .map(normalizePerformanceRecord)
+      .filter((item) => item.groupName || item.totalTimeDisplay)
+      .filter((item) => {
+        const date = parseDate(item.sessionDate || item.syncedAt);
+        return date && date >= start && date < end;
+      });
+    const totalMiles = roundVolume(training.reduce((sum, item) => sum + (Number(item.completedVolumeMiles) || 0), 0));
+    const currentWeekStart = startOfCurrentWeek();
+    const currentWeekMiles = sumVolumeBetween(training, currentWeekStart, addDays(currentWeekStart, 7));
+    const groups = uniqueStrings(training.map((item) => item.groupName).filter(Boolean));
+    const last = training.slice().sort((a, b) => String(b.sessionDate || b.syncedAt).localeCompare(String(a.sessionDate || a.syncedAt)))[0] || {};
+    return {
+      athleteName: athlete.name,
+      gender: athlete.gender,
+      groups,
+      totalMiles,
+      workouts: training.length,
+      averagePerWorkout: training.length ? roundVolume(totalMiles / training.length) : 0,
+      currentWeekMiles,
+      lastLoggedDate: last.sessionDate || last.syncedAt || "",
+    };
+  }).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
+}
+
+function uniqueStrings(values) {
+  const seen = new Set();
+  return values.map(clean).filter(Boolean).filter((value) => {
+    const key = value.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function publicBoardDate(value) {
+  const text = clean(Array.isArray(value) ? value[0] : value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const date = new Date(`${text}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function normalizedBoardRange(start, end) {
+  const today = new Date();
+  const defaultStart = new Date(today.getFullYear(), 5, 1);
+  const defaultEnd = addDays(new Date(today.getFullYear(), today.getMonth(), today.getDate()), 1);
+  const safeStart = start || defaultStart;
+  const safeEnd = end ? addDays(end, 1) : defaultEnd;
+  if (safeEnd <= safeStart) return { start: defaultStart, end: defaultEnd };
+  return { start: safeStart, end: safeEnd };
+}
+
+function boardRangeLabel(start, end) {
+  return `${shortBoardDate(start)} - ${shortBoardDate(addDays(end, -1))}`;
+}
+
+function shortBoardDate(date) {
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function dateOnly(date) {
+  return date.toISOString().slice(0, 10);
+}
+
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");

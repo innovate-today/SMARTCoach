@@ -1234,6 +1234,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 392. SMARTCoach mobile field events now warn before **Clear Flight Draft** removes athletes and unsaved attempts. Legal field marks entered in feet/inches are normalized to quarter-inch decimal formatting on save, such as `15-0.25`, and the horizontal jumps/throws attempt info page now shows the mark as the bold top line with the attempt/status line underneath.
 393. Dashboard Training Load Summary now calculates **Avg miles per workout** as completed training volume divided by completed workout entries in the selected view. The card no longer averages completed volume by active athletes, and regression coverage checks the workout-based divisor.
 394. Dashboard Volume by Athlete summary now labels the per-athlete volume card **Average Volume Per Athlete** to make clear that it is athlete-based volume within the filtered volume view.
+395. Added **Share Miles Board** for friendly summer mileage competition. Coaches set the Dashboard activity range, click Share Miles Board, and get a signed read-only link to `/miles-board.html`. The public board uses a tokenized API that returns only sanitized leaderboard data: athlete name, groups, total miles, current-week miles, workout count, average per workout, and last logged date. It does not expose contact info, coach notes, PB/SB detail, attendance, or edit actions. The coach how-to documents the workflow.
 
 ## Known Good Test Flow
 

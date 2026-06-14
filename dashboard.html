@@ -279,6 +279,7 @@ tr:last-child td{border-bottom:0}
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
+        <button id="shareMilesBoardBtn" class="modal-action" type="button">Share Miles Board</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
@@ -1579,6 +1580,7 @@ var els={
   manageMeetsSectionBtn:document.getElementById('manageMeetsSectionBtn'),
   raceResultBtn:document.getElementById('raceResultBtn'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
+  shareMilesBoardBtn:document.getElementById('shareMilesBoardBtn'),
   changeCodeBtn:document.getElementById('changeCodeBtn'),
   codeModal:document.getElementById('codeModal'),
   codeClose:document.getElementById('codeClose'),
@@ -1904,6 +1906,7 @@ els.manageMeetsBtn.addEventListener('click',openMeetManager);
 els.manageMeetsSectionBtn.addEventListener('click',openMeetManager);
 els.raceResultBtn.addEventListener('click',openRaceResult);
 els.manualMileageBtn.addEventListener('click',openManualMileage);
+els.shareMilesBoardBtn.addEventListener('click',shareMilesBoard);
 els.changeCodeBtn.addEventListener('click',openCodeModal);
 els.codeClose.addEventListener('click',closeCodeModal);
 els.codeSave.addEventListener('click',saveCoachCode);
@@ -3154,6 +3157,50 @@ function openManualMileage(){
   updateManualMileageScope();
   setManualMileageStatus('', '');
   els.manualMileageModal.hidden=false;
+}
+
+function shareMilesBoard(){
+  var bounds=activityRangeBounds();
+  var params=new URLSearchParams({account:smartCoachAccountKey()});
+  if(bounds&&bounds.start)params.set('start',dateInputValue(bounds.start));
+  if(bounds&&bounds.end)params.set('end',dateInputValue(bounds.end));
+  var button=els.shareMilesBoardBtn;
+  if(button){button.disabled=true;button.textContent='Creating Link...';}
+  fetch('/api/smart-trak/miles-board-link?'+params.toString(),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not create Miles Board link.');
+    var absolute=new URL(result.data.url,window.location.origin).toString();
+    return copyTextToClipboard(absolute).then(function(copied){
+      if(button)button.textContent=copied?'Link Copied':'Open Miles Board';
+      if(!copied)window.open(absolute,'_blank','noopener');
+      setTimeout(function(){if(button){button.textContent='Share Miles Board';button.disabled=false;}},1800);
+    });
+  }).catch(function(error){
+    if(button){button.textContent='Share Miles Board';button.disabled=false;}
+    alert(error.message||'Could not create Miles Board link.');
+  });
+}
+
+function copyTextToClipboard(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text).then(function(){return true;}).catch(function(){return fallbackCopyText(text);});
+  }
+  return Promise.resolve(fallbackCopyText(text));
+}
+
+function fallbackCopyText(text){
+  var input=document.createElement('textarea');
+  input.value=text;
+  input.setAttribute('readonly','');
+  input.style.position='fixed';
+  input.style.left='-9999px';
+  document.body.appendChild(input);
+  input.select();
+  var ok=false;
+  try{ok=document.execCommand('copy');}catch(e){ok=false;}
+  document.body.removeChild(input);
+  return ok;
 }
 
 function closeManualMileage(){

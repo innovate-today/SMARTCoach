@@ -16,6 +16,7 @@ const htmlFiles = [
   "track-simulator.html",
   "xc-simulator.html",
   "weather.html",
+  "miles-board.html",
   "how-to.html",
   "athlete-calendar.html",
   "account-access.html",
@@ -278,6 +279,54 @@ function checkDashboardActivityRangeLayout() {
     throw new Error("dashboard header action rows should stay two horizontal rows instead of becoming a multi-row grid.");
   }
   console.log("dashboard activity range layout ok");
+}
+
+function checkMilesBoardFeature() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const board = fs.readFileSync("miles-board.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  [
+    'id="shareMilesBoardBtn"',
+    "Share Miles Board",
+    "function shareMilesBoard()",
+    "miles-board-link",
+    "copyTextToClipboard",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`dashboard Miles Board share missing ${text}`);
+  });
+  [
+    "SMART Trak Miles Board",
+    "/api/smart-trak/miles-board?",
+    "data-sort=\"totalMiles\"",
+    "data-sort=\"currentWeekMiles\"",
+    "data-sort=\"averagePerWorkout\"",
+    "Friendly team mileage leaderboard.",
+  ].forEach((text) => {
+    if (!board.includes(text)) throw new Error(`Miles Board page missing ${text}`);
+  });
+  if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Miles Board must stay read-only.");
+  [
+    'if (route === "miles-board-link")',
+    "return accountMilesBoardLink(req, res);",
+    'if (route === "miles-board")',
+    "return accountMilesBoard(req, res);",
+    "function milesBoardToken(accountKey)",
+    "SMARTCOACH_MILES_BOARD_SECRET",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Miles Board API route missing ${text}`);
+  });
+  [
+    "module.exports.publicMilesBoard = publicMilesBoard;",
+    "async function publicMilesBoard(req, res)",
+    "function buildMilesBoardRows",
+    "averagePerWorkout",
+    "lastLoggedDate",
+    "athleteName",
+  ].forEach((text) => {
+    if (!dashboardApi.includes(text)) throw new Error(`Miles Board sanitized dashboard API missing ${text}`);
+  });
+  console.log("Miles Board feature ok");
 }
 
 function checkDashboardWhatsNew() {
@@ -1465,6 +1514,7 @@ checkAccountOwnerExcludedFromAthletes();
 checkSmartTrakAthleteCountsIgnoreGhlContacts();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
+checkMilesBoardFeature();
 checkDashboardWhatsNew();
 checkHowToGuidePage();
 checkDashboardToolPreferences();

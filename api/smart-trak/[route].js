@@ -100,6 +100,17 @@ module.exports = async function handler(req, res) {
     return accountDashboardPreferences(req, res);
   }
 
+  if (route === "miles-board-link") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountMilesBoardLink(req, res);
+  }
+
+  if (route === "miles-board") {
+    await attachRegistryAccount(req);
+    return accountMilesBoard(req, res);
+  }
+
   if (route === "attendance") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -1534,6 +1545,40 @@ async function accountDashboardPreferences(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Dashboard preferences save failed." });
   }
+}
+
+async function accountMilesBoardLink(req, res) {
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+  const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const token = milesBoardToken(accountKey);
+  const start = cleanSetupText(firstQueryValue(req.query && req.query.start));
+  const end = cleanSetupText(firstQueryValue(req.query && req.query.end));
+  const params = new URLSearchParams({ account: accountKey, token });
+  if (/^\d{4}-\d{2}-\d{2}$/.test(start)) params.set("start", start);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(end)) params.set("end", end);
+  res.status(200).json({
+    success: true,
+    token,
+    url: `/miles-board.html?${params.toString()}`,
+  });
+}
+
+async function accountMilesBoard(req, res) {
+  const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const provided = cleanSetupText(firstQueryValue(req.query && req.query.token));
+  const expected = milesBoardToken(accountKey);
+  if (!provided || !safeEqual(provided, expected)) {
+    res.status(403).json({ error: "Miles Board link is invalid or expired." });
+    return;
+  }
+  if (!handlers.dashboard || typeof handlers.dashboard.publicMilesBoard !== "function") {
+    res.status(500).json({ error: "Miles Board is not available." });
+    return;
+  }
+  return handlers.dashboard.publicMilesBoard(req, res);
 }
 
 function defaultDashboardVisibleTools() {
@@ -3666,6 +3711,11 @@ function safeEqual(a, b) {
   let diff = 0;
   for (let i = 0; i < left.length; i += 1) diff |= left.charCodeAt(i) ^ right.charCodeAt(i);
   return diff === 0;
+}
+
+function milesBoardToken(accountKey) {
+  const secret = cleanSetupText(process.env.SMARTCOACH_MILES_BOARD_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE || "smartcoach-miles-board");
+  return crypto.createHmac("sha256", secret).update(`miles-board:${normalizeSetupAccountKey(accountKey) || "default"}`).digest("base64url");
 }
 
 function suggestedAccessCode(accountKey) {

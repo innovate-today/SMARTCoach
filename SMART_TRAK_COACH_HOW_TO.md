@@ -34,7 +34,7 @@ Use the Dashboard as the daily coaching home base. It shows roster status, train
 
 How to use it:
 
-1. Review the top cards for the activity range and Training Load Summary: planned volume, completed volume, average miles per athlete, on-target workouts, and outside-target workouts.
+1. Review the top cards for the activity range and Training Load Summary: planned volume, completed volume, average miles per workout, on-target workouts, and outside-target workouts.
 2. Use the search box to find one athlete or group.
 3. Use **Activity range** for quick ranges such as Last 7 days, Last 30 days, or Last 90 days. Choose **Custom range** when you need exact start and end dates.
 4. Use the filters to narrow the view by athlete group, activity type, or season.
@@ -52,6 +52,8 @@ Use **Customize Dashboard** when a coach wants to hide optional tools they do no
 The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
 
 The **Feedback** button includes **Open How To Guide**. Use it to open the latest coach guide inside SMART Trak. The web guide is generated from the same how-to text used for support and chat prompts, so it stays current when the guide is updated.
+
+Use **Share Miles Board** when you want a view-only mileage leaderboard for athletes. Set the Dashboard activity range first, then click **Share Miles Board**. SMART Trak creates a signed link that can be sent to athletes or parents. The board is read-only and sortable. It shows athlete name, groups, total miles, current-week miles, workouts logged, average per workout, and last logged date. It does not show coach tools, notes, contact information, PB/SB details, or edit buttons.
 
 How to use Staff Access:
 
