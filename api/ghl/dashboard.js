@@ -160,6 +160,7 @@ async function publicMilesBoard(req, res) {
     const range = normalizedBoardRange(start, end);
     const gameSettings = milesBoardGameSettings(req.milesBoardSharing && req.milesBoardSharing.gameSettings);
     const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, start: range.start, end: range.end, gameSettings });
+    const groupRows = milesBoardGroupRows(boardRows);
     const totalMiles = roundVolume(boardRows.reduce((sum, row) => sum + row.totalMiles, 0));
     const totalWorkouts = boardRows.reduce((sum, row) => sum + row.workouts, 0);
     res.status(200).json({
@@ -185,7 +186,8 @@ async function publicMilesBoard(req, res) {
         teamGoalProgress: gameSettings.teamGoalMiles ? Math.round((totalMiles / gameSettings.teamGoalMiles) * 100) : 0,
       },
       highlights: milesBoardHighlights(boardRows),
-      groups: milesBoardGroupRows(boardRows),
+      weeklyWinners: milesBoardWeeklyWinners(boardRows, groupRows),
+      groups: groupRows,
       rows: boardRows,
     });
   } catch (error) {
@@ -205,11 +207,19 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSet
       });
     const totalMiles = roundVolume(training.reduce((sum, item) => sum + (Number(item.completedVolumeMiles) || 0), 0));
     const currentWeekStart = startOfCurrentWeek();
+    const currentWeekTraining = training.filter((item) => {
+      const date = parseDate(item.sessionDate || item.syncedAt);
+      return date && date >= currentWeekStart && date < addDays(currentWeekStart, 7);
+    });
     const currentWeekMiles = sumVolumeBetween(training, currentWeekStart, addDays(currentWeekStart, 7));
     const previousWeekMiles = sumVolumeBetween(training, addDays(currentWeekStart, -7), currentWeekStart);
     const groups = uniqueStrings(training.map((item) => item.groupName).filter(Boolean));
     const last = training.slice().sort((a, b) => String(b.sessionDate || b.syncedAt).localeCompare(String(a.sessionDate || a.syncedAt)))[0] || {};
     const activeDays = uniqueStrings(training.map((item) => {
+      const date = parseDate(item.sessionDate || item.syncedAt);
+      return date ? dateOnly(date) : "";
+    }).filter(Boolean)).length;
+    const currentWeekActiveDays = uniqueStrings(currentWeekTraining.map((item) => {
       const date = parseDate(item.sessionDate || item.syncedAt);
       return date ? dateOnly(date) : "";
     }).filter(Boolean)).length;
@@ -221,6 +231,8 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSet
       workouts: training.length,
       averagePerWorkout: training.length ? roundVolume(totalMiles / training.length) : 0,
       currentWeekMiles,
+      currentWeekWorkouts: currentWeekTraining.length,
+      currentWeekActiveDays,
       previousWeekMiles,
       weekChangeMiles: roundVolume(currentWeekMiles - previousWeekMiles),
       activeDays,
@@ -229,10 +241,52 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSet
     return {
       ...row,
       gameScore: milesBoardGameScore(row, gameSettings),
+      currentWeekGameScore: milesBoardGameScore({
+        totalMiles: row.currentWeekMiles,
+        workouts: row.currentWeekWorkouts,
+        currentWeekMiles: row.currentWeekMiles,
+        weekChangeMiles: row.weekChangeMiles,
+        activeDays: row.currentWeekActiveDays,
+      }, gameSettings),
       goalHit: gameSettings.athleteGoalMiles > 0 && totalMiles >= gameSettings.athleteGoalMiles,
       badges: milesBoardBadges(row, gameSettings),
     };
   }).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
+}
+
+function milesBoardWeeklyWinners(rows, groups) {
+  return {
+    gameScore: milesBoardWinner(rows, "currentWeekGameScore", "pts this week"),
+    mileage: milesBoardWinner(rows, "currentWeekMiles", "mi this week"),
+    consistency: milesBoardWinner(rows, "currentWeekWorkouts", "workouts this week"),
+    bigMover: milesBoardWinner(rows.filter((row) => row.weekChangeMiles > 0), "weekChangeMiles", "mi over last week"),
+    pack: milesBoardPackWinner(groups),
+  };
+}
+
+function milesBoardWinner(rows, key, suffix) {
+  const winner = rows
+    .filter((row) => Number(row[key]) > 0)
+    .sort((a, b) => (Number(b[key]) || 0) - (Number(a[key]) || 0) || (Number(b.currentWeekMiles) || 0) - (Number(a.currentWeekMiles) || 0) || a.athleteName.localeCompare(b.athleteName))[0];
+  if (!winner) return { name: "", value: 0, label: "No winner yet" };
+  const value = Number(winner[key]) || 0;
+  return {
+    name: winner.athleteName,
+    value,
+    label: `${key.indexOf("Miles") >= 0 || key === "weekChangeMiles" ? roundVolume(value) : Math.round(value)} ${suffix}`,
+  };
+}
+
+function milesBoardPackWinner(groups) {
+  const winner = (groups || [])
+    .filter((group) => Number(group.currentWeekMiles) > 0 || Number(group.currentWeekGameScore) > 0)
+    .sort((a, b) => (Number(b.currentWeekGameScore) || 0) - (Number(a.currentWeekGameScore) || 0) || (Number(b.currentWeekMiles) || 0) - (Number(a.currentWeekMiles) || 0) || milesBoardDivisionOrder(a.groupName) - milesBoardDivisionOrder(b.groupName))[0];
+  if (!winner) return { name: "", value: 0, label: "No pack winner yet" };
+  return {
+    name: winner.groupName,
+    value: Math.round(Number(winner.currentWeekGameScore) || 0),
+    label: `${Math.round(Number(winner.currentWeekGameScore) || 0)} pts this week`,
+  };
 }
 
 function milesBoardHighlights(rows) {
@@ -310,7 +364,7 @@ function milesBoardGroupRows(rows) {
   rows.forEach((row) => {
     const key = milesBoardGenderDivision(row.gender);
     if (!groups.has(key)) {
-        groups.set(key, { groupName: key, athletes: 0, athletesWithMiles: 0, totalMiles: 0, workouts: 0, currentWeekMiles: 0, gameScore: 0 });
+        groups.set(key, { groupName: key, athletes: 0, athletesWithMiles: 0, totalMiles: 0, workouts: 0, currentWeekMiles: 0, currentWeekGameScore: 0, gameScore: 0 });
     }
     const group = groups.get(key);
     group.athletes += 1;
@@ -318,12 +372,14 @@ function milesBoardGroupRows(rows) {
     group.totalMiles += Number(row.totalMiles) || 0;
     group.workouts += Number(row.workouts) || 0;
     group.currentWeekMiles += Number(row.currentWeekMiles) || 0;
+    group.currentWeekGameScore += Number(row.currentWeekGameScore) || 0;
     group.gameScore += Number(row.gameScore) || 0;
   });
   return Array.from(groups.values()).map((group) => ({
     ...group,
     totalMiles: roundVolume(group.totalMiles),
     currentWeekMiles: roundVolume(group.currentWeekMiles),
+    currentWeekGameScore: Math.round(group.currentWeekGameScore),
     gameScore: Math.round(group.gameScore),
     averagePerAthlete: group.athletes ? roundVolume(group.totalMiles / group.athletes) : 0,
   })).sort((a, b) => milesBoardDivisionOrder(a.groupName) - milesBoardDivisionOrder(b.groupName) || b.totalMiles - a.totalMiles || a.groupName.localeCompare(b.groupName));
