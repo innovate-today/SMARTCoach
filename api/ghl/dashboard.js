@@ -178,6 +178,8 @@ async function publicMilesBoard(req, res) {
         workouts: totalWorkouts,
         averagePerWorkout: totalWorkouts ? roundVolume(totalMiles / totalWorkouts) : 0,
       },
+      highlights: milesBoardHighlights(boardRows),
+      groups: milesBoardGroupRows(boardRows),
       rows: boardRows,
     });
   } catch (error) {
@@ -198,6 +200,7 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end }) {
     const totalMiles = roundVolume(training.reduce((sum, item) => sum + (Number(item.completedVolumeMiles) || 0), 0));
     const currentWeekStart = startOfCurrentWeek();
     const currentWeekMiles = sumVolumeBetween(training, currentWeekStart, addDays(currentWeekStart, 7));
+    const previousWeekMiles = sumVolumeBetween(training, addDays(currentWeekStart, -7), currentWeekStart);
     const groups = uniqueStrings(training.map((item) => item.groupName).filter(Boolean));
     const last = training.slice().sort((a, b) => String(b.sessionDate || b.syncedAt).localeCompare(String(a.sessionDate || a.syncedAt)))[0] || {};
     return {
@@ -208,9 +211,59 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end }) {
       workouts: training.length,
       averagePerWorkout: training.length ? roundVolume(totalMiles / training.length) : 0,
       currentWeekMiles,
+      previousWeekMiles,
+      weekChangeMiles: roundVolume(currentWeekMiles - previousWeekMiles),
       lastLoggedDate: last.sessionDate || last.syncedAt || "",
     };
   }).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
+}
+
+function milesBoardHighlights(rows) {
+  return {
+    mileageLeader: milesBoardHighlight(rows, "totalMiles", "mi"),
+    weekLeader: milesBoardHighlight(rows, "currentWeekMiles", "mi this week"),
+    consistencyLeader: milesBoardHighlight(rows, "workouts", "workouts"),
+    bigMover: milesBoardHighlight(rows.filter((row) => row.weekChangeMiles > 0), "weekChangeMiles", "mi over last week"),
+  };
+}
+
+function milesBoardHighlight(rows, key, suffix) {
+  const sorted = rows
+    .filter((row) => Number(row[key]) > 0)
+    .sort((a, b) => (Number(b[key]) || 0) - (Number(a[key]) || 0) || (Number(b.totalMiles) || 0) - (Number(a.totalMiles) || 0) || a.athleteName.localeCompare(b.athleteName));
+  const row = sorted[0];
+  if (!row) return { athleteName: "", value: 0, label: "No miles yet" };
+  const value = Number(row[key]) || 0;
+  return {
+    athleteName: row.athleteName,
+    value,
+    label: `${key === "workouts" ? value : roundVolume(value)} ${suffix}`,
+  };
+}
+
+function milesBoardGroupRows(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const rowGroups = (row.groups && row.groups.length ? row.groups : ["No group"]).slice(0, 6);
+    rowGroups.forEach((groupName) => {
+      const key = clean(groupName) || "No group";
+      if (!groups.has(key)) {
+        groups.set(key, { groupName: key, athletes: 0, athletesWithMiles: 0, totalMiles: 0, workouts: 0, currentWeekMiles: 0 });
+      }
+      const group = groups.get(key);
+      group.athletes += 1;
+      if (row.totalMiles > 0) group.athletesWithMiles += 1;
+      group.totalMiles += Number(row.totalMiles) || 0;
+      group.workouts += Number(row.workouts) || 0;
+      group.currentWeekMiles += Number(row.currentWeekMiles) || 0;
+    });
+  });
+  return Array.from(groups.values()).map((group) => ({
+    ...group,
+    totalMiles: roundVolume(group.totalMiles),
+    currentWeekMiles: roundVolume(group.currentWeekMiles),
+    averagePerAthlete: group.athletes ? roundVolume(group.totalMiles / group.athletes) : 0,
+  })).sort((a, b) => b.totalMiles - a.totalMiles || b.currentWeekMiles - a.currentWeekMiles || a.groupName.localeCompare(b.groupName));
 }
 
 function uniqueStrings(values) {

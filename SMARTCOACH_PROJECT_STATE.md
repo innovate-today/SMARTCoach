@@ -1235,6 +1235,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 393. Dashboard Training Load Summary now calculates **Avg miles per workout** as completed training volume divided by completed workout entries in the selected view. The card no longer averages completed volume by active athletes, and regression coverage checks the workout-based divisor.
 394. Dashboard Volume by Athlete summary now labels the per-athlete volume card **Average Volume Per Athlete** to make clear that it is athlete-based volume within the filtered volume view.
 395. Added **Share Miles Board** for friendly summer mileage competition. Coaches set the Dashboard activity range, click Share Miles Board, and get a signed read-only link to `/miles-board.html`. The public board uses a tokenized API that returns only sanitized leaderboard data: athlete name, groups, total miles, current-week miles, workout count, average per workout, and last logged date. It does not expose contact info, coach notes, PB/SB detail, attendance, or edit actions. The coach how-to documents the workflow.
+396. Added the next Miles Board competition layer. The signed public board now returns and displays challenge highlights for mileage leader, current-week leader, consistency leader, and biggest positive week change. It also includes a Pack Challenge table that totals miles, workouts, athletes logging miles, and current-week miles by group. Athlete rows now include week change while the board remains read-only and sanitized.
 
 ## Known Good Test Flow
 

@@ -300,8 +300,13 @@ function checkMilesBoardFeature() {
     "/api/smart-trak/miles-board?",
     "data-sort=\"totalMiles\"",
     "data-sort=\"currentWeekMiles\"",
+    "data-sort=\"weekChangeMiles\"",
     "data-sort=\"averagePerWorkout\"",
     "Friendly team mileage leaderboard.",
+    "Challenge Highlights",
+    "Pack Challenge",
+    "renderHighlights",
+    "renderGroups",
   ].forEach((text) => {
     if (!board.includes(text)) throw new Error(`Miles Board page missing ${text}`);
   });
@@ -320,7 +325,13 @@ function checkMilesBoardFeature() {
     "module.exports.publicMilesBoard = publicMilesBoard;",
     "async function publicMilesBoard(req, res)",
     "function buildMilesBoardRows",
+    "function milesBoardHighlights",
+    "function milesBoardGroupRows",
     "averagePerWorkout",
+    "previousWeekMiles",
+    "weekChangeMiles",
+    "highlights: milesBoardHighlights(boardRows)",
+    "groups: milesBoardGroupRows(boardRows)",
     "lastLoggedDate",
     "athleteName",
   ].forEach((text) => {
