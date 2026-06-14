@@ -342,6 +342,7 @@ function milesBoardGameSettings(source) {
   const input = source && typeof source === "object" ? source : {};
   return {
     challengeName: clean(input.challengeName).slice(0, 80) || "Summer Mileage Challenge",
+    coachMessage: clean(input.coachMessage).slice(0, 240),
     teamGoalMiles: boundedBoardNumber(input.teamGoalMiles, 0, 10000),
     athleteGoalMiles: boundedBoardNumber(input.athleteGoalMiles, 0, 1000),
     pointsPerMile: boundedBoardNumber(input.pointsPerMile, 1, 100),

@@ -1243,6 +1243,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 401. Added **Miles Board Game Settings**. Coaches can now name the mileage challenge, set optional team and athlete mileage goals, and adjust the point weights for miles, workouts, current-week miles, improvement miles, consistency days, and consistency bonus. The public board uses the saved settings for Game Score, shows team goal progress and athlete goal cards, and adds a Goal Hit badge when the athlete goal is reached.
 402. Added live **This Week's Winners** to the public Miles Board. The API now calculates current-week game score, mileage winner, consistency winner, biggest mover, and Boys vs Girls pack winner from weekly values. The public board renders those winners as awards without adding coach editing controls.
 403. Corrected the Miles Board desktop card layout so the top metric cards, Challenge Highlights, and This Week's Winners each fit on a single row. Reverted the accidental Dashboard summary layout change from the prior pass.
+404. Added the next Miles Board competition layer. Coaches can add an optional coach message in Miles Board Sharing, and the public board now shows that message, a Weekly Snapshot, team goal progress, and per-athlete goal progress bars while remaining read-only.
 
 ## Known Good Test Flow
 

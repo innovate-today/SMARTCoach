@@ -569,6 +569,10 @@ tr:last-child td{border-bottom:0}
           <label for="milesBoardChallengeName">Challenge Name</label>
           <input id="milesBoardChallengeName" type="text" maxlength="80" placeholder="Summer Mileage Challenge">
         </div>
+        <div class="field full">
+          <label for="milesBoardCoachMessage">Coach Message</label>
+          <textarea id="milesBoardCoachMessage" maxlength="240" rows="3" placeholder="Optional note for this challenge"></textarea>
+        </div>
         <div class="field">
           <label for="milesBoardTeamGoal">Team Goal Miles</label>
           <input id="milesBoardTeamGoal" type="number" min="0" step="1" placeholder="Optional">
@@ -1386,7 +1390,7 @@ function defaultMilesBoardSharing(){
   return {active:true,challengeType:'total',challengeTypes:['total'],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
 }
 function defaultMilesBoardGameSettings(){
-  return {challengeName:'Summer Mileage Challenge',teamGoalMiles:0,athleteGoalMiles:0,pointsPerMile:1,pointsPerWorkout:3,pointsPerCurrentWeekMile:1,pointsPerImprovementMile:2,consistencyDays:3,consistencyBonus:5};
+  return {challengeName:'Summer Mileage Challenge',coachMessage:'',teamGoalMiles:0,athleteGoalMiles:0,pointsPerMile:1,pointsPerWorkout:3,pointsPerCurrentWeekMile:1,pointsPerImprovementMile:2,consistencyDays:3,consistencyBonus:5};
 }
 function milesBoardNumber(value,fallback,max){
   var number=Number(value);
@@ -1397,6 +1401,7 @@ function normalizeMilesBoardGameSettings(source){
   var input=source&&typeof source==='object'?source:{};
   return {
     challengeName:String(input.challengeName||'').trim().slice(0,80)||'Summer Mileage Challenge',
+    coachMessage:String(input.coachMessage||'').trim().slice(0,240),
     teamGoalMiles:milesBoardNumber(input.teamGoalMiles,0,10000),
     athleteGoalMiles:milesBoardNumber(input.athleteGoalMiles,0,1000),
     pointsPerMile:milesBoardNumber(input.pointsPerMile,1,100),
@@ -1465,6 +1470,7 @@ function collectMilesBoardSharing(){
 function renderMilesBoardGameSettings(settings){
   settings=normalizeMilesBoardGameSettings(settings);
   if(els.milesBoardChallengeName)els.milesBoardChallengeName.value=settings.challengeName;
+  if(els.milesBoardCoachMessage)els.milesBoardCoachMessage.value=settings.coachMessage;
   if(els.milesBoardTeamGoal)els.milesBoardTeamGoal.value=settings.teamGoalMiles||'';
   if(els.milesBoardAthleteGoal)els.milesBoardAthleteGoal.value=settings.athleteGoalMiles||'';
   if(els.milesBoardPointsMile)els.milesBoardPointsMile.value=settings.pointsPerMile;
@@ -1478,6 +1484,7 @@ function collectMilesBoardGameSettings(fallback){
   var current=normalizeMilesBoardGameSettings(fallback);
   return normalizeMilesBoardGameSettings({
     challengeName:els.milesBoardChallengeName?els.milesBoardChallengeName.value:current.challengeName,
+    coachMessage:els.milesBoardCoachMessage?els.milesBoardCoachMessage.value:current.coachMessage,
     teamGoalMiles:els.milesBoardTeamGoal?els.milesBoardTeamGoal.value:current.teamGoalMiles,
     athleteGoalMiles:els.milesBoardAthleteGoal?els.milesBoardAthleteGoal.value:current.athleteGoalMiles,
     pointsPerMile:els.milesBoardPointsMile?els.milesBoardPointsMile.value:current.pointsPerMile,
@@ -2016,6 +2023,7 @@ var els={
   milesBoardChallengeList:document.getElementById('milesBoardChallengeList'),
   milesBoardActive:document.getElementById('milesBoardActive'),
   milesBoardChallengeName:document.getElementById('milesBoardChallengeName'),
+  milesBoardCoachMessage:document.getElementById('milesBoardCoachMessage'),
   milesBoardTeamGoal:document.getElementById('milesBoardTeamGoal'),
   milesBoardAthleteGoal:document.getElementById('milesBoardAthleteGoal'),
   milesBoardPointsMile:document.getElementById('milesBoardPointsMile'),
