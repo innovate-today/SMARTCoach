@@ -100,6 +100,12 @@ module.exports = async function handler(req, res) {
     return accountDashboardPreferences(req, res);
   }
 
+  if (route === "miles-board-sharing") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountMilesBoardSharing(req, res);
+  }
+
   if (route === "miles-board-link") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -1462,6 +1468,7 @@ async function accountStatus(req, res) {
     coachStaff,
     trainingCustomization: normalizeTrainingCustomization(registry.record && registry.record.trainingCustomization),
     dashboardPreferences: normalizeDashboardPreferences(registry.record && registry.record.dashboardPreferences),
+    milesBoardSharing: normalizeMilesBoardSharing(registry.record && registry.record.milesBoardSharing),
     coachAccessUnlocked,
     coachAccessCodeAccepted: accessCodeAccepted,
     parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(currentCoachSession && currentCoachSession.parentEmailAllowed),
@@ -1553,15 +1560,23 @@ async function accountMilesBoardLink(req, res) {
     return;
   }
   const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
-  const token = milesBoardToken(accountKey);
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = normalizeMilesBoardSharing(existing.record && existing.record.milesBoardSharing);
+  if (!sharing.active) {
+    res.status(403).json({ error: "Miles Board sharing is turned off." });
+    return;
+  }
+  const token = milesBoardToken(accountKey, sharing.tokenVersion);
   const start = cleanSetupText(firstQueryValue(req.query && req.query.start));
   const end = cleanSetupText(firstQueryValue(req.query && req.query.end));
   const params = new URLSearchParams({ account: accountKey, token });
   if (/^\d{4}-\d{2}-\d{2}$/.test(start)) params.set("start", start);
   if (/^\d{4}-\d{2}-\d{2}$/.test(end)) params.set("end", end);
+  params.set("challenge", sharing.challengeType);
   res.status(200).json({
     success: true,
     token,
+    milesBoardSharing: sharing,
     url: `/miles-board.html?${params.toString()}`,
   });
 }
@@ -1569,8 +1584,16 @@ async function accountMilesBoardLink(req, res) {
 async function accountMilesBoard(req, res) {
   const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
   const provided = cleanSetupText(firstQueryValue(req.query && req.query.token));
-  const expected = milesBoardToken(accountKey);
-  if (!provided || !safeEqual(provided, expected)) {
+  const existing = await loadAccountRecord(accountKey);
+  const hasSavedSharing = !!(existing.record && existing.record.milesBoardSharing);
+  const sharing = normalizeMilesBoardSharing(existing.record && existing.record.milesBoardSharing);
+  if (!sharing.active) {
+    res.status(403).json({ error: "Miles Board sharing is turned off." });
+    return;
+  }
+  const expected = milesBoardToken(accountKey, sharing.tokenVersion);
+  const legacyExpected = !hasSavedSharing ? legacyMilesBoardToken(accountKey) : "";
+  if (!provided || (!safeEqual(provided, expected) && !safeEqual(provided, legacyExpected))) {
     res.status(403).json({ error: "Miles Board link is invalid or expired." });
     return;
   }
@@ -1578,7 +1601,76 @@ async function accountMilesBoard(req, res) {
     res.status(500).json({ error: "Miles Board is not available." });
     return;
   }
+  req.milesBoardSharing = sharing;
   return handlers.dashboard.publicMilesBoard(req, res);
+}
+
+async function accountMilesBoardSharing(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    if (req.method === "GET") {
+      res.status(200).json({
+        success: true,
+        accountKey,
+        milesBoardSharing: normalizeMilesBoardSharing(existing.record.milesBoardSharing),
+      });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
+    const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    if (!sessionAllowed && !codeAllowed) {
+      throw httpError(401, "Active coach access is required to update Miles Board sharing.");
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const current = normalizeMilesBoardSharing(existing.record.milesBoardSharing);
+    const input = payload.milesBoardSharing && typeof payload.milesBoardSharing === "object" ? payload.milesBoardSharing : payload;
+    const action = cleanSetupText(payload.action || input.action).toLowerCase();
+    const next = normalizeMilesBoardSharing({ ...current, ...input });
+    if (action === "reset") {
+      next.active = true;
+      next.tokenVersion = milesBoardTokenVersion();
+      next.resetAt = new Date().toISOString();
+    }
+    next.updatedAt = new Date().toISOString();
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      milesBoardSharing: next,
+      lastMilesBoardSharingSync: {
+        savedAt: next.updatedAt,
+        active: next.active,
+        challengeType: next.challengeType,
+        resetAt: next.resetAt || "",
+      },
+    });
+    res.status(200).json({ success: true, accountKey, milesBoardSharing: next });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Miles Board sharing save failed." });
+  }
 }
 
 function defaultDashboardVisibleTools() {
@@ -1605,6 +1697,26 @@ function normalizeDashboardPreferences(source) {
     updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
     visibleTools,
   };
+}
+
+function normalizeMilesBoardSharing(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    version: 1,
+    active: input.active !== false,
+    challengeType: normalizeMilesBoardChallenge(input.challengeType || input.challenge || "total"),
+    tokenVersion: cleanSetupText(input.tokenVersion) || "1",
+    updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
+    resetAt: cleanSetupText(input.resetAt),
+  };
+}
+
+function normalizeMilesBoardChallenge(value) {
+  const text = cleanSetupText(value).toLowerCase().replace(/[^a-z]/g, "");
+  if (text === "weekly" || text === "week" || text === "thisweek") return "weekly";
+  if (text === "consistency" || text === "workouts" || text === "logs") return "consistency";
+  if (text === "mover" || text === "bigmover" || text === "weekchange") return "mover";
+  return "total";
 }
 
 async function accountTrainingCustomization(req, res) {
@@ -3713,9 +3825,18 @@ function safeEqual(a, b) {
   return diff === 0;
 }
 
-function milesBoardToken(accountKey) {
+function milesBoardToken(accountKey, tokenVersion = "1") {
+  const secret = cleanSetupText(process.env.SMARTCOACH_MILES_BOARD_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE || "smartcoach-miles-board");
+  return crypto.createHmac("sha256", secret).update(`miles-board:${normalizeSetupAccountKey(accountKey) || "default"}:${cleanSetupText(tokenVersion) || "1"}`).digest("base64url");
+}
+
+function legacyMilesBoardToken(accountKey) {
   const secret = cleanSetupText(process.env.SMARTCOACH_MILES_BOARD_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE || "smartcoach-miles-board");
   return crypto.createHmac("sha256", secret).update(`miles-board:${normalizeSetupAccountKey(accountKey) || "default"}`).digest("base64url");
+}
+
+function milesBoardTokenVersion() {
+  return crypto.randomBytes(12).toString("base64url");
 }
 
 function suggestedAccessCode(accountKey) {

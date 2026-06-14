@@ -166,6 +166,7 @@ async function publicMilesBoard(req, res) {
       accountKey,
       logoUrl,
       generatedAt: new Date().toISOString(),
+      challengeType: clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total",
       range: {
         start: dateOnly(range.start),
         end: dateOnly(addDays(range.end, -1)),

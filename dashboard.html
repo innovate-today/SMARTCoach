@@ -542,6 +542,43 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<div id="milesBoardModal" class="modal" hidden>
+  <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="milesBoardTitle">
+    <div class="modalhead">
+      <h2 id="milesBoardTitle">Miles Board Sharing</h2>
+      <button id="milesBoardClose" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="whats-new-intro">Create a view-only mileage challenge link for athletes or parents. Turning sharing off stops the current link from loading.</p>
+      <div class="formgrid">
+        <div class="field">
+          <label for="milesBoardChallenge">Challenge Type</label>
+          <select id="milesBoardChallenge">
+            <option value="total">Total Miles</option>
+            <option value="weekly">This Week</option>
+            <option value="consistency">Consistency</option>
+            <option value="mover">Big Mover</option>
+          </select>
+        </div>
+        <label class="checkline" style="display:flex;align-items:center;gap:8px;margin-top:26px;color:#334155;font-size:14px;font-weight:800">
+          <input id="milesBoardActive" type="checkbox">
+          <span>Link active</span>
+        </label>
+        <div class="field full">
+          <label for="milesBoardLinkPreview">Current Link</label>
+          <input id="milesBoardLinkPreview" type="text" readonly placeholder="Create or copy a link">
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="milesBoardStatus" class="modalstatus">Set the range on the Dashboard before copying the link.</div>
+        <button id="milesBoardTurnOff" class="secondary" type="button">Turn Off Link</button>
+        <button id="milesBoardReset" class="secondary" type="button">Reset Link</button>
+        <button id="milesBoardOpen" class="secondary" type="button">Open Link</button>
+        <button id="milesBoardCopy" type="button">Copy Link</button>
+      </div>
+    </div>
+  </section>
+</div>
 <div id="accessModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
     <div class="modalhead">
@@ -1116,6 +1153,8 @@ var recentAttendanceRows=[];
 var docuItems=[];
 var docuRecords={};
 var dashboardPreferences=null;
+var milesBoardSharing=null;
+var currentMilesBoardUrl='';
 var trainingGroups=[];
 var meetManagerRows=[];
 var raceResultMeetRows=[];
@@ -1304,6 +1343,155 @@ function saveDashboardPreferences(){
     els.dashboardPrefsStatus.style.color='#b00000';
   }).finally(function(){
     els.dashboardPrefsSave.disabled=false;
+  });
+}
+function defaultMilesBoardSharing(){
+  return {active:true,challengeType:'total',tokenVersion:'1',updatedAt:new Date().toISOString()};
+}
+function normalizeMilesBoardSharing(source){
+  var input=source&&typeof source==='object'?source:{};
+  var challenge=String(input.challengeType||input.challenge||'total').toLowerCase();
+  if(['weekly','consistency','mover'].indexOf(challenge)<0)challenge='total';
+  return {
+    active:input.active!==false,
+    challengeType:challenge,
+    tokenVersion:String(input.tokenVersion||'1'),
+    updatedAt:String(input.updatedAt||''),
+    resetAt:String(input.resetAt||'')
+  };
+}
+function renderMilesBoardSharing(){
+  var settings=normalizeMilesBoardSharing(milesBoardSharing||defaultMilesBoardSharing());
+  if(els.milesBoardChallenge)els.milesBoardChallenge.value=settings.challengeType;
+  if(els.milesBoardActive)els.milesBoardActive.checked=settings.active;
+  if(els.milesBoardLinkPreview)els.milesBoardLinkPreview.value=currentMilesBoardUrl||'';
+  if(els.milesBoardStatus){
+    els.milesBoardStatus.textContent=settings.active?'Set the range on the Dashboard before copying the link.':'Miles Board sharing is off. Current links will not load.';
+    els.milesBoardStatus.style.color=settings.active?'#64748b':'#b00000';
+  }
+}
+function collectMilesBoardSharing(){
+  var current=normalizeMilesBoardSharing(milesBoardSharing||defaultMilesBoardSharing());
+  return {
+    active:!!(els.milesBoardActive&&els.milesBoardActive.checked),
+    challengeType:els.milesBoardChallenge?els.milesBoardChallenge.value:current.challengeType,
+    tokenVersion:current.tokenVersion,
+    updatedAt:new Date().toISOString()
+  };
+}
+function openMilesBoardSharing(){
+  currentMilesBoardUrl='';
+  renderMilesBoardSharing();
+  els.milesBoardModal.hidden=false;
+  loadMilesBoardSharing();
+  els.milesBoardClose.focus();
+}
+function closeMilesBoardSharing(){
+  els.milesBoardModal.hidden=true;
+}
+function setMilesBoardStatus(message,color){
+  if(!els.milesBoardStatus)return;
+  els.milesBoardStatus.textContent=message||'';
+  els.milesBoardStatus.style.color=color||'#64748b';
+}
+function setMilesBoardButtons(disabled){
+  [els.milesBoardTurnOff,els.milesBoardReset,els.milesBoardOpen,els.milesBoardCopy].forEach(function(button){
+    if(button)button.disabled=!!disabled;
+  });
+}
+function loadMilesBoardSharing(){
+  setMilesBoardStatus('Loading Miles Board sharing settings...','#64748b');
+  return fetch('/api/smart-trak/miles-board-sharing?account='+encodeURIComponent(smartCoachAccountKey()),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not load Miles Board sharing.');
+    milesBoardSharing=normalizeMilesBoardSharing(result.data&&result.data.milesBoardSharing);
+    renderMilesBoardSharing();
+    return milesBoardSharing;
+  }).catch(function(error){
+    setMilesBoardStatus(error.message||'Could not load Miles Board sharing.','#b00000');
+    return normalizeMilesBoardSharing(milesBoardSharing||defaultMilesBoardSharing());
+  });
+}
+function saveMilesBoardSharing(action){
+  var settings=collectMilesBoardSharing();
+  setMilesBoardButtons(true);
+  setMilesBoardStatus(action==='reset'?'Resetting link...':'Saving Miles Board sharing...','#64748b');
+  return fetch('/api/smart-trak/miles-board-sharing?account='+encodeURIComponent(smartCoachAccountKey()),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:action||'',milesBoardSharing:settings})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save Miles Board sharing.');
+    milesBoardSharing=normalizeMilesBoardSharing(result.data&&result.data.milesBoardSharing);
+    currentMilesBoardUrl='';
+    renderMilesBoardSharing();
+    return milesBoardSharing;
+  }).finally(function(){
+    setMilesBoardButtons(false);
+  });
+}
+function milesBoardLinkParams(){
+  var bounds=activityRangeBounds();
+  var params=new URLSearchParams({account:smartCoachAccountKey()});
+  if(bounds&&bounds.start)params.set('start',dateInputValue(bounds.start));
+  if(bounds&&bounds.end)params.set('end',dateInputValue(bounds.end));
+  return params;
+}
+function createMilesBoardLink(){
+  var settings=collectMilesBoardSharing();
+  if(!settings.active){
+    setMilesBoardStatus('Turn the link active before creating a Miles Board link.','#b00000');
+    return Promise.reject(new Error('Miles Board sharing is off.'));
+  }
+  return saveMilesBoardSharing('').then(function(){
+    setMilesBoardStatus('Creating Miles Board link...','#64748b');
+    return fetch('/api/smart-trak/miles-board-link?'+milesBoardLinkParams().toString(),{cache:'no-store'}).then(function(res){
+      return res.json().then(function(data){return{ok:res.ok,data:data};});
+    });
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not create Miles Board link.');
+    currentMilesBoardUrl=new URL(result.data.url,window.location.origin).toString();
+    if(els.milesBoardLinkPreview)els.milesBoardLinkPreview.value=currentMilesBoardUrl;
+    setMilesBoardStatus('Miles Board link is ready.','#08783c');
+    return currentMilesBoardUrl;
+  }).catch(function(error){
+    if(error&&error.message!=='Miles Board sharing is off.')setMilesBoardStatus(error.message||'Could not create Miles Board link.','#b00000');
+    throw error;
+  });
+}
+function copyMilesBoardLink(){
+  createMilesBoardLink().then(function(url){
+    return copyTextToClipboard(url).then(function(copied){
+      setMilesBoardStatus(copied?'Miles Board link copied.':'Copy failed. Use the Current Link field. ',copied?'#08783c':'#b00000');
+    });
+  }).catch(function(){});
+}
+function openMilesBoardLink(){
+  createMilesBoardLink().then(function(url){
+    window.open(url,'_blank','noopener');
+  }).catch(function(){});
+}
+function turnOffMilesBoardLink(){
+  if(els.milesBoardActive)els.milesBoardActive.checked=false;
+  saveMilesBoardSharing('').then(function(){
+    setMilesBoardStatus('Miles Board sharing is off. Current links will not load.','#b00000');
+  }).catch(function(error){
+    setMilesBoardStatus(error.message||'Could not turn off Miles Board sharing.','#b00000');
+  });
+}
+function resetMilesBoardLink(){
+  if(els.milesBoardActive)els.milesBoardActive.checked=true;
+  saveMilesBoardSharing('reset').then(function(){
+    return createMilesBoardLink();
+  }).then(function(url){
+    return copyTextToClipboard(url).then(function(copied){
+      setMilesBoardStatus(copied?'New Miles Board link copied. Old links are invalid.':'New Miles Board link is ready. Old links are invalid.',copied?'#08783c':'#08783c');
+    });
+  }).catch(function(error){
+    setMilesBoardStatus(error.message||'Could not reset Miles Board link.','#b00000');
   });
 }
 function openSimulatorModal(){
@@ -1714,6 +1902,16 @@ var els={
   dashboardPrefsStatus:document.getElementById('dashboardPrefsStatus'),
   dashboardPrefsReset:document.getElementById('dashboardPrefsReset'),
   dashboardPrefsSave:document.getElementById('dashboardPrefsSave'),
+  milesBoardModal:document.getElementById('milesBoardModal'),
+  milesBoardClose:document.getElementById('milesBoardClose'),
+  milesBoardChallenge:document.getElementById('milesBoardChallenge'),
+  milesBoardActive:document.getElementById('milesBoardActive'),
+  milesBoardLinkPreview:document.getElementById('milesBoardLinkPreview'),
+  milesBoardStatus:document.getElementById('milesBoardStatus'),
+  milesBoardTurnOff:document.getElementById('milesBoardTurnOff'),
+  milesBoardReset:document.getElementById('milesBoardReset'),
+  milesBoardOpen:document.getElementById('milesBoardOpen'),
+  milesBoardCopy:document.getElementById('milesBoardCopy'),
   simulatorBtn:document.getElementById('simulatorBtn'),
   simulatorModal:document.getElementById('simulatorModal'),
   simulatorClose:document.getElementById('simulatorClose'),
@@ -1774,6 +1972,14 @@ els.dashboardPrefsSave.addEventListener('click',saveDashboardPreferences);
 els.dashboardPrefsModal.addEventListener('click',function(event){
   if(event.target===els.dashboardPrefsModal)closeDashboardPrefs();
 });
+els.milesBoardClose.addEventListener('click',closeMilesBoardSharing);
+els.milesBoardCopy.addEventListener('click',copyMilesBoardLink);
+els.milesBoardOpen.addEventListener('click',openMilesBoardLink);
+els.milesBoardTurnOff.addEventListener('click',turnOffMilesBoardLink);
+els.milesBoardReset.addEventListener('click',resetMilesBoardLink);
+els.milesBoardModal.addEventListener('click',function(event){
+  if(event.target===els.milesBoardModal)closeMilesBoardSharing();
+});
 els.simulatorBtn.addEventListener('click',openSimulatorModal);
 els.simulatorClose.addEventListener('click',closeSimulatorModal);
 els.simulatorModal.addEventListener('click',function(event){
@@ -1782,6 +1988,7 @@ els.simulatorModal.addEventListener('click',function(event){
 document.addEventListener('keydown',function(event){
   if(event.key==='Escape'&&!els.whatsNewModal.hidden)closeWhatsNew();
   if(event.key==='Escape'&&!els.dashboardPrefsModal.hidden)closeDashboardPrefs();
+  if(event.key==='Escape'&&!els.milesBoardModal.hidden)closeMilesBoardSharing();
   if(event.key==='Escape'&&!els.simulatorModal.hidden)closeSimulatorModal();
 });
 els.accessSubmit.addEventListener('click',submitDashboardAccessCode);
@@ -2445,6 +2652,7 @@ function checkSmartCoachAccount(){
     return res.json().then(function(data){
       refreshRememberedCoachSession(data);
       applyDashboardPreferences(data&&data.dashboardPreferences);
+      milesBoardSharing=normalizeMilesBoardSharing(data&&data.milesBoardSharing);
       return{ok:res.ok,data:data};
     });
   });
@@ -3160,26 +3368,7 @@ function openManualMileage(){
 }
 
 function shareMilesBoard(){
-  var bounds=activityRangeBounds();
-  var params=new URLSearchParams({account:smartCoachAccountKey()});
-  if(bounds&&bounds.start)params.set('start',dateInputValue(bounds.start));
-  if(bounds&&bounds.end)params.set('end',dateInputValue(bounds.end));
-  var button=els.shareMilesBoardBtn;
-  if(button){button.disabled=true;button.textContent='Creating Link...';}
-  fetch('/api/smart-trak/miles-board-link?'+params.toString(),{cache:'no-store'}).then(function(res){
-    return res.json().then(function(data){return{ok:res.ok,data:data};});
-  }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not create Miles Board link.');
-    var absolute=new URL(result.data.url,window.location.origin).toString();
-    return copyTextToClipboard(absolute).then(function(copied){
-      if(button)button.textContent=copied?'Link Copied':'Open Miles Board';
-      if(!copied)window.open(absolute,'_blank','noopener');
-      setTimeout(function(){if(button){button.textContent='Share Miles Board';button.disabled=false;}},1800);
-    });
-  }).catch(function(error){
-    if(button){button.textContent='Share Miles Board';button.disabled=false;}
-    alert(error.message||'Could not create Miles Board link.');
-  });
+  openMilesBoardSharing();
 }
 
 function copyTextToClipboard(text){

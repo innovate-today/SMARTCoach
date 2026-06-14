@@ -289,7 +289,17 @@ function checkMilesBoardFeature() {
   [
     'id="shareMilesBoardBtn"',
     "Share Miles Board",
+    'id="milesBoardModal"',
+    "Miles Board Sharing",
+    'id="milesBoardChallenge"',
+    'id="milesBoardTurnOff"',
+    'id="milesBoardReset"',
     "function shareMilesBoard()",
+    "function openMilesBoardSharing()",
+    "function createMilesBoardLink()",
+    "function turnOffMilesBoardLink()",
+    "function resetMilesBoardLink()",
+    "fetch('/api/smart-trak/miles-board-sharing?account='",
     "miles-board-link",
     "copyTextToClipboard",
   ].forEach((text) => {
@@ -307,6 +317,9 @@ function checkMilesBoardFeature() {
     "Pack Challenge",
     "<th>Division</th>",
     "divisionOrder",
+    "challengeSortKey",
+    "challengeLabel",
+    "This Week Challenge",
     "renderHighlights",
     "renderGroups",
   ].forEach((text) => {
@@ -316,10 +329,17 @@ function checkMilesBoardFeature() {
   [
     'if (route === "miles-board-link")',
     "return accountMilesBoardLink(req, res);",
+    'if (route === "miles-board-sharing")',
+    "return accountMilesBoardSharing(req, res);",
     'if (route === "miles-board")',
     "return accountMilesBoard(req, res);",
-    "function milesBoardToken(accountKey)",
+    "function milesBoardToken(accountKey, tokenVersion",
+    "function legacyMilesBoardToken(accountKey)",
+    "function milesBoardTokenVersion()",
     "SMARTCOACH_MILES_BOARD_SECRET",
+    "normalizeMilesBoardSharing",
+    "Miles Board sharing is turned off.",
+    "lastMilesBoardSharingSync",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Miles Board API route missing ${text}`);
   });
@@ -331,6 +351,7 @@ function checkMilesBoardFeature() {
     "function milesBoardGroupRows",
     "function milesBoardGenderDivision",
     "function milesBoardDivisionOrder",
+    "challengeType:",
     "averagePerWorkout",
     "previousWeekMiles",
     "weekChangeMiles",
