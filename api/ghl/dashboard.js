@@ -197,7 +197,7 @@ async function publicMilesBoard(req, res) {
 }
 
 function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSettings }) {
-  return athletes.map((athlete) => {
+  const rows = athletes.map((athlete) => {
     const training = performanceRecords
       .filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record))
       .map(normalizePerformanceRecord)
@@ -252,7 +252,8 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSet
       goalHit: gameSettings.athleteGoalMiles > 0 && totalMiles >= gameSettings.athleteGoalMiles,
       badges: milesBoardBadges(row, gameSettings),
     };
-  }).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
+  });
+  return milesBoardCompetitionBadges(rows).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
 }
 
 function milesBoardWeeklyWinners(rows, groups) {
@@ -335,8 +336,29 @@ function milesBoardBadges(row, settings) {
   else if (totalMiles >= 25) badges.push("25 Mile Club");
   if (workouts >= 5) badges.push("Consistency");
   if ((Number(row.currentWeekMiles) || 0) >= 10) badges.push("This Week");
+  if ((Number(row.currentWeekMiles) || 0) >= 30) badges.push("30 Mile Week");
+  else if ((Number(row.currentWeekMiles) || 0) >= 20) badges.push("20 Mile Week");
   if ((Number(row.weekChangeMiles) || 0) > 0) badges.push("Big Mover");
+  if ((Number(row.weekChangeMiles) || 0) >= 5) badges.push("Comeback Runner");
   return badges;
+}
+
+function milesBoardCompetitionBadges(rows) {
+  const maxActiveDays = Math.max(0, ...rows.map((row) => Number(row.activeDays) || 0));
+  const packLeaders = {};
+  rows.forEach((row) => {
+    const division = milesBoardGenderDivision(row.gender);
+    if (!packLeaders[division] || (Number(row.currentWeekMiles) || 0) > (Number(packLeaders[division].currentWeekMiles) || 0)) {
+      packLeaders[division] = row;
+    }
+  });
+  return rows.map((row) => {
+    const badges = Array.isArray(row.badges) ? row.badges.slice() : [];
+    const division = milesBoardGenderDivision(row.gender);
+    if (maxActiveDays >= 3 && (Number(row.activeDays) || 0) === maxActiveDays) badges.push("Streak Leader");
+    if ((Number(row.currentWeekMiles) || 0) > 0 && packLeaders[division] && packLeaders[division].athleteName === row.athleteName) badges.push("Pack MVP");
+    return { ...row, badges: uniqueStrings(badges) };
+  });
 }
 
 function milesBoardGameSettings(source) {
