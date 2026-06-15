@@ -206,7 +206,7 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSet
         return date && date >= start && date < end;
       });
     const totalMiles = roundVolume(training.reduce((sum, item) => sum + (Number(item.completedVolumeMiles) || 0), 0));
-    const currentWeekStart = startOfCurrentWeek();
+    const currentWeekStart = startOfBoardWeek(end);
     const currentWeekTraining = training.filter((item) => {
       const date = parseDate(item.sessionDate || item.syncedAt);
       return date && date >= currentWeekStart && date < addDays(currentWeekStart, 7);
@@ -945,7 +945,15 @@ function roundVolume(value) {
 }
 
 function startOfCurrentWeek() {
-  const now = new Date();
+  return startOfWeekForDate(new Date());
+}
+
+function startOfBoardWeek(end) {
+  return startOfWeekForDate(addDays(end, -1));
+}
+
+function startOfWeekForDate(sourceDate) {
+  const now = sourceDate instanceof Date ? sourceDate : new Date();
   const day = now.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);

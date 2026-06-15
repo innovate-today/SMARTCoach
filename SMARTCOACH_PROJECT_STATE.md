@@ -1244,6 +1244,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 402. Added live **This Week's Winners** to the public Miles Board. The API now calculates current-week game score, mileage winner, consistency winner, biggest mover, and Boys vs Girls pack winner from weekly values. The public board renders those winners as awards without adding coach editing controls.
 403. Corrected the Miles Board desktop card layout so the top metric cards, Challenge Highlights, and This Week's Winners each fit on a single row. Reverted the accidental Dashboard summary layout change from the prior pass.
 404. Added the next Miles Board competition layer. Coaches can add an optional coach message in Miles Board Sharing, and the public board now shows that message, a Weekly Snapshot, team goal progress, and per-athlete goal progress bars while remaining read-only.
+405. Fixed Miles Board weekly stats so **This Week**, Weekly Snapshot, weekly winners, and pack current-week totals anchor to the selected board range's ending week instead of the hosting server's current calendar week.
 
 ## Known Good Test Flow
 

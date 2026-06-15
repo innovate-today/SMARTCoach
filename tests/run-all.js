@@ -384,6 +384,8 @@ function checkMilesBoardFeature() {
     "function milesBoardGameScore",
     "function milesBoardBadges",
     "function milesBoardGameSettings",
+    "function startOfBoardWeek",
+    "const currentWeekStart = startOfBoardWeek(end)",
     "function milesBoardGroupRows",
     "function milesBoardGenderDivision",
     "function milesBoardDivisionOrder",
