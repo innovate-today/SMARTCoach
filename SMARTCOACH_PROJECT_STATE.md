@@ -1249,6 +1249,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 407. Added **Miles Board Display Mode** and expanded badges. The public board now has a Display Mode toggle for a larger Top 10 view suited for a projector/TV, and the API adds badges for 20/30 Mile Week, Comeback Runner, Streak Leader, and Pack MVP.
 408. Updated the coach how-to for the Miles Board public rollout. The guide now includes a short athlete-facing posting explanation and the exact criteria for each Miles Board badge.
 409. Promoted **Miles Board** into its own coach how-to section so the sharing setup, Display Mode, weekly snapshots, public board fields, and badge criteria are easy to find in SMARTCoach Help.
+410. Removed the raw **Open Text Guide** link from SMARTCoach Help. The rendered How To page already shows the latest guide, and removing the raw markdown link prevents coaches from landing on a text-only page with no dashboard navigation.
 
 ## Known Good Test Flow
 

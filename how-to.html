@@ -33,7 +33,6 @@ h1{font-size:24px;line-height:1.15;margin:0}.sub{font-size:14px;color:var(--mute
     </div>
     <div class="actions">
       <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
-      <a id="markdownLink" class="linkbtn secondary" href="/SMART_TRAK_COACH_HOW_TO.md">Open Text Guide</a>
       <button id="printBtn" class="utility" type="button">Print</button>
     </div>
   </section>
@@ -91,7 +90,6 @@ function renderMarkdown(markdown){
 function init(){
   document.body.classList.toggle('embedded',embeddedMode());
   document.getElementById('dashboardLink').href=pageUrl('/dashboard.html');
-  document.getElementById('markdownLink').href=pageUrl('/SMART_TRAK_COACH_HOW_TO.md');
   document.getElementById('printBtn').addEventListener('click',function(){window.print();});
   fetch('/SMART_TRAK_COACH_HOW_TO.md?t='+Date.now(),{cache:'no-store'}).then(function(res){if(!res.ok)throw new Error('Guide could not be loaded.');return res.text();}).then(function(text){
     renderMarkdown(text);
@@ -99,7 +97,7 @@ function init(){
     document.getElementById('lastUpdated').textContent='Last loaded '+new Date().toLocaleString();
   }).catch(function(error){
     document.getElementById('guideStatus').textContent=error.message||'Guide could not be loaded.';
-    document.getElementById('guideBody').innerHTML='<div class="empty">Open the text guide from the top button.</div>';
+    document.getElementById('guideBody').innerHTML='<div class="empty">Try refreshing this page, or return to the Dashboard.</div>';
     document.getElementById('tocBody').innerHTML='<div class="empty">Guide unavailable.</div>';
     document.getElementById('lastUpdated').textContent='Guide unavailable';
   });

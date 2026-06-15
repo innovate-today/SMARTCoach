@@ -485,11 +485,17 @@ function checkHowToGuidePage() {
     "function renderMarkdown(markdown)",
     "id=\"tocBody\"",
     "id=\"guideBody\"",
-    "Open Text Guide",
     "printBtn",
     "smartcoach-help-widget.js",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`How To guide page missing ${text}`);
+  });
+  [
+    "Open Text Guide",
+    "id=\"markdownLink\"",
+    "href=\"/SMART_TRAK_COACH_HOW_TO.md\"",
+  ].forEach((text) => {
+    if (html.includes(text)) throw new Error(`How To guide should not link coaches to raw text page: ${text}`);
   });
   [
     'id="dashboardLink"',
