@@ -1603,6 +1603,7 @@ async function accountMilesBoard(req, res) {
     return;
   }
   req.milesBoardSharing = sharing;
+  req.milesBoardSnapshots = normalizeMilesBoardSnapshots(existing.record && existing.record.milesBoardSnapshots);
   return handlers.dashboard.publicMilesBoard(req, res);
 }
 
@@ -1652,24 +1653,32 @@ async function accountMilesBoardSharing(req, res) {
     const input = payload.milesBoardSharing && typeof payload.milesBoardSharing === "object" ? payload.milesBoardSharing : payload;
     const action = cleanSetupText(payload.action || input.action).toLowerCase();
     const next = normalizeMilesBoardSharing({ ...current, ...input });
+    let milesBoardSnapshots = normalizeMilesBoardSnapshots(existing.record.milesBoardSnapshots);
     if (action === "reset") {
       next.active = true;
       next.tokenVersion = milesBoardTokenVersion();
       next.resetAt = new Date().toISOString();
     }
+    if (action === "snapshot") {
+      const snapshot = normalizeMilesBoardSnapshot(payload.snapshot || input.snapshot);
+      if (!snapshot) throw httpError(400, "Miles Board snapshot was empty.");
+      milesBoardSnapshots = [snapshot, ...milesBoardSnapshots.filter((item) => item.id !== snapshot.id && item.rangeLabel !== snapshot.rangeLabel)].slice(0, 12);
+    }
     next.updatedAt = new Date().toISOString();
     await saveAccountRecord(accountKey, {
       ...existing.record,
       milesBoardSharing: next,
+      milesBoardSnapshots,
       lastMilesBoardSharingSync: {
         savedAt: next.updatedAt,
         active: next.active,
         challengeType: next.challengeType,
         challengeTypes: next.challengeTypes,
         resetAt: next.resetAt || "",
+        snapshotSaved: action === "snapshot",
       },
     });
-    res.status(200).json({ success: true, accountKey, milesBoardSharing: next });
+    res.status(200).json({ success: true, accountKey, milesBoardSharing: next, milesBoardSnapshots });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Miles Board sharing save failed." });
   }
@@ -1729,6 +1738,33 @@ function normalizeMilesBoardGameSettings(source) {
     pointsPerImprovementMile: milesBoardNumber(input.pointsPerImprovementMile, 2, 100),
     consistencyDays: Math.round(milesBoardNumber(input.consistencyDays, 3, 14)),
     consistencyBonus: milesBoardNumber(input.consistencyBonus, 5, 500),
+  };
+}
+
+function normalizeMilesBoardSnapshots(source) {
+  const list = Array.isArray(source) ? source : [];
+  return list.map(normalizeMilesBoardSnapshot).filter(Boolean).slice(0, 12);
+}
+
+function normalizeMilesBoardSnapshot(source) {
+  const input = source && typeof source === "object" ? source : {};
+  const rangeLabel = cleanSetupText(input.rangeLabel).slice(0, 60);
+  if (!rangeLabel) return null;
+  const savedAt = cleanSetupText(input.savedAt) || new Date().toISOString();
+  return {
+    id: cleanSetupText(input.id).slice(0, 80) || `miles_${Date.now()}`,
+    rangeLabel,
+    savedAt,
+    challengeName: cleanSetupText(input.challengeName).slice(0, 80),
+    coachMessage: cleanSetupText(input.coachMessage).slice(0, 240),
+    totalMiles: milesBoardNumber(input.totalMiles, 0, 100000),
+    workouts: Math.round(milesBoardNumber(input.workouts, 0, 100000)),
+    athletesActive: Math.round(milesBoardNumber(input.athletesActive, 0, 10000)),
+    packLeader: cleanSetupText(input.packLeader).slice(0, 80),
+    mileageWinner: cleanSetupText(input.mileageWinner).slice(0, 80),
+    gameWinner: cleanSetupText(input.gameWinner).slice(0, 80),
+    consistencyWinner: cleanSetupText(input.consistencyWinner).slice(0, 80),
+    bigMover: cleanSetupText(input.bigMover).slice(0, 80),
   };
 }
 

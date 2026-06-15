@@ -1245,6 +1245,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 403. Corrected the Miles Board desktop card layout so the top metric cards, Challenge Highlights, and This Week's Winners each fit on a single row. Reverted the accidental Dashboard summary layout change from the prior pass.
 404. Added the next Miles Board competition layer. Coaches can add an optional coach message in Miles Board Sharing, and the public board now shows that message, a Weekly Snapshot, team goal progress, and per-athlete goal progress bars while remaining read-only.
 405. Fixed Miles Board weekly stats so **This Week**, Weekly Snapshot, weekly winners, and pack current-week totals anchor to the selected board range's ending week instead of the hosting server's current calendar week.
+406. Added **Miles Board Weekly Snapshots**. Coaches can save the currently selected Miles Board range from the sharing modal, storing totals, winners, pack leader, and coach message on the account. Public Miles Boards now show saved snapshots under **Past Weeks** while keeping the board read-only.
 
 ## Known Good Test Flow
 

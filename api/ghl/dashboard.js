@@ -187,6 +187,7 @@ async function publicMilesBoard(req, res) {
       },
       highlights: milesBoardHighlights(boardRows),
       weeklyWinners: milesBoardWeeklyWinners(boardRows, groupRows),
+      snapshots: milesBoardSnapshots(req.milesBoardSnapshots),
       groups: groupRows,
       rows: boardRows,
     });
@@ -352,6 +353,24 @@ function milesBoardGameSettings(source) {
     consistencyDays: Math.round(boundedBoardNumber(input.consistencyDays, 3, 14)),
     consistencyBonus: boundedBoardNumber(input.consistencyBonus, 5, 500),
   };
+}
+
+function milesBoardSnapshots(source) {
+  return (Array.isArray(source) ? source : []).slice(0, 12).map((item) => ({
+    id: clean(item.id),
+    rangeLabel: clean(item.rangeLabel),
+    savedAt: clean(item.savedAt),
+    challengeName: clean(item.challengeName),
+    coachMessage: clean(item.coachMessage),
+    totalMiles: roundVolume(item.totalMiles),
+    workouts: Number(item.workouts) || 0,
+    athletesActive: Number(item.athletesActive) || 0,
+    packLeader: clean(item.packLeader),
+    mileageWinner: clean(item.mileageWinner),
+    gameWinner: clean(item.gameWinner),
+    consistencyWinner: clean(item.consistencyWinner),
+    bigMover: clean(item.bigMover),
+  })).filter((item) => item.rangeLabel);
 }
 
 function boundedBoardNumber(value, fallback, max) {

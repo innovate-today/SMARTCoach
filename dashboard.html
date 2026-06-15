@@ -614,6 +614,7 @@ tr:last-child td{border-bottom:0}
         <div id="milesBoardStatus" class="modalstatus">Set the range on the Dashboard before copying the link.</div>
         <button id="milesBoardTurnOff" class="secondary" type="button">Turn Off Link</button>
         <button id="milesBoardReset" class="secondary" type="button">Reset Link</button>
+        <button id="milesBoardSnapshot" class="secondary" type="button">Save Weekly Snapshot</button>
         <button id="milesBoardOpen" class="secondary" type="button">Open Link</button>
         <button id="milesBoardCopy" type="button">Copy Link</button>
       </div>
@@ -1511,7 +1512,7 @@ function setMilesBoardStatus(message,color){
   els.milesBoardStatus.style.color=color||'#64748b';
 }
 function setMilesBoardButtons(disabled){
-  [els.milesBoardTurnOff,els.milesBoardReset,els.milesBoardOpen,els.milesBoardCopy].forEach(function(button){
+  [els.milesBoardTurnOff,els.milesBoardReset,els.milesBoardSnapshot,els.milesBoardOpen,els.milesBoardCopy].forEach(function(button){
     if(button)button.disabled=!!disabled;
   });
 }
@@ -1576,6 +1577,56 @@ function createMilesBoardLink(){
   }).catch(function(error){
     if(error&&error.message!=='Miles Board sharing is off.')setMilesBoardStatus(error.message||'Could not create Miles Board link.','#b00000');
     throw error;
+  });
+}
+function milesBoardApiUrlFromLink(url){
+  var link=new URL(url,window.location.origin);
+  return '/api/smart-trak/miles-board?'+link.searchParams.toString();
+}
+function saveMilesBoardSnapshot(){
+  setMilesBoardButtons(true);
+  createMilesBoardLink().then(function(url){
+    setMilesBoardStatus('Loading Miles Board snapshot...','#64748b');
+    return fetch(milesBoardApiUrlFromLink(url),{cache:'no-store'}).then(function(res){
+      return res.json().then(function(data){return{ok:res.ok,data:data};});
+    });
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not load Miles Board data.');
+    var data=result.data||{};
+    var winners=data.weeklyWinners||{};
+    var rows=data.rows||[];
+    var snapshot={
+      id:'miles_'+Date.now(),
+      rangeLabel:data.range&&data.range.label||'Selected range',
+      savedAt:new Date().toISOString(),
+      challengeName:data.gameSettings&&data.gameSettings.challengeName||'Miles Board',
+      coachMessage:data.gameSettings&&data.gameSettings.coachMessage||'',
+      totalMiles:data.totals&&data.totals.totalMiles||0,
+      workouts:data.totals&&data.totals.workouts||0,
+      athletesActive:rows.filter(function(row){return Number(row.currentWeekMiles)>0||Number(row.currentWeekWorkouts)>0;}).length,
+      packLeader:winners.pack&&winners.pack.name||'',
+      mileageWinner:winners.mileage&&winners.mileage.name||'',
+      gameWinner:winners.gameScore&&winners.gameScore.name||'',
+      consistencyWinner:winners.consistency&&winners.consistency.name||'',
+      bigMover:winners.bigMover&&winners.bigMover.name||''
+    };
+    setMilesBoardStatus('Saving Weekly Snapshot...','#64748b');
+    return fetch('/api/smart-trak/miles-board-sharing?account='+encodeURIComponent(smartCoachAccountKey()),{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'snapshot',milesBoardSharing:collectMilesBoardSharing(),snapshot:snapshot})
+    }).then(function(res){
+      return res.json().then(function(data){return{ok:res.ok,data:data};});
+    });
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save Weekly Snapshot.');
+    milesBoardSharing=normalizeMilesBoardSharing(result.data&&result.data.milesBoardSharing);
+    renderMilesBoardSharing();
+    setMilesBoardStatus('Weekly Snapshot saved. Refresh the board to see Past Weeks.','#08783c');
+  }).catch(function(error){
+    setMilesBoardStatus(error.message||'Could not save Weekly Snapshot.','#b00000');
+  }).finally(function(){
+    setMilesBoardButtons(false);
   });
 }
 function copyMilesBoardLink(){
@@ -2036,6 +2087,7 @@ var els={
   milesBoardStatus:document.getElementById('milesBoardStatus'),
   milesBoardTurnOff:document.getElementById('milesBoardTurnOff'),
   milesBoardReset:document.getElementById('milesBoardReset'),
+  milesBoardSnapshot:document.getElementById('milesBoardSnapshot'),
   milesBoardOpen:document.getElementById('milesBoardOpen'),
   milesBoardCopy:document.getElementById('milesBoardCopy'),
   simulatorBtn:document.getElementById('simulatorBtn'),
@@ -2103,6 +2155,7 @@ els.milesBoardCopy.addEventListener('click',copyMilesBoardLink);
 els.milesBoardOpen.addEventListener('click',openMilesBoardLink);
 els.milesBoardTurnOff.addEventListener('click',turnOffMilesBoardLink);
 els.milesBoardReset.addEventListener('click',resetMilesBoardLink);
+els.milesBoardSnapshot.addEventListener('click',saveMilesBoardSnapshot);
 els.milesBoardModal.addEventListener('click',function(event){
   if(event.target===els.milesBoardModal)closeMilesBoardSharing();
 });
