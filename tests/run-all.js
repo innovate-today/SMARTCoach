@@ -367,6 +367,7 @@ function checkMilesBoardFeature() {
     "SMARTCOACH_MILES_BOARD_SECRET",
     "normalizeMilesBoardSharing",
     "normalizeMilesBoardChallenges",
+    "coachMessage: cleanSetupText(input.coachMessage).slice(0, 240)",
     "Miles Board sharing is turned off.",
     "lastMilesBoardSharingSync",
   ].forEach((text) => {

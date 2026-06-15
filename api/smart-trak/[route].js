@@ -1720,6 +1720,7 @@ function normalizeMilesBoardGameSettings(source) {
   const input = source && typeof source === "object" ? source : {};
   return {
     challengeName: cleanSetupText(input.challengeName).slice(0, 80) || "Summer Mileage Challenge",
+    coachMessage: cleanSetupText(input.coachMessage).slice(0, 240),
     teamGoalMiles: milesBoardNumber(input.teamGoalMiles, 0, 10000),
     athleteGoalMiles: milesBoardNumber(input.athleteGoalMiles, 0, 1000),
     pointsPerMile: milesBoardNumber(input.pointsPerMile, 1, 100),
