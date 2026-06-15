@@ -499,11 +499,17 @@ function checkHowToGuidePage() {
   });
   if (dashboard.includes('id="howToLink"')) throw new Error("How To guide should not live in the Dashboard action row.");
   [
+    "## Miles Board",
+    "Use **Share Miles Board** when you want a view-only mileage leaderboard for athletes.",
+    "How to set up the Miles Board:",
+    "Display Mode",
+    "Miles Board badges are earned this way:",
+    "Pack MVP",
     "Use **Import History** when starting SMART Trak with older results from a spreadsheet, CSV, TSV, or the SMART Trak template.",
     "Paste spreadsheet rows into the import box, or upload a CSV/TSV/template file.",
     "Athletic.net copy/paste import is no longer available because it was not reliable enough for coach-facing use.",
   ].forEach((text) => {
-    if (!guide.includes(text)) throw new Error(`How To guide Meet History import wording missing ${text}`);
+    if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
   });
   [
     "Choose **Paste Spreadsheet**, **Upload Spreadsheet**, or **Athletic.net Import**.",

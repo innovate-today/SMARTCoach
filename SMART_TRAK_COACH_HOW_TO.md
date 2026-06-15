@@ -53,7 +53,23 @@ The Dashboard includes a small **Staff Access** button after **Refresh**. This o
 
 The **Feedback** button includes **Open How To Guide**. Use it to open the latest coach guide inside SMART Trak. The web guide is generated from the same how-to text used for support and chat prompts, so it stays current when the guide is updated.
 
-Use **Share Miles Board** when you want a view-only mileage leaderboard for athletes. Set the Dashboard activity range first, then click **Share Miles Board**. In **Miles Board Sharing**, choose one or more challenge types: Total Miles, Game Score, This Week, Consistency, or Big Mover. The first selected challenge controls the board's default sort, and all selected challenges appear as highlight cards. Use the Game Settings fields to name the challenge, add an optional coach message, set optional team and athlete mileage goals, and adjust point values for miles, workouts, current-week miles, improvement, and consistency. Game Score adds points from those settings, and the board shows badges such as Goal Hit, 25/50/100 Mile Club, Consistency, This Week, Big Mover, 20/30 Mile Week, Comeback Runner, Streak Leader, and Pack MVP. Use **Copy Link** to send the board, **Open Link** to preview it, **Turn Off Link** to stop the current link from loading, and **Reset Link** to create a new link while invalidating older links. Use **Save Weekly Snapshot** when a week is finished and you want the current range's totals, winners, pack leader, and coach message saved under **Past Weeks** on the public board. On the public board, use **Display Mode** when showing the board on a projector or TV; it hides the search/full table and shows a larger Top 10 view while keeping the board read-only. The board is read-only and sortable. It shows athlete name, groups, total miles, current-week miles, week change, points, badges, workouts logged, average per workout, and last logged date. It also includes the coach message, team and athlete goal progress bars, a Weekly Snapshot, live This Week's Winners, Past Weeks, and a Pack Challenge table for Boys vs Girls division totals. It does not show coach tools, notes, contact information, PB/SB details, or edit buttons.
+## Miles Board
+
+Use **Share Miles Board** when you want a view-only mileage leaderboard for athletes. Set the Dashboard activity range first, then click **Share Miles Board**.
+
+How to set up the Miles Board:
+
+1. Choose one or more challenge types: **Total Miles**, **Game Score**, **This Week**, **Consistency**, or **Big Mover**.
+2. Put the challenge you want as the default sort first. All selected challenges appear as highlight cards on the public board.
+3. Use the Game Settings fields to name the challenge, add an optional coach message, set optional team and athlete mileage goals, and adjust point values for miles, workouts, current-week miles, improvement, and consistency.
+4. Use **Copy Link** to send the board, **Open Link** to preview it, **Turn Off Link** to stop the current link from loading, and **Reset Link** to create a new link while invalidating older links.
+5. Use **Save Weekly Snapshot** when a week is finished and you want the current range's totals, winners, pack leader, and coach message saved under **Past Weeks** on the public board.
+
+Game Score adds points from the saved settings, and the board shows badges such as Goal Hit, 25/50/100 Mile Club, Consistency, This Week, Big Mover, 20/30 Mile Week, Comeback Runner, Streak Leader, and Pack MVP.
+
+On the public board, use **Display Mode** when showing the board on a projector or TV. Display Mode hides the search/full table and shows a larger Top 10 view while keeping the board read-only.
+
+The board is read-only and sortable. It shows athlete name, groups, total miles, current-week miles, week change, points, badges, workouts logged, average per workout, and last logged date. It also includes the coach message, team and athlete goal progress bars, a Weekly Snapshot, live This Week's Winners, Past Weeks, and a Pack Challenge table for Boys vs Girls division totals. It does not show coach tools, notes, contact information, PB/SB details, or edit buttons.
 
 When sharing the Miles Board link with athletes, a simple explanation is: "This is our team mileage leaderboard. It updates from the miles you log, so make sure your runs are entered if you want them to count. You can see team miles, weekly mileage, Boys vs Girls pack totals, top runners, weekly winners, past weekly snapshots, and individual badges."
 

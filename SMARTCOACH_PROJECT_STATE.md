@@ -1248,6 +1248,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 406. Added **Miles Board Weekly Snapshots**. Coaches can save the currently selected Miles Board range from the sharing modal, storing totals, winners, pack leader, and coach message on the account. Public Miles Boards now show saved snapshots under **Past Weeks** while keeping the board read-only.
 407. Added **Miles Board Display Mode** and expanded badges. The public board now has a Display Mode toggle for a larger Top 10 view suited for a projector/TV, and the API adds badges for 20/30 Mile Week, Comeback Runner, Streak Leader, and Pack MVP.
 408. Updated the coach how-to for the Miles Board public rollout. The guide now includes a short athlete-facing posting explanation and the exact criteria for each Miles Board badge.
+409. Promoted **Miles Board** into its own coach how-to section so the sharing setup, Display Mode, weekly snapshots, public board fields, and badge criteria are easy to find in SMARTCoach Help.
 
 ## Known Good Test Flow
 
