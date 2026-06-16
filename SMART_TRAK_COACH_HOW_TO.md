@@ -599,6 +599,22 @@ Season mapping:
 - **Winter:** December and January
 - **Spring:** February through May
 
+## Field Practice
+
+Use **Field Practice** when a field event group needs a practice plan and attempt log instead of a distance workout. Phase 1 is built around pole vault.
+
+How to use Field Practice:
+
+1. Open **Field Practice** from the Dashboard.
+2. Choose the date, group or athlete, practice focus, and drill routine.
+3. Use the drill checklist during practice to mark completed technical work.
+4. If athletes are jumping, choose **Bungee** or **Crossbar**, enter the height, and add attempts as **O** for make, **X** for miss, or **-** for pass.
+5. Add a note to any attempt when the coach wants to remember a cue, mistake, or adjustment.
+6. Use **Athlete Preview** / **Copy Preview** when the practice plan needs to be shared with athletes before practice.
+7. Save the practice so the completed drills, attempts, heights, and notes stay in SMART Trak.
+
+Pole vault routines include beginner, plant mechanics, short approach, bar clearance, meet week, and custom routines.
+
 ## Log Race Result
 
 Use Log Race Result when a race result needs to be entered without using the phone stopwatch.

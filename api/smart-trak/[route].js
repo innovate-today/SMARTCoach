@@ -138,6 +138,13 @@ module.exports = async function handler(req, res) {
     return accountPartnerTiming(req, res);
   }
 
+  if (route === "field-practice") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    await recordRequestCoachDevice(req).catch(() => {});
+    return accountFieldPractice(req, res);
+  }
+
   if (route === "bug-trak") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -381,6 +388,140 @@ async function accountPartnerTiming(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Partner Timing sync failed." });
   }
+}
+
+async function accountFieldPractice(req, res) {
+  setKeepTrakCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    if (req.method === "GET") {
+      const existing = await loadAccountRecord(accountKey);
+      const practices = normalizeFieldPractices(existing && existing.record && existing.record.fieldPracticeSessions);
+      const start = firstQueryValue(req.query && req.query.start);
+      const end = firstQueryValue(req.query && req.query.end);
+      const event = cleanSetupText(firstQueryValue(req.query && req.query.event)).toLowerCase();
+      const filtered = practices.filter((item) => {
+        if (start && item.date < start) return false;
+        if (end && item.date > end) return false;
+        if (event && event !== "all" && cleanSetupText(item.event).toLowerCase() !== event) return false;
+        return true;
+      });
+      res.status(200).json({ success: true, practices: filtered, count: filtered.length });
+      return;
+    }
+
+    if (req.method === "POST" || req.method === "PATCH") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      const practices = normalizeFieldPractices(Array.isArray(payload.practices) ? payload.practices : payload.practice ? [payload.practice] : [payload]);
+      const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
+      if (!practices.length && !deleteIds.length) throw httpError(400, "No field practice records were provided.");
+      const existing = await loadAccountRecord(accountKey);
+      if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
+      const byId = new Map();
+      normalizeFieldPractices(existing.record.fieldPracticeSessions).forEach((item) => byId.set(item.id, item));
+      deleteIds.forEach((id) => byId.delete(id));
+      practices.forEach((item) => byId.set(item.id, item));
+      const fieldPracticeSessions = Array.from(byId.values())
+        .sort((a, b) => cleanSetupText(b.date).localeCompare(cleanSetupText(a.date)) || cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
+        .slice(0, 1000);
+      const savedAt = new Date().toISOString();
+      await saveAccountRecord(accountKey, {
+        ...existing.record,
+        fieldPracticeSessions,
+        lastFieldPracticeSync: { savedAt, count: practices.length, total: fieldPracticeSessions.length },
+      });
+      res.status(200).json({ success: true, saved: true, practices: fieldPracticeSessions, count: fieldPracticeSessions.length, savedAt });
+      return;
+    }
+
+    res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Field Practice save failed." });
+  }
+}
+
+function normalizeFieldPractices(items) {
+  return (Array.isArray(items) ? items : []).map(normalizeFieldPractice).filter(Boolean);
+}
+
+function normalizeFieldPractice(item) {
+  const source = item && typeof item === "object" ? item : {};
+  const date = cleanSetupText(source.date).slice(0, 10);
+  const event = cleanSetupText(source.event || "Pole Vault").slice(0, 80) || "Pole Vault";
+  const id = cleanSetupText(source.id) || `field_${date || new Date().toISOString().slice(0, 10)}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  if (!date) return null;
+  return {
+    id,
+    date,
+    event,
+    groupId: cleanSetupText(source.groupId),
+    groupName: cleanSetupText(source.groupName).slice(0, 120),
+    athleteId: cleanSetupText(source.athleteId),
+    athleteName: cleanSetupText(source.athleteName).slice(0, 120),
+    coachName: cleanSetupText(source.coachName).slice(0, 120),
+    focus: cleanSetupText(source.focus).slice(0, 120),
+    routineName: cleanSetupText(source.routineName).slice(0, 120),
+    setupType: normalizeFieldSetupType(source.setupType),
+    height: cleanSetupText(source.height).slice(0, 40),
+    drills: normalizeFieldPracticeDrills(source.drills),
+    attempts: normalizeFieldPracticeAttempts(source.attempts),
+    planNotes: cleanSetupText(source.planNotes).slice(0, 2000),
+    coachNotes: cleanSetupText(source.coachNotes).slice(0, 2000),
+    createdAt: cleanSetupText(source.createdAt) || new Date().toISOString(),
+    updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString(),
+  };
+}
+
+function normalizeFieldSetupType(value) {
+  const raw = cleanSetupText(value).toLowerCase();
+  if (raw === "crossbar" || raw === "cross bar" || raw === "bar") return "Crossbar";
+  if (raw === "bungee") return "Bungee";
+  return raw ? cleanSetupText(value).slice(0, 40) : "";
+}
+
+function normalizeFieldPracticeDrills(items) {
+  return (Array.isArray(items) ? items : []).map((item, index) => {
+    const source = item && typeof item === "object" ? item : { name: item };
+    const name = cleanSetupText(source.name || source.label).slice(0, 120);
+    if (!name) return null;
+    return {
+      id: cleanSetupText(source.id) || `drill_${index + 1}`,
+      name,
+      completed: source.completed === true,
+      note: cleanSetupText(source.note).slice(0, 500),
+    };
+  }).filter(Boolean).slice(0, 40);
+}
+
+function normalizeFieldPracticeAttempts(items) {
+  return (Array.isArray(items) ? items : []).map((item, index) => {
+    const source = item && typeof item === "object" ? item : {};
+    const result = normalizeAttemptResult(source.result);
+    const height = cleanSetupText(source.height).slice(0, 40);
+    if (!result && !height && !cleanSetupText(source.note)) return null;
+    return {
+      id: cleanSetupText(source.id) || `attempt_${index + 1}`,
+      result,
+      setupType: normalizeFieldSetupType(source.setupType),
+      height,
+      note: cleanSetupText(source.note).slice(0, 500),
+    };
+  }).filter(Boolean).slice(0, 80);
+}
+
+function normalizeAttemptResult(value) {
+  const raw = cleanSetupText(value).toUpperCase();
+  if (raw === "O" || raw === "MAKE" || raw === "MADE") return "O";
+  if (raw === "X" || raw === "MISS" || raw === "MISSED") return "X";
+  if (raw === "-" || raw === "PASS" || raw === "SKIP") return "-";
+  return "";
 }
 
 async function accountBugTrak(req, res) {

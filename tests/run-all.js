@@ -12,6 +12,7 @@ const htmlFiles = [
   "plan-builder.html",
   "meet-history.html",
   "keep-trak.html",
+  "field-practice.html",
   "records.html",
   "track-simulator.html",
   "xc-simulator.html",
@@ -1635,6 +1636,52 @@ function checkPartnerTimingPhaseOne() {
   console.log("Partner Timing phase one ok");
 }
 
+function checkFieldPracticePhaseOne() {
+  const page = fs.readFileSync("field-practice.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  [
+    "Field Practice",
+    "Pole vault drill checklists, practice focus, and jump attempt notes.",
+    "Practice Focus",
+    "Drill Routine",
+    "Beginner pole vault routine",
+    "Plant mechanics routine",
+    "Short approach routine",
+    "Bar clearance routine",
+    "Meet week routine",
+    "Jump Attempts",
+    "Make O",
+    "Miss X",
+    "Pass -",
+    "Athlete Preview",
+    "Copy Preview",
+    "/api/smart-trak/field-practice",
+  ].forEach((text) => {
+    if (!page.includes(text)) throw new Error(`Field Practice page missing ${text}`);
+  });
+  [
+    'id="fieldPracticeLink"',
+    'href="/field-practice.html"',
+    "Field Practice",
+    "fieldPractice.href=smartCoachPageUrl('/field-practice.html');",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Dashboard Field Practice link missing ${text}`);
+  });
+  [
+    'route === "field-practice"',
+    "return accountFieldPractice(req, res);",
+    "async function accountFieldPractice(req, res)",
+    "function normalizeFieldPractice(item)",
+    "fieldPracticeSessions",
+    "lastFieldPracticeSync",
+    "function normalizeFieldPracticeAttempts(items)",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Field Practice API missing ${text}`);
+  });
+  console.log("Field Practice phase one ok");
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
@@ -1680,5 +1727,6 @@ checkMobileAccountLogout();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkPartnerTimingPhaseOne();
+checkFieldPracticePhaseOne();
 
 console.log("SMARTCoach regression checks passed");

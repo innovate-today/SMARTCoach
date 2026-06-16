@@ -1254,6 +1254,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 412. Fixed Athlete Setup group reconciliation so saved Training Groups are not hidden when their stored member ids no longer match the currently loaded roster ids. Groups now stay visible on desktop while preserving matched athlete cleanup when matches are available.
 413. Added a future **MileSplit integration discovery** note to `PROJECT_PLAN.md` for later recall, including the partner/API questions to ask MileSplit/FloSports, required result fields, what SMARTCoach should provide, and the preferred coach-authorized integration ask.
 414. Tightened Athletes roster contact inclusion so GHL contacts created by normal email/conversation activity do not appear as unnamed **Needs setup** athletes. The Athletes page can still show SMARTCoach roster members and named setup candidates with SMARTCoach roster fields, but generic email-only contacts are filtered out.
+415. Added **Field Practice** phase 1 for pole vault practice tracking. Coaches can open Field Practice from the Dashboard, choose focus/routine/group/athlete, complete a drill checklist, log bungee/crossbar attempts by height with O/X/pass and per-attempt notes, copy an athlete preview, and save sessions to the account registry under `fieldPracticeSessions`.
 
 ## Known Good Test Flow
 

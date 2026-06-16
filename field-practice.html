@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Field Practice</title>
+<style>
+:root{--blue:#2B4FCC;--ink:#111827;--muted:#526481;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#08783c;--bad:#b91c1c;--warn:#b45309}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body.embedded .page{max-width:none;padding:16px 18px 28px}.page{max-width:1480px;margin:0 auto;padding:20px 18px 32px}
+.top{position:sticky;top:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;box-shadow:0 12px 28px rgba(15,23,42,.08)}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:62px;height:62px;display:grid;place-items:center;flex:0 0 62px}.mark img{max-width:58px;max-height:58px;object-fit:contain}
+h1{font-size:26px;line-height:1.1;margin:0}.sub{font-size:14px;color:var(--muted);margin-top:4px}.updated{display:inline-flex;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#f8fbff;color:#334155;font-size:13px;font-weight:800;padding:7px 10px}
+.actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font:800 14px inherit;padding:8px 11px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px}button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.ghost{background:#eef2f7;color:#172033}button.danger{background:#fee2e2;color:#991b1b}button:disabled{opacity:.55;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:minmax(340px,.8fr) minmax(0,1.2fr);gap:14px;align-items:start}.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}.panelhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}.panelhead h2{font-size:18px;margin:0}.panelbody{padding:14px 16px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.full{grid-column:1/-1}label{display:grid;gap:5px;color:#435066;font-size:12px;font-weight:900;letter-spacing:.03em;text-transform:uppercase}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px}textarea{min-height:92px;resize:vertical;line-height:1.4}.status{color:var(--muted);font-size:13px;font-weight:800}.hint{color:var(--muted);font-size:12px;line-height:1.35}
+.drills{display:grid;gap:7px}.drill{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:9px}.drill input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--blue)}.drill b{display:block;font-size:14px}.drill small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.attemptbar{display:grid;grid-template-columns:1fr 1fr 1fr 2fr auto;gap:8px;align-items:end}.attempts{display:grid;gap:8px;margin-top:10px}.attempt{display:grid;grid-template-columns:70px 96px 80px 1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:8px}.result{font-size:22px;font-weight:950;text-align:center}.result.make{color:var(--good)}.result.miss{color:var(--bad)}.result.pass{color:var(--warn)}.list{display:grid;gap:8px}.practice{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}.practice h3{margin:0 0 4px;font-size:16px}.practice .meta{color:var(--muted);font-size:12px;font-weight:800}.practice .summary{margin-top:8px;font-size:13px;line-height:1.4}.practice .row{display:flex;align-items:center;justify-content:space-between;gap:8px}.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.chip{display:inline-flex;border-radius:999px;background:#e8efff;color:#173891;padding:3px 8px;font-size:11px;font-weight:900}.empty{text-align:center;color:var(--muted);padding:22px}.preview{white-space:pre-wrap;border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px;font-size:13px;line-height:1.45}
+@media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%;justify-content:stretch}.actions a,.actions button{flex:1}.grid,.formgrid,.attemptbar,.attempt{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="top">
+    <div class="brand">
+      <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div>
+        <h1>Field Practice</h1>
+        <div class="sub">Pole vault drill checklists, practice focus, and jump attempt notes.</div>
+        <div id="lastUpdated" class="updated">Loading Field Practice...</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
+      <a id="calendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
+      <a id="athletesLink" class="linkbtn secondary" href="/athletes.html">Athletes</a>
+      <button id="newBtn" type="button">New Practice</button>
+      <button id="refreshBtn" class="ghost" type="button">Refresh</button>
+    </div>
+  </section>
+
+  <section class="grid">
+    <section>
+      <section class="panel">
+        <div class="panelhead"><h2>Practice Setup</h2><span id="saveStatus" class="status"></span></div>
+        <div class="panelbody">
+          <div class="formgrid">
+            <label>Date <input id="practiceDate" type="date"></label>
+            <label>Event <select id="eventSelect"><option>Pole Vault</option></select></label>
+            <label>Group <select id="groupSelect"><option value="">Team / no group</option></select></label>
+            <label>Athlete <select id="athleteSelect"><option value="">Whole group</option></select></label>
+            <label>Practice Focus
+              <select id="focusSelect">
+                <option>Approach consistency</option><option>Plant mechanics</option><option>Takeoff</option><option>Swing</option><option>Turn</option><option>Bar clearance</option><option>Short approach jumps</option><option>Full approach jumps</option><option>Meet prep</option><option>Custom</option>
+              </select>
+            </label>
+            <label>Drill Routine
+              <select id="routineSelect">
+                <option value="beginner">Beginner pole vault routine</option><option value="plant">Plant mechanics routine</option><option value="short">Short approach routine</option><option value="bar">Bar clearance routine</option><option value="meet">Meet week routine</option><option value="custom">Custom routine</option>
+              </select>
+            </label>
+            <label>Setup <select id="setupSelect"><option value="">No jumps today</option><option>Bungee</option><option>Crossbar</option></select></label>
+            <label>Height <input id="heightInput" placeholder="9-0"></label>
+            <label class="full">Practice Plan / Athlete Preview <textarea id="planNotes" placeholder="What athletes should know before practice..."></textarea></label>
+            <label class="full">Coach Notes <textarea id="coachNotes" placeholder="Private notes after practice..."></textarea></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panelhead"><h2>Drill Checklist</h2><button id="addDrillBtn" class="secondary" type="button">Add Drill</button></div>
+        <div class="panelbody"><div id="drillList" class="drills"></div></div>
+      </section>
+
+      <section class="panel">
+        <div class="panelhead"><h2>Jump Attempts</h2><span id="attemptSummary" class="status"></span></div>
+        <div class="panelbody">
+          <div class="attemptbar">
+            <label>Result <select id="attemptResult"><option value="O">Make O</option><option value="X">Miss X</option><option value="-">Pass -</option></select></label>
+            <label>Setup <select id="attemptSetup"><option>Bungee</option><option>Crossbar</option></select></label>
+            <label>Height <input id="attemptHeight" placeholder="9-0"></label>
+            <label>Attempt Note <input id="attemptNote" placeholder="late plant, better knee drive..."></label>
+            <button id="addAttemptBtn" type="button">Add</button>
+          </div>
+          <div id="attemptList" class="attempts"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panelhead"><h2>Athlete Preview</h2><button id="copyPreviewBtn" class="secondary" type="button">Copy Preview</button></div>
+        <div class="panelbody"><div id="athletePreview" class="preview"></div></div>
+      </section>
+
+      <div class="actions" style="justify-content:flex-start;margin-bottom:16px">
+        <button id="saveBtn" type="button">Save Field Practice</button>
+        <button id="deleteBtn" class="danger" type="button" hidden>Delete</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panelhead"><h2>Saved Practices</h2><span id="listStatus" class="status"></span></div>
+      <div class="panelbody"><div id="practiceList" class="list"><div class="empty">Loading practices...</div></div></div>
+    </section>
+  </section>
+</main>
+<script>
+var practices=[],athletes=[],groups=[],currentId='',drills=[],attempts=[];
+var routines={
+  beginner:['Dynamic warmup','Pole carry posture','Walking plant drill','3-step pop ups','Sand pit takeoffs','Core cooldown'],
+  plant:['Dynamic warmup','Pole runs','Slide-box plant drill','3-step plant to takeoff','4-step plant rhythm','Coach video review'],
+  short:['Dynamic warmup','Approach check marks','3-left short approach jumps','Bungee clearance work','Landing position review','Cooldown notes'],
+  bar:['Dynamic warmup','Short approach bar clearance','Swing and turn drill','Bungee to crossbar progression','Meet-height confidence reps','Review best cues'],
+  meet:['Warmup routine rehearsal','Runway marks check','First-attempt rhythm reps','Opening height confidence jumps','Meet cue review','Recovery cooldown'],
+  custom:['Custom drill']
+};
+var els={};
+function $(id){return document.getElementById(id);}
+function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function escAttr(v){return esc(v).replace(/"/g,'&quot;');}
+function todayISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function embeddedMode(){try{var p=new URLSearchParams(location.search||'');return p.get('embed')==='1'||p.get('iframe')==='1';}catch(e){return false;}}
+function smartCoachAccountKey(){try{var p=new URLSearchParams(location.search||'');var key=(p.get('account')||localStorage.getItem('sc_account')||'default').trim();if(key&&key!=='default')localStorage.setItem('sc_account',key);return key||'default';}catch(e){return 'default';}}
+function apiUrl(path){var url=new URL(path,location.origin);var account=smartCoachAccountKey();if(account&&account!=='default')url.searchParams.set('account',account);return url.pathname+url.search;}
+function pageUrl(path){var url=new URL(path,location.origin);var account=smartCoachAccountKey();if(account&&account!=='default')url.searchParams.set('account',account);if(embeddedMode())url.searchParams.set('embed','1');return url.pathname+url.search;}
+function headers(){var h={'Content-Type':'application/json'};var account=smartCoachAccountKey();if(account&&account!=='default')h['X-SMARTCoach-Account']=account;try{var session=localStorage.getItem('smartcoach_session_'+account)||'';if(session)h['X-SMARTCoach-Session']=session;}catch(e){}return h;}
+function jsonResult(res){return res.json().then(function(data){if(!res.ok)throw new Error(data&&data.error||'Request failed.');return data;});}
+function init(){
+  ['dashboardLink','calendarLink','athletesLink','newBtn','refreshBtn','practiceDate','routineSelect','setupSelect','heightInput','attemptSetup','attemptHeight','addDrillBtn','addAttemptBtn','saveBtn','deleteBtn','copyPreviewBtn'].forEach(function(id){els[id]=$(id);});
+  document.body.classList.toggle('embedded',embeddedMode());
+  els.dashboardLink.href=pageUrl('/dashboard.html');els.calendarLink.href=pageUrl('/training-calendar.html');els.athletesLink.href=pageUrl('/athletes.html');
+  els.practiceDate.value=todayISO();resetRoutine();
+  els.newBtn.onclick=newPractice;els.refreshBtn.onclick=loadAll;els.routineSelect.onchange=resetRoutine;els.setupSelect.onchange=syncAttemptDefaults;els.heightInput.oninput=syncAttemptDefaults;els.addDrillBtn.onclick=addDrill;els.addAttemptBtn.onclick=addAttempt;els.saveBtn.onclick=savePractice;els.deleteBtn.onclick=deletePractice;els.copyPreviewBtn.onclick=copyPreview;
+  ['eventSelect','groupSelect','athleteSelect','focusSelect','planNotes','coachNotes','attemptResult','attemptSetup','attemptHeight','attemptNote'].forEach(function(id){$(id).addEventListener('input',renderPreview);$(id).addEventListener('change',renderPreview);});
+  loadAll();
+}
+function loadAll(){
+  $('lastUpdated').textContent='Loading Field Practice...';
+  Promise.all([
+    fetch(apiUrl('/api/smart-trak/field-practice'),{cache:'no-store',headers:headers()}).then(jsonResult).catch(function(){return{practices:[]};}),
+    fetch(apiUrl('/api/smart-trak/athletes'),{cache:'no-store',headers:headers()}).then(jsonResult).catch(function(){return{athletes:[]};}),
+    fetch(apiUrl('/api/smart-trak/groups'),{cache:'no-store',headers:headers()}).then(jsonResult).catch(function(){return{groups:[]};})
+  ]).then(function(results){
+    practices=results[0].practices||[];athletes=results[1].athletes||[];groups=(results[2].groups||[]).filter(function(g){return !g.archived&&String(g.type||'training')!=='meet';});
+    renderGroups();renderAthletes();renderList();renderDrills();renderAttempts();renderPreview();
+    $('lastUpdated').textContent='Last updated '+new Date().toLocaleString();
+  }).catch(function(error){$('lastUpdated').textContent='Could not load Field Practice';$('saveStatus').textContent=error.message;});
+}
+function renderGroups(){var current=$('groupSelect').value;var html='<option value="">Team / no group</option>'+groups.map(function(g){return '<option value="'+escAttr(g.id||g.name)+'">'+esc(g.name||'Group')+'</option>';}).join('');$('groupSelect').innerHTML=html;$('groupSelect').value=current;renderAthletes();}
+function groupAthleteIds(){var id=$('groupSelect').value;if(!id)return null;var group=groups.find(function(g){return String(g.id||g.name)===String(id);});if(!group)return null;var map={};(group.athletes||group.runners||[]).forEach(function(a){if(a.contactId)map[String(a.contactId)]=true;if(a.id)map[String(a.id)]=true;if(a.name)map['name:'+String(a.name).toLowerCase()]=true;});return map;}
+function renderAthletes(){var current=$('athleteSelect').value;var ids=groupAthleteIds();var source=athletes.filter(function(a){if(!a.smartcoachActive)return false;if(!ids)return true;return ids[String(a.id)]||ids['name:'+String(a.name||'').toLowerCase()];});$('athleteSelect').innerHTML='<option value="">Whole group</option>'+source.map(function(a){return '<option value="'+escAttr(a.id)+'">'+esc(a.name||'Athlete')+'</option>';}).join('');$('athleteSelect').value=source.some(function(a){return String(a.id)===String(current);})?current:'';renderPreview();}
+function resetRoutine(){var names=routines[$('routineSelect').value]||routines.custom;drills=names.map(function(name,index){return{id:'drill_'+(index+1),name:name,completed:false,note:''};});renderDrills();renderPreview();}
+function addDrill(){drills.push({id:'drill_'+Date.now(),name:'Custom drill',completed:false,note:''});renderDrills();}
+function renderDrills(){$('drillList').innerHTML=drills.length?drills.map(function(d,i){return '<label class="drill"><input type="checkbox" data-drill-check="'+i+'" '+(d.completed?'checked':'')+'><span><b contenteditable="true" data-drill-name="'+i+'">'+esc(d.name)+'</b><small contenteditable="true" data-drill-note="'+i+'">'+esc(d.note||'Add note')+'</small></span></label>';}).join(''):'<div class="empty">No drills loaded.</div>';Array.prototype.slice.call(document.querySelectorAll('[data-drill-check]')).forEach(function(el){el.onchange=function(){drills[Number(el.dataset.drillCheck)].completed=el.checked;renderPreview();};});Array.prototype.slice.call(document.querySelectorAll('[data-drill-name]')).forEach(function(el){el.oninput=function(){drills[Number(el.dataset.drillName)].name=el.textContent.trim();renderPreview();};});Array.prototype.slice.call(document.querySelectorAll('[data-drill-note]')).forEach(function(el){el.oninput=function(){drills[Number(el.dataset.drillNote)].note=el.textContent.trim();renderPreview();};});}
+function syncAttemptDefaults(){if($('setupSelect').value)$('attemptSetup').value=$('setupSelect').value;if($('heightInput').value&&!$('attemptHeight').value)$('attemptHeight').value=$('heightInput').value;renderPreview();}
+function addAttempt(){var result=$('attemptResult').value;attempts.push({id:'attempt_'+Date.now(),result:result,setupType:$('attemptSetup').value,height:$('attemptHeight').value||$('heightInput').value,note:$('attemptNote').value});$('attemptNote').value='';renderAttempts();renderPreview();}
+function renderAttempts(){var makes=attempts.filter(function(a){return a.result==='O';}).length,misses=attempts.filter(function(a){return a.result==='X';}).length;$('attemptSummary').textContent=attempts.length+' attempts · '+makes+' makes · '+misses+' misses';$('attemptList').innerHTML=attempts.length?attempts.map(function(a,i){var cls=a.result==='O'?'make':a.result==='X'?'miss':'pass';return '<div class="attempt"><div class="result '+cls+'">'+esc(a.result||'')+'</div><div>'+esc(a.setupType||'Setup')+'</div><div>'+esc(a.height||'--')+'</div><input data-attempt-note="'+i+'" value="'+escAttr(a.note||'')+'" placeholder="Attempt note"><button class="ghost" type="button" data-remove-attempt="'+i+'">Remove</button></div>';}).join(''):'<div class="empty">No jump attempts yet.</div>';Array.prototype.slice.call(document.querySelectorAll('[data-remove-attempt]')).forEach(function(el){el.onclick=function(){attempts.splice(Number(el.dataset.removeAttempt),1);renderAttempts();renderPreview();};});Array.prototype.slice.call(document.querySelectorAll('[data-attempt-note]')).forEach(function(el){el.oninput=function(){attempts[Number(el.dataset.attemptNote)].note=el.value;renderPreview();};});}
+function selectedGroup(){var id=$('groupSelect').value;return groups.find(function(g){return String(g.id||g.name)===String(id);})||{};}
+function selectedAthlete(){var id=$('athleteSelect').value;return athletes.find(function(a){return String(a.id)===String(id);})||{};}
+function practicePayload(){var group=selectedGroup(),athlete=selectedAthlete();return{id:currentId||'',date:$('practiceDate').value,event:$('eventSelect').value,groupId:group.id||'',groupName:group.name||'',athleteId:athlete.id||'',athleteName:athlete.name||'',focus:$('focusSelect').value,routineName:$('routineSelect').options[$('routineSelect').selectedIndex].text,setupType:$('setupSelect').value,height:$('heightInput').value,drills:drills,attempts:attempts,planNotes:$('planNotes').value,coachNotes:$('coachNotes').value,updatedAt:new Date().toISOString()};}
+function renderPreview(){var p=practicePayload();var lines=['Field Practice: '+p.event,'Date: '+p.date,'Focus: '+(p.focus||'Not set'),'Routine: '+(p.routineName||'Not set')];if(p.setupType||p.height)lines.push('Jumps: '+[p.setupType,p.height].filter(Boolean).join(' at '));if(p.planNotes)lines.push('',p.planNotes);lines.push('','Drills:');drills.forEach(function(d){lines.push((d.completed?'[x] ':'[ ] ')+d.name);});if(attempts.length){lines.push('','Jump log:');attempts.forEach(function(a){lines.push([a.height,a.setupType,a.result,a.note].filter(Boolean).join(' · '));});}$('athletePreview').textContent=lines.join('\n');}
+function savePractice(){var payload=practicePayload();if(!payload.date){$('saveStatus').textContent='Choose a date.';return;}if(!payload.id)payload.id='field_'+Date.now();currentId=payload.id;$('saveStatus').textContent='Saving...';fetch(apiUrl('/api/smart-trak/field-practice'),{method:'POST',headers:headers(),body:JSON.stringify({practice:payload})}).then(jsonResult).then(function(data){practices=data.practices||practices;$('saveStatus').textContent='Saved field practice.';$('deleteBtn').hidden=false;renderList();}).catch(function(error){$('saveStatus').textContent='Could not save: '+error.message;});}
+function deletePractice(){if(!currentId||!confirm('Delete this field practice?'))return;fetch(apiUrl('/api/smart-trak/field-practice'),{method:'POST',headers:headers(),body:JSON.stringify({deleteIds:[currentId]})}).then(jsonResult).then(function(data){practices=data.practices||[];newPractice();renderList();$('saveStatus').textContent='Deleted field practice.';});}
+function newPractice(){currentId='';$('practiceDate').value=todayISO();$('groupSelect').value='';renderAthletes();$('athleteSelect').value='';$('focusSelect').value='Approach consistency';$('routineSelect').value='beginner';$('setupSelect').value='';$('heightInput').value='';$('planNotes').value='';$('coachNotes').value='';attempts=[];resetRoutine();renderAttempts();$('deleteBtn').hidden=true;$('saveStatus').textContent='';}
+function openPractice(id){var p=practices.find(function(x){return x.id===id;});if(!p)return;currentId=p.id;$('practiceDate').value=p.date||todayISO();$('eventSelect').value=p.event||'Pole Vault';$('groupSelect').value=p.groupId||'';renderAthletes();$('athleteSelect').value=p.athleteId||'';$('focusSelect').value=p.focus||'Approach consistency';$('setupSelect').value=p.setupType||'';$('heightInput').value=p.height||'';$('planNotes').value=p.planNotes||'';$('coachNotes').value=p.coachNotes||'';drills=p.drills||[];attempts=p.attempts||[];renderDrills();renderAttempts();renderPreview();$('deleteBtn').hidden=false;}
+function renderList(){var list=$('practiceList');$('listStatus').textContent=practices.length+' saved';list.innerHTML=practices.length?practices.map(function(p){var complete=(p.drills||[]).filter(function(d){return d.completed;}).length;var makes=(p.attempts||[]).filter(function(a){return a.result==='O';}).length;return '<article class="practice"><div class="row"><h3>'+esc(p.date+' · '+p.event)+'</h3><button class="secondary" type="button" onclick="openPractice(&quot;'+escAttr(p.id)+'&quot;)">Open</button></div><div class="meta">'+esc([p.groupName||'Team',p.athleteName||'Whole group',p.focus].filter(Boolean).join(' · '))+'</div><div class="summary">'+complete+' of '+(p.drills||[]).length+' drills complete · '+(p.attempts||[]).length+' attempts · '+makes+' makes</div><div class="chips">'+(p.setupType?'<span class="chip">'+esc(p.setupType)+'</span>':'')+(p.height?'<span class="chip">'+esc(p.height)+'</span>':'')+'</div></article>';}).join(''):'<div class="empty">No field practices saved yet.</div>';}
+function copyPreview(){var text=$('athletePreview').textContent||'';if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){$('saveStatus').textContent='Copied athlete preview.';});return;}$('saveStatus').textContent='Preview ready to copy.';}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+<script src="/assets/smartcoach-help-widget.js"></script>
+</body>
+</html>
