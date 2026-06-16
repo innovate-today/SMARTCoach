@@ -130,7 +130,7 @@ async function listSmartCoachAthletes({ token, locationId, includeContacts = fal
   return uniqueContacts(contacts)
     .map((contact) => normalizeContact(contact, { rosterFieldIds }))
     .filter((athlete) => !athlete.excludedSystemContact)
-    .filter((athlete) => includeContacts || athlete.smartcoachActive || athlete.smartcoachRosterMember)
+    .filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -349,13 +349,7 @@ function normalizeContact(contact, options = {}) {
   const excludedSystemContact = isExcludedSystemContact(tags) || isSmartCoachSupportContact(contact);
   const smartcoachRosterMember = !excludedSystemContact && hasAthleteTag;
   const smartcoachActive = smartcoachRosterMember && (isActiveValue(smartcoachActiveValue) || (!explicitlyInactive && Boolean(smartcoachAthleteId || hasAthleteTag)));
-  return {
-    id: contact.id,
-    name: contactName(contact),
-    firstName: clean(contact.firstName),
-    lastName: clean(contact.lastName),
-    email: clean(contact.email),
-    phone: clean(contact.phone),
+  const setupFields = {
     gender: contactGender(contact, rosterFieldIds.gender),
     grade: classYearFromTags(contact) || contactFieldByIdsOrNames(contact, rosterFieldIds.grade, ATHLETE_FIELD_ALIASES.grade),
     parentGuardianName: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardianName, ATHLETE_FIELD_ALIASES.parentGuardianName),
@@ -365,12 +359,32 @@ function normalizeContact(contact, options = {}) {
     parentGuardian2Email: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardian2Email, ATHLETE_FIELD_ALIASES.parentGuardian2Email),
     parentGuardian2Phone: contactFieldByIdsOrNames(contact, rosterFieldIds.parentGuardian2Phone, ATHLETE_FIELD_ALIASES.parentGuardian2Phone),
     coachNotes: contactFieldByIdsOrNames(contact, rosterFieldIds.coachNotes, ATHLETE_FIELD_ALIASES.coachNotes),
+  };
+  const hasRosterSetupData = Object.keys(setupFields).some((key) => clean(setupFields[key]));
+  const smartcoachSetupCandidate = !excludedSystemContact && Boolean(contactName(contact)) && Boolean(smartcoachAthleteId || smartcoachActiveValue || hasRosterSetupData);
+  return {
+    id: contact.id,
+    name: contactName(contact),
+    firstName: clean(contact.firstName),
+    lastName: clean(contact.lastName),
+    email: clean(contact.email),
+    phone: clean(contact.phone),
+    gender: setupFields.gender,
+    grade: setupFields.grade,
+    parentGuardianName: setupFields.parentGuardianName,
+    parentGuardianEmail: setupFields.parentGuardianEmail,
+    parentGuardianPhone: setupFields.parentGuardianPhone,
+    parentGuardian2Name: setupFields.parentGuardian2Name,
+    parentGuardian2Email: setupFields.parentGuardian2Email,
+    parentGuardian2Phone: setupFields.parentGuardian2Phone,
+    coachNotes: setupFields.coachNotes,
     smartcoachActive,
     smartcoachActiveValue,
     smartcoachAthleteId,
     tags,
     smartcoachRosterMember,
     excludedSystemContact,
+    smartcoachSetupCandidate,
   };
 }
 

@@ -164,8 +164,9 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
   const dashboard = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   [
     "const smartcoachRosterMember = !excludedSystemContact && hasAthleteTag;",
-    ".filter((athlete) => includeContacts || athlete.smartcoachActive || athlete.smartcoachRosterMember)",
+    ".filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))",
     "const smartcoachActive = smartcoachRosterMember &&",
+    "const smartcoachSetupCandidate = !excludedSystemContact && Boolean(contactName(contact)) && Boolean(smartcoachAthleteId || smartcoachActiveValue || hasRosterSetupData);",
   ].forEach((text) => {
     if (!athletes.includes(text)) throw new Error(`athlete API must count only SMART Trak roster athletes: ${text}`);
   });
