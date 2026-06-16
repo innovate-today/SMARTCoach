@@ -1258,6 +1258,7 @@ function checkGroupsTrayAddHidden() {
 
 function checkMobileGroupStorageAccountScoped() {
   const mobile = fs.readFileSync("index.html", "utf8");
+  const setup = fs.readFileSync("plan-setup.html", "utf8");
   [
     "function accountStorageSuffix()",
     "function accountStorageKey(base)",
@@ -1275,6 +1276,15 @@ function checkMobileGroupStorageAccountScoped() {
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile group storage account scoping missing ${text}`);
   });
+  [
+    "function reconcileTrainingGroupsForRoster(sourceGroups)",
+    "next.athletes=cleaned.length||!members.length?cleaned:members;",
+  ].forEach((text) => {
+    if (!setup.includes(text)) throw new Error(`desktop group reconciliation must preserve saved groups when member ids do not match: ${text}`);
+  });
+  if (setup.includes("if(members.length&&!cleaned.length)return null;")) {
+    throw new Error("desktop group reconciliation should not hide saved groups just because current roster ids do not match.");
+  }
   [
     "Recover Phone Groups",
     "recoverLegacyPhoneGroups",

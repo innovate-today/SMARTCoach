@@ -657,9 +657,8 @@ function reconcileTrainingGroupsForRoster(sourceGroups){
       var name=String(member.name||'').trim().toLowerCase();
       return id&&ids[id]||name&&names[name];
     });
-    if(members.length&&!cleaned.length)return null;
     var next=Object.assign({},group);
-    next.athletes=cleaned;
+    next.athletes=cleaned.length||!members.length?cleaned:members;
     return next;
   }).filter(Boolean);
 }

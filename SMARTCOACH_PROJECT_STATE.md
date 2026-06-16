@@ -1251,6 +1251,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 409. Promoted **Miles Board** into its own coach how-to section so the sharing setup, Display Mode, weekly snapshots, public board fields, and badge criteria are easy to find in SMARTCoach Help.
 410. Removed the raw **Open Text Guide** link from SMARTCoach Help. The rendered How To page already shows the latest guide, and removing the raw markdown link prevents coaches from landing on a text-only page with no dashboard navigation.
 411. Added **Miles Board** and **Partner Timing** to the Dashboard What's New drawer after explicit user approval. The What’s New version was bumped so coaches see the read-only mileage board, challenge/badge layer, Display Mode, weekly snapshots, and shared race-day timing updates.
+412. Fixed Athlete Setup group reconciliation so saved Training Groups are not hidden when their stored member ids no longer match the currently loaded roster ids. Groups now stay visible on desktop while preserving matched athlete cleanup when matches are available.
 
 ## Known Good Test Flow
 
