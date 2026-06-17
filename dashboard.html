@@ -2487,24 +2487,29 @@ function loadDashboard(){
     renderRows();
     openPendingDashboardAction();
   }).catch(function(error){
-    dashboardRows=[];
-    recentMeetRows=[];
-    recentTrainingRows=[];
-    recentAttendanceRows=[];
-    docuItems=[];
-    docuRecords={};
-    trainingGroups=[];
-    els.rows.innerHTML='';
-    els.recentMeetRows.innerHTML='';
-    els.recentTrainingRows.innerHTML='';
-    els.empty.hidden=false;
-    els.recentMeetEmpty.hidden=false;
-    els.recentTrainingEmpty.hidden=false;
-    els.empty.textContent=error.message||'Dashboard failed to load.';
-    els.status.textContent='Needs attention';
+    var hadDashboardData=dashboardRows.length||recentMeetRows.length||recentTrainingRows.length;
+    if(!hadDashboardData){
+      dashboardRows=[];
+      recentMeetRows=[];
+      recentTrainingRows=[];
+      recentAttendanceRows=[];
+      docuItems=[];
+      docuRecords={};
+      trainingGroups=[];
+      els.rows.innerHTML='';
+      els.recentMeetRows.innerHTML='';
+      els.recentTrainingRows.innerHTML='';
+      els.empty.hidden=false;
+      els.recentMeetEmpty.hidden=false;
+      els.recentTrainingEmpty.hidden=false;
+      els.empty.textContent=error.message||'Dashboard failed to load.';
+      els.status.textContent='Needs attention';
+      updateBreakdowns();
+      refreshTableScrollbars();
+    }else{
+      els.status.textContent='Refresh failed. Showing last loaded data.';
+    }
     els.lastUpdated.textContent='Update failed';
-    updateBreakdowns();
-    refreshTableScrollbars();
   }).finally(function(){
     if(els.refreshBtn)els.refreshBtn.disabled=false;
   });

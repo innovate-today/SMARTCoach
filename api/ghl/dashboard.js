@@ -89,9 +89,9 @@ module.exports = async function handler(req, res) {
   try {
     const [athletes, bestRecords, meetRecords, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
       listActiveAthletes({ token, locationId }),
-      searchObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY }),
-      searchObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
-      searchObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
     ]);
     const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
@@ -119,8 +119,6 @@ module.exports = async function handler(req, res) {
         currentMonthVolumeMiles: roundVolume(rows.reduce((sum, row) => sum + row.currentMonthVolumeMiles, 0)),
       },
       athletes: rows,
-      meetResults,
-      trainingSyncs,
       recentMeetResults,
       recentTrainingSyncs,
     });
@@ -151,7 +149,7 @@ async function publicMilesBoard(req, res) {
   try {
     const [athletes, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
       listActiveAthletes({ token, locationId }),
-      searchObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
     ]);
     const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
@@ -546,6 +544,19 @@ async function searchObjectRecords({ token, locationId, schemaKey }) {
     return uniqueRecords(records);
   } catch (error) {
     if (error.statusCode && error.statusCode >= 500) throw error;
+    return [];
+  }
+}
+
+async function safeDashboardObjectRecords(options) {
+  try {
+    return await searchObjectRecords(options);
+  } catch (error) {
+    console.warn("SMART Trak dashboard optional object lookup failed", {
+      schemaKey: options && options.schemaKey,
+      statusCode: error && error.statusCode,
+      message: error && error.message,
+    });
     return [];
   }
 }
