@@ -1261,6 +1261,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 419. Added **Field Practice** to the SMARTCoach mobile app. The main SMARTCoach screen now has a Pro-only **Field** tool that loads saved desktop Field Practice sessions, lets coaches open a practice, check drills, add O/X/P pole vault attempts by bungee/crossbar and height, and save the same record back through `/api/smart-trak/field-practice`.
 420. Moved the desktop **Field Practice** button from the Dashboard to the Training Calendar header, matching the other Training Calendar action buttons. The Dashboard navigation button for Training Calendar now displays as **Training**.
 421. Field Practice header button hierarchy was polished so **Dashboard** is the only primary blue button, Training/Athletes/New Practice use the light-blue action style, and Refresh is intentionally muted.
+422. Field Practice header buttons now use the same explicit desktop button font rules and top-button sizing pattern as Training Calendar. The page subtitle now describes field events generally instead of pole vault only.
 
 ## Known Good Test Flow
 

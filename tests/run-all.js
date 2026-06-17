@@ -1718,7 +1718,6 @@ function checkFieldPracticePhaseOne() {
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   [
     "Field Practice",
-    "Pole vault drill checklists, practice focus, and jump attempt notes.",
     "Practice Focus",
     "Drill Routine",
     "Beginner pole vault routine",
@@ -1735,6 +1734,10 @@ function checkFieldPracticePhaseOne() {
     "Attempt summary:",
     "Athlete Preview",
     "Copy Preview",
+    "Field event drill checklists, practice focus, and attempt notes.",
+    "font-family:inherit;font-size:14px;font-weight:800",
+    "button.utility-action",
+    'id="refreshBtn" class="utility-action"',
     "/api/smart-trak/field-practice",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Field Practice page missing ${text}`);
