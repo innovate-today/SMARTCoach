@@ -1747,17 +1747,29 @@ async function accountMilesBoardLink(req, res) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(end)) params.set("end", end);
   params.set("challenge", sharing.challengeType);
   if (sharing.challengeTypes.length) params.set("challenges", sharing.challengeTypes.join(","));
+  const compactParams = new URLSearchParams({
+    k: milesBoardShareKey({
+      account: accountKey,
+      token,
+      start: params.get("start"),
+      end: params.get("end"),
+      challenge: params.get("challenge"),
+      challenges: params.get("challenges"),
+    }),
+  });
   res.status(200).json({
     success: true,
     token,
     milesBoardSharing: sharing,
-    url: `/miles-board.html?${params.toString()}`,
+    url: `/miles-board.html?${compactParams.toString()}`,
+    legacyUrl: `/miles-board.html?${params.toString()}`,
   });
 }
 
 async function accountMilesBoard(req, res) {
-  const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
-  const provided = cleanSetupText(firstQueryValue(req.query && req.query.token));
+  const share = milesBoardShareFromKey(firstQueryValue(req.query && req.query.k));
+  const accountKey = normalizeSetupAccountKey(share.account || firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const provided = cleanSetupText(share.token || firstQueryValue(req.query && req.query.token));
   const existing = await loadAccountRecord(accountKey);
   const hasSavedSharing = !!(existing.record && existing.record.milesBoardSharing);
   const sharing = normalizeMilesBoardSharing(existing.record && existing.record.milesBoardSharing);
@@ -1777,6 +1789,10 @@ async function accountMilesBoard(req, res) {
   }
   req.milesBoardSharing = sharing;
   req.milesBoardSnapshots = normalizeMilesBoardSnapshots(existing.record && existing.record.milesBoardSnapshots);
+  if (share.start && req.query && !firstQueryValue(req.query.start)) req.query.start = share.start;
+  if (share.end && req.query && !firstQueryValue(req.query.end)) req.query.end = share.end;
+  if (share.challenge && req.query && !firstQueryValue(req.query.challenge)) req.query.challenge = share.challenge;
+  if (share.challenges && req.query && !firstQueryValue(req.query.challenges)) req.query.challenges = share.challenges;
   return handlers.dashboard.publicMilesBoard(req, res);
 }
 
@@ -4233,6 +4249,37 @@ function legacyMilesBoardToken(accountKey) {
 
 function milesBoardTokenVersion() {
   return crypto.randomBytes(12).toString("base64url");
+}
+
+function milesBoardShareKey(input) {
+  const source = input && typeof input === "object" ? input : {};
+  const payload = {
+    a: normalizeSetupAccountKey(source.account),
+    t: cleanSetupText(source.token),
+    s: cleanSetupText(source.start),
+    e: cleanSetupText(source.end),
+    c: cleanSetupText(source.challenge),
+    cs: cleanSetupText(source.challenges),
+  };
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function milesBoardShareFromKey(value) {
+  const key = cleanSetupText(value);
+  if (!key) return {};
+  try {
+    const raw = JSON.parse(Buffer.from(key, "base64url").toString("utf8"));
+    return {
+      account: normalizeSetupAccountKey(raw.a || raw.account),
+      token: cleanSetupText(raw.t || raw.token),
+      start: cleanSetupText(raw.s || raw.start),
+      end: cleanSetupText(raw.e || raw.end),
+      challenge: cleanSetupText(raw.c || raw.challenge),
+      challenges: cleanSetupText(raw.cs || raw.challenges),
+    };
+  } catch (error) {
+    return {};
+  }
 }
 
 function suggestedAccessCode(accountKey) {

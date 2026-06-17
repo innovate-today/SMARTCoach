@@ -459,6 +459,8 @@ function checkMilesBoardFeature() {
     "function fetchWithTimeout(url,options,timeoutMs)",
     "Miles Board is taking too long to load. Tap Refresh to try again.",
     "window.addEventListener('pageshow'",
+    "function decodeCompactShareKey(key)",
+    "function compactShareParams()",
   ].forEach((text) => {
     if (!board.includes(text)) throw new Error(`Miles Board page missing ${text}`);
   });
@@ -473,6 +475,10 @@ function checkMilesBoardFeature() {
     "function milesBoardToken(accountKey, tokenVersion",
     "function legacyMilesBoardToken(accountKey)",
     "function milesBoardTokenVersion()",
+    "function milesBoardShareKey(input)",
+    "function milesBoardShareFromKey(value)",
+    "legacyUrl: `/miles-board.html?",
+    "k: milesBoardShareKey",
     "SMARTCOACH_MILES_BOARD_SECRET",
     "normalizeMilesBoardSharing",
     "normalizeMilesBoardChallenges",
