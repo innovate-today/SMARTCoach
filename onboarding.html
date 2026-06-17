@@ -118,6 +118,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .cleanupbox{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;margin-top:14px;display:grid;gap:10px}
 .cleanupbox h3{font-size:15px;margin:0}
 .cleanupbox p{color:var(--muted);font-size:12px;line-height:1.4;margin:0}
+.cleanupconfirm{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cleanupgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .cleanupgrid label{display:flex;align-items:flex-start;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px 10px;color:var(--ink);font-size:12px;font-weight:850;text-transform:none;letter-spacing:0}
 .cleanupgrid input{width:16px;height:16px;margin-top:1px;accent-color:var(--blue);flex:0 0 16px}
@@ -125,7 +126,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .cleanupresult{font-size:13px;font-weight:800;color:var(--muted)}
 .cleanupresult.good{color:var(--good)}.cleanupresult.bad{color:var(--bad)}
 @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.automationgrid,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
-@media(max-width:760px){.lookupgrid,.connectiongrid,.registrycards,.registryrow,.signoffgrid,.subscriberbar,.cleanupgrid{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
+@media(max-width:760px){.lookupgrid,.connectiongrid,.registrycards,.registryrow,.signoffgrid,.subscriberbar,.cleanupgrid,.cleanupconfirm{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
 </style>
 </head>
 <body>
@@ -232,6 +233,16 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       <div class="cleanupbox">
         <h3>Admin Cleanup</h3>
         <p>Reset demo or test-account data without changing subscription, coach access codes, account owner info, Location ID, token, athletes, or meets.</p>
+        <div class="cleanupconfirm">
+          <div class="field">
+            <label for="cleanupAccountKey">Confirm Account Key</label>
+            <input id="cleanupAccountKey" type="text" placeholder="Type account key again" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="cleanupLocationId">Confirm Location ID</label>
+            <input id="cleanupLocationId" type="text" placeholder="Type saved Location ID" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+          </div>
+        </div>
         <div class="cleanupgrid" id="cleanupOptions">
           <label><input type="checkbox" value="groups" checked> Shared training groups</label>
           <label><input type="checkbox" value="training" checked> Completed workouts mirror</label>
@@ -1136,9 +1147,16 @@ function setCleanupResult(text,type){
 }
 function cleanupAccountData(){
   var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');
+  var confirmAccount=cleanAccountKey((document.getElementById('cleanupAccountKey')||{}).value||'');
+  var confirmLocation=String((document.getElementById('cleanupLocationId')||{}).value||'').trim();
+  var savedRecord=(currentSetup&&currentSetup.accountRegistryRecord)||{};
+  var savedLocation=String(savedRecord.locationId||'').trim();
   var secret=document.getElementById('automationSecret').value.trim();
   var labels=cleanupSelectionLabels();
   if(!account){setCleanupResult('Enter an account key first.','bad');return;}
+  if(!confirmAccount||confirmAccount!==account){setCleanupResult('Type the same account key in Admin Cleanup before cleaning.','bad');return;}
+  if(!savedLocation){setCleanupResult('Lookup this account first so the saved Location ID can be verified.','bad');return;}
+  if(!confirmLocation||confirmLocation!==savedLocation){setCleanupResult('Type the saved Location ID exactly before cleaning.','bad');return;}
   if(!secret){setCleanupResult('Enter the automation secret first.','bad');return;}
   if(!labels.length){setCleanupResult('Select at least one cleanup option.','bad');return;}
   var prompt='Clean selected demo/test data for '+account+'?\n\nThis will reset:\n- '+labels.join('\n- ')+'\n\nIt will not change subscription, coach codes, account owner info, athletes, meets, Location ID, or token.';
@@ -1150,7 +1168,7 @@ function cleanupAccountData(){
   fetch('/api/smart-trak/account-cleanup',{
     method:'POST',
     headers:{'Content-Type':'application/json','X-SMARTCoach-Automation-Secret':secret},
-    body:JSON.stringify({accountKey:account,cleanupOptions:selectedCleanupOptions()})
+    body:JSON.stringify({accountKey:account,locationId:confirmLocation,cleanupOptions:selectedCleanupOptions()})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){

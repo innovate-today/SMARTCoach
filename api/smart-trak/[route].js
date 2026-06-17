@@ -2908,6 +2908,11 @@ async function accountCleanup(req, res) {
     if (!existing.configured || !existing.found || !existing.record) {
       throw httpError(404, "Account registry record was not found.");
     }
+    const expectedLocationId = cleanSetupText(firstPayloadValue(payload, ["locationId", "expectedLocationId", "confirmLocationId"]) || firstQueryValue(req.query && (req.query.locationId || req.query.expectedLocationId)));
+    if (!expectedLocationId) throw httpError(400, "Location ID confirmation is required.");
+    if (!cleanSetupText(existing.record.locationId) || !safeEqual(expectedLocationId, cleanSetupText(existing.record.locationId))) {
+      throw httpError(409, "Location ID confirmation does not match this account.");
+    }
     const cleanupOptions = normalizeAccountCleanupOptions(payload.cleanupOptions || payload.options || payload);
     if (!Object.keys(cleanupOptions).some((key) => cleanupOptions[key])) {
       throw httpError(400, "Select at least one cleanup option.");

@@ -134,11 +134,16 @@ function checkAdminAccountCleanup() {
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   [
     "Admin Cleanup",
+    "cleanupAccountKey",
+    "cleanupLocationId",
     "cleanupOptions",
     "function cleanupAccountData()",
     "selectedCleanupOptions()",
     "/api/smart-trak/account-cleanup",
     "X-SMARTCoach-Automation-Secret",
+    "Type the same account key in Admin Cleanup before cleaning.",
+    "Type the saved Location ID exactly before cleaning.",
+    "body:JSON.stringify({accountKey:account,locationId:confirmLocation,cleanupOptions:selectedCleanupOptions()})",
     "It will not change subscription, coach codes, account owner info, athletes, meets, Location ID, or token.",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`admin cleanup UI missing ${text}`);
@@ -148,6 +153,9 @@ function checkAdminAccountCleanup() {
     "return accountCleanup(req, res);",
     "async function accountCleanup(req, res)",
     "automationAllowed(req)",
+    "Location ID confirmation is required.",
+    "Location ID confirmation does not match this account.",
+    "safeEqual(expectedLocationId, cleanSetupText(existing.record.locationId))",
     "const ACCOUNT_CLEANUP_OPTIONS",
     "function normalizeAccountCleanupOptions(source)",
     "function cleanupAccountRecord(record, options)",
