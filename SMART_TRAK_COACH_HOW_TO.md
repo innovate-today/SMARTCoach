@@ -617,6 +617,8 @@ Pole vault routines include beginner, plant mechanics, short approach, bar clear
 
 Pole vault heights are cleaned into feet-inches format, such as `9-0` or `9-0.25`. Jump attempts are summarized by setup and height, such as `9-0 Crossbar [XOXXO]`, so the coach can quickly review the make/miss pattern without reading every note.
 
+On the SMARTCoach app, tap **Field** from the main SMARTCoach screen to open saved Field Practice sessions. Coaches can refresh the list, open the saved practice, check off drills during practice, add pole vault attempts, and save those changes back to SMART Trak.
+
 ## Log Race Result
 
 Use Log Race Result when a race result needs to be entered without using the phone stopwatch.

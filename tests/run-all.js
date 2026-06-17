@@ -1739,6 +1739,15 @@ function checkFieldPracticePhaseOne() {
     if (!page.includes(text)) throw new Error(`Field Practice page missing ${text}`);
   });
   [
+    "openFieldPractice()",
+    "m-field-practice",
+    "function loadFieldPractice()",
+    "function saveFieldPractice(practice)",
+  ].forEach((text) => {
+    const app = fs.readFileSync("index.html", "utf8");
+    if (!app.includes(text)) throw new Error(`Mobile Field Practice app missing ${text}`);
+  });
+  [
     'id="fieldPracticeLink"',
     'href="/field-practice.html"',
     "Field Practice",
