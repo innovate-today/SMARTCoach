@@ -30,7 +30,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:1 1 auto;min-width:0}
 .action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;max-width:100%}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:8px 11px;cursor:pointer;text-decoration:none}
-.actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;min-height:34px;line-height:1.15;text-align:center;padding:7px 10px}
+.actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:34px;min-height:34px;line-height:1;white-space:nowrap;text-align:center;padding:7px 10px}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
 button.ghost{background:#eef2f7;color:#172033}
@@ -41,6 +41,9 @@ button.compact{padding:6px 8px;font-size:12px;border-radius:7px}
 button:disabled{opacity:.55;cursor:not-allowed}
 .actions .primary-nav{background:var(--blue);color:#fff}
 .actions .utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line)}
+.dashboard-tools-row{display:flex;align-items:center;justify-content:flex-start;margin:-8px 0 6px}
+.dashboard-prefs-link{background:transparent;color:#173891;border:0;font-size:13px;font-weight:800;padding:0;min-height:0}
+.dashboard-prefs-link:hover{text-decoration:underline}
 .stats{display:grid;grid-template-columns:minmax(230px,.55fr) minmax(0,1.45fr);gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
 .statline{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:28px}
@@ -258,7 +261,6 @@ tr:last-child td{border-bottom:0}
             <span>What's New</span>
             <span id="whatsNewCount" class="whats-new-count">New</span>
           </button>
-          <button id="dashboardPrefsBtn" class="whats-new-btn" type="button" aria-haspopup="dialog">Customize Dashboard</button>
         </div>
         <div class="sub">Roster, training volume, current fitness, and recent results.</div>
         <div id="lastUpdated" class="updated">Last updated --</div>
@@ -301,6 +303,8 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+
+  <div class="dashboard-tools-row"><button id="dashboardPrefsBtn" class="dashboard-prefs-link" type="button" aria-haspopup="dialog">Customize Dashboard</button></div>
 
   <section class="stats">
     <div class="stat range-stat">
