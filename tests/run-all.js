@@ -293,6 +293,8 @@ function checkDashboardActivityRangeLayout() {
     'id="trackSimulatorLink"',
     'id="xcSimulatorLink"',
     "@media(max-width:1180px)",
+    ".actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:1 1 auto;min-width:0}",
+    ".action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;max-width:100%}",
     ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}",
     ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
   ];

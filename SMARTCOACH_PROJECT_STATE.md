@@ -1262,6 +1262,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 420. Moved the desktop **Field Practice** button from the Dashboard to the Training Calendar header, matching the other Training Calendar action buttons. The Dashboard navigation button for Training Calendar now displays as **Training**.
 421. Field Practice header button hierarchy was polished so **Dashboard** is the only primary blue button, Training/Athletes/New Practice use the light-blue action style, and Refresh is intentionally muted.
 422. Field Practice header buttons now use the same explicit desktop button font rules and top-button sizing pattern as Training Calendar. The page subtitle now describes field events generally instead of pole vault only.
+423. Dashboard header action rows now stay on one line in the embedded desktop view, with horizontal overflow instead of wrapping Weather or other navigation buttons to a third row.
 
 ## Known Good Test Flow
 
