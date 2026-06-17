@@ -1729,6 +1729,9 @@ function checkFieldPracticePhaseOne() {
     "Make O",
     "Miss X",
     "Pass -",
+    "attemptPattern",
+    "function normalizeHeight(mark)",
+    "Attempt summary:",
     "Athlete Preview",
     "Copy Preview",
     "/api/smart-trak/field-practice",
@@ -1750,6 +1753,8 @@ function checkFieldPracticePhaseOne() {
     "function normalizeFieldPractice(item)",
     "fieldPracticeSessions",
     "lastFieldPracticeSync",
+    "function normalizeFieldPracticeHeight(value)",
+    "attemptSummary",
     "function normalizeFieldPracticeAttempts(items)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Field Practice API missing ${text}`);

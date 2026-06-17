@@ -473,9 +473,10 @@ function normalizeFieldPractice(item) {
     focus: cleanSetupText(source.focus).slice(0, 120),
     routineName: cleanSetupText(source.routineName).slice(0, 120),
     setupType: normalizeFieldSetupType(source.setupType),
-    height: cleanSetupText(source.height).slice(0, 40),
+    height: normalizeFieldPracticeHeight(source.height),
     drills: normalizeFieldPracticeDrills(source.drills),
     attempts: normalizeFieldPracticeAttempts(source.attempts),
+    attemptSummary: cleanSetupText(source.attemptSummary).slice(0, 500),
     planNotes: cleanSetupText(source.planNotes).slice(0, 2000),
     coachNotes: cleanSetupText(source.coachNotes).slice(0, 2000),
     createdAt: cleanSetupText(source.createdAt) || new Date().toISOString(),
@@ -488,6 +489,33 @@ function normalizeFieldSetupType(value) {
   if (raw === "crossbar" || raw === "cross bar" || raw === "bar") return "Crossbar";
   if (raw === "bungee") return "Bungee";
   return raw ? cleanSetupText(value).slice(0, 40) : "";
+}
+
+function normalizeFieldPracticeHeight(value) {
+  const original = cleanSetupText(value).slice(0, 40);
+  let text = original.toLowerCase().replace(/\s+/g, "");
+  text = text.replace(/[′’]/g, "'").replace(/[″"]/g, "").replace(/'/g, "-").replace(/[^\d.\-]/g, "");
+  if (!text) return "";
+  const parts = text.split("-").filter((part, index) => index === 0 || part !== "");
+  let feet = 0;
+  let inches = 0;
+  if (parts.length > 1) {
+    feet = parseInt(parts[0], 10);
+    inches = parseFloat(parts.slice(1).join("."));
+  } else {
+    feet = parseInt(parts[0], 10);
+    inches = 0;
+  }
+  if (!Number.isFinite(feet) || feet < 0 || !Number.isFinite(inches) || inches < 0) return original;
+  inches = Math.round(inches * 4) / 4;
+  while (inches >= 12) {
+    feet += 1;
+    inches -= 12;
+  }
+  let inchText = String(Math.floor(inches));
+  const fraction = Number((inches - Math.floor(inches)).toFixed(2));
+  if (fraction) inchText += fraction === 0.25 ? ".25" : fraction === 0.5 ? ".5" : fraction === 0.75 ? ".75" : "";
+  return `${feet}-${inchText}`;
 }
 
 function normalizeFieldPracticeDrills(items) {
@@ -508,7 +536,7 @@ function normalizeFieldPracticeAttempts(items) {
   return (Array.isArray(items) ? items : []).map((item, index) => {
     const source = item && typeof item === "object" ? item : {};
     const result = normalizeAttemptResult(source.result);
-    const height = cleanSetupText(source.height).slice(0, 40);
+    const height = normalizeFieldPracticeHeight(source.height);
     if (!result && !height && !cleanSetupText(source.note)) return null;
     return {
       id: cleanSetupText(source.id) || `attempt_${index + 1}`,
