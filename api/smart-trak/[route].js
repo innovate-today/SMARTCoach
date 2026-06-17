@@ -72,6 +72,10 @@ module.exports = async function handler(req, res) {
     return accountRegistry(req, res);
   }
 
+  if (route === "account-cleanup") {
+    return accountCleanup(req, res);
+  }
+
   if (route === "account-session") {
     return accountSession(req, res);
   }
@@ -2872,6 +2876,56 @@ async function accountRegistry(req, res) {
   }
 }
 
+async function accountCleanup(req, res) {
+  setAutomationHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (!automationAllowed(req)) {
+    res.status(401).json({
+      error: "Automation secret is required.",
+      automationSecretRequired: true,
+    });
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const accountKey = normalizeSetupAccountKey(
+      firstPayloadValue(payload, ["accountKey", "account", "tenant", "key"]) ||
+      firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+    );
+    if (!accountKey) throw httpError(400, "Account key is required.");
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+    const cleanupOptions = normalizeAccountCleanupOptions(payload.cleanupOptions || payload.options || payload);
+    if (!Object.keys(cleanupOptions).some((key) => cleanupOptions[key])) {
+      throw httpError(400, "Select at least one cleanup option.");
+    }
+    const cleaned = cleanupAccountRecord(existing.record, cleanupOptions);
+    await saveAccountRecord(accountKey, cleaned.record);
+    res.status(200).json({
+      success: true,
+      accountKey,
+      cleared: cleaned.cleared,
+      clearedCount: cleaned.cleared.length,
+      cleanup: cleaned.cleanupEvent,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Account cleanup failed." });
+  }
+}
+
 async function accountSession(req, res) {
   setSessionHeaders(res);
 
@@ -3414,6 +3468,99 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     lastAutomationEvent: event,
     automationEventHistory,
   };
+}
+
+const ACCOUNT_CLEANUP_OPTIONS = {
+  groups: {
+    label: "Shared training groups",
+    fields: ["smartcoachGroups", "lastGroupsSync"],
+  },
+  training: {
+    label: "Completed workout mirror",
+    fields: ["trainingMirror", "lastTrainingMirrorSync"],
+  },
+  attendance: {
+    label: "Attendance records",
+    fields: ["attendanceMirror", "lastAttendanceSync"],
+  },
+  keep: {
+    label: "Keep Trak notes",
+    fields: ["keepTrakNotes", "lastKeepTrakSync"],
+  },
+  equipment: {
+    label: "Equipment Trak",
+    fields: ["equipmentTrak", "lastEquipmentTrakSync"],
+  },
+  docu: {
+    label: "Docu Trak",
+    fields: ["docuTrak", "lastDocuTrakSync"],
+  },
+  partnerTiming: {
+    label: "Partner Timing sessions",
+    fields: ["partnerTimingSessions", "lastPartnerTimingSync"],
+  },
+  fieldPractice: {
+    label: "Field Practice sessions",
+    fields: ["fieldPracticeSessions", "lastFieldPracticeSync"],
+  },
+  milesBoard: {
+    label: "Miles Board sharing",
+    fields: ["milesBoardSharing", "milesBoardSnapshots"],
+  },
+  dashboardPreferences: {
+    label: "Dashboard customizations",
+    fields: ["dashboardPreferences", "lastDashboardPreferencesSync"],
+  },
+  weather: {
+    label: "Weather locations",
+    fields: ["weatherLocations", "lastWeatherLocationSync"],
+  },
+  feedback: {
+    label: "Bug Trak / Idea Trak reports",
+    fields: ["bugTrakReports", "lastBugTrakReport"],
+  },
+};
+
+function normalizeAccountCleanupOptions(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return Object.keys(ACCOUNT_CLEANUP_OPTIONS).reduce((options, key) => {
+    options[key] = normalizeSetupBoolean(input[key], false);
+    return options;
+  }, {});
+}
+
+function cleanupAccountRecord(record, options) {
+  const now = new Date().toISOString();
+  const next = { ...(record || {}) };
+  const cleared = [];
+  Object.keys(ACCOUNT_CLEANUP_OPTIONS).forEach((key) => {
+    if (!options[key]) return;
+    const spec = ACCOUNT_CLEANUP_OPTIONS[key];
+    const before = cleanupFieldSummary(next, spec.fields);
+    spec.fields.forEach((field) => {
+      delete next[field];
+    });
+    cleared.push({ key, label: spec.label, before });
+  });
+  const cleanupEvent = {
+    cleanedAt: now,
+    source: "SMARTCoach Admin Cleanup",
+    cleared: cleared.map((item) => item.key),
+  };
+  next.lastAdminCleanup = cleanupEvent;
+  next.adminCleanupHistory = [cleanupEvent, ...(Array.isArray(next.adminCleanupHistory) ? next.adminCleanupHistory : [])].slice(0, 20);
+  return { record: next, cleared, cleanupEvent };
+}
+
+function cleanupFieldSummary(record, fields) {
+  return fields.reduce((summary, field) => {
+    const value = record && record[field];
+    if (Array.isArray(value)) summary[field] = value.length;
+    else if (value && typeof value === "object") summary[field] = Object.keys(value).length;
+    else if (value) summary[field] = 1;
+    else summary[field] = 0;
+    return summary;
+  }, {});
 }
 
 function coachCodeChangeState(existing, nextCodes, options = {}) {

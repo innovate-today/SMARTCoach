@@ -115,8 +115,17 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .subscribertable button{padding:7px 9px;font-size:12px}
 .subscribertable code{color:#102a70;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:normal;word-break:break-word}
 .subscriberactions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cleanupbox{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;margin-top:14px;display:grid;gap:10px}
+.cleanupbox h3{font-size:15px;margin:0}
+.cleanupbox p{color:var(--muted);font-size:12px;line-height:1.4;margin:0}
+.cleanupgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cleanupgrid label{display:flex;align-items:flex-start;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px 10px;color:var(--ink);font-size:12px;font-weight:850;text-transform:none;letter-spacing:0}
+.cleanupgrid input{width:16px;height:16px;margin-top:1px;accent-color:var(--blue);flex:0 0 16px}
+.cleanupactions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cleanupresult{font-size:13px;font-weight:800;color:var(--muted)}
+.cleanupresult.good{color:var(--good)}.cleanupresult.bad{color:var(--bad)}
 @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions a{flex:1;text-align:center}.grid,.subgrid,.cards,.links,.automationgrid,.varrow,.linkline,.linkdetails{grid-template-columns:1fr}.varrow button,.linkline button{width:100%}}
-@media(max-width:760px){.lookupgrid,.connectiongrid,.registrycards,.registryrow,.signoffgrid,.subscriberbar{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
+@media(max-width:760px){.lookupgrid,.connectiongrid,.registrycards,.registryrow,.signoffgrid,.subscriberbar,.cleanupgrid{grid-template-columns:1fr}.formactions{align-items:stretch;flex-direction:column}.formactions button{width:100%}}
 </style>
 </head>
 <body>
@@ -220,6 +229,28 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div id="systemResult" class="registrybox"></div>
       <div id="lookupResult" class="registrybox"></div>
+      <div class="cleanupbox">
+        <h3>Admin Cleanup</h3>
+        <p>Reset demo or test-account data without changing subscription, coach access codes, account owner info, Location ID, token, athletes, or meets.</p>
+        <div class="cleanupgrid" id="cleanupOptions">
+          <label><input type="checkbox" value="groups" checked> Shared training groups</label>
+          <label><input type="checkbox" value="training" checked> Completed workouts mirror</label>
+          <label><input type="checkbox" value="attendance" checked> Attendance records</label>
+          <label><input type="checkbox" value="keep" checked> Keep Trak notes</label>
+          <label><input type="checkbox" value="equipment" checked> Equipment Trak</label>
+          <label><input type="checkbox" value="docu" checked> Docu Trak</label>
+          <label><input type="checkbox" value="partnerTiming" checked> Partner Timing sessions</label>
+          <label><input type="checkbox" value="fieldPractice" checked> Field Practice sessions</label>
+          <label><input type="checkbox" value="milesBoard" checked> Miles Board sharing</label>
+          <label><input type="checkbox" value="dashboardPreferences" checked> Dashboard customizations</label>
+          <label><input type="checkbox" value="weather" checked> Weather locations</label>
+          <label><input type="checkbox" value="feedback"> Bug Trak / Idea Trak reports</label>
+        </div>
+        <div class="cleanupactions">
+          <div id="cleanupResult" class="cleanupresult"></div>
+          <button id="cleanupBtn" type="button" class="secondary" onclick="cleanupAccountData()">Clean Selected Data</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1084,6 +1115,54 @@ function clearSubscriberSearch(){
   var search=document.getElementById('subscriberSearch');
   if(search)search.value='';
   renderSubscribers();
+}
+function selectedCleanupOptions(){
+  var options={};
+  document.querySelectorAll('#cleanupOptions input[type="checkbox"]').forEach(function(input){
+    options[input.value]=!!input.checked;
+  });
+  return options;
+}
+function cleanupSelectionLabels(){
+  return Array.prototype.slice.call(document.querySelectorAll('#cleanupOptions input[type="checkbox"]:checked')).map(function(input){
+    return (input.parentNode&&input.parentNode.textContent||input.value).trim();
+  });
+}
+function setCleanupResult(text,type){
+  var el=document.getElementById('cleanupResult');
+  if(!el)return;
+  el.textContent=text||'';
+  el.className='cleanupresult '+(type||'');
+}
+function cleanupAccountData(){
+  var account=cleanAccountKey(document.getElementById('lookupAccountKey').value||document.getElementById('accountKey').value||'');
+  var secret=document.getElementById('automationSecret').value.trim();
+  var labels=cleanupSelectionLabels();
+  if(!account){setCleanupResult('Enter an account key first.','bad');return;}
+  if(!secret){setCleanupResult('Enter the automation secret first.','bad');return;}
+  if(!labels.length){setCleanupResult('Select at least one cleanup option.','bad');return;}
+  var prompt='Clean selected demo/test data for '+account+'?\n\nThis will reset:\n- '+labels.join('\n- ')+'\n\nIt will not change subscription, coach codes, account owner info, athletes, meets, Location ID, or token.';
+  if(!window.confirm(prompt)){setCleanupResult('Cleanup canceled.','');return;}
+  rememberAutomationSecret(secret);
+  var btn=document.getElementById('cleanupBtn');
+  if(btn)btn.disabled=true;
+  setCleanupResult('Cleaning selected account data...','');
+  fetch('/api/smart-trak/account-cleanup',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-SMARTCoach-Automation-Secret':secret},
+    body:JSON.stringify({accountKey:account,cleanupOptions:selectedCleanupOptions()})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Cleanup failed.');
+    var cleared=(result.data&&result.data.cleared||[]).map(function(item){return item.label||item.key;});
+    setCleanupResult('Cleaned '+cleared.length+' area'+(cleared.length===1?'':'s')+': '+cleared.join(', ')+'.','good');
+    lookupAccount();
+  }).catch(function(error){
+    setCleanupResult(error.message||'Cleanup failed.','bad');
+  }).finally(function(){
+    if(btn)btn.disabled=false;
+  });
 }
 function lookupAccount(options){
   options=options||{};

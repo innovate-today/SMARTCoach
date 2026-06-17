@@ -129,6 +129,58 @@ function checkOnboardingSubscriberPlanLoad() {
   console.log("onboarding subscriber plan load ok");
 }
 
+function checkAdminAccountCleanup() {
+  const html = fs.readFileSync("onboarding.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  [
+    "Admin Cleanup",
+    "cleanupOptions",
+    "function cleanupAccountData()",
+    "selectedCleanupOptions()",
+    "/api/smart-trak/account-cleanup",
+    "X-SMARTCoach-Automation-Secret",
+    "It will not change subscription, coach codes, account owner info, athletes, meets, Location ID, or token.",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`admin cleanup UI missing ${text}`);
+  });
+  [
+    'if (route === "account-cleanup")',
+    "return accountCleanup(req, res);",
+    "async function accountCleanup(req, res)",
+    "automationAllowed(req)",
+    "const ACCOUNT_CLEANUP_OPTIONS",
+    "function normalizeAccountCleanupOptions(source)",
+    "function cleanupAccountRecord(record, options)",
+    "smartcoachGroups",
+    "trainingMirror",
+    "attendanceMirror",
+    "keepTrakNotes",
+    "equipmentTrak",
+    "docuTrak",
+    "partnerTimingSessions",
+    "fieldPracticeSessions",
+    "milesBoardSharing",
+    "dashboardPreferences",
+    "weatherLocations",
+    "bugTrakReports",
+    "lastAdminCleanup",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`admin cleanup API missing ${text}`);
+  });
+  [
+    "coachAccessCodes",
+    "accountOwnerEmail",
+    "locationId",
+    "token",
+    "subscription",
+  ].forEach((field) => {
+    if (api.includes(`delete next.${field}`) || api.includes(`"${field}", "last`)) {
+      throw new Error(`admin cleanup should not clear protected account field ${field}`);
+    }
+  });
+  console.log("admin account cleanup ok");
+}
+
 function checkAccountOwnerExcludedFromAthletes() {
   const files = [
     "api/ghl/athletes.js",
@@ -1709,6 +1761,7 @@ checkPageScripts();
 checkLiveValidationPage();
 checkAccountStatusLocationVerification();
 checkOnboardingSubscriberPlanLoad();
+checkAdminAccountCleanup();
 checkAccountOwnerExcludedFromAthletes();
 checkSmartTrakAthleteCountsIgnoreGhlContacts();
 checkStandaloneRaceResultSaveScope();
