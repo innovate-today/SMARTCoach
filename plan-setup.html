@@ -464,7 +464,7 @@ function loadBuilder(){
     if(!athleteResult.ok)throw new Error(athleteResult.data&&athleteResult.data.error?athleteResult.data.error:'Athletes unavailable');
     athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
     plans=(planResult.data&&planResult.data.plans)||[];
-    trainingGroups=reconcileTrainingGroupsForRoster((groupResult.data&&groupResult.data.groups)||[]);
+    trainingGroups=reconcileTrainingGroupsForRoster(((groupResult.data&&groupResult.data.groups)||[]).filter(function(group){return !group.archived;}));
     selectedGroupId=trainingGroups[0]&&trainingGroups[0].id||'';
     renderFitnessRows();
     renderTrainingGroups();
@@ -758,17 +758,19 @@ function deleteTrainingGroup(){
   var group=selectedTrainingGroup();
   if(!group)return;
   if(!confirm('Delete "'+group.name+'"?'))return;
+  var deletedGroupId=groupKey(group);
   trainingGroups=trainingGroups.filter(function(item){return groupKey(item)!==selectedGroupId;});
   selectedGroupId=trainingGroups[0]&&trainingGroups[0].id||'';
-  saveTrainingGroups('Deleted '+group.name+'.');
+  saveTrainingGroups('Deleted '+group.name+'.',{deleteGroupIds:[deletedGroupId]});
 }
-function saveTrainingGroups(message){
+function saveTrainingGroups(message,options){
   setGroupStatus('Saving groups...',null);
-  fetch('/api/smart-trak/groups',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({groups:trainingGroups})}).then(function(r){
+  options=options||{};
+  fetch('/api/smart-trak/groups',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({groups:trainingGroups,deleteGroupIds:options.deleteGroupIds||[]})}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Group save failed');
-    trainingGroups=(result.data&&result.data.groups)||trainingGroups;
+    trainingGroups=((result.data&&result.data.groups)||trainingGroups).filter(function(group){return !group.archived;});
     if(!selectedTrainingGroup())selectedGroupId=trainingGroups[0]&&trainingGroups[0].id||'';
     setGroupStatus(message||'Groups saved.','ok');
     renderTrainingGroups();
@@ -893,7 +895,7 @@ function savePlanAssignments(){
     var groupResult=results[0],result=results[1];
     if(!groupResult.ok)throw new Error(groupResult.data&&groupResult.data.error?groupResult.data.error:'Group save failed');
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Assignments failed');
-    trainingGroups=(groupResult.data&&groupResult.data.groups)||trainingGroups;
+    trainingGroups=((groupResult.data&&groupResult.data.groups)||trainingGroups).filter(function(group){return !group.archived;});
     plan.assignedGroup=assignedGroup;
     plan.assignedAthleteIds=athleteIds;
     plan.assignedAthleteNames=athleteNames;

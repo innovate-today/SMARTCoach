@@ -1870,7 +1870,7 @@ function isActiveCalendarMeetDay(day){
   return !!activeMeetRecordIds()[linked];
 }
 function sharedGroupsPayload(){
-  var groups=logs.filter(function(group){return (group.type||'training')==='training'&&!group.archived;}).map(function(group){
+  var groups=logs.filter(function(group){return (group.type||'training')==='training';}).map(function(group){
     return {
       id:group.sharedGroupId||('grp_'+group.id),
       name:group.name||'Group',

@@ -1261,6 +1261,7 @@ function checkGroupsTrayAddHidden() {
 function checkMobileGroupStorageAccountScoped() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const setup = fs.readFileSync("plan-setup.html", "utf8");
+  const groupsApi = fs.readFileSync("lib/ghl-groups.js", "utf8");
   [
     "function accountStorageSuffix()",
     "function accountStorageKey(base)",
@@ -1281,9 +1282,23 @@ function checkMobileGroupStorageAccountScoped() {
   [
     "function reconcileTrainingGroupsForRoster(sourceGroups)",
     "next.athletes=cleaned.length||!members.length?cleaned:members;",
+    "deleteGroupIds:options.deleteGroupIds||[]",
+    ".filter(function(group){return !group.archived;})",
   ].forEach((text) => {
     if (!setup.includes(text)) throw new Error(`desktop group reconciliation must preserve saved groups when member ids do not match: ${text}`);
   });
+  [
+    "function mergeGroups(existingGroups, incomingGroups, deleteGroupIds)",
+    "const existingState = await loadGroupsState({ token, locationId, accountKey });",
+    "const groups = mergeGroups(existingState.groups, incomingGroups, deleteGroupIds);",
+    "function groupNameKey(group)",
+    "function normalizeDeleteGroupIds(values)",
+  ].forEach((text) => {
+    if (!groupsApi.includes(text)) throw new Error(`shared group API should merge desktop and phone saves: ${text}`);
+  });
+  if (!mobile.includes("logs.filter(function(group){return (group.type||'training')==='training';})")) {
+    throw new Error("mobile shared group saves should include archived training groups so archive state can sync.");
+  }
   if (setup.includes("if(members.length&&!cleaned.length)return null;")) {
     throw new Error("desktop group reconciliation should not hide saved groups just because current roster ids do not match.");
   }
