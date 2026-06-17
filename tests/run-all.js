@@ -101,6 +101,25 @@ function checkLiveValidationPage() {
   console.log("live launch validation links ok");
 }
 
+function checkTrainingCalendarButtonLabels() {
+  htmlFiles.forEach((file) => {
+    if (!fs.existsSync(file)) return;
+    const html = fs.readFileSync(file, "utf8");
+    const buttonLabels = [...html.matchAll(/<(?:a|button)\b[^>]*(?:linkbtn|button|data-page-link)[^>]*training-calendar\.html[^>]*>([\s\S]*?)<\/(?:a|button)>/gi)];
+    buttonLabels.forEach((match) => {
+      const label = match[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (label === "Training Calendar") {
+        throw new Error(`${file} has a Training Calendar button label; use Training.`);
+      }
+    });
+  });
+  const onboarding = fs.readFileSync("onboarding.html", "utf8");
+  if (onboarding.includes("{label:'Training Calendar',path:'/training-calendar.html'+query}")) {
+    throw new Error("onboarding generated Training Calendar button should be labeled Training.");
+  }
+  console.log("Training Calendar button labels ok");
+}
+
 function checkAccountStatusLocationVerification() {
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   [
@@ -1796,6 +1815,7 @@ jsFilesUnder("api").concat(jsFilesUnder("lib"), jsFilesUnder("tests")).forEach((
 checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
+checkTrainingCalendarButtonLabels();
 checkAccountStatusLocationVerification();
 checkOnboardingSubscriberPlanLoad();
 checkAdminAccountCleanup();
