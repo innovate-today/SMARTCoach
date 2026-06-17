@@ -1280,6 +1280,7 @@ function checkAttendanceSeasonAttachment() {
     "sport:tr.querySelector('[data-sport]').value",
     "season:seasonParts.season",
     "seasonYear:seasonParts.seasonYear",
+    "body:JSON.stringify({records:[next],deleteIds:[id]})",
     "'sport','season','seasonYear'",
     'id="confirmOverlay"',
     "function openConfirm(title,message,detail,okLabel,onConfirm)",

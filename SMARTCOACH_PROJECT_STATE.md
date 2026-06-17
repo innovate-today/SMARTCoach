@@ -1265,6 +1265,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 423. Dashboard header action rows now stay on one line in the embedded desktop view, with horizontal overflow instead of wrapping Weather or other navigation buttons to a third row.
 424. Dashboard Customize Dashboard moved out of the title row to a small text control above Activity Range, and dashboard header buttons now keep a consistent 34px height with no label wrapping.
 425. Remaining desktop navigation button labels that pointed to `/training-calendar.html` were shortened from **Training Calendar** to **Training** across coach-facing pages and generated admin page links.
+426. Desktop Attendance row edits now replace the original attendance key on every save. This prevents sport/season/status edits from adding a second attendance record when the registry key changes.
 
 ## Known Good Test Flow
 
