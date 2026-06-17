@@ -268,7 +268,7 @@ tr:last-child td{border-bottom:0}
       <div class="action-row">
         <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
         <a id="athletesLink" class="linkbtn secondary" href="/athletes.html">Athletes</a>
-        <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training Calendar</a>
+        <a id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training</a>
         <a id="meetHistoryLink" class="linkbtn secondary" href="/meet-history.html">Meet History</a>
         <button id="simulatorBtn" class="secondary" type="button" data-dashboard-tool="simulators">Simulator</button>
         <a id="recordsLink" class="linkbtn secondary" href="/records.html" data-dashboard-tool="records">Records</a>
@@ -279,7 +279,6 @@ tr:last-child td{border-bottom:0}
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
-        <a id="fieldPracticeLink" class="linkbtn modal-action" href="/field-practice.html">Field Practice</a>
         <button id="shareMilesBoardBtn" class="modal-action" type="button">Share Miles Board</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
@@ -1843,8 +1842,6 @@ function applySmartCoachLinks(){
   if(keepTrak)keepTrak.href=smartCoachPageUrl('/keep-trak.html');
   var weather=document.getElementById('weatherLink');
   if(weather)weather.href=smartCoachPageUrl('/weather.html');
-  var fieldPractice=document.getElementById('fieldPracticeLink');
-  if(fieldPractice)fieldPractice.href=smartCoachPageUrl('/field-practice.html');
   var trackSimulator=document.getElementById('trackSimulatorLink');
   if(trackSimulator)trackSimulator.href=smartCoachPageUrl('/track-simulator.html');
   var xcSimulator=document.getElementById('xcSimulatorLink');

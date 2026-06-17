@@ -605,7 +605,7 @@ Use **Field Practice** when a field event group needs a practice plan and attemp
 
 How to use Field Practice:
 
-1. Open **Field Practice** from the Dashboard.
+1. Open **Training Calendar**, then click **Field Practice**.
 2. Choose the date, group or athlete, practice focus, and drill routine.
 3. Use the drill checklist during practice to mark completed technical work.
 4. If athletes are jumping, choose **Bungee** or **Crossbar**, enter the height, and add attempts as **O** for make, **X** for miss, or **-** for pass.

@@ -1714,6 +1714,7 @@ function checkPartnerTimingPhaseOne() {
 function checkFieldPracticePhaseOne() {
   const page = fs.readFileSync("field-practice.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   [
     "Field Practice",
@@ -1751,10 +1752,12 @@ function checkFieldPracticePhaseOne() {
     'id="fieldPracticeLink"',
     'href="/field-practice.html"',
     "Field Practice",
-    "fieldPractice.href=smartCoachPageUrl('/field-practice.html');",
+    "els.fieldPracticeLink.href=pageUrl('/field-practice.html');",
   ].forEach((text) => {
-    if (!dashboard.includes(text)) throw new Error(`Dashboard Field Practice link missing ${text}`);
+    if (!calendar.includes(text)) throw new Error(`Training Calendar Field Practice link missing ${text}`);
   });
+  if (dashboard.includes('id="fieldPracticeLink"')) throw new Error("Dashboard should not show Field Practice button");
+  if (!dashboard.includes('id="trainingCalendarLink" class="linkbtn secondary" href="/training-calendar.html">Training</a>')) throw new Error("Dashboard Training Calendar button should be labeled Training");
   [
     'route === "field-practice"',
     "return accountFieldPractice(req, res);",
