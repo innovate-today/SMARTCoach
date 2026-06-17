@@ -456,6 +456,9 @@ function checkMilesBoardFeature() {
     "This Week Challenge",
     "renderHighlights",
     "renderGroups",
+    "function fetchWithTimeout(url,options,timeoutMs)",
+    "Miles Board is taking too long to load. Tap Refresh to try again.",
+    "window.addEventListener('pageshow'",
   ].forEach((text) => {
     if (!board.includes(text)) throw new Error(`Miles Board page missing ${text}`);
   });
@@ -523,6 +526,9 @@ function checkMilesBoardFeature() {
     "groups: groupRows",
     "lastLoggedDate",
     "athleteName",
+    "OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS",
+    "safeDashboardObjectRecords",
+    "controller.abort()",
   ].forEach((text) => {
     if (!dashboardApi.includes(text)) throw new Error(`Miles Board sanitized dashboard API missing ${text}`);
   });

@@ -5,6 +5,7 @@ const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
+const OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS = 4500;
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { loadTrainingMirror } = require("../../lib/account-registry");
@@ -527,7 +528,7 @@ async function listContactFieldIds({ token, locationId, names }) {
   }
 }
 
-async function searchObjectRecords({ token, locationId, schemaKey }) {
+async function searchObjectRecords({ token, locationId, schemaKey, signal }) {
   try {
     const records = [];
     for (let page = 1; page <= 10; page += 1) {
@@ -536,6 +537,7 @@ async function searchObjectRecords({ token, locationId, schemaKey }) {
         path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
         method: "POST",
         body: { locationId, page, pageLimit: 100 },
+        signal,
       });
       const batch = recordsFromResult(result);
       records.push(...batch);
@@ -549,8 +551,19 @@ async function searchObjectRecords({ token, locationId, schemaKey }) {
 }
 
 async function safeDashboardObjectRecords(options) {
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  let timer = null;
   try {
-    return await searchObjectRecords(options);
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        if (controller) controller.abort();
+        reject(httpError(504, "Dashboard optional lookup timed out."));
+      }, OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS);
+    });
+    return await Promise.race([
+      searchObjectRecords({ ...options, signal: controller && controller.signal }),
+      timeout,
+    ]);
   } catch (error) {
     console.warn("SMART Trak dashboard optional object lookup failed", {
       schemaKey: options && options.schemaKey,
@@ -558,6 +571,8 @@ async function safeDashboardObjectRecords(options) {
       message: error && error.message,
     });
     return [];
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -1048,9 +1063,10 @@ function recordTimestamp(record) {
   return clean(record && (record.createdAt || record.dateAdded || record.dateCreated || record.updatedAt || record.dateUpdated));
 }
 
-async function ghlFetch({ token, path, method, body }) {
+async function ghlFetch({ token, path, method, body, signal }) {
   const response = await fetch(`${GHL_BASE_URL}${path}`, {
     method,
+    signal,
     headers: {
       Authorization: `Bearer ${token}`,
       Version: GHL_VERSION,
