@@ -1133,7 +1133,7 @@ tr:last-child td{border-bottom:0}
       </section>
       <section class="accesspanel" aria-label="Share mobile app access">
         <div class="summary-head">
-          <h3>Share Mobile App Access</h3>
+          <h3>Email the Mobile App Link</h3>
           <div class="breakrange">Email the phone link, account key, and shared code instructions.</div>
         </div>
         <div class="formgrid">
@@ -1145,10 +1145,20 @@ tr:last-child td{border-bottom:0}
             <label for="mobileAccessCode">Shared Access Code</label>
             <input id="mobileAccessCode" type="password" placeholder="Enter the shared coach code to include" autocomplete="off">
           </div>
+          <div class="field full">
+            <label for="mobileAccessProvider">Email Provider</label>
+            <select id="mobileAccessProvider">
+              <option value="gmail" selected>Gmail</option>
+              <option value="outlook">Outlook</option>
+              <option value="yahoo">Yahoo</option>
+              <option value="mailto">Default mail app</option>
+            </select>
+          </div>
         </div>
         <div class="modalactions">
           <div id="mobileAccessStatus" class="modalstatus">The saved code is not shown. Enter the shared code you want to send.</div>
           <button id="mobileAccessCopy" class="ghost" type="button">Copy Message</button>
+          <a id="mobileAccessDirectLink" class="linkbtn secondary" href="#" hidden>Open Draft Link</a>
           <button id="mobileAccessEmail" type="button">Open Email Draft</button>
         </div>
       </section>
@@ -1991,8 +2001,10 @@ var els={
   staffSave:document.getElementById('staffSave'),
   mobileAccessEmails:document.getElementById('mobileAccessEmails'),
   mobileAccessCode:document.getElementById('mobileAccessCode'),
+  mobileAccessProvider:document.getElementById('mobileAccessProvider'),
   mobileAccessStatus:document.getElementById('mobileAccessStatus'),
   mobileAccessCopy:document.getElementById('mobileAccessCopy'),
+  mobileAccessDirectLink:document.getElementById('mobileAccessDirectLink'),
   mobileAccessEmail:document.getElementById('mobileAccessEmail'),
   accountStatus:document.getElementById('accountStatus'),
   accountRefresh:document.getElementById('accountRefresh'),
@@ -2631,6 +2643,7 @@ function openCodeModal(){
   els.newCoachCode.value='';
   els.confirmCoachCode.value='';
   if(els.mobileAccessCode)els.mobileAccessCode.value='';
+  if(els.mobileAccessDirectLink)els.mobileAccessDirectLink.hidden=true;
   if(els.mobileAccessStatus){els.mobileAccessStatus.textContent='The saved code is not shown. Enter the shared code you want to send.';els.mobileAccessStatus.style.color='';}
   els.codeStatus.textContent='';
   els.codeStatus.style.color='';
@@ -2668,6 +2681,21 @@ function collectMobileAccessMessage(){
   return {accountKey:key,code:code,emails:(els.mobileAccessEmails?els.mobileAccessEmails.value.trim():''),subject:'SMARTCoach mobile app access',body:lines.join('\n')};
 }
 
+function mobileAccessProvider(){
+  return els.mobileAccessProvider&&els.mobileAccessProvider.value||'gmail';
+}
+
+function mobileAccessDraftUrl(message){
+  var to=String(message&&message.emails||'').replace(/\s+/g,'');
+  var subject=message&&message.subject||'SMARTCoach mobile app access';
+  var body=message&&message.body||'';
+  var provider=mobileAccessProvider();
+  if(provider==='gmail')return 'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  if(provider==='outlook')return 'https://outlook.office.com/mail/deeplink/compose?to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  if(provider==='yahoo')return 'https://compose.mail.yahoo.com/?to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  return 'mailto:'+to+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+}
+
 function setMobileAccessStatus(message,color){
   if(!els.mobileAccessStatus)return;
   els.mobileAccessStatus.textContent=message;
@@ -2693,10 +2721,17 @@ function emailMobileAccessMessage(){
     if(els.mobileAccessCode)els.mobileAccessCode.focus();
     return;
   }
-  var recipients=message.emails.replace(/\s+/g,'');
-  var href='mailto:'+recipients+'?subject='+encodeURIComponent(message.subject)+'&body='+encodeURIComponent(message.body);
-  setMobileAccessStatus('Opening email draft...','#64748b');
-  window.location.href=href;
+  var href=mobileAccessDraftUrl(message);
+  var provider=mobileAccessProvider();
+  if(els.mobileAccessDirectLink){
+    els.mobileAccessDirectLink.href=href;
+    els.mobileAccessDirectLink.hidden=false;
+    els.mobileAccessDirectLink.target=provider==='mailto'?'':'_blank';
+    els.mobileAccessDirectLink.rel=provider==='mailto'?'':'noopener';
+    els.mobileAccessDirectLink.textContent='Open Draft Link';
+  }
+  setMobileAccessStatus('Opening email draft. If no window opens, click Open Draft Link or choose another provider.','#64748b');
+  if(els.mobileAccessDirectLink)els.mobileAccessDirectLink.click();
 }
 
 function sendTemporaryCoachCode(){
