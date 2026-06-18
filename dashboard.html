@@ -1131,6 +1131,27 @@ tr:last-child td{border-bottom:0}
           <button id="staffSave" type="button">Save Coaches</button>
         </div>
       </section>
+      <section class="accesspanel" aria-label="Share mobile app access">
+        <div class="summary-head">
+          <h3>Share Mobile App Access</h3>
+          <div class="breakrange">Email the phone link, account key, and shared code instructions.</div>
+        </div>
+        <div class="formgrid">
+          <div class="field full">
+            <label for="mobileAccessEmails">Recipient Emails</label>
+            <input id="mobileAccessEmails" type="text" placeholder="coach1@school.org, coach2@school.org" autocomplete="off">
+          </div>
+          <div class="field full">
+            <label for="mobileAccessCode">Shared Access Code</label>
+            <input id="mobileAccessCode" type="password" placeholder="Enter the shared coach code to include" autocomplete="off">
+          </div>
+        </div>
+        <div class="modalactions">
+          <div id="mobileAccessStatus" class="modalstatus">The saved code is not shown. Enter the shared code you want to send.</div>
+          <button id="mobileAccessCopy" class="ghost" type="button">Copy Message</button>
+          <button id="mobileAccessEmail" type="button">Open Email Draft</button>
+        </div>
+      </section>
       <div class="formgrid">
         <div class="field full">
           <label for="currentCoachCode">Current Code</label>
@@ -1968,6 +1989,11 @@ var els={
   staffStatus:document.getElementById('staffStatus'),
   staffAdd:document.getElementById('staffAdd'),
   staffSave:document.getElementById('staffSave'),
+  mobileAccessEmails:document.getElementById('mobileAccessEmails'),
+  mobileAccessCode:document.getElementById('mobileAccessCode'),
+  mobileAccessStatus:document.getElementById('mobileAccessStatus'),
+  mobileAccessCopy:document.getElementById('mobileAccessCopy'),
+  mobileAccessEmail:document.getElementById('mobileAccessEmail'),
   accountStatus:document.getElementById('accountStatus'),
   accountRefresh:document.getElementById('accountRefresh'),
   accountSave:document.getElementById('accountSave'),
@@ -2305,6 +2331,8 @@ els.codeSave.addEventListener('click',saveCoachCode);
 if(els.codeRecoverySend)els.codeRecoverySend.addEventListener('click',sendTemporaryCoachCode);
 if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff=collectStaffRows(true);coachStaff.push({id:'',name:'',active:true});renderStaffList();});
 if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
+if(els.mobileAccessCopy)els.mobileAccessCopy.addEventListener('click',copyMobileAccessMessage);
+if(els.mobileAccessEmail)els.mobileAccessEmail.addEventListener('click',emailMobileAccessMessage);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
 els.accountRefresh.addEventListener('click',refreshAppVersion);
@@ -2602,6 +2630,8 @@ function openCodeModal(){
   els.recoveryCoachCode.value='';
   els.newCoachCode.value='';
   els.confirmCoachCode.value='';
+  if(els.mobileAccessCode)els.mobileAccessCode.value='';
+  if(els.mobileAccessStatus){els.mobileAccessStatus.textContent='The saved code is not shown. Enter the shared code you want to send.';els.mobileAccessStatus.style.color='';}
   els.codeStatus.textContent='';
   els.codeStatus.style.color='';
   els.codeSave.disabled=false;
@@ -2612,6 +2642,61 @@ function openCodeModal(){
 
 function closeCodeModal(){
   els.codeModal.hidden=true;
+}
+
+function mobileAppAccessUrl(){
+  var key=smartCoachAccountKey();
+  return new URL('/?account='+encodeURIComponent(key),window.location.origin).toString();
+}
+
+function collectMobileAccessMessage(){
+  var key=smartCoachAccountKey();
+  var code=els.mobileAccessCode?els.mobileAccessCode.value.trim():'';
+  var lines=[
+    'SMARTCoach mobile app access',
+    '',
+    'Open this link on your phone:',
+    mobileAppAccessUrl(),
+    '',
+    'Account key: '+key,
+    'Shared access code: '+(code||'[enter shared coach code]'),
+    '',
+    'After opening the app, tap Account if prompted, then enter the account key and shared access code.',
+    '',
+    'Please keep this access private for active coaching staff only.'
+  ];
+  return {accountKey:key,code:code,emails:(els.mobileAccessEmails?els.mobileAccessEmails.value.trim():''),subject:'SMARTCoach mobile app access',body:lines.join('\n')};
+}
+
+function setMobileAccessStatus(message,color){
+  if(!els.mobileAccessStatus)return;
+  els.mobileAccessStatus.textContent=message;
+  els.mobileAccessStatus.style.color=color||'';
+}
+
+function copyMobileAccessMessage(){
+  var message=collectMobileAccessMessage();
+  if(!message.code){
+    setMobileAccessStatus('Enter the shared access code before copying the message.','#b00000');
+    if(els.mobileAccessCode)els.mobileAccessCode.focus();
+    return;
+  }
+  copyTextToClipboard(message.body).then(function(copied){
+    setMobileAccessStatus(copied?'Mobile access message copied.':'Copy failed. Select and copy the message manually.',copied?'#08783c':'#b00000');
+  });
+}
+
+function emailMobileAccessMessage(){
+  var message=collectMobileAccessMessage();
+  if(!message.code){
+    setMobileAccessStatus('Enter the shared access code before opening an email draft.','#b00000');
+    if(els.mobileAccessCode)els.mobileAccessCode.focus();
+    return;
+  }
+  var recipients=message.emails.replace(/\s+/g,'');
+  var href='mailto:'+recipients+'?subject='+encodeURIComponent(message.subject)+'&body='+encodeURIComponent(message.body);
+  setMobileAccessStatus('Opening email draft...','#64748b');
+  window.location.href=href;
 }
 
 function sendTemporaryCoachCode(){

@@ -679,6 +679,17 @@ function checkDashboardToolPreferences() {
     'data-dashboard-tool="simulators"',
     "equipmentTrak:true",
     "Show All",
+    "Share Mobile App Access",
+    'id="mobileAccessEmails"',
+    'id="mobileAccessCode"',
+    'id="mobileAccessEmail"',
+    'id="mobileAccessCopy"',
+    "function mobileAppAccessUrl()",
+    "function collectMobileAccessMessage()",
+    "function emailMobileAccessMessage()",
+    "SMARTCoach mobile app access",
+    "Shared access code:",
+    "window.location.href=href;",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard tool preferences missing ${text}`);
   });
