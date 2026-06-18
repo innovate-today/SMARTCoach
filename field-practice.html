@@ -159,7 +159,12 @@ function embeddedMode(){try{var p=new URLSearchParams(location.search||'');retur
 function smartCoachAccountKey(){try{var p=new URLSearchParams(location.search||'');var key=(p.get('account')||localStorage.getItem('sc_account')||'default').trim();if(key&&key!=='default')localStorage.setItem('sc_account',key);return key||'default';}catch(e){return 'default';}}
 function apiUrl(path){var url=new URL(path,location.origin);var account=smartCoachAccountKey();if(account&&account!=='default')url.searchParams.set('account',account);return url.pathname+url.search;}
 function pageUrl(path){var url=new URL(path,location.origin);var account=smartCoachAccountKey();if(account&&account!=='default')url.searchParams.set('account',account);if(embeddedMode())url.searchParams.set('embed','1');return url.pathname+url.search;}
-function headers(){var h={'Content-Type':'application/json'};var account=smartCoachAccountKey();if(account&&account!=='default')h['X-SMARTCoach-Account']=account;try{var session=localStorage.getItem('smartcoach_session_'+account)||'';if(session)h['X-SMARTCoach-Session']=session;}catch(e){}return h;}
+function accessStorageKey(){return 'sc_access_'+smartCoachAccountKey();}
+function sessionStorageKey(){return 'sc_session_'+smartCoachAccountKey();}
+function rememberedSessionStorageKey(){return 'sc_session_remembered_'+smartCoachAccountKey();}
+function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}catch(e){return '';}}
+function sessionToken(){try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}}
+function headers(){var h={'Content-Type':'application/json'};var account=smartCoachAccountKey();if(account&&account!=='default')h['X-SMARTCoach-Account']=account;var session=sessionToken();var code=accessCode();if(session)h['X-SMARTCoach-Session']=session;if(code&&!session)h['X-SMARTCoach-Access-Code']=code;return h;}
 function jsonResult(res){return res.json().then(function(data){if(!res.ok)throw new Error(data&&data.error||'Request failed.');return data;});}
 function init(){
   ['dashboardLink','calendarLink','athletesLink','newBtn','refreshBtn','practiceDate','routineSelect','setupSelect','heightInput','attemptSetup','attemptHeight','addDrillBtn','addAttemptBtn','saveBtn','deleteBtn','copyPreviewBtn'].forEach(function(id){els[id]=$(id);});
