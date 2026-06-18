@@ -1797,6 +1797,8 @@ function checkFieldPracticePhaseOne() {
     "Field Practice",
     "Practice Focus",
     "Drill Routine",
+    "function renderRoutineOptions(selected)",
+    "var eventRoutineMap",
     "Beginner pole vault routine",
     "High jump approach routine",
     "Long jump approach routine",
