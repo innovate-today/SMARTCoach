@@ -471,6 +471,7 @@ function normalizeFieldPractice(item) {
     athleteName: cleanSetupText(source.athleteName).slice(0, 120),
     coachName: cleanSetupText(source.coachName).slice(0, 120),
     focus: cleanSetupText(source.focus).slice(0, 120),
+    routineKey: cleanSetupText(source.routineKey).slice(0, 80),
     routineName: cleanSetupText(source.routineName).slice(0, 120),
     setupType: normalizeFieldSetupType(source.setupType),
     height: normalizeFieldPracticeHeight(source.height),

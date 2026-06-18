@@ -1798,6 +1798,13 @@ function checkFieldPracticePhaseOne() {
     "Practice Focus",
     "Drill Routine",
     "Beginner pole vault routine",
+    "High jump approach routine",
+    "Long jump approach routine",
+    "Triple jump rhythm routine",
+    "Shot put power routine",
+    "Discus stand throw routine",
+    "Javelin approach routine",
+    "Hammer turn routine",
     "Plant mechanics routine",
     "Short approach routine",
     "Bar clearance routine",
@@ -1824,6 +1831,14 @@ function checkFieldPracticePhaseOne() {
     "m-field-practice",
     "function loadFieldPractice()",
     "function saveFieldPractice(practice)",
+    "function newFieldPractice()",
+    "function fieldPracticeRoutineDrills(event,routineKey)",
+    "function fieldPracticePreviewText(p)",
+    "function shareFieldPracticePreview()",
+    "FIELD_PRACTICE_EVENTS",
+    "FIELD_PRACTICE_ROUTINES",
+    "Create Practice",
+    "Share Preview",
   ].forEach((text) => {
     const app = fs.readFileSync("index.html", "utf8");
     if (!app.includes(text)) throw new Error(`Mobile Field Practice app missing ${text}`);
@@ -1846,6 +1861,7 @@ function checkFieldPracticePhaseOne() {
     "fieldPracticeSessions",
     "lastFieldPracticeSync",
     "function normalizeFieldPracticeHeight(value)",
+    "routineKey",
     "attemptSummary",
     "function normalizeFieldPracticeAttempts(items)",
   ].forEach((text) => {
