@@ -136,7 +136,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 /* SPLASH / HOME */
 .splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;height:100dvh;background:var(--W);position:absolute;inset:0;z-index:200;transition:opacity .4s}
 .splash.gone{opacity:0;pointer-events:none}
-.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.srow.h{display:none}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sinp.ta{min-height:62px;resize:vertical}.infoi{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;margin-left:4px;border:0;background:transparent;color:var(--R);font-size:17px;font-family:inherit;vertical-align:middle;cursor:pointer}.picker-control{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}.picker-list{padding:0 12px 10px;max-height:58vh;overflow:auto}.picker-row{width:100%;border:0;border-bottom:0.5px solid #e5e5ea;background:#fff;text-align:left;padding:13px 12px;font-family:inherit;color:#222;cursor:pointer}.picker-row b{display:block;font-size:17px;line-height:1.2}.picker-row small{display:block;font-size:13px;color:#777;margin-top:3px;line-height:1.25}.picker-row.on{border-left:4px solid var(--R);padding-left:8px}.picker-row.on b{color:var(--R)}#m-picker{z-index:140}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}.sync-athlete-main{flex:1;min-width:0}.save-state{font-weight:700!important}.save-state.ready{color:var(--R)}.save-state.saved{color:#0a7a44}.save-state.resave{color:#c47a00}.save-state.off{color:#777}.best-flags{display:flex;gap:8px;align-items:center;flex-shrink:0}.best-flag{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#333}.best-flag input{width:16px;height:16px}.best-hint{color:#777}.best-hint.good{color:#0a7a44}.best-hint.warn{color:#c47a00}.profile-box{padding:0 12px 10px;max-height:68vh;overflow:auto;text-align:left}.profile-sec{background:#fff;border-bottom:0.5px solid #e5e5ea;padding:10px 12px}.profile-sec h4{font-size:12px;letter-spacing:0;color:#777;margin-bottom:6px}.profile-row{font-size:13px;color:#333;line-height:1.35;padding:4px 0}.profile-row b{font-size:14px}.profile-row small{display:block;color:#777;margin-top:1px}#m-training-plan .msh,#m-field-capture .msh{max-height:86vh;display:flex;flex-direction:column}#m-training-plan .msh,#m-field-events .msh,#m-field-capture .msh,#m-field-attempt .msh,#m-field-attempts .msh,#m-sync .msh,#m-attendance .msh,#m-field-practice .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}#m-training-plan #tp-detail{max-height:none;flex:1;min-height:0;-webkit-overflow-scrolling:touch}#m-sync .mhd,#m-sync .mttl,#m-sync #sy-status,#m-sync .mbtn,#m-attendance .mhd,#m-attendance .mttl,#m-attendance .srow,#m-attendance .bulk-actions,#m-attendance .bulk-status,#m-attendance .mbtn,#m-field-practice .mhd,#m-field-practice .mttl,#m-field-practice #fp-status,#m-field-practice .mbtn{flex-shrink:0}#m-sync .sync-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 4px 4px}.field-top{display:flex;align-items:center;gap:8px;padding:0 16px 10px}.field-top .mttl{flex:1;padding:0;text-align:left}.field-save{width:auto;margin:0;padding:9px 13px;border-radius:9px;font-size:13px;flex-shrink:0}.field-list{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 8px}.builder-box{padding:0 12px 10px;max-height:68vh;overflow:auto}.builder-box .srow{align-items:flex-start;background:#fff;border-bottom:.5px solid #e5e5ea;margin:0;padding:7px 12px}.builder-box .slbl{padding-top:6px}#m-attendance .builder-box{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}.att-card{background:#fff;border:0.5px solid #e5e5ea;border-radius:10px;margin:0 0 12px;overflow:hidden}.att-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#f7f7f9;border-bottom:0.5px solid #e5e5ea}.att-name{font-size:15px;font-weight:800;color:#222}.att-small{font-size:11px;color:#777;margin-top:2px}.att-row{padding:10px 12px;border-bottom:0.5px solid #eee}.att-row:last-child{border-bottom:none}.att-athlete{font-size:15px;font-weight:800;color:#222;margin-bottom:7px}.att-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.att-btn{border:1px solid #d1d5db;background:#fff;border-radius:8px;padding:8px 2px;font-size:11px;font-weight:800;color:#333;font-family:inherit}.att-btn.on{background:var(--R);border-color:var(--R);color:#fff}.att-btn.absent.on{background:#c00;border-color:#c00}.att-btn.excused.on{background:#7c3aed;border-color:#7c3aed}.att-note{font-size:11px;color:#777;margin-top:6px;line-height:1.25}.fp-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 10px}.fp-card{background:#fff;border:0.5px solid #d1d5db;border-radius:10px;margin:0 0 10px;padding:12px;text-align:left}.fp-title{font-size:17px;font-weight:900;color:#222;line-height:1.15}.fp-meta{font-size:12px;color:#777;font-weight:700;margin-top:4px}.fp-text{font-size:14px;color:#333;line-height:1.35;white-space:pre-wrap;margin-top:8px}.fp-row{display:flex;align-items:flex-start;gap:9px;border-top:0.5px solid #eee;padding:10px 0}.fp-row:first-child{border-top:none}.fp-row input{width:22px;height:22px;accent-color:var(--R);flex:0 0 22px}.fp-row b{font-size:15px}.fp-row small{display:block;color:#777;font-size:12px;margin-top:2px}.fp-pattern{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f8f8fa;border-left:4px solid var(--R);border-radius:9px;padding:9px 10px;margin-top:8px;font-size:14px}.fp-pattern span:last-child{font-weight:900;letter-spacing:.08em}.plan-essential .pro-only,.plan-essential #gf-meets{display:none!important}.mcheck{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#333}.mcheck input{width:18px;height:18px;accent-color:var(--R)}</style>
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 12px}.srow.h{display:none}.slbl{font-size:12px;font-weight:600;color:#333;flex-shrink:0;width:110px}.sinp{flex:1;font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);-webkit-appearance:none;outline:none;color:#333}.sinp.ta{min-height:62px;resize:vertical}.infoi{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;margin-left:4px;border:0;background:transparent;color:var(--R);font-size:17px;font-family:inherit;vertical-align:middle;cursor:pointer}.picker-control{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}.picker-list{padding:0 12px 10px;max-height:58vh;overflow:auto}.picker-row{width:100%;border:0;border-bottom:0.5px solid #e5e5ea;background:#fff;text-align:left;padding:13px 12px;font-family:inherit;color:#222;cursor:pointer}.picker-row b{display:block;font-size:17px;line-height:1.2}.picker-row small{display:block;font-size:13px;color:#777;margin-top:3px;line-height:1.25}.picker-row.on{border-left:4px solid var(--R);padding-left:8px}.picker-row.on b{color:var(--R)}#m-picker{z-index:140}.sync-athletes{padding:2px 12px 8px}.sync-athlete{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:0.5px solid #e5e5ea;padding:8px 12px;font-size:13px;font-weight:600;color:#333}.sync-athlete input{width:18px;height:18px;accent-color:var(--R)}.sync-athlete small{display:block;font-weight:400;color:#777;margin-top:1px}.sync-athlete-main{flex:1;min-width:0}.save-state{font-weight:700!important}.save-state.ready{color:var(--R)}.save-state.saved{color:#0a7a44}.save-state.resave{color:#c47a00}.save-state.off{color:#777}.best-flags{display:flex;gap:8px;align-items:center;flex-shrink:0}.best-flag{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#333}.best-flag input{width:16px;height:16px}.best-hint{color:#777}.best-hint.good{color:#0a7a44}.best-hint.warn{color:#c47a00}.profile-box{padding:0 12px 10px;max-height:68vh;overflow:auto;text-align:left}.profile-sec{background:#fff;border-bottom:0.5px solid #e5e5ea;padding:10px 12px}.profile-sec h4{font-size:12px;letter-spacing:0;color:#777;margin-bottom:6px}.profile-row{font-size:13px;color:#333;line-height:1.35;padding:4px 0}.profile-row b{font-size:14px}.profile-row small{display:block;color:#777;margin-top:1px}#m-training-plan .msh,#m-field-capture .msh{max-height:86vh;display:flex;flex-direction:column}#m-training-plan .msh,#m-field-events .msh,#m-field-capture .msh,#m-field-attempt .msh,#m-field-attempts .msh,#m-sync .msh,#m-attendance .msh,#m-field-practice .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}#m-training-plan #tp-detail{max-height:none;flex:1;min-height:0;-webkit-overflow-scrolling:touch}#m-sync .mhd,#m-sync .mttl,#m-sync #sy-status,#m-sync .mbtn,#m-attendance .mhd,#m-attendance .mttl,#m-attendance .srow,#m-attendance .bulk-actions,#m-attendance .bulk-status,#m-attendance .mbtn,#m-field-practice .mhd,#m-field-practice .mttl,#m-field-practice #fp-status,#m-field-practice .mbtn{flex-shrink:0}#m-sync .sync-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 4px 4px}.field-top{display:flex;align-items:center;gap:8px;padding:0 16px 10px}.field-top .mttl{flex:1;padding:0;text-align:left}.field-save{width:auto;margin:0;padding:9px 13px;border-radius:9px;font-size:13px;flex-shrink:0}.field-list{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 8px}.builder-box{padding:0 12px 10px;max-height:68vh;overflow:auto}.builder-box .srow{align-items:flex-start;background:#fff;border-bottom:.5px solid #e5e5ea;margin:0;padding:7px 12px}.builder-box .slbl{padding-top:6px}#m-attendance .builder-box{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}.att-card{background:#fff;border:0.5px solid #e5e5ea;border-radius:10px;margin:0 0 12px;overflow:hidden}.att-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#f7f7f9;border-bottom:0.5px solid #e5e5ea}.att-name{font-size:15px;font-weight:800;color:#222}.att-small{font-size:11px;color:#777;margin-top:2px}.att-row{padding:10px 12px;border-bottom:0.5px solid #eee}.att-row:last-child{border-bottom:none}.att-athlete{font-size:15px;font-weight:800;color:#222;margin-bottom:7px}.att-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.att-btn{border:1px solid #d1d5db;background:#fff;border-radius:8px;padding:8px 2px;font-size:11px;font-weight:800;color:#333;font-family:inherit}.att-btn.on{background:var(--R);border-color:var(--R);color:#fff}.att-btn.absent.on{background:#c00;border-color:#c00}.att-btn.excused.on{background:#7c3aed;border-color:#7c3aed}.att-note{font-size:11px;color:#777;margin-top:6px;line-height:1.25}.fp-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 10px}.fp-card{background:#fff;border:0.5px solid #d1d5db;border-radius:10px;margin:0 0 10px;padding:12px;text-align:left}.fp-title{font-size:17px;font-weight:900;color:#222;line-height:1.15}.fp-meta{font-size:12px;color:#777;font-weight:700;margin-top:4px}.fp-text{font-size:14px;color:#333;line-height:1.35;white-space:pre-wrap;margin-top:8px}.fp-row{display:flex;align-items:flex-start;gap:9px;border-top:0.5px solid #eee;padding:10px 0}.fp-row:first-child{border-top:none}.fp-row input{width:22px;height:22px;accent-color:var(--R);flex:0 0 22px}.fp-row b{font-size:15px}.fp-row small{display:block;color:#777;font-size:12px;margin-top:2px}.fp-pattern{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f8f8fa;border-left:4px solid var(--R);border-radius:9px;padding:9px 10px;margin-top:8px;font-size:14px}.fp-pattern span:last-child{font-weight:900;letter-spacing:.08em}.fp-ath{border-top:0.5px solid #eee;padding:10px 0}.fp-ath:first-child{border-top:none}.fp-ath b{display:block;font-size:15px}.fp-ath small{display:block;color:#777;font-size:12px;margin-top:2px}.fp-ath select,.fp-ath textarea,.fp-ath input{margin-top:7px}.plan-essential .pro-only,.plan-essential #gf-meets{display:none!important}.mcheck{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#333}.mcheck input{width:18px;height:18px;accent-color:var(--R)}</style>
 <style>
 #m-attendance .att-card{background:#eef1f6;border:1px solid #cfd6df;border-radius:12px;margin:0 0 14px;overflow:hidden}
 #m-attendance .att-row{background:#f3f4f6;margin:10px;border:1px solid #cbd5e1;border-radius:10px;overflow:hidden;padding:0}
@@ -3058,6 +3058,51 @@ function fieldPracticeAttemptGroups(attempts){
   });
   return Object.keys(map).map(function(key){return map[key];});
 }
+function fieldPracticeFocusOptions(event){
+  var options={
+    'Pole Vault':['Approach rhythm','Pole carry','Plant mechanics','Takeoff position','Swing','Turn','Bar clearance','Confidence / commitment','Custom'],
+    'High Jump':['Approach rhythm','Curve shape','Check mark consistency','Penultimate step','Takeoff position','Knee drive','Arm action','Bar clearance','Landing','Confidence / commitment','Custom'],
+    'Long Jump':['Approach consistency','Board accuracy','Penultimate step','Takeoff position','Flight mechanics','Landing','Rhythm','Custom'],
+    'Triple Jump':['Approach consistency','Hop phase','Step phase','Jump phase','Phase rhythm','Posture','Landing','Custom'],
+    'Shot Put':['Grip / release','Power position','Block side','Glide rhythm','Rotational entry','Release angle','Balance','Custom'],
+    'Discus':['Entry','Middle balance','Power position','Block side','Release angle','Reverse / finish','Sector control','Custom'],
+    'Javelin':['Carry','Withdrawal','Crossover rhythm','Impulse step','Block side','Release angle','Recovery','Custom'],
+    'Hammer':['Winds','Entry','Turn rhythm','Low point','Balance','Release direction','Finish','Custom']
+  };
+  return options[event]||['Practice focus','Custom'];
+}
+function fieldPracticeSummaryKey(item){
+  return String(item&&item.athleteId||'')||('name:'+String(item&&item.athleteName||'').trim().toLowerCase());
+}
+function fieldPracticeSummaryAthletes(p){
+  if(!p)return[];
+  var selected=String(p.athleteId||'');
+  if(selected){
+    var one=fieldPracticeGroupRunners(p.groupId).find(function(item){return String(item.contactId||item.id||item.name||'')===selected;});
+    return one?[one]:[{contactId:selected,name:p.athleteName||'Athlete'}];
+  }
+  return fieldPracticeGroupRunners(p.groupId);
+}
+function syncFieldPracticeAthleteSummaries(p){
+  if(!p)return;
+  p.athleteSummaries=Array.isArray(p.athleteSummaries)?p.athleteSummaries:[];
+  var byKey={};
+  p.athleteSummaries.forEach(function(row){byKey[fieldPracticeSummaryKey(row)]=row;});
+  fieldPracticeSummaryAthletes(p).forEach(function(runner){
+    var id=runner.contactId||runner.id||runner.name||'';
+    var key=String(id)||('name:'+String(runner.name||'').trim().toLowerCase());
+    if(!byKey[key])p.athleteSummaries.push({id:'athlete_summary_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:id,athleteName:runner.name||'Athlete',focus:'',summary:'',bestMark:'',updatedAt:''});
+    else{byKey[key].athleteId=byKey[key].athleteId||id;byKey[key].athleteName=runner.name||byKey[key].athleteName||'Athlete';}
+  });
+}
+function fieldPracticeVisibleSummaries(p){
+  syncFieldPracticeAthleteSummaries(p);
+  var athletes=fieldPracticeSummaryAthletes(p);
+  if(!athletes.length)return (p.athleteSummaries||[]).filter(function(row){return row.focus||row.summary||row.bestMark;});
+  var allowed={};
+  athletes.forEach(function(runner){allowed[String(runner.contactId||runner.id||runner.name||'')||('name:'+String(runner.name||'').trim().toLowerCase())]=true;});
+  return (p.athleteSummaries||[]).filter(function(row){return allowed[fieldPracticeSummaryKey(row)]||row.focus||row.summary||row.bestMark;});
+}
 function fieldPracticeMeta(p){
   return [p.date,p.groupName||'Team',p.athleteName||'Whole group',p.focus].filter(Boolean).join(' · ');
 }
@@ -3069,7 +3114,7 @@ function newFieldPractice(){
   var routine=fieldPracticeRoutineOptions(event)[0];
   var group=CL&&String(CL.type||'training')==='training'?CL:null;
   var coach=selectedCoachIdentity();
-  var practice={id:fieldPracticeNewId(),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:'Approach consistency',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),attempts:[],planNotes:'',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var practice={id:fieldPracticeNewId(),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:'Approach consistency',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],attempts:[],planNotes:'',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
   FIELD_PRACTICE.practices=[practice].concat((FIELD_PRACTICE.practices||[]).filter(function(item){return item.id!==practice.id;}));
   FIELD_PRACTICE.activeId=practice.id;
   renderFieldPractice();
@@ -3117,6 +3162,7 @@ function updateFieldPracticeFromForm(renderAfter){
     p.routineKey=first.key;p.routineName=first.label;p.drills=fieldPracticeRoutineDrills(p.event,first.key);
   }
   if(oldGroup!==p.groupId){p.athleteId='';p.athleteName='';}
+  syncFieldPracticeAthleteSummaries(p);
   if(renderAfter)renderFieldPractice();
   return p;
 }
@@ -3133,9 +3179,14 @@ function fieldPracticePreviewText(p){
   if(p.planNotes)lines.push('',p.planNotes);
   lines.push('','Drills:');
   (p.drills||[]).forEach(function(d){lines.push((d.completed?'[x] ':'[ ] ')+(d.name||'Drill'));});
+  var summaries=fieldPracticeVisibleSummaries(p).filter(function(row){return row.focus||row.summary||row.bestMark;});
+  if(summaries.length){
+    lines.push('','Athlete focus & summary:');
+    summaries.forEach(function(row){lines.push('- '+(row.athleteName||'Athlete')+': '+[row.focus,row.bestMark,row.summary].filter(Boolean).join(' · '));});
+  }
   var patterns=fieldPracticeAttemptGroups(p.attempts||[]);
   if(patterns.length){
-    lines.push('','Attempt summary:');
+    lines.push('','Optional attempt summary:');
     patterns.forEach(function(group){lines.push(group.height+' '+group.setupType+' ['+group.codes.join('')+']');});
   }
   return lines.join('\n');
@@ -3161,11 +3212,15 @@ function renderFieldPractice(){
     var selected=p.id===FIELD_PRACTICE.activeId;
     var complete=(p.drills||[]).filter(function(d){return d.completed;}).length;
     var attempts=(p.attempts||[]).length;
-    return section+'<button type="button" class="picker-row '+(selected?'on':'')+'" onclick="selectFieldPractice(\''+fieldPracticeJs(p.id)+'\')"><b>'+ex((p.date||'Practice')+' · '+(p.event||'Field Event'))+'</b><small>'+ex(fieldPracticeMeta(p))+'</small><small>'+complete+' of '+((p.drills||[]).length)+' drills · '+attempts+' attempts</small></button>';
+    var noted=(p.athleteSummaries||[]).filter(function(row){return row.focus||row.summary||row.bestMark;}).length;
+    return section+'<button type="button" class="picker-row '+(selected?'on':'')+'" onclick="selectFieldPractice(\''+fieldPracticeJs(p.id)+'\')"><b>'+ex((p.date||'Practice')+' · '+(p.event||'Field Event'))+'</b><small>'+ex(fieldPracticeMeta(p))+'</small><small>'+complete+' of '+((p.drills||[]).length)+' drills · '+noted+' athlete notes · '+attempts+' optional attempts</small></button>';
   }).join('');
   var p=activeFieldPractice();
   if(!p){detail.innerHTML='<div class="eq-empty">Choose a practice.</div>';if(status)status.textContent=practices.length+' saved practice'+(practices.length===1?'':'s');return;}
+  syncFieldPracticeAthleteSummaries(p);
   var patterns=fieldPracticeAttemptGroups(p.attempts||[]);
+  var athleteRows=fieldPracticeVisibleSummaries(p);
+  var focusOptions=fieldPracticeFocusOptions(p.event);
   detail.innerHTML=
     '<div class="fp-card"><div class="fp-title">Practice Setup</div><div class="fp-form">'+
       '<div class="srow" style="padding:0"><label class="slbl">Date</label><input id="fp-date" class="sinp" type="date" value="'+ex(p.date||todayISO())+'" onchange="updateFieldPracticeFromForm(false)"></div>'+
@@ -3183,7 +3238,8 @@ function renderFieldPractice(){
     '</div></div>'+
     '<div class="fp-card"><div class="fp-title">'+ex(p.event||'Field Event')+'</div><div class="fp-meta">'+ex(fieldPracticeMeta(p))+'</div>'+(p.planNotes?'<div class="fp-text">'+ex(p.planNotes)+'</div>':'')+'</div>'+
     '<div class="fp-card"><div class="fp-title">Drill Checklist</div>'+((p.drills||[]).length?(p.drills||[]).map(function(d,i){return '<label class="fp-row"><input type="checkbox" '+(d.completed?'checked':'')+' onchange="toggleFieldPracticeDrill('+i+',this.checked)"><span><b>'+ex(d.name||'Drill')+'</b>'+(d.note?'<small>'+ex(d.note)+'</small>':'')+'</span></label>';}).join(''):'<div class="fp-text">No drills saved.</div>')+'</div>'+
-    '<div class="fp-card"><div class="fp-title">Jump Attempts</div>'+
+    '<div class="fp-card"><div class="fp-title">Athlete Focus & Summary</div>'+(athleteRows.length?athleteRows.map(function(row,i){var chosen=focusOptions.indexOf(row.focus)>=0?row.focus:'Custom';return '<div class="fp-ath"><b>'+ex(row.athleteName||'Athlete')+'</b><small>Individual focus and post-practice takeaway</small><select class="sinp" onchange="updateFieldPracticeAthleteSummary('+i+',&quot;focus&quot;,this.value)">'+focusOptions.map(function(opt){return '<option '+(opt===chosen?'selected':'')+'>'+ex(opt)+'</option>';}).join('')+'</select><textarea class="sinp ta" placeholder="Post-practice summary for this athlete..." oninput="updateFieldPracticeAthleteSummary('+i+',&quot;summary&quot;,this.value)">'+ex(row.summary||'')+'</textarea><input class="sinp" value="'+ex(row.bestMark||'')+'" placeholder="Best mark optional" oninput="updateFieldPracticeAthleteSummary('+i+',&quot;bestMark&quot;,this.value)"></div>';}).join(''):'<div class="fp-text">Choose a group or athlete to add individual summaries.</div>')+'</div>'+
+    '<div class="fp-card"><div class="fp-title">Optional Jump Attempts</div>'+
       (patterns.length?patterns.map(function(group){return '<div class="fp-pattern"><span>'+ex(group.height+' '+group.setupType)+'</span><span>['+ex(group.codes.join(''))+']</span></div>';}).join(''):'<div class="fp-text">No attempts logged yet.</div>')+
       '<div class="srow" style="padding:10px 0 0"><label class="slbl">Result</label><select id="fp-result" class="sinp"><option value="O">O</option><option value="X">X</option><option value="-">P</option></select></div>'+
       '<div class="srow" style="padding:0"><label class="slbl">Setup</label><select id="fp-setup" class="sinp"><option>Bungee</option><option>Crossbar</option></select></div>'+
@@ -3194,7 +3250,7 @@ function renderFieldPractice(){
     '<div class="fp-card"><div class="fp-title">Athlete Preview</div><div class="fp-text">'+ex(fieldPracticePreviewText(p))+'</div></div>';
   var setup=document.getElementById('fp-setup');
   if(setup&&p.setupType)setup.value=p.setupType;
-  if(status)status.textContent=practices.length+' saved · '+((p.drills||[]).filter(function(d){return d.completed;}).length)+' drills complete · '+((p.attempts||[]).length)+' attempts';
+  if(status)status.textContent=practices.length+' saved · '+((p.drills||[]).filter(function(d){return d.completed;}).length)+' drills complete · '+(athleteRows.filter(function(row){return row.focus||row.summary||row.bestMark;}).length)+' athlete notes';
 }
 function saveActiveFieldPractice(){
   var p=updateFieldPracticeFromForm(false);
@@ -3228,6 +3284,18 @@ function toggleFieldPracticeDrill(index,completed){
   updateFieldPracticeFromForm(false);
   p.drills[index].completed=!!completed;
   saveFieldPractice(p);
+}
+function updateFieldPracticeAthleteSummary(index,field,value){
+  var p=activeFieldPractice();
+  if(!p)return;
+  updateFieldPracticeFromForm(false);
+  var rows=fieldPracticeVisibleSummaries(p);
+  var row=rows[index];
+  if(!row)return;
+  row[field]=value;
+  row.updatedAt=new Date().toISOString();
+  var status=document.getElementById('fp-status');
+  if(status)status.textContent='Athlete summary updated. Tap Save when finished.';
 }
 function addFieldPracticeAttempt(){
   var p=updateFieldPracticeFromForm(false);

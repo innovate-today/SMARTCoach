@@ -476,6 +476,7 @@ function normalizeFieldPractice(item) {
     setupType: normalizeFieldSetupType(source.setupType),
     height: normalizeFieldPracticeHeight(source.height),
     drills: normalizeFieldPracticeDrills(source.drills),
+    athleteSummaries: normalizeFieldPracticeAthleteSummaries(source.athleteSummaries),
     attempts: normalizeFieldPracticeAttempts(source.attempts),
     attemptSummary: cleanSetupText(source.attemptSummary).slice(0, 500),
     planNotes: cleanSetupText(source.planNotes).slice(0, 2000),
@@ -531,6 +532,27 @@ function normalizeFieldPracticeDrills(items) {
       note: cleanSetupText(source.note).slice(0, 500),
     };
   }).filter(Boolean).slice(0, 40);
+}
+
+function normalizeFieldPracticeAthleteSummaries(items) {
+  return (Array.isArray(items) ? items : []).map((item, index) => {
+    const source = item && typeof item === "object" ? item : {};
+    const athleteId = cleanSetupText(source.athleteId);
+    const athleteName = cleanSetupText(source.athleteName || source.name).slice(0, 120);
+    const focus = cleanSetupText(source.focus).slice(0, 120);
+    const summary = cleanSetupText(source.summary || source.note || source.coachSummary).slice(0, 1000);
+    const bestMark = cleanSetupText(source.bestMark || source.best || source.mark).slice(0, 80);
+    if (!athleteId && !athleteName && !focus && !summary && !bestMark) return null;
+    return {
+      id: cleanSetupText(source.id) || `athlete_summary_${index + 1}`,
+      athleteId,
+      athleteName,
+      focus,
+      summary,
+      bestMark,
+      updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString(),
+    };
+  }).filter(Boolean).slice(0, 120);
 }
 
 function normalizeFieldPracticeAttempts(items) {

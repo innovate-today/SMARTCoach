@@ -1797,6 +1797,9 @@ function checkFieldPracticePhaseOne() {
     "Field Practice",
     "Practice Focus",
     "Drill Routine",
+    "Athlete Focus & Summary",
+    "athleteSummaries",
+    "Post-practice summary for this athlete",
     "function renderRoutineOptions(selected)",
     "function accessStorageKey()",
     "function rememberedSessionStorageKey()",
@@ -1821,7 +1824,7 @@ function checkFieldPracticePhaseOne() {
     "Pass -",
     "attemptPattern",
     "function normalizeHeight(mark)",
-    "Attempt summary:",
+    "Optional attempt summary:",
     "Athlete Preview",
     "Copy Preview",
     "Field event drill checklists, practice focus, and attempt notes.",
@@ -1839,7 +1842,10 @@ function checkFieldPracticePhaseOne() {
     "function saveFieldPractice(practice)",
     "function newFieldPractice()",
     "function fieldPracticeRoutineDrills(event,routineKey)",
+    "function syncFieldPracticeAthleteSummaries(p)",
+    "function updateFieldPracticeAthleteSummary(index,field,value)",
     "function fieldPracticePreviewText(p)",
+    "Athlete Focus & Summary",
     "function shareFieldPracticePreview()",
     "FIELD_PRACTICE_EVENTS",
     "FIELD_PRACTICE_ROUTINES",
@@ -1870,6 +1876,7 @@ function checkFieldPracticePhaseOne() {
     "routineKey",
     "attemptSummary",
     "function normalizeFieldPracticeAttempts(items)",
+    "function normalizeFieldPracticeAthleteSummaries(items)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Field Practice API missing ${text}`);
   });
