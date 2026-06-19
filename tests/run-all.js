@@ -602,6 +602,7 @@ function checkDashboardStartHere() {
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     'id="startHereBtn"',
+    'onclick="openStartHere()"',
     "Start Here",
     'id="startHereModal"',
     "var START_HERE_PATHS=",
@@ -619,6 +620,7 @@ function checkDashboardStartHere() {
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Dashboard Start Here missing ${text}`);
   });
+  if (html.includes("escAttr(")) throw new Error("Dashboard Start Here references missing escAttr helper.");
   [
     "Use **Start Here** on the Dashboard",
     "It stays available after setup is complete",

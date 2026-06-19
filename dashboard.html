@@ -260,7 +260,7 @@ tr:last-child td{border-bottom:0}
       <div>
         <div class="title-row">
           <h1>SMART Trak Dashboard</h1>
-          <button id="startHereBtn" class="start-here-btn" type="button" aria-haspopup="dialog">
+          <button id="startHereBtn" class="start-here-btn" type="button" aria-haspopup="dialog" onclick="openStartHere()">
             <span class="start-here-dot" aria-hidden="true"></span>
             <span>Start Here</span>
           </button>
@@ -1359,8 +1359,8 @@ function markWhatsNewSeen(){
   els.whatsNewStatus.textContent='All updates marked seen.';
 }
 function startHereActionButton(action,path){
-  if(String(path||'').charAt(0)==='#')return '<button class="secondary" type="button" data-start-action="'+escAttr(path)+'">'+esc(action)+'</button>';
-  return '<a class="linkbtn secondary" href="'+escAttr(smartCoachPageUrl(path))+'">'+esc(action)+'</a>';
+  if(String(path||'').charAt(0)==='#')return '<button class="secondary" type="button" data-start-action="'+esc(path)+'">'+esc(action)+'</button>';
+  return '<a class="linkbtn secondary" href="'+esc(smartCoachPageUrl(path))+'">'+esc(action)+'</a>';
 }
 function renderStartHereProgress(){
   if(!els.startHereProgress)return;
@@ -2277,7 +2277,6 @@ renderWhatsNewButton();
 renderStartHereProgress();
 applyDashboardPreferences(defaultDashboardPreferences());
 els.refreshBtn.addEventListener('click',loadDashboard);
-els.startHereBtn.addEventListener('click',openStartHere);
 els.startHereClose.addEventListener('click',closeStartHere);
 els.startHereList.addEventListener('click',handleStartHereAction);
 els.startHereModal.addEventListener('click',function(event){
