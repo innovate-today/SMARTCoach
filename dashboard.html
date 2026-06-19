@@ -25,6 +25,8 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .whats-new-btn{position:relative;display:inline-flex;align-items:center;gap:6px;border:1px solid #bfd0ef;background:#fff;color:#173891;border-radius:999px;font-size:12px;font-weight:900;line-height:1;padding:7px 10px;min-height:0}
 .whats-new-btn:hover{background:#eef4ff}.whats-new-dot{width:8px;height:8px;border-radius:50%;background:#2B4FCC;box-shadow:0 0 0 3px rgba(43,79,204,.14)}.whats-new-count{border-radius:999px;background:#dbeafe;color:#173891;padding:2px 6px;font-size:11px}
+.start-here-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #b7c7ea;background:#eef6ff;color:#173891;border-radius:999px;font-size:12px;font-weight:900;line-height:1;padding:7px 10px;min-height:0}
+.start-here-btn:hover{background:#dbeafe}.start-here-dot{width:8px;height:8px;border-radius:50%;background:#0f9f6e}
 .sub{font-size:14px;color:var(--muted);margin-top:4px}
 .updated{display:inline-flex;align-items:center;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:700;padding:7px 10px}
 .actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:1 1 auto;min-width:0}
@@ -184,6 +186,7 @@ tr:last-child td{border-bottom:0}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
 .modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
 .whats-new-panel{width:min(620px,100%)}.whats-new-intro{color:#475569;font-size:14px;line-height:1.45;margin:0 0 12px}.release-list{display:grid;gap:10px}.release-group{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}.release-group h3{font-size:14px;margin:0 0 8px;color:#0f172a}.release-group ul{margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.45}.release-group li+li{margin-top:4px}.release-badge{display:inline-flex;align-items:center;border-radius:999px;background:#dbeafe;color:#173891;padding:3px 8px;font-size:12px;font-weight:900;margin-bottom:10px}
+.start-path-panel{width:min(920px,100%)}.start-path-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.start-path-card{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:13px;display:grid;gap:8px}.start-path-card h3{font-size:16px;margin:0;color:#0f172a}.start-path-card p{margin:0;color:#475569;font-size:13px;line-height:1.4}.start-path-card ol{margin:0 0 0 20px;padding:0;color:#334155;font-size:13px;line-height:1.45}.start-path-card li+li{margin-top:3px}.start-path-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px}.start-path-actions a,.start-path-actions button{font-size:12px;padding:7px 9px;min-height:30px}.start-path-note{border-left:4px solid #0f9f6e;background:#f0fdf4;border-radius:8px;padding:10px 12px;color:#166534;font-size:13px;font-weight:800;margin-bottom:12px}
 .dashboard-pref-list{display:grid;gap:8px}.dashboard-pref-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px 12px}.dashboard-pref-row b{display:block;font-size:14px;color:#0f172a}.dashboard-pref-row small{display:block;color:#64748b;font-size:12px;line-height:1.35;margin-top:2px}.dashboard-pref-row input{width:18px;height:18px;accent-color:var(--blue);flex:0 0 auto;margin-top:3px}
 .accountsummary{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 11px;margin-top:10px;color:var(--muted);font-size:13px;line-height:1.35}
 .accountsummary b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
@@ -241,6 +244,7 @@ tr:last-child td{border-bottom:0}
   .filterstate{margin-top:-2px}
   .detailgrid{grid-template-columns:1fr}
   .formgrid{grid-template-columns:1fr}
+  .start-path-grid{grid-template-columns:1fr}
   .modalactions{align-items:stretch;flex-direction:column}
   .modalstatus{margin-right:0}
   .modal{padding:20px 10px}
@@ -256,6 +260,10 @@ tr:last-child td{border-bottom:0}
       <div>
         <div class="title-row">
           <h1>SMART Trak Dashboard</h1>
+          <button id="startHereBtn" class="start-here-btn" type="button" aria-haspopup="dialog">
+            <span class="start-here-dot" aria-hidden="true"></span>
+            <span>Start Here</span>
+          </button>
           <button id="whatsNewBtn" class="whats-new-btn" type="button" aria-haspopup="dialog">
             <span id="whatsNewDot" class="whats-new-dot" aria-hidden="true"></span>
             <span>What's New</span>
@@ -525,6 +533,24 @@ tr:last-child td{border-bottom:0}
       <div class="modalactions">
         <div id="whatsNewStatus" class="modalstatus"></div>
         <button id="whatsNewSeenBtn" type="button">Mark All Seen</button>
+      </div>
+    </div>
+  </section>
+</div>
+<div id="startHereModal" class="modal" hidden>
+  <section class="modalpanel start-path-panel" role="dialog" aria-modal="true" aria-labelledby="startHereTitle">
+    <div class="modalhead">
+      <h2 id="startHereTitle">Start Here</h2>
+      <button id="startHereClose" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="release-badge">Coach setup paths</div>
+      <p class="whats-new-intro">Choose what you are trying to do first. Each path gives the next few coach actions and opens the right SMART Trak page.</p>
+      <div id="startHereProgress" class="start-path-note"></div>
+      <div id="startHereList" class="start-path-grid"></div>
+      <div class="modalactions">
+        <div id="startHereStatus" class="modalstatus">Pick a goal, then follow the buttons from left to right.</div>
+        <a id="startHereGuideLink" class="linkbtn secondary" href="/how-to.html">Open How To Guide</a>
       </div>
     </div>
   </section>
@@ -1260,6 +1286,14 @@ var WHATS_NEW_ITEMS=[
   {area:'Meet History',items:['Imports now use the reliable spreadsheet/template path only.','Imported historical rows can be corrected or voided from Meet History.']},
   {area:'Feedback',items:['Desktop pages now include one Feedback button with Bug Trak and Idea Trak.','Use Bug Trak to report beta issues and Idea Trak to share workflow improvements.']}
 ];
+var START_HERE_PATHS=[
+  {title:'Set Up My Team',desc:'Start here when the account is new or the roster needs cleanup.',steps:['Add or import active athletes.','Create training groups.','Add current fitness marks.','Send athlete calendar links when ready.'],actions:[['Athletes','/athletes.html'],['Athlete Setup','/plan-setup.html']]},
+  {title:'Plan Workouts',desc:'Build the week before practice starts.',steps:['Open Training.','Add or upload the plan.','Assign workouts to one or more groups.','Check the calendar before sharing.'],actions:[['Training','/training-calendar.html'],['Upload/Paste Plan','/plan-import.html'],['Auto Build Plan','/plan-builder.html']]},
+  {title:'Run Daily Practice',desc:'Use the app and desktop together for the normal practice routine.',steps:['Open today in Training.','Use the SMARTCoach app to time or log work.','Take Attendance.','Add Keep Trak reminders or practice notes.'],actions:[['Training','/training-calendar.html'],['Attendance','/attendance.html'],['Keep Trak','/keep-trak.html'],['Open App','/']]},
+  {title:'Run Meet Day',desc:'Prepare meets and save clean results.',steps:['Create or confirm the meet in Manage Meets.','Use the app for race timing, relays, field events, or Partner Timing.','Sync or save results.','Review Meet History and Records.'],actions:[['Manage Meets','#manage-meets'],['Meet History','/meet-history.html'],['Records','/records.html'],['Open App','/']]},
+  {title:'Track Summer Mileage',desc:'Create a friendly, read-only team mileage challenge.',steps:['Set the Dashboard activity range.','Open Share Miles Board.','Choose challenge types and points.','Copy the public board link for athletes.'],actions:[['Share Miles Board','#share-miles-board'],['Log Miles','#log-miles']]},
+  {title:'Coach Field Events',desc:'Plan drills and save individual field-event takeaways.',steps:['Open Field Practice from Training.','Pick the event, group, and drill routine.','Check drills during practice.','Add athlete-specific focus and post-practice summaries.'],actions:[['Training','/training-calendar.html'],['Field Practice','/field-practice.html']]}
+];
 var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS,['Other']);
 var activeTab='roster';
 var activeTrainingSubtab='volume';
@@ -1323,6 +1357,49 @@ function markWhatsNewSeen(){
   try{localStorage.setItem(whatsNewStorageKey(),WHATS_NEW_VERSION);}catch(e){}
   renderWhatsNewButton();
   els.whatsNewStatus.textContent='All updates marked seen.';
+}
+function startHereActionButton(action,path){
+  if(String(path||'').charAt(0)==='#')return '<button class="secondary" type="button" data-start-action="'+escAttr(path)+'">'+esc(action)+'</button>';
+  return '<a class="linkbtn secondary" href="'+escAttr(smartCoachPageUrl(path))+'">'+esc(action)+'</a>';
+}
+function renderStartHereProgress(){
+  if(!els.startHereProgress)return;
+  var active=(dashboardRows||[]).filter(function(row){return row&&row.smartcoachActive!==false;}).length;
+  var groups=(trainingGroups||[]).filter(function(group){return group&&!group.archived&&String(group.type||'training')!=='meet';}).length;
+  var workouts=(recentTrainingRows||[]).length;
+  var ready=[];
+  var remaining=[];
+  if(active)ready.push(active+' active athlete'+(active===1?'':'s'));else remaining.push('add athletes');
+  if(groups)ready.push(groups+' training group'+(groups===1?'':'s'));else remaining.push('create groups');
+  if(workouts)ready.push(workouts+' saved workout'+(workouts===1?'':'s'));else remaining.push('add first workout');
+  els.startHereProgress.textContent=remaining.length?'Setup progress: '+ready.concat(remaining.map(function(item){return 'need to '+item;})).join(' · '):'Setup looks ready: '+ready.join(' · ')+'. Choose the workflow you need today.';
+}
+function renderStartHereList(){
+  if(!els.startHereList)return;
+  els.startHereList.innerHTML=START_HERE_PATHS.map(function(path){
+    var steps=(path.steps||[]).map(function(step){return '<li>'+esc(step)+'</li>';}).join('');
+    var actions=(path.actions||[]).map(function(pair){return startHereActionButton(pair[0],pair[1]);}).join('');
+    return '<section class="start-path-card"><h3>'+esc(path.title)+'</h3><p>'+esc(path.desc)+'</p><ol>'+steps+'</ol><div class="start-path-actions">'+actions+'</div></section>';
+  }).join('');
+}
+function openStartHere(){
+  renderStartHereProgress();
+  renderStartHereList();
+  if(els.startHereGuideLink)els.startHereGuideLink.href=smartCoachPageUrl('/how-to.html');
+  els.startHereModal.hidden=false;
+  els.startHereClose.focus();
+}
+function closeStartHere(){
+  els.startHereModal.hidden=true;
+}
+function handleStartHereAction(event){
+  var button=event.target.closest&&event.target.closest('[data-start-action]');
+  if(!button)return;
+  var action=button.getAttribute('data-start-action');
+  closeStartHere();
+  if(action==='#manage-meets'){openMeetManager();return;}
+  if(action==='#share-miles-board'){openMilesBoardSharing();return;}
+  if(action==='#log-miles'){openManualMileage();return;}
 }
 function defaultDashboardPreferences(){
   return {
@@ -1900,6 +1977,8 @@ function applySmartCoachLinks(){
   if(setupPreview)setupPreview.href=smartCoachPageUrl('/dashboard.html','pro');
   var setupOnboarding=document.getElementById('setupOnboardingLink');
   if(setupOnboarding)setupOnboarding.href='/onboarding.html?account='+encodeURIComponent(smartCoachAccountKey())+'&plan=pro';
+  var startGuide=document.getElementById('startHereGuideLink');
+  if(startGuide)startGuide.href=smartCoachPageUrl('/how-to.html');
 }
 function adminToolsVisible(){
   try{
@@ -2099,6 +2178,13 @@ var els={
   status:document.getElementById('status'),
   filterState:document.getElementById('filterState'),
   lastUpdated:document.getElementById('lastUpdated'),
+  startHereBtn:document.getElementById('startHereBtn'),
+  startHereModal:document.getElementById('startHereModal'),
+  startHereClose:document.getElementById('startHereClose'),
+  startHereList:document.getElementById('startHereList'),
+  startHereProgress:document.getElementById('startHereProgress'),
+  startHereStatus:document.getElementById('startHereStatus'),
+  startHereGuideLink:document.getElementById('startHereGuideLink'),
   whatsNewBtn:document.getElementById('whatsNewBtn'),
   whatsNewDot:document.getElementById('whatsNewDot'),
   whatsNewCount:document.getElementById('whatsNewCount'),
@@ -2180,8 +2266,15 @@ var els={
 setupTableScrollbars();
 initHeaderTooltips();
 renderWhatsNewButton();
+renderStartHereProgress();
 applyDashboardPreferences(defaultDashboardPreferences());
 els.refreshBtn.addEventListener('click',loadDashboard);
+els.startHereBtn.addEventListener('click',openStartHere);
+els.startHereClose.addEventListener('click',closeStartHere);
+els.startHereList.addEventListener('click',handleStartHereAction);
+els.startHereModal.addEventListener('click',function(event){
+  if(event.target===els.startHereModal)closeStartHere();
+});
 els.whatsNewBtn.addEventListener('click',openWhatsNew);
 els.whatsNewClose.addEventListener('click',closeWhatsNew);
 els.whatsNewSeenBtn.addEventListener('click',markWhatsNewSeen);
@@ -2526,6 +2619,7 @@ function loadDashboard(){
     updateWeekRanges();
     updateBreakdowns();
     renderRows();
+    renderStartHereProgress();
     openPendingDashboardAction();
   }).catch(function(error){
     var hadDashboardData=dashboardRows.length||recentMeetRows.length||recentTrainingRows.length;

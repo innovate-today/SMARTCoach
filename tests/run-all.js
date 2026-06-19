@@ -597,6 +597,38 @@ function checkDashboardWhatsNew() {
   console.log("Dashboard What's New ok");
 }
 
+function checkDashboardStartHere() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    'id="startHereBtn"',
+    "Start Here",
+    'id="startHereModal"',
+    "var START_HERE_PATHS=",
+    "Set Up My Team",
+    "Plan Workouts",
+    "Run Daily Practice",
+    "Run Meet Day",
+    "Track Summer Mileage",
+    "Coach Field Events",
+    "function renderStartHereProgress()",
+    "function openStartHere()",
+    "function handleStartHereAction(event)",
+    "Pick a goal, then follow the buttons from left to right.",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Dashboard Start Here missing ${text}`);
+  });
+  [
+    "Use **Start Here** on the Dashboard",
+    "**Set Up My Team**",
+    "**Coach Field Events**",
+    "If the account is brand new, start with **Set Up My Team**",
+  ].forEach((text) => {
+    if (!guide.includes(text)) throw new Error(`How To Start Here guide missing ${text}`);
+  });
+  console.log("Dashboard Start Here ok");
+}
+
 function checkHowToGuidePage() {
   const html = fs.readFileSync("how-to.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
@@ -1903,6 +1935,7 @@ checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkMilesBoardFeature();
 checkDashboardWhatsNew();
+checkDashboardStartHere();
 checkHowToGuidePage();
 checkDashboardToolPreferences();
 checkBugTrakDesktopFeedback();

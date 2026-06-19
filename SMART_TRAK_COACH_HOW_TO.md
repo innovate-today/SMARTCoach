@@ -4,11 +4,18 @@ This guide explains how coaches use SMART Trak and the SMARTCoach Pro Mobile App
 
 ## Best Place To Start
 
-1. Open **Athlete Setup** and confirm the roster, active athletes, and training groups.
-2. Open **Training Calendar** and add the next workout, race, or rest day.
-3. Open the SMARTCoach Pro Mobile App, choose the training group, and time the workout.
-4. Sync the workout to SMART Trak.
-5. Review the result on the **Dashboard**.
+Use **Start Here** on the Dashboard when you are not sure what to do first. It opens short goal paths with the next few coach actions and buttons to the right pages.
+
+Common goal paths:
+
+1. **Set Up My Team**: add or import athletes, create training groups, add current fitness marks, and send calendar links when ready.
+2. **Plan Workouts**: open Training, add or upload a plan, assign workouts to one or more groups, and check the calendar.
+3. **Run Daily Practice**: review today's Training entry, use the SMARTCoach Pro Mobile App to time or log work, take Attendance, and add Keep Trak notes when needed.
+4. **Run Meet Day**: confirm the meet, use the app for timing, relays, field events, or Partner Timing, then review Meet History and Records.
+5. **Track Summer Mileage**: set the Dashboard activity range, open Share Miles Board, choose challenge types, and copy the read-only link.
+6. **Coach Field Events**: open Field Practice from Training, choose the event and drill routine, check off drills, and add athlete-specific focus summaries.
+
+If the account is brand new, start with **Set Up My Team**, then **Plan Workouts**, then **Run Daily Practice**.
 
 ## Plans And Limits
 
@@ -45,7 +52,7 @@ How to use it:
 6. Click **Show workouts** under an athlete to see completed workout details.
 7. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
-The Dashboard title includes a small **What's New** button. Use it to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Dashboard Customization, Training Customization, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
+The Dashboard title includes **Start Here** and **What's New**. Use **Start Here** for goal-based setup and workflow steps. Use **What's New** to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Dashboard Customization, Training Customization, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
 
 Use **Customize Dashboard** when a coach wants to hide optional tools they do not use every day. Keep Trak, Attendance Trak, Equipment Trak, Docu Trak, Weather, Records, and Simulators can be turned off for the Dashboard view. Hiding a tool only removes its dashboard shortcut or summary card; the tool's saved data stays in SMART Trak, direct page links still work, and **Show All** can turn everything back on.
 
