@@ -1372,7 +1372,15 @@ function renderStartHereProgress(){
   if(active)ready.push(active+' active athlete'+(active===1?'':'s'));else remaining.push('add athletes');
   if(groups)ready.push(groups+' training group'+(groups===1?'':'s'));else remaining.push('create groups');
   if(workouts)ready.push(workouts+' saved workout'+(workouts===1?'':'s'));else remaining.push('add first workout');
-  els.startHereProgress.textContent=remaining.length?'Setup progress: '+ready.concat(remaining.map(function(item){return 'need to '+item;})).join(' · '):'Setup looks ready: '+ready.join(' · ')+'. Choose the workflow you need today.';
+  if(!active&&!groups&&!workouts){
+    els.startHereProgress.textContent='New account: start with Set Up My Team, then choose the workflow you need next.';
+    return;
+  }
+  if(remaining.length){
+    els.startHereProgress.textContent='Account snapshot: '+ready.concat(remaining.map(function(item){return 'next step: '+item;})).join(' · ')+'.';
+    return;
+  }
+  els.startHereProgress.textContent='Account setup looks complete: '+ready.join(' · ')+'. Choose the workflow you need today.';
 }
 function renderStartHereList(){
   if(!els.startHereList)return;

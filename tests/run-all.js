@@ -614,12 +614,14 @@ function checkDashboardStartHere() {
     "function renderStartHereProgress()",
     "function openStartHere()",
     "function handleStartHereAction(event)",
+    "Account setup looks complete:",
     "Pick a goal, then follow the buttons from left to right.",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Dashboard Start Here missing ${text}`);
   });
   [
     "Use **Start Here** on the Dashboard",
+    "It stays available after setup is complete",
     "**Set Up My Team**",
     "**Coach Field Events**",
     "If the account is brand new, start with **Set Up My Team**",

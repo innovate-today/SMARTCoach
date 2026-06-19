@@ -4,7 +4,7 @@ This guide explains how coaches use SMART Trak and the SMARTCoach Pro Mobile App
 
 ## Best Place To Start
 
-Use **Start Here** on the Dashboard when you are not sure what to do first. It opens short goal paths with the next few coach actions and buttons to the right pages.
+Use **Start Here** on the Dashboard when you are not sure what to do first. It stays available after setup is complete and opens short goal paths with the next few coach actions and buttons to the right pages.
 
 Common goal paths:
 
