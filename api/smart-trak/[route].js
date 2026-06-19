@@ -98,6 +98,12 @@ module.exports = async function handler(req, res) {
     return accountTrainingCustomization(req, res);
   }
 
+  if (route === "athlete-calendar-questions") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountAthleteCalendarQuestions(req, res);
+  }
+
   if (route === "dashboard-preferences") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -2063,6 +2069,63 @@ async function accountTrainingCustomization(req, res) {
   }
 }
 
+async function accountAthleteCalendarQuestions(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    if (req.method === "GET") {
+      res.status(200).json({
+        success: true,
+        accountKey,
+        athleteCalendarQuestions: normalizeAthleteCalendarQuestions(existing.record.athleteCalendarQuestions),
+      });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
+    const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    if (!sessionAllowed && !codeAllowed) {
+      throw httpError(401, "Active coach access is required to update Athlete Calendar questions.");
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const questions = normalizeAthleteCalendarQuestions(payload.athleteCalendarQuestions || payload.questions || payload);
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      athleteCalendarQuestions: questions,
+      lastAthleteCalendarQuestionsSync: {
+        savedAt: new Date().toISOString(),
+        count: questions.questions.length,
+      },
+    });
+    res.status(200).json({ success: true, accountKey, athleteCalendarQuestions: questions });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Athlete Calendar questions save failed." });
+  }
+}
+
 function defaultTrainingCustomizationRules() {
   return [
     { key: "Easy/Recovery Run", label: "Easy / Recovery Run", repMeters: 1609.34, low: 60, high: 70, suffix: "/mi" },
@@ -2102,6 +2165,30 @@ function normalizeTrainingCustomization(source) {
     version: 1,
     updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
     rules,
+  };
+}
+
+function normalizeAthleteCalendarQuestions(source) {
+  const input = source && typeof source === "object" ? source : {};
+  const rawQuestions = Array.isArray(input.questions) ? input.questions : Array.isArray(source) ? source : [];
+  const questions = rawQuestions.map((item, index) => normalizeAthleteCalendarQuestion(item, index)).filter(Boolean).slice(0, 5);
+  return {
+    version: 1,
+    updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
+    questions,
+  };
+}
+
+function normalizeAthleteCalendarQuestion(item, index) {
+  const source = item && typeof item === "object" ? item : { text: item };
+  const text = cleanSetupText(source.text || source.question || source.label).slice(0, 160);
+  if (!text) return null;
+  const id = cleanSetupText(source.id || source.key || `q${index + 1}`).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40) || `q${index + 1}`;
+  return {
+    id,
+    text,
+    required: normalizeSetupBoolean(source.required, false),
+    active: source.active === false ? false : true,
   };
 }
 

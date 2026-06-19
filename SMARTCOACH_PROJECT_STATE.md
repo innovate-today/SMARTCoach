@@ -1267,6 +1267,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 425. Remaining desktop navigation button labels that pointed to `/training-calendar.html` were shortened from **Training Calendar** to **Training** across coach-facing pages and generated admin page links.
 426. Desktop Attendance row edits now replace the original attendance key on every save. This prevents sport/season/status edits from adding a second attendance record when the registry key changes.
 427. Miles Board Team goal progress card now shows both progress and the actual team goal, such as `4% of 5,000 mi`, while keeping the progress bar.
+428. Athlete Calendar now supports coach-created completion questions. Coaches open **Athletes > Calendar Questions**, save up to five Complete/Modify/Skip questions, and mark any question required. Athlete answers are validated on the athlete calendar modal and appended into the completed workout Athlete Note alongside the regular notes field.
 
 ## Known Good Test Flow
 

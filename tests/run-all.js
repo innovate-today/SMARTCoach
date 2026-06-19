@@ -1045,6 +1045,67 @@ function checkAthleteCalendarBulkEmailLinks() {
   console.log("Athlete Calendar bulk email links ok");
 }
 
+function checkAthleteCalendarQuestions() {
+  const athletes = fs.readFileSync("athletes.html", "utf8");
+  const calendar = fs.readFileSync("athlete-calendar.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const lib = fs.readFileSync("lib/athlete-calendar.js", "utf8");
+  [
+    'id="calendarQuestionsBtn"',
+    "Calendar Questions",
+    'id="calendarQuestionsModal"',
+    'id="calendarQuestionRows"',
+    'id="saveCalendarQuestionsBtn"',
+    "Complete Workout Questions",
+    "Answers are added to the Athlete Note column",
+    "function openCalendarQuestionsModal()",
+    "function collectCalendarQuestionSettings()",
+    "function saveCalendarQuestionSettings()",
+    "function setupCalendarQuestionTools()",
+    "document.addEventListener('DOMContentLoaded',setupCalendarQuestionTools);",
+    "fetch(apiUrl('/api/smart-trak/athlete-calendar-questions')",
+    "questions:questions",
+    ".filter(Boolean).slice(0,5)",
+  ].forEach((text) => {
+    if (!athletes.includes(text)) throw new Error(`Athlete Calendar Questions coach setup missing ${text}`);
+  });
+  [
+    'id="calendarQuestions"',
+    "athleteCalendarQuestions=[]",
+    "athleteCalendarQuestions=normalizeCalendarQuestions(data.athleteCalendarQuestions)",
+    "function renderCalendarQuestions()",
+    "function collectCalendarQuestionAnswers()",
+    "Answer required:",
+    "athleteCalendarAnswers:answers",
+    ".slice(0,5)",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Athlete Calendar question modal missing ${text}`);
+  });
+  [
+    'route === "athlete-calendar-questions"',
+    "function accountAthleteCalendarQuestions",
+    "athleteCalendarQuestions: normalizeAthleteCalendarQuestions",
+    "lastAthleteCalendarQuestionsSync",
+    "function normalizeAthleteCalendarQuestions",
+    "function normalizeAthleteCalendarQuestion",
+    ".filter(Boolean).slice(0, 5)",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Athlete Calendar Questions API missing ${text}`);
+  });
+  [
+    "athleteCalendarQuestions: questionSettings",
+    "function loadAthleteCalendarQuestionSettings",
+    "function normalizeAthleteCalendarAnswers",
+    "const missingRequired",
+    "function composeAthleteSubmittedNotes",
+    "Workout questions:",
+    "athleteSubmittedNote: notes",
+  ].forEach((text) => {
+    if (!lib.includes(text)) throw new Error(`Athlete Calendar Questions sync path missing ${text}`);
+  });
+  console.log("Athlete Calendar questions ok");
+}
+
 function checkDashboardPlainLapSplitsStayLaps() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -1950,6 +2011,7 @@ checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
 checkTrainingCustomization();
 checkAthleteCalendarBulkEmailLinks();
+checkAthleteCalendarQuestions();
 checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
