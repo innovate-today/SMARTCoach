@@ -220,6 +220,7 @@ function checkAccountOwnerExcludedFromAthletes() {
       throw new Error(`${file} must exclude smartcoach-account-owner contacts from athlete rosters.`);
     }
     [
+      'value === "voice chat"',
       'value === "smartcoach feedback"',
       'value === "smartcoach bug trak"',
       'value === "smartcoach idea trak"',
