@@ -1268,6 +1268,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 426. Desktop Attendance row edits now replace the original attendance key on every save. This prevents sport/season/status edits from adding a second attendance record when the registry key changes.
 427. Miles Board Team goal progress card now shows both progress and the actual team goal, such as `4% of 5,000 mi`, while keeping the progress bar.
 428. Athlete Calendar now supports coach-created completion questions. Coaches open **Athletes > Calendar Questions**, save up to five Complete/Modify/Skip questions, and mark any question required. Athlete answers are validated on the athlete calendar modal and appended into the completed workout Athlete Note alongside the regular notes field.
+429. Added **Athlete Calendar Questions** to the Dashboard **What's New** drawer after explicit user approval. The What's New version was bumped so coaches see the new Complete/Modify/Skip question workflow.
 
 ## Known Good Test Flow
 
