@@ -687,6 +687,15 @@ function checkHowToGuidePage() {
   ].forEach((text) => {
     if (guide.includes(text)) throw new Error(`How To guide still describes removed Athletic.net import flow: ${text}`);
   });
+  [
+    ".html",
+    "/api/",
+    "webhook",
+    "payload",
+    "custom_objects",
+  ].forEach((text) => {
+    if (guide.includes(text)) throw new Error(`How To guide includes non-coach-facing technical text: ${text}`);
+  });
   console.log("How To guide page ok");
 }
 
