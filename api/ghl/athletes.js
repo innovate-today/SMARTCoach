@@ -21,7 +21,7 @@ const ATHLETE_FIELD_ALIASES = {
   coachNotes: ["smartcoach_notes", "smartcoach athlete notes", "coach notes", "notes"],
 };
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
 
@@ -76,7 +76,7 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Athlete roster request failed." });
   }
-};
+}
 
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -588,3 +588,6 @@ function httpError(statusCode, message) {
   error.statusCode = statusCode;
   return error;
 }
+
+module.exports = handler;
+module.exports.listSmartCoachAthletes = listSmartCoachAthletes;

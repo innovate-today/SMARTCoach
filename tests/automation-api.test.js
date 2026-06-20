@@ -544,6 +544,88 @@ async function testCoachCodeResetLimit() {
   }
 }
 
+async function testPlanDowngradeBlockedWhenActiveAthletesExceedLimit() {
+  const previousFetch = global.fetch;
+  const existing = {
+    accountKey: "downgrade-school",
+    productPlan: "pro100",
+    token: "saved-token",
+    locationId: "saved-location",
+    coachSeats: 1,
+    coachAccessCodes: ["coach-code"],
+    requireCoachAccess: true,
+    subscription: { status: "active", billingCadence: "monthly", amount: "75.00" },
+  };
+  let saveCalled = false;
+
+  global.fetch = async (url) => {
+    const text = String(url);
+    if (text.includes("/get/")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: JSON.stringify(existing) }),
+      };
+    }
+    if (text.includes("/locations/saved-location/customFields")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ customFields: [] }),
+      };
+    }
+    if (text.includes("/contacts/?")) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          contacts: Array.from({ length: 30 }, (_, index) => ({
+            id: `athlete_${index + 1}`,
+            name: `Athlete ${index + 1}`,
+            tags: ["smartcoach-athlete"],
+          })),
+        }),
+      };
+    }
+    if (text.includes("/set/")) {
+      saveCalled = true;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ result: "OK" }),
+      };
+    }
+    throw new Error(`Unexpected downgrade call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_AUTOMATION_SECRET: "automation-secret",
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+    }, async () => {
+      const res = mockRes();
+      await handler({
+        method: "POST",
+        query: { route: "account-automation" },
+        headers: { "x-smartcoach-automation-secret": "automation-secret" },
+        body: {
+          accountKey: "downgrade-school",
+          productPlan: "pro25",
+          subscriptionAmount: "45.00",
+        },
+      }, res);
+
+      assert.strictEqual(res.statusCode, 409);
+      assert.match(res.body.error, /Pro 25 allows up to 25 active athletes/);
+      assert.match(res.body.error, /currently has 30 active athletes/);
+      assert.strictEqual(saveCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testCoachSelfServiceCodeReset() {
   const previousFetch = global.fetch;
   const existing = {
@@ -1212,6 +1294,7 @@ async function testAccountStatusReportsDeviceUnlock() {
   await testInvalidStripeWebhookDoesNotTouchRegistry();
   await testPartialAutomationPreservesSavedConnection();
   await testCoachCodeResetLimit();
+  await testPlanDowngradeBlockedWhenActiveAthletesExceedLimit();
   await testCoachSelfServiceCodeReset();
   await testCoachRecoveryBypassesMonthlyResetLimit();
   await testAccountSetupSyncsGhlAccountKeyCustomValue();

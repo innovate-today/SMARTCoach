@@ -3,12 +3,13 @@ const crypto = require("crypto");
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME = "account_key";
+const athletesApi = require("../ghl/athletes");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
   "athlete-calendar": require("../../lib/athlete-calendar"),
   "athlete-profile": require("../ghl/athlete-profile"),
-  athletes: require("../ghl/athletes"),
+  athletes: athletesApi,
   dashboard: require("../ghl/dashboard"),
   groups: require("../../lib/ghl-groups"),
   "manual-mileage": require("../ghl/manual-mileage"),
@@ -2734,6 +2735,7 @@ async function saveAutomationAccount(payload, options = {}) {
   const account = accountAutomationRecord(payload, existing, options);
   const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const environment = accountEnvironmentRows({ suffix, account, includeCrm: isProPlan(account.productPlan) });
+  await enforcePlanDowngradeAthleteLimit({ existing, account });
   if (options.skipDuplicateEvents && automationEventAlreadyRecorded(existing, account.lastAutomationEvent)) {
     return automationAccountResult(account, {
       configured: registryConfigured(),
@@ -2778,6 +2780,28 @@ function automationAccountResult(account, registryResult, extra = {}) {
     ghlCustomLinkUrl: `/dashboard.html?account=${encodeURIComponent(account.accountKey)}&embed=1`,
     accountUrl: `/?account=${encodeURIComponent(account.accountKey)}`,
   };
+}
+
+async function enforcePlanDowngradeAthleteLimit({ existing, account }) {
+  if (!existing || !account) return;
+  const targetPlan = planDefinition(account.productPlan);
+  const previousPlan = planDefinition(existing.productPlan || account.productPlan);
+  const targetLimit = targetPlan.activeAthleteLimit;
+  if (targetLimit === null || typeof targetLimit === "undefined") return;
+  const previousLimit = previousPlan.activeAthleteLimit;
+  const loweringLimit = previousLimit === null || typeof previousLimit === "undefined" || Number(previousLimit) > Number(targetLimit);
+  if (!loweringLimit) return;
+  const token = cleanSetupText(account.token || existing.token);
+  const locationId = cleanSetupText(account.locationId || existing.locationId);
+  if (!token || !locationId) return;
+  const activeAthletes = await athletesApi.listSmartCoachAthletes({ token, locationId, includeContacts: false });
+  const activeCount = activeAthletes.filter((athlete) => athlete && athlete.smartcoachActive).length;
+  if (activeCount <= Number(targetLimit)) return;
+  const overBy = activeCount - Number(targetLimit);
+  throw httpError(
+    409,
+    `${targetPlan.label} allows up to ${targetLimit} active athlete${Number(targetLimit) === 1 ? "" : "s"}. This account currently has ${activeCount} active athletes. Mark ${overBy} athlete${overBy === 1 ? "" : "s"} inactive before changing to ${targetPlan.label}.`
+  );
 }
 
 async function syncAccountKeyCustomValue(account) {
@@ -2870,6 +2894,7 @@ async function previewAutomationAccount(payload, options = {}) {
   if (!accountKey) throw httpError(400, "Account key is required.");
   const existing = await loadExistingAccountRecord(accountKey);
   const account = accountAutomationRecord(payload, existing, options);
+  await enforcePlanDowngradeAthleteLimit({ existing, account });
   const suffix = account.accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const environment = accountEnvironmentRows({ suffix, account, includeCrm: isProPlan(account.productPlan) });
   const subscriptionAllowed = subscriptionAccessAllowed(account.subscription);

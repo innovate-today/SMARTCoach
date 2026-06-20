@@ -641,6 +641,8 @@ function checkHowToGuidePage() {
   const html = fs.readFileSync("how-to.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  const sales = fs.readFileSync("sales.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   [
     "SMART Trak How To Guide",
     "Coach-facing guide for SMART Trak and the SMARTCoach Pro mobile app.",
@@ -677,6 +679,8 @@ function checkHowToGuidePage() {
     "Use **Import History** when starting SMART Trak with older results from a spreadsheet, CSV, TSV, or the SMART Trak template.",
     "Paste spreadsheet rows into the import box, or upload a CSV/TSV/template file.",
     "Athletic.net copy/paste import is no longer available because it was not reliable enough for coach-facing use.",
+    "Beta customers can use a 30-day Pro 100 trial.",
+    "A coach can only move to a lower Pro plan after the active athlete count is at or below that plan's limit.",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
   });
@@ -695,6 +699,20 @@ function checkHowToGuidePage() {
     "custom_objects",
   ].forEach((text) => {
     if (guide.includes(text)) throw new Error(`How To guide includes non-coach-facing technical text: ${text}`);
+  });
+  [
+    "Beta customers can start with a 30-day Pro 100 trial.",
+    "Lower-plan downgrades require the active athlete count to fit the requested plan first.",
+  ].forEach((text) => {
+    if (!sales.includes(text)) throw new Error(`Sales page missing ${text}`);
+  });
+  if (guide.includes("7-day trial") || sales.includes("7-day trial")) throw new Error("Trial wording should use the 30-day Pro 100 beta trial.");
+  [
+    "async function enforcePlanDowngradeAthleteLimit",
+    "Mark ${overBy} athlete",
+    "before changing to ${targetPlan.label}",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Plan downgrade guard missing ${text}`);
   });
   console.log("How To guide page ok");
 }
