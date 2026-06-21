@@ -8,7 +8,7 @@ const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS = 4500;
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
-const { loadTrainingMirror } = require("../../lib/account-registry");
+const { loadTrainingMirror, loadAttendanceRecords } = require("../../lib/account-registry");
 
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
@@ -148,20 +148,31 @@ async function publicMilesBoard(req, res) {
   }
 
   try {
-    const [athletes, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
+    const sharing = req.milesBoardSharing || {};
+    const displayOptions = milesBoardDisplayOptions(sharing.displayOptions);
+    const [athletes, performanceRecords, mirroredPerformanceRecords, attendanceRecords] = await Promise.all([
       listActiveAthletes({ token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
+      displayOptions.teamAttendance || displayOptions.athleteAttendance ? loadAttendanceRecords(accountKey, {
+        start: dateOnly(rangeForAttendanceStart(req.query && req.query.start)),
+        end: dateOnly(rangeForAttendanceEnd(req.query && req.query.end)),
+      }) : Promise.resolve([]),
     ]);
     const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
     const start = publicBoardDate(req.query && req.query.start);
     const end = publicBoardDate(req.query && req.query.end);
     const range = normalizedBoardRange(start, end);
-    const gameSettings = milesBoardGameSettings(req.milesBoardSharing && req.milesBoardSharing.gameSettings);
-    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, start: range.start, end: range.end, gameSettings });
+    const rangeAttendance = (attendanceRecords || []).filter((record) => {
+      const date = parseDate(record.date || record.syncedAt || record.updatedAt);
+      return date && date >= range.start && date < range.end;
+    });
+    const gameSettings = milesBoardGameSettings(sharing.gameSettings);
+    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, attendanceRecords: rangeAttendance, start: range.start, end: range.end, gameSettings, displayOptions });
     const groupRows = milesBoardGroupRows(boardRows);
     const totalMiles = roundVolume(boardRows.reduce((sum, row) => sum + row.totalMiles, 0));
     const totalWorkouts = boardRows.reduce((sum, row) => sum + row.workouts, 0);
+    const teamAttendance = displayOptions.teamAttendance ? milesBoardAttendanceSummary(rangeAttendance) : null;
     res.status(200).json({
       success: true,
       accountKey,
@@ -169,6 +180,7 @@ async function publicMilesBoard(req, res) {
       generatedAt: new Date().toISOString(),
       challengeType: clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total",
       challengeTypes: Array.isArray(req.milesBoardSharing && req.milesBoardSharing.challengeTypes) ? req.milesBoardSharing.challengeTypes : [clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total"],
+      displayOptions,
       gameSettings,
       range: {
         start: dateOnly(range.start),
@@ -183,6 +195,8 @@ async function publicMilesBoard(req, res) {
         averagePerWorkout: totalWorkouts ? roundVolume(totalMiles / totalWorkouts) : 0,
         teamGoalMiles: gameSettings.teamGoalMiles,
         teamGoalProgress: gameSettings.teamGoalMiles ? Math.round((totalMiles / gameSettings.teamGoalMiles) * 100) : 0,
+        attendanceRate: teamAttendance ? teamAttendance.rate : undefined,
+        attendanceRequired: teamAttendance ? teamAttendance.required : undefined,
       },
       highlights: milesBoardHighlights(boardRows),
       weeklyWinners: milesBoardWeeklyWinners(boardRows, groupRows),
@@ -195,7 +209,8 @@ async function publicMilesBoard(req, res) {
   }
 }
 
-function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSettings }) {
+function buildMilesBoardRows({ athletes, performanceRecords, attendanceRecords, start, end, gameSettings, displayOptions }) {
+  const showAttendance = !!(displayOptions && displayOptions.athleteAttendance);
   const rows = athletes.map((athlete) => {
     const training = performanceRecords
       .filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record))
@@ -238,6 +253,11 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSet
       activeDays,
       lastLoggedDate: last.sessionDate || last.syncedAt || "",
     };
+    if (showAttendance) {
+      const attendance = milesBoardAttendanceSummary((attendanceRecords || []).filter((record) => attendanceMatchesAthlete(record, athlete)));
+      row.attendanceRate = attendance.rate;
+      row.attendanceRequired = attendance.required;
+    }
     return {
       ...row,
       gameScore: milesBoardGameScore(row, gameSettings),
@@ -253,6 +273,46 @@ function buildMilesBoardRows({ athletes, performanceRecords, start, end, gameSet
     };
   });
   return milesBoardCompetitionBadges(rows).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
+}
+
+function milesBoardDisplayOptions(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    teamAttendance: input.teamAttendance === true,
+    athleteAttendance: input.athleteAttendance === true,
+  };
+}
+
+function rangeForAttendanceStart(value) {
+  return publicBoardDate(value) || normalizedBoardRange(null, null).start;
+}
+
+function rangeForAttendanceEnd(value) {
+  const date = publicBoardDate(value);
+  return date || addDays(normalizedBoardRange(null, null).end, -1);
+}
+
+function attendanceMatchesAthlete(record, athlete) {
+  if (!record || !athlete) return false;
+  const recordIds = [record.athleteId, record.contactId, record.smartcoachAthleteId].map(clean).filter(Boolean).map((value) => value.toLowerCase());
+  const athleteIds = [athlete.id, athlete.contactId, athlete.smartcoachAthleteId].map(clean).filter(Boolean).map((value) => value.toLowerCase());
+  if (recordIds.length && athleteIds.length && recordIds.some((id) => athleteIds.includes(id))) return true;
+  return clean(record.athleteName).toLowerCase() === clean(athlete.name).toLowerCase();
+}
+
+function milesBoardAttendanceSummary(records) {
+  const counts = { present: 0, late: 0, checked_out: 0, absent: 0 };
+  (Array.isArray(records) ? records : []).forEach((record) => {
+    const status = clean(record && record.status).toLowerCase().replace(/\s+/g, "_");
+    if (Object.prototype.hasOwnProperty.call(counts, status)) counts[status] += 1;
+  });
+  const attended = counts.present + counts.late + counts.checked_out;
+  const required = attended + counts.absent;
+  return {
+    attended,
+    required,
+    rate: required ? Math.round((attended / required) * 100) : null,
+  };
 }
 
 function milesBoardWeeklyWinners(rows, groups) {

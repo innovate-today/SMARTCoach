@@ -1270,6 +1270,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 428. Athlete Calendar now supports coach-created completion questions. Coaches open **Athletes > Calendar Questions**, save up to five Complete/Modify/Skip questions, and mark any question required. Athlete answers are validated on the athlete calendar modal and appended into the completed workout Athlete Note alongside the regular notes field.
 429. Added **Athlete Calendar Questions** to the Dashboard **What's New** drawer after explicit user approval. The What's New version was bumped so coaches see the new Complete/Modify/Skip question workflow.
 430. Added the Pro plan downgrade guard. Account automation and setup preview now block lowering to a capped plan such as Pro 25 when the current active SMART Trak roster exceeds the requested plan limit. Coaches/support must mark athletes inactive first; SMARTCoach does not auto-deactivate the last-added athletes. Product docs now describe the 30-day Pro 100 beta trial and downgrade limit rule.
+431. Share Miles Board now lets coaches choose whether attendance appears on the public board. Team Attendance % can be shown as a top card, Athlete Attendance % can be shown as a sortable leaderboard column, and both stay hidden from the public API unless enabled in Miles Board Sharing. Attendance uses the same Present/Late/Checked Out counted-as-attended rule as the Dashboard.
 
 ## Known Good Test Flow
 

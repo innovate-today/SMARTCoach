@@ -1937,10 +1937,19 @@ function normalizeMilesBoardSharing(source) {
     active: input.active !== false,
     challengeType: challengeTypes[0],
     challengeTypes,
+    displayOptions: normalizeMilesBoardDisplayOptions(input.displayOptions),
     gameSettings: normalizeMilesBoardGameSettings(input.gameSettings),
     tokenVersion: cleanSetupText(input.tokenVersion) || "1",
     updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
     resetAt: cleanSetupText(input.resetAt),
+  };
+}
+
+function normalizeMilesBoardDisplayOptions(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    teamAttendance: input.teamAttendance === true,
+    athleteAttendance: input.athleteAttendance === true,
   };
 }
 

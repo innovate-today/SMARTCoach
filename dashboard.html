@@ -596,6 +596,13 @@ tr:last-child td{border-bottom:0}
           <span>Link active</span>
         </label>
         <div class="field full">
+          <label>Visible Board Details</label>
+          <div class="dashboard-pref-list">
+            <label class="dashboard-pref-row"><span><b>Team Attendance %</b><small>Shows a team attendance card for this board range.</small></span><input id="milesBoardShowTeamAttendance" type="checkbox"></label>
+            <label class="dashboard-pref-row"><span><b>Athlete Attendance %</b><small>Shows each athlete's attendance percentage on the leaderboard.</small></span><input id="milesBoardShowAthleteAttendance" type="checkbox"></label>
+          </div>
+        </div>
+        <div class="field full">
           <label for="milesBoardChallengeName">Challenge Name</label>
           <input id="milesBoardChallengeName" type="text" maxlength="80" placeholder="Summer Mileage Challenge">
         </div>
@@ -1512,7 +1519,10 @@ function saveDashboardPreferences(){
   });
 }
 function defaultMilesBoardSharing(){
-  return {active:true,challengeType:'total',challengeTypes:['total'],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
+  return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
+}
+function defaultMilesBoardDisplayOptions(){
+  return {teamAttendance:false,athleteAttendance:false};
 }
 function defaultMilesBoardGameSettings(){
   return {challengeName:'Summer Mileage Challenge',coachMessage:'',teamGoalMiles:0,athleteGoalMiles:0,pointsPerMile:1,pointsPerWorkout:3,pointsPerCurrentWeekMile:1,pointsPerImprovementMile:2,consistencyDays:3,consistencyBonus:5};
@@ -1550,6 +1560,13 @@ function normalizeMilesBoardChallenges(values){
   });
   return out.length?out:['total'];
 }
+function normalizeMilesBoardDisplayOptions(source){
+  var input=source&&typeof source==='object'?source:{};
+  return {
+    teamAttendance:input.teamAttendance===true,
+    athleteAttendance:input.athleteAttendance===true
+  };
+}
 function normalizeMilesBoardSharing(source){
   var input=source&&typeof source==='object'?source:{};
   var challenges=normalizeMilesBoardChallenges(input.challengeTypes||input.challengeType||input.challenge||'total');
@@ -1557,6 +1574,7 @@ function normalizeMilesBoardSharing(source){
     active:input.active!==false,
     challengeType:challenges[0],
     challengeTypes:challenges,
+    displayOptions:normalizeMilesBoardDisplayOptions(input.displayOptions),
     gameSettings:normalizeMilesBoardGameSettings(input.gameSettings),
     tokenVersion:String(input.tokenVersion||'1'),
     updatedAt:String(input.updatedAt||''),
@@ -1570,6 +1588,8 @@ function renderMilesBoardSharing(){
   });
   renderMilesBoardGameSettings(settings.gameSettings);
   if(els.milesBoardActive)els.milesBoardActive.checked=settings.active;
+  if(els.milesBoardShowTeamAttendance)els.milesBoardShowTeamAttendance.checked=!!settings.displayOptions.teamAttendance;
+  if(els.milesBoardShowAthleteAttendance)els.milesBoardShowAthleteAttendance.checked=!!settings.displayOptions.athleteAttendance;
   if(els.milesBoardLinkPreview)els.milesBoardLinkPreview.value=currentMilesBoardUrl||'';
   if(els.milesBoardStatus){
     els.milesBoardStatus.textContent=settings.active?'Set the range on the Dashboard before copying the link.':'Miles Board sharing is off. Current links will not load.';
@@ -1587,6 +1607,10 @@ function collectMilesBoardSharing(){
     active:!!(els.milesBoardActive&&els.milesBoardActive.checked),
     challengeType:selected[0]||current.challengeType,
     challengeTypes:selected,
+    displayOptions:normalizeMilesBoardDisplayOptions({
+      teamAttendance:!!(els.milesBoardShowTeamAttendance&&els.milesBoardShowTeamAttendance.checked),
+      athleteAttendance:!!(els.milesBoardShowAthleteAttendance&&els.milesBoardShowAthleteAttendance.checked)
+    }),
     gameSettings:collectMilesBoardGameSettings(current.gameSettings),
     tokenVersion:current.tokenVersion,
     updatedAt:new Date().toISOString()
@@ -2213,6 +2237,8 @@ var els={
   milesBoardClose:document.getElementById('milesBoardClose'),
   milesBoardChallengeList:document.getElementById('milesBoardChallengeList'),
   milesBoardActive:document.getElementById('milesBoardActive'),
+  milesBoardShowTeamAttendance:document.getElementById('milesBoardShowTeamAttendance'),
+  milesBoardShowAthleteAttendance:document.getElementById('milesBoardShowAthleteAttendance'),
   milesBoardChallengeName:document.getElementById('milesBoardChallengeName'),
   milesBoardCoachMessage:document.getElementById('milesBoardCoachMessage'),
   milesBoardTeamGoal:document.getElementById('milesBoardTeamGoal'),
