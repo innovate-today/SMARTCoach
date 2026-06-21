@@ -1031,6 +1031,25 @@ function checkTrainingCustomization() {
   console.log("Training customization ok");
 }
 
+function checkMobileCalendarWorkoutPriority() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "function canAutoApplyCalendarWorkout(group)",
+    "return true;",
+    "function hasCalendarWorkoutSelection(target)",
+    "target&&target.trainingPlanAuto==='calendar'&&target.trainingPlanDayId",
+    "function canAutoApplySavedGroupPlan(group)",
+    "if(hasCalendarWorkoutSelection(group))return false;",
+    "if(groupPlan&&canAutoApplySavedGroupPlan(CL))",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile calendar workout priority missing ${text}`);
+  });
+  if (mobile.includes("if(group.trainingPlanId&&!group.trainingPlanAuto)return false;")) {
+    throw new Error("Mobile SMART Trak Calendar workouts should not be blocked by an older saved group plan.");
+  }
+  console.log("mobile calendar workout priority ok");
+}
+
 function checkAthleteCalendarBulkEmailLinks() {
   const html = fs.readFileSync("athletes.html", "utf8");
   const api = fs.readFileSync("api/ghl/athletes.js", "utf8");
@@ -2061,6 +2080,7 @@ checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
 checkTrainingCustomization();
+checkMobileCalendarWorkoutPriority();
 checkAthleteCalendarBulkEmailLinks();
 checkAthleteCalendarQuestions();
 checkDashboardPlainLapSplitsStayLaps();

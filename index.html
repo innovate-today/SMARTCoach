@@ -1732,8 +1732,15 @@ function applyCalendarDayToTarget(target,day,auto){
 }
 function canAutoApplyCalendarWorkout(group){
   if(!group)return false;
-  if(group.trainingPlanId&&!group.trainingPlanAuto)return false;
-  return !group.trainingPlanDayId||group.trainingPlanAuto==='calendar'||group.trainingPlanAuto==='1'||!group.trainingPlanId;
+  return true;
+}
+function hasCalendarWorkoutSelection(target){
+  return !!(target&&target.trainingPlanAuto==='calendar'&&target.trainingPlanDayId);
+}
+function canAutoApplySavedGroupPlan(group){
+  if(!group)return false;
+  if(hasCalendarWorkoutSelection(group))return false;
+  return !group.trainingPlanId||group.trainingPlanAuto;
 }
 function mergeCalendarWorkoutDaysIntoLogs(days){
   var changed=false,byGroup={};
@@ -1964,7 +1971,7 @@ function applyAutoPlansToCurrentGroup(){
   if(!CL||!TP.length)return;
   var changed=false;
   var groupPlan=findAssignedPlanForGroup();
-  if(groupPlan&&(!CL.trainingPlanId||CL.trainingPlanAuto)){
+  if(groupPlan&&canAutoApplySavedGroupPlan(CL)){
     applyTrainingPlanRecordToTarget(CL,groupPlan,true);
     changed=true;
   }
