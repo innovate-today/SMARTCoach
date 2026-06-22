@@ -3426,6 +3426,26 @@ function equipmentItemById(){
   equipmentActiveItems().forEach(function(item){byId[equipmentItemId(item.id)]=item;});
   return byId;
 }
+function equipmentNorm(value){return String(value||'').trim().toLowerCase();}
+function equipmentNumberInRange(number,row){
+  var n=parseInt(String(number||'').trim(),10);
+  var a=parseInt(String(row&&row.startNumber||'').trim(),10);
+  var b=parseInt(String(row&&row.endNumber||'').trim(),10);
+  if(!Number.isFinite(n)||!Number.isFinite(a))return equipmentNorm(number)===equipmentNorm(row&&row.startNumber);
+  if(!Number.isFinite(b))return n===a;
+  return n>=a&&n<=b;
+}
+function equipmentInventoryForRecordItem(itemId,row){
+  row=row||{};
+  return (EQUIP.inventory||[]).find(function(inv){
+    if(equipmentItemId(inv.itemId)!==equipmentItemId(itemId))return false;
+    if(inv.size&&equipmentNorm(inv.size)!==equipmentNorm(row.size))return false;
+    if((inv.trackingType||'numbered')==='numbered'&&!equipmentNumberInRange(row.number,inv))return false;
+    if(inv.programScope!=='shared'&&equipmentNorm(row.program)!==equipmentNorm(inv.program||'General'))return false;
+    if(inv.groupScope!=='shared'&&equipmentNorm(row.group)!==equipmentNorm(inv.group||'General'))return false;
+    return true;
+  })||null;
+}
 function equipmentStatusLabel(value){
   return({not_issued:'Not Issued',issued:'Issued',returned:'Returned',lost_damaged:'Lost / Damaged',not_required:'Not Required'})[value]||'Not Issued';
 }
@@ -3474,15 +3494,16 @@ function renderEquipmentLookup(){
       var row=record.items[itemId]||{};
       var item=items[equipmentItemId(itemId)]||{name:itemId};
       if(row.status==='not_issued'&&!row.size&&!row.number&&!row.note)return;
-      var hay=[record.athleteName,key,item.name,itemId,row.status,row.size,row.number,row.note,row.issuedDate,row.returnedDate].join(' ').toLowerCase();
+      var inventory=equipmentInventoryForRecordItem(itemId,row);
+      var hay=[record.athleteName,key,item.name,itemId,row.status,row.size,row.number,inventory&&inventory.model,inventory&&inventory.serialNumber,row.note,row.issuedDate,row.returnedDate].join(' ').toLowerCase();
       if(terms.every(function(term){return hay.indexOf(term)>=0;})){
-        rows.push({athlete:record.athleteName||key,item:item.name||itemId,status:row.status||'not_issued',size:row.size||'',number:row.number||'',note:row.note||''});
+        rows.push({athlete:record.athleteName||key,item:item.name||itemId,status:row.status||'not_issued',size:row.size||'',number:row.number||'',model:inventory&&inventory.model||'',serialNumber:inventory&&inventory.serialNumber||'',note:row.note||''});
       }
     });
   });
-  if(!rows.length){results.innerHTML='<div class="eq-results"><div class="eq-result"><b>No match found</b><small>Try the item name, number, size, or athlete name.</small></div></div>';return;}
+  if(!rows.length){results.innerHTML='<div class="eq-results"><div class="eq-result"><b>No match found</b><small>Try the item name, assigned #, model, serial, size, or athlete name.</small></div></div>';return;}
   results.innerHTML='<div class="eq-results">'+rows.slice(0,12).map(function(row){
-    var detail=[equipmentStatusLabel(row.status),row.size?('Size '+row.size):'',row.number?('# '+row.number):'',row.note].filter(Boolean).join(' · ');
+    var detail=[equipmentStatusLabel(row.status),row.size?('Size '+row.size):'',row.number?('Assigned # '+row.number):'',row.model?('Model '+row.model):'',row.serialNumber?('Serial '+row.serialNumber):'',row.note].filter(Boolean).join(' · ');
     return '<div class="eq-result"><b>'+ex(row.athlete)+' - '+ex(row.item)+'</b><small>'+ex(detail||'Equipment record')+'</small></div>';
   }).join('')+'</div>';
 }
@@ -3504,7 +3525,7 @@ function equipmentItemHtml(runnerIndex,itemIndex,item,row){
   return '<div class="eq-item '+(filled?'filled':'blank')+'" id="'+prefix+'-wrap"><div class="eq-item-title">'+ex(item.name||'Equipment')+'</div><div class="eq-grid">'+
     '<select class="sinp" id="'+prefix+'-status" onchange="equipmentFieldChanged('+runnerIndex+','+itemIndex+')">'+equipmentStatusOptions(status)+'</select>'+
     (item.trackSize!==false?'<select class="sinp" id="'+prefix+'-size" onchange="equipmentFieldChanged('+runnerIndex+','+itemIndex+')">'+equipmentSizeOptions(row.size||'')+'</select>':'<input class="sinp" id="'+prefix+'-size" value="'+ex(row.size||'')+'" placeholder="Size optional" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>')+
-    (item.trackNumber!==false?'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# / ID" inputmode="numeric" pattern="[0-9]*" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>':'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# optional" inputmode="numeric" pattern="[0-9]*" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>')+
+    (item.trackNumber!==false?'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="Assigned #" inputmode="numeric" pattern="[0-9]*" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>':'<input class="sinp" id="'+prefix+'-number" value="'+ex(row.number||'')+'" placeholder="# optional" inputmode="numeric" pattern="[0-9]*" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>')+
     '<input class="sinp eq-note" id="'+prefix+'-note" value="'+ex(row.note||'')+'" placeholder="Note" oninput="equipmentFieldChanged('+runnerIndex+','+itemIndex+')"/>'+
     '<input type="hidden" id="'+prefix+'-item" value="'+ex(itemId)+'"/>'+
   '</div></div>';

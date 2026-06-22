@@ -1494,6 +1494,8 @@ function normalizeEquipmentInventory(inventory) {
       startNumber,
       endNumber,
       quantity: trackingType === "numbered" ? inventoryRangeCount(startNumber, endNumber) : quantity,
+      model: cleanSetupText(raw.model || raw.modelNumber).slice(0, 80),
+      serialNumber: cleanSetupText(raw.serialNumber || raw.serial).slice(0, 120),
       note: cleanSetupText(raw.note || raw.notes).slice(0, 800),
       active: raw.active === false ? false : true,
       updatedAt: cleanSetupText(raw.updatedAt) || new Date().toISOString(),

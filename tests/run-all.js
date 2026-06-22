@@ -1335,6 +1335,38 @@ function checkPageSearchDebounces() {
   console.log("page search debounce checks ok");
 }
 
+function checkEquipmentInventoryModelSerial() {
+  const athletes = fs.readFileSync("athletes.html", "utf8");
+  const mobile = fs.readFileSync("index.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  [
+    "data-inventory-model",
+    "data-inventory-serial",
+    "function equipmentInventoryForIssuedRow(row)",
+    "row.model=String(row.model||row.modelNumber||'').trim();",
+    "row.serialNumber=String(row.serialNumber||row.serial||'').trim();",
+    "Assigned #",
+    "Serial #",
+  ].forEach((text) => {
+    if (!athletes.includes(text)) throw new Error(`Equipment Trak inventory metadata missing ${text}`);
+  });
+  [
+    "function equipmentInventoryForRecordItem(itemId,row)",
+    "inventory&&inventory.model",
+    "inventory&&inventory.serialNumber",
+    "Assigned #",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
+  });
+  [
+    "model: cleanSetupText(raw.model || raw.modelNumber).slice(0, 80)",
+    "serialNumber: cleanSetupText(raw.serialNumber || raw.serial).slice(0, 120)",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Equipment Trak API metadata persistence missing ${text}`);
+  });
+  console.log("Equipment Trak inventory model/serial checks ok");
+}
+
 function checkFieldNoMarkResultsAllowed() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
@@ -2090,6 +2122,7 @@ checkMeetHistoryPerformanceCaches();
 checkMeetHistoryImportOnlySpreadsheet();
 checkMeetHistoryImportedResultCorrections();
 checkPageSearchDebounces();
+checkEquipmentInventoryModelSerial();
 checkFieldNoMarkResultsAllowed();
 checkMobileFieldEventCaptureControls();
 checkKeepTrakFeature();
