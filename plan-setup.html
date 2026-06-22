@@ -797,7 +797,17 @@ function isArchivedPlan(plan){
   if(plan.archived)return true;
   if(/\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(String(plan.schoolConstraints||'')))return true;
   var status=[plan.approvalStatus,plan.status,plan.recordStatus,plan.state,plan.visibility].filter(Boolean).join(' ').toLowerCase();
-  return status.indexOf('archiv')>=0||status.indexOf('inactive')>=0||status.indexOf('deleted')>=0;
+  if(status.indexOf('archiv')>=0||status.indexOf('inactive')>=0||status.indexOf('deleted')>=0)return true;
+  var end=parsePlanDate(plan.endDate||plan.planEndDate);
+  if(isNaN(end.getTime()))return false;
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  return end<today;
+}
+function parsePlanDate(value){
+  var text=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(text))return new Date(text.slice(0,10)+'T00:00:00');
+  return new Date(value);
 }
 function renderAssignmentPlans(){
   var select=document.getElementById('assignmentPlan');

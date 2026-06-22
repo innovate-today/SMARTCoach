@@ -925,6 +925,22 @@ function checkPlanImportMultiGroupAssignment() {
   console.log("Upload/Paste Plan multi-group assignment ok");
 }
 
+function checkPlanSetupHidesArchivedPlans() {
+  const html = fs.readFileSync("plan-setup.html", "utf8");
+  [
+    "function activeAssignmentPlans()",
+    "return plans.filter(function(plan){return !isArchivedPlan(plan);});",
+    "function isArchivedPlan(plan)",
+    "if(/\\[SMARTCoach Plan Archive\\][\\s\\S]*?Archived:\\s*Yes/i.test(String(plan.schoolConstraints||'')))return true;",
+    "var end=parsePlanDate(plan.endDate||plan.planEndDate);",
+    "return end<today;",
+    "function parsePlanDate(value)",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Athlete Setup plan assignments should hide archived/past plans: ${text}`);
+  });
+  console.log("Athlete Setup archived plan filter ok");
+}
+
 function checkMeetManagerSportField() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/meets.js", "utf8");
@@ -2108,6 +2124,7 @@ checkHowToGuidePage();
 checkDashboardToolPreferences();
 checkBugTrakDesktopFeedback();
 checkPlanImportMultiGroupAssignment();
+checkPlanSetupHidesArchivedPlans();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
