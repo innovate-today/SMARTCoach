@@ -1067,6 +1067,21 @@ function checkMobileCalendarWorkoutPriority() {
   console.log("mobile calendar workout priority ok");
 }
 
+function checkMobileTrainingPlanArchiveFilter() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "function activeTrainingPlans(plans)",
+    "if(isPastTrainingPlan(plan))return false;",
+    "function isPastTrainingPlan(plan)",
+    "var end=parseTrainingPlanDate(plan&&plan.endDate||plan&&plan.planEndDate);",
+    "return end<today;",
+    "function parseTrainingPlanDate(value)",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile training plan picker should hide archived/past plans: ${text}`);
+  });
+  console.log("mobile training plan archive filter ok");
+}
+
 function checkAthleteCalendarBulkEmailLinks() {
   const html = fs.readFileSync("athletes.html", "utf8");
   const api = fs.readFileSync("api/ghl/athletes.js", "utf8");
@@ -2131,6 +2146,7 @@ checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
 checkTrainingCustomization();
 checkMobileCalendarWorkoutPriority();
+checkMobileTrainingPlanArchiveFilter();
 checkAthleteCalendarBulkEmailLinks();
 checkAthleteCalendarQuestions();
 checkDashboardPlainLapSplitsStayLaps();

@@ -1951,8 +1951,21 @@ function activeTrainingPlans(plans){
     if(isArchivedStatus(status))return false;
     if(/\b(archive|archived|inactive|deleted)\b/i.test(status))return false;
     if(/\[SMARTCoach Plan Archive\][\s\S]*?Archived:\s*Yes/i.test(String(plan&&plan.schoolConstraints||'')))return false;
+    if(isPastTrainingPlan(plan))return false;
     return true;
   });
+}
+function isPastTrainingPlan(plan){
+  var end=parseTrainingPlanDate(plan&&plan.endDate||plan&&plan.planEndDate);
+  if(isNaN(end.getTime()))return false;
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  return end<today;
+}
+function parseTrainingPlanDate(value){
+  var text=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(text))return new Date(text.slice(0,10)+'T00:00:00');
+  return new Date(value);
 }
 function loadProData(){
   if(!isProPlan()){
