@@ -1014,6 +1014,54 @@ function checkTrainingCalendarQualityEditParsing() {
   console.log("Training Calendar quality edit parser ok");
 }
 
+function checkQualityWorkoutTypesAccepted() {
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const trainingPlanApi = fs.readFileSync("api/ghl/training-plan.js", "utf8");
+  const syncApi = fs.readFileSync("api/ghl/sync-session.js", "utf8");
+  const correctionApi = fs.readFileSync("api/ghl/correction.js", "utf8");
+  const manualMileageApi = fs.readFileSync("api/ghl/manual-mileage.js", "utf8");
+  [
+    "Threshold",
+    "Interval",
+    "Repetition",
+    "Hills",
+    "Fast Reps",
+    "Speed Endurance I",
+    "Speed Endurance II",
+    "Special Endurance I",
+    "Special Endurance II",
+    "Intensive Tempo",
+    "Extensive Tempo",
+  ].forEach((type) => {
+    if (!calendar.includes(type)) throw new Error(`Training Calendar quality workout type missing ${type}`);
+  });
+  [
+    'threshold: "lactate_threshold"',
+    'interval: "aerobic_power"',
+    'repetition: "acceleration"',
+    'fast_reps: "acceleration"',
+    'hills: "hill_sprints"',
+    'hill: "hill_sprints"',
+    "speed_endurance_ii",
+    "special_endurance_ii",
+  ].forEach((text) => {
+    [trainingPlanApi, syncApi, correctionApi].forEach((source) => {
+      if (!source.includes(text)) throw new Error(`Workout type save aliases missing ${text}`);
+    });
+  });
+  [
+    'threshold: "Lactate Threshold"',
+    'interval: "Aerobic Power"',
+    'repetition: "Acceleration"',
+    'fast_reps: "Acceleration"',
+    'hills: "Hill Sprints"',
+  ].forEach((text) => {
+    if (!manualMileageApi.includes(text)) throw new Error(`Manual mileage workout type alias missing ${text}`);
+  });
+  if (!syncApi.includes("createPerformanceRecordWithWorkoutTypeFallback")) throw new Error("Sync should retry workout saves when GHL rejects a workout type option");
+  console.log("Quality workout type aliases ok");
+}
+
 function checkTrainingCustomization() {
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const app = fs.readFileSync("index.html", "utf8");
@@ -2144,6 +2192,7 @@ checkPlanSetupHidesArchivedPlans();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
+checkQualityWorkoutTypesAccepted();
 checkTrainingCustomization();
 checkMobileCalendarWorkoutPriority();
 checkMobileTrainingPlanArchiveFilter();

@@ -1570,14 +1570,24 @@ function workoutTypeValue(value) {
   const normalized = optionValue(value);
   if (normalized === "off_day" || normalized === "no_practice" || normalized === "rest") return "";
   const aliases = {
+    easy: "easy_recovery_run",
     easy_recovery_run: "easy_recovery_run",
     recovery_run: "easy_recovery_run",
+    threshold: "lactate_threshold",
+    interval: "aerobic_power",
+    repetition: "acceleration",
+    fast_reps: "acceleration",
+    hills: "hill_sprints",
+    hill: "hill_sprints",
+    hill_sprints: "hill_sprints",
     special_endurance_1: "special_endurance_i",
     special_endurance_i: "special_endurance_i",
     special_endurance_2: "special_endurance_ii",
     special_endurance_ii: "special_endurance_ii",
     speed_endurance_1: "speed_endurance_i",
     speed_endurance_i: "speed_endurance_i",
+    speed_endurance_2: "speed_endurance_ii",
+    speed_endurance_ii: "speed_endurance_ii",
   };
   return aliases[normalized] || normalized;
 }

@@ -350,14 +350,10 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
       run,
     }), forceSuffix);
 
-    const record = await ghlFetch({
+    const record = await createPerformanceRecordWithWorkoutTypeFallback({
       token,
-      path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
-      method: "POST",
-      body: {
-        locationId,
-        properties,
-      },
+      locationId,
+      properties,
     });
 
     const recordId = objectRecordId(record);
@@ -373,6 +369,33 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
   }
 
   return created;
+}
+
+async function createPerformanceRecordWithWorkoutTypeFallback({ token, locationId, properties }) {
+  try {
+    return await ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
+      method: "POST",
+      body: {
+        locationId,
+        properties,
+      },
+    });
+  } catch (error) {
+    if (!/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "") || !properties.workout_type) throw error;
+    const fallback = { ...properties };
+    delete fallback.workout_type;
+    return ghlFetch({
+      token,
+      path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
+      method: "POST",
+      body: {
+        locationId,
+        properties: fallback,
+      },
+    });
+  }
 }
 
 async function findDuplicatePerformanceRecords({ token, locationId, contactId, athlete, session }) {
@@ -1190,13 +1213,25 @@ function workoutTypeValue(value) {
     easy_run: "easy_recovery_run",
     recovery_run: "easy_recovery_run",
     easy_recovery: "easy_recovery_run",
+    easy_recovery_run: "easy_recovery_run",
+    threshold: "lactate_threshold",
+    interval: "aerobic_power",
+    repetition: "acceleration",
+    fast_reps: "acceleration",
+    hills: "hill_sprints",
+    hill: "hill_sprints",
+    hill_sprints: "hill_sprints",
     tempo_run: "extensive_tempo",
     warmup_cooldown: "easy_recovery_run",
     warm_up_cool_down: "easy_recovery_run",
     speed_endurance_i: "speed_endurance_1",
     speed_endurance_ii: "speed_endurance_2",
+    speed_endurance_1: "speed_endurance_1",
+    speed_endurance_2: "speed_endurance_2",
     special_endurance_i: "special_endurance_1",
     special_endurance_ii: "special_endurance_2",
+    special_endurance_1: "special_endurance_1",
+    special_endurance_2: "special_endurance_2",
     quality: "aerobic_power",
     quality_session: "aerobic_power",
     workout: "other",
