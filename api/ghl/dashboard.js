@@ -770,6 +770,7 @@ function isExcludedSystemContact(tags) {
     const value = clean(tag).toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
     return value === "live chat" ||
       value === "voice chat" ||
+      value === "support" ||
       value === "smartcoach account owner" ||
       value === "smartcoach feedback" ||
       value === "smartcoach bug trak" ||

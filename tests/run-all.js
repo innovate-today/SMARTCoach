@@ -221,6 +221,7 @@ function checkAccountOwnerExcludedFromAthletes() {
     }
     [
       'value === "voice chat"',
+      'value === "support"',
       'value === "smartcoach feedback"',
       'value === "smartcoach bug trak"',
       'value === "smartcoach idea trak"',
