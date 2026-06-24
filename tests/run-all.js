@@ -1006,12 +1006,29 @@ function checkTrainingCalendarQualityEditParsing() {
     "distanceUnit:normalizeQualityDistanceUnit(match[4]),",
     "effort:String(match[5]||'Threshold').trim(),",
     "recoveryUnit:normalizeQualityRecoveryUnit(recovery&&recovery[2]||'min (jog)')",
+    "function stripQualityGeneratedLines(text)",
+    "if(parseQualityDistanceLine(value))return false;",
+    "parsedRows.forEach(addQualityRow);",
+    "stripQualityGeneratedLines(calendarEditDay.details||'')",
     "if(/^mi\\b|^mile/.test(value))return 'mi ('+movement+')';",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`Training Calendar quality edit parser missing ${text}`);
   });
   console.log("Training Calendar quality edit parser ok");
+}
+
+function checkTrainingAdjustmentAuditDates() {
+  const api = fs.readFileSync("api/ghl/training-plan.js", "utf8");
+  [
+    "function coachDateTimeLabel(date)",
+    'timeZone: "America/Chicago"',
+    "Adjustment Date: ${coachDateTimeLabel(new Date())}",
+    "Status Update Date: ${coachDateTimeLabel(new Date())}",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Training adjustment audit date missing ${text}`);
+  });
+  console.log("Training adjustment audit dates ok");
 }
 
 function checkQualityWorkoutTypesAccepted() {
@@ -2192,6 +2209,7 @@ checkPlanSetupHidesArchivedPlans();
 checkMeetManagerSportField();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
+checkTrainingAdjustmentAuditDates();
 checkQualityWorkoutTypesAccepted();
 checkTrainingCustomization();
 checkMobileCalendarWorkoutPriority();

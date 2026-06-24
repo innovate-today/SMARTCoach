@@ -475,7 +475,7 @@ function buildManualDaySourceRecordId({ planId, payload, day, index }) {
 function appendPlanDayAudit(notes, reason) {
   const lines = [];
   if (notes) lines.push(notes);
-  lines.push(`Adjustment Date: ${new Date().toISOString()}`);
+  lines.push(`Adjustment Date: ${coachDateTimeLabel(new Date())}`);
   if (reason) lines.push(`Adjustment Reason: ${reason}`);
   return lines.join("\n");
 }
@@ -483,10 +483,22 @@ function appendPlanDayAudit(notes, reason) {
 function appendPlanDayStatusAudit(notes, status, reason) {
   const lines = [];
   if (notes) lines.push(notes);
-  lines.push(`Status Update Date: ${new Date().toISOString()}`);
+  lines.push(`Status Update Date: ${coachDateTimeLabel(new Date())}`);
   lines.push(`Status Updated To: ${clean(status)}`);
   if (reason) lines.push(`Status Update Reason: ${reason}`);
   return lines.join("\n");
+}
+
+function coachDateTimeLabel(date) {
+  const value = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+  return value.toLocaleString("en-US", {
+    timeZone: "America/Chicago",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function assignmentBlockText(existingText, assignment) {

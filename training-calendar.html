@@ -2267,9 +2267,19 @@ function parseQualityDistanceLine(line){
     recoveryUnit:normalizeQualityRecoveryUnit(recovery&&recovery[2]||'min (jog)')
   };
 }
+function stripQualityGeneratedLines(text){
+  return String(text||'').split(/\r?\n/).filter(function(line){
+    var value=line.trim();
+    if(!value)return false;
+    if(/^Warmup:/i.test(value)||/^Cooldown:/i.test(value)||/^Rest:/i.test(value))return false;
+    if(parseQualityDistanceLine(value))return false;
+    if(/^[\d.]+\s*(?:min|sec|mi|km|m)(?:\s*\([^)]*\)|\s+(?:jog|walk|rest))?\s+recovery between (?:reps|sets)$/i.test(value))return false;
+    return true;
+  }).join('\n');
+}
 function hydrateQualityBuilderFromDay(day){
   if(!day||inferCalendarActivityMode(day)!=='quality')return;
-  var source=[day.details,day.targetSplits].filter(Boolean).join('\n');
+  var source=day.details||day.targetSplits||'';
   if(!source)return;
   var warmup=source.match(/Warmup:\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters)\b/i);
   var cooldown=source.match(/Cooldown:\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters)\b/i);
@@ -2288,7 +2298,7 @@ function hydrateQualityBuilderFromDay(day){
   }
   if(parsedRows.length){
     els.qualityRows.innerHTML='';
-    addQualityRow(parsedRows[0]);
+    parsedRows.forEach(addQualityRow);
   }else{
     renderAddActivitySummary();
   }
@@ -2338,7 +2348,7 @@ function openAddDayModal(dateValue,mode,editDay){
     els.addDayAthlete.value=calendarEditDay.athleteName||'';
     els.addDayVolume.value=calendarEditDay.plannedVolume||'';
     els.addDayTarget.value=calendarEditDay.targetSplits||'';
-    els.addDayDetails.value=calendarEditDay.details||'';
+    els.addDayDetails.value=stripQualityGeneratedLines(calendarEditDay.details||'');
     els.addDayNotes.value=stripCalendarMetaLines(stripAdjustmentLines(calendarEditDay.coachNotes||''));
     els.addEasyDistance.value=parts.value||'5';
     els.addEasyUnit.value=parts.unit||'mi';
@@ -2353,7 +2363,7 @@ function openAddDayModal(dateValue,mode,editDay){
     els.addDayTitleInput.value=calendarEditDay.title||els.addDayTitleInput.value;
     els.addDayVolume.value=calendarEditDay.plannedVolume||els.addDayVolume.value;
     els.addDayTarget.value=calendarEditDay.targetSplits||els.addDayTarget.value;
-    els.addDayDetails.value=calendarEditDay.details||els.addDayDetails.value;
+    els.addDayDetails.value=stripQualityGeneratedLines(calendarEditDay.details||'')||els.addDayDetails.value;
     hydrateQualityBuilderFromDay(calendarEditDay);
   }
   setAddDayStatus(calendarEditDay?'Adjustments update this calendar workout only.':'Save as a manual calendar entry, or connect it to a saved plan.','');
