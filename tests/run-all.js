@@ -1273,6 +1273,18 @@ function checkAthleteCalendarQuestions() {
   console.log("Athlete Calendar questions ok");
 }
 
+function checkAthleteCalendarSubmittedStatusPill() {
+  const calendar = fs.readFileSync("athlete-calendar.html", "utf8");
+  [
+    "var pillLabel=submitted?submitted.label:(day.status||'Scheduled');",
+    '<span class="pill \'+(submitted?submitted.className:\'\')+\'">\'+esc(pillLabel)+\'</span>',
+    "Athlete submitted: '+esc(submitted.label)",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Athlete Calendar submitted status pill missing ${text}`);
+  });
+  console.log("Athlete Calendar submitted status pill ok");
+}
+
 function checkDashboardPlainLapSplitsStayLaps() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -2216,6 +2228,7 @@ checkMobileCalendarWorkoutPriority();
 checkMobileTrainingPlanArchiveFilter();
 checkAthleteCalendarBulkEmailLinks();
 checkAthleteCalendarQuestions();
+checkAthleteCalendarSubmittedStatusPill();
 checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
