@@ -1476,6 +1476,22 @@ function checkEquipmentInventoryModelSerial() {
   console.log("Equipment Trak inventory model/serial checks ok");
 }
 
+function checkEquipmentIssueSheetStickyHeader() {
+  const athletes = fs.readFileSync("athletes.html", "utf8");
+  [
+    "#equipmentIssueSheetPane{display:flex;flex-direction:column;min-height:0}",
+    ".issue-sheet-wrap{max-height:calc(100vh - 250px);overflow:auto}",
+    ".issue-sheet-wrap table{border-collapse:separate;border-spacing:0}",
+    ".issue-sheet-wrap th{top:0;z-index:5;background:#f8fafc",
+  ].forEach((text) => {
+    if (!athletes.includes(text)) throw new Error(`Equipment Trak issue sheet sticky header missing ${text}`);
+  });
+  if (athletes.includes(".issue-sheet-wrap th{top:57px")) {
+    throw new Error("Equipment Trak issue sheet header should not use the old fixed toolbar offset.");
+  }
+  console.log("Equipment Trak issue sheet sticky header checks ok");
+}
+
 function checkFieldNoMarkResultsAllowed() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
@@ -2237,6 +2253,7 @@ checkMeetHistoryImportOnlySpreadsheet();
 checkMeetHistoryImportedResultCorrections();
 checkPageSearchDebounces();
 checkEquipmentInventoryModelSerial();
+checkEquipmentIssueSheetStickyHeader();
 checkFieldNoMarkResultsAllowed();
 checkMobileFieldEventCaptureControls();
 checkKeepTrakFeature();
