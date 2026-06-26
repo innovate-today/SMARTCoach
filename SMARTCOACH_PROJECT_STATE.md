@@ -1275,6 +1275,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 431. Added the Pro plan downgrade guard. Account automation and setup preview now block lowering to a capped plan such as Pro 25 when the current active SMART Trak roster exceeds the requested plan limit. Coaches/support must mark athletes inactive first; SMARTCoach does not auto-deactivate the last-added athletes. Product docs now describe the 30-day Pro 100 beta trial and downgrade limit rule.
 432. Share Miles Board now lets coaches choose whether attendance appears on the public board. Team Attendance % can be shown as a top card, Athlete Attendance % can be shown as a sortable leaderboard column, and both stay hidden from the public API unless enabled in Miles Board Sharing. Attendance uses the same Present/Late/Checked Out counted-as-attended rule as the Dashboard.
 433. SMARTCoach mobile app calendar workout priority was fixed. Group-assigned workouts created on the Training Calendar now auto-attach to the matching phone app group even if that group previously had a saved group plan selected, and saved group plans no longer overwrite an active SMART Trak Calendar workout before practice.
+434. Equipment Trak coach-issued items can now be edited or deleted from the Coach Issued tab. Numbered gear assigned to coaches is duplicate-protected against athlete-issued gear using a global assigned-number guard, while athlete-vs-athlete duplicate checks still honor separate inventory pools.
 
 ## Known Good Test Flow
 

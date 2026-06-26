@@ -1600,26 +1600,39 @@ function inventoryRangeCount(start, end) {
 }
 
 function duplicateIssuedEquipment(records, inventory, coachRecords = {}) {
-  const seen = {};
+  const seenScoped = {};
+  const seenGlobal = {};
+  const seenCoachGlobal = {};
   const allRecords = [
-    ...Object.keys(records || {}).map((key) => ({ key, label: (records[key] && records[key].athleteName) || key, record: records[key] || {} })),
-    ...Object.keys(coachRecords || {}).map((key) => ({ key: `coach_${key}`, label: (coachRecords[key] && coachRecords[key].coachName) || key, record: coachRecords[key] || {} })),
+    ...Object.keys(records || {}).map((key) => ({ key, type: "athlete", label: (records[key] && records[key].athleteName) || key, record: records[key] || {} })),
+    ...Object.keys(coachRecords || {}).map((key) => ({ key: `coach_${key}`, type: "coach", label: (coachRecords[key] && coachRecords[key].coachName) || key, record: coachRecords[key] || {} })),
   ];
+  let duplicate = null;
   allRecords.forEach((entry) => {
     const record = entry.record || {};
     Object.keys(record.items || {}).forEach((itemId) => {
       const item = record.items[itemId] || {};
       if (item.status !== "issued" || !item.number) return;
+      const globalKey = equipmentDuplicateGlobalKey(itemId, item);
+      if (entry.type === "coach" && globalKey && seenGlobal[globalKey] && !duplicate) {
+        duplicate = { itemId, number: item.number, firstRecipient: seenGlobal[globalKey] };
+      }
+      if (entry.type !== "coach" && globalKey && seenCoachGlobal[globalKey] && !duplicate) {
+        duplicate = { itemId, number: item.number, firstRecipient: seenCoachGlobal[globalKey] };
+      }
       equipmentDuplicateKeys(itemId, item, inventory).forEach((key) => {
-        if (!seen[key]) {
-          seen[key] = { itemId, number: item.number, firstRecipient: entry.label };
-        } else if (!seen[key].duplicate) {
-          seen[key].duplicate = true;
+        if (seenScoped[key] && !duplicate) {
+          duplicate = { itemId, number: item.number, firstRecipient: seenScoped[key] };
         }
+        if (!seenScoped[key]) seenScoped[key] = entry.label;
       });
+      if (globalKey) {
+        if (!seenGlobal[globalKey]) seenGlobal[globalKey] = entry.label;
+        if (entry.type === "coach" && !seenCoachGlobal[globalKey]) seenCoachGlobal[globalKey] = entry.label;
+      }
     });
   });
-  return Object.keys(seen).map((key) => seen[key]).find((row) => row.duplicate) || null;
+  return duplicate;
 }
 
 function equipmentDuplicateKeys(itemId, item, inventory) {
@@ -1637,6 +1650,12 @@ function equipmentDuplicateKeys(itemId, item, inventory) {
     const group = row.groupScope === "shared" ? "all" : cleanSetupText(item.group || row.group || "General").toLowerCase();
     return `${normalizedItemId}::${program}::${group}::${number}`;
   });
+}
+
+function equipmentDuplicateGlobalKey(itemId, item) {
+  const normalizedItemId = normalizeDocuItemId(itemId);
+  const number = normalizeEquipmentNumber(item && item.number);
+  return normalizedItemId && number ? `${normalizedItemId}::staff-global::${number}` : "";
 }
 
 function normalizeEquipmentNumber(value) {

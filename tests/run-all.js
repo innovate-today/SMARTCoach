@@ -1500,6 +1500,9 @@ function checkEquipmentCoachIssued() {
     "Coach Issued",
     "function saveEquipmentCoachRecord()",
     "function duplicateIssuedCoachItem(coachKey,nextItems)",
+    "function deleteEquipmentCoachRecord(coachKey,itemId)",
+    "data-delete-equipment-coach",
+    "function duplicateEquipmentGlobalKey(itemId,item)",
     "action:'save-coach'",
     "data-edit-equipment-coach",
   ].forEach((text) => {
@@ -1511,6 +1514,8 @@ function checkEquipmentCoachIssued() {
     "function normalizeEquipmentCoachRecords(records)",
     "function outstandingCoachEquipmentRecordsForPool(seasons, pool)",
     "duplicateIssuedEquipment(current.records, current.inventory, current.coachRecords)",
+    "function equipmentDuplicateGlobalKey(itemId, item)",
+    "seenCoachGlobal",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Equipment Trak coach-issued API missing ${text}`);
   });
