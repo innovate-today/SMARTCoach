@@ -1492,6 +1492,31 @@ function checkEquipmentIssueSheetStickyHeader() {
   console.log("Equipment Trak issue sheet sticky header checks ok");
 }
 
+function checkEquipmentCoachIssued() {
+  const athletes = fs.readFileSync("athletes.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  [
+    "equipmentCoachRecords={}",
+    "Coach Issued",
+    "function saveEquipmentCoachRecord()",
+    "function duplicateIssuedCoachItem(coachKey,nextItems)",
+    "action:'save-coach'",
+    "data-edit-equipment-coach",
+  ].forEach((text) => {
+    if (!athletes.includes(text)) throw new Error(`Equipment Trak coach-issued UI missing ${text}`);
+  });
+  [
+    'action === "save-coach"',
+    "coachRecords: normalizeEquipmentCoachRecords(raw.coachRecords)",
+    "function normalizeEquipmentCoachRecords(records)",
+    "function outstandingCoachEquipmentRecordsForPool(seasons, pool)",
+    "duplicateIssuedEquipment(current.records, current.inventory, current.coachRecords)",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Equipment Trak coach-issued API missing ${text}`);
+  });
+  console.log("Equipment Trak coach-issued checks ok");
+}
+
 function checkFieldNoMarkResultsAllowed() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
@@ -2254,6 +2279,7 @@ checkMeetHistoryImportedResultCorrections();
 checkPageSearchDebounces();
 checkEquipmentInventoryModelSerial();
 checkEquipmentIssueSheetStickyHeader();
+checkEquipmentCoachIssued();
 checkFieldNoMarkResultsAllowed();
 checkMobileFieldEventCaptureControls();
 checkKeepTrakFeature();

@@ -1129,10 +1129,10 @@ async function accountEquipmentTrak(req, res) {
     const action = cleanSetupText(payload.action || payload.mode).toLowerCase();
     if (action === "save-items") {
       current.items = normalizeEquipmentItems(payload.items);
-      setActiveEquipmentSeason(current, { items: current.items, records: current.records, inventory: current.inventory });
+      setActiveEquipmentSeason(current, { items: current.items, records: current.records, coachRecords: current.coachRecords, inventory: current.inventory });
     } else if (action === "save-inventory") {
       current.inventory = normalizeEquipmentInventory(payload.inventory || payload.items);
-      setActiveEquipmentSeason(current, { items: current.items, records: current.records, inventory: current.inventory });
+      setActiveEquipmentSeason(current, { items: current.items, records: current.records, coachRecords: current.coachRecords, inventory: current.inventory });
     } else if (action === "save-athlete") {
       const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
       const contactId = cleanSetupText(payload.contactId);
@@ -1152,13 +1152,31 @@ async function accountEquipmentTrak(req, res) {
         updatedAt: new Date().toISOString(),
         items: normalizeEquipmentAthleteItems(payload.items || payload.records),
       };
-      const duplicate = duplicateIssuedEquipment(current.records, current.inventory);
+      const duplicate = duplicateIssuedEquipment(current.records, current.inventory, current.coachRecords);
       if (duplicate) {
         if (previous) current.records[athleteKey] = previous;
         else delete current.records[athleteKey];
-        throw httpError(409, `${duplicate.itemId} #${duplicate.number} is already issued to ${duplicate.firstAthlete}.`);
+        throw httpError(409, `${duplicate.itemId} #${duplicate.number} is already issued to ${duplicate.firstRecipient}.`);
       }
-      setActiveEquipmentSeason(current, { items: current.items, records: current.records, inventory: current.inventory });
+      setActiveEquipmentSeason(current, { items: current.items, records: current.records, coachRecords: current.coachRecords, inventory: current.inventory });
+    } else if (action === "save-coach") {
+      const coachName = cleanSetupText(payload.coachName || payload.name).slice(0, 120);
+      const coachKey = normalizeDocuRecordKey(payload.coachId || coachName);
+      if (!coachKey || !coachName) throw httpError(400, "Coach name is required.");
+      const previous = current.coachRecords[coachKey];
+      current.coachRecords[coachKey] = {
+        coachId: coachKey,
+        coachName,
+        updatedAt: new Date().toISOString(),
+        items: normalizeEquipmentAthleteItems(payload.items || payload.records),
+      };
+      const duplicate = duplicateIssuedEquipment(current.records, current.inventory, current.coachRecords);
+      if (duplicate) {
+        if (previous) current.coachRecords[coachKey] = previous;
+        else delete current.coachRecords[coachKey];
+        throw httpError(409, `${duplicate.itemId} #${duplicate.number} is already issued to ${duplicate.firstRecipient}.`);
+      }
+      setActiveEquipmentSeason(current, { items: current.items, records: current.records, coachRecords: current.coachRecords, inventory: current.inventory });
     } else if (action === "start-season") {
       const pool = normalizeEquipmentPool(payload.inventoryPool || payload.pool || payload.sport);
       const nextSeason = normalizeEquipmentSeason({
@@ -1170,6 +1188,7 @@ async function accountEquipmentTrak(req, res) {
         items: selectedEquipmentItems(current.items, payload.copyItemIds),
         inventory: selectedEquipmentInventory(current.inventory, payload.copyInventory),
         records: outstandingEquipmentRecordsForPool(current.seasons, pool),
+        coachRecords: outstandingCoachEquipmentRecordsForPool(current.seasons, pool),
         active: true,
         archived: false,
         createdAt: new Date().toISOString(),
@@ -1209,11 +1228,12 @@ function normalizeEquipmentTrak(source) {
   const value = source && typeof source === "object" ? source : {};
   const legacyItems = normalizeEquipmentItems(value.items);
   const legacyRecords = normalizeEquipmentRecords(value.records);
+  const legacyCoachRecords = normalizeEquipmentCoachRecords(value.coachRecords);
   const legacyInventory = normalizeEquipmentInventory(value.inventory);
   let seasons = normalizeEquipmentSeasons(value.seasons);
   let activeSeasonId = normalizeDocuItemId(value.activeSeasonId || value.currentSeasonId);
   if (!seasons.length) {
-    const fallback = defaultEquipmentSeason(legacyItems, legacyRecords, legacyInventory);
+    const fallback = defaultEquipmentSeason(legacyItems, legacyRecords, legacyInventory, legacyCoachRecords);
     seasons = [fallback];
     activeSeasonId = fallback.id;
   }
@@ -1223,12 +1243,16 @@ function normalizeEquipmentTrak(source) {
   activeSeason = seasons.find((season) => season.id === activeSeasonId) || seasons[0] || defaultEquipmentSeason(legacyItems, legacyRecords, legacyInventory);
   const fallbackItems = legacyItems.length ? legacyItems : firstNonEmptyEquipmentItems(seasons);
   const fallbackRecords = Object.keys(legacyRecords).length ? legacyRecords : firstNonEmptyEquipmentRecords(seasons);
+  const fallbackCoachRecords = Object.keys(legacyCoachRecords).length ? legacyCoachRecords : firstNonEmptyEquipmentCoachRecords(seasons);
   const fallbackInventory = legacyInventory.length ? legacyInventory : firstNonEmptyEquipmentInventory(seasons);
   if ((!activeSeason.items || !activeSeason.items.length) && fallbackItems.length) {
     activeSeason = { ...activeSeason, items: fallbackItems };
   }
   if ((!activeSeason.records || !Object.keys(activeSeason.records).length) && Object.keys(fallbackRecords).length) {
     activeSeason = { ...activeSeason, records: fallbackRecords };
+  }
+  if ((!activeSeason.coachRecords || !Object.keys(activeSeason.coachRecords).length) && Object.keys(fallbackCoachRecords).length) {
+    activeSeason = { ...activeSeason, coachRecords: fallbackCoachRecords };
   }
   if ((!activeSeason.inventory || !activeSeason.inventory.length) && fallbackInventory.length) {
     activeSeason = { ...activeSeason, inventory: fallbackInventory };
@@ -1239,6 +1263,7 @@ function normalizeEquipmentTrak(source) {
     seasons,
     items: activeSeason.items,
     records: activeSeason.records,
+    coachRecords: activeSeason.coachRecords || {},
     inventory: activeSeason.inventory,
   };
 }
@@ -1251,6 +1276,11 @@ function firstNonEmptyEquipmentItems(seasons) {
 function firstNonEmptyEquipmentRecords(seasons) {
   const found = (Array.isArray(seasons) ? seasons : []).find((season) => season.records && Object.keys(season.records).length);
   return found ? normalizeEquipmentRecords(found.records) : {};
+}
+
+function firstNonEmptyEquipmentCoachRecords(seasons) {
+  const found = (Array.isArray(seasons) ? seasons : []).find((season) => season.coachRecords && Object.keys(season.coachRecords).length);
+  return found ? normalizeEquipmentCoachRecords(found.coachRecords) : {};
 }
 
 function firstNonEmptyEquipmentInventory(seasons) {
@@ -1286,11 +1316,12 @@ function normalizeEquipmentSeason(season, index) {
     createdAt: cleanSetupText(raw.createdAt),
     items: normalizeEquipmentItems(raw.items),
     records: normalizeEquipmentRecords(raw.records),
+    coachRecords: normalizeEquipmentCoachRecords(raw.coachRecords),
     inventory: normalizeEquipmentInventory(raw.inventory),
   };
 }
 
-function defaultEquipmentSeason(items, records, inventory) {
+function defaultEquipmentSeason(items, records, inventory, coachRecords = {}) {
   const year = new Date().getFullYear();
   return {
     id: `season_${year}_general`,
@@ -1303,6 +1334,7 @@ function defaultEquipmentSeason(items, records, inventory) {
     createdAt: "",
     items,
     records,
+    coachRecords,
     inventory,
   };
 }
@@ -1337,6 +1369,7 @@ function updateActiveEquipmentSeason(current, changes) {
   if (activeSeason) {
     current.items = activeSeason.items;
     current.records = activeSeason.records;
+    current.coachRecords = activeSeason.coachRecords || {};
     current.inventory = activeSeason.inventory;
   }
 }
@@ -1353,6 +1386,7 @@ function activateEquipmentSeason(current, seasonId) {
   const activeSeason = current.seasons.find((season) => season.id === id);
   current.items = activeSeason.items;
   current.records = activeSeason.records;
+  current.coachRecords = activeSeason.coachRecords || {};
   current.inventory = activeSeason.inventory;
 }
 
@@ -1382,6 +1416,25 @@ function outstandingEquipmentRecordsForPool(seasons, pool) {
       });
       if (Object.keys(items).length) {
         out[athleteKey] = { ...record, items, updatedAt: record.updatedAt || new Date().toISOString() };
+      }
+    });
+  });
+  return out;
+}
+
+function outstandingCoachEquipmentRecordsForPool(seasons, pool) {
+  const out = {};
+  (Array.isArray(seasons) ? seasons : []).forEach((season) => {
+    if (normalizeEquipmentPool(season.inventoryPool || season.sport) !== pool) return;
+    Object.keys(season.coachRecords || {}).forEach((coachKey) => {
+      const record = season.coachRecords[coachKey] || {};
+      const items = {};
+      Object.keys(record.items || {}).forEach((itemId) => {
+        const item = record.items[itemId] || {};
+        if (item.status === "issued" || item.status === "lost_damaged") items[itemId] = item;
+      });
+      if (Object.keys(items).length) {
+        out[coachKey] = { ...record, items, updatedAt: record.updatedAt || new Date().toISOString() };
       }
     });
   });
@@ -1441,6 +1494,24 @@ function normalizeEquipmentRecords(records) {
       contactId: cleanSetupText(row.contactId),
       smartcoachAthleteId: cleanSetupText(row.smartcoachAthleteId),
       athleteName: cleanSetupText(row.athleteName),
+      updatedAt: cleanSetupText(row.updatedAt),
+      items: normalizeEquipmentAthleteItems(row.items),
+    };
+  });
+  return out;
+}
+
+function normalizeEquipmentCoachRecords(records) {
+  const out = {};
+  const source = records && typeof records === "object" ? records : {};
+  Object.keys(source).forEach((key) => {
+    const row = source[key] || {};
+    const coachName = cleanSetupText(row.coachName || row.name).slice(0, 120);
+    const coachKey = normalizeDocuRecordKey(row.coachId || key || coachName);
+    if (!coachKey || !coachName) return;
+    out[coachKey] = {
+      coachId: coachKey,
+      coachName,
       updatedAt: cleanSetupText(row.updatedAt),
       items: normalizeEquipmentAthleteItems(row.items),
     };
@@ -1528,16 +1599,20 @@ function inventoryRangeCount(start, end) {
   return start ? 1 : 0;
 }
 
-function duplicateIssuedEquipment(records, inventory) {
+function duplicateIssuedEquipment(records, inventory, coachRecords = {}) {
   const seen = {};
-  Object.keys(records || {}).forEach((athleteKey) => {
-    const record = records[athleteKey] || {};
+  const allRecords = [
+    ...Object.keys(records || {}).map((key) => ({ key, label: (records[key] && records[key].athleteName) || key, record: records[key] || {} })),
+    ...Object.keys(coachRecords || {}).map((key) => ({ key: `coach_${key}`, label: (coachRecords[key] && coachRecords[key].coachName) || key, record: coachRecords[key] || {} })),
+  ];
+  allRecords.forEach((entry) => {
+    const record = entry.record || {};
     Object.keys(record.items || {}).forEach((itemId) => {
       const item = record.items[itemId] || {};
       if (item.status !== "issued" || !item.number) return;
       equipmentDuplicateKeys(itemId, item, inventory).forEach((key) => {
         if (!seen[key]) {
-          seen[key] = { itemId, number: item.number, firstAthlete: record.athleteName || athleteKey };
+          seen[key] = { itemId, number: item.number, firstRecipient: entry.label };
         } else if (!seen[key].duplicate) {
           seen[key].duplicate = true;
         }
