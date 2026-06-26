@@ -1276,6 +1276,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 432. Share Miles Board now lets coaches choose whether attendance appears on the public board. Team Attendance % can be shown as a top card, Athlete Attendance % can be shown as a sortable leaderboard column, and both stay hidden from the public API unless enabled in Miles Board Sharing. Attendance uses the same Present/Late/Checked Out counted-as-attended rule as the Dashboard.
 433. SMARTCoach mobile app calendar workout priority was fixed. Group-assigned workouts created on the Training Calendar now auto-attach to the matching phone app group even if that group previously had a saved group plan selected, and saved group plans no longer overwrite an active SMART Trak Calendar workout before practice.
 434. Equipment Trak coach-issued items can now be edited or deleted from the Coach Issued tab. Numbered gear assigned to coaches is duplicate-protected against athlete-issued gear using a global assigned-number guard, while athlete-vs-athlete duplicate checks still honor separate inventory pools.
+435. Equipment Trak inventory rows now support Lost / Damaged availability without deleting the item from inventory. Coaches can mark a full inventory row unavailable or list lost numbered items / lost quantity; those counts reduce Available, appear in Lost / Damaged, and block the gear from being issued again. Number ranges now support alphanumeric watch labels such as `G1-G20` so `G15` is recognized correctly.
 
 ## Known Good Test Flow
 

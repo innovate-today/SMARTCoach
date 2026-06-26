@@ -1451,9 +1451,16 @@ function checkEquipmentInventoryModelSerial() {
   [
     "data-inventory-model",
     "data-inventory-serial",
+    "data-inventory-availability",
+    "data-inventory-lost",
     "function equipmentInventoryForIssuedRow(row)",
+    "function inventoryUnavailableCount(inv,total)",
+    "function inventoryItemUnavailable(itemId,item)",
+    "function inventoryCapacityIssue(skipAthleteKey,skipCoachKey,itemId,item)",
+    "function inventoryAlphaNumber(value)",
     "row.model=String(row.model||row.modelNumber||'').trim();",
     "row.serialNumber=String(row.serialNumber||row.serial||'').trim();",
+    "row.availability=equipmentInventoryAvailability",
     "Assigned #",
     "Serial #",
   ].forEach((text) => {
@@ -1470,6 +1477,12 @@ function checkEquipmentInventoryModelSerial() {
   [
     "model: cleanSetupText(raw.model || raw.modelNumber).slice(0, 80)",
     "serialNumber: cleanSetupText(raw.serialNumber || raw.serial).slice(0, 120)",
+    "availability: normalizeEquipmentInventoryAvailability",
+    "function duplicateInventoryUnavailableEquipment(records, inventory, coachRecords = {})",
+    "function duplicateInventoryCapacityIssue(records, inventory, coachRecords = {})",
+    "function equipmentDuplicateMessage(duplicate)",
+    "function equipmentInventoryRowBlocksItem(row, itemId, item)",
+    "function inventoryAlphaNumber(value)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Equipment Trak API metadata persistence missing ${text}`);
   });

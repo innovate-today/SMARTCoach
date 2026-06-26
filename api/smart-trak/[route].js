@@ -1156,7 +1156,7 @@ async function accountEquipmentTrak(req, res) {
       if (duplicate) {
         if (previous) current.records[athleteKey] = previous;
         else delete current.records[athleteKey];
-        throw httpError(409, `${duplicate.itemId} #${duplicate.number} is already issued to ${duplicate.firstRecipient}.`);
+        throw httpError(409, equipmentDuplicateMessage(duplicate));
       }
       setActiveEquipmentSeason(current, { items: current.items, records: current.records, coachRecords: current.coachRecords, inventory: current.inventory });
     } else if (action === "save-coach") {
@@ -1174,7 +1174,7 @@ async function accountEquipmentTrak(req, res) {
       if (duplicate) {
         if (previous) current.coachRecords[coachKey] = previous;
         else delete current.coachRecords[coachKey];
-        throw httpError(409, `${duplicate.itemId} #${duplicate.number} is already issued to ${duplicate.firstRecipient}.`);
+        throw httpError(409, equipmentDuplicateMessage(duplicate));
       }
       setActiveEquipmentSeason(current, { items: current.items, records: current.records, coachRecords: current.coachRecords, inventory: current.inventory });
     } else if (action === "start-season") {
@@ -1567,6 +1567,9 @@ function normalizeEquipmentInventory(inventory) {
       quantity: trackingType === "numbered" ? inventoryRangeCount(startNumber, endNumber) : quantity,
       model: cleanSetupText(raw.model || raw.modelNumber).slice(0, 80),
       serialNumber: cleanSetupText(raw.serialNumber || raw.serial).slice(0, 120),
+      availability: normalizeEquipmentInventoryAvailability(raw.availability || raw.inventoryStatus || raw.status),
+      lostNumbers: cleanSetupText(raw.lostNumbers || raw.lostNumber || raw.unavailableNumbers).slice(0, 240),
+      lostQuantity: Math.max(0, parseInt(raw.lostQuantity || raw.unavailableQuantity, 10) || 0),
       note: cleanSetupText(raw.note || raw.notes).slice(0, 800),
       active: raw.active === false ? false : true,
       updatedAt: cleanSetupText(raw.updatedAt) || new Date().toISOString(),
@@ -1583,6 +1586,11 @@ function normalizeInventoryTrackingType(value) {
 function normalizeInventoryScope(value) {
   const text = cleanSetupText(value || "separate").toLowerCase();
   return text.includes("shared") ? "shared" : "separate";
+}
+
+function normalizeEquipmentInventoryAvailability(value) {
+  const text = cleanSetupText(value || "available").toLowerCase().replace(/[^a-z]+/g, "_").replace(/^_+|_+$/g, "");
+  return text === "lost_damaged" || text === "unavailable" ? "lost_damaged" : "available";
 }
 
 function normalizeEquipmentGroup(value) {
@@ -1603,6 +1611,7 @@ function duplicateIssuedEquipment(records, inventory, coachRecords = {}) {
   const seenScoped = {};
   const seenGlobal = {};
   const seenCoachGlobal = {};
+  const seenUnavailableGlobal = {};
   const allRecords = [
     ...Object.keys(records || {}).map((key) => ({ key, type: "athlete", label: (records[key] && records[key].athleteName) || key, record: records[key] || {} })),
     ...Object.keys(coachRecords || {}).map((key) => ({ key: `coach_${key}`, type: "coach", label: (coachRecords[key] && coachRecords[key].coachName) || key, record: coachRecords[key] || {} })),
@@ -1612,8 +1621,12 @@ function duplicateIssuedEquipment(records, inventory, coachRecords = {}) {
     const record = entry.record || {};
     Object.keys(record.items || {}).forEach((itemId) => {
       const item = record.items[itemId] || {};
-      if (item.status !== "issued" || !item.number) return;
+      if ((item.status !== "issued" && item.status !== "lost_damaged") || !item.number) return;
       const globalKey = equipmentDuplicateGlobalKey(itemId, item);
+      if (item.status === "lost_damaged" && globalKey) {
+        if (!seenUnavailableGlobal[globalKey]) seenUnavailableGlobal[globalKey] = entry.label;
+        return;
+      }
       if (entry.type === "coach" && globalKey && seenGlobal[globalKey] && !duplicate) {
         duplicate = { itemId, number: item.number, firstRecipient: seenGlobal[globalKey] };
       }
@@ -1632,7 +1645,78 @@ function duplicateIssuedEquipment(records, inventory, coachRecords = {}) {
       }
     });
   });
+  const inventoryUnavailable = duplicateInventoryUnavailableEquipment(records, inventory, coachRecords);
+  if (inventoryUnavailable) return inventoryUnavailable;
+  if (!duplicate) {
+    allRecords.forEach((entry) => {
+      const record = entry.record || {};
+      Object.keys(record.items || {}).forEach((itemId) => {
+        const item = record.items[itemId] || {};
+        if (item.status !== "issued" || !item.number) return;
+        const globalKey = equipmentDuplicateGlobalKey(itemId, item);
+        if (globalKey && seenUnavailableGlobal[globalKey] && !duplicate) {
+          duplicate = { itemId, number: item.number, firstRecipient: `${seenUnavailableGlobal[globalKey]} as lost/damaged` };
+        }
+      });
+    });
+  }
   return duplicate;
+}
+
+function equipmentDuplicateMessage(duplicate) {
+  if (!duplicate) return "Equipment could not be saved.";
+  if (!duplicate.number) return `${duplicate.itemId} is not available to issue because of current Lost / Damaged or available inventory counts.`;
+  if (String(duplicate.firstRecipient || "").toLowerCase().includes("lost/damaged") || String(duplicate.firstRecipient || "").toLowerCase().includes("lost / damaged")) return `${duplicate.itemId} #${duplicate.number} is marked Lost / Damaged. Update inventory before issuing it again.`;
+  return `${duplicate.itemId} #${duplicate.number} is already issued to ${duplicate.firstRecipient}.`;
+}
+
+function duplicateInventoryUnavailableEquipment(records, inventory, coachRecords = {}) {
+  const rows = normalizeEquipmentInventory(inventory);
+  const allRecords = [
+    ...Object.keys(records || {}).map((key) => ({ record: records[key] || {} })),
+    ...Object.keys(coachRecords || {}).map((key) => ({ record: coachRecords[key] || {} })),
+  ];
+  for (const entry of allRecords) {
+    const items = (entry.record && entry.record.items) || {};
+    for (const itemId of Object.keys(items)) {
+      const item = items[itemId] || {};
+      if (item.status !== "issued") continue;
+      const blocked = rows.find((row) => equipmentInventoryRowBlocksItem(row, itemId, item));
+      if (blocked) return { itemId, number: item.number || "", firstRecipient: "Lost / Damaged inventory" };
+    }
+  }
+  const capacityIssue = duplicateInventoryCapacityIssue(records, rows, coachRecords);
+  if (capacityIssue) return capacityIssue;
+  return null;
+}
+
+function duplicateInventoryCapacityIssue(records, inventory, coachRecords = {}) {
+  const counts = {};
+  const capacities = {};
+  (inventory || []).filter((row) => row.trackingType !== "numbered").forEach((row) => {
+    const key = equipmentInventoryCapacityKey(row.itemId, row);
+    const total = row.trackingType === "numbered" ? inventoryRangeCount(row.startNumber, row.endNumber) : (Number(row.quantity) || 0);
+    const lost = row.availability === "lost_damaged" ? total : Math.min(total, Math.max(0, Number(row.lostQuantity) || 0));
+    capacities[key] = (capacities[key] || 0) + Math.max(0, total - lost);
+  });
+  const allRecords = [
+    ...Object.keys(records || {}).map((key) => ({ record: records[key] || {} })),
+    ...Object.keys(coachRecords || {}).map((key) => ({ record: coachRecords[key] || {} })),
+  ];
+  allRecords.forEach((entry) => {
+    const items = (entry.record && entry.record.items) || {};
+    Object.keys(items).forEach((itemId) => {
+      const item = items[itemId] || {};
+      if (item.status !== "issued" || item.number) return;
+      const matchingRows = (inventory || []).filter((row) => row.trackingType !== "numbered" && equipmentInventoryRowMatchesItem(row, itemId, item));
+      matchingRows.forEach((row) => {
+        const key = equipmentInventoryCapacityKey(row.itemId, row);
+        counts[key] = (counts[key] || 0) + 1;
+      });
+    });
+  });
+  const overKey = Object.keys(counts).find((key) => capacities[key] !== undefined && counts[key] > capacities[key]);
+  return overKey ? { itemId: overKey.split("::")[0], number: "", firstRecipient: "available inventory" } : null;
 }
 
 function equipmentDuplicateKeys(itemId, item, inventory) {
@@ -1658,6 +1742,33 @@ function equipmentDuplicateGlobalKey(itemId, item) {
   return normalizedItemId && number ? `${normalizedItemId}::staff-global::${number}` : "";
 }
 
+function equipmentInventoryRowBlocksItem(row, itemId, item) {
+  if (!equipmentInventoryRowMatchesItem(row, itemId, item)) return false;
+  if (row.availability === "lost_damaged") return true;
+  if (row.trackingType === "numbered" && item && item.number) {
+    return equipmentLostNumberTokens(row.lostNumbers).some((number) => normalizeEquipmentNumber(number) === normalizeEquipmentNumber(item.number));
+  }
+  return false;
+}
+
+function equipmentInventoryRowMatchesItem(row, itemId, item) {
+  if (!row || row.itemId !== normalizeDocuItemId(itemId)) return false;
+  if (row.size && cleanSetupText(item && item.size).toLowerCase() !== cleanSetupText(row.size).toLowerCase()) return false;
+  if (row.programScope !== "shared" && cleanSetupText(item && item.program).toLowerCase() !== cleanSetupText(row.program || "General").toLowerCase()) return false;
+  if (row.groupScope !== "shared" && cleanSetupText(item && item.group).toLowerCase() !== cleanSetupText(row.group || "General").toLowerCase()) return false;
+  return true;
+}
+
+function equipmentInventoryCapacityKey(itemId, row) {
+  const program = row.programScope === "shared" ? "all" : cleanSetupText(row.program || "General").toLowerCase();
+  const group = row.groupScope === "shared" ? "all" : cleanSetupText(row.group || "General").toLowerCase();
+  return `${normalizeDocuItemId(itemId)}::${cleanSetupText(row.size).toLowerCase()}::${program}::${group}`;
+}
+
+function equipmentLostNumberTokens(value) {
+  return cleanSetupText(value).split(/[,\s;]+/).map((part) => part.trim()).filter(Boolean);
+}
+
 function normalizeEquipmentNumber(value) {
   return cleanSetupText(value).toLowerCase().replace(/^0+([0-9]+)$/, "$1");
 }
@@ -1666,9 +1777,23 @@ function inventoryNumberInRange(number, row) {
   const n = parseInt(cleanSetupText(number), 10);
   const a = parseInt(cleanSetupText(row && row.startNumber), 10);
   const b = parseInt(cleanSetupText(row && row.endNumber), 10);
-  if (!Number.isFinite(n) || !Number.isFinite(a)) return normalizeEquipmentNumber(number) === normalizeEquipmentNumber(row && row.startNumber);
-  if (!Number.isFinite(b)) return n === a;
-  return n >= a && n <= b;
+  if (Number.isFinite(n) && Number.isFinite(a)) {
+    if (!Number.isFinite(b)) return n === a;
+    return n >= a && n <= b;
+  }
+  const parsed = inventoryAlphaNumber(number);
+  const start = inventoryAlphaNumber(row && row.startNumber);
+  const end = inventoryAlphaNumber(row && row.endNumber);
+  if (parsed && start && parsed.prefix === start.prefix) {
+    if (!end || end.prefix !== start.prefix) return parsed.num === start.num;
+    return parsed.num >= start.num && parsed.num <= end.num;
+  }
+  return normalizeEquipmentNumber(number) === normalizeEquipmentNumber(row && row.startNumber);
+}
+
+function inventoryAlphaNumber(value) {
+  const match = cleanSetupText(value).toLowerCase().match(/^([a-z]+)[\s-]*(\d+)$/);
+  return match ? { prefix: match[1], num: parseInt(match[2], 10) } : null;
 }
 
 function normalizeEquipmentStatus(value) {
