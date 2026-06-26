@@ -1453,6 +1453,9 @@ function checkEquipmentInventoryModelSerial() {
     "data-inventory-serial",
     "data-inventory-availability",
     "data-inventory-lost",
+    "id=\"openEquipmentSetupBtn\"",
+    "Setup Items",
+    "function refreshEquipmentSetupViews()",
     "function equipmentInventoryForIssuedRow(row)",
     "function inventoryUnavailableCount(inv,total)",
     "function inventoryItemUnavailable(itemId,item)",
@@ -1466,6 +1469,9 @@ function checkEquipmentInventoryModelSerial() {
   ].forEach((text) => {
     if (!athletes.includes(text)) throw new Error(`Equipment Trak inventory metadata missing ${text}`);
   });
+  if (athletes.includes("data-equipment-setup=\"1\"")) {
+    throw new Error("Equipment setup should live in the Equipment Trak modal, not athlete details.");
+  }
   [
     "function equipmentInventoryForRecordItem(itemId,row)",
     "inventory&&inventory.model",
