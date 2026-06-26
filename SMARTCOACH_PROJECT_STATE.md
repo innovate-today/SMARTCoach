@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-06-04
+Last updated: 2026-06-26
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,9 +40,11 @@ Current launch status:
 
 Latest handoff:
 
-- Latest pushed code commit before this state update: `1bd9ed4 Use Athletic.net meet references in imports`.
-- Latest local commit when this handoff was checked: `1bd9ed4 Use Athletic.net meet references in imports`.
-- Repo was pushed to `main` after the Athletic.net meet-reference import cleanup.
+- Latest local code commit before this state update: `85a4aa1 Add coach-issued equipment tracking`.
+- `85a4aa1` adds a Coach Issued workflow to Equipment Trak so coaches can assign watches/radios/gear to staff without creating athlete/contact rows. Coach-issued items count against inventory availability, appear in issued reports/CSV, are duplicate-protected against athlete-issued items, and carry forward during equipment season rollover if still issued/lost.
+- `npm test` passed after `85a4aa1`.
+- `README.md` still had an unrelated pre-existing local modification and was intentionally left uncommitted.
+- Push command for the latest code commit remains `git -C smartcoach-repo push origin main:main`.
 - Marketing/sales website work is now in progress:
   - `/sales.html` is the public marketing page for SMARTCoach Pro, SMARTCoach Essential, and SMART Trak.
   - The page uses real product screenshots from SMART Trak and SMARTCoach instead of CSS mockup imagery.
@@ -1268,10 +1270,11 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 426. Desktop Attendance row edits now replace the original attendance key on every save. This prevents sport/season/status edits from adding a second attendance record when the registry key changes.
 427. Miles Board Team goal progress card now shows both progress and the actual team goal, such as `4% of 5,000 mi`, while keeping the progress bar.
 428. Athlete Calendar now supports coach-created completion questions. Coaches open **Athletes > Calendar Questions**, save up to five Complete/Modify/Skip questions, and mark any question required. Athlete answers are validated on the athlete calendar modal and appended into the completed workout Athlete Note alongside the regular notes field.
-429. Added **Athlete Calendar Questions** to the Dashboard **What's New** drawer after explicit user approval. The What's New version was bumped so coaches see the new Complete/Modify/Skip question workflow.
-430. Added the Pro plan downgrade guard. Account automation and setup preview now block lowering to a capped plan such as Pro 25 when the current active SMART Trak roster exceeds the requested plan limit. Coaches/support must mark athletes inactive first; SMARTCoach does not auto-deactivate the last-added athletes. Product docs now describe the 30-day Pro 100 beta trial and downgrade limit rule.
-431. Share Miles Board now lets coaches choose whether attendance appears on the public board. Team Attendance % can be shown as a top card, Athlete Attendance % can be shown as a sortable leaderboard column, and both stay hidden from the public API unless enabled in Miles Board Sharing. Attendance uses the same Present/Late/Checked Out counted-as-attended rule as the Dashboard.
-432. SMARTCoach mobile app calendar workout priority was fixed. Group-assigned workouts created on the Training Calendar now auto-attach to the matching phone app group even if that group previously had a saved group plan selected, and saved group plans no longer overwrite an active SMART Trak Calendar workout before practice.
+429. Equipment Trak now supports coach-issued equipment. The Athletes page Equipment Trak modal includes a **Coach Issued** tab where coaches can assign items such as watches, radios, or timing gear to staff by coach name without creating athlete roster contacts. Coach-issued items appear in Equipment Issued reports/CSV, count against inventory totals, share numbered-item duplicate protection with athlete-issued gear, and carry forward during equipment season rollover when still issued or lost/damaged.
+430. Added **Athlete Calendar Questions** to the Dashboard **What's New** drawer after explicit user approval. The What's New version was bumped so coaches see the new Complete/Modify/Skip question workflow.
+431. Added the Pro plan downgrade guard. Account automation and setup preview now block lowering to a capped plan such as Pro 25 when the current active SMART Trak roster exceeds the requested plan limit. Coaches/support must mark athletes inactive first; SMARTCoach does not auto-deactivate the last-added athletes. Product docs now describe the 30-day Pro 100 beta trial and downgrade limit rule.
+432. Share Miles Board now lets coaches choose whether attendance appears on the public board. Team Attendance % can be shown as a top card, Athlete Attendance % can be shown as a sortable leaderboard column, and both stay hidden from the public API unless enabled in Miles Board Sharing. Attendance uses the same Present/Late/Checked Out counted-as-attended rule as the Dashboard.
+433. SMARTCoach mobile app calendar workout priority was fixed. Group-assigned workouts created on the Training Calendar now auto-attach to the matching phone app group even if that group previously had a saved group plan selected, and saved group plans no longer overwrite an active SMART Trak Calendar workout before practice.
 
 ## Known Good Test Flow
 
