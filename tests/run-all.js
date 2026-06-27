@@ -1459,6 +1459,8 @@ function checkEquipmentInventoryModelSerial() {
     "function moveEquipmentSetupRow(row,direction)",
     "data-equipment-setup-move=\"up\"",
     "data-equipment-setup-move=\"down\"",
+    "title=\"Move up\"",
+    "title=\"Move down\"",
     "equipment-setup-row",
     "function equipmentInventoryForIssuedRow(row)",
     "function inventoryUnavailableCount(inv,total)",
