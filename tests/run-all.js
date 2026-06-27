@@ -1501,6 +1501,20 @@ function checkEquipmentInventoryModelSerial() {
   console.log("Equipment Trak inventory model/serial checks ok");
 }
 
+function checkAthletesDocuTrakSetupLayout() {
+  const athletes = fs.readFileSync("athletes.html", "utf8");
+  if (athletes.includes("coach-facing view")) {
+    throw new Error("Athletes page subtitle should not say coach-facing view.");
+  }
+  if (!athletes.includes('<div class="sectiontitle">Checklist Requirements <button id="addDocuItemBtn" class="utility section-action" type="button">Add</button></div>')) {
+    throw new Error("Docu Trak add requirement button should stay in the Checklist Requirements header.");
+  }
+  if (athletes.includes('<button id="addDocuItemBtn" class="utility" type="button">Add Requirement</button>')) {
+    throw new Error("Docu Trak add requirement button should not sit in the modal footer.");
+  }
+  console.log("Athletes Docu Trak setup layout ok");
+}
+
 function checkEquipmentIssueSheetStickyHeader() {
   const athletes = fs.readFileSync("athletes.html", "utf8");
   [
@@ -2307,6 +2321,7 @@ checkMeetHistoryPerformanceCaches();
 checkMeetHistoryImportOnlySpreadsheet();
 checkMeetHistoryImportedResultCorrections();
 checkPageSearchDebounces();
+checkAthletesDocuTrakSetupLayout();
 checkEquipmentInventoryModelSerial();
 checkEquipmentIssueSheetStickyHeader();
 checkEquipmentCoachIssued();
