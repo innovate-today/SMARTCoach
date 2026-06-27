@@ -425,7 +425,9 @@ function checkMilesBoardFeature() {
     "data-sort=\"averagePerWorkout\"",
     "Game Score Leader",
     "This Week's Winners",
-    "class=\"infobadge\"",
+    "class=\"headinfo\"",
+    "smart-tooltip",
+    "function initHeaderTooltips()",
     "function pointsHelpText()",
     "function badgesHelpText()",
     "function updateMilesBoardHelp()",
@@ -488,6 +490,8 @@ function checkMilesBoardFeature() {
     if (!board.includes(text)) throw new Error(`Miles Board page missing ${text}`);
   });
   if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Miles Board must stay read-only.");
+  if (board.includes("class=\"infobadge\"")) throw new Error("Miles Board should use Dashboard-style headinfo bubbles.");
+  if (board.includes("No group")) throw new Error("Miles Board should not print athlete groups under names.");
   [
     'if (route === "miles-board-link")',
     "return accountMilesBoardLink(req, res);",

@@ -1280,6 +1280,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 436. Equipment Trak setup was moved out of individual athlete details and into the Equipment Trak modal header as Setup Items. Saving setup now refreshes Equipment Trak item filters, issue sheet columns, coach issue options, inventory item dropdowns, and the open athlete equipment detail so newly added items such as Watch appear immediately.
 437. Equipment Trak Setup rows can now be reordered with compact arrow controls. The saved row order is preserved and drives the Issue Sheet column order, so coaches can place uniforms, warmups, watches, chips, and bags in the order they want.
 438. Docu Trak Setup was cleaned up so the checklist Add control sits in the Checklist Requirements header instead of the sticky footer. The Athletes page subtitle was shortened to remove the unnecessary "coach-facing view" wording.
+439. Miles Board info bubbles now match the Dashboard-style custom tooltip instead of native browser title bubbles. Leaderboard and Display Mode athlete rows no longer show training groups under athlete names, keeping the public board cleaner for athletes and parents.
 
 ## Known Good Test Flow
 
