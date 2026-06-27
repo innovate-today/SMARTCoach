@@ -1278,6 +1278,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 434. Equipment Trak coach-issued items can now be edited or deleted from the Coach Issued tab. Numbered gear assigned to coaches is duplicate-protected against athlete-issued gear using a global assigned-number guard, while athlete-vs-athlete duplicate checks still honor separate inventory pools.
 435. Equipment Trak inventory rows now support Lost / Damaged availability without deleting the item from inventory. Coaches can mark a full inventory row unavailable or list lost numbered items / lost quantity; those counts reduce Available, appear in Lost / Damaged, and block the gear from being issued again. Number ranges now support alphanumeric watch labels such as `G1-G20` so `G15` is recognized correctly.
 436. Equipment Trak setup was moved out of individual athlete details and into the Equipment Trak modal header as Setup Items. Saving setup now refreshes Equipment Trak item filters, issue sheet columns, coach issue options, inventory item dropdowns, and the open athlete equipment detail so newly added items such as Watch appear immediately.
+437. Equipment Trak Setup rows can now be reordered with Up/Down controls. The saved row order is preserved and drives the Issue Sheet column order, so coaches can place uniforms, warmups, watches, chips, and bags in the order they want.
 
 ## Known Good Test Flow
 
