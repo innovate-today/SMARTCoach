@@ -1127,6 +1127,9 @@ function checkMobileCalendarWorkoutPriority() {
     "function canAutoApplySavedGroupPlan(group)",
     "if(hasCalendarWorkoutSelection(group))return false;",
     "if(groupPlan&&canAutoApplySavedGroupPlan(CL))",
+    "onclick=\"selectTrainingPlanDay('+TP.indexOf(plan)+','+di+',true)\"",
+    "function selectTrainingPlanDay(planIndex,dayIndex,applyNow)",
+    "if(applyNow)useSelectedTrainingPlan();",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile calendar workout priority missing ${text}`);
   });

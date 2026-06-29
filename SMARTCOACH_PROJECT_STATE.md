@@ -1282,6 +1282,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 438. Docu Trak Setup was cleaned up so the checklist Add control sits in the Checklist Requirements header instead of the sticky footer. The Athletes page subtitle was shortened to remove the unnecessary "coach-facing view" wording.
 439. Miles Board info bubbles now match the Dashboard-style custom tooltip instead of native browser title bubbles. Leaderboard and Display Mode athlete rows no longer show training groups under athlete names, keeping the public board cleaner for athletes and parents.
 440. SMARTCoach mobile Attendance now opens with Sport blank and requires coaches to choose Cross Country or Track before saving, preventing accidental Track-only attendance records.
+441. SMARTCoach mobile calendar workout cards now apply the tapped workout immediately to the active group/athlete, so the timing screen updates from the previously selected calendar day instead of only changing the selected card label.
 
 ## Known Good Test Flow
 
