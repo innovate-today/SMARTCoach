@@ -1281,6 +1281,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 437. Equipment Trak Setup rows can now be reordered with compact arrow controls. The saved row order is preserved and drives the Issue Sheet column order, so coaches can place uniforms, warmups, watches, chips, and bags in the order they want.
 438. Docu Trak Setup was cleaned up so the checklist Add control sits in the Checklist Requirements header instead of the sticky footer. The Athletes page subtitle was shortened to remove the unnecessary "coach-facing view" wording.
 439. Miles Board info bubbles now match the Dashboard-style custom tooltip instead of native browser title bubbles. Leaderboard and Display Mode athlete rows no longer show training groups under athlete names, keeping the public board cleaner for athletes and parents.
+440. SMARTCoach mobile Attendance now opens with Sport blank and requires coaches to choose Cross Country or Track before saving, preventing accidental Track-only attendance records.
 
 ## Known Good Test Flow
 

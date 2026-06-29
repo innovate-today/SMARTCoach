@@ -1707,16 +1707,22 @@ function checkAttendanceSeasonAttachment() {
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
   [
-    'id="att-sport"',
+    'id="att-sport" required',
+    '<option value="">Choose sport</option>',
     'id="att-season"',
     "function attendanceSport()",
     "function attendanceSeason()",
     "sport:attendanceSport()",
     "season:attendanceSeason()",
     "Off Season Track",
+    "Choose Cross Country or Track before saving attendance.",
+    "if(sport)sport.value='';",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile attendance season attachment missing ${text}`);
   });
+  if (mobile.includes("return input&&input.value?input.value:(CL&&CL.type==='meet'?'Track':'Cross Country');")) {
+    throw new Error("mobile attendance sport must not default to Track/Cross Country.");
+  }
   [
     'id="sportFilter"',
     'id="seasonFilter"',

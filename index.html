@@ -411,7 +411,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl" id="att-title">Attendance</div>
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="att-date" type="date" onchange="renderAttendance()"/></div>
-    <div class="srow"><span class="slbl">Sport</span><select class="sinp" id="att-sport"><option>Cross Country</option><option>Track</option></select></div>
+    <div class="srow"><span class="slbl">Sport</span><select class="sinp" id="att-sport" required><option value="">Choose sport</option><option>Cross Country</option><option>Track</option></select></div>
     <div class="srow"><span class="slbl">Season</span><select class="sinp" id="att-season"><option>Fall</option><option>Off Season Track</option><option>Winter</option><option>Spring</option><option>Summer</option></select></div>
     <div class="bulk-actions">
       <button class="mbtn c" onclick="addAttendanceCheckpoint()">Add Checkpoint</button>
@@ -2582,7 +2582,7 @@ function attendanceDate(){
 }
 function attendanceSport(){
   var input=document.getElementById('att-sport');
-  return input&&input.value?input.value:(CL&&CL.type==='meet'?'Track':'Cross Country');
+  return input&&input.value?input.value:'';
 }
 function attendanceSeason(){
   var input=document.getElementById('att-season');
@@ -2601,8 +2601,7 @@ function ensureSelectOption(select,value){
 function setAttendanceDefaultsFromGroup(){
   var sport=document.getElementById('att-sport');
   var season=document.getElementById('att-season');
-  var text=[CL&&CL.name,CL&&CL.season,CL&&CL.trainingPlanSeason].filter(Boolean).join(' ').toLowerCase();
-  if(sport)sport.value=/cross|xc/.test(text)?'Cross Country':'Track';
+  if(sport)sport.value='';
   if(season){
     var value=CL&&CL.season||currentSeason().season;
     ensureSelectOption(season,value);
@@ -2756,11 +2755,17 @@ function renameAttendanceCheckpoint(cpIndex){
   renderAttendance();
 }
 function saveAttendanceAndClose(){
+  var summary=document.getElementById('att-summary');
+  if(!attendanceSport()){
+    if(summary)summary.textContent='Choose Cross Country or Track before saving attendance.';
+    var sport=document.getElementById('att-sport');
+    if(sport)try{sport.focus();}catch(error){}
+    return;
+  }
   save();
   syncAttendanceToSmartTrak().then(function(){
     hm('m-attendance');
   }).catch(function(error){
-    var summary=document.getElementById('att-summary');
     if(summary)summary.textContent='Attendance saved on this device, but SMART Trak sync failed: '+(error&&error.message?error.message:'try again');
   });
 }
