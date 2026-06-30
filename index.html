@@ -1736,7 +1736,16 @@ function canAutoApplyCalendarWorkout(group){
   return true;
 }
 function hasCalendarWorkoutSelection(target){
-  return !!(target&&String(target.trainingPlanAuto||'').indexOf('calendar')===0&&target.trainingPlanDayId);
+  if(!target)return false;
+  if(String(target.trainingPlanTitle||'').indexOf('SMART Trak Calendar')===0)return true;
+  return String(target.trainingPlanAuto||'').indexOf('calendar')===0&&!!(
+    target.trainingPlanDayId||
+    target.trainingPlanDaySourceId||
+    target.trainingPlanDayDate||
+    target.trainingPlanDayTitle||
+    target.trainingPlanDayDetails||
+    target.trainingPlanDayTargetSplits
+  );
 }
 function canAutoApplySavedGroupPlan(group){
   if(!group)return false;
