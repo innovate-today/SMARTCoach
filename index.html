@@ -5944,13 +5944,14 @@ function useSelectedTrainingPlanForGroup(){
 function clearGroupCalendarRunnerOverrides(){
   if(!CL||!Array.isArray(CL.runners))return;
   CL.runners.forEach(function(r){
+    clearCachedPlanTarget(r);
     if(isRunnerCalendarPlanOverride(r))clearAthleteTrainingPlanFields(r);
   });
 }
 function isRunnerCalendarPlanOverride(r){
   if(!r)return false;
   if(String(r.trainingPlanAuto||'').indexOf('calendar')===0)return true;
-  if(String(r.trainingPlanTitle||'')==='SMART Trak Calendar')return true;
+  if(String(r.trainingPlanTitle||'').indexOf('SMART Trak Calendar')===0)return true;
   return !r.trainingPlanId&&(r.trainingPlanDayId||r.trainingPlanDayTitle||r.trainingPlanDayDetails||r.trainingPlanDayTargetSplits);
 }
 function targetNeedsPlanDay(target){

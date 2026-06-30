@@ -1137,7 +1137,9 @@ function checkMobileCalendarWorkoutPriority() {
     "function useSelectedTrainingPlanForGroup()",
     "applySelectedTrainingPlanToTarget(CL,plan)",
     "clearGroupCalendarRunnerOverrides();",
+    "clearCachedPlanTarget(r);",
     "function isRunnerCalendarPlanOverride(r)",
+    "String(r.trainingPlanTitle||'').indexOf('SMART Trak Calendar')===0",
     "onclick=\"useSelectedTrainingPlanForGroup()\"",
     "Workout selected for the group.",
   ].forEach((text) => {
