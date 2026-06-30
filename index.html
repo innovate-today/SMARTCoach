@@ -1997,6 +1997,8 @@ function applyAutoPlansToCurrentGroup(){
 }
 function applyAssignedPlanForRunner(r,athlete){
   if(!r||!athlete||!TP.length)return false;
+  if(hasCalendarWorkoutSelection(r))return false;
+  if(CL&&CL.trainingPlanAuto==='calendar-selected')return false;
   if(r.trainingPlanId&&!r.trainingPlanAuto)return false;
   var plan=findAssignedPlanForAthlete(athlete)||findAssignedPlanForGroup();
   if(!plan)return false;

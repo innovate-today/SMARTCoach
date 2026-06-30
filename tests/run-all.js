@@ -1126,6 +1126,8 @@ function checkMobileCalendarWorkoutPriority() {
     "String(target.trainingPlanAuto||'').indexOf('calendar')===0&&target.trainingPlanDayId",
     "function canAutoApplySavedGroupPlan(group)",
     "if(hasCalendarWorkoutSelection(group))return false;",
+    "if(hasCalendarWorkoutSelection(r))return false;",
+    "if(CL&&CL.trainingPlanAuto==='calendar-selected')return false;",
     "if(groupPlan&&canAutoApplySavedGroupPlan(CL))",
     "onclick=\"selectTrainingPlanDay('+TP.indexOf(plan)+','+di+')\"",
     "function selectTrainingPlanDay(planIndex,dayIndex)",

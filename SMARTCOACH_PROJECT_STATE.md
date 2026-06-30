@@ -1288,6 +1288,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 444. SMARTCoach mobile group workout selection now persists the calendar-selected marker, reopens the picker on the currently active calendar workout, and clears stale runner-level SMART Trak Calendar overrides when **Use for Group** is tapped. This prevents old athlete-level targets, such as a prior 4x400 workout, from overriding the newly selected group workout, such as 3x1 threshold.
 445. SMARTCoach mobile workout cards now only select the workout inside the picker; they no longer auto-apply to the current athlete. The bottom buttons are the only apply actions: **Use for Athlete** creates an individual override, and **Use for Group** changes the group workout. This prevents accidental "Individual Plan" overrides from keeping old targets after a group workout change.
 446. SMARTCoach mobile **Use for Group** now clears runner-level SMART Trak Calendar overrides whose saved title includes an athlete/group suffix, such as `SMART Trak Calendar - vivi & abby`, and clears cached runner targets before repainting. This fixes the case where the picker said the workout changed but timing rows still showed the old individual target.
+447. SMARTCoach mobile group screen reloads now respect coach-selected calendar workouts. When a group has a `calendar-selected` workout, the automatic plan refresh no longer reapplies athlete-specific assigned plans on Back/Done and reverts the timing rows to the old target.
 
 ## Known Good Test Flow
 
