@@ -1121,15 +1121,16 @@ function checkMobileCalendarWorkoutPriority() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
     "function canAutoApplyCalendarWorkout(group)",
-    "return true;",
+    "if(group.trainingPlanAuto==='calendar-selected')return false;",
     "function hasCalendarWorkoutSelection(target)",
-    "target&&target.trainingPlanAuto==='calendar'&&target.trainingPlanDayId",
+    "String(target.trainingPlanAuto||'').indexOf('calendar')===0&&target.trainingPlanDayId",
     "function canAutoApplySavedGroupPlan(group)",
     "if(hasCalendarWorkoutSelection(group))return false;",
     "if(groupPlan&&canAutoApplySavedGroupPlan(CL))",
     "onclick=\"selectTrainingPlanDay('+TP.indexOf(plan)+','+di+',true)\"",
     "function selectTrainingPlanDay(planIndex,dayIndex,applyNow)",
     "if(applyNow)useSelectedTrainingPlan();",
+    "target.trainingPlanAuto=plan.calendarPlan?'calendar-selected':'';",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile calendar workout priority missing ${text}`);
   });

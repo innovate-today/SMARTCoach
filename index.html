@@ -1732,10 +1732,11 @@ function applyCalendarDayToTarget(target,day,auto){
 }
 function canAutoApplyCalendarWorkout(group){
   if(!group)return false;
+  if(group.trainingPlanAuto==='calendar-selected')return false;
   return true;
 }
 function hasCalendarWorkoutSelection(target){
-  return !!(target&&target.trainingPlanAuto==='calendar'&&target.trainingPlanDayId);
+  return !!(target&&String(target.trainingPlanAuto||'').indexOf('calendar')===0&&target.trainingPlanDayId);
 }
 function canAutoApplySavedGroupPlan(group){
   if(!group)return false;
@@ -5861,7 +5862,7 @@ function useSelectedTrainingPlan(){
     target.trainingPlanDescription=plan.description||'';
     target.trainingPlanSeason=plan.season||'';
     target.trainingPlanPhase=plan.phase||plan.blockType||'';
-    target.trainingPlanAuto=plan.calendarPlan?'calendar':'';
+    target.trainingPlanAuto=plan.calendarPlan?'calendar-selected':'';
     var day=plan.selectedDay||(upcomingPlanDays(plan.planDays||[],5)[0])||null;
     if(!day){
       document.getElementById('tp-status').textContent='Select a workout from this plan first.';
