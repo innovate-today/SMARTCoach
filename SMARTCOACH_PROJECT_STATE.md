@@ -1284,6 +1284,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 440. SMARTCoach mobile Attendance now opens with Sport blank and requires coaches to choose Cross Country or Track before saving, preventing accidental Track-only attendance records.
 441. SMARTCoach mobile calendar workout cards now apply the tapped workout immediately to the active group/athlete, so the timing screen updates from the previously selected calendar day instead of only changing the selected card label.
 442. SMARTCoach mobile calendar selections now distinguish coach-selected calendar workouts from auto-filled "today" calendar workouts. Choosing a future workout and using it for the group no longer gets overwritten by the current-day workout when returning to the Training screen.
+443. SMARTCoach mobile athlete-mode calendar picker now has a true **Use for Group** action. When a coach opens the picker from an athlete, selects a future workout, and taps Use for Group, the selected workout is saved onto the group and the athlete is returned to that updated group plan instead of clearing back to the old group workout.
 
 ## Known Good Test Flow
 

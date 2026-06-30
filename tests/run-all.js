@@ -1131,6 +1131,11 @@ function checkMobileCalendarWorkoutPriority() {
     "function selectTrainingPlanDay(planIndex,dayIndex,applyNow)",
     "if(applyNow)useSelectedTrainingPlan();",
     "target.trainingPlanAuto=plan.calendarPlan?'calendar-selected':'';",
+    "function useSelectedTrainingPlanForGroup()",
+    "applySelectedTrainingPlanToTarget(CL,plan)",
+    "clearAthleteTrainingPlanFields(CE)",
+    "onclick=\"useSelectedTrainingPlanForGroup()\"",
+    "Workout selected for the group.",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile calendar workout priority missing ${text}`);
   });

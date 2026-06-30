@@ -5576,7 +5576,7 @@ function openSeasonPlan(assignToGroup){
   var btn=document.getElementById('tp-btn');
   btn.textContent=TPA.kind==='athlete'?'Use for Athlete':'Use for Group';btn.disabled=true;btn.style.background='#2B4FCC';
   var clear=document.getElementById('tp-clear');
-  if(clear)clear.style.display=TPA.kind==='athlete'?'block':'none';
+  if(clear){clear.textContent='Use for Group';clear.style.display=TPA.kind==='athlete'?'block':'none';}
   sm('m-training-plan');
   Promise.all([
     fetch('/api/smart-trak/training-plan').then(function(r){
@@ -5836,6 +5836,31 @@ function selectTrainingPlanDay(planIndex,dayIndex,applyNow){
 function planDayRecordId(day){
   return day&&(day.id||day.sourceRecordId)||'';
 }
+function applySelectedTrainingPlanToTarget(target,plan){
+  if(!target||!plan)return false;
+  var day=plan.selectedDay||(upcomingPlanDays(plan.planDays||[],5)[0])||null;
+  if(!day)return false;
+  clearCachedPlanTarget(target);
+  target.trainingPlanId=plan.calendarPlan?'':(plan.id||'');
+  target.trainingPlanSourceId=plan.calendarPlan?'':(plan.sourceRecordId||'');
+  target.trainingPlanTitle=plan.title||'';
+  target.trainingPlanDescription=plan.description||'';
+  target.trainingPlanSeason=plan.season||'';
+  target.trainingPlanPhase=plan.phase||plan.blockType||'';
+  target.trainingPlanAuto=plan.calendarPlan?'calendar-selected':'';
+  target.trainingPlanDayId=planDayRecordId(day);
+  target.trainingPlanDaySourceId=day&&day.sourceRecordId||'';
+  target.trainingPlanDayTitle=day&&day.title||'';
+  target.trainingPlanDayType=day&&day.dayType||'';
+  target.trainingPlanDayDate=day&&day.date||'';
+  target.trainingPlanDayWorkoutType=day&&day.workoutType||'';
+  target.trainingPlanDayEnergySystem=day&&day.energySystem||'';
+  target.trainingPlanDayTargetSplits=day&&day.targetSplits||'';
+  target.trainingPlanDayDetails=day&&day.details||'';
+  target.trainingPlanDayPlannedVolume=day&&day.plannedVolume||'';
+  target.trainingPlanDayLinkedMeetId=day&&day.linkedMeetId||'';
+  return true;
+}
 function useSelectedTrainingPlan(){
   var sel=document.getElementById('tp-plan');
   var plan=TP[parseInt(sel.value)]||null;
@@ -5854,38 +5879,49 @@ function useSelectedTrainingPlan(){
     return;
   }
   if(TPA&&TPA.target){
-    var target=TPA.target;
-    clearCachedPlanTarget(target);
-    target.trainingPlanId=plan.calendarPlan?'':(plan.id||'');
-    target.trainingPlanSourceId=plan.calendarPlan?'':(plan.sourceRecordId||'');
-    target.trainingPlanTitle=plan.title||'';
-    target.trainingPlanDescription=plan.description||'';
-    target.trainingPlanSeason=plan.season||'';
-    target.trainingPlanPhase=plan.phase||plan.blockType||'';
-    target.trainingPlanAuto=plan.calendarPlan?'calendar-selected':'';
-    var day=plan.selectedDay||(upcomingPlanDays(plan.planDays||[],5)[0])||null;
-    if(!day){
+    if(!applySelectedTrainingPlanToTarget(TPA.target,plan)){
       document.getElementById('tp-status').textContent='Select a workout from this plan first.';
       document.getElementById('tp-status').style.color='#c47a00';
       return;
     }
-    target.trainingPlanDayId=planDayRecordId(day);
-    target.trainingPlanDaySourceId=day&&day.sourceRecordId||'';
-    target.trainingPlanDayTitle=day&&day.title||'';
-    target.trainingPlanDayType=day&&day.dayType||'';
-    target.trainingPlanDayDate=day&&day.date||'';
-    target.trainingPlanDayWorkoutType=day&&day.workoutType||'';
-    target.trainingPlanDayEnergySystem=day&&day.energySystem||'';
-    target.trainingPlanDayTargetSplits=day&&day.targetSplits||'';
-    target.trainingPlanDayDetails=day&&day.details||'';
-    target.trainingPlanDayPlannedVolume=day&&day.plannedVolume||'';
-    target.trainingPlanDayLinkedMeetId=day&&day.linkedMeetId||'';
     save();
     rl();
     if(CL)rr();
     if(CE&&TPA.kind==='athlete')oEnt(CE.id);
   }
   document.getElementById('tp-status').textContent=TPA&&TPA.kind==='athlete'?'Plan selected for this athlete.':'Plan selected for this group.';
+  document.getElementById('tp-status').style.color='#0a7a44';
+  document.getElementById('tp-status').style.fontWeight='700';
+}
+function useSelectedTrainingPlanForGroup(){
+  var sel=document.getElementById('tp-plan');
+  var plan=TP[parseInt(sel.value)]||null;
+  if(!plan||!CL)return;
+  if(!Array.isArray(plan.planDays)){
+    document.getElementById('tp-status').textContent='Loading workouts for this plan...';
+    document.getElementById('tp-status').style.color='#555';
+    fetchTrainingPlanDays(plan.id,plan.sourceRecordId).then(function(days){
+      plan.planDays=days||[];
+      renderTrainingPlanDetail(plan,plan.planDays,false);
+      setTrainingPlanUseReady(plan,plan.planDays);
+      useSelectedTrainingPlanForGroup();
+    }).catch(function(){
+      document.getElementById('tp-status').textContent='Could not load workouts for this plan.';
+      document.getElementById('tp-status').style.color='#c00';
+    });
+    return;
+  }
+  if(!applySelectedTrainingPlanToTarget(CL,plan)){
+    document.getElementById('tp-status').textContent='Select a workout from this plan first.';
+    document.getElementById('tp-status').style.color='#c47a00';
+    return;
+  }
+  if(CE)clearAthleteTrainingPlanFields(CE);
+  save();
+  rl();
+  rr();
+  if(CE)oEnt(CE.id);
+  document.getElementById('tp-status').textContent='Workout selected for the group.';
   document.getElementById('tp-status').style.color='#0a7a44';
   document.getElementById('tp-status').style.fontWeight='700';
 }
@@ -5933,29 +5969,33 @@ function hydrateAssignedPlanWorkouts(){
 }
 function clearAthleteTrainingPlan(){
   if(!CE)return;
-  clearCachedPlanTarget(CE);
-  CE.trainingPlanId='';
-  CE.trainingPlanSourceId='';
-  CE.trainingPlanTitle='';
-  CE.trainingPlanDescription='';
-  CE.trainingPlanSeason='';
-  CE.trainingPlanPhase='';
-  CE.trainingPlanDayId='';
-  CE.trainingPlanDaySourceId='';
-  CE.trainingPlanDayTitle='';
-  CE.trainingPlanDayType='';
-  CE.trainingPlanDayDate='';
-  CE.trainingPlanDayWorkoutType='';
-  CE.trainingPlanDayEnergySystem='';
-  CE.trainingPlanDayTargetSplits='';
-  CE.trainingPlanDayDetails='';
-  CE.trainingPlanDayPlannedVolume='';
-  CE.trainingPlanDayLinkedMeetId='';
-  CE.trainingPlanAuto='';
+  clearAthleteTrainingPlanFields(CE);
   save();rr();oEnt(CE.id);
   document.getElementById('tp-status').textContent='Athlete is back on the group plan.';
   document.getElementById('tp-status').style.color='#0a7a44';
   document.getElementById('tp-status').style.fontWeight='700';
+}
+function clearAthleteTrainingPlanFields(target){
+  if(!target)return;
+  clearCachedPlanTarget(target);
+  target.trainingPlanId='';
+  target.trainingPlanSourceId='';
+  target.trainingPlanTitle='';
+  target.trainingPlanDescription='';
+  target.trainingPlanSeason='';
+  target.trainingPlanPhase='';
+  target.trainingPlanDayId='';
+  target.trainingPlanDaySourceId='';
+  target.trainingPlanDayTitle='';
+  target.trainingPlanDayType='';
+  target.trainingPlanDayDate='';
+  target.trainingPlanDayWorkoutType='';
+  target.trainingPlanDayEnergySystem='';
+  target.trainingPlanDayTargetSplits='';
+  target.trainingPlanDayDetails='';
+  target.trainingPlanDayPlannedVolume='';
+  target.trainingPlanDayLinkedMeetId='';
+  target.trainingPlanAuto='';
 }
 
 function oSet(){
@@ -8041,7 +8081,7 @@ document.addEventListener('touchstart',function(e){
 <datalist id="athletes-list"></datalist>
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-profile"><div class="msh"><div class="mhd"></div><div class="mttl" id="profile-title">Athlete Profile</div><div class="profile-box" id="profile-body"></div><button class="mbtn c" onclick="hm('m-profile')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
-<div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="clearAthleteTrainingPlan()" style="display:none;margin-top:8px">Use Group Plan</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="useSelectedTrainingPlanForGroup()" style="display:none;margin-top:8px">Use for Group</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-relay"><div class="msh"><div class="mhd"></div><div class="mttl">Relay</div><div id="relay-controls"></div><button class="mbtn c" onclick="hm('m-relay')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-partner-timing"><div class="msh"><div class="mhd"></div><div class="mttl">Partner Timing</div><div id="partner-controls" class="builder-box"></div><button class="mbtn c" onclick="hm('m-partner-timing')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
