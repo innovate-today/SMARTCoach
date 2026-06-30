@@ -1127,9 +1127,8 @@ function checkMobileCalendarWorkoutPriority() {
     "function canAutoApplySavedGroupPlan(group)",
     "if(hasCalendarWorkoutSelection(group))return false;",
     "if(groupPlan&&canAutoApplySavedGroupPlan(CL))",
-    "onclick=\"selectTrainingPlanDay('+TP.indexOf(plan)+','+di+',true)\"",
-    "function selectTrainingPlanDay(planIndex,dayIndex,applyNow)",
-    "if(applyNow)useSelectedTrainingPlan();",
+    "onclick=\"selectTrainingPlanDay('+TP.indexOf(plan)+','+di+')\"",
+    "function selectTrainingPlanDay(planIndex,dayIndex)",
     "target.trainingPlanAuto=plan.calendarPlan?'calendar-selected':'';",
     "trainingPlanAuto:l.trainingPlanAuto||''",
     "trainingPlanAuto:r.trainingPlanAuto||''",
@@ -1144,6 +1143,9 @@ function checkMobileCalendarWorkoutPriority() {
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile calendar workout priority missing ${text}`);
   });
+  if (mobile.includes("if(applyNow)useSelectedTrainingPlan();")) {
+    throw new Error("Mobile workout card taps must not auto-create athlete overrides before Use for Group.");
+  }
   if (mobile.includes("if(group.trainingPlanId&&!group.trainingPlanAuto)return false;")) {
     throw new Error("Mobile SMART Trak Calendar workouts should not be blocked by an older saved group plan.");
   }

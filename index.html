@@ -5785,7 +5785,7 @@ function renderTrainingPlanDetail(plan,days,loading){
       var detail=[d.dayType,d.workoutType,d.energySystem,d.plannedVolume].filter(Boolean).join(' · ');
       var body=coachVisiblePlanText([d.details,d.targetSplits,d.coachNotes].filter(Boolean).join('\n\n'));
       var active=plan.selectedDay&&plan.selectedDay.id===d.id;
-      return '<div class="profile-row" style="'+(active?'border-left:3px solid #2B4FCC;padding-left:8px':'')+'"><b>'+ex((d.date?d.date+' - ':'')+(d.title||'Workout'))+'</b><small>'+ex(detail)+'</small>'+(body?'<small style="white-space:pre-wrap">'+ex(body)+'</small>':'')+'<button style="margin-top:6px;border:1px solid #2B4FCC;background:'+(active?'#2B4FCC':'#fff')+';color:'+(active?'#fff':'#2B4FCC')+';border-radius:8px;padding:6px 10px;font-weight:700" onclick="selectTrainingPlanDay('+TP.indexOf(plan)+','+di+',true)">'+(active?'Selected':'Use this workout')+'</button></div>';
+      return '<div class="profile-row" style="'+(active?'border-left:3px solid #2B4FCC;padding-left:8px':'')+'"><b>'+ex((d.date?d.date+' - ':'')+(d.title||'Workout'))+'</b><small>'+ex(detail)+'</small>'+(body?'<small style="white-space:pre-wrap">'+ex(body)+'</small>':'')+'<button style="margin-top:6px;border:1px solid #2B4FCC;background:'+(active?'#2B4FCC':'#fff')+';color:'+(active?'#fff':'#2B4FCC')+';border-radius:8px;padding:6px 10px;font-weight:700" onclick="selectTrainingPlanDay('+TP.indexOf(plan)+','+di+')">'+(active?'Selected':'Use this workout')+'</button></div>';
     }).join('');
     if(!upcoming.length)scheduleHtml='<div class="profile-row"><small>No workouts scheduled in the next 5 days.</small></div>';
   }else{
@@ -5839,7 +5839,7 @@ function upcomingPlanDays(days,count){
   var today=todayISO();
   return (days||[]).filter(function(d){return !d.date||d.date>=today;}).slice(0,count||5);
 }
-function selectTrainingPlanDay(planIndex,dayIndex,applyNow){
+function selectTrainingPlanDay(planIndex,dayIndex){
   var plan=TP[planIndex];
   if(!plan)return;
   var input=document.getElementById('tp-plan');
@@ -5848,7 +5848,6 @@ function selectTrainingPlanDay(planIndex,dayIndex,applyNow){
   plan.selectedDay=days[dayIndex]||null;
   renderTrainingPlanDetail(plan,plan.planDays||[],false);
   setTrainingPlanUseReady(plan,plan.planDays||[]);
-  if(applyNow)useSelectedTrainingPlan();
 }
 function planDayRecordId(day){
   return day&&(day.id||day.sourceRecordId)||'';
