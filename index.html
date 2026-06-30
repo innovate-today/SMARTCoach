@@ -3872,7 +3872,8 @@ function rHTML(r){
   var cfg=normalizeCfg(CL&&CL.cfg);
   var hookClass=r.hook?' hook-'+r.hook:'';
   var hookChip=r.hook?'<span class="hookchip '+r.hook+'">'+ex(r.hook)+' hook</span>':'';
-  var planHtml=cfg.showPlan&&r.trainingPlanTitle?'<div style="font-size:11px;color:#2B4FCC;font-weight:700;margin-top:2px">Individual Plan: '+ex([r.trainingPlanTitle,r.trainingPlanDayTitle].filter(Boolean).join(' · '))+'</div>':'';
+  var planLabel=r.trainingPlanAuto==='calendar-group-selected'?'Group Plan':'Individual Plan';
+  var planHtml=cfg.showPlan&&r.trainingPlanTitle?'<div style="font-size:11px;color:#2B4FCC;font-weight:700;margin-top:2px">'+planLabel+': '+ex([r.trainingPlanTitle,r.trainingPlanDayTitle].filter(Boolean).join(' · '))+'</div>':'';
   var status=runnerRowStatus(r);
   var statusHtml=cfg.showSync&&status?'<div class="rtarget on save-state '+status.cls+'" '+(status.action?'onclick="openRunnerStatusAction('+r.id+')"':'')+' style="display:block'+(status.action?';cursor:pointer':'')+'">'+ex(status.label)+'</div>':'';
   var partnerStations=[];
@@ -5536,7 +5537,7 @@ function eventDistance(event){
 }
 function runnerPlan(r){
   var runnerHasPlan=!!(r&&(r.trainingPlanId||r.trainingPlanDayId||r.trainingPlanDayTitle||r.trainingPlanDayDetails||r.trainingPlanDayTargetSplits));
-  if(runnerHasPlan&&CL&&CL.trainingPlanAuto==='calendar-selected'&&String(r.trainingPlanAuto||'')!=='calendar-athlete-selected'){
+  if(runnerHasPlan&&CL&&CL.trainingPlanAuto==='calendar-selected'&&['calendar-athlete-selected','calendar-group-selected'].indexOf(String(r.trainingPlanAuto||''))<0){
     runnerHasPlan=false;
   }
   if(runnerHasPlan){
@@ -5960,7 +5961,7 @@ function useSelectedTrainingPlanForGroup(){
     document.getElementById('tp-status').style.color='#c47a00';
     return;
   }
-  clearGroupCalendarRunnerOverrides();
+  applySelectedTrainingPlanToGroupRunners(plan);
   save();
   rl();
   rr();
@@ -5968,6 +5969,13 @@ function useSelectedTrainingPlanForGroup(){
   document.getElementById('tp-status').textContent='Workout selected for the group.';
   document.getElementById('tp-status').style.color='#0a7a44';
   document.getElementById('tp-status').style.fontWeight='700';
+}
+function applySelectedTrainingPlanToGroupRunners(plan){
+  if(!CL||!Array.isArray(CL.runners))return;
+  CL.runners.forEach(function(r){
+    clearAthleteTrainingPlanFields(r);
+    if(applySelectedTrainingPlanToTarget(r,plan))r.trainingPlanAuto='calendar-group-selected';
+  });
 }
 function clearGroupCalendarRunnerOverrides(){
   if(!CL||!Array.isArray(CL.runners))return;

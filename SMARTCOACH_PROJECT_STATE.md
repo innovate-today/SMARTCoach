@@ -1291,6 +1291,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 447. SMARTCoach mobile group screen reloads now respect coach-selected calendar workouts. When a group has a `calendar-selected` workout, the automatic plan refresh no longer reapplies athlete-specific assigned plans on Back/Done and reverts the timing rows to the old target.
 448. SMARTCoach mobile calendar workout detection now recognizes calendar-selected workouts even when the calendar day id is missing. Titles that start with `SMART Trak Calendar`, plus saved calendar date/title/details/target fields, now block the auto-plan refresh from restoring the old assigned workout when Done/Back is tapped.
 449. SMARTCoach mobile calendar workout changes can now be changed again after the first successful group change. Calendar workout cards use a stable date/title/details/target comparison when ids are missing, group-selected calendar workouts win over stale runner calendar plans on timing rows, and true athlete-only calendar selections are tagged separately.
+450. SMARTCoach mobile **Use for Group** now writes the selected workout onto every runner in the current group as a `calendar-group-selected` plan. This removes the old split-brain behavior where the athlete detail screen could show the newly selected workout while the group timing rows still read stale runner targets after Back/Done.
 
 ## Known Good Test Flow
 
