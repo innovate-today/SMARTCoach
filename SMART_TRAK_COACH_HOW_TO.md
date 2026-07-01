@@ -669,20 +669,22 @@ Field event results save to meet results and attach to the athlete, meet, and da
 
 ## Log Miles
 
-Use Log Miles for manual mileage entries that were not timed in the app.
+Use Log Miles for manual mileage entries or quality sessions that were not timed in the app.
 
 How to use it:
 
 1. Click **Log Miles**.
 2. Choose the date.
-3. Choose whether the mileage applies to an individual athlete or a group.
-4. Select the athlete or group.
-5. Choose the effort.
-6. Enter the distance with a clear unit, such as `4 miles`, `4 mi`, or `0.5 mi`.
-7. Add time, source, surface, and notes if useful.
-8. Save mileage.
+3. Choose **Easy Miles** for a simple entry or **Quality Session** for warmup, reps, rests, splits, and cooldown.
+4. Choose whether the entry applies to an individual athlete or a group.
+5. Select the athlete or group.
+6. Choose the effort.
+7. For Easy Miles, enter the distance with a clear unit, such as `4 miles`, `4 mi`, or `0.5 mi`.
+8. For Quality Session, enter warmup, cooldown, and one or more sets. Each set can include reps, distance, rep splits, rest, effort, and notes.
+9. Add time, source, surface, and notes if useful.
+10. Save mileage.
 
-Manual mileage appears in Dashboard training volume and athlete training load.
+Manual mileage and manual quality sessions appear in Dashboard training volume and athlete training load. Quality-session rep splits appear with the completed workout details.
 
 ## SMARTCoach Pro Mobile App: Training Section
 

@@ -171,6 +171,14 @@ tr:last-child td{border-bottom:0}
 .inline-action-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .inline-action-row input{min-width:0}
 .inline-action-row button{white-space:nowrap}
+.quality-builder{grid-column:1/-1;display:grid;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}
+.quality-builder h3{font-size:13px;margin:0;color:#475569;text-transform:uppercase;letter-spacing:.03em}
+.quality-summary{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;color:#334155;font-size:13px;line-height:1.4;white-space:pre-wrap}
+.quality-set-list{display:grid;gap:8px}
+.quality-set-row{display:grid;grid-template-columns:70px 115px minmax(150px,1fr) 135px 145px minmax(130px,1fr) auto;gap:8px;align-items:end;border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px}
+.quality-set-row label{display:grid;gap:4px;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.02em}
+.quality-set-row input,.quality-set-row select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:8px 9px}
+.quality-set-row button{min-height:36px;padding:7px 10px}
 .relaylegs{grid-column:1/-1;display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}
 .relaylegs h3{font-size:13px;margin:0;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 .relayleg{display:grid;grid-template-columns:1fr 140px;gap:8px}
@@ -244,6 +252,7 @@ tr:last-child td{border-bottom:0}
   .filterstate{margin-top:-2px}
   .detailgrid{grid-template-columns:1fr}
   .formgrid{grid-template-columns:1fr}
+  .quality-set-row{grid-template-columns:1fr}
   .start-path-grid{grid-template-columns:1fr}
   .modalactions{align-items:stretch;flex-direction:column}
   .modalstatus{margin-right:0}
@@ -703,6 +712,13 @@ tr:last-child td{border-bottom:0}
           <input id="manualMileageDate" type="date" placeholder="Select workout date">
         </div>
         <div class="field">
+          <label for="manualMileageMode">Log Type <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Easy Miles for simple mileage or Quality Session to enter warmup, reps, rests, splits, and cooldown.">i</span></label>
+          <select id="manualMileageMode">
+            <option value="easy">Easy Miles</option>
+            <option value="quality">Quality Session</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="manualMileageScope">Apply To <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Individual for one athlete or Group for every athlete in an active training group.">i</span></label>
           <select id="manualMileageScope">
             <option value="">Select apply to</option>
@@ -763,6 +779,25 @@ tr:last-child td{border-bottom:0}
             <option>Track</option>
             <option>Indoor</option>
           </select>
+        </div>
+        <div id="manualMileageQualityFields" class="quality-builder" hidden>
+          <h3>Quality Session Details</h3>
+          <div class="formgrid">
+            <div class="field">
+              <label for="manualMileageWarmup">Warmup</label>
+              <input id="manualMileageWarmup" type="text" placeholder="Example: 1 mi">
+            </div>
+            <div class="field">
+              <label for="manualMileageCooldown">Cooldown</label>
+              <input id="manualMileageCooldown" type="text" placeholder="Example: 2 mi">
+            </div>
+          </div>
+          <div id="manualMileageRepRows" class="quality-set-list"></div>
+          <div class="modalactions" style="margin-top:0">
+            <div id="manualMileageQualitySummary" class="modalstatus">Add reps to build the quality session.</div>
+            <button id="manualMileageAddRep" class="ghost" type="button">Add Set</button>
+          </div>
+          <div id="manualMileageQualityPreview" class="quality-summary" hidden></div>
         </div>
         <div class="field full">
           <label for="manualMileageNotes">Notes <span class="fieldinfo" tabindex="0" data-tip="Optional context such as route, conditions, soreness, or coach notes.">i</span></label>
@@ -2125,6 +2160,7 @@ var els={
   manualMileageModal:document.getElementById('manualMileageModal'),
   manualMileageClose:document.getElementById('manualMileageClose'),
   manualMileageDate:document.getElementById('manualMileageDate'),
+  manualMileageMode:document.getElementById('manualMileageMode'),
   manualMileageScope:document.getElementById('manualMileageScope'),
   manualMileageAthlete:document.getElementById('manualMileageAthlete'),
   manualMileageGroup:document.getElementById('manualMileageGroup'),
@@ -2133,6 +2169,13 @@ var els={
   manualMileageTime:document.getElementById('manualMileageTime'),
   manualMileageSource:document.getElementById('manualMileageSource'),
   manualMileageSurface:document.getElementById('manualMileageSurface'),
+  manualMileageQualityFields:document.getElementById('manualMileageQualityFields'),
+  manualMileageWarmup:document.getElementById('manualMileageWarmup'),
+  manualMileageCooldown:document.getElementById('manualMileageCooldown'),
+  manualMileageRepRows:document.getElementById('manualMileageRepRows'),
+  manualMileageAddRep:document.getElementById('manualMileageAddRep'),
+  manualMileageQualitySummary:document.getElementById('manualMileageQualitySummary'),
+  manualMileageQualityPreview:document.getElementById('manualMileageQualityPreview'),
   manualMileageNotes:document.getElementById('manualMileageNotes'),
   manualMileageStatus:document.getElementById('manualMileageStatus'),
   manualMileageSave:document.getElementById('manualMileageSave'),
@@ -2478,7 +2521,20 @@ els.accountClose.addEventListener('click',closeAccountSettings);
 els.accountRefresh.addEventListener('click',refreshAppVersion);
 els.accountSave.addEventListener('click',saveAccountSettings);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
+els.manualMileageMode.addEventListener('change',updateManualMileageMode);
 els.manualMileageScope.addEventListener('change',updateManualMileageScope);
+els.manualMileageWarmup.addEventListener('input',updateManualMileageQuality);
+els.manualMileageCooldown.addEventListener('input',updateManualMileageQuality);
+els.manualMileageAddRep.addEventListener('click',function(){addManualMileageRepRow();});
+els.manualMileageRepRows.addEventListener('input',updateManualMileageQuality);
+els.manualMileageRepRows.addEventListener('change',updateManualMileageQuality);
+els.manualMileageRepRows.addEventListener('click',function(event){
+  var remove=event.target&&event.target.closest('[data-remove-manual-rep]');
+  if(!remove)return;
+  var row=remove.closest('.quality-set-row');
+  if(row)row.remove();
+  updateManualMileageQuality();
+});
 els.manualMileageSave.addEventListener('click',saveManualMileage);
 els.raceResultClose.addEventListener('click',closeRaceResult);
 els.raceResultMeet.addEventListener('change',syncRaceResultMeet);
@@ -4870,6 +4926,88 @@ function setMeetManagerStatus(text,type){
   els.meetManagerStatus.style.color=type==='error'?'#b00000':type==='success'?'#08783c':'';
 }
 
+function updateManualMileageMode(){
+  var quality=(els.manualMileageMode.value||'easy')==='quality';
+  els.manualMileageQualityFields.hidden=!quality;
+  if(quality&&!els.manualMileageRepRows.children.length)addManualMileageRepRow();
+  if(quality){
+    els.manualMileageDistance.placeholder='Auto total from warmup, reps, cooldown';
+  }else{
+    els.manualMileageDistance.placeholder='Example: 4 miles';
+  }
+  updateManualMileageQuality();
+}
+
+function addManualMileageRepRow(set){
+  set=set||{};
+  var row=document.createElement('div');
+  row.className='quality-set-row';
+  row.innerHTML=
+    '<label>Reps<input data-quality-reps type="number" min="1" step="1" value="'+esc(set.reps||1)+'"></label>'+
+    '<label>Distance<input data-quality-distance type="text" value="'+esc(set.distance||'')+'" placeholder="200 m"></label>'+
+    '<label>Rep Splits<input data-quality-splits type="text" value="'+esc(set.splits||'')+'" placeholder="32.1, 31.8"></label>'+
+    '<label>Rest<input data-quality-rest type="text" value="'+esc(set.rest||'')+'" placeholder="1 min jog"></label>'+
+    '<label>Effort<select data-quality-effort>'+manualQualityEffortOptions(set.effort||els.manualMileageWorkout.value)+'</select></label>'+
+    '<label>Notes<input data-quality-note type="text" value="'+esc(set.note||'')+'" placeholder="Optional"></label>'+
+    '<button class="danger compact" data-remove-manual-rep type="button">Remove</button>';
+  els.manualMileageRepRows.appendChild(row);
+  updateManualMileageQuality();
+}
+
+function manualQualityEffortOptions(selected){
+  var efforts=['Threshold','Interval','Repetition','Hills','Fast Reps','Speed Endurance I','Speed Endurance II','Special Endurance I','Special Endurance II','Intensive Tempo','Extensive Tempo'];
+  selected=selected||'';
+  return efforts.map(function(effort){
+    return '<option'+(effort===selected?' selected':'')+'>'+esc(effort)+'</option>';
+  }).join('');
+}
+
+function collectManualQualitySession(){
+  var sets=[];
+  Array.prototype.forEach.call(els.manualMileageRepRows.children,function(row){
+    var reps=Math.max(1,Math.round(num(row.querySelector('[data-quality-reps]')&&row.querySelector('[data-quality-reps]').value)||1));
+    var distance=(row.querySelector('[data-quality-distance]')&&row.querySelector('[data-quality-distance]').value||'').trim();
+    var splits=(row.querySelector('[data-quality-splits]')&&row.querySelector('[data-quality-splits]').value||'').split(/[,\n;]/).map(function(item){return item.trim();}).filter(Boolean);
+    var rest=(row.querySelector('[data-quality-rest]')&&row.querySelector('[data-quality-rest]').value||'').trim();
+    var effort=(row.querySelector('[data-quality-effort]')&&row.querySelector('[data-quality-effort]').value||'').trim();
+    var note=(row.querySelector('[data-quality-note]')&&row.querySelector('[data-quality-note]').value||'').trim();
+    if(distance||splits.length||rest||note)sets.push({reps:reps,distance:distance,splits:splits,rest:rest,effort:effort,note:note});
+  });
+  var warmup=(els.manualMileageWarmup.value||'').trim();
+  var cooldown=(els.manualMileageCooldown.value||'').trim();
+  var totalMiles=parseCompletedMiles(warmup)+parseCompletedMiles(cooldown);
+  sets.forEach(function(set){
+    totalMiles+=parseCompletedMiles(set.distance)*Math.max(1,num(set.reps)||1);
+  });
+  var totalLabel=totalMiles?formatMiles(totalMiles)+' total':'';
+  return {warmup:warmup,cooldown:cooldown,sets:sets,totalMiles:totalMiles,totalLabel:totalLabel,summary:manualQualitySummaryText({warmup:warmup,cooldown:cooldown,sets:sets,totalLabel:totalLabel})};
+}
+
+function manualQualitySummaryText(quality){
+  var lines=[];
+  if(quality.warmup)lines.push('Warmup: '+quality.warmup);
+  (quality.sets||[]).forEach(function(set,index){
+    var base=(set.reps||1)+' x '+(set.distance||'distance')+(set.effort?' @ '+set.effort:'');
+    var extras=[];
+    if(set.splits&&set.splits.length)extras.push('splits '+set.splits.join(' / '));
+    if(set.rest)extras.push('rest '+set.rest);
+    if(set.note)extras.push(set.note);
+    lines.push('Set '+(index+1)+': '+base+(extras.length?' - '+extras.join(' - '):''));
+  });
+  if(quality.cooldown)lines.push('Cooldown: '+quality.cooldown);
+  if(quality.totalLabel)lines.push('Total: '+quality.totalLabel);
+  return lines.join('\n');
+}
+
+function updateManualMileageQuality(){
+  if((els.manualMileageMode.value||'easy')!=='quality')return;
+  var quality=collectManualQualitySession();
+  if(quality.totalLabel)els.manualMileageDistance.value=quality.totalLabel;
+  els.manualMileageQualitySummary.textContent=quality.sets.length?(quality.totalLabel||'Quality session ready.'):'Add reps to build the quality session.';
+  els.manualMileageQualityPreview.hidden=!quality.summary;
+  els.manualMileageQualityPreview.textContent=quality.summary;
+}
+
 function renderManualMileageAthletes(){
   if(!els.manualMileageAthlete)return;
   var current=els.manualMileageAthlete.value;
@@ -4935,8 +5073,11 @@ function manualAthletePayload(row){
 
 function saveManualMileage(){
   var athletes=manualMileageAthletes();
-  var distance=(els.manualMileageDistance.value||'').trim();
+  var qualityMode=(els.manualMileageMode.value||'easy')==='quality';
+  var quality=qualityMode?collectManualQualitySession():null;
+  var distance=(qualityMode?(quality.totalLabel||els.manualMileageDistance.value):els.manualMileageDistance.value||'').trim();
   if(!athletes.length){setManualMileageStatus('Select at least one athlete.', 'bad');return;}
+  if(qualityMode&&!quality.sets.length){setManualMileageStatus('Add at least one quality set.', 'bad');return;}
   if(!distance){setManualMileageStatus('Distance is required.', 'bad');return;}
   var payload={
     date:els.manualMileageDate.value,
@@ -4947,6 +5088,8 @@ function saveManualMileage(){
     source:els.manualMileageSource.value,
     surface:els.manualMileageSurface.value,
     notes:els.manualMileageNotes.value,
+    logType:qualityMode?'quality':'easy',
+    qualitySession:quality,
     athletes:athletes
   };
   els.manualMileageSave.disabled=true;
@@ -4960,8 +5103,8 @@ function saveManualMileage(){
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Mileage could not be saved.');
     applyManualMileageLocally(payload,result.data||{});
-    setManualMileageStatus('Saved mileage for '+athletes.length+' athlete'+(athletes.length===1?'':'s')+'.', 'ok');
-    els.manualMileageDistance.value='';
+    setManualMileageStatus('Saved '+(qualityMode?'quality session':'mileage')+' for '+athletes.length+' athlete'+(athletes.length===1?'':'s')+'.', 'ok');
+    if(!qualityMode)els.manualMileageDistance.value='';
     els.manualMileageTime.value='';
     els.manualMileageNotes.value='';
   }).catch(function(error){
@@ -4974,6 +5117,9 @@ function saveManualMileage(){
 function applyManualMileageLocally(payload,result){
   var synced=result&&result.synced||[];
   var syncedAt=new Date().toISOString();
+  var quality=payload.logType==='quality'?payload.qualitySession:null;
+  var qualitySummary=quality&&quality.summary||'';
+  var qualitySplits=manualQualitySplitsText(quality);
   (payload.athletes||[]).forEach(function(athlete,index){
     var match=synced.find(function(item){
       return String(item.contactId||'')===String(athlete.contactId||'') ||
@@ -4997,9 +5143,9 @@ function applyManualMileageLocally(payload,result){
       totalTimeDisplay:payload.time||'Untimed',
       totalTimeMs:0,
       sessionDate:payload.date||todayInputValue(),
-      splitsText:'',
-      coachNote:['Manual mileage entry','Completed volume: '+payload.distance,payload.source?'Source: '+payload.source:'',payload.notes||''].filter(Boolean).join('\n'),
-      workoutPrescription:payload.workoutType||'Manual Mileage',
+      splitsText:qualitySplits,
+      coachNote:[payload.logType==='quality'?'Manual quality session entry':'Manual mileage entry','Completed volume: '+payload.distance,qualitySummary,payload.source?'Source: '+payload.source:'',payload.notes||''].filter(Boolean).join('\n'),
+      workoutPrescription:payload.logType==='quality'?'Manual Quality Session':(payload.workoutType||'Manual Mileage'),
       plannedTarget:'',
       actual:'',
       targetDifference:'',
@@ -5022,6 +5168,17 @@ function applyManualMileageLocally(payload,result){
   updateWeekRanges();
   updateDashboardTopStats();
   renderRows();
+}
+
+function manualQualitySplitsText(quality){
+  if(!quality||!Array.isArray(quality.sets))return '';
+  var items=[];
+  quality.sets.forEach(function(set,setIndex){
+    (set.splits||[]).forEach(function(split,index){
+      items.push('Set '+(setIndex+1)+' Rep '+(index+1)+': '+split);
+    });
+  });
+  return items.join('\n');
 }
 
 function updateDashboardAthleteAfterTrainingAdd(row){

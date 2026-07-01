@@ -28,14 +28,18 @@ module.exports = async function handler(req, res) {
 
 function buildSyncPayload(payload) {
   const athletes = Array.isArray(payload.athletes) ? payload.athletes.map(normalizeAthlete).filter((athlete) => athlete.name) : [];
-  const distance = clean(payload.distance || payload.completedVolume);
+  const qualitySession = normalizeQualitySession(payload.qualitySession);
+  const distance = clean(payload.distance || payload.completedVolume || qualitySession.totalLabel);
   const workoutType = manualWorkoutType(clean(payload.workoutType)) || "Easy/Recovery Run";
   const date = clean(payload.date) || new Date().toISOString();
   const timeDisplay = clean(payload.time || payload.totalTime);
   const totalMs = timeDisplay ? parseTimeToMs(timeDisplay) : null;
+  const qualityNote = qualitySession.summary;
+  const qualityLaps = qualitySession.laps;
 
   if (!athletes.length) throw httpError(400, "Select at least one athlete.");
   if (!distance) throw httpError(400, "Distance is required.");
+  if (clean(payload.logType) === "quality" && !qualitySession.sets.length) throw httpError(400, "Add at least one quality set.");
   if (timeDisplay && !totalMs) throw httpError(400, "Enter time like 36:20, 1:02:15, or 18:04.5.");
 
   return {
@@ -55,10 +59,11 @@ function buildSyncPayload(payload) {
           runNumber: 1,
           total: timeDisplay || "Untimed",
           totalMs,
-          laps: [],
+          laps: qualityLaps,
           note: [
-            "Manual mileage entry",
+            clean(payload.logType) === "quality" ? "Manual quality session entry" : "Manual mileage entry",
             timeDisplay ? `Manual time: ${timeDisplay}` : "",
+            qualityNote,
             clean(payload.source) ? `Source: ${clean(payload.source)}` : "",
             clean(payload.notes),
           ].filter(Boolean).join("\n"),
@@ -67,6 +72,44 @@ function buildSyncPayload(payload) {
       ],
     })),
   };
+}
+
+function normalizeQualitySession(raw) {
+  const sets = Array.isArray(raw && raw.sets)
+    ? raw.sets.map((set) => ({
+        reps: Math.max(1, Math.round(Number(set && set.reps) || 1)),
+        distance: clean(set && set.distance),
+        splits: Array.isArray(set && set.splits) ? set.splits.map(clean).filter(Boolean) : [],
+        rest: clean(set && set.rest),
+        effort: clean(set && set.effort),
+        note: clean(set && set.note),
+      })).filter((set) => set.distance || set.splits.length || set.rest || set.note)
+    : [];
+  const warmup = clean(raw && raw.warmup);
+  const cooldown = clean(raw && raw.cooldown);
+  const totalLabel = clean(raw && raw.totalLabel);
+  const lines = [];
+  const laps = [];
+  if (warmup) lines.push(`Warmup: ${warmup}`);
+  sets.forEach((set, setIndex) => {
+    const base = `${set.reps} x ${set.distance || "distance"}${set.effort ? ` @ ${set.effort}` : ""}`;
+    const extras = [];
+    if (set.splits.length) extras.push(`splits ${set.splits.join(" / ")}`);
+    if (set.rest) extras.push(`rest ${set.rest}`);
+    if (set.note) extras.push(set.note);
+    lines.push(`Set ${setIndex + 1}: ${base}${extras.length ? ` - ${extras.join(" - ")}` : ""}`);
+    set.splits.forEach((split, splitIndex) => {
+      laps.push({
+        time: split,
+        ms: parseTimeToMs(split),
+        kind: "rep",
+        label: `Set ${setIndex + 1} Rep ${splitIndex + 1}`,
+      });
+    });
+  });
+  if (cooldown) lines.push(`Cooldown: ${cooldown}`);
+  if (totalLabel) lines.push(`Total: ${totalLabel}`);
+  return { warmup, cooldown, sets, totalLabel, summary: lines.join("\n"), laps };
 }
 
 function normalizeAthlete(raw) {
@@ -104,6 +147,12 @@ function manualWorkoutType(value) {
     hills: "Hill Sprints",
     hill: "Hill Sprints",
     hill_sprints: "Hill Sprints",
+    speed_endurance_i: "Speed Endurance I",
+    speed_endurance_ii: "Speed Endurance II",
+    special_endurance_i: "Special Endurance I",
+    special_endurance_ii: "Special Endurance II",
+    intensive_tempo: "Intensive Tempo",
+    extensive_tempo: "Extensive Tempo",
     tempo_run: "Extensive Tempo",
     warmup_cooldown: "Easy/Recovery Run",
     warm_up_cool_down: "Easy/Recovery Run",

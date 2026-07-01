@@ -1083,6 +1083,42 @@ function checkQualityWorkoutTypesAccepted() {
   console.log("Quality workout type aliases ok");
 }
 
+function checkManualMileageQualitySession() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const manualMileageApi = fs.readFileSync("api/ghl/manual-mileage.js", "utf8");
+  const howTo = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    'id="manualMileageMode"',
+    'value="quality">Quality Session',
+    'id="manualMileageWarmup"',
+    'id="manualMileageCooldown"',
+    'id="manualMileageRepRows"',
+    'data-quality-splits',
+    "function collectManualQualitySession()",
+    "function manualQualitySplitsText(quality)",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Manual quality session UI missing ${text}`);
+  });
+  [
+    "function normalizeQualitySession(raw)",
+    'kind: "rep"',
+    "Set ${setIndex + 1} Rep ${splitIndex + 1}",
+    "Manual quality session entry",
+    'speed_endurance_ii: "Speed Endurance II"',
+    'special_endurance_ii: "Special Endurance II"',
+  ].forEach((text) => {
+    if (!manualMileageApi.includes(text)) throw new Error(`Manual quality session API missing ${text}`);
+  });
+  [
+    "Use Log Miles for manual mileage entries or quality sessions",
+    "warmup, reps, rests, splits, and cooldown",
+    "Quality-session rep splits appear with the completed workout details.",
+  ].forEach((text) => {
+    if (!howTo.includes(text)) throw new Error(`Manual quality session guide missing ${text}`);
+  });
+  console.log("Manual mileage quality session ok");
+}
+
 function checkTrainingCustomization() {
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const app = fs.readFileSync("index.html", "utf8");
@@ -2348,6 +2384,7 @@ checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
 checkTrainingAdjustmentAuditDates();
 checkQualityWorkoutTypesAccepted();
+checkManualMileageQualitySession();
 checkTrainingCustomization();
 checkMobileCalendarWorkoutPriority();
 checkMobileTrainingPlanArchiveFilter();

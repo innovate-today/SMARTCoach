@@ -281,7 +281,7 @@ Implemented:
 - Completed workouts can be expanded by athlete.
 - Top and bottom horizontal scrollbars were added for wide tables.
 - Cards have hover shadow and improved layout.
-- Manual mileage logging exists.
+- Manual mileage logging exists, including Quality Session entries with warmup, cooldown, sets, rest, rep splits, and notes.
 - Manual workout corrections and voids exist.
 - Edits should update instantly whenever possible; this is now a product standard.
 - Meet result corrections have event dropdowns to keep data clean.
@@ -1292,6 +1292,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 448. SMARTCoach mobile calendar workout detection now recognizes calendar-selected workouts even when the calendar day id is missing. Titles that start with `SMART Trak Calendar`, plus saved calendar date/title/details/target fields, now block the auto-plan refresh from restoring the old assigned workout when Done/Back is tapped.
 449. SMARTCoach mobile calendar workout changes can now be changed again after the first successful group change. Calendar workout cards use a stable date/title/details/target comparison when ids are missing, group-selected calendar workouts win over stale runner calendar plans on timing rows, and true athlete-only calendar selections are tagged separately.
 450. SMARTCoach mobile **Use for Group** now writes the selected workout onto every runner in the current group as a `calendar-group-selected` plan. This removes the old split-brain behavior where the athlete detail screen could show the newly selected workout while the group timing rows still read stale runner targets after Back/Done.
+451. Dashboard **Log Miles** now supports **Quality Session** entries. Coaches can manually log warmup, cooldown, sets, rest, rep splits, effort, and notes for an individual or group. The save still uses the existing completed-workout sync path, so quality sessions appear in Training Load / Completed Workouts with split labels such as `Set 1 Rep 1`.
 
 ## Known Good Test Flow
 
