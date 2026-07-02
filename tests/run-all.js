@@ -1355,6 +1355,33 @@ function checkAthleteCalendarSubmittedStatusPill() {
   console.log("Athlete Calendar submitted status pill ok");
 }
 
+function checkAthleteCalendarSelfReportedWorkouts() {
+  const calendar = fs.readFileSync("athlete-calendar.html", "utf8");
+  const lib = fs.readFileSync("lib/athlete-calendar.js", "utf8");
+  [
+    'id="addWorkoutBtn"',
+    'id="selfReportModal"',
+    'data-self-report-mode="quality"',
+    'data-self-report-splits',
+    "function collectSelfReportQualitySession()",
+    "action:'athlete-added'",
+    "Add at least one quality set.",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Athlete Calendar self-report UI missing ${text}`);
+  });
+  [
+    "function isAthleteAddedWorkout",
+    "function buildAthleteAddedSyncPayload",
+    "Athlete added quality session",
+    "normalizeQualitySession(payload.qualitySession)",
+    "forceDuplicateSync: true",
+    "const syncSession = require(\"../api/ghl/sync-session\");",
+  ].forEach((text) => {
+    if (!lib.includes(text)) throw new Error(`Athlete Calendar self-report sync missing ${text}`);
+  });
+  console.log("Athlete Calendar self-reported workouts ok");
+}
+
 function checkDashboardPlainLapSplitsStayLaps() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -2391,6 +2418,7 @@ checkMobileTrainingPlanArchiveFilter();
 checkAthleteCalendarBulkEmailLinks();
 checkAthleteCalendarQuestions();
 checkAthleteCalendarSubmittedStatusPill();
+checkAthleteCalendarSelfReportedWorkouts();
 checkDashboardPlainLapSplitsStayLaps();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();

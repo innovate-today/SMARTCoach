@@ -887,6 +887,8 @@ How to use it:
 8. After a successful submission, the workout card shows **Athlete submitted: Completed**, **Athlete submitted: Modified**, or **Athlete submitted: Skipped** with a matching card color and selected action button.
 9. Submitted updates save into SMART Trak as athlete-submitted completed workout records.
 
+Athletes can also click **+ Add Workout** when they need to report a run or quality session that was not already on their calendar. Easy runs can include date, completed volume, total time, and notes. Quality sessions can include warmup, cooldown, reps, distance, rep splits, rest, effort, total time, and notes. These athlete-added entries save as completed workouts in SMART Trak without changing the assigned calendar plan.
+
 Athlete links are unique to each athlete. Athletes do not need the coach access code.
 
 To send links in bulk, filter the Athletes page first if needed, then click **Email Calendar Links**. SMART Trak prepares one personalized draft for each active athlete in the current view who has an athlete email saved. In the bottom action row, choose **Email Provider**. Gmail is selected by default so the draft opens in a browser compose window. Coaches can switch to Outlook, Yahoo Mail, or Default mail app. Click **Open Next Draft** to open each message. If the browser blocks the draft, click the visible **Open Draft for athlete** link that appears. Use **Copy Messages** or **Download CSV** when the coach wants to paste the messages into another email workflow or mail merge.
