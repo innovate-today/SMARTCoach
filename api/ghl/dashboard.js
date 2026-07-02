@@ -554,7 +554,7 @@ async function listActiveAthletes({ token, locationId }) {
 
   return (result.contacts || [])
     .map((contact) => normalizeContact(contact, { genderFieldIds }))
-    .filter((athlete) => athlete.smartcoachRosterMember && !athlete.excludedSystemContact)
+    .filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

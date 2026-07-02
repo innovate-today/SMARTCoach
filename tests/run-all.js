@@ -256,10 +256,28 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
     "const inferredSmartCoachAthlete = hasAthleteTag;",
     "const smartcoachActive = !excludedSystemContact && inferredSmartCoachAthlete &&",
     "smartcoachRosterMember: !excludedSystemContact && inferredSmartCoachAthlete",
+    ".filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`dashboard roster must ignore ordinary GHL contacts: ${text}`);
   });
   console.log("SMART Trak athlete counts ignore GHL contacts ok");
+}
+
+function checkInactiveAthletesStayOutOfCurrentViews() {
+  const athletes = fs.readFileSync("athletes.html", "utf8");
+  const dashboard = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  [
+    '<option value="active" selected>Active athletes</option>',
+    '<option value="all">All roster entries</option>',
+    "if(status==='active'&&!a.smartcoachActive)return false;",
+    "if(status==='inactive'&&a.smartcoachActive)return false;",
+  ].forEach((text) => {
+    if (!athletes.includes(text)) throw new Error(`inactive athletes should be hidden from the default roster view: ${text}`);
+  });
+  if (!dashboard.includes(".filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)")) {
+    throw new Error("dashboard and Miles Board should only use active SMART Trak athletes.");
+  }
+  console.log("inactive athletes stay out of current views ok");
 }
 
 function checkStandaloneRaceResultSaveScope() {
@@ -2396,6 +2414,7 @@ checkOnboardingSubscriberPlanLoad();
 checkAdminAccountCleanup();
 checkAccountOwnerExcludedFromAthletes();
 checkSmartTrakAthleteCountsIgnoreGhlContacts();
+checkInactiveAthletesStayOutOfCurrentViews();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkMilesBoardFeature();
