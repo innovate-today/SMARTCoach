@@ -120,6 +120,32 @@ function checkTrainingCalendarButtonLabels() {
   console.log("Training Calendar button labels ok");
 }
 
+function checkTrainingCalendarMonthView() {
+  const html = fs.readFileSync("training-calendar.html", "utf8");
+  [
+    'id="monthViewBtn"',
+    ">Month View<",
+    "var calendarMonthStart=startOfMonth(new Date());",
+    "function startOfMonth(date)",
+    "function endOfMonth(date)",
+    "function addMonths(date,monthsToAdd)",
+    "function renderMonthView(list)",
+    "function monthDayCell(date,items,outside)",
+    "function monthItem(day)",
+    "function plannedVolumeMiles(day)",
+    "viewMode==='month'",
+    "Previous Month",
+    "Next Month",
+    "data-current-month",
+    "monthscroll",
+  ].forEach((text) => {
+    if (!html.includes(text)) {
+      throw new Error(`Training Calendar month view missing ${text}`);
+    }
+  });
+  console.log("Training Calendar Month View ok");
+}
+
 function checkAccountStatusLocationVerification() {
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   [
@@ -2409,6 +2435,7 @@ checkJsonFiles();
 checkPageScripts();
 checkLiveValidationPage();
 checkTrainingCalendarButtonLabels();
+checkTrainingCalendarMonthView();
 checkAccountStatusLocationVerification();
 checkOnboardingSubscriberPlanLoad();
 checkAdminAccountCleanup();

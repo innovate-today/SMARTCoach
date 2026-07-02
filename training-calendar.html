@@ -69,17 +69,29 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .planarchive.restore{background:#dcfce7;color:var(--good)}
 .planempty{padding:10px;color:var(--muted);font-size:13px}
 .status{color:var(--muted);font-size:13px;text-align:right}
-.viewtabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.viewtabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .viewtab{background:#fff;color:#172033;border:1px solid var(--line)}
 .viewtab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 .calendar{display:grid;gap:12px}
 .calendar.weekscroll{max-height:70vh;min-height:360px;overflow:auto;padding-right:4px;scrollbar-gutter:stable}
 .calendar.weekscroll .weekhead{position:sticky;top:0;z-index:4}
 .calendar.weekscroll .week{overflow:visible}
+.calendar.monthscroll{max-height:76vh;min-height:520px;overflow:auto;padding-right:4px;scrollbar-gutter:stable}
+.calendar.monthscroll .monthhead{position:sticky;top:0;z-index:4}
 .week{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
 .weekhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--line)}
 .weekhead b{font-size:15px}
 .weekhead span{font-size:12px;color:var(--muted)}
+.month{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.monthhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--line)}
+.monthhead b{font-size:16px}.monthhead span{font-size:12px;color:var(--muted);font-weight:800}
+.monthdow,.monthgrid{display:grid;grid-template-columns:repeat(7,minmax(118px,1fr))}
+.monthdow span{border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#f8fafc;color:#475569;font-size:11px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;padding:8px 10px}.monthdow span:last-child{border-right:0}
+.monthday{min-height:118px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;padding:8px;display:grid;align-content:start;gap:6px}
+.monthday:nth-child(7n){border-right:0}.monthday.outside{background:#f8fafc;color:#94a3b8}.monthday.today{background:#f4f7ff;box-shadow:inset 0 0 0 2px rgba(43,79,204,.18)}
+.monthdate{border:0;background:transparent;color:#475569;font:900 12px inherit;padding:0;text-align:left;text-transform:uppercase;letter-spacing:.03em;min-height:22px;justify-content:flex-start}.monthday.today .monthdate{display:inline-flex;width:max-content;border-radius:999px;background:var(--blue);color:#fff;padding:3px 7px}
+.monthsummary{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.monthpill{display:inline-flex;border-radius:999px;background:#e8eefc;color:#173891;padding:2px 6px;font-size:11px;font-weight:900}.monthpill.meet{background:#ede9fe;color:#5b21b6}.monthpill.recovery{background:#dcfce7;color:#0a7a44}.monthpill.off{background:#e2e8f0;color:#475569}.monthpill.volume{background:#ffedd5;color:#9a3412}
+.monthitems{display:grid;gap:4px}.monthitem{display:block;border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:6px;background:#fbfdff;color:#172033;font:800 11px inherit;line-height:1.2;text-align:left;padding:5px 6px;min-height:0}.monthitem.meet{border-left-color:#7c3aed}.monthitem.recovery{border-left-color:#0a7a44}.monthitem.off{border-left-color:#94a3b8}.monthmore{color:var(--muted);font-size:11px;font-weight:900}
 .days{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));overflow:auto}
 .day{min-height:170px;border-right:1px solid var(--line);padding:10px;background:#fff}
 .day.today{background:#f4f7ff;box-shadow:inset 0 0 0 2px rgba(43,79,204,.18)}
@@ -295,6 +307,7 @@ button.compact{padding:6px 9px;font-size:12px}
     <button id="prevWeekBtn" class="viewtab" type="button">Previous Week</button>
     <button id="weekViewBtn" class="viewtab active" type="button">Week View</button>
     <button id="nextWeekBtn" class="viewtab" type="button">Next Week</button>
+    <button id="monthViewBtn" class="viewtab" type="button">Month View</button>
     <button id="listViewBtn" class="viewtab" type="button">List View</button>
     <button id="todayBtn" class="viewtab" type="button">Today</button>
   </section>
@@ -609,6 +622,7 @@ var meetManagerEditingId='';
 var activeDay=null;
 var viewMode='week';
 var calendarWeekStart=startOfWeek(new Date());
+var calendarMonthStart=startOfMonth(new Date());
 var listSort={key:'date',dir:'asc'};
 var pendingStatusUpdates={};
 var mixHidden=false;
@@ -665,6 +679,7 @@ var els={
   prevWeekBtn:document.getElementById('prevWeekBtn'),
   weekViewBtn:document.getElementById('weekViewBtn'),
   nextWeekBtn:document.getElementById('nextWeekBtn'),
+  monthViewBtn:document.getElementById('monthViewBtn'),
   listViewBtn:document.getElementById('listViewBtn'),
   todayBtn:document.getElementById('todayBtn'),
   calendar:document.getElementById('calendar'),
@@ -1006,6 +1021,19 @@ function startOfWeek(date){
   d.setDate(d.getDate()-d.getDay());
   return d;
 }
+function startOfMonth(date){
+  var d=new Date(date);
+  d.setHours(0,0,0,0);
+  return new Date(d.getFullYear(),d.getMonth(),1);
+}
+function endOfMonth(date){
+  var d=startOfMonth(date);
+  return new Date(d.getFullYear(),d.getMonth()+1,0);
+}
+function addMonths(date,monthsToAdd){
+  var d=startOfMonth(date||new Date());
+  return new Date(d.getFullYear(),d.getMonth()+monthsToAdd,1);
+}
 function addDays(date,daysToAdd){
   var d=new Date(date);
   d.setDate(d.getDate()+daysToAdd);
@@ -1284,6 +1312,12 @@ function matchesDateRange(day,range){
     var selectedEnd=addDays(selectedStart,6);
     return date>=selectedStart&&date<=selectedEnd;
   }
+  if(viewMode==='month'){
+    if(isNaN(date.getTime()))return false;
+    var selectedMonthStart=startOfMonth(calendarMonthStart||new Date());
+    var selectedMonthEnd=endOfMonth(selectedMonthStart);
+    return date>=selectedMonthStart&&date<=selectedMonthEnd;
+  }
   if(range==='all')return true;
   if(isNaN(date.getTime()))return range==='all';
   var today=new Date();
@@ -1376,13 +1410,17 @@ function render(){
   els.approveDraftsBtn.textContent=draftCount?'Approve Drafts ('+draftCount+')':'Approve Drafts';
   els.scheduleApprovedBtn.textContent=approvedCount?'Schedule Approved ('+approvedCount+')':'Schedule Approved';
   els.weekViewBtn.classList.toggle('active',viewMode==='week');
+  els.monthViewBtn.classList.toggle('active',viewMode==='month');
   els.listViewBtn.classList.toggle('active',viewMode==='list');
+  els.prevWeekBtn.textContent=viewMode==='month'?'Previous Month':'Previous Week';
+  els.nextWeekBtn.textContent=viewMode==='month'?'Next Month':'Next Week';
   els.prevWeekBtn.classList.toggle('active',false);
   els.nextWeekBtn.classList.toggle('active',false);
   els.calendar.classList.toggle('weekscroll',viewMode==='week');
+  els.calendar.classList.toggle('monthscroll',viewMode==='month');
   els.calendar.classList.toggle('listscroll',viewMode==='list');
-  els.calendar.innerHTML=viewMode==='list'?renderListView(list):renderWeekView(list);
-  els.empty.hidden=!!list.length||viewMode==='week';
+  els.calendar.innerHTML=viewMode==='list'?renderListView(list):(viewMode==='month'?renderMonthView(list):renderWeekView(list));
+  els.empty.hidden=!!list.length||viewMode==='week'||viewMode==='month';
 }
 function scheduleSearchRender(){
   clearTimeout(searchRenderTimer);
@@ -1407,14 +1445,70 @@ function renderMixBar(counts){
   });
 }
 function jumpToToday(){
-  els.dateFilter.value='current_week';
+  if(viewMode==='list')els.dateFilter.value='current_week';
   calendarWeekStart=startOfWeek(new Date());
-  viewMode='week';
+  calendarMonthStart=startOfMonth(new Date());
+  if(viewMode==='list')viewMode='week';
   render();
   setTimeout(function(){
-    var current=els.calendar.querySelector('[data-current-week="1"]')||els.calendar.firstElementChild;
+    var current=els.calendar.querySelector('[data-current-week="1"],[data-current-month="1"]')||els.calendar.firstElementChild;
     if(current)current.scrollIntoView({behavior:'smooth',block:'start'});
   },50);
+}
+function renderMonthView(list){
+  var monthStart=startOfMonth(calendarMonthStart||new Date());
+  var monthEnd=endOfMonth(monthStart);
+  var gridStart=startOfWeek(monthStart);
+  var gridEnd=addDays(startOfWeek(monthEnd),6);
+  var byDate={};
+  list.forEach(function(day){
+    var key=String(day.date||'').slice(0,10);
+    if(!key)return;
+    if(!byDate[key])byDate[key]=[];
+    byDate[key].push(day);
+  });
+  var cells=[];
+  for(var date=gridStart;date<=gridEnd;date=addDays(date,1)){
+    var key=isoDate(date);
+    cells.push(monthDayCell(date,byDate[key]||[],date.getMonth()!==monthStart.getMonth()));
+  }
+  return '<section class="month" data-current-month="'+(monthStart.getFullYear()===new Date().getFullYear()&&monthStart.getMonth()===new Date().getMonth()?'1':'0')+'">'+
+    '<div class="monthhead"><b>'+esc(monthStart.toLocaleDateString(undefined,{month:'long',year:'numeric'}))+'</b><span>'+list.length+' plan day'+(list.length===1?'':'s')+'</span></div>'+
+    '<div class="monthdow"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>'+
+    '<div class="monthgrid">'+cells.join('')+'</div></section>';
+}
+function monthDayCell(date,items,outside){
+  var dateKey=isoDate(date);
+  var isToday=dateKey===isoDate(new Date());
+  var counts={workout:0,meet:0,recovery:0,off:0,other:0};
+  var volume=0;
+  items.forEach(function(day){
+    counts[dayMixCategory(day)]+=1;
+    volume+=plannedVolumeMiles(day);
+  });
+  var pills=[];
+  if(counts.workout)pills.push('<span class="monthpill">'+counts.workout+' workout'+(counts.workout===1?'':'s')+'</span>');
+  if(counts.meet)pills.push('<span class="monthpill meet">'+counts.meet+' meet/race'+(counts.meet===1?'':'s')+'</span>');
+  if(counts.recovery)pills.push('<span class="monthpill recovery">'+counts.recovery+' recovery</span>');
+  if(counts.off)pills.push('<span class="monthpill off">'+counts.off+' off</span>');
+  if(volume)pills.push('<span class="monthpill volume">'+formatMiles(volume)+'</span>');
+  return '<div class="monthday'+(outside?' outside':'')+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'">'+
+    '<button class="monthdate" data-add-day="'+esc(dateKey)+'" type="button">'+esc(date.toLocaleDateString(undefined,{month:'short',day:'numeric'}))+'</button>'+
+    '<div class="monthsummary">'+(pills.join('')||'<span class="meta">No plan day</span>')+'</div>'+
+    '<div class="monthitems">'+items.slice(0,3).map(monthItem).join('')+(items.length>3?'<div class="monthmore">+'+(items.length-3)+' more</div>':'')+'</div></div>';
+}
+function monthItem(day){
+  var category=dayMixCategory(day);
+  var cls=category==='meet'?' meet':category==='recovery'?' recovery':category==='off'?' off':'';
+  return '<button class="monthitem'+cls+'" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+esc(day.title||day.dayType||'Plan day')+'</button>';
+}
+function plannedVolumeMiles(day){
+  var text=[day&&day.plannedVolume,day&&day.details,day&&day.targetSplits].filter(Boolean).join(' ');
+  var matches=text.match(/(\d+(?:\.\d+)?)\s*(?:mi|mile|miles)\b/ig)||[];
+  return matches.reduce(function(sum,item){
+    var value=parseFloat(item);
+    return sum+(isNaN(value)?0:value);
+  },0);
 }
 function renderWeekView(list){
   var weeks={};
@@ -1439,8 +1533,12 @@ function renderWeekView(list){
   }).join('');
 }
 function shiftWeek(offset){
-  calendarWeekStart=addDays(startOfWeek(calendarWeekStart||new Date()),offset*7);
-  viewMode='week';
+  if(viewMode==='month'){
+    calendarMonthStart=addMonths(calendarMonthStart||new Date(),offset);
+  }else{
+    calendarWeekStart=addDays(startOfWeek(calendarWeekStart||new Date()),offset*7);
+    viewMode='week';
+  }
   render();
 }
 function renderListView(list){
@@ -3756,6 +3854,11 @@ function init(){
   });
   els.prevWeekBtn.addEventListener('click',function(){shiftWeek(-1);});
   els.nextWeekBtn.addEventListener('click',function(){shiftWeek(1);});
+  els.monthViewBtn.addEventListener('click',function(){
+    calendarMonthStart=startOfMonth(calendarWeekStart||new Date());
+    viewMode='month';
+    render();
+  });
   els.listViewBtn.addEventListener('click',function(){
     viewMode='list';
     render();
