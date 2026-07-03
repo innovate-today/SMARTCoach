@@ -2493,6 +2493,8 @@ function checkFieldPracticePhaseOne() {
     "function cleanFieldPracticeSpeedMetrics(p)",
     "function fieldPracticeSpeedCaptureHtml(p)",
     "Speed Capture",
+    "Session Setup",
+    "New Session",
     "Add Rep",
     "m/s",
     "return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});",
