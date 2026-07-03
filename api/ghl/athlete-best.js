@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
 
   if (!requireProPlan(req, res)) return;
 
-  if (req.method !== "GET" && req.method !== "POST") {
+  if (req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
@@ -53,6 +53,13 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    if (req.method === "DELETE") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      const result = await deleteAthleteBest({ token, locationId, payload });
+      res.status(200).json({ success: true, ...result });
+      return;
+    }
+
     const contactId = clean(req.query && req.query.contactId);
     const event = clean(req.query && req.query.event);
     const season = clean(req.query && req.query.season);
@@ -76,8 +83,27 @@ module.exports = async function handler(req, res) {
 
 function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
+}
+
+async function deleteAthleteBest({ token, locationId, payload }) {
+  const contactId = clean(payload.contactId);
+  const event = clean(payload.event);
+  if (!contactId) throw httpError(400, "Athlete contact is required.");
+  if (!event) throw httpError(400, "Fitness distance is required.");
+
+  const existing = await findAthleteBest({ token, locationId, contactId, event });
+  if (!existing || !existing.id) {
+    return { action: "not_found", contactId, event };
+  }
+
+  await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}?locationId=${encodeURIComponent(locationId)}`,
+    method: "DELETE",
+  });
+  return { action: "deleted", recordId: existing.id, contactId, event };
 }
 
 async function upsertAthleteBest({ token, locationId, payload }) {

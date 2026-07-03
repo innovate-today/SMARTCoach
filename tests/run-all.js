@@ -146,6 +146,32 @@ function checkTrainingCalendarMonthView() {
   console.log("Training Calendar Month View ok");
 }
 
+function checkCurrentFitnessClear() {
+  const api = fs.readFileSync("api/ghl/athlete-best.js", "utf8");
+  [
+    'req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE"',
+    "async function deleteAthleteBest",
+    "action: \"deleted\"",
+    "action: \"not_found\"",
+    "Access-Control-Allow-Methods\", \"GET, POST, DELETE, OPTIONS\"",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Current fitness clear API missing ${text}`);
+  });
+  ["plan-setup.html", "plan-builder.html"].forEach((file) => {
+    const html = fs.readFileSync(file, "utf8");
+    [
+      "function clearFitnessRow(index)",
+      "class=\"fitness-clear\"",
+      "method:'DELETE'",
+      "Clear '+(athlete.name||'this athlete')+' current fitness for '+event",
+      "notifyFitnessChanged();",
+    ].forEach((text) => {
+      if (!html.includes(text)) throw new Error(`${file} missing current fitness clear control: ${text}`);
+    });
+  });
+  console.log("Current fitness clear controls ok");
+}
+
 function checkAccountStatusLocationVerification() {
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   [
@@ -2436,6 +2462,7 @@ checkPageScripts();
 checkLiveValidationPage();
 checkTrainingCalendarButtonLabels();
 checkTrainingCalendarMonthView();
+checkCurrentFitnessClear();
 checkAccountStatusLocationVerification();
 checkOnboardingSubscriberPlanLoad();
 checkAdminAccountCleanup();

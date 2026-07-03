@@ -52,9 +52,10 @@ select[multiple]{min-height:112px}
 .fitness-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .fitness-controls select{min-width:120px;font-size:13px;padding:7px 8px}
 .fitness-table{display:grid;gap:6px}
-.fitness-row{display:grid;grid-template-columns:1.2fr .75fr .75fr .75fr .75fr;gap:8px;align-items:center}
+.fitness-row{display:grid;grid-template-columns:1.2fr .75fr .75fr .75fr .75fr auto;gap:8px;align-items:center}
 .fitness-name{font-size:13px;font-weight:800;color:#374151}
 .fitness-row input,.fitness-row select{font-size:13px;padding:7px 8px}
+.fitness-clear{background:#fee2e2;color:#b91c1c;border-color:#fecaca;font-size:12px;padding:7px 9px;min-height:34px;white-space:nowrap}
 .fitness-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:10px}
 .fitness-status{min-height:18px;font-size:13px;color:var(--muted);font-weight:800;text-align:right}
 .assignments{border-bottom:1px solid var(--line);padding:16px 20px;background:#fff}
@@ -488,7 +489,7 @@ function renderFitnessRows(){
   box.innerHTML=filtered.map(function(item){
     var a=item.athlete,i=item.index,gender=athleteGender(a);
     var draft=fitnessDraftValues[fitnessDraftKey(a)]||{};
-    return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+(gender?'<br><small>'+esc(gender)+'</small>':'')+'</div><select class="fit-sport">'+fitnessSports.map(function(s){return '<option value="'+esc(s.value)+'" '+((draft.sport||'track')===s.value?'selected':'')+'>'+esc(s.label)+'</option>';}).join('')+'</select><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'" '+((draft.event||fitnessEvents[0])===event?'selected':'')+'>'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00" value="'+esc(draft.time||'')+'"><input class="fit-date" type="date" value="'+esc(draft.date||todayISO())+'"></div>';
+    return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+(gender?'<br><small>'+esc(gender)+'</small>':'')+'</div><select class="fit-sport">'+fitnessSports.map(function(s){return '<option value="'+esc(s.value)+'" '+((draft.sport||'track')===s.value?'selected':'')+'>'+esc(s.label)+'</option>';}).join('')+'</select><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'" '+((draft.event||fitnessEvents[0])===event?'selected':'')+'>'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00" value="'+esc(draft.time||'')+'"><input class="fit-date" type="date" value="'+esc(draft.date||todayISO())+'"><button class="fitness-clear" type="button" onclick="clearFitnessRow('+i+')">Clear</button></div>';
   }).join('');
 }
 function captureFitnessDraftValues(){
@@ -557,6 +558,33 @@ function saveFitnessRows(){
     }
     notifyFitnessChanged();
     setFitnessStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
+  }).catch(function(e){setFitnessStatus('Error: '+e.message,'bad');});
+}
+function clearFitnessRow(index){
+  var row=document.querySelector('.fitness-row[data-index="'+index+'"]');
+  var athlete=athletes[index]||{};
+  var event=(row&&row.querySelector('.fit-event')||{}).value||'';
+  if(!athlete.id){setFitnessStatus('Choose an athlete before clearing fitness.','warn');return;}
+  if(!event){setFitnessStatus('Choose the fitness event to clear.','warn');return;}
+  if(!confirm('Clear '+(athlete.name||'this athlete')+' current fitness for '+event+'?'))return;
+  setFitnessStatus('Clearing current fitness...',null);
+  fetch('/api/smart-trak/athlete-best',{method:'DELETE',cache:'no-store',headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({contactId:athlete.id,athleteName:athlete.name||'',event:event})}).then(function(r){
+    return r.json().then(function(data){return{ok:r.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Fitness clear failed');
+    var key=fitnessDraftKey(athlete);
+    if(fitnessDraftValues[key]){
+      fitnessDraftValues[key].time='';
+      fitnessDraftValues[key].date=todayISO();
+    }
+    if(row){
+      var timeInput=row.querySelector('.fit-time');
+      var dateInput=row.querySelector('.fit-date');
+      if(timeInput)timeInput.value='';
+      if(dateInput)dateInput.value=todayISO();
+    }
+    notifyFitnessChanged();
+    setFitnessStatus(result.data&&result.data.action==='not_found'?'No saved fitness found for '+event+'.':'Cleared current fitness for '+(athlete.name||'athlete')+' - '+event+'.','ok');
   }).catch(function(e){setFitnessStatus('Error: '+e.message,'bad');});
 }
 function notifyFitnessChanged(){
