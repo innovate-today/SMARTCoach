@@ -104,11 +104,7 @@ async function deleteAthleteBest({ token, locationId, payload }) {
     return { action: "not_found", contactId, event };
   }
 
-  await ghlFetch({
-    token,
-    path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}?locationId=${encodeURIComponent(locationId)}`,
-    method: "DELETE",
-  });
+  await deleteObjectRecordWithLocationFallback({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, recordId: existing.id });
   return { action: "deleted", recordId: existing.id, contactId, event };
 }
 
@@ -189,7 +185,7 @@ async function upsertAthleteBest({ token, locationId, payload }) {
 
 async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey, recordId, method, properties, optionKeys }) {
   const path = recordId
-    ? `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}?locationId=${encodeURIComponent(locationId)}`
+    ? objectRecordPath(schemaKey, recordId, locationId)
     : `/objects/${encodeURIComponent(schemaKey)}/records`;
   const requestBody = recordId ? { properties } : { locationId, properties };
   try {
@@ -200,6 +196,9 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
       body: requestBody,
     });
   } catch (error) {
+    if (recordId && isLocationIdBodyError(error)) {
+      return saveExistingObjectRecordWithoutLocation({ token, schemaKey, recordId, method, properties });
+    }
     if (!recordId && isLocationIdBodyError(error)) {
       return createObjectRecordWithoutBodyLocation({
         token,
@@ -220,6 +219,9 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
         body: recordId ? { properties: fallback } : { locationId, properties: fallback },
       });
     } catch (fallbackError) {
+      if (recordId && isLocationIdBodyError(fallbackError)) {
+        return saveExistingObjectRecordWithoutLocation({ token, schemaKey, recordId, method, properties: fallback });
+      }
       if (!recordId && isLocationIdBodyError(fallbackError)) {
         return createObjectRecordWithoutBodyLocation({
           token,
@@ -231,6 +233,32 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
       }
       throw fallbackError;
     }
+  }
+}
+
+async function saveExistingObjectRecordWithoutLocation({ token, schemaKey, recordId, method, properties }) {
+  return ghlFetch({
+    token,
+    path: objectRecordPath(schemaKey, recordId),
+    method,
+    body: { properties },
+  });
+}
+
+async function deleteObjectRecordWithLocationFallback({ token, locationId, schemaKey, recordId }) {
+  try {
+    return await ghlFetch({
+      token,
+      path: objectRecordPath(schemaKey, recordId, locationId),
+      method: "DELETE",
+    });
+  } catch (error) {
+    if (!isLocationIdBodyError(error)) throw error;
+    return ghlFetch({
+      token,
+      path: objectRecordPath(schemaKey, recordId),
+      method: "DELETE",
+    });
   }
 }
 
@@ -367,6 +395,11 @@ async function ghlFetch({ token, path, method, body }) {
 
 function isLocationIdBodyError(error) {
   return /property\s+locationId\s+should\s+not\s+exist|locationId\s+should\s+not\s+exist/i.test(error && error.message || "");
+}
+
+function objectRecordPath(schemaKey, recordId, locationId) {
+  const base = `/objects/${encodeURIComponent(schemaKey)}/records/${encodeURIComponent(recordId)}`;
+  return locationId ? `${base}?locationId=${encodeURIComponent(locationId)}` : base;
 }
 
 function firstRecord(result) {
