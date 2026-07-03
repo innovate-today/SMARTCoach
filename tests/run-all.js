@@ -154,6 +154,8 @@ function checkCurrentFitnessClear() {
     'action) === "fitnessRows"',
     "async function listAthleteBestRows",
     "async function searchAthleteBestRecords",
+    "async function createObjectRecordWithoutBodyLocation",
+    "async function searchAthleteBestRecordsWithoutBodyLocation",
     "function isLocationIdBodyError",
     "?locationId=${encodeURIComponent(locationId)}",
     "action: \"deleted\"",

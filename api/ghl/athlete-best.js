@@ -201,11 +201,12 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
     });
   } catch (error) {
     if (!recordId && isLocationIdBodyError(error)) {
-      return ghlFetch({
+      return createObjectRecordWithoutBodyLocation({
         token,
-        path: `${path}?locationId=${encodeURIComponent(locationId)}`,
         method,
-        body: { properties },
+        path,
+        locationId,
+        properties,
       });
     }
     if (!/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "")) throw error;
@@ -220,15 +221,35 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
       });
     } catch (fallbackError) {
       if (!recordId && isLocationIdBodyError(fallbackError)) {
-        return ghlFetch({
+        return createObjectRecordWithoutBodyLocation({
           token,
-          path: `${path}?locationId=${encodeURIComponent(locationId)}`,
           method,
-          body: { properties: fallback },
+          path,
+          locationId,
+          properties: fallback,
         });
       }
       throw fallbackError;
     }
+  }
+}
+
+async function createObjectRecordWithoutBodyLocation({ token, path, locationId, method, properties }) {
+  try {
+    return await ghlFetch({
+      token,
+      path: `${path}?locationId=${encodeURIComponent(locationId)}`,
+      method,
+      body: { properties },
+    });
+  } catch (error) {
+    if (!isLocationIdBodyError(error)) throw error;
+    return ghlFetch({
+      token,
+      path,
+      method,
+      body: { properties },
+    });
   }
 }
 
@@ -281,9 +302,23 @@ async function searchAthleteBestRecords({ token, locationId, page, pageLimit }) 
     });
   } catch (error) {
     if (!isLocationIdBodyError(error)) throw error;
-    return ghlFetch({
+    return searchAthleteBestRecordsWithoutBodyLocation({ token, path, locationId, page, pageLimit });
+  }
+}
+
+async function searchAthleteBestRecordsWithoutBodyLocation({ token, path, locationId, page, pageLimit }) {
+  try {
+    return await ghlFetch({
       token,
       path: `${path}?locationId=${encodeURIComponent(locationId)}`,
+      method: "POST",
+      body: { page, pageLimit },
+    });
+  } catch (error) {
+    if (!isLocationIdBodyError(error)) throw error;
+    return ghlFetch({
+      token,
+      path,
       method: "POST",
       body: { page, pageLimit },
     });
