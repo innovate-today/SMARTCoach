@@ -2489,6 +2489,12 @@ function checkFieldPracticePhaseOne() {
     "FIELD_PRACTICE.mode='field'",
     "FIELD_PRACTICE.mode='speed'",
     "function createSpeedMetricsPracticeForCurrentGroup()",
+    "function syncFieldPracticeSpeedMetrics(p,force)",
+    "function cleanFieldPracticeSpeedMetrics(p)",
+    "function fieldPracticeSpeedCaptureHtml(p)",
+    "Speed Capture",
+    "Add Rep",
+    "m/s",
     "return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});",
   ].forEach((text) => {
     const app = fs.readFileSync("index.html", "utf8");
@@ -2528,6 +2534,8 @@ function checkFieldPracticePhaseOne() {
     "attemptSummary",
     "function normalizeFieldPracticeAttempts(items)",
     "function normalizeFieldPracticeAthleteSummaries(items)",
+    "function normalizeFieldPracticeSpeedMetrics(items)",
+    "speedMetrics: normalizeFieldPracticeSpeedMetrics(source.speedMetrics)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Field Practice API missing ${text}`);
   });

@@ -484,6 +484,7 @@ function normalizeFieldPractice(item) {
     height: normalizeFieldPracticeHeight(source.height),
     drills: normalizeFieldPracticeDrills(source.drills),
     athleteSummaries: normalizeFieldPracticeAthleteSummaries(source.athleteSummaries),
+    speedMetrics: normalizeFieldPracticeSpeedMetrics(source.speedMetrics),
     attempts: normalizeFieldPracticeAttempts(source.attempts),
     attemptSummary: cleanSetupText(source.attemptSummary).slice(0, 500),
     planNotes: cleanSetupText(source.planNotes).slice(0, 2000),
@@ -560,6 +561,69 @@ function normalizeFieldPracticeAthleteSummaries(items) {
       updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString(),
     };
   }).filter(Boolean).slice(0, 120);
+}
+
+function parseFieldPracticeSeconds(value) {
+  const text = cleanSetupText(value).toLowerCase().replace(/sec(?:onds?)?$/i, "").replace(/s$/i, "").trim();
+  if (!text) return 0;
+  if (text.includes(":")) {
+    const parts = text.split(":").map((part) => Number(part));
+    if (parts.some((part) => !Number.isFinite(part) || part < 0)) return 0;
+    return parts.reduce((total, part) => total * 60 + part, 0);
+  }
+  const seconds = Number(text);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+}
+
+function roundedMetric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Number(number.toFixed(3)) : 0;
+}
+
+function normalizeFieldPracticeSpeedMetrics(items) {
+  return (Array.isArray(items) ? items : []).map((item, index) => {
+    const source = item && typeof item === "object" ? item : {};
+    const athleteId = cleanSetupText(source.athleteId);
+    const athleteName = cleanSetupText(source.athleteName || source.name).slice(0, 120);
+    const zone = cleanSetupText(source.zone || source.focus).slice(0, 120);
+    const unit = cleanSetupText(source.unit).toLowerCase() === "yd" ? "yd" : "m";
+    const rawDistance = Number(source.distance);
+    const rawMeters = Number(source.meters);
+    const distance = Number.isFinite(rawDistance) && rawDistance > 0
+      ? rawDistance
+      : Number.isFinite(rawMeters) && rawMeters > 0
+        ? unit === "yd" ? rawMeters / 0.9144 : rawMeters
+        : 0;
+    const meters = Number.isFinite(rawMeters) && rawMeters > 0 ? rawMeters : unit === "yd" ? distance * 0.9144 : distance;
+    const time = cleanSetupText(source.time).slice(0, 40);
+    const rawSeconds = Number(source.seconds);
+    const seconds = Number.isFinite(rawSeconds) && rawSeconds > 0 ? rawSeconds : parseFieldPracticeSeconds(time);
+    const rawStrides = Number(source.strides);
+    const strides = Number.isFinite(rawStrides) && rawStrides > 0 ? rawStrides : 0;
+    const velocity = meters && seconds ? meters / seconds : Number(source.velocity) || 0;
+    const strideLength = meters && strides ? meters / strides : Number(source.strideLength) || 0;
+    const strideFrequency = strides && seconds ? strides / seconds : Number(source.strideFrequency) || 0;
+    const note = cleanSetupText(source.note).slice(0, 500);
+    if (!athleteId && !athleteName && !zone && !time && !strides && !note && !velocity) return null;
+    return {
+      id: cleanSetupText(source.id) || `speed_metric_${index + 1}`,
+      athleteId,
+      athleteName,
+      rep: Math.max(1, parseInt(source.rep || index + 1, 10) || 1),
+      zone,
+      distance: roundedMetric(distance),
+      unit,
+      time,
+      strides: roundedMetric(strides),
+      note,
+      meters: roundedMetric(meters),
+      seconds: roundedMetric(seconds),
+      velocity: roundedMetric(velocity),
+      strideLength: roundedMetric(strideLength),
+      strideFrequency: roundedMetric(strideFrequency),
+      updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString(),
+    };
+  }).filter(Boolean).slice(0, 500);
 }
 
 function normalizeFieldPracticeAttempts(items) {
