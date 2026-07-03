@@ -113,16 +113,7 @@ async function deleteAthleteBest({ token, locationId, payload }) {
 }
 
 async function listAthleteBestRows({ token, locationId }) {
-  const result = await ghlFetch({
-    token,
-    path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/search`,
-    method: "POST",
-    body: {
-      locationId,
-      page: 1,
-      pageLimit: 100,
-    },
-  });
+  const result = await searchAthleteBestRecords({ token, locationId, page: 1, pageLimit: 100 });
   return recordsFromResult(result).map((record) => {
     const props = recordProperties(record);
     const display = prop(props, "last_result_display") || prop(props, "season_best_display") || prop(props, "personal_best_display");
@@ -209,15 +200,35 @@ async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey
       body: requestBody,
     });
   } catch (error) {
+    if (!recordId && isLocationIdBodyError(error)) {
+      return ghlFetch({
+        token,
+        path: `${path}?locationId=${encodeURIComponent(locationId)}`,
+        method,
+        body: { properties },
+      });
+    }
     if (!/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "")) throw error;
     const fallback = { ...properties };
     (optionKeys || []).forEach((key) => delete fallback[key]);
-    return ghlFetch({
-      token,
-      path,
-      method,
-      body: recordId ? { properties: fallback } : { locationId, properties: fallback },
-    });
+    try {
+      return await ghlFetch({
+        token,
+        path,
+        method,
+        body: recordId ? { properties: fallback } : { locationId, properties: fallback },
+      });
+    } catch (fallbackError) {
+      if (!recordId && isLocationIdBodyError(fallbackError)) {
+        return ghlFetch({
+          token,
+          path: `${path}?locationId=${encodeURIComponent(locationId)}`,
+          method,
+          body: { properties: fallback },
+        });
+      }
+      throw fallbackError;
+    }
   }
 }
 
@@ -251,21 +262,32 @@ function buildAthleteBestProperties({ contactId, athleteName, event, display, re
 }
 
 async function findAthleteBest({ token, locationId, contactId, event }) {
-  const result = await ghlFetch({
-    token,
-    path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/search`,
-    method: "POST",
-    body: {
-      locationId,
-      page: 1,
-      pageLimit: 100,
-    },
-  });
+  const result = await searchAthleteBestRecords({ token, locationId, page: 1, pageLimit: 100 });
   const wantedEvent = optionValue(event);
   return recordsFromResult(result).find((record) => {
     const props = recordProperties(record);
     return prop(props, "athlete_contact") === contactId && optionValue(prop(props, "event")) === wantedEvent;
   }) || null;
+}
+
+async function searchAthleteBestRecords({ token, locationId, page, pageLimit }) {
+  const path = `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/search`;
+  try {
+    return await ghlFetch({
+      token,
+      path,
+      method: "POST",
+      body: { locationId, page, pageLimit },
+    });
+  } catch (error) {
+    if (!isLocationIdBodyError(error)) throw error;
+    return ghlFetch({
+      token,
+      path: `${path}?locationId=${encodeURIComponent(locationId)}`,
+      method: "POST",
+      body: { page, pageLimit },
+    });
+  }
 }
 
 function normalizeAthleteBest({ record, season, seasonYear, sourceRecordId }) {
@@ -306,6 +328,10 @@ async function ghlFetch({ token, path, method, body }) {
   const data = text ? safeJson(text) : {};
   if (!response.ok) throw httpError(response.status, data.message || data.error || `GHL request failed with ${response.status}.`);
   return data;
+}
+
+function isLocationIdBodyError(error) {
+  return /property\s+locationId\s+should\s+not\s+exist|locationId\s+should\s+not\s+exist/i.test(error && error.message || "");
 }
 
 function firstRecord(result) {
