@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-06-26
+Last updated: 2026-07-03
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,11 +40,16 @@ Current launch status:
 
 Latest handoff:
 
-- Latest local code commit before this state update: `85a4aa1 Add coach-issued equipment tracking`.
-- `85a4aa1` adds a Coach Issued workflow to Equipment Trak so coaches can assign watches/radios/gear to staff without creating athlete/contact rows. Coach-issued items count against inventory availability, appear in issued reports/CSV, are duplicate-protected against athlete-issued items, and carry forward during equipment season rollover if still issued/lost.
-- `npm test` passed after `85a4aa1`.
+- Latest local code commit before this state update: pending Speed Metrics commit.
+- Training Calendar now includes a **Speed Metrics** activity choice for fly zones, acceleration zones, and runway timing. It saves through the existing workout/calendar path using allowed speed-work effort types while preserving coach-facing Speed Metrics details, planned reps, timed distance, and time-plus-stride-count instructions.
+- Field Practice now includes a **Runway / Speed Metrics** panel. Coaches can choose a zone/focus, timed distance, unit, and group/athlete, then enter each athlete's time and stride count. SMART Trak calculates velocity, average stride length, and stride frequency, saves those rows with the field practice, and includes them in the athlete preview.
+- Field Practice remains the practice-side workflow for field-event drills, individual athlete summaries, optional jump attempts, and now sprint/runway metrics. The coach how-to was updated so Field Practice is no longer described as pole-vault-only.
+- `npm test` passed after the Speed Metrics changes.
 - `README.md` still had an unrelated pre-existing local modification and was intentionally left uncommitted.
 - Push command for the latest code commit remains `git -C smartcoach-repo push origin main:main`.
+- Previous handoff before Speed Metrics: `85a4aa1 Add coach-issued equipment tracking`.
+- `85a4aa1` adds a Coach Issued workflow to Equipment Trak so coaches can assign watches/radios/gear to staff without creating athlete/contact rows. Coach-issued items count against inventory availability, appear in issued reports/CSV, are duplicate-protected against athlete-issued items, and carry forward during equipment season rollover if still issued/lost.
+- `npm test` passed after `85a4aa1`.
 - Marketing/sales website work is now in progress:
   - `/sales.html` is the public marketing page for SMARTCoach Pro, SMARTCoach Essential, and SMART Trak.
   - The page uses real product screenshots from SMART Trak and SMARTCoach instead of CSS mockup imagery.

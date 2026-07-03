@@ -609,19 +609,21 @@ Season mapping:
 
 ## Field Practice
 
-Use **Field Practice** when a field event group needs a practice plan and attempt log instead of a distance workout. Phase 1 is built around pole vault.
+Use **Field Practice** when a field event or sprint group needs a practice plan, drill checklist, athlete focus notes, jump attempts, or runway/speed metrics instead of a distance workout.
 
 How to use Field Practice:
 
 1. Open **Training Calendar**, then click **Field Practice**.
-2. Choose the date, group or athlete, practice focus, and drill routine.
+2. Choose the date, event, group or athlete, practice focus, and drill routine.
 3. Use the drill checklist during practice to mark completed technical work.
-4. If athletes are jumping, choose **Bungee** or **Crossbar**, enter the height, and add attempts as **O** for make, **X** for miss, or **-** for pass.
-5. Add a note to any attempt when the coach wants to remember a cue, mistake, or adjustment.
-6. Use **Athlete Preview** / **Copy Preview** when the practice plan needs to be shared with athletes before practice.
-7. Save the practice so the completed drills, attempts, heights, and notes stay in SMART Trak.
+4. Add athlete-specific focus summaries when different athletes need different cues after the same drill session.
+5. For runway checks, fly zones, or sprint metrics, choose the zone, timed distance, and unit, then load the athletes. Enter each athlete's time and stride count; SMART Trak calculates velocity, average stride length, and stride frequency.
+6. If athletes are jumping, choose **Bungee** or **Crossbar**, enter the height, and add attempts as **O** for make, **X** for miss, or **-** for pass.
+7. Add a note to any attempt when the coach wants to remember a cue, mistake, or adjustment.
+8. Use **Athlete Preview** / **Copy Preview** when the practice plan needs to be shared with athletes before practice.
+9. Save the practice so the completed drills, athlete summaries, speed metrics, attempts, heights, and notes stay in SMART Trak.
 
-Pole vault routines include beginner, plant mechanics, short approach, bar clearance, meet week, and custom routines.
+Field Practice includes event-specific drill routines for pole vault, high jump, long jump, triple jump, shot put, discus, javelin, hammer, and custom sessions. The routine list changes based on the selected event.
 
 Pole vault heights are cleaned into feet-inches format, such as `9-0` or `9-0.25`. Jump attempts are summarized by setup and height, such as `9-0 Crossbar [XOXXO]`, so the coach can quickly review the make/miss pattern without reading every note.
 

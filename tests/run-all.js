@@ -2406,6 +2406,10 @@ function checkFieldPracticePhaseOne() {
     "Athlete Focus & Summary",
     "athleteSummaries",
     "Post-practice summary for this athlete",
+    "Runway / Speed Metrics",
+    "speedMetrics",
+    "function speedMetricCalc(row)",
+    "velocity, stride length, and stride frequency",
     "function renderRoutineOptions(selected)",
     "function accessStorageKey()",
     "function rememberedSessionStorageKey()",
@@ -2466,6 +2470,9 @@ function checkFieldPracticePhaseOne() {
     'href="/field-practice.html"',
     "Field Practice",
     "els.fieldPracticeLink.href=pageUrl('/field-practice.html');",
+    'data-add-activity-mode="speed"',
+    "Add Speed Metrics",
+    "Capture time and stride count for each athlete",
   ].forEach((text) => {
     if (!calendar.includes(text)) throw new Error(`Training Calendar Field Practice link missing ${text}`);
   });

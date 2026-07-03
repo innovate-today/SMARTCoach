@@ -435,6 +435,7 @@ button.compact{padding:6px 9px;font-size:12px}
       <div id="addDayChooser" class="activitychooser" aria-label="Choose calendar activity">
         <button class="activitychoice easy" data-add-activity-mode="easy" type="button"><b>Easy Run</b><small>Distance, optional notes, optional strides.</small></button>
         <button class="activitychoice quality" data-add-activity-mode="quality" type="button"><b>Quality Session</b><small>Warmup, reps, effort, recovery, cooldown.</small></button>
+        <button class="activitychoice quality" data-add-activity-mode="speed" type="button"><b>Speed Metrics</b><small>Fly zones, runway timing, stride count.</small></button>
         <button class="activitychoice race" data-add-activity-mode="race" type="button"><b>Race</b><small>Meet or race day, attached to a plan when needed.</small></button>
         <button class="activitychoice rest" data-add-activity-mode="off" type="button"><b>Rest / Day Off</b><small>Add an off day to the calendar.</small></button>
       </div>
@@ -479,6 +480,15 @@ button.compact{padding:6px 9px;font-size:12px}
             <button id="addQualityRepeatBtn" class="builder-link" type="button">Add Repeating Sets</button>
             <button id="clearQualityBtn" class="builder-link" type="button">Clear</button>
           </div>
+        </div>
+        <div id="speedActivityFields" class="activitysection" hidden>
+          <h3>Speed Metrics</h3>
+          <div class="compactgrid">
+            <div class="field"><label for="addSpeedZone">Zone / Focus</label><select id="addSpeedZone" class="mini-select"><option>Fly 10m</option><option>Fly 20m</option><option selected>Fly 30m</option><option>Acceleration 10m</option><option>Acceleration 20m</option><option>Acceleration 30m</option><option>Runway 20m</option><option>Runway 30m</option><option>Approach Check</option><option>Custom</option></select></div>
+            <div class="field"><label for="addSpeedDistance">Timed Distance</label><div class="inline-control"><input id="addSpeedDistance" class="mini-input" type="number" min="0" step="1" value="30"><select id="addSpeedUnit" class="mini-select"><option>m</option><option>yd</option></select></div></div>
+            <div class="field"><label for="addSpeedReps">Planned Reps</label><input id="addSpeedReps" class="mini-input" type="number" min="1" step="1" value="5"></div>
+          </div>
+          <div class="hint" style="margin-top:8px">At practice, use Field Practice to enter time and stride count for each athlete. SMART Trak calculates velocity, stride length, and stride frequency.</div>
         </div>
         <div id="addActivitySummary" class="activitysummary" hidden><div class="activitysummary-title">Quality Session Summary</div><div id="addActivitySummaryBody" class="activitysummary-body"></div></div>
         <div id="addDayDetailsField" class="field full"><label for="addDayDetails">Details <span class="fieldinfo" tabindex="0" data-tip="Workout instructions, race notes, warmup, cooldown, or reminders.">i</span></label><textarea id="addDayDetails" placeholder="Add the session details"></textarea></div>
@@ -748,6 +758,11 @@ var els={
   addQualityRestBtn:document.getElementById('addQualityRestBtn'),
   addQualityRepeatBtn:document.getElementById('addQualityRepeatBtn'),
   clearQualityBtn:document.getElementById('clearQualityBtn'),
+  speedActivityFields:document.getElementById('speedActivityFields'),
+  addSpeedZone:document.getElementById('addSpeedZone'),
+  addSpeedDistance:document.getElementById('addSpeedDistance'),
+  addSpeedUnit:document.getElementById('addSpeedUnit'),
+  addSpeedReps:document.getElementById('addSpeedReps'),
   addActivitySummary:document.getElementById('addActivitySummary'),
   addActivitySummaryBody:document.getElementById('addActivitySummaryBody'),
   addDayDetails:document.getElementById('addDayDetails'),
@@ -2507,17 +2522,18 @@ function setActivityTypeOptions(options,selected){
 }
 function setAddDayMode(mode){
   addDayMode=mode||'easy';
-  var titleWasDefault=/^(Easy run|Quality session|Race day|Rest day)$/i.test(els.addDayTitleInput.value||'');
+  var titleWasDefault=/^(Easy run|Quality session|Speed metrics|Race day|Rest day)$/i.test(els.addDayTitleInput.value||'');
   Array.prototype.slice.call(els.addDayChooser.querySelectorAll('[data-add-activity-mode]')).forEach(function(button){
     button.classList.toggle('active',button.getAttribute('data-add-activity-mode')===addDayMode);
   });
   els.easyActivityFields.hidden=addDayMode!=='easy';
   els.qualityActivityFields.hidden=addDayMode!=='quality';
+  els.speedActivityFields.hidden=addDayMode!=='speed';
   els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=false;
   els.addDayWorkoutTypeField.hidden=addDayMode==='easy'||addDayMode==='race'||addDayMode==='off';
-  els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality'||addDayMode==='off'||(addDayMode==='race'&&normalizeSport(els.addDaySport.value)!=='Cross Country');
-  els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='race'||addDayMode==='off';
+  els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality'||addDayMode==='speed'||addDayMode==='off'||(addDayMode==='race'&&normalizeSport(els.addDaySport.value)!=='Cross Country');
+  els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='speed'||addDayMode==='race'||addDayMode==='off';
   els.addDayDetailsField.hidden=addDayMode==='off';
   if(addDayMode==='easy'){
     setSelectValue(els.addDayType,'Recovery');
@@ -2537,6 +2553,15 @@ function setAddDayMode(mode){
     els.addDayTarget.value='';
     els.addDayDetails.placeholder='Add workout notes, suggestions, or tips...';
     els.addDayTitle.textContent='Add Quality Session';
+  }else if(addDayMode==='speed'){
+    setSelectValue(els.addDayType,'Workout');
+    setActivityTypeOptions(['Acceleration','Speed Endurance I','Speed Endurance II','Repetition','Fast Reps'],'Acceleration');
+    if(!els.addDayTitleInput.value||titleWasDefault)els.addDayTitleInput.value='Speed metrics';
+    els.addDayTitleInput.placeholder='Example: 5 x fly 30m';
+    els.addDayVolume.value='';
+    els.addDayTarget.value='';
+    els.addDayDetails.placeholder='Add sprint/runway cues, rest, or setup notes...';
+    els.addDayTitle.textContent='Add Speed Metrics';
   }else if(addDayMode==='race'){
     setSelectValue(els.addDayType,'Meet');
     setActivityTypeOptions(['Race / Meet'],'Race / Meet');
@@ -2757,6 +2782,27 @@ function buildAddDayActivityValues(){
         return setRecovery?line+' and '+setRecovery:line;
       }).join('; '),
       details:qLines.join('\n')
+    };
+  }
+  if(addDayMode==='speed'){
+    var zone=els.addSpeedZone.value.trim()||'Fly 30m';
+    var distance=distanceLabel(els.addSpeedDistance.value,els.addSpeedUnit.value)||zone;
+    var reps=Number(els.addSpeedReps.value||0)||1;
+    var speedLines=[
+      'Speed Metrics',
+      'Zone: '+zone,
+      'Timed distance: '+distance,
+      'Planned reps: '+reps,
+      'Measure: time + stride count'
+    ];
+    if(details)speedLines.push(details);
+    return {
+      dayType:'Workout',
+      title:title||(reps+' x '+zone),
+      workoutType:type||'Acceleration',
+      plannedVolume:volume||(reps+' reps - '+zone),
+      targetSplits:target||('Capture time and stride count for each athlete over '+distance+'.'),
+      details:speedLines.join('\n')
     };
   }
   if(addDayMode==='race'){
