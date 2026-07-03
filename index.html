@@ -2991,8 +2991,13 @@ function openFieldPractice(){
   sm('m-field-practice');
   loadFieldPractice();
 }
-var FIELD_PRACTICE_EVENTS=['Pole Vault','High Jump','Long Jump','Triple Jump','Shot Put','Discus','Javelin','Hammer'];
+var FIELD_PRACTICE_EVENTS=['Runway / Speed Metrics','Pole Vault','High Jump','Long Jump','Triple Jump','Shot Put','Discus','Javelin','Hammer'];
 var FIELD_PRACTICE_ROUTINES={
+  'Runway / Speed Metrics':{
+    fly:['Dynamic warmup','Acceleration build-ins','Fly zone setup','Time fly zone','Count strides','Review velocity notes'],
+    acceleration:['Dynamic warmup','Wall drives','Falling starts','10m acceleration','20m acceleration','Stride count review'],
+    runway:['Dynamic warmup','Runway check marks','Approach rhythm reps','Takeoff zone accuracy','Time approach zone','Review stride pattern']
+  },
   'Pole Vault':{
     beginner:['Dynamic warmup','Pole carry posture','Walking plant drill','3-step pop ups','Sand pit takeoffs','Core cooldown'],
     plant:['Dynamic warmup','Pole runs','Slide-box plant drill','3-step plant to takeoff','4-step plant rhythm','Coach video review'],
@@ -3097,6 +3102,7 @@ function fieldPracticeAttemptGroups(attempts){
 }
 function fieldPracticeFocusOptions(event){
   var options={
+    'Runway / Speed Metrics':['Fly zone','Acceleration','Max velocity','Runway rhythm','Stride length','Stride frequency','Velocity','Custom'],
     'Pole Vault':['Approach rhythm','Pole carry','Plant mechanics','Takeoff position','Swing','Turn','Bar clearance','Confidence / commitment','Custom'],
     'High Jump':['Approach rhythm','Curve shape','Check mark consistency','Penultimate step','Takeoff position','Knee drive','Arm action','Bar clearance','Landing','Confidence / commitment','Custom'],
     'Long Jump':['Approach consistency','Board accuracy','Penultimate step','Takeoff position','Flight mechanics','Landing','Rhythm','Custom'],
@@ -3145,6 +3151,62 @@ function fieldPracticeMeta(p){
 }
 function fieldPracticeNewId(){
   return 'field_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+}
+function fieldPracticePlanDayText(day){
+  return [day&&day.title,day&&day.dayType,day&&day.workoutType,day&&day.energySystem,day&&day.details,day&&day.targetSplits,day&&day.coachNotes].filter(Boolean).join(' ');
+}
+function isSpeedMetricsPlanDay(day){
+  var text=fieldPracticePlanDayText(day).toLowerCase();
+  return /\b(speed metrics|fly\s*\d*|fly zone|acceleration|max velocity|runway|stride count|stride length|stride frequency|velocity|speed endurance|special endurance|fast reps)\b/.test(text);
+}
+function inferFieldPracticeEventFromPlanDay(day){
+  var text=fieldPracticePlanDayText(day).toLowerCase();
+  if(/\b(high jump|hj)\b/.test(text))return 'High Jump';
+  if(/\b(pole vault|pv)\b/.test(text))return 'Pole Vault';
+  if(/\b(long jump|lj)\b/.test(text))return 'Long Jump';
+  if(/\b(triple jump|tj)\b/.test(text))return 'Triple Jump';
+  if(/\b(shot put|shot)\b/.test(text))return 'Shot Put';
+  if(/\bdiscus\b/.test(text))return 'Discus';
+  if(/\bjavelin\b/.test(text))return 'Javelin';
+  if(/\bhammer\b/.test(text))return 'Hammer';
+  return 'Runway / Speed Metrics';
+}
+function inferFieldPracticeRoutineFromPlanDay(event,day){
+  var text=fieldPracticePlanDayText(day).toLowerCase();
+  if(event==='Runway / Speed Metrics'){
+    if(/\b(runway|approach)\b/.test(text))return 'runway';
+    if(/\b(acceleration|start)\b/.test(text))return 'acceleration';
+    return 'fly';
+  }
+  var options=fieldPracticeRoutineOptions(event);
+  return options[0]&&options[0].key||'';
+}
+function createFieldPracticeFromPlanDay(plan,day){
+  var event=inferFieldPracticeEventFromPlanDay(day);
+  var routineKey=inferFieldPracticeRoutineFromPlanDay(event,day);
+  var routine=(fieldPracticeRoutineOptions(event).find(function(option){return option.key===routineKey;})||fieldPracticeRoutineOptions(event)[0]||{key:routineKey,label:'Practice routine'});
+  var group=CL&&String(CL.type||'training')==='training'?CL:null;
+  var coach=selectedCoachIdentity();
+  var planText=coachVisiblePlanText([day&&day.details,day&&day.targetSplits,day&&day.coachNotes].filter(Boolean).join('\n\n'));
+  var focus=(day&&day.workoutType)||((day&&day.title)||'Speed metrics');
+  var practice={id:fieldPracticeNewId(),date:day&&day.date||todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:focus,routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],attempts:[],planNotes:planText,coachNotes:'',sourceTrainingPlanTitle:plan&&plan.title||'',sourcePlanDayId:planDayRecordId(day),sourcePlanDayDate:day&&day.date||'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  syncFieldPracticeAthleteSummaries(practice);
+  return practice;
+}
+function openSelectedPlanDayFieldPractice(planIndex,dayIndex){
+  var plan=TP[planIndex];
+  if(!plan)return;
+  var days=upcomingPlanDays(plan.planDays||[],5);
+  var day=days[dayIndex]||plan.selectedDay||null;
+  if(!day)return;
+  plan.selectedDay=day;
+  sm('m-field-practice');
+  var practice=createFieldPracticeFromPlanDay(plan,day);
+  FIELD_PRACTICE.practices=[practice].concat((FIELD_PRACTICE.practices||[]).filter(function(item){return item.id!==practice.id;}));
+  FIELD_PRACTICE.activeId=practice.id;
+  renderFieldPractice();
+  var status=document.getElementById('fp-status');
+  if(status)status.textContent='Speed Metrics ready. Review details, then save.';
 }
 function newFieldPractice(){
   var event='Pole Vault';
@@ -5801,7 +5863,8 @@ function renderTrainingPlanDetail(plan,days,loading){
       var detail=[d.dayType,d.workoutType,d.energySystem,d.plannedVolume].filter(Boolean).join(' · ');
       var body=coachVisiblePlanText([d.details,d.targetSplits,d.coachNotes].filter(Boolean).join('\n\n'));
       var active=sameTrainingPlanDay(plan.selectedDay,d);
-      return '<div class="profile-row" style="'+(active?'border-left:3px solid #2B4FCC;padding-left:8px':'')+'"><b>'+ex((d.date?d.date+' - ':'')+(d.title||'Workout'))+'</b><small>'+ex(detail)+'</small>'+(body?'<small style="white-space:pre-wrap">'+ex(body)+'</small>':'')+'<button style="margin-top:6px;border:1px solid #2B4FCC;background:'+(active?'#2B4FCC':'#fff')+';color:'+(active?'#fff':'#2B4FCC')+';border-radius:8px;padding:6px 10px;font-weight:700" onclick="selectTrainingPlanDay('+TP.indexOf(plan)+','+di+')">'+(active?'Selected':'Use this workout')+'</button></div>';
+      var speedAction=isSpeedMetricsPlanDay(d)?'<small style="font-weight:700;color:#0a7a44">Speed Metrics ready</small><button style="margin-top:6px;margin-left:6px;border:1px solid #0a7a44;background:#fff;color:#0a7a44;border-radius:8px;padding:6px 10px;font-weight:700" onclick="openSelectedPlanDayFieldPractice('+TP.indexOf(plan)+','+di+')">Open Speed Metrics</button>':'';
+      return '<div class="profile-row" style="'+(active?'border-left:3px solid #2B4FCC;padding-left:8px':'')+'"><b>'+ex((d.date?d.date+' - ':'')+(d.title||'Workout'))+'</b><small>'+ex(detail)+'</small>'+(body?'<small style="white-space:pre-wrap">'+ex(body)+'</small>':'')+'<button style="margin-top:6px;border:1px solid #2B4FCC;background:'+(active?'#2B4FCC':'#fff')+';color:'+(active?'#fff':'#2B4FCC')+';border-radius:8px;padding:6px 10px;font-weight:700" onclick="selectTrainingPlanDay('+TP.indexOf(plan)+','+di+')">'+(active?'Selected':'Use this workout')+'</button>'+speedAction+'</div>';
     }).join('');
     if(!upcoming.length)scheduleHtml='<div class="profile-row"><small>No workouts scheduled in the next 5 days.</small></div>';
   }else{
