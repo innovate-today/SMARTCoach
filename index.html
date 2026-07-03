@@ -446,7 +446,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <div class="mover h pro-only" id="m-field-practice">
   <div class="msh">
     <div class="mhd"></div>
-    <div class="mttl">Field Practice</div>
+    <div class="mttl" id="fp-modal-title">Field Practice</div>
     <div class="bulk-actions"><button class="mbtn" onclick="newFieldPractice()">New Practice</button><button class="mbtn c" onclick="loadFieldPractice()">Refresh</button></div>
     <div class="fp-body">
       <div id="fp-list" class="picker-list" style="padding:0 0 10px"></div>
@@ -455,6 +455,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div id="fp-status" class="bulk-status"></div>
     <div class="bulk-actions"><button class="mbtn c" onclick="shareFieldPracticePreview()">Share Preview</button><button class="mbtn" onclick="saveActiveFieldPractice()">Save Practice</button></div>
     <button class="mbtn c" onclick="hm('m-field-practice')">Close</button>
+    <div style="height:8px"></div>
+  </div>
+</div>
+
+<!-- TRAINING MODE MODAL -->
+<div class="mover h pro-only" id="m-training-mode">
+  <div class="msh">
+    <div class="mhd"></div>
+    <div class="mttl" id="training-mode-title">Training</div>
+    <div class="profile-box" id="training-mode-options"></div>
+    <button class="mbtn c" onclick="hm('m-training-mode')">Close</button>
     <div style="height:8px"></div>
   </div>
 </div>
@@ -552,7 +563,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],activeId:''}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],activeId:'',mode:'field'}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
 
 function smartCoachAccountKey(){
   try{
@@ -2435,8 +2446,57 @@ function updateGroupsTrayActions(){
 function oGroup(id){
   for(var i=0;i<logs.length;i++){if(logs[i].id===id){CL=logs[i];break;}}
   document.getElementById('ltit').textContent=CL.type==='meet'?meetDisplayTitle(CL):CL.name;
+  if(GV==='training'&&String(CL.type||'training')==='training'){
+    openTrainingModePicker();
+    return;
+  }
   go('s-group');
   if(partnerTimingEnabled())loadPartnerTimingSession();
+}
+function openTrainingModePicker(){
+  if(!CL)return;
+  var title=document.getElementById('training-mode-title');
+  var options=document.getElementById('training-mode-options');
+  if(title)title.textContent=CL.name||'Training';
+  if(!options)return;
+  var speedDay=trainingModeSpeedMetricDay();
+  options.innerHTML=
+    '<button type="button" class="picker-row" onclick="openTrainingModeDistance()"><b>Distance Timing</b><small>Use the regular group timer for easy runs, intervals, reps, rest, and meet-style timing.</small></button>'+
+    '<button type="button" class="picker-row" onclick="openTrainingModeSpeed()"><b>Speed Metrics</b><small>'+(speedDay?'Open today or the next speed metrics workout for this group.':'Create a speed, fly, acceleration, or runway metrics session for this group.')+'</small></button>'+
+    '<button type="button" class="picker-row" onclick="openTrainingModeCalendar()"><b>Calendar Workout</b><small>Review or switch the workout assigned to this group.</small></button>';
+  sm('m-training-mode');
+}
+function openTrainingModeDistance(){
+  hm('m-training-mode');
+  go('s-group');
+  if(partnerTimingEnabled())loadPartnerTimingSession();
+}
+function trainingModeSpeedMetricDay(){
+  var groupName=CL&&CL.name||'';
+  if(!groupName)return null;
+  var days=upcomingCalendarWorkoutDays(CD||[],groupName,5).filter(function(day){return isSpeedMetricsPlanDay(day);});
+  var today=todayISO();
+  return days.find(function(day){return day.date===today;})||days[0]||null;
+}
+function openTrainingModeSpeed(){
+  if(!isProPlan()){alert('Speed Metrics is available with SMARTCoach Pro.');return;}
+  hm('m-training-mode');
+  FIELD_PRACTICE.mode='speed';
+  sm('m-field-practice');
+  loadCalendarDaysCache().catch(function(){return CD||[];}).then(function(){return loadFieldPractice();}).then(function(){
+    var day=trainingModeSpeedMetricDay();
+    var practice=day?createFieldPracticeFromPlanDay({title:'SMART Trak Calendar'},day):createSpeedMetricsPracticeForCurrentGroup();
+    delete practice.calendarGenerated;
+    FIELD_PRACTICE.practices=[practice].concat((FIELD_PRACTICE.practices||[]).filter(function(item){return item.id!==practice.id;}));
+    FIELD_PRACTICE.activeId=practice.id;
+    renderFieldPractice();
+    var status=document.getElementById('fp-status');
+    if(status)status.textContent='Speed Metrics ready. Capture time and stride count for each athlete.';
+  });
+}
+function openTrainingModeCalendar(){
+  hm('m-training-mode');
+  openSeasonPlan(true);
 }
 function createGroup(){
   var name=document.getElementById('mln').value.trim()||'New Group';
@@ -2988,6 +3048,7 @@ function saveKeepTrakNotes(notes){
 }
 function openFieldPractice(){
   if(!isProPlan()){alert('Field Practice is available with SMARTCoach Pro.');return;}
+  FIELD_PRACTICE.mode='field';
   sm('m-field-practice');
   loadCalendarDaysCache().catch(function(){return CD||[];}).then(function(){return loadFieldPractice();});
 }
@@ -3206,6 +3267,7 @@ function createFieldPracticeFromPlanDay(plan,day){
   return practice;
 }
 function calendarSpeedMetricFieldPractices(saved){
+  if(FIELD_PRACTICE.mode!=='speed')return[];
   var savedSources={};
   (saved||[]).forEach(function(item){if(item&&item.sourcePlanDayId)savedSources[String(item.sourcePlanDayId)]=true;});
   return (CD||[]).filter(function(day){return isCalendarWorkoutDay(day)&&isSpeedMetricsPlanDay(day);}).map(function(day){
@@ -3216,7 +3278,10 @@ function calendarSpeedMetricFieldPractices(saved){
 }
 function fieldPracticeAllPractices(){
   var saved=FIELD_PRACTICE.practices||[];
-  return saved.concat(calendarSpeedMetricFieldPractices(saved));
+  if(FIELD_PRACTICE.mode==='speed'){
+    return saved.filter(function(item){return item&&item.event==='Runway / Speed Metrics';}).concat(calendarSpeedMetricFieldPractices(saved));
+  }
+  return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});
 }
 function openSelectedPlanDayFieldPractice(planIndex,dayIndex){
   var plan=TP[planIndex];
@@ -3225,6 +3290,7 @@ function openSelectedPlanDayFieldPractice(planIndex,dayIndex){
   var day=days[dayIndex]||plan.selectedDay||null;
   if(!day)return;
   plan.selectedDay=day;
+  FIELD_PRACTICE.mode='speed';
   sm('m-field-practice');
   var practice=createFieldPracticeFromPlanDay(plan,day);
   delete practice.calendarGenerated;
@@ -3235,16 +3301,26 @@ function openSelectedPlanDayFieldPractice(planIndex,dayIndex){
   if(status)status.textContent='Speed Metrics ready. Review details, then save.';
 }
 function newFieldPractice(){
-  var event='Pole Vault';
+  var speedMode=FIELD_PRACTICE.mode==='speed';
+  var event=speedMode?'Runway / Speed Metrics':'Pole Vault';
   var routine=fieldPracticeRoutineOptions(event)[0];
   var group=CL&&String(CL.type||'training')==='training'?CL:null;
   var coach=selectedCoachIdentity();
-  var practice={id:fieldPracticeNewId(),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:'Approach consistency',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],attempts:[],planNotes:'',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var practice={id:fieldPracticeNewId(),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:speedMode?'Fly zone':'Approach consistency',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],attempts:[],planNotes:speedMode?'Capture time and stride count for each athlete.':'',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
   FIELD_PRACTICE.practices=[practice].concat((FIELD_PRACTICE.practices||[]).filter(function(item){return item.id!==practice.id;}));
   FIELD_PRACTICE.activeId=practice.id;
   renderFieldPractice();
   var status=document.getElementById('fp-status');
-  if(status)status.textContent='New Field Practice ready. Add details, then save.';
+  if(status)status.textContent=speedMode?'New Speed Metrics session ready. Add details, then save.':'New Field Practice ready. Add details, then save.';
+}
+function createSpeedMetricsPracticeForCurrentGroup(){
+  var event='Runway / Speed Metrics';
+  var routine=fieldPracticeRoutineOptions(event)[0]||{key:'fly',label:'Fly routine'};
+  var group=CL&&String(CL.type||'training')==='training'?CL:null;
+  var coach=selectedCoachIdentity();
+  var practice={id:'speed_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:'Fly zone',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],attempts:[],planNotes:'Capture time and stride count for each athlete.',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  syncFieldPracticeAthleteSummaries(practice);
+  return practice;
 }
 function fieldPracticeOptionHtml(values,selected){
   return values.map(function(value){return '<option value="'+ex(value)+'" '+(String(value)===String(selected)?'selected':'')+'>'+ex(value)+'</option>';}).join('');
@@ -3320,12 +3396,14 @@ function renderFieldPractice(){
   var list=document.getElementById('fp-list');
   var detail=document.getElementById('fp-detail');
   var status=document.getElementById('fp-status');
+  var title=document.getElementById('fp-modal-title');
+  if(title)title.textContent=FIELD_PRACTICE.mode==='speed'?'Speed Metrics':'Field Practice';
   if(!list||!detail)return;
   var practices=fieldPracticeAllPractices();
   if(!practices.length){
-    list.innerHTML='<div class="eq-empty">No Field Practice sessions saved yet.</div><button class="mbtn" type="button" onclick="newFieldPractice()">Create Practice</button>';
+    list.innerHTML='<div class="eq-empty">'+(FIELD_PRACTICE.mode==='speed'?'No Speed Metrics sessions saved yet.':'No Field Practice sessions saved yet.')+'</div><button class="mbtn" type="button" onclick="newFieldPractice()">Create Practice</button>';
     detail.innerHTML='';
-    if(status)status.textContent='Create one here or from SMART Trak desktop.';
+    if(status)status.textContent=FIELD_PRACTICE.mode==='speed'?'Create one here or from a speed workout on the calendar.':'Create one here or from SMART Trak desktop.';
     return;
   }
   var sorted=practices.slice().sort(function(a,b){return String(a.event||'').localeCompare(String(b.event||''))||String(a.groupName||'Team').localeCompare(String(b.groupName||'Team'))||String(b.date||'').localeCompare(String(a.date||''));});

@@ -2476,6 +2476,18 @@ function checkFieldPracticePhaseOne() {
     "Stride frequency",
     "Create Practice",
     "Share Preview",
+    "m-training-mode",
+    "function openTrainingModePicker()",
+    "function openTrainingModeDistance()",
+    "function openTrainingModeSpeed()",
+    "function openTrainingModeCalendar()",
+    "Distance Timing",
+    "Speed Metrics",
+    "Calendar Workout",
+    "FIELD_PRACTICE.mode='field'",
+    "FIELD_PRACTICE.mode='speed'",
+    "function createSpeedMetricsPracticeForCurrentGroup()",
+    "return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});",
   ].forEach((text) => {
     const app = fs.readFileSync("index.html", "utf8");
     if (!app.includes(text)) throw new Error(`Mobile Field Practice app missing ${text}`);
