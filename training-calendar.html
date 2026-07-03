@@ -43,7 +43,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .mixbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:14px}
 .mixbar b{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin-right:4px}
 .mixitem{display:inline-flex;align-items:center;border-radius:999px;background:#f1f5f9;color:#334155;font-size:12px;font-weight:900;padding:5px 9px}
-.mixitem.workout{background:#e8eefc;color:#173891}.mixitem.meet{background:#ede9fe;color:#5b21b6}.mixitem.recovery{background:#dcfce7;color:#0a7a44}.mixitem.off{background:#f1f5f9;color:#475569}.mixitem.other{background:#ffedd5;color:#b45309}
+.mixitem.easy{background:#dcfce7;color:#0a7a44}.mixitem.quality{background:#e8eefc;color:#173891}.mixitem.speed{background:#fff7ed;color:#c2410c}.mixitem.race{background:#ede9fe;color:#5b21b6}.mixitem.rest{background:#f1f5f9;color:#475569}.mixitem.other{background:#ffedd5;color:#b45309}
 .mixhide{margin-left:auto;background:#eef2f7;color:#172033;font-size:12px;padding:6px 10px}
 .mixshow{background:#eef2f7;color:#172033;font-size:13px;padding:10px 12px}
 .bar{display:grid;grid-template-columns:1.25fr .9fr .9fr .9fr 1.05fr auto 1fr auto auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
@@ -90,8 +90,8 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .monthday{min-height:118px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;padding:8px;display:grid;align-content:start;gap:6px}
 .monthday:nth-child(7n){border-right:0}.monthday.outside{background:#f8fafc;color:#94a3b8}.monthday.today{background:#f4f7ff;box-shadow:inset 0 0 0 2px rgba(43,79,204,.18)}
 .monthdate{border:0;background:transparent;color:#475569;font:900 12px inherit;padding:0;text-align:left;text-transform:uppercase;letter-spacing:.03em;min-height:22px;justify-content:flex-start}.monthday.today .monthdate{display:inline-flex;width:max-content;border-radius:999px;background:var(--blue);color:#fff;padding:3px 7px}
-.monthsummary{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.monthpill{display:inline-flex;border-radius:999px;background:#e8eefc;color:#173891;padding:2px 6px;font-size:11px;font-weight:900}.monthpill.meet{background:#ede9fe;color:#5b21b6}.monthpill.recovery{background:#dcfce7;color:#0a7a44}.monthpill.off{background:#e2e8f0;color:#475569}.monthpill.volume{background:#ffedd5;color:#9a3412}
-.monthitems{display:grid;gap:4px}.monthitem{display:block;border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:6px;background:#fbfdff;color:#172033;font:800 11px inherit;line-height:1.2;text-align:left;padding:5px 6px;min-height:0}.monthitem.meet{border-left-color:#7c3aed}.monthitem.recovery{border-left-color:#0a7a44}.monthitem.off{border-left-color:#94a3b8}.monthmore{color:var(--muted);font-size:11px;font-weight:900}
+.monthsummary{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.monthpill{display:inline-flex;border-radius:999px;background:#e8eefc;color:#173891;padding:2px 6px;font-size:11px;font-weight:900}.monthpill.easy{background:#dcfce7;color:#0a7a44}.monthpill.speed{background:#fff7ed;color:#c2410c}.monthpill.race{background:#ede9fe;color:#5b21b6}.monthpill.rest{background:#e2e8f0;color:#475569}.monthpill.volume{background:#ffedd5;color:#9a3412}
+.monthitems{display:grid;gap:4px}.monthitem{display:block;border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:6px;background:#fbfdff;color:#172033;font:800 11px inherit;line-height:1.2;text-align:left;padding:5px 6px;min-height:0}.monthitem.easy{border-left-color:#0a7a44}.monthitem.speed{border-left-color:#f97316}.monthitem.race{border-left-color:#7c3aed}.monthitem.rest{border-left-color:#94a3b8}.monthmore{color:var(--muted);font-size:11px;font-weight:900}
 .days{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));overflow:auto}
 .day{min-height:170px;border-right:1px solid var(--line);padding:10px;background:#fff}
 .day.today{background:#f4f7ff;box-shadow:inset 0 0 0 2px rgba(43,79,204,.18)}
@@ -113,7 +113,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .item{position:relative;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:9px;margin-bottom:8px;background:#fbfdff;cursor:grab}
 .item:active{cursor:grabbing}
 .item.dragging{opacity:.55}
-.item.meet{border-left-color:#7c3aed}.item.recovery{border-left-color:#0a7a44}.item.off{border-left-color:#94a3b8}.item.skipped{opacity:.68}
+.item.easy{border-left-color:#0a7a44}.item.speed{border-left-color:#f97316}.item.race{border-left-color:#7c3aed}.item.rest{border-left-color:#94a3b8}.item.skipped{opacity:.68}
 .item b{display:block;font-size:14px;line-height:1.25}
 .itemcopy{position:absolute;right:7px;top:7px;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;border:1px solid #bfd0ef;background:#fff;color:#173891;font-size:15px;font-weight:900;padding:0;z-index:2}
 .itemcopy:hover{background:#eef6ff}
@@ -292,7 +292,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <div id="planChoiceList"></div>
       </div>
     </div>
-    <select id="typeFilter"><option value="all">All day types</option></select>
+    <select id="typeFilter"><option value="all">All activity types</option></select>
     <select id="statusFilter"><option value="all">All statuses</option></select>
     <select id="dateFilter"><option value="all">All dates</option><option value="current_week">Current week</option><option value="next_7">Next 7 days</option><option value="next_30">Next 30 days</option><option value="past_due">Past due</option></select>
     <select id="bulkStatus"><option value="">Change selected to status</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select>
@@ -1180,13 +1180,14 @@ function renderOptions(){
     if(day.status)statuses[day.status]=true;
   });
   var typeOptions=[
-    {value:'workout',label:'Workouts'},
-    {value:'meet',label:'Meets/Races'},
-    {value:'recovery',label:'Recovery'},
-    {value:'off',label:'Off/Travel'},
+    {value:'easy',label:'Easy'},
+    {value:'quality',label:'Quality'},
+    {value:'speed',label:'Speed'},
+    {value:'race',label:'Race'},
+    {value:'rest',label:'Rest'},
     {value:'other',label:'Other'}
   ];
-  els.typeFilter.innerHTML='<option value="all">All day types</option>'+typeOptions.map(function(option){return '<option value="'+esc(option.value)+'">'+esc(option.label)+'</option>';}).join('');
+  els.typeFilter.innerHTML='<option value="all">All activity types</option>'+typeOptions.map(function(option){return '<option value="'+esc(option.value)+'">'+esc(option.label)+'</option>';}).join('');
   els.statusFilter.innerHTML='<option value="all">All statuses</option>'+Object.keys(statuses).sort().map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
   els.typeFilter.value=typeOptions.some(function(option){return option.value===type;})?type:'all';
   els.statusFilter.value=Object.prototype.hasOwnProperty.call(statuses,status)?status:'all';
@@ -1377,12 +1378,14 @@ function dayMixCategory(day){
   var text=[type,title,workout,details,target,volume].join(' ');
   var effortText=[type,workout,title,target,volume].join(' ');
   var qualityText=[workout,target,volume,title,details].join(' ');
+  var speedPattern=/\b(speed metrics|fly\s*\d+|acceleration|runway|stride count|speed endurance|special endurance|fast reps)\b/;
   var qualityPattern=/\b(tempo|threshold|interval|repetition|fast reps|speed endurance|special endurance|intensive|extensive|quality)\b/;
-  if(text.indexOf('meet')>=0||text.indexOf('race')>=0)return 'meet';
-  if(text.indexOf('off')>=0||text.indexOf('travel')>=0||text.indexOf('no practice')>=0)return 'off';
-  if(qualityPattern.test(qualityText))return 'workout';
-  if(effortText.indexOf('recovery')>=0||effortText.indexOf('easy')>=0||effortText.indexOf('conversational')>=0||/\bez\b/.test(title)||/\beasy\b/.test(details))return 'recovery';
-  if(text.indexOf('workout')>=0||text.indexOf('quality')>=0||text.indexOf('session')>=0)return 'workout';
+  if(text.indexOf('meet')>=0||text.indexOf('race')>=0)return 'race';
+  if(text.indexOf('off')>=0||text.indexOf('travel')>=0||text.indexOf('no practice')>=0||text.indexOf('rest day')>=0)return 'rest';
+  if(speedPattern.test(text))return 'speed';
+  if(qualityPattern.test(qualityText))return 'quality';
+  if(effortText.indexOf('recovery')>=0||effortText.indexOf('easy')>=0||effortText.indexOf('conversational')>=0||effortText.indexOf('long run')>=0||/\bez\b/.test(title)||/\beasy\b/.test(details))return 'easy';
+  if(text.indexOf('workout')>=0||text.indexOf('quality')>=0||text.indexOf('session')>=0)return 'quality';
   return 'other';
 }
 function weekTitle(key){
@@ -1397,17 +1400,21 @@ function render(){
   var meetCount=0;
   var completedCount=0;
   var reviewCount=0;
-  var recoveryCount=0;
-  var offCount=0;
+  var easyCount=0;
+  var qualityCount=0;
+  var speedCount=0;
+  var restCount=0;
   var otherCount=0;
   list.forEach(function(day){
     var category=dayMixCategory(day);
     var status=String(day.status||'').toLowerCase();
-    if(category==='workout')workoutCount+=1;
-    else if(category==='meet')meetCount+=1;
-    else if(category==='recovery')recoveryCount+=1;
-    else if(category==='off')offCount+=1;
+    if(category==='easy')easyCount+=1;
+    else if(category==='quality')qualityCount+=1;
+    else if(category==='speed')speedCount+=1;
+    else if(category==='race')meetCount+=1;
+    else if(category==='rest')restCount+=1;
     else otherCount+=1;
+    if(category==='easy'||category==='quality'||category==='speed')workoutCount+=1;
     if(status.indexOf('completed')>=0)completedCount+=1;
     if(status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0)reviewCount+=1;
   });
@@ -1416,7 +1423,7 @@ function render(){
   els.meetCount.textContent=meetCount;
   els.completedCount.textContent=completedCount;
   els.needsReviewCount.textContent=reviewCount;
-  renderMixBar({workouts:workoutCount,meets:meetCount,recovery:recoveryCount,off:offCount,other:otherCount});
+  renderMixBar({easy:easyCount,quality:qualityCount,speed:speedCount,race:meetCount,rest:restCount,other:otherCount});
   els.status.textContent=list.length+' days';
   var draftCount=list.filter(isDraftDay).length;
   var approvedCount=list.filter(isApprovedDay).length;
@@ -1446,10 +1453,11 @@ function renderMixBar(counts){
   els.mixShowBtn.hidden=!mixHidden;
   if(mixHidden)return;
   els.mixBar.innerHTML='<b>Visible mix</b>'+
-    '<span class="mixitem workout">'+counts.workouts+' workouts</span>'+
-    '<span class="mixitem meet">'+counts.meets+' meets/races</span>'+
-    '<span class="mixitem recovery">'+counts.recovery+' recovery</span>'+
-    '<span class="mixitem off">'+counts.off+' off/travel</span>'+
+    '<span class="mixitem easy">'+counts.easy+' easy</span>'+
+    '<span class="mixitem quality">'+counts.quality+' quality</span>'+
+    '<span class="mixitem speed">'+counts.speed+' speed</span>'+
+    '<span class="mixitem race">'+counts.race+' race</span>'+
+    '<span class="mixitem rest">'+counts.rest+' rest</span>'+
     '<span class="mixitem other">'+counts.other+' other</span>'+
     '<button id="mixHideBtn" class="mixhide" type="button">Hide mix</button>';
   var hideBtn=document.getElementById('mixHideBtn');
@@ -1495,17 +1503,19 @@ function renderMonthView(list){
 function monthDayCell(date,items,outside){
   var dateKey=isoDate(date);
   var isToday=dateKey===isoDate(new Date());
-  var counts={workout:0,meet:0,recovery:0,off:0,other:0};
+  var counts={easy:0,quality:0,speed:0,race:0,rest:0,other:0};
   var volume=0;
   items.forEach(function(day){
-    counts[dayMixCategory(day)]+=1;
+    var category=dayMixCategory(day);
+    counts[category]=(counts[category]||0)+1;
     volume+=plannedVolumeMiles(day);
   });
   var pills=[];
-  if(counts.workout)pills.push('<span class="monthpill">'+counts.workout+' workout'+(counts.workout===1?'':'s')+'</span>');
-  if(counts.meet)pills.push('<span class="monthpill meet">'+counts.meet+' meet/race'+(counts.meet===1?'':'s')+'</span>');
-  if(counts.recovery)pills.push('<span class="monthpill recovery">'+counts.recovery+' recovery</span>');
-  if(counts.off)pills.push('<span class="monthpill off">'+counts.off+' off</span>');
+  if(counts.easy)pills.push('<span class="monthpill easy">'+counts.easy+' easy</span>');
+  if(counts.quality)pills.push('<span class="monthpill">'+counts.quality+' quality</span>');
+  if(counts.speed)pills.push('<span class="monthpill speed">'+counts.speed+' speed</span>');
+  if(counts.race)pills.push('<span class="monthpill race">'+counts.race+' race</span>');
+  if(counts.rest)pills.push('<span class="monthpill rest">'+counts.rest+' rest</span>');
   if(volume)pills.push('<span class="monthpill volume">'+formatMiles(volume)+'</span>');
   return '<div class="monthday'+(outside?' outside':'')+(isToday?' today':'')+'" data-calendar-date="'+esc(dateKey)+'">'+
     '<button class="monthdate" data-add-day="'+esc(dateKey)+'" type="button">'+esc(date.toLocaleDateString(undefined,{month:'short',day:'numeric'}))+'</button>'+
@@ -1514,7 +1524,7 @@ function monthDayCell(date,items,outside){
 }
 function monthItem(day){
   var category=dayMixCategory(day);
-  var cls=category==='meet'?' meet':category==='recovery'?' recovery':category==='off'?' off':'';
+  var cls=category==='easy'?' easy':category==='speed'?' speed':category==='race'?' race':category==='rest'?' rest':'';
   return '<button class="monthitem'+cls+'" data-day-id="'+esc(day.id||day.sourceRecordId||'')+'" type="button">'+esc(day.title||day.dayType||'Plan day')+'</button>';
 }
 function plannedVolumeMiles(day){
@@ -1615,7 +1625,7 @@ function dayColumn(date,items){
 function dayItem(day){
   var category=dayMixCategory(day);
   var status=String(day.status||'').toLowerCase();
-  var cls=category==='meet'?' meet':category==='recovery'?' recovery':category==='off'?' off':'';
+  var cls=category==='easy'?' easy':category==='speed'?' speed':category==='race'?' race':category==='rest'?' rest':'';
   if(status.indexOf('skipped')>=0)cls+=' skipped';
   var statusClass=status.indexOf('completed')>=0?'good':status.indexOf('draft')>=0||status.indexOf('adjust')>=0||status.indexOf('skipped')>=0?'warn':'neutral';
   var id=day.id||day.sourceRecordId||'';
@@ -2331,8 +2341,11 @@ function inferCalendarActivityMode(day){
   var dayType=String(day&&day.dayType||'').toLowerCase();
   var workoutType=String(day&&day.workoutType||'').toLowerCase();
   var title=String(day&&day.title||'').toLowerCase();
+  var details=String(day&&day.details||'').toLowerCase();
+  var target=String(day&&day.targetSplits||'').toLowerCase();
   if(dayType.indexOf('off')>=0||workoutType.indexOf('off')>=0||title.indexOf('rest day')>=0)return 'off';
   if(dayType.indexOf('meet')>=0||workoutType.indexOf('race')>=0)return 'race';
+  if(/\b(speed metrics|fly\s*\d+|acceleration|runway|stride count|speed endurance|special endurance|fast reps)\b/.test([workoutType,title,details,target].join(' ')))return 'speed';
   if(dayType.indexOf('recovery')>=0||workoutType.indexOf('easy')>=0||workoutType.indexOf('long run')>=0)return 'easy';
   return 'quality';
 }

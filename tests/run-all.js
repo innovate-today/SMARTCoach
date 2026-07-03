@@ -2473,6 +2473,15 @@ function checkFieldPracticePhaseOne() {
     'data-add-activity-mode="speed"',
     "Add Speed Metrics",
     "Capture time and stride count for each athlete",
+    '<option value="all">All activity types</option>',
+    "{value:'easy',label:'Easy'}",
+    "{value:'quality',label:'Quality'}",
+    "{value:'speed',label:'Speed'}",
+    "{value:'race',label:'Race'}",
+    "{value:'rest',label:'Rest'}",
+    'class="mixitem speed"',
+    "counts.speed",
+    "return 'speed';",
   ].forEach((text) => {
     if (!calendar.includes(text)) throw new Error(`Training Calendar Field Practice link missing ${text}`);
   });
