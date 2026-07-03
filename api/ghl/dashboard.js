@@ -17,9 +17,11 @@ const FIELD_IDS = {
   source_record_id: ["9YD4n4y4aqf3VnkrwLL1", "3HVSAaItyvtLXYNasRAJ"],
   event: ["0zkuDc0aDTpw5hPOKADa", "Qtvff2zJpE2nu8qV6kAU"],
   personal_best_display: ["h1rwv5B4JSLfNnsTL7qJ"],
+  personal_best_ms: ["personal_best_ms"],
   personal_best_meet: ["mRbdhzawlZ0Q386Zv3X2"],
   personal_best_date: ["tOWqZJ9HUKMtE6THTOfZ"],
   season_best_display: ["6Xc5844e5EwfqBltPYU9"],
+  season_best_ms: ["season_best_ms"],
   season_best_meet: ["rRAorB4W8yNzZiIyWeV8"],
   season_best_date: ["AffLPRbHGOzMUgKaALwi"],
   last_result_display: ["JlPshYvArSOfoUTP7Gn6"],
@@ -722,10 +724,14 @@ function chooseCurrentFitness(bests) {
   const sorted = source.slice().sort((a, b) => String(bestDate(b)).localeCompare(String(bestDate(a))));
   const best = sorted[0] || {};
   const display = best.lastResultDisplay || best.seasonBestDisplay || best.personalBestDisplay || "";
+  const resultMs = best.lastResultDisplay === display
+    ? parseTimeToMs(display)
+    : (best.seasonBestDisplay === display ? best.seasonBestMs : best.personalBestMs) || parseTimeToMs(display);
   const date = bestDate(best);
   return {
     event: best.event || "",
     display,
+    resultMs: resultMs || 0,
     date,
     label: [best.event, display].filter(Boolean).join(" "),
   };
@@ -795,9 +801,11 @@ function normalizeBest(record) {
   return {
     event: prop(props, "event"),
     personalBestDisplay: prop(props, "personal_best_display"),
+    personalBestMs: Number(prop(props, "personal_best_ms")) || 0,
     personalBestDate: prop(props, "personal_best_date"),
     personalBestMeet: prop(props, "personal_best_meet"),
     seasonBestDisplay: prop(props, "season_best_display"),
+    seasonBestMs: Number(prop(props, "season_best_ms")) || 0,
     seasonBestDate: prop(props, "season_best_date"),
     seasonBestMeet: prop(props, "season_best_meet"),
     lastResultDisplay: prop(props, "last_result_display"),
@@ -1320,6 +1328,18 @@ function labelValue(value) {
 
 function yes(value) {
   return /^(yes|true|1|on)$/i.test(clean(value));
+}
+
+function parseTimeToMs(value) {
+  const text = clean(value);
+  if (!text) return 0;
+  const parts = text.split(":").map((part) => Number(part));
+  if (parts.some((part) => Number.isNaN(part))) return 0;
+  let seconds = 0;
+  if (parts.length === 1) seconds = parts[0];
+  if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
+  if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return Math.round(seconds * 1000);
 }
 
 function clean(value) {

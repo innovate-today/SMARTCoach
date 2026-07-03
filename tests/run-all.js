@@ -458,6 +458,30 @@ function checkDashboardActivityRangeLayout() {
   console.log("dashboard activity range layout ok");
 }
 
+function checkDashboardTrainingPaces() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  [
+    "function renderAthleteTrainingPaces",
+    "Training Paces",
+    "Equivalent Performances",
+    "Fast Reps",
+    "function eventDistanceMeters",
+    "renderAthleteTrainingPaces(fitness)",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`dashboard roster detail training paces missing ${text}`);
+  });
+  [
+    "personal_best_ms",
+    "season_best_ms",
+    "resultMs: resultMs || 0",
+    "function parseTimeToMs",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`dashboard API current fitness pace source missing ${text}`);
+  });
+  console.log("dashboard roster detail training paces ok");
+}
+
 function checkMilesBoardFeature() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const board = fs.readFileSync("miles-board.html", "utf8");
@@ -2486,6 +2510,7 @@ checkSmartTrakAthleteCountsIgnoreGhlContacts();
 checkInactiveAthletesStayOutOfCurrentViews();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
+checkDashboardTrainingPaces();
 checkMilesBoardFeature();
 checkDashboardWhatsNew();
 checkDashboardStartHere();
