@@ -60,6 +60,12 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    if (clean(req.query && req.query.action) === "fitnessRows") {
+      const records = await listAthleteBestRows({ token, locationId });
+      res.status(200).json({ success: true, fitnessRows: records });
+      return;
+    }
+
     const contactId = clean(req.query && req.query.contactId);
     const event = clean(req.query && req.query.event);
     const season = clean(req.query && req.query.season);
@@ -104,6 +110,35 @@ async function deleteAthleteBest({ token, locationId, payload }) {
     method: "DELETE",
   });
   return { action: "deleted", recordId: existing.id, contactId, event };
+}
+
+async function listAthleteBestRows({ token, locationId }) {
+  const result = await ghlFetch({
+    token,
+    path: `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/search`,
+    method: "POST",
+    body: {
+      locationId,
+      page: 1,
+      pageLimit: 100,
+    },
+  });
+  return recordsFromResult(result).map((record) => {
+    const props = recordProperties(record);
+    const display = prop(props, "last_result_display") || prop(props, "season_best_display") || prop(props, "personal_best_display");
+    const date = prop(props, "last_result_date") || prop(props, "season_best_date") || prop(props, "personal_best_date");
+    const event = prop(props, "event");
+    return {
+      recordId: record.id || "",
+      contactId: prop(props, "athlete_contact"),
+      athleteName: prop(props, "athlete_name_snapshot"),
+      sport: prop(props, "sport") || sportForEvent(event),
+      event,
+      resultDisplay: display,
+      resultDate: date,
+      label: [event, display].filter(Boolean).join(" "),
+    };
+  }).filter((row) => row.contactId && row.event && row.resultDisplay);
 }
 
 async function upsertAthleteBest({ token, locationId, payload }) {

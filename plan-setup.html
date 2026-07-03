@@ -56,8 +56,13 @@ select[multiple]{min-height:112px}
 .fitness-name{font-size:13px;font-weight:800;color:#374151}
 .fitness-row input,.fitness-row select{font-size:13px;padding:7px 8px}
 .fitness-clear{background:#fee2e2;color:#b91c1c;border-color:#fecaca;font-size:12px;padding:7px 9px;min-height:34px;white-space:nowrap}
+.fitness-clear:disabled{background:#eef2f7;color:#94a3b8;border-color:#d7deea;cursor:not-allowed}
 .fitness-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:10px}
 .fitness-status{min-height:18px;font-size:13px;color:var(--muted);font-weight:800;text-align:right}
+.confirmbackdrop{position:fixed;inset:0;z-index:50;background:rgba(15,23,42,.42);display:flex;align-items:center;justify-content:center;padding:18px}
+.confirmpanel{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 48px rgba(15,23,42,.24);padding:18px}
+.confirmpanel h3{font-size:19px;margin-bottom:8px}.confirmpanel p{font-size:14px;color:#334155;line-height:1.45;margin-bottom:12px}.confirmdetail{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;color:#475569;margin-bottom:14px}
+.confirmactions{display:flex;justify-content:flex-end;gap:10px}.confirmactions button{min-width:86px}.confirmactions .danger{background:#fee2e2;color:#b91c1c;border-color:#fecaca}
 .assignments{border-bottom:1px solid var(--line);padding:16px 20px;background:#fff}
 .assignment-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
 .assignment-head h2{font-size:16px;letter-spacing:0}
@@ -191,7 +196,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
   <p id="accessStatus" style="color:var(--muted);font-size:13px;margin-top:10px"></p>
 </section>
 <script>
-var questionnaire=null,athletes=[],meets=[],plans=[],trainingGroups=[],selectedGroupId='',accountStatus=null,fitnessDraftValues={},assignmentDraftValues={},assignmentDraftPlanKey='';
+var questionnaire=null,athletes=[],meets=[],plans=[],trainingGroups=[],selectedGroupId='',accountStatus=null,fitnessDraftValues={},fitnessRowsByAthlete={},assignmentDraftValues={},assignmentDraftPlanKey='';
 var fitnessEvents=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay','High Jump','Long Jump','Triple Jump','Pole Vault','Shot Put','Discus','Javelin','Hammer'];
 var fitnessSports=[{label:'Track',value:'track'},{label:'Cross Country',value:'cross_country'}];
 function smartCoachAccountKey(){
@@ -458,12 +463,14 @@ function loadBuilder(){
   Promise.all([
     fetch('/api/smart-trak/athletes').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{athletes:[]}};}),
     fetch('/api/smart-trak/training-plan?kind=assignments').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{plans:[]}};}),
-    fetch('/api/smart-trak/groups').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{groups:[]}};})
+    fetch('/api/smart-trak/groups').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{groups:[]}};}),
+    fetch('/api/smart-trak/athlete-best?action=fitnessRows').then(function(r){return r.json().then(function(data){return{ok:r.ok,data:data};});}).catch(function(){return{ok:false,data:{fitnessRows:[]}};})
   ]).then(function(results){
-    var athleteResult=results[0],planResult=results[1],groupResult=results[2];
+    var athleteResult=results[0],planResult=results[1],groupResult=results[2],fitnessResult=results[3];
     if(results.some(function(item){return item&&item.data&&item.data.accessCodeRequired;})){showAccessMessage((results.find(function(item){return item&&item.data&&item.data.accessCodeRequired;})||{}).data);return;}
     if(!athleteResult.ok)throw new Error(athleteResult.data&&athleteResult.data.error?athleteResult.data.error:'Athletes unavailable');
     athletes=(athleteResult.data&&athleteResult.data.athletes)||[];
+    fitnessRowsByAthlete=groupFitnessRows((fitnessResult.data&&fitnessResult.data.fitnessRows)||[]);
     plans=(planResult.data&&planResult.data.plans)||[];
     trainingGroups=reconcileTrainingGroupsForRoster(((groupResult.data&&groupResult.data.groups)||[]).filter(function(group){return !group.archived;}));
     selectedGroupId=trainingGroups[0]&&trainingGroups[0].id||'';
@@ -489,7 +496,15 @@ function renderFitnessRows(){
   box.innerHTML=filtered.map(function(item){
     var a=item.athlete,i=item.index,gender=athleteGender(a);
     var draft=fitnessDraftValues[fitnessDraftKey(a)]||{};
-    return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+(gender?'<br><small>'+esc(gender)+'</small>':'')+'</div><select class="fit-sport">'+fitnessSports.map(function(s){return '<option value="'+esc(s.value)+'" '+((draft.sport||'track')===s.value?'selected':'')+'>'+esc(s.label)+'</option>';}).join('')+'</select><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'" '+((draft.event||fitnessEvents[0])===event?'selected':'')+'>'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00" value="'+esc(draft.time||'')+'"><input class="fit-date" type="date" value="'+esc(draft.date||todayISO())+'"><button class="fitness-clear" type="button" onclick="clearFitnessRow('+i+')">Clear</button></div>';
+    var saved=draft.event?savedFitnessForAthlete(a,draft.event):savedFitnessForAthlete(a);
+    if(!saved&&!draft.time)saved=savedFitnessForAthlete(a);
+    if(saved&&!draft.time){
+      draft={sport:saved.sport||sportForEvent(saved.event),event:saved.event,time:saved.resultDisplay,date:saved.resultDate||todayISO()};
+      fitnessDraftValues[fitnessDraftKey(a)]=draft;
+    }
+    var clearTarget=savedFitnessForAthlete(a,draft.event);
+    var canClear=clearTarget&&clearTarget.event&&clearTarget.resultDisplay;
+    return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+(gender?'<br><small>'+esc(gender)+'</small>':'')+'</div><select class="fit-sport">'+fitnessSports.map(function(s){return '<option value="'+esc(s.value)+'" '+((draft.sport||'track')===s.value?'selected':'')+'>'+esc(s.label)+'</option>';}).join('')+'</select><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'" '+((draft.event||fitnessEvents[0])===event?'selected':'')+'>'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00" value="'+esc(draft.time||'')+'"><input class="fit-date" type="date" value="'+esc(draft.date||todayISO())+'"><button class="fitness-clear" type="button" onclick="clearFitnessRow('+i+')" '+(canClear?'':'disabled')+' title="'+esc(canClear?'Clear saved current fitness':'No saved current fitness to clear')+'">Clear</button></div>';
   }).join('');
 }
 function captureFitnessDraftValues(){
@@ -537,6 +552,27 @@ function athleteGenderGroup(athlete){
   if(value.indexOf('boy')>=0||value.indexOf('male')>=0||value==='m'||value==='men')return 'boys';
   return '';
 }
+function groupFitnessRows(rows){
+  return (rows||[]).reduce(function(map,row){
+    var key=String(row.contactId||'');
+    if(!key)return map;
+    if(!map[key])map[key]=[];
+    map[key].push(row);
+    map[key].sort(function(a,b){return String(b.resultDate||'').localeCompare(String(a.resultDate||''));});
+    return map;
+  },{});
+}
+function savedFitnessForAthlete(athlete,event){
+  var rows=fitnessRowsByAthlete[String(athlete&&athlete.id||'')]||[];
+  if(event){
+    var wanted=normalizeFitnessEvent(event);
+    return rows.find(function(row){return normalizeFitnessEvent(row.event)===wanted;})||null;
+  }
+  return rows[0]||null;
+}
+function normalizeFitnessEvent(value){
+  return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+}
 function saveFitnessRows(){
   var rows=collectFitnessRows();
   if(!rows.length){
@@ -566,26 +602,45 @@ function clearFitnessRow(index){
   var event=(row&&row.querySelector('.fit-event')||{}).value||'';
   if(!athlete.id){setFitnessStatus('Choose an athlete before clearing fitness.','warn');return;}
   if(!event){setFitnessStatus('Choose the fitness event to clear.','warn');return;}
-  if(!confirm('Clear '+(athlete.name||'this athlete')+' current fitness for '+event+'?'))return;
-  setFitnessStatus('Clearing current fitness...',null);
+  var saved=savedFitnessForAthlete(athlete,event);
+  if(!saved){showFitnessNotice('No saved current fitness','There is no saved current fitness for '+(athlete.name||'this athlete')+' in '+event+'.');return;}
+  showFitnessConfirm({
+    title:'Clear current fitness?',
+    body:'This removes the saved fitness mark used for target paces.',
+    detail:(athlete.name||'Athlete')+' - '+saved.event+' '+saved.resultDisplay+(saved.resultDate?' - '+saved.resultDate:''),
+    confirmLabel:'Clear'
+  }).then(function(ok){
+    if(!ok)return;
+    setFitnessStatus('Clearing current fitness...',null);
   fetch('/api/smart-trak/athlete-best',{method:'DELETE',cache:'no-store',headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({contactId:athlete.id,athleteName:athlete.name||'',event:event})}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Fitness clear failed');
     var key=fitnessDraftKey(athlete);
-    if(fitnessDraftValues[key]){
-      fitnessDraftValues[key].time='';
-      fitnessDraftValues[key].date=todayISO();
-    }
-    if(row){
-      var timeInput=row.querySelector('.fit-time');
-      var dateInput=row.querySelector('.fit-date');
-      if(timeInput)timeInput.value='';
-      if(dateInput)dateInput.value=todayISO();
-    }
+    delete fitnessDraftValues[key];
+    fitnessRowsByAthlete[String(athlete.id||'')]=(fitnessRowsByAthlete[String(athlete.id||'')]||[]).filter(function(item){return normalizeFitnessEvent(item.event)!==normalizeFitnessEvent(event);});
+    renderFitnessRows();
     notifyFitnessChanged();
     setFitnessStatus(result.data&&result.data.action==='not_found'?'No saved fitness found for '+event+'.':'Cleared current fitness for '+(athlete.name||'athlete')+' - '+event+'.','ok');
   }).catch(function(e){setFitnessStatus('Error: '+e.message,'bad');});
+  });
+}
+function showFitnessNotice(title,body){
+  return showFitnessConfirm({title:title,body:body,detail:'',confirmLabel:'OK',notice:true});
+}
+function showFitnessConfirm(options){
+  return new Promise(function(resolve){
+    var backdrop=document.createElement('div');
+    backdrop.className='confirmbackdrop';
+    backdrop.innerHTML='<div class="confirmpanel" role="dialog" aria-modal="true"><h3>'+esc(options.title||'Confirm')+'</h3><p>'+esc(options.body||'')+'</p>'+(options.detail?'<div class="confirmdetail">'+esc(options.detail)+'</div>':'')+'<div class="confirmactions">'+(options.notice?'':'<button class="secondary" type="button" data-confirm-cancel>Cancel</button>')+'<button class="'+(options.notice?'primary':'danger')+'" type="button" data-confirm-ok>'+esc(options.confirmLabel||'OK')+'</button></div></div>';
+    document.body.appendChild(backdrop);
+    var finish=function(value){backdrop.remove();resolve(value);};
+    backdrop.addEventListener('click',function(event){if(event.target===backdrop)finish(false);});
+    backdrop.querySelector('[data-confirm-ok]').focus();
+    backdrop.querySelector('[data-confirm-ok]').addEventListener('click',function(){finish(true);});
+    var cancel=backdrop.querySelector('[data-confirm-cancel]');
+    if(cancel)cancel.addEventListener('click',function(){finish(false);});
+  });
 }
 function notifyFitnessChanged(){
   try{localStorage.setItem('smartcoachFitnessUpdatedAt',String(Date.now()));}catch(e){}

@@ -151,6 +151,8 @@ function checkCurrentFitnessClear() {
   [
     'req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE"',
     "async function deleteAthleteBest",
+    'action) === "fitnessRows"',
+    "async function listAthleteBestRows",
     "action: \"deleted\"",
     "action: \"not_found\"",
     "Access-Control-Allow-Methods\", \"GET, POST, DELETE, OPTIONS\"",
@@ -163,11 +165,16 @@ function checkCurrentFitnessClear() {
       "function clearFitnessRow(index)",
       "class=\"fitness-clear\"",
       "method:'DELETE'",
-      "Clear '+(athlete.name||'this athlete')+' current fitness for '+event",
+      "fitnessRowsByAthlete",
+      "function groupFitnessRows",
+      "function savedFitnessForAthlete",
+      "function showFitnessConfirm",
+      "No saved current fitness",
       "notifyFitnessChanged();",
     ].forEach((text) => {
       if (!html.includes(text)) throw new Error(`${file} missing current fitness clear control: ${text}`);
     });
+    if (html.includes("confirm('Clear ")) throw new Error(`${file} should use the in-page current fitness clear confirmation.`);
   });
   console.log("Current fitness clear controls ok");
 }
