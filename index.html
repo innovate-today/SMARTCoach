@@ -2989,7 +2989,7 @@ function saveKeepTrakNotes(notes){
 function openFieldPractice(){
   if(!isProPlan()){alert('Field Practice is available with SMARTCoach Pro.');return;}
   sm('m-field-practice');
-  loadFieldPractice();
+  loadCalendarDaysCache().catch(function(){return CD||[];}).then(function(){return loadFieldPractice();});
 }
 var FIELD_PRACTICE_EVENTS=['Runway / Speed Metrics','Pole Vault','High Jump','Long Jump','Triple Jump','Shot Put','Discus','Javelin','Hammer'];
 var FIELD_PRACTICE_ROUTINES={
@@ -3047,6 +3047,11 @@ function fieldPracticeGroups(){
 function fieldPracticeGroupById(id){
   return fieldPracticeGroups().find(function(group){return String(group.id||group.name||'')===String(id||'');})||null;
 }
+function fieldPracticeGroupByName(name){
+  var wanted=String(name||'').trim().toLowerCase();
+  if(!wanted)return null;
+  return fieldPracticeGroups().find(function(group){return String(group.name||'').trim().toLowerCase()===wanted;})||null;
+}
 function fieldPracticeGroupRunners(groupId){
   var group=fieldPracticeGroupById(groupId);
   return group&&Array.isArray(group.runners)?group.runners:[];
@@ -3075,10 +3080,15 @@ function loadFieldPractice(){
   });
 }
 function activeFieldPractice(){
-  return (FIELD_PRACTICE.practices||[]).find(function(item){return item.id===FIELD_PRACTICE.activeId;})||null;
+  return fieldPracticeAllPractices().find(function(item){return item.id===FIELD_PRACTICE.activeId;})||null;
 }
 function selectFieldPractice(id){
   updateFieldPracticeFromForm(false);
+  var generated=fieldPracticeAllPractices().find(function(item){return item.id===id&&item.calendarGenerated;});
+  if(generated){
+    delete generated.calendarGenerated;
+    FIELD_PRACTICE.practices=[generated].concat((FIELD_PRACTICE.practices||[]).filter(function(item){return item.id!==generated.id;}));
+  }
   FIELD_PRACTICE.activeId=id||'';
   renderFieldPractice();
 }
@@ -3185,13 +3195,28 @@ function createFieldPracticeFromPlanDay(plan,day){
   var event=inferFieldPracticeEventFromPlanDay(day);
   var routineKey=inferFieldPracticeRoutineFromPlanDay(event,day);
   var routine=(fieldPracticeRoutineOptions(event).find(function(option){return option.key===routineKey;})||fieldPracticeRoutineOptions(event)[0]||{key:routineKey,label:'Practice routine'});
-  var group=CL&&String(CL.type||'training')==='training'?CL:null;
+  var dayGroup=String(day&&day.groupName||'').trim();
+  var group=(CL&&String(CL.type||'training')==='training'&&(!dayGroup||String(CL.name||'').trim().toLowerCase()===dayGroup.toLowerCase())?CL:null)||fieldPracticeGroupByName(dayGroup);
   var coach=selectedCoachIdentity();
   var planText=coachVisiblePlanText([day&&day.details,day&&day.targetSplits,day&&day.coachNotes].filter(Boolean).join('\n\n'));
   var focus=(day&&day.workoutType)||((day&&day.title)||'Speed metrics');
-  var practice={id:fieldPracticeNewId(),date:day&&day.date||todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:focus,routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],attempts:[],planNotes:planText,coachNotes:'',sourceTrainingPlanTitle:plan&&plan.title||'',sourcePlanDayId:planDayRecordId(day),sourcePlanDayDate:day&&day.date||'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var sourceId=planDayRecordId(day)||[day&&day.date,dayGroup,day&&day.title].filter(Boolean).join('|');
+  var practice={id:'calendar_speed_'+String(sourceId||fieldPracticeNewId()).replace(/[^a-zA-Z0-9_-]/g,'_'),date:day&&day.date||todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||dayGroup,athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:focus,routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],attempts:[],planNotes:planText,coachNotes:'',sourceTrainingPlanTitle:plan&&plan.title||'SMART Trak Calendar',sourcePlanDayId:sourceId,sourcePlanDayDate:day&&day.date||'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
   syncFieldPracticeAthleteSummaries(practice);
   return practice;
+}
+function calendarSpeedMetricFieldPractices(saved){
+  var savedSources={};
+  (saved||[]).forEach(function(item){if(item&&item.sourcePlanDayId)savedSources[String(item.sourcePlanDayId)]=true;});
+  return (CD||[]).filter(function(day){return isCalendarWorkoutDay(day)&&isSpeedMetricsPlanDay(day);}).map(function(day){
+    var practice=createFieldPracticeFromPlanDay({title:'SMART Trak Calendar'},day);
+    practice.calendarGenerated=true;
+    return practice;
+  }).filter(function(practice){return !savedSources[String(practice.sourcePlanDayId||'')];});
+}
+function fieldPracticeAllPractices(){
+  var saved=FIELD_PRACTICE.practices||[];
+  return saved.concat(calendarSpeedMetricFieldPractices(saved));
 }
 function openSelectedPlanDayFieldPractice(planIndex,dayIndex){
   var plan=TP[planIndex];
@@ -3202,6 +3227,7 @@ function openSelectedPlanDayFieldPractice(planIndex,dayIndex){
   plan.selectedDay=day;
   sm('m-field-practice');
   var practice=createFieldPracticeFromPlanDay(plan,day);
+  delete practice.calendarGenerated;
   FIELD_PRACTICE.practices=[practice].concat((FIELD_PRACTICE.practices||[]).filter(function(item){return item.id!==practice.id;}));
   FIELD_PRACTICE.activeId=practice.id;
   renderFieldPractice();
@@ -3295,7 +3321,7 @@ function renderFieldPractice(){
   var detail=document.getElementById('fp-detail');
   var status=document.getElementById('fp-status');
   if(!list||!detail)return;
-  var practices=FIELD_PRACTICE.practices||[];
+  var practices=fieldPracticeAllPractices();
   if(!practices.length){
     list.innerHTML='<div class="eq-empty">No Field Practice sessions saved yet.</div><button class="mbtn" type="button" onclick="newFieldPractice()">Create Practice</button>';
     detail.innerHTML='';
@@ -3303,6 +3329,7 @@ function renderFieldPractice(){
     return;
   }
   var sorted=practices.slice().sort(function(a,b){return String(a.event||'').localeCompare(String(b.event||''))||String(a.groupName||'Team').localeCompare(String(b.groupName||'Team'))||String(b.date||'').localeCompare(String(a.date||''));});
+  if(!activeFieldPractice()&&sorted.length)FIELD_PRACTICE.activeId=sorted[0].id||'';
   var lastHeader='';
   list.innerHTML=sorted.map(function(p){
     var header=(p.event||'Field Event')+' · '+(p.groupName||'Team');
