@@ -15,8 +15,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .brand{display:flex;align-items:center;gap:12px}.brand img{width:58px;height:58px;object-fit:contain}
 h1{font-size:26px;margin:0;line-height:1.05}.sub{font-size:14px;color:var(--muted);margin-top:4px}.updated{display:inline-flex;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:6px 10px;font-size:13px;font-weight:800;color:#334155}
 .top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-a.button,button{border:0;border-radius:8px;background:#dde3ed;color:#172033;font:800 14px inherit;padding:10px 13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-a.primary{background:var(--blue);color:#fff}
+button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;padding:8px 11px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px}
+button.modal-action,.linkbtn.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
+button.utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line)}
+.top .linkbtn,.top button{font-size:13px;padding:7px 10px;min-height:34px;white-space:nowrap}
 .controls{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:10px;margin-bottom:14px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px}
 input,select{border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:10px 12px;min-width:0}
 .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px}.card b{display:block;font-size:24px}.card span{font-size:13px;color:#52627a}
@@ -41,10 +43,10 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
       </div>
     </div>
     <div class="top-actions">
-      <a id="dashboardLink" class="button primary" href="/dashboard.html">Dashboard</a>
-      <a id="trainingLink" class="button" href="/training-calendar.html">Training</a>
-      <a id="fieldPracticeLink" class="button" href="/field-practice.html">Field Practice</a>
-      <button id="refreshBtn" type="button">Refresh</button>
+      <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
+      <a id="trainingLink" class="linkbtn modal-action" href="/training-calendar.html">Training</a>
+      <a id="fieldPracticeLink" class="linkbtn modal-action" href="/field-practice.html">Field Practice</a>
+      <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
     </div>
   </section>
   <section class="controls" aria-label="Speed Trak filters">
