@@ -2481,7 +2481,7 @@ function checkFieldPracticePhaseOne() {
     "function openTrainingModeDistance()",
     "function openTrainingModeSpeed()",
     "function openTrainingModeCalendar()",
-    "Distance Timing",
+    "Multi Athlete Timer",
     "Speed Metrics",
     "Calendar Workout",
     "#m-training-mode .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}",

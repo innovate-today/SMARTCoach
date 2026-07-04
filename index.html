@@ -2508,7 +2508,7 @@ function openTrainingModePicker(){
   if(!options)return;
   var speedDay=trainingModeSpeedMetricDay();
   options.innerHTML=
-    '<button type="button" class="picker-row" onclick="openTrainingModeDistance()"><b>Distance Timing</b><small>Use the regular group timer for easy runs, intervals, reps, rest, and meet-style timing.</small></button>'+
+    '<button type="button" class="picker-row" onclick="openTrainingModeDistance()"><b>Multi Athlete Timer</b><small>Use the regular group timer for easy runs, intervals, reps, rest, and meet-style timing.</small></button>'+
     '<button type="button" class="picker-row" onclick="openTrainingModeSpeed()"><b>Speed Metrics</b><small>'+(speedDay?'Open today or the next speed metrics workout for this group.':'Create a speed, fly, acceleration, or runway metrics session for this group.')+'</small></button>'+
     '<button type="button" class="picker-row" onclick="openTrainingModeCalendar()"><b>Calendar Workout</b><small>Review or switch the workout assigned to this group.</small></button>';
   sm('m-training-mode');
