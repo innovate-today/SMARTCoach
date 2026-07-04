@@ -243,12 +243,13 @@ Common items include:
 How to set up Equipment Trak:
 
 1. Open **Athletes**.
-2. Click **Equipment Trak** on any athlete row.
-3. In the Equipment Trak section, click **Setup**.
+2. Click **Equipment Trak** in the top toolbar.
+3. Click **Setup Items** in the Equipment Trak modal.
 4. Use **Add Equipment** to add the items your program issues.
 5. Turn on **Size** for items where the coach needs to track a size.
 6. Turn on **Number / ID** for numbered items such as watches, warmups, chips, or bags.
-7. Click **Save Equipment Trak Setup**.
+7. Drag or use the row controls to put the items in the order you want them to appear on the Issue Sheet.
+8. Click **Save Equipment Trak Setup**.
 
 How to set up Equipment Inventory:
 
@@ -370,11 +371,12 @@ Use the Training Calendar as the main place to add one-day workouts, races, rest
 
 How to use it:
 
-1. Use **Previous Week**, **Next Week**, **Week View**, **List View**, or **Today** to move around the calendar.
+1. Use **Previous Week**, **Next Week**, **Week View**, **Month View**, **List View**, or **Today** to move around the calendar.
 2. Click **Add** on a date.
 3. Choose the activity type:
    - **Easy Run** for easy, recovery, or long run days.
    - **Quality Session** for workouts with reps, sets, efforts, and recoveries.
+   - **Speed Metrics** for fly zones, acceleration zones, max velocity, speed endurance, runway timing, and stride count work.
    - **Race/Meet** for track meets or cross country races.
    - **Rest/Day Off** for off days, travel days, or no assigned workout.
 4. Choose the group that should receive the workout.
@@ -384,6 +386,8 @@ How to use it:
 To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.
 
 To edit a workout already on the calendar, open the workout and click **Edit**. Quality Session edits reopen with the saved warmup, reps, distance, effort, recovery, cooldown, details, and target text so the coach can adjust the actual workout instead of rebuilding it from scratch.
+
+Use the activity type filter to narrow the calendar to **Easy**, **Quality**, **Speed**, **Race**, or **Rest**. If a Speed Metrics workout is edited into a Quality Session, it should appear with Quality instead of staying under Speed.
 
 To copy a workout already on the calendar:
 
@@ -617,7 +621,7 @@ How to use Field Practice:
 2. Choose the date, event, group or athlete, practice focus, and drill routine.
 3. Use the drill checklist during practice to mark completed technical work.
 4. Add athlete-specific focus summaries when different athletes need different cues after the same drill session.
-5. For runway checks, fly zones, or sprint metrics, choose the zone, timed distance, and unit, then load the athletes. Enter each athlete's time and stride count; SMART Trak calculates velocity, average stride length, and stride frequency.
+5. For runway checks, fly zones, max velocity, or sprint metrics, choose the zone, timed distance, and unit, then load the athletes. Time each rep or enter a manual time, add the athlete's stride count, and SMART Trak calculates velocity, average stride length, and stride frequency.
 6. If athletes are jumping, choose **Bungee** or **Crossbar**, enter the height, and add attempts as **O** for make, **X** for miss, or **-** for pass.
 7. Add a note to any attempt when the coach wants to remember a cue, mistake, or adjustment.
 8. Use **Athlete Preview** / **Copy Preview** when the practice plan needs to be shared with athletes before practice.
@@ -627,7 +631,7 @@ Field Practice includes event-specific drill routines for pole vault, high jump,
 
 Pole vault heights are cleaned into feet-inches format, such as `9-0` or `9-0.25`. Jump attempts are summarized by setup and height, such as `9-0 Crossbar [XOXXO]`, so the coach can quickly review the make/miss pattern without reading every note.
 
-On the SMARTCoach app, tap a training group and choose **Speed Metrics** when the group is doing fly zones, acceleration zones, or runway timing. The app opens a compact speed screen and preloads the group athletes collapsed. Tap an athlete to open that athlete's reps, use the single **Start/Stop** button to time a rep, enter stride count, and add notes as needed. Drag the handle beside a name to reorder the session list. **Remove athlete from this session** only removes that athlete from the current speed session after confirmation; group membership is still managed in SMART Trak. The session leaderboard appears at the bottom automatically and shows best reps sorted by velocity, stride length, stride frequency, time, name, or gender. Tap **Field** from the main SMARTCoach screen for field-event drill sessions and jump attempts.
+On the SMARTCoach app, tap a training group and choose **Speed Metrics** when the group is doing fly zones, acceleration zones, max velocity, or runway timing. The app opens a compact speed screen and preloads the group athletes collapsed. Tap an athlete to open that athlete's reps, use the single **Start/Stop** button to time a rep, enter stride count, and add notes as needed. Drag the handle beside a name to reorder the session list. **Remove athlete from this session** only removes that athlete from the current speed session after confirmation; group membership is still managed in SMART Trak. The session leaderboard appears at the bottom automatically and shows best reps sorted by velocity, stride length, stride frequency, time, name, or gender. Tap **Field** from the main SMARTCoach screen for field-event drill sessions and jump attempts.
 
 ## Log Race Result
 

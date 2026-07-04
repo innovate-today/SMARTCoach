@@ -40,18 +40,22 @@ Current launch status:
 
 Latest handoff:
 
-- Latest local code commit before this state update: pending mobile Speed Metrics compact layout commit.
+- Latest local code commit before this state update: `e92d3c8 Keep edited quality sessions out of speed filter`.
+- Recent local commit `b2a5828 Clarify Speed Metrics practice instructions` changed the Training Calendar Speed Metrics description so coaches are directed to open Speed Metrics in the SMARTCoach app, time or manually enter each rep, add stride count, and let SMART Trak calculate velocity, average stride length, and stride frequency.
+- Training Calendar activity sorting now lets an edited **Quality Session** win over leftover speed labels such as Acceleration, so a workout changed from Speed Metrics to Quality no longer remains in the Speed filter. Regression coverage was added.
+- Speed Metrics now includes **Max Velocity** as an effort/focus option.
+- Training Calendar has **Month View** and an activity type filter for Easy, Quality, Speed, Race, and Rest.
 - Mobile Speed Metrics now uses a coach-usable session flow: group athletes are listed up front, tapping a name opens that athlete while collapsing the rest, each athlete can have timed reps started/stopped directly in the app, and manual time/stride/note entry remains available.
 - Speed Metrics athlete removal is session-only. **Remove From Session** removes the athlete and their reps from the current practice session without removing that athlete from the SMART Trak training group; group add/remove stays in SMART Trak.
 - Speed Metrics session results now print at the bottom of the speed screen, so the footer keeps the coach focused on saving the session.
-- Training Calendar now includes a **Speed Metrics** activity choice for fly zones, acceleration zones, and runway timing. It saves through the existing workout/calendar path using allowed speed-work effort types while preserving coach-facing Speed Metrics details, planned reps, timed distance, and time-plus-stride-count instructions.
+- Training Calendar now includes a **Speed Metrics** activity choice for fly zones, acceleration zones, max velocity, and runway timing. It saves through the existing workout/calendar path using allowed speed-work effort types while preserving coach-facing Speed Metrics details, planned reps, timed distance, and time-plus-stride-count instructions.
 - Field Practice now includes a **Runway / Speed Metrics** panel. Coaches can choose a zone/focus, timed distance, unit, and group/athlete, then enter each athlete's time and stride count. SMART Trak calculates velocity, average stride length, and stride frequency, saves those rows with the field practice, and includes them in the athlete preview.
 - SMARTCoach mobile Training now has a full Speed Metrics capture flow. A coach can open a group, choose Speed Metrics, preload athletes from the group/calendar speed workout, add rep rows per athlete, enter time plus stride count, review velocity/stride length/stride frequency, and save the same field-practice record back to SMART Trak.
 - The mobile Speed Metrics view is intentionally compact: it shows session setup and speed capture only, while field-event-only controls such as routine drills, no-jump setup, height, jump attempts, athlete summaries, and athlete preview stay hidden from that speed workflow.
 - Field Practice remains the practice-side workflow for field-event drills, individual athlete summaries, optional jump attempts, and now sprint/runway metrics. The coach how-to was updated so Field Practice is no longer described as pole-vault-only.
-- `npm test` passed after the Speed Metrics changes.
+- `npm test` passed after the latest Speed Metrics/calendar filter changes.
 - `README.md` still had an unrelated pre-existing local modification and was intentionally left uncommitted.
-- Push command for the latest code commit remains `git -C smartcoach-repo push origin main:main`.
+- Push command for the latest code commits remains `git -C smartcoach-repo push origin main:main`. The local environment may still fail to push with GitHub credential errors, in which case the user should run the command locally.
 - Previous handoff before Speed Metrics: `85a4aa1 Add coach-issued equipment tracking`.
 - `85a4aa1` adds a Coach Issued workflow to Equipment Trak so coaches can assign watches/radios/gear to staff without creating athlete/contact rows. Coach-issued items count against inventory availability, appear in issued reports/CSV, are duplicate-protected against athlete-issued items, and carry forward during equipment season rollover if still issued/lost.
 - `npm test` passed after `85a4aa1`.
