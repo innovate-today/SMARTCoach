@@ -96,9 +96,11 @@ Miles Board badges are earned this way:
 
 ## Speed Trak
 
-Use **Speed Trak** from Training when you want a read-only leaderboard of speed testing marks captured during Speed Metrics practice sessions.
+Use **Speed Trak** from Training when you want a leaderboard of speed testing marks captured during Speed Metrics practice sessions or imported from a spreadsheet.
 
 Speed Trak pulls from saved Speed Metrics reps. It can show common fly and start metrics such as **10m Fly**, **30m Fly**, **30m Start**, **60m Start**, **90m Start**, **150m Start**, and **250m Start**. Coaches can filter by metric, gender, year, athlete search, and how many results to show.
+
+To import speed marks, use **Import Speed Data** on the Speed Trak page. Download the template, upload a CSV/TSV file, or paste spreadsheet rows. Required information is athlete name, mark/time, and either a date in the row or the default date above the paste box. Metric can be included in the spreadsheet or supplied by the default metric. Stride count is optional; when included, SMART Trak calculates stride length and stride frequency. Preview the rows before clicking **Save Speed Data**.
 
 The Speed Trak table shows year, athlete, grade, mark, date, and when available: **velocity**, **stride length**, and **stride frequency**. Velocity is calculated from timed distance and time. Stride length and stride frequency appear when stride count was captured for the rep.
 

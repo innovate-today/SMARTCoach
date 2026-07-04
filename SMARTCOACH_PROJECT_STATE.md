@@ -1313,6 +1313,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 455. Dashboard **Share Miles Board** was relabeled to **Miles Trak** without changing the existing Miles Board sharing workflow. Training Calendar now includes **Miles Trak** and **Speed Trak** buttons so coaches can reach mileage sharing and speed leaderboards from the Training page.
 456. Added **Speed Trak**, a read-only coach board for saved Speed Metrics practice reps. Coaches can filter by speed metric, gender, year, athlete search, and top count. The board shows year, athlete, grade, mark, date, and calculated velocity, stride length, and stride frequency when enough rep data is available.
 457. Speed Trak now uses the same saved SMART Trak coach session/access-code headers as Field Practice and other protected coach pages. Opening Speed Trak from the embedded dashboard should load the board without asking for a fresh access code.
+458. Speed Trak now supports spreadsheet import by CSV/TSV upload or pasted rows. Coaches can download a template, preview speed marks, and save valid rows as Speed Metrics Field Practice sessions. Imported rows preserve athlete, metric, mark, date, year, grade, gender, notes, and optional stride count; velocity, stride length, and stride frequency calculate when enough data is present.
 
 ## Known Good Test Flow
 

@@ -700,6 +700,12 @@ function checkSpeedTrakFeature() {
     "90m Start",
     "150m Start",
     "250m Start",
+    "Import Speed Data",
+    "Download Template",
+    "Preview Data",
+    "Save Speed Data",
+    "csvInput",
+    "pasteInput",
     "strideLength",
     "strideFrequency",
     "velocity",
@@ -710,6 +716,9 @@ function checkSpeedTrakFeature() {
     "limitSelect",
     "function buildRows(practices,athletes)",
     "function metricLabel(row,practice)",
+    "function parseSpeedImportRows(text)",
+    "function buildSpeedImportPractice(rows,date,index)",
+    "function saveSpeedImport()",
     "function initHeaderTooltips()",
     "X-SMARTCoach-Session",
     "X-SMARTCoach-Access-Code",
@@ -726,7 +735,7 @@ function checkSpeedTrakFeature() {
   ].forEach((text) => {
     if (!training.includes(text)) throw new Error(`Training Speed/Miles Trak link missing ${text}`);
   });
-  if (/Edit|Delete|Void|Save/.test(page)) throw new Error("Speed Trak must stay read-only.");
+  if (/Edit|Delete|Void/.test(page)) throw new Error("Speed Trak must not expose result edit/delete actions.");
   console.log("Speed Trak feature ok");
 }
 
@@ -862,7 +871,7 @@ function checkHowToGuidePage() {
     "Beta customers can use a 30-day Pro 100 trial.",
     "A coach can only move to a lower Pro plan after the active athlete count is at or below that plan's limit.",
     "## Speed Trak",
-    "Use **Speed Trak** from Training when you want a read-only leaderboard of speed testing marks captured during Speed Metrics practice sessions.",
+    "Use **Speed Trak** from Training when you want a leaderboard of speed testing marks captured during Speed Metrics practice sessions or imported from a spreadsheet.",
     "velocity",
     "stride length",
     "stride frequency",
