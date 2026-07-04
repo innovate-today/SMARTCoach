@@ -1650,6 +1650,21 @@ function loadSharedGroups(){
     if(CL)rr();
   }).catch(function(){SG=[];});
 }
+function groupRosterKeyFromAthletes(athletes){
+  var keys=(athletes||[]).map(function(athlete){
+    return String((athlete&&athlete.contactId)||(athlete&&athlete.smartcoachAthleteId)||(athlete&&athlete.name)||'').trim().toLowerCase();
+  }).filter(Boolean).sort();
+  return keys.length?keys.join('|'):'';
+}
+function groupRosterKey(group){
+  var cs=currentSeason();
+  var type=(group&&group.type)||'training';
+  var season=String((group&&group.season)||cs.season||'').trim().toLowerCase();
+  var year=String((group&&group.seasonYear)||cs.year||'').trim();
+  var athletes=(group&&group.athletes)||(group&&group.runners)||[];
+  var roster=groupRosterKeyFromAthletes(athletes);
+  return roster?[type,season,year,roster].join(':'):'';
+}
 function mergeSharedGroupsIntoLogs(){
   var cs=currentSeason(),changed=false;
   var activeSharedIds={};
@@ -1666,17 +1681,19 @@ function mergeSharedGroupsIntoLogs(){
     if(CL&&CL.sharedGroupId&&!activeSharedIds[CL.sharedGroupId])CL=null;
   }
   SG.filter(function(group){return (group.type||'training')==='training'&&!group.archived;}).forEach(function(group){
+    var rosterKey=groupRosterKey(group);
     var log=logs.find(function(item){return item.sharedGroupId&&item.sharedGroupId===group.id;})||
-      logs.find(function(item){return (item.type||'training')==='training'&&String(item.name||'').trim().toLowerCase()===String(group.name||'').trim().toLowerCase();});
+      logs.find(function(item){return (item.type||'training')==='training'&&String(item.name||'').trim().toLowerCase()===String(group.name||'').trim().toLowerCase();})||
+      (rosterKey?logs.find(function(item){return (item.type||'training')==='training'&&!item.sharedGroupId&&groupRosterKey(item)===rosterKey;}):null);
     if(!log){
       log={id:lid++,sharedGroupId:group.id,name:group.name,type:'training',season:group.season||cs.season,seasonYear:group.seasonYear||cs.year,cfg:defaultCfg(),attendance:defaultAttendanceState(),runners:[]};
       logs.unshift(log);
       changed=true;
     }
-    log.sharedGroupId=group.id;
-    log.name=group.name||log.name;
-    if(!log.season)log.season=group.season||cs.season;
-    if(!log.seasonYear)log.seasonYear=group.seasonYear||cs.year;
+    if(log.sharedGroupId!==group.id){log.sharedGroupId=group.id;changed=true;}
+    if(group.name&&log.name!==group.name){log.name=group.name;changed=true;}
+    if((group.season||cs.season)&&log.season!==(group.season||cs.season)){log.season=group.season||cs.season;changed=true;}
+    if((group.seasonYear||cs.year)&&log.seasonYear!==(group.seasonYear||cs.year)){log.seasonYear=group.seasonYear||cs.year;changed=true;}
     if(mergeSharedGroupRunners(log,group.athletes||[]))changed=true;
   });
   if(changed&&CL&&CL.sharedGroupId){

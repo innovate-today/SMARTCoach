@@ -2042,9 +2042,19 @@ function checkMobileGroupStorageAccountScoped() {
     "const existingState = await loadGroupsState({ token, locationId, accountKey });",
     "const groups = mergeGroups(existingState.groups, incomingGroups, deleteGroupIds);",
     "function groupNameKey(group)",
+    "function groupRosterKey(group)",
+    "const previousRosterKey = rosterKey ? rosterToKey.get(rosterKey) : \"\";",
     "function normalizeDeleteGroupIds(values)",
   ].forEach((text) => {
     if (!groupsApi.includes(text)) throw new Error(`shared group API should merge desktop and phone saves: ${text}`);
+  });
+  [
+    "function groupRosterKeyFromAthletes(athletes)",
+    "function groupRosterKey(group)",
+    "if(group.name&&log.name!==group.name){log.name=group.name;changed=true;}",
+    "!item.sharedGroupId&&groupRosterKey(item)===rosterKey",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile group sync should rename existing groups instead of duplicating them: ${text}`);
   });
   if (!mobile.includes("logs.filter(function(group){return (group.type||'training')==='training';})")) {
     throw new Error("mobile shared group saves should include archived training groups so archive state can sync.");
