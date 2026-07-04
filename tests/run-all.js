@@ -2541,6 +2541,8 @@ function checkFieldPracticePhaseOne() {
     "els.fieldPracticeLink.href=pageUrl('/field-practice.html');",
     'data-add-activity-mode="speed"',
     "Add Speed Metrics",
+    "Max Velocity",
+    "max velocity",
     "Capture time and stride count for each athlete",
     '<option value="all">All activity types</option>',
     "{value:'easy',label:'Easy'}",

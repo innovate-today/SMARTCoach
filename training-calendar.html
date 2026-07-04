@@ -1378,7 +1378,7 @@ function dayMixCategory(day){
   var text=[type,title,workout,details,target,volume].join(' ');
   var effortText=[type,workout,title,target,volume].join(' ');
   var qualityText=[workout,target,volume,title,details].join(' ');
-  var speedPattern=/\b(speed metrics|fly\s*\d+|acceleration|runway|stride count|speed endurance|special endurance|fast reps)\b/;
+  var speedPattern=/\b(speed metrics|fly\s*\d+|acceleration|max velocity|runway|stride count|speed endurance|special endurance|fast reps)\b/;
   var qualityPattern=/\b(tempo|threshold|interval|repetition|fast reps|speed endurance|special endurance|intensive|extensive|quality)\b/;
   if(text.indexOf('meet')>=0||text.indexOf('race')>=0)return 'race';
   if(text.indexOf('off')>=0||text.indexOf('travel')>=0||text.indexOf('no practice')>=0||text.indexOf('rest day')>=0)return 'rest';
@@ -2345,7 +2345,7 @@ function inferCalendarActivityMode(day){
   var target=String(day&&day.targetSplits||'').toLowerCase();
   if(dayType.indexOf('off')>=0||workoutType.indexOf('off')>=0||title.indexOf('rest day')>=0)return 'off';
   if(dayType.indexOf('meet')>=0||workoutType.indexOf('race')>=0)return 'race';
-  if(/\b(speed metrics|fly\s*\d+|acceleration|runway|stride count|speed endurance|special endurance|fast reps)\b/.test([workoutType,title,details,target].join(' ')))return 'speed';
+  if(/\b(speed metrics|fly\s*\d+|acceleration|max velocity|runway|stride count|speed endurance|special endurance|fast reps)\b/.test([workoutType,title,details,target].join(' ')))return 'speed';
   if(dayType.indexOf('recovery')>=0||workoutType.indexOf('easy')>=0||workoutType.indexOf('long run')>=0)return 'easy';
   return 'quality';
 }
@@ -2568,7 +2568,7 @@ function setAddDayMode(mode){
     els.addDayTitle.textContent='Add Quality Session';
   }else if(addDayMode==='speed'){
     setSelectValue(els.addDayType,'Workout');
-    setActivityTypeOptions(['Acceleration','Speed Endurance I','Speed Endurance II','Repetition','Fast Reps'],'Acceleration');
+    setActivityTypeOptions(['Acceleration','Max Velocity','Speed Endurance I','Speed Endurance II','Repetition','Fast Reps'],'Acceleration');
     if(!els.addDayTitleInput.value||titleWasDefault)els.addDayTitleInput.value='Speed metrics';
     els.addDayTitleInput.placeholder='Example: 5 x fly 30m';
     els.addDayVolume.value='';
