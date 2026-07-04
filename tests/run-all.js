@@ -2056,8 +2056,8 @@ function checkMobileGroupStorageAccountScoped() {
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile group sync should rename existing groups instead of duplicating them: ${text}`);
   });
-  if (!mobile.includes("logs.filter(function(group){return (group.type||'training')==='training';})")) {
-    throw new Error("mobile shared group saves should include archived training groups so archive state can sync.");
+  if (!mobile.includes("logs.filter(function(group){return (group.type||'training')==='training'&&!group.archived;})")) {
+    throw new Error("mobile shared group saves should skip archived training groups so deleted Smart Trak groups do not get recreated.");
   }
   if (setup.includes("if(members.length&&!cleaned.length)return null;")) {
     throw new Error("desktop group reconciliation should not hide saved groups just because current roster ids do not match.");
@@ -2506,13 +2506,17 @@ function checkFieldPracticePhaseOne() {
     "speed-ath-open",
     "speed-ath-remove",
     "speed-add-rep",
+    "speed-add-athlete-toggle",
+    "function toggleFieldPracticeSpeedAddAthlete()",
+    "FIELD_PRACTICE.addAthleteOpen=false;",
     "data-speed-row-key",
     "startFieldPracticeSpeedDrag",
     "finishFieldPracticeSpeedDrag",
     "cancelFieldPracticeSpeedDrag",
     "#m-field-practice.speed-mode #fp-share-btn{display:none}",
     "Speed Capture",
-    "Add Athlete to Session",
+    "+ Athlete",
+    "Add Athlete",
     "+ Add Rep",
     "Remove '+name+'?",
     "function confirmRemoveFieldPracticeSpeedAthlete(key)",
