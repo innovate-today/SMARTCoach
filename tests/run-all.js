@@ -2550,6 +2550,8 @@ function checkFieldPracticePhaseOne() {
     "{value:'speed',label:'Speed'}",
     "{value:'race',label:'Race'}",
     "{value:'rest',label:'Rest'}",
+    "var explicitQualityPattern=/\\b(quality session|tempo|threshold|interval|repetition|quality)\\b/;",
+    "if(explicitQualityPattern.test(qualityText))return 'quality';",
     'class="mixitem speed"',
     "counts.speed",
     "return 'speed';",

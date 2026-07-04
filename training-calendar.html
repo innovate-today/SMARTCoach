@@ -1378,11 +1378,15 @@ function dayMixCategory(day){
   var text=[type,title,workout,details,target,volume].join(' ');
   var effortText=[type,workout,title,target,volume].join(' ');
   var qualityText=[workout,target,volume,title,details].join(' ');
-  var speedPattern=/\b(speed metrics|fly\s*\d+|acceleration|max velocity|runway|stride count|speed endurance|special endurance|fast reps)\b/;
+  var explicitSpeedPattern=/\b(speed metrics|fly\s*\d+|fly zone|runway|stride count|stride length|stride frequency|velocity)\b/;
+  var speedEffortPattern=/\b(acceleration|max velocity|speed endurance|special endurance|fast reps)\b/;
+  var explicitQualityPattern=/\b(quality session|tempo|threshold|interval|repetition|quality)\b/;
   var qualityPattern=/\b(tempo|threshold|interval|repetition|fast reps|speed endurance|special endurance|intensive|extensive|quality)\b/;
   if(text.indexOf('meet')>=0||text.indexOf('race')>=0)return 'race';
   if(text.indexOf('off')>=0||text.indexOf('travel')>=0||text.indexOf('no practice')>=0||text.indexOf('rest day')>=0)return 'rest';
-  if(speedPattern.test(text))return 'speed';
+  if(explicitSpeedPattern.test(text))return 'speed';
+  if(explicitQualityPattern.test(qualityText))return 'quality';
+  if(speedEffortPattern.test(effortText))return 'speed';
   if(qualityPattern.test(qualityText))return 'quality';
   if(effortText.indexOf('recovery')>=0||effortText.indexOf('easy')>=0||effortText.indexOf('conversational')>=0||effortText.indexOf('long run')>=0||/\bez\b/.test(title)||/\beasy\b/.test(details))return 'easy';
   if(text.indexOf('workout')>=0||text.indexOf('quality')>=0||text.indexOf('session')>=0)return 'quality';
@@ -2343,9 +2347,13 @@ function inferCalendarActivityMode(day){
   var title=String(day&&day.title||'').toLowerCase();
   var details=String(day&&day.details||'').toLowerCase();
   var target=String(day&&day.targetSplits||'').toLowerCase();
+  var text=[workoutType,title,details,target].join(' ');
+  var qualityText=[workoutType,target,title,details].join(' ');
   if(dayType.indexOf('off')>=0||workoutType.indexOf('off')>=0||title.indexOf('rest day')>=0)return 'off';
   if(dayType.indexOf('meet')>=0||workoutType.indexOf('race')>=0)return 'race';
-  if(/\b(speed metrics|fly\s*\d+|acceleration|max velocity|runway|stride count|speed endurance|special endurance|fast reps)\b/.test([workoutType,title,details,target].join(' ')))return 'speed';
+  if(/\b(speed metrics|fly\s*\d+|fly zone|runway|stride count|stride length|stride frequency|velocity)\b/.test(text))return 'speed';
+  if(/\b(quality session|tempo|threshold|interval|repetition|quality)\b/.test(qualityText))return 'quality';
+  if(/\b(acceleration|max velocity|speed endurance|special endurance|fast reps)\b/.test([dayType,workoutType,title,target].join(' ')))return 'speed';
   if(dayType.indexOf('recovery')>=0||workoutType.indexOf('easy')>=0||workoutType.indexOf('long run')>=0)return 'easy';
   return 'quality';
 }
