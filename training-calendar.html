@@ -250,6 +250,8 @@ button.compact{padding:6px 9px;font-size:12px}
       <div class="action-row">
         <a id="dashboardLink" class="linkbtn primary-nav" href="/dashboard.html">Dashboard</a>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
+        <a id="milesTrakLink" class="linkbtn modal-action" href="/dashboard.html#share-miles-board">Miles Trak</a>
+        <a id="speedTrakLink" class="linkbtn modal-action" href="/speed-trak.html">Speed Trak</a>
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
         <a id="fieldPracticeLink" class="linkbtn modal-action" href="/field-practice.html">Field Practice</a>
@@ -652,6 +654,8 @@ var els={
   accessSubmit:document.getElementById('accessSubmit'),
   accessStatus:document.getElementById('accessStatus'),
   dashboardLink:document.getElementById('dashboardLink'),
+  milesTrakLink:document.getElementById('milesTrakLink'),
+  speedTrakLink:document.getElementById('speedTrakLink'),
   fieldPracticeLink:document.getElementById('fieldPracticeLink'),
   keepTrakLink:document.getElementById('keepTrakLink'),
   weatherLink:document.getElementById('weatherLink'),
@@ -3745,6 +3749,8 @@ function init(){
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
   loadMixPreference();
   els.dashboardLink.href=pageUrl('/dashboard.html');
+  els.milesTrakLink.href=pageUrl('/dashboard.html')+'#share-miles-board';
+  els.speedTrakLink.href=pageUrl('/speed-trak.html');
   els.fieldPracticeLink.href=pageUrl('/field-practice.html');
   els.keepTrakLink.href=pageUrl('/keep-trak.html');
   els.weatherLink.href=pageUrl('/weather.html');

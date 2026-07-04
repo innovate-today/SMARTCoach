@@ -18,6 +18,7 @@ const htmlFiles = [
   "xc-simulator.html",
   "weather.html",
   "miles-board.html",
+  "speed-trak.html",
   "how-to.html",
   "athlete-calendar.html",
   "account-access.html",
@@ -489,7 +490,7 @@ function checkMilesBoardFeature() {
   const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   [
     'id="shareMilesBoardBtn"',
-    "Share Miles Board",
+    "Miles Trak",
     'id="milesBoardModal"',
     "Miles Board Sharing",
     'id="milesBoardChallengeList"',
@@ -685,6 +686,46 @@ function checkMilesBoardFeature() {
   console.log("Miles Board feature ok");
 }
 
+function checkSpeedTrakFeature() {
+  const page = fs.readFileSync("speed-trak.html", "utf8");
+  const training = fs.readFileSync("training-calendar.html", "utf8");
+  [
+    "SMART Trak Speed Trak",
+    "/api/smart-trak/field-practice",
+    "/api/smart-trak/athletes",
+    "10m Fly",
+    "30m Fly",
+    "30m Start",
+    "60m Start",
+    "90m Start",
+    "150m Start",
+    "250m Start",
+    "strideLength",
+    "strideFrequency",
+    "velocity",
+    "data-sort=\"seconds\"",
+    "metricSelect",
+    "genderSelect",
+    "yearSelect",
+    "limitSelect",
+    "function buildRows(practices,athletes)",
+    "function metricLabel(row,practice)",
+    "function initHeaderTooltips()",
+  ].forEach((text) => {
+    if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
+  });
+  [
+    'id="milesTrakLink"',
+    'id="speedTrakLink"',
+    "els.milesTrakLink.href=pageUrl('/dashboard.html')+'#share-miles-board';",
+    "els.speedTrakLink.href=pageUrl('/speed-trak.html');",
+  ].forEach((text) => {
+    if (!training.includes(text)) throw new Error(`Training Speed/Miles Trak link missing ${text}`);
+  });
+  if (/Edit|Delete|Void|Save/.test(page)) throw new Error("Speed Trak must stay read-only.");
+  console.log("Speed Trak feature ok");
+}
+
 function checkDashboardWhatsNew() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   [
@@ -806,7 +847,7 @@ function checkHowToGuidePage() {
   if (dashboard.includes('id="howToLink"')) throw new Error("How To guide should not live in the Dashboard action row.");
   [
     "## Miles Board",
-    "Use **Share Miles Board** when you want a view-only mileage leaderboard for athletes.",
+    "Use **Miles Trak** when you want a view-only mileage leaderboard for athletes.",
     "How to set up the Miles Board:",
     "Display Mode",
     "Miles Board badges are earned this way:",
@@ -816,6 +857,11 @@ function checkHowToGuidePage() {
     "Athletic.net copy/paste import is no longer available because it was not reliable enough for coach-facing use.",
     "Beta customers can use a 30-day Pro 100 trial.",
     "A coach can only move to a lower Pro plan after the active athlete count is at or below that plan's limit.",
+    "## Speed Trak",
+    "Use **Speed Trak** from Training when you want a read-only leaderboard of speed testing marks captured during Speed Metrics practice sessions.",
+    "velocity",
+    "stride length",
+    "stride frequency",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
   });
@@ -2603,6 +2649,7 @@ checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkDashboardTrainingPaces();
 checkMilesBoardFeature();
+checkSpeedTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStartHere();
 checkHowToGuidePage();

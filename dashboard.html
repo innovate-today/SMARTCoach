@@ -307,7 +307,7 @@ tr:last-child td{border-bottom:0}
         <button id="manageMeetsBtn" class="modal-action" type="button">Manage Meets</button>
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
-        <button id="shareMilesBoardBtn" class="modal-action" type="button">Share Miles Board</button>
+        <button id="shareMilesBoardBtn" class="modal-action" type="button">Miles Trak</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
@@ -1343,7 +1343,7 @@ var START_HERE_PATHS=[
   {title:'Plan Workouts',desc:'Build the week before practice starts.',steps:['Open Training.','Add or upload the plan.','Assign workouts to one or more groups.','Check the calendar before sharing.'],actions:[['Training','/training-calendar.html'],['Upload/Paste Plan','/plan-import.html'],['Auto Build Plan','/plan-builder.html']]},
   {title:'Run Daily Practice',desc:'Use the app and desktop together for the normal practice routine.',steps:['Open today in Training.','Use the SMARTCoach app to time or log work.','Take Attendance.','Add Keep Trak reminders or practice notes.'],actions:[['Training','/training-calendar.html'],['Attendance','/attendance.html'],['Keep Trak','/keep-trak.html'],['Open App','/']]},
   {title:'Run Meet Day',desc:'Prepare meets and save clean results.',steps:['Create or confirm the meet in Manage Meets.','Use the app for race timing, relays, field events, or Partner Timing.','Sync or save results.','Review Meet History and Records.'],actions:[['Manage Meets','#manage-meets'],['Meet History','/meet-history.html'],['Records','/records.html'],['Open App','/']]},
-  {title:'Track Summer Mileage',desc:'Create a friendly, read-only team mileage challenge.',steps:['Set the Dashboard activity range.','Open Share Miles Board.','Choose challenge types and points.','Copy the public board link for athletes.'],actions:[['Share Miles Board','#share-miles-board'],['Log Miles','#log-miles']]},
+  {title:'Track Summer Mileage',desc:'Create a friendly, read-only team mileage challenge.',steps:['Set the Dashboard activity range.','Open Miles Trak.','Choose challenge types and points.','Copy the public board link for athletes.'],actions:[['Miles Trak','#share-miles-board'],['Log Miles','#log-miles']]},
   {title:'Coach Field Events',desc:'Plan drills and save individual field-event takeaways.',steps:['Open Field Practice from Training.','Pick the event, group, and drill routine.','Check drills during practice.','Add athlete-specific focus and post-practice summaries.'],actions:[['Training','/training-calendar.html'],['Field Practice','/field-practice.html']]}
 ];
 var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS,['Other']);
@@ -2517,6 +2517,7 @@ els.manageMeetsSectionBtn.addEventListener('click',openMeetManager);
 els.raceResultBtn.addEventListener('click',openRaceResult);
 els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.shareMilesBoardBtn.addEventListener('click',shareMilesBoard);
+if(location.hash==='#share-miles-board')setTimeout(shareMilesBoard,0);
 els.changeCodeBtn.addEventListener('click',openCodeModal);
 els.codeClose.addEventListener('click',closeCodeModal);
 els.codeSave.addEventListener('click',saveCoachCode);

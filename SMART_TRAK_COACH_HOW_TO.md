@@ -12,7 +12,7 @@ Common goal paths:
 2. **Plan Workouts**: open Training, add or upload a plan, assign workouts to one or more groups, and check the calendar.
 3. **Run Daily Practice**: review today's Training entry, use the SMARTCoach Pro Mobile App to time or log work, take Attendance, and add Keep Trak notes when needed.
 4. **Run Meet Day**: confirm the meet, use the app for timing, relays, field events, or Partner Timing, then review Meet History and Records.
-5. **Track Summer Mileage**: set the Dashboard activity range, open Share Miles Board, choose challenge types, and copy the read-only link.
+5. **Track Summer Mileage**: set the Dashboard activity range, open Miles Trak, choose challenge types, and copy the read-only link.
 6. **Coach Field Events**: open Field Practice from Training, choose the event and drill routine, check off drills, and add athlete-specific focus summaries.
 
 If the account is brand new, start with **Set Up My Team**, then **Plan Workouts**, then **Run Daily Practice**.
@@ -62,7 +62,7 @@ The **Feedback** button includes **Open How To Guide**. Use it to open the lates
 
 ## Miles Board
 
-Use **Share Miles Board** when you want a view-only mileage leaderboard for athletes. Set the Dashboard activity range first, then click **Share Miles Board**.
+Use **Miles Trak** when you want a view-only mileage leaderboard for athletes. Set the Dashboard activity range first, then click **Miles Trak**.
 
 How to set up the Miles Board:
 
@@ -93,6 +93,14 @@ Miles Board badges are earned this way:
 8. **Comeback Runner**: the athlete improves by at least 5 miles over the previous week.
 9. **Streak Leader**: the athlete is tied for the most days with logged runs in the selected board range, with at least 3 logged days.
 10. **Pack MVP**: the athlete has the top current-week mileage in their Boys/Girls pack division.
+
+## Speed Trak
+
+Use **Speed Trak** from Training when you want a read-only leaderboard of speed testing marks captured during Speed Metrics practice sessions.
+
+Speed Trak pulls from saved Speed Metrics reps. It can show common fly and start metrics such as **10m Fly**, **30m Fly**, **30m Start**, **60m Start**, **90m Start**, **150m Start**, and **250m Start**. Coaches can filter by metric, gender, year, athlete search, and how many results to show.
+
+The Speed Trak table shows year, athlete, grade, mark, date, and when available: **velocity**, **stride length**, and **stride frequency**. Velocity is calculated from timed distance and time. Stride length and stride frequency appear when stride count was captured for the rep.
 
 How to use Staff Access:
 
