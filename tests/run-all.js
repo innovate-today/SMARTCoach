@@ -711,6 +711,10 @@ function checkSpeedTrakFeature() {
     "function buildRows(practices,athletes)",
     "function metricLabel(row,practice)",
     "function initHeaderTooltips()",
+    "X-SMARTCoach-Session",
+    "X-SMARTCoach-Access-Code",
+    "sc_access_",
+    "headers:headers()",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
   });

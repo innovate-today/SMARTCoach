@@ -1312,6 +1312,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 454. SMARTCoach mobile Speed Metrics was compacted further for sensitive touch screens. The session setup card is shorter, the footer Results button is hidden because the leaderboard already prints inline, and athlete ordering now uses the row drag handle instead of Move Up/Move Down buttons.
 455. Dashboard **Share Miles Board** was relabeled to **Miles Trak** without changing the existing Miles Board sharing workflow. Training Calendar now includes **Miles Trak** and **Speed Trak** buttons so coaches can reach mileage sharing and speed leaderboards from the Training page.
 456. Added **Speed Trak**, a read-only coach board for saved Speed Metrics practice reps. Coaches can filter by speed metric, gender, year, athlete search, and top count. The board shows year, athlete, grade, mark, date, and calculated velocity, stride length, and stride frequency when enough rep data is available.
+457. Speed Trak now uses the same saved SMART Trak coach session/access-code headers as Field Practice and other protected coach pages. Opening Speed Trak from the embedded dashboard should load the board without asking for a fresh access code.
 
 ## Known Good Test Flow
 
