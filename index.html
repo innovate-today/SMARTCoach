@@ -229,6 +229,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-field-practice.speed-mode .fp-body{padding:0 8px 10px}
 #m-field-practice.speed-mode .fp-card{border-radius:8px;padding:10px;margin-bottom:8px}
 #m-field-practice.speed-mode .fp-speed-grid{grid-template-columns:1fr}
+#m-field-practice.speed-mode .speed-setup-card{padding:9px 10px}
+#m-field-practice.speed-mode .speed-setup-card .srow{padding:0;margin:0 0 5px}
+#m-field-practice.speed-mode .speed-setup-card .srow:last-child{margin-bottom:0}
+#m-field-practice.speed-mode .speed-setup-card .slbl{width:88px;font-size:12px}
+#m-field-practice.speed-mode .speed-setup-card .sinp{padding:5px 8px;min-height:29px}
 #m-field-practice .speed-hero{background:#fff;border:0.5px solid #d1d5db;border-radius:8px;margin:0 0 8px;padding:12px;text-align:left}
 #m-field-practice .speed-title{font-size:18px;font-weight:900;color:#111827}
 #m-field-practice .speed-sub{font-size:13px;color:#556987;margin-top:3px;line-height:1.25}
@@ -236,8 +241,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-field-practice .speed-chip{background:#eef4ff;border-radius:999px;color:#173f99;font-size:12px;font-weight:800;padding:5px 8px}
 #m-field-practice .speed-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #m-field-practice .speed-ath-row{background:#fff;border:1px solid #d8e2f1;border-radius:9px;margin-top:8px;overflow:hidden;text-align:left}
-#m-field-practice .speed-ath-toggle{width:100%;border:0;background:#fff;display:flex;align-items:center;gap:8px;text-align:left;padding:12px;font-family:inherit;color:#111827}
-#m-field-practice .speed-handle{font-size:19px;line-height:1;color:#6b7280;width:24px;text-align:center;flex:0 0 24px}
+#m-field-practice .speed-ath-row.dragging{border-color:#2B4FCC;box-shadow:0 0 0 2px rgba(43,79,204,.14)}
+#m-field-practice .speed-ath-toggle{width:100%;border:0;background:#fff;display:flex;align-items:stretch;gap:8px;text-align:left;padding:10px 12px;font-family:inherit;color:#111827}
+#m-field-practice .speed-ath-open{border:0;background:transparent;display:flex;align-items:center;gap:8px;text-align:left;padding:0;flex:1;min-width:0;font-family:inherit;color:#111827}
+#m-field-practice .speed-handle{border:0;background:transparent;font-size:20px;line-height:1;color:#6b7280;width:30px;text-align:center;flex:0 0 30px;padding:0;touch-action:none;cursor:grab;font-family:inherit}
 #m-field-practice .speed-ath-main{flex:1;min-width:0}
 #m-field-practice .speed-ath-name{font-size:17px;font-weight:900;line-height:1.15}
 #m-field-practice .speed-ath-meta{font-size:12px;color:#667085;margin-top:3px}
@@ -251,8 +258,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-field-practice .speed-session-actions{display:grid;gap:8px}
 #m-field-practice .speed-session-actions .mbtn{margin:0;width:100%;padding:10px 8px}
 #m-field-practice .speed-remove-session{border:0;background:transparent;color:#b42318;font-size:12px;font-weight:900;text-align:left;padding:4px 0;font-family:inherit}
-#m-field-practice .speed-mini-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-#m-field-practice .speed-mini-actions .mini{width:100%;padding:9px 6px}
+#m-field-practice.speed-mode #fp-share-btn{display:none}
+#m-field-practice.speed-mode #fp-save-btn{flex:1 1 100%}
 #m-field-practice .speed-results-table{width:100%;border-collapse:collapse;font-size:13px}
 #m-field-practice .speed-results-table th,#m-field-practice .speed-results-table td{border-bottom:1px solid #e5edf7;padding:7px 6px;text-align:left}
 #m-field-practice .speed-results-table th{font-size:11px;text-transform:uppercase;color:#475569}
@@ -3420,6 +3427,54 @@ function moveFieldPracticeSpeedAthlete(key,delta){
   FIELD_PRACTICE.openSpeedAthleteKey=key;
   renderFieldPractice();
 }
+function reorderFieldPracticeSpeedAthlete(key,targetKey,after){
+  var p=activeFieldPractice();
+  if(!p||!key||!targetKey||key===targetKey)return;
+  var rows=fieldPracticeSpeedAthleteRows(p);
+  var order=rows.map(function(row){return row.key;}).filter(function(item){return item!==key;});
+  var targetIndex=order.indexOf(targetKey);
+  if(targetIndex<0)return;
+  order.splice(targetIndex+(after?1:0),0,key);
+  p.speedAthleteOrder=order;
+  FIELD_PRACTICE.openSpeedAthleteKey=key;
+  renderFieldPractice();
+}
+function startFieldPracticeSpeedDrag(event,key){
+  if(!event||!key)return;
+  event.preventDefault();
+  event.stopPropagation();
+  FIELD_PRACTICE.dragSpeedKey=key;
+  FIELD_PRACTICE.dragSpeedStartY=Number(event.clientY||0);
+  var row=event.currentTarget&&event.currentTarget.closest?event.currentTarget.closest('.speed-ath-row'):null;
+  if(row)row.classList.add('dragging');
+  if(event.currentTarget&&event.currentTarget.setPointerCapture&&event.pointerId!==undefined){
+    try{event.currentTarget.setPointerCapture(event.pointerId);}catch(e){}
+  }
+}
+function finishFieldPracticeSpeedDrag(event){
+  if(!event||!FIELD_PRACTICE.dragSpeedKey)return;
+  event.preventDefault();
+  event.stopPropagation();
+  var key=FIELD_PRACTICE.dragSpeedKey;
+  var startY=Number(FIELD_PRACTICE.dragSpeedStartY||0);
+  FIELD_PRACTICE.dragSpeedKey='';
+  FIELD_PRACTICE.dragSpeedStartY=0;
+  document.querySelectorAll('.speed-ath-row.dragging').forEach(function(row){row.classList.remove('dragging');});
+  var target=document.elementFromPoint?document.elementFromPoint(event.clientX,event.clientY):null;
+  var targetRow=target&&target.closest?target.closest('[data-speed-row-key]'):null;
+  if(targetRow&&targetRow.getAttribute('data-speed-row-key')!==key){
+    var rect=targetRow.getBoundingClientRect();
+    reorderFieldPracticeSpeedAthlete(key,targetRow.getAttribute('data-speed-row-key'),event.clientY>rect.top+(rect.height/2));
+    return;
+  }
+  var delta=Number(event.clientY||0)-startY;
+  if(Math.abs(delta)>28)moveFieldPracticeSpeedAthlete(key,delta>0?1:-1);
+}
+function cancelFieldPracticeSpeedDrag(){
+  FIELD_PRACTICE.dragSpeedKey='';
+  FIELD_PRACTICE.dragSpeedStartY=0;
+  document.querySelectorAll('.speed-ath-row.dragging').forEach(function(row){row.classList.remove('dragging');});
+}
 function addFieldPracticeSpeedAthlete(){
   var p=activeFieldPractice();
   if(!p)return;
@@ -3531,7 +3586,7 @@ function fieldPracticeSpeedCaptureHtml(p){
   var athletes=fieldPracticeSpeedAthleteRows(p);
   var rows=Array.isArray(p.speedMetrics)?p.speedMetrics:[];
   var html='<div class="speed-hero"><div class="speed-title">'+ex(p.date||todayISO())+' · '+ex(p.focus||'Speed Metrics')+'</div><div class="speed-sub">'+ex(p.groupName||'Team')+' · '+ex(defaults.distance)+' '+ex(defaults.unit)+' · '+athletes.length+' athletes</div><div class="speed-chips"><span class="speed-chip">'+ex(defaults.zone||'Speed zone')+'</span><span class="speed-chip">'+cleanFieldPracticeSpeedMetrics(p).length+' reps recorded</span></div></div>'+
-    '<div class="fp-card"><div class="fp-title">Session Setup</div>'+
+    '<div class="fp-card speed-setup-card"><div class="fp-title">Session Setup</div>'+
       '<div class="fp-speed-grid">'+
         '<div class="srow" style="padding:0"><label class="slbl">Date</label><input id="fp-date" class="sinp" type="date" value="'+ex(p.date||todayISO())+'" onchange="updateFieldPracticeFromForm(false)"></div>'+
         '<div class="srow" style="padding:0"><label class="slbl">Group</label><select id="fp-group" class="sinp" onchange="updateFieldPracticeFromForm(true)">'+fieldPracticeGroupOptions(p.groupId||'')+'</select></div>'+
@@ -3550,9 +3605,9 @@ function fieldPracticeSpeedCaptureHtml(p){
     var athleteRows=rows.filter(function(row){return fieldPracticeSpeedKey(row)===key;}).sort(function(a,b){return Number(a.rep||0)-Number(b.rep||0);});
     var best=fieldPracticeBestSpeedRows(p).find(function(row){return fieldPracticeSpeedKey(row)===key;});
     var open=FIELD_PRACTICE.openSpeedAthleteKey===key;
-    html+='<div class="speed-ath-row"><button type="button" class="speed-ath-toggle" onclick="toggleFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\')"><span class="speed-handle">☰</span><span class="speed-ath-main"><span class="speed-ath-name">'+ex(athleteName)+'</span><span class="speed-ath-meta">'+athleteRows.length+' reps'+(best&&best.velocity?' · best '+best.velocity.toFixed(2)+' m/s':'')+'</span></span><span class="speed-badge">'+(open?'Open':'View')+'</span></button>';
+    html+='<div class="speed-ath-row" data-speed-row-key="'+ex(key)+'"><div class="speed-ath-toggle"><button type="button" class="speed-handle" aria-label="Drag '+ex(athleteName)+'" onpointerdown="startFieldPracticeSpeedDrag(event,\''+fieldPracticeJs(key)+'\')" onpointerup="finishFieldPracticeSpeedDrag(event)" onpointercancel="cancelFieldPracticeSpeedDrag()">☰</button><button type="button" class="speed-ath-open" onclick="toggleFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\')"><span class="speed-ath-main"><span class="speed-ath-name">'+ex(athleteName)+'</span><span class="speed-ath-meta">'+athleteRows.length+' reps'+(best&&best.velocity?' · best '+best.velocity.toFixed(2)+' m/s':'')+'</span></span><span class="speed-badge">'+(open?'Open':'View')+'</span></button></div>';
     if(open){
-      html+='<div class="speed-ath-detail"><div class="speed-mini-actions"><button class="mini c" type="button" onclick="moveFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\',-1)">Move Up</button><button class="mini c" type="button" onclick="moveFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\',1)">Move Down</button></div>';
+      html+='<div class="speed-ath-detail">';
       html+='<div class="speed-session-actions"><button class="mbtn" type="button" onclick="addFieldPracticeSpeedRep(\''+fieldPracticeJs(athleteId)+'\',\''+fieldPracticeJs(athleteName)+'\')">New Rep</button><button class="speed-remove-session" type="button" onclick="confirmRemoveFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\')">Remove athlete from this session</button></div>';
       athleteRows.forEach(function(row){
       var rowId=fieldPracticeJs(row.id);
