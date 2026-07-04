@@ -627,7 +627,7 @@ Field Practice includes event-specific drill routines for pole vault, high jump,
 
 Pole vault heights are cleaned into feet-inches format, such as `9-0` or `9-0.25`. Jump attempts are summarized by setup and height, such as `9-0 Crossbar [XOXXO]`, so the coach can quickly review the make/miss pattern without reading every note.
 
-On the SMARTCoach app, tap a training group and choose **Speed Metrics** when the group is doing fly zones, acceleration zones, or runway timing. The app opens a compact speed screen, preloads the group athletes, lets the coach add rep rows, enter each athlete's time and stride count, and save the calculated speed metrics back to SMART Trak. Tap **Field** from the main SMARTCoach screen for field-event drill sessions and jump attempts.
+On the SMARTCoach app, tap a training group and choose **Speed Metrics** when the group is doing fly zones, acceleration zones, or runway timing. The app opens a compact speed screen and preloads the group athletes. Tap an athlete to open that athlete's reps, use **Start** and **Stop** to time a rep, enter stride count, and add notes as needed. **Remove From Session** only removes that athlete from the current speed session; group membership is still managed in SMART Trak. Use **Results** to review the session leaderboard, including best reps sorted by velocity, stride length, stride frequency, time, name, or gender. Tap **Field** from the main SMARTCoach screen for field-event drill sessions and jump attempts.
 
 ## Log Race Result
 

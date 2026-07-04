@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,7 +40,10 @@ Current launch status:
 
 Latest handoff:
 
-- Latest local code commit before this state update: pending Speed Metrics commit.
+- Latest local code commit before this state update: pending mobile Speed Metrics capture polish commit.
+- Mobile Speed Metrics now uses a coach-usable session flow: group athletes are listed up front, tapping a name opens that athlete while collapsing the rest, each athlete can have timed reps started/stopped directly in the app, and manual time/stride/note entry remains available.
+- Speed Metrics athlete removal is session-only. **Remove From Session** removes the athlete and their reps from the current practice session without removing that athlete from the SMART Trak training group; group add/remove stays in SMART Trak.
+- The Speed Metrics footer **Results** action now opens a session leaderboard of each athlete's best completed rep, sortable by velocity, stride length, stride frequency, time, name, and gender.
 - Training Calendar now includes a **Speed Metrics** activity choice for fly zones, acceleration zones, and runway timing. It saves through the existing workout/calendar path using allowed speed-work effort types while preserving coach-facing Speed Metrics details, planned reps, timed distance, and time-plus-stride-count instructions.
 - Field Practice now includes a **Runway / Speed Metrics** panel. Coaches can choose a zone/focus, timed distance, unit, and group/athlete, then enter each athlete's time and stride count. SMART Trak calculates velocity, average stride length, and stride frequency, saves those rows with the field practice, and includes them in the athlete preview.
 - SMARTCoach mobile Training now has a full Speed Metrics capture flow. A coach can open a group, choose Speed Metrics, preload athletes from the group/calendar speed workout, add rep rows per athlete, enter time plus stride count, review velocity/stride length/stride frequency, and save the same field-practice record back to SMART Trak.
