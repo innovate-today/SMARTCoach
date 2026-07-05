@@ -1354,6 +1354,8 @@ Use this as the current launch regression test:
 
 - Read this file first.
 - Then inspect the relevant page/backend only for the task at hand.
+- Do not guess or assume when an issue is reported. Trace the actual data flow first: UI control, local state, API payload, backend handler, saved record shape, reload/render path, and any tests that cover the behavior.
+- Give short progress updates while working, especially before edits and after learning something important from tracing.
 - Do not rework the whole app unless asked.
 - Keep changes scoped.
 - Use `rg` for searches.
