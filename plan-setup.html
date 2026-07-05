@@ -490,7 +490,7 @@ function renderFitnessRows(){
   if(!box)return;
   captureFitnessDraftValues();
   setFitnessStatus('',null);
-  if(!athletes.length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
+  if(!activePlanAthletes().length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
   var filtered=fitnessAthletes();
   if(!filtered.length){box.innerHTML='<div class="meet-empty">No athletes match this filter.</div>';return;}
   box.innerHTML=filtered.map(function(item){
@@ -526,7 +526,7 @@ function fitnessDraftKey(athlete){
 function fitnessAthletes(){
   var filter=(document.getElementById('fitnessGenderFilter')||{}).value||'all';
   var sort=(document.getElementById('fitnessSort')||{}).value||'name_asc';
-  return athletes.map(function(athlete,index){return{athlete:athlete,index:index};}).filter(function(item){
+  return activePlanAthletes().map(function(athlete){return{athlete:athlete,index:athletes.indexOf(athlete)};}).filter(function(item){
     if(filter==='all')return true;
     var group=athleteGenderGroup(item.athlete);
     return filter==='unlisted'?!group:group===filter;
@@ -534,6 +534,9 @@ function fitnessAthletes(){
     var result=String(a.athlete.name||'').localeCompare(String(b.athlete.name||''),undefined,{sensitivity:'base'});
     return sort==='name_desc'?-result:result;
   });
+}
+function activePlanAthletes(){
+  return (athletes||[]).filter(function(athlete){return athlete&&athlete.smartcoachActive!==false;});
 }
 function athleteGender(athlete){
   return String(athlete&&(
@@ -691,7 +694,7 @@ function renderForm(){
     if(f.key==='priorityMeets'){
       input=meetScheduleControl();
     }else if(f.type==='athlete'){
-      input='<select id="field-'+f.key+'"><option value="">Whole group / no individual athlete</option>'+athletes.map(function(a){return'<option value="'+esc(a.id)+'" data-name="'+esc(a.name)+'" data-athlete-id="'+esc(a.smartcoachAthleteId||'')+'">'+esc(a.name)+'</option>';}).join('')+'</select>';
+      input='<select id="field-'+f.key+'"><option value="">Whole group / no individual athlete</option>'+activePlanAthletes().map(function(a){return'<option value="'+esc(a.id)+'" data-name="'+esc(a.name)+'" data-athlete-id="'+esc(a.smartcoachAthleteId||'')+'">'+esc(a.name)+'</option>';}).join('')+'</select>';
     }else if(f.type==='select'||f.type==='select_or_text'){
       input='<select id="field-'+f.key+'">'+(f.options||[]).map(function(o){return'<option value="'+esc(o.value)+'">'+esc(o.label)+'</option>';}).join('')+'</select>';
     }else if(f.type==='multi_select'){
@@ -785,7 +788,7 @@ function newTrainingGroup(){
 }
 function groupAthletes(){
   var filter=(document.getElementById('groupGenderFilter')||{}).value||'all';
-  return athletes.filter(function(athlete){
+  return activePlanAthletes().filter(function(athlete){
     if(filter==='all')return true;
     var group=athleteGenderGroup(athlete);
     return filter==='unlisted'?!group:group===filter;
@@ -798,7 +801,7 @@ function renderGroupAthletes(){
   if(name)name.value=group&&group.name||'';
   if(!box)return;
   if(!group){box.innerHTML='<div class="meet-empty">Select or create a group.</div>';return;}
-  if(!athletes.length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
+  if(!activePlanAthletes().length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
   var selected={};
   (group.athletes||[]).forEach(function(athlete){selected[String(athlete.contactId||'')]=true;});
   var visible=groupAthletes();
@@ -924,7 +927,7 @@ function captureAssignmentDraftValues(){
 function assignmentAthletes(){
   var filter=(document.getElementById('assignmentGenderFilter')||{}).value||'all';
   var sort=(document.getElementById('assignmentSort')||{}).value||'name_asc';
-  return athletes.filter(function(athlete){
+  return activePlanAthletes().filter(function(athlete){
     if(filter==='all')return true;
     var group=athleteGenderGroup(athlete);
     return filter==='unlisted'?!group:group===filter;
@@ -946,7 +949,7 @@ function renderAssignmentAthletes(){
     renderAssignmentGroupOptions();
     if(planChanged)group.value=plan.assignedGroup||'';
   }
-  if(!athletes.length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
+  if(!activePlanAthletes().length){box.innerHTML='<div class="meet-empty">No active athletes found.</div>';return;}
   var draft=assignmentDraftValues[assignmentDraftPlanKey];
   if(!draft){
     draft={};
@@ -1027,7 +1030,7 @@ function upsertGroupFromAssignment(groupName,athleteIds){
   }
   var ids={};
   athleteIds.forEach(function(id){ids[String(id)]=true;});
-  group.athletes=athletes.filter(function(athlete){return ids[String(athlete.id||'')];}).map(function(athlete){return{contactId:athlete.id||'',name:athlete.name||'',smartcoachAthleteId:athlete.smartcoachAthleteId||''};});
+  group.athletes=activePlanAthletes().filter(function(athlete){return ids[String(athlete.id||'')];}).map(function(athlete){return{contactId:athlete.id||'',name:athlete.name||'',smartcoachAthleteId:athlete.smartcoachAthleteId||''};});
   group.updatedAt=new Date().toISOString();
   selectedGroupId=group.id;
 }

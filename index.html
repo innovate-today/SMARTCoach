@@ -3315,6 +3315,14 @@ function fieldPracticeSpeedMetricText(row){
   if(!calc.velocity)return'Enter time and strides to calculate.';
   return calc.velocity.toFixed(2)+' m/s · '+calc.strideLength.toFixed(2)+' m/stride · '+calc.strideFrequency.toFixed(2)+' strides/sec';
 }
+function fieldPracticeSpeedRepStatus(row,field){
+  var calc=fieldPracticeSpeedMetricCalc(row);
+  var name=row&&row.athleteName?row.athleteName:'athlete';
+  if(calc.velocity)return'Rep saved for '+name+'. Move to the next runner or tap + Add Rep.';
+  if(field==='time')return'Time captured for '+name+'. Enter strides to finish the rep.';
+  if(field==='strides')return'Strides saved for '+name+'. Enter time to finish the rep.';
+  return'Speed metric updated. Tap Save to SMART Trak when finished.';
+}
 function fieldPracticeSpeedDefaults(p){
   var first=(p&&Array.isArray(p.speedMetrics)?p.speedMetrics:[]).find(function(row){return row&&(row.zone||row.distance||row.unit);});
   if(first)return{zone:first.zone||p&&p.focus||'Fly zone',distance:first.distance||'30',unit:String(first.unit||'m').toLowerCase()==='yd'?'yd':'m'};
@@ -3358,7 +3366,7 @@ function updateFieldPracticeSpeedSetup(field,value){
   p.speedMetrics=Array.isArray(p.speedMetrics)?p.speedMetrics:[];
   p.speedMetrics.forEach(function(row){row[field]=value;row.updatedAt=new Date().toISOString();});
   var status=document.getElementById('fp-status');
-  if(status)status.textContent='Speed setup updated. Tap Save when finished.';
+  if(status)status.textContent='Speed setup updated. Tap Save to SMART Trak when finished.';
 }
 function updateFieldPracticeSpeedMetric(id,field,value){
   var p=activeFieldPractice();
@@ -3370,7 +3378,7 @@ function updateFieldPracticeSpeedMetric(id,field,value){
   var result=document.getElementById('speed-result-'+fieldPracticeJs(id));
   if(result)result.textContent=fieldPracticeSpeedMetricText(row);
   var status=document.getElementById('fp-status');
-  if(status)status.textContent='Speed metric updated. Tap Save when finished.';
+  if(status)status.textContent=fieldPracticeSpeedRepStatus(row,field);
 }
 function addFieldPracticeSpeedRep(athleteId,athleteName){
   var p=updateFieldPracticeFromForm(false);
@@ -3549,6 +3557,8 @@ function stopFieldPracticeSpeedRep(id){
   row.startedAt=0;
   row.updatedAt=new Date().toISOString();
   renderFieldPractice();
+  var status=document.getElementById('fp-status');
+  if(status)status.textContent=fieldPracticeSpeedRepStatus(row,'time');
 }
 function toggleFieldPracticeSpeedRepTimer(id){
   var p=activeFieldPractice();
@@ -3840,7 +3850,7 @@ function renderFieldPractice(){
   var shareBtn=document.getElementById('fp-share-btn');
   var saveBtn=document.getElementById('fp-save-btn');
   if(shareBtn)shareBtn.textContent=FIELD_PRACTICE.mode==='speed'?'Results':'Share Preview';
-  if(saveBtn)saveBtn.textContent=FIELD_PRACTICE.mode==='speed'?'Save Session':'Save Practice';
+  if(saveBtn)saveBtn.textContent=FIELD_PRACTICE.mode==='speed'?'Save to SMART Trak':'Save Practice';
   var practices=fieldPracticeAllPractices();
   if(!practices.length){
     list.innerHTML='<div class="eq-empty">'+(FIELD_PRACTICE.mode==='speed'?'No Speed Metrics sessions saved yet.':'No Field Practice sessions saved yet.')+'</div><button class="mbtn" type="button" onclick="newFieldPractice()">Create Practice</button>';
@@ -3922,7 +3932,8 @@ function saveActiveFieldPractice(){
 }
 function saveFieldPractice(practice){
   var status=document.getElementById('fp-status');
-  if(status)status.textContent='Saving Field Practice...';
+  var speedMode=practice&&(FIELD_PRACTICE.mode==='speed'||practice.event==='Runway / Speed Metrics');
+  if(status)status.textContent=speedMode?'Saving Speed Metrics to SMART Trak...':'Saving Field Practice...';
   practice.updatedAt=new Date().toISOString();
   practice.speedMetrics=cleanFieldPracticeSpeedMetrics(practice);
   practice.attemptSummary=fieldPracticeAttemptGroups(practice.attempts||[]).map(function(group){return group.height+' '+group.setupType+' ['+group.codes.join('')+']';}).join('; ');
@@ -3935,7 +3946,7 @@ function saveFieldPractice(practice){
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Field Practice save failed.');
     FIELD_PRACTICE.practices=Array.isArray(result.data.practices)?result.data.practices:FIELD_PRACTICE.practices;
-    if(status)status.textContent='Field Practice saved.';
+    if(status)status.textContent=speedMode?'Speed Metrics saved to SMART Trak.':'Field Practice saved.';
     renderFieldPractice();
     return result.data;
   }).catch(function(error){

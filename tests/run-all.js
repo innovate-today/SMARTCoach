@@ -334,6 +334,7 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
 function checkInactiveAthletesStayOutOfCurrentViews() {
   const athletes = fs.readFileSync("athletes.html", "utf8");
   const dashboard = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  const planSetup = fs.readFileSync("plan-setup.html", "utf8");
   [
     '<option value="active" selected>Active athletes</option>',
     '<option value="all">All roster entries</option>',
@@ -345,6 +346,14 @@ function checkInactiveAthletesStayOutOfCurrentViews() {
   if (!dashboard.includes(".filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)")) {
     throw new Error("dashboard and Miles Board should only use active SMART Trak athletes.");
   }
+  [
+    "function activePlanAthletes()",
+    "return activePlanAthletes().map(function(athlete)",
+    "return activePlanAthletes().filter(function(athlete)",
+    "if(!activePlanAthletes().length)",
+  ].forEach((text) => {
+    if (!planSetup.includes(text)) throw new Error(`plan setup should only show active athletes in current setup lists: ${text}`);
+  });
   console.log("inactive athletes stay out of current views ok");
 }
 
@@ -715,6 +724,13 @@ function checkSpeedTrakFeature() {
     "strideLength",
     "strideFrequency",
     "velocity",
+    "speedAthleteOptions",
+    "function matchRosterAthlete(name)",
+    "function applyRosterAthleteToForm()",
+    "Roster Status",
+    "rosterStatus",
+    "populateSpeedAthleteOptions();",
+    "speedAthleteInput.addEventListener('change',applyRosterAthleteToForm)",
     "data-sort=\"seconds\"",
     "metricSelect",
     "genderSelect",
@@ -2600,6 +2616,11 @@ function checkFieldPracticePhaseOne() {
     "Stop",
     "fp-speed-result-gender",
     "speedRemovedAthletes",
+    "Save to SMART Trak",
+    "function fieldPracticeSpeedRepStatus(row,field)",
+    "Move to the next runner",
+    "Time captured for",
+    "Strides saved for",
     "m/s",
     "return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});",
   ].forEach((text) => {
