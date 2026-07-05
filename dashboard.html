@@ -2690,6 +2690,7 @@ function loadDashboard(){
     fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
     fetch('/api/smart-trak/attendance?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{attendance:[]}};}),
     fetch('/api/smart-trak/docu-trak?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{items:[],records:{}}};}),
+    fetch('/api/smart-trak/field-practice?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{practices:[]}};}),
     checkSmartCoachAccount().catch(function(){return{ok:false,data:{}};})
   ]).then(function(results){
     var result=results[0];
@@ -2700,12 +2701,13 @@ function loadDashboard(){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Dashboard failed to load.');
     dashboardRows=result.data.athletes||[];
     recentMeetRows=result.data.recentMeetResults||[];
-    recentTrainingRows=result.data.recentTrainingSyncs||[];
+    var fieldPractices=results[4].ok?((results[4].data.practices||results[4].data.items||[])):[];
+    recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPractices,dashboardRows));
     trainingGroups=results[1].ok?(results[1].data.groups||[]):[];
     recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
     docuItems=results[3].ok?(results[3].data.items||[]):[];
     docuRecords=results[3].ok?(results[3].data.records||{}):{};
-    renderStaffAccess(results[4]&&results[4].data||{});
+    renderStaffAccess(results[5]&&results[5].data||{});
     annotateDashboardRosterGroups();
     lastLoadedAt=result.data.generatedAt||new Date().toISOString();
     els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
@@ -5980,6 +5982,7 @@ function completedVolumeMiles(row){
   return effectiveCompletedVolume(row).miles;
 }
 function effectiveCompletedVolume(row){
+  if(row&&row.speedMetricSession)return {label:row.completedVolume||'',miles:num(row.completedVolumeMiles)};
   var splitVolume=completedRepVolumeFromSplits(row);
   if(splitVolume)return splitVolume;
   var miles=parseCompletedMiles(row&&row.completedVolume,row&&row.completedVolumeMiles);
@@ -6038,6 +6041,158 @@ function volumeAmountToMeters(amount,unit){
   return 0;
 }
 
+function speedPracticeTrainingRows(practices,athletes){
+  var lookup=speedDashboardAthleteLookup(athletes);
+  var rows=[];
+  (Array.isArray(practices)?practices:[]).forEach(function(practice){
+    if(!practice||practice.event!=='Runway / Speed Metrics')return;
+    var metrics=Array.isArray(practice.speedMetrics)?practice.speedMetrics:[];
+    var grouped={};
+    metrics.forEach(function(rep,index){
+      if(!rep)return;
+      var seconds=speedMetricSeconds(rep);
+      var meters=speedMetricMeters(rep,practice);
+      if(!seconds||!meters)return;
+      var athlete=speedMetricMatchedDashboardAthlete(rep,lookup);
+      if(!athlete)return;
+      var key=normalizedLookupKey(athlete.contactId||athlete.smartcoachAthleteId||athlete.id||athlete.name||rep.athleteName);
+      if(!grouped[key])grouped[key]={athlete:athlete,reps:[]};
+      var copy=Object.assign({},rep);
+      copy._seconds=seconds;
+      copy._meters=meters;
+      copy._metricIndex=index;
+      grouped[key].reps.push(copy);
+    });
+    Object.keys(grouped).forEach(function(key){
+      var bundle=grouped[key];
+      var reps=bundle.reps.sort(function(a,b){return num(a._metricIndex)-num(b._metricIndex);});
+      var totalMeters=reps.reduce(function(sum,rep){return sum+num(rep._meters);},0);
+      if(!totalMeters)return;
+      var first=reps[0]||{};
+      var firstMeters=num(first._meters);
+      var sameDistance=reps.every(function(rep){return Math.abs(num(rep._meters)-firstMeters)<.01;});
+      var distanceLabel=speedMetricDistanceLabel(first,practice);
+      var completedLabel=sameDistance?reps.length+' x '+distanceLabel+' completed':distanceLabelFromMeters(totalMeters)+' completed';
+      var plannedReps=num(practice.plannedReps||first.plannedReps);
+      var plannedLabel=plannedReps&&sameDistance?plannedReps+' x '+distanceLabel+' planned':'';
+      var best=speedMetricBestRep(reps);
+      var focus=first.metric||first.zone||practice.focus||practice.routineName||'Speed Metrics';
+      var sessionDate=first.date||practice.date||practice.sourcePlanDayDate||'';
+      rows.push({
+        speedMetricSession:true,
+        speedRepCount:reps.length,
+        sourceSessionId:practice.id||practice.practiceId||'',
+        athleteName:speedDashboardAthleteName(bundle.athlete,first.athleteName||'Athlete'),
+        contactId:bundle.athlete.contactId||bundle.athlete.id||first.contactId||first.athleteId||'',
+        groupName:practice.groupName||'Speed Metrics',
+        workoutType:'Speed Metrics',
+        workoutPrescription:focus,
+        completedVolume:completedLabel,
+        completedVolumeMiles:totalMeters/1609.344,
+        plannedVolume:plannedLabel,
+        plannedVolumeMiles:plannedReps&&sameDistance?(plannedReps*firstMeters/1609.344):0,
+        totalTimeDisplay:best?'Best '+formatSpeedMetricSeconds(best._seconds):reps.length+' reps',
+        splitsText:speedMetricSplitsText(reps),
+        coachNote:['Speed Metrics session','Completed volume: '+completedLabel,practice.planNotes||'',practice.coachNotes||''].filter(Boolean).join('\n'),
+        plannedEffort:practice.focus||first.zone||'',
+        plannedTarget:'',
+        targetDifference:'',
+        athleteNote:'',
+        sessionDate:sessionDate,
+        syncedAt:practice.updatedAt||practice.createdAt||first.updatedAt||sessionDate,
+        corrected:false
+      });
+    });
+  });
+  return rows;
+}
+
+function speedDashboardAthleteLookup(athletes){
+  var lookup={};
+  (Array.isArray(athletes)?athletes:[]).forEach(function(athlete){
+    if(!athlete)return;
+    addSpeedLookup(lookup,athlete.contactId,athlete);
+    addSpeedLookup(lookup,athlete.smartcoachAthleteId,athlete);
+    addSpeedLookup(lookup,athlete.id,athlete);
+    addSpeedLookup(lookup,athlete.email,athlete);
+    addSpeedLookup(lookup,athlete.name,athlete);
+    addSpeedLookup(lookup,athlete.fullName,athlete);
+    addSpeedLookup(lookup,[athlete.firstName,athlete.lastName].filter(Boolean).join(' '),athlete);
+  });
+  return lookup;
+}
+
+function speedDashboardAthleteName(athlete,fallback){
+  if(!athlete)return fallback||'Athlete';
+  return athlete.name||athlete.fullName||[athlete.firstName,athlete.lastName].filter(Boolean).join(' ')||fallback||'Athlete';
+}
+
+function addSpeedLookup(lookup,key,athlete){
+  key=normalizedLookupKey(key);
+  if(key&&!lookup[key])lookup[key]=athlete;
+}
+
+function speedMetricMatchedDashboardAthlete(rep,lookup){
+  return lookup[normalizedLookupKey(rep.contactId)]||
+    lookup[normalizedLookupKey(rep.smartcoachAthleteId)]||
+    lookup[normalizedLookupKey(rep.athleteId)]||
+    lookup[normalizedLookupKey(rep.email)]||
+    lookup[normalizedLookupKey(rep.athleteName)]||null;
+}
+
+function normalizedLookupKey(value){
+  return String(value||'').trim().toLowerCase().replace(/\s+/g,' ');
+}
+
+function speedMetricSeconds(rep){
+  return num(rep.seconds||rep.timeSeconds||rep.markSeconds||rep.durationSeconds)||parseSpeedMetricSeconds(rep.time||rep.mark||rep.result||rep.resultDisplay);
+}
+
+function parseSpeedMetricSeconds(value){
+  var ms=parseDurationMs(value);
+  if(ms)return ms/1000;
+  var number=Number(String(value||'').replace(/[^0-9.]/g,''));
+  return number||0;
+}
+
+function speedMetricMeters(rep,practice){
+  var meters=num(rep.meters||rep.distanceMeters);
+  if(meters)return meters;
+  return volumeAmountToMeters(num(rep.distance||practice.timedDistance||practice.timedDistanceMeters||practice.distance),rep.unit||practice.unit||'m');
+}
+
+function speedMetricDistanceLabel(rep,practice){
+  return distanceLabelFromMeters(speedMetricMeters(rep,practice));
+}
+
+function speedMetricBestRep(reps){
+  return reps.reduce(function(best,rep){return !best||rep._seconds<best._seconds?rep:best;},null);
+}
+
+function formatSpeedMetricSeconds(value){
+  value=num(value);
+  if(!value)return '';
+  return value.toFixed(value<10?2:1).replace(/\.?0+$/,'')+' sec';
+}
+
+function speedMetricSplitsText(reps){
+  return reps.map(function(rep,index){
+    var details=[speedMetricCalcText(rep),rep.note].filter(Boolean).join(' · ');
+    return 'Rep '+(index+1)+': '+formatSpeedMetricSeconds(rep._seconds)+(details?' · '+details:'');
+  }).join('\n');
+}
+
+function speedMetricCalcText(rep){
+  var pieces=[];
+  if(num(rep.velocity||rep.velocityMps))pieces.push('velocity '+num(rep.velocity||rep.velocityMps).toFixed(2)+' m/s');
+  else if(rep._seconds&&rep._meters)pieces.push('velocity '+(rep._meters/rep._seconds).toFixed(2)+' m/s');
+  if(num(rep.strideLength||rep.strideLengthMeters))pieces.push('stride length '+num(rep.strideLength||rep.strideLengthMeters).toFixed(2)+' m');
+  else if(num(rep.strides))pieces.push('stride length '+(rep._meters/num(rep.strides)).toFixed(2)+' m');
+  if(num(rep.strideFrequency||rep.strideFrequencyHz))pieces.push('stride frequency '+num(rep.strideFrequency||rep.strideFrequencyHz).toFixed(2)+'/s');
+  else if(num(rep.strides)&&rep._seconds)pieces.push('stride frequency '+(num(rep.strides)/rep._seconds).toFixed(2)+'/s');
+  return pieces.join(' · ');
+}
+
 function targetStatusPill(row){
   var status=targetStatus(row);
   if(status==='on')return '<span class="pill good">On target</span>';
@@ -6077,6 +6232,10 @@ function trainingSessionDetailHtml(group){
 }
 
 function splitCountText(row){
+  if(row&&row.speedMetricSession){
+    var count=num(row.speedRepCount);
+    return count?count+' speed reps':'';
+  }
   var splits=parseSplitLines(row.splitsText);
   if(!splits.length)return '';
   var work=workSplitCount(row,splits);

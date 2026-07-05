@@ -106,6 +106,8 @@ To enter one result without a spreadsheet, click **Add Result**. Start typing th
 
 The Speed Trak table shows year, athlete, grade, mark, date, and when available: **velocity**, **stride length**, and **stride frequency**. Velocity is calculated from timed distance and time. Stride length and stride frequency appear when stride count was captured for the rep.
 
+Saved Speed Metrics sessions also feed the Dashboard Training Load and Completed Workouts views. Speed volume counts only the timed sprint/runway distance, so 5 x 30m counts as 150m. Warmup and cooldown are not added for Speed Metrics. One saved speed session counts as one completed workout for each athlete with at least one saved rep, and the completed-workout detail shows the Speed Metrics rep breakdown.
+
 How to use Staff Access:
 
 1. Click **Staff Access** on the Dashboard.

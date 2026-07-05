@@ -698,6 +698,7 @@ function checkMilesBoardFeature() {
 function checkSpeedTrakFeature() {
   const page = fs.readFileSync("speed-trak.html", "utf8");
   const training = fs.readFileSync("training-calendar.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
   [
     "SMART Trak Speed Trak",
     "/api/smart-trak/field-practice",
@@ -763,6 +764,17 @@ function checkSpeedTrakFeature() {
     "els.speedTrakLink.href=pageUrl('/speed-trak.html');",
   ].forEach((text) => {
     if (!training.includes(text)) throw new Error(`Training Speed/Miles Trak link missing ${text}`);
+  });
+  [
+    "/api/smart-trak/field-practice?v=",
+    "speedPracticeTrainingRows(fieldPractices,dashboardRows)",
+    "speedMetricSession:true",
+    "speedRepCount",
+    "speed reps",
+    "Speed Metrics session",
+    "completedVolumeMiles:totalMeters/1609.344",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Dashboard Speed Metrics training-load bridge missing ${text}`);
   });
   if (/Void/.test(page)) throw new Error("Speed Trak should not expose void actions.");
   console.log("Speed Trak feature ok");
@@ -904,6 +916,10 @@ function checkHowToGuidePage() {
     "velocity",
     "stride length",
     "stride frequency",
+    "Dashboard Training Load and Completed Workouts",
+    "5 x 30m counts as 150m",
+    "one completed workout for each athlete with at least one saved rep",
+    "completed-workout detail shows the Speed Metrics rep breakdown",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
   });

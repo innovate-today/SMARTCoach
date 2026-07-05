@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-04
+Last updated: 2026-07-05
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -1323,6 +1323,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 457. Speed Trak now uses the same saved SMART Trak coach session/access-code headers as Field Practice and other protected coach pages. Opening Speed Trak from the embedded dashboard should load the board without asking for a fresh access code.
 458. Speed Trak now supports spreadsheet import by CSV/TSV upload or pasted rows. Coaches can download a template, preview speed marks, and save valid rows as Speed Metrics Field Practice sessions. Imported rows preserve athlete, metric, mark, date, year, grade, gender, notes, and optional stride count; velocity, stride length, and stride frequency calculate when enough data is present.
 459. Speed Trak now supports coach-managed result maintenance. Coaches can add a one-off speed mark without a spreadsheet, edit row details for corrections, or delete an incorrect speed result. Saves update the underlying Speed Metrics practice data and refresh the leaderboard calculations.
+460. Dashboard Training Load now includes saved Speed Metrics sessions. Each athlete with at least one saved speed rep gets one completed workout, speed volume counts only timed rep distance (for example, 5 x 30m = 150m), warmup/cooldown are excluded, and Completed Workouts details show Speed Metrics rep breakdowns.
 
 ## Known Good Test Flow
 
