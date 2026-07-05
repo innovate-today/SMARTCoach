@@ -468,6 +468,30 @@ function checkDashboardActivityRangeLayout() {
   console.log("dashboard activity range layout ok");
 }
 
+function checkDashboardFilterContextAndArchivedGroups() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  [
+    "var rows=sortRows(dashboardRows.filter(function(row){return matchesAthleteFilter(row,filter)&&athleteMatchesDashboardSearch(row,query);})",
+    "var visibleNames=rows.map(function(row){return String(row.name||'').toLowerCase();});",
+    "var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);})",
+    "var completedRows=completedVolumeRows(trainingRows,meetRows);",
+    "var volumeRows=sortRows(groupVolumeByAthlete(completedRows),tableSorts.volume,volumeSortValue);",
+    "updateBreakdowns(rows,meetRows,trainingRows,completedRows);",
+    "els.volumeSummary.innerHTML=volumeSummaryHtml(volumeRows);",
+    "els.status.textContent=formatMiles(sumTrainingVolume(completedRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+seasonRangeLabel()+' · '+activityRangeLabel();",
+    "if(displayableTrainingGroupName(row.groupName)&&groups[key].groups.indexOf(row.groupName)<0)groups[key].groups.push(row.groupName);",
+    "return !isArchivedTrainingGroupName(text);",
+    "return String(group&&group.name||'').trim().toLowerCase()===text && !!group.archived;",
+    "if(!group||!group.name||group.archived||group.type==='meet')return false;",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`dashboard filtered training load/archived group guard missing ${text}`);
+  });
+  if (html.includes("updateBreakdowns(rows);") || html.includes("volumeSummaryHtml(groupVolumeByAthlete(recentTrainingRows")) {
+    throw new Error("dashboard training cards should stay tied to the current filtered rows, not the full dashboard dataset.");
+  }
+  console.log("dashboard filtered training load and archived groups ok");
+}
+
 function checkDashboardTrainingPaces() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -2714,6 +2738,7 @@ checkSmartTrakAthleteCountsIgnoreGhlContacts();
 checkInactiveAthletesStayOutOfCurrentViews();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
+checkDashboardFilterContextAndArchivedGroups();
 checkDashboardTrainingPaces();
 checkMilesBoardFeature();
 checkSpeedTrakFeature();
