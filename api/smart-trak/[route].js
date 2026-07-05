@@ -2486,6 +2486,16 @@ function milesBoardNumber(value, fallback, max) {
   return Math.min(number, max);
 }
 
+function uniqueStrings(values) {
+  const seen = new Set();
+  return (Array.isArray(values) ? values : []).map(cleanSetupText).filter(Boolean).filter((value) => {
+    const key = value.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function normalizeMilesBoardChallenges(values) {
   const list = Array.isArray(values) ? values : cleanSetupText(values).split(",");
   const seen = new Set();

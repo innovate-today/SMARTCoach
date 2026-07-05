@@ -835,6 +835,7 @@ function checkSpeedTrakFeature() {
     "function buildSpeedBoardRows",
     "function normalizeSpeedBoardReps(practices)",
     "function speedBoardHighlights(rows)",
+    "function uniqueStrings(values)",
     "speedBoardSharing: next",
     "lastSpeedBoardSharingSync",
   ].forEach((text) => {
