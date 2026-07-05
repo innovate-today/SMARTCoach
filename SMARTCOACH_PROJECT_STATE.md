@@ -40,7 +40,8 @@ Current launch status:
 
 Latest handoff:
 
-- Latest local code commit before this state update: `e92d3c8 Keep edited quality sessions out of speed filter`.
+- Latest local code commit before this state update: Speed Trak add/edit/delete result management.
+- Speed Trak now supports coach-managed one-off result corrections: **Add Result** creates a manual speed mark, and row-level **Edit** / **Delete** lets coaches correct or remove saved Speed Metrics marks without reimporting a spreadsheet.
 - Recent local commit `b2a5828 Clarify Speed Metrics practice instructions` changed the Training Calendar Speed Metrics description so coaches are directed to open Speed Metrics in the SMARTCoach app, time or manually enter each rep, add stride count, and let SMART Trak calculate velocity, average stride length, and stride frequency.
 - Training Calendar activity sorting now lets an edited **Quality Session** win over leftover speed labels such as Acceleration, so a workout changed from Speed Metrics to Quality no longer remains in the Speed filter. Regression coverage was added.
 - Speed Metrics now includes **Max Velocity** as an effort/focus option.
@@ -1311,9 +1312,10 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 453. SMARTCoach mobile Speed Metrics capture was tightened for practice use. The speed screen hides the extra New Practice/Refresh controls, opens with athlete rows collapsed, expands/collapses one athlete at a time, uses one Start/Stop button per rep, and moves athlete removal to a smaller confirmed session-only action away from New Rep.
 454. SMARTCoach mobile Speed Metrics was compacted further for sensitive touch screens. The session setup card is shorter, the footer Results button is hidden because the leaderboard already prints inline, and athlete ordering now uses the row drag handle instead of Move Up/Move Down buttons.
 455. Dashboard **Share Miles Board** was relabeled to **Miles Trak** without changing the existing Miles Board sharing workflow. Training Calendar now includes **Miles Trak** and **Speed Trak** buttons so coaches can reach mileage sharing and speed leaderboards from the Training page.
-456. Added **Speed Trak**, a read-only coach board for saved Speed Metrics practice reps. Coaches can filter by speed metric, gender, year, athlete search, and top count. The board shows year, athlete, grade, mark, date, and calculated velocity, stride length, and stride frequency when enough rep data is available.
+456. Added **Speed Trak**, a coach board for saved Speed Metrics practice reps. Coaches can filter by speed metric, gender, year, athlete search, and top count. The board shows year, athlete, grade, mark, date, and calculated velocity, stride length, and stride frequency when enough rep data is available.
 457. Speed Trak now uses the same saved SMART Trak coach session/access-code headers as Field Practice and other protected coach pages. Opening Speed Trak from the embedded dashboard should load the board without asking for a fresh access code.
 458. Speed Trak now supports spreadsheet import by CSV/TSV upload or pasted rows. Coaches can download a template, preview speed marks, and save valid rows as Speed Metrics Field Practice sessions. Imported rows preserve athlete, metric, mark, date, year, grade, gender, notes, and optional stride count; velocity, stride length, and stride frequency calculate when enough data is present.
+459. Speed Trak now supports coach-managed result maintenance. Coaches can add a one-off speed mark without a spreadsheet, edit row details for corrections, or delete an incorrect speed result. Saves update the underlying Speed Metrics practice data and refresh the leaderboard calculations.
 
 ## Known Good Test Flow
 

@@ -700,6 +700,10 @@ function checkSpeedTrakFeature() {
     "90m Start",
     "150m Start",
     "250m Start",
+    "Max Velocity",
+    'id="addResultBtn"',
+    'id="speedResultModal"',
+    'id="deleteSpeedResultModal"',
     "Import Speed Data",
     'id="importBody" hidden',
     "toggleImportBtn.textContent=open?'Hide Import':'Open Import'",
@@ -718,10 +722,17 @@ function checkSpeedTrakFeature() {
     "limitSelect",
     "function buildRows(practices,athletes)",
     "function metricLabel(row,practice)",
+    "function openSpeedResultModal(row)",
+    "function saveSpeedResult()",
+    "function deleteSpeedResult()",
+    "function savePracticeList(practices)",
     "function parseSpeedImportRows(text)",
     "function buildSpeedImportPractice(rows,date,index)",
     "function saveSpeedImport()",
     "function initHeaderTooltips()",
+    "data-speed-edit",
+    "data-speed-delete",
+    "state.practices=practices",
     "X-SMARTCoach-Session",
     "X-SMARTCoach-Access-Code",
     "sc_access_",
@@ -737,7 +748,7 @@ function checkSpeedTrakFeature() {
   ].forEach((text) => {
     if (!training.includes(text)) throw new Error(`Training Speed/Miles Trak link missing ${text}`);
   });
-  if (/Edit|Delete|Void/.test(page)) throw new Error("Speed Trak must not expose result edit/delete actions.");
+  if (/Void/.test(page)) throw new Error("Speed Trak should not expose void actions.");
   console.log("Speed Trak feature ok");
 }
 
