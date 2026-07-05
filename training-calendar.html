@@ -2634,6 +2634,15 @@ function distanceText(value,unit){
 function distanceLabel(value,unit){
   return distanceText(value,unit).replace(' m walk','m walk').replace(' m jog','m jog').replace(' min jog',' min jog').replace(' sec rest',' sec rest');
 }
+function speedWorkVolumeLabel(reps,value,unit){
+  var count=Number(reps||0);
+  var distance=Number(value||0);
+  var label=distanceLabel(value,unit);
+  if(!count||!distance||!label)return '';
+  var total=count*distance;
+  var totalLabel=(Math.round(total*100)/100).toString().replace(/\.0$/,'');
+  return count+' x '+label+' = '+totalLabel+' '+String(unit||'').trim();
+}
 function effortOptions(selected){
   return ['Easy','Threshold','Interval','Repetition','Hills','Fast Reps','Speed Endurance I','Speed Endurance II','Special Endurance I','Special Endurance II','Intensive Tempo','Extensive Tempo'].map(function(value){
     return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';
@@ -2813,20 +2822,22 @@ function buildAddDayActivityValues(){
     var zone=els.addSpeedZone.value.trim()||'Fly 30m';
     var distance=distanceLabel(els.addSpeedDistance.value,els.addSpeedUnit.value)||zone;
     var reps=Number(els.addSpeedReps.value||0)||1;
+    var workVolume=speedWorkVolumeLabel(reps,els.addSpeedDistance.value,els.addSpeedUnit.value);
     var speedLines=[
       'Speed Metrics',
-      'Zone: '+zone,
+      'Zone / Focus: '+zone,
       'Timed distance: '+distance,
       'Planned reps: '+reps,
+      workVolume?'Work volume: '+workVolume:'',
       'Measure: time + stride count'
-    ];
+    ].filter(Boolean);
     if(details)speedLines.push(details);
     return {
       dayType:'Workout',
       title:title||(reps+' x '+zone),
       workoutType:type||'Acceleration',
-      plannedVolume:volume||(reps+' reps - '+zone),
-      targetSplits:target||('Capture time and stride count for each athlete over '+distance+'.'),
+      plannedVolume:volume||(workVolume?workVolume+' total':reps+' reps - '+zone),
+      targetSplits:target||((workVolume||reps+' reps')+' @ '+zone+'; capture time + stride count for each athlete.'),
       details:speedLines.join('\n')
     };
   }

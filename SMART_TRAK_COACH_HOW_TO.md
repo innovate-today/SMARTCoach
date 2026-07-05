@@ -401,6 +401,8 @@ To edit a workout already on the calendar, open the workout and click **Edit**. 
 
 Use the activity type filter to narrow the calendar to **Easy**, **Quality**, **Speed**, **Race**, or **Rest**. If a Speed Metrics workout is edited into a Quality Session, it should appear with Quality instead of staying under Speed.
 
+Speed Metrics workout details show the same kind of breakdown as other workouts: zone/focus, timed distance, planned reps, work volume, and time-plus-stride-count instructions. Speed work volume is the timed sprint/runway distance only, such as `5 x 30 m = 150 m`; warmup and cooldown are not included.
+
 To copy a workout already on the calendar:
 
 1. Click the copy icon on the workout card, or open the workout and click **Copy**.
