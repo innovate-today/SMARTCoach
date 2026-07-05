@@ -795,6 +795,7 @@ function checkSpeedTrakFeature() {
     "speedMetricSession:true",
     "speedRepCount",
     "speedMetricIds",
+    "if(row&&row.speedMetricSession&&effective.label)return effective.label;",
     "sourceSessionId:practice.id||practice.practiceId||''",
     "sourceRecordId:'field_practice_'+(practice.id||practice.practiceId||'')+'_'+key",
     "speed reps",

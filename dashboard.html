@@ -6028,6 +6028,7 @@ function targetReviewText(row){
 
 function volumeDisplay(row){
   var effective=effectiveCompletedVolume(row);
+  if(row&&row.speedMetricSession&&effective.label)return effective.label;
   if(effective.label)return effective.label+(effective.miles?' · '+formatMiles(effective.miles):'');
   if(row.plannedVolume)return 'Planned: '+row.plannedVolume;
   return '';
