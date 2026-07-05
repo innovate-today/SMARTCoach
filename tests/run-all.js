@@ -19,6 +19,7 @@ const htmlFiles = [
   "weather.html",
   "miles-board.html",
   "speed-trak.html",
+  "speed-board.html",
   "how-to.html",
   "athlete-calendar.html",
   "account-access.html",
@@ -721,6 +722,8 @@ function checkMilesBoardFeature() {
 
 function checkSpeedTrakFeature() {
   const page = fs.readFileSync("speed-trak.html", "utf8");
+  const board = fs.readFileSync("speed-board.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const training = fs.readFileSync("training-calendar.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   [
@@ -736,6 +739,18 @@ function checkSpeedTrakFeature() {
     "250m Start",
     "Max Velocity",
     'id="addResultBtn"',
+    'id="shareSpeedBoardBtn"',
+    'id="speedBoardModal"',
+    "Speed Trak Board Sharing",
+    'data-speed-board-challenge="velocity"',
+    'data-speed-board-challenge="fastest"',
+    'data-speed-board-challenge="consistency"',
+    'data-speed-board-challenge="game"',
+    "function openSpeedBoardSharing()",
+    "fetch('/api/smart-trak/speed-board-sharing?account='",
+    "fetch('/api/smart-trak/speed-board-link?'+speedBoardLinkParams().toString()",
+    "function createSpeedBoardLink()",
+    "function resetSpeedBoardLink()",
     'id="speedResultModal"',
     'id="deleteSpeedResultModal"',
     "Import Speed Data",
@@ -780,6 +795,50 @@ function checkSpeedTrakFeature() {
     "headers:headers()",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
+  });
+  [
+    "SMART Trak Speed Trak Board",
+    "Team speed leaderboard.",
+    "/api/smart-trak/speed-board?",
+    "Speed Trak Board is taking too long to load. Tap Refresh to try again.",
+    "Display Mode",
+    "Challenge Highlights",
+    "Velocity Leader",
+    "Fastest Time",
+    "Rep Leader",
+    "Game Score",
+    "Big Mover",
+    "This Week's Winners",
+    "data-sort=\"bestVelocity\"",
+    "data-sort=\"bestSeconds\"",
+    "data-sort=\"reps\"",
+    "function renderDisplayRows(rows)",
+    "function challengeSortKey(value)",
+    "badgeHtml(row.badges)",
+  ].forEach((text) => {
+    if (!board.includes(text)) throw new Error(`Speed Trak public board missing ${text}`);
+  });
+  if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Speed Trak Board must stay read-only.");
+  [
+    'if (route === "speed-board-sharing")',
+    'if (route === "speed-board-link")',
+    'if (route === "speed-board")',
+    "function accountSpeedBoardSharing(req, res)",
+    "function accountSpeedBoardLink(req, res)",
+    "function accountSpeedBoard(req, res)",
+    "function speedBoardToken(accountKey",
+    "function speedBoardShareKey(input)",
+    "function speedBoardShareFromKey(value)",
+    "url: `/speed-board.html?",
+    "function normalizeSpeedBoardSharing(source)",
+    "function normalizeSpeedBoardChallenges(values)",
+    "function buildSpeedBoardRows",
+    "function normalizeSpeedBoardReps(practices)",
+    "function speedBoardHighlights(rows)",
+    "speedBoardSharing: next",
+    "lastSpeedBoardSharingSync",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Speed Trak Board API missing ${text}`);
   });
   [
     'id="milesTrakLink"',
@@ -1182,9 +1241,11 @@ function checkBugTrakDesktopFeedback() {
 function checkPublicSharePagesHideFeedback() {
   const athleteCalendar = fs.readFileSync("athlete-calendar.html", "utf8");
   const milesBoard = fs.readFileSync("miles-board.html", "utf8");
+  const speedBoard = fs.readFileSync("speed-board.html", "utf8");
   [
     ["Athlete Calendar", athleteCalendar],
     ["Miles Board", milesBoard],
+    ["Speed Trak Board", speedBoard],
   ].forEach(([label, html]) => {
     if (html.includes("smartcoach-help-widget.js")) {
       throw new Error(`${label} should not load the shared feedback/help widget`);

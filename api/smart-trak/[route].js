@@ -128,6 +128,23 @@ module.exports = async function handler(req, res) {
     return accountMilesBoard(req, res);
   }
 
+  if (route === "speed-board-sharing") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountSpeedBoardSharing(req, res);
+  }
+
+  if (route === "speed-board-link") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountSpeedBoardLink(req, res);
+  }
+
+  if (route === "speed-board") {
+    await attachRegistryAccount(req);
+    return accountSpeedBoard(req, res);
+  }
+
   if (route === "attendance") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -2206,6 +2223,170 @@ async function accountMilesBoardSharing(req, res) {
   }
 }
 
+async function accountSpeedBoardLink(req, res) {
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+  const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = normalizeSpeedBoardSharing(existing.record && existing.record.speedBoardSharing);
+  if (!sharing.active) {
+    res.status(403).json({ error: "Speed Trak Board sharing is turned off." });
+    return;
+  }
+  const token = speedBoardToken(accountKey, sharing.tokenVersion);
+  const metric = cleanSetupText(firstQueryValue(req.query && req.query.metric)).slice(0, 80);
+  const gender = normalizeSpeedBoardGender(firstQueryValue(req.query && req.query.gender));
+  const year = cleanSetupText(firstQueryValue(req.query && req.query.year)).slice(0, 20);
+  const params = new URLSearchParams({ account: accountKey, token });
+  if (metric) params.set("metric", metric);
+  if (gender) params.set("gender", gender);
+  if (year) params.set("year", year);
+  params.set("challenge", sharing.challengeType);
+  if (sharing.challengeTypes.length) params.set("challenges", sharing.challengeTypes.join(","));
+  const compactParams = new URLSearchParams({
+    k: speedBoardShareKey({
+      account: accountKey,
+      token,
+      metric: params.get("metric"),
+      gender: params.get("gender"),
+      year: params.get("year"),
+      challenge: params.get("challenge"),
+      challenges: params.get("challenges"),
+    }),
+  });
+  res.status(200).json({
+    success: true,
+    token,
+    speedBoardSharing: sharing,
+    url: `/speed-board.html?${compactParams.toString()}`,
+    legacyUrl: `/speed-board.html?${params.toString()}`,
+  });
+}
+
+async function accountSpeedBoard(req, res) {
+  const share = speedBoardShareFromKey(firstQueryValue(req.query && req.query.k));
+  const accountKey = normalizeSetupAccountKey(share.account || firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const provided = cleanSetupText(share.token || firstQueryValue(req.query && req.query.token));
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = normalizeSpeedBoardSharing(existing.record && existing.record.speedBoardSharing);
+  if (!sharing.active) {
+    res.status(403).json({ error: "Speed Trak Board sharing is turned off." });
+    return;
+  }
+  const expected = speedBoardToken(accountKey, sharing.tokenVersion);
+  if (!provided || !safeEqual(provided, expected)) {
+    res.status(403).json({ error: "Speed Trak Board link is invalid or expired." });
+    return;
+  }
+  try {
+    const metric = cleanSetupText(share.metric || firstQueryValue(req.query && req.query.metric)).slice(0, 80);
+    const gender = normalizeSpeedBoardGender(share.gender || firstQueryValue(req.query && req.query.gender));
+    const year = cleanSetupText(share.year || firstQueryValue(req.query && req.query.year)).slice(0, 20);
+    const practices = normalizeFieldPractices(existing.record && existing.record.fieldPracticeSessions);
+    const gameSettings = normalizeSpeedBoardGameSettings(sharing.gameSettings);
+    const challengeTypes = normalizeSpeedBoardChallenges(share.challenges || firstQueryValue(req.query && req.query.challenges) || sharing.challengeTypes);
+    const rows = buildSpeedBoardRows({ practices, metric, gender, year, gameSettings });
+    const totalReps = rows.reduce((sum, row) => sum + row.reps, 0);
+    res.status(200).json({
+      success: true,
+      accountKey,
+      generatedAt: new Date().toISOString(),
+      challengeType: challengeTypes[0] || sharing.challengeType,
+      challengeTypes,
+      gameSettings,
+      filters: {
+        metric: metric || "All metrics",
+        gender: gender || "",
+        year: year || "",
+        label: speedBoardFilterLabel({ metric, gender, year }),
+      },
+      totals: {
+        athletes: rows.length,
+        reps: totalReps,
+        averageReps: rows.length ? Math.round((totalReps / rows.length) * 10) / 10 : 0,
+        bestMark: rows[0] && rows[0].bestSeconds ? rows[0].bestSeconds : 0,
+        bestVelocity: rows.reduce((best, row) => Math.max(best, Number(row.bestVelocity) || 0), 0),
+      },
+      highlights: speedBoardHighlights(rows),
+      weeklyWinners: speedBoardWeeklyWinners(rows),
+      rows,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Speed Trak Board lookup failed." });
+  }
+}
+
+async function accountSpeedBoardSharing(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    if (req.method === "GET") {
+      res.status(200).json({
+        success: true,
+        accountKey,
+        speedBoardSharing: normalizeSpeedBoardSharing(existing.record.speedBoardSharing),
+      });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
+    const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    if (!sessionAllowed && !codeAllowed) {
+      throw httpError(401, "Active coach access is required to update Speed Trak Board sharing.");
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const current = normalizeSpeedBoardSharing(existing.record.speedBoardSharing);
+    const input = payload.speedBoardSharing && typeof payload.speedBoardSharing === "object" ? payload.speedBoardSharing : payload;
+    const action = cleanSetupText(payload.action || input.action).toLowerCase();
+    const next = normalizeSpeedBoardSharing({ ...current, ...input });
+    if (action === "reset") {
+      next.active = true;
+      next.tokenVersion = speedBoardTokenVersion();
+      next.resetAt = new Date().toISOString();
+    }
+    next.updatedAt = new Date().toISOString();
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      speedBoardSharing: next,
+      lastSpeedBoardSharingSync: {
+        savedAt: next.updatedAt,
+        active: next.active,
+        challengeType: next.challengeType,
+        challengeTypes: next.challengeTypes,
+        resetAt: next.resetAt || "",
+      },
+    });
+    res.status(200).json({ success: true, accountKey, speedBoardSharing: next });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Speed Trak Board sharing save failed." });
+  }
+}
+
 function defaultDashboardVisibleTools() {
   return {
     keepTrak: true,
@@ -2323,6 +2504,238 @@ function normalizeMilesBoardChallenge(value) {
   if (text === "consistency" || text === "workouts" || text === "logs") return "consistency";
   if (text === "mover" || text === "bigmover" || text === "weekchange") return "mover";
   return "total";
+}
+
+function normalizeSpeedBoardSharing(source) {
+  const input = source && typeof source === "object" ? source : {};
+  const challengeTypes = normalizeSpeedBoardChallenges(input.challengeTypes || input.challengeType || input.challenge || "velocity");
+  return {
+    active: input.active !== false,
+    challengeType: challengeTypes[0],
+    challengeTypes,
+    gameSettings: normalizeSpeedBoardGameSettings(input.gameSettings),
+    tokenVersion: cleanSetupText(input.tokenVersion) || "1",
+    updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
+    resetAt: cleanSetupText(input.resetAt),
+  };
+}
+
+function normalizeSpeedBoardGameSettings(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    challengeName: cleanSetupText(input.challengeName).slice(0, 80) || "Speed Trak Leaderboard",
+    coachMessage: cleanSetupText(input.coachMessage).slice(0, 240),
+    pointsPerVelocity: milesBoardNumber(input.pointsPerVelocity, 10, 500),
+    pointsPerRep: milesBoardNumber(input.pointsPerRep, 2, 100),
+    pointsPerImprovement: milesBoardNumber(input.pointsPerImprovement, 5, 500),
+  };
+}
+
+function normalizeSpeedBoardChallenges(values) {
+  const list = Array.isArray(values) ? values : cleanSetupText(values).split(",");
+  const seen = new Set();
+  const normalized = list.map(normalizeSpeedBoardChallenge).filter(Boolean).filter((value) => {
+    if (seen.has(value)) return false;
+    seen.add(value);
+    return true;
+  });
+  return normalized.length ? normalized : ["velocity"];
+}
+
+function normalizeSpeedBoardChallenge(value) {
+  const text = cleanSetupText(value).toLowerCase().replace(/[^a-z]/g, "");
+  if (text === "fastest" || text === "time" || text === "mark") return "fastest";
+  if (text === "consistency" || text === "reps" || text === "logs") return "consistency";
+  if (text === "improvement" || text === "mover" || text === "bigmover") return "improvement";
+  if (text === "game" || text === "points" || text === "score") return "game";
+  return "velocity";
+}
+
+function normalizeSpeedBoardGender(value) {
+  const text = cleanSetupText(value).toLowerCase();
+  if (text === "boy" || text === "boys" || text === "male" || text === "m") return "boy";
+  if (text === "girl" || text === "girls" || text === "female" || text === "f") return "girl";
+  return "";
+}
+
+function buildSpeedBoardRows({ practices, metric, gender, year, gameSettings }) {
+  const rowsByAthlete = new Map();
+  normalizeSpeedBoardReps(practices).filter((rep) => {
+    if (metric && rep.metric !== metric) return false;
+    if (gender && rep.gender !== gender) return false;
+    if (year && String(rep.year) !== String(year)) return false;
+    return true;
+  }).forEach((rep) => {
+    const key = cleanSetupText(rep.athleteName).toLowerCase();
+    if (!key) return;
+    if (!rowsByAthlete.has(key)) rowsByAthlete.set(key, []);
+    rowsByAthlete.get(key).push(rep);
+  });
+  const rows = Array.from(rowsByAthlete.values()).map((reps) => speedBoardAthleteRow(reps, gameSettings));
+  return speedBoardCompetitionBadges(rows).sort((a, b) => (Number(b.bestVelocity) || 0) - (Number(a.bestVelocity) || 0) || (Number(a.bestSeconds) || 999999) - (Number(b.bestSeconds) || 999999) || a.athleteName.localeCompare(b.athleteName));
+}
+
+function normalizeSpeedBoardReps(practices) {
+  const out = [];
+  (Array.isArray(practices) ? practices : []).forEach((practice) => {
+    const metrics = Array.isArray(practice.speedMetrics) ? practice.speedMetrics : [];
+    metrics.forEach((rep) => {
+      const seconds = speedBoardSeconds(rep.seconds || rep.time);
+      const meters = speedBoardMeters(rep, practice);
+      const athleteName = cleanSetupText(rep.athleteName || rep.name || [rep.firstName, rep.lastName].filter(Boolean).join(" "));
+      if (!athleteName || !seconds || !meters) return;
+      const strides = Number(rep.strides || rep.strideCount) || 0;
+      const date = cleanSetupText(rep.date || practice.date).slice(0, 10);
+      out.push({
+        athleteName,
+        gender: normalizeSpeedBoardGender(rep.gender),
+        year: cleanSetupText(rep.year || practice.year || date.slice(0, 4)),
+        grade: cleanSetupText(rep.grade),
+        metric: cleanSetupText(rep.metric) || speedBoardMetricLabel(rep, practice),
+        seconds,
+        meters,
+        velocity: speedBoardRound(rep.velocity || meters / seconds, 2),
+        strideLength: speedBoardRound(rep.strideLength || (strides ? meters / strides : 0), 2),
+        strideFrequency: speedBoardRound(rep.strideFrequency || (strides ? strides / seconds : 0), 2),
+        strides,
+        date,
+      });
+    });
+  });
+  return out;
+}
+
+function speedBoardAthleteRow(reps, gameSettings) {
+  const sortedByTime = reps.slice().sort((a, b) => a.seconds - b.seconds || String(b.date).localeCompare(String(a.date)));
+  const sortedByVelocity = reps.slice().sort((a, b) => b.velocity - a.velocity || a.seconds - b.seconds);
+  const best = sortedByTime[0] || sortedByVelocity[0] || {};
+  const velocityBest = sortedByVelocity[0] || best;
+  const latest = reps.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || {};
+  const first = reps.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)))[0] || {};
+  const improvement = first.seconds && best.seconds && first.seconds > best.seconds ? speedBoardRound(first.seconds - best.seconds, 2) : 0;
+  const row = {
+    athleteName: best.athleteName || "Athlete",
+    gender: best.gender || "",
+    year: best.year || "",
+    grade: best.grade || "",
+    metric: best.metric || velocityBest.metric || "Speed Metrics",
+    bestSeconds: speedBoardRound(best.seconds, 2),
+    bestVelocity: speedBoardRound(velocityBest.velocity, 2),
+    strideLength: speedBoardRound(velocityBest.strideLength, 2),
+    strideFrequency: speedBoardRound(velocityBest.strideFrequency, 2),
+    reps: reps.length,
+    latestDate: latest.date || "",
+    improvementSeconds: improvement,
+  };
+  return {
+    ...row,
+    gameScore: speedBoardGameScore(row, gameSettings),
+    badges: speedBoardBadges(row),
+  };
+}
+
+function speedBoardGameScore(row, settings) {
+  const gameSettings = normalizeSpeedBoardGameSettings(settings);
+  return Math.round((Number(row.bestVelocity) || 0) * gameSettings.pointsPerVelocity)
+    + Math.round((Number(row.reps) || 0) * gameSettings.pointsPerRep)
+    + Math.round((Number(row.improvementSeconds) || 0) * gameSettings.pointsPerImprovement);
+}
+
+function speedBoardBadges(row) {
+  const badges = [];
+  if ((Number(row.bestVelocity) || 0) >= 9) badges.push("Velocity Club");
+  if ((Number(row.reps) || 0) >= 5) badges.push("Consistent Sprinter");
+  if ((Number(row.improvementSeconds) || 0) > 0) badges.push("Big Mover");
+  if ((Number(row.strideFrequency) || 0) >= 5) badges.push("Quick Turnover");
+  return badges;
+}
+
+function speedBoardCompetitionBadges(rows) {
+  const velocityLeader = rows.slice().sort((a, b) => (Number(b.bestVelocity) || 0) - (Number(a.bestVelocity) || 0))[0];
+  const repsLeader = rows.slice().sort((a, b) => (Number(b.reps) || 0) - (Number(a.reps) || 0))[0];
+  return rows.map((row) => {
+    const badges = Array.isArray(row.badges) ? row.badges.slice() : [];
+    if (velocityLeader && row.athleteName === velocityLeader.athleteName && Number(row.bestVelocity) > 0) badges.push("Velocity Leader");
+    if (repsLeader && row.athleteName === repsLeader.athleteName && Number(row.reps) > 1) badges.push("Rep Leader");
+    return { ...row, badges: uniqueStrings(badges) };
+  });
+}
+
+function speedBoardHighlights(rows) {
+  return {
+    velocityLeader: speedBoardWinner(rows, "bestVelocity", "m/s"),
+    fastest: speedBoardFastestWinner(rows),
+    consistencyLeader: speedBoardWinner(rows, "reps", "reps"),
+    improvementLeader: speedBoardWinner(rows.filter((row) => row.improvementSeconds > 0), "improvementSeconds", "sec drop"),
+    gameLeader: speedBoardWinner(rows, "gameScore", "pts"),
+  };
+}
+
+function speedBoardWeeklyWinners(rows) {
+  const weekStart = startOfBoardWeek(new Date());
+  const weeklyRows = rows.filter((row) => {
+    const date = publicBoardDate(row.latestDate);
+    return date && date >= weekStart && date < addDays(weekStart, 7);
+  });
+  return {
+    velocity: speedBoardWinner(weeklyRows, "bestVelocity", "m/s this week"),
+    fastest: speedBoardFastestWinner(weeklyRows),
+    consistency: speedBoardWinner(weeklyRows, "reps", "reps this week"),
+  };
+}
+
+function speedBoardWinner(rows, key, suffix) {
+  const winner = (rows || []).filter((row) => Number(row[key]) > 0).sort((a, b) => (Number(b[key]) || 0) - (Number(a[key]) || 0) || a.athleteName.localeCompare(b.athleteName))[0];
+  if (!winner) return { name: "", value: 0, label: "No winner yet" };
+  const value = Number(winner[key]) || 0;
+  return { name: winner.athleteName, value, label: `${key === "reps" || key === "gameScore" ? Math.round(value) : speedBoardRound(value, 2)} ${suffix}` };
+}
+
+function speedBoardFastestWinner(rows) {
+  const winner = (rows || []).filter((row) => Number(row.bestSeconds) > 0).sort((a, b) => (Number(a.bestSeconds) || 999999) - (Number(b.bestSeconds) || 999999) || a.athleteName.localeCompare(b.athleteName))[0];
+  if (!winner) return { name: "", value: 0, label: "No winner yet" };
+  return { name: winner.athleteName, value: winner.bestSeconds, label: `${speedBoardRound(winner.bestSeconds, 2)} sec` };
+}
+
+function speedBoardFilterLabel({ metric, gender, year }) {
+  return [metric || "All metrics", gender === "boy" ? "Boys" : gender === "girl" ? "Girls" : "", year].filter(Boolean).join(" · ");
+}
+
+function speedBoardSeconds(value) {
+  const text = cleanSetupText(value);
+  if (!text) return 0;
+  if (/^\d+(\.\d+)?$/.test(text)) return Number(text);
+  const parts = text.split(":").map(Number);
+  if (parts.some((number) => !Number.isFinite(number))) return 0;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return 0;
+}
+
+function speedBoardMeters(rep, practice) {
+  const unit = cleanSetupText(rep.unit || "m").toLowerCase();
+  const distance = Number(rep.meters || rep.distance || practice.timedDistance || practice.distance || speedBoardMetersFromLabel(rep.metric));
+  if (!Number.isFinite(distance) || distance <= 0) return 0;
+  return unit === "yd" ? distance * 0.9144 : distance;
+}
+
+function speedBoardMetricLabel(rep, practice) {
+  const meters = Math.round(speedBoardMeters(rep, practice));
+  const text = [rep.zone, practice.zone, practice.focus, practice.routineName, practice.details, practice.notes].join(" ").toLowerCase();
+  const type = /fly|max velocity|max/.test(text) ? "Fly" : /start|accel/.test(text) ? "Start" : "Start";
+  return meters ? `${meters}m ${type}` : cleanSetupText(practice.focus || rep.zone) || "Speed Metrics";
+}
+
+function speedBoardMetersFromLabel(label) {
+  const match = cleanSetupText(label).match(/(\d+(?:\.\d+)?)\s*m/i);
+  return match ? Number(match[1]) : 0;
+}
+
+function speedBoardRound(value, digits = 2) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return 0;
+  const factor = 10 ** digits;
+  return Math.round(number * factor) / factor;
 }
 
 async function accountTrainingCustomization(req, res) {
@@ -4003,6 +4416,10 @@ const ACCOUNT_CLEANUP_OPTIONS = {
     label: "Miles Board sharing",
     fields: ["milesBoardSharing", "milesBoardSnapshots"],
   },
+  speedBoard: {
+    label: "Speed Trak Board sharing",
+    fields: ["speedBoardSharing", "lastSpeedBoardSharingSync"],
+  },
   dashboardPreferences: {
     label: "Dashboard customizations",
     fields: ["dashboardPreferences", "lastDashboardPreferencesSync"],
@@ -4721,6 +5138,48 @@ function milesBoardShareFromKey(value) {
       token: cleanSetupText(raw.t || raw.token),
       start: cleanSetupText(raw.s || raw.start),
       end: cleanSetupText(raw.e || raw.end),
+      challenge: cleanSetupText(raw.c || raw.challenge),
+      challenges: cleanSetupText(raw.cs || raw.challenges),
+    };
+  } catch (error) {
+    return {};
+  }
+}
+
+function speedBoardToken(accountKey, tokenVersion = "1") {
+  const secret = cleanSetupText(process.env.SMARTCOACH_SPEED_BOARD_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE || "smartcoach-speed-board");
+  return crypto.createHmac("sha256", secret).update(`speed-board:${normalizeSetupAccountKey(accountKey) || "default"}:${cleanSetupText(tokenVersion) || "1"}`).digest("base64url");
+}
+
+function speedBoardTokenVersion() {
+  return crypto.randomBytes(12).toString("base64url");
+}
+
+function speedBoardShareKey(input) {
+  const source = input && typeof input === "object" ? input : {};
+  const payload = {
+    a: normalizeSetupAccountKey(source.account),
+    t: cleanSetupText(source.token),
+    m: cleanSetupText(source.metric),
+    g: cleanSetupText(source.gender),
+    y: cleanSetupText(source.year),
+    c: cleanSetupText(source.challenge),
+    cs: cleanSetupText(source.challenges),
+  };
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function speedBoardShareFromKey(value) {
+  const key = cleanSetupText(value);
+  if (!key) return {};
+  try {
+    const raw = JSON.parse(Buffer.from(key, "base64url").toString("utf8"));
+    return {
+      account: normalizeSetupAccountKey(raw.a || raw.account),
+      token: cleanSetupText(raw.t || raw.token),
+      metric: cleanSetupText(raw.m || raw.metric),
+      gender: cleanSetupText(raw.g || raw.gender),
+      year: cleanSetupText(raw.y || raw.year),
       challenge: cleanSetupText(raw.c || raw.challenge),
       challenges: cleanSetupText(raw.cs || raw.challenges),
     };
