@@ -74,28 +74,33 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
         <p>Upload a CSV/TSV file or paste spreadsheet rows. Required: athlete, mark/time, and date or default date.</p>
       </div>
       <div class="import-actions">
+        <button id="toggleImportBtn" class="modal-action" type="button">Open Import</button>
+      </div>
+    </div>
+    <div id="importBody" hidden>
+      <div class="importgrid">
+        <label>Default Metric
+          <select id="defaultMetricSelect" aria-label="Default metric"></select>
+        </label>
+        <label>Default Date
+          <input id="defaultDateInput" type="date">
+        </label>
+        <label>CSV / TSV File
+          <input id="csvInput" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
+        </label>
+        <label class="full">Paste Rows
+          <textarea id="pasteInput" spellcheck="false" placeholder="Year,Name,Grade,Gender,Metric,Mark,Date,Strides,Notes&#10;2026,Christian Azevedo,11,Boy,30m Fly,3.42,2026-07-04,15,Good posture"></textarea>
+        </label>
+      </div>
+      <div class="import-actions" style="padding:0 14px 12px">
         <button id="templateBtn" class="modal-action" type="button">Download Template</button>
         <button id="previewImportBtn" class="modal-action" type="button">Preview Data</button>
         <button id="saveImportBtn" type="button" disabled>Save Speed Data</button>
         <button id="clearImportBtn" class="utility-action" type="button">Clear</button>
       </div>
+      <div class="import-status" id="importStatus">Import hidden.</div>
+      <div class="previewwrap" id="importPreview"></div>
     </div>
-    <div class="importgrid">
-      <label>Default Metric
-        <select id="defaultMetricSelect" aria-label="Default metric"></select>
-      </label>
-      <label>Default Date
-        <input id="defaultDateInput" type="date">
-      </label>
-      <label>CSV / TSV File
-        <input id="csvInput" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
-      </label>
-      <label class="full">Paste Rows
-        <textarea id="pasteInput" spellcheck="false" placeholder="Year,Name,Grade,Gender,Metric,Mark,Date,Strides,Notes&#10;2026,Christian Azevedo,11,Boy,30m Fly,3.42,2026-07-04,15,Good posture"></textarea>
-      </label>
-    </div>
-    <div class="import-status" id="importStatus">No speed rows loaded yet.</div>
-    <div class="previewwrap" id="importPreview"></div>
   </section>
   <section class="cards">
     <div class="card"><b id="resultsCount">--</b><span>Results in view</span></div>
@@ -130,7 +135,7 @@ var els={
   lastUpdated:document.getElementById('lastUpdated'),dashboardLink:document.getElementById('dashboardLink'),trainingLink:document.getElementById('trainingLink'),fieldPracticeLink:document.getElementById('fieldPracticeLink'),refreshBtn:document.getElementById('refreshBtn'),
   search:document.getElementById('search'),metricSelect:document.getElementById('metricSelect'),genderSelect:document.getElementById('genderSelect'),yearSelect:document.getElementById('yearSelect'),limitSelect:document.getElementById('limitSelect'),
   resultsCount:document.getElementById('resultsCount'),athletesCount:document.getElementById('athletesCount'),bestMark:document.getElementById('bestMark'),latestResult:document.getElementById('latestResult'),tableTitle:document.getElementById('tableTitle'),status:document.getElementById('status'),rows:document.getElementById('rows'),
-  templateBtn:document.getElementById('templateBtn'),previewImportBtn:document.getElementById('previewImportBtn'),saveImportBtn:document.getElementById('saveImportBtn'),clearImportBtn:document.getElementById('clearImportBtn'),csvInput:document.getElementById('csvInput'),pasteInput:document.getElementById('pasteInput'),defaultMetricSelect:document.getElementById('defaultMetricSelect'),defaultDateInput:document.getElementById('defaultDateInput'),importStatus:document.getElementById('importStatus'),importPreview:document.getElementById('importPreview')
+  toggleImportBtn:document.getElementById('toggleImportBtn'),importBody:document.getElementById('importBody'),templateBtn:document.getElementById('templateBtn'),previewImportBtn:document.getElementById('previewImportBtn'),saveImportBtn:document.getElementById('saveImportBtn'),clearImportBtn:document.getElementById('clearImportBtn'),csvInput:document.getElementById('csvInput'),pasteInput:document.getElementById('pasteInput'),defaultMetricSelect:document.getElementById('defaultMetricSelect'),defaultDateInput:document.getElementById('defaultDateInput'),importStatus:document.getElementById('importStatus'),importPreview:document.getElementById('importPreview')
 };
 function embeddedMode(){try{var p=new URLSearchParams(location.search||'');return p.get('embed')==='1'||p.get('iframe')==='1';}catch(e){return false;}}
 function smartCoachAccountKey(){try{var p=new URLSearchParams(location.search||'');var key=(p.get('account')||localStorage.getItem('sc_account')||'default').trim();if(key&&key!=='default')localStorage.setItem('sc_account',key);return key||'default';}catch(e){return 'default';}}
@@ -178,7 +183,7 @@ function buildSpeedImportPractice(rows,date,index){var now=new Date().toISOStrin
 function saveSpeedImport(){var rows=state.importRows||[];if(!rows.length){previewSpeedImport();return}els.importStatus.className='import-status';els.importStatus.textContent='Saving speed data...';var byDate={};rows.forEach(function(row){var key=row.date||els.defaultDateInput.value||todayISO();(byDate[key]=byDate[key]||[]).push(row)});var practices=Object.keys(byDate).map(function(date,index){return buildSpeedImportPractice(byDate[date],date,index)});fetch(apiUrl('/api/smart-trak/field-practice'),{method:'POST',headers:headers(),body:JSON.stringify({practices:practices})}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data&&data.error||'Save failed');return data})}).then(function(){els.importStatus.className='import-status good';els.importStatus.textContent=rows.length+' speed rows saved.';state.importRows=[];els.saveImportBtn.disabled=true;load()}).catch(function(error){els.importStatus.className='import-status bad';els.importStatus.textContent=error.message||'Could not save speed data.'})}
 function downloadSpeedTemplate(){var csv='Year,Name,Grade,Gender,Metric,Mark,Date,Strides,Notes\n2026,Christian Azevedo,11,Boy,30m Fly,3.42,'+todayISO()+',15,Good posture\n2026,Jack Zugaro,10,Boy,30m Start,4.18,'+todayISO()+',18,\n';var blob=new Blob([csv],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='speed-trak-template.csv';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},0)}
 function clearSpeedImport(){state.importRows=[];els.pasteInput.value='';els.csvInput.value='';els.importPreview.innerHTML='';els.importStatus.className='import-status';els.importStatus.textContent='No speed rows loaded yet.';els.saveImportBtn.disabled=true}
-function initSpeedImportControls(){els.defaultMetricSelect.innerHTML=DEFAULT_METRICS.map(function(metric){return '<option value="'+esc(metric)+'">'+esc(metric)+'</option>'}).join('');els.defaultMetricSelect.value='30m Fly';els.defaultDateInput.value=todayISO();els.templateBtn.addEventListener('click',downloadSpeedTemplate);els.previewImportBtn.addEventListener('click',previewSpeedImport);els.saveImportBtn.addEventListener('click',saveSpeedImport);els.clearImportBtn.addEventListener('click',clearSpeedImport);els.defaultMetricSelect.addEventListener('change',function(){if(els.pasteInput.value.trim())previewSpeedImport()});els.defaultDateInput.addEventListener('change',function(){if(els.pasteInput.value.trim())previewSpeedImport()});els.pasteInput.addEventListener('input',function(){state.importRows=[];els.saveImportBtn.disabled=true});els.csvInput.addEventListener('change',function(){var file=els.csvInput.files&&els.csvInput.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(){els.pasteInput.value=String(reader.result||'');previewSpeedImport()};reader.onerror=function(){els.importStatus.className='import-status bad';els.importStatus.textContent='Could not read that file.'};reader.readAsText(file)})}
+function initSpeedImportControls(){els.defaultMetricSelect.innerHTML=DEFAULT_METRICS.map(function(metric){return '<option value="'+esc(metric)+'">'+esc(metric)+'</option>'}).join('');els.defaultMetricSelect.value='30m Fly';els.defaultDateInput.value=todayISO();els.toggleImportBtn.addEventListener('click',function(){var open=els.importBody.hidden;els.importBody.hidden=!open;els.toggleImportBtn.textContent=open?'Hide Import':'Open Import';els.importStatus.className='import-status';if(open&&!els.pasteInput.value.trim())els.importStatus.textContent='Paste spreadsheet rows or upload a CSV/TSV template.';if(!open)els.importStatus.textContent='Import hidden.';});els.templateBtn.addEventListener('click',downloadSpeedTemplate);els.previewImportBtn.addEventListener('click',previewSpeedImport);els.saveImportBtn.addEventListener('click',saveSpeedImport);els.clearImportBtn.addEventListener('click',clearSpeedImport);els.defaultMetricSelect.addEventListener('change',function(){if(els.pasteInput.value.trim())previewSpeedImport()});els.defaultDateInput.addEventListener('change',function(){if(els.pasteInput.value.trim())previewSpeedImport()});els.pasteInput.addEventListener('input',function(){state.importRows=[];els.saveImportBtn.disabled=true});els.csvInput.addEventListener('change',function(){var file=els.csvInput.files&&els.csvInput.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(){els.pasteInput.value=String(reader.result||'');previewSpeedImport()};reader.onerror=function(){els.importStatus.className='import-status bad';els.importStatus.textContent='Could not read that file.'};reader.readAsText(file)})}
 function fetchJson(url){return fetch(url,{cache:'no-store',headers:headers()}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data&&data.error||'Load failed');return data})})}
 function load(){var account=smartCoachAccountKey();if(!account||account==='default'){els.lastUpdated.textContent='Account required';els.status.textContent='Open Speed Trak from SMART Trak.';return}els.lastUpdated.textContent='Loading...';els.status.textContent='Loading...';Promise.all([fetchJson(apiUrl('/api/smart-trak/field-practice')),fetchJson(apiUrl('/api/smart-trak/athletes'))]).then(function(results){state.rows=buildRows(results[0].practices||results[0].items||[],results[1].athletes||results[1].items||[]);populateFilters();applyFilters();els.lastUpdated.textContent='Last updated '+new Date().toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}).catch(function(error){els.lastUpdated.textContent='Load failed';els.status.textContent=error.message||'Load failed';els.rows.innerHTML='<tr><td colspan="9" class="empty">'+esc(error.message||'Could not load Speed Trak.')+'</td></tr>'})}
 function initHeaderTooltips(){var tip=document.createElement('div');tip.className='smart-tooltip';document.body.appendChild(tip);function show(el){tip.textContent=el.getAttribute('data-tip')||'';if(!tip.textContent)return;tip.classList.remove('flipped');tip.classList.add('show');var r=el.getBoundingClientRect();var left=Math.max(12,Math.min(window.innerWidth-332,r.left-18));var top=r.bottom+10;if(top+tip.offsetHeight>window.innerHeight-12){top=r.top-tip.offsetHeight-10;tip.classList.add('flipped')}tip.style.left=left+'px';tip.style.top=top+'px'}function hide(){tip.classList.remove('show')}document.querySelectorAll('.headinfo').forEach(function(el){el.addEventListener('mouseenter',function(){show(el)});el.addEventListener('focus',function(){show(el)});el.addEventListener('mouseleave',hide);el.addEventListener('blur',hide)})}

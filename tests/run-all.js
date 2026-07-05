@@ -701,6 +701,8 @@ function checkSpeedTrakFeature() {
     "150m Start",
     "250m Start",
     "Import Speed Data",
+    'id="importBody" hidden',
+    "toggleImportBtn.textContent=open?'Hide Import':'Open Import'",
     "Download Template",
     "Preview Data",
     "Save Speed Data",
