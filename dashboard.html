@@ -361,7 +361,7 @@ tr:last-child td{border-bottom:0}
       <div class="breakgrid">
         <div class="metric"><b id="plannedVolumeValue">--</b><span>Planned volume</span></div>
         <div class="metric"><b id="completedVolumeValue">--</b><span>Completed volume</span></div>
-        <div class="metric"><b id="trainingSyncCount">--</b><span>Avg miles per workout</span></div>
+        <div class="metric"><b id="trainingSyncCount">--</b><span id="trainingSyncLabel">Avg miles per workout</span></div>
         <div class="metric" data-filter="training_on_target"><b id="trainingOnTargetCount">--</b><span>On target</span></div>
         <div class="metric" data-filter="training_needs_review"><b id="trainingReviewCount">--</b><span>Outside target</span></div>
       </div>
@@ -399,6 +399,7 @@ tr:last-child td{border-bottom:0}
       <option value="all">All athletes</option>
       <option value="missing_fitness">Missing current fitness</option>
       <option value="no_training_this_week">Athletes without completed workout</option>
+      <option value="speed_training">Speed / sprints</option>
       <option value="training_on_target">Training on target</option>
       <option value="training_needs_review">Training outside target</option>
       <option value="corrected_training">Corrected workouts</option>
@@ -1318,6 +1319,7 @@ var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
 var visibleVolumeRows=[];
+var dashboardVolumeUnit='miles';
 var expandedTrainingAthletes={};
 var correctionRow=null;
 var meetCorrectionRow=null;
@@ -2330,6 +2332,7 @@ var els={
   refreshBtn:document.getElementById('refreshBtn'),
   plannedVolumeValue:document.getElementById('plannedVolumeValue'),
   completedVolumeValue:document.getElementById('completedVolumeValue'),
+  trainingSyncLabel:document.getElementById('trainingSyncLabel'),
   currentWeekRuns:document.getElementById('currentWeekRuns'),
   previousWeekRuns:document.getElementById('previousWeekRuns'),
   currentWeekVolume:document.getElementById('currentWeekVolume'),
@@ -3184,8 +3187,8 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   els.activityRangeDates.textContent=activityDateRangeLabel();
   if(els.currentWeekRuns)els.currentWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7));}).length;
   if(els.previousWeekRuns)els.previousWeekRuns.textContent=trainingRows.filter(function(row){return dateInRange(row.sessionDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date()));}).length;
-  if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)));
-  if(els.previousWeekVolume)els.previousWeekVolume.textContent=formatMiles(sumCompletedVolumeBetween(volumeRows,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())));
+  if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatDashboardVolume(sumCompletedVolumeBetween(volumeRows,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)));
+  if(els.previousWeekVolume)els.previousWeekVolume.textContent=formatDashboardVolume(sumCompletedVolumeBetween(volumeRows,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())));
   if(els.rosterActive)els.rosterActive.textContent=active;
   if(els.rosterAttendanceRate)els.rosterAttendanceRate.textContent=attendanceRateText(attendanceRows);
   updateDocuStatusCard(rows);
@@ -3194,7 +3197,8 @@ function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
   els.meetPbCount.textContent=meetRows.filter(function(row){return row.isPr;}).length;
   els.meetSbCount.textContent=meetRows.filter(function(row){return row.isSeasonBest;}).length;
   els.trainingRangeLabel.textContent=rangeText;
-  els.trainingSyncCount.textContent=formatMiles(trainingRows.length?completedMiles/trainingRows.length:0);
+  els.trainingSyncCount.textContent=formatDashboardVolume(trainingRows.length?completedMiles/trainingRows.length:0);
+  if(els.trainingSyncLabel)els.trainingSyncLabel.textContent=dashboardVolumeUnit==='meters'?'Avg meters per workout':'Avg miles per workout';
   els.trainingOnTargetCount.textContent=trainingRows.filter(function(row){return targetStatus(row)==='on';}).length;
   els.trainingReviewCount.textContent=trainingRows.filter(isOutsideTarget).length;
 }
@@ -3238,6 +3242,7 @@ function renderRows(){
   var meetRows=sortRows(recentMeetRows.filter(function(row){return matchesSeasonFilter(row,'meet')&&matchesActivityRange(row,'meet')&&matchesMeetFilter(row,filter,visibleNames)&&(!query||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.meet,meetSortValue);
   var trainingRows=sortRows(recentTrainingRows.filter(function(row){return matchesSeasonFilter(row,'training')&&matchesActivityRange(row,'training')&&matchesTrainingFilter(row,filter,visibleNames)&&(!query||visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0);}),tableSorts.training,trainingSortValue);
   var completedRows=completedVolumeRows(trainingRows,meetRows);
+  dashboardVolumeUnit=speedVolumeContext(trainingRows,completedRows,filter)?'meters':'miles';
   var volumeRows=sortRows(groupVolumeByAthlete(completedRows),tableSorts.volume,volumeSortValue);
   var trainingGroups=sortRows(groupTrainingByAthlete(trainingRows),tableSorts.training,trainingGroupSortValue);
   updateBreakdowns(rows,meetRows,trainingRows,completedRows);
@@ -3264,7 +3269,7 @@ function renderRows(){
   els.trainingViewCount.textContent=trainingRows.length;
   els.volumeSubtabCount.textContent=volumeRows.length;
   els.workoutsSubtabCount.textContent=trainingRows.length;
-  els.status.textContent=formatMiles(sumTrainingVolume(completedRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+seasonRangeLabel()+' · '+activityRangeLabel();
+  els.status.textContent=formatDashboardVolume(sumTrainingVolume(completedRows))+' volume · '+rows.length+' athletes · '+trainingRows.length+' workouts · '+seasonRangeLabel()+' · '+activityRangeLabel();
   els.filterState.textContent=filterStateText(query,filter);
   els.filterState.hidden=isDefaultView(query,filter);
   updateActiveMetric(filter);
@@ -3348,7 +3353,7 @@ function refreshTableScrollbars(){
 
 function tabForFilter(filter){
   if(filter==='pb'||filter==='sb'||filter==='corrected_meets')return 'meet';
-  if(filter==='no_training_this_week'||filter==='training_on_target'||filter==='training_needs_review'||filter==='corrected_training')return 'training';
+  if(filter==='no_training_this_week'||filter==='speed_training'||filter==='training_on_target'||filter==='training_needs_review'||filter==='corrected_training')return 'training';
   return 'roster';
 }
 
@@ -3559,6 +3564,7 @@ function updateVolumeRangeLabel(){
 }
 
 function volumeRangeText(){
+  if(dashboardVolumeUnit==='meters')return (els.activityRange.value||'30')==='all'?'Speed Volume':'Filtered Speed Volume';
   return (els.activityRange.value||'30')==='all'?'Volume':'Filtered Volume';
 }
 
@@ -3571,6 +3577,7 @@ function updateActiveMetric(filter){
 function matchesAthleteFilter(row,filter){
   if(filter==='missing_fitness')return !(row.currentFitness&&row.currentFitness.label);
   if(filter==='no_training_this_week')return num(row.currentWeekRuns)===0;
+  if(filter==='speed_training')return hasSpeedTraining(row.name);
   if(filter==='training_on_target')return hasTrainingTargetStatus(row.name,'on');
   if(filter==='training_needs_review')return hasTrainingTargetStatus(row.name,'review');
   if(filter==='corrected_training')return hasCorrectedTraining(row.name);
@@ -3580,6 +3587,7 @@ function matchesAthleteFilter(row,filter){
   return true;
 }
 function matchesMeetFilter(row,filter,visibleNames){
+  if(filter==='speed_training')return false;
   if(filter==='pb')return !!row.isPr;
   if(filter==='sb')return !!row.isSeasonBest;
   if(filter==='corrected_meets')return !!row.corrected;
@@ -3587,11 +3595,18 @@ function matchesMeetFilter(row,filter,visibleNames){
   return true;
 }
 function matchesTrainingFilter(row,filter,visibleNames){
+  if(filter==='speed_training')return !!row.speedMetricSession;
   if(filter==='training_on_target')return targetStatus(row)==='on';
   if(filter==='training_needs_review')return isOutsideTarget(row);
   if(filter==='corrected_training')return !!row.corrected;
   if(filter==='missing_fitness'||filter==='no_training_this_week'||filter==='pb'||filter==='sb'||filter==='corrected_meets')return visibleNames.indexOf(String(row.athleteName||'').toLowerCase())>=0;
   return true;
+}
+
+function speedVolumeContext(trainingRows,completedRows,filter){
+  if(filter==='speed_training')return true;
+  var rows=(trainingRows||[]).filter(function(row){return completedVolumeMiles(row)||plannedVolumeMiles(row);});
+  return rows.length>0&&rows.every(function(row){return !!row.speedMetricSession;})&&!(completedRows||[]).some(function(row){return !row.speedMetricSession;});
 }
 function syncActivityRangeControls(fillDefault){
   var custom=(els.activityRange.value||'30')==='custom';
@@ -3790,6 +3805,13 @@ function hasTrainingTargetStatus(name,status){
   });
 }
 
+function hasSpeedTraining(name){
+  var normalized=String(name||'').toLowerCase();
+  return recentTrainingRows.some(function(row){
+    return matchesSeasonFilter(row,'training') && matchesActivityRange(row,'training') && String(row.athleteName||'').toLowerCase()===normalized && row.speedMetricSession;
+  });
+}
+
 function hasCorrectedTraining(name){
   var normalized=String(name||'').toLowerCase();
   return recentTrainingRows.some(function(row){
@@ -3832,12 +3854,35 @@ function rowHtml(row){
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
-    '<td>'+mainLine(formatMiles(row.currentWeekVolumeMiles))+'</td>'+
-    '<td>'+mainLine(formatMiles(row.previousWeekVolumeMiles))+'</td>'+
+    '<td>'+mainLine(athletePeriodVolumeDisplay(row,'currentWeek'))+'</td>'+
+    '<td>'+mainLine(athletePeriodVolumeDisplay(row,'previousWeek'))+'</td>'+
     '<td><span class="pill">'+num(row.currentWeekRuns)+'</span></td>'+
     '<td><span class="pill">'+num(row.previousWeekRuns)+'</span></td>'+
     '<td><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span><div class="muted">'+num(row.trainingRecordCount)+' training · '+num(row.meetResultCount)+' meet</div></td>'+
   '</tr>';
+}
+
+function athletePeriodVolumeDisplay(row,period){
+  if(dashboardVolumeUnit!=='meters'){
+    return period==='previousWeek'?formatMiles(row.previousWeekVolumeMiles):formatMiles(row.currentWeekVolumeMiles);
+  }
+  var weekStart=startOfDashboardWeek(new Date());
+  var start=period==='previousWeek'?addDashboardDays(weekStart,-7):weekStart;
+  var end=period==='previousWeek'?weekStart:addDashboardDays(weekStart,7);
+  var meters=(visibleTrainingRows||[]).reduce(function(sum,item){
+    return sameAthlete(item,row)&&dateInRange(item.sessionDate||item.syncedAt,start,end)?sum+completedVolumeMeters(item):sum;
+  },0);
+  return formatMeters(meters);
+}
+
+function athleteVisibleVolumeDisplay(row,range){
+  if(dashboardVolumeUnit!=='meters')return formatMiles(range==='currentMonth'?row.currentMonthVolumeMiles:row.currentWeekVolumeMiles);
+  var start=range==='currentMonth'?startOfCurrentMonthDate():startOfDashboardWeek(new Date());
+  var end=range==='currentMonth'?startOfNextMonthDate():addDashboardDays(startOfDashboardWeek(new Date()),7);
+  var meters=(visibleTrainingRows||[]).reduce(function(sum,item){
+    return sameAthlete(item,row)&&dateInRange(item.sessionDate||item.syncedAt,start,end)?sum+completedVolumeMeters(item):sum;
+  },0);
+  return formatMeters(meters);
 }
 
 function openAthleteDetail(row){
@@ -3852,7 +3897,7 @@ function openAthleteDetail(row){
       detailCard('Current Fitness',fitness.label||'Not set',fitness.date?formatDate(fitness.date):'')+
       detailCard('Latest Meet Result',[latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result',[latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+
       detailCard('Latest Training',[latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout',[latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+
-      detailCard('Training Volume',formatMiles(row.currentWeekVolumeMiles)+' this week · '+formatMiles(row.previousWeekVolumeMiles)+' previous week',formatMiles(row.currentMonthVolumeMiles)+' this month')+
+      detailCard('Training Volume',athletePeriodVolumeDisplay(row,'currentWeek')+' this week · '+athletePeriodVolumeDisplay(row,'previousWeek')+' previous week',athleteVisibleVolumeDisplay(row,'currentMonth')+' this month')+
       detailCard('Workout Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training records · '+num(row.meetResultCount)+' meet results')+
     '</div>'+
     renderAthleteTrainingPaces(fitness)+
@@ -5680,6 +5725,7 @@ function groupVolumeByAthlete(rows){
   var groups={};
   (rows||[]).forEach(function(row){
     var miles=completedVolumeMiles(row);
+    var meters=completedVolumeMeters(row);
     if(!miles)return;
     var key=String(row.contactId||row.athleteName||'').toLowerCase();
     if(!groups[key]){
@@ -5687,18 +5733,23 @@ function groupVolumeByAthlete(rows){
         athleteName:row.athleteName||'Unnamed',
         contactId:row.contactId||'',
         volumeMiles:0,
+        volumeMeters:0,
         currentWeekVolumeMiles:0,
+        currentWeekVolumeMeters:0,
         previousWeekVolumeMiles:0,
+        previousWeekVolumeMeters:0,
         currentMonthVolumeMiles:0,
+        currentMonthVolumeMeters:0,
         syncs:0,
         groups:[],
         lastDate:''
       };
     }
     groups[key].volumeMiles+=miles;
-    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7)))groups[key].currentWeekVolumeMiles+=miles;
-    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date())))groups[key].previousWeekVolumeMiles+=miles;
-    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,startOfCurrentMonthDate(),startOfNextMonthDate()))groups[key].currentMonthVolumeMiles+=miles;
+    groups[key].volumeMeters+=meters;
+    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,startOfDashboardWeek(new Date()),addDashboardDays(startOfDashboardWeek(new Date()),7))){groups[key].currentWeekVolumeMiles+=miles;groups[key].currentWeekVolumeMeters+=meters;}
+    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,addDashboardDays(startOfDashboardWeek(new Date()),-7),startOfDashboardWeek(new Date()))){groups[key].previousWeekVolumeMiles+=miles;groups[key].previousWeekVolumeMeters+=meters;}
+    if(dateInRange(row.sessionDate||row.meetDate||row.syncedAt,startOfCurrentMonthDate(),startOfNextMonthDate())){groups[key].currentMonthVolumeMiles+=miles;groups[key].currentMonthVolumeMeters+=meters;}
     groups[key].syncs+=1;
     if(displayableTrainingGroupName(row.groupName)&&groups[key].groups.indexOf(row.groupName)<0)groups[key].groups.push(row.groupName);
     var date=row.syncedAt||row.sessionDate||'';
@@ -5706,9 +5757,13 @@ function groupVolumeByAthlete(rows){
   });
   return Object.keys(groups).map(function(key){
     groups[key].volumeMiles=Math.round(groups[key].volumeMiles*10)/10;
+    groups[key].volumeMeters=Math.round(groups[key].volumeMeters);
     groups[key].currentWeekVolumeMiles=Math.round(groups[key].currentWeekVolumeMiles*10)/10;
+    groups[key].currentWeekVolumeMeters=Math.round(groups[key].currentWeekVolumeMeters);
     groups[key].previousWeekVolumeMiles=Math.round(groups[key].previousWeekVolumeMiles*10)/10;
+    groups[key].previousWeekVolumeMeters=Math.round(groups[key].previousWeekVolumeMeters);
     groups[key].currentMonthVolumeMiles=Math.round(groups[key].currentMonthVolumeMiles*10)/10;
+    groups[key].currentMonthVolumeMeters=Math.round(groups[key].currentMonthVolumeMeters);
     return groups[key];
   });
 }
@@ -5716,10 +5771,10 @@ function groupVolumeByAthlete(rows){
 function volumeRowHtml(row){
   return '<tr>'+
     '<td>'+athleteDetailButton(row)+'</td>'+
-    '<td>'+mainLine(formatMiles(row.volumeMiles))+'</td>'+
-    '<td>'+mainLine(formatMiles(row.currentWeekVolumeMiles))+'</td>'+
-    '<td>'+mainLine(formatMiles(row.previousWeekVolumeMiles))+'</td>'+
-    '<td>'+mainLine(formatMiles(row.currentMonthVolumeMiles))+'</td>'+
+    '<td>'+mainLine(volumeValueDisplay(row,'volume'))+'</td>'+
+    '<td>'+mainLine(volumeValueDisplay(row,'currentWeek'))+'</td>'+
+    '<td>'+mainLine(volumeValueDisplay(row,'previousWeek'))+'</td>'+
+    '<td>'+mainLine(volumeValueDisplay(row,'currentMonth'))+'</td>'+
     '<td>'+volumeChangeHtml(row)+'</td>'+
     '<td><span class="pill">'+num(row.syncs)+'</span></td>'+
     '<td>'+mainLine(row.groups.join(', ')||'')+'</td>'+
@@ -5731,7 +5786,7 @@ function volumeChangeHtml(row){
   var current=num(row.currentWeekVolumeMiles);
   var previous=num(row.previousWeekVolumeMiles);
   var diff=Math.round((current-previous)*10)/10;
-  var label=(diff>0?'+':'')+formatMiles(diff);
+  var label=(diff>0?'+':'')+formatDashboardVolume(diff);
   var pct=previous?Math.round((diff/previous)*100):null;
   var status='';
   if(current===0&&previous>0)status='<span class="pill warn">No volume</span>';
@@ -5750,15 +5805,28 @@ function volumeSummaryHtml(rows){
   var low=active.slice().sort(function(a,b){return num(a.volumeMiles)-num(b.volumeMiles);})[0]||{};
   var label=volumeRangeText().toLowerCase();
   return [
-    volumeCard('Team '+label,formatMiles(total),active.length+' athlete'+(active.length===1?'':'s')+' in view'),
-    volumeCard('Average Volume Per Athlete',formatMiles(average),activityRangeLabel()),
-    volumeCard('Highest '+label,high.athleteName?formatMiles(high.volumeMiles):'0 mi',high.athleteName||'No athlete yet'),
-    volumeCard('Lowest '+label,low.athleteName?formatMiles(low.volumeMiles):'0 mi',low.athleteName||'No athlete yet')
+    volumeCard('Team '+label,formatDashboardVolume(total),active.length+' athlete'+(active.length===1?'':'s')+' in view'),
+    volumeCard('Average Volume Per Athlete',formatDashboardVolume(average),activityRangeLabel()),
+    volumeCard('Highest '+label,high.athleteName?volumeValueDisplay(high,'volume'):(dashboardVolumeUnit==='meters'?'0 m':'0 mi'),high.athleteName||'No athlete yet'),
+    volumeCard('Lowest '+label,low.athleteName?volumeValueDisplay(low,'volume'):(dashboardVolumeUnit==='meters'?'0 m':'0 mi'),low.athleteName||'No athlete yet')
   ].join('');
 }
 
 function volumeCard(label,value,sub){
   return '<div class="volume-card"><b>'+esc(value||'--')+'</b><span>'+esc(label)+'</span>'+subLine(sub||'')+'</div>';
+}
+
+function volumeValueDisplay(row,range){
+  if(dashboardVolumeUnit!=='meters'){
+    if(range==='currentWeek')return formatMiles(row.currentWeekVolumeMiles);
+    if(range==='previousWeek')return formatMiles(row.previousWeekVolumeMiles);
+    if(range==='currentMonth')return formatMiles(row.currentMonthVolumeMiles);
+    return formatMiles(row.volumeMiles);
+  }
+  if(range==='currentWeek')return formatMeters(row.currentWeekVolumeMeters);
+  if(range==='previousWeek')return formatMeters(row.previousWeekVolumeMeters);
+  if(range==='currentMonth')return formatMeters(row.currentMonthVolumeMeters);
+  return formatMeters(row.volumeMeters);
 }
 
 function sumVolumeRows(rows,key){
@@ -5872,6 +5940,7 @@ function groupTrainingByAthlete(rows){
         contactId:row.contactId||'',
         rows:[],
         volumeMiles:0,
+        volumeMeters:0,
         workouts:0,
         latestDate:'',
         latestWorkout:{},
@@ -5880,6 +5949,7 @@ function groupTrainingByAthlete(rows){
     }
     groups[key].rows.push(row);
     groups[key].volumeMiles+=completedVolumeMiles(row);
+    groups[key].volumeMeters+=completedVolumeMeters(row);
     groups[key].workouts+=1;
     var date=row.sessionDate||row.syncedAt||'';
     if(compareValues(date,groups[key].latestDate)>0){
@@ -5890,6 +5960,7 @@ function groupTrainingByAthlete(rows){
   return Object.keys(groups).map(function(key){
     var group=groups[key];
     group.volumeMiles=Math.round(group.volumeMiles*10)/10;
+    group.volumeMeters=Math.round(group.volumeMeters);
     group.rows=group.rows.sort(function(a,b){return compareValues(b.sessionDate||b.syncedAt,a.sessionDate||a.syncedAt);});
     group.targetSummary=trainingTargetSummary(group.rows);
     return group;
@@ -5916,7 +5987,7 @@ function trainingGroupHtml(group){
   var open=!!expandedTrainingAthletes[group.key];
   var html='<tr class="training-summary-row" data-training-toggle="'+esc(group.key)+'">'+
     '<td><button class="expandbtn '+(open?'open':'')+'" data-training-toggle="'+esc(group.key)+'" type="button">'+esc(group.athleteName||'Unnamed')+'</button><div class="muted">'+(open?'Hide workouts':'Show workouts')+'</div></td>'+
-    '<td>'+mainLine(formatMiles(group.volumeMiles))+'</td>'+
+    '<td>'+mainLine(dashboardVolumeUnit==='meters'?formatMeters(group.volumeMeters):formatMiles(group.volumeMiles))+'</td>'+
     '<td><span class="pill">'+num(group.workouts)+'</span></td>'+
     '<td>'+mainLine([latest.workoutPrescription||latest.workoutType,latest.groupName].filter(Boolean).join(' · ')||'No workout')+subLine(formatDate(latest.sessionDate)||'')+'</td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
@@ -6056,8 +6127,8 @@ function plannedVolumeMiles(row){
 function updatePlannedCompletedVolumeCard(trainingRows){
   var planned=sumPlannedTrainingVolume(trainingRows||[]);
   var completed=sumTrainingVolume(trainingRows||[]);
-  if(els.plannedVolumeValue)els.plannedVolumeValue.textContent=formatMiles(planned);
-  if(els.completedVolumeValue)els.completedVolumeValue.textContent=formatMiles(completed);
+  if(els.plannedVolumeValue)els.plannedVolumeValue.textContent=formatDashboardVolume(planned);
+  if(els.completedVolumeValue)els.completedVolumeValue.textContent=formatDashboardVolume(completed);
 }
 
 function completedVolumeRows(trainingRows,meetRows){
@@ -6132,6 +6203,15 @@ function formatMiles(value){
   return miles?miles.toFixed(miles%1?1:0)+' mi':'0 mi';
 }
 
+function formatMeters(value){
+  var meters=Math.round(num(value));
+  return meters?meters+' m':'0 m';
+}
+
+function formatDashboardVolume(miles){
+  return dashboardVolumeUnit==='meters'?formatMeters(num(miles)*1609.344):formatMiles(miles);
+}
+
 function parseCompletedMiles(value,fallback){
   var text=String(value||'').toLowerCase();
   var reps=text.match(/(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
@@ -6151,6 +6231,10 @@ function volumeAmountToMiles(amount,unit){
 }
 function completedVolumeMiles(row){
   return effectiveCompletedVolume(row).miles;
+}
+function completedVolumeMeters(row){
+  if(row&&row.speedMetricSession)return num(row.completedVolumeMeters)||num(row.completedVolumeMiles)*1609.344;
+  return completedVolumeMiles(row)*1609.344;
 }
 function effectiveCompletedVolume(row){
   if(row&&row.speedMetricSession)return {label:row.completedVolume||'',miles:num(row.completedVolumeMiles)};
@@ -6261,8 +6345,10 @@ function speedPracticeTrainingRows(practices,athletes){
         workoutType:'Speed Metrics',
         workoutPrescription:focus,
         completedVolume:completedLabel,
+        completedVolumeMeters:totalMeters,
         completedVolumeMiles:totalMeters/1609.344,
         plannedVolume:plannedLabel,
+        plannedVolumeMeters:plannedReps&&sameDistance?plannedReps*firstMeters:0,
         plannedVolumeMiles:plannedReps&&sameDistance?(plannedReps*firstMeters/1609.344):0,
         totalTimeDisplay:best?'Best '+formatSpeedMetricSeconds(best._seconds):reps.length+' reps',
         splitsText:speedMetricSplitsText(reps),
