@@ -1114,6 +1114,8 @@ function checkBugTrakDesktopFeedback() {
   [
     "smartcoach-bugtrak-btn",
     "smartcoachFeedbackBtn",
+    "function smartcoachHelpSuppressedPage()",
+    "path==='/athlete-calendar'||path==='/athlete-calendar.html'||path==='/miles-board'||path==='/miles-board.html'",
     "Feedback",
     "Bug Trak",
     "Idea Trak",
@@ -1175,6 +1177,20 @@ function checkBugTrakDesktopFeedback() {
     if (!registry.includes(text)) throw new Error(`Bug Trak registry missing ${text}`);
   });
   console.log("Bug Trak desktop feedback ok");
+}
+
+function checkPublicSharePagesHideFeedback() {
+  const athleteCalendar = fs.readFileSync("athlete-calendar.html", "utf8");
+  const milesBoard = fs.readFileSync("miles-board.html", "utf8");
+  [
+    ["Athlete Calendar", athleteCalendar],
+    ["Miles Board", milesBoard],
+  ].forEach(([label, html]) => {
+    if (html.includes("smartcoach-help-widget.js")) {
+      throw new Error(`${label} should not load the shared feedback/help widget`);
+    }
+  });
+  console.log("Public share pages hide feedback ok");
 }
 
 function checkPlanImportMultiGroupAssignment() {
@@ -2778,6 +2794,7 @@ checkDashboardStartHere();
 checkHowToGuidePage();
 checkDashboardToolPreferences();
 checkBugTrakDesktopFeedback();
+checkPublicSharePagesHideFeedback();
 checkPlanImportMultiGroupAssignment();
 checkPlanSetupHidesArchivedPlans();
 checkMeetManagerSportField();

@@ -1,5 +1,10 @@
 (function(){
   if (window.SMARTCoachHelpWidgetLoaded) return;
+  function smartcoachHelpSuppressedPage(){
+    var path=String(window.location&&window.location.pathname||'').toLowerCase().replace(/\/+$/,'');
+    return path==='/athlete-calendar'||path==='/athlete-calendar.html'||path==='/miles-board'||path==='/miles-board.html';
+  }
+  if (smartcoachHelpSuppressedPage()) return;
   window.SMARTCoachHelpWidgetLoaded = true;
   var css = [
     'iframe[src*="leadconnectorhq.com"]',
