@@ -1303,6 +1303,7 @@ var searchRenderTimer=null;
 var accountStatus=null;
 var recentMeetRows=[];
 var recentTrainingRows=[];
+var fieldPracticeRows=[];
 var recentAttendanceRows=[];
 var docuItems=[];
 var docuRecords={};
@@ -2211,6 +2212,7 @@ var els={
   raceResultStatus:document.getElementById('raceResultStatus'),
   raceResultSave:document.getElementById('raceResultSave'),
   correctionModal:document.getElementById('correctionModal'),
+  correctionTitle:document.getElementById('correctionTitle'),
   correctionOriginal:document.getElementById('correctionOriginal'),
   correctionClose:document.getElementById('correctionClose'),
   correctionDate:document.getElementById('correctionDate'),
@@ -2701,8 +2703,8 @@ function loadDashboard(){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Dashboard failed to load.');
     dashboardRows=result.data.athletes||[];
     recentMeetRows=result.data.recentMeetResults||[];
-    var fieldPractices=results[4].ok?((results[4].data.practices||results[4].data.items||[])):[];
-    recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPractices,dashboardRows));
+    fieldPracticeRows=results[4].ok?((results[4].data.practices||results[4].data.items||[])):[];
+    recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
     trainingGroups=results[1].ok?(results[1].data.groups||[]):[];
     recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
     docuItems=results[3].ok?(results[3].data.items||[]):[];
@@ -2729,6 +2731,7 @@ function loadDashboard(){
       dashboardRows=[];
       recentMeetRows=[];
       recentTrainingRows=[];
+      fieldPracticeRows=[];
       recentAttendanceRows=[];
       docuItems=[];
       docuRecords={};
@@ -4243,8 +4246,9 @@ function openCorrectionModal(button){
     alert('Could not find this training entry.');
     return;
   }
+  if(els.correctionTitle)els.correctionTitle.textContent=correctionRow.speedMetricSession?'Correct Sprint Workout':'Correct Training Entry';
   els.correctionDate.value=dateInputValue(correctionRow.sessionDate);
-  setSelectValue(els.correctionWorkout,correctionRow.workoutType||'Easy/Recovery Run');
+  setSelectValue(els.correctionWorkout,correctionRow.speedMetricSession?(correctionRow.workoutPrescription||correctionRow.plannedEffort||'Max Velocity'):(correctionRow.workoutType||'Easy/Recovery Run'));
   setSelectValue(els.correctionSurface,correctionRow.surface||'Road');
   els.correctionVolume.value=correctionRow.completedVolume||'';
   els.correctionTime.value=correctionRow.totalTimeDisplay||'';
@@ -4252,7 +4256,7 @@ function openCorrectionModal(button){
   els.correctionReason.value='';
   els.correctionNotes.value=correctionNotesFromRow(correctionRow);
   els.correctionOriginal.innerHTML=correctionOriginalHtml(correctionRow);
-  setCorrectionStatus('Corrections are saved to SMART Trak notes.','');
+  setCorrectionStatus(correctionRow.speedMetricSession?'Sprint corrections update the saved Speed Metrics practice session.':'Corrections are saved to SMART Trak notes.','');
   els.correctionModal.hidden=false;
 }
 
@@ -4280,6 +4284,7 @@ function saveCorrection(){
     setCorrectionStatus('Reason is required so SMART Trak has a useful audit note.','error');
     return;
   }
+  if(correctionRow.speedMetricSession)return saveSpeedPracticeCorrection(reason);
   els.correctionSave.disabled=true;
   setCorrectionStatus('Saving correction...','');
   fetch('/api/smart-trak/correction',{
@@ -4323,6 +4328,144 @@ function saveCorrection(){
   }).finally(function(){
     els.correctionSave.disabled=false;
   });
+}
+
+function saveSpeedPracticeCorrection(reason){
+  els.correctionSave.disabled=true;
+  setCorrectionStatus('Saving sprint correction...','');
+  updateSpeedPracticeForRow(correctionRow,function(practice,metrics){
+    var updatedAt=new Date().toISOString();
+    var focus=els.correctionWorkout.value||correctionRow.workoutPrescription||correctionRow.plannedEffort||'Speed Metrics';
+    var date=els.correctionDate.value||correctionRow.sessionDate||practice.date;
+    var distance=speedDistanceFromCorrection(els.correctionVolume.value,correctionRow);
+    var times=speedTimesFromCorrection(els.correctionTime.value,metrics.length);
+    practice.date=date;
+    practice.focus=focus;
+    practice.routineName=focus;
+    practice.coachNotes=appendAuditNote(els.correctionNotes.value||practice.coachNotes,reason,'Sprint correction');
+    practice.updatedAt=updatedAt;
+    var timeIndex=0;
+    practice.speedMetrics=(practice.speedMetrics||[]).map(function(metric){
+      if(metrics.indexOf(metric)<0)return metric;
+      var next=Object.assign({},metric,{
+        date:date,
+        metric:focus,
+        zone:focus,
+        note:els.correctionNotes.value||metric.note||'',
+        updatedAt:updatedAt
+      });
+      if(distance){
+        next.distance=distance.distance;
+        next.unit=distance.unit;
+        next.meters=distance.meters;
+      }
+      if(times.length){
+        next.seconds=times[timeIndex]||next.seconds;
+        next.time=formatSpeedMetricSeconds(next.seconds);
+        timeIndex+=1;
+      }
+      return recalcSpeedMetric(next);
+    });
+    return practice;
+  }).then(function(){
+    setCorrectionStatus('Sprint correction saved.','success');
+    closeCorrectionModal();
+  }).catch(function(error){
+    setCorrectionStatus(error.message||'Could not save sprint correction.','error');
+  }).finally(function(){
+    els.correctionSave.disabled=false;
+  });
+}
+
+function updateSpeedPracticeForRow(row,updater){
+  row=row||{};
+  var practice=findSpeedPracticeForRow(row);
+  if(!practice)return Promise.reject(new Error('Saved sprint practice was not found.'));
+  var metrics=speedPracticeMetricsForRow(practice,row);
+  if(!metrics.length)return Promise.reject(new Error('Saved sprint reps were not found.'));
+  var updated=updater(Object.assign({},practice,{speedMetrics:(practice.speedMetrics||[]).slice()}),metrics);
+  if(!updated||!updated.id)return Promise.reject(new Error('Sprint practice update could not be built.'));
+  return fetch('/api/smart-trak/field-practice',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({practice:updated})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Sprint practice update failed.');
+    fieldPracticeRows=result.data&&result.data.practices||fieldPracticeRows.map(function(item){return item.id===updated.id?updated:item;});
+    rebuildSpeedTrainingRows();
+    renderRows();
+    return result.data;
+  });
+}
+
+function rebuildSpeedTrainingRows(){
+  var normalRows=recentTrainingRows.filter(function(row){return !row.speedMetricSession;});
+  recentTrainingRows=normalRows.concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
+}
+
+function findSpeedPracticeForRow(row){
+  var id=String(row&&row.sourceSessionId||'');
+  if(!id)return null;
+  return (fieldPracticeRows||[]).find(function(practice){return String(practice&&practice.id||practice&&practice.practiceId||'')===id;})||null;
+}
+
+function speedPracticeMetricsForRow(practice,row){
+  var wantedIds=(Array.isArray(row&&row.speedMetricIds)?row.speedMetricIds:[]).map(function(id){return String(id||'');}).filter(Boolean);
+  var metrics=Array.isArray(practice&&practice.speedMetrics)?practice.speedMetrics:[];
+  if(wantedIds.length){
+    var byId=metrics.filter(function(metric){return wantedIds.indexOf(String(metric&&metric.id||''))>=0;});
+    if(byId.length)return byId;
+  }
+  var athleteKeys=[row&&row.contactId,row&&row.athleteName].map(normalizedLookupKey).filter(Boolean);
+  return metrics.filter(function(metric){
+    var keys=[metric&&metric.athleteId,metric&&metric.contactId,metric&&metric.athleteName].map(normalizedLookupKey).filter(Boolean);
+    return keys.some(function(key){return athleteKeys.indexOf(key)>=0;});
+  });
+}
+
+function speedDistanceFromCorrection(value,row){
+  var text=String(value||'');
+  var reps=text.match(/\b\d+(?:\.\d+)?\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(yd|yard|yards|m|meter|meters)\b/i);
+  var single=text.match(/\b(\d+(?:\.\d+)?)\s*(yd|yard|yards|m|meter|meters)\b/i);
+  var match=reps||single;
+  if(!match)return null;
+  var distance=Number(match[1]);
+  var unit=/^yd|yard/i.test(match[2]||'')?'yd':'m';
+  if(!Number.isFinite(distance)||distance<=0)return null;
+  return {distance:distance,unit:unit,meters:unit==='yd'?distance*.9144:distance};
+}
+
+function speedTimesFromCorrection(value,count){
+  var text=String(value||'').replace(/^best\s+/i,'');
+  var values=(text.match(/\d+(?:\.\d+)?/g)||[]).map(Number).filter(function(value){return Number.isFinite(value)&&value>0;});
+  if(!values.length)return [];
+  if(count===1)return [values[0]];
+  return values.length===count?values:[];
+}
+
+function recalcSpeedMetric(metric){
+  var meters=num(metric.meters)||(metric.unit==='yd'?num(metric.distance)*.9144:num(metric.distance));
+  var seconds=num(metric.seconds)||speedMetricSeconds(metric);
+  var strides=num(metric.strides);
+  return Object.assign({},metric,{
+    meters:roundSpeedMetric(meters),
+    seconds:roundSpeedMetric(seconds),
+    velocity:roundSpeedMetric(meters&&seconds?meters/seconds:num(metric.velocity)),
+    strideLength:roundSpeedMetric(meters&&strides?meters/strides:num(metric.strideLength)),
+    strideFrequency:roundSpeedMetric(strides&&seconds?strides/seconds:num(metric.strideFrequency))
+  });
+}
+
+function roundSpeedMetric(value){
+  value=Number(value);
+  return Number.isFinite(value)&&value>0?Number(value.toFixed(3)):0;
+}
+
+function appendAuditNote(notes,reason,label){
+  var stamp=formatDateTime(new Date().toISOString());
+  return [notes,[label||'Correction',stamp,reason].filter(Boolean).join(': ')].filter(Boolean).join('\n');
 }
 
 function applyTrainingCorrectionLocally(row,updates,reason){
@@ -4403,8 +4546,8 @@ function voidTrainingRecord(button){
   var sourceRecordId=button.getAttribute('data-source-record-id')||row.sourceRecordId||'';
   var label=[row.athleteName,row.workoutPrescription||row.workoutType,formatDate(row.sessionDate)].filter(Boolean).join(' - ')||'this training entry';
   openVoidModal({
-    kind:'training',
-    title:'Void Training Entry',
+    kind:row.speedMetricSession?'speed':'training',
+    title:row.speedMetricSession?'Void Sprint Workout':'Void Training Entry',
     label:label,
     row:row,
     recordId:recordId,
@@ -4447,6 +4590,25 @@ function saveVoidRecord(){
     return;
   }
   var isMeet=voidRequest.kind==='meet';
+  if(voidRequest.kind==='speed'){
+    els.voidSave.disabled=true;
+    setVoidStatus('Voiding sprint workout...','');
+    updateSpeedPracticeForRow(voidRequest.row,function(practice,metrics){
+      practice.speedMetrics=(practice.speedMetrics||[]).filter(function(metric){return metrics.indexOf(metric)<0;});
+      practice.coachNotes=appendAuditNote(practice.coachNotes,reason,'Sprint void');
+      practice.updatedAt=new Date().toISOString();
+      return practice;
+    }).then(function(){
+      setVoidStatus('Sprint workout voided.','success');
+      applyVoidedEntryLocally(voidRequest);
+      els.status.textContent='Sprint workout voided.';
+      closeVoidModal();
+    }).catch(function(error){
+      setVoidStatus(error.message||'Could not void sprint workout.','error');
+      els.voidSave.disabled=false;
+    });
+    return;
+  }
   els.voidSave.disabled=true;
   setVoidStatus('Voiding entry...','');
   fetch('/api/smart-trak/correction',{
@@ -4489,7 +4651,7 @@ function applyVoidedEntryLocally(request){
   }else{
     recentTrainingRows=recentTrainingRows.filter(keep);
   }
-  refreshRosterAfterVoid(request.kind,originalRow);
+  refreshRosterAfterVoid(request.kind==='speed'?'training':request.kind,originalRow);
   renderRows();
 }
 
@@ -5301,11 +5463,19 @@ function plainDateValue(value){
 
 function setSelectValue(select,value){
   if(!select)return;
-  var wanted=String(value||'').toLowerCase();
+  var text=String(value||'').trim();
+  var wanted=text.toLowerCase();
   var found=Array.prototype.slice.call(select.options).find(function(option){
     return option.value.toLowerCase()===wanted || option.text.toLowerCase()===wanted;
   });
   if(found)select.value=found.value;
+  else if(text){
+    var option=document.createElement('option');
+    option.value=text;
+    option.textContent=text;
+    select.insertBefore(option,select.firstChild);
+    select.value=text;
+  }
 }
 
 function sameAthlete(item,row){
@@ -6081,7 +6251,9 @@ function speedPracticeTrainingRows(practices,athletes){
       rows.push({
         speedMetricSession:true,
         speedRepCount:reps.length,
+        speedMetricIds:reps.map(function(rep){return rep.id||'';}).filter(Boolean),
         sourceSessionId:practice.id||practice.practiceId||'',
+        sourceRecordId:'field_practice_'+(practice.id||practice.practiceId||'')+'_'+key,
         athleteName:speedDashboardAthleteName(bundle.athlete,first.athleteName||'Athlete'),
         contactId:bundle.athlete.contactId||bundle.athlete.id||first.contactId||first.athleteId||'',
         groupName:practice.groupName||'Speed Metrics',

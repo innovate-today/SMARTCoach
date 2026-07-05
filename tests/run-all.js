@@ -791,12 +791,23 @@ function checkSpeedTrakFeature() {
   });
   [
     "/api/smart-trak/field-practice?v=",
-    "speedPracticeTrainingRows(fieldPractices,dashboardRows)",
+    "speedPracticeTrainingRows(fieldPracticeRows,dashboardRows)",
     "speedMetricSession:true",
     "speedRepCount",
+    "speedMetricIds",
+    "sourceSessionId:practice.id||practice.practiceId||''",
+    "sourceRecordId:'field_practice_'+(practice.id||practice.practiceId||'')+'_'+key",
     "speed reps",
     "Speed Metrics session",
     "completedVolumeMiles:totalMeters/1609.344",
+    "var fieldPracticeRows=[];",
+    "recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));",
+    "function saveSpeedPracticeCorrection(reason)",
+    "function updateSpeedPracticeForRow(row,updater)",
+    "fetch('/api/smart-trak/field-practice'",
+    "kind:row.speedMetricSession?'speed':'training'",
+    "if(voidRequest.kind==='speed')",
+    "practice.speedMetrics=(practice.speedMetrics||[]).filter(function(metric){return metrics.indexOf(metric)<0;});",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Dashboard Speed Metrics training-load bridge missing ${text}`);
   });
