@@ -1354,6 +1354,18 @@ function checkDashboardMeetCorrectionFields() {
   console.log("Dashboard meet correction fields ok");
 }
 
+function checkTrainingCorrectionWorkoutNoteReplacement() {
+  const api = fs.readFileSync("api/ghl/correction.js", "utf8");
+  [
+    "Workout: nextValues.workoutType",
+    "return !/^(Workout|Completed volume|Weather):/i.test(line.trim());",
+    "workout_type: workoutTypeValue(nextValues.workoutType)",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Training correction workout note replacement missing ${text}`);
+  });
+  console.log("Training correction workout note replacement ok");
+}
+
 function checkWeatherLocationSaveFallback() {
   const html = fs.readFileSync("weather.html", "utf8");
   const route = fs.readFileSync("api/smart-trak/[route].js", "utf8");
@@ -2902,6 +2914,7 @@ checkPlanImportMultiGroupAssignment();
 checkPlanSetupHidesArchivedPlans();
 checkMeetManagerSportField();
 checkDashboardMeetCorrectionFields();
+checkTrainingCorrectionWorkoutNoteReplacement();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
 checkTrainingAdjustmentAuditDates();

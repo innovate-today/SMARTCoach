@@ -335,6 +335,7 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
 
   const correctionTime = new Date().toISOString();
   const nextNote = replaceNoteLines(previousNote, {
+    Workout: nextValues.workoutType,
     "Completed volume": nextValues.completedVolume,
     Weather: nextValues.weather,
   }, nextValues.notes, correctionTime, reason);
@@ -723,7 +724,7 @@ function replaceMeetNoteLines(note, labeledValues, notes, correctionTime, reason
 function stripSystemNoteLines(note) {
   return clean(note).split(/\r?\n/).filter((line) => {
     if (isCorrectionLine(line)) return false;
-    return !/^(Completed volume|Weather):/i.test(line.trim());
+    return !/^(Workout|Completed volume|Weather):/i.test(line.trim());
   }).join("\n");
 }
 
