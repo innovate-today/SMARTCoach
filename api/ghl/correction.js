@@ -232,6 +232,8 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
 
   const resultMs = nextValues.resultDisplay ? parseTimeToMs(nextValues.resultDisplay) : null;
   if (nextValues.resultDisplay && !resultMs && !isField) throw httpError(400, "Enter result like 58.2, 4:52.3, or 18:04.5.");
+  const seasonYearValue = clean(nextValues.seasonYear);
+  if (seasonYearValue && !Number.isFinite(Number(seasonYearValue))) throw httpError(400, "Season Year must be a number.");
 
   const correctionTime = new Date().toISOString();
   const nextNote = replaceMeetNoteLines(previousNote, isRelay ? {
@@ -262,7 +264,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
         wind: nextValues.wind,
         ...(clean(nextValues.sport) ? { sport: optionValue(nextValues.sport) } : {}),
         ...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {}),
-        season_year: Number(nextValues.seasonYear) || "",
+        ...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {}),
         is_pr: nextValues.isPr,
         is_season_best: nextValues.isSeasonBest,
         splits_json: nextValues.splitsJson,

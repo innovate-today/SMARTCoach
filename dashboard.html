@@ -1014,6 +1014,28 @@ tr:last-child td{border-bottom:0}
           <input id="meetCorrectionName" type="text" placeholder="Meet name">
         </div>
         <div class="field">
+          <label for="meetCorrectionSport">Sport</label>
+          <select id="meetCorrectionSport">
+            <option value="">Leave unchanged</option>
+            <option value="Track">Track</option>
+            <option value="Cross Country">Cross Country</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="meetCorrectionSeason">Season</label>
+          <select id="meetCorrectionSeason">
+            <option value="">Leave unchanged</option>
+            <option>Spring</option>
+            <option>Summer</option>
+            <option>Fall</option>
+            <option>Winter</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="meetCorrectionSeasonYear">Season Year</label>
+          <input id="meetCorrectionSeasonYear" type="number" placeholder="2026">
+        </div>
+        <div class="field">
           <label for="meetCorrectionEvent">Event</label>
           <select id="meetCorrectionEvent">
             <option value="100m">100m</option>
@@ -2233,6 +2255,9 @@ var els={
   meetCorrectionClose:document.getElementById('meetCorrectionClose'),
   meetCorrectionDate:document.getElementById('meetCorrectionDate'),
   meetCorrectionName:document.getElementById('meetCorrectionName'),
+  meetCorrectionSport:document.getElementById('meetCorrectionSport'),
+  meetCorrectionSeason:document.getElementById('meetCorrectionSeason'),
+  meetCorrectionSeasonYear:document.getElementById('meetCorrectionSeasonYear'),
   meetCorrectionEvent:document.getElementById('meetCorrectionEvent'),
   meetCorrectionRelayFields:document.getElementById('meetCorrectionRelayFields'),
   meetCorrectionRelayTeamWrap:document.getElementById('meetCorrectionRelayTeamWrap'),
@@ -4710,6 +4735,9 @@ function openMeetCorrectionModal(button){
   }
   els.meetCorrectionDate.value=dateInputValue(meetCorrectionRow.meetDate);
   els.meetCorrectionName.value=meetCorrectionRow.meetName||'';
+  setSelectValue(els.meetCorrectionSport,meetCorrectionRow.sport||'');
+  setSelectValue(els.meetCorrectionSeason,meetCorrectionRow.season||'');
+  els.meetCorrectionSeasonYear.value=meetCorrectionRow.seasonYear||'';
   renderMeetCorrectionEventOptions(meetCorrectionRow.event||'');
   els.meetCorrectionResult.value=meetCorrectionRow.resultDisplay||'';
   els.meetCorrectionWind.value=meetCorrectionRow.wind||'';
@@ -4832,6 +4860,9 @@ function saveMeetCorrection(){
       updates:{
         meetDate:els.meetCorrectionDate.value,
         meetName:els.meetCorrectionName.value,
+        sport:els.meetCorrectionSport.value,
+        season:els.meetCorrectionSeason.value,
+        seasonYear:els.meetCorrectionSeasonYear.value,
         event:els.meetCorrectionEvent.value,
         resultDisplay:els.meetCorrectionResult.value,
         wind:els.meetCorrectionWind.value,
@@ -4852,6 +4883,9 @@ function saveMeetCorrection(){
     applyMeetCorrectionLocally(meetCorrectionRow,{
       meetDate:els.meetCorrectionDate.value,
       meetName:els.meetCorrectionName.value,
+      sport:els.meetCorrectionSport.value,
+      season:els.meetCorrectionSeason.value,
+      seasonYear:els.meetCorrectionSeasonYear.value,
       event:els.meetCorrectionEvent.value,
       resultDisplay:els.meetCorrectionResult.value,
       wind:els.meetCorrectionWind.value,
@@ -4882,6 +4916,9 @@ function applyMeetCorrectionLocally(row,updates,reason){
     updatedRow=Object.assign({},item,{
       meetDate:updates.meetDate||item.meetDate,
       meetName:updates.meetName||item.meetName,
+      sport:updates.sport||item.sport,
+      season:updates.season||item.season,
+      seasonYear:updates.seasonYear||item.seasonYear,
       event:updates.event||item.event,
       resultDisplay:updates.resultDisplay||item.resultDisplay,
       wind:updates.wind||'',
@@ -4942,6 +4979,9 @@ function meetCorrectionPreviousPayload(row){
     sourceRecordId:row.sourceRecordId||'',
     meetName:row.meetName||'',
     meetDate:row.meetDate||'',
+    sport:row.sport||'',
+    season:row.season||'',
+    seasonYear:row.seasonYear||'',
     event:row.event||'',
     resultDisplay:row.resultDisplay||'',
     wind:row.wind||'',

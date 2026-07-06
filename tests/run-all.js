@@ -1318,6 +1318,38 @@ function checkMeetManagerSportField() {
   console.log("Meet Manager sport field ok");
 }
 
+function checkDashboardMeetCorrectionFields() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/ghl/correction.js", "utf8");
+  [
+    'id="meetCorrectionSport"',
+    'id="meetCorrectionSeason"',
+    'id="meetCorrectionSeasonYear"',
+    "meetCorrectionSport:document.getElementById('meetCorrectionSport')",
+    "meetCorrectionSeason:document.getElementById('meetCorrectionSeason')",
+    "meetCorrectionSeasonYear:document.getElementById('meetCorrectionSeasonYear')",
+    "setSelectValue(els.meetCorrectionSport,meetCorrectionRow.sport||'')",
+    "setSelectValue(els.meetCorrectionSeason,meetCorrectionRow.season||'')",
+    "els.meetCorrectionSeasonYear.value=meetCorrectionRow.seasonYear||''",
+    "sport:els.meetCorrectionSport.value",
+    "season:els.meetCorrectionSeason.value",
+    "seasonYear:els.meetCorrectionSeasonYear.value",
+    "sport:row.sport||''",
+    "season:row.season||''",
+    "seasonYear:row.seasonYear||''",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Dashboard meet correction fields missing ${text}`);
+  });
+  [
+    'const seasonYearValue = clean(nextValues.seasonYear);',
+    'if (seasonYearValue && !Number.isFinite(Number(seasonYearValue))) throw httpError(400, "Season Year must be a number.");',
+    '...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {})',
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Correction API meet correction field handling missing ${text}`);
+  });
+  console.log("Dashboard meet correction fields ok");
+}
+
 function checkWeatherLocationSaveFallback() {
   const html = fs.readFileSync("weather.html", "utf8");
   const route = fs.readFileSync("api/smart-trak/[route].js", "utf8");
@@ -1867,7 +1899,7 @@ function checkMeetHistoryImportedResultCorrections() {
     'seasonYear: String(prop(props, "season_year") || "")',
     '...(clean(nextValues.sport) ? { sport: optionValue(nextValues.sport) } : {})',
     '...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {})',
-    'season_year: Number(nextValues.seasonYear) || ""',
+    '...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {})',
     'sport: clean(data.sport)',
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Correction API imported history support missing ${text}`);
@@ -2861,6 +2893,7 @@ checkPublicSharePagesHideFeedback();
 checkPlanImportMultiGroupAssignment();
 checkPlanSetupHidesArchivedPlans();
 checkMeetManagerSportField();
+checkDashboardMeetCorrectionFields();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
 checkTrainingAdjustmentAuditDates();
