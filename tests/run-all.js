@@ -1865,7 +1865,8 @@ function checkMeetHistoryImportedResultCorrections() {
     'sport: prop(props, "sport")',
     'season: prop(props, "season")',
     'seasonYear: String(prop(props, "season_year") || "")',
-    'sport: optionValue(nextValues.sport)',
+    '...(clean(nextValues.sport) ? { sport: optionValue(nextValues.sport) } : {})',
+    '...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {})',
     'season_year: Number(nextValues.seasonYear) || ""',
     'sport: clean(data.sport)',
   ].forEach((text) => {
