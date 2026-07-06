@@ -1767,6 +1767,11 @@ function checkAthleteCalendarSubmittedStatusPill() {
     "async function loadActiveMeetIds(accountKey)",
     "function trainingDayHasActiveMeet(day, activeMeetIds)",
     "return activeMeetIds.has(linkedMeetId);",
+    "loadSubmittedTrainingStatuses(context.accountKey, athlete)",
+    "function applySubmittedTrainingStatus(day, submittedStatuses)",
+    "function submittedStatusFromNote(note)",
+    "athlete calendar submission",
+    "smartcoach status: voided",
   ].forEach((text) => {
     if (!lib.includes(text)) throw new Error(`Athlete Calendar deleted meet guard missing ${text}`);
   });
