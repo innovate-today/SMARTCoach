@@ -153,7 +153,7 @@ async function publicMilesBoard(req, res) {
     const sharing = req.milesBoardSharing || {};
     const displayOptions = milesBoardDisplayOptions(sharing.displayOptions);
     const [athletes, performanceRecords, mirroredPerformanceRecords, attendanceRecords] = await Promise.all([
-      listActiveAthletes({ token, locationId, includeInactive: true }),
+      listActiveAthletes({ token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
       displayOptions.teamAttendance || displayOptions.athleteAttendance ? loadAttendanceRecords(accountKey, {
@@ -546,7 +546,7 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
 }
 
-async function listActiveAthletes({ token, locationId, includeInactive = false }) {
+async function listActiveAthletes({ token, locationId }) {
   const genderFieldIds = await listContactFieldIds({ token, locationId, names: ["gender", "sex", "division"] });
   const result = await ghlFetch({
     token,
@@ -556,7 +556,7 @@ async function listActiveAthletes({ token, locationId, includeInactive = false }
 
   return (result.contacts || [])
     .map((contact) => normalizeContact(contact, { genderFieldIds }))
-    .filter((athlete) => (includeInactive ? athlete.smartcoachRosterMember : athlete.smartcoachActive) && !athlete.excludedSystemContact)
+    .filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
