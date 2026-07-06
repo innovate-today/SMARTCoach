@@ -1752,12 +1752,23 @@ function checkAthleteCalendarQuestions() {
 
 function checkAthleteCalendarSubmittedStatusPill() {
   const calendar = fs.readFileSync("athlete-calendar.html", "utf8");
+  const lib = fs.readFileSync("lib/athlete-calendar.js", "utf8");
   [
     "var pillLabel=submitted?submitted.label:(day.status||'Scheduled');",
     '<span class="pill \'+(submitted?submitted.className:\'\')+\'">\'+esc(pillLabel)+\'</span>',
     "Athlete submitted: '+esc(submitted.label)",
   ].forEach((text) => {
     if (!calendar.includes(text)) throw new Error(`Athlete Calendar submitted status pill missing ${text}`);
+  });
+  [
+    "const activeMeetIds = await loadActiveMeetIds(context.accountKey);",
+    "athleteCanSeeDay(athlete, groups, day) && trainingDayHasActiveMeet(day, activeMeetIds)",
+    "athleteCanSeeDay(athlete, groups, day) || !trainingDayHasActiveMeet(day, activeMeetIds)",
+    "async function loadActiveMeetIds(accountKey)",
+    "function trainingDayHasActiveMeet(day, activeMeetIds)",
+    "return activeMeetIds.has(linkedMeetId);",
+  ].forEach((text) => {
+    if (!lib.includes(text)) throw new Error(`Athlete Calendar deleted meet guard missing ${text}`);
   });
   console.log("Athlete Calendar submitted status pill ok");
 }
