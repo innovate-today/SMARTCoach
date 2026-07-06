@@ -241,7 +241,7 @@ async function accountAttendance(req, res) {
     return;
   }
 
-  const { accountKey } = getGhlContext(req);
+  const { accountKey, token, locationId } = getGhlContext(req);
 
   try {
     if (req.method === "GET") {
@@ -256,7 +256,8 @@ async function accountAttendance(req, res) {
         athleteName: firstQueryValue(req.query && req.query.athleteName),
         status: firstQueryValue(req.query && req.query.status),
       });
-      res.status(200).json({ success: true, attendance, count: attendance.length });
+      const activeAttendance = await activeAttendanceRecords({ attendance, token, locationId });
+      res.status(200).json({ success: true, attendance: activeAttendance, count: activeAttendance.length });
       return;
     }
 
@@ -277,6 +278,22 @@ async function accountAttendance(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Attendance save failed." });
   }
+}
+
+async function activeAttendanceRecords({ attendance, token, locationId }) {
+  const rows = Array.isArray(attendance) ? attendance : [];
+  if (!token || !locationId || !rows.length) return rows;
+  const athletes = await athletesApi.listSmartCoachAthletes({ token, locationId, includeContacts: false });
+  const activeKeys = new Set();
+  athletes.filter((athlete) => athlete && athlete.smartcoachActive).forEach((athlete) => {
+    [athlete.id, athlete.contactId, athlete.smartcoachAthleteId, athlete.name].map(cleanSetupText).filter(Boolean).forEach((value) => {
+      activeKeys.add(value.toLowerCase());
+    });
+  });
+  return rows.filter((row) => {
+    const keys = [row && row.athleteId, row && row.contactId, row && row.smartcoachAthleteId, row && row.athleteName].map(cleanSetupText).filter(Boolean);
+    return keys.some((value) => activeKeys.has(value.toLowerCase()));
+  });
 }
 
 function attendanceRecordsFromPayload(payload) {

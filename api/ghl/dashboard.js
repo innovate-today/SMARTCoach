@@ -64,6 +64,12 @@ const FIELD_LABELS = {
   coach_note: ["coach note", "notes"],
 };
 
+const ATHLETE_FIELD_ALIASES = {
+  smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
+  smartcoachAthleteId: ["smartcoach athlete id", "smartcoach_athlete_id", "athlete id", "smartcoach id"],
+  gender: ["gender", "sex", "division"],
+};
+
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   setCorsHeaders(res);
@@ -547,7 +553,11 @@ function setCorsHeaders(res) {
 }
 
 async function listActiveAthletes({ token, locationId }) {
-  const genderFieldIds = await listContactFieldIds({ token, locationId, names: ["gender", "sex", "division"] });
+  const [activeFieldIds, athleteIdFieldIds, genderFieldIds] = await Promise.all([
+    listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachActive }),
+    listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachAthleteId }),
+    listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.gender }),
+  ]);
   const result = await ghlFetch({
     token,
     path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=100`,
@@ -555,7 +565,7 @@ async function listActiveAthletes({ token, locationId }) {
   });
 
   return (result.contacts || [])
-    .map((contact) => normalizeContact(contact, { genderFieldIds }))
+    .map((contact) => normalizeContact(contact, { activeFieldIds, athleteIdFieldIds, genderFieldIds }))
     .filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -751,8 +761,8 @@ function isFutureDate(value) {
 
 function normalizeContact(contact, options = {}) {
   const tags = Array.isArray(contact.tags) ? contact.tags : [];
-  const smartcoachActiveValue = existingCustomFieldValue(contact, SMARTCOACH_ACTIVE_FIELD_ID);
-  const smartcoachAthleteId = existingCustomFieldValue(contact, SMARTCOACH_ATHLETE_ID_FIELD_ID);
+  const smartcoachActiveValue = existingCustomFieldValueByIdsOrNames(contact, [SMARTCOACH_ACTIVE_FIELD_ID].concat(options.activeFieldIds || []), ATHLETE_FIELD_ALIASES.smartcoachActive);
+  const smartcoachAthleteId = existingCustomFieldValueByIdsOrNames(contact, [SMARTCOACH_ATHLETE_ID_FIELD_ID].concat(options.athleteIdFieldIds || []), ATHLETE_FIELD_ALIASES.smartcoachAthleteId);
   const explicitlyInactive = isInactiveValue(smartcoachActiveValue);
   const hasAthleteTag = tags.some((tag) => clean(tag).toLowerCase() === "smartcoach-athlete");
   const excludedSystemContact = isExcludedSystemContact(tags) || isSmartCoachSupportContact(contact);
@@ -1250,6 +1260,11 @@ function existingCustomFieldValue(contact, fieldId) {
   const field = customFieldList(contact).find((item) => item && (item.id === fieldId || item.fieldId === fieldId || item.field_id === fieldId || item.customFieldId === fieldId));
   if (!field) return "";
   return fieldValue(field);
+}
+
+function existingCustomFieldValueByIdsOrNames(contact, fieldIds, names) {
+  const byId = (Array.isArray(fieldIds) ? fieldIds : []).map((fieldId) => existingCustomFieldValue(contact, fieldId)).find(Boolean);
+  return byId || existingCustomFieldValueByName(contact, names || []);
 }
 
 function existingCustomFieldValueByName(contact, names) {

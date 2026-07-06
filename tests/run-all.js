@@ -322,6 +322,9 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
     if (!athletes.includes(text)) throw new Error(`athlete API must count only SMART Trak roster athletes: ${text}`);
   });
   [
+    "const ATHLETE_FIELD_ALIASES = {",
+    "listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachActive })",
+    "existingCustomFieldValueByIdsOrNames(contact, [SMARTCOACH_ACTIVE_FIELD_ID].concat(options.activeFieldIds || []), ATHLETE_FIELD_ALIASES.smartcoachActive)",
     "const inferredSmartCoachAthlete = hasAthleteTag;",
     "const smartcoachActive = !excludedSystemContact && inferredSmartCoachAthlete &&",
     "smartcoachRosterMember: !excludedSystemContact && inferredSmartCoachAthlete",
@@ -2243,6 +2246,10 @@ function checkAttendanceSeasonAttachment() {
   [
     "sport: firstQueryValue(req.query && req.query.sport)",
     "season: firstQueryValue(req.query && req.query.season)",
+    "const activeAttendance = await activeAttendanceRecords({ attendance, token, locationId });",
+    "async function activeAttendanceRecords({ attendance, token, locationId })",
+    "athletes.filter((athlete) => athlete && athlete.smartcoachActive)",
+    "return rows.filter((row) => {",
     "const sport = cleanSetupText(payload && payload.sport);",
     "seasonYear",
   ].forEach((text) => {
