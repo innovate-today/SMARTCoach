@@ -1846,7 +1846,10 @@ function mergeCalendarWorkoutDaysIntoLogs(days){
       logs.unshift(log);
       changed=true;
     }
-    if(canAutoApplyCalendarWorkout(log))changed=applyCalendarDayToTarget(log,nextDay,true)||changed;
+    if(canAutoApplyCalendarWorkout(log)){
+      changed=applyCalendarDayToTarget(log,nextDay,true)||changed;
+      changed=clearGroupCalendarRunnerOverrides(log)||changed;
+    }
   });
   return changed;
 }
@@ -6638,12 +6641,15 @@ function applySelectedTrainingPlanToGroupRunners(plan){
     if(applySelectedTrainingPlanToTarget(r,plan))r.trainingPlanAuto='calendar-group-selected';
   });
 }
-function clearGroupCalendarRunnerOverrides(){
-  if(!CL||!Array.isArray(CL.runners))return;
-  CL.runners.forEach(function(r){
+function clearGroupCalendarRunnerOverrides(group){
+  var target=group||CL;
+  if(!target||!Array.isArray(target.runners))return false;
+  var changed=false;
+  target.runners.forEach(function(r){
     clearCachedPlanTarget(r);
-    if(isRunnerCalendarPlanOverride(r))clearAthleteTrainingPlanFields(r);
+    if(isRunnerCalendarPlanOverride(r)){clearAthleteTrainingPlanFields(r);changed=true;}
   });
+  return changed;
 }
 function isRunnerCalendarPlanOverride(r){
   if(!r)return false;
