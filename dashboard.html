@@ -2915,6 +2915,66 @@ function staffPersonalCode(){
   }
 }
 
+function compactMessageLines(lines){
+  return lines.filter(function(line,index,all){
+    return line!==''||all[index-1]!==''&&index!==all.length-1;
+  }).join('\n');
+}
+
+function staffCodeMessageLines(savedItem,code,options){
+  options=options||{};
+  var appOnly=normalizeStaffAccessType(savedItem&&savedItem.accessType)==='app-only';
+  var account=smartCoachAccountKey();
+  var desktopLink=window.location.origin+'/dashboard.html?account='+encodeURIComponent(account);
+  var lines=[
+    'SMARTCoach Access',
+    '',
+    'Hi '+(savedItem&&savedItem.name||'Coach')+',',
+    '',
+    'Your personal SMARTCoach code is:',
+    '',
+    code,
+    '',
+    'SMARTCoach Phone App',
+    '',
+    'Use the stopwatch app on your phone to time workouts, record splits, manage training groups, and sync completed sessions into SMART Trak.',
+    '',
+    'Open this link on your phone:',
+    'https://app.smartcoach-pro.com',
+    '',
+    'iPhone',
+    'Open the link in Safari. It must be Safari, not Chrome.',
+    'Tap the Share button at the bottom.',
+    'Scroll down and tap Add to Home Screen.',
+    'The SMARTCoach icon will appear on your home screen.',
+    '',
+    'Android',
+    'Open the link in Chrome.',
+    'Tap the menu in the top right.',
+    'Tap Add to Home screen or Install app if it appears.',
+    'Confirm by tapping Add or Install.',
+    'The SMARTCoach icon will appear on your home screen.',
+    '',
+    'Use this code when the app asks for your coach access code.',
+    '',
+    appOnly?'This code is for the phone app only.':'This same code also opens SMART Trak:',
+    appOnly?'':desktopLink
+  ];
+  if(options.inviteLink){
+    lines=lines.concat([
+      '',
+      'SMART Trak invite link:',
+      options.inviteLink
+    ]);
+  }
+  return lines.concat([
+    '',
+    'Access type: '+staffAccessTypeLabel(savedItem&&savedItem.accessType),
+    '',
+    'Keep this code private. If it stops working, ask the head coach to reset your personal coach code.'
+  ]);
+}
+
 function dashboardInviteToken(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -3335,34 +3395,7 @@ function copyStaffCoachCode(index){
   coachStaff[index]=item;
   saveStaffList({quiet:true,staff:coachStaff}).then(function(saved){
     var savedItem=saved[index]||item;
-    var appOnly=normalizeStaffAccessType(savedItem.accessType)==='app-only';
-    var account=smartCoachAccountKey();
-    var desktopLink=window.location.origin+'/dashboard.html?account='+encodeURIComponent(account);
-    var message=[
-      'SMARTCoach Access',
-      '',
-      'Hi '+savedItem.name+',',
-      '',
-      'Your personal SMARTCoach code is:',
-      '',
-      code,
-      '',
-      'SMARTCoach Phone App',
-      '',
-      'Open this link on your phone:',
-      'https://app.smartcoach-pro.com',
-      '',
-      'Use this code when the app asks for your coach access code.',
-      '',
-      appOnly?'This code is for the phone app only.':'This same code also opens SMART Trak:',
-      appOnly?'':desktopLink,
-      '',
-      'Access type: '+staffAccessTypeLabel(savedItem.accessType),
-      '',
-      'Keep this code private. If it stops working, ask the head coach to reset your personal coach code.'
-    ].filter(function(line,index,all){
-      return line!==''||all[index-1]!==''&&index!==all.length-1;
-    }).join('\n');
+    var message=compactMessageLines(staffCodeMessageLines(savedItem,code));
     return copyTextToClipboard(message).then(function(copied){
       if(els.staffStatus){els.staffStatus.textContent=copied?'Personal code copied for '+savedItem.name+'.':'Code saved, but copy failed. Reset the code and copy again.';els.staffStatus.style.color=copied?'#08783c':'#b00000';}
     });
@@ -3394,43 +3427,16 @@ function copyStaffInvite(index){
     item.inviteLastUsedAt='';
     item.inviteLastUsedSource='';
   }
+  var code=staffPersonalCode();
+  item.newCoachCode=code;
   item.inviteLastCopiedAt=now;
   coachStaff[index]=item;
   saveStaffList({quiet:true,staff:coachStaff}).then(function(saved){
     var savedItem=saved[index]||item;
     var link=staffInviteUrl(savedItem);
-    var message=[
-      'SMARTCoach staff invite',
-      '',
-      'Hi '+savedItem.name+',',
-      '',
-      'Open this SMART Trak invite link:',
-      link,
-      '',
-      'SMARTCoach Phone App',
-      '',
-      'Use the stopwatch app on your phone to time workouts, record splits, manage training groups, and sync completed sessions into SMART Trak.',
-      '',
-      'Open this link on your phone:',
-      'https://app.smartcoach-pro.com',
-      '',
-      'iPhone',
-      'Open the link in Safari. It must be Safari, not Chrome.',
-      'Tap the Share button at the bottom.',
-      'Scroll down and tap Add to Home Screen.',
-      'The SMARTCoach icon will appear on your home screen.',
-      '',
-      'Android',
-      'Open the link in Chrome.',
-      'Tap the menu in the top right.',
-      'Tap Add to Home screen or Install app if it appears.',
-      'Confirm by tapping Add or Install.',
-      'The SMARTCoach icon will appear on your home screen.',
-      '',
-      'This invite is assigned to you. Keep it private and use it only while you are active coaching staff.'
-    ].join('\n');
+    var message=compactMessageLines(staffCodeMessageLines(savedItem,code,{inviteLink:link}));
     return copyTextToClipboard(message).then(function(copied){
-      if(els.staffStatus){els.staffStatus.textContent=copied?'Invite copied for '+savedItem.name+'.':'Copy failed. Open the invite row and copy again.';els.staffStatus.style.color=copied?'#08783c':'#b00000';}
+      if(els.staffStatus){els.staffStatus.textContent=copied?'Invite and personal code copied for '+savedItem.name+'.':'Invite saved, but copy failed. Open the invite row and copy again.';els.staffStatus.style.color=copied?'#08783c':'#b00000';}
     });
   }).catch(function(){});
 }
