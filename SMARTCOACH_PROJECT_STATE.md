@@ -40,7 +40,7 @@ Current launch status:
 
 Latest handoff:
 
-- Assistant coach access setup is now moving from the starting shared-link/shared-code version toward named assistant invite links. Staff Access keeps the existing shared SMART Trak link and shared coach-code workflow, and now stores assistant name/email plus invite token/status fields on the saved `coachStaff` record.
+- Assistant coach access setup has moved from the starting generic shared-link/shared-code version to named assistant invite links. Staff Access stores assistant name/email plus invite token/status fields on the saved `coachStaff` record, and the redundant generic **Share Assistant Access** panel was removed so assistant sharing happens from each coach row.
 - Staff Access can create/copy a private SMART Trak invite for a named assistant, revoke it, or restore it. Opening `/dashboard.html?account=...&invite=...` exchanges the invite token through `/api/smart-trak/account-session` for the normal signed coach session. Revoked, inactive, or unknown invite tokens are rejected.
 - Accepted staff invite links now write an `inviteLastUsedAt` audit timestamp back to the saved `coachStaff` row, and Staff Access displays used invite status so head coaches can see whether an assistant invite was actually opened.
 - Staff Access now lets coaches set a staff role (`Head Coach`, `Assistant Coach`, `Volunteer Coach`, or `Staff`) and mark each coach Active/Inactive. Inactive staff rows stay saved for reference, but invite copy is disabled in the UI and backend invite validation already rejects inactive staff.

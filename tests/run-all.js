@@ -990,10 +990,6 @@ function checkDashboardStaffAccessHandoff() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const onboarding = fs.readFileSync("onboarding.html", "utf8");
   [
-    "Share Assistant Access",
-    "Share direct SMART Trak access without adding assistant coaches to the account workspace.",
-    'id="assistantSmartTrakLink"',
-    'id="assistantSmartTrakCopy"',
     "data-staff-email",
     "data-copy-staff-invite",
     "data-revoke-staff-invite",
@@ -1028,20 +1024,22 @@ function checkDashboardStaffAccessHandoff() {
     "inviteLastUsedAt",
     "Used '+formatDateTime(item.inviteLastUsedAt)",
     "if(item.active===false)return 'Inactive';",
-    "function assistantSmartTrakUrl()",
     "function staffInviteToken()",
     "function staffInviteUrl(item)",
     "function tryDashboardInviteAccess(data)",
     "inviteToken:token",
-    "return new URL('/dashboard.html?account='+encodeURIComponent(key),window.location.origin).toString();",
-    "function copyAssistantSmartTrakLink()",
     "function copyStaffInvite(index)",
-    "Desktop SMART Trak link:",
-    "Phone app link:",
-    "Desktop: open the SMART Trak link and enter the shared coach code if prompted.",
-    "subject:'SMARTCoach staff access'",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Dashboard Staff Access handoff missing ${text}`);
+  });
+  [
+    "Share Assistant Access",
+    'id="assistantSmartTrakLink"',
+    'id="mobileAccessEmails"',
+    "function collectMobileAccessMessage()",
+    "function emailMobileAccessMessage()",
+  ].forEach((text) => {
+    if (html.includes(text)) throw new Error(`Dashboard Staff Access should use named invites, not generic sharing: ${text}`);
   });
   [
     "Head coach: use SMART Trak from the custom menu link.",
@@ -1252,28 +1250,6 @@ function checkDashboardToolPreferences() {
     'data-dashboard-tool="simulators"',
     "equipmentTrak:true",
     "Show All",
-    "Share Assistant Access",
-    'id="mobileAccessEmails"',
-    'id="mobileAccessCode"',
-    'id="mobileAccessProvider"',
-    '<option value="gmail" selected>Gmail</option>',
-    '<option value="outlook">Outlook</option>',
-    '<option value="yahoo">Yahoo</option>',
-    '<option value="mailto">Default mail app</option>',
-    'id="mobileAccessEmail"',
-    'id="mobileAccessCopy"',
-    'id="mobileAccessDirectLink"',
-    "function mobileAppAccessUrl()",
-    "function collectMobileAccessMessage()",
-    "function mobileAccessProvider()",
-    "function mobileAccessDraftUrl(message)",
-    "function emailMobileAccessMessage()",
-    "https://outlook.office.com/mail/deeplink/compose",
-    "https://mail.google.com/mail/?view=cm&fs=1",
-    "Open Draft Link",
-    "SMARTCoach staff access",
-    "Shared access code:",
-    "els.mobileAccessDirectLink.click();",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard tool preferences missing ${text}`);
   });

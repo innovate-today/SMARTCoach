@@ -1246,44 +1246,6 @@ tr:last-child td{border-bottom:0}
           <button id="staffSave" type="button">Save Coaches</button>
         </div>
       </section>
-      <section class="accesspanel" aria-label="Share mobile app access">
-        <div class="summary-head">
-          <h3>Share Assistant Access</h3>
-          <div class="breakrange">Share direct SMART Trak access without adding assistant coaches to the account workspace.</div>
-        </div>
-        <div class="formgrid">
-          <div class="field full">
-            <label for="assistantSmartTrakLink">Assistant SMART Trak Link</label>
-            <div class="inline-action-row">
-              <input id="assistantSmartTrakLink" type="text" readonly>
-              <button id="assistantSmartTrakCopy" class="ghost" type="button">Copy Link</button>
-            </div>
-          </div>
-          <div class="field full">
-            <label for="mobileAccessEmails">Recipient Emails</label>
-            <input id="mobileAccessEmails" type="text" placeholder="coach1@school.org, coach2@school.org" autocomplete="off">
-          </div>
-          <div class="field full">
-            <label for="mobileAccessCode">Shared Access Code</label>
-            <input id="mobileAccessCode" type="password" placeholder="Enter the shared coach code to include" autocomplete="off">
-          </div>
-          <div class="field full">
-            <label for="mobileAccessProvider">Email Provider</label>
-            <select id="mobileAccessProvider">
-              <option value="gmail" selected>Gmail</option>
-              <option value="outlook">Outlook</option>
-              <option value="yahoo">Yahoo</option>
-              <option value="mailto">Default mail app</option>
-            </select>
-          </div>
-        </div>
-        <div class="modalactions">
-          <div id="mobileAccessStatus" class="modalstatus">Assistants use this direct link plus the shared coach code. The saved code is not shown.</div>
-          <button id="mobileAccessCopy" class="ghost" type="button">Copy Message</button>
-          <a id="mobileAccessDirectLink" class="linkbtn secondary" href="#" hidden>Open Draft Link</a>
-          <button id="mobileAccessEmail" type="button">Open Email Draft</button>
-        </div>
-      </section>
       <div class="formgrid">
         <div class="field full">
           <label for="currentCoachCode">Current Code</label>
@@ -2225,15 +2187,6 @@ var els={
   staffStatus:document.getElementById('staffStatus'),
   staffAdd:document.getElementById('staffAdd'),
   staffSave:document.getElementById('staffSave'),
-  assistantSmartTrakLink:document.getElementById('assistantSmartTrakLink'),
-  assistantSmartTrakCopy:document.getElementById('assistantSmartTrakCopy'),
-  mobileAccessEmails:document.getElementById('mobileAccessEmails'),
-  mobileAccessCode:document.getElementById('mobileAccessCode'),
-  mobileAccessProvider:document.getElementById('mobileAccessProvider'),
-  mobileAccessStatus:document.getElementById('mobileAccessStatus'),
-  mobileAccessCopy:document.getElementById('mobileAccessCopy'),
-  mobileAccessDirectLink:document.getElementById('mobileAccessDirectLink'),
-  mobileAccessEmail:document.getElementById('mobileAccessEmail'),
   accountStatus:document.getElementById('accountStatus'),
   accountRefresh:document.getElementById('accountRefresh'),
   accountSave:document.getElementById('accountSave'),
@@ -2601,9 +2554,6 @@ if(els.codeRecoverySend)els.codeRecoverySend.addEventListener('click',sendTempor
 if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff=collectStaffRows(true);coachStaff.push({id:'',name:'',active:true});renderStaffList();});
 if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
 if(els.staffList)els.staffList.addEventListener('click',handleStaffListClick);
-if(els.assistantSmartTrakCopy)els.assistantSmartTrakCopy.addEventListener('click',copyAssistantSmartTrakLink);
-if(els.mobileAccessCopy)els.mobileAccessCopy.addEventListener('click',copyMobileAccessMessage);
-if(els.mobileAccessEmail)els.mobileAccessEmail.addEventListener('click',emailMobileAccessMessage);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
 els.accountRefresh.addEventListener('click',refreshAppVersion);
@@ -2923,10 +2873,6 @@ function openCodeModal(){
   els.recoveryCoachCode.value='';
   els.newCoachCode.value='';
   els.confirmCoachCode.value='';
-  if(els.assistantSmartTrakLink)els.assistantSmartTrakLink.value=assistantSmartTrakUrl();
-  if(els.mobileAccessCode)els.mobileAccessCode.value='';
-  if(els.mobileAccessDirectLink)els.mobileAccessDirectLink.hidden=true;
-  if(els.mobileAccessStatus){els.mobileAccessStatus.textContent='Assistants use this direct link plus the shared coach code. The saved code is not shown.';els.mobileAccessStatus.style.color='';}
   els.codeStatus.textContent='';
   els.codeStatus.style.color='';
   els.codeSave.disabled=false;
@@ -2937,16 +2883,6 @@ function openCodeModal(){
 
 function closeCodeModal(){
   els.codeModal.hidden=true;
-}
-
-function mobileAppAccessUrl(){
-  var key=smartCoachAccountKey();
-  return new URL('/?account='+encodeURIComponent(key),window.location.origin).toString();
-}
-
-function assistantSmartTrakUrl(){
-  var key=smartCoachAccountKey();
-  return new URL('/dashboard.html?account='+encodeURIComponent(key),window.location.origin).toString();
 }
 
 function staffInviteUrl(item){
@@ -3012,90 +2948,6 @@ function tryDashboardInviteAccess(data){
     els.accessStatus.style.color='#b00000';
   });
   return true;
-}
-
-function copyAssistantSmartTrakLink(){
-  var link=assistantSmartTrakUrl();
-  if(els.assistantSmartTrakLink)els.assistantSmartTrakLink.value=link;
-  copyTextToClipboard(link).then(function(copied){
-    setMobileAccessStatus(copied?'Assistant SMART Trak link copied. Share it with the shared coach code.':'Copy failed. Select and copy the assistant link manually.',copied?'#08783c':'#b00000');
-  });
-}
-
-function collectMobileAccessMessage(){
-  var key=smartCoachAccountKey();
-  var code=els.mobileAccessCode?els.mobileAccessCode.value.trim():'';
-  var lines=[
-    'SMARTCoach staff access',
-    '',
-    'Desktop SMART Trak link:',
-    assistantSmartTrakUrl(),
-    '',
-    'Phone app link:',
-    mobileAppAccessUrl(),
-    '',
-    'Account key: '+key,
-    'Shared access code: '+(code||'[enter shared coach code]'),
-    '',
-    'Desktop: open the SMART Trak link and enter the shared coach code if prompted.',
-    'Phone: open the app link, tap Account if prompted, then enter the account key and shared coach code.',
-    '',
-    'Please keep this access private for active coaching staff only.'
-  ];
-  return {accountKey:key,code:code,emails:(els.mobileAccessEmails?els.mobileAccessEmails.value.trim():''),subject:'SMARTCoach staff access',body:lines.join('\n')};
-}
-
-function mobileAccessProvider(){
-  return els.mobileAccessProvider&&els.mobileAccessProvider.value||'gmail';
-}
-
-function mobileAccessDraftUrl(message){
-  var to=String(message&&message.emails||'').replace(/\s+/g,'');
-  var subject=message&&message.subject||'SMARTCoach mobile app access';
-  var body=message&&message.body||'';
-  var provider=mobileAccessProvider();
-  if(provider==='gmail')return 'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-  if(provider==='outlook')return 'https://outlook.office.com/mail/deeplink/compose?to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-  if(provider==='yahoo')return 'https://compose.mail.yahoo.com/?to='+encodeURIComponent(to)+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-  return 'mailto:'+to+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-}
-
-function setMobileAccessStatus(message,color){
-  if(!els.mobileAccessStatus)return;
-  els.mobileAccessStatus.textContent=message;
-  els.mobileAccessStatus.style.color=color||'';
-}
-
-function copyMobileAccessMessage(){
-  var message=collectMobileAccessMessage();
-  if(!message.code){
-    setMobileAccessStatus('Enter the shared access code before copying the message.','#b00000');
-    if(els.mobileAccessCode)els.mobileAccessCode.focus();
-    return;
-  }
-  copyTextToClipboard(message.body).then(function(copied){
-    setMobileAccessStatus(copied?'Mobile access message copied.':'Copy failed. Select and copy the message manually.',copied?'#08783c':'#b00000');
-  });
-}
-
-function emailMobileAccessMessage(){
-  var message=collectMobileAccessMessage();
-  if(!message.code){
-    setMobileAccessStatus('Enter the shared access code before opening an email draft.','#b00000');
-    if(els.mobileAccessCode)els.mobileAccessCode.focus();
-    return;
-  }
-  var href=mobileAccessDraftUrl(message);
-  var provider=mobileAccessProvider();
-  if(els.mobileAccessDirectLink){
-    els.mobileAccessDirectLink.href=href;
-    els.mobileAccessDirectLink.hidden=false;
-    els.mobileAccessDirectLink.target=provider==='mailto'?'':'_blank';
-    els.mobileAccessDirectLink.rel=provider==='mailto'?'':'noopener';
-    els.mobileAccessDirectLink.textContent='Open Draft Link';
-  }
-  setMobileAccessStatus('Opening email draft. If no window opens, click Open Draft Link or choose another provider.','#64748b');
-  if(els.mobileAccessDirectLink)els.mobileAccessDirectLink.click();
 }
 
 function sendTemporaryCoachCode(){
