@@ -114,14 +114,15 @@ How to use Staff Access:
 2. Check **Assistant coach seats** to confirm the account allows up to 10 assistant coach seats.
 3. Check **Active devices** to see how many devices have used the shared coach code in the last 30 days.
 4. Check **Seen this week** to see how many devices have been active recently.
-5. Add coach names in the **Coaches** section and click **Save Coaches**.
-6. Optional: add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy a private SMART Trak invite link for that assistant.
-7. Use **Revoke** when an assistant should no longer have direct invite-link access. Use **Restore** only when that same assistant should use the invite again.
-8. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
+5. Add coach names in the **Coaches** section, choose each coach's role, and keep only current staff marked **Active**.
+6. Click **Save Coaches** after changing names, roles, or active status.
+7. Optional: add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy a private SMART Trak invite link for that assistant.
+8. Use **Revoke** when an assistant should no longer have direct invite-link access. Use **Restore** only when that same assistant should use the invite again.
+9. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
 
 Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace. Keep invite links private. The shared coach code remains available for the stopwatch app and as a fallback desktop access option.
 
-After an assistant opens an invite link, Staff Access updates that assistant's invite status to show when the link was last used. Use that status along with **Active devices** and **Seen this week** to spot old or unexpected access.
+Inactive coaches cannot use staff invite links. After an assistant opens an invite link, Staff Access updates that assistant's invite status to show when the link was last used. Use that status along with **Active devices** and **Seen this week** to spot old or unexpected access.
 
 If the current shared coach code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new shared coach code. This does not reveal the old code; it replaces it and removes old remembered device access. If the account owner email is not saved or the message does not arrive, contact support.
 

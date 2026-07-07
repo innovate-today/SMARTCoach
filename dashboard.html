@@ -206,8 +206,9 @@ tr:last-child td{border-bottom:0}
 .staff-warning{border:1px solid #fed7aa;background:#fff7ed;color:#92400e;border-radius:8px;padding:10px 11px;margin-top:10px;font-size:13px;line-height:1.35}
 .staff-warning b{display:block;color:#9a3412;margin-bottom:3px}
 .staff-list{display:grid;gap:8px;margin-top:10px}
-.staff-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(180px,1fr) auto auto auto auto;gap:8px;align-items:center}
-.staff-row input{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px}
+.staff-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(180px,1fr) minmax(130px,auto) minmax(105px,auto) auto auto auto auto;gap:8px;align-items:center}
+.staff-row.inactive{opacity:.72}
+.staff-row input,.staff-row select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px}
 .staff-row button{padding:9px 11px}
 .staff-row .invite-state{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
 @media(max-width:760px){.staff-row{grid-template-columns:1fr}.staff-row .invite-state{white-space:normal}}
@@ -3235,10 +3236,21 @@ function normalizeStaffForView(items){
 }
 
 function staffInviteState(item){
-  if(!item||!item.inviteToken)return 'No invite';
+  if(!item)return 'No invite';
+  if(item.active===false)return 'Inactive';
+  if(!item.inviteToken)return 'No invite';
   if(item.inviteRevokedAt)return 'Revoked';
   if(item.inviteLastUsedAt)return 'Used '+formatDateTime(item.inviteLastUsedAt);
   return item.inviteLastCopiedAt?'Invited':'Ready';
+}
+
+function staffRoleOptions(current){
+  var value=String(current||'Assistant Coach').trim()||'Assistant Coach';
+  var roles=['Head Coach','Assistant Coach','Volunteer Coach','Staff'];
+  if(roles.indexOf(value)<0)roles.push(value);
+  return roles.map(function(role){
+    return '<option value="'+esc(role)+'"'+(role===value?' selected':'')+'>'+esc(role)+'</option>';
+  }).join('');
 }
 
 function renderStaffList(){
@@ -3249,15 +3261,18 @@ function renderStaffList(){
   }
   els.staffList.innerHTML=coachStaff.map(function(item,index){
     var revoked=!!item.inviteRevokedAt;
+    var inactive=item.active===false;
     var copyLabel=item.inviteToken&&!revoked?'Copy Invite':'Create Invite';
     var revokeButton=item.inviteToken
       ? '<button class="ghost" type="button" data-'+(revoked?'restore':'revoke')+'-staff-invite="'+index+'">'+(revoked?'Restore':'Revoke')+'</button>'
       : '<span></span>';
-    return '<div class="staff-row" data-staff-row="'+index+'">'+
+    return '<div class="staff-row'+(inactive?' inactive':'')+'" data-staff-row="'+index+'">'+
       '<input data-staff-name type="text" value="'+esc(item.name||'')+'" placeholder="Coach name" autocomplete="off">'+
       '<input data-staff-email type="email" value="'+esc(item.email||'')+'" placeholder="Coach email optional" autocomplete="off">'+
+      '<select data-staff-role aria-label="Coach role">'+staffRoleOptions(item.role)+'</select>'+
+      '<select data-staff-active aria-label="Coach status"><option value="active"'+(!inactive?' selected':'')+'>Active</option><option value="inactive"'+(inactive?' selected':'')+'>Inactive</option></select>'+
       '<span class="invite-state">'+esc(staffInviteState(item))+'</span>'+
-      '<button class="ghost" type="button" data-copy-staff-invite="'+index+'">'+copyLabel+'</button>'+
+      '<button class="ghost" type="button" data-copy-staff-invite="'+index+'"'+(inactive?' disabled':'')+'>'+copyLabel+'</button>'+
       revokeButton+
       '<button class="ghost" type="button" data-remove-staff="'+index+'">Remove</button>'+
     '</div>';
@@ -3270,6 +3285,8 @@ function collectStaffRows(keepBlankRows){
   return rows.map(function(row,index){
     var input=row.querySelector('[data-staff-name]');
     var emailInput=row.querySelector('[data-staff-email]');
+    var roleInput=row.querySelector('[data-staff-role]');
+    var activeInput=row.querySelector('[data-staff-active]');
     var current=coachStaff[index]||{};
     var name=String(input&&input.value||'').trim();
     var email=String(emailInput&&emailInput.value||'').trim();
@@ -3281,8 +3298,8 @@ function collectStaffRows(keepBlankRows){
       id:id,
       name:name||email,
       email:email,
-      active:current.active===false?false:true,
-      role:current.role||'',
+      active:activeInput&&activeInput.value==='inactive'?false:true,
+      role:String(roleInput&&roleInput.value||current.role||'Assistant Coach').trim()||'Assistant Coach',
       inviteToken:current.inviteToken||'',
       inviteCreatedAt:current.inviteCreatedAt||'',
       inviteLastCopiedAt:current.inviteLastCopiedAt||'',
@@ -3341,6 +3358,10 @@ function copyStaffInvite(index){
   var item=coachStaff[index]||{};
   if(!item.name){
     if(els.staffStatus){els.staffStatus.textContent='Add the assistant coach name before creating an invite.';els.staffStatus.style.color='#b00000';}
+    return;
+  }
+  if(item.active===false){
+    if(els.staffStatus){els.staffStatus.textContent='Set this coach to Active before creating or copying an invite.';els.staffStatus.style.color='#b00000';}
     return;
   }
   var now=new Date().toISOString();
