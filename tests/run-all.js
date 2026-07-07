@@ -1029,6 +1029,13 @@ function checkDashboardStaffAccessHandoff() {
     "function tryDashboardInviteAccess(data)",
     "inviteToken:token",
     "function copyStaffInvite(index)",
+    "SMARTCoach Phone App",
+    "Use the stopwatch app on your phone to time workouts, record splits, manage training groups, and sync completed sessions into SMART Trak.",
+    "Open this link on your phone:",
+    "https://app.smartcoach-pro.com",
+    "Open the link in Safari. It must be Safari, not Chrome.",
+    "Scroll down and tap Add to Home Screen.",
+    "Tap Add to Home screen or Install app if it appears.",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Dashboard Staff Access handoff missing ${text}`);
   });

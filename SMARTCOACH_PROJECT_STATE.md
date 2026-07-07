@@ -51,6 +51,7 @@ Latest handoff:
 - Account status and account-staff GET responses strip invite tokens unless the dashboard is already unlocked by an active coach session, so invite secrets are not exposed by public account-status checks.
 - Coach-facing Staff Access copy and onboarding handoff copy were cleaned so they do not mention GHL. Coach-facing material should continue to say account workspace, custom menu link, SMART Trak, or SMARTCoach instead.
 - Copy Coach Invite now includes SMARTCoach Phone App install instructions for iPhone/Safari and Android/Chrome, including the phone app URL and Add to Home Screen / Install app steps, so new coaches know how to add the stopwatch app to their phone.
+- Staff Access row-level assistant invite messages now also include the SMARTCoach Phone App install instructions. This is the **Copy Invite** message generated from a named coach row, separate from the onboarding **Copy Coach Invite** message.
 - The coach How To Guide now includes the same SMARTCoach Phone App install steps so the guide matches the new coach invite email.
 - `SMART_TRAK_COACH_HOW_TO.md` was updated for named assistant invite links because Staff Access is coach-facing.
 - Latest local code commit before this state update: Speed Trak roster matching and mobile Speed Metrics save clarity.
