@@ -1233,6 +1233,12 @@ tr:last-child td{border-bottom:0}
           <h3>Coaches</h3>
           <div class="breakrange">Names appear in the SMARTCoach app.</div>
         </div>
+        <div class="breakgrid">
+          <div class="metric"><b id="staffActiveCount">0</b><span>Active staff</span></div>
+          <div class="metric"><b id="staffInactiveCount">0</b><span>Inactive staff</span></div>
+          <div class="metric"><b id="staffInviteUsedCount">0</b><span>Invites used</span></div>
+          <div class="metric"><b id="staffInviteRevokedCount">0</b><span>Revoked invites</span></div>
+        </div>
         <div id="staffList" class="staff-list"></div>
         <div class="modalactions">
           <div id="staffStatus" class="modalstatus"></div>
@@ -2196,6 +2202,10 @@ var els={
   staffAccessWeekDevices:document.getElementById('staffAccessWeekDevices'),
   staffAccessLastSeen:document.getElementById('staffAccessLastSeen'),
   staffAccessWarning:document.getElementById('staffAccessWarning'),
+  staffActiveCount:document.getElementById('staffActiveCount'),
+  staffInactiveCount:document.getElementById('staffInactiveCount'),
+  staffInviteUsedCount:document.getElementById('staffInviteUsedCount'),
+  staffInviteRevokedCount:document.getElementById('staffInviteRevokedCount'),
   staffList:document.getElementById('staffList'),
   staffStatus:document.getElementById('staffStatus'),
   staffAdd:document.getElementById('staffAdd'),
@@ -3197,6 +3207,7 @@ function renderStaffAccess(data){
   els.staffAccessLastSeen.textContent=usage.lastSeenAt?'Last device activity '+formatDateTime(usage.lastSeenAt):'No device activity yet';
   coachStaff=normalizeStaffForView(data&&data.coachStaff||coachStaff||[]);
   renderStaffAccessWarning(usage);
+  renderStaffSummary();
   renderStaffList();
 }
 
@@ -3212,6 +3223,18 @@ function renderStaffAccessWarning(usage){
   var last=usage&&usage.unassignedLastSeenAt?' Last seen '+formatDateTime(usage.unassignedLastSeenAt)+'.':'';
   els.staffAccessWarning.hidden=false;
   els.staffAccessWarning.innerHTML='<b>'+count+' unassigned '+(count===1?'device':'devices')+'</b>The shared coach code was used by '+count+' '+noun+' not selected a coach name yet.'+last+' Add missing coach names, or change the coach code if this activity is unexpected.';
+}
+
+function renderStaffSummary(){
+  var staff=normalizeStaffForView(coachStaff||[]);
+  var active=staff.filter(function(item){return item.active!==false;}).length;
+  var inactive=staff.filter(function(item){return item.active===false;}).length;
+  var used=staff.filter(function(item){return !!item.inviteLastUsedAt;}).length;
+  var revoked=staff.filter(function(item){return !!item.inviteRevokedAt;}).length;
+  if(els.staffActiveCount)els.staffActiveCount.textContent=active;
+  if(els.staffInactiveCount)els.staffInactiveCount.textContent=inactive;
+  if(els.staffInviteUsedCount)els.staffInviteUsedCount.textContent=used;
+  if(els.staffInviteRevokedCount)els.staffInviteRevokedCount.textContent=revoked;
 }
 
 function normalizeStaffForView(items){
@@ -3271,6 +3294,7 @@ function staffAuditHtml(item){
 
 function renderStaffList(){
   if(!els.staffList)return;
+  renderStaffSummary();
   if(!coachStaff.length){
     els.staffList.innerHTML='<div class="small">Add coach names so the SMARTCoach app can label saves and syncs.</div>';
     return;

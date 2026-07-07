@@ -46,6 +46,7 @@ Latest handoff:
 - Staff Access now lets coaches set a staff role (`Head Coach`, `Assistant Coach`, `Volunteer Coach`, or `Staff`) and mark each coach Active/Inactive. Inactive staff rows stay saved for reference, but invite copy is disabled in the UI and backend invite validation already rejects inactive staff.
 - Staff Access modal layout was widened specifically for the expanded coach rows, with tablet/mobile row wrapping so name, email, role, active status, invite status, and invite actions no longer squeeze together.
 - Staff Access coach rows now use a two-line layout: editable name/email/role/status controls on the first line, then invite status, invite activity chips, and actions on the second line. Activity chips are built from the saved invite created/copied/used/revoked timestamps.
+- Staff Access Coaches panel now summarizes Active staff, Inactive staff, Invites used, and Revoked invites from the saved `coachStaff` rows so head coaches can audit staff access at a glance.
 - Account status and account-staff GET responses strip invite tokens unless the dashboard is already unlocked by an active coach session, so invite secrets are not exposed by public account-status checks.
 - Coach-facing Staff Access copy and onboarding handoff copy were cleaned so they do not mention GHL. Coach-facing material should continue to say account workspace, custom menu link, SMART Trak, or SMARTCoach instead.
 - `SMART_TRAK_COACH_HOW_TO.md` was updated for named assistant invite links because Staff Access is coach-facing.
