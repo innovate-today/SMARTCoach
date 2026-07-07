@@ -3226,6 +3226,8 @@ function normalizeStaffForView(items){
       inviteToken:String(raw.inviteToken||raw.staffInviteToken||'').trim(),
       inviteCreatedAt:raw.inviteCreatedAt||'',
       inviteLastCopiedAt:raw.inviteLastCopiedAt||'',
+      inviteLastUsedAt:raw.inviteLastUsedAt||'',
+      inviteLastUsedSource:raw.inviteLastUsedSource||'',
       inviteRevokedAt:raw.inviteRevokedAt||'',
       updatedAt:raw.updatedAt||''
     };
@@ -3235,6 +3237,7 @@ function normalizeStaffForView(items){
 function staffInviteState(item){
   if(!item||!item.inviteToken)return 'No invite';
   if(item.inviteRevokedAt)return 'Revoked';
+  if(item.inviteLastUsedAt)return 'Used '+formatDateTime(item.inviteLastUsedAt);
   return item.inviteLastCopiedAt?'Invited':'Ready';
 }
 
@@ -3283,6 +3286,8 @@ function collectStaffRows(keepBlankRows){
       inviteToken:current.inviteToken||'',
       inviteCreatedAt:current.inviteCreatedAt||'',
       inviteLastCopiedAt:current.inviteLastCopiedAt||'',
+      inviteLastUsedAt:current.inviteLastUsedAt||'',
+      inviteLastUsedSource:current.inviteLastUsedSource||'',
       inviteRevokedAt:current.inviteRevokedAt||'',
       updatedAt:new Date().toISOString()
     };
@@ -3343,6 +3348,8 @@ function copyStaffInvite(index){
     item.inviteToken=staffInviteToken();
     item.inviteCreatedAt=now;
     item.inviteRevokedAt='';
+    item.inviteLastUsedAt='';
+    item.inviteLastUsedSource='';
   }
   item.inviteLastCopiedAt=now;
   coachStaff[index]=item;

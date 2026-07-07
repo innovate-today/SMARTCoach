@@ -121,6 +121,8 @@ How to use Staff Access:
 
 Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace. Keep invite links private. The shared coach code remains available for the stopwatch app and as a fallback desktop access option.
 
+After an assistant opens an invite link, Staff Access updates that assistant's invite status to show when the link was last used. Use that status along with **Active devices** and **Seen this week** to spot old or unexpected access.
+
 If the current shared coach code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new shared coach code. This does not reveal the old code; it replaces it and removes old remembered device access. If the account owner email is not saved or the message does not arrive, contact support.
 
 If Staff Access shows an **unassigned devices** warning, the shared code has been used by one or more devices that have not selected a coach name yet. This usually means either a coach name still needs to be added in the **Coaches** section, or someone unexpected has the shared code. Add the missing coach name if the device belongs to staff, or change the coach code if the activity is unexpected.

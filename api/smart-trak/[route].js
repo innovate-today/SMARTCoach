@@ -3039,6 +3039,8 @@ function normalizeCoachStaff(items) {
       inviteToken: cleanSetupText(raw.inviteToken || raw.staffInviteToken).slice(0, 120),
       inviteCreatedAt: cleanSetupText(raw.inviteCreatedAt),
       inviteLastCopiedAt: cleanSetupText(raw.inviteLastCopiedAt),
+      inviteLastUsedAt: cleanSetupText(raw.inviteLastUsedAt),
+      inviteLastUsedSource: cleanSetupText(raw.inviteLastUsedSource).slice(0, 40),
       inviteRevokedAt: cleanSetupText(raw.inviteRevokedAt),
       updatedAt: cleanSetupText(raw.updatedAt) || new Date().toISOString(),
     };
@@ -3056,6 +3058,8 @@ function publicCoachStaff(items, includeInviteSecrets = false) {
     role: item.role,
     inviteCreatedAt: item.inviteCreatedAt,
     inviteLastCopiedAt: item.inviteLastCopiedAt,
+    inviteLastUsedAt: item.inviteLastUsedAt,
+    inviteLastUsedSource: item.inviteLastUsedSource,
     inviteRevokedAt: item.inviteRevokedAt,
     updatedAt: item.updatedAt,
   }));
@@ -3088,8 +3092,31 @@ function coachInviteAllowed(account, accountKey, inviteToken) {
     parentEmailAllowed: false,
     coachCodeVersion: Number(account.coachCodeVersion) || 0,
     staffInvite: true,
+    staffInviteId: staff[index].id,
     coachName: staff[index].name,
   };
+}
+
+async function markStaffInviteUsed({ accountKey, accountRecord, staffInviteId, deviceSource }) {
+  const id = cleanSetupText(staffInviteId);
+  if (!id) return null;
+  const existing = (await loadExistingAccountRecord(accountKey)) || accountRecord || {};
+  const now = new Date().toISOString();
+  const staff = normalizeCoachStaff(existing.coachStaff).map((item) => {
+    if (item.id !== id) return item;
+    return {
+      ...item,
+      inviteLastUsedAt: now,
+      inviteLastUsedSource: cleanSetupText(deviceSource || "desktop").slice(0, 40) || "desktop",
+      updatedAt: now,
+    };
+  });
+  await saveAccountRecord(accountKey, {
+    ...existing,
+    coachStaff: staff,
+    lastStaffInviteUse: { usedAt: now, coachId: id },
+  });
+  return now;
 }
 
 function essentialSessionMatches(session, accountRecord) {
@@ -4039,6 +4066,9 @@ async function accountSession(req, res) {
         expiresAtIso: session.expiresAtIso,
       }).catch((error) => ({ saved: false, error: error.message || "Device usage could not be saved." }))
       : { saved: false, skipped: true, reason: "Desktop sessions are not counted as coach devices." };
+    const staffInviteUsedAt = access.staffInvite
+      ? await markStaffInviteUsed({ accountKey, accountRecord: req.smartcoachRegistryAccount, staffInviteId: access.staffInviteId, deviceSource }).catch(() => "")
+      : "";
     res.status(200).json({
       success: true,
       accountKey,
@@ -4047,6 +4077,7 @@ async function accountSession(req, res) {
       coachIndex: access.coachIndex,
       coachName: access.coachName,
       staffInviteAccepted: !!access.staffInvite,
+      staffInviteUsedAt,
       parentEmailAllowed,
       sessionToken: session.token,
       expiresAt: session.expiresAt,

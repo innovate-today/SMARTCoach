@@ -998,6 +998,8 @@ function checkDashboardStaffAccessHandoff() {
     "data-copy-staff-invite",
     "data-revoke-staff-invite",
     "data-restore-staff-invite",
+    "inviteLastUsedAt",
+    "Used '+formatDateTime(item.inviteLastUsedAt)",
     "function assistantSmartTrakUrl()",
     "function staffInviteToken()",
     "function staffInviteUrl(item)",
@@ -1027,6 +1029,10 @@ function checkDashboardStaffAccessHandoff() {
     "publicCoachStaff(coachStaff, coachAccessUnlocked)",
     "publicCoachStaff(normalizeCoachStaff(existing.record.coachStaff), false)",
     "staffInviteAccepted: !!access.staffInvite",
+    "function markStaffInviteUsed({ accountKey, accountRecord, staffInviteId, deviceSource })",
+    "staffInviteUsedAt",
+    "lastStaffInviteUse",
+    "inviteLastUsedAt",
     "inviteRevokedAt",
   ].forEach((text) => {
     if (!smartTrakApi.includes(text)) throw new Error(`Staff invite backend missing ${text}`);
@@ -1036,6 +1042,7 @@ function checkDashboardStaffAccessHandoff() {
     "Create Invite",
     "Copy Invite",
     "Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace.",
+    "Staff Access updates that assistant's invite status to show when the link was last used.",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Staff invite guide missing ${text}`);
   });
