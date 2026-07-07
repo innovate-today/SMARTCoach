@@ -206,14 +206,18 @@ tr:last-child td{border-bottom:0}
 .accesspanel .summary-head{margin-bottom:9px}
 .staff-warning{border:1px solid #fed7aa;background:#fff7ed;color:#92400e;border-radius:8px;padding:10px 11px;margin-top:10px;font-size:13px;line-height:1.35}
 .staff-warning b{display:block;color:#9a3412;margin-bottom:3px}
-.staff-list{display:grid;gap:8px;margin-top:10px}
-.staff-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(185px,1.1fr) 132px 112px 86px auto auto auto;gap:8px;align-items:center}
-.staff-row.inactive{opacity:.72}
+.staff-list{display:grid;gap:10px;margin-top:10px}
+.staff-row{display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px}
+.staff-row.inactive{opacity:.72;background:#f8fafc}
+.staff-row-fields{display:grid;grid-template-columns:minmax(150px,1fr) minmax(200px,1.2fr) 140px 120px;gap:8px;align-items:center}
+.staff-row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .staff-row input,.staff-row select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px}
 .staff-row button{padding:9px 11px}
-.staff-row .invite-state{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
-@media(max-width:980px){.staff-access-panel{width:min(760px,100%)}.staff-row{grid-template-columns:repeat(2,minmax(0,1fr))}.staff-row .invite-state{white-space:normal}.staff-row button{width:100%}}
-@media(max-width:620px){.staff-row{grid-template-columns:1fr}}
+.staff-row .invite-state{font-size:12px;font-weight:900;color:#334155;white-space:nowrap}
+.staff-audit{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-right:auto;color:var(--muted);font-size:12px;font-weight:800}
+.staff-audit span{display:inline-flex;align-items:center;border-radius:999px;background:#eef2f7;color:#475569;padding:3px 7px}
+@media(max-width:980px){.staff-access-panel{width:min(760px,100%)}.staff-row-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.staff-row-actions button{flex:1 1 130px}.staff-row .invite-state{white-space:normal}}
+@media(max-width:620px){.staff-row-fields{grid-template-columns:1fr}.staff-row-actions{align-items:stretch}.staff-row-actions button{width:100%;flex:1 1 100%}.staff-audit{width:100%}}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
 .detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
@@ -3255,6 +3259,16 @@ function staffRoleOptions(current){
   }).join('');
 }
 
+function staffAuditHtml(item){
+  var parts=[];
+  if(item.inviteCreatedAt)parts.push('Created '+formatDateTime(item.inviteCreatedAt));
+  if(item.inviteLastCopiedAt)parts.push('Copied '+formatDateTime(item.inviteLastCopiedAt));
+  if(item.inviteLastUsedAt)parts.push('Used '+formatDateTime(item.inviteLastUsedAt));
+  if(item.inviteRevokedAt)parts.push('Revoked '+formatDateTime(item.inviteRevokedAt));
+  if(!parts.length)parts.push(item.active===false?'Inactive staff row':'No invite activity');
+  return '<div class="staff-audit">'+parts.map(function(part){return '<span>'+esc(part)+'</span>';}).join('')+'</div>';
+}
+
 function renderStaffList(){
   if(!els.staffList)return;
   if(!coachStaff.length){
@@ -3269,14 +3283,19 @@ function renderStaffList(){
       ? '<button class="ghost" type="button" data-'+(revoked?'restore':'revoke')+'-staff-invite="'+index+'">'+(revoked?'Restore':'Revoke')+'</button>'
       : '<span></span>';
     return '<div class="staff-row'+(inactive?' inactive':'')+'" data-staff-row="'+index+'">'+
-      '<input data-staff-name type="text" value="'+esc(item.name||'')+'" placeholder="Coach name" autocomplete="off">'+
-      '<input data-staff-email type="email" value="'+esc(item.email||'')+'" placeholder="Coach email optional" autocomplete="off">'+
-      '<select data-staff-role aria-label="Coach role">'+staffRoleOptions(item.role)+'</select>'+
-      '<select data-staff-active aria-label="Coach status"><option value="active"'+(!inactive?' selected':'')+'>Active</option><option value="inactive"'+(inactive?' selected':'')+'>Inactive</option></select>'+
-      '<span class="invite-state">'+esc(staffInviteState(item))+'</span>'+
-      '<button class="ghost" type="button" data-copy-staff-invite="'+index+'"'+(inactive?' disabled':'')+'>'+copyLabel+'</button>'+
-      revokeButton+
-      '<button class="ghost" type="button" data-remove-staff="'+index+'">Remove</button>'+
+      '<div class="staff-row-fields">'+
+        '<input data-staff-name type="text" value="'+esc(item.name||'')+'" placeholder="Coach name" autocomplete="off">'+
+        '<input data-staff-email type="email" value="'+esc(item.email||'')+'" placeholder="Coach email optional" autocomplete="off">'+
+        '<select data-staff-role aria-label="Coach role">'+staffRoleOptions(item.role)+'</select>'+
+        '<select data-staff-active aria-label="Coach status"><option value="active"'+(!inactive?' selected':'')+'>Active</option><option value="inactive"'+(inactive?' selected':'')+'>Inactive</option></select>'+
+      '</div>'+
+      '<div class="staff-row-actions">'+
+        '<span class="invite-state">'+esc(staffInviteState(item))+'</span>'+
+        staffAuditHtml(item)+
+        '<button class="ghost" type="button" data-copy-staff-invite="'+index+'"'+(inactive?' disabled':'')+'>'+copyLabel+'</button>'+
+        revokeButton+
+        '<button class="ghost" type="button" data-remove-staff="'+index+'">Remove</button>'+
+      '</div>'+
     '</div>';
   }).join('');
 }

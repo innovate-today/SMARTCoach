@@ -1001,6 +1001,12 @@ function checkDashboardStaffAccessHandoff() {
     "data-staff-role",
     "data-staff-active",
     "staff-access-panel",
+    "staff-row-fields",
+    "staff-row-actions",
+    "function staffAuditHtml(item)",
+    "Created '+formatDateTime(item.inviteCreatedAt)",
+    "Copied '+formatDateTime(item.inviteLastCopiedAt)",
+    "Revoked '+formatDateTime(item.inviteRevokedAt)",
     ".staff-access-panel{width:min(1080px,100%)}",
     "@media(max-width:980px)",
     "Head Coach",
@@ -1054,6 +1060,7 @@ function checkDashboardStaffAccessHandoff() {
     "Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace.",
     "choose each coach's role, and keep only current staff marked **Active**.",
     "Inactive coaches cannot use staff invite links.",
+    "Each coach row shows invite activity such as when an invite was created, copied, used, or revoked.",
     "Staff Access updates that assistant's invite status to show when the link was last used.",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Staff invite guide missing ${text}`);
