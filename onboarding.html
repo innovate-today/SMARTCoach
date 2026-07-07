@@ -2364,6 +2364,31 @@ function coachAccessCodeLines(){
   if(!codes.length)return ['Coach access code: Use the shared coach code assigned during SMARTCoach setup.'];
   return ['Coach access code: Use the shared coach code from your head coach.'];
 }
+function phoneAppInstallLines(plan){
+  var isEssential=plan==='essential';
+  return [
+    '',
+    'SMARTCoach Phone App',
+    '',
+    'Use the stopwatch app on your phone to time workouts, record splits, manage training groups, and sync completed sessions'+(isEssential?'.':' into SMART Trak.'),
+    '',
+    'Open this link on your phone:',
+    'https://app.smartcoach-pro.com',
+    '',
+    'iPhone',
+    'Open the link in Safari. It must be Safari, not Chrome.',
+    'Tap the Share button at the bottom.',
+    'Scroll down and tap Add to Home Screen.',
+    'The SMARTCoach icon will appear on your home screen.',
+    '',
+    'Android',
+    'Open the link in Chrome.',
+    'Tap the menu in the top right.',
+    'Tap Add to Home screen or Install app if it appears.',
+    'Confirm by tapping Add or Install.',
+    'The SMARTCoach icon will appear on your home screen.'
+  ];
+}
 function copyCoachInvite(){
   var data=setupForActiveAccount();
   var account=data.accountKey||cleanAccountKey(document.getElementById('accountKey').value||document.getElementById('lookupAccountKey').value||'');
@@ -2405,6 +2430,7 @@ function copyCoachInvite(){
     lines.push('Plan: SMARTCoach Essential');
     lines.push('This account uses the stopwatch app only.');
     lines.push('Phone: open the stopwatch app, go to Groups, tap Account, then enter the account key.');
+    lines=lines.concat(phoneAppInstallLines('essential'));
   }else{
     lines.push('Plan: SMARTCoach Pro');
     lines=lines.concat(coachAccessCodeLines());
@@ -2413,6 +2439,7 @@ function copyCoachInvite(){
     lines.push('Start here: open Dashboard first, then use Athletes for roster setup and Training Calendar for daily work.');
     lines.push('Desktop: open the SMARTCoach link and enter the coach access code if prompted.');
     lines.push('Phone: open the stopwatch app, go to Groups, tap Account, then enter the account key and coach access code.');
+    lines=lines.concat(phoneAppInstallLines('pro'));
   }
   lines.push('');
   lines.push('Keep this access private. Contact SMARTCoach support if the link or code does not work.');

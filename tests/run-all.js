@@ -1045,6 +1045,14 @@ function checkDashboardStaffAccessHandoff() {
     "Head coach: use SMART Trak from the custom menu link.",
     "Assistant coaches: use the direct SMART Trak link with the shared coach code or a staff invite link.",
     "Head coaches can use the custom menu link; assistants can use the direct SMART Trak link with the shared code or a staff invite link.",
+    "function phoneAppInstallLines(plan)",
+    "SMARTCoach Phone App",
+    "Use the stopwatch app on your phone to time workouts, record splits, manage training groups, and sync completed sessions",
+    "Open this link on your phone:",
+    "https://app.smartcoach-pro.com",
+    "Open the link in Safari. It must be Safari, not Chrome.",
+    "Scroll down and tap Add to Home Screen.",
+    "Tap Add to Home screen or Install app if it appears.",
   ].forEach((text) => {
     if (!onboarding.includes(text)) throw new Error(`Onboarding staff access handoff missing ${text}`);
   });
