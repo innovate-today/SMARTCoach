@@ -1977,6 +1977,8 @@ async function accountStatus(req, res) {
   if (deviceAccessReady) await recordRequestCoachDevice(req).catch(() => {});
   const coachDeviceUsage = configured ? await loadCoachDeviceUsage(accountKey) : undefined;
   const coachStaff = normalizeCoachStaff(registry.record && registry.record.coachStaff);
+  const staffAdminAllowed = !!currentCoachSession && staffAccessAdminAllowed(currentCoachSession, coachStaff);
+  const currentStaff = currentCoachSession ? coachStaff[Number(currentCoachSession.coachIndex) || 0] || null : null;
   const missing = [];
   if (proPlan && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (proPlan && !locationId) missing.push({ label: "Location ID", key: locationKey });
@@ -1996,7 +1998,9 @@ async function accountStatus(req, res) {
     coachAccessCodesConfigured: configuredCoachCodes,
     coach: currentCoachSession ? {
       index: Number(currentCoachSession.coachIndex) || 0,
-      label: `Coach ${(Number(currentCoachSession.coachIndex) || 0) + 1}`,
+      label: currentStaff && currentStaff.name || `Coach ${(Number(currentCoachSession.coachIndex) || 0) + 1}`,
+      role: currentStaff && currentStaff.role || "",
+      staffAdminAllowed,
       parentEmailAllowed: parentEmailFeatureReleased() && !!currentCoachSession.parentEmailAllowed,
     } : null,
     coachSessionActive: proPlan ? !!currentCoachSession : essentialSessionActive,
@@ -2010,6 +2014,7 @@ async function accountStatus(req, res) {
     dashboardPreferences: normalizeDashboardPreferences(registry.record && registry.record.dashboardPreferences),
     milesBoardSharing: normalizeMilesBoardSharing(registry.record && registry.record.milesBoardSharing),
     coachAccessUnlocked,
+    staffAdminAllowed,
     coachAccessCodeAccepted: accessCodeAccepted,
     parentEmailToolsAllowed: parentEmailFeatureReleased() && !!(currentCoachSession && currentCoachSession.parentEmailAllowed),
     accessCodeRequired: coachAccessRequired,
@@ -3002,9 +3007,14 @@ async function accountStaff(req, res) {
     const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
     const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
     const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
-    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    const codeIndex = providedAccessCode ? allowedCodes.findIndex((code) => safeEqual(providedAccessCode, code)) : -1;
+    const codeAllowed = codeIndex >= 0;
     if (!sessionAllowed && !codeAllowed) {
       throw httpError(401, "Active coach access is required to update staff.");
+    }
+    const staffAdmin = staffAccessAdminAllowed(sessionAllowed ? session : { coachIndex: codeIndex }, existing.record.coachStaff);
+    if (!staffAdmin) {
+      throw httpError(403, "Head coach access is required to manage Staff Access.");
     }
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
@@ -3063,6 +3073,14 @@ function publicCoachStaff(items, includeInviteSecrets = false) {
     inviteRevokedAt: item.inviteRevokedAt,
     updatedAt: item.updatedAt,
   }));
+}
+
+function staffAccessAdminAllowed(sessionOrAccess, staffItems) {
+  const index = Number(sessionOrAccess && sessionOrAccess.coachIndex) || 0;
+  if (index === 0) return true;
+  const staff = normalizeCoachStaff(staffItems);
+  const item = staff[index] || null;
+  return !!(item && item.active !== false && /^head coach$/i.test(cleanSetupText(item.role)));
 }
 
 function coachInviteAllowed(account, accountKey, inviteToken) {
@@ -4127,6 +4145,9 @@ async function accountCodeReset(req, res) {
     if (!access.allowed) {
       res.status(access.statusCode || 401).json(access);
       return;
+    }
+    if (!recoveryAllowed && !staffAccessAdminAllowed(access, existing.coachStaff)) {
+      throw httpError(403, "Head coach access is required to change the shared coach code.");
     }
 
     const coachSeats = normalizeSetupCoachSeats(existing.coachSeats || access.coachSeats || 1, existing.productPlan);

@@ -2033,6 +2033,21 @@ function applyPlanMode(){
   }
   var badge=document.getElementById('productModeBadge');
   if(badge)badge.textContent=productPlanLabel(productPlan());
+  applyStaffAccessVisibility(accountStatus);
+}
+
+function staffAccessAllowed(data){
+  if(!isProPlan())return false;
+  if(data&&data.accessCodeRequired&&data.coachSessionActive!==true)return false;
+  if(data&&data.coachSessionActive&&data.staffAdminAllowed===false)return false;
+  return !data || data.staffAdminAllowed!==false;
+}
+
+function applyStaffAccessVisibility(data){
+  if(!els||!els.changeCodeBtn)return;
+  var allowed=staffAccessAllowed(data);
+  els.changeCodeBtn.hidden=!allowed;
+  els.changeCodeBtn.disabled=!allowed;
 }
 function syncProductPlanFromAccount(){
   if(productPlanOverride())return Promise.resolve(productPlan());
@@ -2900,6 +2915,10 @@ function closeAccountSettings(){
 }
 
 function openCodeModal(){
+  if(accountStatus&&accountStatus.staffAdminAllowed===false){
+    els.status.textContent='Staff Access is available to the head coach.';
+    return;
+  }
   els.currentCoachCode.value='';
   els.recoveryCoachCode.value='';
   els.newCoachCode.value='';
@@ -3200,6 +3219,7 @@ function renderAccountSummary(data,fallbackPlan){
 
 function renderStaffAccess(data){
   if(!els.staffAccessSeats)return;
+  applyStaffAccessVisibility(data);
   var usage=data&&data.coachDeviceUsage||{};
   els.staffAccessSeats.textContent='Up to 10';
   els.staffAccessActiveDevices.textContent=usage.activeDevices!=null?usage.activeDevices:'0';
@@ -3460,6 +3480,8 @@ function checkSmartCoachAccount(){
   return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(res){
     return res.json().then(function(data){
       refreshRememberedCoachSession(data);
+      accountStatus=data||accountStatus;
+      applyStaffAccessVisibility(data);
       applyDashboardPreferences(data&&data.dashboardPreferences);
       milesBoardSharing=normalizeMilesBoardSharing(data&&data.milesBoardSharing);
       return{ok:res.ok,data:data};

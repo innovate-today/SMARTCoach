@@ -58,6 +58,8 @@ Use **Customize Dashboard** when a coach wants to hide optional tools they do no
 
 The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
 
+Only the head coach can see and use **Staff Access**. Assistant coaches use their SMART Trak invite link or shared coach code for normal access, while staff-management actions stay with the head coach.
+
 The **Feedback** button includes **Open How To Guide**. Use it to open the latest coach guide inside SMART Trak. The web guide is generated from the same how-to text used for support and chat prompts, so it stays current when the guide is updated.
 
 ## Miles Board
@@ -124,6 +126,8 @@ How to use Staff Access:
 Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace. Keep invite links private. The shared coach code remains available for the stopwatch app and as a fallback desktop access option.
 
 Inactive coaches cannot use staff invite links. Each coach row shows invite activity such as when an invite was created, copied, used, or revoked. After an assistant opens an invite link, Staff Access updates that assistant's invite status to show when the link was last used. Use that status along with **Active devices** and **Seen this week** to spot old or unexpected access.
+
+Changing the shared coach code and saving staff rows require head coach access. Temporary recovery codes are sent to the saved account owner email.
 
 If the current shared coach code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new shared coach code. This does not reveal the old code; it replaces it and removes old remembered device access. If the account owner email is not saved or the message does not arrive, contact support.
 
