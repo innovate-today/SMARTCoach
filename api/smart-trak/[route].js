@@ -3761,6 +3761,10 @@ async function accountRegistry(req, res) {
     return;
   }
 
+  if (req.method === "POST") {
+    return accountRegistryUpdate(req, res);
+  }
+
   if (req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
     return;
@@ -3804,6 +3808,44 @@ async function accountRegistry(req, res) {
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not load account registry record." });
+  }
+}
+
+async function accountRegistryUpdate(req, res) {
+  try {
+    const payload = requestBodyObject(req);
+    const action = cleanSetupText(payload.action || firstQueryValue(req.query && req.query.action)).toLowerCase();
+    const accountKey = normalizeSetupAccountKey(payload.accountKey || firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key)));
+    if (action !== "archive" && action !== "restore") throw httpError(400, "Unsupported account registry action.");
+    if (!accountKey) throw httpError(400, "Account key is required.");
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
+    const now = new Date().toISOString();
+    const updated = action === "archive"
+      ? {
+          ...existing.record,
+          archived: true,
+          archivedAt: now,
+          archivedReason: cleanSetupText(payload.reason).slice(0, 240),
+          lastAutomationEvent: { source: "smartcoach-admin-archive", action, at: now },
+        }
+      : {
+          ...existing.record,
+          archived: false,
+          archivedAt: "",
+          restoredAt: now,
+          lastAutomationEvent: { source: "smartcoach-admin-archive", action, at: now },
+        };
+    if (action === "restore") delete updated.archivedReason;
+    await saveAccountRecord(accountKey, updated);
+    res.status(200).json({
+      success: true,
+      action,
+      accountKey,
+      account: publicAccountRecord(updated),
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ error: error.message || "Could not update account registry record." });
   }
 }
 

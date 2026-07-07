@@ -205,14 +205,47 @@ function checkAccountStatusLocationVerification() {
 
 function checkOnboardingSubscriberPlanLoad() {
   const html = fs.readFileSync("onboarding.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
   [
     "lookupAccount({loadIntoForm:true});",
     "if(options.loadIntoForm){",
     "fillFormFromLookup();",
     "raw==='pro unlimited custom'",
     "proUnlimited:'Pro Unlimited (Custom)'",
+    'id="subscriberStatusFilter"',
+    "statusFilter==='active'&&account.archived",
+    "statusFilter==='archived'&&!account.archived",
+    "data-subscriber-archive",
+    "function setSubscriberArchive(account,action)",
+    "Archive '+account+'? Optional reason:",
+    "Restore '+account+' to the active Subscriber Accounts list?",
+    "body:JSON.stringify({accountKey:account,action:action,reason:reason})",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`onboarding subscriber plan load missing ${text}`);
+  });
+  [
+    "return accountRegistryUpdate(req, res);",
+    "async function accountRegistryUpdate(req, res)",
+    'action !== "archive" && action !== "restore"',
+    "archivedAt: now",
+    "archivedReason: cleanSetupText(payload.reason).slice(0, 240)",
+    "restoredAt: now",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`subscriber archive API missing ${text}`);
+  });
+  if (api.indexOf("return accountRegistryUpdate(req, res);") < api.indexOf("async function accountRegistry(req, res)")) {
+    throw new Error("subscriber archive API route is not inside accountRegistry");
+  }
+  if (api.indexOf("return accountRegistryUpdate(req, res);") > api.indexOf("async function accountRegistryUpdate(req, res)")) {
+    throw new Error("subscriber archive API route is after accountRegistryUpdate");
+  }
+  [
+    "archived: !!(source.archived || source.archivedAt)",
+    "archivedAt: clean(source.archivedAt)",
+    "archivedReason: clean(source.archivedReason)",
+  ].forEach((text) => {
+    if (!registry.includes(text)) throw new Error(`subscriber archive registry missing ${text}`);
   });
   console.log("onboarding subscriber plan load ok");
 }

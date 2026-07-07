@@ -107,12 +107,14 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
 .registrycards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .registryrow{display:grid;grid-template-columns:180px 1fr;gap:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;font-size:13px}
 .registryrow b{color:#475569;text-transform:uppercase;letter-spacing:.03em;font-size:11px}
-.subscriberbar{display:grid;grid-template-columns:1fr 240px auto auto;gap:10px;align-items:end}
+.subscriberbar{display:grid;grid-template-columns:1fr 170px 240px auto auto;gap:10px;align-items:end}
 .subscribertable{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .subscribertable th,.subscribertable td{border-bottom:1px solid var(--line);padding:10px 11px;text-align:left;vertical-align:top;font-size:13px}
 .subscribertable th{background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
 .subscribertable tr:last-child td{border-bottom:0}
+.subscribertable tr.archived td{background:#f8fafc;color:#64748b}
 .subscribertable button{padding:7px 9px;font-size:12px}
+.subscribertable button.danger{background:#fee2e2;color:#b91c1c}
 .subscribertable code{color:#102a70;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;white-space:normal;word-break:break-word}
 .subscriberactions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .cleanupbox{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px;margin-top:14px;display:grid;gap:10px}
@@ -200,6 +202,14 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <div class="field">
           <label for="subscriberSearch">Search Subscribers</label>
           <input id="subscriberSearch" type="text" placeholder="Account key, plan, or status" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="subscriberStatusFilter">Status</label>
+          <select id="subscriberStatusFilter">
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+            <option value="all">All</option>
+          </select>
         </div>
         <div class="field">
           <label for="subscriberAutomationSecret">Automation Secret</label>
@@ -1023,6 +1033,8 @@ function systemReadinessBlockerText(){
 function bindSubscriberSearch(){
   var search=document.getElementById('subscriberSearch');
   if(search)search.addEventListener('input',renderSubscribers);
+  var statusFilter=document.getElementById('subscriberStatusFilter');
+  if(statusFilter)statusFilter.addEventListener('change',renderSubscribers);
   var subscriberSecret=document.getElementById('subscriberAutomationSecret');
   var lookupSecret=document.getElementById('automationSecret');
   if(subscriberSecret)subscriberSecret.addEventListener('input',function(){syncAutomationSecretFields('subscriber');});
@@ -1075,23 +1087,28 @@ function renderSubscribers(){
   var box=document.getElementById('subscriberResult');
   if(!box)return;
   var query=String((document.getElementById('subscriberSearch')||{}).value||'').trim().toLowerCase();
+  var statusFilter=String((document.getElementById('subscriberStatusFilter')||{}).value||'active').toLowerCase();
   var rows=(subscriberAccounts||[]).filter(function(account){
+    if(statusFilter==='active'&&account.archived)return false;
+    if(statusFilter==='archived'&&!account.archived)return false;
     if(!query)return true;
-    return [account.accountKey,planLabel(account.productPlan),account.subscriptionStatus,account.billingCadence,account.lastUpdateSource].filter(Boolean).join(' ').toLowerCase().indexOf(query)>=0;
+    return [account.accountKey,planLabel(account.productPlan),account.subscriptionStatus,account.billingCadence,account.archived?'archived':'active',account.archivedReason,account.lastUpdateSource].filter(Boolean).join(' ').toLowerCase().indexOf(query)>=0;
   });
   if(!subscriberAccounts.length){
     box.innerHTML='<div class="empty">Load subscribers to find an account key for support or code resets.</div>';
     return;
   }
   if(!rows.length){
-    box.innerHTML='<div class="empty">No subscriber accounts match this search.</div>';
+    box.innerHTML='<div class="empty">No '+esc(statusFilter)+' subscriber accounts match this search.</div>';
     return;
   }
   box.innerHTML='<table class="subscribertable"><thead><tr><th>Account</th><th>Plan</th><th>Subscription</th><th>Staff Access</th><th>Setup</th><th>Updated</th><th>Actions</th></tr></thead><tbody>'+
     rows.map(function(account){
       var sub=[account.subscriptionStatus||'not tracked',account.billingCadence,account.subscriptionAmount?('$'+account.subscriptionAmount):''].filter(Boolean).join(' / ');
-      return '<tr>'+
-        '<td><code>'+esc(account.accountKey||'')+'</code></td>'+
+      var archiveLabel=account.archived?'Restore':'Archive';
+      var archiveClass=account.archived?'secondary':'danger';
+      return '<tr'+(account.archived?' class="archived"':'')+'>'+
+        '<td><code>'+esc(account.accountKey||'')+'</code>'+(account.archived?'<br><span class="muted">Archived '+esc(shortDateTime(account.archivedAt))+'</span>':'')+'</td>'+
         '<td>'+esc(planLabel(account.productPlan))+'</td>'+
         '<td>'+esc(sub)+'</td>'+
         '<td>'+esc((account.coachAccessCodesConfigured?'Code saved':'Missing')+' / '+(account.coachSeats||1)+' seat'+((account.coachSeats||1)===1?'':'s'))+'</td>'+
@@ -1101,6 +1118,7 @@ function renderSubscribers(){
           '<button type="button" data-subscriber-load="'+esc(account.accountKey||'')+'">Load</button>'+
           '<button type="button" class="secondary" data-subscriber-copy="'+esc(account.accountKey||'')+'">Copy Key</button>'+
           '<a class="linkbtn secondary" href="'+esc('/dashboard.html?account='+encodeURIComponent(account.accountKey||''))+'" target="_blank" rel="noopener">Open</a>'+
+          '<button type="button" class="'+archiveClass+'" data-subscriber-archive="'+esc(account.accountKey||'')+'" data-archive-action="'+(account.archived?'restore':'archive')+'">'+archiveLabel+'</button>'+
         '</div></td>'+
       '</tr>';
     }).join('')+'</tbody></table>';
@@ -1112,6 +1130,39 @@ function bindSubscriberActions(){
   });
   document.querySelectorAll('[data-subscriber-copy]').forEach(function(btn){
     btn.addEventListener('click',function(){copyText(btn.getAttribute('data-subscriber-copy')||'','Account key copied.');});
+  });
+  document.querySelectorAll('[data-subscriber-archive]').forEach(function(btn){
+    btn.addEventListener('click',function(){setSubscriberArchive(btn.getAttribute('data-subscriber-archive')||'',btn.getAttribute('data-archive-action')||'archive');});
+  });
+}
+function setSubscriberArchive(account,action){
+  account=cleanAccountKey(account);
+  action=String(action||'archive').toLowerCase()==='restore'?'restore':'archive';
+  var secret=activeAutomationSecret();
+  if(!account){setStatus('Choose a subscriber account first.','bad');return;}
+  if(!secret){setStatus('Enter the automation secret before updating subscriber status.','bad');return;}
+  var reason='';
+  if(action==='archive'){
+    var promptedReason=window.prompt('Archive '+account+'? Optional reason:', '');
+    if(promptedReason===null)return;
+    reason=promptedReason||'';
+    if(!window.confirm('Archive '+account+'? It will be hidden from the default Subscriber Accounts list but can be restored later.'))return;
+  }else if(!window.confirm('Restore '+account+' to the active Subscriber Accounts list?')){
+    return;
+  }
+  rememberAutomationSecret(secret);
+  fetch('/api/smart-trak/account-registry',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-SMARTCoach-Automation-Secret':secret},
+    body:JSON.stringify({accountKey:account,action:action,reason:reason})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update subscriber account.');
+    setStatus((action==='archive'?'Archived ':'Restored ')+account+'.','good');
+    return loadSubscribers();
+  }).catch(function(error){
+    setStatus(error.message||'Could not update subscriber account.','bad');
   });
 }
 function loadSubscriberAccount(account){
