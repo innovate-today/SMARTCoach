@@ -3018,13 +3018,37 @@ async function accountStaff(req, res) {
     }
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const coachStaff = normalizeCoachStaff(payload.coachStaff || payload.staff || payload.coaches);
+    const coachStaff = normalizeCoachStaffForSave(
+      payload.coachStaff || payload.staff || payload.coaches,
+      accountKey,
+      existing.record.coachStaff,
+      allowedCodes
+    );
+    const sessionRefreshNeeded = staffAccessChangeRequiresSessionBump(existing.record.coachStaff, coachStaff);
+    const nextCoachCodeVersion = sessionRefreshNeeded ? (Number(existing.record.coachCodeVersion) || 0) + 1 : Number(existing.record.coachCodeVersion) || 0;
+    const refreshedSession = sessionRefreshNeeded && sessionAllowed
+      ? createCoachSession(accountKey, {
+        coachIndex: Number(session.coachIndex) || 0,
+        parentEmailAllowed: !!session.parentEmailAllowed,
+        sessionId: cleanSetupText(session.sessionId) || crypto.randomBytes(12).toString("hex"),
+        coachCodeVersion: nextCoachCodeVersion,
+      })
+      : null;
     await saveAccountRecord(accountKey, {
       ...existing.record,
       coachStaff,
+      coachCodeVersion: nextCoachCodeVersion,
       lastStaffSync: { savedAt: new Date().toISOString(), count: coachStaff.length },
     });
-    res.status(200).json({ success: true, accountKey, coachStaff });
+    res.status(200).json({
+      success: true,
+      accountKey,
+      coachStaff: publicCoachStaff(coachStaff, true),
+      coachCodeVersion: nextCoachCodeVersion,
+      sessionToken: refreshedSession && refreshedSession.token || undefined,
+      expiresAt: refreshedSession && refreshedSession.expiresAt || undefined,
+      expiresAtIso: refreshedSession && refreshedSession.expiresAtIso || undefined,
+    });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Staff save failed." });
   }
@@ -3047,6 +3071,10 @@ function normalizeCoachStaff(items) {
       active: raw.active === false ? false : true,
       role: cleanSetupText(raw.role).slice(0, 80),
       accessType: normalizeStaffAccessType(raw.accessType || raw.staffAccessType),
+      coachCodeHash: normalizeStaffCoachCodeHash(raw.coachCodeHash || raw.staffCodeHash || raw.personalCodeHash),
+      coachCodeCreatedAt: cleanSetupText(raw.coachCodeCreatedAt || raw.staffCodeCreatedAt),
+      coachCodeLastCopiedAt: cleanSetupText(raw.coachCodeLastCopiedAt || raw.staffCodeLastCopiedAt),
+      coachCodeUpdatedAt: cleanSetupText(raw.coachCodeUpdatedAt || raw.staffCodeUpdatedAt),
       inviteToken: cleanSetupText(raw.inviteToken || raw.staffInviteToken).slice(0, 120),
       inviteCreatedAt: cleanSetupText(raw.inviteCreatedAt),
       inviteLastCopiedAt: cleanSetupText(raw.inviteLastCopiedAt),
@@ -3058,6 +3086,52 @@ function normalizeCoachStaff(items) {
   }).filter(Boolean).slice(0, 25);
 }
 
+function normalizeCoachStaffForSave(items, accountKey, existingItems, legacyCodes = []) {
+  const source = Array.isArray(items) ? items : [];
+  const existingById = new Map(normalizeCoachStaff(existingItems).map((item) => [item.id, item]));
+  const staff = normalizeCoachStaff(source).map((item, index) => {
+    const raw = typeof source[index] === "string" ? { name: source[index] } : source[index] || {};
+    const existing = existingById.get(item.id) || {};
+    const newCode = cleanSetupText(raw.newCoachCode || raw.coachCode || raw.staffCode || raw.personalCode);
+    const next = {
+      ...item,
+      coachCodeHash: item.coachCodeHash || existing.coachCodeHash || "",
+      coachCodeCreatedAt: item.coachCodeCreatedAt || existing.coachCodeCreatedAt || "",
+      coachCodeLastCopiedAt: item.coachCodeLastCopiedAt || existing.coachCodeLastCopiedAt || "",
+      coachCodeUpdatedAt: item.coachCodeUpdatedAt || existing.coachCodeUpdatedAt || "",
+    };
+    if (newCode) {
+      validateNewCoachCode(newCode, accountKey);
+      if ((Array.isArray(legacyCodes) ? legacyCodes : []).some((code) => safeEqual(code, newCode))) {
+        throw httpError(400, "Personal code must be different from the shared fallback code.");
+      }
+      const now = new Date().toISOString();
+      next.coachCodeHash = staffCoachCodeHash(accountKey, newCode);
+      next.coachCodeCreatedAt = next.coachCodeCreatedAt || now;
+      next.coachCodeLastCopiedAt = now;
+      next.coachCodeUpdatedAt = now;
+    }
+    return next;
+  });
+  const codeHashes = new Set();
+  for (const item of staff) {
+    if (!item.coachCodeHash) continue;
+    if (codeHashes.has(item.coachCodeHash)) throw httpError(400, "Personal coach codes must be unique.");
+    codeHashes.add(item.coachCodeHash);
+  }
+  return staff;
+}
+
+function staffAccessChangeRequiresSessionBump(existingItems, nextItems) {
+  const existing = new Map(normalizeCoachStaff(existingItems).map((item) => [item.id, item]));
+  return normalizeCoachStaff(nextItems).some((item) => {
+    const prev = existing.get(item.id) || {};
+    return prev.active !== item.active ||
+      normalizeStaffAccessType(prev.accessType) !== normalizeStaffAccessType(item.accessType) ||
+      cleanSetupText(prev.coachCodeHash) !== cleanSetupText(item.coachCodeHash);
+  });
+}
+
 function normalizeStaffAccessType(value) {
   const text = cleanSetupText(value).toLowerCase().replace(/[\s_-]+/g, "-");
   if (text === "app" || text === "app-only" || text === "phone" || text === "phone-app") return "app-only";
@@ -3066,7 +3140,12 @@ function normalizeStaffAccessType(value) {
 
 function publicCoachStaff(items, includeInviteSecrets = false) {
   const staff = normalizeCoachStaff(items);
-  if (includeInviteSecrets) return staff;
+  if (includeInviteSecrets) {
+    return staff.map(({ coachCodeHash, ...item }) => ({
+      ...item,
+      hasCoachCode: !!coachCodeHash,
+    }));
+  }
   return staff.map((item) => ({
     id: item.id,
     name: item.name,
@@ -3074,6 +3153,10 @@ function publicCoachStaff(items, includeInviteSecrets = false) {
     active: item.active,
     role: item.role,
     accessType: item.accessType,
+    hasCoachCode: !!item.coachCodeHash,
+    coachCodeCreatedAt: item.coachCodeCreatedAt,
+    coachCodeLastCopiedAt: item.coachCodeLastCopiedAt,
+    coachCodeUpdatedAt: item.coachCodeUpdatedAt,
     inviteCreatedAt: item.inviteCreatedAt,
     inviteLastCopiedAt: item.inviteLastCopiedAt,
     inviteLastUsedAt: item.inviteLastUsedAt,
@@ -3081,6 +3164,51 @@ function publicCoachStaff(items, includeInviteSecrets = false) {
     inviteRevokedAt: item.inviteRevokedAt,
     updatedAt: item.updatedAt,
   }));
+}
+
+function normalizeStaffCoachCodeHash(value) {
+  const text = cleanSetupText(value).toLowerCase();
+  return /^[a-f0-9]{64}$/.test(text) ? text : "";
+}
+
+function staffCoachCodeHash(accountKey, code) {
+  const secret = cleanSetupText(process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE || "smartcoach-staff-code");
+  return crypto.createHash("sha256").update(`${secret}:staff:${normalizeSetupAccountKey(accountKey) || "default"}:${cleanSetupText(code).toUpperCase()}`).digest("hex");
+}
+
+function staffCoachCodeAllowed(account, accountKey, providedCode) {
+  const provided = cleanSetupText(providedCode);
+  if (!provided || !account) return { allowed: false };
+  const productPlan = normalizeSetupProductPlan(account.productPlan);
+  const subscription = account.subscription || {};
+  if (!subscriptionAccessAllowed(subscription)) {
+    return {
+      allowed: false,
+      statusCode: 402,
+      error: subscriptionBlockedMessage(subscription),
+      accountKey,
+      productPlan,
+      subscriptionStatus: subscription && subscription.status,
+      subscriptionAccessRequired: true,
+    };
+  }
+  const hash = staffCoachCodeHash(accountKey, provided);
+  const staff = normalizeCoachStaff(account.coachStaff);
+  const index = staff.findIndex((item) => item.active !== false && item.coachCodeHash && safeEqual(item.coachCodeHash, hash));
+  if (index < 0) return { allowed: false };
+  return {
+    allowed: true,
+    accountKey,
+    productPlan,
+    coachSeats: Number(account.coachSeats) || 10,
+    coachIndex: index,
+    parentEmailAllowed: false,
+    coachCodeVersion: Number(account.coachCodeVersion) || 0,
+    staffCoachCode: true,
+    staffCoachId: staff[index].id,
+    coachName: staff[index].name,
+    accessType: staff[index].accessType,
+  };
 }
 
 function staffAccessAdminAllowed(sessionOrAccess, staffItems) {
@@ -3120,6 +3248,7 @@ function coachInviteAllowed(account, accountKey, inviteToken) {
     staffInvite: true,
     staffInviteId: staff[index].id,
     coachName: staff[index].name,
+    accessType: staff[index].accessType,
   };
 }
 
@@ -3285,7 +3414,7 @@ function accountSetup(req, res) {
       value: String(coachSeats),
       required: true,
       label: "Coach seats",
-      description: isProPlan(productPlan) ? "Pro accounts use one shared coach code and include up to 10 assistant coach seats. Keep staff access tight to protect clean data." : "Essential allows one active device session at a time.",
+      description: isProPlan(productPlan) ? "Pro accounts use named personal coach codes and include up to 10 assistant coach seats. Keep staff access tight to protect clean data." : "Essential allows one active device session at a time.",
     },
     {
       key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
@@ -3307,7 +3436,7 @@ function accountSetup(req, res) {
       required: false,
       recommended: true,
       label: "Account owner email",
-      description: "Used to send a temporary recovery code when the shared coach code is lost.",
+      description: "Used to send a temporary recovery code when the fallback coach code is lost.",
     },
     {
       key: `SMARTCOACH_ACCOUNT_OWNER_PHONE_${suffix}`,
@@ -3507,7 +3636,7 @@ async function accountAutomationHealth(req, res) {
     productionWarnings.push("Set SMARTCOACH_ADMIN_SETUP_CODE so internal customer setup field generation requires a setup code.");
   }
   if (!coachAccessEnforcementConfigured) {
-    productionWarnings.push("Set SMARTCOACH_REQUIRE_COACH_ACCESS=true after Pro accounts have a shared coach code.");
+    productionWarnings.push("Set SMARTCOACH_REQUIRE_COACH_ACCESS=true after Pro accounts have a fallback coach code.");
   }
   if (!registryStatus.configured) {
     productionWarnings.push("Connect the durable account registry so Stripe and setup automation survive deployments.");
@@ -4049,11 +4178,14 @@ async function accountSession(req, res) {
     }
     await attachRegistryAccountForKey(req, accountKey);
     const inviteAccess = inviteToken ? coachInviteAllowed(req.smartcoachRegistryAccount, accountKey, inviteToken) : null;
+    const staffCodeAccess = accessCode ? staffCoachCodeAllowed(req.smartcoachRegistryAccount, accountKey, accessCode) : null;
     const access = inviteAccess && inviteAccess.allowed
       ? inviteAccess
       : inviteToken && !accessCode
         ? inviteAccess
-        : coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: req.smartcoachRegistryAccount }, accessCode);
+        : staffCodeAccess && staffCodeAccess.allowed
+          ? staffCodeAccess
+          : coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: req.smartcoachRegistryAccount }, accessCode);
     if (!access.allowed) {
       const failure = recordSessionFailure({ accountKey, ip });
       if (failure.blocked) res.setHeader("Retry-After", String(failure.retryAfterSeconds || 900));
@@ -4118,6 +4250,9 @@ async function accountSession(req, res) {
       coachSeats: access.coachSeats,
       coachIndex: access.coachIndex,
       coachName: access.coachName,
+      coachId: access.staffCoachId || access.staffInviteId || "",
+      accessType: access.accessType || "",
+      staffCoachCodeAccepted: !!access.staffCoachCode,
       staffInviteAccepted: !!access.staffInvite,
       staffInviteUsedAt,
       parentEmailAllowed,
@@ -4158,7 +4293,7 @@ async function accountCodeReset(req, res) {
 
     const result = await attachRegistryAccountForKey(req, accountKey);
     const existing = result && result.found && result.record ? result.record : null;
-    if (!existing) throw httpError(404, "Account registry record was not found. Save Account Setup before changing the shared coach code.");
+    if (!existing) throw httpError(404, "Account registry record was not found. Save Account Setup before changing the fallback coach code.");
 
     const temporaryRecoveryAllowed = !!recoveryCode && coachTemporaryRecoveryCodeAllowed(existing, accountKey, recoveryCode);
     const setupRecoveryAllowed = !!recoveryCode && setupRecoveryCodeAllowed(recoveryCode);
@@ -4171,7 +4306,7 @@ async function accountCodeReset(req, res) {
       return;
     }
     if (!recoveryAllowed && !staffAccessAdminAllowed(access, existing.coachStaff)) {
-      throw httpError(403, "Head coach access is required to change the shared coach code.");
+      throw httpError(403, "Head coach access is required to change the fallback coach code.");
     }
 
     const coachSeats = normalizeSetupCoachSeats(existing.coachSeats || access.coachSeats || 1, existing.productPlan);
@@ -4181,6 +4316,10 @@ async function accountCodeReset(req, res) {
     if (coachIndex < 0) throw httpError(401, "Current coach code was not accepted.");
     if (currentCodes.some((code) => safeEqual(code, newCode))) {
       throw httpError(400, "New code must be different from the current code.");
+    }
+    const newStaffCodeHash = staffCoachCodeHash(accountKey, newCode);
+    if (normalizeCoachStaff(existing.coachStaff).some((item) => item.coachCodeHash && safeEqual(item.coachCodeHash, newStaffCodeHash))) {
+      throw httpError(400, "New fallback code is already assigned to a coach.");
     }
     if (currentCodes.some((code, index) => index !== coachIndex && safeEqual(code, newCode))) {
       throw httpError(400, "New code is already assigned to another coach.");
@@ -4384,13 +4523,13 @@ async function sendCoachCodeRecoveryEmail({ token, accountKey, productPlan, cont
   const expiration = new Date(expiresAt).toLocaleString("en-US", { timeZone: "America/Chicago" });
   const essential = normalizeSetupProductPlan(productPlan) === "essential";
   const html = [
-    `<p>A SMARTCoach ${essential ? "Essential app access code" : "shared coach code"} reset was requested.</p>`,
+    `<p>A SMARTCoach ${essential ? "Essential app access code" : "fallback coach code"} reset was requested.</p>`,
     `<p><strong>Account:</strong> ${escapeHtml(accountKey)}<br>`,
     `<strong>Temporary recovery code:</strong> ${escapeHtml(temporaryCode)}<br>`,
     `<strong>Expires:</strong> ${escapeHtml(expiration)} Central</p>`,
     essential
       ? "<p>Enter this temporary code on the SMARTCoach Account Access page, then choose a new app access code you can remember.</p>"
-      : "<p>Enter this temporary code in Staff Access, then choose a new shared coach code your staff can remember.</p>",
+      : "<p>Enter this temporary code in Staff Access, then choose a new fallback coach code.</p>",
     "<p>If you did not request this reset, contact support@smartcoach-pro.com.</p>",
   ].join("");
   await ghlRequest({
@@ -4401,7 +4540,7 @@ async function sendCoachCodeRecoveryEmail({ token, accountKey, productPlan, cont
       type: "Email",
       contactId,
       emailTo: ownerEmail,
-      subject: essential ? "SMARTCoach Essential access code reset" : "SMARTCoach shared coach code reset",
+      subject: essential ? "SMARTCoach Essential access code reset" : "SMARTCoach fallback coach code reset",
       html,
     },
   });
@@ -4444,7 +4583,7 @@ function validateNewCoachCode(newCode, accountKey) {
   const normalized = value.toLowerCase().replace(/\s+/g, "");
   const blocked = new Set(["123456", "password", "coach", "smartcoach", "smarttrak", "track", "xcountry"]);
   if (blocked.has(normalized) || normalized === cleanSetupText(accountKey).toLowerCase()) {
-    throw httpError(400, "Choose a more specific shared code that your staff can remember.");
+    throw httpError(400, "Choose a more specific coach code.");
   }
 }
 
@@ -4842,7 +4981,7 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
       value: String(account.coachSeats || 1),
       required: true,
       label: "Coach seats",
-      description: isProPlan(account.productPlan) ? "Pro accounts use one shared coach code and include up to 10 assistant coach seats. Keep staff access tight to protect clean data." : "Essential allows one active device session at a time.",
+      description: isProPlan(account.productPlan) ? "Pro accounts use named personal coach codes and include up to 10 assistant coach seats. Keep staff access tight to protect clean data." : "Essential allows one active device session at a time.",
     },
     {
       key: `SMARTCOACH_COACH_ACCESS_CODES_${suffix}`,
@@ -4864,7 +5003,7 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
       required: false,
       recommended: true,
       label: "Account owner email",
-      description: "Used for shared code recovery. The old coach code is never shown; the owner receives a temporary reset code.",
+      description: "Used for fallback code recovery. The old coach code is never shown; the owner receives a temporary reset code.",
     },
     {
       key: `SMARTCOACH_ACCOUNT_OWNER_PHONE_${suffix}`,

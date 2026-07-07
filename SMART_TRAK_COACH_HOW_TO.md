@@ -35,9 +35,9 @@ SMARTCoach has five customer plans:
 4. **Pro 200**: $135/month or $1350/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 200 active athletes.
 5. **Pro Unlimited**: Custom/manual offer. SMARTCoach Pro Mobile App plus SMART Trak for programs that need unlimited active athletes.
 
-Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. A coach can only move to a lower Pro plan after the active athlete count is at or below that plan's limit. SMARTCoach does not automatically choose athletes to make inactive. Pro accounts can include up to 10 assistant coach seats using the shared coach code, but schools should keep staff access tight because more devices syncing data increases the chance of messy records.
+Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. A coach can only move to a lower Pro plan after the active athlete count is at or below that plan's limit. SMARTCoach does not automatically choose athletes to make inactive. Pro accounts can include up to 10 assistant coach seats. Each active staff coach should use their own personal coach code so access and device activity can be tied to the right coach.
 
-The shared coach code can be changed when staff changes, but code resets are limited to 2 times per month. A coach can use **Staff Access** on the Dashboard to replace the current code. If the current code is lost, click **Send Temporary Code** to email a temporary recovery code to the saved account owner, then enter that temporary code and create a new shared code the staff can remember. The old code is never displayed. Essential app-only coaches can use **Account Access** from the app settings to email a temporary recovery code and create a new app access code. Support can also help reset the code when needed. Changing the saved coach code removes old coach-code access and remembered device access, so coaches must use the new active code.
+Personal coach codes can be created or reset from **Staff Access** on the Dashboard. A Full Access coach code unlocks both SMART Trak and the SMARTCoach phone app. An App Only coach code unlocks the phone app only. Inactive coaches cannot use their personal code. A shared fallback code may still exist for recovery or transition, but staff should use named personal codes for normal access. If the fallback code is lost, click **Send Temporary Code** to email a temporary recovery code to the saved account owner, then enter that temporary code and create a new fallback code. The old code is never displayed. Essential app-only coaches can use **Account Access** from the app settings to email a temporary recovery code and create a new app access code. Support can also help reset access when needed.
 
 Beta customers can use a 30-day Pro 100 trial. After the trial, access continues only when the subscription is active. If a customer wants a lower paid plan after the trial, the active roster must fit that plan before the downgrade can be saved. Canceled or failed-payment accounts lose access until billing is corrected.
 
@@ -64,9 +64,9 @@ The Dashboard title includes **Start Here** and **What's New**. Use **Start Here
 
 Use **Customize Dashboard** when a coach wants to hide optional tools they do not use every day. Keep Trak, Attendance Trak, Equipment Trak, Docu Trak, Weather, Records, and Simulators can be turned off for the Dashboard view. Hiding a tool only removes its dashboard shortcut or summary card; the tool's saved data stays in SMART Trak, direct page links still work, and **Show All** can turn everything back on.
 
-The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach-code management window and helps the head coach see how many devices are using the shared coach code without showing the code itself.
+The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach access window and helps the head coach see staff, device activity, personal codes, and invite status without showing saved codes.
 
-Only the head coach can see and use **Staff Access**. Assistant coaches use their SMART Trak invite link or shared coach code for normal access, while staff-management actions stay with the head coach.
+Only the head coach can see and use **Staff Access**. Assistant coaches use their personal coach code or SMART Trak invite link for normal access, while staff-management actions stay with the head coach.
 
 The **Feedback** button includes **Open How To Guide**. Use it to open the latest coach guide inside SMART Trak. The web guide is generated from the same how-to text used for support and chat prompts, so it stays current when the guide is updated.
 
@@ -122,28 +122,29 @@ How to use Staff Access:
 
 1. Click **Staff Access** on the Dashboard.
 2. Check **Assistant coach seats** to confirm the account allows up to 10 assistant coach seats.
-3. Check **Active devices** to see how many devices have used the shared coach code in the last 30 days.
+3. Check **Active devices** to see how many devices have used coach access in the last 30 days.
 4. Check **Seen this week** to see how many devices have been active recently.
 5. Review the **Active staff**, **Inactive staff**, **Invites used**, and **Revoked invites** cards in the **Coaches** section.
 6. Add coach names in the **Coaches** section, choose each coach's role, choose **Full Access** or **App Only**, and keep only current staff marked **Active**.
-7. Click **Save Coaches** after changing names, roles, or active status.
-8. Optional: for **Full Access** assistants, add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy a private SMART Trak invite link for that assistant.
-9. Use **Revoke** when an assistant should no longer have direct invite-link access. Use **Restore** only when that same assistant should use the invite again.
-10. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
+7. Click **Create Code** or **Reset Code** to copy a personal coach code for that coach. The code is only shown in the copied message, so reset it if it is lost.
+8. Click **Save Coaches** after changing names, roles, access type, or active status.
+9. Optional: for **Full Access** assistants, add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy a private SMART Trak invite link for that assistant.
+10. Use **Revoke** when an assistant should no longer have direct invite-link access. Use **Restore** only when that same assistant should use the invite again.
+11. Review **Last device activity**. If the number of devices is higher than expected, mark old staff inactive, reset the coach's personal code, or reset the shared fallback code if it may have been shared too broadly.
 
-Use **Full Access** for coaches who should open SMART Trak and use the phone app. Use **App Only** for coaches who should appear in the phone app coach picker but should not receive a SMART Trak invite link. Inactive coaches are removed from the phone app coach picker and cannot use staff invite links.
+Use **Full Access** for coaches who should open SMART Trak and use the phone app. Use **App Only** for coaches who should use the phone app but should not open SMART Trak. Inactive coaches are removed from the phone app coach picker and cannot use personal codes or staff invite links.
 
-Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace. Keep invite links private. The shared coach code remains available for the stopwatch app and as a fallback desktop access option. Because the shared coach code can unlock both the phone app and SMART Trak, share it only with staff who should have access. For stricter app-only separation, contact support about app-only invite/code options.
+Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace. Keep invite links private. Personal coach codes are the preferred normal access method. The shared fallback code remains available for recovery or transition and should be shared only when needed.
 
 Inactive coaches cannot use staff invite links. Each coach row shows invite activity such as when an invite was created, copied, used, or revoked. After an assistant opens an invite link, Staff Access updates that assistant's invite status to show when the link was last used. Use that status along with **Active devices** and **Seen this week** to spot old or unexpected access.
 
-Changing the shared coach code and saving staff rows require head coach access. Temporary recovery codes are sent to the saved account owner email.
+Creating/resetting personal coach codes, changing the shared fallback code, and saving staff rows require head coach access. Temporary recovery codes are sent to the saved account owner email.
 
-If the current shared coach code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new shared coach code. This does not reveal the old code; it replaces it and removes old remembered device access. If the account owner email is not saved or the message does not arrive, contact support.
+If the shared fallback code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new fallback code. This does not reveal the old code; it replaces it and removes old fallback-code access. If a personal coach code is lost, use **Reset Code** on that coach row.
 
-If Staff Access shows an **unassigned devices** warning, the shared code has been used by one or more devices that have not selected a coach name yet. This usually means either a coach name still needs to be added in the **Coaches** section, or someone unexpected has the shared code. Add the missing coach name if the device belongs to staff, or change the coach code if the activity is unexpected.
+If Staff Access shows an **unassigned devices** warning, the fallback code or an older access path has been used by one or more devices that have not selected a coach name yet. This usually means either a coach name still needs to be added in the **Coaches** section, or someone unexpected has access. Add the missing coach name if the device belongs to staff, or reset codes if the activity is unexpected.
 
-When a coach enters the shared code, they can choose **Remember this device for 30 days**. Each trusted device stays signed in while it is active, but changing the shared coach code still removes old access immediately.
+When a coach enters a personal coach code, they can choose **Remember this device for 30 days**. Each trusted device stays signed in while it is active, but making a coach inactive removes their access.
 
 When the SMARTCoach app sees a trusted device that has not picked a coach name yet, it opens **Select Coach** and asks **Which Coach Are You?**. The list includes saved coach names plus **Not Listed**. A selected coach name is remembered on that device for the current account and is used to label saves and syncs, including attendance activity.
 

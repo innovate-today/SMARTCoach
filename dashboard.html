@@ -700,7 +700,7 @@ tr:last-child td{border-bottom:0}
         <input id="rememberDeviceInput" type="checkbox" checked>
         <span>Remember this device for 30 days</span>
       </label>
-      <div class="small" style="margin-top:8px">Use this only on devices used by authorized coaching staff. Changing the shared coach code still removes old access immediately.</div>
+      <div class="small" style="margin-top:8px">Use this only on devices used by authorized coaching staff. Changing a coach's access still removes old access immediately.</div>
       <div class="small" style="margin-top:8px"><a href="#" onclick="openAccountAccessPage();return false;" style="color:#2B4FCC;font-weight:800;text-decoration:none">Forgot or change access code?</a></div>
       <div class="modalactions">
         <div id="accessStatus" class="modalstatus"></div>
@@ -1267,7 +1267,7 @@ tr:last-child td{border-bottom:0}
           <input id="confirmCoachCode" type="password" placeholder="Re-enter new code" autocomplete="off">
         </div>
       </div>
-      <div class="small" style="margin-top:8px">Use the current code for normal staff changes. If it is lost, send a temporary code to the account owner email, enter it here, then create a new shared coach code your staff can remember. The shared coach code can be changed 2 times per month. After saving, old coach-code access and remembered device access stop working.</div>
+      <div class="small" style="margin-top:8px">Named coach codes should be managed from each coach row above. Use this shared fallback code only for recovery or transition. If it is lost, send a temporary code to the account owner email, enter it here, then create a new fallback code. The fallback code can be changed 2 times per month. After saving, old fallback-code access and remembered device access stop working.</div>
       <div class="modalactions">
         <div id="codeStatus" class="modalstatus"></div>
         <button id="codeSave" type="button">Save New Code</button>
@@ -2904,6 +2904,17 @@ function staffInviteToken(){
   }
 }
 
+function staffPersonalCode(){
+  var alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  try{
+    var bytes=new Uint8Array(8);
+    window.crypto.getRandomValues(bytes);
+    return Array.prototype.map.call(bytes,function(byte){return alphabet[byte%alphabet.length];}).join('');
+  }catch(e){
+    return ('SC'+Math.random().toString(36).slice(2,10)).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);
+  }
+}
+
 function dashboardInviteToken(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -2966,7 +2977,7 @@ function sendTemporaryCoachCode(){
       throw new Error((result.data&&result.data.error)||'Could not send a temporary code.');
     }
     var sentTo=result.data&&result.data.sentTo?(' to '+result.data.sentTo):'';
-    els.codeStatus.textContent='Temporary code sent'+sentTo+'. Enter it here, then choose a new shared coach code.';
+    els.codeStatus.textContent='Temporary code sent'+sentTo+'. Enter it here, then choose a new fallback code.';
     els.codeStatus.style.color='#08783c';
     els.recoveryCoachCode.focus();
   }).catch(function(error){
@@ -3094,7 +3105,7 @@ function renderStaffAccessWarning(usage){
   var noun=count===1?'device that has':'devices that have';
   var last=usage&&usage.unassignedLastSeenAt?' Last seen '+formatDateTime(usage.unassignedLastSeenAt)+'.':'';
   els.staffAccessWarning.hidden=false;
-  els.staffAccessWarning.innerHTML='<b>'+count+' unassigned '+(count===1?'device':'devices')+'</b>The shared coach code was used by '+count+' '+noun+' not selected a coach name yet.'+last+' Add missing coach names, or change the coach code if this activity is unexpected.';
+  els.staffAccessWarning.innerHTML='<b>'+count+' unassigned '+(count===1?'device':'devices')+'</b>A fallback or older access path was used by '+count+' '+noun+' not selected a coach name yet.'+last+' Add missing coach names, or reset codes if this activity is unexpected.';
 }
 
 function renderStaffSummary(){
@@ -3135,6 +3146,10 @@ function normalizeStaffForView(items){
       active:raw.active===false?false:true,
       role:String(raw.role||'').trim(),
       accessType:normalizeStaffAccessType(raw.accessType||raw.staffAccessType),
+      hasCoachCode:!!(raw.hasCoachCode||raw.coachCodeHash||raw.staffCodeHash||raw.personalCodeHash),
+      coachCodeCreatedAt:raw.coachCodeCreatedAt||raw.staffCodeCreatedAt||'',
+      coachCodeLastCopiedAt:raw.coachCodeLastCopiedAt||raw.staffCodeLastCopiedAt||'',
+      coachCodeUpdatedAt:raw.coachCodeUpdatedAt||raw.staffCodeUpdatedAt||'',
       inviteToken:String(raw.inviteToken||raw.staffInviteToken||'').trim(),
       inviteCreatedAt:raw.inviteCreatedAt||'',
       inviteLastCopiedAt:raw.inviteLastCopiedAt||'',
@@ -3175,6 +3190,8 @@ function staffAccessTypeOptions(current){
 
 function staffAuditHtml(item){
   var parts=[];
+  if(item.hasCoachCode)parts.push('Code saved');
+  if(item.coachCodeLastCopiedAt)parts.push('Code copied '+formatDateTime(item.coachCodeLastCopiedAt));
   if(item.inviteCreatedAt)parts.push('Created '+formatDateTime(item.inviteCreatedAt));
   if(item.inviteLastCopiedAt)parts.push('Copied '+formatDateTime(item.inviteLastCopiedAt));
   if(item.inviteLastUsedAt)parts.push('Used '+formatDateTime(item.inviteLastUsedAt));
@@ -3195,6 +3212,7 @@ function renderStaffList(){
     var inactive=item.active===false;
     var appOnly=normalizeStaffAccessType(item.accessType)==='app-only';
     var copyLabel=item.inviteToken&&!revoked?'Copy Invite':'Create Invite';
+    var codeLabel=item.hasCoachCode?'Reset Code':'Create Code';
     var revokeButton=item.inviteToken
       ? '<button class="ghost" type="button" data-'+(revoked?'restore':'revoke')+'-staff-invite="'+index+'">'+(revoked?'Restore':'Revoke')+'</button>'
       : '<span></span>';
@@ -3209,6 +3227,7 @@ function renderStaffList(){
       '<div class="staff-row-actions">'+
         '<span class="invite-state">'+esc(staffInviteState(item))+'</span>'+
         staffAuditHtml(item)+
+        '<button class="ghost" type="button" data-copy-staff-code="'+index+'"'+(inactive?' disabled':'')+'>'+codeLabel+'</button>'+
         '<button class="ghost" type="button" data-copy-staff-invite="'+index+'"'+(inactive||appOnly?' disabled':'')+'>'+copyLabel+'</button>'+
         revokeButton+
         '<button class="ghost" type="button" data-remove-staff="'+index+'">Remove</button>'+
@@ -3240,6 +3259,10 @@ function collectStaffRows(keepBlankRows){
       active:activeInput&&activeInput.value==='inactive'?false:true,
       role:String(roleInput&&roleInput.value||current.role||'Assistant Coach').trim()||'Assistant Coach',
       accessType:normalizeStaffAccessType(accessTypeInput&&accessTypeInput.value||current.accessType),
+      hasCoachCode:!!current.hasCoachCode,
+      coachCodeCreatedAt:current.coachCodeCreatedAt||'',
+      coachCodeLastCopiedAt:current.coachCodeLastCopiedAt||'',
+      coachCodeUpdatedAt:current.coachCodeUpdatedAt||'',
       inviteToken:current.inviteToken||'',
       inviteCreatedAt:current.inviteCreatedAt||'',
       inviteLastCopiedAt:current.inviteLastCopiedAt||'',
@@ -3265,6 +3288,7 @@ function saveStaffList(options){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save coach names.');
+    if(result.data&&result.data.sessionToken)setSmartCoachSession(result.data.sessionToken,true);
     coachStaff=normalizeStaffForView(result.data&&result.data.coachStaff||staff);
     renderStaffList();
     if(els.staffStatus&&!options.quiet){els.staffStatus.textContent='Coach names saved.';els.staffStatus.style.color='#08783c';}
@@ -3278,10 +3302,12 @@ function saveStaffList(options){
 }
 
 function handleStaffListClick(event){
+  var code=event.target.closest&&event.target.closest('[data-copy-staff-code]');
   var copy=event.target.closest&&event.target.closest('[data-copy-staff-invite]');
   var revoke=event.target.closest&&event.target.closest('[data-revoke-staff-invite]');
   var restore=event.target.closest&&event.target.closest('[data-restore-staff-invite]');
   var remove=event.target.closest&&event.target.closest('[data-remove-staff]');
+  if(code){copyStaffCoachCode(Number(code.getAttribute('data-copy-staff-code')));return;}
   if(copy){copyStaffInvite(Number(copy.getAttribute('data-copy-staff-invite')));return;}
   if(revoke){setStaffInviteRevoked(Number(revoke.getAttribute('data-revoke-staff-invite')),true);return;}
   if(restore){setStaffInviteRevoked(Number(restore.getAttribute('data-restore-staff-invite')),false);return;}
@@ -3291,6 +3317,48 @@ function handleStaffListClick(event){
     coachStaff.splice(index,1);
     renderStaffList();
   }
+}
+
+function copyStaffCoachCode(index){
+  coachStaff=collectStaffRows(true);
+  var item=coachStaff[index]||{};
+  if(!item.name){
+    if(els.staffStatus){els.staffStatus.textContent='Add the coach name before creating a personal code.';els.staffStatus.style.color='#b00000';}
+    return;
+  }
+  if(item.active===false){
+    if(els.staffStatus){els.staffStatus.textContent='Set this coach to Active before creating or resetting a code.';els.staffStatus.style.color='#b00000';}
+    return;
+  }
+  var code=staffPersonalCode();
+  item.newCoachCode=code;
+  coachStaff[index]=item;
+  saveStaffList({quiet:true,staff:coachStaff}).then(function(saved){
+    var savedItem=saved[index]||item;
+    var appOnly=normalizeStaffAccessType(savedItem.accessType)==='app-only';
+    var message=[
+      'SMARTCoach personal coach code',
+      '',
+      'Hi '+savedItem.name+',',
+      '',
+      'Your personal SMARTCoach code:',
+      code,
+      '',
+      appOnly?'This code gives you SMARTCoach phone app access only.':'This code gives you SMARTCoach phone app and SMART Trak access.',
+      '',
+      'SMARTCoach Phone App',
+      '',
+      'Open this link on your phone:',
+      'https://app.smartcoach-pro.com',
+      '',
+      'Keep this code private. If it stops working, ask the head coach to reset your personal coach code.'
+    ].join('\n');
+    return copyTextToClipboard(message).then(function(copied){
+      if(els.staffStatus){els.staffStatus.textContent=copied?'Personal code copied for '+savedItem.name+'.':'Code saved, but copy failed. Reset the code and copy again.';els.staffStatus.style.color=copied?'#08783c':'#b00000';}
+    });
+  }).catch(function(error){
+    if(els.staffStatus){els.staffStatus.textContent=error&&error.message?error.message:'Could not create personal code.';els.staffStatus.style.color='#b00000';}
+  });
 }
 
 function copyStaffInvite(index){

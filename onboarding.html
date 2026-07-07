@@ -367,7 +367,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="field">
           <label for="coachAccessCodes">Shared Coach Code</label>
-          <input id="coachAccessCodes" type="text" placeholder="Generate or paste the one shared code" autocomplete="off">
+          <input id="coachAccessCodes" type="text" placeholder="Generate or paste the fallback code" autocomplete="off">
         </div>
         <div class="field">
           <label for="accountOwnerEmail">Account Owner Email</label>
@@ -386,7 +386,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="logoUrl" type="text" placeholder="Optional customer logo URL" autocomplete="off">
         </div>
       </div>
-      <div class="setupnote"><b>Coach code is intentional</b>Generate or paste the shared coach code before saving a new Pro account. Blank coach-code fields preserve the saved code on existing accounts, but a new Pro account with no code stays setup-incomplete.</div>
+      <div class="setupnote"><b>Coach code is intentional</b>Generate or paste the fallback coach code before saving a new Pro account. Blank coach-code fields preserve the saved code on existing accounts, but a new Pro account with no code stays setup-incomplete.</div>
       <div class="status">Use these fields only for internal setup or support. Blank connection fields preserve the saved customer account value.</div>
     </div>
   </section>
@@ -505,7 +505,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         </div>
         <div class="payloadbox">
           <strong>GHL Subscription Payload</strong>
-          <span>Use this JSON body when GHL updates SMART Trak after subscription changes. Setup secrets and the shared coach code are intentionally not included.</span>
+          <span>Use this JSON body when GHL updates SMART Trak after subscription changes. Setup secrets and the fallback coach code are intentionally not included.</span>
           <pre id="automationPayloadText"></pre>
           <button type="button" class="secondary" onclick="copyPayload('automation')">Copy GHL Subscription Payload</button>
         </div>
@@ -557,7 +557,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
       </div>
       <div id="liveSmokeChecklist" class="checklist">
         <label class="checkrow"><input type="checkbox"><span><b>1. System check is ready<em class="checkbadge warn">Required</em></b><span>Run Check System with the automation secret. The result should say Ready for initial rollout and show no launch blockers.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup preview passes<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, assistant coach seats, subscription status, and shared coach code before saving.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>2. Customer setup preview passes<em class="checkbadge warn">Required</em></b><span>Use Test Setup First for the customer account key, plan, assistant coach seats, subscription status, and fallback coach code before saving.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>3. Customer account record is saved<em class="checkbadge warn">Required</em></b><span>Save the account setup, then use Lookup Account to confirm subscription, coach seats, connection fields, and recent update history are present.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>4. Customer dashboard opens<em class="checkbadge warn">Required</em></b><span>Open the customer SMART Trak link with the account key. Confirm the coach access prompt accepts the correct code and rejects a wrong code.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>5. Core coach pages load real data<em class="checkbadge warn">Required</em></b><span>Check Dashboard, Athletes, Training Calendar, Athlete Setup, and Upload/Paste Plan. The pages should load the customer roster and should not show setup-needed errors.</span></span></label>
@@ -565,7 +565,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <label class="checkrow"><input type="checkbox"><span><b>7. Stopwatch sync saves<em class="checkbadge warn">Required</em></b><span>Time one harmless app workout, sync it, then confirm Dashboard volume, completed workout details, splits, and Training Calendar status update in SMART Trak.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>8. Standalone race result saves<em class="checkbadge warn">Required</em></b><span>Log one race result from SMART Trak without using the stopwatch app. Confirm Dashboard, Meet History, and athlete bests update.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>9. Simulators score<em class="checkbadge warn">Required</em></b><span>Load Track Simulator My Season Bests and XC Simulator My Season Best, load saved fields, and score simulated meets with complete results.</span></span></label>
-        <label class="checkrow"><input type="checkbox"><span><b>10. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL Subscription Payload workflow or manually save status changes. Active or trialing should allow SMART Trak; blocked billing statuses should block it clearly. Setup secrets and the shared coach code should stay out of the copied GHL payload.</span></span></label>
+        <label class="checkrow"><input type="checkbox"><span><b>10. Subscription status controls access<em class="checkbadge warn">Required</em></b><span>Trigger the GHL Subscription Payload workflow or manually save status changes. Active or trialing should allow SMART Trak; blocked billing statuses should block it clearly. Setup secrets and the fallback coach code should stay out of the copied GHL payload.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>11. Activation record is saved<em class="checkbadge warn">Required</em></b><span>After system readiness, saved customer setup, and launch sign-off are complete, use Copy Activation Record and save the support note. This item is marked complete when the copy succeeds.</span></span></label>
         <label class="checkrow"><input type="checkbox"><span><b>12. Parent email is still off<em class="checkbadge good">Initial rollout</em></b><span>Keep parent email unreleased unless the parent communication feature is intentionally turned on later.</span></span></label>
       </div>
@@ -1404,7 +1404,7 @@ function accountNextAction(data,record){
   if(missing.length)return 'Add missing setup: '+missing.map(function(item){return item.label||item.key||item;}).join(', ')+'.';
   if(!(record.locationId&&record.token)&&data.crmConfigured===false)return 'Add the customer Location ID and Private Integration Token.';
   var codeCount=Number(data.coachAccessCodesConfigured)||((record.coachAccessCodes||[]).length)||(record.accessCode?1:0);
-  if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste the shared coach code, then save the account setup.';
+  if(data.coachAccessRequired&&codeCount<1)return 'Generate or paste the fallback coach code, then save the account setup.';
   if(data.accessReady===false)return 'Finish account setup, then check customer access again.';
   if(data.deviceAccessReady===false)return 'Account is ready. Enter a coach access code on this browser or phone to unlock coach data.';
   var smoke=smokeValidationProgress();
@@ -1781,10 +1781,10 @@ function renderReadiness(data){
   }
   if(configured){
     title.textContent='SMART Trak account ready';
-    detail.textContent='The SMART Trak connection is configured. Coach access is limited by the shared coach code.';
+    detail.textContent='The SMART Trak connection is configured. Coach access is limited by coach codes.';
   }else{
     title.textContent='SMART Trak setup needed';
-    detail.textContent='Add the location ID, private integration token, assistant coach seats, and shared coach code, then use Save Account Setup and check again.';
+    detail.textContent='Add the location ID, private integration token, assistant coach seats, and fallback coach code, then use Save Account Setup and check again.';
   }
 }
 function checkSetupStatus(){
@@ -2288,7 +2288,7 @@ function renderLiveSmokeSummary(){
   box.className='readybar '+(complete?'good':'warn');
   box.querySelector('b').textContent=complete?'Live smoke test complete':'Live smoke test not complete';
   box.querySelector('span').textContent=complete
-    ?'All required live validation checks are marked complete for this account. Keep the account key, shared coach code, and support notes with the customer record.'
+    ?'All required live validation checks are marked complete for this account. Keep the account key, fallback coach code, and support notes with the customer record.'
     :done+' of '+total+' required live validation checks complete. Finish every required check before sending the coach invite.';
   renderActivationHandoffStatus();
 }
@@ -2361,8 +2361,8 @@ function copyCustomLink(){
 function coachAccessCodeLines(){
   var raw=(document.getElementById('coachAccessCodes')||{}).value||'';
   var codes=raw.split(',').map(function(code){return code.trim();}).filter(Boolean);
-  if(!codes.length)return ['Coach access code: Use the shared coach code assigned during SMARTCoach setup.'];
-  return ['Coach access code: Use the shared coach code from your head coach.'];
+  if(!codes.length)return ['Coach access: Head coach creates personal coach codes in Staff Access after setup.'];
+  return ['Coach access: Head coach creates personal coach codes in Staff Access. The saved setup code is a fallback/recovery code.'];
 }
 function phoneAppInstallLines(plan){
   var isEssential=plan==='essential';
@@ -2435,7 +2435,7 @@ function copyCoachInvite(){
     lines.push('Plan: SMARTCoach Pro');
     lines=lines.concat(coachAccessCodeLines());
     lines.push('Head coach: use SMART Trak from the custom menu link.');
-    lines.push('Assistant coaches: use the direct SMART Trak link with the shared coach code or a staff invite link.');
+    lines.push('Assistant coaches: use a personal coach code or staff invite link from Staff Access.');
     lines.push('Start here: open Dashboard first, then use Athletes for roster setup and Training Calendar for daily work.');
     lines.push('Desktop: open the SMARTCoach link and enter the coach access code if prompted.');
     lines.push('Phone: open the stopwatch app, go to Groups, tap Account, then enter the account key and coach access code.');
@@ -2608,7 +2608,7 @@ function renderChecklist(data){
       title:'Set staff access',
       body:plan==='essential'
         ?'Essential needs one active coach code. Only one device session stays active at a time.'
-        :'Use one shared coach code for active staff only. Head coaches can use the custom menu link; assistants can use the direct SMART Trak link with the shared code or a staff invite link. Pro includes up to 10 assistant coach seats, but fewer syncing devices keeps team data cleaner. Active athlete limits are enforced by SMARTCoach.',
+        :'Use Staff Access to create personal coach codes for active staff. Head coaches can use the custom menu link; assistants can use a personal coach code or staff invite link. The saved setup code is a fallback/recovery code. Pro includes up to 10 assistant coach seats, but fewer syncing devices keeps team data cleaner. Active athlete limits are enforced by SMARTCoach.',
       state:signals.coachCodesReady?'good':'bad',
       status:signals.coachCodesReady?'Codes saved':'Missing codes'
     },
@@ -2652,7 +2652,7 @@ function activationSteps(data){
     },
     {
       title:'Test setup first',
-      body:'Use Test Setup First for '+account+' before saving. Fix missing location ID, private integration token, shared coach code, or subscription status.'
+      body:'Use Test Setup First for '+account+' before saving. Fix missing location ID, private integration token, fallback coach code, or subscription status.'
     },
     {
       title:'Save the account record',
@@ -2662,7 +2662,7 @@ function activationSteps(data){
       title:isEssential?'Give the coach the stopwatch link':'Add the SMART Trak custom link',
       body:isEssential
         ?'Use the customer stopwatch link for app-only access: '+link
-        :'Add one custom sidebar link in the head coach account workspace. Base app stays app.smartcoach-pro.com; only the account key changes. Assistant coaches can use this direct SMART Trak link with the shared coach code or a staff invite link. Link: '+link
+        :'Add one custom sidebar link in the head coach account workspace. Base app stays app.smartcoach-pro.com; only the account key changes. Assistant coaches can use this direct SMART Trak link with a personal coach code or staff invite link. Link: '+link
     },
     {
       title:'Verify coach access',
@@ -2871,7 +2871,7 @@ function accountSetupBlockerText(data){
   if(!signals.registrySaved)return 'Save and verify the customer account record before copying the activation record or coach invite.';
   if(!signals.subscriptionAllowed)return signals.subscriptionBlockedReason;
   if(!signals.crmReady)return 'Add the customer Location ID and Private Integration Token before copying the activation record or coach invite.';
-  if(!signals.coachCodesReady)return 'Generate and save the shared coach code before copying the activation record or coach invite.';
+  if(!signals.coachCodesReady)return 'Generate and save the fallback coach code before copying the activation record or coach invite.';
   if(!signals.accountConfigured)return 'Confirm the customer account status is configured before copying the activation record or coach invite.';
   return '';
 }

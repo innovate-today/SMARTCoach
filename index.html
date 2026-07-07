@@ -1114,6 +1114,9 @@ function createSmartCoachSession(accessCode,remember){
     if(result.ok&&result.data&&result.data.sessionToken){
       setSmartCoachSession(result.data.sessionToken,remember);
       setSmartCoachAccessCode('');
+      if(result.data.coachName){
+        setSelectedCoachIdentity({id:result.data.coachId||'',name:result.data.coachName,accessType:result.data.accessType||'full'});
+      }
       return true;
     }
     return false;
