@@ -126,7 +126,7 @@ How to use Staff Access:
 4. Check **Seen this week** to see how many devices have been active recently.
 5. Review the **Active staff**, **Inactive staff**, **Invites used**, and **Revoked invites** cards in the **Coaches** section.
 6. Add coach names in the **Coaches** section, choose each coach's role, choose **Full Access** or **App Only**, and keep only current staff marked **Active**.
-7. Click **Create Code** or **Reset Code** to copy a personal coach code for that coach. The code is only shown in the copied message, so reset it if it is lost.
+7. Click **Create Code** or **Reset Code** to copy a send-ready message for that coach. The message includes the personal code, phone app link, access type, and the SMART Trak link when the coach has Full Access. The code is only shown in the copied message, so reset it if it is lost.
 8. Click **Save Coaches** after changing names, roles, access type, or active status.
 9. Optional: for **Full Access** assistants, add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy a private SMART Trak invite link for that assistant.
 10. Use **Revoke** when an assistant should no longer have direct invite-link access. Use **Restore** only when that same assistant should use the invite again.

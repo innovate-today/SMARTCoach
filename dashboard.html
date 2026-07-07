@@ -3336,23 +3336,33 @@ function copyStaffCoachCode(index){
   saveStaffList({quiet:true,staff:coachStaff}).then(function(saved){
     var savedItem=saved[index]||item;
     var appOnly=normalizeStaffAccessType(savedItem.accessType)==='app-only';
+    var account=smartCoachAccountKey();
+    var desktopLink=window.location.origin+'/dashboard.html?account='+encodeURIComponent(account);
     var message=[
-      'SMARTCoach personal coach code',
+      'SMARTCoach Access',
       '',
       'Hi '+savedItem.name+',',
       '',
-      'Your personal SMARTCoach code:',
-      code,
+      'Your personal SMARTCoach code is:',
       '',
-      appOnly?'This code gives you SMARTCoach phone app access only.':'This code gives you SMARTCoach phone app and SMART Trak access.',
+      code,
       '',
       'SMARTCoach Phone App',
       '',
       'Open this link on your phone:',
       'https://app.smartcoach-pro.com',
       '',
+      'Use this code when the app asks for your coach access code.',
+      '',
+      appOnly?'This code is for the phone app only.':'This same code also opens SMART Trak:',
+      appOnly?'':desktopLink,
+      '',
+      'Access type: '+staffAccessTypeLabel(savedItem.accessType),
+      '',
       'Keep this code private. If it stops working, ask the head coach to reset your personal coach code.'
-    ].join('\n');
+    ].filter(function(line,index,all){
+      return line!==''||all[index-1]!==''&&index!==all.length-1;
+    }).join('\n');
     return copyTextToClipboard(message).then(function(copied){
       if(els.staffStatus){els.staffStatus.textContent=copied?'Personal code copied for '+savedItem.name+'.':'Code saved, but copy failed. Reset the code and copy again.';els.staffStatus.style.color=copied?'#08783c':'#b00000';}
     });
