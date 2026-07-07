@@ -2,6 +2,14 @@
 
 This guide explains how coaches use SMART Trak and the SMARTCoach Pro Mobile App together. SMART Trak is the desktop command center. The SMARTCoach Pro Mobile App is used at practice or meets to time athletes, manage groups, and sync completed work back to SMART Trak.
 
+## Install The SMARTCoach Phone App
+
+Open `https://app.smartcoach-pro.com` on your phone.
+
+On iPhone, open the link in Safari. Tap the Share button at the bottom, scroll down, and tap **Add to Home Screen**. The SMARTCoach icon will appear on your home screen.
+
+On Android, open the link in Chrome. Tap the menu in the top right, then tap **Add to Home screen** or **Install app** if it appears. Confirm by tapping **Add** or **Install**. The SMARTCoach icon will appear on your home screen.
+
 ## Best Place To Start
 
 Use **Start Here** on the Dashboard when you are not sure what to do first. It stays available after setup is complete and opens short goal paths with the next few coach actions and buttons to the right pages.
