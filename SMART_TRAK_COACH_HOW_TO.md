@@ -125,13 +125,15 @@ How to use Staff Access:
 3. Check **Active devices** to see how many devices have used the shared coach code in the last 30 days.
 4. Check **Seen this week** to see how many devices have been active recently.
 5. Review the **Active staff**, **Inactive staff**, **Invites used**, and **Revoked invites** cards in the **Coaches** section.
-6. Add coach names in the **Coaches** section, choose each coach's role, and keep only current staff marked **Active**.
+6. Add coach names in the **Coaches** section, choose each coach's role, choose **Full Access** or **App Only**, and keep only current staff marked **Active**.
 7. Click **Save Coaches** after changing names, roles, or active status.
-8. Optional: add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy a private SMART Trak invite link for that assistant.
+8. Optional: for **Full Access** assistants, add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy a private SMART Trak invite link for that assistant.
 9. Use **Revoke** when an assistant should no longer have direct invite-link access. Use **Restore** only when that same assistant should use the invite again.
 10. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
 
-Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace. Keep invite links private. The shared coach code remains available for the stopwatch app and as a fallback desktop access option.
+Use **Full Access** for coaches who should open SMART Trak and use the phone app. Use **App Only** for coaches who should appear in the phone app coach picker but should not receive a SMART Trak invite link. Inactive coaches are removed from the phone app coach picker and cannot use staff invite links.
+
+Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace. Keep invite links private. The shared coach code remains available for the stopwatch app and as a fallback desktop access option. Because the shared coach code can unlock both the phone app and SMART Trak, share it only with staff who should have access. For stricter app-only separation, contact support about app-only invite/code options.
 
 Inactive coaches cannot use staff invite links. Each coach row shows invite activity such as when an invite was created, copied, used, or revoked. After an assistant opens an invite link, Staff Access updates that assistant's invite status to show when the link was last used. Use that status along with **Active devices** and **Seen this week** to spot old or unexpected access.
 

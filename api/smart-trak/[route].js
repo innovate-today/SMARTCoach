@@ -3046,6 +3046,7 @@ function normalizeCoachStaff(items) {
       email: cleanSetupText(raw.email || raw.coachEmail).slice(0, 160),
       active: raw.active === false ? false : true,
       role: cleanSetupText(raw.role).slice(0, 80),
+      accessType: normalizeStaffAccessType(raw.accessType || raw.staffAccessType),
       inviteToken: cleanSetupText(raw.inviteToken || raw.staffInviteToken).slice(0, 120),
       inviteCreatedAt: cleanSetupText(raw.inviteCreatedAt),
       inviteLastCopiedAt: cleanSetupText(raw.inviteLastCopiedAt),
@@ -3057,6 +3058,12 @@ function normalizeCoachStaff(items) {
   }).filter(Boolean).slice(0, 25);
 }
 
+function normalizeStaffAccessType(value) {
+  const text = cleanSetupText(value).toLowerCase().replace(/[\s_-]+/g, "-");
+  if (text === "app" || text === "app-only" || text === "phone" || text === "phone-app") return "app-only";
+  return "full";
+}
+
 function publicCoachStaff(items, includeInviteSecrets = false) {
   const staff = normalizeCoachStaff(items);
   if (includeInviteSecrets) return staff;
@@ -3066,6 +3073,7 @@ function publicCoachStaff(items, includeInviteSecrets = false) {
     email: item.email,
     active: item.active,
     role: item.role,
+    accessType: item.accessType,
     inviteCreatedAt: item.inviteCreatedAt,
     inviteLastCopiedAt: item.inviteLastCopiedAt,
     inviteLastUsedAt: item.inviteLastUsedAt,
@@ -3097,7 +3105,7 @@ function coachInviteAllowed(account, accountKey, inviteToken) {
     return { allowed: false, statusCode: 403, error: subscriptionBlockedMessage(subscription), accessReady: false, coachAccessRequired: true };
   }
   const staff = normalizeCoachStaff(account.coachStaff);
-  const index = staff.findIndex((item) => item.active !== false && item.inviteToken && !item.inviteRevokedAt && safeEqual(item.inviteToken, token));
+  const index = staff.findIndex((item) => item.active !== false && normalizeStaffAccessType(item.accessType) !== "app-only" && item.inviteToken && !item.inviteRevokedAt && safeEqual(item.inviteToken, token));
   if (index < 0) {
     return { allowed: false, statusCode: 401, error: "Staff invite link is invalid or revoked.", coachAccessRequired: true };
   }
@@ -3113,6 +3121,13 @@ function coachInviteAllowed(account, accountKey, inviteToken) {
     staffInviteId: staff[index].id,
     coachName: staff[index].name,
   };
+}
+
+function desktopSessionAllowedForStaff(access, account, deviceSource) {
+  if (cleanSetupText(deviceSource).toLowerCase() === "app") return true;
+  const staff = normalizeCoachStaff(account && account.coachStaff);
+  const item = staff[Number(access && access.coachIndex) || 0] || null;
+  return !(item && item.active !== false && normalizeStaffAccessType(item.accessType) === "app-only");
 }
 
 async function markStaffInviteUsed({ accountKey, accountRecord, staffInviteId, deviceSource }) {
@@ -4045,6 +4060,16 @@ async function accountSession(req, res) {
       res.status(access.statusCode || 401).json(access);
       return;
     }
+    const deviceSource = cleanSetupText(firstPayloadValue(payload, ["deviceSource", "source", "client"])).toLowerCase();
+    if (!desktopSessionAllowedForStaff(access, req.smartcoachRegistryAccount, deviceSource)) {
+      res.status(403).json({
+        allowed: false,
+        error: "This coach is set to App Only. Ask the head coach for Full Access before opening SMART Trak.",
+        accountKey,
+        coachAccessRequired: true,
+      });
+      return;
+    }
     clearSessionFailures({ accountKey, ip });
     const parentEmailAllowed = parentEmailFeatureReleased() && !!access.parentEmailAllowed;
     const sessionId = crypto.randomBytes(12).toString("hex");
@@ -4071,7 +4096,6 @@ async function accountSession(req, res) {
         },
       });
     }
-    const deviceSource = cleanSetupText(firstPayloadValue(payload, ["deviceSource", "source", "client"])).toLowerCase();
     const deviceId = deviceSource === "app" ? cleanSetupText(firstPayloadValue(payload, ["deviceId", "clientDeviceId"])) : "";
     const deviceLabel = deviceSource === "app" ? cleanSetupText(firstPayloadValue(payload, ["deviceLabel", "deviceName"])) : "";
     const usage = deviceId

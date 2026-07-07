@@ -209,7 +209,7 @@ tr:last-child td{border-bottom:0}
 .staff-list{display:grid;gap:10px;margin-top:10px}
 .staff-row{display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px}
 .staff-row.inactive{opacity:.72;background:#f8fafc}
-.staff-row-fields{display:grid;grid-template-columns:minmax(150px,1fr) minmax(200px,1.2fr) 140px 120px;gap:8px;align-items:center}
+.staff-row-fields{display:grid;grid-template-columns:minmax(150px,1fr) minmax(200px,1.2fr) 140px 130px 120px;gap:8px;align-items:center}
 .staff-row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .staff-row input,.staff-row select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px}
 .staff-row button{padding:9px 11px}
@@ -3109,6 +3109,15 @@ function renderStaffSummary(){
   if(els.staffInviteRevokedCount)els.staffInviteRevokedCount.textContent=revoked;
 }
 
+function normalizeStaffAccessType(value){
+  var text=String(value||'').trim().toLowerCase().replace(/[\s_-]+/g,'-');
+  if(text==='app'||text==='app-only'||text==='phone'||text==='phone-app')return 'app-only';
+  return 'full';
+}
+function staffAccessTypeLabel(value){
+  return normalizeStaffAccessType(value)==='app-only'?'App Only':'Full Access';
+}
+
 function normalizeStaffForView(items){
   var seen={};
   return (Array.isArray(items)?items:[]).map(function(item,index){
@@ -3125,6 +3134,7 @@ function normalizeStaffForView(items){
       email:String(raw.email||raw.coachEmail||'').trim(),
       active:raw.active===false?false:true,
       role:String(raw.role||'').trim(),
+      accessType:normalizeStaffAccessType(raw.accessType||raw.staffAccessType),
       inviteToken:String(raw.inviteToken||raw.staffInviteToken||'').trim(),
       inviteCreatedAt:raw.inviteCreatedAt||'',
       inviteLastCopiedAt:raw.inviteLastCopiedAt||'',
@@ -3139,6 +3149,7 @@ function normalizeStaffForView(items){
 function staffInviteState(item){
   if(!item)return 'No invite';
   if(item.active===false)return 'Inactive';
+  if(normalizeStaffAccessType(item.accessType)==='app-only')return 'App Only';
   if(!item.inviteToken)return 'No invite';
   if(item.inviteRevokedAt)return 'Revoked';
   if(item.inviteLastUsedAt)return 'Used '+formatDateTime(item.inviteLastUsedAt);
@@ -3152,6 +3163,14 @@ function staffRoleOptions(current){
   return roles.map(function(role){
     return '<option value="'+esc(role)+'"'+(role===value?' selected':'')+'>'+esc(role)+'</option>';
   }).join('');
+}
+
+function staffAccessTypeOptions(current){
+  var value=normalizeStaffAccessType(current);
+  return [
+    '<option value="full"'+(value==='full'?' selected':'')+'>Full Access</option>',
+    '<option value="app-only"'+(value==='app-only'?' selected':'')+'>App Only</option>'
+  ].join('');
 }
 
 function staffAuditHtml(item){
@@ -3174,6 +3193,7 @@ function renderStaffList(){
   els.staffList.innerHTML=coachStaff.map(function(item,index){
     var revoked=!!item.inviteRevokedAt;
     var inactive=item.active===false;
+    var appOnly=normalizeStaffAccessType(item.accessType)==='app-only';
     var copyLabel=item.inviteToken&&!revoked?'Copy Invite':'Create Invite';
     var revokeButton=item.inviteToken
       ? '<button class="ghost" type="button" data-'+(revoked?'restore':'revoke')+'-staff-invite="'+index+'">'+(revoked?'Restore':'Revoke')+'</button>'
@@ -3183,12 +3203,13 @@ function renderStaffList(){
         '<input data-staff-name type="text" value="'+esc(item.name||'')+'" placeholder="Coach name" autocomplete="off">'+
         '<input data-staff-email type="email" value="'+esc(item.email||'')+'" placeholder="Coach email optional" autocomplete="off">'+
         '<select data-staff-role aria-label="Coach role">'+staffRoleOptions(item.role)+'</select>'+
+        '<select data-staff-access-type aria-label="Coach access type">'+staffAccessTypeOptions(item.accessType)+'</select>'+
         '<select data-staff-active aria-label="Coach status"><option value="active"'+(!inactive?' selected':'')+'>Active</option><option value="inactive"'+(inactive?' selected':'')+'>Inactive</option></select>'+
       '</div>'+
       '<div class="staff-row-actions">'+
         '<span class="invite-state">'+esc(staffInviteState(item))+'</span>'+
         staffAuditHtml(item)+
-        '<button class="ghost" type="button" data-copy-staff-invite="'+index+'"'+(inactive?' disabled':'')+'>'+copyLabel+'</button>'+
+        '<button class="ghost" type="button" data-copy-staff-invite="'+index+'"'+(inactive||appOnly?' disabled':'')+'>'+copyLabel+'</button>'+
         revokeButton+
         '<button class="ghost" type="button" data-remove-staff="'+index+'">Remove</button>'+
       '</div>'+
@@ -3203,6 +3224,7 @@ function collectStaffRows(keepBlankRows){
     var input=row.querySelector('[data-staff-name]');
     var emailInput=row.querySelector('[data-staff-email]');
     var roleInput=row.querySelector('[data-staff-role]');
+    var accessTypeInput=row.querySelector('[data-staff-access-type]');
     var activeInput=row.querySelector('[data-staff-active]');
     var current=coachStaff[index]||{};
     var name=String(input&&input.value||'').trim();
@@ -3217,6 +3239,7 @@ function collectStaffRows(keepBlankRows){
       email:email,
       active:activeInput&&activeInput.value==='inactive'?false:true,
       role:String(roleInput&&roleInput.value||current.role||'Assistant Coach').trim()||'Assistant Coach',
+      accessType:normalizeStaffAccessType(accessTypeInput&&accessTypeInput.value||current.accessType),
       inviteToken:current.inviteToken||'',
       inviteCreatedAt:current.inviteCreatedAt||'',
       inviteLastCopiedAt:current.inviteLastCopiedAt||'',
@@ -3279,6 +3302,10 @@ function copyStaffInvite(index){
   }
   if(item.active===false){
     if(els.staffStatus){els.staffStatus.textContent='Set this coach to Active before creating or copying an invite.';els.staffStatus.style.color='#b00000';}
+    return;
+  }
+  if(normalizeStaffAccessType(item.accessType)==='app-only'){
+    if(els.staffStatus){els.staffStatus.textContent='This coach is App Only. Change Access Type to Full Access before creating a SMART Trak invite.';els.staffStatus.style.color='#b00000';}
     return;
   }
   var now=new Date().toISOString();

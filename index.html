@@ -760,12 +760,12 @@ function selectedCoachIdentity(){
   try{
     var raw=localStorage.getItem(coachIdentityStorageKey())||'';
     var data=raw?JSON.parse(raw):null;
-    return data&&data.name?{id:String(data.id||'').trim(),name:String(data.name||'').trim()}:null;
+    return data&&data.name?{id:String(data.id||'').trim(),name:String(data.name||'').trim(),accessType:String(data.accessType||'full').trim()}:null;
   }catch(e){return null;}
 }
 function setSelectedCoachIdentity(coach){
   try{
-    if(coach&&coach.name)localStorage.setItem(coachIdentityStorageKey(),JSON.stringify({id:coach.id||'',name:coach.name||''}));
+    if(coach&&coach.name)localStorage.setItem(coachIdentityStorageKey(),JSON.stringify({id:coach.id||'',name:coach.name||'',accessType:coach.accessType||'full'}));
     else localStorage.removeItem(coachIdentityStorageKey());
   }catch(e){}
 }
@@ -783,11 +783,13 @@ function normalizeCoachStaffForApp(items){
     var id=String(raw.id||raw.coachId||name||('coach_'+(index+1))).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_')||('coach_'+(index+1));
     if(seen[id])return null;
     seen[id]=true;
-    return{id:id,name:name};
+    return{id:id,name:name,accessType:String(raw.accessType||'full').trim()||'full'};
   }).filter(Boolean).slice(0,25);
 }
 function updateCoachStaffFromAccount(data){
   STAFF=normalizeCoachStaffForApp(data&&data.coachStaff||[]);
+  var selected=selectedCoachIdentity();
+  if(selected&&!selectedCoachIsValid(selected))setSelectedCoachIdentity(null);
   maybePromptForDeviceCoach(data);
 }
 function selectedCoachIsValid(coach){
@@ -814,7 +816,8 @@ function renderCoachSelect(){
   var current=selectedCoachIdentity();
   select.innerHTML='<option value="">Select coach</option>'+STAFF.map(function(coach){
     var selected=current&&(current.id===coach.id||String(current.name||'').toLowerCase()===String(coach.name||'').toLowerCase())?' selected':'';
-    return '<option value="'+htmlEscape(coach.id)+'"'+selected+'>'+htmlEscape(coach.name)+'</option>';
+    var label=coach.name+(coach.accessType==='app-only'?' (App Only)':'');
+    return '<option value="'+htmlEscape(coach.id)+'"'+selected+'>'+htmlEscape(label)+'</option>';
   }).join('')+'<option value="__not_listed__">Not Listed</option>';
 }
 function saveDeviceCoach(){

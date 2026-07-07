@@ -996,6 +996,7 @@ function checkDashboardStaffAccessHandoff() {
     "data-restore-staff-invite",
     "data-staff-role",
     "data-staff-active",
+    "data-staff-access-type",
     'id="staffActiveCount"',
     'id="staffInactiveCount"',
     'id="staffInviteUsedCount"',
@@ -1020,6 +1021,11 @@ function checkDashboardStaffAccessHandoff() {
     "Head Coach",
     "Assistant Coach",
     "Volunteer Coach",
+    "Full Access",
+    "App Only",
+    "function normalizeStaffAccessType(value)",
+    "function staffAccessTypeOptions(current)",
+    "This coach is App Only. Change Access Type to Full Access before creating a SMART Trak invite.",
     "Set this coach to Active before creating or copying an invite.",
     "inviteLastUsedAt",
     "Used '+formatDateTime(item.inviteLastUsedAt)",
@@ -1079,8 +1085,20 @@ function checkDashboardStaffAccessHandoff() {
     "lastStaffInviteUse",
     "inviteLastUsedAt",
     "inviteRevokedAt",
+    "accessType: normalizeStaffAccessType",
+    "normalizeStaffAccessType(item.accessType) !== \"app-only\"",
+    "function desktopSessionAllowedForStaff(access, account, deviceSource)",
+    "This coach is set to App Only. Ask the head coach for Full Access before opening SMART Trak.",
   ].forEach((text) => {
     if (!smartTrakApi.includes(text)) throw new Error(`Staff invite backend missing ${text}`);
+  });
+  const app = fs.readFileSync("index.html", "utf8");
+  [
+    "accessType:String(raw.accessType||'full')",
+    "if(selected&&!selectedCoachIsValid(selected))setSelectedCoachIdentity(null);",
+    "coach.name+(coach.accessType==='app-only'?' (App Only)':'')",
+  ].forEach((text) => {
+    if (!app.includes(text)) throw new Error(`SMARTCoach app staff access type missing ${text}`);
   });
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
@@ -1090,7 +1108,10 @@ function checkDashboardStaffAccessHandoff() {
     "Changing the shared coach code and saving staff rows require head coach access.",
     "Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace.",
     "Review the **Active staff**, **Inactive staff**, **Invites used**, and **Revoked invites** cards",
-    "choose each coach's role, and keep only current staff marked **Active**.",
+    "choose each coach's role, choose **Full Access** or **App Only**, and keep only current staff marked **Active**.",
+    "Use **Full Access** for coaches who should open SMART Trak and use the phone app.",
+    "Use **App Only** for coaches who should appear in the phone app coach picker but should not receive a SMART Trak invite link.",
+    "Because the shared coach code can unlock both the phone app and SMART Trak, share it only with staff who should have access.",
     "Inactive coaches cannot use staff invite links.",
     "Each coach row shows invite activity such as when an invite was created, copied, used, or revoked.",
     "Staff Access updates that assistant's invite status to show when the link was last used.",
