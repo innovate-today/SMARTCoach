@@ -206,9 +206,11 @@ tr:last-child td{border-bottom:0}
 .staff-warning{border:1px solid #fed7aa;background:#fff7ed;color:#92400e;border-radius:8px;padding:10px 11px;margin-top:10px;font-size:13px;line-height:1.35}
 .staff-warning b{display:block;color:#9a3412;margin-bottom:3px}
 .staff-list{display:grid;gap:8px;margin-top:10px}
-.staff-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.staff-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(180px,1fr) auto auto auto auto;gap:8px;align-items:center}
 .staff-row input{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px}
 .staff-row button{padding:9px 11px}
+.staff-row .invite-state{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
+@media(max-width:760px){.staff-row{grid-template-columns:1fr}.staff-row .invite-state{white-space:normal}}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
 .detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
@@ -1234,7 +1236,7 @@ tr:last-child td{border-bottom:0}
       <section class="accesspanel" aria-label="Share mobile app access">
         <div class="summary-head">
           <h3>Share Assistant Access</h3>
-          <div class="breakrange">Share direct SMART Trak access without adding assistant coaches to GHL.</div>
+          <div class="breakrange">Share direct SMART Trak access without adding assistant coaches to the account workspace.</div>
         </div>
         <div class="formgrid">
           <div class="field full">
@@ -1344,6 +1346,7 @@ var trainingGroups=[];
 var meetManagerRows=[];
 var raceResultMeetRows=[];
 var coachStaff=[];
+var inviteSessionAttempted=false;
 var visibleRosterRows=[];
 var visibleMeetRows=[];
 var visibleTrainingRows=[];
@@ -2565,6 +2568,7 @@ els.codeSave.addEventListener('click',saveCoachCode);
 if(els.codeRecoverySend)els.codeRecoverySend.addEventListener('click',sendTemporaryCoachCode);
 if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff=collectStaffRows(true);coachStaff.push({id:'',name:'',active:true});renderStaffList();});
 if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
+if(els.staffList)els.staffList.addEventListener('click',handleStaffListClick);
 if(els.assistantSmartTrakCopy)els.assistantSmartTrakCopy.addEventListener('click',copyAssistantSmartTrakLink);
 if(els.mobileAccessCopy)els.mobileAccessCopy.addEventListener('click',copyMobileAccessMessage);
 if(els.mobileAccessEmail)els.mobileAccessEmail.addEventListener('click',emailMobileAccessMessage);
@@ -2815,6 +2819,7 @@ function openPendingDashboardAction(){
   if(action==='manageMeets')openMeetManager();
 }
 function showDashboardAccessCode(data){
+  if(tryDashboardInviteAccess(data))return;
   els.lastUpdated.textContent='Access required';
   els.status.textContent='Access required';
   els.accessStatus.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';
@@ -2906,6 +2911,71 @@ function mobileAppAccessUrl(){
 function assistantSmartTrakUrl(){
   var key=smartCoachAccountKey();
   return new URL('/dashboard.html?account='+encodeURIComponent(key),window.location.origin).toString();
+}
+
+function staffInviteUrl(item){
+  var token=item&&item.inviteToken;
+  if(!token)return '';
+  var url=new URL('/dashboard.html',window.location.origin);
+  url.searchParams.set('account',smartCoachAccountKey());
+  url.searchParams.set('invite',token);
+  return url.toString();
+}
+
+function staffInviteToken(){
+  try{
+    var bytes=new Uint8Array(18);
+    window.crypto.getRandomValues(bytes);
+    return Array.prototype.map.call(bytes,function(byte){return ('0'+byte.toString(16)).slice(-2);}).join('');
+  }catch(e){
+    return String(Date.now())+String(Math.random()).slice(2);
+  }
+}
+
+function dashboardInviteToken(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    return String(params.get('invite')||params.get('staffInvite')||'').trim();
+  }catch(e){
+    return '';
+  }
+}
+
+function clearDashboardInviteToken(){
+  try{
+    var url=new URL(window.location.href);
+    url.searchParams.delete('invite');
+    url.searchParams.delete('staffInvite');
+    window.history.replaceState({},document.title,url.toString());
+  }catch(e){}
+}
+
+function tryDashboardInviteAccess(data){
+  var token=dashboardInviteToken();
+  if(!token||inviteSessionAttempted)return false;
+  inviteSessionAttempted=true;
+  els.lastUpdated.textContent='Checking invite';
+  els.status.textContent='Checking staff invite...';
+  fetch('/api/smart-trak/account-session',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),inviteToken:token,deviceSource:'desktop'})
+  }).then(function(res){
+    return res.json().then(function(response){return{ok:res.ok,data:response};});
+  }).then(function(result){
+    if(!result.ok||!result.data||!result.data.sessionToken)throw new Error(result.data&&result.data.error||'Staff invite was not accepted.');
+    setSmartCoachSession(result.data.sessionToken,true);
+    setSmartCoachAccessCode('');
+    clearDashboardInviteToken();
+    els.accessModal.hidden=true;
+    loadDashboard();
+  }).catch(function(error){
+    clearDashboardInviteToken();
+    showDashboardAccessCode(data||{});
+    els.accessStatus.textContent=error.message||'Staff invite was not accepted.';
+    els.accessStatus.style.color='#b00000';
+  });
+  return true;
 }
 
 function copyAssistantSmartTrakLink(){
@@ -3147,8 +3217,25 @@ function normalizeStaffForView(items){
     if(!id)id='coach_'+(index+1);
     if(seen[id])return null;
     seen[id]=true;
-    return{id:id,name:name,active:raw.active===false?false:true,role:String(raw.role||'').trim(),updatedAt:raw.updatedAt||''};
+    return{
+      id:id,
+      name:name,
+      email:String(raw.email||raw.coachEmail||'').trim(),
+      active:raw.active===false?false:true,
+      role:String(raw.role||'').trim(),
+      inviteToken:String(raw.inviteToken||raw.staffInviteToken||'').trim(),
+      inviteCreatedAt:raw.inviteCreatedAt||'',
+      inviteLastCopiedAt:raw.inviteLastCopiedAt||'',
+      inviteRevokedAt:raw.inviteRevokedAt||'',
+      updatedAt:raw.updatedAt||''
+    };
   }).filter(Boolean).slice(0,25);
+}
+
+function staffInviteState(item){
+  if(!item||!item.inviteToken)return 'No invite';
+  if(item.inviteRevokedAt)return 'Revoked';
+  return item.inviteLastCopiedAt?'Invited':'Ready';
 }
 
 function renderStaffList(){
@@ -3158,39 +3245,57 @@ function renderStaffList(){
     return;
   }
   els.staffList.innerHTML=coachStaff.map(function(item,index){
-    return '<div class="staff-row" data-staff-row="'+index+'"><input type="text" value="'+esc(item.name||'')+'" placeholder="Coach name" autocomplete="off"><button class="ghost" type="button" data-remove-staff="'+index+'">Remove</button></div>';
+    var revoked=!!item.inviteRevokedAt;
+    var copyLabel=item.inviteToken&&!revoked?'Copy Invite':'Create Invite';
+    var revokeButton=item.inviteToken
+      ? '<button class="ghost" type="button" data-'+(revoked?'restore':'revoke')+'-staff-invite="'+index+'">'+(revoked?'Restore':'Revoke')+'</button>'
+      : '<span></span>';
+    return '<div class="staff-row" data-staff-row="'+index+'">'+
+      '<input data-staff-name type="text" value="'+esc(item.name||'')+'" placeholder="Coach name" autocomplete="off">'+
+      '<input data-staff-email type="email" value="'+esc(item.email||'')+'" placeholder="Coach email optional" autocomplete="off">'+
+      '<span class="invite-state">'+esc(staffInviteState(item))+'</span>'+
+      '<button class="ghost" type="button" data-copy-staff-invite="'+index+'">'+copyLabel+'</button>'+
+      revokeButton+
+      '<button class="ghost" type="button" data-remove-staff="'+index+'">Remove</button>'+
+    '</div>';
   }).join('');
-  Array.prototype.forEach.call(els.staffList.querySelectorAll('[data-remove-staff]'),function(button){
-    button.addEventListener('click',function(){
-      var index=Number(button.getAttribute('data-remove-staff'));
-      coachStaff=collectStaffRows(true);
-      coachStaff.splice(index,1);
-      renderStaffList();
-    });
-  });
 }
 
 function collectStaffRows(keepBlankRows){
   var rows=els.staffList?Array.prototype.slice.call(els.staffList.querySelectorAll('[data-staff-row]')):[];
   var seen={};
   return rows.map(function(row,index){
-    var input=row.querySelector('input');
+    var input=row.querySelector('[data-staff-name]');
+    var emailInput=row.querySelector('[data-staff-email]');
     var current=coachStaff[index]||{};
     var name=String(input&&input.value||'').trim();
-    if(!name)return keepBlankRows?{id:current.id||'',name:'',active:true,role:current.role||'',updatedAt:current.updatedAt||''}:null;
-    var id=String(current.id||name).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_')||('coach_'+(index+1));
+    var email=String(emailInput&&emailInput.value||'').trim();
+    if(!name&&!email)return keepBlankRows?Object.assign({},current,{name:'',email:email}):null;
+    var id=String(current.id||email||name).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_')||('coach_'+(index+1));
     if(seen[id])return null;
     seen[id]=true;
-    return{id:id,name:name,active:true,role:current.role||'',updatedAt:new Date().toISOString()};
+    return{
+      id:id,
+      name:name||email,
+      email:email,
+      active:current.active===false?false:true,
+      role:current.role||'',
+      inviteToken:current.inviteToken||'',
+      inviteCreatedAt:current.inviteCreatedAt||'',
+      inviteLastCopiedAt:current.inviteLastCopiedAt||'',
+      inviteRevokedAt:current.inviteRevokedAt||'',
+      updatedAt:new Date().toISOString()
+    };
   }).filter(Boolean).slice(0,25);
 }
 
-function saveStaffList(){
+function saveStaffList(options){
+  options=options||{};
   if(!els.staffSave)return;
-  var staff=collectStaffRows();
+  var staff=options.staff||collectStaffRows();
   els.staffSave.disabled=true;
-  if(els.staffStatus){els.staffStatus.textContent='Saving coach names...';els.staffStatus.style.color='#64748b';}
-  fetch('/api/smart-trak/account-staff?account='+encodeURIComponent(smartCoachAccountKey()),{
+  if(els.staffStatus&&!options.quiet){els.staffStatus.textContent='Saving coach names...';els.staffStatus.style.color='#64748b';}
+  return fetch('/api/smart-trak/account-staff?account='+encodeURIComponent(smartCoachAccountKey()),{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({coachStaff:staff})
@@ -3200,12 +3305,75 @@ function saveStaffList(){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save coach names.');
     coachStaff=normalizeStaffForView(result.data&&result.data.coachStaff||staff);
     renderStaffList();
-    if(els.staffStatus){els.staffStatus.textContent='Coach names saved.';els.staffStatus.style.color='#08783c';}
+    if(els.staffStatus&&!options.quiet){els.staffStatus.textContent='Coach names saved.';els.staffStatus.style.color='#08783c';}
+    return coachStaff;
   }).catch(function(error){
     if(els.staffStatus){els.staffStatus.textContent=error.message||'Could not save coach names.';els.staffStatus.style.color='#b00000';}
+    throw error;
   }).finally(function(){
     els.staffSave.disabled=false;
   });
+}
+
+function handleStaffListClick(event){
+  var copy=event.target.closest&&event.target.closest('[data-copy-staff-invite]');
+  var revoke=event.target.closest&&event.target.closest('[data-revoke-staff-invite]');
+  var restore=event.target.closest&&event.target.closest('[data-restore-staff-invite]');
+  var remove=event.target.closest&&event.target.closest('[data-remove-staff]');
+  if(copy){copyStaffInvite(Number(copy.getAttribute('data-copy-staff-invite')));return;}
+  if(revoke){setStaffInviteRevoked(Number(revoke.getAttribute('data-revoke-staff-invite')),true);return;}
+  if(restore){setStaffInviteRevoked(Number(restore.getAttribute('data-restore-staff-invite')),false);return;}
+  if(remove){
+    var index=Number(remove.getAttribute('data-remove-staff'));
+    coachStaff=collectStaffRows(true);
+    coachStaff.splice(index,1);
+    renderStaffList();
+  }
+}
+
+function copyStaffInvite(index){
+  coachStaff=collectStaffRows(true);
+  var item=coachStaff[index]||{};
+  if(!item.name){
+    if(els.staffStatus){els.staffStatus.textContent='Add the assistant coach name before creating an invite.';els.staffStatus.style.color='#b00000';}
+    return;
+  }
+  var now=new Date().toISOString();
+  if(!item.inviteToken||item.inviteRevokedAt){
+    item.inviteToken=staffInviteToken();
+    item.inviteCreatedAt=now;
+    item.inviteRevokedAt='';
+  }
+  item.inviteLastCopiedAt=now;
+  coachStaff[index]=item;
+  saveStaffList({quiet:true,staff:coachStaff}).then(function(saved){
+    var savedItem=saved[index]||item;
+    var link=staffInviteUrl(savedItem);
+    var message=[
+      'SMARTCoach staff invite',
+      '',
+      'Hi '+savedItem.name+',',
+      '',
+      'Open this SMART Trak invite link:',
+      link,
+      '',
+      'This invite is assigned to you. Keep it private and use it only while you are active coaching staff.'
+    ].join('\n');
+    return copyTextToClipboard(message).then(function(copied){
+      if(els.staffStatus){els.staffStatus.textContent=copied?'Invite copied for '+savedItem.name+'.':'Copy failed. Open the invite row and copy again.';els.staffStatus.style.color=copied?'#08783c':'#b00000';}
+    });
+  }).catch(function(){});
+}
+
+function setStaffInviteRevoked(index,revoked){
+  coachStaff=collectStaffRows(true);
+  var item=coachStaff[index];
+  if(!item||!item.inviteToken)return;
+  item.inviteRevokedAt=revoked?new Date().toISOString():'';
+  item.updatedAt=new Date().toISOString();
+  saveStaffList({quiet:true,staff:coachStaff}).then(function(){
+    if(els.staffStatus){els.staffStatus.textContent=revoked?'Assistant invite revoked.':'Assistant invite restored.';els.staffStatus.style.color='#08783c';}
+  }).catch(function(){});
 }
 
 function refreshAppVersion(){

@@ -991,12 +991,21 @@ function checkDashboardStaffAccessHandoff() {
   const onboarding = fs.readFileSync("onboarding.html", "utf8");
   [
     "Share Assistant Access",
-    "Share direct SMART Trak access without adding assistant coaches to GHL.",
+    "Share direct SMART Trak access without adding assistant coaches to the account workspace.",
     'id="assistantSmartTrakLink"',
     'id="assistantSmartTrakCopy"',
+    "data-staff-email",
+    "data-copy-staff-invite",
+    "data-revoke-staff-invite",
+    "data-restore-staff-invite",
     "function assistantSmartTrakUrl()",
+    "function staffInviteToken()",
+    "function staffInviteUrl(item)",
+    "function tryDashboardInviteAccess(data)",
+    "inviteToken:token",
     "return new URL('/dashboard.html?account='+encodeURIComponent(key),window.location.origin).toString();",
     "function copyAssistantSmartTrakLink()",
+    "function copyStaffInvite(index)",
     "Desktop SMART Trak link:",
     "Phone app link:",
     "Desktop: open the SMART Trak link and enter the shared coach code if prompted.",
@@ -1005,11 +1014,30 @@ function checkDashboardStaffAccessHandoff() {
     if (!html.includes(text)) throw new Error(`Dashboard Staff Access handoff missing ${text}`);
   });
   [
-    "Head coach: use SMART Trak from the GHL custom menu link.",
-    "Assistant coaches: use the direct SMART Trak link outside GHL with the shared coach code.",
-    "Head coaches can use the GHL custom menu link; assistants can use the direct SMART Trak link outside GHL with the shared code.",
+    "Head coach: use SMART Trak from the custom menu link.",
+    "Assistant coaches: use the direct SMART Trak link with the shared coach code or a staff invite link.",
+    "Head coaches can use the custom menu link; assistants can use the direct SMART Trak link with the shared code or a staff invite link.",
   ].forEach((text) => {
     if (!onboarding.includes(text)) throw new Error(`Onboarding staff access handoff missing ${text}`);
+  });
+  const smartTrakApi = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  [
+    "function coachInviteAllowed(account, accountKey, inviteToken)",
+    "Staff invite link is invalid or revoked.",
+    "publicCoachStaff(coachStaff, coachAccessUnlocked)",
+    "publicCoachStaff(normalizeCoachStaff(existing.record.coachStaff), false)",
+    "staffInviteAccepted: !!access.staffInvite",
+    "inviteRevokedAt",
+  ].forEach((text) => {
+    if (!smartTrakApi.includes(text)) throw new Error(`Staff invite backend missing ${text}`);
+  });
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    "Create Invite",
+    "Copy Invite",
+    "Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace.",
+  ].forEach((text) => {
+    if (!guide.includes(text)) throw new Error(`Staff invite guide missing ${text}`);
   });
   console.log("Dashboard Staff Access handoff ok");
 }

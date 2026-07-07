@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-05
+Last updated: 2026-07-07
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,11 @@ Current launch status:
 
 Latest handoff:
 
+- Assistant coach access setup is now moving from the starting shared-link/shared-code version toward named assistant invite links. Staff Access keeps the existing shared SMART Trak link and shared coach-code workflow, and now stores assistant name/email plus invite token/status fields on the saved `coachStaff` record.
+- Staff Access can create/copy a private SMART Trak invite for a named assistant, revoke it, or restore it. Opening `/dashboard.html?account=...&invite=...` exchanges the invite token through `/api/smart-trak/account-session` for the normal signed coach session. Revoked, inactive, or unknown invite tokens are rejected.
+- Account status and account-staff GET responses strip invite tokens unless the dashboard is already unlocked by an active coach session, so invite secrets are not exposed by public account-status checks.
+- Coach-facing Staff Access copy and onboarding handoff copy were cleaned so they do not mention GHL. Coach-facing material should continue to say account workspace, custom menu link, SMART Trak, or SMARTCoach instead.
+- `SMART_TRAK_COACH_HOW_TO.md` was updated for named assistant invite links because Staff Access is coach-facing.
 - Latest local code commit before this state update: Speed Trak roster matching and mobile Speed Metrics save clarity.
 - Athlete Setup now keeps inactive athletes out of the current fitness, group setup, and plan assignment lists so planning controls focus on athletes who are currently active.
 - Speed Trak manual entry and spreadsheet imports now try to match typed/uploaded athlete names to saved roster athletes. Matched rows preserve roster identifiers/status to reduce duplicate athlete entries, and the import template/preview includes optional **Roster Status** for historical active/inactive marks.

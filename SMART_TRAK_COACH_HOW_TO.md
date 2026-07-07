@@ -115,7 +115,11 @@ How to use Staff Access:
 3. Check **Active devices** to see how many devices have used the shared coach code in the last 30 days.
 4. Check **Seen this week** to see how many devices have been active recently.
 5. Add coach names in the **Coaches** section and click **Save Coaches**.
-6. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
+6. Optional: add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy a private SMART Trak invite link for that assistant.
+7. Use **Revoke** when an assistant should no longer have direct invite-link access. Use **Restore** only when that same assistant should use the invite again.
+8. Review **Last device activity**. If the number of devices is higher than expected, change the coach code and share the new code only with active staff.
+
+Assistant invite links unlock SMART Trak for the named assistant without requiring the head coach to add that coach to the account workspace. Keep invite links private. The shared coach code remains available for the stopwatch app and as a fallback desktop access option.
 
 If the current shared coach code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new shared coach code. This does not reveal the old code; it replaces it and removes old remembered device access. If the account owner email is not saved or the message does not arrive, contact support.
 

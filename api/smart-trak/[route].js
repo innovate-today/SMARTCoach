@@ -2005,7 +2005,7 @@ async function accountStatus(req, res) {
     expiresAtIso: refreshedSession && refreshedSession.expiresAtIso || undefined,
     sessionRefreshed: !!refreshedSession,
     coachDeviceUsage,
-    coachStaff,
+    coachStaff: publicCoachStaff(coachStaff, coachAccessUnlocked),
     trainingCustomization: normalizeTrainingCustomization(registry.record && registry.record.trainingCustomization),
     dashboardPreferences: normalizeDashboardPreferences(registry.record && registry.record.dashboardPreferences),
     milesBoardSharing: normalizeMilesBoardSharing(registry.record && registry.record.milesBoardSharing),
@@ -2987,7 +2987,7 @@ async function accountStaff(req, res) {
     }
 
     if (req.method === "GET") {
-      res.status(200).json({ success: true, accountKey, coachStaff: normalizeCoachStaff(existing.record.coachStaff) });
+      res.status(200).json({ success: true, accountKey, coachStaff: publicCoachStaff(normalizeCoachStaff(existing.record.coachStaff), false) });
       return;
     }
 
@@ -3033,11 +3033,63 @@ function normalizeCoachStaff(items) {
     return {
       id,
       name,
+      email: cleanSetupText(raw.email || raw.coachEmail).slice(0, 160),
       active: raw.active === false ? false : true,
       role: cleanSetupText(raw.role).slice(0, 80),
+      inviteToken: cleanSetupText(raw.inviteToken || raw.staffInviteToken).slice(0, 120),
+      inviteCreatedAt: cleanSetupText(raw.inviteCreatedAt),
+      inviteLastCopiedAt: cleanSetupText(raw.inviteLastCopiedAt),
+      inviteRevokedAt: cleanSetupText(raw.inviteRevokedAt),
       updatedAt: cleanSetupText(raw.updatedAt) || new Date().toISOString(),
     };
   }).filter(Boolean).slice(0, 25);
+}
+
+function publicCoachStaff(items, includeInviteSecrets = false) {
+  const staff = normalizeCoachStaff(items);
+  if (includeInviteSecrets) return staff;
+  return staff.map((item) => ({
+    id: item.id,
+    name: item.name,
+    email: item.email,
+    active: item.active,
+    role: item.role,
+    inviteCreatedAt: item.inviteCreatedAt,
+    inviteLastCopiedAt: item.inviteLastCopiedAt,
+    inviteRevokedAt: item.inviteRevokedAt,
+    updatedAt: item.updatedAt,
+  }));
+}
+
+function coachInviteAllowed(account, accountKey, inviteToken) {
+  const token = cleanSetupText(inviteToken);
+  const productPlan = normalizeSetupProductPlan(account && account.productPlan);
+  if (!token) {
+    return { allowed: false, statusCode: 401, error: "Staff invite link is required.", coachAccessRequired: true };
+  }
+  if (!account || !isProPlan(productPlan)) {
+    return { allowed: false, statusCode: 404, error: "SMART Trak account was not found.", coachAccessRequired: true };
+  }
+  const subscription = account.subscription || {};
+  if (!subscriptionAccessAllowed(subscription)) {
+    return { allowed: false, statusCode: 403, error: subscriptionBlockedMessage(subscription), accessReady: false, coachAccessRequired: true };
+  }
+  const staff = normalizeCoachStaff(account.coachStaff);
+  const index = staff.findIndex((item) => item.active !== false && item.inviteToken && !item.inviteRevokedAt && safeEqual(item.inviteToken, token));
+  if (index < 0) {
+    return { allowed: false, statusCode: 401, error: "Staff invite link is invalid or revoked.", coachAccessRequired: true };
+  }
+  return {
+    allowed: true,
+    accountKey,
+    productPlan,
+    coachSeats: Number(account.coachSeats) || 10,
+    coachIndex: index,
+    parentEmailAllowed: false,
+    coachCodeVersion: Number(account.coachCodeVersion) || 0,
+    staffInvite: true,
+    coachName: staff[index].name,
+  };
 }
 
 function essentialSessionMatches(session, accountRecord) {
@@ -3924,6 +3976,7 @@ async function accountSession(req, res) {
         firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
     ) || "default";
     const accessCode = cleanSetupText(firstPayloadValue(payload, ["accessCode", "coachAccessCode", "code"]));
+    const inviteToken = cleanSetupText(firstPayloadValue(payload, ["inviteToken", "staffInviteToken", "invite"]));
     const ip = requestIp(req);
     const attempt = checkSessionAttempt({ accountKey, ip });
     if (!attempt.allowed) {
@@ -3935,7 +3988,12 @@ async function accountSession(req, res) {
       return;
     }
     await attachRegistryAccountForKey(req, accountKey);
-    const access = coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: req.smartcoachRegistryAccount }, accessCode);
+    const inviteAccess = inviteToken ? coachInviteAllowed(req.smartcoachRegistryAccount, accountKey, inviteToken) : null;
+    const access = inviteAccess && inviteAccess.allowed
+      ? inviteAccess
+      : inviteToken && !accessCode
+        ? inviteAccess
+        : coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: req.smartcoachRegistryAccount }, accessCode);
     if (!access.allowed) {
       const failure = recordSessionFailure({ accountKey, ip });
       if (failure.blocked) res.setHeader("Retry-After", String(failure.retryAfterSeconds || 900));
@@ -3987,6 +4045,8 @@ async function accountSession(req, res) {
       productPlan: access.productPlan,
       coachSeats: access.coachSeats,
       coachIndex: access.coachIndex,
+      coachName: access.coachName,
+      staffInviteAccepted: !!access.staffInvite,
       parentEmailAllowed,
       sessionToken: session.token,
       expiresAt: session.expiresAt,
