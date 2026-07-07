@@ -159,6 +159,7 @@ tr:last-child td{border-bottom:0}
 .modal[hidden]{display:none}
 .modalpanel{width:min(760px,100%);background:#fff;border-radius:10px;border:1px solid var(--line);box-shadow:0 18px 45px rgba(15,23,42,.2);overflow:hidden}
 .simulator-panel{width:min(420px,100%)}
+.staff-access-panel{width:min(1080px,100%)}
 .modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .modalhead h2{font-size:20px;margin:0}
 .modalbody{padding:16px 18px 20px}
@@ -206,12 +207,13 @@ tr:last-child td{border-bottom:0}
 .staff-warning{border:1px solid #fed7aa;background:#fff7ed;color:#92400e;border-radius:8px;padding:10px 11px;margin-top:10px;font-size:13px;line-height:1.35}
 .staff-warning b{display:block;color:#9a3412;margin-bottom:3px}
 .staff-list{display:grid;gap:8px;margin-top:10px}
-.staff-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(180px,1fr) minmax(130px,auto) minmax(105px,auto) auto auto auto auto;gap:8px;align-items:center}
+.staff-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(185px,1.1fr) 132px 112px 86px auto auto auto;gap:8px;align-items:center}
 .staff-row.inactive{opacity:.72}
 .staff-row input,.staff-row select{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font:14px inherit;padding:9px 10px}
 .staff-row button{padding:9px 11px}
 .staff-row .invite-state{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
-@media(max-width:760px){.staff-row{grid-template-columns:1fr}.staff-row .invite-state{white-space:normal}}
+@media(max-width:980px){.staff-access-panel{width:min(760px,100%)}.staff-row{grid-template-columns:repeat(2,minmax(0,1fr))}.staff-row .invite-state{white-space:normal}.staff-row button{width:100%}}
+@media(max-width:620px){.staff-row{grid-template-columns:1fr}}
 .detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
 .detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
@@ -1204,7 +1206,7 @@ tr:last-child td{border-bottom:0}
   </section>
 </div>
 <div id="codeModal" class="modal" hidden>
-  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
+  <section class="modalpanel staff-access-panel" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
     <div class="modalhead">
       <h2 id="codeTitle">Staff Access</h2>
       <button id="codeClose" class="ghost" type="button">Close</button>
