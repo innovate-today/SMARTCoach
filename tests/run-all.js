@@ -733,7 +733,8 @@ function checkSpeedTrakFeature() {
   const training = fs.readFileSync("training-calendar.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   [
-    "SMART Trak Speed Trak",
+    "<h1>Speed Trak</h1>",
+    "Speed testing leaderboard for flys, starts, and runway work.",
     "/api/smart-trak/field-practice",
     "/api/smart-trak/athletes",
     "10m Fly",
