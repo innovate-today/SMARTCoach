@@ -2408,6 +2408,8 @@ function copyCoachInvite(){
   }else{
     lines.push('Plan: SMARTCoach Pro');
     lines=lines.concat(coachAccessCodeLines());
+    lines.push('Head coach: use SMART Trak from the GHL custom menu link.');
+    lines.push('Assistant coaches: use the direct SMART Trak link outside GHL with the shared coach code.');
     lines.push('Start here: open Dashboard first, then use Athletes for roster setup and Training Calendar for daily work.');
     lines.push('Desktop: open the SMARTCoach link and enter the coach access code if prompted.');
     lines.push('Phone: open the stopwatch app, go to Groups, tap Account, then enter the account key and coach access code.');
@@ -2579,7 +2581,7 @@ function renderChecklist(data){
       title:'Set staff access',
       body:plan==='essential'
         ?'Essential needs one active coach code. Only one device session stays active at a time.'
-        :'Use one shared coach code for active staff only. Pro includes up to 10 assistant coach seats, but fewer syncing devices keeps team data cleaner. Active athlete limits are enforced by SMARTCoach.',
+        :'Use one shared coach code for active staff only. Head coaches can use the GHL custom menu link; assistants can use the direct SMART Trak link outside GHL with the shared code. Pro includes up to 10 assistant coach seats, but fewer syncing devices keeps team data cleaner. Active athlete limits are enforced by SMARTCoach.',
       state:signals.coachCodesReady?'good':'bad',
       status:signals.coachCodesReady?'Codes saved':'Missing codes'
     },
@@ -2633,7 +2635,7 @@ function activationSteps(data){
       title:isEssential?'Give the coach the stopwatch link':'Add the SMART Trak custom link',
       body:isEssential
         ?'Use the customer stopwatch link for app-only access: '+link
-        :'Add one custom sidebar link in the coach subaccount. Base app stays app.smartcoach-pro.com; only the account key changes. Link: '+link
+        :'Add one custom sidebar link in the head coach GHL subaccount. Base app stays app.smartcoach-pro.com; only the account key changes. Assistant coaches can use this direct SMART Trak link outside GHL with the shared coach code. Link: '+link
     },
     {
       title:'Verify coach access',

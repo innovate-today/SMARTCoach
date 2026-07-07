@@ -986,6 +986,34 @@ function checkDashboardWhatsNew() {
   console.log("Dashboard What's New ok");
 }
 
+function checkDashboardStaffAccessHandoff() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const onboarding = fs.readFileSync("onboarding.html", "utf8");
+  [
+    "Share Assistant Access",
+    "Share direct SMART Trak access without adding assistant coaches to GHL.",
+    'id="assistantSmartTrakLink"',
+    'id="assistantSmartTrakCopy"',
+    "function assistantSmartTrakUrl()",
+    "return new URL('/dashboard.html?account='+encodeURIComponent(key),window.location.origin).toString();",
+    "function copyAssistantSmartTrakLink()",
+    "Desktop SMART Trak link:",
+    "Phone app link:",
+    "Desktop: open the SMART Trak link and enter the shared coach code if prompted.",
+    "subject:'SMARTCoach staff access'",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Dashboard Staff Access handoff missing ${text}`);
+  });
+  [
+    "Head coach: use SMART Trak from the GHL custom menu link.",
+    "Assistant coaches: use the direct SMART Trak link outside GHL with the shared coach code.",
+    "Head coaches can use the GHL custom menu link; assistants can use the direct SMART Trak link outside GHL with the shared code.",
+  ].forEach((text) => {
+    if (!onboarding.includes(text)) throw new Error(`Onboarding staff access handoff missing ${text}`);
+  });
+  console.log("Dashboard Staff Access handoff ok");
+}
+
 function checkDashboardStartHere() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
@@ -1151,7 +1179,7 @@ function checkDashboardToolPreferences() {
     'data-dashboard-tool="simulators"',
     "equipmentTrak:true",
     "Show All",
-    "Email the Mobile App Link",
+    "Share Assistant Access",
     'id="mobileAccessEmails"',
     'id="mobileAccessCode"',
     'id="mobileAccessProvider"',
@@ -1170,7 +1198,7 @@ function checkDashboardToolPreferences() {
     "https://outlook.office.com/mail/deeplink/compose",
     "https://mail.google.com/mail/?view=cm&fs=1",
     "Open Draft Link",
-    "SMARTCoach mobile app access",
+    "SMARTCoach staff access",
     "Shared access code:",
     "els.mobileAccessDirectLink.click();",
   ].forEach((text) => {
@@ -2961,6 +2989,7 @@ checkDashboardTrainingPaces();
 checkMilesBoardFeature();
 checkSpeedTrakFeature();
 checkDashboardWhatsNew();
+checkDashboardStaffAccessHandoff();
 checkDashboardStartHere();
 checkHowToGuidePage();
 checkDashboardToolPreferences();
