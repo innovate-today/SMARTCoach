@@ -420,6 +420,12 @@ function performanceRecordFallbackProperties({ properties, error, removed }) {
     delete fallback.season_year;
     return fallback;
   }
+  if (optionFieldErrorFor(message, "season") && properties.season && !removed.has("season")) {
+    removed.add("season");
+    const fallback = { ...properties };
+    delete fallback.season;
+    return fallback;
+  }
   if (mappedFieldErrorFor(message, "sport") && properties.sport && !removed.has("sport")) {
     removed.add("sport");
     const fallback = { ...properties };
@@ -431,6 +437,10 @@ function performanceRecordFallbackProperties({ properties, error, removed }) {
 
 function mappedFieldErrorFor(message, field) {
   return /mapped field/i.test(message) && new RegExp(`\\b${field}\\b`, "i").test(message);
+}
+
+function optionFieldErrorFor(message, field) {
+  return /allowed option|isn't an allowed option|not an allowed/i.test(message) && new RegExp(`\\b${field}\\b`, "i").test(message);
 }
 
 async function findDuplicatePerformanceRecords({ token, locationId, contactId, athlete, session }) {
@@ -476,44 +486,83 @@ async function upsertSeasonRecord({ token, locationId, contactId, athlete, sessi
     sourceRecordId,
   });
 
-  if (existing && existing.id) {
-    const updated = await ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(existing.id)}`,
-      method: "PUT",
-      body: {
-        locationId,
-        properties,
-      },
-    });
-
-    return {
-      action: "updated",
-      recordId: objectRecordId(updated) || existing.id,
-      sourceRecordId,
-    };
-  }
-
-  const created = await ghlFetch({
+  const saved = await saveSeasonRecordWithFallback({
     token,
-    path: `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records`,
-    method: "POST",
-    body: {
-      locationId,
-      properties,
-    },
+    locationId,
+    existingId: existing && existing.id,
+    properties,
   });
 
-  const recordId = objectRecordId(created);
+  const recordId = objectRecordId(saved) || (existing && existing.id);
   if (!recordId) {
     throw httpError(502, `SMART Trak did not return a saved season record for ${athlete.name}.`);
   }
 
   return {
-    action: "created",
+    action: existing && existing.id ? "updated" : "created",
     recordId,
     sourceRecordId,
   };
+}
+
+async function saveSeasonRecordWithFallback({ token, locationId, existingId, properties }) {
+  let attempt = { ...properties };
+  const removed = new Set();
+
+  for (let index = 0; index < 5; index += 1) {
+    try {
+      return await ghlFetch({
+        token,
+        path: existingId
+          ? `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(existingId)}`
+          : `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records`,
+        method: existingId ? "PUT" : "POST",
+        body: {
+          locationId,
+          properties: attempt,
+        },
+      });
+    } catch (error) {
+      const next = seasonRecordFallbackProperties({ properties: attempt, error, removed });
+      if (!next) throw error;
+      attempt = next;
+    }
+  }
+
+  return ghlFetch({
+    token,
+    path: existingId
+      ? `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records/${encodeURIComponent(existingId)}`
+      : `/objects/${encodeURIComponent(SEASON_RECORD_SCHEMA_KEY)}/records`,
+    method: existingId ? "PUT" : "POST",
+    body: {
+      locationId,
+      properties: attempt,
+    },
+  });
+}
+
+function seasonRecordFallbackProperties({ properties, error, removed }) {
+  const message = String(error && error.message || "");
+  if (optionFieldErrorFor(message, "season") && properties.season && !removed.has("season")) {
+    removed.add("season");
+    const fallback = { ...properties };
+    delete fallback.season;
+    return fallback;
+  }
+  if (mappedFieldErrorFor(message, "season_year") && properties.season_year && !removed.has("season_year")) {
+    removed.add("season_year");
+    const fallback = { ...properties };
+    delete fallback.season_year;
+    return fallback;
+  }
+  if (mappedFieldErrorFor(message, "sport") && properties.sport && !removed.has("sport")) {
+    removed.add("sport");
+    const fallback = { ...properties };
+    delete fallback.sport;
+    return fallback;
+  }
+  return null;
 }
 
 async function findSeasonRecord({ token, locationId, sourceRecordId }) {

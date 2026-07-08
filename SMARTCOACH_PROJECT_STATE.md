@@ -1369,6 +1369,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 477. Speed Trak Board Sharing now lets coaches adjust public badge thresholds for Velocity Club, Quick Turnover, and Big Mover before copying the link. Public Speed Trak Board leaderboard columns now include info bubbles, with Points and Badges explanations reflecting the saved board settings.
 478. Log Miles/manual mileage now recovers when the remote performance-record save rejects the mapped `season_year` field. The sync payload still sends sport/year for local mirrors and season records, but the performance-record create path retries without only the rejected mapped field so manual mileage can save instead of failing with a season-year validation error.
 479. Log Miles/manual mileage now also recovers when the remote performance-record save rejects the mapped `sport` field. The manual mileage payload still keeps Cross Country sport/year context for the local/dashboard flow, while the performance-record create path retries without only the rejected optional mapped field.
+480. Log Miles/manual mileage now also recovers when the remote object schema rejects `cross_country` as a Season option. Both the completed-workout record and season-summary record retry without only the rejected optional season field, so the dashboard/manual-mileage mirror can still save the coach-entered miles.
 
 ## Known Good Test Flow
 
