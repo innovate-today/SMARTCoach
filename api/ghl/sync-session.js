@@ -377,7 +377,7 @@ async function createPerformanceRecordWithWorkoutTypeFallback({ token, locationI
   let attempt = { ...properties };
   const removed = new Set();
 
-  for (let index = 0; index < 3; index += 1) {
+  for (let index = 0; index < 5; index += 1) {
     try {
       return await ghlFetch({
         token,
@@ -396,14 +396,14 @@ async function createPerformanceRecordWithWorkoutTypeFallback({ token, locationI
   }
 
   return ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
-      method: "POST",
-      body: {
-        locationId,
-        properties: attempt,
-      },
-    });
+    token,
+    path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
+    method: "POST",
+    body: {
+      locationId,
+      properties: attempt,
+    },
+  });
 }
 
 function performanceRecordFallbackProperties({ properties, error, removed }) {
@@ -414,13 +414,23 @@ function performanceRecordFallbackProperties({ properties, error, removed }) {
     delete fallback.workout_type;
     return fallback;
   }
-  if (/mapped field|season_year|Season Year/i.test(message) && properties.season_year && !removed.has("season_year")) {
+  if (mappedFieldErrorFor(message, "season_year") && properties.season_year && !removed.has("season_year")) {
     removed.add("season_year");
     const fallback = { ...properties };
     delete fallback.season_year;
     return fallback;
   }
+  if (mappedFieldErrorFor(message, "sport") && properties.sport && !removed.has("sport")) {
+    removed.add("sport");
+    const fallback = { ...properties };
+    delete fallback.sport;
+    return fallback;
+  }
   return null;
+}
+
+function mappedFieldErrorFor(message, field) {
+  return /mapped field/i.test(message) && new RegExp(`\\b${field}\\b`, "i").test(message);
 }
 
 async function findDuplicatePerformanceRecords({ token, locationId, contactId, athlete, session }) {

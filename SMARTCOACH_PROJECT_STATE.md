@@ -1368,6 +1368,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 476. Public Speed Trak Board info bubbles now use the same custom tooltip behavior as Speed Trak. The reps-count challenge layer was removed: Share Board no longer offers the reps-based Consistency option, old saved consistency settings fall back to Velocity, and the public API/page no longer produces Rep Leader, Consistent Sprinter, or weekly reps-count winners. Raw reps remain visible only as supporting context.
 477. Speed Trak Board Sharing now lets coaches adjust public badge thresholds for Velocity Club, Quick Turnover, and Big Mover before copying the link. Public Speed Trak Board leaderboard columns now include info bubbles, with Points and Badges explanations reflecting the saved board settings.
 478. Log Miles/manual mileage now recovers when the remote performance-record save rejects the mapped `season_year` field. The sync payload still sends sport/year for local mirrors and season records, but the performance-record create path retries without only the rejected mapped field so manual mileage can save instead of failing with a season-year validation error.
+479. Log Miles/manual mileage now also recovers when the remote performance-record save rejects the mapped `sport` field. The manual mileage payload still keeps Cross Country sport/year context for the local/dashboard flow, while the performance-record create path retries without only the rejected optional mapped field.
 
 ## Known Good Test Flow
 

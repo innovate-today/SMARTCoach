@@ -824,8 +824,11 @@ function checkMilesBoardFeature() {
     "seasonYear: Number(payload.seasonYear)",
     "season_year: session.seasonYear || sessionDate.getFullYear()",
     "function performanceRecordFallbackProperties",
-    "/mapped field|season_year|Season Year/i",
+    "function mappedFieldErrorFor(message, field)",
+    "mappedFieldErrorFor(message, \"season_year\")",
     "delete fallback.season_year",
+    "mappedFieldErrorFor(message, \"sport\")",
+    "delete fallback.sport",
     "...(session.sport ? { sport: sportValue(session.sport) } : {})",
     "function sportValue(value)",
   ].forEach((text) => {
