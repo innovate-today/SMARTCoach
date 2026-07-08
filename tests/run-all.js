@@ -867,7 +867,6 @@ function checkSpeedTrakFeature() {
     "Speed Trak Board Sharing",
     'data-speed-board-challenge="velocity"',
     'data-speed-board-challenge="fastest"',
-    'data-speed-board-challenge="consistency"',
     'data-speed-board-challenge="game"',
     "function openSpeedBoardSharing()",
     "fetch('/api/smart-trak/speed-board-sharing?account='",
@@ -935,10 +934,12 @@ function checkSpeedTrakFeature() {
     "Challenge Highlights",
     "Velocity Leader",
     "Fastest Time",
-    "Rep Leader",
     "Game Score",
     "Big Mover",
     "This Week's Winners",
+    "class=\"headinfo\"",
+    "smart-tooltip",
+    "function initHeaderTooltips()",
     "data-sort=\"bestVelocity\"",
     "data-sort=\"bestSeconds\"",
     "data-sort=\"reps\"",
@@ -947,6 +948,14 @@ function checkSpeedTrakFeature() {
     "badgeHtml(row.badges)",
   ].forEach((text) => {
     if (!board.includes(text)) throw new Error(`Speed Trak public board missing ${text}`);
+  });
+  [
+    "Rep Leader",
+    'data-challenge-card="consistency"',
+    "consistencyLeader",
+    "weeklyConsistencyWinner",
+  ].forEach((text) => {
+    if (board.includes(text)) throw new Error(`Speed Trak public board should not include reps-based award ${text}`);
   });
   if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Speed Trak Board must stay read-only.");
   [
@@ -979,6 +988,15 @@ function checkSpeedTrakFeature() {
     "lastSpeedBoardSharingSync",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Speed Trak Board API missing ${text}`);
+  });
+  [
+    'if (text === "consistency" || text === "reps"',
+    'badges.push("Rep Leader")',
+    'badges.push("Consistent Sprinter")',
+    "consistencyLeader",
+    'consistency: speedBoardWinner',
+  ].forEach((text) => {
+    if (api.includes(text)) throw new Error(`Speed Trak Board API should not include reps-based award ${text}`);
   });
   [
     'id="milesTrakLink"',

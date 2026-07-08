@@ -2628,7 +2628,6 @@ function normalizeSpeedBoardChallenges(values) {
 function normalizeSpeedBoardChallenge(value) {
   const text = cleanSetupText(value).toLowerCase().replace(/[^a-z]/g, "");
   if (text === "fastest" || text === "time" || text === "mark") return "fastest";
-  if (text === "consistency" || text === "reps" || text === "logs") return "consistency";
   if (text === "improvement" || text === "mover" || text === "bigmover") return "improvement";
   if (text === "game" || text === "points" || text === "score") return "game";
   return "velocity";
@@ -2741,7 +2740,6 @@ function speedBoardGameScore(row, settings) {
 function speedBoardBadges(row) {
   const badges = [];
   if ((Number(row.bestVelocity) || 0) >= 9) badges.push("Velocity Club");
-  if ((Number(row.reps) || 0) >= 5) badges.push("Consistent Sprinter");
   if ((Number(row.improvementSeconds) || 0) > 0) badges.push("Big Mover");
   if ((Number(row.strideFrequency) || 0) >= 5) badges.push("Quick Turnover");
   return badges;
@@ -2749,11 +2747,9 @@ function speedBoardBadges(row) {
 
 function speedBoardCompetitionBadges(rows) {
   const velocityLeader = rows.slice().sort((a, b) => (Number(b.bestVelocity) || 0) - (Number(a.bestVelocity) || 0))[0];
-  const repsLeader = rows.slice().sort((a, b) => (Number(b.reps) || 0) - (Number(a.reps) || 0))[0];
   return rows.map((row) => {
     const badges = Array.isArray(row.badges) ? row.badges.slice() : [];
     if (velocityLeader && row.athleteName === velocityLeader.athleteName && Number(row.bestVelocity) > 0) badges.push("Velocity Leader");
-    if (repsLeader && row.athleteName === repsLeader.athleteName && Number(row.reps) > 1) badges.push("Rep Leader");
     return { ...row, badges: uniqueStrings(badges) };
   });
 }
@@ -2762,7 +2758,6 @@ function speedBoardHighlights(rows) {
   return {
     velocityLeader: speedBoardWinner(rows, "bestVelocity", "m/s"),
     fastest: speedBoardFastestWinner(rows),
-    consistencyLeader: speedBoardWinner(rows, "reps", "reps"),
     improvementLeader: speedBoardWinner(rows.filter((row) => row.improvementSeconds > 0), "improvementSeconds", "sec drop"),
     gameLeader: speedBoardWinner(rows, "gameScore", "pts"),
   };
@@ -2777,7 +2772,6 @@ function speedBoardWeeklyWinners(rows) {
   return {
     velocity: speedBoardWinner(weeklyRows, "bestVelocity", "m/s this week"),
     fastest: speedBoardFastestWinner(weeklyRows),
-    consistency: speedBoardWinner(weeklyRows, "reps", "reps this week"),
   };
 }
 
