@@ -822,6 +822,9 @@ function checkMilesBoardFeature() {
   ].forEach((text) => {
     if (!syncApi.includes(text)) throw new Error(`sync-session sport/year persistence missing ${text}`);
   });
+  if (dashboardApi.includes("recentTrainingSyncs = trainingSyncs.slice(0, 100)")) {
+    throw new Error("dashboard should not trim completed training rows before frontend volume calculations.");
+  }
   [
     "season: clean(payload.season) || seasonForSport(payload.sport) || seasonForDate(date)",
     "seasonYear: Number(payload.seasonYear)",
