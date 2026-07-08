@@ -1251,10 +1251,14 @@ function checkDashboardStaffAccessHandoff() {
     "function staffCoachCodeHash(accountKey, code)",
     "function staffCoachCodeAllowed(account, accountKey, providedCode)",
     "function staffAccessChangeRequiresSessionBump(existingItems, nextItems)",
+    "normalizeStaffAccessType(prev.accessType) !== normalizeStaffAccessType(item.accessType)",
     "const sessionRefreshNeeded = staffAccessChangeRequiresSessionBump(existing.record.coachStaff, coachStaff)",
     "sessionToken: refreshedSession && refreshedSession.token || undefined",
     "staffCodeAccess && staffCodeAccess.allowed",
     "staffCoachCodeAccepted: !!access.staffCoachCode",
+    "staffCodeUpdatedAt: staff[index].coachCodeUpdatedAt",
+    "function coachSessionAllowedForAccount(session, accountRecord, expectedVersion)",
+    "cleanSetupText(item.coachCodeUpdatedAt) !== staffCodeUpdatedAt",
     "hasCoachCode: !!item.coachCodeHash",
     "Personal code must be different from the shared fallback code.",
     "normalizeStaffAccessType(item.accessType) !== \"app-only\"",
@@ -1262,6 +1266,19 @@ function checkDashboardStaffAccessHandoff() {
     "This coach is set to App Only. Ask the head coach for Full Access before opening SMART Trak.",
   ].forEach((text) => {
     if (!smartTrakApi.includes(text)) throw new Error(`Staff invite backend missing ${text}`);
+  });
+  if (smartTrakApi.includes("cleanSetupText(prev.coachCodeHash) !== cleanSetupText(item.coachCodeHash)")) {
+    throw new Error("Personal coach code resets should not bump every coach's remembered session.");
+  }
+  const ghlAccount = fs.readFileSync("lib/ghl-account.js", "utf8");
+  [
+    "staffCoachId: cleanText(options.staffCoachId)",
+    "staffCodeUpdatedAt: cleanText(options.staffCodeUpdatedAt)",
+    "function coachSessionAllowedForStaff(session, expectedVersion, staffItems)",
+    "cleanText(item.coachCodeUpdatedAt) !== staffCodeUpdatedAt",
+    "coachStaff: normalizeCoachStaff(account && account.coachStaff)",
+  ].forEach((text) => {
+    if (!ghlAccount.includes(text)) throw new Error(`Staff session validation missing ${text}`);
   });
   const app = fs.readFileSync("index.html", "utf8");
   [

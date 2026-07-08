@@ -221,7 +221,7 @@ async function recordRequestCoachDevice(req) {
   const deviceId = cleanSetupText(headerValue(req, "x-smartcoach-device-id"));
   if (!deviceId) return;
   const session = coachSessionFromRequest(req, accountKey);
-  const validSession = coachSessionVersionAllowed(session, coachCodeVersion) ? session : null;
+  const validSession = coachSessionAllowedForAccount(session, req.smartcoachRegistryAccount, coachCodeVersion) ? session : null;
   await recordCoachDeviceSession(accountKey, {
     deviceId,
     deviceLabel: cleanSetupText(headerValue(req, "x-smartcoach-device-label")),
@@ -1932,7 +1932,7 @@ async function accountStatus(req, res) {
   const registry = await attachRegistryAccount(req);
   const { accountKey, token, locationId, productPlan, productPlanLabel, activeAthleteLimit, accessCode, coachSeats, coachAccessCodes, coachCodeVersion, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
   const coachSession = coachSessionFromRequest(req, accountKey);
-  const currentCoachSession = coachSessionVersionAllowed(coachSession, coachCodeVersion) ? coachSession : null;
+  const currentCoachSession = coachSessionAllowedForAccount(coachSession, registry.record, coachCodeVersion) ? coachSession : null;
   const proPlan = isProPlan(productPlan);
   const essentialSessionActive = productPlan === "essential" ? essentialSessionMatches(coachSession, registry.record) : false;
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
@@ -1959,6 +1959,9 @@ async function accountStatus(req, res) {
       parentEmailAllowed: !!currentCoachSession.parentEmailAllowed,
       sessionId: cleanSetupText(currentCoachSession.sessionId),
       coachCodeVersion,
+      staffCoachId: cleanSetupText(currentCoachSession.staffCoachId),
+      staffCodeUpdatedAt: cleanSetupText(currentCoachSession.staffCodeUpdatedAt),
+      accessType: cleanSetupText(currentCoachSession.accessType),
     })
     : null;
   if (refreshedSession && productPlan === "essential" && essentialSessionActive && registry.record) {
@@ -2075,7 +2078,7 @@ async function accountDashboardPreferences(req, res) {
     await attachRegistryAccountForKey(req, accountKey);
     const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
     const session = coachSessionFromRequest(req, accountKey);
-    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const sessionAllowed = coachSessionAllowedForAccount(session, existing.record, coachCodeVersion);
     const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
     const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
     const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
@@ -2208,7 +2211,7 @@ async function accountMilesBoardSharing(req, res) {
     await attachRegistryAccountForKey(req, accountKey);
     const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
     const session = coachSessionFromRequest(req, accountKey);
-    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const sessionAllowed = coachSessionAllowedForAccount(session, existing.record, coachCodeVersion);
     const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
     const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
     const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
@@ -2382,7 +2385,7 @@ async function accountSpeedBoardSharing(req, res) {
     await attachRegistryAccountForKey(req, accountKey);
     const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
     const session = coachSessionFromRequest(req, accountKey);
-    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const sessionAllowed = coachSessionAllowedForAccount(session, existing.record, coachCodeVersion);
     const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
     const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
     const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
@@ -2892,7 +2895,7 @@ async function accountTrainingCustomization(req, res) {
     await attachRegistryAccountForKey(req, accountKey);
     const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
     const session = coachSessionFromRequest(req, accountKey);
-    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const sessionAllowed = coachSessionAllowedForAccount(session, existing.record, coachCodeVersion);
     const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
     const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
     const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
@@ -2949,7 +2952,7 @@ async function accountAthleteCalendarQuestions(req, res) {
     await attachRegistryAccountForKey(req, accountKey);
     const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
     const session = coachSessionFromRequest(req, accountKey);
-    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const sessionAllowed = coachSessionAllowedForAccount(session, existing.record, coachCodeVersion);
     const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
     const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
     const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
@@ -3093,7 +3096,7 @@ async function accountStaff(req, res) {
     await attachRegistryAccountForKey(req, accountKey);
     const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
     const session = coachSessionFromRequest(req, accountKey);
-    const sessionAllowed = coachSessionVersionAllowed(session, coachCodeVersion);
+    const sessionAllowed = coachSessionAllowedForAccount(session, existing.record, coachCodeVersion);
     const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
     const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
     const codeIndex = providedAccessCode ? allowedCodes.findIndex((code) => safeEqual(providedAccessCode, code)) : -1;
@@ -3121,6 +3124,9 @@ async function accountStaff(req, res) {
         parentEmailAllowed: !!session.parentEmailAllowed,
         sessionId: cleanSetupText(session.sessionId) || crypto.randomBytes(12).toString("hex"),
         coachCodeVersion: nextCoachCodeVersion,
+        staffCoachId: cleanSetupText(session.staffCoachId),
+        staffCodeUpdatedAt: cleanSetupText(session.staffCodeUpdatedAt),
+        accessType: cleanSetupText(session.accessType),
       })
       : null;
     await saveAccountRecord(accountKey, {
@@ -3216,8 +3222,7 @@ function staffAccessChangeRequiresSessionBump(existingItems, nextItems) {
   return normalizeCoachStaff(nextItems).some((item) => {
     const prev = existing.get(item.id) || {};
     return prev.active !== item.active ||
-      normalizeStaffAccessType(prev.accessType) !== normalizeStaffAccessType(item.accessType) ||
-      cleanSetupText(prev.coachCodeHash) !== cleanSetupText(item.coachCodeHash);
+      normalizeStaffAccessType(prev.accessType) !== normalizeStaffAccessType(item.accessType);
   });
 }
 
@@ -3295,6 +3300,7 @@ function staffCoachCodeAllowed(account, accountKey, providedCode) {
     coachCodeVersion: Number(account.coachCodeVersion) || 0,
     staffCoachCode: true,
     staffCoachId: staff[index].id,
+    staffCodeUpdatedAt: staff[index].coachCodeUpdatedAt,
     coachName: staff[index].name,
     accessType: staff[index].accessType,
   };
@@ -3336,6 +3342,7 @@ function coachInviteAllowed(account, accountKey, inviteToken) {
     coachCodeVersion: Number(account.coachCodeVersion) || 0,
     staffInvite: true,
     staffInviteId: staff[index].id,
+    staffCodeUpdatedAt: staff[index].coachCodeUpdatedAt,
     coachName: staff[index].name,
     accessType: staff[index].accessType,
   };
@@ -3383,6 +3390,22 @@ function coachSessionVersionAllowed(session, expectedVersion) {
   if (!session) return false;
   if (!version) return true;
   return Number(session.coachCodeVersion) === version;
+}
+
+function coachSessionAllowedForAccount(session, accountRecord, expectedVersion) {
+  if (!coachSessionVersionAllowed(session, expectedVersion)) return false;
+  const staffCoachId = cleanSetupText(session && session.staffCoachId);
+  const staffCodeUpdatedAt = cleanSetupText(session && session.staffCodeUpdatedAt);
+  const accessType = cleanSetupText(session && session.accessType);
+  if (!staffCoachId && !staffCodeUpdatedAt && !accessType) return true;
+  const staff = normalizeCoachStaff(accountRecord && accountRecord.coachStaff);
+  const index = Number(session && session.coachIndex) || 0;
+  const item = staff.find((coach) => staffCoachId && coach.id === staffCoachId) || staff[index] || null;
+  if (!item || item.active === false) return false;
+  if (staffCoachId && item.id !== staffCoachId) return false;
+  if (accessType && normalizeStaffAccessType(item.accessType) !== normalizeStaffAccessType(accessType)) return false;
+  if (staffCodeUpdatedAt && cleanSetupText(item.coachCodeUpdatedAt) !== staffCodeUpdatedAt) return false;
+  return true;
 }
 
 function accountSetup(req, res) {
@@ -4294,7 +4317,15 @@ async function accountSession(req, res) {
     clearSessionFailures({ accountKey, ip });
     const parentEmailAllowed = parentEmailFeatureReleased() && !!access.parentEmailAllowed;
     const sessionId = crypto.randomBytes(12).toString("hex");
-    const session = createCoachSession(accountKey, { coachIndex: access.coachIndex, parentEmailAllowed, sessionId, coachCodeVersion: access.coachCodeVersion });
+    const session = createCoachSession(accountKey, {
+      coachIndex: access.coachIndex,
+      parentEmailAllowed,
+      sessionId,
+      coachCodeVersion: access.coachCodeVersion,
+      staffCoachId: access.staffCoachId || access.staffInviteId || "",
+      staffCodeUpdatedAt: access.staffCodeUpdatedAt || "",
+      accessType: access.accessType || "",
+    });
     if (!session) {
       res.status(500).json({
         error: "SMART Trak session signing is not configured.",

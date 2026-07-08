@@ -1371,6 +1371,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 479. Log Miles/manual mileage now also recovers when the remote performance-record save rejects the mapped `sport` field. The manual mileage payload still keeps Cross Country sport/year context for the local/dashboard flow, while the performance-record create path retries without only the rejected optional mapped field.
 480. Log Miles/manual mileage now also recovers when the remote object schema rejects `cross_country` as a Season option. Both the completed-workout record and season-summary record retry without only the rejected optional season field, so the dashboard/manual-mileage mirror can still save the coach-entered miles.
 481. Athlete Calendar race completions now calculate completed volume from race distance plus warmup and cooldown text when the entry is not already marked as a total. This lets race days such as a 1 Mile/1600m/5K with saved warmup and cooldown count full training volume on Dashboard and Miles Board totals after sync.
+482. Staff Access personal coach-code creation/reset no longer bumps the account-wide coach-code version, so creating an App Only assistant code does not log out the head coach or other coaches. New staff-code sessions carry staff identity, access type, and code-updated timestamp so that deactivating a coach, changing Full/App Only, or resetting that coach's personal code can invalidate only the affected staff session.
 
 ## Known Good Test Flow
 

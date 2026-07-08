@@ -133,7 +133,7 @@ How to use Staff Access:
 4. Check **Seen this week** to see how many devices have been active recently.
 5. Review the **Active staff**, **Inactive staff**, **Invites used**, and **Revoked invites** cards in the **Coaches** section.
 6. Add coach names in the **Coaches** section, choose each coach's role, choose **Full Access** or **App Only**, and keep only current staff marked **Active**.
-7. Click **Create Code** or **Reset Code** to copy a send-ready message for that coach. The message includes the personal code, phone app link, access type, and the SMART Trak link when the coach has Full Access. The code is only shown in the copied message, so reset it if it is lost.
+7. Click **Create Code** or **Reset Code** to copy a send-ready message for that coach. The message includes the personal code, phone app link, access type, and the SMART Trak link when the coach has Full Access. The code is only shown in the copied message, so reset it if it is lost. Creating or resetting one coach's personal code affects that coach's access only; it does not log out other coaches.
 8. Click **Save Coaches** after changing names, roles, access type, or active status.
 9. Optional: for **Full Access** assistants, add an assistant coach email, then click **Create Invite** or **Copy Invite** to copy one message with the assistant's personal code and private SMART Trak invite link. Copying an invite creates/resets that assistant's personal code, so send the newest copied message.
 10. Use **Revoke** when an assistant should no longer have direct invite-link access. Use **Restore** only when that same assistant should use the invite again.
@@ -145,7 +145,7 @@ Assistant invite links unlock SMART Trak for the named assistant without requiri
 
 Inactive coaches cannot use staff invite links. Each coach row shows invite activity such as when an invite was created, copied, used, or revoked. After an assistant opens an invite link, Staff Access updates that assistant's invite status to show when the link was last used. Use that status along with **Active devices** and **Seen this week** to spot old or unexpected access.
 
-Creating/resetting personal coach codes, changing the shared fallback code, and saving staff rows require head coach access. Temporary recovery codes are sent to the saved account owner email.
+Creating/resetting personal coach codes, changing the shared fallback code, and saving staff rows require head coach access. Personal code resets are coach-specific. Changing the shared fallback code is the broader reset path and removes old fallback-code access. Temporary recovery codes are sent to the saved account owner email.
 
 If the shared fallback code is lost, open **Staff Access**, click **Send Temporary Code**, and check the account owner email. Leave **Current Code** blank, enter the temporary code in **Temporary / Recovery Code**, then create and save a new fallback code. This does not reveal the old code; it replaces it and removes old fallback-code access. If a personal coach code is lost, use **Reset Code** on that coach row.
 
