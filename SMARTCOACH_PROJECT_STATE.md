@@ -1353,6 +1353,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 461. Dashboard and Training Calendar Log Race Result now show the full Cross Country race event list instead of only 2 Mile, 3200m, and 5K. Cross Country entries include Marathon, Half Marathon, 15K, 10K, 5K, 2 Mile, 3200m, 3K, 1 Mile, 1600m, 1500m, 800m, and Other.
 462. Training Calendar Log Race Result now keeps the last loaded athlete/group roster if a dashboard refresh briefly returns empty, and the athlete dropdown uses the selected meet's matching calendar group roster when available. This prevents coaches from losing all athlete choices after saving multiple race results for a group-attached meet.
 463. Miles Board links now carry Cross Country plus a season year instead of relying only on date-derived current season logic. Public Miles Board rows filter by saved sport/year, new phone-app syncs and manual mileage saves persist sport/year on performance records, and older records without sport only count when their saved season/group labels clearly identify Cross Country.
+464. Public Miles Board load failure was fixed after the sport/year filter called a dashboard-local `yearFromDateValue` helper that had not been defined in the dashboard API bundle. The helper is now included next to the public board date parsing helpers, with regression coverage so Miles Board and related public board loads do not crash on date-year fallback.
 
 ## Known Good Test Flow
 

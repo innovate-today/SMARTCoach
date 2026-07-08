@@ -726,6 +726,7 @@ function checkMilesBoardFeature() {
     "function milesBoardFilter(query)",
     "function milesBoardRecordMatchesFilter(item, filter)",
     "function legacyCrossCountryTrainingRecord(item)",
+    "function yearFromDateValue(value)",
     ".filter((item) => milesBoardRecordMatchesFilter(item, boardFilter))",
     "sport: boardFilter.sportLabel",
     "seasonYear: boardFilter.seasonYear",

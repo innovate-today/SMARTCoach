@@ -560,6 +560,11 @@ function publicBoardDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function yearFromDateValue(value) {
+  const match = clean(value).match(/^(\d{4})/);
+  return match ? Number(match[1]) || 0 : 0;
+}
+
 function normalizedBoardRange(start, end) {
   const today = new Date();
   const defaultStart = new Date(today.getFullYear(), 5, 1);
