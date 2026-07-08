@@ -3675,12 +3675,12 @@ function renderSeasonFilterOptions(){
   var current=els.seasonFilter.value||'current';
   var keys={};
   recentMeetRows.forEach(function(row){
-    var date=parseActivityDate(row.meetDate||row.syncedAt);
-    if(date)keys[seasonKeyForDate(date)]=true;
+    var key=seasonKeyForRow(row,'meet');
+    if(key)keys[key]=true;
   });
   recentTrainingRows.forEach(function(row){
-    var date=parseActivityDate(row.sessionDate||row.syncedAt);
-    if(date)keys[seasonKeyForDate(date)]=true;
+    var key=seasonKeyForRow(row,'training');
+    if(key)keys[key]=true;
   });
   var options=[
     '<option value="current">Current season</option>',
@@ -4114,9 +4114,8 @@ function matchesActivityRange(row,type){
 function matchesSeasonFilter(row,type){
   var value=els.seasonFilter.value||'current';
   if(value==='all')return true;
-  var date=parseActivityDate(activityDateValue(row,type));
-  if(!date)return false;
-  return seasonKeyForDate(date)===seasonFilterValue(value);
+  if(value==='current')return seasonYearForRow(row,type)===new Date().getFullYear();
+  return seasonKeyForRow(row,type)===value;
 }
 
 function attendanceRateText(rows){
@@ -4201,6 +4200,30 @@ function seasonRangeLabel(){
 function seasonFilterValue(value){
   return value==='current'?seasonKeyForDate(new Date()):value;
 }
+function seasonKeyForRow(row,type){
+  var sportKey=sportSeasonKey(row,type);
+  if(sportKey)return sportKey;
+  var date=parseActivityDate(activityDateValue(row,type));
+  return date?seasonKeyForDate(date):'';
+}
+function sportSeasonKey(row,type){
+  var sport=normalizeDashboardSport(row&&row.sport||row&&row.season);
+  if(!sport)return '';
+  var year=seasonYearForRow(row,type);
+  return year?year+'-'+sport:'';
+}
+function seasonYearForRow(row,type){
+  var year=num(row&&row.seasonYear);
+  if(year)return year;
+  var date=parseActivityDate(activityDateValue(row,type));
+  return date?date.getFullYear():0;
+}
+function normalizeDashboardSport(value){
+  var text=String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  if(text==='cross_country'||text==='xc'||text==='cc')return 'cross_country';
+  if(text==='track'||text==='track_and_field'||text==='track_field')return 'track';
+  return '';
+}
 function seasonKeyForDate(date){
   var month=date.getMonth()+1;
   var year=date.getFullYear();
@@ -4211,6 +4234,8 @@ function seasonKeyForDate(date){
 function seasonLabelForKey(key){
   var parts=String(key||'').split('-');
   if(parts.length<2)return key;
+  if(parts[1]==='cross_country')return 'Cross Country '+parts[0];
+  if(parts[1]==='track')return 'Track '+parts[0];
   return capitalize(parts[1])+' '+parts[0];
 }
 function capitalize(text){
@@ -5777,6 +5802,7 @@ function saveManualMileage(){
     date:els.manualMileageDate.value,
     groupName:manualMileageGroupName(),
     workoutType:els.manualMileageWorkout.value,
+    season:'Cross Country',
     seasonYear:milesBoardSeasonYear(),
     sport:'Cross Country',
     distance:distance,

@@ -53,12 +53,13 @@ How to use it:
 2. Use the search box to find one athlete or group.
 3. Use **Activity range** for quick ranges such as Last 7 days, Last 30 days, or Last 90 days. Choose **Custom range** when you need exact start and end dates.
 4. Use the filters to narrow the view by athlete group, activity type, or season.
-5. Use the main tabs:
+5. Season choices use saved sport and year labels, such as **Cross Country 2026** or **Track 2026**, when those labels are available. **Current season** includes records from the current year instead of using month-based season buckets.
+6. Use the main tabs:
    - **Roster Overview** shows each athlete's current fitness, latest meet result, latest training, weekly volume, and status.
    - **Recent Meet Results** shows saved race results and PB/SB updates.
    - **Training Load** shows volume by athlete and completed workouts.
-6. Click **Show workouts** under an athlete to see completed workout details.
-7. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
+7. Click **Show workouts** under an athlete to see completed workout details.
+8. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
 The Dashboard title includes **Start Here** and **What's New**. Use **Start Here** for goal-based setup and workflow steps. Use **What's New** to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Dashboard Customization, Training Customization, Athlete Calendar Questions, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
 

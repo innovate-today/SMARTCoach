@@ -523,6 +523,11 @@ function checkDashboardFilterContextAndArchivedGroups() {
     "return !isArchivedTrainingGroupName(text);",
     "return String(group&&group.name||'').trim().toLowerCase()===text && !!group.archived;",
     "if(!group||!group.name||group.archived||group.type==='meet')return false;",
+    "function seasonKeyForRow(row,type)",
+    "function sportSeasonKey(row,type)",
+    "function normalizeDashboardSport(value)",
+    "if(value==='current')return seasonYearForRow(row,type)===new Date().getFullYear();",
+    "if(parts[1]==='cross_country')return 'Cross Country '+parts[0];",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard filtered training load/archived group guard missing ${text}`);
   });
@@ -818,8 +823,10 @@ function checkMilesBoardFeature() {
     if (!syncApi.includes(text)) throw new Error(`sync-session sport/year persistence missing ${text}`);
   });
   [
+    "season: clean(payload.season) || seasonForSport(payload.sport) || seasonForDate(date)",
     "seasonYear: Number(payload.seasonYear)",
     "sport: clean(payload.sport) || \"Cross Country\"",
+    "function seasonForSport(value)",
   ].forEach((text) => {
     if (!manualMileageApi.includes(text)) throw new Error(`manual mileage sport/year persistence missing ${text}`);
   });
