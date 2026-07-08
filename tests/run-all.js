@@ -1151,6 +1151,20 @@ function checkDashboardStaffAccessHandoff() {
   console.log("Dashboard Staff Access handoff ok");
 }
 
+function checkCrossCountryRaceResultEvents() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const expected = "var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];";
+  [dashboard, calendar].forEach((html, index) => {
+    const page = index === 0 ? "Dashboard" : "Training Calendar";
+    if (!html.includes(expected)) throw new Error(`${page} missing full Cross Country race-result event list.`);
+    if (!html.includes("sport==='cross_country'?[''].concat(CROSS_COUNTRY_RACE_EVENT_OPTIONS)")) {
+      throw new Error(`${page} race-result dropdown must use the full Cross Country event list.`);
+    }
+  });
+  console.log("Cross Country race result events ok");
+}
+
 function checkDashboardStartHere() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
@@ -3105,6 +3119,7 @@ checkMilesBoardFeature();
 checkSpeedTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();
+checkCrossCountryRaceResultEvents();
 checkDashboardStartHere();
 checkHowToGuidePage();
 checkDashboardToolPreferences();

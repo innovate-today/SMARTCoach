@@ -871,7 +871,7 @@ tr:last-child td{border-bottom:0}
           <input id="raceResultRelayTeam" type="text" placeholder="Example: Boys A">
         </div>
         <div class="field">
-          <label for="raceResultEvent">Event <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the race distance or event. Cross country season bests use 2 Mile, 3200m, and 5K.">i</span></label>
+          <label for="raceResultEvent">Event <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the race distance or event. Cross country race results include standard road and distance options.">i</span></label>
           <select id="raceResultEvent">
             <option value="">Select event</option>
             <option value="100m">100m</option>
@@ -1335,6 +1335,7 @@ var meetManagerEditingId='';
 var lastLoadedAt='';
 var FIELD_EVENT_OPTIONS=['High Jump','Long Jump','Triple Jump','Pole Vault','Shot Put','Discus','Javelin','Hammer'];
 var RELAY_EVENT_OPTIONS=['4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
+var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];
 var WHATS_NEW_VERSION='2026-07-05-speed-trak-speed-metrics';
 var WHATS_NEW_ITEMS=[
   {area:'Keep Trak',items:['SMARTCoach app notes can now be edited with Save Edit.','Add Bullet keeps one daily briefing note organized as talking points.','Desktop cleanup helps remove notes older than 30 days.']},
@@ -4354,7 +4355,7 @@ function syncRaceResultSport(){
   var current=els.raceResultEvent.value;
   var sport=els.raceResultSport.value||'track';
   var type=els.raceResultType&&els.raceResultType.value||'individual';
-  var events=type==='relay'?[''].concat(RELAY_EVENT_OPTIONS):type==='field'?[''].concat(FIELD_EVENT_OPTIONS):(sport==='cross_country'?['','2 Mile','3200m','5K']:[''].concat(MEET_EVENT_OPTIONS.filter(function(eventName){return eventName!=='Other';})));
+  var events=type==='relay'?[''].concat(RELAY_EVENT_OPTIONS):type==='field'?[''].concat(FIELD_EVENT_OPTIONS):(sport==='cross_country'?[''].concat(CROSS_COUNTRY_RACE_EVENT_OPTIONS):[''].concat(MEET_EVENT_OPTIONS.filter(function(eventName){return eventName!=='Other';})));
   els.raceResultEvent.innerHTML=events.map(function(eventName){
     return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
   }).join('');
