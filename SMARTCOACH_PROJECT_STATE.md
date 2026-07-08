@@ -1362,6 +1362,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 470. Dashboard completed-workout volume now receives the full fetched training sync list instead of only the first 100 rows. This fixes athlete mileage and expanded completed-workout detail being undercounted when older rows, such as early-June miles in a board range, fell outside the first 100 newest workouts.
 471. Miles Board Cross Country filtering now counts older unlabeled mileage records as legacy Cross Country mileage when they have completed miles and do not clearly identify Track, Speed, sprint, runway, field event, jump, or throw work. This keeps saved sport/year filtering exact for newer labeled rows while restoring full board totals for older Manual Mileage records that predate sport/year persistence.
 472. Miles Board legacy mileage matching now treats old Winter/Spring/Summer/Fall/Unspecified/Unlisted season values as date buckets, not sport labels. Older Manual Mileage rows with `season: Summer` and no saved sport can now count on the Cross Country Miles Board when they are in the selected year/date range and do not clearly identify non-distance work.
+473. Public Speed Trak Board load failure was fixed by adding the board date/week helpers used by weekly winners to the Speed Board API route. The route now has local `publicBoardDate`, `startOfBoardWeek`, `startOfWeekForDate`, and `addDays` helpers so the weekly winners calculation no longer crashes with `startOfBoardWeek is not defined`.
 
 ## Known Good Test Flow
 

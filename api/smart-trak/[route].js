@@ -2819,6 +2819,32 @@ function speedBoardRound(value, digits = 2) {
   return Math.round(number * factor) / factor;
 }
 
+function publicBoardDate(value) {
+  const text = cleanSetupText(Array.isArray(value) ? value[0] : value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const date = new Date(`${text}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function startOfBoardWeek(end) {
+  return startOfWeekForDate(addDays(end, -1));
+}
+
+function startOfWeekForDate(sourceDate) {
+  const now = sourceDate instanceof Date ? sourceDate : new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
 async function accountTrainingCustomization(req, res) {
   if (req.method === "OPTIONS") {
     res.status(204).end();
