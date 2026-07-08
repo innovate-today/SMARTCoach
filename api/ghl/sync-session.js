@@ -374,30 +374,53 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
 }
 
 async function createPerformanceRecordWithWorkoutTypeFallback({ token, locationId, properties }) {
-  try {
-    return await ghlFetch({
+  let attempt = { ...properties };
+  const removed = new Set();
+
+  for (let index = 0; index < 3; index += 1) {
+    try {
+      return await ghlFetch({
+        token,
+        path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
+        method: "POST",
+        body: {
+          locationId,
+          properties: attempt,
+        },
+      });
+    } catch (error) {
+      const next = performanceRecordFallbackProperties({ properties: attempt, error, removed });
+      if (!next) throw error;
+      attempt = next;
+    }
+  }
+
+  return ghlFetch({
       token,
       path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
       method: "POST",
       body: {
         locationId,
-        properties,
+        properties: attempt,
       },
     });
-  } catch (error) {
-    if (!/allowed option|isn't an allowed option|not an allowed/i.test(error.message || "") || !properties.workout_type) throw error;
+}
+
+function performanceRecordFallbackProperties({ properties, error, removed }) {
+  const message = String(error && error.message || "");
+  if (/allowed option|isn't an allowed option|not an allowed/i.test(message) && properties.workout_type && !removed.has("workout_type")) {
+    removed.add("workout_type");
     const fallback = { ...properties };
     delete fallback.workout_type;
-    return ghlFetch({
-      token,
-      path: `/objects/${encodeURIComponent(PERFORMANCE_RECORD_SCHEMA_KEY)}/records`,
-      method: "POST",
-      body: {
-        locationId,
-        properties: fallback,
-      },
-    });
+    return fallback;
   }
+  if (/mapped field|season_year|Season Year/i.test(message) && properties.season_year && !removed.has("season_year")) {
+    removed.add("season_year");
+    const fallback = { ...properties };
+    delete fallback.season_year;
+    return fallback;
+  }
+  return null;
 }
 
 async function findDuplicatePerformanceRecords({ token, locationId, contactId, athlete, session }) {

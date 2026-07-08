@@ -823,6 +823,9 @@ function checkMilesBoardFeature() {
     "sport: clean(payload.sport)",
     "seasonYear: Number(payload.seasonYear)",
     "season_year: session.seasonYear || sessionDate.getFullYear()",
+    "function performanceRecordFallbackProperties",
+    "/mapped field|season_year|Season Year/i",
+    "delete fallback.season_year",
     "...(session.sport ? { sport: sportValue(session.sport) } : {})",
     "function sportValue(value)",
   ].forEach((text) => {
@@ -1819,6 +1822,7 @@ function checkQualityWorkoutTypesAccepted() {
     if (!manualMileageApi.includes(text)) throw new Error(`Manual mileage workout type alias missing ${text}`);
   });
   if (!syncApi.includes("createPerformanceRecordWithWorkoutTypeFallback")) throw new Error("Sync should retry workout saves when GHL rejects a workout type option");
+  if (!syncApi.includes("delete fallback.workout_type")) throw new Error("Sync should retry workout saves without rejected workout type option");
   console.log("Quality workout type aliases ok");
 }
 
