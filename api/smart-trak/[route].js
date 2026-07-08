@@ -2450,6 +2450,7 @@ function normalizeMilesBoardSharing(source) {
     challengeType: challengeTypes[0],
     challengeTypes,
     displayOptions: normalizeMilesBoardDisplayOptions(input.displayOptions),
+    dateRange: normalizeMilesBoardDateRange(input.dateRange),
     groupNames: normalizeMilesBoardGroupNames(input.groupNames),
     gameSettings: normalizeMilesBoardGameSettings(input.gameSettings),
     tokenVersion: cleanSetupText(input.tokenVersion) || "1",
@@ -2464,6 +2465,15 @@ function normalizeMilesBoardDisplayOptions(source) {
     teamAttendance: input.teamAttendance === true,
     athleteAttendance: input.athleteAttendance === true,
   };
+}
+
+function normalizeMilesBoardDateRange(source) {
+  const input = source && typeof source === "object" ? source : {};
+  let mode = cleanSetupText(input.mode || input.rangeMode || "dashboard").toLowerCase();
+  if (!["dashboard", "7", "14", "30", "all", "custom"].includes(mode)) mode = "dashboard";
+  const startDate = /^\d{4}-\d{2}-\d{2}$/.test(cleanSetupText(input.startDate)) ? cleanSetupText(input.startDate) : "";
+  const endDate = /^\d{4}-\d{2}-\d{2}$/.test(cleanSetupText(input.endDate)) ? cleanSetupText(input.endDate) : "";
+  return { mode, startDate, endDate };
 }
 
 function normalizeMilesBoardGroupNames(values) {

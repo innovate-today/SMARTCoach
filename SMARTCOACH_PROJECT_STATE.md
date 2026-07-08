@@ -1355,6 +1355,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 463. Miles Board links now carry Cross Country plus a season year instead of relying only on date-derived current season logic. Public Miles Board rows filter by saved sport/year, new phone-app syncs and manual mileage saves persist sport/year on performance records, and older records without sport only count when their saved season/group labels clearly identify Cross Country.
 464. Public Miles Board load failure was fixed after the sport/year filter called a dashboard-local `yearFromDateValue` helper that had not been defined in the dashboard API bundle. The helper is now included next to the public board date parsing helpers, with regression coverage so Miles Board and related public board loads do not crash on date-year fallback.
 465. Miles Board Sharing now includes training-group selection. The selected group names are saved on `milesBoardSharing.groupNames`, preserved by the account sharing endpoint, and enforced by the public Miles Board API before mileage totals are calculated. When groups are selected, the public board only displays athletes with matching selected-group mileage rows.
+466. Miles Board Sharing now includes a board date-range selector. Coaches can use the Dashboard activity range, last 7/14/30 days, all dates, or custom start/end dates. The selected range is saved on `milesBoardSharing.dateRange`, and link creation uses that board range when writing the public board `start` and `end` parameters.
 
 ## Known Good Test Flow
 

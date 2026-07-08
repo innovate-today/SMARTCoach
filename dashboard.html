@@ -624,6 +624,29 @@ tr:last-child td{border-bottom:0}
           <span>Link active</span>
         </label>
         <div class="field full">
+          <label for="milesBoardRangeMode">Board Date Range</label>
+          <select id="milesBoardRangeMode">
+            <option value="dashboard">Use Dashboard activity range</option>
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="all">All dates</option>
+            <option value="custom">Custom dates</option>
+          </select>
+        </div>
+        <div id="milesBoardCustomRange" class="field full" hidden>
+          <div class="formgrid">
+            <div class="field">
+              <label for="milesBoardStartDate">Start Date</label>
+              <input id="milesBoardStartDate" type="date">
+            </div>
+            <div class="field">
+              <label for="milesBoardEndDate">End Date</label>
+              <input id="milesBoardEndDate" type="date">
+            </div>
+          </div>
+        </div>
+        <div class="field full">
           <label>Visible Board Details</label>
           <div class="dashboard-pref-list">
             <label class="dashboard-pref-row"><span><b>Team Attendance %</b><small>Shows a team attendance card for this board range.</small></span><input id="milesBoardShowTeamAttendance" type="checkbox"></label>
@@ -1580,7 +1603,10 @@ function saveDashboardPreferences(){
   });
 }
 function defaultMilesBoardSharing(){
-  return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),groupNames:[],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
+  return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),dateRange:defaultMilesBoardDateRange(),groupNames:[],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
+}
+function defaultMilesBoardDateRange(){
+  return {mode:'dashboard',startDate:'',endDate:''};
 }
 function defaultMilesBoardDisplayOptions(){
   return {teamAttendance:false,athleteAttendance:false};
@@ -1628,6 +1654,16 @@ function normalizeMilesBoardDisplayOptions(source){
     athleteAttendance:input.athleteAttendance===true
   };
 }
+function normalizeMilesBoardDateRange(source){
+  var input=source&&typeof source==='object'?source:{};
+  var mode=String(input.mode||input.rangeMode||'dashboard').toLowerCase();
+  if(['dashboard','7','14','30','all','custom'].indexOf(mode)<0)mode='dashboard';
+  var startDate=String(input.startDate||'').slice(0,10);
+  var endDate=String(input.endDate||'').slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(startDate))startDate='';
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(endDate))endDate='';
+  return {mode:mode,startDate:startDate,endDate:endDate};
+}
 function normalizeMilesBoardGroupNames(values){
   var list=Array.isArray(values)?values:[values];
   var seen={};
@@ -1650,6 +1686,7 @@ function normalizeMilesBoardSharing(source){
     challengeType:challenges[0],
     challengeTypes:challenges,
     displayOptions:normalizeMilesBoardDisplayOptions(input.displayOptions),
+    dateRange:normalizeMilesBoardDateRange(input.dateRange),
     groupNames:normalizeMilesBoardGroupNames(input.groupNames),
     gameSettings:normalizeMilesBoardGameSettings(input.gameSettings),
     tokenVersion:String(input.tokenVersion||'1'),
@@ -1665,6 +1702,7 @@ function renderMilesBoardSharing(){
   renderMilesBoardGroupList(settings.groupNames);
   renderMilesBoardGameSettings(settings.gameSettings);
   if(els.milesBoardActive)els.milesBoardActive.checked=settings.active;
+  renderMilesBoardDateRange(settings.dateRange);
   if(els.milesBoardShowTeamAttendance)els.milesBoardShowTeamAttendance.checked=!!settings.displayOptions.teamAttendance;
   if(els.milesBoardShowAthleteAttendance)els.milesBoardShowAthleteAttendance.checked=!!settings.displayOptions.athleteAttendance;
   if(els.milesBoardLinkPreview)els.milesBoardLinkPreview.value=currentMilesBoardUrl||'';
@@ -1672,6 +1710,48 @@ function renderMilesBoardSharing(){
     els.milesBoardStatus.textContent=settings.active?'Set the range on the Dashboard before copying the link.':'Miles Board sharing is off. Current links will not load.';
     els.milesBoardStatus.style.color=settings.active?'#64748b':'#b00000';
   }
+}
+function renderMilesBoardDateRange(dateRange){
+  var settings=normalizeMilesBoardDateRange(dateRange);
+  if(els.milesBoardRangeMode)els.milesBoardRangeMode.value=settings.mode;
+  if(els.milesBoardStartDate)els.milesBoardStartDate.value=settings.startDate;
+  if(els.milesBoardEndDate)els.milesBoardEndDate.value=settings.endDate;
+  syncMilesBoardDateRangeControls(true);
+}
+function collectMilesBoardDateRange(){
+  return normalizeMilesBoardDateRange({
+    mode:els.milesBoardRangeMode?els.milesBoardRangeMode.value:'dashboard',
+    startDate:els.milesBoardStartDate?els.milesBoardStartDate.value:'',
+    endDate:els.milesBoardEndDate?els.milesBoardEndDate.value:''
+  });
+}
+function syncMilesBoardDateRangeControls(fillDefault){
+  var mode=els.milesBoardRangeMode?els.milesBoardRangeMode.value:'dashboard';
+  if(els.milesBoardCustomRange)els.milesBoardCustomRange.hidden=mode!=='custom';
+  if(mode==='custom'&&fillDefault&&(!els.milesBoardStartDate.value||!els.milesBoardEndDate.value)){
+    var bounds=activityRangeBounds();
+    if(bounds&&bounds.start&&!els.milesBoardStartDate.value)els.milesBoardStartDate.value=dateInputValue(bounds.start);
+    if(bounds&&bounds.end&&!els.milesBoardEndDate.value)els.milesBoardEndDate.value=dateInputValue(bounds.end);
+  }
+}
+function milesBoardRangeBounds(){
+  var range=collectMilesBoardDateRange();
+  if(range.mode==='all')return null;
+  if(range.mode==='custom'){
+    var customStart=parseDateInput(range.startDate);
+    var customEnd=parseDateInput(range.endDate);
+    if(customStart&&customEnd&&customStart>customEnd){
+      var swap=customStart;
+      customStart=customEnd;
+      customEnd=swap;
+    }
+    return {start:customStart,end:customEnd};
+  }
+  if(range.mode==='dashboard')return activityRangeBounds();
+  var days=Number(range.mode)||30;
+  var end=new Date();
+  end.setHours(0,0,0,0);
+  return {start:addDashboardDays(end,-days+1),end:end};
 }
 function milesBoardEligibleGroups(){
   return (trainingGroups||[]).filter(function(group){
@@ -1712,6 +1792,7 @@ function collectMilesBoardSharing(){
       teamAttendance:!!(els.milesBoardShowTeamAttendance&&els.milesBoardShowTeamAttendance.checked),
       athleteAttendance:!!(els.milesBoardShowAthleteAttendance&&els.milesBoardShowAthleteAttendance.checked)
     }),
+    dateRange:collectMilesBoardDateRange(),
     groupNames:normalizeMilesBoardGroupNames(groupNames),
     gameSettings:collectMilesBoardGameSettings(current.gameSettings),
     tokenVersion:current.tokenVersion,
@@ -1801,7 +1882,7 @@ function saveMilesBoardSharing(action){
   });
 }
 function milesBoardLinkParams(){
-  var bounds=activityRangeBounds();
+  var bounds=milesBoardRangeBounds();
   var params=new URLSearchParams({account:smartCoachAccountKey()});
   if(bounds&&bounds.start)params.set('start',dateInputValue(bounds.start));
   if(bounds&&bounds.end)params.set('end',dateInputValue(bounds.end));
@@ -2371,6 +2452,10 @@ var els={
   milesBoardClose:document.getElementById('milesBoardClose'),
   milesBoardChallengeList:document.getElementById('milesBoardChallengeList'),
   milesBoardActive:document.getElementById('milesBoardActive'),
+  milesBoardRangeMode:document.getElementById('milesBoardRangeMode'),
+  milesBoardCustomRange:document.getElementById('milesBoardCustomRange'),
+  milesBoardStartDate:document.getElementById('milesBoardStartDate'),
+  milesBoardEndDate:document.getElementById('milesBoardEndDate'),
   milesBoardShowTeamAttendance:document.getElementById('milesBoardShowTeamAttendance'),
   milesBoardShowAthleteAttendance:document.getElementById('milesBoardShowAthleteAttendance'),
   milesBoardGroupList:document.getElementById('milesBoardGroupList'),
@@ -2464,6 +2549,9 @@ els.milesBoardOpen.addEventListener('click',openMilesBoardLink);
 els.milesBoardTurnOff.addEventListener('click',turnOffMilesBoardLink);
 els.milesBoardReset.addEventListener('click',resetMilesBoardLink);
 els.milesBoardSnapshot.addEventListener('click',saveMilesBoardSnapshot);
+if(els.milesBoardRangeMode)els.milesBoardRangeMode.addEventListener('change',function(){syncMilesBoardDateRangeControls(true);});
+if(els.milesBoardStartDate)els.milesBoardStartDate.addEventListener('input',function(){syncMilesBoardDateRangeControls(false);});
+if(els.milesBoardEndDate)els.milesBoardEndDate.addEventListener('input',function(){syncMilesBoardDateRangeControls(false);});
 els.milesBoardModal.addEventListener('click',function(event){
   if(event.target===els.milesBoardModal)closeMilesBoardSharing();
 });
