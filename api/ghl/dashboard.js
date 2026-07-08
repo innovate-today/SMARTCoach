@@ -176,7 +176,7 @@ async function publicMilesBoard(req, res) {
       return date && date >= range.start && date < range.end;
     });
     const gameSettings = milesBoardGameSettings(sharing.gameSettings);
-    const boardFilter = milesBoardFilter(req.query);
+    const boardFilter = milesBoardFilter(req.query, sharing);
     const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, attendanceRecords: rangeAttendance, start: range.start, end: range.end, gameSettings, displayOptions, boardFilter });
     const groupRows = milesBoardGroupRows(boardRows);
     const totalMiles = roundVolume(boardRows.reduce((sum, row) => sum + row.totalMiles, 0));
@@ -283,18 +283,21 @@ function buildMilesBoardRows({ athletes, performanceRecords, attendanceRecords, 
       goalHit: gameSettings.athleteGoalMiles > 0 && totalMiles >= gameSettings.athleteGoalMiles,
       badges: milesBoardBadges(row, gameSettings),
     };
-  });
+  }).filter((row) => !(boardFilter && boardFilter.groupNameKeys && boardFilter.groupNameKeys.length) || row.workouts > 0 || row.totalMiles > 0);
   return milesBoardCompetitionBadges(rows).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
 }
 
-function milesBoardFilter(query) {
+function milesBoardFilter(query, sharing) {
   const sport = clean(query && query.sport) || "Cross Country";
   const year = Number(query && query.seasonYear) || new Date().getFullYear();
+  const groupNames = normalizeMilesBoardGroupNames(sharing && sharing.groupNames);
   return {
     sport,
     sportKey: optionValue(sport),
     sportLabel: labelValue(sport),
     seasonYear: year,
+    groupNames,
+    groupNameKeys: groupNames.map((name) => name.toLowerCase()),
   };
 }
 
@@ -302,6 +305,7 @@ function milesBoardRecordMatchesFilter(item, filter) {
   if (!filter) return true;
   const year = Number(item.seasonYear) || yearFromDateValue(item.sessionDate || item.syncedAt);
   if (filter.seasonYear && year !== filter.seasonYear) return false;
+  if (filter.groupNameKeys && filter.groupNameKeys.length && filter.groupNameKeys.indexOf(clean(item.groupName).toLowerCase()) < 0) return false;
   if (!filter.sportKey || filter.sportKey === "all") return true;
   const explicitSport = optionValue(item.sport);
   if (explicitSport) return explicitSport === filter.sportKey;
@@ -325,6 +329,17 @@ function milesBoardDisplayOptions(source) {
     teamAttendance: input.teamAttendance === true,
     athleteAttendance: input.athleteAttendance === true,
   };
+}
+
+function normalizeMilesBoardGroupNames(values) {
+  const list = Array.isArray(values) ? values : clean(values).split(",");
+  const seen = new Set();
+  return list.map((value) => clean(value).slice(0, 120)).filter(Boolean).filter((value) => {
+    const key = value.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function rangeForAttendanceStart(value) {

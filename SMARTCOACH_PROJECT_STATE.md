@@ -1354,6 +1354,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 462. Training Calendar Log Race Result now keeps the last loaded athlete/group roster if a dashboard refresh briefly returns empty, and the athlete dropdown uses the selected meet's matching calendar group roster when available. This prevents coaches from losing all athlete choices after saving multiple race results for a group-attached meet.
 463. Miles Board links now carry Cross Country plus a season year instead of relying only on date-derived current season logic. Public Miles Board rows filter by saved sport/year, new phone-app syncs and manual mileage saves persist sport/year on performance records, and older records without sport only count when their saved season/group labels clearly identify Cross Country.
 464. Public Miles Board load failure was fixed after the sport/year filter called a dashboard-local `yearFromDateValue` helper that had not been defined in the dashboard API bundle. The helper is now included next to the public board date parsing helpers, with regression coverage so Miles Board and related public board loads do not crash on date-year fallback.
+465. Miles Board Sharing now includes training-group selection. The selected group names are saved on `milesBoardSharing.groupNames`, preserved by the account sharing endpoint, and enforced by the public Miles Board API before mileage totals are calculated. When groups are selected, the public board only displays athletes with matching selected-group mileage rows.
 
 ## Known Good Test Flow
 

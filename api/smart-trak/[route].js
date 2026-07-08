@@ -2450,6 +2450,7 @@ function normalizeMilesBoardSharing(source) {
     challengeType: challengeTypes[0],
     challengeTypes,
     displayOptions: normalizeMilesBoardDisplayOptions(input.displayOptions),
+    groupNames: normalizeMilesBoardGroupNames(input.groupNames),
     gameSettings: normalizeMilesBoardGameSettings(input.gameSettings),
     tokenVersion: cleanSetupText(input.tokenVersion) || "1",
     updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
@@ -2463,6 +2464,17 @@ function normalizeMilesBoardDisplayOptions(source) {
     teamAttendance: input.teamAttendance === true,
     athleteAttendance: input.athleteAttendance === true,
   };
+}
+
+function normalizeMilesBoardGroupNames(values) {
+  const list = Array.isArray(values) ? values : cleanSetupText(values).split(",");
+  const seen = new Set();
+  return list.map((value) => cleanSetupText(value).slice(0, 120)).filter(Boolean).filter((value) => {
+    const key = value.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function normalizeMilesBoardGameSettings(source) {

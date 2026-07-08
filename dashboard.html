@@ -631,6 +631,10 @@ tr:last-child td{border-bottom:0}
           </div>
         </div>
         <div class="field full">
+          <label>Groups</label>
+          <div id="milesBoardGroupList" class="dashboard-pref-list"></div>
+        </div>
+        <div class="field full">
           <label for="milesBoardChallengeName">Challenge Name</label>
           <input id="milesBoardChallengeName" type="text" maxlength="80" placeholder="Summer Mileage Challenge">
         </div>
@@ -1576,7 +1580,7 @@ function saveDashboardPreferences(){
   });
 }
 function defaultMilesBoardSharing(){
-  return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
+  return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),groupNames:[],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
 }
 function defaultMilesBoardDisplayOptions(){
   return {teamAttendance:false,athleteAttendance:false};
@@ -1624,6 +1628,20 @@ function normalizeMilesBoardDisplayOptions(source){
     athleteAttendance:input.athleteAttendance===true
   };
 }
+function normalizeMilesBoardGroupNames(values){
+  var list=Array.isArray(values)?values:[values];
+  var seen={};
+  var out=[];
+  list.forEach(function(value){
+    var name=String(value||'').trim().slice(0,120);
+    var key=name.toLowerCase();
+    if(name&&!seen[key]){
+      seen[key]=true;
+      out.push(name);
+    }
+  });
+  return out;
+}
 function normalizeMilesBoardSharing(source){
   var input=source&&typeof source==='object'?source:{};
   var challenges=normalizeMilesBoardChallenges(input.challengeTypes||input.challengeType||input.challenge||'total');
@@ -1632,6 +1650,7 @@ function normalizeMilesBoardSharing(source){
     challengeType:challenges[0],
     challengeTypes:challenges,
     displayOptions:normalizeMilesBoardDisplayOptions(input.displayOptions),
+    groupNames:normalizeMilesBoardGroupNames(input.groupNames),
     gameSettings:normalizeMilesBoardGameSettings(input.gameSettings),
     tokenVersion:String(input.tokenVersion||'1'),
     updatedAt:String(input.updatedAt||''),
@@ -1643,6 +1662,7 @@ function renderMilesBoardSharing(){
   Array.prototype.forEach.call(document.querySelectorAll('[data-miles-board-challenge]'),function(input){
     input.checked=settings.challengeTypes.indexOf(input.getAttribute('data-miles-board-challenge'))>=0;
   });
+  renderMilesBoardGroupList(settings.groupNames);
   renderMilesBoardGameSettings(settings.gameSettings);
   if(els.milesBoardActive)els.milesBoardActive.checked=settings.active;
   if(els.milesBoardShowTeamAttendance)els.milesBoardShowTeamAttendance.checked=!!settings.displayOptions.teamAttendance;
@@ -1653,6 +1673,26 @@ function renderMilesBoardSharing(){
     els.milesBoardStatus.style.color=settings.active?'#64748b':'#b00000';
   }
 }
+function milesBoardEligibleGroups(){
+  return (trainingGroups||[]).filter(function(group){
+    return group&&!group.archived&&String(group.type||'training')!=='meet'&&String(group.name||'').trim();
+  }).map(function(group){return String(group.name||'').trim();}).filter(function(name,index,list){
+    return list.findIndex(function(item){return item.toLowerCase()===name.toLowerCase();})===index;
+  }).sort(function(a,b){return a.localeCompare(b);});
+}
+function renderMilesBoardGroupList(selectedNames){
+  if(!els.milesBoardGroupList)return;
+  var selected=normalizeMilesBoardGroupNames(selectedNames).map(function(name){return name.toLowerCase();});
+  var groups=milesBoardEligibleGroups();
+  if(!groups.length){
+    els.milesBoardGroupList.innerHTML='<div class="small">No active training groups loaded.</div>';
+    return;
+  }
+  els.milesBoardGroupList.innerHTML=groups.map(function(groupName){
+    var checked=selected.indexOf(groupName.toLowerCase())>=0?' checked':'';
+    return '<label class="dashboard-pref-row"><span><b>'+esc(groupName)+'</b><small>Include this group on the public Miles Board.</small></span><input type="checkbox" data-miles-board-group="'+esc(groupName)+'"'+checked+'></label>';
+  }).join('');
+}
 function collectMilesBoardSharing(){
   var current=normalizeMilesBoardSharing(milesBoardSharing||defaultMilesBoardSharing());
   var selected=[];
@@ -1660,6 +1700,10 @@ function collectMilesBoardSharing(){
     if(input.checked)selected.push(input.getAttribute('data-miles-board-challenge'));
   });
   selected=normalizeMilesBoardChallenges(selected);
+  var groupNames=[];
+  Array.prototype.forEach.call(document.querySelectorAll('[data-miles-board-group]'),function(input){
+    if(input.checked)groupNames.push(input.getAttribute('data-miles-board-group'));
+  });
   return {
     active:!!(els.milesBoardActive&&els.milesBoardActive.checked),
     challengeType:selected[0]||current.challengeType,
@@ -1668,6 +1712,7 @@ function collectMilesBoardSharing(){
       teamAttendance:!!(els.milesBoardShowTeamAttendance&&els.milesBoardShowTeamAttendance.checked),
       athleteAttendance:!!(els.milesBoardShowAthleteAttendance&&els.milesBoardShowAthleteAttendance.checked)
     }),
+    groupNames:normalizeMilesBoardGroupNames(groupNames),
     gameSettings:collectMilesBoardGameSettings(current.gameSettings),
     tokenVersion:current.tokenVersion,
     updatedAt:new Date().toISOString()
@@ -2328,6 +2373,7 @@ var els={
   milesBoardActive:document.getElementById('milesBoardActive'),
   milesBoardShowTeamAttendance:document.getElementById('milesBoardShowTeamAttendance'),
   milesBoardShowAthleteAttendance:document.getElementById('milesBoardShowAthleteAttendance'),
+  milesBoardGroupList:document.getElementById('milesBoardGroupList'),
   milesBoardChallengeName:document.getElementById('milesBoardChallengeName'),
   milesBoardCoachMessage:document.getElementById('milesBoardCoachMessage'),
   milesBoardTeamGoal:document.getElementById('milesBoardTeamGoal'),
