@@ -320,10 +320,16 @@ function legacyCrossCountryTrainingRecord(item) {
     item.coachNote,
   ].filter(Boolean).join(" ").toLowerCase();
   if (/\b(cross country|xc|cc)\b/.test(text)) return true;
-  if (optionValue(item.sport) || optionValue(item.season)) return false;
+  const seasonKey = optionValue(item.season);
+  if (optionValue(item.sport)) return false;
+  if (seasonKey && !legacyMileageDateBucketSeason(seasonKey)) return false;
   if (!Number(item.completedVolumeMiles)) return false;
   if (/\b(track|speed|sprint|fly|starts?|runway|field event|jumps?|throws?)\b/.test(text)) return false;
   return true;
+}
+
+function legacyMileageDateBucketSeason(value) {
+  return ["winter", "spring", "summer", "fall", "unspecified", "unlisted"].includes(optionValue(value));
 }
 
 function milesBoardAthletesForSelectedGroups(athletes, selectedKeys) {

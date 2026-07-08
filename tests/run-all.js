@@ -804,7 +804,10 @@ function checkMilesBoardFeature() {
     "OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS",
     "safeDashboardObjectRecords",
     "controller.abort()",
-    "if (optionValue(item.sport) || optionValue(item.season)) return false;",
+    "if (optionValue(item.sport)) return false;",
+    "if (seasonKey && !legacyMileageDateBucketSeason(seasonKey)) return false;",
+    "function legacyMileageDateBucketSeason(value)",
+    "[\"winter\", \"spring\", \"summer\", \"fall\", \"unspecified\", \"unlisted\"].includes(optionValue(value))",
     "if (!Number(item.completedVolumeMiles)) return false;",
     "if (/\\b(track|speed|sprint|fly|starts?|runway|field event|jumps?|throws?)\\b/.test(text)) return false;",
   ].forEach((text) => {
