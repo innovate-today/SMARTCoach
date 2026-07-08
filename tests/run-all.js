@@ -1165,6 +1165,24 @@ function checkCrossCountryRaceResultEvents() {
   console.log("Cross Country race result events ok");
 }
 
+function checkTrainingCalendarRaceResultAthleteFallback() {
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  [
+    "function raceResultAthleteRows()",
+    "function selectedRaceResultGroupAthletes(activeRows)",
+    "function selectedRaceResultCalendarDay()",
+    "var groupRows=selectedRaceResultGroupAthletes(active);",
+    "return groupRows.length?groupRows:active;",
+    "if(loadedAthletes.length||!mileageAthletes.length)mileageAthletes=loadedAthletes;",
+    "if(loadedGroups.length||!trainingGroups.length)trainingGroups=loadedGroups;",
+    "return raceResultAthleteRows().find(function(row){return String(row.contactId||row.name||'')===String(selected);})||null;",
+    "No athletes available for this meet",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Training Calendar race-result athlete fallback missing ${text}`);
+  });
+  console.log("Training Calendar race result athlete fallback ok");
+}
+
 function checkDashboardStartHere() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
@@ -3120,6 +3138,7 @@ checkSpeedTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();
 checkCrossCountryRaceResultEvents();
+checkTrainingCalendarRaceResultAthleteFallback();
 checkDashboardStartHere();
 checkHowToGuidePage();
 checkDashboardToolPreferences();

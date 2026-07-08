@@ -3156,15 +3156,15 @@ function openRaceResult(){
 function closeRaceResult(){els.raceResultModal.hidden=true;}
 function renderRaceResultAthletes(){
   var current=els.raceResultAthlete.value;
-  var rows=activeMileageAthletes();
-  els.raceResultAthlete.innerHTML='<option value="">Select athlete</option>'+(rows.length?rows:[{contactId:'',name:'No active athletes loaded'}]).map(function(row){
+  var rows=raceResultAthleteRows();
+  els.raceResultAthlete.innerHTML='<option value="">Select athlete</option>'+(rows.length?rows:[{contactId:'',name:'No athletes available for this meet'}]).map(function(row){
     var value=row.contactId||row.name||'';
     return '<option value="'+esc(value)+'">'+esc(row.name||'Unnamed')+'</option>';
   }).join('');
   if(current)els.raceResultAthlete.value=current;
 }
 function renderRelayRunnerOptions(){
-  var rows=activeMileageAthletes();
+  var rows=raceResultAthleteRows();
   for(var i=1;i<=4;i+=1){
     var select=document.getElementById('raceResultRelayName'+i);
     if(!select)continue;
@@ -3182,6 +3182,52 @@ function activeMileageAthletes(){
     if(row.smartcoachActive===false)return false;
     return true;
   });
+}
+function raceResultAthleteRows(){
+  var active=activeMileageAthletes();
+  var groupRows=selectedRaceResultGroupAthletes(active);
+  return groupRows.length?groupRows:active;
+}
+function selectedRaceResultGroupAthletes(activeRows){
+  var day=selectedRaceResultCalendarDay();
+  var groupName=day&&day.groupName||'';
+  if(!groupName)return [];
+  var sourceRows=Array.isArray(activeRows)?activeRows:activeMileageAthletes();
+  var byKey={};
+  sourceRows.forEach(function(row){
+    if(row.contactId)byKey['id:'+String(row.contactId)]=row;
+    if(row.smartcoachAthleteId)byKey['smart:'+String(row.smartcoachAthleteId)]=row;
+    if(row.name)byKey['name:'+String(row.name).toLowerCase()]=row;
+  });
+  var seen={};
+  var rows=[];
+  activeTrainingGroups().filter(function(group){return String(group.name||'')===String(groupName);}).forEach(function(group){
+    (group.athletes||[]).forEach(function(athlete){
+      var row=(athlete.contactId&&byKey['id:'+String(athlete.contactId)])||
+        (athlete.smartcoachAthleteId&&byKey['smart:'+String(athlete.smartcoachAthleteId)])||
+        (athlete.name&&byKey['name:'+String(athlete.name).toLowerCase()])||
+        {contactId:athlete.contactId||'',smartcoachAthleteId:athlete.smartcoachAthleteId||'',name:athlete.name||''};
+      var key=String(row.contactId||row.smartcoachAthleteId||row.name||'').toLowerCase();
+      if(!key||seen[key])return;
+      seen[key]=true;
+      rows.push(row);
+    });
+  });
+  return rows;
+}
+function selectedRaceResultCalendarDay(){
+  var meet=selectedRaceResultMeet();
+  var date=meet&&meet.date||els.raceResultDate.value||'';
+  var name=meet&&meet.name||'';
+  var id=meet&&meet.id||'';
+  var candidates=calendarDaysWithMeets().filter(function(day){
+    if(!day)return false;
+    if(date&&String(day.date||'').slice(0,10)!==String(date).slice(0,10))return false;
+    if(id&&String(day.linkedMeetId||'')===String(id))return true;
+    if(name&&meetCalendarKey(day.title||day.workoutTitle,day.date)===meetCalendarKey(name,date))return true;
+    return !name&&inferCalendarActivityMode(day)==='race';
+  });
+  return candidates.find(function(day){return !!day.groupName;})||candidates[0]||null;
 }
 function loadRaceResultMeets(){
   setRaceResultStatus('Loading meets...','');
@@ -3219,6 +3265,8 @@ function syncRaceResultMeet(){
     var meet=selectedRaceResultMeet();
     if(meet&&meet.date)els.raceResultDate.value=dateInputValue(meet.date);
   }
+  renderRaceResultAthletes();
+  renderRelayRunnerOptions();
 }
 function syncRaceResultSport(){
   var current=els.raceResultEvent.value;
@@ -3259,7 +3307,7 @@ function selectedRaceResultMeet(){
 }
 function selectedRaceResultAthlete(){
   var selected=els.raceResultAthlete.value||'';
-  return mileageAthletes.find(function(row){return String(row.contactId||row.name||'')===String(selected);})||null;
+  return raceResultAthleteRows().find(function(row){return String(row.contactId||row.name||'')===String(selected);})||null;
 }
 function dateInputValue(value){
   var date=parseCalendarDate(value);
@@ -3733,9 +3781,11 @@ function loadCalendar(){
     if(!results[1].ok)throw new Error(results[1].data&&results[1].data.error||'Plan days failed to load.');
     plans=results[0].data.plans||[];
     days=applyPendingDayUpdates(results[1].data.days||[]);
-    mileageAthletes=results[2].ok?(results[2].data.athletes||[]):[];
-    mileageTrainingRows=results[2].ok?(results[2].data.recentTrainingSyncs||results[2].data.trainingSyncs||[]):[];
-    trainingGroups=results[3].ok?(results[3].data.groups||[]):[];
+    var loadedAthletes=results[2].ok?(results[2].data.athletes||[]):[];
+    if(loadedAthletes.length||!mileageAthletes.length)mileageAthletes=loadedAthletes;
+    mileageTrainingRows=results[2].ok?(results[2].data.recentTrainingSyncs||results[2].data.trainingSyncs||[]):mileageTrainingRows;
+    var loadedGroups=results[3].ok?(results[3].data.groups||[]):[];
+    if(loadedGroups.length||!trainingGroups.length)trainingGroups=loadedGroups;
     calendarMeets=results[4].ok?(results[4].data.meets||[]):[];
     els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
     renderOptions();

@@ -682,6 +682,7 @@ How to use it:
 2. Choose the date and sport.
 3. Choose an existing meet or enter a new meet name.
 4. Select the athlete.
+   - If the race day is tied to a training group on the calendar, the athlete list uses that group first.
 5. Choose the event. Cross Country includes Marathon, Half Marathon, 15K, 10K, 5K, 2 Mile, 3200m, 3K, 1 Mile, 1600m, 1500m, 800m, and Other.
 6. Enter the result.
 7. Choose best status if needed.
