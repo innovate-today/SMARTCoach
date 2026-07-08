@@ -2117,6 +2117,13 @@ function checkAthleteCalendarSubmittedStatusPill() {
   });
   [
     "const activeMeetIds = await loadActiveMeetIds(context.accountKey);",
+    "raceCompletedVolume(day, actualVolume)",
+    "function raceCompletedVolume(day, actualVolume)",
+    "const raceMiles = parseRaceDistanceMiles",
+    "const supportMiles = raceSupportMiles",
+    "function raceSupportMiles(text)",
+    "function parseRaceDistanceMiles(text)",
+    "return `${formatMiles(totalMiles)} total`;",
     "athleteCanSeeDay(athlete, groups, day) && trainingDayHasActiveMeet(day, activeMeetIds)",
     "athleteCanSeeDay(athlete, groups, day) || !trainingDayHasActiveMeet(day, activeMeetIds)",
     "async function loadActiveMeetIds(accountKey)",

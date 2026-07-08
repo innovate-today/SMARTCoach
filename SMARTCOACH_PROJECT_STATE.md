@@ -1370,6 +1370,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 478. Log Miles/manual mileage now recovers when the remote performance-record save rejects the mapped `season_year` field. The sync payload still sends sport/year for local mirrors and season records, but the performance-record create path retries without only the rejected mapped field so manual mileage can save instead of failing with a season-year validation error.
 479. Log Miles/manual mileage now also recovers when the remote performance-record save rejects the mapped `sport` field. The manual mileage payload still keeps Cross Country sport/year context for the local/dashboard flow, while the performance-record create path retries without only the rejected optional mapped field.
 480. Log Miles/manual mileage now also recovers when the remote object schema rejects `cross_country` as a Season option. Both the completed-workout record and season-summary record retry without only the rejected optional season field, so the dashboard/manual-mileage mirror can still save the coach-entered miles.
+481. Athlete Calendar race completions now calculate completed volume from race distance plus warmup and cooldown text when the entry is not already marked as a total. This lets race days such as a 1 Mile/1600m/5K with saved warmup and cooldown count full training volume on Dashboard and Miles Board totals after sync.
 
 ## Known Good Test Flow
 
