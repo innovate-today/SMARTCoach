@@ -1366,6 +1366,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 474. Public Speed Trak Board now includes read-only metric/distance, gender, and year filters similar to Speed Trak. The Speed Board API returns available filter options from all saved speed reps, and visible filter choices override the original compact share-link metric so viewers can switch between 10m Fly, 30m Fly, starts, runway work, and other saved metrics without mixing distances on one leaderboard.
 475. Public Speed Trak Board title was simplified to **Speed Trak Leaderboard** in the browser title and page header, removing the extra SMART Trak prefix from the shared athlete-facing board.
 476. Public Speed Trak Board info bubbles now use the same custom tooltip behavior as Speed Trak. The reps-count challenge layer was removed: Share Board no longer offers the reps-based Consistency option, old saved consistency settings fall back to Velocity, and the public API/page no longer produces Rep Leader, Consistent Sprinter, or weekly reps-count winners. Raw reps remain visible only as supporting context.
+477. Speed Trak Board Sharing now lets coaches adjust public badge thresholds for Velocity Club, Quick Turnover, and Big Mover before copying the link. Public Speed Trak Board leaderboard columns now include info bubbles, with Points and Badges explanations reflecting the saved board settings.
 
 ## Known Good Test Flow
 

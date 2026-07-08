@@ -2611,6 +2611,9 @@ function normalizeSpeedBoardGameSettings(source) {
     pointsPerVelocity: milesBoardNumber(input.pointsPerVelocity, 10, 500),
     pointsPerRep: milesBoardNumber(input.pointsPerRep, 2, 100),
     pointsPerImprovement: milesBoardNumber(input.pointsPerImprovement, 5, 500),
+    velocityClubThreshold: milesBoardNumber(input.velocityClubThreshold, 9, 30),
+    quickTurnoverThreshold: milesBoardNumber(input.quickTurnoverThreshold, 5, 20),
+    bigMoverThreshold: milesBoardNumber(input.bigMoverThreshold, 0, 20),
   };
 }
 
@@ -2726,7 +2729,7 @@ function speedBoardAthleteRow(reps, gameSettings) {
   return {
     ...row,
     gameScore: speedBoardGameScore(row, gameSettings),
-    badges: speedBoardBadges(row),
+    badges: speedBoardBadges(row, gameSettings),
   };
 }
 
@@ -2737,11 +2740,12 @@ function speedBoardGameScore(row, settings) {
     + Math.round((Number(row.improvementSeconds) || 0) * gameSettings.pointsPerImprovement);
 }
 
-function speedBoardBadges(row) {
+function speedBoardBadges(row, settings) {
+  const gameSettings = normalizeSpeedBoardGameSettings(settings);
   const badges = [];
-  if ((Number(row.bestVelocity) || 0) >= 9) badges.push("Velocity Club");
-  if ((Number(row.improvementSeconds) || 0) > 0) badges.push("Big Mover");
-  if ((Number(row.strideFrequency) || 0) >= 5) badges.push("Quick Turnover");
+  if ((Number(row.bestVelocity) || 0) >= gameSettings.velocityClubThreshold) badges.push("Velocity Club");
+  if ((Number(row.improvementSeconds) || 0) > 0 && (Number(row.improvementSeconds) || 0) >= gameSettings.bigMoverThreshold) badges.push("Big Mover");
+  if ((Number(row.strideFrequency) || 0) >= gameSettings.quickTurnoverThreshold) badges.push("Quick Turnover");
   return badges;
 }
 
