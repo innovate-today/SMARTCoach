@@ -1831,6 +1831,7 @@ function openMilesBoardSharing(){
   currentMilesBoardUrl='';
   renderMilesBoardSharing();
   els.milesBoardModal.hidden=false;
+  loadMilesBoardGroups();
   loadMilesBoardSharing();
   els.milesBoardClose.focus();
 }
@@ -1845,6 +1846,20 @@ function setMilesBoardStatus(message,color){
 function setMilesBoardButtons(disabled){
   [els.milesBoardTurnOff,els.milesBoardReset,els.milesBoardSnapshot,els.milesBoardOpen,els.milesBoardCopy].forEach(function(button){
     if(button)button.disabled=!!disabled;
+  });
+}
+function loadMilesBoardGroups(){
+  if(els.milesBoardGroupList)els.milesBoardGroupList.innerHTML='<div class="small">Loading training groups...</div>';
+  return fetch('/api/smart-trak/groups?v='+Date.now(),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not load training groups.');
+    trainingGroups=result.data&&Array.isArray(result.data.groups)?result.data.groups:trainingGroups;
+    renderMilesBoardGroupList(normalizeMilesBoardSharing(milesBoardSharing||defaultMilesBoardSharing()).groupNames);
+    return trainingGroups;
+  }).catch(function(error){
+    if(els.milesBoardGroupList)els.milesBoardGroupList.innerHTML='<div class="small">'+esc(error.message||'Could not load training groups.')+'</div>';
+    return trainingGroups||[];
   });
 }
 function loadMilesBoardSharing(){

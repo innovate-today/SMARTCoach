@@ -1357,6 +1357,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 465. Miles Board Sharing now includes training-group selection. The selected group names are saved on `milesBoardSharing.groupNames`, preserved by the account sharing endpoint, and enforced by the public Miles Board API before mileage totals are calculated. When groups are selected, the public board only displays athletes with matching selected-group mileage rows.
 466. Miles Board Sharing now includes a board date-range selector. Coaches can use the Dashboard activity range, last 7/14/30 days, all dates, or custom start/end dates. The selected range is saved on `milesBoardSharing.dateRange`, and link creation uses that board range when writing the public board `start` and `end` parameters.
 467. Miles Board selected groups now determine the board athlete roster instead of filtering individual workout rows by `group_name`. The public board route derives selected athlete keys from saved `smartcoachGroups`, passes those keys to the dashboard API, and then counts all saved miles for those selected athletes in the board date range, including manual miles or app syncs that were not attached to the selected group.
+468. Miles Board Sharing now loads training groups directly when the modal opens. The group selector no longer depends on the main Dashboard refresh succeeding, so coaches can still choose Miles Board groups even if the dashboard data panel is showing an update failure.
 
 ## Known Good Test Flow
 

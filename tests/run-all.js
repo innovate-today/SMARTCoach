@@ -583,6 +583,8 @@ function checkMilesBoardFeature() {
     "dateRange:collectMilesBoardDateRange()",
     'id="milesBoardGroupList"',
     "function renderMilesBoardGroupList",
+    "function loadMilesBoardGroups",
+    "fetch('/api/smart-trak/groups?v='+Date.now()",
     "function milesBoardEligibleGroups",
     "data-miles-board-group",
     "function normalizeMilesBoardDisplayOptions",
