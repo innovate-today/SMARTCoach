@@ -319,7 +319,11 @@ function legacyCrossCountryTrainingRecord(item) {
     item.workoutPrescription,
     item.coachNote,
   ].filter(Boolean).join(" ").toLowerCase();
-  return /\b(cross country|xc|cc)\b/.test(text);
+  if (/\b(cross country|xc|cc)\b/.test(text)) return true;
+  if (optionValue(item.sport) || optionValue(item.season)) return false;
+  if (!Number(item.completedVolumeMiles)) return false;
+  if (/\b(track|speed|sprint|fly|starts?|runway|field event|jumps?|throws?)\b/.test(text)) return false;
+  return true;
 }
 
 function milesBoardAthletesForSelectedGroups(athletes, selectedKeys) {
