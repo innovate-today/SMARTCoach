@@ -1364,6 +1364,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 472. Miles Board legacy mileage matching now treats old Winter/Spring/Summer/Fall/Unspecified/Unlisted season values as date buckets, not sport labels. Older Manual Mileage rows with `season: Summer` and no saved sport can now count on the Cross Country Miles Board when they are in the selected year/date range and do not clearly identify non-distance work.
 473. Public Speed Trak Board load failure was fixed by adding the board date/week helpers used by weekly winners to the Speed Board API route. The route now has local `publicBoardDate`, `startOfBoardWeek`, `startOfWeekForDate`, and `addDays` helpers so the weekly winners calculation no longer crashes with `startOfBoardWeek is not defined`.
 474. Public Speed Trak Board now includes read-only metric/distance, gender, and year filters similar to Speed Trak. The Speed Board API returns available filter options from all saved speed reps, and visible filter choices override the original compact share-link metric so viewers can switch between 10m Fly, 30m Fly, starts, runway work, and other saved metrics without mixing distances on one leaderboard.
+475. Public Speed Trak Board title was simplified to **Speed Trak Leaderboard** in the browser title and page header, removing the extra SMART Trak prefix from the shared athlete-facing board.
 
 ## Known Good Test Flow
 

@@ -920,7 +920,7 @@ function checkSpeedTrakFeature() {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
   });
   [
-    "SMART Trak Speed Trak Board",
+    "Speed Trak Leaderboard",
     "Team speed leaderboard.",
     "/api/smart-trak/speed-board?",
     "Speed Trak Board is taking too long to load. Tap Refresh to try again.",
