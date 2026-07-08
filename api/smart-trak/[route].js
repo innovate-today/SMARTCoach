@@ -2310,12 +2310,13 @@ async function accountSpeedBoard(req, res) {
     return;
   }
   try {
-    const metric = cleanSetupText(share.metric || firstQueryValue(req.query && req.query.metric)).slice(0, 80);
-    const gender = normalizeSpeedBoardGender(share.gender || firstQueryValue(req.query && req.query.gender));
-    const year = cleanSetupText(share.year || firstQueryValue(req.query && req.query.year)).slice(0, 20);
+    const metric = speedBoardOptionalFilter(firstQueryValue(req.query && req.query.metric) || share.metric).slice(0, 80);
+    const gender = normalizeSpeedBoardGender(firstQueryValue(req.query && req.query.gender) || share.gender);
+    const year = speedBoardOptionalFilter(firstQueryValue(req.query && req.query.year) || share.year).slice(0, 20);
     const practices = normalizeFieldPractices(existing.record && existing.record.fieldPracticeSessions);
     const gameSettings = normalizeSpeedBoardGameSettings(sharing.gameSettings);
     const challengeTypes = normalizeSpeedBoardChallenges(share.challenges || firstQueryValue(req.query && req.query.challenges) || sharing.challengeTypes);
+    const filterOptions = speedBoardFilterOptions(practices);
     const rows = buildSpeedBoardRows({ practices, metric, gender, year, gameSettings });
     const totalReps = rows.reduce((sum, row) => sum + row.reps, 0);
     res.status(200).json({
@@ -2331,6 +2332,7 @@ async function accountSpeedBoard(req, res) {
         year: year || "",
         label: speedBoardFilterLabel({ metric, gender, year }),
       },
+      filterOptions,
       totals: {
         athletes: rows.length,
         reps: totalReps,
@@ -2654,6 +2656,20 @@ function buildSpeedBoardRows({ practices, metric, gender, year, gameSettings }) 
   });
   const rows = Array.from(rowsByAthlete.values()).map((reps) => speedBoardAthleteRow(reps, gameSettings));
   return speedBoardCompetitionBadges(rows).sort((a, b) => (Number(b.bestVelocity) || 0) - (Number(a.bestVelocity) || 0) || (Number(a.bestSeconds) || 999999) - (Number(b.bestSeconds) || 999999) || a.athleteName.localeCompare(b.athleteName));
+}
+
+function speedBoardOptionalFilter(value) {
+  const text = cleanSetupText(value);
+  return text.toLowerCase() === "all" ? "" : text;
+}
+
+function speedBoardFilterOptions(practices) {
+  const reps = normalizeSpeedBoardReps(practices);
+  return {
+    metrics: uniqueStrings(reps.map((rep) => rep.metric)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    genders: uniqueStrings(reps.map((rep) => rep.gender)).sort(),
+    years: uniqueStrings(reps.map((rep) => rep.year)).sort((a, b) => String(b).localeCompare(String(a))),
+  };
 }
 
 function normalizeSpeedBoardReps(practices) {
