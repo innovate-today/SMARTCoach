@@ -176,7 +176,8 @@ async function publicMilesBoard(req, res) {
       return date && date >= range.start && date < range.end;
     });
     const gameSettings = milesBoardGameSettings(sharing.gameSettings);
-    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, attendanceRecords: rangeAttendance, start: range.start, end: range.end, gameSettings, displayOptions });
+    const boardFilter = milesBoardFilter(req.query);
+    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, attendanceRecords: rangeAttendance, start: range.start, end: range.end, gameSettings, displayOptions, boardFilter });
     const groupRows = milesBoardGroupRows(boardRows);
     const totalMiles = roundVolume(boardRows.reduce((sum, row) => sum + row.totalMiles, 0));
     const totalWorkouts = boardRows.reduce((sum, row) => sum + row.workouts, 0);
@@ -194,6 +195,8 @@ async function publicMilesBoard(req, res) {
         start: dateOnly(range.start),
         end: dateOnly(addDays(range.end, -1)),
         label: boardRangeLabel(range.start, range.end),
+        sport: boardFilter.sportLabel,
+        seasonYear: boardFilter.seasonYear,
       },
       totals: {
         athletes: boardRows.length,
@@ -217,13 +220,14 @@ async function publicMilesBoard(req, res) {
   }
 }
 
-function buildMilesBoardRows({ athletes, performanceRecords, attendanceRecords, start, end, gameSettings, displayOptions }) {
+function buildMilesBoardRows({ athletes, performanceRecords, attendanceRecords, start, end, gameSettings, displayOptions, boardFilter }) {
   const showAttendance = !!(displayOptions && displayOptions.athleteAttendance);
   const rows = athletes.map((athlete) => {
     const training = performanceRecords
       .filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record))
       .map(normalizePerformanceRecord)
       .filter((item) => item.groupName || item.totalTimeDisplay)
+      .filter((item) => milesBoardRecordMatchesFilter(item, boardFilter))
       .filter((item) => {
         const date = parseDate(item.sessionDate || item.syncedAt);
         return date && date >= start && date < end;
@@ -281,6 +285,38 @@ function buildMilesBoardRows({ athletes, performanceRecords, attendanceRecords, 
     };
   });
   return milesBoardCompetitionBadges(rows).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
+}
+
+function milesBoardFilter(query) {
+  const sport = clean(query && query.sport) || "Cross Country";
+  const year = Number(query && query.seasonYear) || new Date().getFullYear();
+  return {
+    sport,
+    sportKey: optionValue(sport),
+    sportLabel: labelValue(sport),
+    seasonYear: year,
+  };
+}
+
+function milesBoardRecordMatchesFilter(item, filter) {
+  if (!filter) return true;
+  const year = Number(item.seasonYear) || yearFromDateValue(item.sessionDate || item.syncedAt);
+  if (filter.seasonYear && year !== filter.seasonYear) return false;
+  if (!filter.sportKey || filter.sportKey === "all") return true;
+  const explicitSport = optionValue(item.sport);
+  if (explicitSport) return explicitSport === filter.sportKey;
+  if (filter.sportKey === "cross_country") return legacyCrossCountryTrainingRecord(item);
+  return false;
+}
+
+function legacyCrossCountryTrainingRecord(item) {
+  const text = [
+    item.season,
+    item.groupName,
+    item.workoutPrescription,
+    item.coachNote,
+  ].filter(Boolean).join(" ").toLowerCase();
+  return /\b(cross country|xc|cc)\b/.test(text);
 }
 
 function milesBoardDisplayOptions(source) {
@@ -888,6 +924,9 @@ function normalizePerformanceRecord(record) {
     sourceSessionId: prop(props, "source_session_id"),
     sourceRecordId: prop(props, "source_record_id"),
     groupName: prop(props, "group_name"),
+    season: labelValue(prop(props, "season")) || prop(props, "season"),
+    seasonYear: Number(prop(props, "season_year")) || yearFromDateValue(prop(props, "session_date")),
+    sport: labelValue(prop(props, "sport")) || prop(props, "sport"),
     workoutType: labelValue(prop(props, "workout_type")),
     surface: labelValue(prop(props, "surface")),
     repNumber: Number(prop(props, "rep_number")) || null,
@@ -1333,6 +1372,10 @@ function isActiveValue(value) {
 
 function isInactiveValue(value) {
   return /^(no|n|false|inactive|0|off)$/i.test(clean(value));
+}
+
+function optionValue(value) {
+  return clean(value).toLowerCase().replace(/&/g, "and").replace(/\+/g, "plus").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 }
 
 function labelValue(value) {

@@ -2117,6 +2117,8 @@ async function accountMilesBoardLink(req, res) {
   const params = new URLSearchParams({ account: accountKey, token });
   if (/^\d{4}-\d{2}-\d{2}$/.test(start)) params.set("start", start);
   if (/^\d{4}-\d{2}-\d{2}$/.test(end)) params.set("end", end);
+  params.set("sport", cleanSetupText(firstQueryValue(req.query && req.query.sport)) || "Cross Country");
+  params.set("seasonYear", cleanSetupText(firstQueryValue(req.query && req.query.seasonYear)) || String(new Date().getFullYear()));
   params.set("challenge", sharing.challengeType);
   if (sharing.challengeTypes.length) params.set("challenges", sharing.challengeTypes.join(","));
   const compactParams = new URLSearchParams({
@@ -2125,6 +2127,8 @@ async function accountMilesBoardLink(req, res) {
       token,
       start: params.get("start"),
       end: params.get("end"),
+      sport: params.get("sport"),
+      seasonYear: params.get("seasonYear"),
       challenge: params.get("challenge"),
       challenges: params.get("challenges"),
     }),
@@ -2163,6 +2167,8 @@ async function accountMilesBoard(req, res) {
   req.milesBoardSnapshots = normalizeMilesBoardSnapshots(existing.record && existing.record.milesBoardSnapshots);
   if (share.start && req.query && !firstQueryValue(req.query.start)) req.query.start = share.start;
   if (share.end && req.query && !firstQueryValue(req.query.end)) req.query.end = share.end;
+  if (share.sport && req.query && !firstQueryValue(req.query.sport)) req.query.sport = share.sport;
+  if (share.seasonYear && req.query && !firstQueryValue(req.query.seasonYear)) req.query.seasonYear = share.seasonYear;
   if (share.challenge && req.query && !firstQueryValue(req.query.challenge)) req.query.challenge = share.challenge;
   if (share.challenges && req.query && !firstQueryValue(req.query.challenges)) req.query.challenges = share.challenges;
   return handlers.dashboard.publicMilesBoard(req, res);
@@ -5466,6 +5472,8 @@ function milesBoardShareKey(input) {
     t: cleanSetupText(source.token),
     s: cleanSetupText(source.start),
     e: cleanSetupText(source.end),
+    sp: cleanSetupText(source.sport),
+    y: cleanSetupText(source.seasonYear),
     c: cleanSetupText(source.challenge),
     cs: cleanSetupText(source.challenges),
   };
@@ -5482,6 +5490,8 @@ function milesBoardShareFromKey(value) {
       token: cleanSetupText(raw.t || raw.token),
       start: cleanSetupText(raw.s || raw.start),
       end: cleanSetupText(raw.e || raw.end),
+      sport: cleanSetupText(raw.sp || raw.sport),
+      seasonYear: cleanSetupText(raw.y || raw.seasonYear),
       challenge: cleanSetupText(raw.c || raw.challenge),
       challenges: cleanSetupText(raw.cs || raw.challenges),
     };

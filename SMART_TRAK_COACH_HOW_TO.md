@@ -74,6 +74,8 @@ The **Feedback** button includes **Open How To Guide**. Use it to open the lates
 
 Use **Miles Trak** when you want a view-only mileage leaderboard for athletes. Set the Dashboard activity range first, then click **Miles Trak**.
 
+Miles Board links are Cross Country boards for the selected year. Track mileage is kept out even when Track and Cross Country overlap on the calendar.
+
 How to set up the Miles Board:
 
 1. Choose one or more challenge types: **Total Miles**, **Game Score**, **This Week**, **Consistency**, or **Big Mover**.

@@ -157,6 +157,8 @@ function normalizeSession(payload) {
   return {
     groupName: clean(payload.groupName) || "SMARTCoach Workout",
     season: clean(payload.season) || "Unspecified",
+    seasonYear: Number(payload.seasonYear) || (payload.sessionDate ? new Date(payload.sessionDate).getFullYear() : new Date().getFullYear()),
+    sport: clean(payload.sport),
     phase: clean(payload.phase) || "Unspecified",
     workoutType: clean(payload.workoutType) || "Unspecified",
     energySystem: clean(payload.energySystem),
@@ -615,6 +617,8 @@ function buildPerformanceRecordProperties({ locationId, contactId, athlete, sess
     group_name: session.groupName,
     session_date: dateOnly(sessionDate),
     season: optionValue(session.season),
+    season_year: session.seasonYear || sessionDate.getFullYear(),
+    ...(session.sport ? { sport: sportValue(session.sport) } : {}),
     phase: phaseValue(phase),
     workout_type: workoutTypeValue(workoutType),
     ...(session.energySystem ? { energy_system: energySystemValue(session.energySystem) } : {}),
@@ -685,7 +689,7 @@ function preparePerformanceRecordProperties(properties, forceSuffix) {
 
 function buildSeasonRecordProperties({ contactId, athlete, session, performanceRecordCount, existing, sourceRecordId }) {
   const sessionDate = validDate(session.sessionDate) || new Date();
-  const seasonYear = sessionDate.getFullYear();
+  const seasonYear = session.seasonYear || sessionDate.getFullYear();
   const recordName = `${athlete.name} - ${session.season} ${seasonYear}`;
   const existingProperties = recordProperties(existing);
   const seasonBests = updateSeasonBests({
@@ -704,7 +708,7 @@ function buildSeasonRecordProperties({ contactId, athlete, session, performanceR
     source_record_id: sourceRecordId,
     season: optionValue(session.season),
     season_year: seasonYear,
-    sport: "track",
+    sport: sportValue(session.sport),
     primary_event: existingProperties.primary_event || "",
     practice_session_count: seasonBests.practiceSessionCount,
     performance_record_count: seasonBests.performanceRecordCount,
@@ -1178,6 +1182,13 @@ function optionValue(value) {
     .replace(/\+/g, "plus")
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_|_$/g, "");
+}
+
+function sportValue(value) {
+  const normalized = optionValue(value);
+  if (normalized.indexOf("cross_country") === 0 || normalized === "xc" || normalized === "cc") return "cross_country";
+  if (normalized.indexOf("track") === 0) return "track";
+  return normalized || "track";
 }
 
 function energySystemValue(value) {

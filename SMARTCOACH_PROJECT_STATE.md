@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-07
+Last updated: 2026-07-08
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -1352,6 +1352,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 460. Dashboard Training Load now includes saved Speed Metrics sessions. Each athlete with at least one saved speed rep gets one completed workout, speed volume counts only timed rep distance (for example, 5 x 30m = 150m), warmup/cooldown are excluded, and Completed Workouts details show Speed Metrics rep breakdowns.
 461. Dashboard and Training Calendar Log Race Result now show the full Cross Country race event list instead of only 2 Mile, 3200m, and 5K. Cross Country entries include Marathon, Half Marathon, 15K, 10K, 5K, 2 Mile, 3200m, 3K, 1 Mile, 1600m, 1500m, 800m, and Other.
 462. Training Calendar Log Race Result now keeps the last loaded athlete/group roster if a dashboard refresh briefly returns empty, and the athlete dropdown uses the selected meet's matching calendar group roster when available. This prevents coaches from losing all athlete choices after saving multiple race results for a group-attached meet.
+463. Miles Board links now carry Cross Country plus a season year instead of relying only on date-derived current season logic. Public Miles Board rows filter by saved sport/year, new phone-app syncs and manual mileage saves persist sport/year on performance records, and older records without sport only count when their saved season/group labels clearly identify Cross Country.
 
 ## Known Good Test Flow
 

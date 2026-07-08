@@ -561,6 +561,9 @@ function checkMilesBoardFeature() {
   const board = fs.readFileSync("miles-board.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  const mobile = fs.readFileSync("index.html", "utf8");
+  const syncApi = fs.readFileSync("api/ghl/sync-session.js", "utf8");
+  const manualMileageApi = fs.readFileSync("api/ghl/manual-mileage.js", "utf8");
   [
     'id="shareMilesBoardBtn"',
     "Miles Trak",
@@ -594,6 +597,9 @@ function checkMilesBoardFeature() {
     "function resetMilesBoardLink()",
     "fetch('/api/smart-trak/miles-board-sharing?account='",
     "miles-board-link",
+    "params.set('sport','Cross Country');",
+    "params.set('seasonYear',milesBoardSeasonYear());",
+    "function milesBoardSeasonYear()",
     "copyTextToClipboard",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`dashboard Miles Board share missing ${text}`);
@@ -687,6 +693,14 @@ function checkMilesBoardFeature() {
     "function milesBoardTokenVersion()",
     "function milesBoardShareKey(input)",
     "function milesBoardShareFromKey(value)",
+    "params.set(\"sport\", cleanSetupText(firstQueryValue(req.query && req.query.sport)) || \"Cross Country\");",
+    "params.set(\"seasonYear\", cleanSetupText(firstQueryValue(req.query && req.query.seasonYear)) || String(new Date().getFullYear()));",
+    "sport: params.get(\"sport\")",
+    "seasonYear: params.get(\"seasonYear\")",
+    "sp: cleanSetupText(source.sport)",
+    "y: cleanSetupText(source.seasonYear)",
+    "sport: cleanSetupText(raw.sp || raw.sport)",
+    "seasonYear: cleanSetupText(raw.y || raw.seasonYear)",
     "legacyUrl: `/miles-board.html?",
     "k: milesBoardShareKey",
     "SMARTCOACH_MILES_BOARD_SECRET",
@@ -708,6 +722,13 @@ function checkMilesBoardFeature() {
     "module.exports.publicMilesBoard = publicMilesBoard;",
     "async function publicMilesBoard(req, res)",
     "function buildMilesBoardRows",
+    "const boardFilter = milesBoardFilter(req.query);",
+    "function milesBoardFilter(query)",
+    "function milesBoardRecordMatchesFilter(item, filter)",
+    "function legacyCrossCountryTrainingRecord(item)",
+    ".filter((item) => milesBoardRecordMatchesFilter(item, boardFilter))",
+    "sport: boardFilter.sportLabel",
+    "seasonYear: boardFilter.seasonYear",
     "loadAttendanceRecords",
     "displayOptions",
     "attendanceRate",
@@ -755,6 +776,27 @@ function checkMilesBoardFeature() {
     "controller.abort()",
   ].forEach((text) => {
     if (!dashboardApi.includes(text)) throw new Error(`Miles Board sanitized dashboard API missing ${text}`);
+  });
+  [
+    "sport:CL.sport||''",
+    "seasonYear:CL.seasonYear||currentSeason().year",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`SMARTCoach app Miles Board sport/year sync missing ${text}`);
+  });
+  [
+    "sport: clean(payload.sport)",
+    "seasonYear: Number(payload.seasonYear)",
+    "season_year: session.seasonYear || sessionDate.getFullYear()",
+    "...(session.sport ? { sport: sportValue(session.sport) } : {})",
+    "function sportValue(value)",
+  ].forEach((text) => {
+    if (!syncApi.includes(text)) throw new Error(`sync-session sport/year persistence missing ${text}`);
+  });
+  [
+    "seasonYear: Number(payload.seasonYear)",
+    "sport: clean(payload.sport) || \"Cross Country\"",
+  ].forEach((text) => {
+    if (!manualMileageApi.includes(text)) throw new Error(`manual mileage sport/year persistence missing ${text}`);
   });
   console.log("Miles Board feature ok");
 }

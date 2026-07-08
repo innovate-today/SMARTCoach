@@ -45,6 +45,8 @@ function buildSyncPayload(payload) {
   return {
     groupName: clean(payload.groupName) || "Manual Mileage",
     season: clean(payload.season) || seasonForDate(date),
+    seasonYear: Number(payload.seasonYear) || new Date(date).getFullYear(),
+    sport: clean(payload.sport) || "Cross Country",
     phase: clean(payload.phase) || "GPP",
     workoutType,
     surface: clean(payload.surface) || "Road",

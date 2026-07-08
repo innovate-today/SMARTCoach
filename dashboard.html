@@ -1760,7 +1760,15 @@ function milesBoardLinkParams(){
   var params=new URLSearchParams({account:smartCoachAccountKey()});
   if(bounds&&bounds.start)params.set('start',dateInputValue(bounds.start));
   if(bounds&&bounds.end)params.set('end',dateInputValue(bounds.end));
+  params.set('sport','Cross Country');
+  params.set('seasonYear',milesBoardSeasonYear());
   return params;
+}
+function milesBoardSeasonYear(){
+  var value=els.seasonFilter&&els.seasonFilter.value||'current';
+  var match=String(value||'').match(/^(\d{4})-/);
+  if(match)return match[1];
+  return String(new Date().getFullYear());
 }
 function createMilesBoardLink(){
   var settings=collectMilesBoardSharing();
@@ -5620,6 +5628,8 @@ function saveManualMileage(){
     date:els.manualMileageDate.value,
     groupName:manualMileageGroupName(),
     workoutType:els.manualMileageWorkout.value,
+    seasonYear:milesBoardSeasonYear(),
+    sport:'Cross Country',
     distance:distance,
     time:els.manualMileageTime.value,
     source:els.manualMileageSource.value,
