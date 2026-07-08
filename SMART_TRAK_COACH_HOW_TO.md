@@ -82,7 +82,7 @@ How to set up the Miles Board:
 2. Put the challenge you want as the default sort first. All selected challenges appear as highlight cards on the public board.
 3. Choose the board date range. You can use the Dashboard activity range, a recent-days preset, all dates, or custom start and end dates.
 4. Choose optional visible board details such as **Team Attendance %** or **Athlete Attendance %** when you want attendance to appear on the shared board.
-5. Select the training groups that should feed the board.
+5. Select the training groups whose athletes should appear on the board. Once an athlete is included, all of that athlete's saved miles in the board date range count, including miles entered outside that group.
 6. Use the Game Settings fields to name the challenge, add an optional coach message, set optional team and athlete mileage goals, and adjust point values for miles, workouts, current-week miles, improvement, and consistency.
 7. Use **Copy Link** to send the board, **Open Link** to preview it, **Turn Off Link** to stop the current link from loading, and **Reset Link** to create a new link while invalidating older links.
 8. Use **Save Weekly Snapshot** when a week is finished and you want the current range's totals, winners, pack leader, and coach message saved under **Past Weeks** on the public board.

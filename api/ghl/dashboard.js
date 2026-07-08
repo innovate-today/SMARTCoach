@@ -158,7 +158,7 @@ async function publicMilesBoard(req, res) {
   try {
     const sharing = req.milesBoardSharing || {};
     const displayOptions = milesBoardDisplayOptions(sharing.displayOptions);
-    const [athletes, performanceRecords, mirroredPerformanceRecords, attendanceRecords] = await Promise.all([
+    const [allAthletes, performanceRecords, mirroredPerformanceRecords, attendanceRecords] = await Promise.all([
       listActiveAthletes({ token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
@@ -167,6 +167,7 @@ async function publicMilesBoard(req, res) {
         end: dateOnly(rangeForAttendanceEnd(req.query && req.query.end)),
       }) : Promise.resolve([]),
     ]);
+    const athletes = milesBoardAthletesForSelectedGroups(allAthletes, req.milesBoardAthleteKeys);
     const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
     const start = publicBoardDate(req.query && req.query.start);
     const end = publicBoardDate(req.query && req.query.end);
@@ -283,7 +284,7 @@ function buildMilesBoardRows({ athletes, performanceRecords, attendanceRecords, 
       goalHit: gameSettings.athleteGoalMiles > 0 && totalMiles >= gameSettings.athleteGoalMiles,
       badges: milesBoardBadges(row, gameSettings),
     };
-  }).filter((row) => !(boardFilter && boardFilter.groupNameKeys && boardFilter.groupNameKeys.length) || row.workouts > 0 || row.totalMiles > 0);
+  });
   return milesBoardCompetitionBadges(rows).sort((a, b) => b.totalMiles - a.totalMiles || b.workouts - a.workouts || a.athleteName.localeCompare(b.athleteName));
 }
 
@@ -297,7 +298,6 @@ function milesBoardFilter(query, sharing) {
     sportLabel: labelValue(sport),
     seasonYear: year,
     groupNames,
-    groupNameKeys: groupNames.map((name) => name.toLowerCase()),
   };
 }
 
@@ -305,7 +305,6 @@ function milesBoardRecordMatchesFilter(item, filter) {
   if (!filter) return true;
   const year = Number(item.seasonYear) || yearFromDateValue(item.sessionDate || item.syncedAt);
   if (filter.seasonYear && year !== filter.seasonYear) return false;
-  if (filter.groupNameKeys && filter.groupNameKeys.length && filter.groupNameKeys.indexOf(clean(item.groupName).toLowerCase()) < 0) return false;
   if (!filter.sportKey || filter.sportKey === "all") return true;
   const explicitSport = optionValue(item.sport);
   if (explicitSport) return explicitSport === filter.sportKey;
@@ -321,6 +320,19 @@ function legacyCrossCountryTrainingRecord(item) {
     item.coachNote,
   ].filter(Boolean).join(" ").toLowerCase();
   return /\b(cross country|xc|cc)\b/.test(text);
+}
+
+function milesBoardAthletesForSelectedGroups(athletes, selectedKeys) {
+  const keys = new Set(Array.isArray(selectedKeys) ? selectedKeys.map(clean).filter(Boolean).map((value) => value.toLowerCase()) : []);
+  if (!keys.size) return athletes;
+  return (Array.isArray(athletes) ? athletes : []).filter((athlete) => athleteMatchesSelectedMilesBoardGroup(athlete, keys));
+}
+
+function athleteMatchesSelectedMilesBoardGroup(athlete, keys) {
+  return [athlete && athlete.id, athlete && athlete.contactId, athlete && athlete.smartcoachAthleteId, athlete && athlete.name]
+    .map(clean)
+    .filter(Boolean)
+    .some((value) => keys.has(value.toLowerCase()));
 }
 
 function milesBoardDisplayOptions(source) {

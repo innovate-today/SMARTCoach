@@ -2164,6 +2164,7 @@ async function accountMilesBoard(req, res) {
     return;
   }
   req.milesBoardSharing = sharing;
+  req.milesBoardAthleteKeys = milesBoardAthleteKeysForGroups(existing.record && existing.record.smartcoachGroups, sharing.groupNames);
   req.milesBoardSnapshots = normalizeMilesBoardSnapshots(existing.record && existing.record.milesBoardSnapshots);
   if (share.start && req.query && !firstQueryValue(req.query.start)) req.query.start = share.start;
   if (share.end && req.query && !firstQueryValue(req.query.end)) req.query.end = share.end;
@@ -2485,6 +2486,26 @@ function normalizeMilesBoardGroupNames(values) {
     seen.add(key);
     return true;
   });
+}
+
+function milesBoardAthleteKeysForGroups(groupsState, groupNames) {
+  const selected = new Set(normalizeMilesBoardGroupNames(groupNames).map((name) => name.toLowerCase()));
+  if (!selected.size) return [];
+  const keys = new Set();
+  const groups = Array.isArray(groupsState && groupsState.groups) ? groupsState.groups : [];
+  groups.forEach((group) => {
+    if (!group || group.archived || cleanSetupText(group.type) === "meet") return;
+    if (!selected.has(cleanSetupText(group.name).toLowerCase())) return;
+    (Array.isArray(group.athletes) ? group.athletes : []).forEach((athlete) => {
+      [
+        athlete && athlete.contactId,
+        athlete && athlete.smartcoachAthleteId,
+        athlete && athlete.id,
+        athlete && athlete.name,
+      ].map(cleanSetupText).filter(Boolean).forEach((value) => keys.add(value.toLowerCase()));
+    });
+  });
+  return Array.from(keys);
 }
 
 function normalizeMilesBoardGameSettings(source) {
