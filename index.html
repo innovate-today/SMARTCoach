@@ -1468,6 +1468,21 @@ function isUpcomingMeetGroup(l){
   if(!l.meetDate)return false;
   return String(l.meetDate)>=todayISO();
 }
+function meetGroupDateSortValue(group){
+  var value=String(group&&group.meetDate||'').slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return Number.MAX_SAFE_INTEGER;
+  var date=new Date(value+'T00:00:00');
+  return isNaN(date.getTime())?Number.MAX_SAFE_INTEGER:date.getTime();
+}
+function compareMeetGroupsByDate(a,b){
+  var today=todayISO();
+  var aDate=String(a&&a.meetDate||'').slice(0,10);
+  var bDate=String(b&&b.meetDate||'').slice(0,10);
+  var aPast=aDate&&aDate<today;
+  var bPast=bDate&&bDate<today;
+  if(aPast!==bPast)return aPast?1:-1;
+  return meetGroupDateSortValue(a)-meetGroupDateSortValue(b)||String(meetDisplayTitle(a)).localeCompare(String(meetDisplayTitle(b)));
+}
 function syncedRunCount(r){
   return (r.saved||[]).filter(function(s){return s&&s.synced;}).length;
 }
@@ -2515,13 +2530,15 @@ function handleMeetSelect(){
   }
 }
 function visibleGroups(){
-  return logs.filter(function(l){
+  var groups=logs.filter(function(l){
     var type=l.type||'training';
     if(GV==='archive')return !!l.archived;
     if(l.archived)return false;
     if(GV==='meets')return type==='meet';
     return type!=='meet';
   });
+  if(GV==='meets')groups.sort(compareMeetGroupsByDate);
+  return groups;
 }
 function rl(){
   var el=document.getElementById('ll');

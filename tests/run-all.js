@@ -2196,6 +2196,21 @@ function checkMobileCalendarMeetDedup() {
   console.log("mobile calendar meet dedup ok");
 }
 
+function checkMobileMeetListSort() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "function meetGroupDateSortValue(group)",
+    "return isNaN(date.getTime())?Number.MAX_SAFE_INTEGER:date.getTime();",
+    "function compareMeetGroupsByDate(a,b)",
+    "if(aPast!==bPast)return aPast?1:-1;",
+    "return meetGroupDateSortValue(a)-meetGroupDateSortValue(b)||String(meetDisplayTitle(a)).localeCompare(String(meetDisplayTitle(b)));",
+    "if(GV==='meets')groups.sort(compareMeetGroupsByDate);",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile meet list sort missing ${text}`);
+  });
+  console.log("mobile meet list sort ok");
+}
+
 function checkAthleteCalendarBulkEmailLinks() {
   const html = fs.readFileSync("athletes.html", "utf8");
   const api = fs.readFileSync("api/ghl/athletes.js", "utf8");
@@ -3538,6 +3553,7 @@ checkTrainingCustomization();
 checkMobileCalendarWorkoutPriority();
 checkMobileTrainingPlanArchiveFilter();
 checkMobileCalendarMeetDedup();
+checkMobileMeetListSort();
 checkAthleteCalendarBulkEmailLinks();
 checkAthleteCalendarQuestions();
 checkAthleteCalendarSubmittedStatusPill();
