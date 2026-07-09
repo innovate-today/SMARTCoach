@@ -861,6 +861,7 @@ function resultsBoardSharing(source) {
       bestBadges: !(input.displayOptions && input.displayOptions.bestBadges === false),
       grades: !(input.displayOptions && input.displayOptions.grades === false),
       teamSummary: !(input.displayOptions && input.displayOptions.teamSummary === false),
+      detailOrder: normalizeResultsBoardDetailOrder(input.displayOptions && input.displayOptions.detailOrder),
     },
     gameSettings: {
       boardName: clean(input.gameSettings && input.gameSettings.boardName).slice(0, 80) || "Team Results Board",
@@ -919,9 +920,39 @@ function resultsBoardFilterLabel(filters, meetName) {
   return [filters.sportLabel, filters.seasonYear, filters.allMeets ? "All Meets" : meetName || "Latest meet"].filter(Boolean).join(" · ");
 }
 
+function defaultResultsBoardDetailOrder() {
+  return ["bestHighlights", "divisionSummary", "latestMeet", "meetArchive", "athleteSummary", "eventSummary", "seasonSummary"];
+}
+
+function normalizeResultsBoardDetailOrder(values) {
+  const defaults = defaultResultsBoardDetailOrder();
+  const allowed = new Set(defaults);
+  const out = [];
+  (Array.isArray(values) ? values : []).forEach((value) => {
+    const key = clean(value);
+    if (allowed.has(key) && !out.includes(key)) out.push(key);
+  });
+  defaults.forEach((key) => {
+    if (!out.includes(key)) out.push(key);
+  });
+  return out;
+}
+
+function resultsBoardTopTimedResult(rows, gender) {
+  const list = Array.isArray(rows) ? rows : [];
+  const fastest = list.slice().filter((row) => {
+    if (!(Number(row.resultMs) > 0)) return false;
+    return !gender || resultsBoardGender(row.athleteGender) === gender;
+  }).sort((a, b) => Number(a.resultMs) - Number(b.resultMs))[0] || {};
+  return fastest.athleteName ? {
+    athleteName: fastest.athleteName,
+    event: fastest.event,
+    resultDisplay: fastest.resultDisplay,
+  } : null;
+}
+
 function resultsBoardMeetSummary(rows, meetName) {
   const list = Array.isArray(rows) ? rows : [];
-  const fastest = list.slice().filter((row) => Number(row.resultMs) > 0).sort((a, b) => Number(a.resultMs) - Number(b.resultMs))[0] || {};
   return {
     meetName: meetName || "",
     meetDate: list[0] && list[0].meetDate || "",
@@ -929,11 +960,9 @@ function resultsBoardMeetSummary(rows, meetName) {
     results: list.length,
     personalBests: list.filter((row) => row.isPr).length,
     seasonBests: list.filter((row) => row.isSeasonBest).length,
-    topResult: fastest.athleteName ? {
-      athleteName: fastest.athleteName,
-      event: fastest.event,
-      resultDisplay: fastest.resultDisplay,
-    } : null,
+    topResult: resultsBoardTopTimedResult(list),
+    topGirlsResult: resultsBoardTopTimedResult(list, "girl"),
+    topBoysResult: resultsBoardTopTimedResult(list, "boy"),
   };
 }
 

@@ -2830,7 +2830,26 @@ function normalizeResultsBoardDisplayOptions(source) {
     bestBadges: input.bestBadges !== false,
     grades: input.grades !== false,
     teamSummary: input.teamSummary !== false,
+    detailOrder: normalizeResultsBoardDetailOrder(input.detailOrder),
   };
+}
+
+function defaultResultsBoardDetailOrder() {
+  return ["bestHighlights", "divisionSummary", "latestMeet", "meetArchive", "athleteSummary", "eventSummary", "seasonSummary"];
+}
+
+function normalizeResultsBoardDetailOrder(values) {
+  const defaults = defaultResultsBoardDetailOrder();
+  const allowed = new Set(defaults);
+  const out = [];
+  (Array.isArray(values) ? values : []).forEach((value) => {
+    const key = cleanSetupText(value);
+    if (allowed.has(key) && !out.includes(key)) out.push(key);
+  });
+  defaults.forEach((key) => {
+    if (!out.includes(key)) out.push(key);
+  });
+  return out;
 }
 
 function normalizeResultsBoardGameSettings(source) {

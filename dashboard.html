@@ -196,7 +196,7 @@ tr:last-child td{border-bottom:0}
 .modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
 .whats-new-panel{width:min(620px,100%)}.whats-new-intro{color:#475569;font-size:14px;line-height:1.45;margin:0 0 12px}.release-list{display:grid;gap:10px}.release-group{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}.release-group h3{font-size:14px;margin:0 0 8px;color:#0f172a}.release-group ul{margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.45}.release-group li+li{margin-top:4px}.release-badge{display:inline-flex;align-items:center;border-radius:999px;background:#dbeafe;color:#173891;padding:3px 8px;font-size:12px;font-weight:900;margin-bottom:10px}
 .start-path-panel{width:min(920px,100%)}.start-path-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.start-path-card{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:13px;display:grid;gap:8px}.start-path-card h3{font-size:16px;margin:0;color:#0f172a}.start-path-card p{margin:0;color:#475569;font-size:13px;line-height:1.4}.start-path-card ol{margin:0 0 0 20px;padding:0;color:#334155;font-size:13px;line-height:1.45}.start-path-card li+li{margin-top:3px}.start-path-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px}.start-path-actions a,.start-path-actions button{font-size:12px;padding:7px 9px;min-height:30px}.start-path-note{border-left:4px solid #0f9f6e;background:#f0fdf4;border-radius:8px;padding:10px 12px;color:#166534;font-size:13px;font-weight:800;margin-bottom:12px}
-.dashboard-pref-list{display:grid;gap:8px}.dashboard-pref-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px 12px}.dashboard-pref-row b{display:block;font-size:14px;color:#0f172a}.dashboard-pref-row small{display:block;color:#64748b;font-size:12px;line-height:1.35;margin-top:2px}.dashboard-pref-row input{width:18px;height:18px;accent-color:var(--blue);flex:0 0 auto;margin-top:3px}
+.dashboard-pref-list{display:grid;gap:8px}.dashboard-pref-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px 12px}.dashboard-pref-row b{display:block;font-size:14px;color:#0f172a}.dashboard-pref-row small{display:block;color:#64748b;font-size:12px;line-height:1.35;margin-top:2px}.dashboard-pref-row input{width:18px;height:18px;accent-color:var(--blue);flex:0 0 auto;margin-top:3px}.dashboard-pref-grip{font-weight:900;color:#64748b;letter-spacing:1px;margin-top:1px}.dashboard-pref-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}.dashboard-pref-actions button{padding:5px 8px;font-size:12px;min-height:28px}
 .accountsummary{border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px 11px;margin-top:10px;color:var(--muted);font-size:13px;line-height:1.35}
 .accountsummary b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
 .accountsummary.good{border-color:#bbf7d0;background:#f0fdf4}.accountsummary.good b{color:#08783c}
@@ -739,15 +739,18 @@ tr:last-child td{border-bottom:0}
           <input id="resultsBoardSeasonYear" type="number" min="2020" max="2100" step="1">
         </div>
         <div class="field full">
-          <label>Visible Board Details</label>
-          <div class="dashboard-pref-list">
-            <label class="dashboard-pref-row"><span><b>Latest Meet</b><small>Shows the most recent meet for the selected sport and year.</small></span><input id="resultsBoardShowLatest" type="checkbox"></label>
-            <label class="dashboard-pref-row"><span><b>Season Results</b><small>Shows each athlete's best season result by event.</small></span><input id="resultsBoardShowSeason" type="checkbox"></label>
-            <label class="dashboard-pref-row"><span><b>Meet Archive</b><small>Shows meet-by-meet result, athlete, PB, and SB totals.</small></span><input id="resultsBoardShowArchive" type="checkbox"></label>
-            <label class="dashboard-pref-row"><span><b>Athlete Summary</b><small>Shows each athlete's season result, meet, event, PB, and SB totals.</small></span><input id="resultsBoardShowAthletes" type="checkbox"></label>
-            <label class="dashboard-pref-row"><span><b>Event Summary</b><small>Shows each event's result count, athlete count, and season leader.</small></span><input id="resultsBoardShowEvents" type="checkbox"></label>
-            <label class="dashboard-pref-row"><span><b>Division Summary</b><small>Shows Boys/Girls season result totals and leaders.</small></span><input id="resultsBoardShowDivisions" type="checkbox"></label>
-            <label class="dashboard-pref-row"><span><b>PB / SB Highlights</b><small>Shows a focused list of new personal and season bests.</small></span><input id="resultsBoardShowHighlights" type="checkbox"></label>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
+            <label>Visible Board Details</label>
+            <button id="resultsBoardDetailsDefault" class="secondary" type="button">Defaults</button>
+          </div>
+          <div id="resultsBoardDetailList" class="dashboard-pref-list">
+            <div class="dashboard-pref-row" data-results-board-detail="latestMeet"><span class="dashboard-pref-grip">::</span><span><b>Latest Meet</b><small>Shows the most recent meet for the selected sport and year.</small></span><div class="dashboard-pref-actions"><button class="secondary" type="button" data-results-board-move="up">Up</button><button class="secondary" type="button" data-results-board-move="down">Down</button><input id="resultsBoardShowLatest" type="checkbox"></div></div>
+            <div class="dashboard-pref-row" data-results-board-detail="seasonSummary"><span class="dashboard-pref-grip">::</span><span><b>Season Results</b><small>Shows each athlete's best season result by event.</small></span><div class="dashboard-pref-actions"><button class="secondary" type="button" data-results-board-move="up">Up</button><button class="secondary" type="button" data-results-board-move="down">Down</button><input id="resultsBoardShowSeason" type="checkbox"></div></div>
+            <div class="dashboard-pref-row" data-results-board-detail="meetArchive"><span class="dashboard-pref-grip">::</span><span><b>Meet Archive</b><small>Shows meet-by-meet result, athlete, PB, and SB totals.</small></span><div class="dashboard-pref-actions"><button class="secondary" type="button" data-results-board-move="up">Up</button><button class="secondary" type="button" data-results-board-move="down">Down</button><input id="resultsBoardShowArchive" type="checkbox"></div></div>
+            <div class="dashboard-pref-row" data-results-board-detail="athleteSummary"><span class="dashboard-pref-grip">::</span><span><b>Athlete Summary</b><small>Shows each athlete's season result, meet, event, PB, and SB totals.</small></span><div class="dashboard-pref-actions"><button class="secondary" type="button" data-results-board-move="up">Up</button><button class="secondary" type="button" data-results-board-move="down">Down</button><input id="resultsBoardShowAthletes" type="checkbox"></div></div>
+            <div class="dashboard-pref-row" data-results-board-detail="eventSummary"><span class="dashboard-pref-grip">::</span><span><b>Event Summary</b><small>Shows each event's result count, athlete count, and season leader.</small></span><div class="dashboard-pref-actions"><button class="secondary" type="button" data-results-board-move="up">Up</button><button class="secondary" type="button" data-results-board-move="down">Down</button><input id="resultsBoardShowEvents" type="checkbox"></div></div>
+            <div class="dashboard-pref-row" data-results-board-detail="divisionSummary"><span class="dashboard-pref-grip">::</span><span><b>Division Summary</b><small>Shows Boys/Girls season result totals and leaders.</small></span><div class="dashboard-pref-actions"><button class="secondary" type="button" data-results-board-move="up">Up</button><button class="secondary" type="button" data-results-board-move="down">Down</button><input id="resultsBoardShowDivisions" type="checkbox"></div></div>
+            <div class="dashboard-pref-row" data-results-board-detail="bestHighlights"><span class="dashboard-pref-grip">::</span><span><b>PB / SB Highlights</b><small>Shows a focused list of new personal and season bests.</small></span><div class="dashboard-pref-actions"><button class="secondary" type="button" data-results-board-move="up">Up</button><button class="secondary" type="button" data-results-board-move="down">Down</button><input id="resultsBoardShowHighlights" type="checkbox"></div></div>
             <label class="dashboard-pref-row"><span><b>PB / SB Badges</b><small>Shows personal-best and season-best result badges.</small></span><input id="resultsBoardShowBadges" type="checkbox"></label>
             <label class="dashboard-pref-row"><span><b>Team Summary</b><small>Shows team result, athlete, meet, PB, and SB totals.</small></span><input id="resultsBoardShowSummary" type="checkbox"></label>
           </div>
@@ -1670,7 +1673,24 @@ function defaultMilesBoardSharing(){
   return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),dateRange:defaultMilesBoardDateRange(),groupNames:[],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
 }
 function defaultResultsBoardSharing(){
-  return {active:true,sport:'Cross Country',seasonYear:new Date().getFullYear(),displayOptions:{latestMeet:true,seasonSummary:true,meetArchive:true,athleteSummary:true,eventSummary:true,divisionSummary:true,bestHighlights:true,bestBadges:true,teamSummary:true},gameSettings:{boardName:'Team Results Board',coachMessage:''},tokenVersion:'1',updatedAt:new Date().toISOString()};
+  return {active:true,sport:'Cross Country',seasonYear:new Date().getFullYear(),displayOptions:{latestMeet:true,seasonSummary:true,meetArchive:true,athleteSummary:true,eventSummary:true,divisionSummary:true,bestHighlights:true,bestBadges:true,teamSummary:true,detailOrder:defaultResultsBoardDetailOrder()},gameSettings:{boardName:'Team Results Board',coachMessage:''},tokenVersion:'1',updatedAt:new Date().toISOString()};
+}
+function defaultResultsBoardDetailOrder(){
+  return ['bestHighlights','divisionSummary','latestMeet','meetArchive','athleteSummary','eventSummary','seasonSummary'];
+}
+function normalizeResultsBoardDetailOrder(values){
+  var defaults=defaultResultsBoardDetailOrder();
+  var allowed={};
+  var out=[];
+  defaults.forEach(function(key){allowed[key]=true;});
+  (Array.isArray(values)?values:[]).forEach(function(value){
+    var key=String(value||'').trim();
+    if(allowed[key]&&out.indexOf(key)<0)out.push(key);
+  });
+  defaults.forEach(function(key){
+    if(out.indexOf(key)<0)out.push(key);
+  });
+  return out;
 }
 function defaultMilesBoardDateRange(){
   return {mode:'dashboard',startDate:'',endDate:''};
@@ -2100,7 +2120,8 @@ function normalizeResultsBoardSharing(source){
       divisionSummary:display.divisionSummary!==false,
       bestHighlights:display.bestHighlights!==false,
       bestBadges:display.bestBadges!==false,
-      teamSummary:display.teamSummary!==false
+      teamSummary:display.teamSummary!==false,
+      detailOrder:normalizeResultsBoardDetailOrder(display.detailOrder)
     },
     gameSettings:{
       boardName:String(game.boardName||'').trim().slice(0,80)||'Team Results Board',
@@ -2113,6 +2134,7 @@ function normalizeResultsBoardSharing(source){
 }
 function renderResultsBoardSharing(){
   var settings=normalizeResultsBoardSharing(resultsBoardSharing||defaultResultsBoardSharing());
+  renderResultsBoardDetailOrder(settings.displayOptions.detailOrder);
   if(els.resultsBoardActive)els.resultsBoardActive.checked=settings.active;
   if(els.resultsBoardSport)els.resultsBoardSport.value=settings.sport;
   if(els.resultsBoardSeasonYear)els.resultsBoardSeasonYear.value=settings.seasonYear;
@@ -2130,6 +2152,39 @@ function renderResultsBoardSharing(){
   if(els.resultsBoardLinkPreview)els.resultsBoardLinkPreview.value=currentResultsBoardUrl||'';
   setResultsBoardStatus(settings.active?'Choose sport and season before copying the link.':'Results Board sharing is off. Current links will not load.',settings.active?'#64748b':'#b00000');
 }
+function renderResultsBoardDetailOrder(order){
+  if(!els.resultsBoardDetailList)return;
+  var rows={};
+  Array.prototype.forEach.call(els.resultsBoardDetailList.querySelectorAll('[data-results-board-detail]'),function(row){
+    rows[row.getAttribute('data-results-board-detail')]=row;
+  });
+  normalizeResultsBoardDetailOrder(order).forEach(function(key){
+    if(rows[key])els.resultsBoardDetailList.appendChild(rows[key]);
+  });
+}
+function collectResultsBoardDetailOrder(){
+  if(!els.resultsBoardDetailList)return defaultResultsBoardDetailOrder();
+  return normalizeResultsBoardDetailOrder(Array.prototype.map.call(els.resultsBoardDetailList.querySelectorAll('[data-results-board-detail]'),function(row){
+    return row.getAttribute('data-results-board-detail');
+  }));
+}
+function moveResultsBoardDetail(button,direction){
+  var row=button&&button.closest?button.closest('[data-results-board-detail]'):null;
+  if(!row||!els.resultsBoardDetailList)return;
+  if(direction==='up'&&row.previousElementSibling&&row.previousElementSibling.hasAttribute('data-results-board-detail')){
+    els.resultsBoardDetailList.insertBefore(row,row.previousElementSibling);
+  }
+  if(direction==='down'&&row.nextElementSibling&&row.nextElementSibling.hasAttribute('data-results-board-detail')){
+    els.resultsBoardDetailList.insertBefore(row.nextElementSibling,row);
+  }
+}
+function resetResultsBoardDetailDefaults(){
+  renderResultsBoardDetailOrder(defaultResultsBoardDetailOrder());
+  [els.resultsBoardShowLatest,els.resultsBoardShowSeason,els.resultsBoardShowArchive,els.resultsBoardShowAthletes,els.resultsBoardShowEvents,els.resultsBoardShowDivisions,els.resultsBoardShowHighlights,els.resultsBoardShowBadges,els.resultsBoardShowSummary].forEach(function(input){
+    if(input)input.checked=true;
+  });
+  setResultsBoardStatus('Board details reset to defaults.','#08783c');
+}
 function collectResultsBoardSharing(){
   var current=normalizeResultsBoardSharing(resultsBoardSharing||defaultResultsBoardSharing());
   return normalizeResultsBoardSharing({
@@ -2145,7 +2200,8 @@ function collectResultsBoardSharing(){
       divisionSummary:!!(els.resultsBoardShowDivisions&&els.resultsBoardShowDivisions.checked),
       bestHighlights:!!(els.resultsBoardShowHighlights&&els.resultsBoardShowHighlights.checked),
       bestBadges:!!(els.resultsBoardShowBadges&&els.resultsBoardShowBadges.checked),
-      teamSummary:!!(els.resultsBoardShowSummary&&els.resultsBoardShowSummary.checked)
+      teamSummary:!!(els.resultsBoardShowSummary&&els.resultsBoardShowSummary.checked),
+      detailOrder:collectResultsBoardDetailOrder()
     },
     gameSettings:{
       boardName:els.resultsBoardName?els.resultsBoardName.value:current.gameSettings.boardName,
@@ -2623,6 +2679,8 @@ var els={
   resultsBoardActive:document.getElementById('resultsBoardActive'),
   resultsBoardSport:document.getElementById('resultsBoardSport'),
   resultsBoardSeasonYear:document.getElementById('resultsBoardSeasonYear'),
+  resultsBoardDetailList:document.getElementById('resultsBoardDetailList'),
+  resultsBoardDetailsDefault:document.getElementById('resultsBoardDetailsDefault'),
   resultsBoardShowLatest:document.getElementById('resultsBoardShowLatest'),
   resultsBoardShowSeason:document.getElementById('resultsBoardShowSeason'),
   resultsBoardShowArchive:document.getElementById('resultsBoardShowArchive'),
@@ -3002,6 +3060,13 @@ els.resultsBoardCopy.addEventListener('click',copyResultsBoardLink);
 els.resultsBoardOpen.addEventListener('click',openResultsBoardLink);
 els.resultsBoardTurnOff.addEventListener('click',turnOffResultsBoardLink);
 els.resultsBoardReset.addEventListener('click',resetResultsBoardLink);
+if(els.resultsBoardDetailsDefault)els.resultsBoardDetailsDefault.addEventListener('click',resetResultsBoardDetailDefaults);
+if(els.resultsBoardDetailList)els.resultsBoardDetailList.addEventListener('click',function(event){
+  var button=event.target&&event.target.closest?event.target.closest('[data-results-board-move]'):null;
+  if(!button)return;
+  event.preventDefault();
+  moveResultsBoardDetail(button,button.getAttribute('data-results-board-move'));
+});
 els.manualMileageMode.addEventListener('change',updateManualMileageMode);
 els.manualMileageScope.addEventListener('change',updateManualMileageScope);
 els.manualMileageWarmup.addEventListener('input',updateManualMileageQuality);

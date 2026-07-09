@@ -1379,6 +1379,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 487. Results Board Phase 5 adds a public **Division Summary** layer. Results Board Sharing now has a Division Summary visibility toggle, the public API returns Boys/Girls/Unlisted season totals grouped by athlete gender, and `/results-board.html` renders a read-only division table with result count, athlete count, meet count, event count, PB count, SB count, division leader, and latest result date.
 488. Public Results Board meet filtering now includes **All Meets** in addition to Latest Meet and individual meet names. The All Meets option uses a distinct filter value, keeps all selected sport/year results in view, and updates the board label/summary without treating "All Meets" as a real meet record.
 489. Results Board Phase 6 adds public **PB / SB Highlights**. Results Board Sharing now has a PB / SB Highlights visibility toggle, the public API returns filtered result rows that are personal bests or season bests, and `/results-board.html` renders a read-only highlights table with athlete, event, result, PB/SB badges, meet, and date.
+490. Results Board adds gender-specific top-result summary cards and coach-controlled section ordering. The public API now returns overall, Girls, and Boys top timed results for the current board view, Results Board Sharing saves a normalized section order, the sharing modal provides Up/Down controls plus Defaults, and `/results-board.html` applies the saved order to public board sections.
 
 ## Known Good Test Flow
 
