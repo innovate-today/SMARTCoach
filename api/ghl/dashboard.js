@@ -166,8 +166,8 @@ async function publicResultsBoard(req, res) {
     const filters = resultsBoardFilters(req.query, sharing);
     const seasonRows = allRows.filter((row) => resultsBoardRowMatches(row, filters));
     const filterOptions = resultsBoardFilterOptions(allRows, filters);
-    const latestMeetName = filters.meetName || latestResultsMeetName(seasonRows);
-    const latestRows = seasonRows.filter((row) => !latestMeetName || clean(row.meetName) === latestMeetName).sort(resultsSort);
+    const latestMeetName = filters.allMeets ? "" : filters.meetName || latestResultsMeetName(seasonRows);
+    const latestRows = (filters.allMeets ? seasonRows : seasonRows.filter((row) => !latestMeetName || clean(row.meetName) === latestMeetName)).sort(resultsSort);
     const seasonBestRows = resultsBoardSeasonBestRows(seasonRows).sort(resultsSort);
     const meetNames = uniqueStrings(seasonRows.map((row) => row.meetName));
     res.status(200).json({
@@ -180,7 +180,7 @@ async function publicResultsBoard(req, res) {
       filters: {
         sport: filters.sportLabel,
         seasonYear: filters.seasonYear,
-        meet: latestMeetName,
+        meet: filters.allMeets ? "__all__" : latestMeetName,
         event: filters.event,
         gender: filters.gender,
         label: resultsBoardFilterLabel(filters, latestMeetName),
@@ -194,7 +194,7 @@ async function publicResultsBoard(req, res) {
         personalBests: seasonRows.filter((row) => row.isPr).length,
         seasonBests: seasonRows.filter((row) => row.isSeasonBest).length,
       },
-      latestMeet: resultsBoardMeetSummary(latestRows, latestMeetName),
+      latestMeet: resultsBoardMeetSummary(latestRows, filters.allMeets ? "All Meets" : latestMeetName),
       seasonSummary: resultsBoardSeasonSummary(seasonRows),
       meetArchive: resultsBoardMeetArchive(seasonRows),
       athleteSummaryRows: resultsBoardAthleteSummaryRows(seasonRows),
@@ -869,12 +869,14 @@ function resultsBoardSharing(source) {
 
 function resultsBoardFilters(query, sharing) {
   const sport = resultsBoardSport(query && query.sport || sharing.sport);
+  const meetInput = clean(query && query.meet).slice(0, 160);
   return {
     sport,
     sportKey: optionValue(sport),
     sportLabel: sport,
     seasonYear: Number(query && query.seasonYear) || Number(sharing.seasonYear) || new Date().getFullYear(),
-    meetName: clean(query && query.meet).slice(0, 160),
+    allMeets: meetInput === "__all__",
+    meetName: meetInput === "__all__" ? "" : meetInput,
     event: clean(query && query.event).slice(0, 80),
     gender: resultsBoardGender(query && query.gender),
   };
@@ -912,7 +914,7 @@ function resultsBoardFilterOptions(rows, filters) {
 }
 
 function resultsBoardFilterLabel(filters, meetName) {
-  return [filters.sportLabel, filters.seasonYear, meetName || "Latest meet"].filter(Boolean).join(" · ");
+  return [filters.sportLabel, filters.seasonYear, filters.allMeets ? "All Meets" : meetName || "Latest meet"].filter(Boolean).join(" · ");
 }
 
 function resultsBoardMeetSummary(rows, meetName) {
