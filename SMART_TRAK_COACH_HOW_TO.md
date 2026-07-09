@@ -122,7 +122,7 @@ How to set up the Results Board:
 5. Add an optional board name and coach message.
 6. Use **Copy Link** to send the board, **Open Link** to preview it, **Turn Off Link** to stop the current link from loading, and **Reset Link** to create a new link while invalidating older links.
 
-The public Results Board is read-only. It includes the latest meet for the selected sport/year, team totals, PB/SB totals, top girls result, top boys result, PB/SB Highlights, a Division Summary for Boys/Girls totals, a Meet Archive with meet-by-meet result counts, an Athlete Summary with season totals by athlete, an Event Summary with event leaders, and a Season Results table that shows each athlete's best saved result by event. Viewers can filter by meet, event, gender, and search text without seeing coach tools or edit buttons.
+The public Results Board is read-only. It includes the latest meet for the selected sport/year, team totals, PB/SB totals, top girls result, top boys result, PB/SB Highlights, a Division Summary for Boys/Girls totals, a Meet Archive with meet-by-meet result counts, an Athlete Summary with season totals by athlete, an Event Summary with event leaders, and a Season Results table that shows each athlete's best saved result by event. Viewers can filter by meet, event, gender, and search text, and they can tap any table column header to sort that table ascending or descending without seeing coach tools or edit buttons.
 
 ## Speed Trak
 
