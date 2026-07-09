@@ -609,7 +609,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],activeId:'',mode:'field'}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],activeId:'',mode:'field'}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, AR_PROMISE=null, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
 
 function smartCoachAccountKey(){
   try{
@@ -1641,6 +1641,14 @@ function loadTrainingPlans(){
     loadCalendarMeetDays();
   }).catch(function(){TP=[];TP_READY=false;});
 }
+function applyLoadedSharedGroups(){
+  mergeSharedGroupsIntoLogs();
+  var pruned=reconcileGroupsWithActiveAthletes();
+  if(pruned)queueSharedGroupsSave();
+  save();
+  rl();
+  if(CL)rr();
+}
 function loadSharedGroups(){
   if(!isProPlan()){SG=[];return;}
   fetch('/api/smart-trak/groups?v='+Date.now(),{cache:'no-store'}).then(function(r){
@@ -1648,11 +1656,12 @@ function loadSharedGroups(){
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Groups unavailable');
     SG=(result.data&&result.data.groups)||[];
-    mergeSharedGroupsIntoLogs();
-    reconcileGroupsWithActiveAthletes();
-    save();
-    rl();
-    if(CL)rr();
+    if(!AR_READY){
+      return loadAthletes().then(function(){
+        if(AR_READY)applyLoadedSharedGroups();
+      });
+    }
+    applyLoadedSharedGroups();
   }).catch(function(){SG=[];});
 }
 function groupRosterKeyFromAthletes(athletes){
@@ -2170,8 +2179,9 @@ function openAthletePicker(id){
   });
 }
 function loadAthletes(){
-  if(!isProPlan()){AR=[];AR_READY=false;renderAthleteList();return;}
-  fetch('/api/smart-trak/athletes?v='+Date.now(),{cache:'no-store'}).then(function(r){
+  if(!isProPlan()){AR=[];AR_READY=false;renderAthleteList();return Promise.resolve(false);}
+  if(AR_PROMISE)return AR_PROMISE;
+  AR_PROMISE=fetch('/api/smart-trak/athletes?v='+Date.now(),{cache:'no-store'}).then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Roster unavailable');
@@ -2179,7 +2189,10 @@ function loadAthletes(){
     AR_READY=true;
     renderAthleteList();
     var pruned=reconcileGroupsWithActiveAthletes();
-    if(pruned)save();
+    if(pruned){
+      save();
+      queueSharedGroupsSave();
+    }
     applyAutoPlansToCurrentGroup();
     if(pruned)rl();
     if(CL)rr();
@@ -2191,7 +2204,12 @@ function loadAthletes(){
       updateMeetBestHints();
     }
   }
-  }).catch(function(){AR=[];AR_READY=false;renderAthleteList();});
+    return true;
+  }).catch(function(){AR=[];AR_READY=false;renderAthleteList();return false;}).then(function(ok){
+    AR_PROMISE=null;
+    return ok;
+  });
+  return AR_PROMISE;
 }
 function handleAthleteSelect(id,el){
   if(el.value==='__add_athlete__'){

@@ -2922,6 +2922,10 @@ function checkMobileGroupStorageAccountScoped() {
     "function groupRosterKey(group)",
     "if(group.name&&log.name!==group.name){log.name=group.name;changed=true;}",
     "!item.sharedGroupId&&groupRosterKey(item)===rosterKey",
+    "if(AR_PROMISE)return AR_PROMISE;",
+    "return loadAthletes().then(function(){",
+    "if(AR_READY)applyLoadedSharedGroups();",
+    "if(pruned)queueSharedGroupsSave();",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile group sync should rename existing groups instead of duplicating them: ${text}`);
   });

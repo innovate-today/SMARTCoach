@@ -1383,6 +1383,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 491. Results Board top-result cards were narrowed to **Top Result - Girls** and **Top Result - Boys** only. Contact-matched meet results now preserve the contact gender when the saved meet result does not include a gender note, so gender-specific summary cards and gender filtering can populate from normal roster-backed results.
 492. Results Board table columns are now sortable on the public board. Every table header carries a table/key marker, header taps toggle ascending/descending per table, sort state is applied after search/filtering, rank columns recalculate after sorting, and visual arrows show the active sort direction.
 493. Results Board initial build phases are complete. Dashboard **What's New** now includes a coach-facing Results Board release group covering the read-only share board, meet/event/gender filters, All Meets, PB/SB highlights, Boys/Girls summaries, section reordering, coach message, and sortable table headers; the What's New version was bumped so coaches see the Results Board update.
+494. SMARTCoach app shared training groups now wait for the active-athlete roster before merging saved group rosters into the phone app. If an athlete was in a group and is later made inactive, the app prunes that athlete after the active roster loads and saves the cleaned group roster back to shared storage so inactive athletes do not keep reappearing from stale group membership.
 
 ## Known Good Test Flow
 
