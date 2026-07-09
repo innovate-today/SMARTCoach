@@ -943,6 +943,7 @@ function checkResultsBoardFeature() {
   ].forEach((text) => {
     if (!board.includes(text)) throw new Error(`Results Board page missing ${text}`);
   });
+  if (board.includes("<strong>Top Result</strong>")) throw new Error("Results Board should show only Girls/Boys top-result cards.");
   if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Results Board must stay read-only.");
   [
     'if (route === "results-board-sharing")',
@@ -987,6 +988,7 @@ function checkResultsBoardFeature() {
     "function resultsBoardDivisionLabel(value)",
     "function resultsBoardBestHighlightRows(rows)",
     "function resultsBoardTopTimedResult(rows, gender)",
+    "athleteGender: result.athleteGender || athlete.gender",
     "meetArchive: resultsBoardMeetArchive(seasonRows)",
     "athleteSummaryRows: resultsBoardAthleteSummaryRows(seasonRows)",
     "eventSummaryRows: resultsBoardEventSummaryRows(seasonRows)",

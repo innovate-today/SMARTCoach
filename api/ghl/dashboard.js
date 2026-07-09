@@ -827,10 +827,10 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
       if (!result.event && !result.resultDisplay) return;
       if (result.recordId) matchedRecordIds.add(result.recordId);
       rows.push({
+        ...result,
         athleteName: athlete.name,
         contactId: athlete.id,
-        athleteGender: athlete.gender,
-        ...result,
+        athleteGender: result.athleteGender || athlete.gender,
       });
     });
   });

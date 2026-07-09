@@ -1380,6 +1380,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 488. Public Results Board meet filtering now includes **All Meets** in addition to Latest Meet and individual meet names. The All Meets option uses a distinct filter value, keeps all selected sport/year results in view, and updates the board label/summary without treating "All Meets" as a real meet record.
 489. Results Board Phase 6 adds public **PB / SB Highlights**. Results Board Sharing now has a PB / SB Highlights visibility toggle, the public API returns filtered result rows that are personal bests or season bests, and `/results-board.html` renders a read-only highlights table with athlete, event, result, PB/SB badges, meet, and date.
 490. Results Board adds gender-specific top-result summary cards and coach-controlled section ordering. The public API now returns overall, Girls, and Boys top timed results for the current board view, Results Board Sharing saves a normalized section order, the sharing modal provides Up/Down controls plus Defaults, and `/results-board.html` applies the saved order to public board sections.
+491. Results Board top-result cards were narrowed to **Top Result - Girls** and **Top Result - Boys** only. Contact-matched meet results now preserve the contact gender when the saved meet result does not include a gender note, so gender-specific summary cards and gender filtering can populate from normal roster-backed results.
 
 ## Known Good Test Flow
 
