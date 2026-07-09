@@ -626,6 +626,7 @@ var mileageAthletes=[];
 var mileageTrainingRows=[];
 var trainingGroups=[];
 var calendarMeets=[];
+var calendarMeetsLoaded=false;
 var raceResultMeetRows=[];
 var meetManagerRows=[];
 var FIELD_EVENT_OPTIONS=['High Jump','Long Jump','Triple Jump','Pole Vault','Shot Put','Discus','Javelin','Hammer'];
@@ -1259,7 +1260,16 @@ function filteredDays(){
   }).sort(compareByCurrentWeekFirst);
 }
 function calendarDaysWithMeets(){
-  var list=(days||[]).slice();
+  var activeMeetIds={};
+  (calendarMeets||[]).forEach(function(meet){
+    if(!meet||meet.archived||/archived/i.test(meet.status||''))return;
+    var id=String(meet.id||'');
+    if(id)activeMeetIds[id]=true;
+  });
+  var list=(days||[]).filter(function(day){
+    var linked=String(day&&day.linkedMeetId||'');
+    return !(calendarMeetsLoaded&&linked&&!activeMeetIds[linked]);
+  });
   var existingMeetIds={};
   var existingMeetKeys={};
   list.forEach(function(day){
@@ -3773,7 +3783,7 @@ function loadCalendar(){
     fetch('/api/smart-trak/training-plan?kind=days',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
     fetch('/api/smart-trak/dashboard',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{athletes:[],recentTrainingSyncs:[],trainingSyncs:[]}};}),
     fetch('/api/smart-trak/groups',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
-    fetch('/api/smart-trak/meets',{headers:apiHeaders(),cache:'no-store'}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{meets:[]}};})
+    fetch('/api/smart-trak/meets',{headers:apiHeaders(),cache:'no-store'}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};})
   ]).then(function(results){
     if(!results[0].ok&&results[0].data&&results[0].data.accessCodeRequired){
       showAccess(results[0].data);
@@ -3788,7 +3798,8 @@ function loadCalendar(){
     mileageTrainingRows=results[2].ok?(results[2].data.recentTrainingSyncs||results[2].data.trainingSyncs||[]):mileageTrainingRows;
     var loadedGroups=results[3].ok?(results[3].data.groups||[]):[];
     if(loadedGroups.length||!trainingGroups.length)trainingGroups=loadedGroups;
-    calendarMeets=results[4].ok?(results[4].data.meets||[]):[];
+    calendarMeetsLoaded=!!results[4].ok;
+    if(calendarMeetsLoaded)calendarMeets=results[4].data.meets||[];
     els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
     renderOptions();
     render();
@@ -3799,6 +3810,7 @@ function loadCalendar(){
     mileageTrainingRows=[];
     trainingGroups=[];
     calendarMeets=[];
+    calendarMeetsLoaded=false;
     els.calendar.innerHTML='';
     els.empty.hidden=false;
     els.empty.textContent=error.message||'Training calendar failed to load.';

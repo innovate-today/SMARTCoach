@@ -1523,6 +1523,23 @@ function checkTrainingCalendarRaceResultAthleteFallback() {
   console.log("Training Calendar race result athlete fallback ok");
 }
 
+function checkTrainingCalendarDeletedMeetGuard() {
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  [
+    "var calendarMeetsLoaded=false;",
+    "var activeMeetIds={};",
+    "if(id)activeMeetIds[id]=true;",
+    "return !(calendarMeetsLoaded&&linked&&!activeMeetIds[linked]);",
+    "calendarMeetsLoaded=!!results[4].ok;",
+    "if(calendarMeetsLoaded)calendarMeets=results[4].data.meets||[];",
+    "catch(function(){return{ok:false,data:{meets:[]}};})",
+    "calendarMeetsLoaded=false;",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Training Calendar deleted meet guard missing ${text}`);
+  });
+  console.log("Training Calendar deleted meet guard ok");
+}
+
 function checkDashboardStartHere() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
@@ -3534,6 +3551,7 @@ checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();
 checkCrossCountryRaceResultEvents();
 checkTrainingCalendarRaceResultAthleteFallback();
+checkTrainingCalendarDeletedMeetGuard();
 checkDashboardStartHere();
 checkHowToGuidePage();
 checkDashboardToolPreferences();
