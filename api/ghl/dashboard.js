@@ -197,6 +197,7 @@ async function publicResultsBoard(req, res) {
       latestMeet: resultsBoardMeetSummary(latestRows, latestMeetName),
       seasonSummary: resultsBoardSeasonSummary(seasonRows),
       meetArchive: resultsBoardMeetArchive(seasonRows),
+      athleteSummaryRows: resultsBoardAthleteSummaryRows(seasonRows),
       latestRows,
       seasonRows: seasonBestRows,
     });
@@ -850,6 +851,7 @@ function resultsBoardSharing(source) {
       latestMeet: !(input.displayOptions && input.displayOptions.latestMeet === false),
       seasonSummary: !(input.displayOptions && input.displayOptions.seasonSummary === false),
       meetArchive: !(input.displayOptions && input.displayOptions.meetArchive === false),
+      athleteSummary: !(input.displayOptions && input.displayOptions.athleteSummary === false),
       bestBadges: !(input.displayOptions && input.displayOptions.bestBadges === false),
       grades: !(input.displayOptions && input.displayOptions.grades === false),
       teamSummary: !(input.displayOptions && input.displayOptions.teamSummary === false),
@@ -970,6 +972,52 @@ function resultsBoardMeetArchive(rows) {
     personalBests: item.personalBests,
     seasonBests: item.seasonBests,
   })).sort((a, b) => String(b.meetDate).localeCompare(String(a.meetDate)) || a.meetName.localeCompare(b.meetName));
+}
+
+function resultsBoardAthleteSummaryRows(rows) {
+  const byAthlete = new Map();
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const athleteName = clean(row.athleteName) || "Unlisted athlete";
+    const key = athleteName.toLowerCase();
+    if (!byAthlete.has(key)) {
+      byAthlete.set(key, {
+        athleteName,
+        gender: resultsBoardGender(row.athleteGender),
+        results: 0,
+        meets: new Set(),
+        events: new Set(),
+        personalBests: 0,
+        seasonBests: 0,
+        bestResult: null,
+        latestDate: "",
+      });
+    }
+    const item = byAthlete.get(key);
+    item.results += 1;
+    if (clean(row.meetName)) item.meets.add(clean(row.meetName));
+    if (clean(row.event)) item.events.add(clean(row.event));
+    if (row.isPr) item.personalBests += 1;
+    if (row.isSeasonBest) item.seasonBests += 1;
+    if (!item.bestResult || resultsBetter(row, item.bestResult)) item.bestResult = row;
+    if (String(row.meetDate || "") > item.latestDate) item.latestDate = String(row.meetDate || "");
+  });
+  return Array.from(byAthlete.values()).map((item) => ({
+    athleteName: item.athleteName,
+    gender: item.gender,
+    results: item.results,
+    meets: item.meets.size,
+    events: item.events.size,
+    personalBests: item.personalBests,
+    seasonBests: item.seasonBests,
+    bestEvent: item.bestResult && item.bestResult.event || "",
+    bestResult: item.bestResult && item.bestResult.resultDisplay || "",
+    latestDate: item.latestDate,
+  })).sort((a, b) =>
+    b.personalBests - a.personalBests ||
+    b.seasonBests - a.seasonBests ||
+    b.results - a.results ||
+    a.athleteName.localeCompare(b.athleteName)
+  );
 }
 
 function resultsBoardSeasonBestRows(rows) {

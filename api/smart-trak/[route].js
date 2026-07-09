@@ -2823,6 +2823,7 @@ function normalizeResultsBoardDisplayOptions(source) {
     latestMeet: input.latestMeet !== false,
     seasonSummary: input.seasonSummary !== false,
     meetArchive: input.meetArchive !== false,
+    athleteSummary: input.athleteSummary !== false,
     bestBadges: input.bestBadges !== false,
     grades: input.grades !== false,
     teamSummary: input.teamSummary !== false,
