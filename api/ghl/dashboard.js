@@ -196,6 +196,7 @@ async function publicResultsBoard(req, res) {
       },
       latestMeet: resultsBoardMeetSummary(latestRows, latestMeetName),
       seasonSummary: resultsBoardSeasonSummary(seasonRows),
+      meetArchive: resultsBoardMeetArchive(seasonRows),
       latestRows,
       seasonRows: seasonBestRows,
     });
@@ -848,6 +849,7 @@ function resultsBoardSharing(source) {
     displayOptions: {
       latestMeet: !(input.displayOptions && input.displayOptions.latestMeet === false),
       seasonSummary: !(input.displayOptions && input.displayOptions.seasonSummary === false),
+      meetArchive: !(input.displayOptions && input.displayOptions.meetArchive === false),
       bestBadges: !(input.displayOptions && input.displayOptions.bestBadges === false),
       grades: !(input.displayOptions && input.displayOptions.grades === false),
       teamSummary: !(input.displayOptions && input.displayOptions.teamSummary === false),
@@ -934,6 +936,40 @@ function resultsBoardSeasonSummary(rows) {
     personalBests: list.filter((row) => row.isPr).length,
     seasonBests: list.filter((row) => row.isSeasonBest).length,
   };
+}
+
+function resultsBoardMeetArchive(rows) {
+  const byMeet = new Map();
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const meetName = clean(row.meetName) || "Unlisted meet";
+    const key = `${meetName}|${clean(row.meetDate)}`;
+    if (!byMeet.has(key)) {
+      byMeet.set(key, {
+        meetName,
+        meetDate: clean(row.meetDate),
+        results: 0,
+        athletes: new Set(),
+        events: new Set(),
+        personalBests: 0,
+        seasonBests: 0,
+      });
+    }
+    const item = byMeet.get(key);
+    item.results += 1;
+    if (clean(row.athleteName)) item.athletes.add(clean(row.athleteName).toLowerCase());
+    if (clean(row.event)) item.events.add(clean(row.event));
+    if (row.isPr) item.personalBests += 1;
+    if (row.isSeasonBest) item.seasonBests += 1;
+  });
+  return Array.from(byMeet.values()).map((item) => ({
+    meetName: item.meetName,
+    meetDate: item.meetDate,
+    results: item.results,
+    athletes: item.athletes.size,
+    events: item.events.size,
+    personalBests: item.personalBests,
+    seasonBests: item.seasonBests,
+  })).sort((a, b) => String(b.meetDate).localeCompare(String(a.meetDate)) || a.meetName.localeCompare(b.meetName));
 }
 
 function resultsBoardSeasonBestRows(rows) {
