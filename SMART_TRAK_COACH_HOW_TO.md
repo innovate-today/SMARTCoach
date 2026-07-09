@@ -446,6 +446,8 @@ To move a workout or meet to another date, grab the calendar item and drag it to
 
 To edit a workout already on the calendar, open the workout and click **Edit**. Quality Session edits reopen with the saved warmup, reps, distance, effort, recovery, cooldown, details, and target text so the coach can adjust the actual workout instead of rebuilding it from scratch.
 
+Quality Session warmup, cooldown, and set distances can use distance or time units, including miles, kilometers, meters, minutes, and seconds. Time-based pieces are shown in the workout instructions but do not add mileage volume.
+
 Use the activity type filter to narrow the calendar to **Easy**, **Quality**, **Speed**, **Race**, or **Rest**. If a Speed Metrics workout is edited into a Quality Session, it should appear with Quality instead of staying under Speed.
 
 Speed Metrics workout details show the same kind of breakdown as other workouts: zone/focus, timed distance, planned reps, work volume, and time-plus-stride-count instructions. Speed work volume is the timed sprint/runway distance only, such as `5 x 30 m = 150 m`; warmup and cooldown are not included.

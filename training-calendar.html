@@ -472,8 +472,8 @@ button.compact{padding:6px 9px;font-size:12px}
         <div id="qualityActivityFields" class="activitysection" hidden>
           <h3>Quality Session</h3>
           <div class="compactgrid">
-            <div class="field"><label for="addQualityWarmupValue">Warmup</label><div class="inline-control"><input id="addQualityWarmupValue" class="mini-input" type="number" min="0" step="1" value="1"><select id="addQualityWarmupUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div></div>
-            <div class="field"><label for="addQualityCooldownValue">Cooldown</label><div class="inline-control"><input id="addQualityCooldownValue" class="mini-input" type="number" min="0" step="1" value="2"><select id="addQualityCooldownUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option></select></div></div>
+            <div class="field"><label for="addQualityWarmupValue">Warmup</label><div class="inline-control"><input id="addQualityWarmupValue" class="mini-input" type="number" min="0" step="1" value="1"><select id="addQualityWarmupUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option><option>sec</option></select></div></div>
+            <div class="field"><label for="addQualityCooldownValue">Cooldown</label><div class="inline-control"><input id="addQualityCooldownValue" class="mini-input" type="number" min="0" step="1" value="2"><select id="addQualityCooldownUnit" class="mini-select"><option>mi</option><option>km</option><option>m</option><option>min</option><option>sec</option></select></div></div>
           </div>
           <div id="qualityRows" style="margin-top:12px"></div>
           <div class="builder-links">
@@ -2377,6 +2377,8 @@ function parseDistanceParts(text,fallbackValue,fallbackUnit){
 }
 function normalizeQualityDistanceUnit(unit){
   var value=String(unit||'').toLowerCase().replace(/\./g,'').trim();
+  if(/^sec|^second/.test(value))return 'sec';
+  if(/^min|^minute/.test(value))return 'min';
   if(/^k/.test(value))return 'km';
   if(/^mi|^mile/.test(value))return 'mi';
   if(/^m|^meter/.test(value))return 'm';
@@ -2392,7 +2394,7 @@ function normalizeQualityRecoveryUnit(unit){
   return 'min ('+movement+')';
 }
 function parseQualityDistanceLine(line){
-  var match=String(line||'').match(/(?:(\d+)\s*x\s*\(\s*)?(\d+)\s*x\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters)\s*@\s*([^\/;\n]+?)(?=\s+(?:with|\/)|\s*;|\s*$)/i);
+  var match=String(line||'').match(/(?:(\d+)\s*x\s*\(\s*)?(\d+)\s*x\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters|min|minute|minutes|sec|second|seconds)\s*@\s*([^\/;\n]+?)(?=\s+(?:with|\/)|\s*;|\s*$)/i);
   if(!match)return null;
   var recovery=String(line||'').match(/(?:with|\/)\s*([\d.]+)\s*((?:minute|minutes|min|second|seconds|sec|mile|miles|mi|kilometer|kilometers|km|meter|meters|m)(?:\s*\([^)]*\)|\s+(?:jog|walk|rest))?)(?=\s+recovery|\s*$)/i);
   return {
@@ -2420,8 +2422,8 @@ function hydrateQualityBuilderFromDay(day){
   if(!day||inferCalendarActivityMode(day)!=='quality')return;
   var source=day.details||day.targetSplits||'';
   if(!source)return;
-  var warmup=source.match(/Warmup:\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters)\b/i);
-  var cooldown=source.match(/Cooldown:\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters)\b/i);
+  var warmup=source.match(/Warmup:\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters|min|minute|minutes|sec|second|seconds)\b/i);
+  var cooldown=source.match(/Cooldown:\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters|min|minute|minutes|sec|second|seconds)\b/i);
   var parsedRows=[];
   String(source).split(/\r?\n|;/).forEach(function(line){
     var parsed=parseQualityDistanceLine(line);
@@ -2650,7 +2652,7 @@ function effortOptions(selected){
   }).join('');
 }
 function distanceUnitOptions(selected){
-  return ['mi','km','m'].map(function(value){return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';}).join('');
+  return ['mi','km','m','min','sec'].map(function(value){return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';}).join('');
 }
 function recoveryUnitOptions(selected){
   var aliases={'min jog':'min (jog)','min walk':'min (walk)','sec jog':'sec (jog)','sec walk':'sec (walk)','m jog':'m (jog)','m walk':'m (walk)','mi jog':'mi (jog)','mi walk':'mi (walk)','km jog':'km (jog)','km walk':'km (walk)'};
@@ -2728,9 +2730,9 @@ function unitMiles(value,unit){
   var n=Number(value||0);
   var text=String(unit||'').toLowerCase();
   if(!n)return 0;
+  if(text.indexOf('min')>=0||text.indexOf('sec')>=0)return 0;
   if(text.indexOf('km')>=0)return n*0.621371;
   if(text.indexOf('m')>=0&&text.indexOf('mi')<0)return n/1609.34;
-  if(text.indexOf('min')>=0||text.indexOf('sec')>=0)return 0;
   return n;
 }
 function formatMiles(value){
