@@ -29,10 +29,10 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .start-here-btn:hover{background:#dbeafe}.start-here-dot{width:8px;height:8px;border-radius:50%;background:#0f9f6e}
 .sub{font-size:14px;color:var(--muted);margin-top:4px}
 .updated{display:inline-flex;align-items:center;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:700;padding:7px 10px}
-.actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:1 1 auto;min-width:0}
-.action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;max-width:100%}
+.actions{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:7px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:thin}
+.action-row,.modal-action-row{display:contents}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:8px 11px;cursor:pointer;text-decoration:none}
-.actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:34px;min-height:34px;line-height:1;white-space:nowrap;text-align:center;padding:7px 10px}
+.actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:32px;min-height:32px;line-height:1;white-space:nowrap;text-align:center;padding:6px 9px;font-size:13px;flex:0 0 auto}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
 button.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}
 button.ghost{background:#eef2f7;color:#172033}
@@ -244,7 +244,6 @@ tr:last-child td{border-bottom:0}
   .top{gap:10px}
   .brand{min-width:0;flex:0 1 auto}
   .actions{flex:1 1 auto;min-width:0;align-items:stretch}
-  .action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
   .actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}
 }
 @media(max-width:760px){

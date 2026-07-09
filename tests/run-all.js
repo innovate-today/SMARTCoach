@@ -450,11 +450,10 @@ function checkDashboardActivityRangeLayout() {
     'id="trackSimulatorLink"',
     'id="xcSimulatorLink"',
     "@media(max-width:1180px)",
-    ".actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:1 1 auto;min-width:0}",
-    ".action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;max-width:100%}",
-    ".actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:34px;min-height:34px;line-height:1;white-space:nowrap",
+    ".actions{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:7px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:thin}",
+    ".action-row,.modal-action-row{display:contents}",
+    ".actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:32px;min-height:32px;line-height:1;white-space:nowrap",
     '<div class="dashboard-tools-row"><button id="dashboardPrefsBtn" class="dashboard-prefs-link" type="button" aria-haspopup="dialog">Customize Dashboard</button></div>',
-    ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}",
     ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
   ];
   required.forEach((text) => {
@@ -498,8 +497,8 @@ function checkDashboardActivityRangeLayout() {
   if (actionRowHtml.includes('id="trackSimulatorLink"') || actionRowHtml.includes('id="xcSimulatorLink"')) {
     throw new Error("dashboard header should use one Simulator button, with Track/XC links inside the chooser modal.");
   }
-  if (html.includes(".action-row,.modal-action-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}")) {
-    throw new Error("dashboard header action rows should stay two horizontal rows instead of becoming a multi-row grid.");
+  if (html.includes("flex-direction:column;align-items:flex-end") || html.includes(".action-row,.modal-action-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}")) {
+    throw new Error("dashboard header actions should stay in one compact horizontal toolbar.");
   }
   const titleRowMatch = html.match(/<div class="title-row">([\s\S]*?)<\/div>/);
   const titleRowHtml = titleRowMatch ? titleRowMatch[1] : "";
