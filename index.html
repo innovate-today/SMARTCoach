@@ -1930,6 +1930,7 @@ function mergeCalendarMeetDaysIntoLogs(days){
     var dateSeason=seasonForDate(day.date);
     var linkedMeet=meetRecordForCalendarDay(day);
     var linkedRecordId=String(linkedMeet&&linkedMeet.id||day.linkedMeetId||'');
+    var daySport=calendarDaySport(day);
     var log=linkedRecordId?findManagedMeetLogByRecordId(linkedRecordId):null;
     if(!log)log=logs.find(function(item){return item.sharedGroupId===id;});
     if(!log){
@@ -1944,7 +1945,7 @@ function mergeCalendarMeetDaysIntoLogs(days){
       type:'meet',
       season:linkedMeet&&linkedMeet.season||dateSeason.season,
       seasonYear:linkedMeet&&linkedMeet.seasonYear||dateSeason.year,
-      sport:linkedMeet&&linkedMeet.sport||inferMeetSport({meetName:linkedMeet&&linkedMeet.name||day.title,meetDate:linkedMeet&&linkedMeet.date||day.date,season:linkedMeet&&linkedMeet.season||dateSeason.season,eventName:day.workoutType||day.targetSplits}),
+      sport:daySport||linkedMeet&&linkedMeet.sport||inferMeetSport({meetName:linkedMeet&&linkedMeet.name||day.title,meetDate:linkedMeet&&linkedMeet.date||day.date,season:linkedMeet&&linkedMeet.season||dateSeason.season,eventName:day.workoutType||day.targetSplits}),
       archived:0,
       meetName:linkedMeet&&linkedMeet.name||day.title||'Meet',
       meetDate:linkedMeet&&linkedMeet.date||day.date||'',
@@ -2472,6 +2473,13 @@ function canonicalMobileSport(value){
   var text=String(value||'').replace(/_/g,' ').replace(/[^a-z0-9]+/ig,' ').replace(/\s+/g,' ').trim().toLowerCase();
   if(text==='cross country'||text==='xc'||text.indexOf('cross country')>=0)return'Cross Country';
   if(text==='track'||text.indexOf('track')>=0)return'Track';
+  return'';
+}
+function calendarDaySport(day){
+  var explicit=canonicalMobileSport(day&&day.sport);
+  if(explicit)return explicit;
+  var noteMatch=String(day&&day.coachNotes||'').match(/^Sport:\s*(Track|Cross Country)\s*$/im);
+  if(noteMatch)return noteMatch[1];
   return'';
 }
 function inferMeetSport(source){

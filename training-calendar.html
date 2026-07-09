@@ -2913,6 +2913,7 @@ function saveManagedMeetCalendarEditFromAdd(reason,updates){
     recordId:recordId,
     meetName:updates.title||meet.name||calendarEditDay.title||'Meet',
     meetDate:date,
+    sport:sportFromDay(Object.assign({},calendarEditDay,updates)),
     season:seasonFromDate(date)||meet.season||'Spring',
     seasonYear:String(isNaN(parsed.getTime())?new Date().getFullYear():parsed.getFullYear()),
     status:updates.status||meet.status||calendarEditDay.status||'Scheduled'
@@ -2923,7 +2924,7 @@ function saveManagedMeetCalendarEditFromAdd(reason,updates){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save meet changes.');
-    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,season:payload.season,seasonYear:payload.seasonYear,status:payload.status},result.data&&result.data.meet||{});
+    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,sport:payload.sport,season:payload.season,seasonYear:payload.seasonYear,status:payload.status},result.data&&result.data.meet||{});
     upsertCalendarMeet(saved);
     activeDay=meetCalendarDay(saved);
     renderOptions();
@@ -2989,12 +2990,14 @@ function createMeetForCalendarDay(plan,day){
   if(day.dayType!=='Meet')return Promise.resolve(null);
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
+  var sport=sportFromDay(day);
   return fetch('/api/smart-trak/meets',{
     method:'POST',
     headers:headers,
     body:JSON.stringify({
       meetName:day.workoutTitle||day.dayType||'Meet',
       meetDate:day.date,
+      sport:sport,
       season:plan&&plan.season||seasonFromDate(day.date),
       seasonYear:plan&&plan.seasonYear||String(new Date(day.date+'T00:00:00').getFullYear()),
       status:'Scheduled'
@@ -3038,6 +3041,7 @@ function saveAddedCalendarDay(){
     workoutType:activity.workoutType,
     targetSplits:activity.targetSplits,
     plannedVolume:activity.plannedVolume,
+    sport:normalizeSport(els.addDaySport.value),
     status:'Scheduled',
     coachNotes:coachNotesWithSport(els.addDayNotes.value,els.addDaySport.value)
   };
@@ -3095,6 +3099,7 @@ function saveAddedCalendarDay(){
       workoutType:day.workoutType,
       targetSplits:day.targetSplits,
       plannedVolume:day.plannedVolume,
+      sport:day.sport,
       status:day.status,
       linkedMeetId:day.linkedMeetId||'',
       coachNotes:day.coachNotes

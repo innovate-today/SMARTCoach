@@ -1890,6 +1890,36 @@ function checkMeetManagerSportField() {
   console.log("Meet Manager sport field ok");
 }
 
+function checkCalendarMeetSportPropagation() {
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const app = fs.readFileSync("index.html", "utf8");
+  const api = fs.readFileSync("api/ghl/meets.js", "utf8");
+  [
+    "var sport=sportFromDay(day);",
+    "sport:sport,",
+    "sport:normalizeSport(els.addDaySport.value)",
+    "sport:day.sport,",
+    "sport:sportFromDay(Object.assign({},calendarEditDay,updates))",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Training Calendar meet sport propagation missing ${text}`);
+  });
+  [
+    "function calendarDaySport(day)",
+    "String(day&&day.coachNotes||'').match(/^Sport:\\s*(Track|Cross Country)\\s*$/im)",
+    "var daySport=calendarDaySport(day);",
+    "sport:daySport||linkedMeet&&linkedMeet.sport||inferMeetSport",
+  ].forEach((text) => {
+    if (!app.includes(text)) throw new Error(`Mobile calendar meet sport fallback missing ${text}`);
+  });
+  [
+    "sport: sportValue(sport),",
+    "if (sport) properties.sport = sportValue(sport);",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Meets API custom-object sport persistence missing ${text}`);
+  });
+  console.log("Calendar meet sport propagation ok");
+}
+
 function checkDashboardMeetCorrectionFields() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/correction.js", "utf8");
@@ -3560,6 +3590,7 @@ checkPublicSharePagesHideFeedback();
 checkPlanImportMultiGroupAssignment();
 checkPlanSetupHidesArchivedPlans();
 checkMeetManagerSportField();
+checkCalendarMeetSportPropagation();
 checkDashboardMeetCorrectionFields();
 checkTrainingCorrectionWorkoutNoteReplacement();
 checkWeatherLocationSaveFallback();

@@ -141,6 +141,7 @@ async function createMeet({ token, locationId, accountKey, payload }) {
   const properties = {
     meet: name,
     meet_date: date || "",
+    sport: sportValue(sport),
     season: optionValue(season),
     season_year: seasonYear,
     status: "scheduled",
@@ -189,6 +190,7 @@ async function updateMeet({ token, locationId, accountKey, payload }) {
   const properties = {};
   if (name) properties.meet = name;
   if (date) properties.meet_date = date;
+  if (sport) properties.sport = sportValue(sport);
   if (season) properties.season = optionValue(season);
   if (seasonYear) properties.season_year = seasonYear;
   if (status) properties.status = optionValue(status);
