@@ -526,6 +526,8 @@ How to use it:
 
 Fastest by event should separate boys and girls so results are compared correctly.
 
+Season filters use the saved sport and year when available, such as **Cross Country 2026** or **Track 2026**. Use the Sport filter with the Season filter when Cross Country and Track results need to stay separated in the same calendar year.
+
 ### Import Historical Meet Results
 
 Use **Import History** when starting SMART Trak with older results from a spreadsheet, CSV, TSV, or the SMART Trak template.

@@ -2403,6 +2403,11 @@ function checkMeetHistorySportToolbarFilter() {
     "els.sportFilter.value='all';",
     "function canonicalSport(value)",
     "if(explicit==='Cross Country'||explicit==='Track')return explicit;",
+    "function seasonYearText(row)",
+    "if((sport==='Cross Country'||sport==='Track')&&seasonYear)return sport+' '+seasonYear;",
+    "if((seasonSport==='Cross Country'||seasonSport==='Track')&&seasonYear)return seasonSport+' '+seasonYear;",
+    "var groupSport=sportText(group);",
+    "var matchesSport=sport==='all'||groupSport===sport||results.length>0;",
     "meetResults=normalizeMeetHistoryRows",
   ];
   required.forEach((text) => {
@@ -3022,7 +3027,7 @@ function checkMeetHistoryUnlistedSeasonYearFallback() {
   const requiredHtml = [
     "if(/^(unlisted|unspecified)$/i.test(season))season='';",
     "if(seasonYear)return seasonYear;",
-    "season:result.season||'',seasonYear:result.seasonYear||''",
+    "sport:result.sport||'',season:result.season||'',seasonYear:result.seasonYear||''",
     "if(season!=='all'&&seasonText(row)!==season&&String(row.seasonYear||'')!==season)return false;",
     "function inferredSeasonText(row)",
     "var season=values.season||importSeasonForDate(meetDate)||els.importDefaultSeason.value;",

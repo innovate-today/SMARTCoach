@@ -583,10 +583,17 @@ function canonicalSport(value){
   if(/^(track|track and field)$/i.test(text)||/\btrack\b/i.test(text))return 'Track';
   return text;
 }
+function seasonYearText(row){
+  return Number(row&&row.seasonYear)||yearFromDateText(row&&row.meetDate)||0;
+}
 function inferredSeasonText(row){
   var season=String(row&&row.season||'').trim();
-  var seasonYear=Number(row&&row.seasonYear)||yearFromDateText(row&&row.meetDate);
+  var seasonYear=seasonYearText(row);
+  var sport=canonicalSport(row&&row.sport);
   if(/^(unlisted|unspecified)$/i.test(season))season='';
+  if((sport==='Cross Country'||sport==='Track')&&seasonYear)return sport+' '+seasonYear;
+  var seasonSport=canonicalSport(season);
+  if((seasonSport==='Cross Country'||seasonSport==='Track')&&seasonYear)return seasonSport+' '+seasonYear;
   if(/^\d{4}$/.test(season)&&!seasonYear)seasonYear=Number(season);
   if(season&&seasonYear&&season!==String(seasonYear))return season+' '+seasonYear;
   if(seasonYear)return String(seasonYear);
@@ -596,8 +603,12 @@ function inferredSeasonText(row){
 function seasonText(row){
   if(row&&row._seasonText)return row._seasonText;
   var season=String(row&&row.season||'').trim();
-  var seasonYear=String(row&&row.seasonYear||'').trim();
+  var seasonYear=String(seasonYearText(row)||'').trim();
+  var sport=canonicalSport(row&&row.sport);
   if(/^(unlisted|unspecified)$/i.test(season))season='';
+  if((sport==='Cross Country'||sport==='Track')&&seasonYear)return sport+' '+seasonYear;
+  var seasonSport=canonicalSport(season);
+  if((seasonSport==='Cross Country'||seasonSport==='Track')&&seasonYear)return seasonSport+' '+seasonYear;
   if(season&&seasonYear)return season+' '+seasonYear;
   if(seasonYear)return seasonYear;
   if(row.meetDate){
@@ -651,11 +662,12 @@ function allMeetGroups(){
   var groups={};
   scheduledMeets.forEach(function(meet){
     var key=meetKey(meet.name,meet.date);
-    if(!groups[key])groups[key]={key:key,name:meet.name,date:meet.date,season:meet.season,seasonYear:meet.seasonYear,status:meet.status,results:[]};
+    if(!groups[key])groups[key]={key:key,name:meet.name,date:meet.date,sport:meet.sport,season:meet.season,seasonYear:meet.seasonYear,status:meet.status,results:[]};
   });
   meetResults.forEach(function(result){
     var key=resultMeetKey(result);
-    if(!groups[key])groups[key]={key:key,name:result.meetName||'Unlisted meet',date:result.meetDate,season:result.season||'',seasonYear:result.seasonYear||'',status:'Completed',results:[]};
+    if(!groups[key])groups[key]={key:key,name:result.meetName||'Unlisted meet',date:result.meetDate,sport:result.sport||'',season:result.season||'',seasonYear:result.seasonYear||'',status:'Completed',results:[]};
+    if(!groups[key].sport&&result.sport)groups[key].sport=result.sport;
     if(!groups[key].season&&result.season)groups[key].season=result.season;
     if(!groups[key].seasonYear&&result.seasonYear)groups[key].seasonYear=result.seasonYear;
     groups[key].results.push(result);
@@ -683,8 +695,9 @@ function filteredGroups(){
       return true;
     });
     var groupSeason=seasonText(group);
+    var groupSport=sportText(group);
     var matchesSeason=season==='all'||groupSeason===season||String(group.seasonYear||'')===season||results.length>0;
-    var matchesSport=sport==='all'||results.length>0;
+    var matchesSport=sport==='all'||groupSport===sport||results.length>0;
     var groupMatchesQuery=!query||searchText(group).indexOf(query)>=0;
     var keep=matchesSeason&&matchesSport&&(results.length||groupMatchesQuery);
     return keep?Object.assign({},group,{results:results}):null;
