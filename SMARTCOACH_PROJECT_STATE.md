@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-08
+Last updated: 2026-07-09
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- SMARTCoach mobile meet-list merging now dedupes calendar-created races that are linked to saved Manage Meets records. When a race is added from Training Calendar, the calendar day still links to the saved meet record, but the mobile app uses the saved meet identity (`meetrec_<id>`) instead of showing a second `calmeet_` meet row. Older linked `calmeet_` duplicates for the same saved meet are archived automatically. Regression coverage was added.
 - Assistant coach access setup has moved from the starting generic shared-link/shared-code version to named assistant invite links. Staff Access stores assistant name/email plus invite token/status fields on the saved `coachStaff` record, and the redundant generic **Share Assistant Access** panel was removed so assistant sharing happens from each coach row.
 - Staff Access can create/copy a private SMART Trak invite for a named assistant, revoke it, or restore it. Opening `/dashboard.html?account=...&invite=...` exchanges the invite token through `/api/smart-trak/account-session` for the normal signed coach session. Revoked, inactive, or unknown invite tokens are rejected.
 - Accepted staff invite links now write an `inviteLastUsedAt` audit timestamp back to the saved `coachStaff` row, and Staff Access displays used invite status so head coaches can see whether an assistant invite was actually opened.

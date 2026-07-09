@@ -1912,16 +1912,19 @@ function mergeCalendarMeetDaysIntoLogs(days){
   var changed=false,activeIds={};
   (days||[]).filter(function(day){return isCalendarMeetDay(day)&&!isRemovedPlanDay(day)&&isActiveTrainingPlanDay(day)&&isActiveCalendarMeetDay(day);}).forEach(function(day){
     var id=calendarMeetGroupId(day);
-    activeIds[id]=true;
     var dateSeason=seasonForDate(day.date);
     var linkedMeet=meetRecordForCalendarDay(day);
-    var log=logs.find(function(item){return item.sharedGroupId===id;});
+    var linkedRecordId=String(linkedMeet&&linkedMeet.id||day.linkedMeetId||'');
+    var log=linkedRecordId?findManagedMeetLogByRecordId(linkedRecordId):null;
+    if(!log)log=logs.find(function(item){return item.sharedGroupId===id;});
     if(!log){
-      log={id:lid++,sharedGroupId:id,name:linkedMeet&&linkedMeet.name||day.title||'Meet',type:'meet',cfg:meetDayCfg(),runners:[]};
+      log={id:lid++,sharedGroupId:linkedRecordId?('meetrec_'+linkedRecordId):id,name:linkedMeet&&linkedMeet.name||day.title||'Meet',type:'meet',cfg:meetDayCfg(),runners:[]};
       logs.unshift(log);
       changed=true;
     }
+    if(!linkedRecordId)activeIds[id]=true;
     var next={
+      sharedGroupId:linkedRecordId?('meetrec_'+linkedRecordId):(log.sharedGroupId||id),
       name:linkedMeet&&linkedMeet.name||day.title||day.workoutType||'Meet',
       type:'meet',
       season:linkedMeet&&linkedMeet.season||dateSeason.season,
@@ -1954,14 +1957,36 @@ function mergeCalendarMeetDaysIntoLogs(days){
       log.runners=runners;
     }
   });
+  var managedRecordIds={};
   logs.forEach(function(log){
-    if(String(log.sharedGroupId||'').indexOf('calmeet_')===0&&!activeIds[log.sharedGroupId]&&!log.archived){
+    if((log.type||'training')!=='meet'||log.archived)return;
+    var shared=String(log.sharedGroupId||'');
+    var recordId=String(log.meetRecordId||'');
+    if(recordId&&shared.indexOf('meetrec_')===0)managedRecordIds[recordId]=true;
+  });
+  logs.forEach(function(log){
+    var shared=String(log.sharedGroupId||'');
+    if(shared.indexOf('calmeet_')!==0||log.archived)return;
+    var recordId=String(log.meetRecordId||log.trainingPlanDayLinkedMeetId||'');
+    if(!activeIds[shared]||(recordId&&managedRecordIds[recordId])){
       log.archived=1;
       log.archivedAt=new Date().toISOString();
       changed=true;
     }
   });
   return changed;
+}
+
+function findManagedMeetLogByRecordId(recordId){
+  recordId=String(recordId||'');
+  if(!recordId)return null;
+  return logs.find(function(log){
+    return (log.type||'training')==='meet'&&String(log.sharedGroupId||'')==='meetrec_'+recordId;
+  })||logs.find(function(log){
+    return (log.type||'training')==='meet'&&String(log.meetRecordId||'')===recordId&&String(log.sharedGroupId||'').indexOf('calmeet_')!==0;
+  })||logs.find(function(log){
+    return (log.type||'training')==='meet'&&String(log.meetRecordId||'')===recordId;
+  })||null;
 }
 
 function meetRecordForCalendarDay(day){

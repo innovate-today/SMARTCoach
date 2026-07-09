@@ -2180,6 +2180,22 @@ function checkMobileTrainingPlanArchiveFilter() {
   console.log("mobile training plan archive filter ok");
 }
 
+function checkMobileCalendarMeetDedup() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "var linkedRecordId=String(linkedMeet&&linkedMeet.id||day.linkedMeetId||'');",
+    "var log=linkedRecordId?findManagedMeetLogByRecordId(linkedRecordId):null;",
+    "sharedGroupId:linkedRecordId?('meetrec_'+linkedRecordId):id",
+    "sharedGroupId:linkedRecordId?('meetrec_'+linkedRecordId):(log.sharedGroupId||id)",
+    "function findManagedMeetLogByRecordId(recordId)",
+    "if(recordId&&shared.indexOf('meetrec_')===0)managedRecordIds[recordId]=true;",
+    "if(!activeIds[shared]||(recordId&&managedRecordIds[recordId]))",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile calendar meet dedup missing ${text}`);
+  });
+  console.log("mobile calendar meet dedup ok");
+}
+
 function checkAthleteCalendarBulkEmailLinks() {
   const html = fs.readFileSync("athletes.html", "utf8");
   const api = fs.readFileSync("api/ghl/athletes.js", "utf8");
@@ -3521,6 +3537,7 @@ checkManualMileageQualitySession();
 checkTrainingCustomization();
 checkMobileCalendarWorkoutPriority();
 checkMobileTrainingPlanArchiveFilter();
+checkMobileCalendarMeetDedup();
 checkAthleteCalendarBulkEmailLinks();
 checkAthleteCalendarQuestions();
 checkAthleteCalendarSubmittedStatusPill();
