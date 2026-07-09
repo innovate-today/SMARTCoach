@@ -747,6 +747,7 @@ tr:last-child td{border-bottom:0}
             <label class="dashboard-pref-row"><span><b>Athlete Summary</b><small>Shows each athlete's season result, meet, event, PB, and SB totals.</small></span><input id="resultsBoardShowAthletes" type="checkbox"></label>
             <label class="dashboard-pref-row"><span><b>Event Summary</b><small>Shows each event's result count, athlete count, and season leader.</small></span><input id="resultsBoardShowEvents" type="checkbox"></label>
             <label class="dashboard-pref-row"><span><b>Division Summary</b><small>Shows Boys/Girls season result totals and leaders.</small></span><input id="resultsBoardShowDivisions" type="checkbox"></label>
+            <label class="dashboard-pref-row"><span><b>PB / SB Highlights</b><small>Shows a focused list of new personal and season bests.</small></span><input id="resultsBoardShowHighlights" type="checkbox"></label>
             <label class="dashboard-pref-row"><span><b>PB / SB Badges</b><small>Shows personal-best and season-best result badges.</small></span><input id="resultsBoardShowBadges" type="checkbox"></label>
             <label class="dashboard-pref-row"><span><b>Team Summary</b><small>Shows team result, athlete, meet, PB, and SB totals.</small></span><input id="resultsBoardShowSummary" type="checkbox"></label>
           </div>
@@ -1669,7 +1670,7 @@ function defaultMilesBoardSharing(){
   return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),dateRange:defaultMilesBoardDateRange(),groupNames:[],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
 }
 function defaultResultsBoardSharing(){
-  return {active:true,sport:'Cross Country',seasonYear:new Date().getFullYear(),displayOptions:{latestMeet:true,seasonSummary:true,meetArchive:true,athleteSummary:true,eventSummary:true,divisionSummary:true,bestBadges:true,teamSummary:true},gameSettings:{boardName:'Team Results Board',coachMessage:''},tokenVersion:'1',updatedAt:new Date().toISOString()};
+  return {active:true,sport:'Cross Country',seasonYear:new Date().getFullYear(),displayOptions:{latestMeet:true,seasonSummary:true,meetArchive:true,athleteSummary:true,eventSummary:true,divisionSummary:true,bestHighlights:true,bestBadges:true,teamSummary:true},gameSettings:{boardName:'Team Results Board',coachMessage:''},tokenVersion:'1',updatedAt:new Date().toISOString()};
 }
 function defaultMilesBoardDateRange(){
   return {mode:'dashboard',startDate:'',endDate:''};
@@ -2097,6 +2098,7 @@ function normalizeResultsBoardSharing(source){
       athleteSummary:display.athleteSummary!==false,
       eventSummary:display.eventSummary!==false,
       divisionSummary:display.divisionSummary!==false,
+      bestHighlights:display.bestHighlights!==false,
       bestBadges:display.bestBadges!==false,
       teamSummary:display.teamSummary!==false
     },
@@ -2120,6 +2122,7 @@ function renderResultsBoardSharing(){
   if(els.resultsBoardShowAthletes)els.resultsBoardShowAthletes.checked=!!settings.displayOptions.athleteSummary;
   if(els.resultsBoardShowEvents)els.resultsBoardShowEvents.checked=!!settings.displayOptions.eventSummary;
   if(els.resultsBoardShowDivisions)els.resultsBoardShowDivisions.checked=!!settings.displayOptions.divisionSummary;
+  if(els.resultsBoardShowHighlights)els.resultsBoardShowHighlights.checked=!!settings.displayOptions.bestHighlights;
   if(els.resultsBoardShowBadges)els.resultsBoardShowBadges.checked=!!settings.displayOptions.bestBadges;
   if(els.resultsBoardShowSummary)els.resultsBoardShowSummary.checked=!!settings.displayOptions.teamSummary;
   if(els.resultsBoardName)els.resultsBoardName.value=settings.gameSettings.boardName;
@@ -2140,6 +2143,7 @@ function collectResultsBoardSharing(){
       athleteSummary:!!(els.resultsBoardShowAthletes&&els.resultsBoardShowAthletes.checked),
       eventSummary:!!(els.resultsBoardShowEvents&&els.resultsBoardShowEvents.checked),
       divisionSummary:!!(els.resultsBoardShowDivisions&&els.resultsBoardShowDivisions.checked),
+      bestHighlights:!!(els.resultsBoardShowHighlights&&els.resultsBoardShowHighlights.checked),
       bestBadges:!!(els.resultsBoardShowBadges&&els.resultsBoardShowBadges.checked),
       teamSummary:!!(els.resultsBoardShowSummary&&els.resultsBoardShowSummary.checked)
     },
@@ -2625,6 +2629,7 @@ var els={
   resultsBoardShowAthletes:document.getElementById('resultsBoardShowAthletes'),
   resultsBoardShowEvents:document.getElementById('resultsBoardShowEvents'),
   resultsBoardShowDivisions:document.getElementById('resultsBoardShowDivisions'),
+  resultsBoardShowHighlights:document.getElementById('resultsBoardShowHighlights'),
   resultsBoardShowBadges:document.getElementById('resultsBoardShowBadges'),
   resultsBoardShowSummary:document.getElementById('resultsBoardShowSummary'),
   resultsBoardName:document.getElementById('resultsBoardName'),

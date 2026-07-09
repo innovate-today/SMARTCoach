@@ -200,6 +200,7 @@ async function publicResultsBoard(req, res) {
       athleteSummaryRows: resultsBoardAthleteSummaryRows(seasonRows),
       eventSummaryRows: resultsBoardEventSummaryRows(seasonRows),
       divisionSummaryRows: resultsBoardDivisionSummaryRows(seasonRows),
+      bestHighlightRows: resultsBoardBestHighlightRows(seasonRows),
       latestRows,
       seasonRows: seasonBestRows,
     });
@@ -856,6 +857,7 @@ function resultsBoardSharing(source) {
       athleteSummary: !(input.displayOptions && input.displayOptions.athleteSummary === false),
       eventSummary: !(input.displayOptions && input.displayOptions.eventSummary === false),
       divisionSummary: !(input.displayOptions && input.displayOptions.divisionSummary === false),
+      bestHighlights: !(input.displayOptions && input.displayOptions.bestHighlights === false),
       bestBadges: !(input.displayOptions && input.displayOptions.bestBadges === false),
       grades: !(input.displayOptions && input.displayOptions.grades === false),
       teamSummary: !(input.displayOptions && input.displayOptions.teamSummary === false),
@@ -1112,6 +1114,22 @@ function resultsBoardDivisionSummaryRows(rows) {
     leaderResult: item.leader && item.leader.resultDisplay || "",
     latestDate: item.latestDate,
   })).sort((a, b) => (order[a.division] || 99) - (order[b.division] || 99));
+}
+
+function resultsBoardBestHighlightRows(rows) {
+  return (Array.isArray(rows) ? rows : []).filter((row) => row && (row.isPr || row.isSeasonBest)).slice().sort((a, b) =>
+    String(b.meetDate || b.syncedAt).localeCompare(String(a.meetDate || a.syncedAt)) ||
+    Number(!!b.isPr) - Number(!!a.isPr) ||
+    clean(a.athleteName).localeCompare(clean(b.athleteName))
+  ).map((row) => ({
+    athleteName: clean(row.athleteName),
+    meetName: clean(row.meetName),
+    meetDate: clean(row.meetDate),
+    event: clean(row.event),
+    resultDisplay: clean(row.resultDisplay),
+    isPr: !!row.isPr,
+    isSeasonBest: !!row.isSeasonBest,
+  }));
 }
 
 function resultsBoardSeasonBestRows(rows) {
