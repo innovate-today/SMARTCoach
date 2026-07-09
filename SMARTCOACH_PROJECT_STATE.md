@@ -1385,6 +1385,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 493. Results Board initial build phases are complete. Dashboard **What's New** now includes a coach-facing Results Board release group covering the read-only share board, meet/event/gender filters, All Meets, PB/SB highlights, Boys/Girls summaries, section reordering, coach message, and sortable table headers; the What's New version was bumped so coaches see the Results Board update.
 494. SMARTCoach app shared training groups now wait for the active-athlete roster before merging saved group rosters into the phone app. If an athlete was in a group and is later made inactive, the app prunes that athlete after the active roster loads and saves the cleaned group roster back to shared storage so inactive athletes do not keep reappearing from stale group membership.
 495. Training Calendar Quality Session builder now supports minute and second units for warmup, cooldown, and set distance fields. Existing quality-session parsing recognizes saved minute/second prescriptions when reopening a workout, and time-based pieces stay out of planned mileage totals while still appearing in the workout instructions.
+496. Dashboard header actions keep the original two-row layout: primary navigation remains on the top row and modal/utility shortcuts remain on the bottom row. Both rows use compact button sizing, full-row no-wrap layout, and horizontal overflow as the narrow-screen fallback so the top row does not wrap into a third visible row.
 
 ## Known Good Test Flow
 
