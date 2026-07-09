@@ -109,6 +109,21 @@ Miles Board badges are earned this way:
 9. **Streak Leader**: the athlete is tied for the most days with logged runs in the selected board range, with at least 3 logged days.
 10. **Pack MVP**: the athlete has the top current-week mileage in their Boys/Girls pack division.
 
+## Results Board
+
+Use **Results** on the Dashboard when you want a view-only team results link for athletes, parents, or a team page. The Results Board shows your team's saved meet results only.
+
+How to set up the Results Board:
+
+1. Click **Results** on the Dashboard.
+2. Choose **Cross Country** or **Track**.
+3. Choose the season year. Use the year that belongs with the season, such as Cross Country 2026 or Track 2026.
+4. Choose which details should appear: **Latest Meet**, **Season Results**, **PB / SB Badges**, and **Team Summary**.
+5. Add an optional board name and coach message.
+6. Use **Copy Link** to send the board, **Open Link** to preview it, **Turn Off Link** to stop the current link from loading, and **Reset Link** to create a new link while invalidating older links.
+
+The public Results Board is read-only. It includes the latest meet for the selected sport/year, team totals, PB/SB totals, and a Season Results table that shows each athlete's best saved result by event. Viewers can filter by meet, event, gender, and search text without seeing coach tools or edit buttons.
+
 ## Speed Trak
 
 Use **Speed Trak** from Training when you want a leaderboard of speed testing marks captured during Speed Metrics practice sessions or imported from a spreadsheet.

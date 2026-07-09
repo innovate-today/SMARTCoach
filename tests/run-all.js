@@ -20,6 +20,7 @@ const htmlFiles = [
   "miles-board.html",
   "speed-trak.html",
   "speed-board.html",
+  "results-board.html",
   "how-to.html",
   "athlete-calendar.html",
   "account-access.html",
@@ -851,6 +852,83 @@ function checkMilesBoardFeature() {
     if (!manualMileageApi.includes(text)) throw new Error(`manual mileage sport/year persistence missing ${text}`);
   });
   console.log("Miles Board feature ok");
+}
+
+function checkResultsBoardFeature() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const board = fs.readFileSync("results-board.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  [
+    'id="shareResultsBoardBtn"',
+    "Results Board Sharing",
+    'id="resultsBoardModal"',
+    'id="resultsBoardSport"',
+    'id="resultsBoardSeasonYear"',
+    'id="resultsBoardShowLatest"',
+    'id="resultsBoardShowSeason"',
+    'id="resultsBoardShowBadges"',
+    'id="resultsBoardShowSummary"',
+    "function normalizeResultsBoardSharing",
+    "function openResultsBoardSharing()",
+    "function createResultsBoardLink()",
+    "fetch('/api/smart-trak/results-board-sharing?account='",
+    "results-board-link",
+    "resultsBoardSharing=normalizeResultsBoardSharing(data&&data.resultsBoardSharing)",
+    "if(location.hash==='#share-results-board')",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`dashboard Results Board share missing ${text}`);
+  });
+  [
+    "SMART Trak Results Board",
+    "/api/smart-trak/results-board?",
+    "Team meet results.",
+    "Latest Meet",
+    "Season Results",
+    "function compactShareParams()",
+    "function renderFilterOptions",
+    "function reloadWithFilters",
+    "function bestPills(row)",
+    "Results Board is taking too long to load. Tap Refresh to try again.",
+  ].forEach((text) => {
+    if (!board.includes(text)) throw new Error(`Results Board page missing ${text}`);
+  });
+  if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Results Board must stay read-only.");
+  [
+    'if (route === "results-board-sharing")',
+    "return accountResultsBoardSharing(req, res);",
+    'if (route === "results-board-link")',
+    "return accountResultsBoardLink(req, res);",
+    'if (route === "results-board")',
+    "return accountResultsBoard(req, res);",
+    "function resultsBoardToken(accountKey, tokenVersion",
+    "function resultsBoardTokenVersion()",
+    "function resultsBoardShareKey(input)",
+    "function resultsBoardShareFromKey(value)",
+    "function normalizeResultsBoardSharing(source)",
+    "resultsBoardSharing: normalizeResultsBoardSharing",
+    "lastResultsBoardSharingSync",
+    "url: `/results-board.html?",
+    "SMARTCOACH_RESULTS_BOARD_SECRET",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Results Board API route missing ${text}`);
+  });
+  [
+    "module.exports.publicResultsBoard = publicResultsBoard;",
+    "async function publicResultsBoard(req, res)",
+    "function resultsBoardFilters(query, sharing)",
+    "function resultsBoardRowMatches(row, filters)",
+    "function latestResultsMeetName(rows)",
+    "function resultsBoardFilterOptions(rows, filters)",
+    "function resultsBoardSeasonBestRows(rows)",
+    "latestRows",
+    "seasonRows: seasonBestRows",
+    "personalBests",
+    "seasonBests",
+  ].forEach((text) => {
+    if (!dashboardApi.includes(text)) throw new Error(`Results Board dashboard API missing ${text}`);
+  });
+  console.log("Results Board feature ok");
 }
 
 function checkSpeedTrakFeature() {
@@ -3304,6 +3382,7 @@ checkDashboardActivityRangeLayout();
 checkDashboardFilterContextAndArchivedGroups();
 checkDashboardTrainingPaces();
 checkMilesBoardFeature();
+checkResultsBoardFeature();
 checkSpeedTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();

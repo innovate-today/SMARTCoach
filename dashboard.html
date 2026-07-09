@@ -317,6 +317,7 @@ tr:last-child td{border-bottom:0}
         <button id="raceResultBtn" class="modal-action" type="button">Log Race Result</button>
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="shareMilesBoardBtn" class="modal-action" type="button">Miles Trak</button>
+        <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
@@ -709,6 +710,62 @@ tr:last-child td{border-bottom:0}
         <button id="milesBoardSnapshot" class="secondary" type="button">Save Weekly Snapshot</button>
         <button id="milesBoardOpen" class="secondary" type="button">Open Link</button>
         <button id="milesBoardCopy" type="button">Copy Link</button>
+      </div>
+    </div>
+  </section>
+</div>
+<div id="resultsBoardModal" class="modal" hidden>
+  <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="resultsBoardTitle">
+    <div class="modalhead">
+      <h2 id="resultsBoardTitle">Results Board Sharing</h2>
+      <button id="resultsBoardClose" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="whats-new-intro">Create a view-only team results link for the latest race and season results.</p>
+      <div class="formgrid">
+        <label class="checkline" style="display:flex;align-items:center;gap:8px;margin-top:26px;color:#334155;font-size:14px;font-weight:800">
+          <input id="resultsBoardActive" type="checkbox">
+          <span>Link active</span>
+        </label>
+        <div class="field">
+          <label for="resultsBoardSport">Sport</label>
+          <select id="resultsBoardSport">
+            <option value="Cross Country">Cross Country</option>
+            <option value="Track">Track</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="resultsBoardSeasonYear">Season Year</label>
+          <input id="resultsBoardSeasonYear" type="number" min="2020" max="2100" step="1">
+        </div>
+        <div class="field full">
+          <label>Visible Board Details</label>
+          <div class="dashboard-pref-list">
+            <label class="dashboard-pref-row"><span><b>Latest Meet</b><small>Shows the most recent meet for the selected sport and year.</small></span><input id="resultsBoardShowLatest" type="checkbox"></label>
+            <label class="dashboard-pref-row"><span><b>Season Results</b><small>Shows each athlete's best season result by event.</small></span><input id="resultsBoardShowSeason" type="checkbox"></label>
+            <label class="dashboard-pref-row"><span><b>PB / SB Badges</b><small>Shows personal-best and season-best result badges.</small></span><input id="resultsBoardShowBadges" type="checkbox"></label>
+            <label class="dashboard-pref-row"><span><b>Team Summary</b><small>Shows team result, athlete, meet, PB, and SB totals.</small></span><input id="resultsBoardShowSummary" type="checkbox"></label>
+          </div>
+        </div>
+        <div class="field full">
+          <label for="resultsBoardName">Board Name</label>
+          <input id="resultsBoardName" type="text" maxlength="80" placeholder="Team Results Board">
+        </div>
+        <div class="field full">
+          <label for="resultsBoardCoachMessage">Coach Message</label>
+          <textarea id="resultsBoardCoachMessage" maxlength="240" rows="3" placeholder="Optional note for this results board"></textarea>
+        </div>
+        <div class="field full">
+          <label for="resultsBoardLinkPreview">Current Link</label>
+          <input id="resultsBoardLinkPreview" type="text" readonly placeholder="Create or copy a link">
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="resultsBoardStatus" class="modalstatus">Choose sport and season before copying the link.</div>
+        <button id="resultsBoardTurnOff" class="secondary" type="button">Turn Off Link</button>
+        <button id="resultsBoardReset" class="secondary" type="button">Reset Link</button>
+        <button id="resultsBoardOpen" class="secondary" type="button">Open Link</button>
+        <button id="resultsBoardCopy" type="button">Copy Link</button>
       </div>
     </div>
   </section>
@@ -1344,6 +1401,8 @@ var docuRecords={};
 var dashboardPreferences=null;
 var milesBoardSharing=null;
 var currentMilesBoardUrl='';
+var resultsBoardSharing=null;
+var currentResultsBoardUrl='';
 var trainingGroups=[];
 var meetManagerRows=[];
 var raceResultMeetRows=[];
@@ -1604,6 +1663,9 @@ function saveDashboardPreferences(){
 }
 function defaultMilesBoardSharing(){
   return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),dateRange:defaultMilesBoardDateRange(),groupNames:[],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
+}
+function defaultResultsBoardSharing(){
+  return {active:true,sport:'Cross Country',seasonYear:new Date().getFullYear(),displayOptions:{latestMeet:true,seasonSummary:true,bestBadges:true,teamSummary:true},gameSettings:{boardName:'Team Results Board',coachMessage:''},tokenVersion:'1',updatedAt:new Date().toISOString()};
 }
 function defaultMilesBoardDateRange(){
   return {mode:'dashboard',startDate:'',endDate:''};
@@ -2015,6 +2077,179 @@ function resetMilesBoardLink(){
     setMilesBoardStatus(error.message||'Could not reset Miles Board link.','#b00000');
   });
 }
+function normalizeResultsBoardSharing(source){
+  var input=source&&typeof source==='object'?source:{};
+  var display=input.displayOptions&&typeof input.displayOptions==='object'?input.displayOptions:{};
+  var game=input.gameSettings&&typeof input.gameSettings==='object'?input.gameSettings:{};
+  var sport=String(input.sport||'Cross Country').toLowerCase().indexOf('track')>=0?'Track':'Cross Country';
+  return {
+    active:input.active!==false,
+    sport:sport,
+    seasonYear:Number(input.seasonYear)||new Date().getFullYear(),
+    displayOptions:{
+      latestMeet:display.latestMeet!==false,
+      seasonSummary:display.seasonSummary!==false,
+      bestBadges:display.bestBadges!==false,
+      teamSummary:display.teamSummary!==false
+    },
+    gameSettings:{
+      boardName:String(game.boardName||'').trim().slice(0,80)||'Team Results Board',
+      coachMessage:String(game.coachMessage||'').trim().slice(0,240)
+    },
+    tokenVersion:String(input.tokenVersion||'1'),
+    updatedAt:String(input.updatedAt||''),
+    resetAt:String(input.resetAt||'')
+  };
+}
+function renderResultsBoardSharing(){
+  var settings=normalizeResultsBoardSharing(resultsBoardSharing||defaultResultsBoardSharing());
+  if(els.resultsBoardActive)els.resultsBoardActive.checked=settings.active;
+  if(els.resultsBoardSport)els.resultsBoardSport.value=settings.sport;
+  if(els.resultsBoardSeasonYear)els.resultsBoardSeasonYear.value=settings.seasonYear;
+  if(els.resultsBoardShowLatest)els.resultsBoardShowLatest.checked=!!settings.displayOptions.latestMeet;
+  if(els.resultsBoardShowSeason)els.resultsBoardShowSeason.checked=!!settings.displayOptions.seasonSummary;
+  if(els.resultsBoardShowBadges)els.resultsBoardShowBadges.checked=!!settings.displayOptions.bestBadges;
+  if(els.resultsBoardShowSummary)els.resultsBoardShowSummary.checked=!!settings.displayOptions.teamSummary;
+  if(els.resultsBoardName)els.resultsBoardName.value=settings.gameSettings.boardName;
+  if(els.resultsBoardCoachMessage)els.resultsBoardCoachMessage.value=settings.gameSettings.coachMessage;
+  if(els.resultsBoardLinkPreview)els.resultsBoardLinkPreview.value=currentResultsBoardUrl||'';
+  setResultsBoardStatus(settings.active?'Choose sport and season before copying the link.':'Results Board sharing is off. Current links will not load.',settings.active?'#64748b':'#b00000');
+}
+function collectResultsBoardSharing(){
+  var current=normalizeResultsBoardSharing(resultsBoardSharing||defaultResultsBoardSharing());
+  return normalizeResultsBoardSharing({
+    active:!!(els.resultsBoardActive&&els.resultsBoardActive.checked),
+    sport:els.resultsBoardSport?els.resultsBoardSport.value:current.sport,
+    seasonYear:els.resultsBoardSeasonYear?els.resultsBoardSeasonYear.value:current.seasonYear,
+    displayOptions:{
+      latestMeet:!!(els.resultsBoardShowLatest&&els.resultsBoardShowLatest.checked),
+      seasonSummary:!!(els.resultsBoardShowSeason&&els.resultsBoardShowSeason.checked),
+      bestBadges:!!(els.resultsBoardShowBadges&&els.resultsBoardShowBadges.checked),
+      teamSummary:!!(els.resultsBoardShowSummary&&els.resultsBoardShowSummary.checked)
+    },
+    gameSettings:{
+      boardName:els.resultsBoardName?els.resultsBoardName.value:current.gameSettings.boardName,
+      coachMessage:els.resultsBoardCoachMessage?els.resultsBoardCoachMessage.value:current.gameSettings.coachMessage
+    },
+    tokenVersion:current.tokenVersion,
+    updatedAt:new Date().toISOString()
+  });
+}
+function openResultsBoardSharing(){
+  currentResultsBoardUrl='';
+  renderResultsBoardSharing();
+  els.resultsBoardModal.hidden=false;
+  loadResultsBoardSharing();
+  els.resultsBoardClose.focus();
+}
+function closeResultsBoardSharing(){
+  els.resultsBoardModal.hidden=true;
+}
+function setResultsBoardStatus(message,color){
+  if(!els.resultsBoardStatus)return;
+  els.resultsBoardStatus.textContent=message||'';
+  els.resultsBoardStatus.style.color=color||'#64748b';
+}
+function setResultsBoardButtons(disabled){
+  [els.resultsBoardTurnOff,els.resultsBoardReset,els.resultsBoardOpen,els.resultsBoardCopy].forEach(function(button){
+    if(button)button.disabled=!!disabled;
+  });
+}
+function loadResultsBoardSharing(){
+  setResultsBoardStatus('Loading Results Board sharing settings...','#64748b');
+  return fetch('/api/smart-trak/results-board-sharing?account='+encodeURIComponent(smartCoachAccountKey()),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not load Results Board sharing.');
+    resultsBoardSharing=normalizeResultsBoardSharing(result.data&&result.data.resultsBoardSharing);
+    renderResultsBoardSharing();
+    return resultsBoardSharing;
+  }).catch(function(error){
+    setResultsBoardStatus(error.message||'Could not load Results Board sharing.','#b00000');
+    return normalizeResultsBoardSharing(resultsBoardSharing||defaultResultsBoardSharing());
+  });
+}
+function saveResultsBoardSharing(action){
+  var settings=collectResultsBoardSharing();
+  setResultsBoardButtons(true);
+  setResultsBoardStatus(action==='reset'?'Resetting link...':'Saving Results Board sharing...','#64748b');
+  return fetch('/api/smart-trak/results-board-sharing?account='+encodeURIComponent(smartCoachAccountKey()),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:action||'',resultsBoardSharing:settings})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save Results Board sharing.');
+    resultsBoardSharing=normalizeResultsBoardSharing(result.data&&result.data.resultsBoardSharing);
+    currentResultsBoardUrl='';
+    renderResultsBoardSharing();
+    return resultsBoardSharing;
+  }).finally(function(){
+    setResultsBoardButtons(false);
+  });
+}
+function resultsBoardLinkParams(){
+  var settings=collectResultsBoardSharing();
+  var params=new URLSearchParams({account:smartCoachAccountKey()});
+  params.set('sport',settings.sport);
+  params.set('seasonYear',settings.seasonYear);
+  return params;
+}
+function createResultsBoardLink(){
+  var settings=collectResultsBoardSharing();
+  if(!settings.active){
+    setResultsBoardStatus('Turn the link active before creating a Results Board link.','#b00000');
+    return Promise.reject(new Error('Results Board sharing is off.'));
+  }
+  return saveResultsBoardSharing('').then(function(){
+    setResultsBoardStatus('Creating Results Board link...','#64748b');
+    return fetch('/api/smart-trak/results-board-link?'+resultsBoardLinkParams().toString(),{cache:'no-store'}).then(function(res){
+      return res.json().then(function(data){return{ok:res.ok,data:data};});
+    });
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not create Results Board link.');
+    currentResultsBoardUrl=new URL(result.data.url,window.location.origin).toString();
+    if(els.resultsBoardLinkPreview)els.resultsBoardLinkPreview.value=currentResultsBoardUrl;
+    setResultsBoardStatus('Results Board link is ready.','#08783c');
+    return currentResultsBoardUrl;
+  }).catch(function(error){
+    if(error&&error.message!=='Results Board sharing is off.')setResultsBoardStatus(error.message||'Could not create Results Board link.','#b00000');
+    throw error;
+  });
+}
+function copyResultsBoardLink(){
+  createResultsBoardLink().then(function(url){
+    return copyTextToClipboard(url).then(function(copied){
+      setResultsBoardStatus(copied?'Results Board link copied.':'Copy failed. Use the Current Link field.',copied?'#08783c':'#b00000');
+    });
+  }).catch(function(){});
+}
+function openResultsBoardLink(){
+  createResultsBoardLink().then(function(url){
+    window.open(url,'_blank','noopener');
+  }).catch(function(){});
+}
+function turnOffResultsBoardLink(){
+  if(els.resultsBoardActive)els.resultsBoardActive.checked=false;
+  saveResultsBoardSharing('').then(function(){
+    setResultsBoardStatus('Results Board sharing is off. Current links will not load.','#b00000');
+  }).catch(function(error){
+    setResultsBoardStatus(error.message||'Could not turn off Results Board sharing.','#b00000');
+  });
+}
+function resetResultsBoardLink(){
+  if(els.resultsBoardActive)els.resultsBoardActive.checked=true;
+  saveResultsBoardSharing('reset').then(function(){
+    return createResultsBoardLink();
+  }).then(function(url){
+    return copyTextToClipboard(url).then(function(copied){
+      setResultsBoardStatus(copied?'New Results Board link copied. Old links are invalid.':'New Results Board link is ready. Old links are invalid.','#08783c');
+    });
+  }).catch(function(error){
+    setResultsBoardStatus(error.message||'Could not reset Results Board link.','#b00000');
+  });
+}
 function openSimulatorModal(){
   applySmartCoachLinks();
   els.simulatorModal.hidden=false;
@@ -2307,6 +2542,7 @@ var els={
   raceResultBtn:document.getElementById('raceResultBtn'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
   shareMilesBoardBtn:document.getElementById('shareMilesBoardBtn'),
+  shareResultsBoardBtn:document.getElementById('shareResultsBoardBtn'),
   changeCodeBtn:document.getElementById('changeCodeBtn'),
   codeModal:document.getElementById('codeModal'),
   codeClose:document.getElementById('codeClose'),
@@ -2362,6 +2598,23 @@ var els={
   manualMileageNotes:document.getElementById('manualMileageNotes'),
   manualMileageStatus:document.getElementById('manualMileageStatus'),
   manualMileageSave:document.getElementById('manualMileageSave'),
+  resultsBoardModal:document.getElementById('resultsBoardModal'),
+  resultsBoardClose:document.getElementById('resultsBoardClose'),
+  resultsBoardActive:document.getElementById('resultsBoardActive'),
+  resultsBoardSport:document.getElementById('resultsBoardSport'),
+  resultsBoardSeasonYear:document.getElementById('resultsBoardSeasonYear'),
+  resultsBoardShowLatest:document.getElementById('resultsBoardShowLatest'),
+  resultsBoardShowSeason:document.getElementById('resultsBoardShowSeason'),
+  resultsBoardShowBadges:document.getElementById('resultsBoardShowBadges'),
+  resultsBoardShowSummary:document.getElementById('resultsBoardShowSummary'),
+  resultsBoardName:document.getElementById('resultsBoardName'),
+  resultsBoardCoachMessage:document.getElementById('resultsBoardCoachMessage'),
+  resultsBoardLinkPreview:document.getElementById('resultsBoardLinkPreview'),
+  resultsBoardStatus:document.getElementById('resultsBoardStatus'),
+  resultsBoardTurnOff:document.getElementById('resultsBoardTurnOff'),
+  resultsBoardReset:document.getElementById('resultsBoardReset'),
+  resultsBoardOpen:document.getElementById('resultsBoardOpen'),
+  resultsBoardCopy:document.getElementById('resultsBoardCopy'),
   raceResultModal:document.getElementById('raceResultModal'),
   raceResultClose:document.getElementById('raceResultClose'),
   raceResultDate:document.getElementById('raceResultDate'),
@@ -2704,7 +2957,9 @@ els.manageMeetsSectionBtn.addEventListener('click',openMeetManager);
 els.raceResultBtn.addEventListener('click',openRaceResult);
 els.manualMileageBtn.addEventListener('click',openManualMileage);
 els.shareMilesBoardBtn.addEventListener('click',shareMilesBoard);
+els.shareResultsBoardBtn.addEventListener('click',openResultsBoardSharing);
 if(location.hash==='#share-miles-board')setTimeout(shareMilesBoard,0);
+if(location.hash==='#share-results-board')setTimeout(openResultsBoardSharing,0);
 els.changeCodeBtn.addEventListener('click',openCodeModal);
 els.codeClose.addEventListener('click',closeCodeModal);
 els.codeSave.addEventListener('click',saveCoachCode);
@@ -2717,6 +2972,11 @@ els.accountClose.addEventListener('click',closeAccountSettings);
 els.accountRefresh.addEventListener('click',refreshAppVersion);
 els.accountSave.addEventListener('click',saveAccountSettings);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
+els.resultsBoardClose.addEventListener('click',closeResultsBoardSharing);
+els.resultsBoardCopy.addEventListener('click',copyResultsBoardLink);
+els.resultsBoardOpen.addEventListener('click',openResultsBoardLink);
+els.resultsBoardTurnOff.addEventListener('click',turnOffResultsBoardLink);
+els.resultsBoardReset.addEventListener('click',resetResultsBoardLink);
 els.manualMileageMode.addEventListener('change',updateManualMileageMode);
 els.manualMileageScope.addEventListener('change',updateManualMileageScope);
 els.manualMileageWarmup.addEventListener('input',updateManualMileageQuality);
@@ -3625,6 +3885,7 @@ function checkSmartCoachAccount(){
       applyStaffAccessVisibility(data);
       applyDashboardPreferences(data&&data.dashboardPreferences);
       milesBoardSharing=normalizeMilesBoardSharing(data&&data.milesBoardSharing);
+      resultsBoardSharing=normalizeResultsBoardSharing(data&&data.resultsBoardSharing);
       return{ok:res.ok,data:data};
     });
   });

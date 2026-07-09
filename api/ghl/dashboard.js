@@ -137,6 +137,72 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.publicMilesBoard = publicMilesBoard;
+module.exports.publicResultsBoard = publicResultsBoard;
+
+async function publicResultsBoard(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  const { token, locationId, accountKey, logoUrl } = getGhlContext(req);
+  if (!token || !locationId) {
+    res.status(500).json({ error: "Results Board is not configured for this account." });
+    return;
+  }
+
+  try {
+    const sharing = resultsBoardSharing(req.resultsBoardSharing);
+    const [athletes, meetRecords] = await Promise.all([
+      listActiveAthletes({ token, locationId }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+    ]);
+    const allRows = buildRecentMeetResults({ athletes, meetRecords });
+    const filters = resultsBoardFilters(req.query, sharing);
+    const seasonRows = allRows.filter((row) => resultsBoardRowMatches(row, filters));
+    const filterOptions = resultsBoardFilterOptions(allRows, filters);
+    const latestMeetName = filters.meetName || latestResultsMeetName(seasonRows);
+    const latestRows = seasonRows.filter((row) => !latestMeetName || clean(row.meetName) === latestMeetName).sort(resultsSort);
+    const seasonBestRows = resultsBoardSeasonBestRows(seasonRows).sort(resultsSort);
+    const meetNames = uniqueStrings(seasonRows.map((row) => row.meetName));
+    res.status(200).json({
+      success: true,
+      accountKey,
+      logoUrl,
+      generatedAt: new Date().toISOString(),
+      gameSettings: sharing.gameSettings,
+      displayOptions: sharing.displayOptions,
+      filters: {
+        sport: filters.sportLabel,
+        seasonYear: filters.seasonYear,
+        meet: latestMeetName,
+        event: filters.event,
+        gender: filters.gender,
+        label: resultsBoardFilterLabel(filters, latestMeetName),
+      },
+      filterOptions,
+      totals: {
+        results: seasonRows.length,
+        latestMeetResults: latestRows.length,
+        athletes: uniqueStrings(seasonRows.map((row) => row.athleteName)).length,
+        meets: meetNames.length,
+        personalBests: seasonRows.filter((row) => row.isPr).length,
+        seasonBests: seasonRows.filter((row) => row.isSeasonBest).length,
+      },
+      latestMeet: resultsBoardMeetSummary(latestRows, latestMeetName),
+      seasonSummary: resultsBoardSeasonSummary(seasonRows),
+      latestRows,
+      seasonRows: seasonBestRows,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Results Board lookup failed." });
+  }
+}
 
 async function publicMilesBoard(req, res) {
   if (req.method === "OPTIONS") {
@@ -771,6 +837,142 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
     rows.push(result);
   });
   return rows.sort(sortMeetSyncDesc);
+}
+
+function resultsBoardSharing(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    active: input.active !== false,
+    sport: resultsBoardSport(input.sport || "Cross Country"),
+    seasonYear: Number(input.seasonYear) || new Date().getFullYear(),
+    displayOptions: {
+      latestMeet: !(input.displayOptions && input.displayOptions.latestMeet === false),
+      seasonSummary: !(input.displayOptions && input.displayOptions.seasonSummary === false),
+      bestBadges: !(input.displayOptions && input.displayOptions.bestBadges === false),
+      grades: !(input.displayOptions && input.displayOptions.grades === false),
+      teamSummary: !(input.displayOptions && input.displayOptions.teamSummary === false),
+    },
+    gameSettings: {
+      boardName: clean(input.gameSettings && input.gameSettings.boardName).slice(0, 80) || "Team Results Board",
+      coachMessage: clean(input.gameSettings && input.gameSettings.coachMessage).slice(0, 240),
+    },
+  };
+}
+
+function resultsBoardFilters(query, sharing) {
+  const sport = resultsBoardSport(query && query.sport || sharing.sport);
+  return {
+    sport,
+    sportKey: optionValue(sport),
+    sportLabel: sport,
+    seasonYear: Number(query && query.seasonYear) || Number(sharing.seasonYear) || new Date().getFullYear(),
+    meetName: clean(query && query.meet).slice(0, 160),
+    event: clean(query && query.event).slice(0, 80),
+    gender: resultsBoardGender(query && query.gender),
+  };
+}
+
+function resultsBoardRowMatches(row, filters) {
+  if (!row) return false;
+  if (filters.seasonYear && (Number(row.seasonYear) || yearFromDateValue(row.meetDate)) !== filters.seasonYear) return false;
+  if (filters.sportKey && filters.sportKey !== "all") {
+    const rowSport = optionValue(row.sport || filters.sportLabel);
+    if (rowSport && rowSport !== filters.sportKey) return false;
+  }
+  if (filters.meetName && clean(row.meetName) !== filters.meetName) return false;
+  if (filters.event && clean(row.event) !== filters.event) return false;
+  if (filters.gender && resultsBoardGender(row.athleteGender) !== filters.gender) return false;
+  return true;
+}
+
+function latestResultsMeetName(rows) {
+  const latest = (Array.isArray(rows) ? rows : []).slice().sort((a, b) => String(b.meetDate || b.syncedAt).localeCompare(String(a.meetDate || a.syncedAt)) || clean(a.meetName).localeCompare(clean(b.meetName)))[0];
+  return clean(latest && latest.meetName);
+}
+
+function resultsBoardFilterOptions(rows, filters) {
+  const scoped = (Array.isArray(rows) ? rows : []).filter((row) => {
+    const year = Number(row.seasonYear) || yearFromDateValue(row.meetDate);
+    const rowSport = optionValue(row.sport || filters.sportLabel);
+    return (!filters.seasonYear || year === filters.seasonYear) && (!filters.sportKey || !rowSport || rowSport === filters.sportKey);
+  });
+  return {
+    meets: uniqueStrings(scoped.map((row) => row.meetName)),
+    events: uniqueStrings(scoped.map((row) => row.event)),
+    years: uniqueStrings((Array.isArray(rows) ? rows : []).map((row) => String(Number(row.seasonYear) || yearFromDateValue(row.meetDate) || "")).filter(Boolean)).sort(),
+  };
+}
+
+function resultsBoardFilterLabel(filters, meetName) {
+  return [filters.sportLabel, filters.seasonYear, meetName || "Latest meet"].filter(Boolean).join(" · ");
+}
+
+function resultsBoardMeetSummary(rows, meetName) {
+  const list = Array.isArray(rows) ? rows : [];
+  const fastest = list.slice().filter((row) => Number(row.resultMs) > 0).sort((a, b) => Number(a.resultMs) - Number(b.resultMs))[0] || {};
+  return {
+    meetName: meetName || "",
+    meetDate: list[0] && list[0].meetDate || "",
+    athletes: uniqueStrings(list.map((row) => row.athleteName)).length,
+    results: list.length,
+    personalBests: list.filter((row) => row.isPr).length,
+    seasonBests: list.filter((row) => row.isSeasonBest).length,
+    topResult: fastest.athleteName ? {
+      athleteName: fastest.athleteName,
+      event: fastest.event,
+      resultDisplay: fastest.resultDisplay,
+    } : null,
+  };
+}
+
+function resultsBoardSeasonSummary(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  return {
+    athletes: uniqueStrings(list.map((row) => row.athleteName)).length,
+    results: list.length,
+    meets: uniqueStrings(list.map((row) => row.meetName)).length,
+    personalBests: list.filter((row) => row.isPr).length,
+    seasonBests: list.filter((row) => row.isSeasonBest).length,
+  };
+}
+
+function resultsBoardSeasonBestRows(rows) {
+  const bestByAthleteEvent = new Map();
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const key = `${clean(row.athleteName).toLowerCase()}|${clean(row.event).toLowerCase()}`;
+    if (!key.replace("|", "")) return;
+    const current = bestByAthleteEvent.get(key);
+    if (!current || resultsBetter(row, current)) bestByAthleteEvent.set(key, row);
+  });
+  return Array.from(bestByAthleteEvent.values());
+}
+
+function resultsBetter(left, right) {
+  const leftMs = Number(left && left.resultMs) || parseTimeToMs(left && left.resultDisplay);
+  const rightMs = Number(right && right.resultMs) || parseTimeToMs(right && right.resultDisplay);
+  if (leftMs && rightMs) return leftMs < rightMs;
+  if (leftMs && !rightMs) return true;
+  if (!leftMs && rightMs) return false;
+  return String(left && left.meetDate || "").localeCompare(String(right && right.meetDate || "")) > 0;
+}
+
+function resultsSort(a, b) {
+  return clean(a.event).localeCompare(clean(b.event)) ||
+    (Number(a.resultMs) || 999999999) - (Number(b.resultMs) || 999999999) ||
+    clean(a.athleteName).localeCompare(clean(b.athleteName));
+}
+
+function resultsBoardSport(value) {
+  const key = optionValue(value);
+  if (key === "track" || key === "track_and_field" || key === "track_field") return "Track";
+  return "Cross Country";
+}
+
+function resultsBoardGender(value) {
+  const text = clean(value).toLowerCase();
+  if (/\b(boy|boys|male|men|mens|m)\b/.test(text)) return "boy";
+  if (/\b(girl|girls|female|women|womens|f)\b/.test(text)) return "girl";
+  return "";
 }
 
 function isHistoricalMeetResult(result) {

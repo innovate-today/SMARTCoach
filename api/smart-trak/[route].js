@@ -145,6 +145,23 @@ module.exports = async function handler(req, res) {
     return accountSpeedBoard(req, res);
   }
 
+  if (route === "results-board-sharing") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountResultsBoardSharing(req, res);
+  }
+
+  if (route === "results-board-link") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountResultsBoardLink(req, res);
+  }
+
+  if (route === "results-board") {
+    await attachRegistryAccount(req);
+    return accountResultsBoard(req, res);
+  }
+
   if (route === "attendance") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -2016,6 +2033,7 @@ async function accountStatus(req, res) {
     trainingCustomization: normalizeTrainingCustomization(registry.record && registry.record.trainingCustomization),
     dashboardPreferences: normalizeDashboardPreferences(registry.record && registry.record.dashboardPreferences),
     milesBoardSharing: normalizeMilesBoardSharing(registry.record && registry.record.milesBoardSharing),
+    resultsBoardSharing: normalizeResultsBoardSharing(registry.record && registry.record.resultsBoardSharing),
     coachAccessUnlocked,
     staffAdminAllowed,
     coachAccessCodeAccepted: accessCodeAccepted,
@@ -2421,6 +2439,145 @@ async function accountSpeedBoardSharing(req, res) {
   }
 }
 
+async function accountResultsBoardLink(req, res) {
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+  const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = normalizeResultsBoardSharing(existing.record && existing.record.resultsBoardSharing);
+  if (!sharing.active) {
+    res.status(403).json({ error: "Results Board sharing is turned off." });
+    return;
+  }
+  const token = resultsBoardToken(accountKey, sharing.tokenVersion);
+  const params = new URLSearchParams({ account: accountKey, token });
+  params.set("sport", cleanSetupText(firstQueryValue(req.query && req.query.sport)) || sharing.sport || "Cross Country");
+  params.set("seasonYear", cleanSetupText(firstQueryValue(req.query && req.query.seasonYear)) || String(sharing.seasonYear || new Date().getFullYear()));
+  const meet = cleanSetupText(firstQueryValue(req.query && req.query.meet)).slice(0, 160);
+  const event = cleanSetupText(firstQueryValue(req.query && req.query.event)).slice(0, 80);
+  const gender = normalizeResultsBoardGender(firstQueryValue(req.query && req.query.gender));
+  if (meet) params.set("meet", meet);
+  if (event) params.set("event", event);
+  if (gender) params.set("gender", gender);
+  const compactParams = new URLSearchParams({
+    k: resultsBoardShareKey({
+      account: accountKey,
+      token,
+      sport: params.get("sport"),
+      seasonYear: params.get("seasonYear"),
+      meet: params.get("meet"),
+      event: params.get("event"),
+      gender: params.get("gender"),
+    }),
+  });
+  res.status(200).json({
+    success: true,
+    token,
+    resultsBoardSharing: sharing,
+    url: `/results-board.html?${compactParams.toString()}`,
+    legacyUrl: `/results-board.html?${params.toString()}`,
+  });
+}
+
+async function accountResultsBoard(req, res) {
+  const share = resultsBoardShareFromKey(firstQueryValue(req.query && req.query.k));
+  const accountKey = normalizeSetupAccountKey(share.account || firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const provided = cleanSetupText(share.token || firstQueryValue(req.query && req.query.token));
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = normalizeResultsBoardSharing(existing.record && existing.record.resultsBoardSharing);
+  if (!sharing.active) {
+    res.status(403).json({ error: "Results Board sharing is turned off." });
+    return;
+  }
+  const expected = resultsBoardToken(accountKey, sharing.tokenVersion);
+  if (!provided || !safeEqual(provided, expected)) {
+    res.status(403).json({ error: "Results Board link is invalid or expired." });
+    return;
+  }
+  if (!handlers.dashboard || typeof handlers.dashboard.publicResultsBoard !== "function") {
+    res.status(500).json({ error: "Results Board is not available." });
+    return;
+  }
+  req.resultsBoardSharing = sharing;
+  if (share.sport && req.query && !firstQueryValue(req.query.sport)) req.query.sport = share.sport;
+  if (share.seasonYear && req.query && !firstQueryValue(req.query.seasonYear)) req.query.seasonYear = share.seasonYear;
+  if (share.meet && req.query && !firstQueryValue(req.query.meet)) req.query.meet = share.meet;
+  if (share.event && req.query && !firstQueryValue(req.query.event)) req.query.event = share.event;
+  if (share.gender && req.query && !firstQueryValue(req.query.gender)) req.query.gender = share.gender;
+  return handlers.dashboard.publicResultsBoard(req, res);
+}
+
+async function accountResultsBoardSharing(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    if (req.method === "GET") {
+      res.status(200).json({
+        success: true,
+        accountKey,
+        resultsBoardSharing: normalizeResultsBoardSharing(existing.record.resultsBoardSharing),
+      });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionAllowedForAccount(session, existing.record, coachCodeVersion);
+    const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
+    const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    if (!sessionAllowed && !codeAllowed) {
+      throw httpError(401, "Active coach access is required to update Results Board sharing.");
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const current = normalizeResultsBoardSharing(existing.record.resultsBoardSharing);
+    const input = payload.resultsBoardSharing && typeof payload.resultsBoardSharing === "object" ? payload.resultsBoardSharing : payload;
+    const action = cleanSetupText(payload.action || input.action).toLowerCase();
+    const next = normalizeResultsBoardSharing({ ...current, ...input });
+    if (action === "reset") {
+      next.active = true;
+      next.tokenVersion = resultsBoardTokenVersion();
+      next.resetAt = new Date().toISOString();
+    }
+    next.updatedAt = new Date().toISOString();
+    await saveAccountRecord(accountKey, {
+      ...existing.record,
+      resultsBoardSharing: next,
+      lastResultsBoardSharingSync: {
+        savedAt: next.updatedAt,
+        active: next.active,
+        sport: next.sport,
+        seasonYear: next.seasonYear,
+        resetAt: next.resetAt || "",
+      },
+    });
+    res.status(200).json({ success: true, accountKey, resultsBoardSharing: next });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Results Board sharing save failed." });
+  }
+}
+
 function defaultDashboardVisibleTools() {
   return {
     keepTrak: true,
@@ -2640,6 +2797,52 @@ function normalizeSpeedBoardChallenge(value) {
 }
 
 function normalizeSpeedBoardGender(value) {
+  const text = cleanSetupText(value).toLowerCase();
+  if (text === "boy" || text === "boys" || text === "male" || text === "m") return "boy";
+  if (text === "girl" || text === "girls" || text === "female" || text === "f") return "girl";
+  return "";
+}
+
+function normalizeResultsBoardSharing(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    active: input.active !== false,
+    sport: normalizeResultsBoardSport(input.sport || "Cross Country"),
+    seasonYear: Number(input.seasonYear) || new Date().getFullYear(),
+    displayOptions: normalizeResultsBoardDisplayOptions(input.displayOptions),
+    gameSettings: normalizeResultsBoardGameSettings(input.gameSettings),
+    tokenVersion: cleanSetupText(input.tokenVersion) || "1",
+    updatedAt: cleanSetupText(input.updatedAt) || new Date().toISOString(),
+    resetAt: cleanSetupText(input.resetAt),
+  };
+}
+
+function normalizeResultsBoardDisplayOptions(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    latestMeet: input.latestMeet !== false,
+    seasonSummary: input.seasonSummary !== false,
+    bestBadges: input.bestBadges !== false,
+    grades: input.grades !== false,
+    teamSummary: input.teamSummary !== false,
+  };
+}
+
+function normalizeResultsBoardGameSettings(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    boardName: cleanSetupText(input.boardName).slice(0, 80) || "Team Results Board",
+    coachMessage: cleanSetupText(input.coachMessage).slice(0, 240),
+  };
+}
+
+function normalizeResultsBoardSport(value) {
+  const key = cleanSetupText(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  if (key === "track" || key === "track_and_field" || key === "track_field") return "Track";
+  return "Cross Country";
+}
+
+function normalizeResultsBoardGender(value) {
   const text = cleanSetupText(value).toLowerCase();
   if (text === "boy" || text === "boys" || text === "male" || text === "m") return "boy";
   if (text === "girl" || text === "girls" || text === "female" || text === "f") return "girl";
@@ -5650,6 +5853,48 @@ function speedBoardShareFromKey(value) {
       year: cleanSetupText(raw.y || raw.year),
       challenge: cleanSetupText(raw.c || raw.challenge),
       challenges: cleanSetupText(raw.cs || raw.challenges),
+    };
+  } catch (error) {
+    return {};
+  }
+}
+
+function resultsBoardToken(accountKey, tokenVersion = "1") {
+  const secret = cleanSetupText(process.env.SMARTCOACH_RESULTS_BOARD_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE || "smartcoach-results-board");
+  return crypto.createHmac("sha256", secret).update(`results-board:${normalizeSetupAccountKey(accountKey) || "default"}:${cleanSetupText(tokenVersion) || "1"}`).digest("base64url");
+}
+
+function resultsBoardTokenVersion() {
+  return crypto.randomBytes(12).toString("base64url");
+}
+
+function resultsBoardShareKey(input) {
+  const source = input && typeof input === "object" ? input : {};
+  const payload = {
+    a: normalizeSetupAccountKey(source.account),
+    t: cleanSetupText(source.token),
+    sp: cleanSetupText(source.sport),
+    y: cleanSetupText(source.seasonYear),
+    m: cleanSetupText(source.meet),
+    e: cleanSetupText(source.event),
+    g: cleanSetupText(source.gender),
+  };
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function resultsBoardShareFromKey(value) {
+  const key = cleanSetupText(value);
+  if (!key) return {};
+  try {
+    const raw = JSON.parse(Buffer.from(key, "base64url").toString("utf8"));
+    return {
+      account: normalizeSetupAccountKey(raw.a || raw.account),
+      token: cleanSetupText(raw.t || raw.token),
+      sport: cleanSetupText(raw.sp || raw.sport),
+      seasonYear: cleanSetupText(raw.y || raw.seasonYear),
+      meet: cleanSetupText(raw.m || raw.meet),
+      event: cleanSetupText(raw.e || raw.event),
+      gender: cleanSetupText(raw.g || raw.gender),
     };
   } catch (error) {
     return {};
