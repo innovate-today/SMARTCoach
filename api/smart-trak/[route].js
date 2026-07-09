@@ -2825,6 +2825,7 @@ function normalizeResultsBoardDisplayOptions(source) {
     meetArchive: input.meetArchive !== false,
     athleteSummary: input.athleteSummary !== false,
     eventSummary: input.eventSummary !== false,
+    divisionSummary: input.divisionSummary !== false,
     bestBadges: input.bestBadges !== false,
     grades: input.grades !== false,
     teamSummary: input.teamSummary !== false,

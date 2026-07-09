@@ -199,6 +199,7 @@ async function publicResultsBoard(req, res) {
       meetArchive: resultsBoardMeetArchive(seasonRows),
       athleteSummaryRows: resultsBoardAthleteSummaryRows(seasonRows),
       eventSummaryRows: resultsBoardEventSummaryRows(seasonRows),
+      divisionSummaryRows: resultsBoardDivisionSummaryRows(seasonRows),
       latestRows,
       seasonRows: seasonBestRows,
     });
@@ -854,6 +855,7 @@ function resultsBoardSharing(source) {
       meetArchive: !(input.displayOptions && input.displayOptions.meetArchive === false),
       athleteSummary: !(input.displayOptions && input.displayOptions.athleteSummary === false),
       eventSummary: !(input.displayOptions && input.displayOptions.eventSummary === false),
+      divisionSummary: !(input.displayOptions && input.displayOptions.divisionSummary === false),
       bestBadges: !(input.displayOptions && input.displayOptions.bestBadges === false),
       grades: !(input.displayOptions && input.displayOptions.grades === false),
       teamSummary: !(input.displayOptions && input.displayOptions.teamSummary === false),
@@ -1065,6 +1067,51 @@ function resultsBoardEventSummaryRows(rows) {
   );
 }
 
+function resultsBoardDivisionSummaryRows(rows) {
+  const byDivision = new Map();
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const gender = resultsBoardGender(row.athleteGender);
+    const key = gender || "unlisted";
+    if (!byDivision.has(key)) {
+      byDivision.set(key, {
+        division: key,
+        results: 0,
+        athletes: new Set(),
+        meets: new Set(),
+        events: new Set(),
+        personalBests: 0,
+        seasonBests: 0,
+        leader: null,
+        latestDate: "",
+      });
+    }
+    const item = byDivision.get(key);
+    item.results += 1;
+    if (clean(row.athleteName)) item.athletes.add(clean(row.athleteName).toLowerCase());
+    if (clean(row.meetName)) item.meets.add(clean(row.meetName));
+    if (clean(row.event)) item.events.add(clean(row.event));
+    if (row.isPr) item.personalBests += 1;
+    if (row.isSeasonBest) item.seasonBests += 1;
+    if (!item.leader || resultsBetter(row, item.leader)) item.leader = row;
+    if (String(row.meetDate || "") > item.latestDate) item.latestDate = String(row.meetDate || "");
+  });
+  const order = { boy: 1, girl: 2, unlisted: 3 };
+  return Array.from(byDivision.values()).map((item) => ({
+    division: item.division,
+    divisionLabel: resultsBoardDivisionLabel(item.division),
+    results: item.results,
+    athletes: item.athletes.size,
+    meets: item.meets.size,
+    events: item.events.size,
+    personalBests: item.personalBests,
+    seasonBests: item.seasonBests,
+    leaderName: item.leader && item.leader.athleteName || "",
+    leaderEvent: item.leader && item.leader.event || "",
+    leaderResult: item.leader && item.leader.resultDisplay || "",
+    latestDate: item.latestDate,
+  })).sort((a, b) => (order[a.division] || 99) - (order[b.division] || 99));
+}
+
 function resultsBoardSeasonBestRows(rows) {
   const bestByAthleteEvent = new Map();
   (Array.isArray(rows) ? rows : []).forEach((row) => {
@@ -1102,6 +1149,12 @@ function resultsBoardGender(value) {
   if (/\b(boy|boys|male|men|mens|m)\b/.test(text)) return "boy";
   if (/\b(girl|girls|female|women|womens|f)\b/.test(text)) return "girl";
   return "";
+}
+
+function resultsBoardDivisionLabel(value) {
+  if (value === "boy") return "Boys";
+  if (value === "girl") return "Girls";
+  return "Unlisted";
 }
 
 function isHistoricalMeetResult(result) {
