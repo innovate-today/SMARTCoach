@@ -3225,15 +3225,10 @@ function attendanceSummaryHeader(key,label){
   var active=sort.key===key;
   return '<th onclick="setAttendanceSummarySort(\''+key+'\')">'+label+(active?(sort.dir==='asc'?' ▲':' ▼'):'')+'</th>';
 }
-function attendanceSummaryDaysPossible(){
-  var seen={};
-  attendanceFilteredSummaryRows().forEach(function(row){
-    var key=[row&&row.date,row&&row.checkpointId||row&&row.checkpointName].map(function(value){
-      return String(value||'').trim().toLowerCase();
-    }).filter(Boolean).join('|');
-    if(key)seen[key]=1;
-  });
-  return Object.keys(seen).length;
+function attendanceSummaryDaysPossible(rows){
+  return (rows||attendanceSummaryRows()).reduce(function(max,row){
+    return Math.max(max,Number(row&&row.counts&&row.counts.total||0));
+  },0);
 }
 function attendanceStatusLabel(value){
   if(value==='checked_out')return 'Checked Out';
@@ -3302,7 +3297,7 @@ function renderAttendanceSummary(selectedId){
   }).join('')||'<tr><td colspan="6">No athletes match this status filter.</td></tr>';
   var statusText=ATTENDANCE_SUMMARY_REMOTE.loading?'Loading SMART Trak attendance...':(ATTENDANCE_SUMMARY_REMOTE.loaded?'Loaded from SMART Trak.':(ATTENDANCE_SUMMARY_REMOTE.error?'Could not load SMART Trak attendance. Showing marks saved on this device.':'Showing marks saved on this device.'));
   body.innerHTML='<div class="att-summary-title">'+ex(CL.name||'Training Group')+'</div>'+
-    '<div class="att-summary-cards"><div class="att-summary-card"><b>'+totals.rate+'%</b><span>Group attendance</span></div><div class="att-summary-card"><b>'+rows.length+'</b><span>Athletes</span></div><div class="att-summary-card"><b>'+attendanceSummaryDaysPossible()+'</b><span>Total days possible</span></div></div>'+
+    '<div class="att-summary-cards"><div class="att-summary-card"><b>'+totals.rate+'%</b><span>Group attendance</span></div><div class="att-summary-card"><b>'+rows.length+'</b><span>Athletes</span></div><div class="att-summary-card"><b>'+attendanceSummaryDaysPossible(rows)+'</b><span>Total days possible</span></div></div>'+
     '<div class="att-summary-note">'+ex(statusText)+'</div>'+
     '<div class="srow"><span class="slbl">Range</span><select class="sinp" id="att-summary-range" onchange="setAttendanceSummaryRange(this.value)"><option value="all"'+(range.mode==='all'?' selected':'')+'>All dates</option><option value="7"'+(range.mode==='7'?' selected':'')+'>Last 7 days</option><option value="14"'+(range.mode==='14'?' selected':'')+'>Last 14 days</option><option value="30"'+(range.mode==='30'?' selected':'')+'>Last 30 days</option><option value="custom"'+(range.mode==='custom'?' selected':'')+'>Custom range</option></select></div>'+
     '<div id="att-summary-custom-range" class="att-summary-range-custom"'+(range.mode==='custom'?'':' hidden')+'><input id="att-summary-start" type="date" value="'+ex(range.startDate)+'" onchange="setAttendanceSummaryCustomRange()"><input id="att-summary-end" type="date" value="'+ex(range.endDate)+'" onchange="setAttendanceSummaryCustomRange()"></div>'+
