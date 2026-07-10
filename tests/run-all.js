@@ -2889,6 +2889,24 @@ function checkAttendanceCheckpointMarkAll() {
   console.log("attendance checkpoint Mark All Present ok");
 }
 
+function checkAttendanceMobileSummary() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    'id="m-attendance-summary"',
+    "openAttendanceSummary()",
+    "function attendanceSavedRecord(cp,r)",
+    "function attendanceRunnerSummaryCounts(r)",
+    "function attendanceSummaryRows()",
+    "function renderAttendanceSummary(selectedId)",
+    "Checked Out is included in Present for this summary.",
+    "<th>Name</th><th>%</th><th>P</th><th>A</th><th>E</th><th>T</th>",
+    "counts.present+counts.checked_out",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile attendance summary missing ${text}`);
+  });
+  console.log("mobile attendance summary ok");
+}
+
 function checkAttendanceSeasonAttachment() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const desktop = fs.readFileSync("attendance.html", "utf8");
@@ -3648,6 +3666,7 @@ checkFieldNoMarkResultsAllowed();
 checkMobileFieldEventCaptureControls();
 checkKeepTrakFeature();
 checkAttendanceCheckpointMarkAll();
+checkAttendanceMobileSummary();
 checkAttendanceSeasonAttachment();
 checkGroupsTrayAddHidden();
 checkMobileGroupStorageAccountScoped();
