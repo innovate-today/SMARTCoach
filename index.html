@@ -167,6 +167,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .att-detail-row em{grid-column:1/-1;font-style:normal;font-size:11px;color:#64748b}
 .att-detail-empty{padding:12px;color:#64748b;font-size:12px;font-weight:800;text-align:center}
 .att-summary-table tbody tr{cursor:pointer}
+.att-summary-range-custom{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#fff;border-bottom:.5px solid #e5e5ea;padding:7px 12px}
+.att-summary-range-custom[hidden]{display:none}
+.att-summary-range-custom input{font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);color:#333}
 #m-keep-trak .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
 #m-keep-trak .mhd,#m-keep-trak .mttl,#m-keep-trak .srow,#m-keep-trak .bulk-status,#m-keep-trak .mbtn,#m-keep-trak .keep-compose-actions{flex-shrink:0}
 #keep-list{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}
@@ -2942,6 +2945,7 @@ function attendanceSavedRecord(cp,r){
   return cp&&cp.records&&cp.records[key]?cp.records[key]:null;
 }
 var ATTENDANCE_SUMMARY_REMOTE={groupKey:'',loaded:false,loading:false,error:'',rows:[]};
+var ATTENDANCE_SUMMARY_RANGE={mode:'all',startDate:'',endDate:''};
 function attendanceSummaryGroupKey(){
   return String(CL&&(CL.sharedGroupId||CL.id||CL.name)||'');
 }
@@ -3009,6 +3013,85 @@ function attendanceSummarySourceRows(){
   attendanceLocalSummaryRows().forEach(function(row){var key=attendanceSummaryRowKey(row);if(key)byKey[key]=row;});
   return Object.keys(byKey).map(function(key){return byKey[key];});
 }
+function attendanceSummaryRange(){
+  var range=ATTENDANCE_SUMMARY_RANGE||{};
+  var mode=String(range.mode||'all');
+  if(['all','7','14','30','custom'].indexOf(mode)<0)mode='all';
+  var startDate=String(range.startDate||'').slice(0,10);
+  var endDate=String(range.endDate||'').slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(startDate))startDate='';
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(endDate))endDate='';
+  return {mode:mode,startDate:startDate,endDate:endDate};
+}
+function attendanceSummaryParseDate(value){
+  var parts=String(value||'').slice(0,10).split('-').map(Number);
+  if(parts.length!==3||!parts[0]||!parts[1]||!parts[2])return null;
+  var date=new Date(parts[0],parts[1]-1,parts[2]);
+  date.setHours(0,0,0,0);
+  return Number.isNaN(date.getTime())?null:date;
+}
+function attendanceSummaryDateInput(date){
+  if(!date)return '';
+  var year=date.getFullYear();
+  var month=String(date.getMonth()+1).padStart(2,'0');
+  var day=String(date.getDate()).padStart(2,'0');
+  return year+'-'+month+'-'+day;
+}
+function attendanceSummaryAddDays(date,days){
+  var next=new Date(date.getTime());
+  next.setDate(next.getDate()+days);
+  next.setHours(0,0,0,0);
+  return next;
+}
+function attendanceSummaryRangeBounds(){
+  var range=attendanceSummaryRange();
+  if(range.mode==='all')return null;
+  if(range.mode==='custom'){
+    var customStart=attendanceSummaryParseDate(range.startDate);
+    var customEnd=attendanceSummaryParseDate(range.endDate);
+    if(customStart&&customEnd&&customStart>customEnd){
+      var swap=customStart;
+      customStart=customEnd;
+      customEnd=swap;
+    }
+    return {start:customStart,end:customEnd};
+  }
+  var days=Number(range.mode)||30;
+  var end=new Date();
+  end.setHours(0,0,0,0);
+  return {start:attendanceSummaryAddDays(end,-days+1),end:end};
+}
+function attendanceSummaryRowInRange(row){
+  var bounds=attendanceSummaryRangeBounds();
+  if(!bounds)return true;
+  var date=attendanceSummaryParseDate(row&&row.date);
+  if(!date)return false;
+  if(bounds.start&&date<bounds.start)return false;
+  if(bounds.end&&date>bounds.end)return false;
+  return true;
+}
+function attendanceFilteredSummaryRows(){
+  return attendanceSummarySourceRows().filter(attendanceSummaryRowInRange);
+}
+function setAttendanceSummaryRange(mode){
+  var current=attendanceSummaryRange();
+  if(mode==='custom'&&(!current.startDate||!current.endDate)){
+    var end=new Date();
+    end.setHours(0,0,0,0);
+    current.startDate=current.startDate||attendanceSummaryDateInput(attendanceSummaryAddDays(end,-29));
+    current.endDate=current.endDate||attendanceSummaryDateInput(end);
+  }
+  ATTENDANCE_SUMMARY_RANGE={mode:mode,startDate:current.startDate,endDate:current.endDate};
+  renderAttendanceSummary(document.getElementById('att-summary-athlete')&&document.getElementById('att-summary-athlete').value||'');
+}
+function setAttendanceSummaryCustomRange(){
+  ATTENDANCE_SUMMARY_RANGE={
+    mode:'custom',
+    startDate:document.getElementById('att-summary-start')&&document.getElementById('att-summary-start').value||'',
+    endDate:document.getElementById('att-summary-end')&&document.getElementById('att-summary-end').value||''
+  };
+  renderAttendanceSummary(document.getElementById('att-summary-athlete')&&document.getElementById('att-summary-athlete').value||'');
+}
 function attendanceStatusCountsFromRows(rows,r){
   var counts={present:0,absent:0,excused:0,late:0,checked_out:0};
   (rows||[]).forEach(function(row){
@@ -3031,8 +3114,8 @@ function attendanceLocalSummaryCounts(r){
   });
   return counts;
 }
-function attendanceRunnerSummaryCounts(r){
-  var counts=ATTENDANCE_SUMMARY_REMOTE.loaded?attendanceStatusCountsFromRows(attendanceSummarySourceRows(),r):attendanceLocalSummaryCounts(r);
+function attendanceRunnerSummaryCounts(r,sourceRows){
+  var counts=attendanceStatusCountsFromRows(sourceRows||attendanceFilteredSummaryRows(),r);
   var presentTotal=counts.present+counts.checked_out;
   var required=presentTotal+counts.late+counts.absent;
   return {
@@ -3045,8 +3128,9 @@ function attendanceRunnerSummaryCounts(r){
   };
 }
 function attendanceSummaryRows(){
+  var sourceRows=attendanceFilteredSummaryRows();
   return (CL&&CL.runners||[]).map(function(r){
-    return {id:String(r.id),name:r.name||'Athlete',counts:attendanceRunnerSummaryCounts(r)};
+    return {id:String(r.id),name:r.name||'Athlete',counts:attendanceRunnerSummaryCounts(r,sourceRows)};
   }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
 }
 function attendanceStatusLabel(value){
@@ -3063,7 +3147,7 @@ function attendanceSelectedRunner(selectedId){
   return (CL&&CL.runners||[]).find(function(r){return String(r.id)===String(selectedId);})||null;
 }
 function attendanceDetailRowsForRunner(r){
-  return attendanceSummarySourceRows().filter(function(row){
+  return attendanceFilteredSummaryRows().filter(function(row){
     return attendanceRowMatchesRunner(row,r);
   }).sort(function(a,b){
     return String(b.date||'').localeCompare(String(a.date||''))||String(a.checkpointName||'').localeCompare(String(b.checkpointName||''));
@@ -3098,6 +3182,12 @@ function renderAttendanceSummary(selectedId){
   if(!body)return;
   var rows=attendanceSummaryRows();
   var selected=selectedId||'';
+  var range=attendanceSummaryRange();
+  var bounds=attendanceSummaryRangeBounds();
+  if(range.mode==='custom'&&(!range.startDate||!range.endDate)&&bounds){
+    if(!range.startDate&&bounds.start)range.startDate=attendanceSummaryDateInput(bounds.start);
+    if(!range.endDate&&bounds.end)range.endDate=attendanceSummaryDateInput(bounds.end);
+  }
   var visible=selected?rows.filter(function(row){return row.id===String(selected);}):rows;
   var totals=attendanceSummaryTotals(rows);
   var options=['<option value="">All athletes</option>'].concat(rows.map(function(row){
@@ -3110,6 +3200,8 @@ function renderAttendanceSummary(selectedId){
   body.innerHTML='<div class="att-summary-title">'+ex(CL.name||'Training Group')+'</div>'+
     '<div class="att-summary-cards"><div class="att-summary-card"><b>'+totals.rate+'%</b><span>Group attendance</span></div><div class="att-summary-card"><b>'+rows.length+'</b><span>Athletes</span></div><div class="att-summary-card"><b>'+totals.p+'</b><span>Present</span></div><div class="att-summary-card"><b>'+totals.a+'</b><span>Absent</span></div><div class="att-summary-card"><b>'+totals.e+'</b><span>Excused</span></div><div class="att-summary-card"><b>'+totals.t+'</b><span>Tardy</span></div></div>'+
     '<div class="att-summary-note">'+ex(statusText)+'</div>'+
+    '<div class="srow"><span class="slbl">Range</span><select class="sinp" id="att-summary-range" onchange="setAttendanceSummaryRange(this.value)"><option value="all"'+(range.mode==='all'?' selected':'')+'>All dates</option><option value="7"'+(range.mode==='7'?' selected':'')+'>Last 7 days</option><option value="14"'+(range.mode==='14'?' selected':'')+'>Last 14 days</option><option value="30"'+(range.mode==='30'?' selected':'')+'>Last 30 days</option><option value="custom"'+(range.mode==='custom'?' selected':'')+'>Custom range</option></select></div>'+
+    '<div id="att-summary-custom-range" class="att-summary-range-custom"'+(range.mode==='custom'?'':' hidden')+'><input id="att-summary-start" type="date" value="'+ex(range.startDate)+'" onchange="setAttendanceSummaryCustomRange()"><input id="att-summary-end" type="date" value="'+ex(range.endDate)+'" onchange="setAttendanceSummaryCustomRange()"></div>'+
     '<div class="srow"><span class="slbl">Athlete</span><select class="sinp" id="att-summary-athlete" onchange="renderAttendanceSummary(this.value)">'+options+'</select></div>'+
     '<div class="att-summary-note">Select an athlete or tap a row to see recent marks.</div>'+
     '<div class="att-summary-table-wrap"><table class="att-summary-table"><thead><tr><th>Name</th><th>%</th><th>P</th><th>A</th><th>E</th><th>T</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'+
