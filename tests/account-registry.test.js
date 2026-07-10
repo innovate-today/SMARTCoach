@@ -4,6 +4,8 @@ const {
   registryHealth,
   saveAccountRecord,
   loadAccountRecord,
+  saveAttendanceRecords,
+  loadAttendanceRecords,
   mirrorSchoolRecords,
   loadSchoolRecordsMirror,
   schoolRecordsMirrorStatus,
@@ -186,6 +188,105 @@ async function testSchoolRecordsMirrorManifestFallback() {
   }
 }
 
+async function testAttendanceMirrorItemizedStorage() {
+  const previousFetch = global.fetch;
+  const store = new Map();
+  const sets = [];
+  global.fetch = async (url, options) => {
+    const text = String(url);
+    const parts = text.replace("https://registry.example/", "").split("/").map(decodeURIComponent);
+    const command = parts[0];
+    if (command === "set") {
+      const key = parts[1];
+      const value = parts.slice(2).join("/");
+      store.set(key, value);
+      sets.push({ key, value });
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
+    if (command === "get") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: store.get(parts[1]) || "" }) };
+    }
+    if (command === "sadd") {
+      const key = parts[1];
+      const set = new Set(JSON.parse(store.get(key) || "[]"));
+      parts.slice(2).forEach((item) => set.add(item));
+      store.set(key, JSON.stringify(Array.from(set)));
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: 1 }) };
+    }
+    if (command === "srem") {
+      const key = parts[1];
+      const set = new Set(JSON.parse(store.get(key) || "[]"));
+      parts.slice(2).forEach((item) => set.delete(item));
+      store.set(key, JSON.stringify(Array.from(set)));
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: 1 }) };
+    }
+    if (command === "smembers") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: JSON.parse(store.get(parts[1]) || "[]") }) };
+    }
+    if (command === "del") {
+      store.delete(parts[1]);
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: 1 }) };
+    }
+    if (command === "scan") {
+      const matchIndex = parts.indexOf("match");
+      const pattern = matchIndex >= 0 ? parts[matchIndex + 1].replace(/\*/g, "") : "";
+      const keys = Array.from(store.keys()).filter((key) => key.startsWith(pattern));
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: ["0", keys] }) };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+      SMARTCOACH_REGISTRY_PREFIX: undefined,
+    }, async () => {
+      await saveAccountRecord("Attendance School", {
+        productPlan: "pro",
+        attendanceMirror: [{
+          date: "2026-07-08",
+          groupId: "cc-team",
+          groupName: "CC Team",
+          sport: "Cross Country",
+          season: "Summer",
+          seasonYear: 2026,
+          checkpointId: "practice",
+          checkpointName: "Practice Start",
+          athleteId: "a1",
+          athleteName: "Runner One",
+          status: "present",
+        }],
+      });
+
+      const saved = await saveAttendanceRecords("Attendance School", [{
+        date: "2026-07-09",
+        groupId: "cc-team",
+        groupName: "CC Team",
+        sport: "Cross Country",
+        season: "Summer",
+        seasonYear: 2026,
+        checkpointId: "practice",
+        checkpointName: "Practice Start",
+        athleteId: "a2",
+        athleteName: "Runner Two",
+        status: "late",
+      }]);
+      assert.strictEqual(saved.saved, true);
+      assert.strictEqual(saved.total, 2);
+
+      const loaded = await loadAttendanceRecords("Attendance School", { group: "CC Team" });
+      assert.deepStrictEqual(loaded.map((row) => row.athleteName).sort(), ["Runner One", "Runner Two"]);
+      const compactAccountSet = sets.filter((entry) => entry.key === "smartcoach:account:attendanceschool").slice(-1)[0];
+      const compactAccount = JSON.parse(compactAccountSet.value);
+      assert.deepStrictEqual(compactAccount.attendanceMirror, []);
+      assert.ok(Array.from(store.keys()).some((key) => key.includes(":attendance:item:")));
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testCoachDeviceUsageCountsAppDevicesOnly() {
   const previousFetch = global.fetch;
   const store = {};
@@ -237,6 +338,7 @@ async function testCoachDeviceUsageCountsAppDevicesOnly() {
   await testVercelKvAliases();
   await testUpstashAliasesAndCustomPrefix();
   await testSchoolRecordsMirrorManifestFallback();
+  await testAttendanceMirrorItemizedStorage();
   await testCoachDeviceUsageCountsAppDevicesOnly();
   console.log("account registry alias tests passed");
 })().catch((error) => {
