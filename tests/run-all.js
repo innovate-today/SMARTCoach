@@ -2909,6 +2909,7 @@ function checkAttendanceMobileSummary() {
     ".filter(attendanceRowMatchesGroup)",
     "function attendanceRunnerSummaryCounts(r,sourceRows)",
     "function attendanceSummaryRows()",
+    "function attendanceSummaryDaysPossible()",
     "function attendanceDetailRowsForRunner(r)",
     "function attendanceDetailHtml(selectedId)",
     "function renderAttendanceSummary(selectedId)",
@@ -2917,6 +2918,8 @@ function checkAttendanceMobileSummary() {
     "var rows=details.map(function(row)",
     "No saved attendance marks for this athlete yet.",
     "Select an athlete or tap a row to see recent marks.",
+    "Total days possible",
+    "String(selected)===String(id)?'':id",
     '<span class="slbl">Range</span>',
     '<option value="custom"',
     'id="att-summary-start"',
@@ -2932,6 +2935,7 @@ function checkAttendanceMobileSummary() {
     if (!mobile.includes(text)) throw new Error(`mobile attendance summary missing ${text}`);
   });
   if (mobile.includes("details.slice(0,12)")) throw new Error("mobile attendance summary still caps selected-athlete recent marks");
+  if (mobile.includes("<span>Present</span></div><div class=\"att-summary-card\"><b>'+totals.a")) throw new Error("mobile attendance summary still shows old present/absent cards");
   console.log("mobile attendance summary ok");
 }
 

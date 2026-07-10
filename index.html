@@ -170,6 +170,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .att-summary-range-custom{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#fff;border-bottom:.5px solid #e5e5ea;padding:7px 12px}
 .att-summary-range-custom[hidden]{display:none}
 .att-summary-range-custom input{font-size:13px;border:1px solid var(--G2);border-radius:8px;padding:5px 8px;font-family:inherit;background:var(--W);color:#333}
+.att-summary-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+.att-summary-card{padding:9px 8px}
+.att-summary-card b{font-size:22px}
+.att-summary-card span{font-size:10px;line-height:1.15}
 #m-keep-trak .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
 #m-keep-trak .mhd,#m-keep-trak .mttl,#m-keep-trak .srow,#m-keep-trak .bulk-status,#m-keep-trak .mbtn,#m-keep-trak .keep-compose-actions{flex-shrink:0}
 #keep-list{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}
@@ -3133,6 +3137,16 @@ function attendanceSummaryRows(){
     return {id:String(r.id),name:r.name||'Athlete',counts:attendanceRunnerSummaryCounts(r,sourceRows)};
   }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
 }
+function attendanceSummaryDaysPossible(){
+  var seen={};
+  attendanceFilteredSummaryRows().forEach(function(row){
+    var key=[row&&row.date,row&&row.checkpointId||row&&row.checkpointName].map(function(value){
+      return String(value||'').trim().toLowerCase();
+    }).filter(Boolean).join('|');
+    if(key)seen[key]=1;
+  });
+  return Object.keys(seen).length;
+}
 function attendanceStatusLabel(value){
   if(value==='checked_out')return 'Checked Out';
   if(value==='late')return 'Tardy';
@@ -3198,7 +3212,7 @@ function renderAttendanceSummary(selectedId){
   }).join('')||'<tr><td colspan="6">No attendance marks saved for this group yet.</td></tr>';
   var statusText=ATTENDANCE_SUMMARY_REMOTE.loading?'Loading SMART Trak attendance...':(ATTENDANCE_SUMMARY_REMOTE.loaded?'Loaded from SMART Trak.':(ATTENDANCE_SUMMARY_REMOTE.error?'Could not load SMART Trak attendance. Showing marks saved on this device.':'Showing marks saved on this device.'));
   body.innerHTML='<div class="att-summary-title">'+ex(CL.name||'Training Group')+'</div>'+
-    '<div class="att-summary-cards"><div class="att-summary-card"><b>'+totals.rate+'%</b><span>Group attendance</span></div><div class="att-summary-card"><b>'+rows.length+'</b><span>Athletes</span></div><div class="att-summary-card"><b>'+totals.p+'</b><span>Present</span></div><div class="att-summary-card"><b>'+totals.a+'</b><span>Absent</span></div><div class="att-summary-card"><b>'+totals.e+'</b><span>Excused</span></div><div class="att-summary-card"><b>'+totals.t+'</b><span>Tardy</span></div></div>'+
+    '<div class="att-summary-cards"><div class="att-summary-card"><b>'+totals.rate+'%</b><span>Group attendance</span></div><div class="att-summary-card"><b>'+rows.length+'</b><span>Athletes</span></div><div class="att-summary-card"><b>'+attendanceSummaryDaysPossible()+'</b><span>Total days possible</span></div></div>'+
     '<div class="att-summary-note">'+ex(statusText)+'</div>'+
     '<div class="srow"><span class="slbl">Range</span><select class="sinp" id="att-summary-range" onchange="setAttendanceSummaryRange(this.value)"><option value="all"'+(range.mode==='all'?' selected':'')+'>All dates</option><option value="7"'+(range.mode==='7'?' selected':'')+'>Last 7 days</option><option value="14"'+(range.mode==='14'?' selected':'')+'>Last 14 days</option><option value="30"'+(range.mode==='30'?' selected':'')+'>Last 30 days</option><option value="custom"'+(range.mode==='custom'?' selected':'')+'>Custom range</option></select></div>'+
     '<div id="att-summary-custom-range" class="att-summary-range-custom"'+(range.mode==='custom'?'':' hidden')+'><input id="att-summary-start" type="date" value="'+ex(range.startDate)+'" onchange="setAttendanceSummaryCustomRange()"><input id="att-summary-end" type="date" value="'+ex(range.endDate)+'" onchange="setAttendanceSummaryCustomRange()"></div>'+
@@ -3208,7 +3222,10 @@ function renderAttendanceSummary(selectedId){
     attendanceDetailHtml(selected)+
     '<div class="att-summary-note">Checked Out is included in Present for this summary.</div>';
   Array.prototype.forEach.call(body.querySelectorAll('[data-att-athlete-id]'),function(row){
-    row.onclick=function(){renderAttendanceSummary(row.getAttribute('data-att-athlete-id'));};
+    row.onclick=function(){
+      var id=row.getAttribute('data-att-athlete-id');
+      renderAttendanceSummary(String(selected)===String(id)?'':id);
+    };
   });
 }
 function loadAttendanceSummaryRows(){
