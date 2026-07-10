@@ -2950,6 +2950,7 @@ function attendanceSavedRecord(cp,r){
 }
 var ATTENDANCE_SUMMARY_REMOTE={groupKey:'',loaded:false,loading:false,error:'',rows:[]};
 var ATTENDANCE_SUMMARY_RANGE={mode:'all',startDate:'',endDate:''};
+var ATTENDANCE_SUMMARY_STATUS='all';
 function attendanceSummaryGroupKey(){
   return String(CL&&(CL.sharedGroupId||CL.id||CL.name)||'');
 }
@@ -3077,6 +3078,14 @@ function attendanceSummaryRowInRange(row){
 function attendanceFilteredSummaryRows(){
   return attendanceSummarySourceRows().filter(attendanceSummaryRowInRange);
 }
+function attendanceSummaryVisibleRows(){
+  var status=String(ATTENDANCE_SUMMARY_STATUS||'all');
+  var rows=attendanceFilteredSummaryRows();
+  if(status==='all')return rows;
+  return rows.filter(function(row){
+    return String(row&&row.status||'')===status;
+  });
+}
 function setAttendanceSummaryRange(mode){
   var current=attendanceSummaryRange();
   if(mode==='custom'&&(!current.startDate||!current.endDate)){
@@ -3094,6 +3103,12 @@ function setAttendanceSummaryCustomRange(){
     startDate:document.getElementById('att-summary-start')&&document.getElementById('att-summary-start').value||'',
     endDate:document.getElementById('att-summary-end')&&document.getElementById('att-summary-end').value||''
   };
+  renderAttendanceSummary(document.getElementById('att-summary-athlete')&&document.getElementById('att-summary-athlete').value||'');
+}
+function setAttendanceSummaryStatus(status){
+  var value=String(status||'all');
+  if(['all','present','late','checked_out','excused','absent'].indexOf(value)<0)value='all';
+  ATTENDANCE_SUMMARY_STATUS=value;
   renderAttendanceSummary(document.getElementById('att-summary-athlete')&&document.getElementById('att-summary-athlete').value||'');
 }
 function attendanceStatusCountsFromRows(rows,r){
@@ -3127,9 +3142,22 @@ function attendanceRunnerSummaryCounts(r,sourceRows){
     a:counts.absent,
     e:counts.excused,
     t:counts.late,
+    presentRaw:counts.present,
+    checkedOut:counts.checked_out,
     rate:required?Math.round(((presentTotal+counts.late)/required)*100):0,
     total:presentTotal+counts.absent+counts.excused+counts.late
   };
+}
+function attendanceSummaryRowMatchesStatus(row){
+  var status=String(ATTENDANCE_SUMMARY_STATUS||'all');
+  if(status==='all')return true;
+  var counts=row&&row.counts||{};
+  if(status==='present')return (counts.presentRaw||0)>0;
+  if(status==='checked_out')return (counts.checkedOut||0)>0;
+  if(status==='late')return (counts.t||0)>0;
+  if(status==='absent')return (counts.a||0)>0;
+  if(status==='excused')return (counts.e||0)>0;
+  return true;
 }
 function attendanceSummaryRows(){
   var sourceRows=attendanceFilteredSummaryRows();
@@ -3161,7 +3189,7 @@ function attendanceSelectedRunner(selectedId){
   return (CL&&CL.runners||[]).find(function(r){return String(r.id)===String(selectedId);})||null;
 }
 function attendanceDetailRowsForRunner(r){
-  return attendanceFilteredSummaryRows().filter(function(row){
+  return attendanceSummaryVisibleRows().filter(function(row){
     return attendanceRowMatchesRunner(row,r);
   }).sort(function(a,b){
     return String(b.date||'').localeCompare(String(a.date||''))||String(a.checkpointName||'').localeCompare(String(b.checkpointName||''));
@@ -3196,26 +3224,29 @@ function renderAttendanceSummary(selectedId){
   if(!body)return;
   var rows=attendanceSummaryRows();
   var selected=selectedId||'';
+  var statusFilter=String(ATTENDANCE_SUMMARY_STATUS||'all');
   var range=attendanceSummaryRange();
   var bounds=attendanceSummaryRangeBounds();
   if(range.mode==='custom'&&(!range.startDate||!range.endDate)&&bounds){
     if(!range.startDate&&bounds.start)range.startDate=attendanceSummaryDateInput(bounds.start);
     if(!range.endDate&&bounds.end)range.endDate=attendanceSummaryDateInput(bounds.end);
   }
-  var visible=selected?rows.filter(function(row){return row.id===String(selected);}):rows;
+  var statusRows=rows.filter(attendanceSummaryRowMatchesStatus);
+  var visible=selected?rows.filter(function(row){return row.id===String(selected);}):statusRows;
   var totals=attendanceSummaryTotals(rows);
   var options=['<option value="">All athletes</option>'].concat(rows.map(function(row){
     return '<option value="'+ex(row.id)+'"'+(String(selected)===row.id?' selected':'')+'>'+ex(row.name)+'</option>';
   })).join('');
   var tableRows=visible.map(function(row){
     return '<tr data-att-athlete-id="'+ex(row.id)+'"'+(selected&&String(selected)===row.id?' class="on"':'')+'><td>'+ex(row.name)+'</td><td>'+row.counts.rate+'%</td><td>'+row.counts.p+'</td><td>'+row.counts.a+'</td><td>'+row.counts.e+'</td><td>'+row.counts.t+'</td></tr>';
-  }).join('')||'<tr><td colspan="6">No attendance marks saved for this group yet.</td></tr>';
+  }).join('')||'<tr><td colspan="6">No athletes match this status filter.</td></tr>';
   var statusText=ATTENDANCE_SUMMARY_REMOTE.loading?'Loading SMART Trak attendance...':(ATTENDANCE_SUMMARY_REMOTE.loaded?'Loaded from SMART Trak.':(ATTENDANCE_SUMMARY_REMOTE.error?'Could not load SMART Trak attendance. Showing marks saved on this device.':'Showing marks saved on this device.'));
   body.innerHTML='<div class="att-summary-title">'+ex(CL.name||'Training Group')+'</div>'+
     '<div class="att-summary-cards"><div class="att-summary-card"><b>'+totals.rate+'%</b><span>Group attendance</span></div><div class="att-summary-card"><b>'+rows.length+'</b><span>Athletes</span></div><div class="att-summary-card"><b>'+attendanceSummaryDaysPossible()+'</b><span>Total days possible</span></div></div>'+
     '<div class="att-summary-note">'+ex(statusText)+'</div>'+
     '<div class="srow"><span class="slbl">Range</span><select class="sinp" id="att-summary-range" onchange="setAttendanceSummaryRange(this.value)"><option value="all"'+(range.mode==='all'?' selected':'')+'>All dates</option><option value="7"'+(range.mode==='7'?' selected':'')+'>Last 7 days</option><option value="14"'+(range.mode==='14'?' selected':'')+'>Last 14 days</option><option value="30"'+(range.mode==='30'?' selected':'')+'>Last 30 days</option><option value="custom"'+(range.mode==='custom'?' selected':'')+'>Custom range</option></select></div>'+
     '<div id="att-summary-custom-range" class="att-summary-range-custom"'+(range.mode==='custom'?'':' hidden')+'><input id="att-summary-start" type="date" value="'+ex(range.startDate)+'" onchange="setAttendanceSummaryCustomRange()"><input id="att-summary-end" type="date" value="'+ex(range.endDate)+'" onchange="setAttendanceSummaryCustomRange()"></div>'+
+    '<div class="srow"><span class="slbl">Status</span><select class="sinp" id="att-summary-status" onchange="setAttendanceSummaryStatus(this.value)"><option value="all"'+(statusFilter==='all'?' selected':'')+'>All statuses</option><option value="present"'+(statusFilter==='present'?' selected':'')+'>Present</option><option value="late"'+(statusFilter==='late'?' selected':'')+'>Tardy</option><option value="checked_out"'+(statusFilter==='checked_out'?' selected':'')+'>Checked Out</option><option value="excused"'+(statusFilter==='excused'?' selected':'')+'>Excused</option><option value="absent"'+(statusFilter==='absent'?' selected':'')+'>Absent</option></select></div>'+
     '<div class="srow"><span class="slbl">Athlete</span><select class="sinp" id="att-summary-athlete" onchange="renderAttendanceSummary(this.value)">'+options+'</select></div>'+
     '<div class="att-summary-note">Select an athlete or tap a row to see recent marks.</div>'+
     '<div class="att-summary-table-wrap"><table class="att-summary-table"><thead><tr><th>Name</th><th>%</th><th>P</th><th>A</th><th>E</th><th>T</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'+
