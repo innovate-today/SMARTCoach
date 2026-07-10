@@ -148,6 +148,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-attendance .att-head .att-name,#m-attendance .att-head .att-small{color:#fff}
 #m-attendance .att-head-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
 #m-attendance .att-head-actions .att-btn{white-space:nowrap;padding:8px 9px}
+.att-save-status{min-height:22px;padding:4px 16px 0;text-align:center;font-size:13px;font-weight:900;line-height:1.25;color:#c00;flex-shrink:0}
+.att-save-status.ok{color:#0a7a44}
+.att-save-status.warn{color:#c00}
 #m-keep-trak .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
 #m-keep-trak .mhd,#m-keep-trak .mttl,#m-keep-trak .srow,#m-keep-trak .bulk-status,#m-keep-trak .mbtn,#m-keep-trak .keep-compose-actions{flex-shrink:0}
 #keep-list{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}
@@ -465,7 +468,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     </div>
     <div id="att-summary" class="bulk-status"></div>
     <div id="att-list" class="builder-box"></div>
-    <button class="mbtn" onclick="saveAttendanceAndClose()">Save Attendance</button>
+    <div id="att-save-status" class="att-save-status"></div>
+    <button class="mbtn" id="att-save-btn" onclick="saveAttendanceAndClose()">Save Attendance</button>
     <button class="mbtn c" onclick="hm('m-attendance')">Close</button>
     <div style="height:8px"></div>
   </div>
@@ -2875,6 +2879,7 @@ function openAttendance(){
   setAttendanceDefaultsFromGroup();
   ensureAttendanceDay(attendanceDate());
   renderAttendance();
+  setAttendanceSaveStatus('','warn');
   sm('m-attendance');
 }
 function renderAttendance(){
@@ -3155,26 +3160,39 @@ function renameAttendanceCheckpoint(cpIndex){
   save();
   renderAttendance();
 }
+function setAttendanceSaveStatus(message,type){
+  var status=document.getElementById('att-save-status');
+  if(!status)return;
+  status.textContent=message||'';
+  status.classList.toggle('ok',type==='ok');
+  status.classList.toggle('warn',type!=='ok');
+}
 function saveAttendanceAndClose(){
-  var summary=document.getElementById('att-summary');
+  var btn=document.getElementById('att-save-btn');
   if(!attendanceSport()){
-    if(summary)summary.textContent='Choose Cross Country or Track before saving attendance.';
+    setAttendanceSaveStatus('Choose Cross Country or Track before saving attendance.','warn');
     var sport=document.getElementById('att-sport');
     if(sport)try{sport.focus();}catch(error){}
     return;
   }
+  if(btn)btn.disabled=true;
   save();
   syncAttendanceToSmartTrak().then(function(){
-    hm('m-attendance');
+    setAttendanceSaveStatus('Complete','ok');
+    setTimeout(function(){
+      if(btn)btn.disabled=false;
+      hm('m-attendance');
+      setAttendanceSaveStatus('','warn');
+    },750);
   }).catch(function(error){
-    if(summary)summary.textContent='Attendance saved on this device, but SMART Trak sync failed: '+(error&&error.message?error.message:'try again');
+    if(btn)btn.disabled=false;
+    setAttendanceSaveStatus('Attendance saved on this device, but SMART Trak sync failed: '+(error&&error.message?error.message:'try again'),'warn');
   });
 }
 function syncAttendanceToSmartTrak(){
   if(!CL)return Promise.resolve(false);
   var day=ensureAttendanceDay(attendanceDate());
-  var summary=document.getElementById('att-summary');
-  if(summary)summary.textContent='Saving attendance to SMART Trak...';
+  setAttendanceSaveStatus('Saving attendance to SMART Trak...','warn');
   return fetch(smartCoachApiUrl('/api/smart-trak/attendance'),{
     method:'POST',
     headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
@@ -3183,7 +3201,6 @@ function syncAttendanceToSmartTrak(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Attendance sync failed.');
-    if(summary)summary.textContent='Saved '+(result.data&&result.data.count||0)+' attendance mark'+((result.data&&result.data.count)===1?'':'s')+' to SMART Trak.';
     return result.data;
   });
 }

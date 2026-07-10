@@ -2893,6 +2893,9 @@ function checkAttendanceMobileSummary() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
     'id="m-attendance-summary"',
+    'id="att-save-status"',
+    'id="att-save-btn"',
+    "function setAttendanceSaveStatus(message,type)",
     "openAttendanceSummary()",
     "function attendanceSavedRecord(cp,r)",
     "function attendanceRowMatchesGroup(row)",
@@ -2904,6 +2907,8 @@ function checkAttendanceMobileSummary() {
     "function attendanceSummaryRows()",
     "function renderAttendanceSummary(selectedId)",
     "Loaded from SMART Trak.",
+    "setAttendanceSaveStatus('Saving attendance to SMART Trak...','warn')",
+    "setAttendanceSaveStatus('Complete','ok')",
     "Checked Out is included in Present for this summary.",
     "<th>Name</th><th>%</th><th>P</th><th>A</th><th>E</th><th>T</th>",
     "counts.present+counts.checked_out",
