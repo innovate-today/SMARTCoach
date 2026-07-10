@@ -206,7 +206,7 @@ How to use it in the SMARTCoach Pro Mobile App:
 6. Mark athletes **Present**, **Late**, **Checked Out**, **Excused**, or **Absent**.
 7. Add a checkpoint when attendance needs to be taken more than once in the same day, such as **Practice Start**, **Weight Room**, or **Meet Checkout**.
 8. Use **Mark All Present** inside any checkpoint when everyone at that checkpoint should be marked present.
-9. Tap **Summary** when you need a quick group attendance view during practice. The summary loads synced attendance for the selected group and includes any marks currently saved on the phone. It shows the group attendance percentage plus each athlete's **%**, **P**, **A**, **E**, and **T** totals. Use the athlete dropdown to focus on one athlete while discussing attendance; selecting one athlete also shows recent attendance marks by date, checkpoint, and status.
+9. Tap **Summary** when you need a quick group attendance view during practice. The summary loads synced attendance for the selected group and includes any marks currently saved on the phone. It shows the group attendance percentage plus each athlete's **%**, **P**, **A**, **E**, and **T** totals. Use the athlete dropdown or tap an athlete row to focus on one athlete while discussing attendance; selecting one athlete also shows recent attendance marks by date, checkpoint, and status.
 10. Save attendance so it syncs to SMART Trak. The app shows the save status above the **Save Attendance** button, then shows **Complete** before closing the Attendance sheet.
 
 How to review it in SMART Trak:
