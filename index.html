@@ -151,6 +151,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .att-save-status{min-height:22px;padding:4px 16px 0;text-align:center;font-size:13px;font-weight:900;line-height:1.25;color:#c00;flex-shrink:0}
 .att-save-status.ok{color:#0a7a44}
 .att-save-status.warn{color:#c00}
+.att-detail{background:#fff;border:1px solid #d8dee7;border-radius:10px;margin-top:10px;overflow:hidden}
+.att-detail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;padding:9px 10px;border-bottom:1px solid #e5e7eb}
+.att-detail-head b{font-size:13px;color:#111827}
+.att-detail-head span{font-size:11px;font-weight:900;color:#64748b;text-transform:uppercase}
+.att-detail-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid #e5e7eb}
+.att-detail-row:last-child{border-bottom:none}
+.att-detail-row b{font-size:13px;color:#111827}
+.att-detail-row small{display:block;font-size:11px;color:#64748b;margin-top:2px}
+.att-detail-row span{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;background:#e8eefc;color:#173891}
+.att-detail-row.absent span{background:#fee2e2;color:#991b1b}
+.att-detail-row.excused span{background:#ede9fe;color:#6d28d9}
+.att-detail-row.late span{background:#ffedd5;color:#b45309}
+.att-detail-row.checked_out span{background:#e0f2fe;color:#0369a1}
+.att-detail-row em{grid-column:1/-1;font-style:normal;font-size:11px;color:#64748b}
+.att-detail-empty{padding:12px;color:#64748b;font-size:12px;font-weight:800;text-align:center}
 #m-keep-trak .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
 #m-keep-trak .mhd,#m-keep-trak .mttl,#m-keep-trak .srow,#m-keep-trak .bulk-status,#m-keep-trak .mbtn,#m-keep-trak .keep-compose-actions{flex-shrink:0}
 #keep-list{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}
@@ -3033,6 +3048,35 @@ function attendanceSummaryRows(){
     return {id:String(r.id),name:r.name||'Athlete',counts:attendanceRunnerSummaryCounts(r)};
   }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
 }
+function attendanceStatusLabel(value){
+  if(value==='checked_out')return 'Checked Out';
+  if(value==='late')return 'Tardy';
+  return value?String(value).charAt(0).toUpperCase()+String(value).slice(1):'Unmarked';
+}
+function attendanceShortDate(value){
+  var parts=String(value||'').slice(0,10).split('-').map(Number);
+  if(parts.length!==3||!parts[0]||!parts[1]||!parts[2])return value||'';
+  return new Date(parts[0],parts[1]-1,parts[2]).toLocaleDateString([], {month:'short',day:'numeric'});
+}
+function attendanceSelectedRunner(selectedId){
+  return (CL&&CL.runners||[]).find(function(r){return String(r.id)===String(selectedId);})||null;
+}
+function attendanceDetailRowsForRunner(r){
+  return attendanceSummarySourceRows().filter(function(row){
+    return attendanceRowMatchesRunner(row,r);
+  }).sort(function(a,b){
+    return String(b.date||'').localeCompare(String(a.date||''))||String(a.checkpointName||'').localeCompare(String(b.checkpointName||''));
+  });
+}
+function attendanceDetailHtml(selectedId){
+  var runner=attendanceSelectedRunner(selectedId);
+  if(!runner)return '';
+  var details=attendanceDetailRowsForRunner(runner);
+  var rows=details.slice(0,12).map(function(row){
+    return '<div class="att-detail-row '+ex(row.status||'')+'"><div><b>'+ex(attendanceShortDate(row.date))+'</b><small>'+ex(row.checkpointName||'Practice Start')+'</small></div><span>'+ex(attendanceStatusLabel(row.status))+'</span>'+(row.note?'<em>'+ex(row.note)+'</em>':'')+'</div>';
+  }).join('')||'<div class="att-detail-empty">No saved attendance marks for this athlete yet.</div>';
+  return '<div class="att-detail"><div class="att-detail-head"><b>'+ex(runner.name||'Athlete')+'</b><span>Recent marks</span></div>'+rows+'</div>';
+}
 function attendanceSummaryTotals(rows){
   var totals={p:0,a:0,e:0,t:0,total:0,rate:0};
   rows.forEach(function(row){
@@ -3067,6 +3111,7 @@ function renderAttendanceSummary(selectedId){
     '<div class="att-summary-note">'+ex(statusText)+'</div>'+
     '<div class="srow"><span class="slbl">Athlete</span><select class="sinp" id="att-summary-athlete" onchange="renderAttendanceSummary(this.value)">'+options+'</select></div>'+
     '<div class="att-summary-table-wrap"><table class="att-summary-table"><thead><tr><th>Name</th><th>%</th><th>P</th><th>A</th><th>E</th><th>T</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'+
+    attendanceDetailHtml(selected)+
     '<div class="att-summary-note">Checked Out is included in Present for this summary.</div>';
 }
 function loadAttendanceSummaryRows(){
