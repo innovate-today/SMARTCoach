@@ -2920,7 +2920,84 @@ function attendanceSavedRecord(cp,r){
   var key=String(r&&r.id||'');
   return cp&&cp.records&&cp.records[key]?cp.records[key]:null;
 }
-function attendanceRunnerSummaryCounts(r){
+var ATTENDANCE_SUMMARY_REMOTE={groupKey:'',loaded:false,loading:false,error:'',rows:[]};
+function attendanceSummaryGroupKey(){
+  return String(CL&&(CL.sharedGroupId||CL.id||CL.name)||'');
+}
+function attendanceRowMatchesGroup(row){
+  if(!CL)return false;
+  var groupIds=[CL.sharedGroupId,CL.id].map(function(value){return String(value||'').trim().toLowerCase();}).filter(Boolean);
+  var groupName=String(CL.name||'').trim().toLowerCase();
+  var rowGroupId=String(row&&row.groupId||'').trim().toLowerCase();
+  var rowGroupName=String(row&&row.groupName||'').trim().toLowerCase();
+  return (rowGroupId&&groupIds.indexOf(rowGroupId)>=0)||(rowGroupName&&groupName&&rowGroupName===groupName);
+}
+function attendanceAthleteKeys(item){
+  var keys=[item&&item.id,item&&item.runnerId,item&&item.athleteId,item&&item.contactId,item&&item.smartcoachAthleteId,item&&item.name,item&&item.athleteName];
+  var seen={};
+  return keys.map(function(value){return String(value||'').trim().toLowerCase();}).filter(function(value){
+    if(!value||seen[value])return false;
+    seen[value]=1;
+    return true;
+  });
+}
+function attendanceRowMatchesRunner(row,r){
+  var runnerKeys=attendanceAthleteKeys(r);
+  var rowKeys=attendanceAthleteKeys(row);
+  return rowKeys.some(function(key){return runnerKeys.indexOf(key)>=0;});
+}
+function attendanceSummaryRowKey(row){
+  return [row&&row.date,row&&row.sport,row&&row.season,row&&row.seasonYear,row&&row.groupId||row&&row.groupName,row&&row.checkpointId||row&&row.checkpointName,row&&row.athleteId||row&&row.contactId||row&&row.smartcoachAthleteId||row&&row.athleteName].map(function(value){
+    return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_');
+  }).filter(Boolean).join('|');
+}
+function attendanceLocalSummaryRows(){
+  if(!CL)return [];
+  var attendance=normalizeAttendanceState(CL.attendance);
+  var rows=[];
+  Object.keys(attendance.days||{}).forEach(function(date){
+    var day=attendance.days[date]||{};
+    (day.checkpoints||[]).forEach(function(cp){
+      (CL.runners||[]).forEach(function(r){
+        var rec=attendanceSavedRecord(cp,r);
+        if(!rec||!rec.status)return;
+        rows.push({
+          date:day.date||date,
+          sport:attendanceSport(),
+          season:attendanceSeason(),
+          seasonYear:CL&&CL.seasonYear||currentSeason().year,
+          groupId:String(CL.sharedGroupId||CL.id||''),
+          groupName:CL.name||'Training Group',
+          checkpointId:cp.id||'practice',
+          checkpointName:cp.name||'Practice Start',
+          athleteId:r.contactId||r.smartcoachAthleteId||r.id,
+          contactId:r.contactId||'',
+          smartcoachAthleteId:r.smartcoachAthleteId||'',
+          athleteName:r.name||'',
+          status:rec.status
+        });
+      });
+    });
+  });
+  return rows;
+}
+function attendanceSummarySourceRows(){
+  var rows=ATTENDANCE_SUMMARY_REMOTE.loaded?(ATTENDANCE_SUMMARY_REMOTE.rows||[]).slice():[];
+  var byKey={};
+  rows.forEach(function(row){var key=attendanceSummaryRowKey(row);if(key)byKey[key]=row;});
+  attendanceLocalSummaryRows().forEach(function(row){var key=attendanceSummaryRowKey(row);if(key)byKey[key]=row;});
+  return Object.keys(byKey).map(function(key){return byKey[key];});
+}
+function attendanceStatusCountsFromRows(rows,r){
+  var counts={present:0,absent:0,excused:0,late:0,checked_out:0};
+  (rows||[]).forEach(function(row){
+    if(!attendanceRowMatchesRunner(row,r))return;
+    var status=row&&row.status||'';
+    if(counts[status]!==undefined)counts[status]++;
+  });
+  return counts;
+}
+function attendanceLocalSummaryCounts(r){
   var counts={present:0,absent:0,excused:0,late:0,checked_out:0};
   var attendance=CL?normalizeAttendanceState(CL.attendance):normalizeAttendanceState(null);
   Object.keys(attendance.days||{}).forEach(function(date){
@@ -2931,6 +3008,10 @@ function attendanceRunnerSummaryCounts(r){
       if(counts[status]!==undefined)counts[status]++;
     });
   });
+  return counts;
+}
+function attendanceRunnerSummaryCounts(r){
+  var counts=ATTENDANCE_SUMMARY_REMOTE.loaded?attendanceStatusCountsFromRows(attendanceSummarySourceRows(),r):attendanceLocalSummaryCounts(r);
   var presentTotal=counts.present+counts.checked_out;
   var required=presentTotal+counts.late+counts.absent;
   return {
@@ -2975,16 +3056,40 @@ function renderAttendanceSummary(selectedId){
   var tableRows=visible.map(function(row){
     return '<tr'+(selected&&String(selected)===row.id?' class="on"':'')+'><td>'+ex(row.name)+'</td><td>'+row.counts.rate+'%</td><td>'+row.counts.p+'</td><td>'+row.counts.a+'</td><td>'+row.counts.e+'</td><td>'+row.counts.t+'</td></tr>';
   }).join('')||'<tr><td colspan="6">No attendance marks saved for this group yet.</td></tr>';
+  var statusText=ATTENDANCE_SUMMARY_REMOTE.loading?'Loading SMART Trak attendance...':(ATTENDANCE_SUMMARY_REMOTE.loaded?'Loaded from SMART Trak.':(ATTENDANCE_SUMMARY_REMOTE.error?'Could not load SMART Trak attendance. Showing marks saved on this device.':'Showing marks saved on this device.'));
   body.innerHTML='<div class="att-summary-title">'+ex(CL.name||'Training Group')+'</div>'+
     '<div class="att-summary-cards"><div class="att-summary-card"><b>'+totals.rate+'%</b><span>Group attendance</span></div><div class="att-summary-card"><b>'+rows.length+'</b><span>Athletes</span></div><div class="att-summary-card"><b>'+totals.p+'</b><span>Present</span></div><div class="att-summary-card"><b>'+totals.a+'</b><span>Absent</span></div><div class="att-summary-card"><b>'+totals.e+'</b><span>Excused</span></div><div class="att-summary-card"><b>'+totals.t+'</b><span>Tardy</span></div></div>'+
+    '<div class="att-summary-note">'+ex(statusText)+'</div>'+
     '<div class="srow"><span class="slbl">Athlete</span><select class="sinp" id="att-summary-athlete" onchange="renderAttendanceSummary(this.value)">'+options+'</select></div>'+
     '<div class="att-summary-table-wrap"><table class="att-summary-table"><thead><tr><th>Name</th><th>%</th><th>P</th><th>A</th><th>E</th><th>T</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'+
     '<div class="att-summary-note">Checked Out is included in Present for this summary.</div>';
+}
+function loadAttendanceSummaryRows(){
+  if(!CL)return Promise.resolve([]);
+  var key=attendanceSummaryGroupKey();
+  if(ATTENDANCE_SUMMARY_REMOTE.loaded&&ATTENDANCE_SUMMARY_REMOTE.groupKey===key)return Promise.resolve(ATTENDANCE_SUMMARY_REMOTE.rows);
+  ATTENDANCE_SUMMARY_REMOTE={groupKey:key,loaded:false,loading:true,error:'',rows:[]};
+  renderAttendanceSummary('');
+  var path='/api/smart-trak/attendance';
+  return fetch(smartCoachApiUrl(path),{cache:'no-store',headers:smartCoachApiHeaders()}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Attendance summary load failed.');
+    ATTENDANCE_SUMMARY_REMOTE={groupKey:key,loaded:true,loading:false,error:'',rows:(result.data&&result.data.attendance||[]).filter(attendanceRowMatchesGroup)};
+    return ATTENDANCE_SUMMARY_REMOTE.rows;
+  }).catch(function(error){
+    ATTENDANCE_SUMMARY_REMOTE={groupKey:key,loaded:false,loading:false,error:error&&error.message||'Attendance summary load failed.',rows:[]};
+    return [];
+  }).then(function(rows){
+    renderAttendanceSummary('');
+    return rows;
+  });
 }
 function openAttendanceSummary(){
   if(!CL||CL.type==='meet')return;
   renderAttendanceSummary('');
   sm('m-attendance-summary');
+  loadAttendanceSummaryRows();
 }
 function setAttendanceStatus(cpIndex,runnerId,status){
   if(!CL)return;
