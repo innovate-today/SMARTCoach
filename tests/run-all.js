@@ -2591,6 +2591,31 @@ function checkMeetHistoryImportedResultCorrections() {
   console.log("Meet History imported result corrections ok");
 }
 
+function checkMeetResultSplitDetails() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const history = fs.readFileSync("meet-history.html", "utf8");
+  [
+    "data-meet-detail=\"1\"",
+    "function openMeetResultDetail(button)",
+    "Lap / Split Times",
+    "parseSplitLines(row.splitsText)",
+    "No lap or split times saved for this result.",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Dashboard meet result split details missing ${text}`);
+  });
+  [
+    'id="historyDetailModal"',
+    'data-history-detail="',
+    "function openHistoryDetail(rowKeyValue)",
+    "function parseSplitLines(text)",
+    "Lap / Split Times",
+    "No lap or split times saved for this result.",
+  ].forEach((text) => {
+    if (!history.includes(text)) throw new Error(`Meet History split details missing ${text}`);
+  });
+  console.log("Meet result split details ok");
+}
+
 function checkPageSearchDebounces() {
   const pages = [
     ["records.html", "els.search.addEventListener('input',scheduleSearchRender);", "searchRenderTimer=setTimeout(render,120);"],
@@ -3613,6 +3638,7 @@ checkMeetHistoryMeetListChronological();
 checkMeetHistoryPerformanceCaches();
 checkMeetHistoryImportOnlySpreadsheet();
 checkMeetHistoryImportedResultCorrections();
+checkMeetResultSplitDetails();
 checkPageSearchDebounces();
 checkAthletesDocuTrakSetupLayout();
 checkEquipmentInventoryModelSerial();

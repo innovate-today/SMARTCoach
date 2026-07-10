@@ -2991,6 +2991,12 @@ document.addEventListener('click',function(event){
     openFieldResultDetail(fieldDetailButton);
     return;
   }
+  var meetDetailButton=event.target.closest&&event.target.closest('[data-meet-detail]');
+  if(meetDetailButton){
+    event.preventDefault();
+    openMeetResultDetail(meetDetailButton);
+    return;
+  }
   var voidMeetButton=event.target.closest&&event.target.closest('[data-void-meet]');
   if(voidMeetButton){
     event.preventDefault();
@@ -6691,7 +6697,7 @@ function recentMeetHtml(row){
   var relay=isRelayResult(row);
   var field=isFieldResult(row);
   return '<tr data-meet-row-key="'+esc(meetRowKey(row))+'">'+
-    '<td>'+(relay?relayDetailButton(row):field?fieldDetailButton(row):athleteDetailButton(row))+'</td>'+
+    '<td>'+(relay?relayDetailButton(row):field?fieldDetailButton(row):meetResultDetailButton(row))+'</td>'+
     '<td>'+mainLine(row.meetName||'No meet')+'</td>'+
     '<td>'+mainLine(row.event||'')+'</td>'+
     '<td>'+mainLine(row.resultDisplay||'')+'</td>'+
@@ -6725,6 +6731,25 @@ function relayDetailButton(row){
 }
 function fieldDetailButton(row){
   return '<button class="namebtn" data-field-detail="1" data-row-key="'+esc(meetRowKey(row))+'" data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" type="button">'+esc(row.athleteName||'Field Athlete')+'</button><div class="muted">View details</div>';
+}
+function meetResultDetailButton(row){
+  return '<button class="namebtn" data-meet-detail="1" data-row-key="'+esc(meetRowKey(row))+'" data-record-id="'+esc(row.recordId||'')+'" data-source-record-id="'+esc(row.sourceRecordId||'')+'" type="button">'+esc(row.athleteName||row.name||'Unnamed')+'</button><div class="muted">View details</div>';
+}
+function openMeetResultDetail(button){
+  var row=findMeetRow(button);
+  if(!row)return;
+  var splits=parseSplitLines(row.splitsText);
+  els.athleteModalTitle.textContent=row.athleteName||row.event||'Meet Result';
+  els.athleteModalBody.innerHTML=
+    '<div class="detailgrid">'+
+      detailCard('Event',row.event||'Race','')+
+      detailCard('Result / Total Time',row.resultDisplay||'No result','')+
+      detailCard('Meet',row.meetName||'Unlisted meet',formatDate(row.meetDate)||'')+
+      detailCard('Best Status',flagText(row)||'No PB/SB','')+
+    '</div>'+
+    '<h3 class="section-title">Lap / Split Times</h3>'+
+    detailList(splits.map(function(split){return mainLine((split.label||('Lap '+split.lap))+': '+split.time);}), 'No lap or split times saved for this result.');
+  els.athleteModal.hidden=false;
 }
 function openRelayResultDetail(button){
   var row=findMeetRow(button);

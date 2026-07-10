@@ -521,8 +521,9 @@ How to use it:
 2. Review fastest results by event.
 3. Use athlete progression to see improvement over time.
 4. Check PB and SB updates.
-5. Correct or void results if a saved result is wrong.
-6. Select a meet in the Meets column to show only that meet's results. Select a compare row to compare the same meet across dates.
+5. Click **Details** on a result to review saved race details, including lap or split times when they were captured by the app.
+6. Correct or void results if a saved result is wrong.
+7. Select a meet in the Meets column to show only that meet's results. Select a compare row to compare the same meet across dates.
 
 Fastest by event should separate boys and girls so results are compared correctly.
 

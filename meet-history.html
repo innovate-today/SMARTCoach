@@ -119,6 +119,14 @@ tr:last-child td{border-bottom:0}
 .modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .modalhead h2{font-size:20px;margin:0}
 .modalbody{padding:16px 18px 20px}
+.detailgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.detailcard{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}
+.detailcard h3{font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
+.detailcard b{display:block;font-size:18px;line-height:1.2}
+.detaillist{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:10px;background:#fff}
+.detailitem{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.detailitem:last-child{border-bottom:0}
+.section-title{font-size:15px;margin:12px 0 8px}
 .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .field{display:grid;gap:5px}
 .field.full{grid-column:1/-1}
@@ -368,6 +376,16 @@ tr:last-child td{border-bottom:0}
   </section>
 </div>
 
+<div id="historyDetailModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="historyDetailTitle">
+    <div class="modalhead">
+      <h2 id="historyDetailTitle">Meet Result Details</h2>
+      <button id="historyDetailClose" class="ghost" type="button">Close</button>
+    </div>
+    <div id="historyDetailBody" class="modalbody"></div>
+  </section>
+</div>
+
 <div id="historyVoidModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="historyVoidTitle">
     <div class="modalhead">
@@ -464,6 +482,10 @@ var els={
   historyEditNotes:document.getElementById('historyEditNotes'),
   historyEditStatus:document.getElementById('historyEditStatus'),
   historyEditSave:document.getElementById('historyEditSave'),
+  historyDetailModal:document.getElementById('historyDetailModal'),
+  historyDetailClose:document.getElementById('historyDetailClose'),
+  historyDetailTitle:document.getElementById('historyDetailTitle'),
+  historyDetailBody:document.getElementById('historyDetailBody'),
   historyVoidModal:document.getElementById('historyVoidModal'),
   historyVoidClose:document.getElementById('historyVoidClose'),
   historyVoidLabel:document.getElementById('historyVoidLabel'),
@@ -752,6 +774,64 @@ function rowKey(row){return resultIdentity(row);}
 function findResultRowByKey(key){
   return meetResults.find(function(row){return rowKey(row)===key;})||null;
 }
+function detailCard(title,value,sub){
+  return '<section class="detailcard"><h3>'+esc(title)+'</h3><b>'+esc(value||'--')+'</b>'+(sub?'<div class="muted">'+esc(sub)+'</div>':'')+'</section>';
+}
+function detailList(items,emptyText){
+  if(!items.length)return '<div class="detaillist"><div class="detailitem muted">'+esc(emptyText)+'</div></div>';
+  return '<div class="detaillist">'+items.map(function(item){return '<div class="detailitem">'+item+'</div>';}).join('')+'</div>';
+}
+function bestLabel(row){
+  return [row&&row.isPr?'PB':'',row&&row.isSeasonBest?'SB':''].filter(Boolean).join(' / ')||'No PB/SB';
+}
+function parseSplitLines(text){
+  var raw=String(text||'').trim();
+  if(!raw)return [];
+  if(raw.charAt(0)==='['){
+    try{
+      var parsed=JSON.parse(raw);
+      if(Array.isArray(parsed)){
+        return parsed.map(function(split,index){
+          var name=String(split&&split.name||split&&split.label||'').trim();
+          var time=String(split&&(split.time||split.split)||'').trim();
+          if(!time)return null;
+          return {lap:Number(split&&split.lap)||index+1,label:name||'Lap '+(index+1),name:name,time:time};
+        }).filter(Boolean);
+      }
+    }catch(e){}
+  }
+  return raw.split(/\r?\n/).map(function(line,index){
+    var match=line.match(/^\s*(?:(Lap|Rep|Rest|Recovery|Split)\s*)?(\d+)\s*:\s*(.+?)\s*$/i);
+    if(match){
+      var word=match[1]||'Lap';
+      var number=Number(match[2])||index+1;
+      return {lap:number,label:word+' '+number,time:match[3]};
+    }
+    var named=line.match(/^\s*([^:]+?)\s*:\s*(.+?)\s*$/);
+    if(!named)return null;
+    return {lap:index+1,label:named[1],name:named[1],time:named[2]};
+  }).filter(Boolean);
+}
+function openHistoryDetail(rowKeyValue){
+  var row=findResultRowByKey(rowKeyValue);
+  if(!row)return;
+  var splits=parseSplitLines(row.splitsText);
+  els.historyDetailTitle.textContent=row.athleteName||row.event||'Meet Result Details';
+  els.historyDetailBody.innerHTML=
+    '<div class="detailgrid">'+
+      detailCard('Event',row.event||'Race','')+
+      detailCard('Result / Total Time',row.resultDisplay||'No result','')+
+      detailCard('Meet',row.meetName||'Unlisted meet',formatDate(row.meetDate)||'')+
+      detailCard('Best Status',bestLabel(row),'')+
+    '</div>'+
+    '<h3 class="section-title">Lap / Split Times</h3>'+
+    detailList(splits.map(function(split){return '<b>'+esc(split.label||('Lap '+split.lap))+'</b> '+esc(split.time);}), 'No lap or split times saved for this result.')+
+    (historyNotesFromRow(row)?'<h3 class="section-title">Notes</h3>'+detailList([esc(historyNotesFromRow(row))], 'No notes saved.'):'');
+  els.historyDetailModal.hidden=false;
+}
+function closeHistoryDetail(){
+  els.historyDetailModal.hidden=true;
+}
 function dateInputValue(value){
   var text=String(value||'').trim();
   if(/^\d{4}-\d{2}-\d{2}$/.test(text))return text;
@@ -960,6 +1040,7 @@ function historyActionButtons(row){
   if(!row.recordId&&!row.sourceRecordId)return '<span class="muted">No actions</span>';
   var key=esc(rowKey(row));
   return '<div class="rowactions">'+
+    '<button class="ghost compact" type="button" data-history-detail="'+key+'">Details</button>'+
     '<button class="ghost compact" type="button" data-history-edit="'+key+'">Edit</button>'+
     '<button class="danger compact" type="button" data-history-void="'+key+'">Void</button>'+
   '</div>';
@@ -2030,6 +2111,11 @@ function init(){
     render();
   });
   els.resultRows.addEventListener('click',function(event){
+    var detail=event.target.closest&&event.target.closest('[data-history-detail]');
+    if(detail){
+      openHistoryDetail(detail.getAttribute('data-history-detail')||'');
+      return;
+    }
     var edit=event.target.closest&&event.target.closest('[data-history-edit]');
     if(edit){
       openHistoryEdit(edit.getAttribute('data-history-edit')||'');
@@ -2038,6 +2124,7 @@ function init(){
     var voidButton=event.target.closest&&event.target.closest('[data-history-void]');
     if(voidButton)openHistoryVoid(voidButton.getAttribute('data-history-void')||'');
   });
+  els.historyDetailClose.addEventListener('click',closeHistoryDetail);
   els.historyEditClose.addEventListener('click',closeHistoryEdit);
   els.historyEditSave.addEventListener('click',saveHistoryEdit);
   els.historyVoidClose.addEventListener('click',closeHistoryVoid);
