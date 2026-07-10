@@ -2983,6 +2983,40 @@ function attendanceSummaryRowKey(row){
     return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_');
   }).filter(Boolean).join('|');
 }
+function attendanceSummaryDisplayKey(row){
+  return [row&&row.date,row&&row.groupId||row&&row.groupName,row&&row.checkpointName||row&&row.checkpointId,row&&row.athleteId||row&&row.contactId||row&&row.smartcoachAthleteId||row&&row.athleteName].map(function(value){
+    return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_');
+  }).filter(Boolean).join('|');
+}
+function attendanceNewerRecord(a,b){
+  return String(a&&a.updatedAt||'').localeCompare(String(b&&b.updatedAt||''))>=0?a:b;
+}
+function compactLocalAttendanceDuplicates(){
+  if(!CL)return false;
+  var changed=false;
+  CL.attendance=normalizeAttendanceState(CL.attendance);
+  Object.keys(CL.attendance.days||{}).forEach(function(date){
+    var day=CL.attendance.days[date]||{};
+    var byCheckpoint={};
+    var next=[];
+    (day.checkpoints||[]).forEach(function(cp){
+      var key=String(cp&&cp.name||cp&&cp.id||'Practice Start').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_')||'practice_start';
+      if(!byCheckpoint[key]){
+        byCheckpoint[key]={id:cp.id||key,name:cp.name||'Practice Start',records:Object.assign({},cp.records||{})};
+        next.push(byCheckpoint[key]);
+        return;
+      }
+      changed=true;
+      var target=byCheckpoint[key];
+      Object.keys(cp.records||{}).forEach(function(runnerKey){
+        target.records[runnerKey]=target.records[runnerKey]?attendanceNewerRecord(target.records[runnerKey],cp.records[runnerKey]):cp.records[runnerKey];
+      });
+    });
+    day.checkpoints=next;
+  });
+  if(changed)save();
+  return changed;
+}
 function attendanceLocalSummaryRows(){
   if(!CL)return [];
   var attendance=normalizeAttendanceState(CL.attendance);
@@ -3016,8 +3050,8 @@ function attendanceLocalSummaryRows(){
 function attendanceSummarySourceRows(){
   var rows=ATTENDANCE_SUMMARY_REMOTE.loaded?(ATTENDANCE_SUMMARY_REMOTE.rows||[]).slice():[];
   var byKey={};
-  rows.forEach(function(row){var key=attendanceSummaryRowKey(row);if(key)byKey[key]=row;});
-  attendanceLocalSummaryRows().forEach(function(row){var key=attendanceSummaryRowKey(row);if(key)byKey[key]=row;});
+  rows.forEach(function(row){var key=attendanceSummaryDisplayKey(row)||attendanceSummaryRowKey(row);if(key)byKey[key]=row;});
+  attendanceLocalSummaryRows().forEach(function(row){var key=attendanceSummaryDisplayKey(row)||attendanceSummaryRowKey(row);if(key&&!byKey[key])byKey[key]=row;});
   return Object.keys(byKey).map(function(key){return byKey[key];});
 }
 function attendanceSummaryRange(){
@@ -3308,6 +3342,7 @@ function loadAttendanceSummaryRows(){
 }
 function openAttendanceSummary(){
   if(!CL||CL.type==='meet')return;
+  compactLocalAttendanceDuplicates();
   renderAttendanceSummary('');
   sm('m-attendance-summary');
   loadAttendanceSummaryRows();
