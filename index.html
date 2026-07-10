@@ -3157,7 +3157,7 @@ function attendanceDetailHtml(selectedId){
   var runner=attendanceSelectedRunner(selectedId);
   if(!runner)return '';
   var details=attendanceDetailRowsForRunner(runner);
-  var rows=details.slice(0,12).map(function(row){
+  var rows=details.map(function(row){
     return '<div class="att-detail-row '+ex(row.status||'')+'"><div><b>'+ex(attendanceShortDate(row.date))+'</b><small>'+ex(row.checkpointName||'Practice Start')+'</small></div><span>'+ex(attendanceStatusLabel(row.status))+'</span>'+(row.note?'<em>'+ex(row.note)+'</em>':'')+'</div>';
   }).join('')||'<div class="att-detail-empty">No saved attendance marks for this athlete yet.</div>';
   return '<div class="att-detail"><div class="att-detail-head"><b>'+ex(runner.name||'Athlete')+'</b><span>Recent marks</span></div>'+rows+'</div>';

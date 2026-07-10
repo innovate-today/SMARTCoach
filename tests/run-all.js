@@ -2914,6 +2914,7 @@ function checkAttendanceMobileSummary() {
     "function renderAttendanceSummary(selectedId)",
     "Loaded from SMART Trak.",
     "Recent marks",
+    "var rows=details.map(function(row)",
     "No saved attendance marks for this athlete yet.",
     "Select an athlete or tap a row to see recent marks.",
     '<span class="slbl">Range</span>',
@@ -2930,6 +2931,7 @@ function checkAttendanceMobileSummary() {
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile attendance summary missing ${text}`);
   });
+  if (mobile.includes("details.slice(0,12)")) throw new Error("mobile attendance summary still caps selected-athlete recent marks");
   console.log("mobile attendance summary ok");
 }
 
