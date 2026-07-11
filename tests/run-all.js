@@ -3584,6 +3584,7 @@ function checkFieldPracticePhaseOne() {
     "suppressSpeedToggleUntil",
     "#m-field-practice.speed-mode #fp-share-btn{display:none}",
     "Speed Capture",
+    "Drag the handle beside a name to reorder without opening details.",
     "+ Athlete",
     "Add Athlete",
     "+ Add Rep",
