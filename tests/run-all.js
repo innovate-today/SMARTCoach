@@ -3581,6 +3581,7 @@ function checkFieldPracticePhaseOne() {
     "startFieldPracticeSpeedDrag",
     "finishFieldPracticeSpeedDrag",
     "cancelFieldPracticeSpeedDrag",
+    "suppressSpeedToggleUntil",
     "#m-field-practice.speed-mode #fp-share-btn{display:none}",
     "Speed Capture",
     "+ Athlete",
@@ -3607,6 +3608,10 @@ function checkFieldPracticePhaseOne() {
     const app = fs.readFileSync("index.html", "utf8");
     if (!app.includes(text)) throw new Error(`Mobile Field Practice app missing ${text}`);
   });
+  const fieldPracticeApp = fs.readFileSync("index.html", "utf8");
+  if (fieldPracticeApp.includes("p.speedAthleteOrder=order;\n  FIELD_PRACTICE.openSpeedAthleteKey=key;\n  renderFieldPractice();")) {
+    throw new Error("Mobile Speed Metrics drag should reorder athletes without forcing athlete details open");
+  }
   [
     'id="fieldPracticeLink"',
     'href="/field-practice.html"',

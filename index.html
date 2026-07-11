@@ -3968,6 +3968,10 @@ function fieldPracticeSpeedAthleteRows(p){
   return rows;
 }
 function toggleFieldPracticeSpeedAthlete(key){
+  if(FIELD_PRACTICE.suppressSpeedToggleUntil&&Date.now()<FIELD_PRACTICE.suppressSpeedToggleUntil){
+    FIELD_PRACTICE.suppressSpeedToggleUntil=0;
+    return;
+  }
   FIELD_PRACTICE.openSpeedAthleteKey=FIELD_PRACTICE.openSpeedAthleteKey===key?'':key;
   renderFieldPractice();
 }
@@ -3982,7 +3986,6 @@ function moveFieldPracticeSpeedAthlete(key,delta){
   var item=order.splice(index,1)[0];
   order.splice(next,0,item);
   p.speedAthleteOrder=order;
-  FIELD_PRACTICE.openSpeedAthleteKey=key;
   renderFieldPractice();
 }
 function reorderFieldPracticeSpeedAthlete(key,targetKey,after){
@@ -3994,13 +3997,13 @@ function reorderFieldPracticeSpeedAthlete(key,targetKey,after){
   if(targetIndex<0)return;
   order.splice(targetIndex+(after?1:0),0,key);
   p.speedAthleteOrder=order;
-  FIELD_PRACTICE.openSpeedAthleteKey=key;
   renderFieldPractice();
 }
 function startFieldPracticeSpeedDrag(event,key){
   if(!event||!key)return;
   event.preventDefault();
   event.stopPropagation();
+  FIELD_PRACTICE.suppressSpeedToggleUntil=Date.now()+500;
   FIELD_PRACTICE.dragSpeedKey=key;
   FIELD_PRACTICE.dragSpeedStartY=Number(event.clientY||0);
   var row=event.currentTarget&&event.currentTarget.closest?event.currentTarget.closest('.speed-ath-row'):null;
@@ -4015,6 +4018,7 @@ function finishFieldPracticeSpeedDrag(event){
   event.stopPropagation();
   var key=FIELD_PRACTICE.dragSpeedKey;
   var startY=Number(FIELD_PRACTICE.dragSpeedStartY||0);
+  FIELD_PRACTICE.suppressSpeedToggleUntil=Date.now()+500;
   FIELD_PRACTICE.dragSpeedKey='';
   FIELD_PRACTICE.dragSpeedStartY=0;
   document.querySelectorAll('.speed-ath-row.dragging').forEach(function(row){row.classList.remove('dragging');});
@@ -4029,6 +4033,7 @@ function finishFieldPracticeSpeedDrag(event){
   if(Math.abs(delta)>28)moveFieldPracticeSpeedAthlete(key,delta>0?1:-1);
 }
 function cancelFieldPracticeSpeedDrag(){
+  FIELD_PRACTICE.suppressSpeedToggleUntil=Date.now()+500;
   FIELD_PRACTICE.dragSpeedKey='';
   FIELD_PRACTICE.dragSpeedStartY=0;
   document.querySelectorAll('.speed-ath-row.dragging').forEach(function(row){row.classList.remove('dragging');});
