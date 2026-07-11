@@ -756,7 +756,7 @@ How to use it:
 7. For Easy Miles, enter the distance with a clear unit, such as `4 miles`, `4 mi`, or `0.5 mi`.
 8. For Quality Session, enter warmup, cooldown, and one or more sets. Each set can include reps, distance, rep splits, rest, effort, and notes.
 9. Add time, source, surface, and notes if useful.
-10. Save mileage.
+10. Save mileage. The confirmation shows the saved distance and athlete name for individual entries.
 
 Manual mileage and manual quality sessions appear in Dashboard training volume and athlete training load. Quality-session rep splits appear with the completed workout details.
 

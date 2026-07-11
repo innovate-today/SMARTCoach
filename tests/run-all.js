@@ -2095,6 +2095,10 @@ function checkManualMileageQualitySession() {
     'data-quality-splits',
     "function collectManualQualitySession()",
     "function manualQualitySplitsText(quality)",
+    "function manualMileageSavedLabel(payload,athletes)",
+    "function manualMileageDistanceLabel(value)",
+    "function manualMileageNameLabel(name)",
+    "setManualMileageStatus(manualMileageSavedLabel(payload,athletes), 'ok')",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Manual quality session UI missing ${text}`);
   });

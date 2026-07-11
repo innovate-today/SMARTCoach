@@ -6148,6 +6148,31 @@ function manualAthletePayload(row){
   return {name:row.name||'',contactId:row.contactId||'',smartcoachAthleteId:row.smartcoachAthleteId||''};
 }
 
+function manualMileageSavedLabel(payload,athletes){
+  var count=(athletes||[]).length;
+  var distanceLabel=manualMileageDistanceLabel(payload&&payload.distance);
+  var type=payload&&payload.logType==='quality'?'quality session':'mileage';
+  if(count===1){
+    var name=manualMileageNameLabel(athletes[0]&&athletes[0].name||'athlete');
+    return 'Saved '+(payload&&payload.logType==='quality'?type+(distanceLabel?' · '+distanceLabel:''):distanceLabel)+' for '+name+'.';
+  }
+  return 'Saved '+(payload&&payload.logType==='quality'?type:'mileage')+(distanceLabel?' · '+distanceLabel:'')+' for '+count+' athletes.';
+}
+
+function manualMileageDistanceLabel(value){
+  var miles=parseCompletedMiles(value);
+  if(!miles)return String(value||'').trim();
+  var rounded=Math.round(miles*10)/10;
+  var text=rounded.toFixed(rounded%1?1:0);
+  return text+' '+(rounded===1?'mile':'miles');
+}
+
+function manualMileageNameLabel(name){
+  return String(name||'athlete').trim().split(/\s+/).map(function(part){
+    return part?part.charAt(0).toUpperCase()+part.slice(1).toLowerCase():'';
+  }).filter(Boolean).join(' ')||'athlete';
+}
+
 function saveManualMileage(){
   var athletes=manualMileageAthletes();
   var qualityMode=(els.manualMileageMode.value||'easy')==='quality';
@@ -6183,7 +6208,7 @@ function saveManualMileage(){
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Mileage could not be saved.');
     applyManualMileageLocally(payload,result.data||{});
-    setManualMileageStatus('Saved '+(qualityMode?'quality session':'mileage')+' for '+athletes.length+' athlete'+(athletes.length===1?'':'s')+'.', 'ok');
+    setManualMileageStatus(manualMileageSavedLabel(payload,athletes), 'ok');
     if(!qualityMode)els.manualMileageDistance.value='';
     els.manualMileageTime.value='';
     els.manualMileageNotes.value='';
