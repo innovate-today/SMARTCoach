@@ -495,6 +495,7 @@ Common uses:
 2. Create or update training groups.
 3. Assign saved plans to groups or athletes.
 4. Remove athletes from old group assignments when needed.
+5. After saving or deleting a training group, review the confirmation beside the group action buttons.
 
 Training groups also appear in the SMARTCoach Pro Mobile App, so keep them clean and practical for how practice is actually organized.
 

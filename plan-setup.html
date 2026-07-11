@@ -88,7 +88,7 @@ select[multiple]{min-height:112px}
 .group-editor-title{font-size:13px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:.03em}
 .group-editor-row{display:grid;grid-template-columns:minmax(0,1fr) 140px;gap:8px}
 .group-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
-.group-status{font-size:13px;color:var(--muted);font-weight:800;min-height:18px}
+.group-status{font-size:13px;color:var(--muted);font-weight:800;min-height:18px;flex:1 1 220px;text-align:left}
 .mini{padding:8px 10px;font-size:13px}
 .status{min-height:22px;text-align:center;font-size:13px;color:var(--muted);padding:12px 20px 0}
 .actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px 20px}
@@ -134,7 +134,6 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
     <div class="groups">
       <div class="assignment-head">
         <div><h2>Training Groups</h2><p>Build the practice groups that appear in the phone app. Coaches can still add or edit groups on the phone at practice.</p></div>
-        <div id="groupStatus" class="group-status"></div>
       </div>
       <div class="group-grid">
         <div class="group-sidebar">
@@ -148,7 +147,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
             <select id="groupGenderFilter" aria-label="Filter group athletes" onchange="renderGroupAthletes()"><option value="all">All athletes</option><option value="girls">Girls</option><option value="boys">Boys</option><option value="unlisted">Unlisted</option></select>
           </div>
           <div id="groupAthletes" class="assignment-athletes"><div class="meet-empty">Select or create a group.</div></div>
-          <div class="group-actions"><button class="secondary mini" onclick="toggleGroupAthletes(true)" type="button">Select All</button><button class="secondary mini" onclick="toggleGroupAthletes(false)" type="button">Clear</button><button class="secondary mini" onclick="deleteTrainingGroup()" type="button">Delete</button><button class="primary mini" onclick="saveTrainingGroup()" type="button">Save Group</button></div>
+          <div class="group-actions"><div id="groupStatus" class="group-status"></div><button class="secondary mini" onclick="toggleGroupAthletes(true)" type="button">Select All</button><button class="secondary mini" onclick="toggleGroupAthletes(false)" type="button">Clear</button><button class="secondary mini" onclick="deleteTrainingGroup()" type="button">Delete</button><button class="primary mini" onclick="saveTrainingGroup()" type="button">Save Group</button></div>
         </div>
       </div>
     </div>

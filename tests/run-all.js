@@ -3089,6 +3089,7 @@ function checkMobileGroupStorageAccountScoped() {
     "next.athletes=cleaned.length||!members.length?cleaned:members;",
     "deleteGroupIds:options.deleteGroupIds||[]",
     ".filter(function(group){return !group.archived;})",
+    '<div class="group-actions"><div id="groupStatus" class="group-status"></div>',
   ].forEach((text) => {
     if (!setup.includes(text)) throw new Error(`desktop group reconciliation must preserve saved groups when member ids do not match: ${text}`);
   });
