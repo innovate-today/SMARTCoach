@@ -1385,13 +1385,14 @@ function normalizePerformanceRecord(record) {
   const plannedVolume = noteValue(coachNote, "Planned volume");
   const splitsText = prop(props, "splits_json");
   const workoutPrescription = noteValue(coachNote, "Workout");
+  const workoutType = labelValue(prop(props, "workout_type")) || workoutTypeFromRecordName(prop(props, "performance_record"), prop(props, "athlete_name_snapshot"));
   const effectiveVolume = effectiveCompletedVolume({
     completedVolume,
     plannedVolume,
     workoutPrescription,
     coachNote,
     splitsText,
-    workoutType: labelValue(prop(props, "workout_type")),
+    workoutType,
     plannedEffort: noteValue(coachNote, "Planned effort"),
   });
   return {
@@ -1402,7 +1403,7 @@ function normalizePerformanceRecord(record) {
     season: labelValue(prop(props, "season")) || prop(props, "season"),
     seasonYear: Number(prop(props, "season_year")) || yearFromDateValue(prop(props, "session_date")),
     sport: labelValue(prop(props, "sport")) || prop(props, "sport"),
-    workoutType: labelValue(prop(props, "workout_type")),
+    workoutType,
     surface: labelValue(prop(props, "surface")),
     repNumber: Number(prop(props, "rep_number")) || null,
     totalTimeDisplay: prop(props, "total_time_display"),
@@ -1427,6 +1428,17 @@ function normalizePerformanceRecord(record) {
     corrected: !!noteValue(coachNote, "Correction Date"),
     syncedAt: recordTimestamp(record),
   };
+}
+
+function workoutTypeFromRecordName(recordName, athleteName) {
+  let text = clean(recordName);
+  const athlete = clean(athleteName);
+  if (!text) return "";
+  if (athlete && text.toLowerCase().startsWith(`${athlete.toLowerCase()} - `)) {
+    text = text.slice(athlete.length + 3);
+  }
+  text = text.replace(/\s+-\s+Run\s+\d+\s*$/i, "");
+  return clean(text);
 }
 
 function isVoidedPerformanceRecord(record) {

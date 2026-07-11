@@ -2039,6 +2039,7 @@ function checkQualityWorkoutTypesAccepted() {
   const syncApi = fs.readFileSync("api/ghl/sync-session.js", "utf8");
   const correctionApi = fs.readFileSync("api/ghl/correction.js", "utf8");
   const manualMileageApi = fs.readFileSync("api/ghl/manual-mileage.js", "utf8");
+  const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   [
     "Threshold",
     "Interval",
@@ -2079,6 +2080,13 @@ function checkQualityWorkoutTypesAccepted() {
   });
   if (!syncApi.includes("createPerformanceRecordWithWorkoutTypeFallback")) throw new Error("Sync should retry workout saves when GHL rejects a workout type option");
   if (!syncApi.includes("delete fallback.workout_type")) throw new Error("Sync should retry workout saves without rejected workout type option");
+  [
+    "function workoutTypeFromRecordName(recordName, athleteName)",
+    "const workoutType = labelValue(prop(props, \"workout_type\")) || workoutTypeFromRecordName",
+    "text.replace(/\\s+-\\s+Run\\s+\\d+\\s*$/i, \"\")",
+  ].forEach((text) => {
+    if (!dashboardApi.includes(text)) throw new Error(`Dashboard completed-workout fallback missing ${text}`);
+  });
   console.log("Quality workout type aliases ok");
 }
 

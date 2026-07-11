@@ -759,7 +759,7 @@ How to use it:
 9. Add time, source, surface, and notes if useful.
 10. Save mileage. The confirmation shows the saved distance and athlete name for individual entries.
 
-Manual mileage and manual quality sessions appear in Dashboard training volume and athlete training load. Quality-session rep splits appear with the completed workout details.
+Manual mileage and manual quality sessions appear in Dashboard training volume, completed workouts, athlete training load, and Miles Board totals when the board date range includes the saved date. Quality-session rep splits appear with the completed workout details.
 
 ## SMARTCoach Pro Mobile App: Training Section
 
