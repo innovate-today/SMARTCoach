@@ -3555,6 +3555,8 @@ function checkFieldPracticePhaseOne() {
     "Create Practice",
     "Share Preview",
     "m-training-mode",
+    "--gesture-safe-bottom",
+    ".tbar,.bact{padding-bottom:var(--gesture-safe-bottom)}",
     "function openTrainingModePicker()",
     "function openTrainingModeDistance()",
     "function openTrainingModeSpeed()",

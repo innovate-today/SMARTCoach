@@ -10,6 +10,8 @@ On iPhone, open the link in Safari. Tap the Share button at the bottom, scroll d
 
 On Android, open the link in Chrome. Tap the menu in the top right, then tap **Add to Home screen** or **Install app** if it appears. Confirm by tapping **Add** or **Install**. The SMARTCoach icon will appear on your home screen.
 
+The phone app leaves extra space near the bottom action buttons for phones that use a swipe-up home gesture.
+
 ## Best Place To Start
 
 Use **Start Here** on the Dashboard when you are not sure what to do first. It stays available after setup is complete and opens short goal paths with the next few coach actions and buttons to the right pages.
