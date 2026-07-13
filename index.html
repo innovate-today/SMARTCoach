@@ -1324,7 +1324,7 @@ function maybePromptForCoachAccess(data){
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:l.type||'training',sport:l.sport||'',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),partnerTiming:normalizePartnerTimingState(l.partnerTiming,l),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanAuto:l.trainingPlanAuto||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:l.cfg,runners:l.runners.map(function(r){
+      return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:l.type||'training',sport:l.sport||'',season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',trainingRaceManualOrder:l.trainingRaceManualOrder?1:0,relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),partnerTiming:normalizePartnerTimingState(l.partnerTiming,l),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanAuto:l.trainingPlanAuto||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:l.cfg,runners:l.runners.map(function(r){
         return{id:r.id,name:r.name,note:r.note||'',hook:r.hook||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanAuto:r.trainingPlanAuto||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayType:r.trainingPlanDayType||'',trainingPlanDayDate:r.trainingPlanDayDate||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:r.trainingPlanDayLinkedMeetId||'',saved:r.saved||[]};
       })};
     });
@@ -1479,7 +1479,7 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:meta.type,sport:meta.sport,season:meta.season,seasonYear:meta.seasonYear,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),partnerTiming:normalizePartnerTimingState(l.partnerTiming,l),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanAuto:l.trainingPlanAuto||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:normalizeCfg(l.cfg),
+        return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:meta.type,sport:meta.sport,season:meta.season,seasonYear:meta.seasonYear,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,trainingRaceManualOrder:l.trainingRaceManualOrder?1:0,relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),partnerTiming:normalizePartnerTimingState(l.partnerTiming,l),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanAuto:l.trainingPlanAuto||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:normalizeCfg(l.cfg),
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',hook:r.hook||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanAuto:r.trainingPlanAuto||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayType:r.trainingPlanDayType||'',trainingPlanDayDate:r.trainingPlanDayDate||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:r.trainingPlanDayLinkedMeetId||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -1742,6 +1742,10 @@ function trainingRaceOrderedRunners(runners,mode){
     return speed||gender||name;
   });
 }
+function trainingRaceDisplayRunners(){
+  if(!CL)return[];
+  return CL.trainingRaceManualOrder?(CL.runners||[]).slice():trainingRaceOrderedRunners(CL.runners);
+}
 function trainingRaceOrderSignature(){
   return (CL&&CL.runners||[]).map(function(r){
     var target=r&&r.cachedPlannedTarget;
@@ -1755,6 +1759,7 @@ function trainingRaceOrderSignature(){
 }
 function scheduleTrainingRaceResort(){
   if(!CL||trainingRaceOrderMode()==='name')return;
+  if(CL.trainingRaceManualOrder)return;
   if(CL.runners&&CL.runners.some(function(r){return r.on;}))return;
   var sig=trainingRaceOrderSignature();
   if(CL.trainingRaceLastResortSignature===sig)return;
@@ -5026,7 +5031,7 @@ function rr(){
   if(!CL.runners.length){
     el.innerHTML=partnerClock+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else{
-    el.innerHTML=partnerClock+trainingRaceOrderedRunners(CL.runners).map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=partnerClock+trainingRaceDisplayRunners().map(function(r){return rHTML(r);}).join('');
   }
   updateGroupPrimaryAction();
   updateTrayActions();
@@ -7610,7 +7615,7 @@ function _startRunnerDrag(id){
 function _runnerDropIndex(y,id){
   if(!CL)return 0;
   var target=0;
-  CL.runners.forEach(function(r){
+  trainingRaceDisplayRunners().forEach(function(r){
     if(r.id===id)return;
     var wrap=document.getElementById('rw-'+r.id);
     if(!wrap)return;
@@ -7627,7 +7632,7 @@ function _clearRunnerDropTargets(){
 function _showRunnerDropTarget(id,targetIndex){
   _clearRunnerDropTargets();
   if(!CL)return;
-  var others=CL.runners.filter(function(r){return r.id!==id;});
+  var others=trainingRaceDisplayRunners().filter(function(r){return r.id!==id;});
   var target=others[targetIndex];
   var wrap=target?document.getElementById('rw-'+target.id):document.getElementById('rw-'+(others[others.length-1]&&others[others.length-1].id));
   if(wrap)wrap.classList.add(target?'drop-before':'drop-after');
@@ -7638,14 +7643,17 @@ function _finishRunnerDrag(id,s){
   if(wrap)wrap.classList.remove('reordering');
   _clearRunnerDropTargets();
   if(!CL)return;
-  var from=CL.runners.findIndex(function(r){return r.id===id;});
+  var visible=trainingRaceDisplayRunners();
+  var from=visible.findIndex(function(r){return r.id===id;});
   if(from<0)return;
-  var runner=CL.runners[from];
-  var next=CL.runners.filter(function(r){return r.id!==id;});
+  var runner=visible[from];
+  var next=visible.filter(function(r){return r.id!==id;});
   var to=typeof s.targetIndex==='number'?s.targetIndex:from;
   to=Math.max(0,Math.min(to,next.length));
   next.splice(to,0,runner);
   CL.runners=next;
+  CL.trainingRaceManualOrder=1;
+  CL.trainingRaceLastResortSignature=trainingRaceOrderSignature();
   save();queueSharedGroupsSave();rr();
 }
 function _closeAll(){
