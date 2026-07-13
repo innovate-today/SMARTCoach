@@ -767,6 +767,8 @@ Manual mileage and manual quality sessions appear in Dashboard training volume, 
 
 Use the Training section at practice for daily workouts.
 
+In the SMARTCoach app settings, **Training/Race Order** controls how athletes appear when opening training groups, race groups, and Speed Metrics sessions. The default is **Speed, gender, name**. When a speed or recent timing signal is available, faster athletes appear first. If athletes are tied or do not have a speed signal yet, Boys are listed before Girls, then Unlisted athletes, then names A-Z. Attendance keeps its attendance-focused order and filters.
+
 How to use it:
 
 1. Open the SMARTCoach app.

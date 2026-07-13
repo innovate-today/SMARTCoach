@@ -1629,6 +1629,7 @@ function checkHowToGuidePage() {
     "5 x 30m counts as 150m",
     "one completed workout for each athlete with at least one saved rep",
     "completed-workout detail shows the Speed Metrics rep breakdown",
+    "**Training/Race Order** controls how athletes appear when opening training groups, race groups, and Speed Metrics sessions",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
   });
@@ -3598,6 +3599,12 @@ function checkFieldPracticePhaseOne() {
     "Session Results",
     "Start",
     "Stop",
+    'id="training-race-order"',
+    "function trainingRaceOrderedRunners(runners,mode)",
+    "function trainingRaceAthleteSpeedScore(runner)",
+    "return speed||gender||name;",
+    "partnerClock+trainingRaceOrderedRunners(CL.runners).map",
+    "if(!p.speedAthleteOrder.length)groupRunners=trainingRaceOrderedRunners(groupRunners);",
     "fp-speed-result-gender",
     "speedRemovedAthletes",
     "Save to SMART Trak",

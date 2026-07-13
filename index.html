@@ -619,6 +619,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="srow"><label class="slbl">Account</label><input id="account-key" class="sinp" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <div class="srow"><label class="slbl">Plan</label><input id="product-plan" type="hidden" value="pro"/><button type="button" id="product-plan-display" class="sinp picker-control" onclick="openProductPlanPicker()">SMARTCoach Pro</button></div>
       <div class="srow"><label class="slbl">Field Marks</label><select id="field-mark-unit" class="sinp"><option value="feet">Feet / inches</option><option value="meters">Meters</option></select></div>
+      <div class="srow"><label class="slbl">Training/Race Order</label><select id="training-race-order" class="sinp"><option value="speed">Speed, gender, name</option><option value="gender">Gender, speed, name</option><option value="name">Name A-Z</option></select></div>
       <div class="srow h" id="access-code-row"><label class="slbl">Access Code</label><input id="access-code" class="sinp" type="password" placeholder="Required for SMART Trak" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <label id="remember-device-row" style="display:none;align-items:center;gap:8px;margin:8px 16px 0;color:#555;font-size:13px;text-align:left">
         <input id="remember-device" type="checkbox" checked style="width:18px;height:18px">
@@ -714,6 +715,17 @@ function setAccountStorage(base,value){
     localStorage.setItem(accountStorageKey(base),String(value));
     localStorage.setItem(base+'_account',accountStorageSuffix());
   }catch(e){}
+}
+function trainingRaceOrderMode(){
+  var value='';
+  try{value=getAccountStorage('sc_training_race_order')||localStorage.getItem('sc_training_race_order')||'';}catch(e){}
+  return ['speed','gender','name'].indexOf(value)>=0?value:'speed';
+}
+function setTrainingRaceOrderMode(value){
+  value=['speed','gender','name'].indexOf(value)>=0?value:'speed';
+  setAccountStorage('sc_training_race_order',value);
+  try{localStorage.setItem('sc_training_race_order',value);}catch(e){}
+  return value;
 }
 function openAccountAccessPage(){
   var key=smartCoachAccountKey();
@@ -973,6 +985,7 @@ function openAccountSettings(){
   var accessInput=document.getElementById('access-code');
   var rememberInput=document.getElementById('remember-device');
   var fieldUnit=document.getElementById('field-mark-unit');
+  var trainingRaceOrder=document.getElementById('training-race-order');
   var status=document.getElementById('account-status');
   var version=document.getElementById('app-version');
   var hasAccount=hasSmartCoachAccountSelection();
@@ -982,6 +995,7 @@ function openAccountSettings(){
   if(accessInput)accessInput.value=smartCoachAccessCode();
   if(rememberInput)rememberInput.checked=true;
   if(fieldUnit)fieldUnit.value=fieldMarkUnit();
+  if(trainingRaceOrder)trainingRaceOrder.value=trainingRaceOrderMode();
   showAccessCodeRow(true);
   if(!hasAccount){
     if(status){status.textContent='Enter your account key and coach access code to continue.';status.style.color='#555';}
@@ -1013,6 +1027,7 @@ function saveAccountSettings(){
   var accessInput=document.getElementById('access-code');
   var rememberInput=document.getElementById('remember-device');
   var fieldUnit=document.getElementById('field-mark-unit');
+  var trainingRaceOrder=document.getElementById('training-race-order');
   var status=document.getElementById('account-status');
   if(input&&!String(input.value||'').trim()){
     if(status){status.textContent='Enter your SMARTCoach account key.';status.style.color='#c00';}
@@ -1023,6 +1038,7 @@ function saveAccountSettings(){
   var plan=setProductPlan(planInput&&planInput.value);
   var accessValue=accessInput?accessInput.value.trim():'';
   setFieldMarkUnit(fieldUnit&&fieldUnit.value);
+  setTrainingRaceOrderMode(trainingRaceOrder&&trainingRaceOrder.value);
   clearAccountUrlOverride();
   if(accessInput)setSmartCoachAccessCode(accessValue);
   if(input)input.value=key;
@@ -1655,6 +1671,71 @@ function activeAthleteForRunner(runner){
     if(activeAthleteKeys(AR[i]).some(function(key){return runnerKeys[key];}))return AR[i];
   }
   return null;
+}
+function trainingRaceAthleteName(runner){
+  return String(runner&&runner.name||runner&&runner.athleteName||'').trim().toLowerCase();
+}
+function trainingRaceAthleteGender(runner){
+  var athlete=activeAthleteForRunner(runner)||findAthleteByName(runner&&runner.name)||{};
+  return String(runner&&runner.gender||runner&&runner.sex||athlete.gender||athlete.sex||'').trim().toLowerCase();
+}
+function trainingRaceGenderRank(runner){
+  var value=trainingRaceAthleteGender(runner);
+  if(/^(boy|boys|male|m|men)$/i.test(value))return 0;
+  if(/^(girl|girls|female|f|women)$/i.test(value))return 1;
+  return 2;
+}
+function trainingRaceSpeedFromText(text){
+  text=String(text||'').trim();
+  if(!text)return null;
+  var eventMatch=text.match(/\b(half marathon|marathon|[0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|[0-9]+k)\b/i);
+  var event=eventMatch?normalizeEventLabel(eventMatch[1]):'';
+  var meters=eventDistance(event);
+  var ms=parseFitnessMs(text,event);
+  return meters&&ms?meters/(ms/1000):null;
+}
+function trainingRaceAthleteSpeedScore(runner){
+  var saved=(runner&&runner.saved||[]).filter(function(item){return item&&Number(item.ms)>0;});
+  if(saved.length){
+    var best=Math.min.apply(null,saved.map(function(item){return Number(item.ms)||Infinity;}));
+    if(isFinite(best)&&best>0)return 1/(best/1000);
+  }
+  var athlete=activeAthleteForRunner(runner)||findAthleteByName(runner&&runner.name)||{};
+  var candidates=[
+    [athlete.currentFitnessEvent,athlete.currentFitnessDisplay].filter(Boolean).join(' '),
+    [athlete.currentFitnessDistance,athlete.currentFitnessTime].filter(Boolean).join(' '),
+    athlete.currentFitness&&athlete.currentFitness.label,
+    athlete.currentFitness&&[athlete.currentFitness.event,athlete.currentFitness.display].filter(Boolean).join(' '),
+    athlete.latestResult&&[athlete.latestResult.event,athlete.latestResult.resultDisplay||athlete.latestResult.display].filter(Boolean).join(' '),
+    athlete.lastResult&&[athlete.lastResult.event,athlete.lastResult.resultDisplay||athlete.lastResult.display].filter(Boolean).join(' ')
+  ];
+  for(var i=0;i<candidates.length;i++){
+    var score=trainingRaceSpeedFromText(candidates[i]);
+    if(score)return score;
+  }
+  return null;
+}
+function trainingRaceCompareBySpeed(a,b){
+  var aScore=trainingRaceAthleteSpeedScore(a),bScore=trainingRaceAthleteSpeedScore(b);
+  if(aScore!==null&&bScore!==null&&aScore!==bScore)return bScore-aScore;
+  if(aScore!==null&&bScore===null)return -1;
+  if(aScore===null&&bScore!==null)return 1;
+  return 0;
+}
+function trainingRaceCompareByGender(a,b){
+  var genderRank=trainingRaceGenderRank(a),genderRankB=trainingRaceGenderRank(b);
+  return genderRank-genderRankB;
+}
+function trainingRaceOrderedRunners(runners,mode){
+  mode=mode||trainingRaceOrderMode();
+  return (runners||[]).slice().sort(function(a,b){
+    var speed=trainingRaceCompareBySpeed(a,b);
+    var gender=trainingRaceCompareByGender(a,b);
+    var name=trainingRaceAthleteName(a).localeCompare(trainingRaceAthleteName(b));
+    if(mode==='name')return name;
+    if(mode==='gender')return gender||speed||name;
+    return speed||gender||name;
+  });
 }
 function isActiveRosterRunner(runner){
   return !AR_READY||!!activeAthleteForRunner(runner);
@@ -3947,6 +4028,8 @@ function fieldPracticeSpeedAthleteRows(p){
   syncFieldPracticeSpeedMetrics(p,false);
   var map={};
   var groupRunners=fieldPracticeGroupRunners(p.groupId);
+  p.speedAthleteOrder=Array.isArray(p.speedAthleteOrder)?p.speedAthleteOrder:[];
+  if(!p.speedAthleteOrder.length)groupRunners=trainingRaceOrderedRunners(groupRunners);
   var removed={};
   (p.speedRemovedAthletes||[]).forEach(function(key){removed[String(key)]=true;});
   groupRunners.forEach(function(runner,index){
@@ -3960,7 +4043,6 @@ function fieldPracticeSpeedAthleteRows(p){
     if(!map[key])map[key]={key:key,id:row.athleteId||'',name:row.athleteName||'Athlete',gender:row.gender||'',source:'session',originalIndex:groupRunners.length+index};
   });
   var rows=Object.keys(map).map(function(key){return map[key];});
-  p.speedAthleteOrder=Array.isArray(p.speedAthleteOrder)?p.speedAthleteOrder:[];
   var order={};
   p.speedAthleteOrder.forEach(function(key,index){order[String(key)]=index;});
   rows.sort(function(a,b){
@@ -4900,7 +4982,7 @@ function rr(){
   if(!CL.runners.length){
     el.innerHTML=partnerClock+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else{
-    el.innerHTML=partnerClock+CL.runners.map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=partnerClock+trainingRaceOrderedRunners(CL.runners).map(function(r){return rHTML(r);}).join('');
   }
   updateGroupPrimaryAction();
   updateTrayActions();
