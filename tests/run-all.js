@@ -3122,6 +3122,9 @@ function checkMobileGroupStorageAccountScoped() {
     "return loadAthletes().then(function(){",
     "if(AR_READY)applyLoadedSharedGroups();",
     "if(pruned)queueSharedGroupsSave();",
+    "function sharedGroupAthletesForPayload(group)",
+    "sourceGroup&&Array.isArray(sourceGroup.athletes)?sourceGroup.athletes:null",
+    "athletes:sharedGroupAthletesForPayload(group)",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile group sync should rename existing groups instead of duplicating them: ${text}`);
   });

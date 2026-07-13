@@ -2202,6 +2202,21 @@ function isActiveCalendarMeetDay(day){
   if(!linked)return true;
   return !!activeMeetRecordIds()[linked];
 }
+function sharedGroupAthletesForPayload(group){
+  var sourceGroup=(group&&group.sharedGroupId)?SG.find(function(item){return item&&item.id===group.sharedGroupId;}):null;
+  var source=sourceGroup&&Array.isArray(sourceGroup.athletes)?sourceGroup.athletes:null;
+  if(source){
+    return source.filter(isActiveRosterRunner).map(function(athlete){
+      var a=activeAthleteForRunner(athlete)||findAthleteByName(athlete&&athlete.name)||{};
+      return {contactId:athlete.contactId||a.id||a.contactId||'',smartcoachAthleteId:athlete.smartcoachAthleteId||a.smartcoachAthleteId||'',name:athlete.name||a.name||''};
+    }).filter(function(a){return a&&(a.contactId||Boolean(a.name&&!/^Runner \d+$/i.test(a.name)));});
+  }
+  return (group&&group.runners||[]).map(function(r){
+    var a=activeAthleteForRunner(r)||findAthleteByName(r.name)||{};
+    if(AR_READY&&!a.id&&!a.contactId&&!a.smartcoachAthleteId)return null;
+    return {contactId:r.contactId||a.id||a.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||a.smartcoachAthleteId||'',name:r.name||a.name||''};
+  }).filter(function(a){return a&&(a.contactId||Boolean(a.name&&!/^Runner \d+$/i.test(a.name)));});
+}
 function sharedGroupsPayload(){
   var groups=logs.filter(function(group){return (group.type||'training')==='training'&&!group.archived;}).map(function(group){
     return {
@@ -2211,11 +2226,7 @@ function sharedGroupsPayload(){
       season:group.season||currentSeason().season,
       seasonYear:group.seasonYear||currentSeason().year,
       archived:!!group.archived,
-      athletes:(group.runners||[]).map(function(r){
-        var a=activeAthleteForRunner(r)||findAthleteByName(r.name)||{};
-        if(AR_READY&&!a.id&&!a.contactId&&!a.smartcoachAthleteId)return null;
-        return {contactId:r.contactId||a.id||a.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||a.smartcoachAthleteId||'',name:r.name||a.name||''};
-      }).filter(function(a){return a&&(a.contactId||Boolean(a.name&&!/^Runner \d+$/i.test(a.name)));})
+      athletes:sharedGroupAthletesForPayload(group)
     };
   });
   return groups;

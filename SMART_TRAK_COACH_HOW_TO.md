@@ -782,6 +782,7 @@ How to use it:
 9. Sync to SMART Trak after the workout.
 
 The app can still capture splits even if the coach hides splits on the detail line.
+Use the red **X** on a runner row only to remove that athlete from the current timing session. It does not remove the athlete from the saved training group roster. Manage permanent group membership from Athlete Setup in SMART Trak.
 
 ### Hooking Runners During A Workout
 
