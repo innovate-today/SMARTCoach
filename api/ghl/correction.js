@@ -315,6 +315,7 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
     time: prop(props, "total_time_display"),
     completedVolume: noteValue(previousNote, "Completed volume"),
     weather: noteValue(previousNote, "Weather"),
+    splitsJson: prop(props, "splits_json"),
     notes: stripSystemNoteLines(previousNote),
   };
   const nextValues = {
@@ -324,6 +325,7 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
     time: clean(updates.time) || previousValues.time,
     completedVolume: clean(updates.completedVolume) || previousValues.completedVolume,
     weather: clean(updates.weather),
+    splitsJson: Object.prototype.hasOwnProperty.call(updates, "splitsText") ? normalizeTrainingSplitsText(updates.splitsText) : previousValues.splitsJson,
     notes: clean(updates.notes),
   };
   const changes = changedValues(previousValues, nextValues);
@@ -351,6 +353,7 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
         surface: optionValue(nextValues.surface),
         total_time_display: nextValues.time,
         ...(totalMs ? { total_time_ms: totalMs } : {}),
+        splits_json: nextValues.splitsJson,
         coach_note: nextNote,
       },
     },
@@ -411,7 +414,7 @@ async function mirrorCorrectedTrainingRecord({ accountKey, record, props, contac
     rep_number: prop(props, "rep_number"),
     total_time_display: Object.prototype.hasOwnProperty.call(values, "time") ? values.time : prop(props, "total_time_display"),
     total_time_ms: totalMs || prop(props, "total_time_ms"),
-    splits_json: prop(props, "splits_json"),
+    splits_json: Object.prototype.hasOwnProperty.call(values, "splitsJson") ? values.splitsJson : prop(props, "splits_json"),
     coach_note: coachNote,
   };
 
@@ -586,6 +589,7 @@ function previousProps(previous, recordType) {
     workout_type: clean(data.workoutType),
     surface: clean(data.surface),
     total_time_display: clean(data.time),
+    splits_json: clean(data.splitsJson),
     coach_note: clean(data.coachNote || data.notes),
   };
 }
@@ -675,6 +679,7 @@ function changedValues(previousValues, nextValues, customLabels) {
     time: "Time",
     completedVolume: "Completed Volume",
     weather: "Weather",
+    splitsJson: "Reps / Rest Times",
     notes: "Notes",
   };
   return Object.keys(labels).reduce((changes, key) => {
@@ -763,6 +768,18 @@ function normalizeSplitsJson(value) {
     return match ? { lap: index + 1, name: clean(match[1]), time: clean(match[2]) } : null;
   }).filter(Boolean);
   return rows.length ? JSON.stringify(rows) : text;
+}
+
+function normalizeTrainingSplitsText(value) {
+  return clean(value).split(/\r?\n/).map((line, index) => {
+    const text = clean(line);
+    if (!text) return "";
+    const labeled = text.match(/^(Lap|Rep|Rest|Recovery)\s*(\d+)\s*[:\-]?\s+(.+?)$/i);
+    if (labeled) return `${labeled[1].replace(/^recovery$/i, "Rest")} ${Number(labeled[2]) || index + 1}: ${clean(labeled[3])}`;
+    const named = text.match(/^([^:]+?):\s*(.+?)$/);
+    if (named) return `${clean(named[1])}: ${clean(named[2])}`;
+    return `Lap ${index + 1}: ${text}`;
+  }).filter(Boolean).join("\n");
 }
 
 function parseTimeToMs(value) {

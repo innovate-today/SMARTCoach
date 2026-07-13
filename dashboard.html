@@ -1087,6 +1087,10 @@ tr:last-child td{border-bottom:0}
           <input id="correctionReason" type="text" placeholder="Required">
         </div>
         <div class="field full">
+          <label for="correctionSplits">Reps / Rest Times</label>
+          <textarea id="correctionSplits" placeholder="Rep 1: 03:31.9&#10;Rest 1: 03:41.3&#10;Rep 2: 06:33.0"></textarea>
+        </div>
+        <div class="field full">
           <label for="correctionNotes">Notes</label>
           <textarea id="correctionNotes" placeholder="Optional"></textarea>
         </div>
@@ -2732,6 +2736,7 @@ var els={
   correctionTime:document.getElementById('correctionTime'),
   correctionWeather:document.getElementById('correctionWeather'),
   correctionReason:document.getElementById('correctionReason'),
+  correctionSplits:document.getElementById('correctionSplits'),
   correctionNotes:document.getElementById('correctionNotes'),
   correctionStatus:document.getElementById('correctionStatus'),
   correctionSave:document.getElementById('correctionSave'),
@@ -5141,6 +5146,7 @@ function openCorrectionModal(button){
   els.correctionTime.value=correctionRow.totalTimeDisplay||'';
   els.correctionWeather.value=correctionRow.weather||'';
   els.correctionReason.value='';
+  els.correctionSplits.value=correctionSplitsTextFromRow(correctionRow);
   els.correctionNotes.value=correctionNotesFromRow(correctionRow);
   els.correctionOriginal.innerHTML=correctionOriginalHtml(correctionRow);
   setCorrectionStatus(correctionRow.speedMetricSession?'Sprint corrections update the saved Speed Metrics practice session.':'Corrections are saved to SMART Trak notes.','');
@@ -5153,6 +5159,7 @@ function correctionOriginalHtml(row){
     ['Date',formatDate(row.sessionDate)],
     ['Volume',row.completedVolume],
     ['Time',row.totalTimeDisplay],
+    ['Splits',splitCountText(row)],
     ['Surface',row.surface],
     ['Weather',row.weather]
   ].filter(function(pair){return pair[1];}).map(function(pair){return esc(pair[0])+': '+esc(pair[1]);}).join(' · ');
@@ -5192,6 +5199,7 @@ function saveCorrection(){
         completedVolume:els.correctionVolume.value,
         time:els.correctionTime.value,
         weather:els.correctionWeather.value,
+        splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow),
         notes:els.correctionNotes.value
       }
     })
@@ -5206,6 +5214,7 @@ function saveCorrection(){
       completedVolume:els.correctionVolume.value,
       time:els.correctionTime.value,
       weather:els.correctionWeather.value,
+      splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow),
       notes:els.correctionNotes.value
     },reason);
     setCorrectionStatus('Correction saved.','success');
@@ -5370,6 +5379,7 @@ function applyTrainingCorrectionLocally(row,updates,reason){
     completedVolumeMiles:completedVolumeMiles(Object.assign({},sourceRow,{completedVolume:updates.completedVolume})),
     totalTimeDisplay:updates.time||sourceRow.totalTimeDisplay,
     weather:updates.weather||'',
+    splitsText:Object.prototype.hasOwnProperty.call(updates,'splitsText')?updates.splitsText:sourceRow.splitsText,
     coachNote:updates.notes||'',
     corrected:true,
     correctionDate:correctedAt,
@@ -5398,6 +5408,7 @@ function correctionPreviousPayload(row){
     time:row.totalTimeDisplay||'',
     completedVolume:row.completedVolume||'',
     weather:row.weather||'',
+    splitsJson:row.splitsText||'',
     notes:correctionNotesFromRow(row),
     coachNote:row.coachNote||''
   };
@@ -5419,6 +5430,30 @@ function findTrainingRow(button){
 function correctionNotesFromRow(row){
   return String(row.coachNote||'').split(/\r?\n/).filter(function(line){
     return !/^(Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+  }).join('\n');
+}
+
+function correctionSplitsTextFromRow(row){
+  var splits=parseSplitLines(row&&row.splitsText);
+  if(!splits.length)return '';
+  return splits.map(function(split,index){
+    var kind=splitKind(row,index,splits);
+    var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):(split.label||'Lap '+split.lap));
+    return label+': '+split.time;
+  }).join('\n');
+}
+
+function normalizeCorrectionSplitsText(text,row){
+  var lines=String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
+  if(!lines.length)return '';
+  var repRest=hasRepRestPattern(row);
+  return lines.map(function(line,index){
+    var labeled=line.match(/^\s*(Lap|Rep|Rest|Recovery)\s*(\d+)\s*[:\-]?\s+(.+?)\s*$/i);
+    if(labeled)return labeled[1].replace(/^recovery$/i,'Rest')+' '+(Number(labeled[2])||index+1)+': '+labeled[3].trim();
+    var named=line.match(/^\s*([^:]+?)\s*:\s*(.+?)\s*$/);
+    if(named)return named[1].trim()+': '+named[2].trim();
+    var label=repRest?(index%2===0?'Rep '+(Math.floor(index/2)+1):'Rest '+(Math.floor(index/2)+1)):'Lap '+(index+1);
+    return label+': '+line;
   }).join('\n');
 }
 

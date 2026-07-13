@@ -1955,12 +1955,32 @@ function checkDashboardMeetCorrectionFields() {
 
 function checkTrainingCorrectionWorkoutNoteReplacement() {
   const api = fs.readFileSync("api/ghl/correction.js", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
   [
     "Workout: nextValues.workoutType",
     "return !/^(Workout|Completed volume|Weather):/i.test(line.trim());",
     "workout_type: workoutTypeValue(nextValues.workoutType)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Training correction workout note replacement missing ${text}`);
+  });
+  [
+    'id="correctionSplits"',
+    "els.correctionSplits.value=correctionSplitsTextFromRow(correctionRow);",
+    "splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow)",
+    "function normalizeCorrectionSplitsText(text,row)",
+    "splitsText:Object.prototype.hasOwnProperty.call(updates,'splitsText')?updates.splitsText:sourceRow.splitsText",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Training correction split editing missing ${text}`);
+  });
+  [
+    'splits_json: clean(data.splitsJson)',
+    'splitsJson: prop(props, "splits_json")',
+    'splitsJson: Object.prototype.hasOwnProperty.call(updates, "splitsText") ? normalizeTrainingSplitsText(updates.splitsText) : previousValues.splitsJson',
+    'splits_json: nextValues.splitsJson',
+    'splits_json: Object.prototype.hasOwnProperty.call(values, "splitsJson") ? values.splitsJson : prop(props, "splits_json")',
+    "function normalizeTrainingSplitsText(value)",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Training correction split backend missing ${text}`);
   });
   console.log("Training correction workout note replacement ok");
 }
