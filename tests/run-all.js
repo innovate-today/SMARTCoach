@@ -2481,6 +2481,8 @@ function checkAthleteCalendarSubmittedStatusPill() {
     "var pillLabel=submitted?submitted.label:(day.status||'Scheduled');",
     '<span class="pill \'+(submitted?submitted.className:\'\')+\'">\'+esc(pillLabel)+\'</span>',
     "Athlete submitted: '+esc(submitted.label)",
+    "if(status.indexOf('completed')>=0||local==='completed')return{key:'completed'",
+    "function pruneSavedSubmissions(saved,visibleKeys)",
   ].forEach((text) => {
     if (!calendar.includes(text)) throw new Error(`Athlete Calendar submitted status pill missing ${text}`);
   });
@@ -2493,7 +2495,7 @@ function checkAthleteCalendarSubmittedStatusPill() {
     "function raceSupportMiles(text)",
     "function parseRaceDistanceMiles(text)",
     "return `${formatMiles(totalMiles)} total`;",
-    "athleteCanSeeDay(athlete, groups, day) && trainingDayHasActiveMeet(day, activeMeetIds)",
+    "!isRemovedTrainingDay(day) && athleteCanSeeDay(athlete, groups, day) && trainingDayHasActiveMeet(day, activeMeetIds)",
     "athleteCanSeeDay(athlete, groups, day) || !trainingDayHasActiveMeet(day, activeMeetIds)",
     "async function loadActiveMeetIds(accountKey)",
     "function trainingDayHasActiveMeet(day, activeMeetIds)",
@@ -2501,8 +2503,12 @@ function checkAthleteCalendarSubmittedStatusPill() {
     "loadSubmittedTrainingStatuses(context.accountKey, athlete)",
     "function applySubmittedTrainingStatus(day, submittedStatuses)",
     "function submittedStatusFromNote(note)",
+    "statusPriority(b.status) - statusPriority(a.status)",
+    "function isRemovedTrainingDay(day)",
+    'notes.indexOf("removed from calendar") >= 0',
     "athlete calendar submission",
     "smartcoach status: voided",
+    'return submittedWorkoutTitleFromNote(note) ? "Completed" : "";',
   ].forEach((text) => {
     if (!lib.includes(text)) throw new Error(`Athlete Calendar deleted meet guard missing ${text}`);
   });

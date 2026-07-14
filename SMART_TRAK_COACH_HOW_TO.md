@@ -977,6 +977,8 @@ How to use it:
 8. After a successful submission, the workout card shows **Athlete submitted: Completed**, **Athlete submitted: Modified**, or **Athlete submitted: Skipped** with a matching card color and selected action button.
 9. Submitted updates save into SMART Trak as athlete-submitted completed workout records.
 
+When a coach completes a practice in the SMARTCoach app and syncs it to SMART Trak, the matching assigned workout on the Athlete Calendar is marked **Completed**. The athlete does not need to submit the same workout again. If a coach removes a workout from the Training Calendar, that workout is also removed from the Athlete Calendar instead of showing as skipped.
+
 Athletes can also click **+ Add Workout** when they need to report a run or quality session that was not already on their calendar. Easy runs can include date, completed volume, total time, and notes. Quality sessions can include warmup, cooldown, reps, distance, rep splits, rest, effort, total time, and notes. These athlete-added entries save as completed workouts in SMART Trak without changing the assigned calendar plan.
 
 Athlete links are unique to each athlete. Athletes do not need the coach access code.
