@@ -338,10 +338,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
   <div class="gfilters"><button class="gf on" id="gf-training" onclick="setGroupView('training')">Training</button><button class="gf" id="gf-meets" onclick="setGroupView('meets')">Meets</button><button class="gf" id="gf-archive" onclick="setGroupView('archive')">Archive</button></div>
   <div class="scroll"><div class="lsec" id="ll"></div></div>
+  <div id="groups-refresh-status" style="display:none;background:#fff;border-top:0.5px solid #e5e5ea;color:#555;font-size:12px;font-weight:800;text-align:center;padding:7px 12px"></div>
   <div class="tbar">
     <button class="tbtn" id="groups-tray-add-btn" onclick="addGroupForView()" hidden><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn" id="groups-tray-account-btn" onclick="openAccountSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Account</span></button>
-    <button class="tbtn" id="groups-tray-refresh-btn" onclick="refreshAppVersion()"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M18 2v4h-4"/><path d="M6 22v-4h4"/></svg><span>Refresh</span></button>
+    <button class="tbtn" id="groups-tray-refresh-btn" onclick="refreshSmartCoachData()"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M18 2v4h-4"/><path d="M6 22v-4h4"/></svg><span>Refresh</span></button>
     <button class="tbtn" id="groups-tray-attendance-btn" onclick="openAttendancePicker()"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M9 2h6v4H9z"/><path d="M6 4H5a2 2 0 0 0-2 2v14h18V6a2 2 0 0 0-2-2h-1"/><path d="M7 11l2 2 4-4"/><path d="M7 17h10"/></svg><span>Attend</span></button>
     <button class="tbtn pro-only" id="groups-tray-field-btn" onclick="openFieldPractice()"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 19L17 5"/><path d="M12 12h6"/><path d="M9 16h5"/></svg><span>Field</span></button>
     <button class="tbtn pro-only" id="groups-tray-keep-btn" onclick="openKeepTrak()"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg><span>Keep</span></button>
@@ -1137,6 +1138,40 @@ function refreshAppVersion(){
   url.searchParams.set('v',Date.now());
   window.location.replace(url.toString());
 }
+function setGroupsRefreshStatus(message,type){
+  var status=document.getElementById('groups-refresh-status');
+  if(!status)return;
+  status.textContent=message||'';
+  status.style.display=message?'block':'none';
+  status.style.color=type==='ok'?'#0a7a44':(type==='warn'?'#c47a00':(type==='bad'?'#c00':'#555'));
+}
+function refreshSmartCoachData(){
+  if(!hasSmartCoachAccountSelection()){
+    setGroupsRefreshStatus('Enter your account key and coach access code first.','warn');
+    openAccountSettings();
+    return;
+  }
+  setGroupsRefreshStatus('Refreshing SMART Trak data...','');
+  syncProductPlanFromAccount().then(function(){
+    if(!accountDeviceAccessReady()){
+      setGroupsRefreshStatus('Enter the coach access code to refresh SMART Trak data.','warn');
+      openAccountSettings();
+      return false;
+    }
+    return loadProData();
+  }).then(function(done){
+    if(done===false)return;
+    rl();
+    if(CL)rr();
+    setGroupsRefreshStatus('Latest SMART Trak data loaded.','ok');
+    setTimeout(function(){
+      var status=document.getElementById('groups-refresh-status');
+      if(status&&status.textContent==='Latest SMART Trak data loaded.')setGroupsRefreshStatus('','');
+    },2200);
+  }).catch(function(error){
+    setGroupsRefreshStatus('Could not refresh SMART Trak data: '+(error&&error.message?error.message:'try again'),'bad');
+  });
+}
 function checkSmartCoachAccount(accountKey){
   var key=cleanAccountKey(accountKey||smartCoachAccountKey());
   var url='/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now();
@@ -1875,8 +1910,8 @@ function applyAthleteMatch(r){
   return a;
 }
 function loadTrainingPlans(){
-  if(!isProPlan()){TP=[];TP_READY=false;return;}
-  fetch('/api/smart-trak/training-plan?kind=assignments').then(function(r){
+  if(!isProPlan()){TP=[];TP_READY=false;return Promise.resolve(false);}
+  return fetch('/api/smart-trak/training-plan?kind=assignments').then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Training plans unavailable');
@@ -1884,7 +1919,8 @@ function loadTrainingPlans(){
     TP_READY=true;
     applyAutoPlansToCurrentGroup();
     loadCalendarMeetDays();
-  }).catch(function(){TP=[];TP_READY=false;});
+    return true;
+  }).catch(function(){TP=[];TP_READY=false;return false;});
 }
 function applyLoadedSharedGroups(){
   mergeSharedGroupsIntoLogs();
@@ -1895,8 +1931,8 @@ function applyLoadedSharedGroups(){
   if(CL)rr();
 }
 function loadSharedGroups(){
-  if(!isProPlan()){SG=[];return;}
-  fetch('/api/smart-trak/groups?v='+Date.now(),{cache:'no-store'}).then(function(r){
+  if(!isProPlan()){SG=[];return Promise.resolve(false);}
+  return fetch('/api/smart-trak/groups?v='+Date.now(),{cache:'no-store'}).then(function(r){
     return r.json().then(function(data){return {ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Groups unavailable');
@@ -1904,10 +1940,12 @@ function loadSharedGroups(){
     if(!AR_READY){
       return loadAthletes().then(function(){
         if(AR_READY)applyLoadedSharedGroups();
+        return AR_READY;
       });
     }
     applyLoadedSharedGroups();
-  }).catch(function(){SG=[];});
+    return true;
+  }).catch(function(){SG=[];return false;});
 }
 function groupRosterKeyFromAthletes(athletes){
   var keys=(athletes||[]).map(function(athlete){
@@ -2356,13 +2394,15 @@ function loadProData(){
     AR=[];TP=[];MT=[];TPD={};CD=[];TP_READY=false;MT_READY=false;AR_READY=false;
     renderAthleteList();
     renderMeetOptions();
-    return;
+    return Promise.resolve(false);
   }
-  if(accountStatus&&accountStatus.accessReady===false)return;
-  loadAthletes();
-  loadTrainingPlans();
-  loadSharedGroups();
-  loadMeets().then(loadCalendarMeetDays);
+  if(accountStatus&&accountStatus.accessReady===false)return Promise.resolve(false);
+  return Promise.all([
+    loadAthletes(),
+    loadTrainingPlans(),
+    loadSharedGroups(),
+    loadMeets().then(loadCalendarMeetDays)
+  ]);
 }
 function applyAutoPlansToCurrentGroup(){
   if(!CL||!TP.length)return;

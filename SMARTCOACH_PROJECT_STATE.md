@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-09
+Last updated: 2026-07-14
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- SMARTCoach app home-screen **Refresh** now reloads SMART Trak account data instead of doing a full app-version reload. The traced flow is bottom tray Refresh -> account/session check -> existing Pro data loaders for roster, assigned plans, shared groups, meets, and calendar days -> local merge/render. The existing Settings **Refresh App** button still performs the full app reload when needed. Coach how-to and regression coverage were updated.
 - Training Calendar now hides saved race/calendar days whose `linkedMeetId` points to a Manage Meets record that no longer exists, once the meets list has successfully loaded. This keeps a meet deleted from Manage Meets from lingering on the Training Calendar, while avoiding accidental hiding if the meets request fails. Regression coverage was added.
 - SMARTCoach mobile Meets now sorts active meet groups by meet date. Upcoming/today meets appear first in earliest-date order; meets whose date has passed drop below upcoming meets; undated meets stay last. Regression coverage was added.
 - SMARTCoach mobile meet-list merging now dedupes calendar-created races that are linked to saved Manage Meets records. When a race is added from Training Calendar, the calendar day still links to the saved meet record, but the mobile app uses the saved meet identity (`meetrec_<id>`) instead of showing a second `calmeet_` meet row. Older linked `calmeet_` duplicates for the same saved meet are archived automatically. Regression coverage was added.
@@ -1419,6 +1420,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 524. SMARTCoach app Training/Race Order now ranks timing groups from current fitness or recent result data instead of planned workout target ranges or saved in-session timing results. Target ranges still display on runner rows, but loading target text no longer resorts the athlete list after the group opens, saved workout reps do not reshuffle the group during practice, and manual drag order still stays locked once a coach drags runners. The coach how-to and regression coverage were updated.
 525. SMARTCoach app Training/Race Order now uses the saved Current Fitness Setup list as the source for group/race timing order. The default is **Sport, speed, name**: matching sport marks come first, faster current-fitness marks sort ahead of slower marks, and names break ties. The SMART Trak athletes API now attaches current fitness rows to active roster athletes so the phone app can use the same data shown on Athlete Setup, Athlete Setup can sort Current Fitness rows by Sport/Speed/Name, and opening the multi-athlete timer clears stale saved manual-order flags before applying the default sort. The coach how-to and regression coverage were updated.
 526. SMARTCoach app manual drag order is now session-only for training/race timing rows. A coach can still drag athletes into a custom order while the timing screen is open, but old saved `trainingRaceManualOrder` flags no longer override the Sport/Speed/Name Current Fitness sort on a later open. This fixes cases where a faster athlete such as Austin could appear below slower athletes because an older manual row order was being reused. Regression coverage was updated.
+527. SMARTCoach app home-screen **Refresh** now reloads current SMART Trak data without forcing a full app refresh. The traced path is the tray Refresh control, existing account/session status, `loadProData()`, roster/plans/shared-groups/meets/calendar-day loaders, local merge, and group-list/render updates. The Settings **Refresh App** action remains the full app-version reload. The coach how-to and regression coverage were updated.
 
 ## Known Good Test Flow
 

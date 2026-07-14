@@ -3097,6 +3097,24 @@ function checkGroupsTrayAddHidden() {
   if (!mobile.includes("id=\"groups-tray-archive-btn\"")) {
     throw new Error("Groups tray Archive button should remain available.");
   }
+  [
+    'id="groups-refresh-status"',
+    'id="groups-tray-refresh-btn" onclick="refreshSmartCoachData()"',
+    "function refreshSmartCoachData()",
+    "setGroupsRefreshStatus('Refreshing SMART Trak data...','');",
+    "return loadProData();",
+    "Latest SMART Trak data loaded.",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile tray Refresh should reload SMART Trak data without a full app refresh: ${text}`);
+  });
+  const refreshButtonIndex = mobile.indexOf('id="groups-tray-refresh-btn"');
+  const refreshAppIndex = mobile.indexOf('onclick="refreshAppVersion()" style="margin-top:8px">Refresh App</button>');
+  if (refreshButtonIndex >= 0 && refreshAppIndex >= 0 && refreshButtonIndex < refreshAppIndex) {
+    const trayToSettings = mobile.slice(refreshButtonIndex, refreshAppIndex);
+    if (trayToSettings.includes("refreshAppVersion()")) {
+      throw new Error("Groups tray Refresh should not call the full app-version reload.");
+    }
+  }
   console.log("Groups tray Add hidden ok");
 }
 

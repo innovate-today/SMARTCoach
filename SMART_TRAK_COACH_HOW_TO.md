@@ -176,6 +176,8 @@ When the SMARTCoach app sees a trusted device that has not picked a coach name y
 
 If a coach chooses **Not Listed**, SMARTCoach does not save that as a coach name. The device stays unassigned, Staff Access shows the unassigned-device warning for the head coach, and the app will ask again the next time that device needs to identify the coach.
 
+On the SMARTCoach app home screen, tap **Refresh** when you need the latest roster, training groups, assigned plans, meet list, or calendar workouts from SMART Trak. This keeps saved timing work on the phone and reloads the current account data. Use **Settings > Refresh App** only when the app itself appears stale and needs a full reload.
+
 Volume miles means completed training and race volume converted into miles for the current filters. Quality session work reps count toward actual quality volume. Recovery between reps does not count unless it is entered as actual running or walking distance.
 
 ## Athletes Page
