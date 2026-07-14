@@ -314,6 +314,8 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
     surface: labelValue(prop(props, "surface")),
     time: prop(props, "total_time_display"),
     completedVolume: noteValue(previousNote, "Completed volume"),
+    plannedTarget: noteValue(previousNote, "Planned target"),
+    plannedEffort: noteValue(previousNote, "Planned effort"),
     weather: noteValue(previousNote, "Weather"),
     splitsJson: prop(props, "splits_json"),
     notes: stripSystemNoteLines(previousNote),
@@ -324,6 +326,8 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
     surface: clean(updates.surface) || previousValues.surface,
     time: clean(updates.time) || previousValues.time,
     completedVolume: clean(updates.completedVolume) || previousValues.completedVolume,
+    plannedTarget: Object.prototype.hasOwnProperty.call(updates, "plannedTarget") ? clean(updates.plannedTarget) : previousValues.plannedTarget,
+    plannedEffort: Object.prototype.hasOwnProperty.call(updates, "plannedEffort") ? clean(updates.plannedEffort) : previousValues.plannedEffort,
     weather: clean(updates.weather),
     splitsJson: Object.prototype.hasOwnProperty.call(updates, "splitsText") ? normalizeTrainingSplitsText(updates.splitsText) : previousValues.splitsJson,
     notes: clean(updates.notes),
@@ -338,6 +342,8 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
   const correctionTime = new Date().toISOString();
   const nextNote = replaceNoteLines(previousNote, {
     Workout: nextValues.workoutType,
+    "Planned target": nextValues.plannedTarget,
+    "Planned effort": nextValues.plannedEffort,
     "Completed volume": nextValues.completedVolume,
     Weather: nextValues.weather,
   }, nextValues.notes, correctionTime, reason);
@@ -678,6 +684,8 @@ function changedValues(previousValues, nextValues, customLabels) {
     surface: "Surface",
     time: "Time",
     completedVolume: "Completed Volume",
+    plannedTarget: "Planned Target",
+    plannedEffort: "Planned Effort",
     weather: "Weather",
     splitsJson: "Reps / Rest Times",
     notes: "Notes",
@@ -729,7 +737,7 @@ function replaceMeetNoteLines(note, labeledValues, notes, correctionTime, reason
 function stripSystemNoteLines(note) {
   return clean(note).split(/\r?\n/).filter((line) => {
     if (isCorrectionLine(line)) return false;
-    return !/^(Workout|Completed volume|Weather):/i.test(line.trim());
+    return !/^(Workout|Planned target|Planned effort|Completed volume|Weather):/i.test(line.trim());
   }).join("\n");
 }
 

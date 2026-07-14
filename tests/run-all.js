@@ -1966,12 +1966,20 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   [
     "Workout: nextValues.workoutType",
-    "return !/^(Workout|Completed volume|Weather):/i.test(line.trim());",
+    '"Planned target": nextValues.plannedTarget',
+    '"Planned effort": nextValues.plannedEffort',
+    "return !/^(Workout|Planned target|Planned effort|Completed volume|Weather):/i.test(line.trim());",
     "workout_type: workoutTypeValue(nextValues.workoutType)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Training correction workout note replacement missing ${text}`);
   });
   [
+    'id="correctionPlannedTarget"',
+    'id="correctionPlannedEffort"',
+    "els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';",
+    "plannedTarget:els.correctionPlannedTarget.value",
+    "plannedEffort:els.correctionPlannedEffort.value",
+    "return !/^(Workout|Planned target|Planned effort|Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());",
     'id="correctionSplits"',
     "els.correctionSplits.value=correctionSplitsTextFromRow(correctionRow);",
     "splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow)",
