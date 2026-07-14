@@ -1449,11 +1449,14 @@ Use this as the current launch regression test:
 
 - Read this file first.
 - Then inspect the relevant page/backend only for the task at hand.
-- Do not guess or assume when an issue is reported. Trace the actual data flow first: UI control, local state, API payload, backend handler, saved record shape, reload/render path, and any tests that cover the behavior.
-- Give short progress updates while working, especially before edits and after learning something important from tracing.
+- Do not guess or assume when an issue is reported. Trace the actual data flow first: UI control, local state, API payload, backend handler, saved record shape, reload/render path, and any tests that cover the behavior. If a likely cause is found, say what was traced before changing code.
+- Give short progress updates while working, especially before edits and after learning something important from tracing. The user should know what is being checked, what was learned, and what is being changed.
 - Do not rework the whole app unless asked.
 - Keep changes scoped.
 - Use `rg` for searches.
 - Use `apply_patch` for edits.
 - Ignore unrelated dirty files unless they affect the current task.
+- Always update `SMARTCOACH_PROJECT_STATE.md` for completed work.
+- Update `SMART_TRAK_COACH_HOW_TO.md` when a change affects what coaches see or how coaches use SMART Trak / SMARTCoach. Write those guide updates in plain coach language. Do not use internal jargon, implementation terms, or the phrase "coach-facing" in coach instructions.
+- When a change affects what coaches see or use, ask whether it should be added to **What's New** unless the user already said not to add it.
 - After frontend edits, provide the user direct confirmation steps.
