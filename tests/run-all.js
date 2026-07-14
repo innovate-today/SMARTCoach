@@ -3684,6 +3684,17 @@ function checkFieldPracticePhaseOne() {
     if (!app.includes(text)) throw new Error(`Mobile Field Practice app missing ${text}`);
   });
   const fieldPracticeApp = fs.readFileSync("index.html", "utf8");
+  [
+    "var effort=effortFromTargetText(source);",
+    "var rule=paceRule(effort||workoutType||source);",
+    "'Interval':{label:'Interval',distance:400,low:.88,high:.95}",
+    "'Aerobic Power':{label:'Aerobic Power',distance:800,low:.78,high:.86}",
+  ].forEach((text) => {
+    if (!fieldPracticeApp.includes(text)) throw new Error(`Mobile target rules should honor explicit @ Interval text before Aerobic Power category: ${text}`);
+  });
+  if (fieldPracticeApp.includes("var rule=paceRule(workoutType||effortFromTargetText(source)||source);")) {
+    throw new Error("Mobile target rules should not let Aerobic Power category override explicit @ Interval text.");
+  }
   if (fieldPracticeApp.includes("p.speedAthleteOrder=order;\n  FIELD_PRACTICE.openSpeedAthleteKey=key;\n  renderFieldPractice();")) {
     throw new Error("Mobile Speed Metrics drag should reorder athletes without forcing athlete details open");
   }

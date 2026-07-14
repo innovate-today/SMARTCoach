@@ -475,6 +475,8 @@ The **Visible Mix** shows how the calendar is balanced across workouts, meets/ra
 
 Use **Training Customization** when your program wants target paces based on different effort percentages. The table shows the current percent range for each effort, such as Easy / Recovery Run, Threshold, Interval, Repetition, Tempo, and speed work. Edit the low and high percentages, then click **Save Customization**. Click **Reset Defaults** to return the table to the built-in SMART Trak percentages.
 
+For Quality Session workouts, the effort written on the set line controls the phone-app target. For example, `3 x 1 mi @ Interval` uses the Interval target range for those mile repeats, even when SMART Trak stores the broader workout category as Aerobic Power.
+
 ## Upload/Paste Plan
 
 Use Upload/Paste Plan for full plans, not one-day workout entry. One-day workouts, races, rest days, and notes should be added on the Training Calendar.
