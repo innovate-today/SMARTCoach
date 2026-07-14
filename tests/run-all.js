@@ -3626,7 +3626,7 @@ function checkFieldPracticePhaseOne() {
     "function trainingRaceOrderedRunners(runners,mode)",
     "function trainingRaceDisplayRunners()",
     "function trainingRaceAthleteSpeedScore(runner)",
-    "runner&&runner.cachedPlannedTarget",
+    "athlete.currentFitness&&[athlete.currentFitness.event,athlete.currentFitness.display]",
     "function scheduleTrainingRaceResort()",
     "if(CL.trainingRaceManualOrder)return;",
     "trainingRaceLastResortSignature",
@@ -3634,7 +3634,6 @@ function checkFieldPracticePhaseOne() {
     "el.innerHTML=partnerClock+trainingRaceDisplayRunners().map",
     "trainingRaceDisplayRunners().forEach(function(r)",
     "CL.trainingRaceManualOrder=1;",
-    "scheduleTrainingRaceResort();",
     "return speed||gender||name;",
     "partnerClock+trainingRaceDisplayRunners().map",
     "if(!p.speedAthleteOrder.length)groupRunners=trainingRaceOrderedRunners(groupRunners);",
@@ -3654,6 +3653,15 @@ function checkFieldPracticePhaseOne() {
   const fieldPracticeApp = fs.readFileSync("index.html", "utf8");
   if (fieldPracticeApp.includes("p.speedAthleteOrder=order;\n  FIELD_PRACTICE.openSpeedAthleteKey=key;\n  renderFieldPractice();")) {
     throw new Error("Mobile Speed Metrics drag should reorder athletes without forcing athlete details open");
+  }
+  if (fieldPracticeApp.includes("var target=runner&&runner.cachedPlannedTarget;")) {
+    throw new Error("Training/race speed order should use current fitness or recent results, not planned target ranges");
+  }
+  if (fieldPracticeApp.includes("var saved=(runner&&runner.saved||[]).filter(function(item){return item&&Number(item.ms)>0;});")) {
+    throw new Error("Training/race speed order should not change from saved in-session timing results");
+  }
+  if (fieldPracticeApp.includes("el.classList.add('on');\n    scheduleTrainingRaceResort();")) {
+    throw new Error("Training/race target text loading should not reorder the runner list");
   }
   [
     'id="fieldPracticeLink"',

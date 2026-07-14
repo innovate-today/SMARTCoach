@@ -1695,22 +1695,12 @@ function trainingRaceSpeedFromText(text){
   return meters&&ms?meters/(ms/1000):null;
 }
 function trainingRaceAthleteSpeedScore(runner){
-  var saved=(runner&&runner.saved||[]).filter(function(item){return item&&Number(item.ms)>0;});
-  if(saved.length){
-    var best=Math.min.apply(null,saved.map(function(item){return Number(item.ms)||Infinity;}));
-    if(isFinite(best)&&best>0)return 1/(best/1000);
-  }
-  var target=runner&&runner.cachedPlannedTarget;
-  if(target&&Number(target.plannedTargetMinMs)>0&&Number(target.plannedTargetMaxMs)>0){
-    var midpoint=(Number(target.plannedTargetMinMs)+Number(target.plannedTargetMaxMs))/2;
-    if(midpoint>0)return 1/(midpoint/1000);
-  }
   var athlete=activeAthleteForRunner(runner)||findAthleteByName(runner&&runner.name)||{};
   var candidates=[
+    athlete.currentFitness&&[athlete.currentFitness.event,athlete.currentFitness.display].filter(Boolean).join(' '),
+    athlete.currentFitness&&athlete.currentFitness.label,
     [athlete.currentFitnessEvent,athlete.currentFitnessDisplay].filter(Boolean).join(' '),
     [athlete.currentFitnessDistance,athlete.currentFitnessTime].filter(Boolean).join(' '),
-    athlete.currentFitness&&athlete.currentFitness.label,
-    athlete.currentFitness&&[athlete.currentFitness.event,athlete.currentFitness.display].filter(Boolean).join(' '),
     athlete.latestResult&&[athlete.latestResult.event,athlete.latestResult.resultDisplay||athlete.latestResult.display].filter(Boolean).join(' '),
     athlete.lastResult&&[athlete.lastResult.event,athlete.lastResult.resultDisplay||athlete.lastResult.display].filter(Boolean).join(' ')
   ];
@@ -1748,12 +1738,10 @@ function trainingRaceDisplayRunners(){
 }
 function trainingRaceOrderSignature(){
   return (CL&&CL.runners||[]).map(function(r){
-    var target=r&&r.cachedPlannedTarget;
     return [
       r&&r.id,
       trainingRaceAthleteName(r),
-      target&&target.plannedTargetMinMs,
-      target&&target.plannedTargetMaxMs
+      trainingRaceAthleteSpeedScore(r)
     ].join(':');
   }).join('|')+'|'+trainingRaceOrderMode();
 }
@@ -5298,7 +5286,6 @@ function renderRunnerTarget(r){
     r.cachedPlannedTarget=target;
     el.textContent='Target: '+target.plannedTargetRange;
     el.classList.add('on');
-    scheduleTrainingRaceResort();
   }).catch(function(){});
 }
 function compactRunnerTarget(plan,profile){
