@@ -3125,7 +3125,11 @@ function checkGroupsTrayAddHidden() {
     'id="groups-refresh-status"',
     'id="groups-tray-refresh-btn" onclick="refreshSmartCoachData()"',
     "function refreshSmartCoachData()",
-    "setGroupsRefreshStatus('Refreshing SMART Trak data...','');",
+    "function showAppSplash()",
+    "function dismissAppSplash()",
+    "setGroupsRefreshStatus('','');",
+    "showAppSplash();",
+    "dismissAppSplash();",
     "return loadProData();",
     "Latest SMART Trak data loaded.",
   ].forEach((text) => {

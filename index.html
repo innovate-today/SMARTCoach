@@ -1145,30 +1145,52 @@ function setGroupsRefreshStatus(message,type){
   status.style.display=message?'block':'none';
   status.style.color=type==='ok'?'#0a7a44':(type==='warn'?'#c47a00':(type==='bad'?'#c00':'#555'));
 }
+function showAppSplash(){
+  var splash=document.getElementById('splash');
+  if(!splash)return;
+  splash.style.display='flex';
+  splash.offsetHeight;
+  splash.classList.remove('gone');
+}
+function dismissAppSplash(){
+  var splash=document.getElementById('splash');
+  if(!splash)return;
+  splash.classList.add('gone');
+  setTimeout(function(){
+    if(splash.classList.contains('gone'))splash.style.display='none';
+  },400);
+}
 function refreshSmartCoachData(){
   if(!hasSmartCoachAccountSelection()){
     setGroupsRefreshStatus('Enter your account key and coach access code first.','warn');
     openAccountSettings();
     return;
   }
-  setGroupsRefreshStatus('Refreshing SMART Trak data...','');
+  setGroupsRefreshStatus('','');
+  showAppSplash();
   syncProductPlanFromAccount().then(function(){
     if(!accountDeviceAccessReady()){
+      dismissAppSplash();
       setGroupsRefreshStatus('Enter the coach access code to refresh SMART Trak data.','warn');
       openAccountSettings();
       return false;
     }
     return loadProData();
   }).then(function(done){
-    if(done===false)return;
+    if(done===false){
+      dismissAppSplash();
+      return;
+    }
     rl();
     if(CL)rr();
+    dismissAppSplash();
     setGroupsRefreshStatus('Latest SMART Trak data loaded.','ok');
     setTimeout(function(){
       var status=document.getElementById('groups-refresh-status');
       if(status&&status.textContent==='Latest SMART Trak data loaded.')setGroupsRefreshStatus('','');
     },2200);
   }).catch(function(error){
+    dismissAppSplash();
     setGroupsRefreshStatus('Could not refresh SMART Trak data: '+(error&&error.message?error.message:'try again'),'bad');
   });
 }
