@@ -1976,9 +1976,13 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
   [
     'id="correctionPlannedTarget"',
     'id="correctionPlannedEffort"',
+    "setSelectValue(els.correctionWorkout,correctionRow.speedMetricSession?(correctionRow.workoutPrescription||correctionRow.plannedEffort||'Max Velocity'):(correctionRow.workoutPrescription||correctionRow.workoutType||'Easy/Recovery Run'));",
     "els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';",
     "plannedTarget:els.correctionPlannedTarget.value",
     "plannedEffort:els.correctionPlannedEffort.value",
+    "subLine(trainingWorkoutTypeSubline(row))",
+    "function qualityStorageWorkoutType(value)",
+    "interval:'Aerobic Power'",
     "return !/^(Workout|Planned target|Planned effort|Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());",
     'id="correctionSplits"',
     "els.correctionSplits.value=correctionSplitsTextFromRow(correctionRow);",
