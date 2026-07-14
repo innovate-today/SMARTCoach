@@ -63,7 +63,7 @@ How to use it:
 7. Click **Show workouts** under an athlete to see completed workout details.
 8. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
-When correcting a saved workout with reps or rest times, use **Reps / Rest Times** in the correction window. Enter one split per line, such as `Rep 1: 03:31.9`, `Rest 1: 03:41.3`, and `Rep 2: 06:33.0`, then click **Save Correction**.
+When correcting a saved workout with reps or rest times, use **Reps / Rest Times** in the correction window. The Workout Type dropdown includes the same quality efforts coaches use when planning workouts, including Interval, Repetition, Hills, and Fast Reps. Enter one split per line, such as `Rep 1: 03:31.9`, `Rest 1: 03:41.3`, and `Rep 2: 06:33.0`, then click **Save Correction**.
 
 The Dashboard title includes **Start Here** and **What's New**. Use **Start Here** for goal-based setup and workflow steps. Use **What's New** to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Dashboard Customization, Training Customization, Results Board sharing, Athlete Calendar Questions, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
 

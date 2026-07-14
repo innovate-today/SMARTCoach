@@ -2069,6 +2069,7 @@ function checkTrainingAdjustmentAuditDates() {
 
 function checkQualityWorkoutTypesAccepted() {
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const trainingPlanApi = fs.readFileSync("api/ghl/training-plan.js", "utf8");
   const syncApi = fs.readFileSync("api/ghl/sync-session.js", "utf8");
   const correctionApi = fs.readFileSync("api/ghl/correction.js", "utf8");
@@ -2088,6 +2089,7 @@ function checkQualityWorkoutTypesAccepted() {
     "Extensive Tempo",
   ].forEach((type) => {
     if (!calendar.includes(type)) throw new Error(`Training Calendar quality workout type missing ${type}`);
+    if (!dashboard.includes(`<option>${type}</option>`)) throw new Error(`Dashboard completed-workout correction type missing ${type}`);
   });
   [
     'threshold: "lactate_threshold"',
