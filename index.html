@@ -6716,6 +6716,9 @@ function entryTargetHtml(plan,profile,run){
     return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||plan.trainingPlanDayTitle||'Workout')+'</span>'+(text?'<br><span>'+ex(text)+'</span>':'');
   }
   if(!fitness){
+    if(rule&&rule.label==='Easy/Recovery Run'){
+      return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: Conversational</span>';
+    }
     return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%</span><br><span style="color:#c47a00">No current fitness found for this athlete.</span>';
   }
   var rangeData=targetRangeDataFromFitness(rule,fitness);

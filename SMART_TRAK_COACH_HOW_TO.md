@@ -449,6 +449,8 @@ How to use it:
 5. Leave **Manual calendar entry** selected when entering workouts week by week, or choose a saved uploaded/pasted/built plan if the day belongs to that plan.
 6. Save the calendar day.
 
+For Easy Run workouts, leave **Target** blank to use the standard easy target from each athlete's current fitness. If no current fitness is set, SMARTCoach treats the easy run as conversational.
+
 To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.
 
 To edit a workout already on the calendar, open the workout and click **Edit**. Quality Session edits reopen with the saved warmup, reps, distance, effort, recovery, cooldown, details, and target text so the coach can adjust the actual workout instead of rebuilding it from scratch. Choose the effort inside each set; those set Effort choices include Interval, Repetition, Hills, and Fast Reps.

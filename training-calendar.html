@@ -2596,7 +2596,8 @@ function setAddDayMode(mode){
     setActivityTypeOptions(['Easy/Recovery Run','Long Run'],'Easy/Recovery Run');
     if(!els.addDayTitleInput.value||titleWasDefault)els.addDayTitleInput.value='Easy run';
     els.addDayTitleInput.placeholder='Example: EZ 5';
-    if(!els.addDayTarget.value)els.addDayTarget.value='Conversational';
+    if(!els.addDayTarget.value)els.addDayTarget.value='';
+    els.addDayTarget.placeholder='Blank = standard easy target; use Conversational when no fitness is set';
     els.addDayVolume.placeholder='Example: 5 miles';
     els.addDayDetails.placeholder='Add the session details';
     els.addDayTitle.textContent='Add Easy Run';
@@ -2810,7 +2811,7 @@ function buildAddDayActivityValues(){
       title:title||(distance?distance+' Easy Run'+(!els.easyStridesFields.hidden?' + Strides':''):'Easy run'),
       workoutType:type||'Easy/Recovery Run',
       plannedVolume:volume||(easyMiles?formatMiles(easyMiles):distance),
-      targetSplits:target||('Conversational'+(!els.easyStridesFields.hidden?'; strides relaxed and fast':'')),
+      targetSplits:target||defaultEasyRunTarget(),
       details:lines.join('\n')
     };
   }
@@ -3665,6 +3666,44 @@ function renderAddDayGroupSelect(currentValues){
 }
 function selectedAddDayGroups(){
   return Array.prototype.slice.call(els.addDayGroup.querySelectorAll('input[type="checkbox"]:checked')).map(function(input){return input.value;});
+}
+function selectedAddDayAthletes(){
+  var active=activeMileageAthletes();
+  var groups=selectedAddDayGroups();
+  if(!groups.length)return active;
+  var byKey={};
+  active.forEach(function(row){
+    if(row.contactId)byKey['id:'+String(row.contactId)]=row;
+    if(row.smartcoachAthleteId)byKey['smart:'+String(row.smartcoachAthleteId)]=row;
+    if(row.name)byKey['name:'+String(row.name).toLowerCase()]=row;
+  });
+  var seen={};
+  var rows=[];
+  activeTrainingGroups().filter(function(group){return groups.indexOf(group.name)>=0;}).forEach(function(group){
+    (group.athletes||[]).forEach(function(athlete){
+      var row=(athlete.contactId&&byKey['id:'+String(athlete.contactId)])||
+        (athlete.smartcoachAthleteId&&byKey['smart:'+String(athlete.smartcoachAthleteId)])||
+        (athlete.name&&byKey['name:'+String(athlete.name).toLowerCase()])||
+        athlete;
+      var key=String(row.contactId||row.smartcoachAthleteId||row.name||'').toLowerCase();
+      if(!key||seen[key])return;
+      seen[key]=true;
+      rows.push(row);
+    });
+  });
+  return rows;
+}
+function athleteHasCurrentFitness(row){
+  var fitness=row&&row.currentFitness||{};
+  return !!(fitness.display||fitness.resultDisplay||fitness.label||fitness.resultMs||row&&row.currentFitnessDisplay||row&&row.currentFitnessTime);
+}
+function selectedAddDayHasCurrentFitness(){
+  return selectedAddDayAthletes().some(athleteHasCurrentFitness);
+}
+function defaultEasyRunTarget(){
+  var target=selectedAddDayHasCurrentFitness()?'':'Conversational';
+  if(target&&!els.easyStridesFields.hidden)target+='; strides relaxed and fast';
+  return target;
 }
 function selectAddDayGroups(values){
   var wanted=(Array.isArray(values)?values:[values]).filter(Boolean);

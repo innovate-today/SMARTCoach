@@ -2071,6 +2071,31 @@ function checkTrainingCalendarQualityEditParsing() {
   console.log("Training Calendar quality edit parser ok");
 }
 
+function checkTrainingCalendarEasyRunStandardTarget() {
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "els.addDayTarget.placeholder='Blank = standard easy target; use Conversational when no fitness is set';",
+    "targetSplits:target||defaultEasyRunTarget()",
+    "function selectedAddDayHasCurrentFitness()",
+    "return selectedAddDayAthletes().some(athleteHasCurrentFitness);",
+    "var target=selectedAddDayHasCurrentFitness()?'':'Conversational';",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Training Calendar Easy Run standard target missing ${text}`);
+  });
+  if (calendar.includes("if(!els.addDayTarget.value)els.addDayTarget.value='Conversational';")) {
+    throw new Error("Training Calendar Easy Run should not prefill Conversational when standard target can be used.");
+  }
+  [
+    "if(rule&&rule.label==='Easy/Recovery Run')",
+    "Target: Conversational",
+    "No current fitness found for this athlete.",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile Easy Run no-fitness fallback missing ${text}`);
+  });
+  console.log("Training Calendar Easy Run standard target ok");
+}
+
 function checkTrainingAdjustmentAuditDates() {
   const api = fs.readFileSync("api/ghl/training-plan.js", "utf8");
   [
@@ -3829,6 +3854,7 @@ checkDashboardMeetCorrectionFields();
 checkTrainingCorrectionWorkoutNoteReplacement();
 checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
+checkTrainingCalendarEasyRunStandardTarget();
 checkTrainingAdjustmentAuditDates();
 checkQualityWorkoutTypesAccepted();
 checkManualMileageQualitySession();
