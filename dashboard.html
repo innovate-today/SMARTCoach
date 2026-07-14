@@ -7008,10 +7008,23 @@ function trainingWorkoutTypeSubline(row){
   if(!row||!row.workoutPrescription)return '';
   var type=String(row.workoutType||'').trim();
   if(!type)return '';
-  var broad=qualityStorageWorkoutType(row.workoutPrescription);
+  var precise=preciseQualityEffortForRow(row);
+  var broad=qualityStorageWorkoutType(precise||row.workoutPrescription);
   if(broad&&trainingOptionKey(type)===trainingOptionKey(broad))return '';
-  if(trainingOptionKey(type)===trainingOptionKey(row.workoutPrescription))return '';
+  if(trainingOptionKey(type)===trainingOptionKey(precise||row.workoutPrescription))return '';
   return type;
+}
+
+function preciseQualityEffortForRow(row){
+  var source=[row&&row.workoutPrescription,row&&row.coachNote].filter(Boolean).join('\n');
+  var explicit=source.match(/@\s*([A-Za-z][A-Za-z\s-]*?)(?:\s*(?:\/|;|\n|\)|$))/);
+  if(explicit)return explicit[1].trim();
+  var percent=String(row&&row.plannedEffort||'').trim();
+  var typeKey=trainingOptionKey(row&&row.workoutType);
+  if(typeKey==='aerobic_power'&&percent==='88-95%')return 'Interval';
+  if(typeKey==='lactate_threshold'&&percent==='82-88%')return 'Threshold';
+  if(typeKey==='acceleration'&&percent==='93-100%')return 'Repetition';
+  return '';
 }
 
 function qualityStorageWorkoutType(value){

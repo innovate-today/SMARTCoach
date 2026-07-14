@@ -451,7 +451,7 @@ How to use it:
 
 To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.
 
-To edit a workout already on the calendar, open the workout and click **Edit**. Quality Session edits reopen with the saved warmup, reps, distance, effort, recovery, cooldown, details, and target text so the coach can adjust the actual workout instead of rebuilding it from scratch. The Effort dropdown in Edit uses the same choices as Add, including Interval, Repetition, Hills, and Fast Reps.
+To edit a workout already on the calendar, open the workout and click **Edit**. Quality Session edits reopen with the saved warmup, reps, distance, effort, recovery, cooldown, details, and target text so the coach can adjust the actual workout instead of rebuilding it from scratch. Choose the effort inside each set; those set Effort choices include Interval, Repetition, Hills, and Fast Reps.
 
 Quality Session warmup, cooldown, and set distances can use distance or time units, including miles, kilometers, meters, minutes, and seconds. Time-based pieces are shown in the workout instructions but do not add mileage volume.
 
@@ -475,7 +475,7 @@ The **Visible Mix** shows how the calendar is balanced across workouts, meets/ra
 
 Use **Training Customization** when your program wants target paces based on different effort percentages. The table shows the current percent range for each effort, such as Easy / Recovery Run, Threshold, Interval, Repetition, Tempo, and speed work. Edit the low and high percentages, then click **Save Customization**. Click **Reset Defaults** to return the table to the built-in SMART Trak percentages.
 
-For Quality Session workouts, the effort written on the set line controls the phone-app target. For example, `3 x 1 mi @ Interval` uses the Interval target range for those mile repeats, even when SMART Trak stores the broader workout category as Aerobic Power.
+For Quality Session workouts, the effort written on the set line controls the phone-app target and the saved workout effort. For example, `3 x 1 mi @ Interval` uses the Interval target range for those mile repeats, even when SMART Trak stores a broader category behind the scenes.
 
 ## Upload/Paste Plan
 

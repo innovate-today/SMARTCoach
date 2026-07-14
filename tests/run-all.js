@@ -1982,6 +1982,8 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "plannedEffort:els.correctionPlannedEffort.value",
     "subLine(trainingWorkoutTypeSubline(row))",
     "function qualityStorageWorkoutType(value)",
+    "function preciseQualityEffortForRow(row)",
+    "if(typeKey==='aerobic_power'&&percent==='88-95%')return 'Interval';",
     "interval:'Aerobic Power'",
     "return !/^(Workout|Planned target|Planned effort|Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());",
     'id="correctionSplits"',
@@ -2058,6 +2060,9 @@ function checkTrainingCalendarQualityEditParsing() {
     "setActivityTypeOptions(qualityEffortTypes(),'Threshold');",
     "function firstQualityEffortFromDay(day)",
     "if(addDayMode==='quality')setActivityTypeOptions(qualityEffortTypes(),firstQualityEffortFromDay(calendarEditDay)||calendarEditDay.workoutType||els.addDayWorkoutType.value||'Threshold');",
+    "els.addDayWorkoutTypeField.hidden=addDayMode==='easy'||addDayMode==='quality'||addDayMode==='race'||addDayMode==='off';",
+    "workoutType:first.effort||type,",
+    "workoutType:addDayMode==='quality'?(generated.workoutType||els.addDayWorkoutType.value.trim()||calendarEditDay&&calendarEditDay.workoutType||'')",
     "return ['Easy'].concat(qualityEffortTypes()).map(function(value)",
   ];
   required.forEach((text) => {

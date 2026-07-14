@@ -2587,7 +2587,7 @@ function setAddDayMode(mode){
   els.speedActivityFields.hidden=addDayMode!=='speed';
   els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=false;
-  els.addDayWorkoutTypeField.hidden=addDayMode==='easy'||addDayMode==='race'||addDayMode==='off';
+  els.addDayWorkoutTypeField.hidden=addDayMode==='easy'||addDayMode==='quality'||addDayMode==='race'||addDayMode==='off';
   els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality'||addDayMode==='speed'||addDayMode==='off'||(addDayMode==='race'&&normalizeSport(els.addDaySport.value)!=='Cross Country');
   els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='speed'||addDayMode==='race'||addDayMode==='off';
   els.addDayDetailsField.hidden=addDayMode==='off';
@@ -2831,14 +2831,14 @@ function buildAddDayActivityValues(){
     qLines.push('Cooldown: '+distanceLabel(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value));
     if(details)qLines.push(details);
     var workBlocks=blocks.filter(function(block){return block.kind!=='rest';});
-    var first=workBlocks[0]||{effort:'Threshold'};
+    var first=workBlocks[0]||{effort:type||'Threshold'};
     var mainSet=workBlocks[0]?qualityBlockLine(workBlocks[0]):'Quality session';
     var total=unitMiles(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value)+unitMiles(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value);
     workBlocks.forEach(function(block){total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);});
     return {
       dayType:'Workout',
       title:title||(mainSet||'Quality session'),
-      workoutType:type||first.effort,
+      workoutType:first.effort||type,
       plannedVolume:volume||(total?formatMiles(total)+' total':'Quality session'),
       targetSplits:target||blocks.map(function(block){
         if(block.kind==='rest')return qualityBlockLine(block);
@@ -2905,7 +2905,7 @@ function buildCalendarEditActivityValues(){
     date:els.addDayDate.value,
     dayType:generated.dayType||els.addDayType.value,
     title:els.addDayTitleInput.value.trim()||generated.title||calendarEditDay&&calendarEditDay.title||'',
-    workoutType:els.addDayWorkoutType.value.trim()||generated.workoutType||calendarEditDay&&calendarEditDay.workoutType||'',
+    workoutType:addDayMode==='quality'?(generated.workoutType||els.addDayWorkoutType.value.trim()||calendarEditDay&&calendarEditDay.workoutType||''):(els.addDayWorkoutType.value.trim()||generated.workoutType||calendarEditDay&&calendarEditDay.workoutType||''),
     energySystem:calendarEditDay&&calendarEditDay.energySystem||'',
     status:els.addDayStatusSelect.value||calendarEditDay&&calendarEditDay.status||'Scheduled',
     groupName:selectedEditGroupName(),
