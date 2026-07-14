@@ -619,7 +619,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="srow"><label class="slbl">Account</label><input id="account-key" class="sinp" type="text" placeholder="default" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <div class="srow"><label class="slbl">Plan</label><input id="product-plan" type="hidden" value="pro"/><button type="button" id="product-plan-display" class="sinp picker-control" onclick="openProductPlanPicker()">SMARTCoach Pro</button></div>
       <div class="srow"><label class="slbl">Field Marks</label><select id="field-mark-unit" class="sinp"><option value="feet">Feet / inches</option><option value="meters">Meters</option></select></div>
-      <div class="srow"><label class="slbl">Training/Race Order</label><select id="training-race-order" class="sinp"><option value="speed">Speed, gender, name</option><option value="gender">Gender, speed, name</option><option value="name">Name A-Z</option></select></div>
+      <div class="srow"><label class="slbl">Training/Race Order</label><select id="training-race-order" class="sinp"><option value="speed">Sport, speed, name</option><option value="gender">Gender, speed, name</option><option value="name">Name A-Z</option></select></div>
       <div class="srow h" id="access-code-row"><label class="slbl">Access Code</label><input id="access-code" class="sinp" type="password" placeholder="Required for SMART Trak" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/></div>
       <label id="remember-device-row" style="display:none;align-items:center;gap:8px;margin:8px 16px 0;color:#555;font-size:13px;text-align:left">
         <input id="remember-device" type="checkbox" checked style="width:18px;height:18px">
@@ -1685,6 +1685,44 @@ function trainingRaceGenderRank(runner){
   if(/^(girl|girls|female|f|women)$/i.test(value))return 1;
   return 2;
 }
+function trainingRaceGroupSport(){
+  if(!CL)return '';
+  var explicit=canonicalMobileSport(CL.sport);
+  if(explicit)return explicit;
+  var text=[
+    CL.name,
+    CL.meetName,
+    CL.eventName,
+    CL.season,
+    CL.trainingPlanTitle,
+    CL.trainingPlanDayTitle,
+    CL.trainingPlanDayWorkoutType,
+    CL.trainingPlanDayDetails,
+    CL.trainingPlanDayTargetSplits
+  ].filter(Boolean).join(' ').toLowerCase();
+  if(/\b(cross country|xc|cc)\b/.test(text))return 'Cross Country';
+  if(/\b(track|sprint|speed|fly|runway|jump|throw|hurdle|relay)\b/.test(text))return 'Track';
+  return '';
+}
+function trainingRaceFitnessSport(value,event){
+  var sport=canonicalMobileSport(value);
+  if(sport)return sport;
+  var label=normalizeEventLabel(event||'');
+  if(/^(4K|5K|8K|10K|15K|Half marathon|Marathon)$/i.test(label))return 'Cross Country';
+  return label?'Track':'';
+}
+function trainingRaceFitnessSportRank(sport,desired){
+  sport=canonicalMobileSport(sport);
+  desired=canonicalMobileSport(desired);
+  if(desired){
+    if(sport===desired)return 0;
+    if(sport)return 1;
+    return 2;
+  }
+  if(sport==='Cross Country')return 0;
+  if(sport==='Track')return 1;
+  return 2;
+}
 function trainingRaceSpeedFromText(text){
   text=String(text||'').trim();
   if(!text)return null;
@@ -1694,24 +1732,55 @@ function trainingRaceSpeedFromText(text){
   var ms=parseFitnessMs(text,event);
   return meters&&ms?meters/(ms/1000):null;
 }
-function trainingRaceAthleteSpeedScore(runner){
+function trainingRaceAthleteFitnessRows(runner){
   var athlete=activeAthleteForRunner(runner)||findAthleteByName(runner&&runner.name)||{};
-  var candidates=[
-    athlete.currentFitness&&[athlete.currentFitness.event,athlete.currentFitness.display].filter(Boolean).join(' '),
-    athlete.currentFitness&&athlete.currentFitness.label,
-    [athlete.currentFitnessEvent,athlete.currentFitnessDisplay].filter(Boolean).join(' '),
-    [athlete.currentFitnessDistance,athlete.currentFitnessTime].filter(Boolean).join(' '),
-    athlete.latestResult&&[athlete.latestResult.event,athlete.latestResult.resultDisplay||athlete.latestResult.display].filter(Boolean).join(' '),
-    athlete.lastResult&&[athlete.lastResult.event,athlete.lastResult.resultDisplay||athlete.lastResult.display].filter(Boolean).join(' ')
-  ];
-  for(var i=0;i<candidates.length;i++){
-    var score=trainingRaceSpeedFromText(candidates[i]);
-    if(score)return score;
+  var rows=Array.isArray(athlete.currentFitnessRows)?athlete.currentFitnessRows.slice():[];
+  if(athlete.currentFitness&&(athlete.currentFitness.event||athlete.currentFitness.display||athlete.currentFitness.resultDisplay||athlete.currentFitness.label)){
+    rows.push({
+      sport:athlete.currentFitness.sport||'',
+      event:athlete.currentFitness.event||'',
+      resultDisplay:athlete.currentFitness.display||athlete.currentFitness.resultDisplay||'',
+      label:athlete.currentFitness.label||''
+    });
   }
-  return null;
+  if(athlete.currentFitnessEvent||athlete.currentFitnessDisplay||athlete.currentFitnessDistance||athlete.currentFitnessTime){
+    rows.push({
+      sport:athlete.currentFitnessSport||'',
+      event:athlete.currentFitnessEvent||athlete.currentFitnessDistance||'',
+      resultDisplay:athlete.currentFitnessDisplay||athlete.currentFitnessTime||'',
+      label:[athlete.currentFitnessEvent||athlete.currentFitnessDistance,athlete.currentFitnessDisplay||athlete.currentFitnessTime].filter(Boolean).join(' ')
+    });
+  }
+  if(!rows.length&&athlete.latestResult)rows.push({sport:athlete.latestResult.sport||'',event:athlete.latestResult.event||'',resultDisplay:athlete.latestResult.resultDisplay||athlete.latestResult.display||'',label:''});
+  if(!rows.length&&athlete.lastResult)rows.push({sport:athlete.lastResult.sport||'',event:athlete.lastResult.event||'',resultDisplay:athlete.lastResult.resultDisplay||athlete.lastResult.display||'',label:''});
+  return rows;
+}
+function trainingRaceFitnessScore(row){
+  return trainingRaceSpeedFromText([row&&row.event,row&&row.resultDisplay||row&&row.display,row&&row.label].filter(Boolean).join(' '));
+}
+function trainingRaceFitnessRank(runner){
+  var desired=trainingRaceGroupSport();
+  var rows=trainingRaceAthleteFitnessRows(runner).map(function(row){
+    return {
+      sport:trainingRaceFitnessSport(row&&row.sport,row&&row.event),
+      score:trainingRaceFitnessScore(row)
+    };
+  }).filter(function(row){return row.score!==null;});
+  if(!rows.length)return{sportRank:99,score:null};
+  rows.sort(function(a,b){
+    var sportRank=trainingRaceFitnessSportRank(a.sport,desired)-trainingRaceFitnessSportRank(b.sport,desired);
+    if(sportRank)return sportRank;
+    return (b.score||0)-(a.score||0);
+  });
+  return{sportRank:trainingRaceFitnessSportRank(rows[0].sport,desired),score:rows[0].score};
+}
+function trainingRaceAthleteSpeedScore(runner){
+  return trainingRaceFitnessRank(runner).score;
 }
 function trainingRaceCompareBySpeed(a,b){
-  var aScore=trainingRaceAthleteSpeedScore(a),bScore=trainingRaceAthleteSpeedScore(b);
+  var aRank=trainingRaceFitnessRank(a),bRank=trainingRaceFitnessRank(b);
+  if(aRank.sportRank!==bRank.sportRank)return aRank.sportRank-bRank.sportRank;
+  var aScore=aRank.score,bScore=bRank.score;
   if(aScore!==null&&bScore!==null&&aScore!==bScore)return bScore-aScore;
   if(aScore!==null&&bScore===null)return -1;
   if(aScore===null&&bScore!==null)return 1;
@@ -1729,7 +1798,7 @@ function trainingRaceOrderedRunners(runners,mode){
     var name=trainingRaceAthleteName(a).localeCompare(trainingRaceAthleteName(b));
     if(mode==='name')return name;
     if(mode==='gender')return gender||speed||name;
-    return speed||gender||name;
+    return speed||name;
   });
 }
 function trainingRaceDisplayRunners(){
@@ -1738,12 +1807,21 @@ function trainingRaceDisplayRunners(){
 }
 function trainingRaceOrderSignature(){
   return (CL&&CL.runners||[]).map(function(r){
+    var rank=trainingRaceFitnessRank(r);
     return [
       r&&r.id,
       trainingRaceAthleteName(r),
-      trainingRaceAthleteSpeedScore(r)
+      rank.sportRank,
+      rank.score
     ].join(':');
-  }).join('|')+'|'+trainingRaceOrderMode();
+  }).join('|')+'|'+trainingRaceOrderMode()+'|'+trainingRaceGroupSport();
+}
+function resetTrainingRaceManualOrderForOpen(){
+  if(!CL||!CL.trainingRaceManualOrder)return;
+  if((CL.runners||[]).some(function(r){return r.on;}))return;
+  CL.trainingRaceManualOrder=0;
+  CL.trainingRaceLastResortSignature='';
+  save();
 }
 function scheduleTrainingRaceResort(){
   if(!CL||trainingRaceOrderMode()==='name')return;
@@ -2770,6 +2848,7 @@ function openTrainingModePicker(){
 }
 function openTrainingModeDistance(){
   hm('m-training-mode');
+  resetTrainingRaceManualOrderForOpen();
   go('s-group');
   if(partnerTimingEnabled())loadPartnerTimingSession();
 }

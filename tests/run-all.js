@@ -349,6 +349,10 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
   const dashboard = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   [
     "const smartcoachRosterMember = !excludedSystemContact && hasAthleteTag;",
+    "const fitnessRows = await safeListAthleteFitnessRows({ token, locationId });",
+    "attachCurrentFitnessRows(athletes, fitnessRows);",
+    "athlete.currentFitnessRows = rows;",
+    "const ATHLETE_BEST_SCHEMA_KEY = \"custom_objects.athlete_bests\";",
     ".filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))",
     "const smartcoachActive = smartcoachRosterMember &&",
     "const smartcoachSetupCandidate = !excludedSystemContact && Boolean(contactName(contact)) && Boolean(smartcoachAthleteId || smartcoachActiveValue || hasRosterSetupData);",
@@ -389,6 +393,9 @@ function checkInactiveAthletesStayOutOfCurrentViews() {
   }
   [
     "function activePlanAthletes()",
+    '<option value="sport_speed_name">Sport, speed, name</option>',
+    "function fitnessSortRank(athlete)",
+    "function fitnessSpeed(event,time)",
     "return activePlanAthletes().map(function(athlete)",
     "return activePlanAthletes().filter(function(athlete)",
     "if(!activePlanAthletes().length)",
@@ -1630,6 +1637,7 @@ function checkHowToGuidePage() {
     "one completed workout for each athlete with at least one saved rep",
     "completed-workout detail shows the Speed Metrics rep breakdown",
     "**Training/Race Order** controls how athletes appear when opening training groups, race groups, and Speed Metrics sessions",
+    "The default is **Sport, speed, name**",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
   });
@@ -3623,10 +3631,15 @@ function checkFieldPracticePhaseOne() {
     "Start",
     "Stop",
     'id="training-race-order"',
+    "Sport, speed, name",
     "function trainingRaceOrderedRunners(runners,mode)",
     "function trainingRaceDisplayRunners()",
+    "function trainingRaceGroupSport()",
+    "function trainingRaceAthleteFitnessRows(runner)",
+    "function trainingRaceFitnessRank(runner)",
     "function trainingRaceAthleteSpeedScore(runner)",
-    "athlete.currentFitness&&[athlete.currentFitness.event,athlete.currentFitness.display]",
+    "athlete.currentFitnessRows",
+    "function resetTrainingRaceManualOrderForOpen()",
     "function scheduleTrainingRaceResort()",
     "if(CL.trainingRaceManualOrder)return;",
     "trainingRaceLastResortSignature",
@@ -3634,7 +3647,7 @@ function checkFieldPracticePhaseOne() {
     "el.innerHTML=partnerClock+trainingRaceDisplayRunners().map",
     "trainingRaceDisplayRunners().forEach(function(r)",
     "CL.trainingRaceManualOrder=1;",
-    "return speed||gender||name;",
+    "return speed||name;",
     "partnerClock+trainingRaceDisplayRunners().map",
     "if(!p.speedAthleteOrder.length)groupRunners=trainingRaceOrderedRunners(groupRunners);",
     "fp-speed-result-gender",

@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
+const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const CLASS_YEAR_TAG_PREFIX = "smartcoach-class-";
@@ -46,6 +47,8 @@ async function handler(req, res) {
       const includeContacts = /^(yes|true|1)$/i.test(clean(req.query && (req.query.includeContacts || req.query.allContacts)));
       const query = clean(req.query && (req.query.query || req.query.search));
       const athletes = await listSmartCoachAthletes({ token, locationId, includeContacts, query });
+      const fitnessRows = await safeListAthleteFitnessRows({ token, locationId });
+      attachCurrentFitnessRows(athletes, fitnessRows);
       if (clean(req.query && req.query.action) === "calendarLink") {
         const athleteId = clean(req.query && (req.query.athleteId || req.query.contactId));
         const athlete = athletes.find((item) => clean(item.id) === athleteId || clean(item.smartcoachAthleteId) === athleteId);
@@ -132,6 +135,83 @@ async function listSmartCoachAthletes({ token, locationId, includeContacts = fal
     .filter((athlete) => !athlete.excludedSystemContact)
     .filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function safeListAthleteFitnessRows({ token, locationId }) {
+  try {
+    return await listAthleteFitnessRows({ token, locationId });
+  } catch (error) {
+    return [];
+  }
+}
+
+async function listAthleteFitnessRows({ token, locationId }) {
+  const result = await searchAthleteBestRecords({ token, locationId, page: 1, pageLimit: 100 });
+  return recordsFromResult(result).map((record) => {
+    const props = recordProperties(record);
+    const event = prop(props, "event");
+    const display = prop(props, "last_result_display") || prop(props, "season_best_display") || prop(props, "personal_best_display");
+    const date = prop(props, "last_result_date") || prop(props, "season_best_date") || prop(props, "personal_best_date");
+    return {
+      recordId: record.id || "",
+      contactId: prop(props, "athlete_contact"),
+      athleteName: prop(props, "athlete_name_snapshot"),
+      sport: prop(props, "sport") || sportForFitnessEvent(event),
+      event,
+      resultDisplay: display,
+      resultDate: date,
+      label: [event, display].filter(Boolean).join(" "),
+    };
+  }).filter((row) => row.contactId && row.event && row.resultDisplay);
+}
+
+async function searchAthleteBestRecords({ token, locationId, page, pageLimit }) {
+  const path = `/objects/${encodeURIComponent(ATHLETE_BEST_SCHEMA_KEY)}/records/search`;
+  try {
+    return await ghlFetch({
+      token,
+      path,
+      method: "POST",
+      body: { locationId, page, pageLimit },
+    });
+  } catch (error) {
+    if (!isLocationIdBodyError(error)) throw error;
+    return searchAthleteBestRecordsWithoutBodyLocation({ token, path, locationId, page, pageLimit });
+  }
+}
+
+async function searchAthleteBestRecordsWithoutBodyLocation({ token, path, locationId, page, pageLimit }) {
+  try {
+    return await ghlFetch({
+      token,
+      path: `${path}?locationId=${encodeURIComponent(locationId)}`,
+      method: "POST",
+      body: { page, pageLimit },
+    });
+  } catch (error) {
+    if (!isLocationIdBodyError(error)) throw error;
+    return ghlFetch({
+      token,
+      path,
+      method: "POST",
+      body: { page, pageLimit },
+    });
+  }
+}
+
+function attachCurrentFitnessRows(athletes, fitnessRows) {
+  const rowsByContact = {};
+  (fitnessRows || []).forEach((row) => {
+    const key = clean(row.contactId);
+    if (!key) return;
+    if (!rowsByContact[key]) rowsByContact[key] = [];
+    rowsByContact[key].push(row);
+  });
+  (athletes || []).forEach((athlete) => {
+    const rows = (rowsByContact[clean(athlete.id)] || []).sort((a, b) => String(b.resultDate || "").localeCompare(String(a.resultDate || "")));
+    athlete.currentFitnessRows = rows;
+    athlete.currentFitness = rows[0] || athlete.currentFitness || null;
+  });
 }
 
 function contactsFromResult(result) {
@@ -567,12 +647,43 @@ function normalizeFieldLabel(value) {
   return clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 }
 
+function recordsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.records) ? result.records : []),
+    ...(Array.isArray(result && result.items) ? result.items : []),
+    ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
+    ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
+  ];
+}
+
+function recordProperties(record) {
+  return (record && (record.properties || record.fields || record.customFields)) || {};
+}
+
+function prop(props, key) {
+  return clean(props && (props[key] || props[`custom_objects.athlete_bests.${key}`]));
+}
+
+function optionValue(value) {
+  return clean(value).toLowerCase().replace(/&/g, "and").replace(/\+/g, "plus").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function sportForFitnessEvent(event) {
+  const normalized = optionValue(event);
+  return ["4k", "5k", "8k", "10k", "15k", "half_marathon", "marathon"].includes(normalized) ? "cross_country" : "track";
+}
+
+function isLocationIdBodyError(error) {
+  return /property\s+locationId\s+should\s+not\s+exist|locationId\s+should\s+not\s+exist/i.test(error && error.message || "");
+}
+
 function athleteAccessCode(accountKey, athleteId) {
   const secret = clean(process.env.SMARTCOACH_ATHLETE_ACCESS_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || "smartcoach-athlete-calendar");
   return crypto.createHmac("sha256", secret).update(`${clean(accountKey).toLowerCase()}:${clean(athleteId)}`).digest("hex").slice(0, 12);
 }
 
 function clean(value) {
+  if (value && typeof value === "object") return clean(value.value || value.name || value.label || value.id);
   return String(value || "").trim();
 }
 

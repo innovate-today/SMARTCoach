@@ -125,7 +125,7 @@ button{border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:800
         <div><h2>Current Fitness Setup</h2><p>Enter each athlete's recent race or time trial mark so SMART Trak can use the right fitness source for target paces.</p></div>
         <div class="fitness-controls">
           <select id="fitnessGenderFilter" aria-label="Filter current fitness athletes" onchange="renderFitnessRows()"><option value="all">All athletes</option><option value="girls">Girls</option><option value="boys">Boys</option><option value="unlisted">Unlisted</option></select>
-          <select id="fitnessSort" aria-label="Sort current fitness athletes" onchange="renderFitnessRows()"><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option></select>
+          <select id="fitnessSort" aria-label="Sort current fitness athletes" onchange="renderFitnessRows()"><option value="sport_speed_name">Sport, speed, name</option><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option></select>
         </div>
       </div>
       <div id="fitnessRows" class="fitness-table"><div class="meet-empty">Loading athletes...</div></div>
@@ -524,15 +524,64 @@ function fitnessDraftKey(athlete){
 }
 function fitnessAthletes(){
   var filter=(document.getElementById('fitnessGenderFilter')||{}).value||'all';
-  var sort=(document.getElementById('fitnessSort')||{}).value||'name_asc';
+  var sort=(document.getElementById('fitnessSort')||{}).value||'sport_speed_name';
   return activePlanAthletes().map(function(athlete){return{athlete:athlete,index:athletes.indexOf(athlete)};}).filter(function(item){
     if(filter==='all')return true;
     var group=athleteGenderGroup(item.athlete);
     return filter==='unlisted'?!group:group===filter;
   }).sort(function(a,b){
-    var result=String(a.athlete.name||'').localeCompare(String(b.athlete.name||''),undefined,{sensitivity:'base'});
-    return sort==='name_desc'?-result:result;
+    var name=String(a.athlete.name||'').localeCompare(String(b.athlete.name||''),undefined,{sensitivity:'base'});
+    if(sort==='name_desc')return -name;
+    if(sort==='sport_speed_name'){
+      var aRank=fitnessSortRank(a.athlete),bRank=fitnessSortRank(b.athlete);
+      if(aRank.sportRank!==bRank.sportRank)return aRank.sportRank-bRank.sportRank;
+      if(aRank.speed!==null&&bRank.speed!==null&&aRank.speed!==bRank.speed)return bRank.speed-aRank.speed;
+      if(aRank.speed!==null&&bRank.speed===null)return -1;
+      if(aRank.speed===null&&bRank.speed!==null)return 1;
+    }
+    return name;
   });
+}
+function fitnessSortRank(athlete){
+  var draft=fitnessDraftValues[fitnessDraftKey(athlete)]||{};
+  var saved=draft.event?savedFitnessForAthlete(athlete,draft.event):savedFitnessForAthlete(athlete);
+  if(!saved&&draft.time)saved={};
+  var sport=draft.sport||saved&&saved.sport||sportForEvent(draft.event||saved&&saved.event);
+  var event=draft.event||saved&&saved.event||'';
+  var display=draft.time||saved&&saved.resultDisplay||'';
+  return{sportRank:fitnessSportRank(sport),speed:fitnessSpeed(event,display)};
+}
+function fitnessSportRank(sport){
+  var value=String(sport||'').toLowerCase();
+  if(value.indexOf('cross')>=0||value==='xc'||value==='cc'||value==='cross_country')return 0;
+  if(value.indexOf('track')>=0)return 1;
+  return 2;
+}
+function fitnessSpeed(event,time){
+  var meters=fitnessEventMeters(event);
+  var ms=fitnessTimeMs(time);
+  return meters&&ms?meters/(ms/1000):null;
+}
+function fitnessEventMeters(event){
+  var value=String(event||'').toLowerCase().replace(/\s+/g,' ').trim();
+  if(!value)return 0;
+  if(value==='half marathon')return 21097.5;
+  if(value==='marathon')return 42195;
+  var number=parseFloat(value);
+  if(!isFinite(number))return 0;
+  if(/\bmi|mile/.test(value))return number*1609.34;
+  if(/\bkm\b|\bk$/.test(value))return number*1000;
+  if(/\bm\b/.test(value)||/^\d+$/.test(value))return number;
+  return 0;
+}
+function fitnessTimeMs(time){
+  var text=String(time||'').trim();
+  if(!text)return 0;
+  var parts=text.split(':').map(function(part){return parseFloat(part);});
+  if(parts.some(function(part){return !isFinite(part);}))return 0;
+  var seconds=0;
+  parts.forEach(function(part){seconds=seconds*60+part;});
+  return seconds>0?seconds*1000:0;
 }
 function activePlanAthletes(){
   return (athletes||[]).filter(function(athlete){return athlete&&athlete.smartcoachActive!==false;});
