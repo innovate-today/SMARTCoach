@@ -1877,10 +1877,11 @@ function equipmentDuplicateGlobalKey(itemId, item) {
 
 function equipmentInventoryRowBlocksItem(row, itemId, item) {
   if (!equipmentInventoryRowMatchesItem(row, itemId, item)) return false;
-  if (row.availability === "lost_damaged") return true;
-  if (row.trackingType === "numbered" && item && item.number) {
+  if (row.trackingType === "numbered") {
+    if (!item || !item.number) return false;
     return equipmentLostNumberTokens(row.lostNumbers).some((number) => normalizeEquipmentNumber(number) === normalizeEquipmentNumber(item.number));
   }
+  if (row.availability === "lost_damaged") return true;
   return false;
 }
 

@@ -330,9 +330,11 @@ How to set up Equipment Inventory:
 9. Use **Numbered** for items with unique numbers, such as backpacks, watches, warmups, or timing chips. Enter the start and end number.
 10. Use **Size Qty** for items counted by size, such as shorts, singlets, or warmup tops.
 11. Use **Count** for simple items where only the total matters.
-12. Use **Copy** on a row when another inventory line is almost the same.
-13. Use **Copy Girls to Boys** when the boys inventory should start from the same list as the girls inventory, then adjust boys number ranges, quantities, or sharing rules before saving.
-14. Click **Save Inventory**.
+12. For numbered items, leave the row **Available** and put only the missing or damaged numbers in **Lost # / qty**, such as `G3, G12`. Those exact numbers cannot be issued again until you remove them from the lost list.
+13. For size or count items, use **Lost / Damaged** when the whole inventory row is unavailable, or enter the lost quantity in **Lost # / qty** when only part of the row is unavailable.
+14. Use **Copy** on a row when another inventory line is almost the same.
+15. Use **Copy Girls to Boys** when the boys inventory should start from the same list as the girls inventory, then adjust boys number ranges, quantities, or sharing rules before saving.
+16. Click **Save Inventory**.
 
 Example: Track Girls Backpacks can be entered as **Numbered**, start **1**, end **45**. Track Boys Backpacks can be entered as **Numbered**, start **46**, end **90**.
 

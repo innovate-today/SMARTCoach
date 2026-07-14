@@ -2746,7 +2746,9 @@ function checkEquipmentInventoryModelSerial() {
     "equipment-setup-row",
     "function equipmentInventoryForIssuedRow(row)",
     "function inventoryUnavailableCount(inv,total)",
+    "if(inv.trackingType==='numbered')return inventoryLostNumberTokens(inv.lostNumbers)",
     "function inventoryItemUnavailable(itemId,item)",
+    "if(inv.trackingType==='numbered'){if(item.number&&inventoryLostNumberTokens(inv.lostNumbers)",
     "function inventoryCapacityIssue(skipAthleteKey,skipCoachKey,itemId,item)",
     "function inventoryAlphaNumber(value)",
     "row.model=String(row.model||row.modelNumber||'').trim();",
@@ -2776,6 +2778,8 @@ function checkEquipmentInventoryModelSerial() {
     "function duplicateInventoryCapacityIssue(records, inventory, coachRecords = {})",
     "function equipmentDuplicateMessage(duplicate)",
     "function equipmentInventoryRowBlocksItem(row, itemId, item)",
+    "if (row.trackingType === \"numbered\") {",
+    "if (!item || !item.number) return false;",
     "function inventoryAlphaNumber(value)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Equipment Trak API metadata persistence missing ${text}`);
