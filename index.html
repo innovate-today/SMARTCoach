@@ -1803,7 +1803,7 @@ function trainingRaceOrderedRunners(runners,mode){
 }
 function trainingRaceDisplayRunners(){
   if(!CL)return[];
-  return CL.trainingRaceManualOrder?(CL.runners||[]).slice():trainingRaceOrderedRunners(CL.runners);
+  return CL.trainingRaceManualOrder&&CL.trainingRaceManualOrderSession?(CL.runners||[]).slice():trainingRaceOrderedRunners(CL.runners);
 }
 function trainingRaceOrderSignature(){
   return (CL&&CL.runners||[]).map(function(r){
@@ -1818,6 +1818,7 @@ function trainingRaceOrderSignature(){
 }
 function resetTrainingRaceManualOrderForOpen(){
   if(!CL||!CL.trainingRaceManualOrder)return;
+  if(CL.trainingRaceManualOrderSession)return;
   if((CL.runners||[]).some(function(r){return r.on;}))return;
   CL.trainingRaceManualOrder=0;
   CL.trainingRaceLastResortSignature='';
@@ -1825,7 +1826,7 @@ function resetTrainingRaceManualOrderForOpen(){
 }
 function scheduleTrainingRaceResort(){
   if(!CL||trainingRaceOrderMode()==='name')return;
-  if(CL.trainingRaceManualOrder)return;
+  if(CL.trainingRaceManualOrder&&CL.trainingRaceManualOrderSession)return;
   if(CL.runners&&CL.runners.some(function(r){return r.on;}))return;
   var sig=trainingRaceOrderSignature();
   if(CL.trainingRaceLastResortSignature===sig)return;
@@ -7719,6 +7720,7 @@ function _finishRunnerDrag(id,s){
   next.splice(to,0,runner);
   CL.runners=next;
   CL.trainingRaceManualOrder=1;
+  CL.trainingRaceManualOrderSession=1;
   CL.trainingRaceLastResortSignature=trainingRaceOrderSignature();
   save();queueSharedGroupsSave();rr();
 }
