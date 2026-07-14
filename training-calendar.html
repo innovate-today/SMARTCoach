@@ -2428,6 +2428,20 @@ function stripQualityGeneratedLines(text){
     return true;
   }).join('\n');
 }
+function firstQualityEffortFromDay(day){
+  if(!day)return '';
+  var source=day.details||day.targetSplits||'';
+  var found='';
+  String(source).split(/\r?\n|;/).some(function(line){
+    var parsed=parseQualityDistanceLine(line);
+    if(parsed&&parsed.kind!=='rest'&&parsed.effort){
+      found=parsed.effort;
+      return true;
+    }
+    return false;
+  });
+  return found;
+}
 function hydrateQualityBuilderFromDay(day){
   if(!day||inferCalendarActivityMode(day)!=='quality')return;
   var source=day.details||day.targetSplits||'';
@@ -2516,6 +2530,7 @@ function openAddDayModal(dateValue,mode,editDay){
     els.addDayTarget.value=calendarEditDay.targetSplits||els.addDayTarget.value;
     els.addDayDetails.value=stripQualityGeneratedLines(calendarEditDay.details||'')||els.addDayDetails.value;
     hydrateQualityBuilderFromDay(calendarEditDay);
+    if(addDayMode==='quality')setActivityTypeOptions(qualityEffortTypes(),firstQualityEffortFromDay(calendarEditDay)||calendarEditDay.workoutType||els.addDayWorkoutType.value||'Threshold');
   }
   setAddDayStatus(calendarEditDay?'Adjustments update this calendar workout only.':'Save as a manual calendar entry, or connect it to a saved plan.','');
   els.addDayModal.hidden=false;
@@ -2558,6 +2573,9 @@ function setActivityTypeOptions(options,selected){
   }).join('');
   setSelectValue(els.addDayWorkoutType,selected||'');
 }
+function qualityEffortTypes(){
+  return ['Threshold','Interval','Repetition','Hills','Fast Reps','Speed Endurance I','Speed Endurance II','Special Endurance I','Special Endurance II','Intensive Tempo','Extensive Tempo'];
+}
 function setAddDayMode(mode){
   addDayMode=mode||'easy';
   var titleWasDefault=/^(Easy run|Quality session|Speed metrics|Race day|Rest day)$/i.test(els.addDayTitleInput.value||'');
@@ -2584,7 +2602,7 @@ function setAddDayMode(mode){
     els.addDayTitle.textContent='Add Easy Run';
   }else if(addDayMode==='quality'){
     setSelectValue(els.addDayType,'Workout');
-    setActivityTypeOptions(['Threshold','Interval','Repetition','Hills','Fast Reps','Speed Endurance I','Speed Endurance II','Special Endurance I','Special Endurance II','Intensive Tempo','Extensive Tempo'],'Threshold');
+    setActivityTypeOptions(qualityEffortTypes(),'Threshold');
     if(!els.addDayTitleInput.value||titleWasDefault)els.addDayTitleInput.value='Quality session';
     els.addDayTitleInput.placeholder='Example: 400m acceleration + mechanics';
     els.addDayVolume.value='';
@@ -2657,7 +2675,7 @@ function speedWorkVolumeLabel(reps,value,unit){
   return count+' x '+label+' = '+totalLabel+' '+String(unit||'').trim();
 }
 function effortOptions(selected){
-  return ['Easy','Threshold','Interval','Repetition','Hills','Fast Reps','Speed Endurance I','Speed Endurance II','Special Endurance I','Special Endurance II','Intensive Tempo','Extensive Tempo'].map(function(value){
+  return ['Easy'].concat(qualityEffortTypes()).map(function(value){
     return '<option '+(value===selected?'selected':'')+'>'+esc(value)+'</option>';
   }).join('');
 }

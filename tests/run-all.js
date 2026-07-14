@@ -2042,6 +2042,11 @@ function checkTrainingCalendarQualityEditParsing() {
     "parsedRows.forEach(addQualityRow);",
     "stripQualityGeneratedLines(calendarEditDay.details||'')",
     "if(/^mi\\b|^mile/.test(value))return 'mi ('+movement+')';",
+    "function qualityEffortTypes()",
+    "setActivityTypeOptions(qualityEffortTypes(),'Threshold');",
+    "function firstQualityEffortFromDay(day)",
+    "if(addDayMode==='quality')setActivityTypeOptions(qualityEffortTypes(),firstQualityEffortFromDay(calendarEditDay)||calendarEditDay.workoutType||els.addDayWorkoutType.value||'Threshold');",
+    "return ['Easy'].concat(qualityEffortTypes()).map(function(value)",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`Training Calendar quality edit parser missing ${text}`);
