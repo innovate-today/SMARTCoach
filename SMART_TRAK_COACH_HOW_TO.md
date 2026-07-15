@@ -178,6 +178,8 @@ If a coach chooses **Not Listed**, SMARTCoach does not save that as a coach name
 
 On the SMARTCoach app home screen, tap **Refresh** when you need the latest roster, training groups, assigned plans, meet list, or calendar workouts from SMART Trak. The SMARTCoach splash screen appears while the current account data reloads, and saved timing work stays on the phone. Use **Settings > Refresh App** only when the app itself appears stale and needs a full reload.
 
+Refresh keeps you on the main app screen when it finishes. If you are already viewing an athlete's details, that details screen updates in place.
+
 When a training group is using **Calendar Workout** from SMART Trak, refreshing the SMARTCoach app moves the group to the current upcoming Training Calendar workout for that group. This keeps the phone app from holding an older selected calendar workout after the Training Calendar has moved to a new day.
 
 If a workout is removed from the Training Calendar, refreshing the SMARTCoach app also clears that removed workout from the group and athletes who still had it selected. The phone app then uses the next current Training Calendar workout for that group.

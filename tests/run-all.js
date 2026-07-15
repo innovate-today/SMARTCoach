@@ -2248,7 +2248,7 @@ function checkMobileCalendarWorkoutPriority() {
     "function canAutoApplyCalendarWorkout(group)",
     "refreshOpenAthleteDetailAfterDataReload();",
     "function refreshOpenAthleteDetailAfterDataReload()",
-    "if(entry&&!entry.classList.contains('h'))oEnt(CE.id);",
+    "if(entry&&entry.classList.contains('active'))oEnt(CE.id);",
     "if(profile&&!profile.classList.contains('h'))openAthleteProfile();",
     "loadSharedGroups(),",
     "loadMeets()",
@@ -2315,6 +2315,9 @@ function checkMobileCalendarWorkoutPriority() {
   }
   if (mobile.includes("loadMeets().then(loadCalendarMeetDays)")) {
     throw new Error("Calendar days must apply after shared groups so stale shared data cannot overwrite them.");
+  }
+  if (mobile.includes("if(entry&&!entry.classList.contains('h'))oEnt(CE.id);")) {
+    throw new Error("Refresh must not reopen athlete details from the main groups screen.");
   }
   console.log("mobile calendar workout priority ok");
 }

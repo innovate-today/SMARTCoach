@@ -1203,7 +1203,7 @@ function refreshOpenAthleteDetailAfterDataReload(){
   if(!current)return;
   CE=current;
   var entry=document.getElementById('s-ent');
-  if(entry&&!entry.classList.contains('h'))oEnt(CE.id);
+  if(entry&&entry.classList.contains('active'))oEnt(CE.id);
   var profile=document.getElementById('m-profile');
   if(profile&&!profile.classList.contains('h'))openAthleteProfile();
 }
