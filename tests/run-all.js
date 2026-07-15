@@ -2246,7 +2246,6 @@ function checkMobileCalendarWorkoutPriority() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
     "function canAutoApplyCalendarWorkout(group)",
-    "if(group.trainingPlanAuto==='calendar-selected')return false;",
     "function hasCalendarWorkoutSelection(target)",
     "String(target.trainingPlanTitle||'').indexOf('SMART Trak Calendar')===0",
     "target.trainingPlanDaySourceId",
@@ -2298,6 +2297,9 @@ function checkMobileCalendarWorkoutPriority() {
   }
   if (mobile.includes("if(group.trainingPlanId&&!group.trainingPlanAuto)return false;")) {
     throw new Error("Mobile SMART Trak Calendar workouts should not be blocked by an older saved group plan.");
+  }
+  if (mobile.includes("if(group.trainingPlanAuto==='calendar-selected')return false;")) {
+    throw new Error("Selected calendar workouts should refresh to the current Training Calendar day.");
   }
   console.log("mobile calendar workout priority ok");
 }
