@@ -2246,6 +2246,10 @@ function checkMobileCalendarWorkoutPriority() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
     "function canAutoApplyCalendarWorkout(group)",
+    "refreshOpenAthleteDetailAfterDataReload();",
+    "function refreshOpenAthleteDetailAfterDataReload()",
+    "if(entry&&!entry.classList.contains('h'))oEnt(CE.id);",
+    "if(profile&&!profile.classList.contains('h'))openAthleteProfile();",
     "function hasCalendarWorkoutSelection(target)",
     "String(target.trainingPlanTitle||'').indexOf('SMART Trak Calendar')===0",
     "target.trainingPlanDaySourceId",

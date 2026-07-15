@@ -1183,6 +1183,7 @@ function refreshSmartCoachData(){
     }
     rl();
     if(CL)rr();
+    refreshOpenAthleteDetailAfterDataReload();
     dismissAppSplash();
     setGroupsRefreshStatus('Latest SMART Trak data loaded.','ok');
     setTimeout(function(){
@@ -1193,6 +1194,18 @@ function refreshSmartCoachData(){
     dismissAppSplash();
     setGroupsRefreshStatus('Could not refresh SMART Trak data: '+(error&&error.message?error.message:'try again'),'bad');
   });
+}
+function refreshOpenAthleteDetailAfterDataReload(){
+  if(!CE||!CL)return;
+  var current=find(CE.id);
+  if(!current&&CE.contactId)current=CL.runners.find(function(r){return r.contactId&&r.contactId===CE.contactId;});
+  if(!current&&CE.name)current=CL.runners.find(function(r){return String(r.name||'').trim().toLowerCase()===String(CE.name||'').trim().toLowerCase();});
+  if(!current)return;
+  CE=current;
+  var entry=document.getElementById('s-ent');
+  if(entry&&!entry.classList.contains('h'))oEnt(CE.id);
+  var profile=document.getElementById('m-profile');
+  if(profile&&!profile.classList.contains('h'))openAthleteProfile();
 }
 function checkSmartCoachAccount(accountKey){
   var key=cleanAccountKey(accountKey||smartCoachAccountKey());
