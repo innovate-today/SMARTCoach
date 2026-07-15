@@ -58,8 +58,12 @@ withEnv({
   SMARTCOACH_SESSION_TTL_SECONDS: undefined,
 }, () => {
   assert.strictEqual(normalizeProductPlan("SMARTCoach Pro Unlimited"), "proUnlimited");
-  assert.strictEqual(planDefinition("pro200").monthlyAmount, "135.00");
-  assert.strictEqual(planDefinition("pro200").annualAmount, "1350.00");
+  assert.strictEqual(planDefinition("pro25").monthlyAmount, "19.00");
+  assert.strictEqual(planDefinition("pro25").annualAmount, "199.00");
+  assert.strictEqual(planDefinition("pro100").monthlyAmount, "29.00");
+  assert.strictEqual(planDefinition("pro100").annualAmount, "299.00");
+  assert.strictEqual(planDefinition("pro200").monthlyAmount, "39.00");
+  assert.strictEqual(planDefinition("pro200").annualAmount, "399.00");
   assert.strictEqual(planDefinition("custom").activeAthleteLimit, null);
   assert.strictEqual(suggestedSubscriptionAmount("custom", "monthly"), "Custom");
   assert.strictEqual(coachSessionTtlSeconds(), 30 * 24 * 60 * 60);

@@ -5558,7 +5558,7 @@ function normalizeSetupSubscriptionAmount(productPlan, billingCadence, amount) {
 
 function isStandardPlanAmount(value) {
   const amount = cleanSetupText(value).replace(/^\$/, "");
-  return ["10", "10.00", "100", "100.00", "45", "45.00", "450", "450.00", "75", "75.00", "750", "750.00", "135", "135.00", "1350", "1350.00"].includes(amount);
+  return ["10", "10.00", "100", "100.00", "19", "19.00", "199", "199.00", "29", "29.00", "299", "299.00", "39", "39.00", "399", "399.00", "45", "45.00", "450", "450.00", "75", "75.00", "750", "750.00", "135", "135.00", "1350", "1350.00"].includes(amount);
 }
 
 function setupAdminAllowed(req) {

@@ -32,9 +32,9 @@ If the account is brand new, start with **Set Up My Team**, then **Plan Workouts
 SMARTCoach has five customer plans:
 
 1. **Essential**: $10/month or $100/year. Stopwatch-only access. Requires an active coach code and allows one active device session at a time.
-2. **Pro 25**: $45/month or $450/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 25 active athletes.
-3. **Pro 100**: $75/month or $750/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 100 active athletes.
-4. **Pro 200**: $135/month or $1350/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 200 active athletes.
+2. **Pro 25**: $19/month or $199/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 25 active athletes.
+3. **Pro 100**: $29/month or $299/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 100 active athletes.
+4. **Pro 200**: $39/month or $399/year. SMARTCoach Pro Mobile App plus SMART Trak for up to 200 active athletes.
 5. **Pro Unlimited**: Custom/manual offer. SMARTCoach Pro Mobile App plus SMART Trak for programs that need unlimited active athletes.
 
 Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. A coach can only move to a lower Pro plan after the active athlete count is at or below that plan's limit. SMARTCoach does not automatically choose athletes to make inactive. Pro accounts can include up to 10 assistant coach seats. Each active staff coach should use their own personal coach code so access and device activity can be tied to the right coach.

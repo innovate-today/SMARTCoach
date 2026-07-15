@@ -490,7 +490,7 @@ async function testCoachCodeResetLimit() {
     coachSeats: 1,
     coachAccessCodes: ["old-code"],
     requireCoachAccess: true,
-    subscription: { status: "active", billingCadence: "monthly", amount: "45.00" },
+    subscription: { status: "active", billingCadence: "monthly", amount: "19.00" },
     coachCodeChangeHistory: [
       { changedAt: `${month}-01T12:00:00.000Z`, month, source: "manual-onboarding" },
       { changedAt: `${month}-10T12:00:00.000Z`, month, source: "manual-onboarding" },
@@ -554,7 +554,7 @@ async function testPlanDowngradeBlockedWhenActiveAthletesExceedLimit() {
     coachSeats: 1,
     coachAccessCodes: ["coach-code"],
     requireCoachAccess: true,
-    subscription: { status: "active", billingCadence: "monthly", amount: "75.00" },
+    subscription: { status: "active", billingCadence: "monthly", amount: "29.00" },
   };
   let saveCalled = false;
 
@@ -612,7 +612,7 @@ async function testPlanDowngradeBlockedWhenActiveAthletesExceedLimit() {
         body: {
           accountKey: "downgrade-school",
           productPlan: "pro25",
-          subscriptionAmount: "45.00",
+          subscriptionAmount: "19.00",
         },
       }, res);
 
@@ -637,7 +637,7 @@ async function testCoachSelfServiceCodeReset() {
     coachAccessCodes: ["coach-one", "coach-two"],
     parentEmailCoachAccess: [true, false],
     requireCoachAccess: true,
-    subscription: { status: "active", billingCadence: "monthly", amount: "45.00" },
+    subscription: { status: "active", billingCadence: "monthly", amount: "19.00" },
     coachCodeVersion: 1,
     coachCodeChangeHistory: [],
   };
@@ -714,7 +714,7 @@ async function testCoachRecoveryBypassesMonthlyResetLimit() {
     coachAccessCodes: ["old-code"],
     parentEmailCoachAccess: [false],
     requireCoachAccess: true,
-    subscription: { status: "active", billingCadence: "monthly", amount: "45.00" },
+    subscription: { status: "active", billingCadence: "monthly", amount: "19.00" },
     coachCodeVersion: 3,
     coachCodeRecovery: {
       requestedAt: `${month}-15T12:00:00.000Z`,
@@ -1161,7 +1161,7 @@ async function testRegistryListSubscribers() {
       coachSeats: 1,
       coachAccessCodes: ["alpha-code"],
       requireCoachAccess: true,
-      subscription: { status: "active", billingCadence: "monthly", amount: "45.00" },
+      subscription: { status: "active", billingCadence: "monthly", amount: "19.00" },
       updatedAt: "2026-05-22T12:00:00.000Z",
     },
     "smartcoach:account:bravo": {
