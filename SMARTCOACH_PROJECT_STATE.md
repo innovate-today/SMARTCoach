@@ -577,6 +577,12 @@ Future:
 
 ## Future Planning Notes
 
+Training Calendar / season planning:
+
+- Future idea: add **Copy Season** for Training Calendar so coaches can reuse a prior season instead of rebuilding from scratch each year. The first version should let a coach choose a source sport/season such as Cross Country 2026, choose a destination such as Cross Country 2027, set the new first training week or anchor date, preview shifted dates, and save copied workouts as Draft/Scheduled while never copying completed/skipped statuses, linked performance records, athlete submissions, or removed calendar days.
+- Copy Season should support both simple cross country seasons and more complex track seasons. Cross country can usually copy one shared distance/team calendar for boys and girls, while track needs selectable training streams or filters such as Distance, Mid Distance, Sprints/Speed, Hurdles, Field Events, or selected training groups. The practical model is: Season = sport/year container, Stream = kind of training inside the season, Group = athletes receiving that workout.
+- Copy Season v1 can use existing fields instead of adding a full new stream system: source/destination sport and year, date range or full season, group filters, workout type filters, weekday-preserving date shift, optional group mapping, and a preview table. Later enhancements can add named Training Streams, copy selected months/weeks, plan backward from championship week, copy meets as tentative, and resolve date conflicts.
+
 Subscription/customer management:
 
 - Added account setup fields for customer subscription information:
