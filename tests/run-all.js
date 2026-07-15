@@ -2250,6 +2250,9 @@ function checkMobileCalendarWorkoutPriority() {
     "function refreshOpenAthleteDetailAfterDataReload()",
     "if(entry&&!entry.classList.contains('h'))oEnt(CE.id);",
     "if(profile&&!profile.classList.contains('h'))openAthleteProfile();",
+    "loadSharedGroups(),",
+    "loadMeets()",
+    "return loadCalendarMeetDays().then(function(){return results;});",
     "function hasCalendarWorkoutSelection(target)",
     "String(target.trainingPlanTitle||'').indexOf('SMART Trak Calendar')===0",
     "target.trainingPlanDaySourceId",
@@ -2304,6 +2307,9 @@ function checkMobileCalendarWorkoutPriority() {
   }
   if (mobile.includes("if(group.trainingPlanAuto==='calendar-selected')return false;")) {
     throw new Error("Selected calendar workouts should refresh to the current Training Calendar day.");
+  }
+  if (mobile.includes("loadMeets().then(loadCalendarMeetDays)")) {
+    throw new Error("Calendar days must apply after shared groups so stale shared data cannot overwrite them.");
   }
   console.log("mobile calendar workout priority ok");
 }

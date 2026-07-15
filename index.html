@@ -2435,8 +2435,10 @@ function loadProData(){
     loadAthletes(),
     loadTrainingPlans(),
     loadSharedGroups(),
-    loadMeets().then(loadCalendarMeetDays)
-  ]);
+    loadMeets()
+  ]).then(function(results){
+    return loadCalendarMeetDays().then(function(){return results;});
+  });
 }
 function applyAutoPlansToCurrentGroup(){
   if(!CL||!TP.length)return;

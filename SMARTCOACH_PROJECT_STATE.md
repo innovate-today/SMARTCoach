@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- Follow-up to the SMARTCoach app Training Calendar refresh fix: Pro data refresh now loads roster, assigned plans, shared groups, and meets first, then applies Training Calendar days last. This prevents older shared group data from overwriting today's Training Calendar workout after refresh, which could leave athlete detail screens showing a stale quality session such as `2 x 1 Mile` when SMART Trak shows today's Easy Run. Regression coverage was updated.
 - Follow-up to the SMARTCoach app Training Calendar refresh fix: after SMART Trak data reloads, the app now rebinds the currently open athlete detail/profile screen to the refreshed runner and redraws it. This prevents an already-open athlete profile from continuing to show an old calendar workout target after the group calendar workout has updated. Regression coverage was updated.
 - SMARTCoach app Training Calendar refresh now lets groups that were manually set to **Calendar Workout** advance to the current upcoming Training Calendar workout for that group. Previously, `calendar-selected` groups could hold an older selected calendar day on the group/runners, so the phone app could show a stale quality session while SMART Trak showed today's easy run. Refresh now applies the current calendar day and clears stale runner-level calendar overrides. Coach how-to and regression coverage were updated.
 - SMARTCoach subscription pricing was updated everywhere pricing is hard-coded in the app/docs: Essential remains $10/month or $100/year; Pro 25 is now $19/month or $199/year; Pro 100 is now $29/month or $299/year; Pro 200 is now $39/month or $399/year; Pro Unlimited remains Custom. Onboarding defaults, plan definitions, the public sales page, backend standard-price handling, coach how-to, and regression coverage were updated.
