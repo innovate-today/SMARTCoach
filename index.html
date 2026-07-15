@@ -2060,6 +2060,7 @@ function loadCalendarMeetDays(){
   if(!isProPlan())return Promise.resolve();
   return loadCalendarDaysCache().then(function(days){
     var changed=false;
+    changed=clearRemovedCalendarSelectionsFromLogs(days)||changed;
     changed=mergeCalendarMeetDaysIntoLogs(days)||changed;
     changed=mergeCalendarWorkoutDaysIntoLogs(days)||changed;
     if(changed){
@@ -2157,6 +2158,29 @@ function canAutoApplySavedGroupPlan(group){
   if(!group)return false;
   if(hasCalendarWorkoutSelection(group))return false;
   return !group.trainingPlanId||group.trainingPlanAuto;
+}
+function clearRemovedCalendarSelectionsFromLogs(days){
+  var removed=(days||[]).filter(isRemovedPlanDay);
+  if(!removed.length)return false;
+  var changed=false;
+  function matchesRemovedSelection(target){
+    if(!hasCalendarWorkoutSelection(target))return false;
+    return removed.some(function(day){return sameTrainingPlanDay(target,day);});
+  }
+  logs.forEach(function(log){
+    if((log.type||'training')!=='training')return;
+    if(matchesRemovedSelection(log)){
+      clearAthleteTrainingPlanFields(log);
+      changed=true;
+    }
+    (log.runners||[]).forEach(function(r){
+      if(matchesRemovedSelection(r)){
+        clearAthleteTrainingPlanFields(r);
+        changed=true;
+      }
+    });
+  });
+  return changed;
 }
 function mergeCalendarWorkoutDaysIntoLogs(days){
   var changed=false,byGroup={};
