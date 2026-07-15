@@ -3104,7 +3104,10 @@ function checkAttendanceSeasonAttachment() {
     "const activeAttendance = await activeAttendanceRecords({ attendance, token, locationId });",
     "async function activeAttendanceRecords({ attendance, token, locationId })",
     "athletes.filter((athlete) => athlete && athlete.smartcoachActive)",
-    "return rows.filter((row) => {",
+    "const rosterNames = new Map();",
+    "if (rosterName) rosterNames.set(key, rosterName);",
+    "const currentName = keys.map((value) => rosterNames.get(value.toLowerCase())).find(Boolean);",
+    "return currentName && currentName !== row.athleteName ? { ...row, athleteName: currentName } : row;",
     "const sport = cleanSetupText(payload && payload.sport);",
     "seasonYear",
   ].forEach((text) => {

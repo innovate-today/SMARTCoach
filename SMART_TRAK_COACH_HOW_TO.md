@@ -226,6 +226,8 @@ How to review it in SMART Trak:
 7. Edit the row's date, sport, season, status, or note when an attendance mark needs a correction, then click **Update**.
 8. Use **Delete** only when one attendance mark should be removed. SMART Trak shows a confirmation message with the athlete, date, season, group, and checkpoint before deleting.
 
+If an athlete's name is corrected on the roster, Attendance Trak uses the corrected roster name for saved attendance marks that are linked to that athlete.
+
 For meet days, create a checkout checkpoint such as **Meet Checkout** or **Parent Checkout**. Mark an athlete **Checked Out** when they leave with a parent or guardian after checking out with a coach. Checked Out is treated as accounted-for attendance in the attendance percentage, not as an absence.
 
 Attendance is saved with the sport, season, and season year selected at the time it is created. This helps separate fall Cross Country attendance from athletes who are training in Off Season Track during the same dates. At the end of Cross Country season, continue using the season label that matches how your team is organized.
