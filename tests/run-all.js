@@ -3266,6 +3266,11 @@ function checkMobileGroupStorageAccountScoped() {
     "function sharedGroupAthletesForPayload(group)",
     "sourceGroup&&Array.isArray(sourceGroup.athletes)?sourceGroup.athletes:null",
     "athletes:sharedGroupAthletesForPayload(group)",
+    "function sharedGroupRunnerKeys(runner)",
+    "function sharedGroupRunnerMatchesKeyMap(runner,keyMap)",
+    "var activeAthletes=athletes.filter(isActiveRosterRunner);",
+    "sharedGroupRunnerKeys(athlete).forEach(function(key){activeKeys[key]=true;});",
+    "if((r.saved||[]).length&&next.indexOf(r)<0&&sharedGroupRunnerMatchesKeyMap(r,activeKeys))next.push(r);",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile group sync should rename existing groups instead of duplicating them: ${text}`);
   });

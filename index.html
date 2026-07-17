@@ -2033,16 +2033,36 @@ function mergeSharedGroupsIntoLogs(){
     if(updated)CL=updated;
   }
 }
+function sharedGroupRunnerKeys(runner){
+  var keys=[];
+  [runner&&runner.contactId,runner&&runner.smartcoachAthleteId,runner&&runner.id,runner&&runner.name].forEach(function(value){
+    value=String(value||'').trim().toLowerCase();
+    if(value&&keys.indexOf(value)<0)keys.push(value);
+  });
+  return keys;
+}
+function sharedGroupRunnerMatchesKeyMap(runner,keyMap){
+  return sharedGroupRunnerKeys(runner).some(function(key){return !!keyMap[key];});
+}
 function mergeSharedGroupRunners(log,athletes){
   var changed=false,existing={};
   (log.runners||[]).forEach(function(r){
-    var key=String(r.contactId||r.name||'').trim().toLowerCase();
-    if(key)existing[key]=r;
+    sharedGroupRunnerKeys(r).forEach(function(key){existing[key]=r;});
+  });
+  var activeAthletes=athletes.filter(isActiveRosterRunner);
+  var activeKeys={};
+  activeAthletes.forEach(function(athlete){
+    sharedGroupRunnerKeys(athlete).forEach(function(key){activeKeys[key]=true;});
   });
   var next=[];
-  athletes.filter(isActiveRosterRunner).forEach(function(athlete){
-    var key=String(athlete.contactId||athlete.name||'').trim().toLowerCase();
-    var r=existing[key]||mkR();
+  activeAthletes.forEach(function(athlete){
+    var keys=sharedGroupRunnerKeys(athlete);
+    var r=null;
+    keys.some(function(key){
+      if(existing[key]){r=existing[key];return true;}
+      return false;
+    });
+    r=r||mkR();
     if(r.name!==athlete.name||r.contactId!==athlete.contactId||r.smartcoachAthleteId!==(athlete.smartcoachAthleteId||''))changed=true;
     r.name=athlete.name||r.name;
     r.contactId=athlete.contactId||r.contactId||'';
@@ -2050,7 +2070,7 @@ function mergeSharedGroupRunners(log,athletes){
     next.push(r);
   });
   (log.runners||[]).forEach(function(r){
-    if((r.saved||[]).length&&next.indexOf(r)<0&&isActiveRosterRunner(r))next.push(r);
+    if((r.saved||[]).length&&next.indexOf(r)<0&&sharedGroupRunnerMatchesKeyMap(r,activeKeys))next.push(r);
   });
   if(next.length!==log.runners.length)changed=true;
   log.runners=next;

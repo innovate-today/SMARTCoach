@@ -186,6 +186,8 @@ When a training group is using **Calendar Workout** from SMART Trak, refreshing 
 
 If a workout is removed from the Training Calendar, refreshing the SMARTCoach app also clears that removed workout from the group and athletes who still had it selected. The phone app then uses the next current Training Calendar workout for that group.
 
+If an athlete is marked inactive in SMART Trak, tap **Refresh** in the SMARTCoach app before practice. The athlete is removed from active phone group timing rows even if they were previously saved in that group on the phone.
+
 Volume miles means completed training and race volume converted into miles for the current filters. Quality session work reps count toward actual quality volume. Recovery between reps does not count unless it is entered as actual running or walking distance.
 
 ## Athletes Page
