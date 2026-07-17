@@ -5474,8 +5474,8 @@ function compactRunnerTarget(plan,profile){
 }
 function plannedTargetData(plan,profile){
   if(isMeetTrainingPlanDay(plan))return null;
-  var text=[plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].filter(Boolean).join('\n');
-  var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
+  var text=trainingPlanWorkoutTargetText(plan);
+  var rule=parseTargetRule(text,trainingPlanWorkoutType(plan));
   if(!rule)return null;
   var fitness=chooseFitness(profile,rule);
   if(!fitness)return null;
@@ -5504,7 +5504,9 @@ function targetPlanCacheKey(plan){
     plan.trainingPlanDayDate||'',
     plan.trainingPlanDayWorkoutType||'',
     plan.trainingPlanDayTargetSplits||'',
-    plan.trainingPlanDayDetails||''
+    plan.trainingPlanDayDetails||'',
+    trainingPlanWorkoutType(plan),
+    trainingPlanWorkoutTargetText(plan)
   ].join('|');
 }
 function cachedTargetMatchesPlan(target,plan){
@@ -6657,8 +6659,8 @@ function renderEntryRunHistory(r){
   }).catch(function(){});
 }
 function entryRunTarget(plan,profile){
-  var text=plan.trainingPlanDayTargetSplits||plan.trainingPlanDayDetails||'';
-  var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
+  var text=trainingPlanWorkoutTargetText(plan);
+  var rule=parseTargetRule(text,trainingPlanWorkoutType(plan));
   var fitness=chooseFitness(profile,rule);
   var range=targetRangeDataFromFitness(rule,fitness);
   return range?{display:range.display,fast:range.fast,slow:range.slow}:null;
@@ -6746,8 +6748,8 @@ function entryWorkoutLabel(r){
   return label||'Select a training plan workout';
 }
 function entryTargetHtml(plan,profile,run){
-  var text=[plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].filter(Boolean).join('\n');
-  var rule=parseTargetRule(text,plan.trainingPlanDayWorkoutType);
+  var text=trainingPlanWorkoutTargetText(plan);
+  var rule=parseTargetRule(text,trainingPlanWorkoutType(plan));
   var fitness=chooseFitness(profile,rule);
   var prescription=workoutPrescription(plan,rule);
   if(!rule){
@@ -6780,7 +6782,34 @@ function workoutPrescription(plan,rule){
   return plan.trainingPlanDayTitle||'Workout';
 }
 function trainingPlanWorkoutTargetText(plan){
-  return [plan&&plan.trainingPlanDayDetails,plan&&plan.trainingPlanDayTargetSplits].filter(Boolean).join('\n');
+  var day=calendarPlanDayForTarget(plan);
+  return [
+    plan&&plan.trainingPlanDayDetails,
+    plan&&plan.trainingPlanDayTargetSplits,
+    day&&day.details,
+    day&&day.targetSplits
+  ].filter(Boolean).join('\n');
+}
+function trainingPlanWorkoutType(plan){
+  var day=calendarPlanDayForTarget(plan);
+  return plan&&plan.trainingPlanDayWorkoutType||day&&day.workoutType||'';
+}
+function calendarPlanDayForTarget(plan){
+  if(!plan||!Array.isArray(CD))return null;
+  var id=String(plan.trainingPlanDayId||plan.trainingPlanDaySourceId||'');
+  if(id){
+    var byId=CD.find(function(day){
+      var dayId=String(planDayRecordId(day)||day.sourceRecordId||'');
+      return dayId&&dayId===id;
+    });
+    if(byId)return byId;
+  }
+  var date=String(plan.trainingPlanDayDate||'');
+  var title=String(plan.trainingPlanDayTitle||'').trim().toLowerCase();
+  if(!date||!title)return null;
+  return CD.find(function(day){
+    return String(day.date||'')===date&&String(day.title||'').trim().toLowerCase()===title;
+  })||null;
 }
 function timedRepPrescription(text){
   var source=String(text||'');
