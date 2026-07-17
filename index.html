@@ -2072,7 +2072,7 @@ function loadCalendarMeetDays(){
 }
 function loadCalendarDaysCache(){
   if(!isProPlan())return Promise.resolve([]);
-  return fetch('/api/smart-trak/training-plan?kind=days').then(function(r){
+  return fetch('/api/smart-trak/training-plan?kind=days',{cache:'no-store'}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Plan days unavailable');
@@ -5456,7 +5456,9 @@ function renderRunnerTarget(r){
   var matched=findAthleteByName(r.name)||{};
   var contactId=r.contactId||matched.id||'';
   if(!contactId)return;
-  athleteProfile(contactId,r.name).then(function(profile){
+  ensureCalendarDaysForTarget(plan).then(function(){
+    return athleteProfile(contactId,r.name);
+  }).then(function(profile){
     if(!CL||!document.getElementById('rta-'+r.id))return;
     var target=plannedTargetData(plan,profile);
     if(!target||!target.plannedTargetRange){
@@ -6719,7 +6721,9 @@ function renderEntryTargets(r){
     return;
   }
   el.textContent='Loading target...';
-  athleteProfile(contactId,r.name).then(function(profile){
+  ensureCalendarDaysForTarget(plan).then(function(){
+    return athleteProfile(contactId,r.name);
+  }).then(function(profile){
     if(CE&&CE.id!==r.id)return;
     var last=r.saved.length?r.saved[r.saved.length-1]:null;
     el.innerHTML=entryTargetHtml(plan,profile,last);
@@ -6806,10 +6810,32 @@ function calendarPlanDayForTarget(plan){
   }
   var date=String(plan.trainingPlanDayDate||'');
   var title=String(plan.trainingPlanDayTitle||'').trim().toLowerCase();
-  if(!date||!title)return null;
-  return CD.find(function(day){
-    return String(day.date||'')===date&&String(day.title||'').trim().toLowerCase()===title;
-  })||null;
+  if(date&&title){
+    var byDateTitle=CD.find(function(day){
+      return String(day.date||'')===date&&String(day.title||'').trim().toLowerCase()===title;
+    });
+    if(byDateTitle)return byDateTitle;
+  }
+  if(!title)return null;
+  var titleMatches=CD.filter(function(day){
+    return String(day.title||'').trim().toLowerCase()===title;
+  }).sort(function(a,b){
+    return String(a.date||'').localeCompare(String(b.date||''));
+  });
+  return titleMatches.find(function(day){
+    return !day.date||day.date>=todayISO();
+  })||titleMatches[0]||null;
+}
+function trainingPlanNeedsCalendarHydration(plan){
+  if(!plan)return false;
+  if(plan.trainingPlanDayDetails||plan.trainingPlanDayTargetSplits)return false;
+  var title=String(plan.trainingPlanTitle||'');
+  return title.indexOf('SMART Trak Calendar')===0&&!!(plan.trainingPlanDayId||plan.trainingPlanDaySourceId||plan.trainingPlanDayTitle);
+}
+function ensureCalendarDaysForTarget(plan){
+  if(!trainingPlanNeedsCalendarHydration(plan))return Promise.resolve(CD||[]);
+  if(Array.isArray(CD)&&CD.length&&calendarPlanDayForTarget(plan))return Promise.resolve(CD);
+  return loadCalendarDaysCache().catch(function(){return CD||[];});
 }
 function timedRepPrescription(text){
   var source=String(text||'');
