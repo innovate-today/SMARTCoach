@@ -153,6 +153,16 @@ tr:last-child td{border-bottom:0}
 .splitchip.fast{background:#fee2e2;color:#b91c1c}
 .splitchip.on{background:#dcfce7;color:#08783c}
 .splitchip.slow{background:#fef3c7;color:#92400e}
+.pace-review{margin-top:7px;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;max-width:460px}
+.pace-review-title{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;color:#334155;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;padding:6px 8px;border-bottom:1px solid var(--line)}
+.pace-review-grid{display:grid;grid-template-columns:58px minmax(98px,1fr) minmax(74px,.8fr) minmax(74px,.8fr);font-size:12px;line-height:1.25}
+.pace-review-grid>div{padding:5px 7px;border-bottom:1px solid #edf1f7}
+.pace-review-grid>div:nth-last-child(-n+4){border-bottom:0}
+.pace-review-head{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;color:#64748b;background:#fbfdff}
+.pace-review-diff{font-weight:900}
+.pace-review-diff.fast{color:#b91c1c}
+.pace-review-diff.on{color:#08783c}
+.pace-review-diff.slow{color:#92400e}
 .empty{padding:26px;text-align:center;color:var(--muted);font-size:14px}
 .small{font-size:12px;color:var(--muted)}
 .modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;z-index:20;overflow:auto}
@@ -4700,6 +4710,8 @@ function isOutsideTarget(row){
 }
 
 function targetStatus(row){
+  var paceStatus=repPaceTargetStatus(row);
+  if(paceStatus)return paceStatus;
   var splitStatus=splitTargetStatus(row);
   if(splitStatus)return splitStatus;
   var totalDiff=targetDifferenceText(row).toLowerCase();
@@ -7166,7 +7178,7 @@ function recentTrainingHtml(row){
 }
 
 function targetReviewHtml(row){
-  var repPaces=repPaceDetailsHtml(row);
+  var repPaces=repPaceReviewHtml(row)||repPaceDetailsHtml(row);
   if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort&&!repPaces)return '<span class="muted">No target saved</span>';
   var chips=splitTargetChipsHtml(row);
   if(chips){
@@ -7594,6 +7606,7 @@ function splitReviewLines(row){
   var splits=parseSplitLines(row.splitsText);
   if(!splits.length)return [];
   var target=parseTargetRange(row.plannedTarget);
+  if(targetRangeIsPace(row&&row.plannedTarget))target=null;
   return splits.map(function(split,index){
     var kind=splitKind(row,index,splits);
     var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap);
@@ -7611,6 +7624,7 @@ function splitTargetChipsHtml(row){
   var splits=parseSplitLines(row&&row.splitsText);
   if(!splits.length)return '';
   var target=parseTargetRange(row&&row.plannedTarget);
+  if(targetRangeIsPace(row&&row.plannedTarget))target=null;
   var chips=splits.map(function(split,index){
     var kind=splitKind(row,index,splits);
     var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap);
@@ -7661,6 +7675,71 @@ function repPaceDetailsHtml(row){
     return '<span class="splitchip '+esc(status)+'">'+esc(label+(diff?' '+paceDiffShort(diff):''))+'</span>';
   });
   return '<div class="splitchips">'+chips.join('')+'</div>';
+}
+
+function repPaceReviewHtml(row){
+  var rows=repPaceReviewRows(row);
+  if(!rows.length)return '';
+  return '<div class="pace-review">'+
+    '<div class="pace-review-title"><span>Actual vs Target</span><span>'+esc(rows.length+' entries')+'</span></div>'+
+    '<div class="pace-review-grid">'+
+      '<div class="pace-review-head">Rep</div><div class="pace-review-head">Target</div><div class="pace-review-head">Actual</div><div class="pace-review-head">Diff</div>'+
+      rows.map(function(item){
+        return '<div>'+esc(item.label)+'</div><div>'+esc(item.target)+'</div><div>'+esc(item.actual)+'</div><div class="pace-review-diff '+esc(item.status)+'">'+esc(item.diff)+'</div>';
+      }).join('')+
+    '</div>'+
+  '</div>';
+}
+
+function repPaceReviewRows(row){
+  var target=parseTargetRange(row&&row.plannedTarget);
+  if(!target||!targetRangeIsPace(row&&row.plannedTarget))return [];
+  return repPaceDetailsFromNote(row&&row.coachNote).map(function(item){
+    var label=(item.kind==='recovery'?'Rest ':'Rep ')+item.rep;
+    if(item.kind==='recovery'){
+      return {label:label,target:'Easy/recovery',actual:item.pace+' /mi',diff:'Logged',status:''};
+    }
+    var diff=paceTargetDiff(item.pace,target.fast,target.slow);
+    return {
+      label:label,
+      target:paceTargetLabel(row&&row.plannedTarget),
+      actual:item.pace+' /mi',
+      diff:paceReviewDiffLabel(diff),
+      status:paceReviewStatus(diff)
+    };
+  });
+}
+
+function paceTargetLabel(text){
+  var label=String(text||'').replace(/\s+/g,' ').trim();
+  return label||'Target pace';
+}
+
+function paceReviewStatus(diff){
+  if(/faster/i.test(diff))return 'fast';
+  if(/slower/i.test(diff))return 'slow';
+  if(/within/i.test(diff))return 'on';
+  return '';
+}
+
+function paceReviewDiffLabel(diff){
+  if(/within/i.test(diff))return 'On target';
+  var short=paceDiffShort(diff);
+  if(/faster/i.test(diff))return (short||'')+' fast';
+  if(/slower/i.test(diff))return (short||'')+' slow';
+  return diff||'';
+}
+
+function repPaceTargetStatus(row){
+  var rows=repPaceReviewRows(row).filter(function(item){return /^Rep\s/i.test(item.label)&&item.status;});
+  if(!rows.length)return '';
+  var fast=rows.some(function(item){return item.status==='fast';});
+  var slow=rows.some(function(item){return item.status==='slow';});
+  if(fast&&slow)return 'review';
+  if(fast)return 'fast';
+  if(slow)return 'slow';
+  if(rows.every(function(item){return item.status==='on';}))return 'on';
+  return '';
 }
 
 function repPaceSummaryText(row){
@@ -7745,6 +7824,10 @@ function parseTargetRange(text){
   return {fast:Math.min(first,second),slow:Math.max(first,second)};
 }
 
+function targetRangeIsPace(text){
+  return /\/\s*(?:mi|mile|km|k)\b|per\s+(?:mile|km|kilometer)/i.test(String(text||''));
+}
+
 function parseDurationMs(text){
   var raw=String(text||'').trim();
   if(!raw)return 0;
@@ -7767,6 +7850,7 @@ function splitTargetDiff(actualMs,minMs,maxMs){
 function splitTargetStatus(row){
   var splits=parseSplitLines(row&&row.splitsText);
   var target=parseTargetRange(row&&row.plannedTarget);
+  if(targetRangeIsPace(row&&row.plannedTarget))target=null;
   if(!splits.length||!target)return '';
   var statuses=splits.filter(function(split,index){
     return splitKind(row,index,splits)!=='recovery';
@@ -7787,6 +7871,7 @@ function targetDifferenceText(row){
   var splitDiff=splitTargetDifferenceText(row);
   if(splitDiff)return splitDiff;
   if(!row||!row.totalTimeMs)return '';
+  if(targetRangeIsPace(row&&row.plannedTarget))return '';
   var target=parseTargetRange(row.plannedTarget);
   if(!target)return '';
   return splitTargetDiff(num(row.totalTimeMs),target.fast,target.slow);
@@ -7795,6 +7880,7 @@ function targetDifferenceText(row){
 function splitTargetDifferenceText(row){
   var splits=parseSplitLines(row&&row.splitsText);
   var target=parseTargetRange(row&&row.plannedTarget);
+  if(targetRangeIsPace(row&&row.plannedTarget))target=null;
   if(!splits.length||!target)return '';
   var workSplits=splits.filter(function(split,index){return splitKind(row,index,splits)!=='recovery';});
   if(!workSplits.length)return '';
