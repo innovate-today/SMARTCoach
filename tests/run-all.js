@@ -3773,9 +3773,12 @@ function checkFieldPracticePhaseOne() {
   [
     "var effort=effortFromTargetText(source);",
     "var rule=paceRule(effort||workoutType||source);",
+    "function trainingPlanWorkoutTargetText(plan)",
+    "var source=trainingPlanWorkoutTargetText(plan);",
     "function timedRepPrescription(text)",
     "var timed=timedRepPrescription(source);",
     "if(timed)return timed.count+' x '+timed.label;",
+    "\\s*(s|sec|secs|second|seconds|min|mins|minute|minutes)\\b",
     "if(timed)return{repLabel:(rule.repLabel||rule.label||effort||workoutType||'Workout')+' pace',repMeters:1609.34",
     "'Interval':{label:'Interval',distance:400,low:.88,high:.95}",
     "'Aerobic Power':{label:'Aerobic Power',distance:800,low:.78,high:.86}",
