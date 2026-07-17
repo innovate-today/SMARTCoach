@@ -3776,13 +3776,18 @@ function checkFieldPracticePhaseOne() {
     "function timedRepPrescription(text)",
     "var timed=timedRepPrescription(source);",
     "if(timed)return timed.count+' x '+timed.label;",
-    "if(timed)return{repLabel:timed.label,targetMs:timed.ms",
-    "if(rule&&rule.targetMs)return{fast:rule.targetMs,slow:rule.targetMs,display:fmt(rule.targetMs)};",
-    "if(rule.targetMs&&timedRangeData)",
+    "if(timed)return{repLabel:(rule.repLabel||rule.label||effort||workoutType||'Workout')+' pace',repMeters:1609.34",
     "'Interval':{label:'Interval',distance:400,low:.88,high:.95}",
     "'Aerobic Power':{label:'Aerobic Power',distance:800,low:.78,high:.86}",
   ].forEach((text) => {
     if (!fieldPracticeApp.includes(text)) throw new Error(`Mobile target rules should honor explicit @ Interval text before Aerobic Power category: ${text}`);
+  });
+  [
+    "if(timed)return{repLabel:timed.label,targetMs:timed.ms",
+    "if(rule&&rule.targetMs)return{fast:rule.targetMs,slow:rule.targetMs,display:fmt(rule.targetMs)};",
+    "if(rule.targetMs&&timedRangeData)",
+  ].forEach((text) => {
+    if (fieldPracticeApp.includes(text)) throw new Error(`Timed quality reps should calculate pace target, not duration target: ${text}`);
   });
   if (fieldPracticeApp.includes("var rule=paceRule(workoutType||effortFromTargetText(source)||source);")) {
     throw new Error("Mobile target rules should not let Aerobic Power category override explicit @ Interval text.");
