@@ -6753,6 +6753,13 @@ function entryTargetHtml(plan,profile,run){
   if(!rule){
     return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||plan.trainingPlanDayTitle||'Workout')+'</span>'+(text?'<br><span>'+ex(text)+'</span>':'');
   }
+  var timedRangeData=targetRangeDataFromFitness(rule,null);
+  if(rule.targetMs&&timedRangeData){
+    var timedActual=run&&run.ms?'<br><span>Actual: '+ex(fmt(run.ms))+'</span>':'';
+    var timedDiff=run&&run.ms?plannedActualDiffText(run.ms,timedRangeData.fast,timedRangeData.slow):'';
+    var timedEffort=rule.label?'<br><span>Effort: '+ex(rule.label)+'</span>':'';
+    return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+ex(timedRangeData.display)+'</span>'+timedActual+(timedDiff?'<br><span>Difference: '+ex(timedDiff)+'</span>':'')+timedEffort;
+  }
   if(!fitness){
     if(rule&&rule.label==='Easy/Recovery Run'){
       return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: Conversational</span>';
@@ -6771,11 +6778,29 @@ function entryTargetHtml(plan,profile,run){
 }
 function workoutPrescription(plan,rule){
   var source=[plan.trainingPlanDayTitle,plan.trainingPlanDayDetails,plan.trainingPlanDayTargetSplits].join(' ');
+  var timed=timedRepPrescription(source);
+  if(timed)return timed.count+' x '+timed.label;
   var m=source.match(/(\d+)\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)/i);
   if(m)return m[1]+' x '+normalizeEventLabel(m[2]);
   if(rule&&rule.suffix&&plan.trainingPlanDayTitle)return plan.trainingPlanDayTitle;
   if(rule&&rule.repLabel)return rule.repLabel;
   return plan.trainingPlanDayTitle||'Workout';
+}
+function timedRepPrescription(text){
+  var source=String(text||'');
+  var match=source.match(/\b(\d+)\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?)\s*(sec|secs|second|seconds|min|mins|minute|minutes)\b/i);
+  if(!match)return null;
+  var amount=Number(match[2])||0;
+  var unit=String(match[3]||'').toLowerCase();
+  var isMinute=unit.indexOf('min')===0;
+  var ms=amount*(isMinute?60000:1000);
+  if(!ms)return null;
+  return{count:Number(match[1])||1,label:formatTimedRepLabel(amount,isMinute),ms:ms};
+}
+function formatTimedRepLabel(amount,isMinute){
+  var value=Number(amount)||0;
+  var label=String(value).replace(/\.0$/,'');
+  return label+' '+(isMinute?(value===1?'min':'min'):'sec');
 }
 function parseTargetRule(text,workoutType){
   var source=String(text||'');
@@ -6787,6 +6812,8 @@ function parseTargetRule(text,workoutType){
   var effort=effortFromTargetText(source);
   var rule=paceRule(effort||workoutType||source);
   if(!rule||!rule.distance)return null;
+  var timed=timedRepPrescription(source);
+  if(timed)return{repLabel:timed.label,targetMs:timed.ms,low:rule.low,high:rule.high,label:rule.label||effort||workoutType||'',preferred:preferredFitnessEvents(source)};
   if(rep){
     var repLabel=normalizeEventLabel(rep[1]);
     return{repLabel:repLabel,repMeters:eventDistance(repLabel),low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source)};
@@ -6847,6 +6874,7 @@ function targetRangeFromFitness(rule,fitness){
   return data?data.display:'';
 }
 function targetRangeDataFromFitness(rule,fitness){
+  if(rule&&rule.targetMs)return{fast:rule.targetMs,slow:rule.targetMs,display:fmt(rule.targetMs)};
   if(!rule||!fitness||!rule.repMeters||!fitness.meters||!fitness.ms)return'';
   var base=fitness.ms/fitness.meters*rule.repMeters;
   var fast=Math.round(base/rule.high);

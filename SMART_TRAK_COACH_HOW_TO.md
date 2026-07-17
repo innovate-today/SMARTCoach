@@ -946,7 +946,7 @@ Common settings:
 - **Multiple:** allow multiple athletes to be timed in the same group.
 - **Splits on Detail Line:** show or hide split chips during the workout.
 - **Plan on Detail Line:** show or hide the assigned plan.
-- **Target on Detail Line:** show or hide target ranges.
+- **Target on Detail Line:** show or hide target ranges. Timed quality sessions, such as `12 x 45 sec`, show the timed rep target instead of changing the workout into a distance target.
 - **Sync Status on Detail Line:** show or hide sync status.
 - **Beep/Vibrate on All Button Taps:** gives feedback for start, stop, lap, rep, and rest taps.
 - **Archive Group:** moves the group out of the active list.
