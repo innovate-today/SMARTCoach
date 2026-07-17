@@ -700,7 +700,7 @@ function changedValues(previousValues, nextValues, customLabels) {
 
 function replaceNoteLines(note, labeledValues, notes, correctionTime, reason) {
   const used = {};
-  const lines = clean(note).split(/\r?\n/).filter((line) => !isCorrectionLine(line));
+  const lines = stripRepPaceNoteBlock(clean(note)).split(/\r?\n/).filter((line) => !isCorrectionLine(line));
   const nextLines = lines.map((line) => {
     const match = line.match(/^([^:]+):\s*(.*)$/);
     if (!match) return line;
@@ -735,9 +735,23 @@ function replaceMeetNoteLines(note, labeledValues, notes, correctionTime, reason
 }
 
 function stripSystemNoteLines(note) {
-  return clean(note).split(/\r?\n/).filter((line) => {
+  return stripRepPaceNoteBlock(clean(note)).split(/\r?\n/).filter((line) => {
     if (isCorrectionLine(line)) return false;
     return !/^(Workout|Planned target|Planned effort|Completed volume|Weather):/i.test(line.trim());
+  }).join("\n");
+}
+
+function stripRepPaceNoteBlock(note) {
+  let inBlock = false;
+  return clean(note).split(/\r?\n/).filter((line) => {
+    const text = line.trim();
+    if (/^Rep pace details:?$/i.test(text)) {
+      inBlock = true;
+      return false;
+    }
+    if (inBlock && /^Rep\s+\d+\s+(?:work|rep|recovery|recover|rest|jog)\s+pace\s*:/i.test(text)) return false;
+    inBlock = false;
+    return true;
   }).join("\n");
 }
 

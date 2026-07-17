@@ -1105,6 +1105,10 @@ tr:last-child td{border-bottom:0}
           <textarea id="correctionSplits" placeholder="Rep 1: 03:31.9&#10;Rest 1: 03:41.3&#10;Rep 2: 06:33.0"></textarea>
         </div>
         <div class="field full">
+          <label for="correctionRepPaces">Actual Rep Paces</label>
+          <textarea id="correctionRepPaces" placeholder="Rep 1 work pace: 6:15 /mi&#10;Rep 1 recovery pace: 8:42 /mi&#10;Rep 2 work pace: 6:51 /mi"></textarea>
+        </div>
+        <div class="field full">
           <label for="correctionNotes">Notes</label>
           <textarea id="correctionNotes" placeholder="Optional"></textarea>
         </div>
@@ -2753,6 +2757,7 @@ var els={
   correctionWeather:document.getElementById('correctionWeather'),
   correctionReason:document.getElementById('correctionReason'),
   correctionSplits:document.getElementById('correctionSplits'),
+  correctionRepPaces:document.getElementById('correctionRepPaces'),
   correctionNotes:document.getElementById('correctionNotes'),
   correctionStatus:document.getElementById('correctionStatus'),
   correctionSave:document.getElementById('correctionSave'),
@@ -5165,6 +5170,7 @@ function openCorrectionModal(button){
   els.correctionWeather.value=correctionRow.weather||'';
   els.correctionReason.value='';
   els.correctionSplits.value=correctionSplitsTextFromRow(correctionRow);
+  els.correctionRepPaces.value=correctionRepPacesTextFromRow(correctionRow);
   els.correctionNotes.value=correctionNotesFromRow(correctionRow);
   els.correctionOriginal.innerHTML=correctionOriginalHtml(correctionRow);
   setCorrectionStatus(correctionRow.speedMetricSession?'Sprint corrections update the saved Speed Metrics practice session.':'Corrections are saved to SMART Trak notes.','');
@@ -5220,7 +5226,7 @@ function saveCorrection(){
         time:els.correctionTime.value,
         weather:els.correctionWeather.value,
         splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow),
-        notes:els.correctionNotes.value
+        notes:correctionNotesWithRepPaces()
       }
     })
   }).then(function(res){
@@ -5237,7 +5243,7 @@ function saveCorrection(){
       time:els.correctionTime.value,
       weather:els.correctionWeather.value,
       splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow),
-      notes:els.correctionNotes.value
+      notes:correctionNotesWithRepPaces()
     },reason);
     setCorrectionStatus('Correction saved.','success');
     closeCorrectionModal();
@@ -5453,7 +5459,7 @@ function findTrainingRow(button){
 }
 
 function correctionNotesFromRow(row){
-  return String(row.coachNote||'').split(/\r?\n/).filter(function(line){
+  return stripRepPaceNoteBlock(String(row.coachNote||'')).split(/\r?\n/).filter(function(line){
     return !/^(Workout|Planned target|Planned effort|Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
   }).join('\n');
 }
@@ -5473,6 +5479,68 @@ function correctionSplitsTextFromRow(row){
     var kind=splitKind(row,index,splits);
     var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):(split.label||'Lap '+split.lap));
     return label+': '+split.time;
+  }).join('\n');
+}
+
+function correctionRepPacesTextFromRow(row){
+  return repPaceDetailsFromNote(row&&row.coachNote).map(function(item){
+    var kind=item.kind==='recovery'?'recovery':'work';
+    return 'Rep '+item.rep+' '+kind+' pace: '+item.pace+' /mi';
+  }).join('\n');
+}
+
+function correctionNotesWithRepPaces(){
+  return [els.correctionNotes.value,normalizeCorrectionRepPacesText(els.correctionRepPaces.value)].filter(Boolean).join('\n');
+}
+
+function normalizeCorrectionRepPacesText(text){
+  var items=parseRepPaceInput(text);
+  if(!items.length)return '';
+  return ['Rep pace details:'].concat(items.map(function(item){
+    return 'Rep '+item.rep+' '+(item.kind==='recovery'?'recovery':'work')+' pace: '+item.pace+' /mi';
+  })).join('\n');
+}
+
+function parseRepPaceInput(text){
+  return String(text||'').split(/\r?\n/).map(function(line,index){
+    var raw=line.trim();
+    if(!raw||/^rep pace details:?$/i.test(raw))return null;
+    var labeled=raw.match(/^rep\s*(\d+)\s*(work|rep|recovery|recover|rest|jog)?\s*pace\s*:\s*(.+)$/i);
+    var simple=raw.match(/^rep\s*(\d+)\s*:\s*(.+)$/i);
+    var rep=0,kind='',pace='';
+    if(labeled){
+      rep=Number(labeled[1])||index+1;
+      kind=/recover|rest|jog/i.test(labeled[2]||'')?'recovery':'work';
+      pace=labeled[3]||'';
+    }else if(simple){
+      rep=Number(simple[1])||index+1;
+      kind='work';
+      pace=simple[2]||'';
+    }else{
+      var paceOnly=raw.match(/(\d{1,2}:\d{2}(?:\.\d+)?)/);
+      if(!paceOnly)return null;
+      rep=index+1;
+      kind='work';
+      pace=paceOnly[1];
+    }
+    pace=normalizePaceText(pace);
+    return pace?{rep:rep,kind:kind,pace:pace}:null;
+  }).filter(Boolean);
+}
+
+function normalizePaceText(value){
+  var match=String(value||'').match(/(\d{1,2}:\d{2}(?:\.\d+)?)/);
+  return match?match[1]:'';
+}
+
+function stripRepPaceNoteBlock(note){
+  var inBlock=false;
+  return String(note||'').split(/\r?\n/).filter(function(line){
+    var text=line.trim();
+    if(/^Rep pace details:?$/i.test(text)){inBlock=true;return false;}
+    if(inBlock&&/^Rep\s+\d+\s+(?:work|rep|recovery|recover|rest|jog)\s+pace\s*:/i.test(text))return false;
+    inBlock=false;
+    return true;
   }).join('\n');
 }
 
@@ -7098,19 +7166,20 @@ function recentTrainingHtml(row){
 }
 
 function targetReviewHtml(row){
-  if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort)return '<span class="muted">No target saved</span>';
+  var repPaces=repPaceDetailsHtml(row);
+  if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort&&!repPaces)return '<span class="muted">No target saved</span>';
   var chips=splitTargetChipsHtml(row);
   if(chips){
-    return mainLine(row.plannedTarget||'Target saved')+chips+
+    return mainLine(row.plannedTarget||'Target saved')+chips+repPaces+
       subLine([row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
   }
   var diff=targetDifferenceText(row)||row.targetDifference;
-  return targetStatusPill(row)+mainLine(row.plannedTarget||'Target saved')+
+  return targetStatusPill(row)+mainLine(row.plannedTarget||'Target saved')+repPaces+
     subLine([diff,row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
 }
 
 function targetReviewText(row){
-  return [row.plannedTarget,targetDifferenceText(row)||row.targetDifference,row.plannedEffort].filter(Boolean).join(' · ');
+  return [row.plannedTarget,targetDifferenceText(row)||row.targetDifference,repPaceSummaryText(row),row.plannedEffort].filter(Boolean).join(' · ');
 }
 
 function volumeDisplay(row){
@@ -7555,6 +7624,66 @@ function splitTargetChipsHtml(row){
     return '<span class="splitchip '+esc(status)+'">'+esc(label+' '+split.time)+'</span>';
   });
   return chips.length?'<div class="splitchips">'+chips.join('')+'</div>':'';
+}
+
+function repPaceDetailsFromNote(note){
+  var lines=String(note||'').split(/\r?\n/);
+  var items=[],inBlock=false;
+  lines.forEach(function(line){
+    var text=line.trim();
+    if(/^Rep pace details:?$/i.test(text)){inBlock=true;return;}
+    if(inBlock&&!/^Rep\s+\d+\s+(?:work|rep|recovery|recover|rest|jog)\s+pace\s*:/i.test(text)){
+      inBlock=false;
+    }
+    if(!inBlock)return;
+    var match=text.match(/^Rep\s+(\d+)\s+(work|rep|recovery|recover|rest|jog)\s+pace\s*:\s*(.+)$/i);
+    if(!match)return;
+    var pace=normalizePaceText(match[3]);
+    if(!pace)return;
+    items.push({rep:Number(match[1])||items.length+1,kind:/recover|rest|jog/i.test(match[2])?'recovery':'work',pace:pace});
+  });
+  return items;
+}
+
+function repPaceDetailsHtml(row){
+  var items=repPaceDetailsFromNote(row&&row.coachNote);
+  if(!items.length)return '';
+  var target=parseTargetRange(row&&row.plannedTarget);
+  var chips=items.map(function(item){
+    var label=(item.kind==='recovery'?'Rest ':'Rep ')+item.rep+' '+item.pace+' /mi';
+    var status='',diff='';
+    if(item.kind!=='recovery'&&target){
+      diff=paceTargetDiff(item.pace,target.fast,target.slow);
+      if(/faster/i.test(diff))status='fast';
+      else if(/slower/i.test(diff))status='slow';
+      else if(/within/i.test(diff))status='on';
+    }
+    return '<span class="splitchip '+esc(status)+'">'+esc(label+(diff?' '+paceDiffShort(diff):''))+'</span>';
+  });
+  return '<div class="splitchips">'+chips.join('')+'</div>';
+}
+
+function repPaceSummaryText(row){
+  var items=repPaceDetailsFromNote(row&&row.coachNote).filter(function(item){return item.kind!=='recovery';});
+  var target=parseTargetRange(row&&row.plannedTarget);
+  if(!items.length||!target)return '';
+  var counts={fast:0,slow:0,on:0};
+  items.forEach(function(item){
+    var diff=paceTargetDiff(item.pace,target.fast,target.slow);
+    if(/faster/i.test(diff))counts.fast+=1;
+    else if(/slower/i.test(diff))counts.slow+=1;
+    else if(/within/i.test(diff))counts.on+=1;
+  });
+  return [counts.fast?counts.fast+' paces fast':'',counts.slow?counts.slow+' paces slow':'',counts.on?counts.on+' paces in target':''].filter(Boolean).join(' · ');
+}
+
+function paceTargetDiff(pace,fastMs,slowMs){
+  return splitTargetDiff(parseDurationMs(pace),fastMs,slowMs);
+}
+
+function paceDiffShort(diff){
+  var match=String(diff||'').match(/^([+-][0-9:.]+)/);
+  return match?match[1]:'';
 }
 
 function workSplitCount(row,splits){

@@ -1968,6 +1968,8 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "Workout: nextValues.workoutType",
     '"Planned target": nextValues.plannedTarget',
     '"Planned effort": nextValues.plannedEffort',
+    "function stripRepPaceNoteBlock(note)",
+    "stripRepPaceNoteBlock(clean(note)).split",
     "return !/^(Workout|Planned target|Planned effort|Completed volume|Weather):/i.test(line.trim());",
     "workout_type: workoutTypeValue(nextValues.workoutType)",
   ].forEach((text) => {
@@ -1987,9 +1989,16 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "interval:'Aerobic Power'",
     "return !/^(Workout|Planned target|Planned effort|Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());",
     'id="correctionSplits"',
+    'id="correctionRepPaces"',
     "els.correctionSplits.value=correctionSplitsTextFromRow(correctionRow);",
+    "els.correctionRepPaces.value=correctionRepPacesTextFromRow(correctionRow);",
     "splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow)",
+    "notes:correctionNotesWithRepPaces()",
     "function normalizeCorrectionSplitsText(text,row)",
+    "function normalizeCorrectionRepPacesText(text)",
+    "function repPaceDetailsHtml(row)",
+    "function repPaceDetailsFromNote(note)",
+    "function repPaceSummaryText(row)",
     "splitsText:Object.prototype.hasOwnProperty.call(updates,'splitsText')?updates.splitsText:sourceRow.splitsText",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Training correction split editing missing ${text}`);
