@@ -3114,6 +3114,7 @@ els.shareMilesBoardBtn.addEventListener('click',shareMilesBoard);
 els.shareResultsBoardBtn.addEventListener('click',openResultsBoardSharing);
 if(location.hash==='#share-miles-board')setTimeout(shareMilesBoard,0);
 if(location.hash==='#share-results-board')setTimeout(openResultsBoardSharing,0);
+if(location.hash==='#api-usage')setTimeout(openApiUsageModal,0);
 els.changeCodeBtn.addEventListener('click',openCodeModal);
 els.codeClose.addEventListener('click',closeCodeModal);
 els.codeSave.addEventListener('click',saveCoachCode);
@@ -3447,7 +3448,7 @@ function closeAccountSettings(){
 
 function openApiUsageModal(){
   if(accountStatus&&accountStatus.staffAdminAllowed===false){
-    els.status.textContent='API Usage is available to the head coach.';
+    els.status.textContent='API Usage is available from SMARTCoach Admin.';
     return;
   }
   els.apiUsageModal.hidden=false;

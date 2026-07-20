@@ -237,6 +237,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
         <button id="lookupBtn" type="button" class="secondary" onclick="lookupAccount()">Lookup Account</button>
         <button id="healthBtn" type="button" class="secondary" onclick="checkAutomationHealth()">Check System</button>
         <button type="button" class="secondary" onclick="copySystemStatus()">Copy System Status</button>
+        <button type="button" class="secondary" onclick="openAdminApiUsage()">Open API Usage</button>
       </div>
       <div id="systemResult" class="registrybox"></div>
       <div id="lookupResult" class="registrybox"></div>
@@ -675,6 +676,14 @@ function activeCustomerAccount(){
   var keys=accountKeyValues();
   if(keys.setup&&keys.lookup&&keys.setup!==keys.lookup)return '';
   return keys.setup||keys.lookup||'';
+}
+function openAdminApiUsage(){
+  var account=activeCustomerAccount();
+  if(!account){
+    setStatus('Enter one matching account key before opening API Usage.','bad');
+    return;
+  }
+  window.open('/dashboard.html?account='+encodeURIComponent(account)+'&admin=1#api-usage','_blank','noopener');
 }
 function setupForActiveAccount(){
   var account=activeCustomerAccount();

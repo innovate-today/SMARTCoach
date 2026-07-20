@@ -294,7 +294,7 @@ async function accountApiUsage(req, res) {
       throw httpError(401, "Active coach access is required to view API usage.");
     }
     if (!staffAccessAdminAllowed(session, req.smartcoachRegistryAccount && req.smartcoachRegistryAccount.coachStaff)) {
-      throw httpError(403, "Head coach access is required to view API usage.");
+      throw httpError(403, "Owner/admin access is required to view API usage.");
     }
     const days = Math.max(1, Math.min(Number(firstQueryValue(req.query && req.query.days)) || 7, 14));
     const usage = await loadApiUsageAudit(accountKey, { days });

@@ -267,6 +267,9 @@ function checkAdminAccountCleanup() {
     "Type the saved Location ID exactly before cleaning.",
     "body:JSON.stringify({accountKey:account,locationId:confirmLocation,cleanupOptions:selectedCleanupOptions()})",
     "It will not change subscription, coach codes, account owner info, athletes, meets, Location ID, or token.",
+    "Open API Usage",
+    "function openAdminApiUsage()",
+    "&admin=1#api-usage",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`admin cleanup UI missing ${text}`);
   });
@@ -1502,6 +1505,7 @@ function checkDashboardApiUsageAudit() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     'id="apiUsageBtn"',
     'id="apiUsageModal"',
@@ -1513,7 +1517,8 @@ function checkDashboardApiUsageAudit() {
     "function loadApiUsage()",
     "function renderApiUsage(data)",
     "fetch('/api/smart-trak/api-usage?account='",
-    "API Usage is available to the head coach.",
+    "API Usage is available from SMARTCoach Admin.",
+    "location.hash==='#api-usage'",
     "Top API Calls - Last 7 Days",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Dashboard API usage view missing ${text}`);
@@ -1526,7 +1531,7 @@ function checkDashboardApiUsageAudit() {
     "async function runSmartTrakRouteWithAudit(req, res, route, work)",
     "async function accountApiUsage(req, res)",
     "Active coach access is required to view API usage.",
-    "Head coach access is required to view API usage.",
+    "Owner/admin access is required to view API usage.",
     "staffAccessAdminAllowed(session",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`SMART Trak API usage route missing ${text}`);
@@ -1545,6 +1550,9 @@ function checkDashboardApiUsageAudit() {
   ].forEach((text) => {
     if (!registry.includes(text)) throw new Error(`Account registry API usage audit missing ${text}`);
   });
+  if (guide.includes("API Usage")) {
+    throw new Error("API Usage should stay out of the coach how-to guide");
+  }
   console.log("Dashboard API usage audit ok");
 }
 
