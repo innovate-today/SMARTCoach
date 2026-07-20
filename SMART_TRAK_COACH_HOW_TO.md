@@ -75,6 +75,8 @@ The Dashboard includes a small **Staff Access** button after **Refresh**. This o
 
 Only the head coach can see and use **Staff Access**. Assistant coaches use their personal coach code or SMART Trak invite link for normal access, while staff-management actions stay with the head coach.
 
+Head coaches with admin tools available can use **API Usage** when SMART Trak traffic or Vercel usage looks unusual. It shows the top SMART Trak API calls for today and the last 7 days, including route, call count, status codes, average time, and total time. It does not show athlete details, notes, request bodies, or private roster information.
+
 The **Feedback** button includes **Open How To Guide**. Use it to open the latest coach guide inside SMART Trak. The web guide is generated from the same how-to text used for support and chat prompts, so it stays current when the guide is updated.
 
 ## Miles Board

@@ -329,6 +329,7 @@ tr:last-child td{border-bottom:0}
         <button id="shareMilesBoardBtn" class="modal-action" type="button">Miles Trak</button>
         <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
+        <button id="apiUsageBtn" class="secondary admin-only" hidden type="button">API Usage</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
@@ -591,6 +592,25 @@ tr:last-child td{border-bottom:0}
         <div id="startHereStatus" class="modalstatus">Pick a goal, then follow the buttons from left to right.</div>
         <a id="startHereGuideLink" class="linkbtn secondary" href="/how-to.html">Open How To Guide</a>
       </div>
+    </div>
+  </section>
+</div>
+<div id="apiUsageModal" class="modal" hidden>
+  <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="apiUsageTitle">
+    <div class="modalhead">
+      <h2 id="apiUsageTitle">API Usage</h2>
+      <button id="apiUsageClose" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="whats-new-intro">Shows SMART Trak API calls saved by this account for today and the last 7 days.</p>
+      <div id="apiUsageStatus" class="modalstatus"></div>
+      <div id="apiUsageSummary" class="detailgrid"></div>
+      <h3 class="section-title">Top API Calls - Last 7 Days</h3>
+      <div id="apiUsageRoutes" class="detaillist"></div>
+      <h3 class="section-title">Status Codes</h3>
+      <div id="apiUsageStatuses" class="detaillist"></div>
+      <h3 class="section-title">Recent Hourly Buckets</h3>
+      <div id="apiUsageBuckets" class="detaillist"></div>
     </div>
   </section>
 </div>
@@ -2665,6 +2685,14 @@ var els={
   accountBtn:document.getElementById('accountBtn'),
   accountModal:document.getElementById('accountModal'),
   accountClose:document.getElementById('accountClose'),
+  apiUsageBtn:document.getElementById('apiUsageBtn'),
+  apiUsageModal:document.getElementById('apiUsageModal'),
+  apiUsageClose:document.getElementById('apiUsageClose'),
+  apiUsageStatus:document.getElementById('apiUsageStatus'),
+  apiUsageSummary:document.getElementById('apiUsageSummary'),
+  apiUsageRoutes:document.getElementById('apiUsageRoutes'),
+  apiUsageStatuses:document.getElementById('apiUsageStatuses'),
+  apiUsageBuckets:document.getElementById('apiUsageBuckets'),
   accountKey:document.getElementById('accountKey'),
   productPlan:document.getElementById('productPlan'),
   appVersion:document.getElementById('appVersion'),
@@ -3095,6 +3123,8 @@ if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
 if(els.staffList)els.staffList.addEventListener('click',handleStaffListClick);
 els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
+if(els.apiUsageBtn)els.apiUsageBtn.addEventListener('click',openApiUsageModal);
+if(els.apiUsageClose)els.apiUsageClose.addEventListener('click',closeApiUsageModal);
 els.accountRefresh.addEventListener('click',refreshAppVersion);
 els.accountSave.addEventListener('click',saveAccountSettings);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
@@ -3413,6 +3443,80 @@ function appVersion(){
 
 function closeAccountSettings(){
   els.accountModal.hidden=true;
+}
+
+function openApiUsageModal(){
+  if(accountStatus&&accountStatus.staffAdminAllowed===false){
+    els.status.textContent='API Usage is available to the head coach.';
+    return;
+  }
+  els.apiUsageModal.hidden=false;
+  renderApiUsage(null);
+  loadApiUsage();
+}
+
+function closeApiUsageModal(){
+  els.apiUsageModal.hidden=true;
+}
+
+function loadApiUsage(){
+  els.apiUsageStatus.textContent='Loading API usage...';
+  els.apiUsageStatus.style.color='#64748b';
+  return fetch('/api/smart-trak/api-usage?account='+encodeURIComponent(smartCoachAccountKey())+'&days=7&v='+Date.now(),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'API usage could not be loaded.');
+    renderApiUsage(result.data||{});
+  }).catch(function(error){
+    els.apiUsageStatus.textContent=error.message||'API usage could not be loaded.';
+    els.apiUsageStatus.style.color='#b00000';
+    renderApiUsage({routes:[],statuses:[],buckets:[],totalCount:0,totalDurationMs:0,avgMs:0});
+  });
+}
+
+function renderApiUsage(data){
+  data=data||{};
+  var total=num(data.totalCount);
+  var duration=num(data.totalDurationMs);
+  var routes=Array.isArray(data.routes)?data.routes:[];
+  var statuses=Array.isArray(data.statuses)?data.statuses:[];
+  var buckets=Array.isArray(data.buckets)?data.buckets:[];
+  var errorCount=statuses.reduce(function(sum,item){return sum+(Number(item&&item.status)>=400?num(item.count):0);},0);
+  els.apiUsageSummary.innerHTML=[
+    detailCard('Calls',total.toLocaleString(),'Last '+(Math.round(num(data.rangeHours)/24)||7)+' days'),
+    detailCard('Avg Time',formatApiUsageMs(num(data.avgMs)),'Per request'),
+    detailCard('Total Time',formatApiUsageMs(duration),'Function handler time'),
+    detailCard('Errors',errorCount.toLocaleString(),'HTTP 4xx and 5xx')
+  ].join('');
+  els.apiUsageRoutes.innerHTML=routes.length?routes.slice(0,20).map(function(item){
+    return '<div class="detailitem"><b>'+esc(item.route||'Unknown')+'</b><span>'+num(item.count).toLocaleString()+' calls · avg '+esc(formatApiUsageMs(item.avgMs))+' · total '+esc(formatApiUsageMs(item.durationMs))+(num(item.errors)?' · '+num(item.errors).toLocaleString()+' errors':'')+'</span></div>';
+  }).join(''):'<div class="detailitem muted">No API usage has been logged yet.</div>';
+  els.apiUsageStatuses.innerHTML=statuses.length?statuses.map(function(item){
+    return '<div class="detailitem"><b>'+esc(item.status||'Unknown')+'</b><span>'+num(item.count).toLocaleString()+' calls</span></div>';
+  }).join(''):'<div class="detailitem muted">No status codes have been logged yet.</div>';
+  els.apiUsageBuckets.innerHTML=buckets.length?buckets.slice(0,24).map(function(item){
+    return '<div class="detailitem"><b>'+esc(formatApiUsageHour(item.hour))+'</b><span>'+num(item.count).toLocaleString()+' calls · avg '+esc(formatApiUsageMs(item.avgMs))+' · total '+esc(formatApiUsageMs(item.durationMs))+'</span></div>';
+  }).join(''):'<div class="detailitem muted">No hourly buckets have been logged yet.</div>';
+  if(total){
+    els.apiUsageStatus.textContent='Latest usage loaded.';
+    els.apiUsageStatus.style.color='#08783c';
+  }else if(!els.apiUsageStatus.textContent||/^Loading/.test(els.apiUsageStatus.textContent)){
+    els.apiUsageStatus.textContent='No saved API usage yet. New calls will appear after logging flushes.';
+    els.apiUsageStatus.style.color='#64748b';
+  }
+}
+
+function formatApiUsageMs(value){
+  var ms=num(value);
+  if(ms>=60000)return Math.round(ms/600)/100+' min';
+  if(ms>=1000)return Math.round(ms/10)/100+' sec';
+  return Math.round(ms)+' ms';
+}
+
+function formatApiUsageHour(value){
+  var date=new Date(value);
+  if(!Number.isFinite(date.getTime()))return value||'Unknown hour';
+  return date.toLocaleString([], { month:'short', day:'numeric', hour:'numeric' });
 }
 
 function openCodeModal(){

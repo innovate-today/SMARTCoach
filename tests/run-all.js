@@ -1498,6 +1498,56 @@ function checkDashboardStaffAccessHandoff() {
   console.log("Dashboard Staff Access handoff ok");
 }
 
+function checkDashboardApiUsageAudit() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
+  [
+    'id="apiUsageBtn"',
+    'id="apiUsageModal"',
+    'id="apiUsageSummary"',
+    'id="apiUsageRoutes"',
+    'id="apiUsageStatuses"',
+    'id="apiUsageBuckets"',
+    "function openApiUsageModal()",
+    "function loadApiUsage()",
+    "function renderApiUsage(data)",
+    "fetch('/api/smart-trak/api-usage?account='",
+    "API Usage is available to the head coach.",
+    "Top API Calls - Last 7 Days",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Dashboard API usage view missing ${text}`);
+  });
+  [
+    "recordApiUsageAudit",
+    "loadApiUsageAudit",
+    'route === "api-usage"',
+    "return accountApiUsage(req, res);",
+    "async function runSmartTrakRouteWithAudit(req, res, route, work)",
+    "async function accountApiUsage(req, res)",
+    "Active coach access is required to view API usage.",
+    "Head coach access is required to view API usage.",
+    "staffAccessAdminAllowed(session",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`SMART Trak API usage route missing ${text}`);
+  });
+  [
+    "async function recordApiUsageAudit(entry)",
+    "async function loadApiUsageAudit(accountKey, options = {})",
+    "function apiUsageHourKey(config, accountKey, hour)",
+    "function normalizeApiUsageEntry(entry)",
+    "function normalizeRegistryHash(result)",
+    "async function registryPipelineRequest(config, commands)",
+    ":api_usage:",
+    "route:${routeKey}:status:${item.statusCode}:count",
+    "recordApiUsageAudit,",
+    "loadApiUsageAudit,",
+  ].forEach((text) => {
+    if (!registry.includes(text)) throw new Error(`Account registry API usage audit missing ${text}`);
+  });
+  console.log("Dashboard API usage audit ok");
+}
+
 function checkCrossCountryRaceResultEvents() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
@@ -3918,6 +3968,7 @@ checkResultsBoardFeature();
 checkSpeedTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();
+checkDashboardApiUsageAudit();
 checkCrossCountryRaceResultEvents();
 checkTrainingCalendarRaceResultAthleteFallback();
 checkTrainingCalendarDeletedMeetGuard();

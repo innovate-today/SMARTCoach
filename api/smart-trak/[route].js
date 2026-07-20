@@ -31,7 +31,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -43,6 +43,7 @@ const {
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
+  return runSmartTrakRouteWithAudit(req, res, route, async () => {
   const selected = handlers[route];
 
   if (route === "account-status") {
@@ -91,6 +92,12 @@ module.exports = async function handler(req, res) {
 
   if (route === "account-staff") {
     return accountStaff(req, res);
+  }
+
+  if (route === "api-usage") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountApiUsage(req, res);
   }
 
   if (route === "training-customization") {
@@ -231,7 +238,25 @@ module.exports = async function handler(req, res) {
   }
 
   return selected(req, res);
+  });
 };
+
+async function runSmartTrakRouteWithAudit(req, res, route, work) {
+  const startedAt = Date.now();
+  try {
+    return await work();
+  } finally {
+    if (route === "api-usage") return;
+    await recordApiUsageAudit({
+      accountKey: accountKeyFromRequest(req),
+      route: `/api/smart-trak/${cleanSetupText(route || "unknown")}`,
+      method: cleanSetupText(req.method || "GET").toUpperCase(),
+      statusCode: Number(res.statusCode) || 200,
+      durationMs: Date.now() - startedAt,
+      at: new Date().toISOString(),
+    }).catch(() => {});
+  }
+}
 
 async function recordRequestCoachDevice(req) {
   const { accountKey, coachCodeVersion } = getGhlContext(req);
@@ -248,6 +273,35 @@ async function recordRequestCoachDevice(req) {
     userAgent: headerValue(req, "user-agent"),
     coachIndex: validSession && Number(validSession.coachIndex) || 0,
   });
+}
+
+async function accountApiUsage(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const { accountKey, coachCodeVersion } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionAllowedForAccount(session, req.smartcoachRegistryAccount, coachCodeVersion);
+    if (!sessionAllowed) {
+      throw httpError(401, "Active coach access is required to view API usage.");
+    }
+    if (!staffAccessAdminAllowed(session, req.smartcoachRegistryAccount && req.smartcoachRegistryAccount.coachStaff)) {
+      throw httpError(403, "Head coach access is required to view API usage.");
+    }
+    const days = Math.max(1, Math.min(Number(firstQueryValue(req.query && req.query.days)) || 7, 14));
+    const usage = await loadApiUsageAudit(accountKey, { days });
+    res.status(200).json({ success: true, ...usage });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "API usage could not be loaded." });
+  }
 }
 
 async function accountAttendance(req, res) {
