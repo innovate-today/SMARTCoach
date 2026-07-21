@@ -5497,7 +5497,7 @@ function compactRunnerTarget(plan,profile){
 function plannedTargetData(plan,profile){
   if(isMeetTrainingPlanDay(plan))return null;
   var text=trainingPlanWorkoutTargetText(plan);
-  var rule=parseTargetRule(text,trainingPlanWorkoutType(plan));
+  var rule=targetRuleForPlan(plan);
   if(!rule)return null;
   var fitness=chooseFitness(profile,rule);
   if(!fitness)return null;
@@ -5527,6 +5527,7 @@ function targetPlanCacheKey(plan){
     plan.trainingPlanDayWorkoutType||'',
     plan.trainingPlanDayTargetSplits||'',
     plan.trainingPlanDayDetails||'',
+    trainingPlanTargetMode(plan),
     trainingPlanWorkoutType(plan),
     trainingPlanWorkoutTargetText(plan)
   ].join('|');
@@ -6773,7 +6774,7 @@ function entryWorkoutLabel(r){
 }
 function entryTargetHtml(plan,profile,run){
   var text=trainingPlanWorkoutTargetText(plan);
-  var rule=parseTargetRule(text,trainingPlanWorkoutType(plan));
+  var rule=targetRuleForPlan(plan);
   var fitness=chooseFitness(profile,rule);
   var prescription=workoutPrescription(plan,rule);
   if(!rule){
@@ -6816,7 +6817,10 @@ function trainingPlanWorkoutTargetText(plan){
 }
 function trainingPlanWorkoutType(plan){
   var day=calendarPlanDayForTarget(plan);
-  return plan&&plan.trainingPlanDayWorkoutType||day&&day.workoutType||inferredTrainingPlanWorkoutType(plan,day);
+  return rawTrainingPlanWorkoutType(plan,day)||inferredTrainingPlanWorkoutType(plan,day);
+}
+function rawTrainingPlanWorkoutType(plan,day){
+  return plan&&plan.trainingPlanDayWorkoutType||day&&day.workoutType||'';
 }
 function inferredTrainingPlanWorkoutType(plan,day){
   var source=[
@@ -6830,6 +6834,41 @@ function inferredTrainingPlanWorkoutType(plan,day){
   var normalized=normalizeWorkoutType(source);
   if(normalized==='Easy/Recovery Run'||normalized==='Long Run')return normalized;
   return '';
+}
+function trainingPlanTargetMode(plan){
+  var day=calendarPlanDayForTarget(plan);
+  var type=normalizeWorkoutType(rawTrainingPlanWorkoutType(plan,day));
+  var dayType=String(plan&&plan.trainingPlanDayType||day&&day.dayType||'').toLowerCase();
+  var source=[
+    plan&&plan.trainingPlanDayType,
+    day&&day.dayType,
+    type,
+    plan&&plan.trainingPlanDayTitle,
+    day&&day.title,
+    plan&&plan.trainingPlanDayTargetSplits,
+    day&&day.targetSplits,
+    plan&&plan.trainingPlanDayDetails,
+    day&&day.details
+  ].filter(Boolean).join(' ').toLowerCase();
+  if(/\b(off|off day|rest day)\b/.test(dayType)||/\b(no assigned workout)\b/.test(source))return'off';
+  if(/\b(meet|race)\b/.test(dayType)||/\b(race \/ meet|race plan)\b/.test(source))return'race';
+  if(type==='Easy/Recovery Run'||type==='Long Run')return'easy';
+  if(/\b(easy run|recovery run|conversational|\d+(?:\.\d+)?\s*(?:mi|miles?|km|k)\s+easy)\b/.test(source)&&!/\b(threshold|interval|repetition|tempo|speed|lactate|aerobic|hill|race|meet)\b/.test(source))return'easy';
+  if(/\b(speed metrics|fly zone|acceleration|max velocity|runway|stride count|stride length|stride frequency|velocity|speed endurance)\b/.test(source))return'speed';
+  if(/\b(threshold|interval|repetition|fast reps|hills|tempo|lactate|aerobic power|special endurance)\b/.test(source))return'quality';
+  return'legacy';
+}
+function targetRuleForPlan(plan){
+  var mode=trainingPlanTargetMode(plan);
+  if(mode==='off'||mode==='race')return null;
+  var text=trainingPlanWorkoutTargetText(plan);
+  var type=trainingPlanWorkoutType(plan);
+  if(mode==='easy'){
+    var easyType=normalizeWorkoutType(type);
+    if(easyType!=='Long Run')easyType='Easy/Recovery Run';
+    return parseTargetRule('',easyType);
+  }
+  return parseTargetRule(text,type);
 }
 function calendarPlanDayForTarget(plan){
   if(!plan||!Array.isArray(CD))return null;
@@ -6887,6 +6926,7 @@ function formatTimedRepLabel(amount,isMinute){
   return label+' '+(isMinute?(value===1?'min':'min'):'sec');
 }
 function parseTargetRule(text,workoutType){
+  var options=arguments.length>2&&arguments[2]||{};
   var source=String(text||'');
   var m=source.match(/([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\s+target:\s*([0-9]+)\s*-\s*([0-9]+)%/i);
   if(m)return{repLabel:normalizeEventLabel(m[1]),repMeters:eventDistance(m[1]),low:Number(m[2])/100,high:Number(m[3])/100,preferred:preferredFitnessEvents(source)};
@@ -6894,7 +6934,10 @@ function parseTargetRule(text,workoutType){
   var pct=source.match(/([0-9]+)\s*-\s*([0-9]+)%/);
   if(rep&&pct)return{repLabel:normalizeEventLabel(rep[1]),repMeters:eventDistance(rep[1]),low:Number(pct[1])/100,high:Number(pct[2])/100,preferred:preferredFitnessEvents(source)};
   var effort=effortFromTargetText(source);
-  var rule=paceRule(effort||workoutType||source);
+  var ruleInput=effort||workoutType||source;
+  if(!String(ruleInput||'').trim())return null;
+  var rule=paceRule(ruleInput);
+  if(!options.allowGeneric&&isGenericPaceRule(rule,ruleInput))return null;
   if(!rule||!rule.distance)return null;
   if(rule.suffix===' /mi'&&(rule.label==='Easy/Recovery Run'||rule.label==='Long Run')){
     return{repLabel:rule.repLabel||rule.label,repMeters:1609.34,low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source),suffix:rule.suffix};
@@ -6906,6 +6949,9 @@ function parseTargetRule(text,workoutType){
     return{repLabel:repLabel,repMeters:eventDistance(repLabel),low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source)};
   }
   return{repLabel:rule.repLabel||rule.distance+'m',repMeters:rule.distance,low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source),suffix:rule.suffix||''};
+}
+function isGenericPaceRule(rule,input){
+  return !!(rule&&rule.distance===400&&rule.low===.75&&rule.high===.85&&rule.label===normalizeWorkoutType(input));
 }
 function effortFromTargetText(text){
   var source=String(text||'');

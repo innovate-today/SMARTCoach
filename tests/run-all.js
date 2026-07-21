@@ -2167,8 +2167,12 @@ function checkTrainingCalendarEasyRunStandardTarget() {
     "Target: Conversational",
     "No current fitness found for this athlete.",
     "function inferredTrainingPlanWorkoutType(plan,day)",
+    "function trainingPlanTargetMode(plan)",
+    "function targetRuleForPlan(plan)",
+    "if(mode==='easy'){",
     "plan&&plan.trainingPlanDayTitle",
     "if(normalized==='Easy/Recovery Run'||normalized==='Long Run')return normalized;",
+    "if(!options.allowGeneric&&isGenericPaceRule(rule,ruleInput))return null;",
     "if(rule.suffix===' /mi'&&(rule.label==='Easy/Recovery Run'||rule.label==='Long Run'))",
     "if(/\\b(easy|recovery)\\b/.test(key)&&!/\\b(threshold|interval|repetition|tempo|speed|lactate|aerobic|hill|race|meet)\\b/.test(key))return'Easy/Recovery Run';",
   ].forEach((text) => {
@@ -3858,7 +3862,8 @@ function checkFieldPracticePhaseOne() {
   const fieldPracticeApp = fs.readFileSync("index.html", "utf8");
   [
     "var effort=effortFromTargetText(source);",
-    "var rule=paceRule(effort||workoutType||source);",
+    "var ruleInput=effort||workoutType||source;",
+    "var rule=targetRuleForPlan(plan);",
     "function trainingPlanWorkoutTargetText(plan)",
     "var source=trainingPlanWorkoutTargetText(plan);",
     "function calendarPlanDayForTarget(plan)",
@@ -3866,6 +3871,8 @@ function checkFieldPracticePhaseOne() {
     "day&&day.targetSplits",
     "function trainingPlanNeedsCalendarHydration(plan)",
     "function ensureCalendarDaysForTarget(plan)",
+    "function trainingPlanTargetMode(plan)",
+    "function targetRuleForPlan(plan)",
     "el.textContent='Loading target...';\n  ensureCalendarDaysForTarget(plan).then(function(){",
     "ensureCalendarDaysForTarget(plan).then(function(){",
     "fetch('/api/smart-trak/training-plan?kind=days',{cache:'no-store'})",

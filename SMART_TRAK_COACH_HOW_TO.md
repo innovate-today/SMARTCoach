@@ -463,7 +463,7 @@ How to use it:
 5. Leave **Manual calendar entry** selected when entering workouts week by week, or choose a saved uploaded/pasted/built plan if the day belongs to that plan.
 6. Save the calendar day.
 
-For Easy Run workouts, leave **Target** blank to use the standard easy target from each athlete's current fitness. If no current fitness is set, SMARTCoach treats the easy run as conversational. In the SMARTCoach app, easy and recovery calendar workouts show the easy/recovery pace target even when the workout notes say something like `6 mi easy` or include relaxed strides.
+For Easy Run workouts, leave **Target** blank to use the standard easy target from each athlete's current fitness. If no current fitness is set, SMARTCoach treats the easy run as conversational. In the SMARTCoach app, the workout card type controls the target first: Easy Run uses the easy/recovery pace target, Quality Session uses the set effort such as Threshold or Interval, Speed Metrics uses speed work instructions, Race uses race-day information, and Rest / Day Off has no pace target. Workout notes such as `6 mi easy` or relaxed strides add detail but should not turn an easy day into a rep-distance target.
 
 To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.
 
