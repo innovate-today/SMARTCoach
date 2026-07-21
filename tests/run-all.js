@@ -2166,6 +2166,8 @@ function checkTrainingCalendarEasyRunStandardTarget() {
     "if(rule&&rule.label==='Easy/Recovery Run')",
     "Target: Conversational",
     "No current fitness found for this athlete.",
+    "if(rule.suffix===' /mi'&&(rule.label==='Easy/Recovery Run'||rule.label==='Long Run'))",
+    "if(/\\b(easy|recovery)\\b/.test(key)&&!/\\b(threshold|interval|repetition|tempo|speed|lactate|aerobic|hill|race|meet)\\b/.test(key))return'Easy/Recovery Run';",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Easy Run no-fitness fallback missing ${text}`);
   });

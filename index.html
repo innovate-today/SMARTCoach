@@ -6883,6 +6883,9 @@ function parseTargetRule(text,workoutType){
   var effort=effortFromTargetText(source);
   var rule=paceRule(effort||workoutType||source);
   if(!rule||!rule.distance)return null;
+  if(rule.suffix===' /mi'&&(rule.label==='Easy/Recovery Run'||rule.label==='Long Run')){
+    return{repLabel:rule.repLabel||rule.label,repMeters:1609.34,low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source),suffix:rule.suffix};
+  }
   var timed=timedRepPrescription(source);
   if(timed)return{repLabel:(rule.repLabel||rule.label||effort||workoutType||'Workout')+' pace',repMeters:1609.34,low:rule.low,high:rule.high,preferred:preferredFitnessEvents(source),suffix:' /mi'};
   if(rep){
@@ -7115,6 +7118,7 @@ function normalizeWorkoutType(workout){
   if(!key)return value;
   if(key.indexOf('conversational')>=0||key.indexOf('easy run')>=0||key.indexOf('recovery run')>=0)return'Easy/Recovery Run';
   if(key==='easy'||key==='easy run'||key==='recovery'||key==='recovery run'||key==='easy recovery run'||key==='easy/recovery run'||key==='conversational')return'Easy/Recovery Run';
+  if(/\b(easy|recovery)\b/.test(key)&&!/\b(threshold|interval|repetition|tempo|speed|lactate|aerobic|hill|race|meet)\b/.test(key))return'Easy/Recovery Run';
   if(key==='long'||key==='long run')return'Long Run';
   if(key==='lactate threshold')return'Lactate Threshold';
   return value;
