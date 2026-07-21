@@ -6816,7 +6816,20 @@ function trainingPlanWorkoutTargetText(plan){
 }
 function trainingPlanWorkoutType(plan){
   var day=calendarPlanDayForTarget(plan);
-  return plan&&plan.trainingPlanDayWorkoutType||day&&day.workoutType||'';
+  return plan&&plan.trainingPlanDayWorkoutType||day&&day.workoutType||inferredTrainingPlanWorkoutType(plan,day);
+}
+function inferredTrainingPlanWorkoutType(plan,day){
+  var source=[
+    plan&&plan.trainingPlanDayType,
+    day&&day.dayType,
+    plan&&plan.trainingPlanDayTitle,
+    day&&day.title,
+    plan&&plan.trainingPlanDayTargetSplits,
+    day&&day.targetSplits
+  ].filter(Boolean).join(' ');
+  var normalized=normalizeWorkoutType(source);
+  if(normalized==='Easy/Recovery Run'||normalized==='Long Run')return normalized;
+  return '';
 }
 function calendarPlanDayForTarget(plan){
   if(!plan||!Array.isArray(CD))return null;

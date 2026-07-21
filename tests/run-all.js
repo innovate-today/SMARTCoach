@@ -2166,6 +2166,9 @@ function checkTrainingCalendarEasyRunStandardTarget() {
     "if(rule&&rule.label==='Easy/Recovery Run')",
     "Target: Conversational",
     "No current fitness found for this athlete.",
+    "function inferredTrainingPlanWorkoutType(plan,day)",
+    "plan&&plan.trainingPlanDayTitle",
+    "if(normalized==='Easy/Recovery Run'||normalized==='Long Run')return normalized;",
     "if(rule.suffix===' /mi'&&(rule.label==='Easy/Recovery Run'||rule.label==='Long Run'))",
     "if(/\\b(easy|recovery)\\b/.test(key)&&!/\\b(threshold|interval|repetition|tempo|speed|lactate|aerobic|hill|race|meet)\\b/.test(key))return'Easy/Recovery Run';",
   ].forEach((text) => {
