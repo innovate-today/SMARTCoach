@@ -2114,10 +2114,12 @@ function renderStravaActivities(activities){
   var athletePicker='<div class="detailitem"><label for="stravaAthleteSelect"><b>Import To Athlete</b></label><select id="stravaAthleteSelect">'+stravaAthleteOptions(selectedKey)+'</select><span>Choose the SMART Trak athlete before importing a Strava activity.</span></div>';
   els.stravaActivitiesList.innerHTML=athletePicker+activities.map(function(item){
     var imported=stravaImportedActivityForAthlete(item,selectedAthlete);
+    var matchDay=stravaPlanMatchForActivity(item,selectedAthlete);
+    var matchNote=matchDay?'<span class="muted">Matched plan: '+esc(stravaPlanMatchLabel(matchDay))+'</span>':'<span class="muted">No same-day calendar match; imports as Strava easy run.</span>';
     var importNote=imported?'<span class="muted">Already imported for selected athlete.</span>':'';
     var disabled=imported?' disabled':'';
     var buttonText=imported?'Already Imported':'Import Completed Workout';
-    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span>'+importNote+'<button class="secondary" type="button" data-strava-import="'+esc(item.id)+'"'+disabled+'>'+buttonText+'</button></div>';
+    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span>'+matchNote+importNote+'<button class="secondary" type="button" data-strava-import="'+esc(item.id)+'"'+disabled+'>'+buttonText+'</button></div>';
   }).join('');
   var select=els.stravaActivitiesList.querySelector('#stravaAthleteSelect');
   if(select){
@@ -2183,6 +2185,70 @@ function stravaTrainingRowMatchesAthlete(row,athlete){
   var athleteKeys=[athlete&&athlete.contactId,athlete&&athlete.smartcoachAthleteId,athlete&&athlete.runnerId,athlete&&athlete.athleteName,athlete&&athlete.name].map(normalizedLookupKey).filter(Boolean);
   return athleteKeys.some(function(key){return rowKeys.indexOf(key)>=0;});
 }
+function stravaActivityDate(activity){
+  return String(activity&&activity.startDateLocal||activity&&activity.startDate||todayInputValue()).slice(0,10)||todayInputValue();
+}
+function stravaDayId(day){
+  return String(day&&day.id||day&&day.sourceRecordId||'');
+}
+function stravaDayPlan(day){
+  var aliases=[day&&day.trainingPlanId,day&&day.trainingPlanSourceId].filter(Boolean).map(String);
+  return (plans||[]).find(function(plan){
+    return planAliases(plan).some(function(alias){return aliases.indexOf(alias)>=0;});
+  })||null;
+}
+function stravaPlanMatchForActivity(activity,athlete){
+  if(!activity||!athlete)return null;
+  var dateText=stravaActivityDate(activity);
+  var candidates=(days||[]).filter(function(day){
+    if(!day||String(day.date||'').slice(0,10)!==dateText)return false;
+    if(dayMixCategory(day)==='rest')return false;
+    return stravaCalendarDayMatchesAthlete(day,athlete);
+  });
+  candidates.sort(function(a,b){return stravaCalendarDayMatchScore(b,athlete)-stravaCalendarDayMatchScore(a,athlete);});
+  return candidates[0]||null;
+}
+function stravaCalendarDayMatchesAthlete(day,athlete){
+  var dayAthlete=normalizedLookupKey(day&&day.athleteName);
+  var athleteName=normalizedLookupKey(athlete&&athlete.name);
+  if(dayAthlete)return dayAthlete===athleteName;
+  var groupName=String(day&&day.groupName||'').trim();
+  if(groupName)return stravaTrainingGroupHasAthlete(groupName,athlete);
+  return true;
+}
+function stravaCalendarDayMatchScore(day,athlete){
+  if(normalizedLookupKey(day&&day.athleteName)&&normalizedLookupKey(day&&day.athleteName)===normalizedLookupKey(athlete&&athlete.name))return 3;
+  if(day&&day.groupName&&stravaTrainingGroupHasAthlete(day.groupName,athlete))return 2;
+  return 1;
+}
+function stravaTrainingGroupHasAthlete(groupName,athlete){
+  var target=normalizedLookupKey(groupName);
+  if(!target||!athlete)return false;
+  var athleteKeys=[athlete.contactId,athlete.smartcoachAthleteId,athlete.runnerId,athlete.name].map(normalizedLookupKey).filter(Boolean);
+  return activeTrainingGroups().some(function(group){
+    if(normalizedLookupKey(group&&group.name)!==target)return false;
+    return (group.athletes||[]).some(function(item){
+      var groupKeys=[item&&item.contactId,item&&item.smartcoachAthleteId,item&&item.runnerId,item&&item.name].map(normalizedLookupKey).filter(Boolean);
+      return athleteKeys.some(function(key){return groupKeys.indexOf(key)>=0;});
+    });
+  });
+}
+function stravaPlanMatchLabel(day){
+  return [day&&day.title||day&&day.dayType||'Workout',day&&day.groupName||day&&day.athleteName||'',day&&day.plannedVolume||''].filter(Boolean).join(' · ');
+}
+function stravaWorkoutTypeFromDay(day){
+  var text=String(day&&day.workoutType||day&&day.title||day&&day.dayType||'').trim();
+  var lower=text.toLowerCase();
+  if(lower.indexOf('easy')>=0||lower.indexOf('recovery')>=0)return 'Easy/Recovery Run';
+  if(lower.indexOf('long')>=0)return 'Long Run';
+  if(lower.indexOf('race')>=0||lower.indexOf('time trial')>=0)return 'Race';
+  if(lower.indexOf('speed')>=0)return 'Speed Endurance I';
+  if(lower.indexOf('hill')>=0)return 'Hills';
+  if(lower.indexOf('threshold')>=0)return 'Threshold';
+  if(lower.indexOf('interval')>=0)return 'Interval';
+  if(lower.indexOf('repetition')>=0||lower.indexOf('fast rep')>=0)return 'Repetition';
+  return text||'Easy/Recovery Run';
+}
 function importStravaActivity(activityId,button){
   var activity=(stravaActivitiesCache||[]).find(function(item){return String(item.id||'')===String(activityId||'');});
   var athlete=selectedStravaAthlete();
@@ -2218,15 +2284,20 @@ function importStravaActivity(activityId,button){
   });
 }
 function stravaImportPayload(activity,athlete){
-  var dateText=String(activity.startDateLocal||activity.startDate||todayInputValue()).slice(0,10)||todayInputValue();
+  var dateText=stravaActivityDate(activity);
   var meters=num(activity.distanceMeters);
   var miles=meters?Math.round((meters/1609.344)*100)/100:0;
   var seconds=num(activity.movingTimeSeconds)||num(activity.elapsedTimeSeconds);
   var durationMs=seconds*1000;
   var duration=durationMs?formatDurationShort(durationMs):'Untimed';
+  var matchDay=stravaPlanMatchForActivity(activity,athlete);
+  var matchPlan=stravaDayPlan(matchDay);
+  var matchTitle=matchDay&&(matchDay.title||matchDay.dayType||'');
   var sourceNote=[
     'Imported from Strava',
     'Strava activity id: '+(activity.id||''),
+    matchTitle?'Matched calendar workout: '+matchTitle:'',
+    matchDay&&matchDay.groupName?'Matched group: '+matchDay.groupName:'',
     activity.name?'Strava activity: '+activity.name:'',
     activity.startDateLocal?'Strava start: '+activity.startDateLocal:'',
     activity.sportType||activity.type?'Strava type: '+(activity.sportType||activity.type):'',
@@ -2235,21 +2306,36 @@ function stravaImportPayload(activity,athlete){
   ].filter(Boolean).join('\n');
   return {
     sourceSessionId:'strava_'+(activity.id||dateText),
-    groupName:'Strava',
-    season:'Cross Country',
-    seasonYear:(new Date(dateText).getFullYear())||new Date().getFullYear(),
-    sport:'Cross Country',
-    phase:'GPP',
-    workoutType:'Easy/Recovery Run',
+    groupName:matchDay&&(matchDay.groupName||matchDay.athleteName)||'Strava',
+    season:matchPlan&&matchPlan.season||'Cross Country',
+    seasonYear:Number(matchPlan&&matchPlan.seasonYear)||(new Date(dateText).getFullYear())||new Date().getFullYear(),
+    sport:matchDay?sportFromDay(matchDay):'Cross Country',
+    phase:matchDay&&matchDay.phase||matchPlan&&matchPlan.phase||'GPP',
+    workoutType:matchDay?stravaWorkoutTypeFromDay(matchDay):'Easy/Recovery Run',
     surface:'Road',
     completedVolume:miles?miles+' mi':'',
     sessionDate:dateText,
+    trainingPlanId:matchPlan&&planId(matchPlan)||matchDay&&matchDay.trainingPlanId||'',
+    trainingPlanSourceId:matchPlan&&matchPlan.sourceRecordId||matchDay&&matchDay.trainingPlanSourceId||'',
+    trainingPlanTitle:matchPlan&&matchPlan.title||'',
+    trainingPlanDayId:matchDay?stravaDayId(matchDay):'',
+    trainingPlanDaySourceId:matchDay&&matchDay.sourceRecordId||'',
+    trainingPlanDayTitle:matchTitle||'',
     athletes:[{
       name:athlete.name||'',
       contactId:athlete.contactId||'',
       runnerId:athlete.runnerId||'',
       smartcoachAthleteId:athlete.smartcoachAthleteId||athlete.runnerId||'',
       completedVolume:miles?miles+' mi':'',
+      trainingPlanId:matchPlan&&planId(matchPlan)||matchDay&&matchDay.trainingPlanId||'',
+      trainingPlanSourceId:matchPlan&&matchPlan.sourceRecordId||matchDay&&matchDay.trainingPlanSourceId||'',
+      trainingPlanTitle:matchPlan&&matchPlan.title||'',
+      trainingPlanDayId:matchDay?stravaDayId(matchDay):'',
+      trainingPlanDaySourceId:matchDay&&matchDay.sourceRecordId||'',
+      trainingPlanDayTitle:matchTitle||'',
+      trainingPlanDayWorkoutType:matchDay?stravaWorkoutTypeFromDay(matchDay):'Easy/Recovery Run',
+      trainingPlanPhase:matchDay&&matchDay.phase||matchPlan&&matchPlan.phase||'GPP',
+      plannedVolume:matchDay&&matchDay.plannedVolume||'',
       runs:[{
         runNumber:1,
         total:duration,
