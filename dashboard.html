@@ -1487,6 +1487,7 @@ var trainingGroups=[];
 var meetManagerRows=[];
 var raceResultMeetRows=[];
 var coachStaff=[];
+var stravaActivitiesCache=[];
 var inviteSessionAttempted=false;
 var visibleRosterRows=[];
 var visibleMeetRows=[];
@@ -3678,13 +3679,112 @@ function loadStravaActivities(){
 
 function renderStravaActivities(activities){
   activities=Array.isArray(activities)?activities:[];
+  stravaActivitiesCache=activities;
   if(!activities.length){
     els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No recent Strava activities returned.</div>';
     return;
   }
+  var athleteOptions=stravaAthleteOptions();
+  var athletePicker='<div class="detailitem"><label for="stravaAthleteSelect"><b>Import To Athlete</b></label><select id="stravaAthleteSelect">'+athleteOptions+'</select><span>Choose the SMART Trak athlete before importing a Strava activity.</span></div>';
   els.stravaActivitiesList.innerHTML=activities.map(function(item){
-    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span></div>';
+    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span><button class="secondary" type="button" data-strava-import="'+esc(item.id)+'">Import Completed Workout</button></div>';
   }).join('');
+  els.stravaActivitiesList.innerHTML=athletePicker+els.stravaActivitiesList.innerHTML;
+  els.stravaActivitiesList.querySelectorAll('[data-strava-import]').forEach(function(button){
+    button.addEventListener('click',function(){
+      importStravaActivity(button.getAttribute('data-strava-import')||'');
+    });
+  });
+}
+
+function stravaAthleteOptions(){
+  var rows=(dashboardRows||[]).filter(function(row){return row&&row.smartcoachActive!==false&&row.name;}).slice().sort(function(a,b){
+    return String(a.name||'').localeCompare(String(b.name||''));
+  });
+  if(!rows.length)return '<option value="">Load the dashboard roster first</option>';
+  return rows.map(function(row){
+    var key=row.contactId||row.smartcoachAthleteId||row.runnerId||row.name;
+    return '<option value="'+esc(key)+'">'+esc(row.name||'Athlete')+'</option>';
+  }).join('');
+}
+
+function selectedStravaAthlete(){
+  var select=document.getElementById('stravaAthleteSelect');
+  var key=select?select.value:'';
+  if(!key)return null;
+  return (dashboardRows||[]).find(function(row){
+    return String(row.contactId||'')===key||String(row.smartcoachAthleteId||'')===key||String(row.runnerId||'')===key||String(row.name||'')===key;
+  })||null;
+}
+
+function importStravaActivity(activityId){
+  var activity=(stravaActivitiesCache||[]).find(function(item){return String(item.id||'')===String(activityId||'');});
+  var athlete=selectedStravaAthlete();
+  if(!activity){els.stravaTestStatus.textContent='Choose a Strava activity to import.';els.stravaTestStatus.style.color='#b00000';return;}
+  if(!athlete){els.stravaTestStatus.textContent='Choose a SMART Trak athlete before importing.';els.stravaTestStatus.style.color='#b00000';return;}
+  var payload=stravaImportPayload(activity,athlete);
+  els.stravaTestStatus.textContent='Importing Strava activity for '+(athlete.name||'athlete')+'...';
+  els.stravaTestStatus.style.color='#64748b';
+  return fetch('/api/smart-trak/sync-session',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(function(resp){
+    return resp.json().then(function(data){return{ok:resp.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activity could not be imported.');
+    els.stravaTestStatus.textContent='Strava activity imported for '+(athlete.name||'athlete')+'.';
+    els.stravaTestStatus.style.color='#08783c';
+    loadDashboard();
+  }).catch(function(error){
+    els.stravaTestStatus.textContent=error.message||'Strava activity could not be imported.';
+    els.stravaTestStatus.style.color='#b00000';
+  });
+}
+
+function stravaImportPayload(activity,athlete){
+  var dateText=String(activity.startDateLocal||activity.startDate||todayInputValue()).slice(0,10)||todayInputValue();
+  var meters=num(activity.distanceMeters);
+  var miles=meters?Math.round((meters/1609.344)*100)/100:0;
+  var seconds=num(activity.movingTimeSeconds)||num(activity.elapsedTimeSeconds);
+  var durationMs=seconds*1000;
+  var duration=durationMs?formatDurationShort(durationMs):'Untimed';
+  var sourceNote=[
+    'Imported from Strava',
+    'Strava activity id: '+(activity.id||''),
+    activity.name?'Strava activity: '+activity.name:'',
+    activity.startDateLocal?'Strava start: '+activity.startDateLocal:'',
+    activity.sportType||activity.type?'Strava type: '+(activity.sportType||activity.type):'',
+    miles?'Strava distance: '+miles+' mi':'',
+    durationMs?'Strava moving time: '+duration:''
+  ].filter(Boolean).join('\n');
+  return {
+    sourceSessionId:'strava_'+(activity.id||dateText),
+    groupName:'Strava',
+    season:'Cross Country',
+    seasonYear:(new Date(dateText).getFullYear())||new Date().getFullYear(),
+    sport:'Cross Country',
+    phase:'GPP',
+    workoutType:'Easy/Recovery Run',
+    surface:'Unspecified',
+    completedVolume:miles?miles+' mi':'',
+    sessionDate:dateText,
+    athletes:[{
+      name:athlete.name||'',
+      contactId:athlete.contactId||'',
+      runnerId:athlete.runnerId||'',
+      smartcoachAthleteId:athlete.smartcoachAthleteId||athlete.runnerId||'',
+      completedVolume:miles?miles+' mi':'',
+      runs:[{
+        runNumber:1,
+        total:duration,
+        totalMs:durationMs||null,
+        laps:[],
+        note:sourceNote,
+        timestamp:activity.startDateLocal||activity.startDate||dateText
+      }]
+    }]
+  };
 }
 
 function stravaActivityMeta(item){

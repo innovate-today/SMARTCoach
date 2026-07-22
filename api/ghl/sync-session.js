@@ -166,6 +166,7 @@ function normalizeSession(payload) {
     weather: clean(payload.weather),
     completedVolume: clean(payload.completedVolume),
     sessionDate: payload.sessionDate ? new Date(payload.sessionDate) : new Date(),
+    sourceSessionId: clean(payload.sourceSessionId),
     forceDuplicateSync: payload.forceDuplicateSync === true,
     trainingPlanId: clean(payload.trainingPlanId),
     trainingPlanSourceId: clean(payload.trainingPlanSourceId),
@@ -1020,6 +1021,7 @@ function buildSeasonSourceRecordId({ contactId, session }) {
 }
 
 function buildSourceSessionId(session, dateValue) {
+  if (session && session.sourceSessionId) return slugValue(session.sourceSessionId);
   const sessionDate = validDate(dateValue) || validDate(session.sessionDate) || new Date();
   const groupSlug = slugValue(session.groupName);
   const dateSlug = sessionDate.toISOString().slice(0, 10).replace(/-/g, "");

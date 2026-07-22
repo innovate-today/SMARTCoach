@@ -1559,6 +1559,7 @@ function checkDashboardApiUsageAudit() {
 function checkStravaAdminTestFlow() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const syncApi = fs.readFileSync("api/ghl/sync-session.js", "utf8");
   const vercel = fs.readFileSync("vercel.json", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
@@ -1573,6 +1574,14 @@ function checkStravaAdminTestFlow() {
     "function stravaRuntimeText(status)",
     "function connectStravaTestAccount()",
     "function loadStravaActivities()",
+    "function importStravaActivity(activityId)",
+    "function stravaImportPayload(activity,athlete)",
+    "stravaActivitiesCache=[]",
+    'id="stravaAthleteSelect"',
+    "Import Completed Workout",
+    "sourceSessionId:'strava_'+(activity.id||dateText)",
+    "fetch('/api/smart-trak/sync-session'",
+    "Imported from Strava",
     "response=json",
     "result.data.authUrl",
     "Strava Test is available from SMARTCoach Admin.",
@@ -1616,6 +1625,12 @@ function checkStravaAdminTestFlow() {
     "refresh_token",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`SMART Trak Strava admin API missing ${text}`);
+  });
+  [
+    "sourceSessionId: clean(payload.sourceSessionId)",
+    "if (session && session.sourceSessionId) return slugValue(session.sourceSessionId);",
+  ].forEach((text) => {
+    if (!syncApi.includes(text)) throw new Error(`SMART Trak Strava import sync support missing ${text}`);
   });
   [
     '"source": "/api/strava/oauth/callback"',
