@@ -1556,6 +1556,67 @@ function checkDashboardApiUsageAudit() {
   console.log("Dashboard API usage audit ok");
 }
 
+function checkStravaAdminTestFlow() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const vercel = fs.readFileSync("vercel.json", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    'id="stravaTestBtn"',
+    'id="stravaTestModal"',
+    'id="stravaConnectBtn"',
+    'id="stravaLoadActivitiesBtn"',
+    "function openStravaTestModal()",
+    "function loadStravaStatus()",
+    "function connectStravaTestAccount()",
+    "function loadStravaActivities()",
+    "Strava Test is available from SMARTCoach Admin.",
+    "Tokens stay hidden.",
+    "location.hash==='#strava-test'",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Dashboard Strava admin test missing ${text}`);
+  });
+  [
+    'route === "strava-status"',
+    'route === "strava-start"',
+    'route === "strava-callback"',
+    'route === "strava-activities"',
+    "return accountStravaStatus(req, res);",
+    "return accountStravaStart(req, res);",
+    "return accountStravaCallback(req, res);",
+    "return accountStravaActivities(req, res);",
+    "function requireOwnerAdminSession(req, actionLabel)",
+    "Owner/admin access is required to",
+    "STRAVA_CLIENT_ID",
+    "STRAVA_CLIENT_SECRET",
+    "STRAVA_REDIRECT_URI",
+    'auth.searchParams.set("scope", "read,activity:read");',
+    "https://www.strava.com/oauth/authorize",
+    "https://www.strava.com/oauth/token",
+    "https://www.strava.com/api/v3/athlete/activities",
+    "stravaConnection",
+    "refresh_token",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`SMART Trak Strava admin API missing ${text}`);
+  });
+  [
+    '"source": "/api/strava/oauth/callback"',
+    '"destination": "/api/smart-trak/strava-callback"',
+  ].forEach((text) => {
+    if (!vercel.includes(text)) throw new Error(`Vercel Strava callback rewrite missing ${text}`);
+  });
+  [
+    "STRAVA_ACCESS_TOKEN",
+    "STRAVA_REFRESH_TOKEN",
+  ].forEach((text) => {
+    if (api.includes(text)) throw new Error(`Strava OAuth flow should not use manual token env var ${text}`);
+  });
+  if (guide.includes("Strava Test")) {
+    throw new Error("Strava Test should stay out of the coach how-to guide");
+  }
+  console.log("Strava admin test flow ok");
+}
+
 function checkCrossCountryRaceResultEvents() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
@@ -3989,6 +4050,7 @@ checkSpeedTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();
 checkDashboardApiUsageAudit();
+checkStravaAdminTestFlow();
 checkCrossCountryRaceResultEvents();
 checkTrainingCalendarRaceResultAthleteFallback();
 checkTrainingCalendarDeletedMeetGuard();

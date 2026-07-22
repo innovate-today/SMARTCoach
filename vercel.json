@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/api/strava/oauth/callback",
+      "destination": "/api/smart-trak/strava-callback"
+    }
+  ],
   "headers": [
     {
       "source": "/",

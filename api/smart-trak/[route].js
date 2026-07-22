@@ -100,6 +100,28 @@ module.exports = async function handler(req, res) {
     return accountApiUsage(req, res);
   }
 
+  if (route === "strava-status") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountStravaStatus(req, res);
+  }
+
+  if (route === "strava-start") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountStravaStart(req, res);
+  }
+
+  if (route === "strava-callback") {
+    return accountStravaCallback(req, res);
+  }
+
+  if (route === "strava-activities") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountStravaActivities(req, res);
+  }
+
   if (route === "training-customization") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -302,6 +324,332 @@ async function accountApiUsage(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "API usage could not be loaded." });
   }
+}
+
+async function accountStravaStatus(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const access = requireOwnerAdminSession(req, "view Strava test status");
+    const connection = sanitizeStravaConnection(access.record && access.record.stravaConnection);
+    res.status(200).json({
+      success: true,
+      configured: stravaEnvConfigured(),
+      connected: !!connection.connected,
+      connection,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Strava status could not be loaded." });
+  }
+}
+
+async function accountStravaStart(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const access = requireOwnerAdminSession(req, "connect Strava");
+    const env = requireStravaEnv();
+    const state = signStravaState({
+      accountKey: access.accountKey,
+      returnPath: `/dashboard.html?account=${encodeURIComponent(access.accountKey)}&admin=1&strava=connected#strava-test`,
+      createdAt: Date.now(),
+    });
+    const auth = new URL("https://www.strava.com/oauth/authorize");
+    auth.searchParams.set("client_id", env.clientId);
+    auth.searchParams.set("redirect_uri", env.redirectUri);
+    auth.searchParams.set("response_type", "code");
+    auth.searchParams.set("approval_prompt", "auto");
+    auth.searchParams.set("scope", "read,activity:read");
+    auth.searchParams.set("state", state);
+    res.writeHead(302, { Location: auth.toString() });
+    res.end();
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Strava connection could not be started." });
+  }
+}
+
+async function accountStravaCallback(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  let returnPath = "/dashboard.html?admin=1&strava=error#strava-test";
+  try {
+    const env = requireStravaEnv();
+    const state = verifyStravaState(firstQueryValue(req.query && req.query.state));
+    const accountKey = normalizeSetupAccountKey(state.accountKey) || "default";
+    returnPath = cleanSetupText(state.returnPath) || `/dashboard.html?account=${encodeURIComponent(accountKey)}&admin=1&strava=connected#strava-test`;
+    const oauthError = cleanSetupText(firstQueryValue(req.query && req.query.error));
+    if (oauthError) throw httpError(400, `Strava returned ${oauthError}.`);
+    const code = cleanSetupText(firstQueryValue(req.query && req.query.code));
+    if (!code) throw httpError(400, "Strava authorization code was missing.");
+    await attachRegistryAccountForKey(req, accountKey);
+    const tokenData = await exchangeStravaToken({
+      clientId: env.clientId,
+      clientSecret: env.clientSecret,
+      code,
+      grantType: "authorization_code",
+    });
+    const existing = (await loadExistingAccountRecord(accountKey)) || req.smartcoachRegistryAccount || {};
+    const now = new Date().toISOString();
+    await saveAccountRecord(accountKey, {
+      ...existing,
+      stravaConnection: normalizeSavedStravaConnection({
+        ...(existing.stravaConnection || {}),
+        ...tokenData,
+        connected: true,
+        connectedAt: existing.stravaConnection && existing.stravaConnection.connectedAt || now,
+        updatedAt: now,
+      }),
+    });
+    res.writeHead(302, { Location: returnPath });
+    res.end();
+  } catch (error) {
+    const url = new URL(returnPath, "https://app.smartcoach-pro.com");
+    url.searchParams.set("strava", "error");
+    url.searchParams.set("stravaMessage", (error.message || "Strava connection failed.").slice(0, 160));
+    res.writeHead(302, { Location: `${url.pathname}${url.search}${url.hash || "#strava-test"}` });
+    res.end();
+  }
+}
+
+async function accountStravaActivities(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const access = requireOwnerAdminSession(req, "load Strava activities");
+    const limit = Math.max(1, Math.min(Number(firstQueryValue(req.query && req.query.limit)) || 10, 30));
+    const connection = await activeStravaConnection(access.accountKey, access.record);
+    const url = new URL("https://www.strava.com/api/v3/athlete/activities");
+    url.searchParams.set("page", "1");
+    url.searchParams.set("per_page", String(limit));
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { Authorization: `Bearer ${connection.accessToken}` },
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw httpError(response.status || 502, data && (data.message || data.error) || "Strava activities could not be loaded.");
+    }
+    const activities = (Array.isArray(data) ? data : []).map(sanitizeStravaActivity).filter(Boolean);
+    res.status(200).json({
+      success: true,
+      connected: true,
+      athlete: sanitizeStravaAthlete(connection.athlete),
+      activities,
+      count: activities.length,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Strava activities could not be loaded." });
+  }
+}
+
+function requireOwnerAdminSession(req, actionLabel) {
+  const { accountKey, coachCodeVersion } = getGhlContext(req);
+  const session = coachSessionFromRequest(req, accountKey);
+  const record = req.smartcoachRegistryAccount;
+  if (!coachSessionAllowedForAccount(session, record, coachCodeVersion)) {
+    throw httpError(401, `Active coach access is required to ${actionLabel}.`);
+  }
+  if (!staffAccessAdminAllowed(session, record && record.coachStaff)) {
+    throw httpError(403, `Owner/admin access is required to ${actionLabel}.`);
+  }
+  return { accountKey, session, record };
+}
+
+function stravaEnv() {
+  return {
+    clientId: cleanSetupText(process.env.STRAVA_CLIENT_ID),
+    clientSecret: cleanSetupText(process.env.STRAVA_CLIENT_SECRET),
+    redirectUri: cleanSetupText(process.env.STRAVA_REDIRECT_URI),
+  };
+}
+
+function stravaEnvConfigured() {
+  const env = stravaEnv();
+  return !!(env.clientId && env.clientSecret && env.redirectUri);
+}
+
+function requireStravaEnv() {
+  const env = stravaEnv();
+  if (!env.clientId || !env.clientSecret || !env.redirectUri) {
+    throw httpError(500, "Strava environment variables are not configured.");
+  }
+  return env;
+}
+
+function signStravaState(payload) {
+  const env = requireStravaEnv();
+  const body = base64UrlEncode(JSON.stringify(payload || {}));
+  const signature = crypto.createHmac("sha256", env.clientSecret).update(body).digest("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return `${body}.${signature}`;
+}
+
+function verifyStravaState(value) {
+  const env = requireStravaEnv();
+  const text = cleanSetupText(value);
+  const parts = text.split(".");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) throw httpError(400, "Strava state was invalid.");
+  const expected = crypto.createHmac("sha256", env.clientSecret).update(parts[0]).digest("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  if (!safeEqual(parts[1], expected)) throw httpError(400, "Strava state could not be verified.");
+  let payload = {};
+  try {
+    payload = JSON.parse(base64UrlDecode(parts[0]));
+  } catch (error) {
+    throw httpError(400, "Strava state could not be read.");
+  }
+  const createdAt = Number(payload.createdAt) || 0;
+  if (!createdAt || Date.now() - createdAt > 15 * 60 * 1000) throw httpError(400, "Strava connection timed out. Please start again.");
+  return payload;
+}
+
+function base64UrlEncode(value) {
+  return Buffer.from(String(value || ""), "utf8").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlDecode(value) {
+  const base64 = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+  return Buffer.from(base64, "base64").toString("utf8");
+}
+
+async function exchangeStravaToken(params) {
+  const body = new URLSearchParams();
+  body.set("client_id", params.clientId);
+  body.set("client_secret", params.clientSecret);
+  body.set("grant_type", params.grantType);
+  if (params.code) body.set("code", params.code);
+  if (params.refreshToken) body.set("refresh_token", params.refreshToken);
+  const response = await fetch("https://www.strava.com/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw httpError(response.status || 502, data && (data.message || data.error) || "Strava token request failed.");
+  }
+  return data || {};
+}
+
+async function activeStravaConnection(accountKey, accountRecord) {
+  const env = requireStravaEnv();
+  const record = accountRecord || {};
+  const connection = normalizeSavedStravaConnection(record.stravaConnection || {});
+  if (!connection.connected || !connection.refreshToken) {
+    throw httpError(404, "Strava is not connected for this account.");
+  }
+  const expiresAtMs = Number(connection.expiresAt) ? Number(connection.expiresAt) * 1000 : Date.parse(connection.expiresAtIso || "");
+  if (connection.accessToken && Number.isFinite(expiresAtMs) && expiresAtMs - Date.now() > 60000) return connection;
+  const tokenData = await exchangeStravaToken({
+    clientId: env.clientId,
+    clientSecret: env.clientSecret,
+    refreshToken: connection.refreshToken,
+    grantType: "refresh_token",
+  });
+  const existing = (await loadExistingAccountRecord(accountKey)) || record;
+  const updated = normalizeSavedStravaConnection({
+    ...connection,
+    ...tokenData,
+    connected: true,
+    updatedAt: new Date().toISOString(),
+  });
+  await saveAccountRecord(accountKey, {
+    ...existing,
+    stravaConnection: updated,
+  });
+  return updated;
+}
+
+function normalizeSavedStravaConnection(value) {
+  const source = value || {};
+  const athlete = source.athlete && typeof source.athlete === "object" ? source.athlete : {};
+  const expiresAt = Number(source.expires_at || source.expiresAt) || 0;
+  return {
+    connected: source.connected !== false,
+    athlete: sanitizeStravaAthlete(athlete),
+    scope: cleanSetupText(source.scope),
+    tokenType: cleanSetupText(source.token_type || source.tokenType),
+    accessToken: cleanSetupText(source.access_token || source.accessToken),
+    refreshToken: cleanSetupText(source.refresh_token || source.refreshToken),
+    expiresAt,
+    expiresAtIso: expiresAt ? new Date(expiresAt * 1000).toISOString() : cleanSetupText(source.expiresAtIso),
+    connectedAt: cleanSetupText(source.connectedAt),
+    updatedAt: cleanSetupText(source.updatedAt),
+  };
+}
+
+function sanitizeStravaConnection(value) {
+  const source = normalizeSavedStravaConnection(value || {});
+  return {
+    connected: !!(source.connected && source.refreshToken),
+    athlete: source.athlete,
+    scope: source.scope,
+    tokenType: source.tokenType,
+    expiresAtIso: source.expiresAtIso,
+    connectedAt: source.connectedAt,
+    updatedAt: source.updatedAt,
+  };
+}
+
+function sanitizeStravaAthlete(value) {
+  const source = value || {};
+  return {
+    id: cleanSetupText(source.id),
+    username: cleanSetupText(source.username),
+    firstname: cleanSetupText(source.firstname),
+    lastname: cleanSetupText(source.lastname),
+    city: cleanSetupText(source.city),
+    state: cleanSetupText(source.state),
+    country: cleanSetupText(source.country),
+  };
+}
+
+function sanitizeStravaActivity(value) {
+  const source = value || {};
+  const id = cleanSetupText(source.id);
+  if (!id) return null;
+  return {
+    id,
+    name: cleanSetupText(source.name),
+    type: cleanSetupText(source.type || source.sport_type),
+    sportType: cleanSetupText(source.sport_type),
+    startDate: cleanSetupText(source.start_date),
+    startDateLocal: cleanSetupText(source.start_date_local),
+    distanceMeters: Math.round(Number(source.distance) || 0),
+    movingTimeSeconds: Math.round(Number(source.moving_time) || 0),
+    elapsedTimeSeconds: Math.round(Number(source.elapsed_time) || 0),
+    averageSpeedMetersPerSecond: Number(source.average_speed) || 0,
+  };
 }
 
 async function accountAttendance(req, res) {

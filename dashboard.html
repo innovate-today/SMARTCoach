@@ -330,6 +330,7 @@ tr:last-child td{border-bottom:0}
         <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="apiUsageBtn" class="secondary admin-only" hidden type="button">API Usage</button>
+        <button id="stravaTestBtn" class="secondary admin-only" hidden type="button">Strava Test</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
@@ -611,6 +612,25 @@ tr:last-child td{border-bottom:0}
       <div id="apiUsageStatuses" class="detaillist"></div>
       <h3 class="section-title">Recent Hourly Buckets</h3>
       <div id="apiUsageBuckets" class="detaillist"></div>
+    </div>
+  </section>
+</div>
+<div id="stravaTestModal" class="modal" hidden>
+  <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="stravaTestTitle">
+    <div class="modalhead">
+      <h2 id="stravaTestTitle">Strava Test</h2>
+      <button id="stravaTestClose" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="whats-new-intro">Owner/admin test area for connecting one Strava account and checking recent activities. Tokens stay hidden.</p>
+      <div id="stravaTestStatus" class="modalstatus"></div>
+      <div id="stravaTestSummary" class="detailgrid"></div>
+      <div class="modalactions">
+        <button id="stravaConnectBtn" type="button">Connect Strava</button>
+        <button id="stravaLoadActivitiesBtn" class="secondary" type="button">Load Recent Activities</button>
+      </div>
+      <h3 class="section-title">Recent Activities</h3>
+      <div id="stravaActivitiesList" class="detaillist"></div>
     </div>
   </section>
 </div>
@@ -2693,6 +2713,14 @@ var els={
   apiUsageRoutes:document.getElementById('apiUsageRoutes'),
   apiUsageStatuses:document.getElementById('apiUsageStatuses'),
   apiUsageBuckets:document.getElementById('apiUsageBuckets'),
+  stravaTestBtn:document.getElementById('stravaTestBtn'),
+  stravaTestModal:document.getElementById('stravaTestModal'),
+  stravaTestClose:document.getElementById('stravaTestClose'),
+  stravaTestStatus:document.getElementById('stravaTestStatus'),
+  stravaTestSummary:document.getElementById('stravaTestSummary'),
+  stravaConnectBtn:document.getElementById('stravaConnectBtn'),
+  stravaLoadActivitiesBtn:document.getElementById('stravaLoadActivitiesBtn'),
+  stravaActivitiesList:document.getElementById('stravaActivitiesList'),
   accountKey:document.getElementById('accountKey'),
   productPlan:document.getElementById('productPlan'),
   appVersion:document.getElementById('appVersion'),
@@ -3115,6 +3143,7 @@ els.shareResultsBoardBtn.addEventListener('click',openResultsBoardSharing);
 if(location.hash==='#share-miles-board')setTimeout(shareMilesBoard,0);
 if(location.hash==='#share-results-board')setTimeout(openResultsBoardSharing,0);
 if(location.hash==='#api-usage')setTimeout(openApiUsageModal,0);
+if(location.hash==='#strava-test')setTimeout(openStravaTestModal,0);
 els.changeCodeBtn.addEventListener('click',openCodeModal);
 els.codeClose.addEventListener('click',closeCodeModal);
 els.codeSave.addEventListener('click',saveCoachCode);
@@ -3126,6 +3155,10 @@ els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
 if(els.apiUsageBtn)els.apiUsageBtn.addEventListener('click',openApiUsageModal);
 if(els.apiUsageClose)els.apiUsageClose.addEventListener('click',closeApiUsageModal);
+if(els.stravaTestBtn)els.stravaTestBtn.addEventListener('click',openStravaTestModal);
+if(els.stravaTestClose)els.stravaTestClose.addEventListener('click',closeStravaTestModal);
+if(els.stravaConnectBtn)els.stravaConnectBtn.addEventListener('click',connectStravaTestAccount);
+if(els.stravaLoadActivitiesBtn)els.stravaLoadActivitiesBtn.addEventListener('click',loadStravaActivities);
 els.accountRefresh.addEventListener('click',refreshAppVersion);
 els.accountSave.addEventListener('click',saveAccountSettings);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
@@ -3512,6 +3545,126 @@ function formatApiUsageMs(value){
   if(ms>=60000)return Math.round(ms/600)/100+' min';
   if(ms>=1000)return Math.round(ms/10)/100+' sec';
   return Math.round(ms)+' ms';
+}
+
+function openStravaTestModal(){
+  if(accountStatus&&accountStatus.staffAdminAllowed===false){
+    els.status.textContent='Strava Test is available from SMARTCoach Admin.';
+    return;
+  }
+  els.stravaTestModal.hidden=false;
+  renderStravaStatus(null);
+  loadStravaStatus();
+}
+
+function closeStravaTestModal(){
+  els.stravaTestModal.hidden=true;
+}
+
+function loadStravaStatus(){
+  els.stravaTestStatus.textContent='Loading Strava status...';
+  els.stravaTestStatus.style.color='#64748b';
+  return fetch('/api/smart-trak/strava-status?account='+encodeURIComponent(smartCoachAccountKey())+'&v='+Date.now(),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Strava status could not be loaded.');
+    renderStravaStatus(result.data||{});
+    showReturnedStravaMessage();
+  }).catch(function(error){
+    els.stravaTestStatus.textContent=error.message||'Strava status could not be loaded.';
+    els.stravaTestStatus.style.color='#b00000';
+    renderStravaStatus({configured:false,connected:false,connection:null});
+  });
+}
+
+function renderStravaStatus(data){
+  data=data||{};
+  var connection=data.connection||{};
+  var athlete=connection.athlete||{};
+  var athleteName=[athlete.firstname,athlete.lastname].filter(Boolean).join(' ')||athlete.username||athlete.id||'Not connected';
+  els.stravaTestSummary.innerHTML=[
+    detailCard('Environment',data.configured?'Configured':'Missing','STRAVA_CLIENT_ID / SECRET / REDIRECT_URI'),
+    detailCard('Connection',data.connected?'Connected':'Not connected',athleteName),
+    detailCard('Scope',connection.scope||'--','Expected: read,activity:read'),
+    detailCard('Token Expires',connection.expiresAtIso?formatDateTime(connection.expiresAtIso):'--','Access token only; refresh token hidden')
+  ].join('');
+  els.stravaConnectBtn.disabled=!data.configured;
+  els.stravaLoadActivitiesBtn.disabled=!data.connected;
+  if(data.connected){
+    els.stravaTestStatus.textContent='Strava is connected for this account.';
+    els.stravaTestStatus.style.color='#08783c';
+  }else if(data.configured){
+    els.stravaTestStatus.textContent='Strava env vars are ready. Connect Strava to test activity access.';
+    els.stravaTestStatus.style.color='#64748b';
+  }else{
+    els.stravaTestStatus.textContent='Strava env vars are missing on the server.';
+    els.stravaTestStatus.style.color='#b00000';
+  }
+  if(els.stravaActivitiesList&&!els.stravaActivitiesList.innerHTML){
+    els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No Strava activities loaded yet.</div>';
+  }
+}
+
+function showReturnedStravaMessage(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    var strava=params.get('strava')||'';
+    if(strava==='connected'){
+      els.stravaTestStatus.textContent='Strava connected. Load recent activities to verify the read path.';
+      els.stravaTestStatus.style.color='#08783c';
+    }
+    if(strava==='error'){
+      els.stravaTestStatus.textContent=params.get('stravaMessage')||'Strava connection failed.';
+      els.stravaTestStatus.style.color='#b00000';
+    }
+  }catch(e){}
+}
+
+function connectStravaTestAccount(){
+  els.stravaTestStatus.textContent='Opening Strava authorization...';
+  els.stravaTestStatus.style.color='#64748b';
+  window.location.href='/api/smart-trak/strava-start?account='+encodeURIComponent(smartCoachAccountKey())+'&v='+Date.now();
+}
+
+function loadStravaActivities(){
+  els.stravaTestStatus.textContent='Loading recent Strava activities...';
+  els.stravaTestStatus.style.color='#64748b';
+  els.stravaActivitiesList.innerHTML='<div class="detailitem muted">Loading...</div>';
+  return fetch('/api/smart-trak/strava-activities?account='+encodeURIComponent(smartCoachAccountKey())+'&limit=10&v='+Date.now(),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activities could not be loaded.');
+    renderStravaActivities(result.data&&result.data.activities||[]);
+    els.stravaTestStatus.textContent='Recent Strava activities loaded.';
+    els.stravaTestStatus.style.color='#08783c';
+  }).catch(function(error){
+    els.stravaTestStatus.textContent=error.message||'Strava activities could not be loaded.';
+    els.stravaTestStatus.style.color='#b00000';
+    els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No Strava activities loaded.</div>';
+  });
+}
+
+function renderStravaActivities(activities){
+  activities=Array.isArray(activities)?activities:[];
+  if(!activities.length){
+    els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No recent Strava activities returned.</div>';
+    return;
+  }
+  els.stravaActivitiesList.innerHTML=activities.map(function(item){
+    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span></div>';
+  }).join('');
+}
+
+function stravaActivityMeta(item){
+  var meters=num(item.distanceMeters);
+  var miles=meters?Math.round((meters/1609.344)*100)/100:0;
+  var parts=[
+    item.startDateLocal?formatDateTime(item.startDateLocal):'No date',
+    item.sportType||item.type||'Activity',
+    miles?miles+' mi':'No distance',
+    item.movingTimeSeconds?formatDurationShort(item.movingTimeSeconds*1000):''
+  ].filter(Boolean);
+  return parts.join(' · ');
 }
 
 function formatApiUsageHour(value){
