@@ -3667,13 +3667,25 @@ function loadStravaActivities(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activities could not be loaded.');
-    renderStravaActivities(result.data&&result.data.activities||[]);
+    els.stravaTestStatus.textContent='Loading dashboard roster for import...';
+    return ensureStravaRosterLoaded().then(function(){
+      renderStravaActivities(result.data&&result.data.activities||[]);
+    });
+  }).then(function(){
     els.stravaTestStatus.textContent='Recent Strava activities loaded.';
     els.stravaTestStatus.style.color='#08783c';
   }).catch(function(error){
     els.stravaTestStatus.textContent=error.message||'Strava activities could not be loaded.';
     els.stravaTestStatus.style.color='#b00000';
     els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No Strava activities loaded.</div>';
+  });
+}
+
+function ensureStravaRosterLoaded(){
+  if((dashboardRows||[]).some(function(row){return row&&row.smartcoachActive!==false&&row.name;}))return Promise.resolve();
+  return loadDashboard().then(function(){
+    if((dashboardRows||[]).some(function(row){return row&&row.smartcoachActive!==false&&row.name;}))return;
+    throw new Error('Dashboard roster could not be loaded for Strava import.');
   });
 }
 
