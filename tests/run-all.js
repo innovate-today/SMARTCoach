@@ -120,6 +120,15 @@ function checkTrainingCalendarButtonLabels() {
   if (onboarding.includes("{label:'Training Calendar',path:'/training-calendar.html'+query}")) {
     throw new Error("onboarding generated Training Calendar button should be labeled Training.");
   }
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  [
+    ".top > .actions{display:flex;flex-direction:column;align-items:flex-end;gap:7px}",
+    ".top .action-row,.top .modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap}",
+    ".setup-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap}",
+    ".top .linkbtn,.top button{font-size:12px;padding:6px 8px;min-height:32px;",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`training calendar compact header missing ${text}`);
+  });
   console.log("Training Calendar button labels ok");
 }
 
@@ -461,10 +470,10 @@ function checkDashboardActivityRangeLayout() {
     'id="xcSimulatorLink"',
     "@media(max-width:1180px)",
     ".actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:1 1 auto;min-width:0}",
-    ".action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;width:100%;max-width:100%}",
+    ".action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;width:100%;max-width:100%}",
     ".actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:32px;min-height:32px;line-height:1;white-space:nowrap",
     '<div class="dashboard-tools-row"><button id="dashboardPrefsBtn" class="dashboard-prefs-link" type="button" aria-haspopup="dialog">Customize Dashboard</button></div>',
-    ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:wrap}",
+    ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap}",
     ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
   ];
   required.forEach((text) => {
