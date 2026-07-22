@@ -3682,7 +3682,6 @@ function loadStravaActivities(){
 }
 
 function ensureStravaRosterLoaded(){
-  if((dashboardRows||[]).some(function(row){return row&&row.smartcoachActive!==false&&row.name;}))return Promise.resolve();
   return loadDashboard().then(function(){
     if((dashboardRows||[]).some(function(row){return row&&row.smartcoachActive!==false&&row.name;}))return;
     throw new Error('Dashboard roster could not be loaded for Strava import.');
@@ -3778,7 +3777,7 @@ function stravaImportPayload(activity,athlete){
     sport:'Cross Country',
     phase:'GPP',
     workoutType:'Easy/Recovery Run',
-    surface:'Unspecified',
+    surface:'Road',
     completedVolume:miles?miles+' mi':'',
     sessionDate:dateText,
     athletes:[{

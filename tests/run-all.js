@@ -1575,10 +1575,12 @@ function checkStravaAdminTestFlow() {
     "function connectStravaTestAccount()",
     "function loadStravaActivities()",
     "function ensureStravaRosterLoaded()",
+    "return loadDashboard().then(function(){",
     "Loading dashboard roster for import...",
     "Dashboard roster could not be loaded for Strava import.",
     "function importStravaActivity(activityId)",
     "function stravaImportPayload(activity,athlete)",
+    "surface:'Road'",
     "stravaActivitiesCache=[]",
     'id="stravaAthleteSelect"',
     "Import Completed Workout",
@@ -1600,6 +1602,9 @@ function checkStravaAdminTestFlow() {
   const stravaCatchError = dashboard.indexOf("els.stravaTestStatus.textContent=error.message||'Strava status could not be loaded.';");
   if (stravaCatchRender < 0 || stravaCatchError < 0 || stravaCatchRender > stravaCatchError) {
     throw new Error("Dashboard Strava status errors should remain visible after fallback render");
+  }
+  if (dashboard.includes("if((dashboardRows||[]).some(function(row){return row&&row.smartcoachActive!==false&&row.name;}))return Promise.resolve();")) {
+    throw new Error("Strava import roster should refresh dashboard data before rendering athlete options");
   }
   [
     'route === "strava-status"',
@@ -1632,6 +1637,7 @@ function checkStravaAdminTestFlow() {
   [
     "sourceSessionId: clean(payload.sourceSessionId)",
     "if (session && session.sourceSessionId) return slugValue(session.sourceSessionId);",
+    'optionFieldErrorFor(message, "surface")',
   ].forEach((text) => {
     if (!syncApi.includes(text)) throw new Error(`SMART Trak Strava import sync support missing ${text}`);
   });

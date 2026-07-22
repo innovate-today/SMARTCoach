@@ -433,6 +433,12 @@ function performanceRecordFallbackProperties({ properties, error, removed }) {
     delete fallback.sport;
     return fallback;
   }
+  if (optionFieldErrorFor(message, "surface") && properties.surface && !removed.has("surface")) {
+    removed.add("surface");
+    const fallback = { ...properties };
+    delete fallback.surface;
+    return fallback;
+  }
   return null;
 }
 
