@@ -369,9 +369,10 @@ async function accountStravaStart(req, res) {
     const access = requireOwnerAdminSession(req, "connect Strava");
     requireBetaFeatureAccount(access.accountKey, "connect Strava");
     const env = requireStravaEnv();
+    const returnPath = cleanStravaReturnPath(firstQueryValue(req.query && req.query.returnPath), access.accountKey) || defaultStravaReturnPath(access.accountKey);
     const state = signStravaState({
       accountKey: access.accountKey,
-      returnPath: `/dashboard.html?account=${encodeURIComponent(access.accountKey)}&admin=1&strava=connected#strava-test`,
+      returnPath,
       createdAt: Date.now(),
     });
     const auth = new URL("https://www.strava.com/oauth/authorize");
@@ -403,13 +404,13 @@ async function accountStravaCallback(req, res) {
     return;
   }
 
-  let returnPath = "/dashboard.html?admin=1&strava=error#strava-test";
+  let returnPath = defaultStravaReturnPath("default");
   try {
     const env = requireStravaEnv();
     const state = verifyStravaState(firstQueryValue(req.query && req.query.state));
     const accountKey = normalizeSetupAccountKey(state.accountKey) || "default";
     requireBetaFeatureAccount(accountKey, "connect Strava");
-    returnPath = cleanSetupText(state.returnPath) || `/dashboard.html?account=${encodeURIComponent(accountKey)}&admin=1&strava=connected#strava-test`;
+    returnPath = cleanStravaReturnPath(state.returnPath, accountKey) || defaultStravaReturnPath(accountKey);
     const oauthError = cleanSetupText(firstQueryValue(req.query && req.query.error));
     if (oauthError) throw httpError(400, `Strava returned ${oauthError}.`);
     const code = cleanSetupText(firstQueryValue(req.query && req.query.code));
@@ -5408,6 +5409,31 @@ function accountKeyFromRequest(req) {
 
 function firstQueryValue(value) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function defaultStravaReturnPath(accountKey) {
+  const key = normalizeSetupAccountKey(accountKey) || "default";
+  return `/dashboard.html?account=${encodeURIComponent(key)}&admin=1&strava=connected#strava-test`;
+}
+
+function cleanStravaReturnPath(value, accountKey) {
+  let text = cleanSetupText(value);
+  if (!text) return "";
+  try {
+    text = decodeURIComponent(text);
+  } catch (error) {}
+  if (!text || !text.startsWith("/") || text.startsWith("//") || /^https?:/i.test(text)) return "";
+  try {
+    const url = new URL(text, "https://app.smartcoach-pro.com");
+    if (!["/dashboard.html", "/training-calendar.html"].includes(url.pathname)) return "";
+    url.searchParams.set("account", normalizeSetupAccountKey(accountKey) || "default");
+    url.searchParams.set("admin", "1");
+    if (!url.searchParams.get("strava")) url.searchParams.set("strava", "connected");
+    if (!url.hash) url.hash = url.pathname === "/training-calendar.html" ? "#strava" : "#strava-test";
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch (error) {
+    return "";
+  }
 }
 
 function normalizeSetupAccountKey(value) {
