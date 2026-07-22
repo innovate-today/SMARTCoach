@@ -11,7 +11,7 @@ const ATHLETE_FIELD_ALIASES = {
 };
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
-const { mirrorTrainingRecords } = require("../../lib/account-registry");
+const { mirrorTrainingRecords, loadTrainingMirror } = require("../../lib/account-registry");
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -47,7 +47,7 @@ module.exports = async function handler(req, res) {
     for (const athlete of session.athletes) {
       const contact = await findOrCreateContact({ token, locationId, athlete, session });
       if (!session.forceDuplicateSync) {
-        const duplicates = await findDuplicatePerformanceRecords({ token, locationId, contactId: contact.id, athlete, session });
+        const duplicates = await findDuplicatePerformanceRecords({ token, locationId, accountKey, contactId: contact.id, athlete, session });
         if (duplicates.length) {
           throw httpError(409, "This workout appears to have already been synced.", {
             code: "DUPLICATE_SYNC",
@@ -450,8 +450,13 @@ function optionFieldErrorFor(message, field) {
   return /allowed option|isn't an allowed option|not an allowed/i.test(message) && new RegExp(`\\b${field}\\b`, "i").test(message);
 }
 
-async function findDuplicatePerformanceRecords({ token, locationId, contactId, athlete, session }) {
+async function findDuplicatePerformanceRecords({ token, locationId, accountKey, contactId, athlete, session }) {
   const duplicates = [];
+  const mirrorRecords = accountKey ? await loadTrainingMirror(accountKey).catch(() => []) : [];
+  const mirrorSourceIds = new Set((Array.isArray(mirrorRecords) ? mirrorRecords : []).map((record) => {
+    const props = record && record.properties || {};
+    return clean(props.source_record_id || record.sourceRecordId || record.id);
+  }).filter(Boolean));
 
   for (const run of athlete.runs) {
     const properties = buildPerformanceRecordProperties({
@@ -461,6 +466,16 @@ async function findDuplicatePerformanceRecords({ token, locationId, contactId, a
       session,
       run,
     });
+    if (mirrorSourceIds.has(properties.source_record_id)) {
+      duplicates.push({
+        athlete: athlete.name,
+        runNumber: run.runNumber,
+        sourceRecordId: properties.source_record_id,
+        recordId: null,
+        source: "trainingMirror",
+      });
+      continue;
+    }
     const existing = await findObjectRecord({
       token,
       locationId,
@@ -474,6 +489,7 @@ async function findDuplicatePerformanceRecords({ token, locationId, contactId, a
         runNumber: run.runNumber,
         sourceRecordId: properties.source_record_id,
         recordId: existing.id || null,
+        source: "performanceRecord",
       });
     }
   }

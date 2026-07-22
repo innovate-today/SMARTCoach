@@ -1578,7 +1578,9 @@ function checkStravaAdminTestFlow() {
     "return loadDashboard().then(function(){",
     "Loading dashboard roster for import...",
     "Dashboard roster could not be loaded for Strava import.",
-    "function importStravaActivity(activityId)",
+    "function importStravaActivity(activityId,button)",
+    "if(button)button.disabled=true;",
+    "if(button)button.disabled=false;",
     "function stravaImportPayload(activity,athlete)",
     "surface:'Road'",
     "stravaActivitiesCache=[]",
@@ -1638,6 +1640,8 @@ function checkStravaAdminTestFlow() {
     "sourceSessionId: clean(payload.sourceSessionId)",
     "if (session && session.sourceSessionId) return slugValue(session.sourceSessionId);",
     'optionFieldErrorFor(message, "surface")',
+    "mirrorTrainingRecords, loadTrainingMirror",
+    "source: \"trainingMirror\"",
   ].forEach((text) => {
     if (!syncApi.includes(text)) throw new Error(`SMART Trak Strava import sync support missing ${text}`);
   });

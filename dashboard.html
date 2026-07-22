@@ -3703,7 +3703,7 @@ function renderStravaActivities(activities){
   els.stravaActivitiesList.innerHTML=athletePicker+els.stravaActivitiesList.innerHTML;
   els.stravaActivitiesList.querySelectorAll('[data-strava-import]').forEach(function(button){
     button.addEventListener('click',function(){
-      importStravaActivity(button.getAttribute('data-strava-import')||'');
+      importStravaActivity(button.getAttribute('data-strava-import')||'',button);
     });
   });
 }
@@ -3728,7 +3728,7 @@ function selectedStravaAthlete(){
   })||null;
 }
 
-function importStravaActivity(activityId){
+function importStravaActivity(activityId,button){
   var activity=(stravaActivitiesCache||[]).find(function(item){return String(item.id||'')===String(activityId||'');});
   var athlete=selectedStravaAthlete();
   if(!activity){els.stravaTestStatus.textContent='Choose a Strava activity to import.';els.stravaTestStatus.style.color='#b00000';return;}
@@ -3736,6 +3736,7 @@ function importStravaActivity(activityId){
   var payload=stravaImportPayload(activity,athlete);
   els.stravaTestStatus.textContent='Importing Strava activity for '+(athlete.name||'athlete')+'...';
   els.stravaTestStatus.style.color='#64748b';
+  if(button)button.disabled=true;
   return fetch('/api/smart-trak/sync-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -3750,6 +3751,8 @@ function importStravaActivity(activityId){
   }).catch(function(error){
     els.stravaTestStatus.textContent=error.message||'Strava activity could not be imported.';
     els.stravaTestStatus.style.color='#b00000';
+  }).finally(function(){
+    if(button)button.disabled=false;
   });
 }
 
