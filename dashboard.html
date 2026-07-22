@@ -1488,6 +1488,7 @@ var meetManagerRows=[];
 var raceResultMeetRows=[];
 var coachStaff=[];
 var stravaActivitiesCache=[];
+var stravaSelectedAthleteKey='';
 var inviteSessionAttempted=false;
 var visibleRosterRows=[];
 var visibleMeetRows=[];
@@ -3695,12 +3696,24 @@ function renderStravaActivities(activities){
     els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No recent Strava activities returned.</div>';
     return;
   }
-  var athleteOptions=stravaAthleteOptions();
+  var athleteOptions=stravaAthleteOptions(stravaSelectedAthleteKey);
   var athletePicker='<div class="detailitem"><label for="stravaAthleteSelect"><b>Import To Athlete</b></label><select id="stravaAthleteSelect">'+athleteOptions+'</select><span>Choose the SMART Trak athlete before importing a Strava activity.</span></div>';
   els.stravaActivitiesList.innerHTML=activities.map(function(item){
-    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span><button class="secondary" type="button" data-strava-import="'+esc(item.id)+'">Import Completed Workout</button></div>';
+    var imported=stravaImportedActivityForSelectedAthlete(item);
+    var importNote=imported?'<span class="muted">Already imported for selected athlete.</span>':'';
+    var disabled=imported?' disabled':'';
+    var buttonText=imported?'Already Imported':'Import Completed Workout';
+    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span>'+importNote+'<button class="secondary" type="button" data-strava-import="'+esc(item.id)+'"'+disabled+'>'+buttonText+'</button></div>';
   }).join('');
   els.stravaActivitiesList.innerHTML=athletePicker+els.stravaActivitiesList.innerHTML;
+  var select=els.stravaActivitiesList.querySelector('#stravaAthleteSelect');
+  if(select){
+    stravaSelectedAthleteKey=select.value||'';
+    select.addEventListener('change',function(){
+      stravaSelectedAthleteKey=this.value||'';
+      renderStravaActivities(stravaActivitiesCache);
+    });
+  }
   els.stravaActivitiesList.querySelectorAll('[data-strava-import]').forEach(function(button){
     button.addEventListener('click',function(){
       importStravaActivity(button.getAttribute('data-strava-import')||'',button);
@@ -3708,14 +3721,15 @@ function renderStravaActivities(activities){
   });
 }
 
-function stravaAthleteOptions(){
+function stravaAthleteOptions(selectedKey){
   var rows=(dashboardRows||[]).filter(function(row){return row&&row.smartcoachActive!==false&&row.name;}).slice().sort(function(a,b){
     return String(a.name||'').localeCompare(String(b.name||''));
   });
   if(!rows.length)return '<option value="">Load the dashboard roster first</option>';
   return rows.map(function(row){
     var key=row.contactId||row.smartcoachAthleteId||row.runnerId||row.name;
-    return '<option value="'+esc(key)+'">'+esc(row.name||'Athlete')+'</option>';
+    var selected=String(key||'')===String(selectedKey||'')?' selected':'';
+    return '<option value="'+esc(key)+'"'+selected+'>'+esc(row.name||'Athlete')+'</option>';
   }).join('');
 }
 
@@ -3728,11 +3742,47 @@ function selectedStravaAthlete(){
   })||null;
 }
 
+function stravaImportedActivityForSelectedAthlete(activity){
+  var athlete=selectedStravaAthlete();
+  if(!athlete||!activity||!activity.id)return false;
+  var sessionId=normalizedLookupKey('strava_'+activity.id);
+  return (recentTrainingRows||[]).some(function(row){
+    var rowSession=normalizedLookupKey(row&&row.sourceSessionId);
+    var rowRecord=normalizedLookupKey(row&&row.sourceRecordId);
+    var isStravaActivity=rowSession===sessionId || rowRecord.indexOf(sessionId+'_')===0;
+    return isStravaActivity && stravaTrainingRowMatchesAthlete(row,athlete);
+  });
+}
+
+function stravaTrainingRowMatchesAthlete(row,athlete){
+  var rowKeys=[
+    row&&row.contactId,
+    row&&row.smartcoachAthleteId,
+    row&&row.runnerId,
+    row&&row.athleteName,
+    row&&row.name
+  ].map(normalizedLookupKey).filter(Boolean);
+  var athleteKeys=[
+    athlete&&athlete.contactId,
+    athlete&&athlete.smartcoachAthleteId,
+    athlete&&athlete.runnerId,
+    athlete&&athlete.athleteName,
+    athlete&&athlete.name
+  ].map(normalizedLookupKey).filter(Boolean);
+  return athleteKeys.some(function(key){return rowKeys.indexOf(key)>=0;});
+}
+
 function importStravaActivity(activityId,button){
   var activity=(stravaActivitiesCache||[]).find(function(item){return String(item.id||'')===String(activityId||'');});
   var athlete=selectedStravaAthlete();
   if(!activity){els.stravaTestStatus.textContent='Choose a Strava activity to import.';els.stravaTestStatus.style.color='#b00000';return;}
   if(!athlete){els.stravaTestStatus.textContent='Choose a SMART Trak athlete before importing.';els.stravaTestStatus.style.color='#b00000';return;}
+  if(stravaImportedActivityForSelectedAthlete(activity)){
+    els.stravaTestStatus.textContent='This Strava activity is already imported for '+(athlete.name||'the selected athlete')+'.';
+    els.stravaTestStatus.style.color='#b00000';
+    renderStravaActivities(stravaActivitiesCache);
+    return;
+  }
   var payload=stravaImportPayload(activity,athlete);
   els.stravaTestStatus.textContent='Importing Strava activity for '+(athlete.name||'athlete')+'...';
   els.stravaTestStatus.style.color='#64748b';
@@ -3747,7 +3797,9 @@ function importStravaActivity(activityId,button){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activity could not be imported.');
     els.stravaTestStatus.textContent='Strava activity imported for '+(athlete.name||'athlete')+'.';
     els.stravaTestStatus.style.color='#08783c';
-    loadDashboard();
+    return loadDashboard().then(function(){
+      renderStravaActivities(stravaActivitiesCache);
+    });
   }).catch(function(error){
     els.stravaTestStatus.textContent=error.message||'Strava activity could not be imported.';
     els.stravaTestStatus.style.color='#b00000';
