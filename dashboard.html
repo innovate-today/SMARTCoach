@@ -3647,7 +3647,15 @@ function showReturnedStravaMessage(){
 function connectStravaTestAccount(){
   els.stravaTestStatus.textContent='Opening Strava authorization...';
   els.stravaTestStatus.style.color='#64748b';
-  window.location.href='/api/smart-trak/strava-start?account='+encodeURIComponent(smartCoachAccountKey())+'&v='+Date.now();
+  return fetch('/api/smart-trak/strava-start?account='+encodeURIComponent(smartCoachAccountKey())+'&response=json&v='+Date.now(),{cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok||!result.data||!result.data.authUrl)throw new Error(result.data&&result.data.error||'Strava authorization could not be opened.');
+    window.location.href=result.data.authUrl;
+  }).catch(function(error){
+    els.stravaTestStatus.textContent=error.message||'Strava authorization could not be opened.';
+    els.stravaTestStatus.style.color='#b00000';
+  });
 }
 
 function loadStravaActivities(){

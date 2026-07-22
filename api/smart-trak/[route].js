@@ -378,6 +378,10 @@ async function accountStravaStart(req, res) {
     auth.searchParams.set("approval_prompt", "auto");
     auth.searchParams.set("scope", "read,activity:read");
     auth.searchParams.set("state", state);
+    if (cleanSetupText(firstQueryValue(req.query && (req.query.response || req.query.format))).toLowerCase() === "json") {
+      res.status(200).json({ success: true, authUrl: auth.toString() });
+      return;
+    }
     res.writeHead(302, { Location: auth.toString() });
     res.end();
   } catch (error) {
