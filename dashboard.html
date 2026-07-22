@@ -331,7 +331,7 @@ tr:last-child td{border-bottom:0}
         <button id="shareMilesBoardBtn" class="modal-action" type="button">Miles Trak</button>
         <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
-        <button id="apiUsageBtn" class="secondary admin-only" hidden type="button">API Usage</button>
+        <button id="apiUsageBtn" class="secondary admin-only" data-beta-admin-only="1" hidden type="button">API Usage</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
@@ -501,7 +501,7 @@ tr:last-child td{border-bottom:0}
       <button class="subtab active" data-training-subtab="volume" type="button">Volume by Athlete <span id="volumeSubtabCount" class="pill count">--</span></button>
       <button class="subtab" data-training-subtab="workouts" type="button">Completed Workouts <span id="workoutsSubtabCount" class="pill count">--</span></button>
     </nav>
-    <div class="training-admin-row admin-only" hidden>
+    <div class="training-admin-row admin-only" data-beta-admin-only="1" hidden>
       <button id="stravaTestBtn" class="secondary" type="button">Strava</button>
     </div>
     <section class="trainsubpanel" data-training-subpanel="volume">
@@ -1538,6 +1538,7 @@ var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
 var fitnessRefreshKey='smartcoachFitnessUpdatedAt';
 var lastFitnessRefreshSignal='';
+var SMARTCOACH_BETA_ACCOUNT_KEYS=['tca-trackandcc'];
 function smartCoachAccountKey(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -1552,6 +1553,9 @@ function smartCoachAccountKey(){
 }
 function cleanAccountKey(value){
   return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';
+}
+function betaAdminToolsVisible(){
+  return SMARTCOACH_BETA_ACCOUNT_KEYS.indexOf(cleanAccountKey(smartCoachAccountKey()))>=0;
 }
 function setSmartCoachAccountKey(value){
   var key=cleanAccountKey(value);
@@ -2641,6 +2645,8 @@ function adminToolsVisible(){
 function applyAdminTools(){
   var show=adminToolsVisible();
   document.querySelectorAll('.admin-only').forEach(function(el){el.hidden=!show;});
+  var showBeta=show&&betaAdminToolsVisible();
+  document.querySelectorAll('[data-beta-admin-only]').forEach(function(el){el.hidden=!showBeta;});
   applySmartCoachLinks();
 }
 (function(){

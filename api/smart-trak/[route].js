@@ -318,6 +318,7 @@ async function accountApiUsage(req, res) {
     if (!staffAccessAdminAllowed(session, req.smartcoachRegistryAccount && req.smartcoachRegistryAccount.coachStaff)) {
       throw httpError(403, "Owner/admin access is required to view API usage.");
     }
+    requireBetaFeatureAccount(accountKey, "view API usage");
     const days = Math.max(1, Math.min(Number(firstQueryValue(req.query && req.query.days)) || 7, 14));
     const usage = await loadApiUsageAudit(accountKey, { days });
     res.status(200).json({ success: true, ...usage });
@@ -339,6 +340,7 @@ async function accountStravaStatus(req, res) {
 
   try {
     const access = requireOwnerAdminSession(req, "view Strava test status");
+    requireBetaFeatureAccount(access.accountKey, "view Strava test status");
     const connection = sanitizeStravaConnection(access.record && access.record.stravaConnection);
     res.status(200).json({
       success: true,
@@ -365,6 +367,7 @@ async function accountStravaStart(req, res) {
 
   try {
     const access = requireOwnerAdminSession(req, "connect Strava");
+    requireBetaFeatureAccount(access.accountKey, "connect Strava");
     const env = requireStravaEnv();
     const state = signStravaState({
       accountKey: access.accountKey,
@@ -405,6 +408,7 @@ async function accountStravaCallback(req, res) {
     const env = requireStravaEnv();
     const state = verifyStravaState(firstQueryValue(req.query && req.query.state));
     const accountKey = normalizeSetupAccountKey(state.accountKey) || "default";
+    requireBetaFeatureAccount(accountKey, "connect Strava");
     returnPath = cleanSetupText(state.returnPath) || `/dashboard.html?account=${encodeURIComponent(accountKey)}&admin=1&strava=connected#strava-test`;
     const oauthError = cleanSetupText(firstQueryValue(req.query && req.query.error));
     if (oauthError) throw httpError(400, `Strava returned ${oauthError}.`);
@@ -453,6 +457,7 @@ async function accountStravaActivities(req, res) {
 
   try {
     const access = requireOwnerAdminSession(req, "load Strava activities");
+    requireBetaFeatureAccount(access.accountKey, "load Strava activities");
     const limit = Math.max(1, Math.min(Number(firstQueryValue(req.query && req.query.limit)) || 10, 30));
     const connection = await activeStravaConnection(access.accountKey, access.record);
     const url = new URL("https://www.strava.com/api/v3/athlete/activities");
@@ -490,6 +495,21 @@ function requireOwnerAdminSession(req, actionLabel) {
     throw httpError(403, `Owner/admin access is required to ${actionLabel}.`);
   }
   return { accountKey, session, record };
+}
+
+function betaFeatureAccountKeys() {
+  const configured = cleanSetupText(process.env.SMARTCOACH_BETA_ACCOUNT_KEYS);
+  const raw = configured || "tca-trackandcc";
+  return raw.split(/[\s,]+/).map(normalizeSetupAccountKey).filter(Boolean);
+}
+
+function betaFeatureAccountAllowed(accountKey) {
+  return betaFeatureAccountKeys().includes(normalizeSetupAccountKey(accountKey) || "default");
+}
+
+function requireBetaFeatureAccount(accountKey, actionLabel) {
+  if (betaFeatureAccountAllowed(accountKey)) return;
+  throw httpError(404, `Beta access is required to ${actionLabel}.`);
 }
 
 function stravaEnv() {

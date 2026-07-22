@@ -1508,6 +1508,7 @@ function checkDashboardApiUsageAudit() {
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     'id="apiUsageBtn"',
+    'data-beta-admin-only="1"',
     'id="apiUsageModal"',
     'id="apiUsageSummary"',
     'id="apiUsageRoutes"',
@@ -1516,6 +1517,8 @@ function checkDashboardApiUsageAudit() {
     "function openApiUsageModal()",
     "function loadApiUsage()",
     "function renderApiUsage(data)",
+    "function betaAdminToolsVisible()",
+    "var SMARTCOACH_BETA_ACCOUNT_KEYS=['tca-trackandcc'];",
     "fetch('/api/smart-trak/api-usage?account='",
     "API Usage is available from SMARTCoach Admin.",
     "location.hash==='#api-usage'",
@@ -1532,6 +1535,8 @@ function checkDashboardApiUsageAudit() {
     "async function accountApiUsage(req, res)",
     "Active coach access is required to view API usage.",
     "Owner/admin access is required to view API usage.",
+    "function requireBetaFeatureAccount(accountKey, actionLabel)",
+    'throw httpError(404, `Beta access is required to ${actionLabel}.`);',
     "staffAccessAdminAllowed(session",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`SMART Trak API usage route missing ${text}`);
@@ -1586,6 +1591,7 @@ function checkStravaAdminTestFlow() {
     "function stravaActivitySessionKeys(activity)",
     "'strava-'+id",
     "training-admin-row admin-only",
+    'data-beta-admin-only="1"',
     'type="button">Strava</button>',
     "function stravaImportedActivityForSelectedAthlete(activity)",
     "function stravaImportedActivityForAthlete(activity,athlete)",
@@ -1631,6 +1637,9 @@ function checkStravaAdminTestFlow() {
     "return accountStravaCallback(req, res);",
     "return accountStravaActivities(req, res);",
     "function requireOwnerAdminSession(req, actionLabel)",
+    "function betaFeatureAccountKeys()",
+    'const raw = configured || "tca-trackandcc";',
+    "requireBetaFeatureAccount(access.accountKey, \"connect Strava\");",
     "Owner/admin access is required to",
     "STRAVA_CLIENT_ID",
     "STRAVA_CLIENT_SECRET",
