@@ -46,6 +46,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .dashboard-tools-row{display:flex;align-items:center;justify-content:flex-start;margin:-8px 0 6px}
 .dashboard-prefs-link{background:transparent;color:#173891;border:0;font-size:13px;font-weight:800;padding:0;min-height:0}
 .dashboard-prefs-link:hover{text-decoration:underline}
+.training-admin-row{display:flex;justify-content:flex-end;margin:8px 0}
+.training-admin-row button{height:32px;min-height:32px;font-size:13px;padding:6px 10px}
 .stats{display:grid;grid-template-columns:minmax(230px,.55fr) minmax(0,1.45fr);gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
 .statline{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:28px}
@@ -330,7 +332,6 @@ tr:last-child td{border-bottom:0}
         <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
         <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
         <button id="apiUsageBtn" class="secondary admin-only" hidden type="button">API Usage</button>
-        <button id="stravaTestBtn" class="secondary admin-only" hidden type="button">Strava Test</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
@@ -500,6 +501,9 @@ tr:last-child td{border-bottom:0}
       <button class="subtab active" data-training-subtab="volume" type="button">Volume by Athlete <span id="volumeSubtabCount" class="pill count">--</span></button>
       <button class="subtab" data-training-subtab="workouts" type="button">Completed Workouts <span id="workoutsSubtabCount" class="pill count">--</span></button>
     </nav>
+    <div class="training-admin-row admin-only" hidden>
+      <button id="stravaTestBtn" class="secondary" type="button">Strava</button>
+    </div>
     <section class="trainsubpanel" data-training-subpanel="volume">
       <section id="volumeSummary" class="volume-summary" aria-label="Volume summary"></section>
       <section class="tablewrap recentwrap">
@@ -3696,10 +3700,13 @@ function renderStravaActivities(activities){
     els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No recent Strava activities returned.</div>';
     return;
   }
-  var athleteOptions=stravaAthleteOptions(stravaSelectedAthleteKey);
+  var selectedAthlete=stravaSelectedAthleteForKey(stravaSelectedAthleteKey)||firstStravaAthlete();
+  var selectedKey=stravaAthleteKey(selectedAthlete);
+  stravaSelectedAthleteKey=selectedKey;
+  var athleteOptions=stravaAthleteOptions(selectedKey);
   var athletePicker='<div class="detailitem"><label for="stravaAthleteSelect"><b>Import To Athlete</b></label><select id="stravaAthleteSelect">'+athleteOptions+'</select><span>Choose the SMART Trak athlete before importing a Strava activity.</span></div>';
   els.stravaActivitiesList.innerHTML=activities.map(function(item){
-    var imported=stravaImportedActivityForSelectedAthlete(item);
+    var imported=stravaImportedActivityForAthlete(item,selectedAthlete);
     var importNote=imported?'<span class="muted">Already imported for selected athlete.</span>':'';
     var disabled=imported?' disabled':'';
     var buttonText=imported?'Already Imported':'Import Completed Workout';
@@ -3727,31 +3734,63 @@ function stravaAthleteOptions(selectedKey){
   });
   if(!rows.length)return '<option value="">Load the dashboard roster first</option>';
   return rows.map(function(row){
-    var key=row.contactId||row.smartcoachAthleteId||row.runnerId||row.name;
+    var key=stravaAthleteKey(row);
     var selected=String(key||'')===String(selectedKey||'')?' selected':'';
     return '<option value="'+esc(key)+'"'+selected+'>'+esc(row.name||'Athlete')+'</option>';
   }).join('');
 }
 
-function selectedStravaAthlete(){
-  var select=document.getElementById('stravaAthleteSelect');
-  var key=select?select.value:'';
+function stravaAthleteRows(){
+  return (dashboardRows||[]).filter(function(row){return row&&row.smartcoachActive!==false&&row.name;}).slice().sort(function(a,b){
+    return String(a.name||'').localeCompare(String(b.name||''));
+  });
+}
+
+function firstStravaAthlete(){
+  return stravaAthleteRows()[0]||null;
+}
+
+function stravaAthleteKey(row){
+  return row?(row.contactId||row.smartcoachAthleteId||row.runnerId||row.name||''):'';
+}
+
+function stravaSelectedAthleteForKey(key){
+  key=String(key||'');
   if(!key)return null;
   return (dashboardRows||[]).find(function(row){
     return String(row.contactId||'')===key||String(row.smartcoachAthleteId||'')===key||String(row.runnerId||'')===key||String(row.name||'')===key;
   })||null;
 }
 
+function selectedStravaAthlete(){
+  var select=document.getElementById('stravaAthleteSelect');
+  var key=select?select.value:'';
+  return stravaSelectedAthleteForKey(key);
+}
+
 function stravaImportedActivityForSelectedAthlete(activity){
-  var athlete=selectedStravaAthlete();
+  return stravaImportedActivityForAthlete(activity,selectedStravaAthlete());
+}
+
+function stravaImportedActivityForAthlete(activity,athlete){
   if(!athlete||!activity||!activity.id)return false;
-  var sessionId=normalizedLookupKey('strava_'+activity.id);
+  var sessionKeys=stravaActivitySessionKeys(activity);
   return (recentTrainingRows||[]).some(function(row){
     var rowSession=normalizedLookupKey(row&&row.sourceSessionId);
     var rowRecord=normalizedLookupKey(row&&row.sourceRecordId);
-    var isStravaActivity=rowSession===sessionId || rowRecord.indexOf(sessionId+'_')===0;
+    var isStravaActivity=sessionKeys.some(function(key){
+      return rowSession===key || rowRecord.indexOf(key+'_')===0 || rowRecord.indexOf(key+'-')===0;
+    });
     return isStravaActivity && stravaTrainingRowMatchesAthlete(row,athlete);
   });
+}
+
+function stravaActivitySessionKeys(activity){
+  var id=activity&&activity.id;
+  return [
+    'strava_'+id,
+    'strava-'+id
+  ].map(normalizedLookupKey).filter(Boolean);
 }
 
 function stravaTrainingRowMatchesAthlete(row,athlete){
