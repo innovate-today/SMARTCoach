@@ -461,10 +461,10 @@ function checkDashboardActivityRangeLayout() {
     'id="xcSimulatorLink"',
     "@media(max-width:1180px)",
     ".actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:1 1 auto;min-width:0}",
-    ".action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;width:100%;max-width:100%}",
+    ".action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;width:100%;max-width:100%}",
     ".actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:32px;min-height:32px;line-height:1;white-space:nowrap",
     '<div class="dashboard-tools-row"><button id="dashboardPrefsBtn" class="dashboard-prefs-link" type="button" aria-haspopup="dialog">Customize Dashboard</button></div>',
-    ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}",
+    ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:wrap}",
     ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
   ];
   required.forEach((text) => {
@@ -1503,12 +1503,11 @@ function checkDashboardStaffAccessHandoff() {
 
 function checkDashboardApiUsageAudit() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const onboarding = fs.readFileSync("onboarding.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
-    'id="apiUsageBtn"',
-    'data-beta-admin-only="1"',
     'id="apiUsageModal"',
     'id="apiUsageSummary"',
     'id="apiUsageRoutes"',
@@ -1526,6 +1525,16 @@ function checkDashboardApiUsageAudit() {
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Dashboard API usage view missing ${text}`);
   });
+  [
+    "Open API Usage",
+    "function openAdminApiUsage()",
+    "window.open('/dashboard.html?account='+encodeURIComponent(account)+'&admin=1#api-usage'",
+  ].forEach((text) => {
+    if (!onboarding.includes(text)) throw new Error(`SMARTCoach Admin API usage entry missing ${text}`);
+  });
+  if (dashboard.includes('id="apiUsageBtn"')) {
+    throw new Error("API Usage button should not appear on school account dashboards");
+  }
   [
     "recordApiUsageAudit",
     "loadApiUsageAudit",
@@ -1563,12 +1572,12 @@ function checkDashboardApiUsageAudit() {
 
 function checkStravaAdminTestFlow() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const syncApi = fs.readFileSync("api/ghl/sync-session.js", "utf8");
   const vercel = fs.readFileSync("vercel.json", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
-    'id="stravaTestBtn"',
     'id="stravaTestModal"',
     'id="stravaConnectBtn"',
     'id="stravaLoadActivitiesBtn"',
@@ -1590,9 +1599,6 @@ function checkStravaAdminTestFlow() {
     "function stravaSelectedAthleteForKey(key)",
     "function stravaActivitySessionKeys(activity)",
     "'strava-'+id",
-    "training-admin-row admin-only",
-    'data-beta-admin-only="1"',
-    'type="button">Strava</button>',
     "function stravaImportedActivityForSelectedAthlete(activity)",
     "function stravaImportedActivityForAthlete(activity,athlete)",
     "function stravaTrainingRowMatchesAthlete(row,athlete)",
@@ -1619,6 +1625,22 @@ function checkStravaAdminTestFlow() {
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Dashboard Strava admin test missing ${text}`);
   });
+  [
+    'id="stravaTrainingLink"',
+    'data-beta-admin-only="1"',
+    '>Strava</a>',
+    "function adminToolsVisible()",
+    "function betaAdminToolsVisible()",
+    "function stravaAdminUrl()",
+    "var betaKeys=['tca-trackandcc'];",
+    "url.hash='strava-test';",
+    "if(els.stravaTrainingLink)els.stravaTrainingLink.href=stravaAdminUrl();",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Training Calendar Strava entry missing ${text}`);
+  });
+  if (dashboard.includes('id="stravaTestBtn"') || dashboard.includes("training-admin-row admin-only")) {
+    throw new Error("Strava button should not appear on the dashboard training panel");
+  }
   const stravaCatchRender = dashboard.indexOf("renderStravaStatus({configured:false,connected:false,connection:null});");
   const stravaCatchError = dashboard.indexOf("els.stravaTestStatus.textContent=error.message||'Strava status could not be loaded.';");
   if (stravaCatchRender < 0 || stravaCatchError < 0 || stravaCatchRender > stravaCatchError) {

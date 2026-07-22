@@ -30,7 +30,7 @@ h1{font-size:24px;line-height:1.15;margin:0}
 .sub{font-size:14px;color:var(--muted);margin-top:4px}
 .updated{display:inline-flex;align-items:center;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#334155;font-size:13px;font-weight:700;padding:7px 10px}
 .actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:1 1 auto;min-width:0}
-.action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;width:100%;max-width:100%}
+.action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;width:100%;max-width:100%}
 button,.linkbtn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:8px 11px;cursor:pointer;text-decoration:none}
 .actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:32px;min-height:32px;line-height:1;white-space:nowrap;text-align:center;padding:6px 8px;font-size:13px;flex:0 0 auto}
 button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}
@@ -46,8 +46,6 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .dashboard-tools-row{display:flex;align-items:center;justify-content:flex-start;margin:-8px 0 6px}
 .dashboard-prefs-link{background:transparent;color:#173891;border:0;font-size:13px;font-weight:800;padding:0;min-height:0}
 .dashboard-prefs-link:hover{text-decoration:underline}
-.training-admin-row{display:flex;justify-content:flex-end;margin:8px 0}
-.training-admin-row button{height:32px;min-height:32px;font-size:13px;padding:6px 10px}
 .stats{display:grid;grid-template-columns:minmax(230px,.55fr) minmax(0,1.45fr);gap:12px;margin-bottom:14px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
 .statline{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:28px}
@@ -256,7 +254,7 @@ tr:last-child td{border-bottom:0}
   .top{gap:10px}
   .brand{min-width:0;flex:0 1 auto}
   .actions{flex:1 1 auto;min-width:0;align-items:stretch}
-  .action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
+  .action-row,.modal-action-row{justify-content:flex-start;flex-wrap:wrap}
   .actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}
 }
 @media(max-width:760px){
@@ -330,8 +328,6 @@ tr:last-child td{border-bottom:0}
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="shareMilesBoardBtn" class="modal-action" type="button">Miles Trak</button>
         <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
-        <button id="accountBtn" class="secondary admin-only" hidden type="button">Account</button>
-        <button id="apiUsageBtn" class="secondary admin-only" data-beta-admin-only="1" hidden type="button">API Usage</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
@@ -501,9 +497,6 @@ tr:last-child td{border-bottom:0}
       <button class="subtab active" data-training-subtab="volume" type="button">Volume by Athlete <span id="volumeSubtabCount" class="pill count">--</span></button>
       <button class="subtab" data-training-subtab="workouts" type="button">Completed Workouts <span id="workoutsSubtabCount" class="pill count">--</span></button>
     </nav>
-    <div class="training-admin-row admin-only" data-beta-admin-only="1" hidden>
-      <button id="stravaTestBtn" class="secondary" type="button">Strava</button>
-    </div>
     <section class="trainsubpanel" data-training-subpanel="volume">
       <section id="volumeSummary" class="volume-summary" aria-label="Volume summary"></section>
       <section class="tablewrap recentwrap">
@@ -3163,7 +3156,7 @@ if(els.codeRecoverySend)els.codeRecoverySend.addEventListener('click',sendTempor
 if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff=collectStaffRows(true);coachStaff.push({id:'',name:'',active:true});renderStaffList();});
 if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
 if(els.staffList)els.staffList.addEventListener('click',handleStaffListClick);
-els.accountBtn.addEventListener('click',openAccountSettings);
+if(els.accountBtn)els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
 if(els.apiUsageBtn)els.apiUsageBtn.addEventListener('click',openApiUsageModal);
 if(els.apiUsageClose)els.apiUsageClose.addEventListener('click',closeApiUsageModal);

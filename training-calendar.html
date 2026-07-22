@@ -266,6 +266,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
         <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
         <button id="trainingCustomBtn" class="secondary" type="button">Training Customization</button>
+        <a id="stravaTrainingLink" class="linkbtn secondary" href="/dashboard.html#strava-test" data-beta-admin-only="1" hidden>Strava</a>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
       </div>
     </div>
@@ -661,9 +662,10 @@ var els={
   fieldPracticeLink:document.getElementById('fieldPracticeLink'),
   keepTrakLink:document.getElementById('keepTrakLink'),
   weatherLink:document.getElementById('weatherLink'),
-	  planImportLink:document.getElementById('planImportLink'),
+  planImportLink:document.getElementById('planImportLink'),
 	  planSetupLink:document.getElementById('planSetupLink'),
 	  planBuilderLink:document.getElementById('planBuilderLink'),
+  stravaTrainingLink:document.getElementById('stravaTrainingLink'),
   trainingCustomBtn:document.getElementById('trainingCustomBtn'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
   approveDraftsBtn:document.getElementById('approveDraftsBtn'),
@@ -861,6 +863,30 @@ function pageUrl(path){
   if(key&&key!=='default')url.searchParams.set('account',key);
   if(embeddedMode())url.searchParams.set('embed','1');
   return url.pathname+url.search;
+}
+function adminToolsVisible(){
+  try{
+    var params=new URLSearchParams(window.location.search||'');
+    if(params.get('admin')==='1'){localStorage.setItem('sc_admin_tools','1');return true;}
+    if(params.get('admin')==='0'){localStorage.removeItem('sc_admin_tools');return false;}
+    return localStorage.getItem('sc_admin_tools')==='1';
+  }catch(e){return false;}
+}
+function betaAdminToolsVisible(){
+  var betaKeys=['tca-trackandcc'];
+  return betaKeys.indexOf(accountKey())!==-1;
+}
+function applyAdminTools(){
+  var showBeta=adminToolsVisible()&&betaAdminToolsVisible();
+  document.querySelectorAll('[data-beta-admin-only]').forEach(function(el){el.hidden=!showBeta;});
+}
+function stravaAdminUrl(){
+  var url=new URL('/dashboard.html',window.location.origin);
+  var key=accountKey();
+  if(key&&key!=='default')url.searchParams.set('account',key);
+  url.searchParams.set('admin','1');
+  url.hash='strava-test';
+  return url.pathname+url.search+url.hash;
 }
 function accessStorageKey(){return 'sc_access_'+accountKey();}
 function sessionStorageKey(){return 'sc_session_'+accountKey();}
@@ -3895,6 +3921,8 @@ function init(){
   els.planImportLink.href=pageUrl('/plan-import.html');
   els.planSetupLink.href=pageUrl('/plan-setup.html');
   els.planBuilderLink.href=pageUrl('/plan-builder.html');
+  if(els.stravaTrainingLink)els.stravaTrainingLink.href=stravaAdminUrl();
+  applyAdminTools();
   els.refreshBtn.addEventListener('click',loadCalendar);
   els.trainingCustomBtn.addEventListener('click',openTrainingCustomization);
   els.trainingCustomClose.addEventListener('click',closeTrainingCustomization);
