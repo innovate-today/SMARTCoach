@@ -343,6 +343,7 @@ async function accountStravaStatus(req, res) {
     res.status(200).json({
       success: true,
       configured: stravaEnvConfigured(),
+      envStatus: stravaEnvStatus(),
       connected: !!connection.connected,
       connection,
     });
@@ -498,6 +499,17 @@ function stravaEnv() {
 function stravaEnvConfigured() {
   const env = stravaEnv();
   return !!(env.clientId && env.clientSecret && env.redirectUri);
+}
+
+function stravaEnvStatus() {
+  const env = stravaEnv();
+  return {
+    clientId: !!env.clientId,
+    clientSecret: !!env.clientSecret,
+    redirectUri: !!env.redirectUri,
+    vercelEnv: cleanSetupText(process.env.VERCEL_ENV),
+    commitSha: cleanSetupText(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12),
+  };
 }
 
 function requireStravaEnv() {

@@ -3581,12 +3581,13 @@ function renderStravaStatus(data){
   data=data||{};
   var connection=data.connection||{};
   var athlete=connection.athlete||{};
+  var envStatus=data.envStatus||{};
   var athleteName=[athlete.firstname,athlete.lastname].filter(Boolean).join(' ')||athlete.username||athlete.id||'Not connected';
   els.stravaTestSummary.innerHTML=[
-    detailCard('Environment',data.configured?'Configured':'Missing','STRAVA_CLIENT_ID / SECRET / REDIRECT_URI'),
+    detailCard('Environment',data.configured?'Configured':'Missing',stravaEnvStatusText(envStatus)),
     detailCard('Connection',data.connected?'Connected':'Not connected',athleteName),
     detailCard('Scope',connection.scope||'--','Expected: read,activity:read'),
-    detailCard('Token Expires',connection.expiresAtIso?formatDateTime(connection.expiresAtIso):'--','Access token only; refresh token hidden')
+    detailCard('Runtime',stravaRuntimeText(envStatus),'Serverless env check')
   ].join('');
   els.stravaConnectBtn.disabled=!data.configured;
   els.stravaLoadActivitiesBtn.disabled=!data.connected;
@@ -3597,12 +3598,35 @@ function renderStravaStatus(data){
     els.stravaTestStatus.textContent='Strava env vars are ready. Connect Strava to test activity access.';
     els.stravaTestStatus.style.color='#64748b';
   }else{
-    els.stravaTestStatus.textContent='Strava env vars are missing on the server.';
+    els.stravaTestStatus.textContent='Strava env vars are missing on the server: '+stravaMissingEnvNames(envStatus).join(', ');
     els.stravaTestStatus.style.color='#b00000';
   }
   if(els.stravaActivitiesList&&!els.stravaActivitiesList.innerHTML){
     els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No Strava activities loaded yet.</div>';
   }
+}
+
+function stravaEnvStatusText(status){
+  if(!status||typeof status!=='object')return 'Waiting for server status';
+  return [
+    'ID '+(status.clientId?'present':'missing'),
+    'Secret '+(status.clientSecret?'present':'missing'),
+    'Redirect '+(status.redirectUri?'present':'missing')
+  ].join(' · ');
+}
+
+function stravaMissingEnvNames(status){
+  var missing=[];
+  if(!status||typeof status!=='object')return ['STRAVA_CLIENT_ID','STRAVA_CLIENT_SECRET','STRAVA_REDIRECT_URI'];
+  if(!status.clientId)missing.push('STRAVA_CLIENT_ID');
+  if(!status.clientSecret)missing.push('STRAVA_CLIENT_SECRET');
+  if(!status.redirectUri)missing.push('STRAVA_REDIRECT_URI');
+  return missing.length?missing:['none'];
+}
+
+function stravaRuntimeText(status){
+  if(!status||typeof status!=='object')return '--';
+  return [status.vercelEnv||'',status.commitSha||''].filter(Boolean).join(' · ')||'--';
 }
 
 function showReturnedStravaMessage(){
