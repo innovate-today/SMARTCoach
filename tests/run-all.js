@@ -1582,6 +1582,11 @@ function checkStravaAdminTestFlow() {
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Dashboard Strava admin test missing ${text}`);
   });
+  const stravaCatchRender = dashboard.indexOf("renderStravaStatus({configured:false,connected:false,connection:null});");
+  const stravaCatchError = dashboard.indexOf("els.stravaTestStatus.textContent=error.message||'Strava status could not be loaded.';");
+  if (stravaCatchRender < 0 || stravaCatchError < 0 || stravaCatchRender > stravaCatchError) {
+    throw new Error("Dashboard Strava status errors should remain visible after fallback render");
+  }
   [
     'route === "strava-status"',
     'route === "strava-start"',

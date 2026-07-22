@@ -3571,9 +3571,9 @@ function loadStravaStatus(){
     renderStravaStatus(result.data||{});
     showReturnedStravaMessage();
   }).catch(function(error){
+    renderStravaStatus({configured:false,connected:false,connection:null});
     els.stravaTestStatus.textContent=error.message||'Strava status could not be loaded.';
     els.stravaTestStatus.style.color='#b00000';
-    renderStravaStatus({configured:false,connected:false,connection:null});
   });
 }
 
