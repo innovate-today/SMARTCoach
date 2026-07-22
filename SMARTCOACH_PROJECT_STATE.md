@@ -1478,6 +1478,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 542. Dashboard owner/admin clutter was reduced for school account views. The visible **Account** and **API Usage** buttons were removed from the Dashboard action row, and the beta **Strava** entry point moved to the Training Calendar setup row for the `tca-trackandcc` beta account while still opening the existing Strava import flow. API Usage remains available from SMARTCoach Admin via **Open API Usage**. This is owner/admin-only, so the coach how-to guide was not changed.
 543. Dashboard and Training Calendar header layout was corrected after the beta admin cleanup. Dashboard action rows are again held to the intended two-row layout instead of wrapping, while Training Calendar header buttons were reduced slightly and its top action/setup rows are kept on one line each so buttons such as **Manage Meets** and **Strava** fit without creating extra header rows.
 544. SMART Trak Records page header copy was simplified from "Coach-managed school record board" to "School record board" while keeping the instruction to update records with Records Tools or bulk import.
+545. The owner/admin Strava modal title was shortened from **Strava Test** to **Strava**. The current beta import flow still lives on Dashboard internally because it depends on Dashboard roster and completed-workout reload data for athlete selection and duplicate detection.
 
 ## Known Good Test Flow
 

@@ -615,7 +615,7 @@ tr:last-child td{border-bottom:0}
 <div id="stravaTestModal" class="modal" hidden>
   <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="stravaTestTitle">
     <div class="modalhead">
-      <h2 id="stravaTestTitle">Strava Test</h2>
+      <h2 id="stravaTestTitle">Strava</h2>
       <button id="stravaTestClose" class="secondary" type="button">Close</button>
     </div>
     <div class="modalbody">
@@ -3554,7 +3554,7 @@ function formatApiUsageMs(value){
 
 function openStravaTestModal(){
   if(accountStatus&&accountStatus.staffAdminAllowed===false){
-    els.status.textContent='Strava Test is available from SMARTCoach Admin.';
+    els.status.textContent='Strava is available from SMARTCoach Admin.';
     return;
   }
   els.stravaTestModal.hidden=false;
