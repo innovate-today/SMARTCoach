@@ -69,6 +69,8 @@ When correcting **Completed Volume**, enter the amount and choose the unit: mile
 
 Older completed-workout rows that were saved with only a number are treated as miles on the Dashboard and will open with **Miles** selected when corrected.
 
+Partial-mile entries such as `.19 mi` or `.78 mi` count as less than one mile, not 19 or 78 miles.
+
 When correcting a saved workout with reps or rest times, use **Reps / Rest Times** in the correction window. The Workout Type dropdown includes the same quality efforts coaches use when planning workouts, including Interval, Repetition, Hills, and Fast Reps. If the workout type was saved wrong, also check **Planned Target** and **Planned Effort** before saving so Target Review uses the corrected range. Enter one split per line, such as `Rep 1: 03:31.9`, `Rest 1: 03:41.3`, and `Rep 2: 06:33.0`, then click **Save Correction**.
 
 Imported Strava rep/rest rows show as clean rep and rest times in the correction window.

@@ -584,22 +584,32 @@ function checkDashboardTrainingPaces() {
 function checkDashboardCompletedVolumeParsing() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
-  const completedTotalPattern = "(?:completed|complete|done|total)\\b";
+  const completedTotalPattern = "(?:completed|complete|done|total)\\\\b";
+  const leadingDecimalNumberPattern = "(?:\\\\d+(?:\\\\.\\\\d+)?|\\\\.\\\\d+)";
   if (!api.includes(completedTotalPattern)) {
     throw new Error("dashboard API completed-volume parser should count unitless completed totals");
   }
   if (!html.includes(completedTotalPattern)) {
     throw new Error("dashboard fallback completed-volume parser should count unitless completed totals");
   }
+  if (!api.includes(`const volumeNumberPattern = "${leadingDecimalNumberPattern}";`)) {
+    throw new Error("dashboard API completed-volume parser should support leading decimal mileage");
+  }
+  if (!html.includes(`var volumeNumberPattern='${leadingDecimalNumberPattern}';`)) {
+    throw new Error("dashboard fallback completed-volume parser should support leading decimal mileage");
+  }
+  if (!api.includes("(?:^|[^\\\\d.:])(") || !html.includes("(?:^|[^\\\\d.:])(")) {
+    throw new Error("dashboard completed-volume unit parser should not match inside decimals or times");
+  }
   [
     "function completedVolumeDisplayLabel(value,miles)",
-    "if(/^\\s*\\d+(?:\\.\\d+)?\\s*(?:completed|complete|done|total)?\\s*$/i.test(text)&&miles)return formatMiles(miles);",
+    "if(/^\\s*(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*(?:completed|complete|done|total)?\\s*$/i.test(text)&&miles)return formatMiles(miles);",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard fallback completed-volume unitless label missing ${text}`);
   });
   [
     "function completedVolumeDisplayLabel(value, miles)",
-    "if (/^\\s*\\d+(?:\\.\\d+)?\\s*(?:completed|complete|done|total)?\\s*$/i.test(text) && miles) return `${roundVolume(miles)} mi`;",
+    "if (/^\\s*(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*(?:completed|complete|done|total)?\\s*$/i.test(text) && miles) return `${roundVolume(miles)} mi`;",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`dashboard API completed-volume unitless label missing ${text}`);
   });

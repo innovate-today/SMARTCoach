@@ -1488,15 +1488,17 @@ function startOfNextMonth() {
 function parseVolumeToMiles(value) {
   const text = clean(value).toLowerCase();
   if (!text) return 0;
-  const repMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  const volumeNumberPattern = "(?:\\d+(?:\\.\\d+)?|\\.\\d+)";
+  const volumeUnitPattern = "(?:mi|mile|miles|km|k|meter|meters|m)";
+  const repMatch = text.match(new RegExp("(" + volumeNumberPattern + ")\\s*(?:x|×)\\s*(" + volumeNumberPattern + ")\\s*(" + volumeUnitPattern + ")\\b"));
   if (repMatch) return convertVolumeToMiles(Number(repMatch[1]) * Number(repMatch[2]), repMatch[3]);
-  const rangeMatch = text.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  const rangeMatch = text.match(new RegExp("(" + volumeNumberPattern + ")\\s*[-–]\\s*(" + volumeNumberPattern + ")\\s*(" + volumeUnitPattern + ")\\b"));
   if (rangeMatch) return convertVolumeToMiles((Number(rangeMatch[1]) + Number(rangeMatch[2])) / 2, rangeMatch[3]);
-  const match = text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  const match = text.match(new RegExp("(?:^|[^\\d.:])(" + volumeNumberPattern + ")\\s*(" + volumeUnitPattern + ")\\b"));
   if (match) return convertVolumeToMiles(Number(match[1]), match[2]);
-  const completedTotal = text.match(/^\s*(\d+(?:\.\d+)?)\s*(?:completed|complete|done|total)\b/);
+  const completedTotal = text.match(new RegExp("^\\s*(" + volumeNumberPattern + ")\\s*(?:completed|complete|done|total)\\b"));
   if (completedTotal) return Number(completedTotal[1]);
-  const numericOnly = text.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
+  const numericOnly = text.match(new RegExp("^\\s*(" + volumeNumberPattern + ")\\s*$"));
   return numericOnly ? Number(numericOnly[1]) : 0;
 }
 
@@ -1511,7 +1513,7 @@ function completedVolumeDisplayLabel(value, miles) {
   const text = clean(value);
   if (!text) return "";
   if (/\b(?:mi|mile|miles|km|k|meter|meters|m)\b/i.test(text)) return text;
-  if (/^\s*\d+(?:\.\d+)?\s*(?:completed|complete|done|total)?\s*$/i.test(text) && miles) return `${roundVolume(miles)} mi`;
+  if (/^\s*(?:\d+(?:\.\d+)?|\.\d+)\s*(?:completed|complete|done|total)?\s*$/i.test(text) && miles) return `${roundVolume(miles)} mi`;
   return text;
 }
 

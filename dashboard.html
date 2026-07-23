@@ -6004,11 +6004,13 @@ function volumeAmountNeedsUnit(amountValue,unitValue){
 function parseCorrectionVolumeValue(value){
   var text=String(value||'').trim();
   var parsed={amount:text.replace(/\s*(?:completed|complete|done|total)\s*$/i,'').trim(),unit:''};
-  var reps=text.match(/^\s*(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/i);
+  var volumeNumberPattern='(?:\\d+(?:\\.\\d+)?|\\.\\d+)';
+  var volumeUnitPattern='(?:mi|mile|miles|km|k|meter|meters|m)';
+  var reps=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\s*(?:x|×)\\s*('+volumeNumberPattern+')\\s*('+volumeUnitPattern+')\\b','i'));
   if(reps)return {amount:reps[1]+' x '+reps[2],unit:normalizeCorrectionVolumeUnit(reps[3])};
-  var match=text.match(/^\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/i);
+  var match=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\s*('+volumeUnitPattern+')\\b','i'));
   if(match)return {amount:match[1],unit:normalizeCorrectionVolumeUnit(match[2])};
-  var numeric=text.match(/^\s*(\d+(?:\.\d+)?)\b/);
+  var numeric=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\b'));
   if(numeric)return {amount:numeric[1],unit:''};
   return parsed;
 }
@@ -7885,13 +7887,15 @@ function formatDashboardVolume(miles){
 
 function parseCompletedMiles(value,fallback){
   var text=String(value||'').toLowerCase();
-  var reps=text.match(/(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  var volumeNumberPattern='(?:\\d+(?:\\.\\d+)?|\\.\\d+)';
+  var volumeUnitPattern='(?:mi|mile|miles|km|k|meter|meters|m)';
+  var reps=text.match(new RegExp('('+volumeNumberPattern+')\\s*(?:x|×)\\s*('+volumeNumberPattern+')\\s*('+volumeUnitPattern+')\\b'));
   if(reps)return volumeAmountToMiles(Number(reps[1])*Number(reps[2]),reps[3]);
-  var match=text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
+  var match=text.match(new RegExp('(?:^|[^\\d.:])('+volumeNumberPattern+')\\s*('+volumeUnitPattern+')\\b'));
   if(match)return volumeAmountToMiles(Number(match[1]),match[2]);
-  var completedTotal=text.match(/^\s*(\d+(?:\.\d+)?)\s*(?:completed|complete|done|total)\b/);
+  var completedTotal=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\s*(?:completed|complete|done|total)\\b'));
   if(completedTotal)return Number(completedTotal[1]);
-  var numericOnly=text.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
+  var numericOnly=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\s*$'));
   if(numericOnly)return Number(numericOnly[1]);
   return num(fallback);
 }
@@ -7921,7 +7925,7 @@ function completedVolumeDisplayLabel(value,miles){
   if(!text)return '';
   var unitPattern=/\b(?:mi|mile|miles|km|k|meter|meters|m)\b/i;
   if(unitPattern.test(text))return text;
-  if(/^\s*\d+(?:\.\d+)?\s*(?:completed|complete|done|total)?\s*$/i.test(text)&&miles)return formatMiles(miles);
+  if(/^\s*(?:\d+(?:\.\d+)?|\.\d+)\s*(?:completed|complete|done|total)?\s*$/i.test(text)&&miles)return formatMiles(miles);
   return text;
 }
 function completedRepVolumeFromSplits(row){
