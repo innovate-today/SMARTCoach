@@ -2383,12 +2383,16 @@ function stravaImportPayload(activity,athlete,detail){
   var importLaps=stravaImportLapsForActivity(matchDay,detail);
   var plannedLaps=stravaPlannedLapsFromDay(matchDay);
   var detailLines=stravaActivityDetailNoteLines(detail);
+  var repPaceNote=stravaRepPaceNoteBlock(matchDay,detail);
+  var repPaceStatus=stravaRepPaceNoteStatus(matchDay,detail,repPaceNote);
   var sourceNote=[
     'Imported from Strava',
     'Strava activity id: '+(activity.id||''),
     matchTitle?'Matched calendar workout: '+matchTitle:'',
     matchDay&&matchDay.groupName?'Matched group: '+matchDay.groupName:'',
     plannedLaps.length?'Imported rep/rest layout from matched SMART Trak workout.':'',
+    repPaceNote,
+    repPaceStatus,
     activity.name?'Strava activity: '+activity.name:'',
     activity.startDateLocal?'Strava start: '+activity.startDateLocal:'',
     activity.sportType||activity.type?'Strava type: '+(activity.sportType||activity.type):'',
@@ -2492,6 +2496,101 @@ function stravaLapsFromDetail(detail){
     var label='Strava Lap '+(lap.lapIndex||lap.index||index+1);
     return {kind:'strava',label:label,time:stravaLapDurationText(seconds),ms:Math.round(seconds*1000)};
   }).filter(Boolean);
+}
+function stravaRepPaceNoteBlock(matchDay,detail){
+  var planned=stravaPlannedLapsFromDay(matchDay);
+  if(!planned.length||!detail)return '';
+  var rows=stravaRepPaceRowsFromStreams(planned,detail.streams||{});
+  if(!rows.length)rows=stravaRepPaceRowsFromLaps(planned,detail.laps||[]);
+  if(!rows.length)return '';
+  return ['Rep pace details:'].concat(rows).join('\n');
+}
+function stravaRepPaceNoteStatus(matchDay,detail,repPaceNote){
+  var planned=stravaPlannedLapsFromDay(matchDay);
+  if(!planned.length)return '';
+  if(repPaceNote)return 'Strava rep pace details saved from Strava stream/lap data.';
+  if(detail&&(detail.streamCounts||detail.lapsCount))return 'Strava rep pace details not saved because Strava did not expose usable stream/lap pace data for the matched rep/rest layout.';
+  return '';
+}
+function stravaRepPaceRowsFromStreams(planned,streams){
+  var time=streams&&Array.isArray(streams.time)?streams.time:[];
+  var distance=streams&&Array.isArray(streams.distance)?streams.distance:[];
+  var length=Math.min(time.length,distance.length);
+  if(length<2)return [];
+  var rows=[];
+  var cursor=0;
+  var lastTime=num(time[length-1]);
+  planned.forEach(function(lap){
+    var plannedSeconds=Math.max(0,num(lap&&lap.ms)/1000);
+    if(!plannedSeconds)return;
+    var start=cursor;
+    var end=cursor+plannedSeconds;
+    cursor=end;
+    if(start>=lastTime)return;
+    var actualEnd=Math.min(end,lastTime);
+    if(actualEnd-start<Math.max(3,plannedSeconds*0.35))return;
+    var meters=stravaStreamDistanceAt(streams,actualEnd)-stravaStreamDistanceAt(streams,start);
+    var pace=stravaPaceFromDistanceTime(meters,actualEnd-start);
+    var line=pace?stravaRepPaceLine(lap,pace):'';
+    if(line)rows.push(line);
+  });
+  return rows;
+}
+function stravaStreamDistanceAt(streams,seconds){
+  var time=streams&&Array.isArray(streams.time)?streams.time:[];
+  var distance=streams&&Array.isArray(streams.distance)?streams.distance:[];
+  var length=Math.min(time.length,distance.length);
+  if(!length)return 0;
+  var target=num(seconds);
+  if(target<=num(time[0]))return num(distance[0]);
+  for(var i=1;i<length;i++){
+    var previousTime=num(time[i-1]);
+    var currentTime=num(time[i]);
+    if(currentTime>=target){
+      var previousDistance=num(distance[i-1]);
+      var currentDistance=num(distance[i]);
+      var span=currentTime-previousTime;
+      if(span<=0)return currentDistance;
+      return previousDistance+((target-previousTime)/span)*(currentDistance-previousDistance);
+    }
+  }
+  return num(distance[length-1]);
+}
+function stravaRepPaceRowsFromLaps(planned,laps){
+  if(!Array.isArray(laps)||!laps.length)return [];
+  var rows=[];
+  planned.forEach(function(plannedLap,index){
+    var lap=laps[index];
+    if(!lap)return;
+    var meters=num(lap.distanceMeters);
+    if(meters<=0||meters>1000)return;
+    var seconds=num(lap.movingTimeSeconds)||num(lap.elapsedTimeSeconds);
+    var plannedSeconds=num(plannedLap&&plannedLap.ms)/1000;
+    if(plannedSeconds&&seconds&&Math.abs(seconds-plannedSeconds)>Math.max(10,plannedSeconds*0.75))return;
+    var pace=lap.averagePaceSeconds?stravaPaceValueText(lap.averagePaceSeconds):stravaPaceFromDistanceTime(meters,seconds);
+    var line=pace?stravaRepPaceLine(plannedLap,pace):'';
+    if(line)rows.push(line);
+  });
+  return rows;
+}
+function stravaPaceFromDistanceTime(meters,seconds){
+  var miles=num(meters)/1609.344;
+  var paceSeconds=miles>0?num(seconds)/miles:0;
+  return stravaPaceValueText(paceSeconds);
+}
+function stravaPaceValueText(seconds){
+  var total=Math.max(0,Math.round(num(seconds)));
+  if(!total||!isFinite(total))return '';
+  var minutes=Math.floor(total/60);
+  var secs=total%60;
+  return minutes+':'+String(secs).padStart(2,'0');
+}
+function stravaRepPaceLine(lap,pace){
+  var match=String(lap&&lap.label||'').match(/\d+/);
+  var rep=match?Number(match[0]):0;
+  if(!rep)return '';
+  var kind=lap&&lap.kind==='rest'?'recovery':'work';
+  return 'Rep '+rep+' '+kind+' pace: '+pace+' /mi';
 }
 function stravaActivityDetailNoteLines(detail){
   if(!detail)return [];

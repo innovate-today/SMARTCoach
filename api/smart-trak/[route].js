@@ -765,6 +765,7 @@ function sanitizeStravaActivityDetail(activity, streams, streamsError) {
     splitsMetric: splitsMetric.slice(0, 12),
     splitsStandard: splitsStandard.slice(0, 12),
     streamCounts: stravaStreamCounts(streams),
+    streams: sanitizeStravaStreams(streams),
     streamsError: cleanSetupText(streamsError),
     rawKeys: Object.keys(source).sort().slice(0, 80),
   };
@@ -813,6 +814,20 @@ function stravaStreamCounts(streams) {
     velocitySmooth: stravaStreamLength(streams, "velocity_smooth"),
     latlng: stravaStreamLength(streams, "latlng"),
   };
+}
+
+function sanitizeStravaStreams(streams) {
+  return {
+    time: stravaStreamData(streams, "time").map((value) => Math.round(value)),
+    distance: stravaStreamData(streams, "distance").map((value) => Math.round(value * 10) / 10),
+    velocitySmooth: stravaStreamData(streams, "velocity_smooth").map((value) => Math.round(value * 1000) / 1000),
+  };
+}
+
+function stravaStreamData(streams, key) {
+  const stream = streams && streams[key] && typeof streams[key] === "object" ? streams[key] : null;
+  const data = stream && Array.isArray(stream.data) ? stream.data : [];
+  return data.slice(0, 5000).map((value) => Number(value)).filter((value) => Number.isFinite(value));
 }
 
 function stravaStreamLength(streams, key) {
