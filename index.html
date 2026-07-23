@@ -570,6 +570,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <button class="mbtn c" onclick="openEquipmentPicker()">Change Group</button>
       <button class="mbtn c" onclick="loadEquipmentTrak(true)">Refresh</button>
     </div>
+    <div class="srow"><span class="slbl">Athlete Order</span><select id="eq-order" class="sinp" onchange="setEquipmentOrderMode(this.value);renderEquipment()"><option value="name">Name A-Z</option><option value="gender">Girls, boys, name</option><option value="grade">Grade, name</option></select></div>
     <div class="eq-search"><input id="eq-search" type="search" placeholder="Search item, #, athlete" oninput="renderEquipmentLookup()"/></div>
     <div id="eq-results"></div>
     <div id="eq-summary" class="bulk-status"></div>
@@ -726,6 +727,17 @@ function setTrainingRaceOrderMode(value){
   value=['speed','gender','name'].indexOf(value)>=0?value:'speed';
   setAccountStorage('sc_training_race_order',value);
   try{localStorage.setItem('sc_training_race_order',value);}catch(e){}
+  return value;
+}
+function equipmentOrderMode(){
+  var value='';
+  try{value=getAccountStorage('sc_equipment_order')||localStorage.getItem('sc_equipment_order')||'';}catch(e){}
+  return ['name','gender','grade'].indexOf(value)>=0?value:'name';
+}
+function setEquipmentOrderMode(value){
+  value=['name','gender','grade'].indexOf(value)>=0?value:'name';
+  setAccountStorage('sc_equipment_order',value);
+  try{localStorage.setItem('sc_equipment_order',value);}catch(e){}
   return value;
 }
 function openAccountAccessPage(){
@@ -4900,7 +4912,10 @@ function openEquipmentPicker(){
 function openEquipment(){
   if(!CL||CL.type==='meet')return;
   sm('m-equipment');
+  var order=document.getElementById('eq-order');
+  if(order)order.value=equipmentOrderMode();
   renderEquipment();
+  if(isProPlan()&&!AR_READY)loadAthletes().then(renderEquipment);
   loadEquipmentTrak(false);
 }
 function closeEquipment(){
@@ -5006,23 +5021,66 @@ function equipmentSizeOptions(value){
     return '<option value="'+ex(size)+'"'+(value===size?' selected':'')+'>'+(size?ex(size):'Size')+'</option>';
   }).join('');
 }
+function equipmentRunnerName(row){
+  return String(row&&row.runner&&row.runner.name||row&&row.athlete&&row.athlete.name||'').trim().toLowerCase();
+}
+function equipmentRunnerGenderRank(row){
+  var value=String(row&&row.runner&&row.runner.gender||row&&row.runner&&row.runner.sex||row&&row.athlete&&row.athlete.gender||row&&row.athlete&&row.athlete.sex||'').trim().toLowerCase();
+  if(/^(girl|girls|female|f|women)$/i.test(value))return 0;
+  if(/^(boy|boys|male|m|men)$/i.test(value))return 1;
+  return 2;
+}
+function equipmentRunnerGradeRank(row){
+  var value=String(row&&row.runner&&row.runner.grade||row&&row.runner&&row.runner.classYear||row&&row.athlete&&row.athlete.grade||row&&row.athlete&&row.athlete.classYear||'').trim().toLowerCase();
+  var match=value.match(/\d+/);
+  if(match)return Number(match[0]);
+  if(/senior|sr|12/.test(value))return 12;
+  if(/junior|jr|11/.test(value))return 11;
+  if(/sophomore|soph|10/.test(value))return 10;
+  if(/freshman|frosh|9/.test(value))return 9;
+  return 999999;
+}
+function equipmentRunnerMeta(row){
+  var athlete=row&&row.athlete||{};
+  var runner=row&&row.runner||{};
+  return [runner.gender||runner.sex||athlete.gender||athlete.sex,runner.grade||runner.classYear||athlete.grade||athlete.classYear].filter(Boolean).join(' · ');
+}
+function equipmentDisplayRunnerRows(){
+  if(!CL)return[];
+  var rows=(CL.runners||[]).map(function(runner,index){
+    return{runner:runner,index:index,athlete:activeAthleteForRunner(runner)||findAthleteByName(runner&&runner.name)||{}};
+  }).filter(function(row){
+    return !AR_READY||isActiveRosterRunner(row.runner);
+  });
+  var mode=equipmentOrderMode();
+  return rows.sort(function(a,b){
+    var name=equipmentRunnerName(a).localeCompare(equipmentRunnerName(b));
+    if(mode==='gender')return (equipmentRunnerGenderRank(a)-equipmentRunnerGenderRank(b))||name;
+    if(mode==='grade')return (equipmentRunnerGradeRank(a)-equipmentRunnerGradeRank(b))||name;
+    return name;
+  });
+}
 function renderEquipment(){
   var title=document.getElementById('eq-title');
   var list=document.getElementById('eq-list');
   var summary=document.getElementById('eq-summary');
+  var order=document.getElementById('eq-order');
+  if(order)order.value=equipmentOrderMode();
   if(title)title.textContent='Equipment Trak - '+(CL&&CL.name||'Group');
   if(!list)return;
   if(!CL){list.innerHTML='<div class="eq-empty">Choose a group first.</div>';return;}
-  var runners=CL.runners||[];
+  var rows=equipmentDisplayRunnerRows();
   var items=equipmentActiveItems();
-  if(!runners.length){list.innerHTML='<div class="eq-empty">Add athletes to this group first.</div>';return;}
+  if(!rows.length){list.innerHTML='<div class="eq-empty">No active athletes in this group.</div>';return;}
   if(!items.length){list.innerHTML='<div class="eq-empty">Set up Equipment Trak in SMART Trak first.</div>';return;}
-  list.innerHTML=runners.map(function(r,runnerIndex){
+  list.innerHTML=rows.map(function(row){
+    var r=row.runner,runnerIndex=row.index;
     var record=equipmentRecordForRunner(r);
-    return '<div class="eq-card"><div class="eq-head"><div><div class="att-name">'+ex(r.name)+'</div><div class="att-small">'+equipmentRunnerSummary(record,items)+'</div></div></div>'+
+    var meta=equipmentRunnerMeta(row);
+    return '<div class="eq-card"><div class="eq-head"><div><div class="att-name">'+ex(r.name)+'</div><div class="att-small">'+ex([meta,equipmentRunnerSummary(record,items)].filter(Boolean).join(' · '))+'</div></div></div>'+
       items.map(function(item,itemIndex){return equipmentItemHtml(runnerIndex,itemIndex,item,record.items&&record.items[equipmentItemId(item.id)]||{});}).join('')+'</div>';
   }).join('');
-  if(summary)summary.textContent=(EQUIP.loaded?'Ready':'Using default items until Equipment Trak loads')+' · '+runners.length+' athletes · '+items.length+' item'+(items.length===1?'':'s');
+  if(summary)summary.textContent=(EQUIP.loaded?'Ready':'Using default items until Equipment Trak loads')+' · '+rows.length+' active athlete'+(rows.length===1?'':'s')+' · '+items.length+' item'+(items.length===1?'':'s');
   renderEquipmentLookup();
 }
 function renderEquipmentLookup(){
@@ -5151,17 +5209,17 @@ function saveEquipmentRunner(runnerIndex,itemsOverride,silent){
 }
 function saveEquipmentSheet(){
   if(!CL)return;
-  var runners=CL.runners||[];
+  var rows=equipmentDisplayRunnerRows();
   var summary=document.getElementById('eq-summary');
   var btn=document.getElementById('eq-save-btn');
-  if(!runners.length){if(summary)summary.textContent='No athletes to save.';return;}
-  var sheetItems=runners.map(function(runner,index){return readEquipmentRunnerItems(index);});
+  if(!rows.length){if(summary)summary.textContent='No active athletes to save.';return;}
+  var sheetItems=rows.map(function(row){return readEquipmentRunnerItems(row.index);});
   var chain=Promise.resolve(),saved=0;
   if(btn){btn.disabled=true;btn.textContent='Saving...';}
-  runners.forEach(function(runner,index){
+  rows.forEach(function(row,index){
     chain=chain.then(function(){
-      if(summary)summary.textContent='Saving '+(index+1)+' of '+runners.length+'...';
-      return saveEquipmentRunner(index,sheetItems[index],true).then(function(){saved++;});
+      if(summary)summary.textContent='Saving '+(index+1)+' of '+rows.length+'...';
+      return saveEquipmentRunner(row.index,sheetItems[index],true).then(function(){saved++;});
     });
   });
   chain.then(function(){

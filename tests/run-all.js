@@ -3203,6 +3203,13 @@ function checkEquipmentInventoryModelSerial() {
     "inventory&&inventory.model",
     "inventory&&inventory.serialNumber",
     "Assigned #",
+    'id="eq-order"',
+    "function equipmentOrderMode()",
+    "function equipmentDisplayRunnerRows()",
+    "return !AR_READY||isActiveRosterRunner(row.runner);",
+    "Girls, boys, name",
+    "No active athletes in this group.",
+    "saveEquipmentRunner(row.index,sheetItems[index],true)",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });

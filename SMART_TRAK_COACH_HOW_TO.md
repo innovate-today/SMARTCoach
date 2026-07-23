@@ -413,9 +413,10 @@ How to use Equipment Trak from the SMARTCoach app:
 1. Open the SMARTCoach app and make sure the coach account is connected.
 2. On the Groups screen, tap **Equip**.
 3. Choose the training group you are issuing equipment to.
-4. For each athlete, mark each item **Issued**, **Returned**, **Lost / Damaged**, **Not Required**, or **Not Issued**.
-5. Enter sizes, numbers / IDs, or notes as needed.
-6. Tap **Save** on one athlete card or **Save Equipment** to save the whole visible group to SMART Trak.
+4. Use **Athlete Order** when you want the list by name, girls then boys, or grade/class year.
+5. For each active athlete, mark each item **Issued**, **Returned**, **Lost / Damaged**, **Not Required**, or **Not Issued**.
+6. Enter sizes, numbers / IDs, or notes as needed.
+7. Tap **Save** on one athlete card or **Save Equipment** to save the whole visible group to SMART Trak.
 
 Use the app workflow when you want to work from a phone or iPad on equipment issue day. Use the desktop **Issue Sheet** when you want the wider spreadsheet-style view.
 
