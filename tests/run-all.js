@@ -581,6 +581,19 @@ function checkDashboardTrainingPaces() {
   console.log("dashboard roster detail training paces ok");
 }
 
+function checkDashboardCompletedVolumeParsing() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  const completedTotalPattern = "(?:completed|complete|done|total)\\b";
+  if (!api.includes(completedTotalPattern)) {
+    throw new Error("dashboard API completed-volume parser should count unitless completed totals");
+  }
+  if (!html.includes(completedTotalPattern)) {
+    throw new Error("dashboard fallback completed-volume parser should count unitless completed totals");
+  }
+  console.log("dashboard completed volume parsing ok");
+}
+
 function checkMilesBoardFeature() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const board = fs.readFileSync("miles-board.html", "utf8");
@@ -4278,6 +4291,7 @@ checkAthleteCalendarQuestions();
 checkAthleteCalendarSubmittedStatusPill();
 checkAthleteCalendarSelfReportedWorkouts();
 checkDashboardPlainLapSplitsStayLaps();
+checkDashboardCompletedVolumeParsing();
 checkMeetHistorySportToolbarFilter();
 checkMeetHistoryMeetListChronological();
 checkMeetHistoryPerformanceCaches();

@@ -1494,6 +1494,8 @@ function parseVolumeToMiles(value) {
   if (rangeMatch) return convertVolumeToMiles((Number(rangeMatch[1]) + Number(rangeMatch[2])) / 2, rangeMatch[3]);
   const match = text.match(/(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/);
   if (match) return convertVolumeToMiles(Number(match[1]), match[2]);
+  const completedTotal = text.match(/^\s*(\d+(?:\.\d+)?)\s*(?:completed|complete|done|total)\b/);
+  if (completedTotal) return Number(completedTotal[1]);
   const numericOnly = text.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
   return numericOnly ? Number(numericOnly[1]) : 0;
 }

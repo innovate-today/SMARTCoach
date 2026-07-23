@@ -63,6 +63,8 @@ How to use it:
 7. Click **Show workouts** under an athlete to see completed workout details.
 8. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
+Weekly volume and **Volume by Athlete** count completed workout totals saved for the athlete, including completed totals that were saved without `mi` in the row.
+
 When correcting a saved workout with reps or rest times, use **Reps / Rest Times** in the correction window. The Workout Type dropdown includes the same quality efforts coaches use when planning workouts, including Interval, Repetition, Hills, and Fast Reps. If the workout type was saved wrong, also check **Planned Target** and **Planned Effort** before saving so Target Review uses the corrected range. Enter one split per line, such as `Rep 1: 03:31.9`, `Rest 1: 03:41.3`, and `Rep 2: 06:33.0`, then click **Save Correction**.
 
 Imported Strava rep/rest rows show as clean rep and rest times in the correction window.
