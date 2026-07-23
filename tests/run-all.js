@@ -2303,6 +2303,7 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     'id="correctionPlannedTarget"',
     'id="correctionPlannedEffort"',
     'id="correctionVolumeUnit"',
+    '<option value="">Select unit</option>',
     "setSelectValue(els.correctionWorkout,correctionRow.speedMetricSession?(correctionRow.workoutPrescription||correctionRow.plannedEffort||'Max Velocity'):(correctionRow.workoutPrescription||correctionRow.workoutType||'Easy/Recovery Run'));",
     "els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';",
     "setCorrectionVolumeFields(correctionRow.completedVolume||'');",
@@ -2312,6 +2313,9 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "completedVolume:completedVolume",
     "function correctionVolumeValue()",
     "function volumeValueWithUnit(amountValue,unitValue)",
+    "function volumeAmountNeedsUnit(amountValue,unitValue)",
+    "Choose miles, kilometers, or meters for Completed Volume.",
+    "event.target.closest('.headinfo,.fieldinfo')",
     "subLine(trainingWorkoutTypeSubline(row))",
     "function qualityStorageWorkoutType(value)",
     "function preciseQualityEffortForRow(row)",
@@ -2545,6 +2549,8 @@ function checkManualMileageQualitySession() {
     "setManualMileageStatus(manualMileageSavedLabel(payload,athletes), 'ok')",
     'id="manualMileageDistanceUnit"',
     "Enter the completed distance amount, then choose the unit",
+    "Choose miles, kilometers, or meters for Distance.",
+    "if(els.manualMileageDistanceUnit)els.manualMileageDistanceUnit.value='';",
     "manualMileageDistanceValue()).trim()",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Manual quality session UI missing ${text}`);
@@ -2567,6 +2573,7 @@ function checkManualMileageQualitySession() {
     "Use Log Miles for manual mileage entries or quality sessions",
     "warmup, reps, rests, splits, and cooldown",
     "For Easy Miles, enter the distance amount and choose the unit",
+    "SMART Trak will ask for the unit before saving.",
     "If you log more than one run for the same athlete on the same day",
     "Quality-session rep splits appear with the completed workout details.",
   ].forEach((text) => {

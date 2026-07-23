@@ -116,9 +116,7 @@ th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;lett
 .headinfo{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;border:1px solid #bfd0ef;border-radius:999px;color:#1d4ed8;background:#eef4ff;box-shadow:0 1px 3px rgba(15,23,42,.12);font-size:11px;font-weight:900;line-height:1;text-transform:none;letter-spacing:0;vertical-align:middle;cursor:help}
 .headinfo:hover,.headinfo:focus{background:#dbeafe;border-color:#8fb1ff;color:#102a70;outline:none;box-shadow:0 3px 10px rgba(29,78,216,.20)}
 .fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
-.fieldinfo::after{content:attr(data-tip);position:absolute;left:-8px;top:24px;width:260px;max-width:min(80vw,260px);padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:30;white-space:normal}
-.fieldinfo.info-left::after{left:auto;right:-8px}
-.fieldinfo:hover::after,.fieldinfo:focus::after{opacity:1}
+.fieldinfo::after{display:none}
 .smart-tooltip{position:fixed;z-index:2000;max-width:320px;padding:12px 14px;border:1px solid #bed0ec;border-radius:10px;background:#fff;color:#172033;box-shadow:0 16px 36px rgba(15,23,42,.22);font-size:13px;font-weight:750;line-height:1.4;text-transform:none;letter-spacing:0;pointer-events:none;opacity:0;transform:translateY(5px);transition:opacity .12s ease,transform .12s ease}
 .smart-tooltip.show{opacity:1;transform:translateY(0)}
 .smart-tooltip:before{content:"";position:absolute;top:-6px;left:18px;width:10px;height:10px;background:#fff;border-left:1px solid #bed0ec;border-top:1px solid #bed0ec;transform:rotate(45deg)}
@@ -915,6 +913,7 @@ tr:last-child td{border-bottom:0}
           <div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:8px">
             <input id="manualMileageDistance" type="text" inputmode="decimal" placeholder="Example: 8">
             <select id="manualMileageDistanceUnit" aria-label="Mileage distance unit">
+              <option value="">Select unit</option>
               <option value="mi">Miles</option>
               <option value="km">Kilometers</option>
               <option value="m">Meters</option>
@@ -1143,6 +1142,7 @@ tr:last-child td{border-bottom:0}
           <div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:8px">
             <input id="correctionVolume" type="text" inputmode="decimal" placeholder="Example: 4">
             <select id="correctionVolumeUnit" aria-label="Completed volume unit">
+              <option value="">Select unit</option>
               <option value="mi">Miles</option>
               <option value="km">Kilometers</option>
               <option value="m">Meters</option>
@@ -3308,20 +3308,24 @@ function initHeaderTooltips(){
     tooltip.classList.remove('show');
   }
 
+  function tooltipTarget(event){
+    return event.target.closest&&event.target.closest('.headinfo,.fieldinfo');
+  }
+
   document.addEventListener('mouseover',function(event){
-    var el=event.target.closest&&event.target.closest('.headinfo');
+    var el=tooltipTarget(event);
     if(el)showTooltip(el);
   });
   document.addEventListener('mouseout',function(event){
-    var el=event.target.closest&&event.target.closest('.headinfo');
+    var el=tooltipTarget(event);
     if(el)hideTooltip();
   });
   document.addEventListener('focusin',function(event){
-    var el=event.target.closest&&event.target.closest('.headinfo');
+    var el=tooltipTarget(event);
     if(el)showTooltip(el);
   });
   document.addEventListener('focusout',function(event){
-    var el=event.target.closest&&event.target.closest('.headinfo');
+    var el=tooltipTarget(event);
     if(el)hideTooltip();
   });
   window.addEventListener('scroll',hideTooltip,true);
@@ -5306,6 +5310,7 @@ function closeAthleteDetail(){
 
 function openManualMileage(){
   if(els.manualMileageDate&&!els.manualMileageDate.value)els.manualMileageDate.value=todayInputValue();
+  if(els.manualMileageDistanceUnit)els.manualMileageDistanceUnit.value='';
   renderManualMileageAthletes();
   renderManualMileageGroups();
   updateManualMileageScope();
@@ -5725,6 +5730,10 @@ function saveCorrection(){
     return;
   }
   if(correctionRow.speedMetricSession)return saveSpeedPracticeCorrection(reason);
+  if(volumeAmountNeedsUnit(els.correctionVolume&&els.correctionVolume.value,els.correctionVolumeUnit&&els.correctionVolumeUnit.value)){
+    setCorrectionStatus('Choose miles, kilometers, or meters for Completed Volume.','error');
+    return;
+  }
   var completedVolume=correctionVolumeValue();
   els.correctionSave.disabled=true;
   setCorrectionStatus('Saving correction...','');
@@ -5981,21 +5990,25 @@ function correctionVolumeValue(){
 function volumeValueWithUnit(amountValue,unitValue){
   var amount=String(amountValue||'').trim();
   if(!amount)return '';
-  var pastedUnit=amount.match(/\b(mi|mile|miles|km|k|meter|meters|m)\b/i);
   var parsed=parseCorrectionVolumeValue(amount);
-  var unit=pastedUnit?parsed.unit:(String(unitValue||'mi').trim()||'mi');
+  var unit=String(unitValue||'').trim();
+  if(!unit)return '';
   return parsed.amount+' '+unit;
+}
+
+function volumeAmountNeedsUnit(amountValue,unitValue){
+  return !!String(amountValue||'').trim()&&!String(unitValue||'').trim();
 }
 
 function parseCorrectionVolumeValue(value){
   var text=String(value||'').trim();
-  var parsed={amount:text.replace(/\s*(?:completed|complete|done|total)\s*$/i,'').trim(),unit:'mi'};
+  var parsed={amount:text.replace(/\s*(?:completed|complete|done|total)\s*$/i,'').trim(),unit:''};
   var reps=text.match(/^\s*(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/i);
   if(reps)return {amount:reps[1]+' x '+reps[2],unit:normalizeCorrectionVolumeUnit(reps[3])};
   var match=text.match(/^\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/i);
   if(match)return {amount:match[1],unit:normalizeCorrectionVolumeUnit(match[2])};
   var numeric=text.match(/^\s*(\d+(?:\.\d+)?)\b/);
-  if(numeric)return {amount:numeric[1],unit:'mi'};
+  if(numeric)return {amount:numeric[1],unit:''};
   return parsed;
 }
 
@@ -6876,6 +6889,10 @@ function saveManualMileage(){
   var athletes=manualMileageAthletes();
   var qualityMode=(els.manualMileageMode.value||'easy')==='quality';
   var quality=qualityMode?collectManualQualitySession():null;
+  if(!qualityMode&&volumeAmountNeedsUnit(els.manualMileageDistance&&els.manualMileageDistance.value,els.manualMileageDistanceUnit&&els.manualMileageDistanceUnit.value)){
+    setManualMileageStatus('Choose miles, kilometers, or meters for Distance.', 'bad');
+    return;
+  }
   var distance=(qualityMode?(quality.totalLabel||els.manualMileageDistance.value):manualMileageDistanceValue()).trim();
   if(!athletes.length){setManualMileageStatus('Select at least one athlete.', 'bad');return;}
   if(qualityMode&&!quality.sets.length){setManualMileageStatus('Add at least one quality set.', 'bad');return;}
