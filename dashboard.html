@@ -6036,8 +6036,8 @@ function findTrainingRow(button){
 }
 
 function correctionNotesFromRow(row){
-  return stripRepPaceNoteBlock(String(row.coachNote||'')).split(/\r?\n/).filter(function(line){
-    return !/^(Workout|Planned target|Planned effort|Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+  return stripRepPaceNoteBlock(normalizeStoredNoteText(row&&row.coachNote)).split(/\r?\n/).filter(function(line){
+    return !isTrainingSystemNoteLine(line);
   }).join('\n');
 }
 
@@ -6112,13 +6112,21 @@ function normalizePaceText(value){
 
 function stripRepPaceNoteBlock(note){
   var inBlock=false;
-  return String(note||'').split(/\r?\n/).filter(function(line){
+  return normalizeStoredNoteText(note).split(/\r?\n/).filter(function(line){
     var text=line.trim();
     if(/^Rep pace details:?$/i.test(text)){inBlock=true;return false;}
     if(inBlock&&/^Rep\s+\d+\s+(?:work|rep|recovery|recover|rest|jog)\s+pace\s*:/i.test(text))return false;
     inBlock=false;
     return true;
   }).join('\n');
+}
+
+function normalizeStoredNoteText(note){
+  return String(note||'').replace(/\\r\\n|\\n|\\r/g,'\n');
+}
+
+function isTrainingSystemNoteLine(line){
+  return /^(Workout|Planned target|Planned effort|Planned volume|Completed volume|Actual|Difference|Current fitness|Workout Location|Athlete note|Athlete notes|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(String(line||'').trim());
 }
 
 function normalizeCorrectionSplitsText(text,row){

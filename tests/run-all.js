@@ -2324,8 +2324,10 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     '"Planned target": nextValues.plannedTarget',
     '"Planned effort": nextValues.plannedEffort',
     "function stripRepPaceNoteBlock(note)",
-    "stripRepPaceNoteBlock(clean(note)).split",
-    "return !/^(Workout|Planned target|Planned effort|Completed volume|Weather):/i.test(line.trim());",
+    "stripRepPaceNoteBlock(normalizeStoredNoteText(note)).split",
+    "function normalizeStoredNoteText(note)",
+    "function isTrainingSystemNoteLine(line)",
+    "Planned volume|Completed volume|Actual|Difference|Current fitness|Workout Location",
     "workout_type: workoutTypeValue(nextValues.workoutType)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Training correction workout note replacement missing ${text}`);
@@ -2353,7 +2355,9 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "function preciseQualityEffortForRow(row)",
     "if(typeKey==='aerobic_power'&&percent==='88-95%')return 'Interval';",
     "interval:'Aerobic Power'",
-    "return !/^(Workout|Planned target|Planned effort|Completed volume|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());",
+    "function normalizeStoredNoteText(note)",
+    "function isTrainingSystemNoteLine(line)",
+    "Planned volume|Completed volume|Actual|Difference|Current fitness|Workout Location",
     'id="correctionSplits"',
     'id="correctionRepPaces"',
     "els.correctionSplits.value=correctionSplitsTextFromRow(correctionRow);",
