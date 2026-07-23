@@ -2528,6 +2528,10 @@ function checkManualMileageQualitySession() {
   });
   [
     "function normalizeQualitySession(raw)",
+    "function buildManualMileageSourceSessionId",
+    "sourceSessionId: buildManualMileageSourceSessionId",
+    "normalizedDistanceKey(distance)",
+    "timeDisplay || \"untimed\"",
     'kind: "rep"',
     "Set ${setIndex + 1} Rep ${splitIndex + 1}",
     "Manual quality session entry",
@@ -2539,6 +2543,7 @@ function checkManualMileageQualitySession() {
   [
     "Use Log Miles for manual mileage entries or quality sessions",
     "warmup, reps, rests, splits, and cooldown",
+    "If you log more than one run for the same athlete on the same day",
     "Quality-session rep splits appear with the completed workout details.",
   ].forEach((text) => {
     if (!howTo.includes(text)) throw new Error(`Manual quality session guide missing ${text}`);

@@ -33,17 +33,21 @@ function buildSyncPayload(payload) {
   const workoutType = manualWorkoutType(clean(payload.workoutType)) || "Easy/Recovery Run";
   const date = clean(payload.date) || new Date().toISOString();
   const timeDisplay = clean(payload.time || payload.totalTime);
+  const source = clean(payload.source);
+  const logType = clean(payload.logType) === "quality" ? "quality" : "easy";
   const totalMs = timeDisplay ? parseTimeToMs(timeDisplay) : null;
   const qualityNote = qualitySession.summary;
   const qualityLaps = qualitySession.laps;
+  const groupName = clean(payload.groupName) || "Manual Mileage";
 
   if (!athletes.length) throw httpError(400, "Select at least one athlete.");
   if (!distance) throw httpError(400, "Distance is required.");
-  if (clean(payload.logType) === "quality" && !qualitySession.sets.length) throw httpError(400, "Add at least one quality set.");
+  if (logType === "quality" && !qualitySession.sets.length) throw httpError(400, "Add at least one quality set.");
   if (timeDisplay && !totalMs) throw httpError(400, "Enter time like 36:20, 1:02:15, or 18:04.5.");
 
   return {
-    groupName: clean(payload.groupName) || "Manual Mileage",
+    sourceSessionId: buildManualMileageSourceSessionId({ date, groupName, workoutType, logType, distance, timeDisplay, source, qualitySession }),
+    groupName,
     season: clean(payload.season) || seasonForSport(payload.sport) || seasonForDate(date),
     seasonYear: Number(payload.seasonYear) || new Date(date).getFullYear(),
     sport: clean(payload.sport) || "Cross Country",
@@ -63,10 +67,10 @@ function buildSyncPayload(payload) {
           totalMs,
           laps: qualityLaps,
           note: [
-            clean(payload.logType) === "quality" ? "Manual quality session entry" : "Manual mileage entry",
+            logType === "quality" ? "Manual quality session entry" : "Manual mileage entry",
             timeDisplay ? `Manual time: ${timeDisplay}` : "",
             qualityNote,
-            clean(payload.source) ? `Source: ${clean(payload.source)}` : "",
+            source ? `Source: ${source}` : "",
             clean(payload.notes),
           ].filter(Boolean).join("\n"),
           timestamp: date,
@@ -112,6 +116,44 @@ function normalizeQualitySession(raw) {
   if (cooldown) lines.push(`Cooldown: ${cooldown}`);
   if (totalLabel) lines.push(`Total: ${totalLabel}`);
   return { warmup, cooldown, sets, totalLabel, summary: lines.join("\n"), laps };
+}
+
+function buildManualMileageSourceSessionId({ date, groupName, workoutType, logType, distance, timeDisplay, source, qualitySession }) {
+  const dateSlug = clean(date).slice(0, 10).replace(/[^0-9]/g, "") || new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const qualityKey = logType === "quality" ? compactQualitySessionKey(qualitySession) : "";
+  return [
+    "manual-mileage",
+    dateSlug,
+    groupName,
+    workoutType,
+    logType,
+    normalizedDistanceKey(distance),
+    timeDisplay || "untimed",
+    source,
+    qualityKey,
+  ].map(sourceIdPart).filter(Boolean).join("_").slice(0, 180);
+}
+
+function compactQualitySessionKey(qualitySession) {
+  const sets = Array.isArray(qualitySession && qualitySession.sets) ? qualitySession.sets : [];
+  return sets.map((set) => [
+    set.reps,
+    set.distance,
+    set.rest,
+    set.effort,
+    set.splits.length ? set.splits.length : "",
+  ].map(clean).filter(Boolean).join("-")).join("_");
+}
+
+function normalizedDistanceKey(value) {
+  const text = clean(value);
+  const numeric = Number(text);
+  if (Number.isFinite(numeric) && numeric > 0) return String(Math.round(numeric * 1000) / 1000);
+  return text;
+}
+
+function sourceIdPart(value) {
+  return clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 function normalizeAthlete(raw) {

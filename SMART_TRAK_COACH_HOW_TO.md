@@ -789,6 +789,8 @@ How to use it:
 
 Manual mileage and manual quality sessions appear in Dashboard training volume, completed workouts, athlete training load, and Miles Board totals when the board date range includes the saved date. Quality-session rep splits appear with the completed workout details.
 
+If you log more than one run for the same athlete on the same day, SMART Trak checks the workout details before warning that it may already be synced. Different mileage or time entries can be saved separately. If the same run is submitted again, you will still see the already-synced warning.
+
 ## SMARTCoach Pro Mobile App: Training Section
 
 Use the Training section at practice for daily workouts.
