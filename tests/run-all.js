@@ -3208,6 +3208,7 @@ function checkEquipmentInventoryModelSerial() {
     "function equipmentDisplayRunnerRows()",
     "return !AR_READY||isActiveRosterRunner(row.runner);",
     "Girls, boys, name",
+    "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
     'meta name="app-version" content="1784845175000"',
