@@ -3210,6 +3210,8 @@ function checkEquipmentInventoryModelSerial() {
     "Girls, boys, name",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
+    'meta name="app-version" content="1784845175000"',
+    "<!-- build:1784845175000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
