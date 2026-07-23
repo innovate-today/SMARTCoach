@@ -5980,6 +5980,7 @@ function correctionPreviousPayload(row){
 function setCorrectionVolumeFields(value){
   var parsed=parseCorrectionVolumeValue(value);
   els.correctionVolume.value=parsed.amount;
+  if(parsed.amount&&!parsed.unit)parsed.unit='mi';
   if(els.correctionVolumeUnit)els.correctionVolumeUnit.value=parsed.unit;
 }
 
@@ -7913,7 +7914,15 @@ function effectiveCompletedVolume(row){
   var splitVolume=completedRepVolumeFromSplits(row);
   if(splitVolume)return splitVolume;
   var miles=parseCompletedMiles(row&&row.completedVolume,row&&row.completedVolumeMiles);
-  return {label:row&&row.completedVolume||'',miles:miles};
+  return {label:completedVolumeDisplayLabel(row&&row.completedVolume,miles),miles:miles};
+}
+function completedVolumeDisplayLabel(value,miles){
+  var text=String(value||'').trim();
+  if(!text)return '';
+  var unitPattern=/\b(?:mi|mile|miles|km|k|meter|meters|m)\b/i;
+  if(unitPattern.test(text))return text;
+  if(/^\s*\d+(?:\.\d+)?\s*(?:completed|complete|done|total)?\s*$/i.test(text)&&miles)return formatMiles(miles);
+  return text;
 }
 function completedRepVolumeFromSplits(row){
   if(!row)return null;

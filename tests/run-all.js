@@ -591,6 +591,18 @@ function checkDashboardCompletedVolumeParsing() {
   if (!html.includes(completedTotalPattern)) {
     throw new Error("dashboard fallback completed-volume parser should count unitless completed totals");
   }
+  [
+    "function completedVolumeDisplayLabel(value,miles)",
+    "if(/^\\s*\\d+(?:\\.\\d+)?\\s*(?:completed|complete|done|total)?\\s*$/i.test(text)&&miles)return formatMiles(miles);",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`dashboard fallback completed-volume unitless label missing ${text}`);
+  });
+  [
+    "function completedVolumeDisplayLabel(value, miles)",
+    "if (/^\\s*\\d+(?:\\.\\d+)?\\s*(?:completed|complete|done|total)?\\s*$/i.test(text) && miles) return `${roundVolume(miles)} mi`;",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`dashboard API completed-volume unitless label missing ${text}`);
+  });
   console.log("dashboard completed volume parsing ok");
 }
 
@@ -2307,6 +2319,7 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "setSelectValue(els.correctionWorkout,correctionRow.speedMetricSession?(correctionRow.workoutPrescription||correctionRow.plannedEffort||'Max Velocity'):(correctionRow.workoutPrescription||correctionRow.workoutType||'Easy/Recovery Run'));",
     "els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';",
     "setCorrectionVolumeFields(correctionRow.completedVolume||'');",
+    "if(parsed.amount&&!parsed.unit)parsed.unit='mi';",
     "plannedTarget:els.correctionPlannedTarget.value",
     "plannedEffort:els.correctionPlannedEffort.value",
     "var completedVolume=correctionVolumeValue();",

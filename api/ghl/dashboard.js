@@ -1503,7 +1503,16 @@ function parseVolumeToMiles(value) {
 function effectiveCompletedVolume(row) {
   const splitVolume = completedRepVolumeFromSplits(row);
   if (splitVolume) return splitVolume;
-  return { label: clean(row && row.completedVolume), miles: parseVolumeToMiles(row && row.completedVolume) };
+  const miles = parseVolumeToMiles(row && row.completedVolume);
+  return { label: completedVolumeDisplayLabel(row && row.completedVolume, miles), miles };
+}
+
+function completedVolumeDisplayLabel(value, miles) {
+  const text = clean(value);
+  if (!text) return "";
+  if (/\b(?:mi|mile|miles|km|k|meter|meters|m)\b/i.test(text)) return text;
+  if (/^\s*\d+(?:\.\d+)?\s*(?:completed|complete|done|total)?\s*$/i.test(text) && miles) return `${roundVolume(miles)} mi`;
+  return text;
 }
 
 function completedRepVolumeFromSplits(row) {
