@@ -2302,10 +2302,16 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
   [
     'id="correctionPlannedTarget"',
     'id="correctionPlannedEffort"',
+    'id="correctionVolumeUnit"',
     "setSelectValue(els.correctionWorkout,correctionRow.speedMetricSession?(correctionRow.workoutPrescription||correctionRow.plannedEffort||'Max Velocity'):(correctionRow.workoutPrescription||correctionRow.workoutType||'Easy/Recovery Run'));",
     "els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';",
+    "setCorrectionVolumeFields(correctionRow.completedVolume||'');",
     "plannedTarget:els.correctionPlannedTarget.value",
     "plannedEffort:els.correctionPlannedEffort.value",
+    "var completedVolume=correctionVolumeValue();",
+    "completedVolume:completedVolume",
+    "function correctionVolumeValue()",
+    "function volumeValueWithUnit(amountValue,unitValue)",
     "subLine(trainingWorkoutTypeSubline(row))",
     "function qualityStorageWorkoutType(value)",
     "function preciseQualityEffortForRow(row)",
@@ -2534,8 +2540,12 @@ function checkManualMileageQualitySession() {
     "function manualQualitySplitsText(quality)",
     "function manualMileageSavedLabel(payload,athletes)",
     "function manualMileageDistanceLabel(value)",
+    "function manualMileageDistanceValue()",
     "function manualMileageNameLabel(name)",
     "setManualMileageStatus(manualMileageSavedLabel(payload,athletes), 'ok')",
+    'id="manualMileageDistanceUnit"',
+    "Enter the completed distance amount, then choose the unit",
+    "manualMileageDistanceValue()).trim()",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Manual quality session UI missing ${text}`);
   });
@@ -2556,6 +2566,7 @@ function checkManualMileageQualitySession() {
   [
     "Use Log Miles for manual mileage entries or quality sessions",
     "warmup, reps, rests, splits, and cooldown",
+    "For Easy Miles, enter the distance amount and choose the unit",
     "If you log more than one run for the same athlete on the same day",
     "Quality-session rep splits appear with the completed workout details.",
   ].forEach((text) => {

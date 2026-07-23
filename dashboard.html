@@ -911,8 +911,15 @@ tr:last-child td{border-bottom:0}
           </select>
         </div>
         <div class="field">
-          <label for="manualMileageDistance">Distance <span class="fieldinfo info-left" tabindex="0" data-tip="Enter the completed distance. SMART Trak accepts miles or common distance wording.">i</span></label>
-          <input id="manualMileageDistance" type="text" placeholder="Example: 4 miles">
+          <label for="manualMileageDistance">Distance <span class="fieldinfo info-left" tabindex="0" data-tip="Enter the completed distance amount, then choose the unit so SMART Trak saves clear completed volume.">i</span></label>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:8px">
+            <input id="manualMileageDistance" type="text" inputmode="decimal" placeholder="Example: 8">
+            <select id="manualMileageDistanceUnit" aria-label="Mileage distance unit">
+              <option value="mi">Miles</option>
+              <option value="km">Kilometers</option>
+              <option value="m">Meters</option>
+            </select>
+          </div>
         </div>
         <div class="field">
           <label for="manualMileageTime">Time <span class="fieldinfo" tabindex="0" data-tip="Optional total time for the completed mileage. Leave blank if only distance matters.">i</span></label>
@@ -1133,7 +1140,14 @@ tr:last-child td{border-bottom:0}
         </div>
         <div class="field">
           <label for="correctionVolume">Completed Volume</label>
-          <input id="correctionVolume" type="text" placeholder="Example: 4 miles">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:8px">
+            <input id="correctionVolume" type="text" inputmode="decimal" placeholder="Example: 4">
+            <select id="correctionVolumeUnit" aria-label="Completed volume unit">
+              <option value="mi">Miles</option>
+              <option value="km">Kilometers</option>
+              <option value="m">Meters</option>
+            </select>
+          </div>
         </div>
         <div class="field">
           <label for="correctionTime">Time</label>
@@ -2755,6 +2769,7 @@ var els={
   manualMileageGroup:document.getElementById('manualMileageGroup'),
   manualMileageWorkout:document.getElementById('manualMileageWorkout'),
   manualMileageDistance:document.getElementById('manualMileageDistance'),
+  manualMileageDistanceUnit:document.getElementById('manualMileageDistanceUnit'),
   manualMileageTime:document.getElementById('manualMileageTime'),
   manualMileageSource:document.getElementById('manualMileageSource'),
   manualMileageSurface:document.getElementById('manualMileageSurface'),
@@ -2824,6 +2839,7 @@ var els={
   correctionPlannedEffort:document.getElementById('correctionPlannedEffort'),
   correctionSurface:document.getElementById('correctionSurface'),
   correctionVolume:document.getElementById('correctionVolume'),
+  correctionVolumeUnit:document.getElementById('correctionVolumeUnit'),
   correctionTime:document.getElementById('correctionTime'),
   correctionWeather:document.getElementById('correctionWeather'),
   correctionReason:document.getElementById('correctionReason'),
@@ -5671,7 +5687,7 @@ function openCorrectionModal(button){
   els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';
   els.correctionPlannedEffort.value=correctionRow.plannedEffort||noteLineValue(correctionRow.coachNote,'Planned effort')||'';
   setSelectValue(els.correctionSurface,correctionRow.surface||'Road');
-  els.correctionVolume.value=correctionRow.completedVolume||'';
+  setCorrectionVolumeFields(correctionRow.completedVolume||'');
   els.correctionTime.value=correctionRow.totalTimeDisplay||'';
   els.correctionWeather.value=correctionRow.weather||'';
   els.correctionReason.value='';
@@ -5709,6 +5725,7 @@ function saveCorrection(){
     return;
   }
   if(correctionRow.speedMetricSession)return saveSpeedPracticeCorrection(reason);
+  var completedVolume=correctionVolumeValue();
   els.correctionSave.disabled=true;
   setCorrectionStatus('Saving correction...','');
   fetch('/api/smart-trak/correction',{
@@ -5728,7 +5745,7 @@ function saveCorrection(){
         plannedTarget:els.correctionPlannedTarget.value,
         plannedEffort:els.correctionPlannedEffort.value,
         surface:els.correctionSurface.value,
-        completedVolume:els.correctionVolume.value,
+        completedVolume:completedVolume,
         time:els.correctionTime.value,
         weather:els.correctionWeather.value,
         splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow),
@@ -5745,7 +5762,7 @@ function saveCorrection(){
       plannedTarget:els.correctionPlannedTarget.value,
       plannedEffort:els.correctionPlannedEffort.value,
       surface:els.correctionSurface.value,
-      completedVolume:els.correctionVolume.value,
+      completedVolume:completedVolume,
       time:els.correctionTime.value,
       weather:els.correctionWeather.value,
       splitsText:normalizeCorrectionSplitsText(els.correctionSplits.value,correctionRow),
@@ -5767,7 +5784,7 @@ function saveSpeedPracticeCorrection(reason){
     var updatedAt=new Date().toISOString();
     var focus=els.correctionWorkout.value||correctionRow.workoutPrescription||correctionRow.plannedEffort||'Speed Metrics';
     var date=els.correctionDate.value||correctionRow.sessionDate||practice.date;
-    var distance=speedDistanceFromCorrection(els.correctionVolume.value,correctionRow);
+    var distance=speedDistanceFromCorrection(correctionVolumeValue(),correctionRow);
     var times=speedTimesFromCorrection(els.correctionTime.value,metrics.length);
     practice.date=date;
     practice.focus=focus;
@@ -5949,6 +5966,44 @@ function correctionPreviousPayload(row){
     notes:correctionNotesFromRow(row),
     coachNote:row.coachNote||''
   };
+}
+
+function setCorrectionVolumeFields(value){
+  var parsed=parseCorrectionVolumeValue(value);
+  els.correctionVolume.value=parsed.amount;
+  if(els.correctionVolumeUnit)els.correctionVolumeUnit.value=parsed.unit;
+}
+
+function correctionVolumeValue(){
+  return volumeValueWithUnit(els.correctionVolume&&els.correctionVolume.value,els.correctionVolumeUnit&&els.correctionVolumeUnit.value);
+}
+
+function volumeValueWithUnit(amountValue,unitValue){
+  var amount=String(amountValue||'').trim();
+  if(!amount)return '';
+  var pastedUnit=amount.match(/\b(mi|mile|miles|km|k|meter|meters|m)\b/i);
+  var parsed=parseCorrectionVolumeValue(amount);
+  var unit=pastedUnit?parsed.unit:(String(unitValue||'mi').trim()||'mi');
+  return parsed.amount+' '+unit;
+}
+
+function parseCorrectionVolumeValue(value){
+  var text=String(value||'').trim();
+  var parsed={amount:text.replace(/\s*(?:completed|complete|done|total)\s*$/i,'').trim(),unit:'mi'};
+  var reps=text.match(/^\s*(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/i);
+  if(reps)return {amount:reps[1]+' x '+reps[2],unit:normalizeCorrectionVolumeUnit(reps[3])};
+  var match=text.match(/^\s*(\d+(?:\.\d+)?)\s*(mi|mile|miles|km|k|meter|meters|m)\b/i);
+  if(match)return {amount:match[1],unit:normalizeCorrectionVolumeUnit(match[2])};
+  var numeric=text.match(/^\s*(\d+(?:\.\d+)?)\b/);
+  if(numeric)return {amount:numeric[1],unit:'mi'};
+  return parsed;
+}
+
+function normalizeCorrectionVolumeUnit(value){
+  var unit=String(value||'').toLowerCase();
+  if(unit==='km'||unit==='k')return 'km';
+  if(unit==='m'||unit==='meter'||unit==='meters')return 'm';
+  return 'mi';
 }
 
 function findTrainingRow(button){
@@ -6651,8 +6706,10 @@ function updateManualMileageMode(){
   if(quality&&!els.manualMileageRepRows.children.length)addManualMileageRepRow();
   if(quality){
     els.manualMileageDistance.placeholder='Auto total from warmup, reps, cooldown';
+    if(els.manualMileageDistanceUnit)els.manualMileageDistanceUnit.hidden=true;
   }else{
-    els.manualMileageDistance.placeholder='Example: 4 miles';
+    els.manualMileageDistance.placeholder='Example: 8';
+    if(els.manualMileageDistanceUnit)els.manualMileageDistanceUnit.hidden=false;
   }
   updateManualMileageQuality();
 }
@@ -6819,7 +6876,7 @@ function saveManualMileage(){
   var athletes=manualMileageAthletes();
   var qualityMode=(els.manualMileageMode.value||'easy')==='quality';
   var quality=qualityMode?collectManualQualitySession():null;
-  var distance=(qualityMode?(quality.totalLabel||els.manualMileageDistance.value):els.manualMileageDistance.value||'').trim();
+  var distance=(qualityMode?(quality.totalLabel||els.manualMileageDistance.value):manualMileageDistanceValue()).trim();
   if(!athletes.length){setManualMileageStatus('Select at least one athlete.', 'bad');return;}
   if(qualityMode&&!quality.sets.length){setManualMileageStatus('Add at least one quality set.', 'bad');return;}
   if(!distance){setManualMileageStatus('Distance is required.', 'bad');return;}
@@ -6915,6 +6972,10 @@ function applyManualMileageLocally(payload,result){
   updateWeekRanges();
   updateDashboardTopStats();
   renderRows();
+}
+
+function manualMileageDistanceValue(){
+  return volumeValueWithUnit(els.manualMileageDistance&&els.manualMileageDistance.value,els.manualMileageDistanceUnit&&els.manualMileageDistanceUnit.value);
 }
 
 function manualQualitySplitsText(quality){

@@ -65,6 +65,8 @@ How to use it:
 
 Weekly volume and **Volume by Athlete** count completed workout totals saved for the athlete, including completed totals that were saved without `mi` in the row.
 
+When correcting **Completed Volume**, enter the amount and choose the unit: miles, kilometers, or meters. SMART Trak saves the correction with the unit included so training volume can calculate correctly.
+
 When correcting a saved workout with reps or rest times, use **Reps / Rest Times** in the correction window. The Workout Type dropdown includes the same quality efforts coaches use when planning workouts, including Interval, Repetition, Hills, and Fast Reps. If the workout type was saved wrong, also check **Planned Target** and **Planned Effort** before saving so Target Review uses the corrected range. Enter one split per line, such as `Rep 1: 03:31.9`, `Rest 1: 03:41.3`, and `Rep 2: 06:33.0`, then click **Save Correction**.
 
 Imported Strava rep/rest rows show as clean rep and rest times in the correction window.
@@ -786,7 +788,7 @@ How to use it:
 4. Choose whether the entry applies to an individual athlete or a group.
 5. Select the athlete or group.
 6. Choose the effort.
-7. For Easy Miles, enter the distance with a clear unit, such as `4 miles`, `4 mi`, or `0.5 mi`.
+7. For Easy Miles, enter the distance amount and choose the unit: miles, kilometers, or meters.
 8. For Quality Session, enter warmup, cooldown, and one or more sets. Each set can include reps, distance, rep splits, rest, effort, and notes.
 9. Add time, source, surface, and notes if useful.
 10. Save mileage. The confirmation shows the saved distance and athlete name for individual entries.
