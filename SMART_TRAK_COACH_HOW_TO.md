@@ -89,7 +89,7 @@ The **Feedback** button includes **Open How To Guide**. Use it to open the lates
 
 ## Miles Board
 
-Use **Miles Trak** when you want a view-only mileage leaderboard for athletes. Set the Dashboard activity range first, then click **Miles Trak**.
+Use **Miles Trak** when you want a view-only mileage leaderboard for athletes. Set the Dashboard activity range first, then click **Miles Trak**. Miles Trak counts each saved workout once, even when SMART Trak has both the main saved row and a backup copy of the same workout.
 
 Miles Board links are Cross Country boards for the selected year. Track mileage is kept out even when Track and Cross Country overlap on the calendar.
 

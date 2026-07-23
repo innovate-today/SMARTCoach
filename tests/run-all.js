@@ -742,6 +742,12 @@ function checkMilesBoardFeature() {
   ].forEach((text) => {
     if (!board.includes(text)) throw new Error(`Miles Board page missing ${text}`);
   });
+  [
+    'const key = prop(props, "source_record_id") || (record && record.id) || JSON.stringify(props);',
+    "const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);",
+  ].forEach((text) => {
+    if (!dashboardApi.includes(text)) throw new Error(`Miles Board source-record dedupe missing ${text}`);
+  });
   if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Miles Board must stay read-only.");
   if (board.includes("class=\"infobadge\"")) throw new Error("Miles Board should use Dashboard-style headinfo bubbles.");
   if (board.includes("No group")) throw new Error("Miles Board should not print athlete groups under names.");

@@ -1721,7 +1721,7 @@ function uniqueRecords(records) {
   const seen = {};
   return records.filter((record) => {
     const props = recordProperties(record);
-    const key = (record && record.id) || prop(props, "source_record_id") || JSON.stringify(props);
+    const key = prop(props, "source_record_id") || (record && record.id) || JSON.stringify(props);
     if (!key || seen[key]) return false;
     seen[key] = true;
     return true;
