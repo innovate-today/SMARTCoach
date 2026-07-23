@@ -743,8 +743,11 @@ function checkMilesBoardFeature() {
     if (!board.includes(text)) throw new Error(`Miles Board page missing ${text}`);
   });
   [
-    'const key = prop(props, "source_record_id") || (record && record.id) || JSON.stringify(props);',
-    "const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);",
+    "function mergePerformanceRecords(liveRecords, mirroredRecords)",
+    'const key = (record && record.id) || prop(props, "source_record_id") || JSON.stringify(props);',
+    "const liveSourceIds = new Set(live.map((record) => prop(recordProperties(record), \"source_record_id\")).filter(Boolean));",
+    "return !sourceRecordId || !liveSourceIds.has(sourceRecordId);",
+    "const allPerformanceRecords = mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords);",
   ].forEach((text) => {
     if (!dashboardApi.includes(text)) throw new Error(`Miles Board source-record dedupe missing ${text}`);
   });

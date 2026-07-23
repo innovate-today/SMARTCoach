@@ -103,7 +103,7 @@ module.exports = async function handler(req, res) {
       safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
     ]);
-    const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
+    const allPerformanceRecords = mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords);
 
     const rows = athletes.map((athlete) => buildAthleteRow({
       athlete,
@@ -239,7 +239,7 @@ async function publicMilesBoard(req, res) {
       }) : Promise.resolve([]),
     ]);
     const athletes = milesBoardAthletesForSelectedGroups(allAthletes, req.milesBoardAthleteKeys);
-    const allPerformanceRecords = uniqueRecords([...(performanceRecords || []), ...(mirroredPerformanceRecords || [])]);
+    const allPerformanceRecords = mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords);
     const start = publicBoardDate(req.query && req.query.start);
     const end = publicBoardDate(req.query && req.query.end);
     const range = normalizedBoardRange(start, end);
@@ -1721,11 +1721,21 @@ function uniqueRecords(records) {
   const seen = {};
   return records.filter((record) => {
     const props = recordProperties(record);
-    const key = prop(props, "source_record_id") || (record && record.id) || JSON.stringify(props);
+    const key = (record && record.id) || prop(props, "source_record_id") || JSON.stringify(props);
     if (!key || seen[key]) return false;
     seen[key] = true;
     return true;
   });
+}
+
+function mergePerformanceRecords(liveRecords, mirroredRecords) {
+  const live = uniqueRecords(liveRecords || []);
+  const liveSourceIds = new Set(live.map((record) => prop(recordProperties(record), "source_record_id")).filter(Boolean));
+  const mirrorOnly = uniqueRecords(mirroredRecords || []).filter((record) => {
+    const sourceRecordId = prop(recordProperties(record), "source_record_id");
+    return !sourceRecordId || !liveSourceIds.has(sourceRecordId);
+  });
+  return live.concat(mirrorOnly);
 }
 
 function recordProperties(record) {
