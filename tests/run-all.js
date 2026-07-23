@@ -1696,6 +1696,28 @@ function checkStravaAdminTestFlow() {
   if (dashboard.includes('id="stravaTestBtn"') || dashboard.includes("training-admin-row admin-only")) {
     throw new Error("Strava button should not appear on the dashboard training panel");
   }
+  [
+    "time:stravaLapDurationText(workSeconds)",
+    "time:stravaLapDurationText(restSeconds)",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Training Calendar Strava clean split time missing ${text}`);
+  });
+  [
+    "time:'Rep '+i+' '+stravaLapDurationText(workSeconds)",
+    "time:'Rest '+i+' '+stravaLapDurationText(restSeconds)",
+    "time:label+' '+stravaLapDurationText(seconds)",
+  ].forEach((text) => {
+    if (calendar.includes(text)) throw new Error(`Training Calendar Strava split time should not duplicate labels: ${text}`);
+  });
+  if (!dashboard.includes("repPaces?'Actual rep paces':'Target saved'")) {
+    throw new Error("Completed Workouts should label ungraded actual rep pace review");
+  }
+  if (!dashboard.includes("var items=[],seen={},inBlock=false;") || !dashboard.includes("var key=rep+'|'+kind+'|'+pace;")) {
+    throw new Error("Rep pace parser should dedupe actual pace lines");
+  }
+  if (!dashboard.includes("function cleanSplitTimeForLabel(label,time)") || !dashboard.includes("clean=clean.slice(prefix.length).trim();")) {
+    throw new Error("Correction split display should clean duplicated Strava rep/rest labels");
+  }
   const stravaCatchRender = dashboard.indexOf("renderStravaStatus({configured:false,connected:false,connection:null});");
   const stravaCatchError = dashboard.indexOf("els.stravaTestStatus.textContent=error.message||'Strava status could not be loaded.';");
   if (stravaCatchRender < 0 || stravaCatchError < 0 || stravaCatchRender > stravaCatchError) {
@@ -1771,6 +1793,9 @@ function checkStravaAdminTestFlow() {
   });
   if (guide.includes("Strava Test")) {
     throw new Error("Strava Test should stay out of the coach how-to guide");
+  }
+  if (!guide.includes("Actual rep paces")) {
+    throw new Error("Coach guide should mention ungraded actual rep paces");
   }
   console.log("Strava admin test flow ok");
 }

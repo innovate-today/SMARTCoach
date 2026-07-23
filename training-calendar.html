@@ -2469,8 +2469,8 @@ function stravaPlannedLapsFromDay(day){
   if(!reps||!workSeconds)return [];
   var laps=[];
   for(var i=1;i<=reps;i++){
-    laps.push({kind:'rep',label:'Rep '+i,time:'Rep '+i+' '+stravaLapDurationText(workSeconds),ms:Math.round(workSeconds*1000)});
-    if(restSeconds)laps.push({kind:'rest',label:'Rest '+i,time:'Rest '+i+' '+stravaLapDurationText(restSeconds),ms:Math.round(restSeconds*1000)});
+    laps.push({kind:'rep',label:'Rep '+i,time:stravaLapDurationText(workSeconds),ms:Math.round(workSeconds*1000)});
+    if(restSeconds)laps.push({kind:'rest',label:'Rest '+i,time:stravaLapDurationText(restSeconds),ms:Math.round(restSeconds*1000)});
   }
   return laps;
 }
@@ -2490,7 +2490,7 @@ function stravaLapsFromDetail(detail){
     var seconds=num(lap&&lap.movingTimeSeconds)||num(lap&&lap.elapsedTimeSeconds);
     if(!seconds)return null;
     var label='Strava Lap '+(lap.lapIndex||lap.index||index+1);
-    return {kind:'strava',label:label,time:label+' '+stravaLapDurationText(seconds),ms:Math.round(seconds*1000)};
+    return {kind:'strava',label:label,time:stravaLapDurationText(seconds),ms:Math.round(seconds*1000)};
   }).filter(Boolean);
 }
 function stravaActivityDetailNoteLines(detail){

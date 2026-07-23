@@ -5984,7 +5984,7 @@ function correctionSplitsTextFromRow(row){
   return splits.map(function(split,index){
     var kind=splitKind(row,index,splits);
     var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):(split.label||'Lap '+split.lap));
-    return label+': '+split.time;
+    return label+': '+cleanSplitTimeForLabel(label,split.time);
   }).join('\n');
 }
 
@@ -7674,13 +7674,14 @@ function recentTrainingHtml(row){
 function targetReviewHtml(row){
   var repPaces=repPaceReviewHtml(row)||repPaceDetailsHtml(row);
   if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort&&!repPaces)return '<span class="muted">No target saved</span>';
+  var reviewTitle=row.plannedTarget||(repPaces?'Actual rep paces':'Target saved');
   var chips=splitTargetChipsHtml(row);
   if(chips){
-    return mainLine(row.plannedTarget||'Target saved')+chips+repPaces+
+    return mainLine(reviewTitle)+chips+repPaces+
       subLine([row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
   }
   var diff=targetDifferenceText(row)||row.targetDifference;
-  return targetStatusPill(row)+mainLine(row.plannedTarget||'Target saved')+repPaces+
+  return targetStatusPill(row)+mainLine(reviewTitle)+repPaces+
     subLine([diff,row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
 }
 
@@ -8093,7 +8094,7 @@ function splitCountText(row){
 }
 
 function splitSummaryText(row){
-  return splitReviewLines(row).join('\n') || parseSplitLines(row.splitsText).map(function(split){return split.label+': '+split.time;}).join('\n');
+  return splitReviewLines(row).join('\n') || parseSplitLines(row.splitsText).map(function(split){return split.label+': '+cleanSplitTimeForLabel(split.label,split.time);}).join('\n');
 }
 
 function splitReviewLines(row){
@@ -8104,9 +8105,10 @@ function splitReviewLines(row){
   return splits.map(function(split,index){
     var kind=splitKind(row,index,splits);
     var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap);
-    var detail=label+': '+split.time;
+    var time=cleanSplitTimeForLabel(label,split.time);
+    var detail=label+': '+time;
     if(kind!=='recovery'&&target){
-      var ms=parseDurationMs(split.time);
+      var ms=parseDurationMs(time);
       var diff=splitTargetDiff(ms,target.fast,target.slow);
       if(diff)detail+=' · '+diff;
     }
@@ -8122,33 +8124,45 @@ function splitTargetChipsHtml(row){
   var chips=splits.map(function(split,index){
     var kind=splitKind(row,index,splits);
     var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap);
+    var time=cleanSplitTimeForLabel(label,split.time);
     var status='';
     if(kind!=='recovery'&&target){
-      var diff=splitTargetDiff(parseDurationMs(split.time),target.fast,target.slow);
+      var diff=splitTargetDiff(parseDurationMs(time),target.fast,target.slow);
       if(/faster than target/i.test(diff))status='fast';
       else if(/slower than target/i.test(diff))status='slow';
       else if(/within target/i.test(diff))status='on';
     }
-    return '<span class="splitchip '+esc(status)+'">'+esc(label+' '+split.time)+'</span>';
+    return '<span class="splitchip '+esc(status)+'">'+esc(label+' '+time)+'</span>';
   });
   return chips.length?'<div class="splitchips">'+chips.join('')+'</div>':'';
 }
 
+function cleanSplitTimeForLabel(label,time){
+  var clean=String(time||'').trim();
+  var prefix=String(label||'').trim();
+  if(prefix&&clean.toLowerCase().indexOf(prefix.toLowerCase()+' ')===0){
+    clean=clean.slice(prefix.length).trim();
+  }
+  return clean;
+}
+
 function repPaceDetailsFromNote(note){
   var lines=String(note||'').split(/\r?\n/);
-  var items=[],inBlock=false;
+  var items=[],seen={},inBlock=false;
   lines.forEach(function(line){
     var text=line.trim();
     if(/^Rep pace details:?$/i.test(text)){inBlock=true;return;}
-    if(inBlock&&!/^Rep\s+\d+\s+(?:work|rep|recovery|recover|rest|jog)\s+pace\s*:/i.test(text)){
-      inBlock=false;
-    }
-    if(!inBlock)return;
     var match=text.match(/^Rep\s+(\d+)\s+(work|rep|recovery|recover|rest|jog)\s+pace\s*:\s*(.+)$/i);
+    if(inBlock&&!match)inBlock=false;
     if(!match)return;
     var pace=normalizePaceText(match[3]);
     if(!pace)return;
-    items.push({rep:Number(match[1])||items.length+1,kind:/recover|rest|jog/i.test(match[2])?'recovery':'work',pace:pace});
+    var rep=Number(match[1])||items.length+1;
+    var kind=/recover|rest|jog/i.test(match[2])?'recovery':'work';
+    var key=rep+'|'+kind+'|'+pace;
+    if(seen[key])return;
+    seen[key]=true;
+    items.push({rep:rep,kind:kind,pace:pace});
   });
   return items;
 }
