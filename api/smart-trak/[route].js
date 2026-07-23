@@ -122,6 +122,12 @@ module.exports = async function handler(req, res) {
     return accountStravaActivities(req, res);
   }
 
+  if (route === "strava-activity-detail") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountStravaActivityDetail(req, res);
+  }
+
   if (route === "training-customization") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -485,6 +491,54 @@ async function accountStravaActivities(req, res) {
   }
 }
 
+async function accountStravaActivityDetail(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const access = requireOwnerAdminSession(req, "inspect Strava activity details");
+    requireBetaFeatureAccount(access.accountKey, "inspect Strava activity details");
+    const activityId = cleanSetupText(firstQueryValue(req.query && req.query.id));
+    if (!activityId) throw httpError(400, "Strava activity id is required.");
+    const connection = await activeStravaConnection(access.accountKey, access.record);
+    const detailUrl = new URL(`https://www.strava.com/api/v3/activities/${encodeURIComponent(activityId)}`);
+    detailUrl.searchParams.set("include_all_efforts", "true");
+    const detailResponse = await fetch(detailUrl.toString(), {
+      method: "GET",
+      headers: { Authorization: `Bearer ${connection.accessToken}` },
+    });
+    const detailData = await detailResponse.json().catch(() => null);
+    if (!detailResponse.ok) {
+      throw httpError(detailResponse.status || 502, detailData && (detailData.message || detailData.error) || "Strava activity details could not be loaded.");
+    }
+
+    const streamUrl = new URL(`https://www.strava.com/api/v3/activities/${encodeURIComponent(activityId)}/streams`);
+    streamUrl.searchParams.set("keys", "time,distance,velocity_smooth,latlng");
+    streamUrl.searchParams.set("key_by_type", "true");
+    const streamResponse = await fetch(streamUrl.toString(), {
+      method: "GET",
+      headers: { Authorization: `Bearer ${connection.accessToken}` },
+    });
+    const streamData = await streamResponse.json().catch(() => null);
+    const streamsError = streamResponse.ok ? "" : cleanSetupText(streamData && (streamData.message || streamData.error) || `Streams returned ${streamResponse.status}`);
+
+    res.status(200).json({
+      success: true,
+      connected: true,
+      activity: sanitizeStravaActivityDetail(detailData, streamResponse.ok ? streamData : null, streamsError),
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Strava activity details could not be loaded." });
+  }
+}
+
 function requireOwnerAdminSession(req, actionLabel) {
   const { accountKey, coachCodeVersion } = getGhlContext(req);
   const session = coachSessionFromRequest(req, accountKey);
@@ -687,6 +741,83 @@ function sanitizeStravaActivity(value) {
     elapsedTimeSeconds: Math.round(Number(source.elapsed_time) || 0),
     averageSpeedMetersPerSecond: Number(source.average_speed) || 0,
   };
+}
+
+function sanitizeStravaActivityDetail(activity, streams, streamsError) {
+  const source = activity || {};
+  const laps = Array.isArray(source.laps) ? source.laps.map(sanitizeStravaLap).filter(Boolean) : [];
+  const splitsMetric = Array.isArray(source.splits_metric) ? source.splits_metric.map(sanitizeStravaSplit).filter(Boolean) : [];
+  const splitsStandard = Array.isArray(source.splits_standard) ? source.splits_standard.map(sanitizeStravaSplit).filter(Boolean) : [];
+  return {
+    id: cleanSetupText(source.id),
+    name: cleanSetupText(source.name),
+    type: cleanSetupText(source.type || source.sport_type),
+    sportType: cleanSetupText(source.sport_type),
+    startDate: cleanSetupText(source.start_date),
+    startDateLocal: cleanSetupText(source.start_date_local),
+    distanceMeters: Math.round(Number(source.distance) || 0),
+    movingTimeSeconds: Math.round(Number(source.moving_time) || 0),
+    elapsedTimeSeconds: Math.round(Number(source.elapsed_time) || 0),
+    lapsCount: laps.length,
+    laps: laps.slice(0, 40),
+    splitsMetricCount: splitsMetric.length,
+    splitsStandardCount: splitsStandard.length,
+    splitsMetric: splitsMetric.slice(0, 12),
+    splitsStandard: splitsStandard.slice(0, 12),
+    streamCounts: stravaStreamCounts(streams),
+    streamsError: cleanSetupText(streamsError),
+    rawKeys: Object.keys(source).sort().slice(0, 80),
+  };
+}
+
+function sanitizeStravaLap(lap, index) {
+  const source = lap || {};
+  const speed = Number(source.average_speed) || 0;
+  return {
+    index: index + 1,
+    id: cleanSetupText(source.id),
+    name: cleanSetupText(source.name),
+    lapIndex: Number(source.lap_index) || index + 1,
+    distanceMeters: Math.round(Number(source.distance) || 0),
+    movingTimeSeconds: Math.round(Number(source.moving_time) || 0),
+    elapsedTimeSeconds: Math.round(Number(source.elapsed_time) || 0),
+    averageSpeedMetersPerSecond: speed,
+    averagePaceSeconds: speedMetersPerSecondToMilePaceSeconds(speed),
+    split: Number(source.split) || 0,
+  };
+}
+
+function sanitizeStravaSplit(split, index) {
+  const source = split || {};
+  const speed = Number(source.average_speed) || 0;
+  return {
+    index: index + 1,
+    distanceMeters: Math.round(Number(source.distance) || 0),
+    movingTimeSeconds: Math.round(Number(source.moving_time) || 0),
+    elapsedTimeSeconds: Math.round(Number(source.elapsed_time) || 0),
+    averageSpeedMetersPerSecond: speed,
+    averagePaceSeconds: speedMetersPerSecondToMilePaceSeconds(speed),
+    split: Number(source.split) || index + 1,
+  };
+}
+
+function speedMetersPerSecondToMilePaceSeconds(speed) {
+  const value = Number(speed) || 0;
+  return value > 0 ? Math.round(1609.344 / value) : 0;
+}
+
+function stravaStreamCounts(streams) {
+  return {
+    time: stravaStreamLength(streams, "time"),
+    distance: stravaStreamLength(streams, "distance"),
+    velocitySmooth: stravaStreamLength(streams, "velocity_smooth"),
+    latlng: stravaStreamLength(streams, "latlng"),
+  };
+}
+
+function stravaStreamLength(streams, key) {
+  const stream = streams && streams[key] && typeof streams[key] === "object" ? streams[key] : null;
+  return stream && Array.isArray(stream.data) ? stream.data.length : 0;
 }
 
 async function accountAttendance(req, res) {

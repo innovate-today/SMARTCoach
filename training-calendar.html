@@ -646,6 +646,7 @@ var searchRenderTimer=null;
 var mileageAthletes=[];
 var mileageTrainingRows=[];
 var stravaActivitiesCache=[];
+var stravaActivityDetailsCache={};
 var stravaSelectedAthleteKey='';
 var trainingGroups=[];
 var calendarMeets=[];
@@ -2119,7 +2120,7 @@ function renderStravaActivities(activities){
     var importNote=imported?'<span class="muted">Already imported for selected athlete.</span>':'';
     var disabled=imported?' disabled':'';
     var buttonText=imported?'Already Imported':'Import Completed Workout';
-    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span>'+matchNote+importNote+'<button class="secondary" type="button" data-strava-import="'+esc(item.id)+'"'+disabled+'>'+buttonText+'</button></div>';
+    return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span>'+matchNote+importNote+'<span><button class="secondary" type="button" data-strava-detail="'+esc(item.id)+'">Inspect Details</button> <button class="secondary" type="button" data-strava-import="'+esc(item.id)+'"'+disabled+'>'+buttonText+'</button></span>'+stravaActivityDetailHtml(item.id)+'</div>';
   }).join('');
   var select=els.stravaActivitiesList.querySelector('#stravaAthleteSelect');
   if(select){
@@ -2133,6 +2134,68 @@ function renderStravaActivities(activities){
     button.addEventListener('click',function(){
       importStravaActivity(button.getAttribute('data-strava-import')||'',button);
     });
+  });
+  els.stravaActivitiesList.querySelectorAll('[data-strava-detail]').forEach(function(button){
+    button.addEventListener('click',function(){
+      inspectStravaActivity(button.getAttribute('data-strava-detail')||'',button);
+    });
+  });
+}
+function stravaActivityDetailHtml(activityId){
+  var detail=stravaActivityDetailsCache[String(activityId||'')];
+  if(!detail)return '';
+  if(detail.loading)return '<div class="muted">Checking Strava API detail...</div>';
+  if(detail.error)return '<div class="muted">Strava API detail error: '+esc(detail.error)+'</div>';
+  var counts=detail.streamCounts||{};
+  var summary='Strava API detail: '+(num(detail.lapsCount)||0)+' laps · '+(num(detail.splitsMetricCount)||0)+' metric splits · '+(num(detail.splitsStandardCount)||0)+' standard splits · streams time '+(counts.time||0)+' / distance '+(counts.distance||0)+' / pace '+(counts.velocitySmooth||0)+' / GPS '+(counts.latlng||0);
+  var verdict=(num(detail.lapsCount)>0)?'Strava is exposing '+(num(detail.lapsCount)||0)+' lap rows for this activity.':'Strava did not expose lap rows for this activity.';
+  var laps=(detail.laps||[]).slice(0,12).map(stravaActivityDetailLapSummary).join('<br>');
+  var streamNote=detail.streamsError?'<span class="muted">Streams note: '+esc(detail.streamsError)+'</span>':'';
+  return '<div class="muted" style="margin-top:6px"><b>'+esc(summary)+'</b><br>'+esc(verdict)+(laps?'<br>'+laps:'')+streamNote+'</div>';
+}
+function stravaActivityDetailLapSummary(lap){
+  return esc('Lap '+(lap.lapIndex||lap.index||'')+': '+stravaMetersText(lap.distanceMeters)+' · '+stravaSecondsText(lap.movingTimeSeconds||lap.elapsedTimeSeconds)+' · '+stravaPaceText(lap.averagePaceSeconds));
+}
+function stravaMetersText(meters){
+  var value=num(meters);
+  if(!value)return '0 m';
+  if(value>=1609.344)return Math.round((value/1609.344)*100)/100+' mi';
+  return Math.round(value)+' m';
+}
+function stravaSecondsText(seconds){
+  var total=Math.max(0,Math.round(num(seconds)));
+  var minutes=Math.floor(total/60);
+  var secs=total%60;
+  return minutes+':'+String(secs).padStart(2,'0');
+}
+function stravaPaceText(seconds){
+  var total=Math.max(0,Math.round(num(seconds)));
+  if(!total)return '-- /mi';
+  var minutes=Math.floor(total/60);
+  var secs=total%60;
+  return minutes+':'+String(secs).padStart(2,'0')+' /mi';
+}
+function inspectStravaActivity(activityId,button){
+  activityId=String(activityId||'');
+  if(!activityId)return;
+  stravaActivityDetailsCache[activityId]={loading:true};
+  renderStravaActivities(stravaActivitiesCache);
+  if(button)button.disabled=true;
+  els.stravaStatus.textContent='Checking Strava activity detail...';
+  els.stravaStatus.style.color='var(--muted)';
+  return fetch('/api/smart-trak/strava-activity-detail?account='+encodeURIComponent(accountKey())+'&id='+encodeURIComponent(activityId)+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activity details could not be loaded.');
+    stravaActivityDetailsCache[activityId]=result.data&&result.data.activity||{error:'No Strava activity detail returned.'};
+    els.stravaStatus.textContent='Strava activity detail loaded.';
+    els.stravaStatus.style.color='var(--good)';
+  }).catch(function(error){
+    stravaActivityDetailsCache[activityId]={error:error.message||'Strava activity details could not be loaded.'};
+    els.stravaStatus.textContent=error.message||'Strava activity details could not be loaded.';
+    els.stravaStatus.style.color='var(--bad)';
+  }).finally(function(){
+    renderStravaActivities(stravaActivitiesCache);
   });
 }
 function stravaAthleteRows(){
