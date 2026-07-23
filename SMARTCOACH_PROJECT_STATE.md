@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-22
+Last updated: 2026-07-23
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- Miles Trak live weekly cards and winners now use the actual current Monday-Sunday week instead of the saved board date range's ending week. This fixes This Week Leader / This Week's Winners showing a runner from an older board-range week, such as Austin McGinnis with a last run on Jul 15, as the current-week mileage winner. Board date-range totals and leaderboard totals still follow the selected board range. Weekly helper math also now uses `sessionDate` with `syncedAt` fallback to match the board filtering path. Coach how-to and regression coverage were updated.
 - Follow-up to the SMART Trak Training Calendar Strava beta import: Strava activity detail now returns sanitized time/distance/pace streams to the owner/admin UI. When a selected Strava activity matches a timed SMART Trak quality workout, the import reconstructs work and recovery pace rows from the stream data, falls back to usable short Strava lap rows when needed, and saves them into the existing `Rep pace details:` note block so Completed Workouts can display **Actual Rep Paces**. Raw Strava lap/count audit notes remain saved for troubleshooting, and mile-style Strava splits are not treated as rep paces. Owner/admin beta only; coach guide unchanged.
 - Follow-up to the SMART Trak Training Calendar Strava beta import: planned rep/rest rows now save clean duration values instead of duplicating labels such as `Rep 1: Rep 1 1:00` in the correction modal, and existing saved rows are cleaned when split text is displayed. Completed Workouts also shows saved Actual Rep Paces under **Actual rep paces** even when the completed workout has no saved target range, so Strava/manual pace details remain visible for later review. Coach how-to and regression coverage were updated.
 - SMART Trak Training Calendar Strava beta imports now load activity detail before saving. When a selected Strava activity matches a SMART Trak timed quality workout, the import saves the matched rep/rest prescription as completed-workout lap rows and appends the Strava-exposed lap summary/counts to the note for audit. If no timed prescription is matched, the import falls back to any Strava lap rows Strava exposes. Owner/admin beta only; coach guide unchanged.

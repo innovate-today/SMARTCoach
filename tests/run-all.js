@@ -811,7 +811,7 @@ function checkMilesBoardFeature() {
     "Pack MVP",
     "function milesBoardGameSettings",
     "function startOfBoardWeek",
-    "const currentWeekStart = startOfBoardWeek(end)",
+    "const currentWeekStart = startOfCurrentWeek()",
     "function milesBoardGroupRows",
     "function milesBoardGenderDivision",
     "function milesBoardDivisionOrder",

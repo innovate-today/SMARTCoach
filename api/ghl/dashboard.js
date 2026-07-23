@@ -305,7 +305,7 @@ function buildMilesBoardRows({ athletes, performanceRecords, attendanceRecords, 
         return date && date >= start && date < end;
       });
     const totalMiles = roundVolume(training.reduce((sum, item) => sum + (Number(item.completedVolumeMiles) || 0), 0));
-    const currentWeekStart = startOfBoardWeek(end);
+    const currentWeekStart = startOfCurrentWeek();
     const currentWeekTraining = training.filter((item) => {
       const date = parseDate(item.sessionDate || item.syncedAt);
       return date && date >= currentWeekStart && date < addDays(currentWeekStart, 7);
@@ -1462,14 +1462,14 @@ function recordMatchesAthlete(record, athlete) {
 
 function countRunsBetween(training, start, end) {
   return training.filter((item) => {
-    const date = parseDate(item.sessionDate);
+    const date = parseDate(item.sessionDate || item.syncedAt);
     return date && date >= start && date < end;
   }).length;
 }
 
 function sumVolumeBetween(training, start, end) {
   return roundVolume(training.reduce((sum, item) => {
-    const date = parseDate(item.sessionDate);
+    const date = parseDate(item.sessionDate || item.syncedAt);
     if (!date || date < start || date >= end) return sum;
     return sum + (Number(item.completedVolumeMiles) || 0);
   }, 0));

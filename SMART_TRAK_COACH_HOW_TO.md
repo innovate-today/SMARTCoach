@@ -102,6 +102,8 @@ How to set up the Miles Board:
 
 Game Score adds points from the saved settings, and the board shows badges such as Goal Hit, 25/50/100 Mile Club, Consistency, This Week, Big Mover, 20/30 Mile Week, Comeback Runner, Streak Leader, and Pack MVP.
 
+Live weekly cards, including **This Week** leaders and **This Week's Winners**, use the current Monday-Sunday week. Changing the board date range changes total miles and leaderboard totals, but it does not move the live weekly window.
+
 On the public board, use **Display Mode** when showing the board on a projector or TV. Display Mode hides the search/full table and shows a larger Top 10 view while keeping the board read-only.
 
 The board is read-only and sortable. It shows athlete name, groups, total miles, current-week miles, week change, points, badges, workouts logged, average per workout, and last logged date. If the coach turns attendance visibility on, it can also show a team attendance card and/or each athlete's attendance percentage for the board range. It also includes the coach message, team and athlete goal progress bars, a Weekly Snapshot, live This Week's Winners, Past Weeks, and a Pack Challenge table for Boys vs Girls division totals. It does not show coach tools, notes, contact information, PB/SB details, or edit buttons.
