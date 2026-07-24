@@ -2328,6 +2328,9 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "function normalizeStoredNoteText(note)",
     "function isTrainingSystemNoteLine(line)",
     "Planned volume|Completed volume|Actual|Difference|Current fitness|Workout Location",
+    "Strava activity id|Matched calendar workout|Matched group|Strava activity|Strava start|Strava type|Strava distance|Strava moving time|Strava API laps exposed|Strava Lap|Strava streams note",
+    "Imported from Strava|Imported rep\\/rest layout from matched SMART Trak workout",
+    "const cleanNotes = normalizeStoredNoteText(notes).split",
     "workout_type: workoutTypeValue(nextValues.workoutType)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Training correction workout note replacement missing ${text}`);
@@ -2358,6 +2361,8 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "function normalizeStoredNoteText(note)",
     "function isTrainingSystemNoteLine(line)",
     "Planned volume|Completed volume|Actual|Difference|Current fitness|Workout Location",
+    "Strava activity id|Matched calendar workout|Matched group|Strava activity|Strava start|Strava type|Strava distance|Strava moving time|Strava API laps exposed|Strava Lap|Strava streams note",
+    "Imported from Strava|Imported rep\\/rest layout from matched SMART Trak workout",
     'id="correctionSplits"',
     'id="correctionRepPaces"',
     "els.correctionSplits.value=correctionSplitsTextFromRow(correctionRow);",

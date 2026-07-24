@@ -701,6 +701,7 @@ function changedValues(previousValues, nextValues, customLabels) {
 function replaceNoteLines(note, labeledValues, notes, correctionTime, reason) {
   const used = {};
   const lines = stripRepPaceNoteBlock(normalizeStoredNoteText(note)).split(/\r?\n/).filter((line) => !isTrainingSystemNoteLine(line));
+  const cleanNotes = normalizeStoredNoteText(notes).split(/\r?\n/).filter((line) => !isTrainingSystemNoteLine(line)).join("\n").trim();
   const nextLines = lines.map((line) => {
     const match = line.match(/^([^:]+):\s*(.*)$/);
     if (!match) return line;
@@ -713,7 +714,7 @@ function replaceNoteLines(note, labeledValues, notes, correctionTime, reason) {
   Object.keys(labeledValues).forEach((label) => {
     if (!used[label] && labeledValues[label]) nextLines.unshift(`${label}: ${labeledValues[label]}`);
   });
-  if (notes) nextLines.push(notes);
+  if (cleanNotes) nextLines.push(cleanNotes);
   nextLines.push(`Correction Date: ${correctionTime}`);
   nextLines.push(`Correction Reason: ${reason}`);
   return nextLines.join("\n");
@@ -757,7 +758,9 @@ function normalizeStoredNoteText(note) {
 }
 
 function isTrainingSystemNoteLine(line) {
-  return /^(Workout|Planned target|Planned effort|Planned volume|Completed volume|Actual|Difference|Current fitness|Workout Location|Athlete note|Athlete notes|Weather|Correction Date|Correction Reason|SMARTCoach Status):/i.test(clean(line));
+  const text = clean(line);
+  if (/^(Workout|Planned target|Planned effort|Planned volume|Completed volume|Actual|Difference|Current fitness|Workout Location|Athlete note|Athlete notes|Weather|Correction Date|Correction Reason|SMARTCoach Status|Strava activity id|Matched calendar workout|Matched group|Strava activity|Strava start|Strava type|Strava distance|Strava moving time|Strava API laps exposed|Strava Lap|Strava streams note):/i.test(text)) return true;
+  return /^(Imported from Strava|Imported rep\/rest layout from matched SMART Trak workout\.|Strava rep pace details saved from Strava stream\/lap data\.|Strava rep pace details not saved because Strava did not expose usable stream\/lap pace data for the matched rep\/rest layout\.)$/i.test(text);
 }
 
 function stripMeetSystemNoteLines(note) {
