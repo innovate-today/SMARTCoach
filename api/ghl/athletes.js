@@ -475,6 +475,7 @@ function isExcludedSystemContact(tags) {
       value === "voice chat" ||
       value === "support" ||
       value === "smartcoach account owner" ||
+      value === "smartcoach prospect" ||
       value === "smartcoach feedback" ||
       value === "smartcoach bug trak" ||
       value === "smartcoach idea trak";

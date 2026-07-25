@@ -334,6 +334,9 @@ function checkAccountOwnerExcludedFromAthletes() {
     if (!source.includes('value === "smartcoach account owner"')) {
       throw new Error(`${file} must exclude smartcoach-account-owner contacts from athlete rosters.`);
     }
+    if (!source.includes('value === "smartcoach prospect"')) {
+      throw new Error(`${file} must exclude smartcoach-prospect contacts from athlete rosters.`);
+    }
     [
       'value === "voice chat"',
       'value === "support"',
