@@ -5224,6 +5224,7 @@ function isOutsideTarget(row){
 }
 
 function targetStatus(row){
+  row=targetReviewRow(row);
   var paceStatus=repPaceTargetStatus(row);
   if(paceStatus)return paceStatus;
   var splitStatus=splitTargetStatus(row);
@@ -7763,21 +7764,73 @@ function recentTrainingHtml(row){
 }
 
 function targetReviewHtml(row){
-  var repPaces=repPaceReviewHtml(row)||repPaceDetailsHtml(row);
-  if(!row.plannedTarget&&!row.targetDifference&&!row.plannedEffort&&!repPaces)return '<span class="muted">No target saved</span>';
-  var reviewTitle=row.plannedTarget||(repPaces?'Actual rep paces':'Target saved');
-  var chips=splitTargetChipsHtml(row);
+  var reviewRow=targetReviewRow(row);
+  var repPaces=repPaceReviewHtml(reviewRow)||repPaceDetailsHtml(reviewRow);
+  if(!reviewRow.plannedTarget&&!reviewRow.targetDifference&&!reviewRow.plannedEffort&&!repPaces)return '<span class="muted">No target saved</span>';
+  var reviewTitle=reviewRow.plannedTarget||(repPaces?'Actual rep paces':'Target saved');
+  var chips=splitTargetChipsHtml(reviewRow);
   if(chips){
     return mainLine(reviewTitle)+chips+repPaces+
-      subLine([row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
+      subLine([reviewRow.plannedEffort,reviewRow.weather?'Weather: '+reviewRow.weather:''].filter(Boolean).join(' · '));
   }
-  var diff=targetDifferenceText(row)||row.targetDifference;
-  return targetStatusPill(row)+mainLine(reviewTitle)+repPaces+
-    subLine([diff,row.plannedEffort,row.weather?'Weather: '+row.weather:''].filter(Boolean).join(' · '));
+  var diff=targetDifferenceText(reviewRow)||reviewRow.targetDifference;
+  return targetStatusPill(reviewRow)+mainLine(reviewTitle)+repPaces+
+    subLine([diff,reviewRow.plannedEffort,reviewRow.weather?'Weather: '+reviewRow.weather:''].filter(Boolean).join(' · '));
 }
 
 function targetReviewText(row){
-  return [row.plannedTarget,targetDifferenceText(row)||row.targetDifference,repPaceSummaryText(row),row.plannedEffort].filter(Boolean).join(' · ');
+  var reviewRow=targetReviewRow(row);
+  return [reviewRow.plannedTarget,targetDifferenceText(reviewRow)||reviewRow.targetDifference,repPaceSummaryText(reviewRow),reviewRow.plannedEffort].filter(Boolean).join(' · ');
+}
+
+function targetReviewRow(row){
+  var fallback=currentFitnessMileageTarget(row);
+  if(!fallback)return row||{};
+  var next=Object.assign({},row);
+  if(!next.plannedTarget)next.plannedTarget=fallback.plannedTarget;
+  if(!next.targetDifference)next.targetDifference=fallback.targetDifference;
+  if(!next.plannedEffort)next.plannedEffort=fallback.plannedEffort;
+  if(!next.currentFitnessSnapshot)next.currentFitnessSnapshot=fallback.currentFitnessSnapshot;
+  next.derivedTargetFromCurrentFitness=true;
+  return next;
+}
+
+function currentFitnessMileageTarget(row){
+  if(!row||row.speedMetricSession)return null;
+  if(row.plannedTarget||row.targetDifference)return null;
+  if(parseSplitLines(row.splitsText).length)return null;
+  var workoutType=currentFitnessMileageWorkoutType(row);
+  if(!workoutType)return null;
+  var athlete=findDashboardAthleteForTraining(row)||{};
+  var fitness=athlete.currentFitness||row.currentFitness||{};
+  var source=trainingPaceSource(fitness);
+  if(!source)return null;
+  var mileRaceMs=equivalentRaceMs(source.resultMs,source.distanceMeters,1609.344);
+  if(!mileRaceMs)return null;
+  var rule=workoutType==='Long Run'
+    ?{fast:1.42,slow:1.67,effort:'60-72%'}
+    :{fast:1.42,slow:1.57,effort:'60-70%'};
+  var fastPace=Math.round(mileRaceMs*rule.fast);
+  var slowPace=Math.round(mileRaceMs*rule.slow);
+  var target=formatPaceRange(fastPace,slowPace)+' /mi';
+  var miles=completedVolumeMiles(row);
+  var totalMs=num(row.totalTimeMs)||parseDurationMs(row.totalTimeDisplay);
+  var diff=(miles&&totalMs)?splitTargetDiff(totalMs/miles,fastPace,slowPace):'';
+  return {
+    plannedTarget:target,
+    targetDifference:diff,
+    plannedEffort:rule.effort,
+    currentFitnessSnapshot:fitness.label||[fitness.event,fitness.display].filter(Boolean).join(' ')
+  };
+}
+
+function currentFitnessMileageWorkoutType(row){
+  var text=[row&&row.workoutPrescription,row&&row.workoutType,row&&row.coachNote].filter(Boolean).join(' ').toLowerCase();
+  if(!text)return '';
+  if(/\b(race|meet|off|rest day|threshold|interval|repetition|tempo|speed|lactate|hill|sprint)\b/.test(text))return '';
+  if(/\blong\b/.test(text))return 'Long Run';
+  if(/\b(easy|recovery|manual mileage|mileage)\b/.test(text))return 'Easy/Recovery Run';
+  return '';
 }
 
 function volumeDisplay(row){

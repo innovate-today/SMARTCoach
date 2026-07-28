@@ -584,6 +584,32 @@ function checkDashboardTrainingPaces() {
   console.log("dashboard roster detail training paces ok");
 }
 
+function checkDashboardCurrentFitnessTargetFallback() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  [
+    "function targetReviewRow(row)",
+    "function currentFitnessMileageTarget(row)",
+    "function currentFitnessMileageWorkoutType(row)",
+    "var fallback=currentFitnessMileageTarget(row);",
+    "if(!next.plannedTarget)next.plannedTarget=fallback.plannedTarget;",
+    "row=targetReviewRow(row);",
+    "var reviewRow=targetReviewRow(row);",
+    "var athlete=findDashboardAthleteForTraining(row)||{};",
+    "var source=trainingPaceSource(fitness);",
+    "var rule=workoutType==='Long Run'",
+    "plannedTarget:target,",
+    "targetDifference:diff,",
+    "derivedTargetFromCurrentFitness=true",
+    "if(row.plannedTarget||row.targetDifference)return null;",
+    "if(parseSplitLines(row.splitsText).length)return null;",
+    "var diff=(miles&&totalMs)?splitTargetDiff(totalMs/miles,fastPace,slowPace):'';",
+    "els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`Dashboard current-fitness target fallback missing ${text}`);
+  });
+  console.log("dashboard current-fitness target fallback ok");
+}
+
 function checkDashboardCompletedVolumeParsing() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -4326,6 +4352,7 @@ checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkDashboardFilterContextAndArchivedGroups();
 checkDashboardTrainingPaces();
+checkDashboardCurrentFitnessTargetFallback();
 checkMilesBoardFeature();
 checkResultsBoardFeature();
 checkSpeedTrakFeature();

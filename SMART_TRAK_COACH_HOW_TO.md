@@ -79,6 +79,8 @@ For timed workouts where the athlete's watch has pace for each segment, use **Ac
 
 If a workout has actual rep paces but no saved target, Completed Workouts still shows those paces under **Actual rep paces** so you can review the rep data later.
 
+For completed Easy/Recovery Run or Long Run mileage rows, **Target Review** can use the athlete's current fitness even when no planned target was saved on that workout. If the row has completed distance and time, SMART Trak compares the athlete's actual pace to the expected pace from current fitness. Saved planned targets and saved rep pace reviews still take priority when they are present.
+
 The Dashboard title includes **Start Here** and **What's New**. Use **Start Here** for goal-based setup and workflow steps. Use **What's New** to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Dashboard Customization, Training Customization, Results Board sharing, Athlete Calendar Questions, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
 
 Use **Customize Dashboard** when a coach wants to hide optional tools they do not use every day. Keep Trak, Attendance Trak, Equipment Trak, Docu Trak, Weather, Records, and Simulators can be turned off for the Dashboard view. Hiding a tool only removes its dashboard shortcut or summary card; the tool's saved data stays in SMART Trak, direct page links still work, and **Show All** can turn everything back on.
