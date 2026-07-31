@@ -65,6 +65,8 @@ How to use it:
 
 Weekly volume and **Volume by Athlete** count completed workout totals saved for the athlete, including completed totals that were saved without `mi` in the row.
 
+Use the season filter to separate current work from older work. Cross country rows show under **Cross Country 2026** when the athlete, group, or saved row is marked as cross country. Track work in the summer shows under **Summer 2026**.
+
 When correcting **Completed Volume**, enter the amount and choose the unit: miles, kilometers, or meters. SMART Trak will ask for the unit before saving so training volume can calculate correctly.
 
 Older completed-workout rows that were saved with only a number are treated as miles on the Dashboard and will open with **Miles** selected when corrected.

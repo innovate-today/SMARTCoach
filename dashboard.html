@@ -5022,7 +5022,7 @@ function matchesActivityRange(row,type){
 function matchesSeasonFilter(row,type){
   var value=els.seasonFilter.value||'current';
   if(value==='all')return true;
-  if(value==='current')return seasonYearForRow(row,type)===new Date().getFullYear();
+  if(value==='current')return currentSeasonKeys().indexOf(seasonKeyForRow(row,type))>=0;
   return seasonKeyForRow(row,type)===value;
 }
 
@@ -5115,8 +5115,8 @@ function seasonKeyForRow(row,type){
   return date?seasonKeyForDate(date):'';
 }
 function sportSeasonKey(row,type){
-  var sport=normalizeDashboardSport(row&&row.sport||row&&row.season);
-  if(!sport)return '';
+  var sport=normalizeDashboardSport([row&&row.sport,row&&row.season,row&&row.groupName,row&&row.workoutPrescription,row&&row.workoutType].filter(Boolean).join(' '));
+  if(sport!=='cross_country')return '';
   var year=seasonYearForRow(row,type);
   return year?year+'-'+sport:'';
 }
@@ -5127,10 +5127,19 @@ function seasonYearForRow(row,type){
   return date?date.getFullYear():0;
 }
 function normalizeDashboardSport(value){
-  var text=String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-  if(text==='cross_country'||text==='xc'||text==='cc')return 'cross_country';
-  if(text==='track'||text==='track_and_field'||text==='track_field')return 'track';
+  var raw=String(value||'').toLowerCase();
+  var text=raw.replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  if(text==='cross_country'||text==='xc'||text==='cc'||/\b(cross country|xc|cc team|cc)\b/.test(raw))return 'cross_country';
+  if(text==='track'||text==='track_and_field'||text==='track_field'||/\b(track|track and field)\b/.test(raw))return 'track';
   return '';
+}
+function currentSeasonKeys(){
+  var date=new Date();
+  var key=seasonKeyForDate(date);
+  var parts=String(key||'').split('-');
+  var year=parts[0]||String(date.getFullYear());
+  if(date.getMonth()+1>=6&&date.getMonth()+1<=11)return [year+'-cross_country',key];
+  return [key];
 }
 function seasonKeyForDate(date){
   var month=date.getMonth()+1;

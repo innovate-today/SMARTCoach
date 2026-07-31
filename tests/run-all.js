@@ -549,8 +549,12 @@ function checkDashboardFilterContextAndArchivedGroups() {
     "function seasonKeyForRow(row,type)",
     "function sportSeasonKey(row,type)",
     "function normalizeDashboardSport(value)",
-    "if(value==='current')return seasonYearForRow(row,type)===new Date().getFullYear();",
+    "if(value==='current')return currentSeasonKeys().indexOf(seasonKeyForRow(row,type))>=0;",
     "if(parts[1]==='cross_country')return 'Cross Country '+parts[0];",
+    "function currentSeasonKeys()",
+    "if(date.getMonth()+1>=6&&date.getMonth()+1<=11)return [year+'-cross_country',key];",
+    "if(sport!=='cross_country')return '';",
+    "row&&row.groupName,row&&row.workoutPrescription,row&&row.workoutType",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard filtered training load/archived group guard missing ${text}`);
   });
