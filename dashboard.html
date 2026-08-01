@@ -5126,7 +5126,7 @@ function dashboardSportForSeason(row,type){
   if(explicit)return explicit;
   var date=parseActivityDate(activityDateValue(row,type));
   var month=date?date.getMonth()+1:0;
-  if(type==='training'&&month>=6&&month<=11&&!dashboardTrackSeasonText(text))return 'cross_country';
+  if(type==='training'&&month>=5&&month<=11&&!dashboardTrackSeasonText(text))return 'cross_country';
   if(type==='meet'&&month>=8&&month<=11&&!dashboardTrackSeasonText(text)&&dashboardCrossCountryMeetText(row,text))return 'cross_country';
   return '';
 }
@@ -5168,7 +5168,7 @@ function currentSeasonKeys(){
   var key=seasonKeyForDate(date);
   var parts=String(key||'').split('-');
   var year=parts[0]||String(date.getFullYear());
-  if(date.getMonth()+1>=6&&date.getMonth()+1<=11)return [year+'-cross_country',key];
+  if(date.getMonth()+1>=5&&date.getMonth()+1<=11)return [year+'-cross_country',key];
   return [key];
 }
 function seasonKeyForDate(date){
