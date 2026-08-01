@@ -55,7 +55,7 @@ How to use it:
 2. Use the search box to find one athlete or group.
 3. Use **Activity range** for quick ranges such as Last 7 days, Last 30 days, or Last 90 days. Choose **Custom range** when you need exact start and end dates.
 4. Use the filters to narrow the view by athlete group, activity type, or season.
-5. Season choices use saved sport and year labels, such as **Cross Country 2026** or **Track 2026**, when those labels are available. **Current season** includes records from the current year instead of using month-based season buckets.
+5. Season choices keep cross country work together by year. Summer and fall cross country mileage and workouts show under **Cross Country 2026** instead of **Summer 2026** or **Fall 2026**. Summer track work stays under **Summer 2026**.
 6. Use the main tabs:
    - **Roster Overview** shows each athlete's current fitness, latest meet result, latest training, weekly volume, and status.
    - **Recent Meet Results** shows saved race results and PB/SB updates.
@@ -65,7 +65,7 @@ How to use it:
 
 Weekly volume and **Volume by Athlete** count completed workout totals saved for the athlete, including completed totals that were saved without `mi` in the row.
 
-Use the season filter to separate current work from older work. Cross country rows show under **Cross Country 2026** when the athlete, group, or saved row is marked as cross country. Track work in the summer shows under **Summer 2026**.
+Use the season filter to separate current work from older work. Cross country mileage and workouts from summer or fall show under **Cross Country 2026**. Track work in the summer shows under **Summer 2026**.
 
 When correcting **Completed Volume**, enter the amount and choose the unit: miles, kilometers, or meters. SMART Trak will ask for the unit before saving so training volume can calculate correctly.
 
@@ -573,7 +573,7 @@ How to use it:
 
 Fastest by event should separate boys and girls so results are compared correctly.
 
-Season filters use the saved sport and year when available, such as **Cross Country 2026** or **Track 2026**. Use the Sport filter with the Season filter when Cross Country and Track results need to stay separated in the same calendar year.
+Season filters use the saved sport and year when available, such as **Cross Country 2026**. Use the Sport filter with the Season filter when Cross Country and Track results need to stay separated in the same calendar year.
 
 ### Import Historical Meet Results
 

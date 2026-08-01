@@ -5115,10 +5115,40 @@ function seasonKeyForRow(row,type){
   return date?seasonKeyForDate(date):'';
 }
 function sportSeasonKey(row,type){
-  var sport=normalizeDashboardSport([row&&row.sport,row&&row.season,row&&row.groupName,row&&row.workoutPrescription,row&&row.workoutType].filter(Boolean).join(' '));
+  var sport=dashboardSportForSeason(row,type);
   if(sport!=='cross_country')return '';
   var year=seasonYearForRow(row,type);
   return year?year+'-'+sport:'';
+}
+function dashboardSportForSeason(row,type){
+  var text=dashboardSeasonText(row);
+  var explicit=normalizeDashboardSport(text);
+  if(explicit)return explicit;
+  var date=parseActivityDate(activityDateValue(row,type));
+  var month=date?date.getMonth()+1:0;
+  if(type==='training'&&month>=6&&month<=11&&!dashboardTrackSeasonText(text))return 'cross_country';
+  if(type==='meet'&&month>=8&&month<=11&&!dashboardTrackSeasonText(text)&&dashboardCrossCountryMeetText(row,text))return 'cross_country';
+  return '';
+}
+function dashboardSeasonText(row){
+  return [
+    row&&row.sport,
+    row&&row.season,
+    row&&row.groupName,
+    row&&row.workoutPrescription,
+    row&&row.workoutType,
+    row&&row.title,
+    row&&row.eventName,
+    row&&row.meetName,
+    row&&row.source
+  ].filter(Boolean).join(' ');
+}
+function dashboardTrackSeasonText(text){
+  return normalizeDashboardSport(text)==='track';
+}
+function dashboardCrossCountryMeetText(row,text){
+  var eventText=String(row&&row.event||row&&row.eventName||'').toLowerCase();
+  return normalizeDashboardSport(text)==='cross_country'||/\b(2 mile|3 mile|4k|5k|6k|8k|10k|xc)\b/.test(eventText);
 }
 function seasonYearForRow(row,type){
   var year=num(row&&row.seasonYear);

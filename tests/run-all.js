@@ -548,13 +548,19 @@ function checkDashboardFilterContextAndArchivedGroups() {
     "if(!group||!group.name||group.archived||group.type==='meet')return false;",
     "function seasonKeyForRow(row,type)",
     "function sportSeasonKey(row,type)",
+    "function dashboardSportForSeason(row,type)",
+    "function dashboardTrackSeasonText(text)",
+    "if(type==='training'&&month>=6&&month<=11&&!dashboardTrackSeasonText(text))return 'cross_country';",
+    "function dashboardCrossCountryMeetText(row,text)",
     "function normalizeDashboardSport(value)",
     "if(value==='current')return currentSeasonKeys().indexOf(seasonKeyForRow(row,type))>=0;",
     "if(parts[1]==='cross_country')return 'Cross Country '+parts[0];",
     "function currentSeasonKeys()",
     "if(date.getMonth()+1>=6&&date.getMonth()+1<=11)return [year+'-cross_country',key];",
     "if(sport!=='cross_country')return '';",
-    "row&&row.groupName,row&&row.workoutPrescription,row&&row.workoutType",
+    "row&&row.groupName",
+    "row&&row.workoutPrescription",
+    "row&&row.workoutType",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard filtered training load/archived group guard missing ${text}`);
   });
