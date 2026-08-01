@@ -67,6 +67,8 @@ Weekly volume and **Volume by Athlete** count completed workout totals saved for
 
 Use the season filter to separate current work from older work. Saved **Cross Country 2026** workouts stay in Cross Country 2026 even after those athletes move into a track season. Track workouts stay in their saved track season.
 
+When a completed workout was saved under the wrong season, click **Edit** on that workout and change **Season**. Choose **Cross Country** for cross country season work. Choose **Track** for track work, and SMART Trak will keep it in the track season for the workout date.
+
 When correcting **Completed Volume**, enter the amount and choose the unit: miles, kilometers, or meters. SMART Trak will ask for the unit before saving so training volume can calculate correctly.
 
 Older completed-workout rows that were saved with only a number are treated as miles on the Dashboard and will open with **Miles** selected when corrected.

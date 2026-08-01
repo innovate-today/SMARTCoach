@@ -12,6 +12,9 @@ const FIELD_IDS = {
   source_record_id: ["9YD4n4y4aqf3VnkrwLL1", "3HVSAaItyvtLXYNasRAJ"],
   group_name: ["ochf7LkGhgAh5ySys5dA"],
   session_date: ["pl69ao2Pu76zeUKMEWpm"],
+  season: ["E7WkU0NjC48zZzSNMlMJ"],
+  season_year: ["jImFId2bLt2Hhox7TTDR"],
+  sport: ["NFlleoMtJlvlB1KAOqpR", "rgFknLe8077zfXPF5i9I"],
   meet_name: ["bCOXXRAtRqmCJnMZFLvB"],
   meet_date: ["rYZUhun2ynmK8MNsYgph"],
   event: ["Qtvff2zJpE2nu8qV6kAU"],
@@ -311,6 +314,9 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
   const previousValues = {
     sessionDate: prop(props, "session_date"),
     workoutType: labelValue(prop(props, "workout_type")),
+    sport: labelValue(prop(props, "sport")) || prop(props, "sport"),
+    season: labelValue(prop(props, "season")) || prop(props, "season"),
+    seasonYear: String(prop(props, "season_year") || ""),
     surface: labelValue(prop(props, "surface")),
     time: prop(props, "total_time_display"),
     completedVolume: noteValue(previousNote, "Completed volume"),
@@ -323,6 +329,9 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
   const nextValues = {
     sessionDate: clean(updates.sessionDate) || previousValues.sessionDate,
     workoutType: clean(updates.workoutType) || previousValues.workoutType,
+    sport: clean(updates.sport) || previousValues.sport,
+    season: clean(updates.season) || previousValues.season,
+    seasonYear: clean(updates.seasonYear) || previousValues.seasonYear,
     surface: clean(updates.surface) || previousValues.surface,
     time: clean(updates.time) || previousValues.time,
     completedVolume: clean(updates.completedVolume) || previousValues.completedVolume,
@@ -338,6 +347,8 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
   if (nextValues.time && nextValues.time.toLowerCase() !== "untimed" && !totalMs) {
     throw httpError(400, "Enter time like 36:20, 1:02:15, or 18:04.5.");
   }
+  const seasonYearValue = clean(nextValues.seasonYear);
+  if (seasonYearValue && !Number.isFinite(Number(seasonYearValue))) throw httpError(400, "Season Year must be a number.");
 
   const correctionTime = new Date().toISOString();
   const nextNote = replaceNoteLines(previousNote, {
@@ -356,6 +367,9 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
       properties: {
         session_date: nextValues.sessionDate,
         workout_type: workoutTypeValue(nextValues.workoutType),
+        ...(clean(nextValues.sport) ? { sport: optionValue(nextValues.sport) } : {}),
+        ...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {}),
+        ...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {}),
         surface: optionValue(nextValues.surface),
         total_time_display: nextValues.time,
         ...(totalMs ? { total_time_ms: totalMs } : {}),
@@ -415,6 +429,9 @@ async function mirrorCorrectedTrainingRecord({ accountKey, record, props, contac
     source_record_id: sourceRecordId,
     group_name: prop(props, "group_name"),
     session_date: values.sessionDate || prop(props, "session_date"),
+    sport: values.sport ? optionValue(values.sport) : prop(props, "sport"),
+    season: values.season ? optionValue(values.season) : prop(props, "season"),
+    season_year: values.seasonYear || prop(props, "season_year"),
     workout_type: values.workoutType ? workoutTypeValue(values.workoutType) : prop(props, "workout_type"),
     surface: values.surface ? optionValue(values.surface) : prop(props, "surface"),
     rep_number: prop(props, "rep_number"),
@@ -593,6 +610,9 @@ function previousProps(previous, recordType) {
     group_name: clean(data.groupName),
     session_date: clean(data.sessionDate),
     workout_type: clean(data.workoutType),
+    sport: clean(data.sport),
+    season: clean(data.season),
+    season_year: clean(data.seasonYear),
     surface: clean(data.surface),
     total_time_display: clean(data.time),
     splits_json: clean(data.splitsJson),
@@ -681,6 +701,9 @@ function changedValues(previousValues, nextValues, customLabels) {
   const labels = customLabels || {
     sessionDate: "Date",
     workoutType: "Workout Type",
+    sport: "Sport",
+    season: "Season",
+    seasonYear: "Season Year",
     surface: "Surface",
     time: "Time",
     completedVolume: "Completed Volume",

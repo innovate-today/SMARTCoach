@@ -1128,6 +1128,14 @@ tr:last-child td{border-bottom:0}
           </select>
         </div>
         <div class="field">
+          <label for="correctionSeason">Season</label>
+          <select id="correctionSeason">
+            <option value="">Keep saved season</option>
+            <option value="cross_country">Cross Country</option>
+            <option value="track">Track</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="correctionPlannedTarget">Planned Target</label>
           <input id="correctionPlannedTarget" type="text" placeholder="Optional, e.g. 06:38-07:10">
         </div>
@@ -2844,6 +2852,7 @@ var els={
   correctionClose:document.getElementById('correctionClose'),
   correctionDate:document.getElementById('correctionDate'),
   correctionWorkout:document.getElementById('correctionWorkout'),
+  correctionSeason:document.getElementById('correctionSeason'),
   correctionPlannedTarget:document.getElementById('correctionPlannedTarget'),
   correctionPlannedEffort:document.getElementById('correctionPlannedEffort'),
   correctionSurface:document.getElementById('correctionSurface'),
@@ -4621,6 +4630,7 @@ function renderRows(){
   dashboardVolumeUnit=speedVolumeContext(trainingRows,completedRows,filter)?'meters':'miles';
   var volumeRows=sortRows(groupVolumeByAthlete(completedRows),tableSorts.volume,volumeSortValue);
   var trainingGroups=sortRows(groupTrainingByAthlete(trainingRows),tableSorts.training,trainingGroupSortValue);
+  rows=sortRows(seasonScopedRosterRows(rows,completedRows),tableSorts.roster,rosterSortValue);
   updateBreakdowns(rows,meetRows,trainingRows,completedRows);
   visibleRosterRows=rows;
   visibleMeetRows=meetRows;
@@ -5033,6 +5043,23 @@ function matchesSeasonFilter(row,type){
   if(value==='all')return true;
   if(value==='current')return currentSeasonKeys().indexOf(seasonKeyForRow(row,type))>=0;
   return seasonKeyForRow(row,type)===value;
+}
+
+function seasonScopedRosterRows(rows,completedRows){
+  var value=els.seasonFilter.value||'current';
+  if(value==='all')return rows;
+  var keys={};
+  (completedRows||[]).forEach(function(row){
+    var contact=String(row&&row.contactId||'').trim();
+    var name=String(row&&row.athleteName||row&&row.name||'').trim().toLowerCase();
+    if(contact)keys['id:'+contact]=true;
+    if(name)keys['name:'+name]=true;
+  });
+  return (rows||[]).filter(function(row){
+    var contact=String(row&&row.contactId||'').trim();
+    var name=String(row&&row.name||row&&row.athleteName||'').trim().toLowerCase();
+    return (contact&&keys['id:'+contact])||(name&&keys['name:'+name]);
+  });
 }
 
 function attendanceRateText(rows){
@@ -5743,6 +5770,7 @@ function openCorrectionModal(button){
   if(els.correctionTitle)els.correctionTitle.textContent=correctionRow.speedMetricSession?'Correct Sprint Workout':'Correct Training Entry';
   els.correctionDate.value=dateInputValue(correctionRow.sessionDate);
   setSelectValue(els.correctionWorkout,correctionRow.speedMetricSession?(correctionRow.workoutPrescription||correctionRow.plannedEffort||'Max Velocity'):(correctionRow.workoutPrescription||correctionRow.workoutType||'Easy/Recovery Run'));
+  if(els.correctionSeason)els.correctionSeason.value=correctionSeasonChoice(correctionRow);
   els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';
   els.correctionPlannedEffort.value=correctionRow.plannedEffort||noteLineValue(correctionRow.coachNote,'Planned effort')||'';
   setSelectValue(els.correctionSurface,correctionRow.surface||'Road');
@@ -5762,6 +5790,7 @@ function correctionOriginalHtml(row){
   var values=[
     ['Workout',row.workoutPrescription||row.workoutType],
     ['Date',formatDate(row.sessionDate)],
+    ['Season',correctionSeasonLabel(row)],
     ['Volume',row.completedVolume],
     ['Time',row.totalTimeDisplay],
     ['Splits',splitCountText(row)],
@@ -5769,6 +5798,33 @@ function correctionOriginalHtml(row){
     ['Weather',row.weather]
   ].filter(function(pair){return pair[1];}).map(function(pair){return esc(pair[0])+': '+esc(pair[1]);}).join(' · ');
   return '<b>Original saved values</b>'+(values||'No saved values found.');
+}
+
+function correctionSeasonChoice(row){
+  var sport=dashboardSportForSeason(row,'training');
+  if(sport==='cross_country')return 'cross_country';
+  if(sport==='track')return 'track';
+  return '';
+}
+
+function correctionSeasonLabel(row){
+  var sport=dashboardSportForSeason(row,'training');
+  var year=seasonYearForRow(row,'training');
+  if(sport==='cross_country')return year?'Cross Country '+year:'Cross Country';
+  if(sport==='track'){
+    var dateKey=seasonKeyForDate(parseActivityDate(row&&row.sessionDate)||new Date());
+    return seasonLabelForKey(dateKey);
+  }
+  return row&&row.seasonYear?[row.season,row.seasonYear].filter(Boolean).join(' '):(row&&row.season||'');
+}
+
+function correctionSeasonContext(row){
+  var value=els.correctionSeason&&els.correctionSeason.value||'';
+  var date=els.correctionDate&&els.correctionDate.value||row&&row.sessionDate||todayInputValue();
+  var parts=raceResultSeasonFromDate(date);
+  if(value==='cross_country')return {sport:'Cross Country',season:'Cross Country',seasonYear:parts.seasonYear};
+  if(value==='track')return {sport:'Track',season:parts.season,seasonYear:parts.seasonYear};
+  return {sport:row&&row.sport||'',season:row&&row.season||'',seasonYear:row&&row.seasonYear||''};
 }
 
 function closeCorrectionModal(){
@@ -5789,6 +5845,7 @@ function saveCorrection(){
     return;
   }
   var completedVolume=correctionVolumeValue();
+  var seasonContext=correctionSeasonContext(correctionRow);
   els.correctionSave.disabled=true;
   setCorrectionStatus('Saving correction...','');
   fetch('/api/smart-trak/correction',{
@@ -5805,6 +5862,9 @@ function saveCorrection(){
       updates:{
         sessionDate:els.correctionDate.value,
         workoutType:els.correctionWorkout.value,
+        sport:seasonContext.sport,
+        season:seasonContext.season,
+        seasonYear:seasonContext.seasonYear,
         plannedTarget:els.correctionPlannedTarget.value,
         plannedEffort:els.correctionPlannedEffort.value,
         surface:els.correctionSurface.value,
@@ -5822,6 +5882,9 @@ function saveCorrection(){
     applyTrainingCorrectionLocally(correctionRow,{
       sessionDate:els.correctionDate.value,
       workoutType:els.correctionWorkout.value,
+      sport:seasonContext.sport,
+      season:seasonContext.season,
+      seasonYear:seasonContext.seasonYear,
       plannedTarget:els.correctionPlannedTarget.value,
       plannedEffort:els.correctionPlannedEffort.value,
       surface:els.correctionSurface.value,
@@ -5989,6 +6052,9 @@ function applyTrainingCorrectionLocally(row,updates,reason){
     sessionDate:updates.sessionDate||sourceRow.sessionDate,
     workoutType:updates.workoutType||sourceRow.workoutType,
     workoutPrescription:updates.workoutType||sourceRow.workoutPrescription,
+    sport:Object.prototype.hasOwnProperty.call(updates,'sport')?updates.sport:sourceRow.sport,
+    season:Object.prototype.hasOwnProperty.call(updates,'season')?updates.season:sourceRow.season,
+    seasonYear:Object.prototype.hasOwnProperty.call(updates,'seasonYear')?updates.seasonYear:sourceRow.seasonYear,
     plannedTarget:Object.prototype.hasOwnProperty.call(updates,'plannedTarget')?updates.plannedTarget:sourceRow.plannedTarget,
     plannedEffort:Object.prototype.hasOwnProperty.call(updates,'plannedEffort')?updates.plannedEffort:sourceRow.plannedEffort,
     surface:updates.surface||sourceRow.surface,
@@ -6021,6 +6087,9 @@ function correctionPreviousPayload(row){
     groupName:row.groupName||'',
     sessionDate:row.sessionDate||'',
     workoutType:row.workoutType||'',
+    sport:row.sport||'',
+    season:row.season||'',
+    seasonYear:row.seasonYear||'',
     surface:row.surface||'',
     time:row.totalTimeDisplay||'',
     completedVolume:row.completedVolume||'',
