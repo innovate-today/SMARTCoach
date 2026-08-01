@@ -50,7 +50,7 @@ function buildSyncPayload(payload) {
     groupName,
     season: clean(payload.season) || seasonForSport(payload.sport) || seasonForDate(date),
     seasonYear: Number(payload.seasonYear) || new Date(date).getFullYear(),
-    sport: clean(payload.sport) || "Cross Country",
+    sport: clean(payload.sport),
     phase: clean(payload.phase) || "GPP",
     workoutType,
     surface: clean(payload.surface) || "Road",
@@ -176,7 +176,6 @@ function seasonForDate(value) {
 function seasonForSport(value) {
   const sport = clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
   if (sport === "cross_country" || sport === "xc" || sport === "cc") return "Cross Country";
-  if (sport === "track" || sport === "track_and_field" || sport === "track_field") return "Track";
   return "";
 }
 

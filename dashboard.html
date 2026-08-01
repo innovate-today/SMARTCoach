@@ -875,6 +875,14 @@ tr:last-child td{border-bottom:0}
           </select>
         </div>
         <div class="field">
+          <label for="manualMileageSeason">Season <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the season this completed entry belongs to. Cross country entries stay with Cross Country for that year. Track entries stay with the track season for the workout date.">i</span></label>
+          <select id="manualMileageSeason">
+            <option value="">Select season</option>
+            <option value="cross_country">Cross Country</option>
+            <option value="track">Track</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="manualMileageScope">Apply To <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Individual for one athlete or Group for every athlete in an active training group.">i</span></label>
           <select id="manualMileageScope">
             <option value="">Select apply to</option>
@@ -2764,6 +2772,7 @@ var els={
   manualMileageClose:document.getElementById('manualMileageClose'),
   manualMileageDate:document.getElementById('manualMileageDate'),
   manualMileageMode:document.getElementById('manualMileageMode'),
+  manualMileageSeason:document.getElementById('manualMileageSeason'),
   manualMileageScope:document.getElementById('manualMileageScope'),
   manualMileageAthlete:document.getElementById('manualMileageAthlete'),
   manualMileageGroup:document.getElementById('manualMileageGroup'),
@@ -5124,10 +5133,6 @@ function dashboardSportForSeason(row,type){
   var text=dashboardSeasonText(row);
   var explicit=normalizeDashboardSport(text);
   if(explicit)return explicit;
-  var date=parseActivityDate(activityDateValue(row,type));
-  var month=date?date.getMonth()+1:0;
-  if(type==='training'&&month>=5&&month<=11&&!dashboardTrackSeasonText(text))return 'cross_country';
-  if(type==='meet'&&month>=8&&month<=11&&!dashboardTrackSeasonText(text)&&dashboardCrossCountryMeetText(row,text))return 'cross_country';
   return '';
 }
 function dashboardSeasonText(row){
@@ -5145,10 +5150,6 @@ function dashboardSeasonText(row){
 }
 function dashboardTrackSeasonText(text){
   return normalizeDashboardSport(text)==='track';
-}
-function dashboardCrossCountryMeetText(row,text){
-  var eventText=String(row&&row.event||row&&row.eventName||'').toLowerCase();
-  return normalizeDashboardSport(text)==='cross_country'||/\b(2 mile|3 mile|4k|5k|6k|8k|10k|xc)\b/.test(eventText);
 }
 function seasonYearForRow(row,type){
   var year=num(row&&row.seasonYear);
@@ -5168,8 +5169,20 @@ function currentSeasonKeys(){
   var key=seasonKeyForDate(date);
   var parts=String(key||'').split('-');
   var year=parts[0]||String(date.getFullYear());
-  if(date.getMonth()+1>=5&&date.getMonth()+1<=11)return [year+'-cross_country',key];
+  if(Object.keys(availableSeasonKeys()).indexOf(year+'-cross_country')>=0)return [year+'-cross_country',key];
   return [key];
+}
+function availableSeasonKeys(){
+  var keys={};
+  recentMeetRows.forEach(function(row){
+    var key=seasonKeyForRow(row,'meet');
+    if(key)keys[key]=true;
+  });
+  recentTrainingRows.forEach(function(row){
+    var key=seasonKeyForRow(row,'training');
+    if(key)keys[key]=true;
+  });
+  return keys;
 }
 function seasonKeyForDate(date){
   var month=date.getMonth()+1;
@@ -5351,6 +5364,7 @@ function closeAthleteDetail(){
 function openManualMileage(){
   if(els.manualMileageDate&&!els.manualMileageDate.value)els.manualMileageDate.value=todayInputValue();
   if(els.manualMileageDistanceUnit)els.manualMileageDistanceUnit.value='';
+  if(els.manualMileageSeason)els.manualMileageSeason.value='';
   renderManualMileageAthletes();
   renderManualMileageGroups();
   updateManualMileageScope();
@@ -6950,13 +6964,15 @@ function saveManualMileage(){
   if(!athletes.length){setManualMileageStatus('Select at least one athlete.', 'bad');return;}
   if(qualityMode&&!quality.sets.length){setManualMileageStatus('Add at least one quality set.', 'bad');return;}
   if(!distance){setManualMileageStatus('Distance is required.', 'bad');return;}
+  var seasonContext=manualMileageSeasonContext();
+  if(!seasonContext){setManualMileageStatus('Choose Cross Country or Track for Season.', 'bad');return;}
   var payload={
     date:els.manualMileageDate.value,
     groupName:manualMileageGroupName(),
     workoutType:els.manualMileageWorkout.value,
-    season:'Cross Country',
-    seasonYear:milesBoardSeasonYear(),
-    sport:'Cross Country',
+    season:seasonContext.season,
+    seasonYear:seasonContext.seasonYear,
+    sport:seasonContext.sport,
     distance:distance,
     time:els.manualMileageTime.value,
     source:els.manualMileageSource.value,
@@ -7012,6 +7028,9 @@ function applyManualMileageLocally(payload,result){
       sourceRecordId:firstRecord.sourceRecordId||'',
       groupName:payload.groupName||'Manual Mileage',
       workoutType:payload.workoutType||'Easy/Recovery Run',
+      sport:payload.sport||'',
+      season:payload.season||'',
+      seasonYear:payload.seasonYear||'',
       surface:payload.surface||'Road',
       repNumber:1,
       totalTimeDisplay:payload.time||'Untimed',
@@ -7046,6 +7065,16 @@ function applyManualMileageLocally(payload,result){
 
 function manualMileageDistanceValue(){
   return volumeValueWithUnit(els.manualMileageDistance&&els.manualMileageDistance.value,els.manualMileageDistanceUnit&&els.manualMileageDistanceUnit.value);
+}
+
+function manualMileageSeasonContext(){
+  var value=els.manualMileageSeason&&els.manualMileageSeason.value||'';
+  if(!value)return null;
+  var date=els.manualMileageDate&&els.manualMileageDate.value||todayInputValue();
+  var parts=raceResultSeasonFromDate(date);
+  if(value==='cross_country')return {sport:'Cross Country',season:'Cross Country',seasonYear:parts.seasonYear};
+  if(value==='track')return {sport:'Track',season:parts.season,seasonYear:parts.seasonYear};
+  return null;
 }
 
 function manualQualitySplitsText(quality){

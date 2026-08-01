@@ -55,7 +55,7 @@ How to use it:
 2. Use the search box to find one athlete or group.
 3. Use **Activity range** for quick ranges such as Last 7 days, Last 30 days, or Last 90 days. Choose **Custom range** when you need exact start and end dates.
 4. Use the filters to narrow the view by athlete group, activity type, or season.
-5. Season choices keep cross country work together by year. Cross country mileage and workouts from May through fall show under **Cross Country 2026** instead of **Spring 2026**, **Summer 2026**, or **Fall 2026**. Track work stays in its calendar season, such as **Winter 2026**, **Spring 2026**, or **Summer 2026**.
+5. Season choices use the season saved on each workout or result. Cross country work stays under **Cross Country 2026** for that season. Track work stays in its track season, such as **Winter 2026**, **Spring 2026**, or **Summer 2026**.
 6. Use the main tabs:
    - **Roster Overview** shows each athlete's current fitness, latest meet result, latest training, weekly volume, and status.
    - **Recent Meet Results** shows saved race results and PB/SB updates.
@@ -65,7 +65,7 @@ How to use it:
 
 Weekly volume and **Volume by Athlete** count completed workout totals saved for the athlete, including completed totals that were saved without `mi` in the row.
 
-Use the season filter to separate current work from older work. Cross country mileage and workouts from May through fall show under **Cross Country 2026**. Track work stays in its calendar season, such as **Summer 2026**.
+Use the season filter to separate current work from older work. Saved **Cross Country 2026** workouts stay in Cross Country 2026 even after those athletes move into a track season. Track workouts stay in their saved track season.
 
 When correcting **Completed Volume**, enter the amount and choose the unit: miles, kilometers, or meters. SMART Trak will ask for the unit before saving so training volume can calculate correctly.
 
@@ -795,13 +795,16 @@ How to use it:
 1. Click **Log Miles**.
 2. Choose the date.
 3. Choose **Easy Miles** for a simple entry or **Quality Session** for warmup, reps, rests, splits, and cooldown.
-4. Choose whether the entry applies to an individual athlete or a group.
-5. Select the athlete or group.
-6. Choose the effort.
-7. For Easy Miles, enter the distance amount and choose the unit: miles, kilometers, or meters. SMART Trak will ask for the unit before saving.
-8. For Quality Session, enter warmup, cooldown, and one or more sets. Each set can include reps, distance, rep splits, rest, effort, and notes.
-9. Add time, source, surface, and notes if useful.
-10. Save mileage. The confirmation shows the saved distance and athlete name for individual entries.
+4. Choose the season: **Cross Country** or **Track**.
+5. Choose whether the entry applies to an individual athlete or a group.
+6. Select the athlete or group.
+7. Choose the effort.
+8. For Easy Miles, enter the distance amount and choose the unit: miles, kilometers, or meters. SMART Trak will ask for the unit before saving.
+9. For Quality Session, enter warmup, cooldown, and one or more sets. Each set can include reps, distance, rep splits, rest, effort, and notes.
+10. Add time, source, surface, and notes if useful.
+11. Save mileage. The confirmation shows the saved distance and athlete name for individual entries.
+
+The season you choose is saved with that entry. Cross country entries stay with that cross country season, and track entries stay with the track season for the workout date.
 
 Manual mileage and manual quality sessions appear in Dashboard training volume, completed workouts, athlete training load, and Miles Board totals when the board date range includes the saved date. Quality-session rep splits appear with the completed workout details.
 
