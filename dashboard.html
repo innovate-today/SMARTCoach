@@ -8419,7 +8419,7 @@ function splitReviewLines(row){
   if(targetRangeIsPace(row&&row.plannedTarget))target=null;
   return splits.map(function(split,index){
     var kind=splitKind(row,index,splits);
-    var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap);
+    var label=row&&row.speedMetricSession?(split.label||('Rep '+(index+1))):(kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap));
     var time=cleanSplitTimeForLabel(label,split.time);
     var detail=label+': '+time;
     if(kind!=='recovery'&&target){
@@ -8438,7 +8438,7 @@ function splitTargetChipsHtml(row){
   if(targetRangeIsPace(row&&row.plannedTarget))target=null;
   var chips=splits.map(function(split,index){
     var kind=splitKind(row,index,splits);
-    var label=kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap);
+    var label=row&&row.speedMetricSession?(split.label||('Rep '+(index+1))):(kind==='recovery'?'Rest '+Math.ceil((index+1)/2):(kind==='work'?'Rep '+Math.ceil((index+1)/2):'Lap '+split.lap));
     var time=cleanSplitTimeForLabel(label,split.time);
     var status='';
     if(kind!=='recovery'&&target){

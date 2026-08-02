@@ -1355,6 +1355,7 @@ function checkSpeedTrakFeature() {
     "note:cleanSpeedMetricNote(metric.note)",
     "function cleanSpeedMetricNote(note)",
     "if(/^Speed Metrics session$/i.test(line))return false;",
+    "row&&row.speedMetricSession?(split.label||('Rep '+(index+1)))",
     "fetch('/api/smart-trak/field-practice'",
     "kind:row.speedMetricSession?'speed':'training'",
     "if(voidRequest.kind==='speed')",
