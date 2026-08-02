@@ -6004,13 +6004,17 @@ function speedPracticeMetricsForRow(practice,row){
 
 function speedDistanceFromCorrection(value,row){
   var text=String(value||'');
-  var reps=text.match(/\b\d+(?:\.\d+)?\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(yd|yard|yards|m|meter|meters)\b/i);
+  var reps=text.match(/\b(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(yd|yard|yards|m|meter|meters)\b/i);
   var single=text.match(/\b(\d+(?:\.\d+)?)\s*(yd|yard|yards|m|meter|meters)\b/i);
   var match=reps||single;
   if(!match)return null;
-  var distance=Number(match[1]);
-  var unit=/^yd|yard/i.test(match[2]||'')?'yd':'m';
+  var distance=Number(reps?match[2]:match[1]);
+  var unit=/^yd|yard/i.test(match[reps?3:2]||'')?'yd':'m';
   if(!Number.isFinite(distance)||distance<=0)return null;
+  if(!reps&&row&&row.speedMetricSession&&num(row.speedRepCount)>1){
+    var meters=unit==='yd'?distance*.9144:distance;
+    if(Math.abs(meters-num(row.completedVolumeMeters))<.01)return null;
+  }
   return {distance:distance,unit:unit,meters:unit==='yd'?distance*.9144:distance};
 }
 
@@ -8222,6 +8226,7 @@ function speedPracticeTrainingRows(practices,athletes){
       var best=speedMetricBestRep(reps);
       var focus=first.metric||first.zone||practice.focus||practice.routineName||'Speed Metrics';
       var sessionDate=first.date||practice.date||practice.sourcePlanDayDate||'';
+      var seasonParts=raceResultSeasonFromDate(sessionDate);
       rows.push({
         speedMetricSession:true,
         speedRepCount:reps.length,
@@ -8233,6 +8238,9 @@ function speedPracticeTrainingRows(practices,athletes){
         groupName:practice.groupName||'Speed Metrics',
         workoutType:'Speed Metrics',
         workoutPrescription:focus,
+        sport:'Track',
+        season:seasonParts.season,
+        seasonYear:seasonParts.seasonYear,
         completedVolume:completedLabel,
         completedVolumeMeters:totalMeters,
         completedVolumeMiles:totalMeters/1609.344,
