@@ -6027,10 +6027,13 @@ function speedTimesFromCorrection(value,count){
 }
 
 function recalcSpeedMetric(metric){
+  var explicit=speedMetricExplicitMeters(metric,{});
   var meters=num(metric.meters)||(metric.unit==='yd'?num(metric.distance)*.9144:num(metric.distance));
+  if(shouldUseExplicitSpeedMeters(explicit,meters,metric))meters=explicit;
   var seconds=num(metric.seconds)||speedMetricSeconds(metric);
   var strides=num(metric.strides);
   return Object.assign({},metric,{
+    distance:roundSpeedMetric(metric.unit==='yd'?meters/.9144:meters),
     meters:roundSpeedMetric(meters),
     seconds:roundSpeedMetric(seconds),
     velocity:roundSpeedMetric(meters&&seconds?meters/seconds:num(metric.velocity)),
@@ -8312,13 +8315,45 @@ function parseSpeedMetricSeconds(value){
 }
 
 function speedMetricMeters(rep,practice){
+  var explicit=speedMetricExplicitMeters(rep,practice);
   var meters=num(rep.meters||rep.distanceMeters);
+  if(shouldUseExplicitSpeedMeters(explicit,meters,rep))return explicit;
   if(meters)return meters;
-  return volumeAmountToMeters(num(rep.distance||practice.timedDistance||practice.timedDistanceMeters||practice.distance),rep.unit||practice.unit||'m');
+  var fallback=volumeAmountToMeters(num(rep.distance||practice.timedDistance||practice.timedDistanceMeters||practice.distance),rep.unit||practice.unit||'m');
+  if(shouldUseExplicitSpeedMeters(explicit,fallback,rep))return explicit;
+  return fallback;
 }
 
 function speedMetricDistanceLabel(rep,practice){
   return distanceLabelFromMeters(speedMetricMeters(rep,practice));
+}
+
+function speedMetricExplicitMeters(rep,practice){
+  var source=[
+    rep&&rep.metric,
+    rep&&rep.zone,
+    rep&&rep.workoutPrescription,
+    practice&&practice.focus,
+    practice&&practice.routineName,
+    practice&&practice.details,
+    practice&&practice.planNotes
+  ].filter(Boolean).join(' ');
+  var match=source.match(/\b(\d+(?:\.\d+)?)\s*(m|meter|meters|yd|yard|yards)\b/i);
+  if(!match)return 0;
+  var amount=Number(match[1]);
+  if(!Number.isFinite(amount)||amount<=0)return 0;
+  return /^yd|yard/i.test(match[2])?amount*.9144:amount;
+}
+
+function shouldUseExplicitSpeedMeters(explicit,meters,source){
+  explicit=num(explicit);
+  meters=num(meters);
+  if(!explicit)return false;
+  if(!meters)return true;
+  if(Math.abs(meters-explicit)<.01)return false;
+  var text=[source&&source.metric,source&&source.zone,source&&source.workoutPrescription,source&&source.note].filter(Boolean).join(' ');
+  if(explicit<=200&&meters>200)return true;
+  return false;
 }
 
 function speedMetricBestRep(reps){
