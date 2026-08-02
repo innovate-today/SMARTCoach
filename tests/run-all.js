@@ -559,6 +559,7 @@ function checkDashboardFilterContextAndArchivedGroups() {
     "function currentSeasonKeys()",
     "function availableSeasonKeys()",
     "if(Object.keys(availableSeasonKeys()).indexOf(year+'-cross_country')>=0)return [year+'-cross_country',key];",
+    "if(sport!=='track')return '';",
     "if(sport!=='cross_country')return '';",
     "row&&row.groupName",
     "row&&row.workoutPrescription",
@@ -948,14 +949,18 @@ function checkMilesBoardFeature() {
     throw new Error("dashboard should not trim completed training rows before frontend volume calculations.");
   }
   [
-    "season: clean(payload.season) || seasonForSport(payload.sport) || seasonForDate(date)",
-    "seasonYear: Number(payload.seasonYear)",
-    "sport: clean(payload.sport)",
+    'if (!distanceHasUnit(distance)) throw httpError(400, "Choose miles, kilometers, or meters for Distance.");',
+    'if (!manualMileageSport(payload.sport)) throw httpError(400, "Choose Cross Country or Track for Season.");',
+    "const sport = manualMileageSport(payload.sport);",
+    "const season = clean(payload.season) || seasonForSport(sport);",
+    "const seasonYear = Number(payload.seasonYear) || new Date(date).getFullYear();",
+    "function manualMileageSport(value)",
+    "function distanceHasUnit(value)",
     "function seasonForSport(value)",
   ].forEach((text) => {
     if (!manualMileageApi.includes(text)) throw new Error(`manual mileage sport/year persistence missing ${text}`);
   });
-  if (manualMileageApi.includes('sport: clean(payload.sport) || "Cross Country"') || manualMileageApi.includes('return "Track";')) {
+  if (manualMileageApi.includes("seasonForSport(payload.sport) || seasonForDate(date)") || manualMileageApi.includes('sport: clean(payload.sport) || "Cross Country"')) {
     throw new Error("manual mileage should not silently default missing or track entries into Cross Country season context.");
   }
   console.log("Miles Board feature ok");
@@ -2625,6 +2630,7 @@ function checkQualityWorkoutTypesAccepted() {
 
 function checkManualMileageQualitySession() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const manualMileageApi = fs.readFileSync("api/ghl/manual-mileage.js", "utf8");
   const howTo = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
@@ -2658,6 +2664,18 @@ function checkManualMileageQualitySession() {
     "manualMileageDistanceValue()).trim()",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Manual quality session UI missing ${text}`);
+  });
+  [
+    'id="manualMileageSeason"',
+    'id="manualMileageDistanceUnit"',
+    "function manualMileageSeasonContext()",
+    "function manualMileageDistanceValue()",
+    "Choose Cross Country or Track for Season.",
+    "Choose miles, kilometers, or meters for Distance.",
+    "season:seasonContext.season",
+    "sport:seasonContext.sport",
+  ].forEach((text) => {
+    if (!calendar.includes(text)) throw new Error(`Training Calendar manual mileage UI missing ${text}`);
   });
   [
     "function normalizeQualitySession(raw)",

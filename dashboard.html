@@ -5145,8 +5145,12 @@ function seasonFilterValue(value){
   return value==='current'?seasonKeyForDate(new Date()):value;
 }
 function seasonKeyForRow(row,type){
-  var sportKey=sportSeasonKey(row,type);
-  if(sportKey)return sportKey;
+  var sport=dashboardSportForSeason(row,type);
+  if(sport==='cross_country'){
+    var year=seasonYearForRow(row,type);
+    return year?year+'-'+sport:'';
+  }
+  if(sport!=='track')return '';
   var date=parseActivityDate(activityDateValue(row,type));
   return date?seasonKeyForDate(date):'';
 }

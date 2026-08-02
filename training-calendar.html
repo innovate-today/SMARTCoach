@@ -515,11 +515,12 @@ button.compact{padding:6px 9px;font-size:12px}
     <div class="modalbody">
       <div class="formgrid">
         <div class="field"><label for="manualMileageDate">Date <span class="fieldinfo" tabindex="0" data-tip="Choose the date the mileage was completed.">i</span></label><input id="manualMileageDate" type="date" placeholder="Select workout date"></div>
+        <div class="field"><label for="manualMileageSeason">Season <span class="fieldinfo info-left" tabindex="0" data-tip="Choose the season this completed entry belongs to. Cross country entries stay with Cross Country for that year. Track entries stay with the track season for the workout date.">i</span></label><select id="manualMileageSeason"><option value="">Select season</option><option value="cross_country">Cross Country</option><option value="track">Track</option></select></div>
         <div class="field"><label for="manualMileageScope">Apply To <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Individual for one athlete or Group for every athlete in an active training group.">i</span></label><select id="manualMileageScope"><option value="">Select apply to</option><option value="athlete">Individual</option><option value="group">Group</option></select></div>
         <div class="field"><label for="manualMileageAthlete">Athlete <span class="fieldinfo" tabindex="0" data-tip="Select the athlete receiving this mileage entry when Apply To is Individual.">i</span></label><select id="manualMileageAthlete"><option value="">Select athlete</option></select></div>
         <div class="field"><label for="manualMileageGroup">Group <span class="fieldinfo info-left" tabindex="0" data-tip="Select an active training group. Archived groups are hidden.">i</span></label><select id="manualMileageGroup"><option value="">Select active group</option></select></div>
         <div class="field"><label for="manualMileageWorkout">Effort <span class="fieldinfo" tabindex="0" data-tip="Choose the effort category for this completed mileage. These match the Upload/Paste Plan effort options.">i</span></label><select id="manualMileageWorkout"><option value="">Select effort</option><option>Easy</option><option>Threshold</option><option>Interval</option><option>Repetition</option><option>Hills</option><option>Fast Reps</option><option>Speed Endurance I</option><option>Speed Endurance II</option><option>Special Endurance I</option><option>Special Endurance II</option><option>Intensive Tempo</option><option>Extensive Tempo</option></select></div>
-        <div class="field"><label for="manualMileageDistance">Distance <span class="fieldinfo info-left" tabindex="0" data-tip="Enter the completed distance. SMART Trak accepts miles or common distance wording.">i</span></label><input id="manualMileageDistance" type="text" placeholder="Example: 4 miles"></div>
+        <div class="field"><label for="manualMileageDistance">Distance <span class="fieldinfo info-left" tabindex="0" data-tip="Enter the completed distance amount, then choose the unit so SMART Trak saves clear completed volume.">i</span></label><div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:8px"><input id="manualMileageDistance" type="text" inputmode="decimal" placeholder="Example: 4"><select id="manualMileageDistanceUnit" aria-label="Mileage distance unit"><option value="">Select unit</option><option value="mi">Miles</option><option value="km">Kilometers</option><option value="m">Meters</option></select></div></div>
         <div class="field"><label for="manualMileageTime">Time <span class="fieldinfo" tabindex="0" data-tip="Optional total time for the completed mileage. Leave blank if only distance matters.">i</span></label><input id="manualMileageTime" type="text" placeholder="Optional, e.g. 36:20"></div>
         <div class="field"><label for="manualMileageSource">Source <span class="fieldinfo info-left" tabindex="0" data-tip="Choose where this mileage information came from.">i</span></label><select id="manualMileageSource"><option value="">Select source</option><option>Athlete reported</option><option>Coach entered</option><option>Watch upload</option></select></div>
         <div class="field"><label for="manualMileageSurface">Surface <span class="fieldinfo" tabindex="0" data-tip="Choose the main surface used for the mileage.">i</span></label><select id="manualMileageSurface"><option value="">Select surface</option><option>Road</option><option>Trail</option><option>Grass</option><option>Track</option><option>Indoor</option></select></div>
@@ -812,11 +813,13 @@ var els={
   manualMileageModal:document.getElementById('manualMileageModal'),
   manualMileageClose:document.getElementById('manualMileageClose'),
   manualMileageDate:document.getElementById('manualMileageDate'),
+  manualMileageSeason:document.getElementById('manualMileageSeason'),
   manualMileageScope:document.getElementById('manualMileageScope'),
   manualMileageAthlete:document.getElementById('manualMileageAthlete'),
   manualMileageGroup:document.getElementById('manualMileageGroup'),
   manualMileageWorkout:document.getElementById('manualMileageWorkout'),
   manualMileageDistance:document.getElementById('manualMileageDistance'),
+  manualMileageDistanceUnit:document.getElementById('manualMileageDistanceUnit'),
   manualMileageTime:document.getElementById('manualMileageTime'),
   manualMileageSource:document.getElementById('manualMileageSource'),
   manualMileageSurface:document.getElementById('manualMileageSurface'),
@@ -3882,6 +3885,8 @@ function todayInputValue(){
 }
 function openManualMileage(){
   if(!els.manualMileageDate.value)els.manualMileageDate.value=todayInputValue();
+  if(els.manualMileageSeason)els.manualMileageSeason.value='';
+  if(els.manualMileageDistanceUnit)els.manualMileageDistanceUnit.value='';
   renderManualMileageAthletes();
   renderManualMileageGroups();
   updateManualMileageScope();
@@ -4457,11 +4462,58 @@ function manualMileageGroupName(){
   if(scope==='group')return els.manualMileageGroup.value||'Manual Mileage';
   return 'Manual Mileage';
 }
+function manualMileageDistanceValue(){
+  return volumeValueWithUnit(els.manualMileageDistance&&els.manualMileageDistance.value,els.manualMileageDistanceUnit&&els.manualMileageDistanceUnit.value);
+}
+function volumeValueWithUnit(amountValue,unitValue){
+  var amount=String(amountValue||'').trim();
+  if(!amount)return '';
+  var parsed=parseVolumeValue(amount);
+  var unit=String(unitValue||'').trim();
+  if(!unit)return '';
+  return parsed.amount+' '+unit;
+}
+function volumeAmountNeedsUnit(amountValue,unitValue){
+  return !!String(amountValue||'').trim()&&!String(unitValue||'').trim();
+}
+function parseVolumeValue(value){
+  var text=String(value||'').trim();
+  var pattern='(?:\\d+(?:\\.\\d+)?|\\.\\d+)';
+  var unit='(?:mi|mile|miles|km|k|meter|meters|m)';
+  var reps=text.match(new RegExp('^\\s*('+pattern+')\\s*(?:x|×)\\s*('+pattern+')\\s*('+unit+')\\b','i'));
+  if(reps)return {amount:reps[1]+' x '+reps[2],unit:normalizeVolumeUnit(reps[3])};
+  var match=text.match(new RegExp('^\\s*('+pattern+')\\s*('+unit+')\\b','i'));
+  if(match)return {amount:match[1],unit:normalizeVolumeUnit(match[2])};
+  var numeric=text.match(new RegExp('^\\s*('+pattern+')\\b'));
+  if(numeric)return {amount:numeric[1],unit:''};
+  return {amount:text,unit:''};
+}
+function normalizeVolumeUnit(value){
+  var text=String(value||'').toLowerCase();
+  if(text==='k'||text==='km')return 'km';
+  if(text==='m'||text.indexOf('meter')===0)return 'm';
+  return 'mi';
+}
+function manualMileageSeasonContext(){
+  var value=els.manualMileageSeason&&els.manualMileageSeason.value||'';
+  if(!value)return null;
+  var date=els.manualMileageDate&&els.manualMileageDate.value||todayInputValue();
+  var parts=raceResultSeasonFromDate(date);
+  if(value==='cross_country')return {sport:'Cross Country',season:'Cross Country',seasonYear:parts.seasonYear};
+  if(value==='track')return {sport:'Track',season:parts.season,seasonYear:parts.seasonYear};
+  return null;
+}
 function saveManualMileage(){
   var athletes=manualMileageAthletes();
-  var distance=(els.manualMileageDistance.value||'').trim();
+  if(volumeAmountNeedsUnit(els.manualMileageDistance&&els.manualMileageDistance.value,els.manualMileageDistanceUnit&&els.manualMileageDistanceUnit.value)){
+    setManualMileageStatus('Choose miles, kilometers, or meters for Distance.','bad');
+    return;
+  }
+  var distance=manualMileageDistanceValue().trim();
   if(!athletes.length){setManualMileageStatus('Select at least one athlete.','bad');return;}
   if(!distance){setManualMileageStatus('Distance is required.','bad');return;}
+  var seasonContext=manualMileageSeasonContext();
+  if(!seasonContext){setManualMileageStatus('Choose Cross Country or Track for Season.','bad');return;}
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
   els.manualMileageSave.disabled=true;
@@ -4473,6 +4525,9 @@ function saveManualMileage(){
       date:els.manualMileageDate.value,
       groupName:manualMileageGroupName(),
       workoutType:els.manualMileageWorkout.value,
+      season:seasonContext.season,
+      seasonYear:seasonContext.seasonYear,
+      sport:seasonContext.sport,
       distance:distance,
       time:els.manualMileageTime.value,
       source:els.manualMileageSource.value,

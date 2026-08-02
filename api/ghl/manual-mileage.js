@@ -42,15 +42,21 @@ function buildSyncPayload(payload) {
 
   if (!athletes.length) throw httpError(400, "Select at least one athlete.");
   if (!distance) throw httpError(400, "Distance is required.");
+  if (!distanceHasUnit(distance)) throw httpError(400, "Choose miles, kilometers, or meters for Distance.");
+  if (!manualMileageSport(payload.sport)) throw httpError(400, "Choose Cross Country or Track for Season.");
   if (logType === "quality" && !qualitySession.sets.length) throw httpError(400, "Add at least one quality set.");
   if (timeDisplay && !totalMs) throw httpError(400, "Enter time like 36:20, 1:02:15, or 18:04.5.");
+
+  const sport = manualMileageSport(payload.sport);
+  const season = clean(payload.season) || seasonForSport(sport);
+  const seasonYear = Number(payload.seasonYear) || new Date(date).getFullYear();
 
   return {
     sourceSessionId: buildManualMileageSourceSessionId({ date, groupName, workoutType, logType, distance, timeDisplay, source, qualitySession }),
     groupName,
-    season: clean(payload.season) || seasonForSport(payload.sport) || seasonForDate(date),
-    seasonYear: Number(payload.seasonYear) || new Date(date).getFullYear(),
-    sport: clean(payload.sport),
+    season,
+    seasonYear,
+    sport,
     phase: clean(payload.phase) || "GPP",
     workoutType,
     surface: clean(payload.surface) || "Road",
@@ -177,6 +183,18 @@ function seasonForSport(value) {
   const sport = clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
   if (sport === "cross_country" || sport === "xc" || sport === "cc") return "Cross Country";
   return "";
+}
+
+function manualMileageSport(value) {
+  const sport = clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  if (sport === "cross_country" || sport === "xc" || sport === "cc") return "Cross Country";
+  if (sport === "track" || sport === "track_and_field" || sport === "track_field") return "Track";
+  return "";
+}
+
+function distanceHasUnit(value) {
+  const text = clean(value).toLowerCase();
+  return /(?:^|[^a-z])(mi|mile|miles|km|k|m|meter|meters)\b/.test(text);
 }
 
 function clean(value) {
