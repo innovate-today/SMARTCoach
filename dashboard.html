@@ -5928,7 +5928,7 @@ function saveSpeedPracticeCorrection(reason){
         date:date,
         metric:focus,
         zone:focus,
-        note:els.correctionNotes.value||metric.note||'',
+        note:cleanSpeedMetricNote(metric.note),
         updatedAt:updatedAt
       });
       if(distance){
@@ -8333,9 +8333,19 @@ function formatSpeedMetricSeconds(value){
 
 function speedMetricSplitsText(reps){
   return reps.map(function(rep,index){
-    var details=[speedMetricCalcText(rep),rep.note].filter(Boolean).join(' · ');
+    var details=speedMetricCalcText(rep);
     return 'Rep '+(index+1)+': '+formatSpeedMetricSeconds(rep._seconds)+(details?' · '+details:'');
   }).join('\n');
+}
+
+function cleanSpeedMetricNote(note){
+  return String(note||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(function(line){
+    if(!line)return false;
+    if(/^Speed Metrics session$/i.test(line))return false;
+    if(/^(Completed volume|Sprint correction|Correction Date|Correction Reason):/i.test(line))return false;
+    if(/^\w{3}\s+\d{1,2},\s+\d{1,2}:\d{2}\s*(?:AM|PM):\s*update$/i.test(line))return false;
+    return true;
+  }).join(' · ').slice(0,500);
 }
 
 function speedMetricCalcText(rep){
