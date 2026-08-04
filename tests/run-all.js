@@ -2418,7 +2418,7 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "sport: clean(updates.sport) || previousValues.sport",
     "season: clean(updates.season) || previousValues.season",
     "seasonYear: clean(updates.seasonYear) || previousValues.seasonYear",
-    "sport: values.sport ? optionValue(values.sport) : prop(props, \"sport\")",
+    "sport: values.sport ? sportValue(values.sport) : prop(props, \"sport\")",
     "season: values.season ? optionValue(values.season) : prop(props, \"season\")",
     "season_year: values.seasonYear || prop(props, \"season_year\")",
     '"Planned target": nextValues.plannedTarget',
@@ -2432,6 +2432,12 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "Imported from Strava|Imported rep\\/rest layout from matched SMART Trak workout",
     "const cleanNotes = normalizeStoredNoteText(notes).split",
     "workout_type: workoutTypeValue(nextValues.workoutType)",
+    "function sportValue(value)",
+    "sport: sportValue(nextValues.sport)",
+    "function saveObjectRecordWithCorrectionFallback",
+    "function correctionFallbackProperties",
+    'mappedFieldErrorFor(message, "sport")',
+    "delete fallback.sport",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Training correction workout note replacement missing ${text}`);
   });
@@ -3260,7 +3266,7 @@ function checkMeetHistoryImportedResultCorrections() {
     'sport: prop(props, "sport")',
     'season: prop(props, "season")',
     'seasonYear: String(prop(props, "season_year") || "")',
-    '...(clean(nextValues.sport) ? { sport: optionValue(nextValues.sport) } : {})',
+    '...(clean(nextValues.sport) ? { sport: sportValue(nextValues.sport) } : {})',
     '...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {})',
     '...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {})',
     'sport: clean(data.sport)',

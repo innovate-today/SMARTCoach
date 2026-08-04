@@ -253,26 +253,25 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     Wind: nextValues.wind,
   }, nextValues.notes, correctionTime, reason);
 
-  await ghlFetch({
+  await saveObjectRecordWithCorrectionFallback({
     token,
-    path: objectRecordPath(MEET_RESULT_SCHEMA_KEY, record.id, locationId),
-    method: "PUT",
-    body: {
-      properties: {
-        meet_name: nextValues.meetName,
-        meet_date: nextValues.meetDate,
-        event: nextValues.event,
-        result_display: nextValues.resultDisplay,
-        ...(resultMs ? { result_ms: resultMs } : {}),
-        wind: nextValues.wind,
-        ...(clean(nextValues.sport) ? { sport: optionValue(nextValues.sport) } : {}),
-        ...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {}),
-        ...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {}),
-        is_pr: nextValues.isPr,
-        is_season_best: nextValues.isSeasonBest,
-        splits_json: nextValues.splitsJson,
-        coach_race_notes: nextNote,
-      },
+    locationId,
+    schemaKey: MEET_RESULT_SCHEMA_KEY,
+    recordId: record.id,
+    properties: {
+      meet_name: nextValues.meetName,
+      meet_date: nextValues.meetDate,
+      event: nextValues.event,
+      result_display: nextValues.resultDisplay,
+      ...(resultMs ? { result_ms: resultMs } : {}),
+      wind: nextValues.wind,
+      ...(clean(nextValues.sport) ? { sport: sportValue(nextValues.sport) } : {}),
+      ...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {}),
+      ...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {}),
+      is_pr: nextValues.isPr,
+      is_season_best: nextValues.isSeasonBest,
+      splits_json: nextValues.splitsJson,
+      coach_race_notes: nextNote,
     },
   });
 
@@ -359,23 +358,22 @@ async function editPerformanceRecord({ token, locationId, accountKey, contactId,
     Weather: nextValues.weather,
   }, nextValues.notes, correctionTime, reason);
 
-  await ghlFetch({
+  await saveObjectRecordWithCorrectionFallback({
     token,
-    path: objectRecordPath(PERFORMANCE_RECORD_SCHEMA_KEY, record.id, locationId),
-    method: "PUT",
-    body: {
-      properties: {
-        session_date: nextValues.sessionDate,
-        workout_type: workoutTypeValue(nextValues.workoutType),
-        ...(clean(nextValues.sport) ? { sport: optionValue(nextValues.sport) } : {}),
-        ...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {}),
-        ...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {}),
-        surface: optionValue(nextValues.surface),
-        total_time_display: nextValues.time,
-        ...(totalMs ? { total_time_ms: totalMs } : {}),
-        splits_json: nextValues.splitsJson,
-        coach_note: nextNote,
-      },
+    locationId,
+    schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY,
+    recordId: record.id,
+    properties: {
+      session_date: nextValues.sessionDate,
+      workout_type: workoutTypeValue(nextValues.workoutType),
+      ...(clean(nextValues.sport) ? { sport: sportValue(nextValues.sport) } : {}),
+      ...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {}),
+      ...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {}),
+      surface: optionValue(nextValues.surface),
+      total_time_display: nextValues.time,
+      ...(totalMs ? { total_time_ms: totalMs } : {}),
+      splits_json: nextValues.splitsJson,
+      coach_note: nextNote,
     },
   });
 
@@ -429,7 +427,7 @@ async function mirrorCorrectedTrainingRecord({ accountKey, record, props, contac
     source_record_id: sourceRecordId,
     group_name: prop(props, "group_name"),
     session_date: values.sessionDate || prop(props, "session_date"),
-    sport: values.sport ? optionValue(values.sport) : prop(props, "sport"),
+    sport: values.sport ? sportValue(values.sport) : prop(props, "sport"),
     season: values.season ? optionValue(values.season) : prop(props, "season"),
     season_year: values.seasonYear || prop(props, "season_year"),
     workout_type: values.workoutType ? workoutTypeValue(values.workoutType) : prop(props, "workout_type"),
@@ -916,6 +914,56 @@ async function ghlFetch({ token, path, method, body }) {
   return data;
 }
 
+async function saveObjectRecordWithCorrectionFallback({ token, locationId, schemaKey, recordId, properties }) {
+  let attempt = { ...properties };
+  const removed = new Set();
+
+  for (let index = 0; index < 5; index += 1) {
+    try {
+      return await ghlFetch({
+        token,
+        path: objectRecordPath(schemaKey, recordId, locationId),
+        method: "PUT",
+        body: { properties: attempt },
+      });
+    } catch (error) {
+      const next = correctionFallbackProperties({ properties: attempt, error, removed });
+      if (!next) throw error;
+      attempt = next;
+    }
+  }
+
+  return ghlFetch({
+    token,
+    path: objectRecordPath(schemaKey, recordId, locationId),
+    method: "PUT",
+    body: { properties: attempt },
+  });
+}
+
+function correctionFallbackProperties({ properties, error, removed }) {
+  const message = String(error && error.message || "");
+  if (mappedFieldErrorFor(message, "sport") && properties.sport && !removed.has("sport")) {
+    removed.add("sport");
+    const fallback = { ...properties };
+    delete fallback.sport;
+    return fallback;
+  }
+  if (optionFieldErrorFor(message, "sport") && properties.sport && !removed.has("sport")) {
+    removed.add("sport");
+    const fallback = { ...properties };
+    delete fallback.sport;
+    return fallback;
+  }
+  if (optionFieldErrorFor(message, "season") && properties.season && !removed.has("season")) {
+    removed.add("season");
+    const fallback = { ...properties };
+    delete fallback.season;
+    return fallback;
+  }
+  return null;
+}
+
 function firstRecord(result) {
   return [
     result && result.record,
@@ -1022,6 +1070,21 @@ function optionValue(value) {
     .replace(/\+/g, "plus")
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_|_$/g, "");
+}
+
+function sportValue(value) {
+  const normalized = optionValue(value);
+  if (normalized.indexOf("cross_country") === 0 || normalized === "xc" || normalized === "cc") return "cross_country";
+  if (normalized.indexOf("track") === 0) return "track";
+  return normalized || "track";
+}
+
+function mappedFieldErrorFor(message, field) {
+  return /mapped field/i.test(message) && new RegExp(`\\b${field}\\b`, "i").test(message);
+}
+
+function optionFieldErrorFor(message, field) {
+  return /allowed option|isn't an allowed option|not an allowed/i.test(message) && new RegExp(`\\b${field}\\b`, "i").test(message);
 }
 
 function workoutTypeValue(value) {
