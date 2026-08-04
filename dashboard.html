@@ -8128,6 +8128,8 @@ function completedVolumeMeters(row){
 }
 function effectiveCompletedVolume(row){
   if(row&&row.speedMetricSession)return {label:row.completedVolume||'',miles:num(row.completedVolumeMiles)};
+  var explicitCompleted=completedRepVolumeFromValue(row&&row.completedVolume);
+  if(explicitCompleted)return explicitCompleted;
   var splitVolume=completedRepVolumeFromSplits(row);
   if(splitVolume)return splitVolume;
   var miles=parseCompletedMiles(row&&row.completedVolume,row&&row.completedVolumeMiles);
@@ -8140,6 +8142,16 @@ function completedVolumeDisplayLabel(value,miles){
   if(unitPattern.test(text))return text;
   if(/^\s*(?:\d+(?:\.\d+)?|\.\d+)\s*(?:completed|complete|done|total)?\s*$/i.test(text)&&miles)return formatMiles(miles);
   return text;
+}
+function completedRepVolumeFromValue(value){
+  var text=String(value||'');
+  var volumeNumberPattern='\\d+(?:\\.\\d+)?|\\.\\d+';
+  var match=text.match(new RegExp('\\b('+volumeNumberPattern+')\\s*(?:x|×)\\s*('+volumeNumberPattern+')\\s*(mi|mile|miles|km|k|meter|meters|m)\\b','i'));
+  if(!match)return null;
+  var reps=Number(match[1]);
+  var distance=distanceLabelAndMeters(match[2]+' '+match[3]);
+  if(!Number.isFinite(reps)||reps<=0||!distance||!distance.meters)return null;
+  return {label:reps+' x '+distance.label+' completed',miles:distance.meters*reps/1609.344};
 }
 function completedRepVolumeFromSplits(row){
   if(!row)return null;

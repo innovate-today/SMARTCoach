@@ -1504,6 +1504,8 @@ function parseVolumeToMiles(value) {
 }
 
 function effectiveCompletedVolume(row) {
+  const explicitCompleted = completedRepVolumeFromValue(row && row.completedVolume);
+  if (explicitCompleted) return explicitCompleted;
   const splitVolume = completedRepVolumeFromSplits(row);
   if (splitVolume) return splitVolume;
   const miles = parseVolumeToMiles(row && row.completedVolume);
@@ -1516,6 +1518,20 @@ function completedVolumeDisplayLabel(value, miles) {
   if (/\b(?:mi|mile|miles|km|k|meter|meters|m)\b/i.test(text)) return text;
   if (/^\s*(?:\d+(?:\.\d+)?|\.\d+)\s*(?:completed|complete|done|total)?\s*$/i.test(text) && miles) return `${roundVolume(miles)} mi`;
   return text;
+}
+
+function completedRepVolumeFromValue(value) {
+  const text = clean(value);
+  const volumeNumberPattern = "\\d+(?:\\.\\d+)?|\\.\\d+";
+  const match = text.match(new RegExp("\\b(" + volumeNumberPattern + ")\\s*(?:x|×)\\s*(" + volumeNumberPattern + ")\\s*(mi|mile|miles|km|k|meter|meters|m)\\b", "i"));
+  if (!match) return null;
+  const reps = Number(match[1]);
+  const distance = distanceLabelAndMeters(`${match[2]} ${match[3]}`);
+  if (!Number.isFinite(reps) || reps <= 0 || !distance || !distance.meters) return null;
+  return {
+    label: `${reps} x ${distance.label} completed`,
+    miles: roundVolume((distance.meters * reps) / 1609.344),
+  };
 }
 
 function completedRepVolumeFromSplits(row) {

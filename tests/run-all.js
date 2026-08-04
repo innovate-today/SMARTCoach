@@ -645,12 +645,18 @@ function checkDashboardCompletedVolumeParsing() {
   }
   [
     "function completedVolumeDisplayLabel(value,miles)",
+    "function completedRepVolumeFromValue(value)",
+    "var explicitCompleted=completedRepVolumeFromValue(row&&row.completedVolume);",
+    "if(explicitCompleted)return explicitCompleted;",
     "if(/^\\s*(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*(?:completed|complete|done|total)?\\s*$/i.test(text)&&miles)return formatMiles(miles);",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard fallback completed-volume unitless label missing ${text}`);
   });
   [
     "function completedVolumeDisplayLabel(value, miles)",
+    "function completedRepVolumeFromValue(value)",
+    "const explicitCompleted = completedRepVolumeFromValue(row && row.completedVolume);",
+    "if (explicitCompleted) return explicitCompleted;",
     "if (/^\\s*(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*(?:completed|complete|done|total)?\\s*$/i.test(text) && miles) return `${roundVolume(miles)} mi`;",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`dashboard API completed-volume unitless label missing ${text}`);
