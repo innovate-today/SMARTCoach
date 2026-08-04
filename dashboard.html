@@ -6142,6 +6142,8 @@ function parseCorrectionVolumeValue(value){
   var volumeUnitPattern='(?:mi|mile|miles|km|k|meter|meters|m)';
   var reps=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\s*(?:x|×)\\s*('+volumeNumberPattern+')\\s*('+volumeUnitPattern+')\\b','i'));
   if(reps)return {amount:reps[1]+' x '+reps[2],unit:normalizeCorrectionVolumeUnit(reps[3])};
+  var unitlessReps=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\s*(?:x|×)\\s*('+volumeNumberPattern+')\\b','i'));
+  if(unitlessReps)return {amount:unitlessReps[1]+' x '+unitlessReps[2],unit:''};
   var match=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\s*('+volumeUnitPattern+')\\b','i'));
   if(match)return {amount:match[1],unit:normalizeCorrectionVolumeUnit(match[2])};
   var numeric=text.match(new RegExp('^\\s*('+volumeNumberPattern+')\\b'));

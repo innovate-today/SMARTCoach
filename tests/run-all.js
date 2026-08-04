@@ -2458,6 +2458,8 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "completedVolume:completedVolume",
     "function correctionVolumeValue()",
     "function volumeValueWithUnit(amountValue,unitValue)",
+    "var unitlessReps=text.match(new RegExp('^\\\\s*('+volumeNumberPattern+')\\\\s*(?:x|×)\\\\s*('+volumeNumberPattern+')\\\\b','i'));",
+    "if(unitlessReps)return {amount:unitlessReps[1]+' x '+unitlessReps[2],unit:''};",
     "function volumeAmountNeedsUnit(amountValue,unitValue)",
     "Choose miles, kilometers, or meters for Completed Volume.",
     "event.target.closest('.headinfo,.fieldinfo')",
