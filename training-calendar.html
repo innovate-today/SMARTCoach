@@ -266,7 +266,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
         <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
         <button id="trainingCustomBtn" class="secondary" type="button">Training Customization</button>
-        <a id="stravaTrainingLink" class="linkbtn secondary" href="/training-calendar.html#strava" data-beta-admin-only="1" hidden>Strava</a>
+        <a id="stravaTrainingLink" class="linkbtn secondary" href="/training-calendar.html#strava" data-beta-only="1" hidden>Strava</a>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
       </div>
     </div>
@@ -627,12 +627,13 @@ button.compact{padding:6px 9px;font-size:12px}
       <button id="stravaClose" class="secondary" type="button">Close</button>
     </div>
     <div class="modalbody">
-      <p class="muted">Owner/admin beta area for connecting one Strava account and importing completed activities. Tokens stay hidden.</p>
+      <p class="muted">Choose a SMART Trak athlete, send or open their Strava connect link, then import completed activities from that athlete's Strava account. Tokens stay hidden.</p>
       <div id="stravaStatus" class="modalstatus" style="margin:0 0 10px"></div>
       <div id="stravaSummary" class="detailgrid"></div>
       <div class="modalactions">
-        <button id="stravaConnectBtn" type="button">Connect Strava</button>
-        <button id="stravaLoadActivitiesBtn" class="secondary" type="button">Load Recent Activities</button>
+        <button id="stravaConnectBtn" type="button">Copy Connect Link</button>
+        <button id="stravaOpenConnectBtn" class="secondary" type="button">Open Connect Link</button>
+        <button id="stravaLoadActivitiesBtn" class="secondary" type="button">Load Athlete Activities</button>
       </div>
       <h3>Recent Activities</h3>
       <div id="stravaActivitiesList" class="detaillist"></div>
@@ -649,6 +650,7 @@ var mileageTrainingRows=[];
 var stravaActivitiesCache=[];
 var stravaActivityDetailsCache={};
 var stravaSelectedAthleteKey='';
+var stravaAthleteConnections=[];
 var trainingGroups=[];
 var calendarMeets=[];
 var calendarMeetsLoaded=false;
@@ -696,6 +698,7 @@ var els={
   stravaStatus:document.getElementById('stravaStatus'),
   stravaSummary:document.getElementById('stravaSummary'),
   stravaConnectBtn:document.getElementById('stravaConnectBtn'),
+  stravaOpenConnectBtn:document.getElementById('stravaOpenConnectBtn'),
   stravaLoadActivitiesBtn:document.getElementById('stravaLoadActivitiesBtn'),
   stravaActivitiesList:document.getElementById('stravaActivitiesList'),
   manualMileageBtn:document.getElementById('manualMileageBtn'),
@@ -912,6 +915,7 @@ function betaAdminToolsVisible(){
 function applyAdminTools(){
   var showBeta=adminToolsVisible()&&betaAdminToolsVisible();
   document.querySelectorAll('[data-beta-admin-only]').forEach(function(el){el.hidden=!showBeta;});
+  document.querySelectorAll('[data-beta-only]').forEach(function(el){el.hidden=!betaAdminToolsVisible();});
 }
 function stravaAdminUrl(){
   var url=new URL('/training-calendar.html',window.location.origin);
@@ -1981,40 +1985,59 @@ function loadStravaStatus(){
   if(!els.stravaStatus)return Promise.resolve();
   els.stravaStatus.textContent='Loading Strava status...';
   els.stravaStatus.style.color='#64748b';
-  return fetch('/api/smart-trak/strava-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+  var statusFetch=fetch('/api/smart-trak/strava-athlete-connections?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
-  }).then(function(result){
+  });
+  return Promise.all([statusFetch,loadStravaImportData().catch(function(error){return {rosterError:error};})]).then(function(results){
+    var result=results[0];
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava status could not be loaded.');
     renderStravaStatus(result.data||{});
     showReturnedStravaMessage();
   }).catch(function(error){
-    renderStravaStatus({configured:false,connected:false,connection:null});
+    renderStravaStatus({configured:false,connections:[]});
     els.stravaStatus.textContent=error.message||'Strava status could not be loaded.';
     els.stravaStatus.style.color='var(--bad)';
   });
 }
 function renderStravaStatus(data){
   data=data||{};
-  var connection=data.connection||{};
-  var athlete=connection.athlete||{};
+  stravaAthleteConnections=Array.isArray(data.connections)?data.connections:[];
+  var selectedAthlete=stravaSelectedAthleteForKey(stravaSelectedAthleteKey)||firstStravaAthlete();
+  var selectedKey=stravaAthleteKey(selectedAthlete);
+  if(selectedKey)stravaSelectedAthleteKey=selectedKey;
+  var connection=stravaConnectionForAthlete(selectedAthlete)||{};
+  var stravaAthlete=connection.stravaAthlete||{};
   var envStatus=data.envStatus||{};
-  var athleteName=[athlete.firstname,athlete.lastname].filter(Boolean).join(' ')||athlete.username||athlete.id||'Not connected';
+  var athleteName=selectedAthlete&&selectedAthlete.name||'Choose athlete';
+  var stravaName=[stravaAthlete.firstname,stravaAthlete.lastname].filter(Boolean).join(' ')||stravaAthlete.username||stravaAthlete.id||'Not connected';
+  var picker=stravaAthleteRows().length?'<label for="stravaAthleteSelect"><b>Athlete</b></label><select id="stravaAthleteSelect">'+stravaAthleteOptions(selectedKey)+'</select><span>Select the athlete whose Strava account should connect or import.</span>':'<b>Athlete</b><span>Load the SMART Trak roster before connecting Strava.</span>';
   if(els.stravaSummary){
     els.stravaSummary.innerHTML=[
       detailCard('Environment',data.configured?'Configured':'Missing',stravaEnvStatusText(envStatus)),
-      detailCard('Connection',data.connected?'Connected':'Not connected',athleteName),
+      '<div class="detailitem">'+picker+'</div>',
+      detailCard('Selected Athlete',athleteName,connection.connected?'Strava connected':'Not connected'),
+      detailCard('Strava Account',stravaName,connection.connected?'Ready to load activities':'Send or open connect link'),
       detailCard('Scope',connection.scope||'--','Expected: read,activity:read'),
       detailCard('Runtime',stravaRuntimeText(envStatus),'Serverless env check')
     ].join('');
   }
-  if(els.stravaConnectBtn)els.stravaConnectBtn.disabled=!data.configured;
-  if(els.stravaLoadActivitiesBtn)els.stravaLoadActivitiesBtn.disabled=!data.connected;
+  var select=els.stravaSummary&&els.stravaSummary.querySelector('#stravaAthleteSelect');
+  if(select){
+    select.addEventListener('change',function(){
+      stravaSelectedAthleteKey=this.value||'';
+      renderStravaStatus(data);
+      if(stravaActivitiesCache.length)renderStravaActivities(stravaActivitiesCache);
+    });
+  }
+  if(els.stravaConnectBtn)els.stravaConnectBtn.disabled=!data.configured||!selectedKey;
+  if(els.stravaOpenConnectBtn)els.stravaOpenConnectBtn.disabled=!data.configured||!selectedKey;
+  if(els.stravaLoadActivitiesBtn)els.stravaLoadActivitiesBtn.disabled=!connection.connected;
   if(!els.stravaStatus)return;
-  if(data.connected){
-    els.stravaStatus.textContent='Strava is connected for this account.';
+  if(connection.connected){
+    els.stravaStatus.textContent='Strava is connected for '+athleteName+'.';
     els.stravaStatus.style.color='var(--good)';
   }else if(data.configured){
-    els.stravaStatus.textContent='Strava env vars are ready. Connect Strava to import activities.';
+    els.stravaStatus.textContent=selectedKey?'Copy or open the athlete connect link.':'Choose an athlete before creating a Strava connect link.';
     els.stravaStatus.style.color='var(--muted)';
   }else{
     els.stravaStatus.textContent='Strava env vars are missing on the server: '+stravaMissingEnvNames(envStatus).join(', ');
@@ -2049,7 +2072,7 @@ function showReturnedStravaMessage(){
     var params=new URLSearchParams(window.location.search||'');
     var strava=params.get('strava')||'';
     if(strava==='connected'){
-      els.stravaStatus.textContent='Strava connected. Load recent activities to verify the read path.';
+      els.stravaStatus.textContent='Strava connected. Load athlete activities to import completed workouts.';
       els.stravaStatus.style.color='var(--good)';
     }
     if(strava==='error'){
@@ -2059,24 +2082,53 @@ function showReturnedStravaMessage(){
   }catch(e){}
 }
 function connectStravaAccount(){
-  els.stravaStatus.textContent='Opening Strava authorization...';
+  return createStravaAthleteConnectLink().then(function(authUrl){
+    if(!authUrl)return;
+    return navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(authUrl).then(function(){
+      els.stravaStatus.textContent='Strava connect link copied. Send it to the selected athlete.';
+      els.stravaStatus.style.color='var(--good)';
+    }).catch(function(){
+      els.stravaStatus.textContent='Copy this Strava connect link: '+authUrl;
+      els.stravaStatus.style.color='var(--muted)';
+    }):(els.stravaStatus.textContent='Copy this Strava connect link: '+authUrl,els.stravaStatus.style.color='var(--muted)');
+  });
+}
+function openStravaAthleteConnectLink(){
+  return createStravaAthleteConnectLink().then(function(authUrl){
+    if(authUrl)window.open(authUrl,'_blank','noopener');
+  });
+}
+function createStravaAthleteConnectLink(){
+  var athlete=stravaSelectedAthleteForKey(stravaSelectedAthleteKey)||firstStravaAthlete();
+  if(!athlete){els.stravaStatus.textContent='Choose a SMART Trak athlete before creating a Strava link.';els.stravaStatus.style.color='var(--bad)';return Promise.resolve('');}
+  els.stravaStatus.textContent='Creating Strava connection link...';
   els.stravaStatus.style.color='var(--muted)';
-  var returnPath='/training-calendar.html?account='+encodeURIComponent(accountKey())+'&admin=1&strava=connected#strava';
-  return fetch('/api/smart-trak/strava-start?account='+encodeURIComponent(accountKey())+'&response=json&returnPath='+encodeURIComponent(returnPath)+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+  var returnPath='/strava-connected.html?account='+encodeURIComponent(accountKey())+'&athlete='+encodeURIComponent(athlete.name||'')+'&strava=connected';
+  var params='account='+encodeURIComponent(accountKey())+'&response=json&returnPath='+encodeURIComponent(returnPath)+'&contactId='+encodeURIComponent(athlete.contactId||'')+'&smartcoachAthleteId='+encodeURIComponent(athlete.smartcoachAthleteId||'')+'&runnerId='+encodeURIComponent(athlete.runnerId||'')+'&athleteName='+encodeURIComponent(athlete.name||'')+'&v='+Date.now();
+  return fetch('/api/smart-trak/strava-athlete-start?'+params,{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
-    if(!result.ok||!result.data||!result.data.authUrl)throw new Error(result.data&&result.data.error||'Strava authorization could not be opened.');
-    window.location.href=result.data.authUrl;
+    if(!result.ok||!result.data||!result.data.authUrl)throw new Error(result.data&&result.data.error||'Strava authorization link could not be created.');
+    return result.data.authUrl;
   }).catch(function(error){
-    els.stravaStatus.textContent=error.message||'Strava authorization could not be opened.';
+    els.stravaStatus.textContent=error.message||'Strava authorization link could not be created.';
     els.stravaStatus.style.color='var(--bad)';
+    return '';
   });
 }
 function loadStravaActivities(){
   els.stravaStatus.textContent='Loading recent Strava activities...';
   els.stravaStatus.style.color='var(--muted)';
   els.stravaActivitiesList.innerHTML='<div class="detailitem muted">Loading...</div>';
-  return fetch('/api/smart-trak/strava-activities?account='+encodeURIComponent(accountKey())+'&limit=10&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+  var athlete=stravaSelectedAthleteForKey(stravaSelectedAthleteKey)||firstStravaAthlete();
+  var athleteKey=stravaAthleteKey(athlete);
+  if(!athleteKey){
+    els.stravaStatus.textContent='Choose a SMART Trak athlete before loading Strava activities.';
+    els.stravaStatus.style.color='var(--bad)';
+    els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No Strava activities loaded.</div>';
+    return Promise.resolve();
+  }
+  return fetch('/api/smart-trak/strava-athlete-activities?account='+encodeURIComponent(accountKey())+'&athleteKey='+encodeURIComponent(athleteKey)+'&limit=10&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activities could not be loaded.');
@@ -2115,7 +2167,7 @@ function renderStravaActivities(activities){
   var selectedAthlete=stravaSelectedAthleteForKey(stravaSelectedAthleteKey)||firstStravaAthlete();
   var selectedKey=stravaAthleteKey(selectedAthlete);
   stravaSelectedAthleteKey=selectedKey;
-  var athletePicker='<div class="detailitem"><label for="stravaAthleteSelect"><b>Import To Athlete</b></label><select id="stravaAthleteSelect">'+stravaAthleteOptions(selectedKey)+'</select><span>Choose the SMART Trak athlete before importing a Strava activity.</span></div>';
+  var athletePicker="<div class=\"detailitem\"><label for=\"stravaAthleteImportSelect\"><b>Import To Athlete</b></label><select id=\"stravaAthleteImportSelect\">"+stravaAthleteOptions(selectedKey)+"</select><span>Activities are loaded from the selected athlete's connected Strava account.</span></div>";
   els.stravaActivitiesList.innerHTML=athletePicker+activities.map(function(item){
     var imported=stravaImportedActivityForAthlete(item,selectedAthlete);
     var matchDay=stravaPlanMatchForActivity(item,selectedAthlete);
@@ -2125,13 +2177,20 @@ function renderStravaActivities(activities){
     var buttonText=imported?'Already Imported':'Import Completed Workout';
     return '<div class="detailitem"><b>'+esc(item.name||'Untitled activity')+'</b><span>'+esc(stravaActivityMeta(item))+'</span>'+matchNote+importNote+'<span><button class="secondary" type="button" data-strava-detail="'+esc(item.id)+'">Inspect Details</button> <button class="secondary" type="button" data-strava-import="'+esc(item.id)+'"'+disabled+'>'+buttonText+'</button></span>'+stravaActivityDetailHtml(item.id)+'</div>';
   }).join('');
-  var select=els.stravaActivitiesList.querySelector('#stravaAthleteSelect');
+  var select=els.stravaActivitiesList.querySelector('#stravaAthleteImportSelect');
   if(select){
     stravaSelectedAthleteKey=select.value||'';
     select.addEventListener('change',function(){
       stravaSelectedAthleteKey=this.value||'';
-      renderStravaActivities(stravaActivitiesCache);
+      stravaActivitiesCache=[];
+      stravaActivityDetailsCache={};
+      renderStravaStatus({configured:true,envStatus:{},connections:stravaAthleteConnections});
+      els.stravaActivitiesList.innerHTML='<div class="detailitem muted">Load Athlete Activities after changing athletes.</div>';
     });
+  }
+  var summarySelect=els.stravaSummary&&els.stravaSummary.querySelector('#stravaAthleteSelect');
+  if(summarySelect&&summarySelect.value!==stravaSelectedAthleteKey){
+    summarySelect.value=stravaSelectedAthleteKey;
   }
   els.stravaActivitiesList.querySelectorAll('[data-strava-import]').forEach(function(button){
     button.addEventListener('click',function(){
@@ -2201,11 +2260,14 @@ function inspectStravaActivity(activityId,button){
 function loadStravaActivityDetail(activityId){
   activityId=String(activityId||'');
   if(!activityId)return Promise.resolve(null);
+  var athlete=stravaSelectedAthleteForKey(stravaSelectedAthleteKey)||firstStravaAthlete();
+  var athleteKey=stravaAthleteKey(athlete);
+  if(!athleteKey)return Promise.reject(new Error('Choose a SMART Trak athlete before loading Strava details.'));
   var cached=stravaActivityDetailsCache[activityId];
   if(cached&&!cached.loading&&!cached.error)return Promise.resolve(cached);
   stravaActivityDetailsCache[activityId]={loading:true};
   renderStravaActivities(stravaActivitiesCache);
-  return fetch('/api/smart-trak/strava-activity-detail?account='+encodeURIComponent(accountKey())+'&id='+encodeURIComponent(activityId)+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+  return fetch('/api/smart-trak/strava-athlete-activity-detail?account='+encodeURIComponent(accountKey())+'&athleteKey='+encodeURIComponent(athleteKey)+'&id='+encodeURIComponent(activityId)+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activity details could not be loaded.');
@@ -2239,8 +2301,17 @@ function stravaSelectedAthleteForKey(key){
     return String(row.contactId||'')===key||String(row.smartcoachAthleteId||'')===key||String(row.runnerId||'')===key||String(row.name||'')===key;
   })||null;
 }
+function stravaConnectionForAthlete(athlete){
+  var keys=[athlete&&athlete.contactId,athlete&&athlete.smartcoachAthleteId,athlete&&athlete.runnerId,athlete&&athlete.name].map(normalizedLookupKey).filter(Boolean);
+  if(!keys.length)return null;
+  return (stravaAthleteConnections||[]).find(function(connection){
+    var row=connection&&connection.athlete||{};
+    var rowKeys=[row.contactId,row.smartcoachAthleteId,row.runnerId,row.name].map(normalizedLookupKey).filter(Boolean);
+    return keys.some(function(key){return rowKeys.indexOf(key)>=0;});
+  })||null;
+}
 function selectedStravaAthlete(){
-  var select=document.getElementById('stravaAthleteSelect');
+  var select=document.getElementById('stravaAthleteImportSelect')||document.getElementById('stravaAthleteSelect');
   return stravaSelectedAthleteForKey(select?select.value:'');
 }
 function stravaImportedActivityForSelectedAthlete(activity){
@@ -4671,6 +4742,7 @@ function init(){
   });
   if(els.stravaClose)els.stravaClose.addEventListener('click',closeStravaModal);
   if(els.stravaConnectBtn)els.stravaConnectBtn.addEventListener('click',connectStravaAccount);
+  if(els.stravaOpenConnectBtn)els.stravaOpenConnectBtn.addEventListener('click',openStravaAthleteConnectLink);
   if(els.stravaLoadActivitiesBtn)els.stravaLoadActivitiesBtn.addEventListener('click',loadStravaActivities);
   if(location.hash==='#strava')setTimeout(openStravaModal,0);
   applyAdminTools();
