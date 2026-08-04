@@ -943,6 +943,12 @@ async function saveObjectRecordWithCorrectionFallback({ token, locationId, schem
 
 function correctionFallbackProperties({ properties, error, removed }) {
   const message = String(error && error.message || "");
+  if (mappedFieldErrorFor(message, "season_year") && properties.season_year && !removed.has("season_year")) {
+    removed.add("season_year");
+    const fallback = { ...properties };
+    delete fallback.season_year;
+    return fallback;
+  }
   if (mappedFieldErrorFor(message, "sport") && properties.sport && !removed.has("sport")) {
     removed.add("sport");
     const fallback = { ...properties };

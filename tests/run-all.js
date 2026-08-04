@@ -2436,6 +2436,8 @@ function checkTrainingCorrectionWorkoutNoteReplacement() {
     "sport: sportValue(nextValues.sport)",
     "function saveObjectRecordWithCorrectionFallback",
     "function correctionFallbackProperties",
+    'mappedFieldErrorFor(message, "season_year")',
+    "delete fallback.season_year",
     'mappedFieldErrorFor(message, "sport")',
     "delete fallback.sport",
   ].forEach((text) => {
