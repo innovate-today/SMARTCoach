@@ -9688,12 +9688,10 @@ function doSMARTTraKSync(forceDuplicateSync){
       throw new Error('SMART Trak did not confirm saved workout records. Refresh and try syncing again.');
     }
     var mirror=result.data&&result.data.trainingMirror;
-    if(!mirror||!mirror.saved){
-      throw new Error('SMART Trak saved the workout but did not confirm the dashboard update. Refresh and try syncing again.');
-    }
+    var mirrorWarning=!mirror||!mirror.saved;
     markSyncedRuns(result.data&&result.data.synced);
-    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' · '+savedRecordCount+' workout record'+(savedRecordCount===1?'':'s')+' saved to SMART Trak.';
-    status.style.color='#0a7a44';
+    status.textContent='Synced '+count+' athlete'+(count===1?'':'s')+' · '+savedRecordCount+' workout record'+(savedRecordCount===1?'':'s')+' saved to SMART Trak.'+(mirrorWarning?' Dashboard confirmation is delayed. Do not sync again; refresh SMART Trak instead.':'');
+    status.style.color=mirrorWarning?'#c47a00':'#0a7a44';
     status.style.fontWeight='700';
     btn.textContent='Synced!';btn.style.background='#0a7a44';
     finishEntryQuickAction('m-sync');

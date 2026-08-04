@@ -2670,6 +2670,31 @@ function checkQualityWorkoutTypesAccepted() {
   console.log("Quality workout type aliases ok");
 }
 
+function checkSmartCoachAppSyncIdempotency() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  const syncApi = fs.readFileSync("api/ghl/sync-session.js", "utf8");
+  [
+    "function createPerformanceRecordIdempotently",
+    "await findObjectRecord({",
+    "function shouldRecoverCreatedPerformanceRecord",
+    "[408, 409, 425, 429].includes(statusCode) || statusCode >= 500",
+    "await mirrorPerformanceRecord(accountKey, createdRecord)",
+  ].forEach((text) => {
+    if (!syncApi.includes(text)) throw new Error(`SMARTCoach app sync retry guard missing ${text}`);
+  });
+  [
+    "var mirrorWarning=!mirror||!mirror.saved;",
+    "Dashboard confirmation is delayed. Do not sync again; refresh SMART Trak instead.",
+    "markSyncedRuns(result.data&&result.data.synced);",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`SMARTCoach app sync mirror-warning flow missing ${text}`);
+  });
+  if (mobile.includes("SMART Trak saved the workout but did not confirm the dashboard update. Refresh and try syncing again.")) {
+    throw new Error("SMARTCoach app sync should not tell coaches to retry after workout records were saved.");
+  }
+  console.log("SMARTCoach app sync idempotency ok");
+}
+
 function checkManualMileageQualitySession() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
@@ -4473,6 +4498,7 @@ checkTrainingCalendarQualityEditParsing();
 checkTrainingCalendarEasyRunStandardTarget();
 checkTrainingAdjustmentAuditDates();
 checkQualityWorkoutTypesAccepted();
+checkSmartCoachAppSyncIdempotency();
 checkManualMileageQualitySession();
 checkTrainingCustomization();
 checkMobileCalendarWorkoutPriority();

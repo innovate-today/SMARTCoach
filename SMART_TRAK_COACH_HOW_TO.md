@@ -1002,6 +1002,8 @@ How to use it:
 
 If the app says a run is already synced, do not resync unless you are intentionally replacing or sending that saved workout again.
 
+If the app says dashboard confirmation is delayed after saving, do not sync the same workout again. Refresh SMART Trak and check the Dashboard instead.
+
 ## Athlete Calendar
 
 Use the Athlete Calendar when athletes need to see assigned workouts and submit their own completion update.

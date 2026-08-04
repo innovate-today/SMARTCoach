@@ -59,6 +59,7 @@ module.exports = async function handler(req, res) {
       const performanceRecords = await addPerformanceRecords({
         token,
         locationId,
+        accountKey,
         contactId: contact.id,
         athlete,
         session,
@@ -134,6 +135,22 @@ async function saveTrainingMirror(accountKey, synced) {
   });
   try {
     return await mirrorTrainingRecords(accountKey, records);
+  } catch (error) {
+    return { saved: false, count: 0, error: error.message || "Training mirror could not be saved." };
+  }
+}
+
+async function mirrorPerformanceRecord(accountKey, record) {
+  if (!accountKey || !record || !record.recordId) {
+    return { saved: false, count: 0, reason: "No saved workout record to mirror." };
+  }
+  try {
+    return await mirrorTrainingRecords(accountKey, [{
+      recordId: record.recordId,
+      sourceRecordId: record.sourceRecordId,
+      syncedAt: new Date().toISOString(),
+      properties: record.properties || {},
+    }]);
   } catch (error) {
     return { saved: false, count: 0, error: error.message || "Training mirror could not be saved." };
   }
@@ -340,7 +357,7 @@ async function addSessionNote({ token, contactId, body }) {
   });
 }
 
-async function addPerformanceRecords({ token, locationId, contactId, athlete, session }) {
+async function addPerformanceRecords({ token, locationId, accountKey, contactId, athlete, session }) {
   const created = [];
   const forceSuffix = session.forceDuplicateSync ? `resync_${Date.now()}` : "";
 
@@ -353,7 +370,7 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
       run,
     }), forceSuffix);
 
-    const record = await createPerformanceRecordWithWorkoutTypeFallback({
+    const record = await createPerformanceRecordIdempotently({
       token,
       locationId,
       properties,
@@ -363,15 +380,48 @@ async function addPerformanceRecords({ token, locationId, contactId, athlete, se
     if (!recordId) {
       throw httpError(502, `SMART Trak did not return a saved workout record for ${athlete.name}.`);
     }
-    created.push({
+    const createdRecord = {
       runNumber: run.runNumber,
       recordId,
       sourceRecordId: properties.source_record_id,
       properties,
-    });
+    };
+    created.push(createdRecord);
+    await mirrorPerformanceRecord(accountKey, createdRecord);
   }
 
   return created;
+}
+
+async function createPerformanceRecordIdempotently({ token, locationId, properties }) {
+  const existing = await findObjectRecord({
+    token,
+    locationId,
+    schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY,
+    sourceRecordId: properties.source_record_id,
+  });
+  if (existing) return existing;
+
+  try {
+    return await createPerformanceRecordWithWorkoutTypeFallback({ token, locationId, properties });
+  } catch (error) {
+    if (!shouldRecoverCreatedPerformanceRecord(error)) throw error;
+    const recovered = await findObjectRecord({
+      token,
+      locationId,
+      schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY,
+      sourceRecordId: properties.source_record_id,
+    }).catch(() => null);
+    if (recovered) return recovered;
+    throw error;
+  }
+}
+
+function shouldRecoverCreatedPerformanceRecord(error) {
+  const statusCode = Number(error && error.statusCode) || 0;
+  if ([408, 409, 425, 429].includes(statusCode) || statusCode >= 500) return true;
+  const message = String(error && error.message || "");
+  return /too many|rate limit|timeout|timed out|network|fetch failed|body size|payload/i.test(message);
 }
 
 async function createPerformanceRecordWithWorkoutTypeFallback({ token, locationId, properties }) {
