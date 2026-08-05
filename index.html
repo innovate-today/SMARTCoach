@@ -489,7 +489,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="mhd"></div>
     <div class="mttl" id="att-title">Attendance</div>
     <div class="srow"><span class="slbl">Date</span><input class="sinp" id="att-date" type="date" onchange="renderAttendance()"/></div>
-    <div class="srow"><span class="slbl">Sport</span><select class="sinp" id="att-sport" required><option value="">Choose sport</option><option>Cross Country</option><option>Track</option></select></div>
+    <div class="srow"><span class="slbl">Sport</span><select class="sinp" id="att-sport" required onchange="updateAttendanceSeasonForSport()"><option value="">Choose sport</option><option>Cross Country</option><option>Track</option></select></div>
     <div class="srow"><span class="slbl">Season</span><select class="sinp" id="att-season"><option>Fall</option><option>Off Season Track</option><option>Winter</option><option>Spring</option><option>Summer</option></select></div>
     <div class="bulk-actions">
       <button class="mbtn c" onclick="addAttendanceCheckpoint()">Add Checkpoint</button>
@@ -3172,9 +3172,18 @@ function attendanceSport(){
   var input=document.getElementById('att-sport');
   return input&&input.value?input.value:'';
 }
+function attendanceDateBucketSeason(value){
+  return ['winter','spring','summer','fall'].indexOf(String(value||'').trim().toLowerCase())>=0;
+}
+function attendanceSeasonForSport(sport,season){
+  var text=String(season||'').trim();
+  if(String(sport||'').trim().toLowerCase()==='cross country'&&(!text||attendanceDateBucketSeason(text)))return 'Cross Country';
+  return text;
+}
 function attendanceSeason(){
   var input=document.getElementById('att-season');
-  return input&&input.value?input.value:(CL&&CL.season?CL.season:currentSeason().season);
+  var value=input&&input.value?input.value:(CL&&CL.season?CL.season:currentSeason().season);
+  return attendanceSeasonForSport(attendanceSport(),value);
 }
 function ensureSelectOption(select,value){
   if(!select||!value)return;
@@ -3194,6 +3203,14 @@ function setAttendanceDefaultsFromGroup(){
     var value=CL&&CL.season||currentSeason().season;
     ensureSelectOption(season,value);
     season.value=value;
+  }
+}
+function updateAttendanceSeasonForSport(){
+  var sport=attendanceSport();
+  var season=document.getElementById('att-season');
+  if(sport==='Cross Country'&&season&&attendanceDateBucketSeason(season.value)){
+    ensureSelectOption(season,'Cross Country');
+    season.value='Cross Country';
   }
 }
 function ensureAttendanceDay(date){
@@ -3786,10 +3803,12 @@ function syncAttendanceToSmartTrak(){
 }
 function attendancePayload(day){
   var coach=selectedCoachIdentity()||{};
+  var sport=attendanceSport();
+  var season=attendanceSeasonForSport(sport,attendanceSeason());
   return {
     date:day&&day.date||attendanceDate(),
-    sport:attendanceSport(),
-    season:attendanceSeason(),
+    sport:sport,
+    season:season,
     seasonYear:CL&&CL.seasonYear||currentSeason().year,
     groupId:String(CL.sharedGroupId||CL.id||''),
     groupName:CL.name||'Training Group',

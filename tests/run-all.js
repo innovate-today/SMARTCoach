@@ -3704,11 +3704,14 @@ function checkAttendanceSeasonAttachment() {
     'id="att-season"',
     "function attendanceSport()",
     "function attendanceSeason()",
+    "function attendanceSeasonForSport(sport,season)",
+    "attendanceSeasonForSport(attendanceSport(),value)",
     "sport:attendanceSport()",
     "season:attendanceSeason()",
     "Off Season Track",
     "Choose Cross Country or Track before saving attendance.",
     "if(sport)sport.value='';",
+    "updateAttendanceSeasonForSport()",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`mobile attendance season attachment missing ${text}`);
   });
@@ -3719,6 +3722,9 @@ function checkAttendanceSeasonAttachment() {
     'id="sportFilter"',
     'id="seasonFilter"',
     "function attendanceSeasonLabel(row)",
+    "function attendanceSeasonName(row)",
+    "attendanceSportKey(row)==='cross_country'",
+    "col==='season'?attendanceSeasonName(row)",
     "data-sport",
     "data-season",
     "sport:tr.querySelector('[data-sport]').value",
@@ -3751,9 +3757,10 @@ function checkAttendanceSeasonAttachment() {
   });
   [
     "const sport = clean(filters.sport).toLowerCase();",
-    "sport: clean(record.sport)",
-    "season: clean(record.season)",
-    "seasonYear: Number(record.seasonYear) || null",
+    "const sport = normalizeAttendanceSport(record.sport)",
+    "const season = normalizeAttendanceSeason(record.season, sport)",
+    "const itemSeasonLabel = [item.season, item.seasonYear].filter(Boolean).join(\" \").toLowerCase();",
+    "if (sport === \"Cross Country\" && (!text || attendanceDateBucketSeason(text))) return \"Cross Country\";",
     "item.sport",
     "item.season",
     "item.seasonYear",
