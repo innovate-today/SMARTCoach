@@ -614,7 +614,7 @@ function checkDashboardCurrentFitnessTargetFallback() {
     "targetDifference:diff,",
     "derivedTargetFromCurrentFitness=true",
     "if(row.plannedTarget||row.targetDifference)return null;",
-    "if(parseSplitLines(row.splitsText).length)return null;",
+    "if(hasRepRestPattern(row))return null;",
     "var diff=(miles&&totalMs)?splitTargetDiff(totalMs/miles,fastPace,slowPace):'';",
     "els.correctionPlannedTarget.value=correctionRow.plannedTarget||noteLineValue(correctionRow.coachNote,'Planned target')||'';",
   ].forEach((text) => {

@@ -83,7 +83,7 @@ For timed workouts where the athlete's watch has pace for each segment, use **Ac
 
 If a workout has actual rep paces but no saved target, Completed Workouts still shows those paces under **Actual rep paces** so you can review the rep data later.
 
-For completed Easy/Recovery Run or Long Run mileage rows, **Target Review** can use the athlete's current fitness even when no planned target was saved on that workout. If the row has completed distance and time, SMART Trak compares the athlete's actual pace to the expected pace from current fitness. Saved planned targets and saved rep pace reviews still take priority when they are present.
+For completed Easy/Recovery Run or Long Run mileage rows, **Target Review** can use the athlete's current fitness even when no planned target was saved on that workout. If the row has completed distance and time, SMART Trak compares the athlete's actual pace to the expected pace from current fitness. Strava lap splits on an easy run do not stop this review. Saved planned targets and saved rep pace reviews still take priority when they are present.
 
 The Dashboard title includes **Start Here** and **What's New**. Use **Start Here** for goal-based setup and workflow steps. Use **What's New** to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Dashboard Customization, Training Customization, Results Board sharing, Athlete Calendar Questions, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
 

@@ -7948,7 +7948,7 @@ function targetReviewRow(row){
 function currentFitnessMileageTarget(row){
   if(!row||row.speedMetricSession)return null;
   if(row.plannedTarget||row.targetDifference)return null;
-  if(parseSplitLines(row.splitsText).length)return null;
+  if(hasRepRestPattern(row))return null;
   var workoutType=currentFitnessMileageWorkoutType(row);
   if(!workoutType)return null;
   var athlete=findDashboardAthleteForTraining(row)||{};
