@@ -14,6 +14,7 @@
     'div[class*="leadconnector"]',
     'div[class*="chat-widget"]'
   ].join(',') + '{z-index:2147483647!important;}' +
+    '.smartcoach-chat-badge-raised{bottom:92px!important;right:18px!important;top:auto!important;z-index:2147483646!important}' +
     '.smartcoach-bugtrak-btn{position:fixed;left:18px;bottom:18px;z-index:2147483000;border:1px solid #bfd0ef;border-radius:999px;background:#fff;color:#173891;font:800 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:9px 12px;box-shadow:0 14px 32px rgba(15,23,42,.18);cursor:pointer}' +
     '.smartcoach-bugtrak-btn:hover{background:#eef4ff}' +
     '.smartcoach-bugtrak-overlay{position:fixed;inset:0;z-index:2147483001;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;overflow:auto}' +
@@ -47,7 +48,45 @@
     Array.prototype.slice.call(document.querySelectorAll('iframe[src*="leadconnectorhq.com"],iframe[src*="chat-widget"],div[id*="lc_chat"],div[class*="lc-"],div[class*="leadconnector"],div[class*="chat-widget"]')).forEach(function(node){
       node.style.zIndex = '2147483647';
     });
+    raiseSmartCoachChatBadge();
   }
+  function fixedBadgeContainer(node){
+    var current=node;
+    while(current&&current!==document.body){
+      var style=window.getComputedStyle?window.getComputedStyle(current):null;
+      if(style&&style.position==='fixed')return current;
+      current=current.parentElement;
+    }
+    return null;
+  }
+  function isBottomRightBadge(node){
+    if(!node||node.nodeType!==1||node.id==='smartcoachFeedbackBtn')return false;
+    var text=(node.textContent||'').replace(/\s+/g,' ').trim();
+    if(text!=='SMARTCoach Pro')return false;
+    var container=fixedBadgeContainer(node);
+    if(!container)return false;
+    var rect=container.getBoundingClientRect();
+    if(!rect.width||!rect.height)return false;
+    return rect.right>window.innerWidth-260&&rect.bottom>window.innerHeight-140&&rect.width<260&&rect.height<90;
+  }
+  function raiseSmartCoachChatBadge(){
+    Array.prototype.slice.call(document.querySelectorAll('body *')).some(function(node){
+      if(!isBottomRightBadge(node))return false;
+      var container=fixedBadgeContainer(node);
+      if(!container)return false;
+      container.classList.add('smartcoach-chat-badge-raised');
+      container.style.setProperty('bottom','92px','important');
+      container.style.setProperty('right','18px','important');
+      container.style.setProperty('top','auto','important');
+      return true;
+    });
+  }
+  if(window.MutationObserver){
+    var chatBadgeObserver=new MutationObserver(function(){raiseSmartCoachChatBadge();});
+    if(document.body)chatBadgeObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+    else document.addEventListener('DOMContentLoaded',function(){chatBadgeObserver.observe(document.body,{childList:true,subtree:true,characterData:true});});
+  }
+  window.addEventListener('resize',raiseSmartCoachChatBadge);
   setInterval(liftWidget,1000);
   var script = document.createElement('script');
   script.src = 'https://beta.leadconnectorhq.com/loader.js';
