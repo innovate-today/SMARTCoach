@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-07-23
+Last updated: 2026-08-05
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- Strava beta access was tightened so the Training Calendar Strava entry point is only visible after owner/admin access on the `tca-trackandcc` beta account, the `#strava` modal auto-open waits for account-status before using that admin flag, and all athlete Strava connection/activity/detail API routes now require owner/admin session access instead of any coach session. The backend beta account allowlist is capped at 10 account keys. Regression coverage was updated. Coach how-to and What's New were not updated because Strava remains a private beta/admin-only feature.
 - Dashboard current-season filtering now mirrors the Miles Trak legacy cross country guard in the browser: older completed training rows with mileage, no explicit sport, and saved date-bucket/no season context can still resolve to Cross Country as long as their row text does not indicate Track/Speed/sprints/field events. This prevents older summer/fall cross country mileage from disappearing from Current season after reload while keeping explicit Track rows in Track seasons. Regression coverage was updated. Coach how-to was not changed because no coach workflow changed. What's New is pending user approval.
 - SMART Trak shared help/chat widget now raises the external `SMARTCoach Pro` bottom-right badge above the blue chat launcher when the LeadConnector widget injects it, so the badge no longer blocks the chat icon. The guard is limited to the exact fixed bottom-right `SMARTCoach Pro` label. Regression coverage was updated. Coach how-to was not changed because no coach workflow changed. What's New is pending user approval.
 - Dashboard Completed Workouts Target Review now still derives current-fitness pace targets for completed Easy/Recovery Run and Long Run rows when Strava imported ordinary lap/split rows. The previous fallback blocked any row with splits, which made Strava easy runs with distance/time/current fitness show `No target saved`; it now only blocks rep/rest-style workouts from using the easy/long mileage fallback. Coach how-to and regression coverage were updated. What's New is pending user approval.

@@ -266,7 +266,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <a id="planImportLink" class="linkbtn secondary" href="/plan-import.html">Upload/Paste Plan</a>
         <a id="planBuilderLink" class="linkbtn secondary" href="/plan-builder.html">Auto Build Plan</a>
         <button id="trainingCustomBtn" class="secondary" type="button">Training Customization</button>
-        <a id="stravaTrainingLink" class="linkbtn secondary" href="/training-calendar.html#strava" data-beta-only="1" hidden>Strava</a>
+        <a id="stravaTrainingLink" class="linkbtn secondary" href="/training-calendar.html#strava" data-beta-admin-only="1" hidden>Strava</a>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
       </div>
     </div>
@@ -676,6 +676,7 @@ var calendarEditDay=null;
 var calendarEditBuilderDirty=false;
 var draggedDayId='';
 var copiedCalendarDay=null;
+var accountStatus=null;
 var els={
   mainPage:document.getElementById('mainPage'),
   accessPanel:document.getElementById('accessPanel'),
@@ -912,8 +913,12 @@ function betaAdminToolsVisible(){
   var betaKeys=['tca-trackandcc'];
   return betaKeys.indexOf(accountKey())!==-1;
 }
+function stravaBetaAdminVisible(){
+  if(accountStatus&&accountStatus.coachSessionActive&&accountStatus.staffAdminAllowed===false)return false;
+  return adminToolsVisible()&&betaAdminToolsVisible();
+}
 function applyAdminTools(){
-  var showBeta=adminToolsVisible()&&betaAdminToolsVisible();
+  var showBeta=stravaBetaAdminVisible();
   document.querySelectorAll('[data-beta-admin-only]').forEach(function(el){el.hidden=!showBeta;});
   document.querySelectorAll('[data-beta-only]').forEach(function(el){el.hidden=!betaAdminToolsVisible();});
 }
@@ -1974,6 +1979,10 @@ function formatDurationShort(ms){
 }
 function openStravaModal(){
   if(!els.stravaModal)return;
+  if(!stravaBetaAdminVisible()){
+    if(els.status)els.status.textContent='Owner/admin beta access is required to use Strava.';
+    return;
+  }
   els.stravaModal.hidden=false;
   renderStravaStatus(null);
   loadStravaStatus();
@@ -4674,7 +4683,9 @@ function ensureAccountAccess(){
   return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){refreshRememberedSession(data);return{ok:res.ok,data:data};});
   }).then(function(result){
+    accountStatus=result.data||null;
     applyBrandLogo(result.data&&result.data.logoUrl);
+    applyAdminTools();
     if(result.data&&result.data.accessReady===false){
       els.mainPage.hidden=true;
       els.accessPanel.hidden=false;
@@ -4781,7 +4792,6 @@ function init(){
   if(els.stravaConnectBtn)els.stravaConnectBtn.addEventListener('click',connectStravaAccount);
   if(els.stravaOpenConnectBtn)els.stravaOpenConnectBtn.addEventListener('click',openStravaAthleteConnectLink);
   if(els.stravaLoadActivitiesBtn)els.stravaLoadActivitiesBtn.addEventListener('click',loadStravaActivities);
-  if(location.hash==='#strava')setTimeout(openStravaModal,0);
   applyAdminTools();
   els.refreshBtn.addEventListener('click',loadCalendar);
   els.trainingCustomBtn.addEventListener('click',openTrainingCustomization);
@@ -5058,7 +5068,11 @@ function init(){
   els.dayEditSave.addEventListener('click',saveDayEdit);
   els.accessSubmit.addEventListener('click',submitAccess);
   els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});
-  ensureAccountAccess().then(function(ok){if(ok)loadCalendar();});
+  ensureAccountAccess().then(function(ok){
+    if(!ok)return;
+    if(location.hash==='#strava'&&stravaBetaAdminVisible())setTimeout(openStravaModal,0);
+    loadCalendar();
+  });
 }
 init();
 </script>

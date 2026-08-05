@@ -435,7 +435,7 @@ async function accountStravaAthleteConnections(req, res) {
   }
 
   try {
-    const access = requireCoachSession(req, "view athlete Strava connections");
+    const access = requireOwnerAdminSession(req, "view athlete Strava connections");
     requireBetaFeatureAccount(access.accountKey, "view athlete Strava connections");
     res.status(200).json({
       success: true,
@@ -460,7 +460,7 @@ async function accountStravaAthleteStart(req, res) {
   }
 
   try {
-    const access = requireCoachSession(req, "create an athlete Strava connection link");
+    const access = requireOwnerAdminSession(req, "create an athlete Strava connection link");
     requireBetaFeatureAccount(access.accountKey, "create an athlete Strava connection link");
     const env = requireStravaEnv();
     const athlete = stravaAthleteFromRequest(req);
@@ -613,7 +613,7 @@ async function accountStravaAthleteActivities(req, res) {
   }
 
   try {
-    const access = requireCoachSession(req, "load athlete Strava activities");
+    const access = requireOwnerAdminSession(req, "load athlete Strava activities");
     requireBetaFeatureAccount(access.accountKey, "load athlete Strava activities");
     const limit = Math.max(1, Math.min(Number(firstQueryValue(req.query && req.query.limit)) || 10, 30));
     const athleteKey = cleanSetupText(firstQueryValue(req.query && (req.query.athleteKey || req.query.athleteId || req.query.contactId)));
@@ -683,7 +683,7 @@ async function accountStravaAthleteActivityDetail(req, res) {
   }
 
   try {
-    const access = requireCoachSession(req, "inspect athlete Strava activity details");
+    const access = requireOwnerAdminSession(req, "inspect athlete Strava activity details");
     requireBetaFeatureAccount(access.accountKey, "inspect athlete Strava activity details");
     const activityId = cleanSetupText(firstQueryValue(req.query && req.query.id));
     const athleteKey = cleanSetupText(firstQueryValue(req.query && (req.query.athleteKey || req.query.athleteId || req.query.contactId)));
@@ -751,7 +751,7 @@ function requireCoachSession(req, actionLabel) {
 function betaFeatureAccountKeys() {
   const configured = cleanSetupText(process.env.SMARTCOACH_BETA_ACCOUNT_KEYS);
   const raw = configured || "tca-trackandcc";
-  return raw.split(/[\s,]+/).map(normalizeSetupAccountKey).filter(Boolean);
+  return raw.split(/[\s,]+/).map(normalizeSetupAccountKey).filter(Boolean).slice(0, 10);
 }
 
 function betaFeatureAccountAllowed(accountKey) {
