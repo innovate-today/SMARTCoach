@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1784845175001"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1784845175002"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1784845175001 -->
-<!-- v1784845175001 -->
+<!-- build:1784845175002 -->
+<!-- v1784845175002 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -3238,9 +3238,20 @@ function attendanceActiveRunners(){
   var runners=CL&&CL.runners||[];
   return AR_READY?runners.filter(isActiveRosterRunner):runners;
 }
+function ensureAttendanceRosterReady(callback){
+  if(!isProPlan()||AR_READY){callback(true);return;}
+  loadAthletes().then(function(ok){callback(!!ok&&AR_READY);});
+}
 function openAttendancePicker(){
   var groups=attendanceGroups();
   if(!groups.length){alert('Create or sync a training group first.');return;}
+  if(isProPlan()&&!AR_READY){
+    loadAthletes().then(function(ok){
+      if(ok&&AR_READY)openAttendancePicker();
+      else alert('Active roster is still loading. Tap Refresh and try again.');
+    });
+    return;
+  }
   openPicker('Attendance Group',groups.map(function(group){
     var runners=group.runners||[];
     var activeCount=AR_READY?runners.filter(isActiveRosterRunner).length:runners.length;
@@ -3260,9 +3271,23 @@ function openAttendance(){
   if(input)input.value=todayISO();
   setAttendanceDefaultsFromGroup();
   ensureAttendanceDay(attendanceDate());
+  sm('m-attendance');
+  if(isProPlan()&&!AR_READY){
+    var list=document.getElementById('att-list');
+    if(list)list.innerHTML='<div style="padding:18px;color:#777;text-align:center;background:#fff">Loading active roster...</div>';
+    setAttendanceSaveStatus('Loading active roster...','warn');
+    ensureAttendanceRosterReady(function(ok){
+      if(!ok){
+        setAttendanceSaveStatus('Active roster could not load. Tap Refresh and try again.','warn');
+        return;
+      }
+      renderAttendance();
+      setAttendanceSaveStatus('','warn');
+    });
+    return;
+  }
   renderAttendance();
   setAttendanceSaveStatus('','warn');
-  sm('m-attendance');
 }
 function renderAttendance(){
   if(!CL)return;
@@ -3773,6 +3798,13 @@ function setAttendanceSaveStatus(message,type){
 }
 function saveAttendanceAndClose(){
   var btn=document.getElementById('att-save-btn');
+  if(isProPlan()&&!AR_READY){
+    setAttendanceSaveStatus('Refresh active roster before saving attendance.','warn');
+    ensureAttendanceRosterReady(function(ok){
+      if(ok){renderAttendance();setAttendanceSaveStatus('','warn');}
+    });
+    return;
+  }
   if(!attendanceSport()){
     setAttendanceSaveStatus('Choose Cross Country or Track before saving attendance.','warn');
     var sport=document.getElementById('att-sport');
@@ -5259,6 +5291,7 @@ function saveEquipmentSheet(){
 }
 function markWorkoutAttendance(r){
   if(!CL||CL.type==='meet'||!r)return;
+  if(AR_READY&&!isActiveRosterRunner(r))return;
   var date=todayISO(),day=ensureAttendanceDay(date),cp=day&&day.checkpoints[0];
   if(!cp)return;
   var rec=attendanceRecord(cp,r);

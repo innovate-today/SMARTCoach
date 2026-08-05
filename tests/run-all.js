@@ -371,6 +371,7 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
     ".filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))",
     "const smartcoachActive = smartcoachRosterMember &&",
     "const smartcoachSetupCandidate = !excludedSystemContact && Boolean(contactName(contact)) && Boolean(smartcoachAthleteId || smartcoachActiveValue || hasRosterSetupData);",
+    "inactive|archived|archive|former|graduated|alumni|quit|no longer active|not active",
   ].forEach((text) => {
     if (!athletes.includes(text)) throw new Error(`athlete API must count only SMART Trak roster athletes: ${text}`);
   });
@@ -382,6 +383,7 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
     "const smartcoachActive = !excludedSystemContact && inferredSmartCoachAthlete &&",
     "smartcoachRosterMember: !excludedSystemContact && inferredSmartCoachAthlete",
     ".filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)",
+    "inactive|archived|archive|former|graduated|alumni|quit|no longer active|not active",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`dashboard roster must ignore ordinary GHL contacts: ${text}`);
   });
@@ -3407,8 +3409,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1784845175001"',
-    "<!-- build:1784845175001 -->",
+    'meta name="app-version" content="1784845175002"',
+    "<!-- build:1784845175002 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -3647,6 +3649,12 @@ function checkAttendanceMobileSummary() {
     "function attendanceSummaryRowMatchesStatus(row)",
     "function attendanceSummaryRows()",
     "function attendanceActiveRunners()",
+    "function ensureAttendanceRosterReady(callback)",
+    "Active roster is still loading. Tap Refresh and try again.",
+    "Loading active roster...",
+    "Active roster could not load. Tap Refresh and try again.",
+    "Refresh active roster before saving attendance.",
+    "if(AR_READY&&!isActiveRosterRunner(r))return;",
     "var runners=attendanceActiveRunners();",
     "attendanceActiveRunners().map(function(r)",
     "runners:attendanceActiveRunners().map(function(r)",
@@ -3751,6 +3759,7 @@ function checkAttendanceSeasonAttachment() {
     "async function activeAttendanceRecords({ attendance, token, locationId })",
     "athletes.filter((athlete) => athlete && athlete.smartcoachActive)",
     "const rosterNames = new Map();",
+    "if (!keys.some((value) => activeKeys.has(value.toLowerCase()))) return null;",
     "if (rosterName) rosterNames.set(key, rosterName);",
     "const currentName = keys.map((value) => rosterNames.get(value.toLowerCase())).find(Boolean);",
     "return currentName && currentName !== row.athleteName ? { ...row, athleteName: currentName } : row;",

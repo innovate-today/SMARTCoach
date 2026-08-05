@@ -1898,7 +1898,9 @@ function isActiveValue(value) {
 }
 
 function isInactiveValue(value) {
-  return /^(no|n|false|inactive|0|off)$/i.test(clean(value));
+  const text = clean(value).toLowerCase().replace(/[_-]+/g, " ").trim();
+  if (/^(no|n|false|inactive|0|off)$/i.test(text)) return true;
+  return /\b(inactive|archived|archive|former|graduated|alumni|quit|no longer active|not active)\b/i.test(text);
 }
 
 function optionValue(value) {

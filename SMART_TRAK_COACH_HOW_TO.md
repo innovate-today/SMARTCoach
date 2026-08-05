@@ -245,7 +245,7 @@ How to use it in the SMARTCoach Pro Mobile App:
 9. Tap **Summary** when you need a quick group attendance view during practice. The summary loads synced attendance for the selected group and includes any marks currently saved on the phone. If the same attendance mark exists on the phone and in SMART Trak, the summary shows it once. Use **Range** to review all dates, the last 7/14/30 days, or a custom date range. Use **Status** to narrow the athlete list and selected-athlete marks to absences, tardies, excused marks, checkouts, or present marks. It shows the group attendance percentage, athlete count, total days possible, and each athlete's **%**, **P**, **A**, **E**, and **T** totals for the selected range. Total days possible reflects the highest marked date/checkpoint count for an athlete in the selected range. Tap a table header to sort ascending or descending. Use the athlete dropdown or tap an athlete row to focus on one athlete while discussing attendance; tap the selected athlete row again to return to all athletes.
 10. Save attendance so it syncs to SMART Trak. The app shows the save status above the **Save Attendance** button, then shows **Complete** before closing the Attendance sheet.
 
-Inactive athletes are removed from the Attendance sheet after the app refreshes current roster data.
+Inactive athletes are removed from the Attendance sheet after the app loads the current roster. If the roster has not loaded yet, the app asks the coach to refresh instead of showing old group members.
 
 How to review it in SMART Trak:
 
@@ -259,6 +259,8 @@ How to review it in SMART Trak:
 8. Use **Delete** only when one attendance mark should be removed. SMART Trak shows a confirmation message with the athlete, date, season, group, and checkpoint before deleting.
 
 If an athlete's name is corrected on the roster, Attendance Trak uses the corrected roster name for saved attendance marks that are linked to that athlete.
+
+Inactive athletes are also left out of the normal SMART Trak Attendance report, even if older attendance marks were saved before the athlete was made inactive.
 
 For meet days, create a checkout checkpoint such as **Meet Checkout** or **Parent Checkout**. Mark an athlete **Checked Out** when they leave with a parent or guardian after checking out with a coach. Checked Out is treated as accounted-for attendance in the attendance percentage, not as an absence.
 
