@@ -617,7 +617,8 @@ async function accountStravaAthleteActivities(req, res) {
     requireBetaFeatureAccount(access.accountKey, "load athlete Strava activities");
     const limit = Math.max(1, Math.min(Number(firstQueryValue(req.query && req.query.limit)) || 10, 30));
     const athleteKey = cleanSetupText(firstQueryValue(req.query && (req.query.athleteKey || req.query.athleteId || req.query.contactId)));
-    const connection = await activeStravaAthleteConnection(access.accountKey, access.record, athleteKey);
+    const requestedAthlete = stravaAthleteFromRequest(req);
+    const connection = await activeStravaAthleteConnection(access.accountKey, access.record, athleteKey, requestedAthlete);
     const url = new URL("https://www.strava.com/api/v3/athlete/activities");
     url.searchParams.set("page", "1");
     url.searchParams.set("per_page", String(limit));
@@ -687,7 +688,8 @@ async function accountStravaAthleteActivityDetail(req, res) {
     const activityId = cleanSetupText(firstQueryValue(req.query && req.query.id));
     const athleteKey = cleanSetupText(firstQueryValue(req.query && (req.query.athleteKey || req.query.athleteId || req.query.contactId)));
     if (!activityId) throw httpError(400, "Strava activity id is required.");
-    const connection = await activeStravaAthleteConnection(access.accountKey, access.record, athleteKey);
+    const requestedAthlete = stravaAthleteFromRequest(req);
+    const connection = await activeStravaAthleteConnection(access.accountKey, access.record, athleteKey, requestedAthlete);
     const detail = await fetchStravaActivityDetail(activityId, connection.accessToken);
     res.status(200).json({
       success: true,
@@ -876,18 +878,44 @@ async function activeStravaConnection(accountKey, accountRecord) {
   return updated;
 }
 
-async function activeStravaAthleteConnection(accountKey, accountRecord, athleteKeyValue) {
+async function activeStravaAthleteConnection(accountKey, accountRecord, athleteKeyValue, requestedAthleteValue) {
   const env = requireStravaEnv();
   const record = accountRecord || {};
   const athleteKey = cleanSetupText(athleteKeyValue);
   if (!athleteKey) throw httpError(400, "Choose an athlete before loading Strava activities.");
   const connections = normalizeSavedStravaAthleteConnections(record.stravaAthleteConnections);
-  const connection = connections.find((item) => stravaConnectionMatchesAthleteKey(item, athleteKey));
+  const requestedAthlete = normalizeStravaConnectionAthlete(requestedAthleteValue || {});
+  const strictConnection = connections.find((item) => stravaConnectionMatchesAthleteKey(item, athleteKey));
+  let connection = strictConnection && !stravaConnectionNameMismatchForAthlete(strictConnection, requestedAthlete) ? strictConnection : null;
+  let repairedConnection = false;
+  if (!connection && stravaConnectionAthleteKey(requestedAthlete)) {
+    connection = connections.find((item) => stravaConnectionMatchesStravaAthleteName(item, requestedAthlete)) || null;
+    if (connection) {
+      connection = normalizeSavedStravaAthleteConnection({
+        ...connection,
+        athlete: requestedAthlete,
+        updatedAt: new Date().toISOString(),
+      });
+      repairedConnection = true;
+    }
+  }
   if (!connection || !connection.connected || !connection.refreshToken) {
+    if (strictConnection && stravaConnectionNameMismatchForAthlete(strictConnection, requestedAthlete)) {
+      throw httpError(409, "The connected Strava account name does not match the selected SMART Trak athlete.");
+    }
     throw httpError(404, "Strava is not connected for this athlete.");
   }
   const expiresAtMs = Number(connection.expiresAt) ? Number(connection.expiresAt) * 1000 : Date.parse(connection.expiresAtIso || "");
-  if (connection.accessToken && Number.isFinite(expiresAtMs) && expiresAtMs - Date.now() > 60000) return connection;
+  if (connection.accessToken && Number.isFinite(expiresAtMs) && expiresAtMs - Date.now() > 60000) {
+    if (repairedConnection) {
+      const existing = (await loadExistingAccountRecord(accountKey)) || record;
+      await saveAccountRecord(accountKey, {
+        ...existing,
+        stravaAthleteConnections: upsertStravaAthleteConnection(existing.stravaAthleteConnections, connection),
+      });
+    }
+    return connection;
+  }
   const tokenData = await exchangeStravaToken({
     clientId: env.clientId,
     clientSecret: env.clientSecret,
@@ -961,7 +989,11 @@ function sanitizeStravaAthleteConnection(value) {
 function upsertStravaAthleteConnection(existingConnections, nextConnection) {
   const next = normalizeSavedStravaAthleteConnection(nextConnection);
   const nextKey = stravaConnectionAthleteKey(next.athlete);
-  const rows = normalizeSavedStravaAthleteConnections(existingConnections).filter((item) => !stravaConnectionMatchesAthleteKey(item, nextKey));
+  const nextStravaKey = stravaAthleteIdentityKey(next.stravaAthlete);
+  const rows = normalizeSavedStravaAthleteConnections(existingConnections).filter((item) => {
+    if (stravaConnectionMatchesAthleteKey(item, nextKey)) return false;
+    return !(nextStravaKey && stravaAthleteIdentityKey(item.stravaAthlete) === nextStravaKey);
+  });
   if (nextKey) rows.push(next);
   return rows;
 }
@@ -995,6 +1027,37 @@ function stravaConnectionMatchesAthleteKey(connection, athleteKeyValue) {
   if (!key) return false;
   const athlete = normalizeStravaConnectionAthlete(connection && connection.athlete || connection || {});
   return [athlete.contactId, athlete.smartcoachAthleteId, athlete.runnerId, athlete.name].map((value) => cleanSetupText(value).toLowerCase()).filter(Boolean).includes(key);
+}
+
+function stravaConnectionMatchesStravaAthleteName(connection, athleteValue) {
+  const athleteName = comparableStravaName(athleteValue && athleteValue.name);
+  const stravaName = comparableStravaName(stravaAthleteDisplayName(connection && connection.stravaAthlete));
+  return !!(athleteName && stravaName && athleteName === stravaName && connection && connection.connected);
+}
+
+function stravaConnectionNameMismatchForAthlete(connection, athleteValue) {
+  if (!connection || !connection.connected) return false;
+  const athleteTokens = comparableStravaName(athleteValue && athleteValue.name).split(" ").filter(Boolean);
+  const stravaTokens = comparableStravaName(stravaAthleteDisplayName(connection.stravaAthlete)).split(" ").filter(Boolean);
+  if (athleteTokens.length < 2 || stravaTokens.length < 2) return false;
+  return !athleteTokens.some((token) => stravaTokens.includes(token));
+}
+
+function stravaAthleteDisplayName(athleteValue) {
+  const athlete = sanitizeStravaAthlete(athleteValue || {});
+  return [athlete.firstname, athlete.lastname].filter(Boolean).join(" ") || athlete.username || athlete.id || "";
+}
+
+function comparableStravaName(value) {
+  return cleanSetupText(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function stravaAthleteIdentityKey(athleteValue) {
+  const athlete = sanitizeStravaAthlete(athleteValue || {});
+  const id = cleanSetupText(athlete.id).toLowerCase();
+  if (id) return `id:${id}`;
+  const name = comparableStravaName(stravaAthleteDisplayName(athlete));
+  return name ? `name:${name}` : "";
 }
 
 function sanitizeStravaConnection(value) {

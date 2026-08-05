@@ -511,7 +511,7 @@ Use the status tools when a group of days needs to be changed:
 
 The **Visible Mix** shows how the calendar is balanced across workouts, meets/races, recovery, off/travel, and other days.
 
-Use **Strava** when an athlete should connect their own Strava account. Choose the athlete, copy the connect link, and send it to that athlete. After the athlete signs in with Strava, open **Strava** again, choose the athlete, and load their recent activities. Import the completed activity into SMART Trak after checking the athlete and the matching workout for that date.
+Use **Strava** when an athlete should connect their own Strava account. Choose the athlete, copy the connect link, and send it to that athlete. After the athlete signs in with Strava, open **Strava** again, choose the athlete, and load their recent activities. Import the completed activity into SMART Trak after checking the athlete and the matching workout for that date. If the Strava account name does not match the selected athlete, send a fresh connect link to the correct athlete before importing.
 
 Use **Training Customization** when your program wants target paces based on different effort percentages. The table shows the current percent range for each effort, such as Easy / Recovery Run, Threshold, Interval, Repetition, Tempo, and speed work. Edit the low and high percentages, then click **Save Customization**. Click **Reset Defaults** to return the table to the built-in SMART Trak percentages.
 

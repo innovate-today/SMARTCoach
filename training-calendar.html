@@ -2121,6 +2121,7 @@ function loadStravaActivities(){
   els.stravaStatus.style.color='var(--muted)';
   els.stravaActivitiesList.innerHTML='<div class="detailitem muted">Loading...</div>';
   var athlete=stravaSelectedAthleteForKey(stravaSelectedAthleteKey)||firstStravaAthlete();
+  var athleteParams=stravaAthleteRequestParams(athlete);
   var athleteKey=stravaAthleteKey(athlete);
   if(!athleteKey){
     els.stravaStatus.textContent='Choose a SMART Trak athlete before loading Strava activities.';
@@ -2128,7 +2129,7 @@ function loadStravaActivities(){
     els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No Strava activities loaded.</div>';
     return Promise.resolve();
   }
-  return fetch('/api/smart-trak/strava-athlete-activities?account='+encodeURIComponent(accountKey())+'&athleteKey='+encodeURIComponent(athleteKey)+'&limit=10&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+  return fetch('/api/smart-trak/strava-athlete-activities?account='+encodeURIComponent(accountKey())+'&'+athleteParams+'&limit=10&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activities could not be loaded.');
@@ -2261,13 +2262,14 @@ function loadStravaActivityDetail(activityId){
   activityId=String(activityId||'');
   if(!activityId)return Promise.resolve(null);
   var athlete=stravaSelectedAthleteForKey(stravaSelectedAthleteKey)||firstStravaAthlete();
+  var athleteParams=stravaAthleteRequestParams(athlete);
   var athleteKey=stravaAthleteKey(athlete);
   if(!athleteKey)return Promise.reject(new Error('Choose a SMART Trak athlete before loading Strava details.'));
   var cached=stravaActivityDetailsCache[activityId];
   if(cached&&!cached.loading&&!cached.error)return Promise.resolve(cached);
   stravaActivityDetailsCache[activityId]={loading:true};
   renderStravaActivities(stravaActivitiesCache);
-  return fetch('/api/smart-trak/strava-athlete-activity-detail?account='+encodeURIComponent(accountKey())+'&athleteKey='+encodeURIComponent(athleteKey)+'&id='+encodeURIComponent(activityId)+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+  return fetch('/api/smart-trak/strava-athlete-activity-detail?account='+encodeURIComponent(accountKey())+'&'+athleteParams+'&id='+encodeURIComponent(activityId)+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activity details could not be loaded.');
@@ -2294,6 +2296,15 @@ function stravaAthleteOptions(selectedKey){
 }
 function firstStravaAthlete(){return stravaAthleteRows()[0]||null;}
 function stravaAthleteKey(row){return row?(row.contactId||row.smartcoachAthleteId||row.runnerId||row.name||''):'';}
+function stravaAthleteRequestParams(row){
+  var params=new URLSearchParams();
+  params.set('athleteKey',stravaAthleteKey(row));
+  params.set('contactId',row&&row.contactId||'');
+  params.set('smartcoachAthleteId',row&&row.smartcoachAthleteId||'');
+  params.set('runnerId',row&&row.runnerId||'');
+  params.set('athleteName',row&&row.name||'');
+  return params.toString();
+}
 function stravaSelectedAthleteForKey(key){
   key=String(key||'');
   if(!key)return null;
@@ -2304,11 +2315,37 @@ function stravaSelectedAthleteForKey(key){
 function stravaConnectionForAthlete(athlete){
   var keys=[athlete&&athlete.contactId,athlete&&athlete.smartcoachAthleteId,athlete&&athlete.runnerId,athlete&&athlete.name].map(normalizedLookupKey).filter(Boolean);
   if(!keys.length)return null;
-  return (stravaAthleteConnections||[]).find(function(connection){
+  var matched=(stravaAthleteConnections||[]).find(function(connection){
     var row=connection&&connection.athlete||{};
     var rowKeys=[row.contactId,row.smartcoachAthleteId,row.runnerId,row.name].map(normalizedLookupKey).filter(Boolean);
-    return keys.some(function(key){return rowKeys.indexOf(key)>=0;});
+    return keys.some(function(key){return rowKeys.indexOf(key)>=0;})&&!stravaConnectionNameMismatch(athlete,connection);
+  });
+  if(matched)return matched;
+  return (stravaAthleteConnections||[]).find(function(connection){
+    return stravaConnectionMatchesStravaName(athlete,connection);
   })||null;
+}
+function stravaConnectionMatchesStravaName(athlete,connection){
+  var athleteName=stravaComparableName(athlete&&athlete.name);
+  var stravaName=stravaComparableName(stravaConnectionDisplayName(connection));
+  return !!(athleteName&&stravaName&&athleteName===stravaName&&connection&&connection.connected);
+}
+function stravaConnectionNameMismatch(athlete,connection){
+  if(!athlete||!connection||!connection.connected)return false;
+  var athleteTokens=stravaNameTokens(athlete.name);
+  var stravaTokens=stravaNameTokens(stravaConnectionDisplayName(connection));
+  if(athleteTokens.length<2||stravaTokens.length<2)return false;
+  return !athleteTokens.some(function(token){return stravaTokens.indexOf(token)>=0;});
+}
+function stravaConnectionDisplayName(connection){
+  var row=connection&&connection.stravaAthlete||{};
+  return [row.firstname,row.lastname].filter(Boolean).join(' ')||row.username||row.id||'';
+}
+function stravaNameTokens(value){
+  return stravaComparableName(value).split(' ').filter(Boolean);
+}
+function stravaComparableName(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
 }
 function selectedStravaAthlete(){
   var select=document.getElementById('stravaAthleteImportSelect')||document.getElementById('stravaAthleteSelect');
