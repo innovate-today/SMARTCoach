@@ -3407,8 +3407,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1784845175000"',
-    "<!-- build:1784845175000 -->",
+    'meta name="app-version" content="1784845175001"',
+    "<!-- build:1784845175001 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -3646,6 +3646,10 @@ function checkAttendanceMobileSummary() {
     "function attendanceRunnerSummaryCounts(r,sourceRows)",
     "function attendanceSummaryRowMatchesStatus(row)",
     "function attendanceSummaryRows()",
+    "function attendanceActiveRunners()",
+    "var runners=attendanceActiveRunners();",
+    "attendanceActiveRunners().map(function(r)",
+    "runners:attendanceActiveRunners().map(function(r)",
     "function attendanceSummarySortRows(rows)",
     "function attendanceSummaryHeader(key,label)",
     "function setAttendanceSummarySort(key)",
@@ -3883,6 +3887,7 @@ function checkMobileGroupStorageAccountScoped() {
     "function sharedGroupRunnerKeys(runner)",
     "function sharedGroupRunnerMatchesKeyMap(runner,keyMap)",
     "var activeAthletes=athletes.filter(isActiveRosterRunner);",
+    "if(!AR[i]||AR[i].smartcoachActive!==true||AR[i].excludedSystemContact)continue;",
     "sharedGroupRunnerKeys(athlete).forEach(function(key){activeKeys[key]=true;});",
     "if((r.saved||[]).length&&next.indexOf(r)<0&&sharedGroupRunnerMatchesKeyMap(r,activeKeys))next.push(r);",
   ].forEach((text) => {

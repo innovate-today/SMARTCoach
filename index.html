@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1784845175000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1784845175001"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1784845175000 -->
-<!-- v1784845175000 -->
+<!-- build:1784845175001 -->
+<!-- v1784845175001 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -1750,6 +1750,7 @@ function activeAthleteForRunner(runner){
     if(value)runnerKeys[value]=true;
   });
   for(var i=0;i<AR.length;i++){
+    if(!AR[i]||AR[i].smartcoachActive!==true||AR[i].excludedSystemContact)continue;
     if(activeAthleteKeys(AR[i]).some(function(key){return runnerKeys[key];}))return AR[i];
   }
   return null;
@@ -3233,11 +3234,17 @@ function attendanceRecord(cp,r){
 function attendanceGroups(){
   return logs.filter(function(group){return group&&!group.archived&&(group.type||'training')==='training';});
 }
+function attendanceActiveRunners(){
+  var runners=CL&&CL.runners||[];
+  return AR_READY?runners.filter(isActiveRosterRunner):runners;
+}
 function openAttendancePicker(){
   var groups=attendanceGroups();
   if(!groups.length){alert('Create or sync a training group first.');return;}
   openPicker('Attendance Group',groups.map(function(group){
-    return{label:group.name||'Training Group',sub:(group.runners||[]).length+' athletes',value:group.id,selected:CL&&CL.id===group.id};
+    var runners=group.runners||[];
+    var activeCount=AR_READY?runners.filter(isActiveRosterRunner).length:runners.length;
+    return{label:group.name||'Training Group',sub:activeCount+' athletes',value:group.id,selected:CL&&CL.id===group.id};
   }),function(item){
     var group=logs.find(function(log){return log.id===item.value;});
     if(!group)return;
@@ -3265,7 +3272,7 @@ function renderAttendance(){
   var summary=document.getElementById('att-summary');
   if(title)title.textContent='Attendance - '+CL.name;
   if(!list)return;
-  var runners=CL.runners||[];
+  var runners=attendanceActiveRunners();
   if(!runners.length){list.innerHTML='<div style="padding:18px;color:#777;text-align:center;background:#fff">Add athletes to this group first.</div>';return;}
   list.innerHTML=day.checkpoints.map(function(cp,cpIndex){
     var counts=attendanceCounts(cp,runners);
@@ -3375,7 +3382,7 @@ function attendanceLocalSummaryRows(){
   Object.keys(attendance.days||{}).forEach(function(date){
     var day=attendance.days[date]||{};
     (day.checkpoints||[]).forEach(function(cp){
-      (CL.runners||[]).forEach(function(r){
+      attendanceActiveRunners().forEach(function(r){
         var rec=attendanceSavedRecord(cp,r);
         if(!rec||!rec.status)return;
         rows.push({
@@ -3555,7 +3562,7 @@ function attendanceSummaryRowMatchesStatus(row){
 }
 function attendanceSummaryRows(){
   var sourceRows=attendanceFilteredSummaryRows();
-  return (CL&&CL.runners||[]).map(function(r){
+  return attendanceActiveRunners().map(function(r){
     return {id:String(r.id),name:r.name||'Athlete',counts:attendanceRunnerSummaryCounts(r,sourceRows)};
   }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
 }
@@ -3592,7 +3599,7 @@ function attendanceShortDate(value){
   return new Date(parts[0],parts[1]-1,parts[2]).toLocaleDateString([], {month:'short',day:'numeric'});
 }
 function attendanceSelectedRunner(selectedId){
-  return (CL&&CL.runners||[]).find(function(r){return String(r.id)===String(selectedId);})||null;
+  return attendanceActiveRunners().find(function(r){return String(r.id)===String(selectedId);})||null;
 }
 function attendanceDetailRowsForRunner(r){
   return attendanceSummaryVisibleRows().filter(function(row){
@@ -3697,7 +3704,7 @@ function setAttendanceStatus(cpIndex,runnerId,status){
   if(!CL)return;
   var day=ensureAttendanceDay(attendanceDate());
   var cp=day.checkpoints[cpIndex];
-  var r=CL.runners.find(function(item){return item.id===runnerId;});
+  var r=attendanceActiveRunners().find(function(item){return item.id===runnerId;});
   if(!cp||!r)return;
   var rec=attendanceRecord(cp,r);
   rec.status=rec.status===status?'':status;
@@ -3711,7 +3718,7 @@ function attendanceMarkAll(status){
   if(!CL)return;
   var day=ensureAttendanceDay(attendanceDate());
   day.checkpoints.forEach(function(cp){
-    (CL.runners||[]).forEach(function(r){
+    attendanceActiveRunners().forEach(function(r){
       var rec=attendanceRecord(cp,r);
       rec.status=status;
       rec.updatedAt=new Date().toISOString();
@@ -3727,7 +3734,7 @@ function attendanceMarkCheckpointAll(cpIndex,status){
   var day=ensureAttendanceDay(attendanceDate());
   var cp=day.checkpoints[cpIndex];
   if(!cp)return;
-  (CL.runners||[]).forEach(function(r){
+  attendanceActiveRunners().forEach(function(r){
     var rec=attendanceRecord(cp,r);
     rec.status=status;
     rec.updatedAt=new Date().toISOString();
@@ -3814,7 +3821,7 @@ function attendancePayload(day){
     groupName:CL.name||'Training Group',
     coachId:coach.id||'',
     coachName:coach.name||'',
-    runners:(CL.runners||[]).map(function(r){
+    runners:attendanceActiveRunners().map(function(r){
       return{runnerId:r.id,contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',name:r.name||''};
     }),
     checkpoints:(day&&day.checkpoints||[]).map(function(cp){
