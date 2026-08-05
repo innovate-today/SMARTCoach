@@ -4040,16 +4040,9 @@ function staffCodeMessageLines(savedItem,code,options){
     '',
     'Use this code when the app asks for your coach access code.',
     '',
-    appOnly?'This code is for the phone app only.':'This same code also opens SMART Trak:',
-    appOnly?'':desktopLink
+    appOnly?'This code is for the phone app only.':options.inviteLink?'Use this private link to open SMART Trak:':'This same code also opens SMART Trak:',
+    appOnly?'':options.inviteLink||desktopLink
   ];
-  if(options.inviteLink){
-    lines=lines.concat([
-      '',
-      'SMART Trak invite link:',
-      options.inviteLink
-    ]);
-  }
   return lines.concat([
     '',
     'Access type: '+staffAccessTypeLabel(savedItem&&savedItem.accessType),
