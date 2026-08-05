@@ -5164,7 +5164,20 @@ function dashboardSportForSeason(row,type){
   var text=dashboardSeasonText(row);
   var explicit=normalizeDashboardSport(text);
   if(explicit)return explicit;
+  if(type==='training'&&legacyCrossCountryTrainingRow(row))return 'cross_country';
   return '';
+}
+function legacyCrossCountryTrainingRow(row){
+  var text=dashboardSeasonText(row).toLowerCase();
+  if(normalizeDashboardSport(row&&row.sport))return false;
+  var seasonKey=String(row&&row.season||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  if(seasonKey&&!legacyMileageDateBucketSeason(seasonKey))return false;
+  if(!completedVolumeMiles(row))return false;
+  if(/\b(track|speed|sprint|fly|starts?|runway|field event|jumps?|throws?)\b/.test(text))return false;
+  return true;
+}
+function legacyMileageDateBucketSeason(value){
+  return ['winter','spring','summer','fall','unspecified','unlisted'].indexOf(String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''))>=0;
 }
 function dashboardSeasonText(row){
   return [
