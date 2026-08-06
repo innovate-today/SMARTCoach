@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-08-05
+Last updated: 2026-08-06
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- Athlete Setup current-fitness corrections now replace the originally displayed current-fitness event when a coach changes the event/distance, such as correcting a wrongly synced `100m` mark to `2 Mile`. Both Athlete Setup pages carry the original event/record id in the save payload, the athlete-best API updates that exact record or removes the old displayed event if a corrected event record already exists, and the page refreshes its local saved rows after save so the dropdown does not snap back. Dashboard Roster Overview should then use the corrected current fitness after refresh. Coach how-to and regression coverage were updated. What's New is pending user approval.
 - Attendance inactive-runner follow-up: SMARTCoach now recognizes broader inactive roster values such as `Inactive Runner`, `Archived`, `Former`, `Graduated`, and `Quit` when normalizing athletes. The phone app Attendance flow waits for the active roster before showing or saving attendance, and it blocks workout auto-attendance for inactive runners. SMART Trak Attendance already filters saved rows through the active roster, so older inactive-athlete marks no longer appear in the normal report once roster normalization identifies the athlete as inactive. Mobile app version stamp, coach how-to, and regression coverage were updated. What's New is pending user approval.
 - SMARTCoach app Attendance now filters the displayed, summarized, mark-all, and synced attendance runner list through the active roster. Inactive roster members such as Mark Sample are not shown in Attendance after the app refreshes roster data, even if their old local group row remains on the device. The active-roster matcher now requires `smartcoachActive === true` instead of treating every returned roster member as active. The mobile app version stamp, coach how-to, and regression coverage were updated. What's New is pending user approval.
 - Attendance Trak season cleanup: saved Cross Country attendance rows with date-bucket seasons such as `Summer 2026` now display, filter, sort, and export as `Cross Country 2026` without rewriting existing records. Future SMARTCoach app Attendance saves normalize Sport = Cross Country to the Cross Country season label, while Track attendance can still use Summer/Winter/Spring/Off Season Track labels. Coach how-to and regression coverage were updated. What's New is pending user approval.

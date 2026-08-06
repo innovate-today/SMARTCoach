@@ -549,6 +549,8 @@ Common uses:
 4. Remove athletes from old group assignments when needed.
 5. After saving or deleting a training group, review the confirmation beside the group action buttons.
 
+If a synced race saved the wrong distance, correct the athlete's current fitness event, time, and date in Athlete Setup, then save. SMART Trak replaces the previous current fitness event for that athlete, so the Dashboard roster and future target paces use the corrected mark after refresh.
+
 Training groups also appear in the SMARTCoach Pro Mobile App, so keep them clean and practical for how practice is actually organized.
 
 ## Auto Build Plan

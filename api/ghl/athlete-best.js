@@ -138,13 +138,17 @@ async function upsertAthleteBest({ token, locationId, payload }) {
   const season = clean(payload.season) || currentSeason();
   const seasonYear = Number(payload.seasonYear) || new Date(`${date}T00:00:00`).getFullYear();
   const sport = clean(payload.sport) || sportForEvent(event);
+  const previousEvent = clean(payload.previousEvent || payload.originalEvent);
+  const previousRecordId = clean(payload.previousRecordId || payload.originalRecordId);
 
   if (!contactId) throw httpError(400, "Athlete contact is required.");
   if (!event) throw httpError(400, "Fitness distance is required.");
   if (!display || !resultMs) throw httpError(400, "Fitness time is required.");
 
   const sourceRecordId = buildAthleteBestSourceRecordId({ contactId, event });
-  const existing = await findAthleteBest({ token, locationId, contactId, event });
+  const existingForEvent = await findAthleteBest({ token, locationId, contactId, event });
+  const replacingPreviousEvent = previousEvent && optionValue(previousEvent) !== optionValue(event) && previousRecordId;
+  const existing = existingForEvent || (replacingPreviousEvent ? { id: previousRecordId, properties: [] } : null);
   const props = buildAthleteBestProperties({
     contactId,
     athleteName,
@@ -169,7 +173,24 @@ async function upsertAthleteBest({ token, locationId, payload }) {
       properties: props,
       optionKeys: [bestField("season")],
     });
-    return { action: "updated", recordId: existing.id || updated.id || "", sourceRecordId, event, resultDisplay: display };
+    let previousDeleted = false;
+    if (replacingPreviousEvent && existingForEvent && clean(existingForEvent.id) !== clean(previousRecordId)) {
+      previousDeleted = await deleteReplacedAthleteBest({ token, locationId, previousRecordId });
+    }
+    return {
+      action: "updated",
+      recordId: existing.id || updated.id || "",
+      sourceRecordId,
+      contactId,
+      athleteName,
+      sport,
+      event,
+      resultDisplay: display,
+      resultDate: date,
+      previousEvent,
+      previousRecordId,
+      previousDeleted,
+    };
   }
 
   const created = await saveObjectRecordWithOptionFallback({
@@ -180,7 +201,27 @@ async function upsertAthleteBest({ token, locationId, payload }) {
     properties: props,
     optionKeys: [bestField("season")],
   });
-  return { action: "created", recordId: created.id || (created.record && created.record.id) || "", sourceRecordId, event, resultDisplay: display };
+  return {
+    action: "created",
+    recordId: created.id || (created.record && created.record.id) || "",
+    sourceRecordId,
+    contactId,
+    athleteName,
+    sport,
+    event,
+    resultDisplay: display,
+    resultDate: date,
+    previousEvent,
+    previousRecordId,
+    previousDeleted: false,
+  };
+}
+
+async function deleteReplacedAthleteBest({ token, locationId, previousRecordId }) {
+  const recordId = clean(previousRecordId);
+  if (!recordId) return false;
+  await deleteObjectRecordWithLocationFallback({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, recordId });
+  return true;
 }
 
 async function saveObjectRecordWithOptionFallback({ token, locationId, schemaKey, recordId, method, properties, optionKeys }) {

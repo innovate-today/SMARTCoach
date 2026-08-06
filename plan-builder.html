@@ -445,12 +445,14 @@ function renderFitnessRows(){
     var saved=draft.event?savedFitnessForAthlete(a,draft.event):savedFitnessForAthlete(a);
     if(!saved&&!draft.time)saved=savedFitnessForAthlete(a);
     if(saved&&!draft.time){
-      draft={sport:saved.sport||sportForEvent(saved.event),event:saved.event,time:saved.resultDisplay,date:saved.resultDate||todayISO()};
+      draft={sport:saved.sport||sportForEvent(saved.event),event:saved.event,time:saved.resultDisplay,date:saved.resultDate||todayISO(),previousEvent:saved.event,previousRecordId:saved.recordId||''};
       fitnessDraftValues[fitnessDraftKey(a)]=draft;
     }
+    var originalEvent=draft.previousEvent||(saved&&saved.event)||'';
+    var originalRecordId=draft.previousRecordId||(saved&&saved.recordId)||'';
     var clearTarget=savedFitnessForAthlete(a,draft.event);
     var canClear=clearTarget&&clearTarget.event&&clearTarget.resultDisplay;
-    return '<div class="fitness-row" data-index="'+i+'"><div class="fitness-name">'+esc(a.name)+(gender?'<br><small>'+esc(gender)+'</small>':'')+'</div><select class="fit-sport">'+fitnessSports.map(function(s){return '<option value="'+esc(s.value)+'" '+((draft.sport||'track')===s.value?'selected':'')+'>'+esc(s.label)+'</option>';}).join('')+'</select><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'" '+((draft.event||fitnessEvents[0])===event?'selected':'')+'>'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00" value="'+esc(draft.time||'')+'"><input class="fit-date" type="date" value="'+esc(draft.date||todayISO())+'"><button class="fitness-clear" type="button" onclick="clearFitnessRow('+i+')" '+(canClear?'':'disabled')+' title="'+esc(canClear?'Clear saved current fitness':'No saved current fitness to clear')+'">Clear</button></div>';
+    return '<div class="fitness-row" data-index="'+i+'" data-original-event="'+esc(originalEvent)+'" data-original-record-id="'+esc(originalRecordId)+'"><div class="fitness-name">'+esc(a.name)+(gender?'<br><small>'+esc(gender)+'</small>':'')+'</div><select class="fit-sport">'+fitnessSports.map(function(s){return '<option value="'+esc(s.value)+'" '+((draft.sport||'track')===s.value?'selected':'')+'>'+esc(s.label)+'</option>';}).join('')+'</select><select class="fit-event">'+fitnessEvents.map(function(event){return '<option value="'+esc(event)+'" '+((draft.event||fitnessEvents[0])===event?'selected':'')+'>'+esc(event)+'</option>';}).join('')+'</select><input class="fit-time" type="text" placeholder="Time e.g. 13:00" value="'+esc(draft.time||'')+'"><input class="fit-date" type="date" value="'+esc(draft.date||todayISO())+'"><button class="fitness-clear" type="button" onclick="clearFitnessRow('+i+')" '+(canClear?'':'disabled')+' title="'+esc(canClear?'Clear saved current fitness':'No saved current fitness to clear')+'">Clear</button></div>';
   }).join('');
 }
 function captureFitnessDraftValues(){
@@ -462,7 +464,9 @@ function captureFitnessDraftValues(){
       sport:(row.querySelector('.fit-sport')||{}).value||'track',
       event:(row.querySelector('.fit-event')||{}).value||'',
       time:(row.querySelector('.fit-time')||{}).value||'',
-      date:(row.querySelector('.fit-date')||{}).value||todayISO()
+      date:(row.querySelector('.fit-date')||{}).value||todayISO(),
+      previousEvent:row.getAttribute('data-original-event')||'',
+      previousRecordId:row.getAttribute('data-original-record-id')||''
     };
   });
 }
@@ -538,8 +542,40 @@ function saveFitnessRows(){
       var reason=skipped[0]&&skipped[0].reason?skipped[0].reason:'No fitness rows were saved.';
       throw new Error(reason);
     }
+    applyFitnessSaveResults(results);
     setFitnessStatus('Saved current fitness for '+saved+' athlete'+(saved===1?'':'s')+'.','ok');
   }).catch(function(e){setFitnessStatus('Error: '+e.message,'bad');});
+}
+function applyFitnessSaveResults(results){
+  (results||[]).forEach(function(item){
+    if(!item||item.action==='skipped'||!item.contactId)return;
+    var contactKey=String(item.contactId||'');
+    var nextEvent=normalizeFitnessEvent(item.event);
+    var previousEvent=normalizeFitnessEvent(item.previousEvent);
+    var rows=(fitnessRowsByAthlete[contactKey]||[]).filter(function(row){
+      var rowEvent=normalizeFitnessEvent(row.event);
+      if(item.recordId&&String(row.recordId||'')===String(item.recordId))return false;
+      if(nextEvent&&rowEvent===nextEvent)return false;
+      if(previousEvent&&rowEvent===previousEvent)return false;
+      return true;
+    });
+    rows.unshift({
+      recordId:item.recordId||'',
+      contactId:item.contactId||'',
+      athleteName:item.athleteName||'',
+      sport:item.sport||sportForEvent(item.event),
+      event:item.event||'',
+      resultDisplay:item.resultDisplay||'',
+      resultDate:item.resultDate||todayISO(),
+      label:[item.event,item.resultDisplay].filter(Boolean).join(' ')
+    });
+    fitnessRowsByAthlete[contactKey]=rows.sort(function(a,b){return String(b.resultDate||'').localeCompare(String(a.resultDate||''));});
+    var athlete=athletes.find(function(row){return String(row&&row.id||'')===contactKey;})||{};
+    if(athlete.id){
+      fitnessDraftValues[fitnessDraftKey(athlete)]={sport:item.sport||sportForEvent(item.event),event:item.event||'',time:item.resultDisplay||'',date:item.resultDate||todayISO(),previousEvent:item.event||'',previousRecordId:item.recordId||''};
+    }
+  });
+  renderFitnessRows();
 }
 function clearFitnessRow(index){
   var row=document.querySelector('.fitness-row[data-index="'+index+'"]');
@@ -602,6 +638,8 @@ function collectFitnessRows(){
       event:draft.event||'',
       resultDisplay:draft.time||'',
       resultDate:draft.date||todayISO(),
+      previousEvent:draft.previousEvent||'',
+      previousRecordId:draft.previousRecordId||'',
       season:currentSeason(),
       seasonYear:new Date().getFullYear()
     };
