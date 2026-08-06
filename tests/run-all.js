@@ -2452,6 +2452,7 @@ function checkDashboardMeetCorrectionFields() {
     'const seasonYearValue = clean(nextValues.seasonYear);',
     'if (seasonYearValue && !Number.isFinite(Number(seasonYearValue))) throw httpError(400, "Season Year must be a number.");',
     '...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {})',
+    ': clean(updates.splitsJson) || previousValues.splitsJson',
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Correction API meet correction field handling missing ${text}`);
   });

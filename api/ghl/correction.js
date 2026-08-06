@@ -210,7 +210,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     relayTeamName: isRelay ? clean(updates.relayTeamName) || previousValues.relayTeamName : "",
     fieldAttempts: isField ? singleLine(updates.fieldAttempts) || previousValues.fieldAttempts : "",
     fieldVideo: isField ? clean(updates.fieldVideo) || previousValues.fieldVideo : "",
-    splitsJson: isRelay ? normalizeSplitsJson(updates.splitsJson || previousValues.splitsJson) : "",
+    splitsJson: isRelay
+      ? normalizeSplitsJson(updates.splitsJson || previousValues.splitsJson)
+      : clean(updates.splitsJson) || previousValues.splitsJson,
     notes: clean(updates.notes),
   };
   const changes = changedValues(previousValues, nextValues, {
