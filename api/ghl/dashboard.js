@@ -1214,7 +1214,7 @@ function isHistoricalMeetResult(result) {
 
 function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords }) {
   const bests = bestRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeBest).filter((item) => item.event);
-  const meets = meetRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeMeetResult).filter((item) => item.event || item.resultDisplay).sort(sortByDateDesc);
+  const meets = meetRecords.filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedMeetResult(record)).map(normalizeMeetResult).filter((item) => item.event || item.resultDisplay).sort(sortLatestMeetDesc);
   const training = performanceRecords.filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record)).map(normalizePerformanceRecord).filter((item) => item.groupName || item.totalTimeDisplay).sort(sortByDateDesc);
   const currentFitness = chooseCurrentFitness(bests);
   const latestMeet = meets[0] || {};
@@ -1681,6 +1681,13 @@ function sortByDateDesc(a, b) {
   const ad = a.meetDate || a.sessionDate || a.lastResultDate || a.seasonBestDate || a.personalBestDate || "";
   const bd = b.meetDate || b.sessionDate || b.lastResultDate || b.seasonBestDate || b.personalBestDate || "";
   return String(bd).localeCompare(String(ad));
+}
+
+function sortLatestMeetDesc(a, b) {
+  return String(b.meetDate || "").localeCompare(String(a.meetDate || "")) ||
+    String(b.syncedAt || "").localeCompare(String(a.syncedAt || "")) ||
+    Number(!!b.corrected) - Number(!!a.corrected) ||
+    clean(b.recordId).localeCompare(clean(a.recordId));
 }
 
 function sortMeetSyncDesc(a, b) {

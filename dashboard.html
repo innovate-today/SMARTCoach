@@ -7366,7 +7366,10 @@ function refreshRosterAfterVoid(kind,originalRow){
 
 function latestMeetForAthlete(athlete){
   return recentMeetRows.filter(function(row){return sameAthlete(row,athlete);}).sort(function(a,b){
-    return compareValues(b.meetDate||b.syncedAt,a.meetDate||a.syncedAt);
+    return compareValues(b.meetDate||'',a.meetDate||'') ||
+      compareValues(b.syncedAt||'',a.syncedAt||'') ||
+      num(!!b.corrected)-num(!!a.corrected) ||
+      compareValues(b.recordId||'',a.recordId||'');
   })[0]||{};
 }
 
