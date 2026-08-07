@@ -643,6 +643,18 @@ async function accountStravaAthleteActivities(req, res) {
       athlete: sanitizeStravaAthlete(connection.stravaAthlete),
       activities,
       count: activities.length,
+      diagnostic: {
+        rawCount: Array.isArray(data) ? data.length : 0,
+        returnedCount: activities.length,
+        query: {
+          page: 1,
+          limit,
+          after,
+          afterIso: after ? new Date(after * 1000).toISOString() : "",
+          before,
+          beforeIso: before ? new Date(before * 1000).toISOString() : "",
+        },
+      },
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Athlete Strava activities could not be loaded." });

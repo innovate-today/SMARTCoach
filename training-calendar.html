@@ -2158,11 +2158,13 @@ function loadStravaActivities(){
     return Promise.resolve();
   }
   var loadedActivities=[];
+  var activityDiagnostic=null;
   return fetch('/api/smart-trak/strava-athlete-activities?account='+encodeURIComponent(accountKey())+'&'+stravaActivityRequestParams(athlete)+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activities could not be loaded.');
     loadedActivities=result.data&&result.data.activities||[];
+    activityDiagnostic=result.data&&result.data.diagnostic||null;
     stravaActivitiesLoadedAthleteKey=athleteKey;
     els.stravaStatus.textContent='Refreshing SMART Trak roster for import...';
     return loadStravaImportData().then(function(){
@@ -2178,11 +2180,26 @@ function loadStravaActivities(){
     var scopeMessage=stravaConnectionMissingPrivateActivityScope(connection)?' This connection has the older Strava scope; reconnect this athlete with the updated link, then load again.':' Make sure the workout has synced to that athlete\'s Strava account, then load again.';
     els.stravaStatus.textContent='Strava is connected, but Strava returned no recent activities for '+((athlete&&athlete.name)||'the selected athlete')+'.'+scopeMessage;
     els.stravaStatus.style.color='var(--muted)';
+    renderStravaEmptyDiagnostic(activityDiagnostic,connection);
   }).catch(function(error){
     els.stravaStatus.textContent=error.message||'Strava activities could not be loaded.';
     els.stravaStatus.style.color='var(--bad)';
     els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No Strava activities loaded.</div>';
   });
+}
+function renderStravaEmptyDiagnostic(diagnostic,connection){
+  if(!els.stravaActivitiesList)return;
+  diagnostic=diagnostic||{};
+  var query=diagnostic.query||{};
+  var stravaAthlete=(connection&&connection.stravaAthlete)||{};
+  var stravaName=[stravaAthlete.firstname,stravaAthlete.lastname].filter(Boolean).join(' ')||stravaAthlete.username||'--';
+  var lines=[
+    'No recent Strava activities returned.',
+    'Strava account: '+stravaName+(stravaAthlete.id?' (#'+stravaAthlete.id+')':''),
+    'Returned rows: '+(diagnostic.returnedCount!=null?diagnostic.returnedCount:'0')+' / raw rows: '+(diagnostic.rawCount!=null?diagnostic.rawCount:'0'),
+    'Query: page 1 · limit '+(query.limit||30)+(query.afterIso?' · after '+query.afterIso.slice(0,10):'')+(query.beforeIso?' · before '+query.beforeIso.slice(0,10):'')
+  ];
+  els.stravaActivitiesList.innerHTML='<div class="detailitem muted">'+lines.map(esc).join('<br>')+'</div>';
 }
 function stravaActivityRequestParams(athlete){
   var params=new URLSearchParams(stravaAthleteRequestParams(athlete));
