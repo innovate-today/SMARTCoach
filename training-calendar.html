@@ -2016,10 +2016,12 @@ function renderStravaStatus(data){
   var selectedKey=stravaAthleteKey(selectedAthlete);
   if(selectedKey)stravaSelectedAthleteKey=selectedKey;
   var connection=stravaConnectionForAthlete(selectedAthlete)||{};
+  var missingPrivateScope=stravaConnectionMissingPrivateActivityScope(connection);
   var stravaAthlete=connection.stravaAthlete||{};
   var envStatus=data.envStatus||{};
   var athleteName=selectedAthlete&&selectedAthlete.name||'Choose athlete';
   var stravaName=[stravaAthlete.firstname,stravaAthlete.lastname].filter(Boolean).join(' ')||stravaAthlete.username||stravaAthlete.id||'Not connected';
+  var scopeHelp=missingPrivateScope?'Reconnect this athlete so SMARTCoach can load private Strava activities.':'Expected: read,activity:read,activity:read_all';
   var picker=stravaAthleteRows().length?'<label for="stravaAthleteSelect"><b>Athlete</b></label><select id="stravaAthleteSelect">'+stravaAthleteOptions(selectedKey)+'</select><span>Select the athlete whose Strava account should connect or import.</span>':'<b>Athlete</b><span>Load the SMART Trak roster before connecting Strava.</span>';
   if(els.stravaSummary){
     els.stravaSummary.innerHTML=[
@@ -2027,7 +2029,7 @@ function renderStravaStatus(data){
       '<div class="detailitem">'+picker+'</div>',
       detailCard('Selected Athlete',athleteName,connection.connected?'Strava connected':'Not connected'),
       detailCard('Strava Account',stravaName,connection.connected?'Ready to load activities':'Send or open connect link'),
-      detailCard('Scope',connection.scope||'--','Expected: read,activity:read'),
+      detailCard('Scope',connection.scope||'--',scopeHelp),
       detailCard('Runtime',stravaRuntimeText(envStatus),'Serverless env check')
     ].join('');
   }
@@ -2046,7 +2048,10 @@ function renderStravaStatus(data){
   if(els.stravaOpenConnectBtn)els.stravaOpenConnectBtn.disabled=!data.configured||!selectedKey;
   if(els.stravaLoadActivitiesBtn)els.stravaLoadActivitiesBtn.disabled=!connection.connected;
   if(!els.stravaStatus)return;
-  if(connection.connected){
+  if(connection.connected&&missingPrivateScope){
+    els.stravaStatus.textContent='Strava is connected for '+athleteName+', but this older connection needs to be reconnected to load private activities.';
+    els.stravaStatus.style.color='var(--warn)';
+  }else if(connection.connected){
     els.stravaStatus.textContent='Strava is connected for '+athleteName+'.';
     els.stravaStatus.style.color='var(--good)';
   }else if(data.configured){
@@ -2059,6 +2064,17 @@ function renderStravaStatus(data){
   if(els.stravaActivitiesList&&!els.stravaActivitiesList.innerHTML){
     els.stravaActivitiesList.innerHTML='<div class="detailitem muted">No Strava activities loaded yet.</div>';
   }
+}
+function stravaConnectionScopeMap(connection){
+  var scope=String(connection&&connection.scope||'').toLowerCase().split(/[\s,]+/);
+  var map={};
+  scope.forEach(function(item){if(item)map[item]=true;});
+  return map;
+}
+function stravaConnectionMissingPrivateActivityScope(connection){
+  if(!connection||!connection.connected)return false;
+  var scopes=stravaConnectionScopeMap(connection);
+  return !scopes['activity:read_all'];
 }
 function stravaEnvStatusText(status){
   if(!status||typeof status!=='object')return 'Waiting for server status';
@@ -2158,7 +2174,9 @@ function loadStravaActivities(){
       els.stravaStatus.style.color='var(--good)';
       return;
     }
-    els.stravaStatus.textContent='Strava is connected, but Strava returned no recent activities for '+((athlete&&athlete.name)||'the selected athlete')+'. Make sure the workout has synced to that athlete\'s Strava account, then load again.';
+    var connection=stravaConnectionForAthlete(athlete)||{};
+    var scopeMessage=stravaConnectionMissingPrivateActivityScope(connection)?' This connection has the older Strava scope; reconnect this athlete with the updated link, then load again.':' Make sure the workout has synced to that athlete\'s Strava account, then load again.';
+    els.stravaStatus.textContent='Strava is connected, but Strava returned no recent activities for '+((athlete&&athlete.name)||'the selected athlete')+'.'+scopeMessage;
     els.stravaStatus.style.color='var(--muted)';
   }).catch(function(error){
     els.stravaStatus.textContent=error.message||'Strava activities could not be loaded.';

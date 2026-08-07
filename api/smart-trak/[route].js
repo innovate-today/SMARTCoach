@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME = "account_key";
+const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
 const athletesApi = require("../ghl/athletes");
 
 const handlers = {
@@ -410,7 +411,7 @@ async function accountStravaStart(req, res) {
     auth.searchParams.set("redirect_uri", env.redirectUri);
     auth.searchParams.set("response_type", "code");
     auth.searchParams.set("approval_prompt", "auto");
-    auth.searchParams.set("scope", "read,activity:read");
+    auth.searchParams.set("scope", STRAVA_REQUIRED_SCOPES);
     auth.searchParams.set("state", state);
     if (cleanSetupText(firstQueryValue(req.query && (req.query.response || req.query.format))).toLowerCase() === "json") {
       res.status(200).json({ success: true, authUrl: auth.toString() });
@@ -478,7 +479,7 @@ async function accountStravaAthleteStart(req, res) {
     auth.searchParams.set("redirect_uri", env.redirectUri);
     auth.searchParams.set("response_type", "code");
     auth.searchParams.set("approval_prompt", "auto");
-    auth.searchParams.set("scope", "read,activity:read");
+    auth.searchParams.set("scope", STRAVA_REQUIRED_SCOPES);
     auth.searchParams.set("state", state);
     res.status(200).json({
       success: true,
