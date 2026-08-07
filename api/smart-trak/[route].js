@@ -616,12 +616,16 @@ async function accountStravaAthleteActivities(req, res) {
     const access = requireOwnerAdminSession(req, "load athlete Strava activities");
     requireBetaFeatureAccount(access.accountKey, "load athlete Strava activities");
     const limit = Math.max(1, Math.min(Number(firstQueryValue(req.query && req.query.limit)) || 10, 30));
+    const after = Math.max(0, Math.floor(Number(firstQueryValue(req.query && req.query.after)) || 0));
+    const before = Math.max(0, Math.floor(Number(firstQueryValue(req.query && req.query.before)) || 0));
     const athleteKey = cleanSetupText(firstQueryValue(req.query && (req.query.athleteKey || req.query.athleteId || req.query.contactId)));
     const requestedAthlete = stravaAthleteFromRequest(req);
     const connection = await activeStravaAthleteConnection(access.accountKey, access.record, athleteKey, requestedAthlete);
     const url = new URL("https://www.strava.com/api/v3/athlete/activities");
     url.searchParams.set("page", "1");
     url.searchParams.set("per_page", String(limit));
+    if (after) url.searchParams.set("after", String(after));
+    if (before) url.searchParams.set("before", String(before));
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: { Authorization: `Bearer ${connection.accessToken}` },
