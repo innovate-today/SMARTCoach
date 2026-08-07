@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-08-06
+Last updated: 2026-08-07
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- Strava athlete import follow-up: changing the selected athlete in the Training Calendar Strava modal now clears the previously loaded activity list/details and blocks imports until activities are loaded again for that athlete. This prevents one athlete's loaded Strava activity list from being reused/imported under another athlete. Plain Strava runs now prefer Strava standard-mile split rows for saved completed splits before falling back to raw Strava laps, while matched rep/rest workouts still use the matched SMART Trak rep/rest layout first. Strava detail inspection now surfaces standard split rows when Strava exposes them, and correction-note cleanup treats those standard-split diagnostic lines as system notes. Regression coverage was updated. Coach how-to and What's New were not updated because Strava remains a private beta/admin-only feature.
 - Meet-result corrections now preserve saved individual race lap/split times. The Dashboard **Correct Meet Result** flow was sending an empty split payload for every non-relay edit, and the correction API treated non-relay meet results as having no splits, which could clear `splits_json` after correcting an event/result such as a wrongly synced `100m` to `2 Mile`. The correction API now keeps existing individual split text unless a non-empty split replacement is provided, while relay corrections still save relay split JSON. Regression coverage was updated. Coach how-to was not changed because the coach workflow did not change. What's New is pending user approval.
 - Dashboard Roster Overview latest meet result now ignores voided meet records and uses the corrected/synced timestamp as the tie-breaker when multiple meet results share the same athlete and meet date. This keeps a corrected `2 Mile` result from being hidden by an older stale `100m` result on the same day, while Recent Meet Results and Meet History continue to show the corrected row. Regression coverage was updated. Coach how-to was not changed because the coach workflow did not change. What's New is pending user approval.
 - Athlete Setup current-fitness corrections now replace the originally displayed current-fitness event when a coach changes the event/distance, such as correcting a wrongly synced `100m` mark to `2 Mile`. Both Athlete Setup pages carry the original event/record id in the save payload, the athlete-best API updates that exact record or removes the old displayed event if a corrected event record already exists, and the page refreshes its local saved rows after save so the dropdown does not snap back. Dashboard Roster Overview should then use the corrected current fitness after refresh. Coach how-to and regression coverage were updated. What's New is pending user approval.

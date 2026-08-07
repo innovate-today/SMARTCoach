@@ -650,6 +650,7 @@ var mileageTrainingRows=[];
 var stravaActivitiesCache=[];
 var stravaActivityDetailsCache={};
 var stravaSelectedAthleteKey='';
+var stravaActivitiesLoadedAthleteKey='';
 var stravaAthleteConnections=[];
 var trainingGroups=[];
 var calendarMeets=[];
@@ -2034,8 +2035,11 @@ function renderStravaStatus(data){
   if(select){
     select.addEventListener('change',function(){
       stravaSelectedAthleteKey=this.value||'';
+      stravaActivitiesCache=[];
+      stravaActivitiesLoadedAthleteKey='';
+      stravaActivityDetailsCache={};
       renderStravaStatus(data);
-      if(stravaActivitiesCache.length)renderStravaActivities(stravaActivitiesCache);
+      if(els.stravaActivitiesList)els.stravaActivitiesList.innerHTML='<div class="detailitem muted">Load Athlete Activities after changing athletes.</div>';
     });
   }
   if(els.stravaConnectBtn)els.stravaConnectBtn.disabled=!data.configured||!selectedKey;
@@ -2142,6 +2146,7 @@ function loadStravaActivities(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Strava activities could not be loaded.');
+    stravaActivitiesLoadedAthleteKey=athleteKey;
     els.stravaStatus.textContent='Refreshing SMART Trak roster for import...';
     return loadStravaImportData().then(function(){
       renderStravaActivities(result.data&&result.data.activities||[]);
@@ -2193,6 +2198,7 @@ function renderStravaActivities(activities){
     select.addEventListener('change',function(){
       stravaSelectedAthleteKey=this.value||'';
       stravaActivitiesCache=[];
+      stravaActivitiesLoadedAthleteKey='';
       stravaActivityDetailsCache={};
       renderStravaStatus({configured:true,envStatus:{},connections:stravaAthleteConnections});
       els.stravaActivitiesList.innerHTML='<div class="detailitem muted">Load Athlete Activities after changing athletes.</div>';
@@ -2220,13 +2226,20 @@ function stravaActivityDetailHtml(activityId){
   if(detail.error)return '<div class="muted">Strava API detail error: '+esc(detail.error)+'</div>';
   var counts=detail.streamCounts||{};
   var summary='Strava API detail: '+(num(detail.lapsCount)||0)+' laps · '+(num(detail.splitsMetricCount)||0)+' metric splits · '+(num(detail.splitsStandardCount)||0)+' standard splits · streams time '+(counts.time||0)+' / distance '+(counts.distance||0)+' / pace '+(counts.velocitySmooth||0)+' / GPS '+(counts.latlng||0);
-  var verdict=(num(detail.lapsCount)>0)?'Strava is exposing '+(num(detail.lapsCount)||0)+' lap rows for this activity.':'Strava did not expose lap rows for this activity.';
+  var verdict=(num(detail.splitsStandardCount)>0)?'Strava is exposing '+(num(detail.splitsStandardCount)||0)+' standard split rows for this activity.':((num(detail.lapsCount)>0)?'Strava is exposing '+(num(detail.lapsCount)||0)+' lap rows for this activity.':'Strava did not expose lap rows for this activity.');
+  var standardSplits=(detail.splitsStandard||[]).slice(0,12).map(stravaActivityDetailStandardSplitSummary).join('<br>');
   var laps=(detail.laps||[]).slice(0,12).map(stravaActivityDetailLapSummary).join('<br>');
   var streamNote=detail.streamsError?'<span class="muted">Streams note: '+esc(detail.streamsError)+'</span>':'';
-  return '<div class="muted" style="margin-top:6px"><b>'+esc(summary)+'</b><br>'+esc(verdict)+(laps?'<br>'+laps:'')+streamNote+'</div>';
+  return '<div class="muted" style="margin-top:6px"><b>'+esc(summary)+'</b><br>'+esc(verdict)+(standardSplits?'<br>'+standardSplits:(laps?'<br>'+laps:''))+streamNote+'</div>';
 }
 function stravaActivityDetailLapSummary(lap){
   return esc(stravaActivityDetailLapSummaryText(lap));
+}
+function stravaActivityDetailStandardSplitSummary(split){
+  return esc(stravaActivityDetailStandardSplitSummaryText(split));
+}
+function stravaActivityDetailStandardSplitSummaryText(split){
+  return 'Mile '+(split.split||split.index||'')+': '+stravaMetersText(split.distanceMeters)+' · '+stravaSecondsText(split.movingTimeSeconds||split.elapsedTimeSeconds)+' · '+stravaPaceText(split.averagePaceSeconds);
 }
 function stravaActivityDetailLapSummaryText(lap){
   return 'Lap '+(lap.lapIndex||lap.index||'')+': '+stravaMetersText(lap.distanceMeters)+' · '+stravaSecondsText(lap.movingTimeSeconds||lap.elapsedTimeSeconds)+' · '+stravaPaceText(lap.averagePaceSeconds);
@@ -2453,6 +2466,14 @@ function importStravaActivity(activityId,button){
   var athlete=selectedStravaAthlete();
   if(!activity){els.stravaStatus.textContent='Choose a Strava activity to import.';els.stravaStatus.style.color='var(--bad)';return;}
   if(!athlete){els.stravaStatus.textContent='Choose a SMART Trak athlete before importing.';els.stravaStatus.style.color='var(--bad)';return;}
+  if(stravaActivitiesLoadedAthleteKey&&stravaActivitiesLoadedAthleteKey!==stravaAthleteKey(athlete)){
+    els.stravaStatus.textContent='Load Athlete Activities again after changing athletes.';
+    els.stravaStatus.style.color='var(--bad)';
+    stravaActivitiesCache=[];
+    stravaActivityDetailsCache={};
+    if(els.stravaActivitiesList)els.stravaActivitiesList.innerHTML='<div class="detailitem muted">Load Athlete Activities after changing athletes.</div>';
+    return;
+  }
   if(stravaImportedActivityForSelectedAthlete(activity)){
     els.stravaStatus.textContent='This Strava activity is already imported for '+(athlete.name||'the selected athlete')+'.';
     els.stravaStatus.style.color='var(--bad)';
@@ -2492,9 +2513,9 @@ function importStravaActivity(activityId,button){
 }
 function stravaImportPayload(activity,athlete,detail){
   var dateText=stravaActivityDate(activity);
-  var meters=num(activity.distanceMeters);
+  var meters=stravaImportDistanceMeters(activity,detail);
   var miles=meters?Math.round((meters/1609.344)*100)/100:0;
-  var seconds=num(activity.movingTimeSeconds)||num(activity.elapsedTimeSeconds);
+  var seconds=stravaImportDurationSeconds(activity,detail);
   var durationMs=seconds*1000;
   var duration=durationMs?formatDurationShort(durationMs):'Untimed';
   var matchDay=stravaPlanMatchForActivity(activity,athlete);
@@ -2563,6 +2584,24 @@ function stravaImportPayload(activity,athlete,detail){
     }]
   };
 }
+function stravaImportDistanceMeters(activity,detail){
+  var streamMeters=stravaStreamTotalDistanceMeters(detail&&detail.streams);
+  var detailMeters=num(detail&&detail.distanceMeters);
+  var activityMeters=num(activity&&activity.distanceMeters);
+  if(streamMeters&&(!activityMeters||Math.abs(streamMeters-activityMeters)>20))return streamMeters;
+  return detailMeters||activityMeters||streamMeters||0;
+}
+function stravaImportDurationSeconds(activity,detail){
+  return num(detail&&detail.movingTimeSeconds)||num(activity&&activity.movingTimeSeconds)||num(detail&&detail.elapsedTimeSeconds)||num(activity&&activity.elapsedTimeSeconds)||stravaStreamTotalSeconds(detail&&detail.streams)||0;
+}
+function stravaStreamTotalDistanceMeters(streams){
+  var distance=streams&&Array.isArray(streams.distance)?streams.distance:[];
+  return distance.length?num(distance[distance.length-1]):0;
+}
+function stravaStreamTotalSeconds(streams){
+  var time=streams&&Array.isArray(streams.time)?streams.time:[];
+  return time.length?num(time[time.length-1]):0;
+}
 function stravaImportLapsForActivity(matchDay,detail){
   var planned=stravaPlannedLapsFromDay(matchDay);
   if(planned.length)return planned;
@@ -2609,11 +2648,22 @@ function stravaLapDurationText(seconds){
   return formatDurationShort(Math.round(num(seconds)*1000));
 }
 function stravaLapsFromDetail(detail){
+  var standardSplits=stravaStandardSplitsFromDetail(detail);
+  if(standardSplits.length)return standardSplits;
   if(!detail||!Array.isArray(detail.laps))return [];
   return detail.laps.slice(0,40).map(function(lap,index){
     var seconds=num(lap&&lap.movingTimeSeconds)||num(lap&&lap.elapsedTimeSeconds);
     if(!seconds)return null;
     var label='Strava Lap '+(lap.lapIndex||lap.index||index+1);
+    return {kind:'strava',label:label,time:stravaLapDurationText(seconds),ms:Math.round(seconds*1000)};
+  }).filter(Boolean);
+}
+function stravaStandardSplitsFromDetail(detail){
+  if(!detail||!Array.isArray(detail.splitsStandard))return [];
+  return detail.splitsStandard.slice(0,40).map(function(split,index){
+    var seconds=num(split&&split.movingTimeSeconds)||num(split&&split.elapsedTimeSeconds);
+    if(!seconds)return null;
+    var label='Strava Mile '+(split.split||split.index||index+1);
     return {kind:'strava',label:label,time:stravaLapDurationText(seconds),ms:Math.round(seconds*1000)};
   }).filter(Boolean);
 }
@@ -2715,6 +2765,12 @@ function stravaRepPaceLine(lap,pace){
 function stravaActivityDetailNoteLines(detail){
   if(!detail)return [];
   var lines=['Strava API laps exposed: '+(num(detail.lapsCount)||0)];
+  if(num(detail.splitsStandardCount)){
+    lines.push('Strava API standard splits exposed: '+(num(detail.splitsStandardCount)||0));
+    (detail.splitsStandard||[]).slice(0,40).forEach(function(split){
+      lines.push('Strava '+stravaActivityDetailStandardSplitSummaryText(split));
+    });
+  }
   (detail.laps||[]).slice(0,40).forEach(function(lap){
     lines.push('Strava '+stravaActivityDetailLapSummaryText(lap));
   });
