@@ -337,6 +337,7 @@ tr:last-child td{border-bottom:0}
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="shareMilesBoardBtn" class="modal-action" type="button">Miles Trak</button>
         <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
+        <button id="fitnessCleanupBtn" class="modal-action admin-only" type="button" hidden>Fitness Review</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
@@ -637,6 +638,35 @@ tr:last-child td{border-bottom:0}
       </div>
       <h3 class="section-title">Recent Activities</h3>
       <div id="stravaActivitiesList" class="detaillist"></div>
+    </div>
+  </section>
+</div>
+<div id="fitnessCleanupModal" class="modal" hidden>
+  <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="fitnessCleanupTitle">
+    <div class="modalhead">
+      <h2 id="fitnessCleanupTitle">Current Fitness Cleanup</h2>
+      <button id="fitnessCleanupClose" class="secondary" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="whats-new-intro">Temporary owner/admin review tool for checking whether the latest race should be used for training paces.</p>
+      <div id="fitnessCleanupStatus" class="modalstatus">Review each athlete, then restore the previous race or use the latest race when needed.</div>
+      <section class="tablewrap recentwrap" style="margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Athlete</th>
+              <th>Current Mark</th>
+              <th>Latest Race</th>
+              <th>Projected</th>
+              <th>Previous Race</th>
+              <th>Review</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="fitnessCleanupRows"></tbody>
+        </table>
+        <div id="fitnessCleanupEmpty" class="empty" hidden>No athletes with meet results to review.</div>
+      </section>
     </div>
   </section>
 </div>
@@ -2777,6 +2807,12 @@ var els={
   stravaConnectBtn:document.getElementById('stravaConnectBtn'),
   stravaLoadActivitiesBtn:document.getElementById('stravaLoadActivitiesBtn'),
   stravaActivitiesList:document.getElementById('stravaActivitiesList'),
+  fitnessCleanupBtn:document.getElementById('fitnessCleanupBtn'),
+  fitnessCleanupModal:document.getElementById('fitnessCleanupModal'),
+  fitnessCleanupClose:document.getElementById('fitnessCleanupClose'),
+  fitnessCleanupStatus:document.getElementById('fitnessCleanupStatus'),
+  fitnessCleanupRows:document.getElementById('fitnessCleanupRows'),
+  fitnessCleanupEmpty:document.getElementById('fitnessCleanupEmpty'),
   accountKey:document.getElementById('accountKey'),
   productPlan:document.getElementById('productPlan'),
   appVersion:document.getElementById('appVersion'),
@@ -3227,6 +3263,12 @@ if(els.stravaTestBtn)els.stravaTestBtn.addEventListener('click',openStravaTestMo
 if(els.stravaTestClose)els.stravaTestClose.addEventListener('click',closeStravaTestModal);
 if(els.stravaConnectBtn)els.stravaConnectBtn.addEventListener('click',connectStravaTestAccount);
 if(els.stravaLoadActivitiesBtn)els.stravaLoadActivitiesBtn.addEventListener('click',loadStravaActivities);
+if(els.fitnessCleanupBtn)els.fitnessCleanupBtn.addEventListener('click',openFitnessCleanup);
+if(els.fitnessCleanupClose)els.fitnessCleanupClose.addEventListener('click',closeFitnessCleanup);
+if(els.fitnessCleanupRows)els.fitnessCleanupRows.addEventListener('click',handleFitnessCleanupAction);
+if(els.fitnessCleanupModal)els.fitnessCleanupModal.addEventListener('click',function(event){
+  if(event.target===els.fitnessCleanupModal)closeFitnessCleanup();
+});
 els.accountRefresh.addEventListener('click',refreshAppVersion);
 els.accountSave.addEventListener('click',saveAccountSettings);
 els.manualMileageClose.addEventListener('click',closeManualMileage);
@@ -5523,6 +5565,154 @@ function activeDashboardAthletes(){
     if(row.smartcoachActive===false)return false;
     return true;
   });
+}
+
+function openFitnessCleanup(){
+  if(accountStatus&&accountStatus.staffAdminAllowed===false){
+    alert('Owner/admin access is required for the current fitness cleanup tool.');
+    return;
+  }
+  renderFitnessCleanupRows();
+  els.fitnessCleanupModal.hidden=false;
+  els.fitnessCleanupClose.focus();
+}
+
+function closeFitnessCleanup(){
+  els.fitnessCleanupModal.hidden=true;
+}
+
+function fitnessCleanupReviewRows(){
+  return activeDashboardAthletes().map(function(athlete){
+    var meets=recentMeetRows.filter(function(meet){return fitnessCleanupSameAthlete(meet,athlete)&&eventDistanceMeters(meet.event)&&parseDurationMs(meet.resultDisplay);}).sort(function(a,b){
+      return compareValues(b.meetDate||'',a.meetDate||'') ||
+        compareValues(b.syncedAt||'',a.syncedAt||'') ||
+        compareValues(b.recordId||'',a.recordId||'');
+    });
+    var latest=meets[0]||null;
+    var previous=meets.slice(1).find(function(meet){
+      return !latest || String(meet.recordId||'')!==String(latest.recordId||'') ||
+        String(meet.event||'')!==String(latest.event||'') ||
+        String(meet.resultDisplay||'')!==String(latest.resultDisplay||'');
+    })||null;
+    var current=athlete.currentFitness||{};
+    if(!latest&&!current.label)return null;
+    return {
+      athlete:athlete,
+      current:current,
+      latest:latest,
+      previous:previous,
+      recommendation:fitnessCleanupRecommendation(current,latest)
+    };
+  }).filter(Boolean);
+}
+
+function fitnessCleanupSameAthlete(meet,athlete){
+  var meetContact=String(meet&&meet.contactId||'').trim();
+  var athleteContact=String(athlete&&athlete.contactId||'').trim();
+  if(meetContact&&athleteContact&&meetContact===athleteContact)return true;
+  var meetName=String(meet&&meet.athleteName||'').trim().toLowerCase();
+  var athleteName=String(athlete&&athlete.name||'').trim().toLowerCase();
+  return !!meetName&&!!athleteName&&meetName===athleteName;
+}
+
+function fitnessCleanupRecommendation(current,latest){
+  if(!latest)return {label:'No recent race',detail:'No race result is available in the current dashboard data.'};
+  var latestMs=parseDurationMs(latest.resultDisplay);
+  var source=trainingPaceSource(current);
+  var latestMeters=eventDistanceMeters(latest.event);
+  var currentMatchesLatest=String(current.event||'').toLowerCase()===String(latest.event||'').toLowerCase() &&
+    String(current.display||'')===String(latest.resultDisplay||'') &&
+    String(current.date||'')===String(latest.meetDate||'');
+  if(!source||!latestMeters||!latestMs){
+    return {label:'Manual review',detail:'Current fitness or latest race cannot be projected.'};
+  }
+  var projected=equivalentRaceMs(source.resultMs,source.distanceMeters,latestMeters);
+  var diffRatio=(latestMs-projected)/projected;
+  if(currentMatchesLatest)return {label:'Latest is current',detail:'Restore previous if this race should not control training paces.',projected:projected};
+  if(diffRatio<=0.03)return {label:'Latest is usable',detail:'Latest race is close to or faster than projection.',projected:projected};
+  return {label:'Keep current',detail:'Latest race is much slower than projection.',projected:projected};
+}
+
+function renderFitnessCleanupRows(){
+  var rows=fitnessCleanupReviewRows();
+  els.fitnessCleanupEmpty.hidden=rows.length>0;
+  els.fitnessCleanupRows.innerHTML=rows.map(function(row,index){
+    var athlete=row.athlete||{};
+    var current=row.current||{};
+    var latest=row.latest||{};
+    var previous=row.previous||{};
+    var projected=row.recommendation&&row.recommendation.projected?formatDurationShort(row.recommendation.projected):'--';
+    var restoreDisabled=previous?'':' disabled';
+    var latestDisabled=latest?'':' disabled';
+    return '<tr>'+
+      '<td><b>'+esc(athlete.name||'Unnamed')+'</b>'+subLine((athlete.gender||'')+(athlete.groups&&athlete.groups.length?' · '+athlete.groups.join(', '):''))+'</td>'+
+      '<td>'+mainLine(current.label||[current.event,current.display].filter(Boolean).join(' ')||'Not set')+subLine(current.date?formatDate(current.date):'')+'</td>'+
+      '<td>'+fitnessCleanupRaceCell(latest)+'</td>'+
+      '<td>'+esc(projected)+'</td>'+
+      '<td>'+fitnessCleanupRaceCell(previous)+'</td>'+
+      '<td>'+mainLine(row.recommendation.label)+subLine(row.recommendation.detail)+'</td>'+
+      '<td><button class="ghost compact" data-fitness-action="restore" data-fitness-index="'+index+'" type="button"'+restoreDisabled+'>Restore Previous</button> '+
+      '<button class="secondary compact" data-fitness-action="latest" data-fitness-index="'+index+'" type="button"'+latestDisabled+'>Use Latest</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function fitnessCleanupRaceCell(race){
+  if(!race)return '<span class="muted">None found</span>';
+  return mainLine([race.event,race.resultDisplay].filter(Boolean).join(' '))+subLine([race.meetName,formatDate(race.meetDate)].filter(Boolean).join(' · '));
+}
+
+function handleFitnessCleanupAction(event){
+  var button=event.target.closest&&event.target.closest('[data-fitness-action]');
+  if(!button)return;
+  event.preventDefault();
+  var rows=fitnessCleanupReviewRows();
+  var row=rows[Number(button.getAttribute('data-fitness-index'))]||null;
+  var action=button.getAttribute('data-fitness-action')||'';
+  var race=action==='restore'?(row&&row.previous):(row&&row.latest);
+  if(!row||!race)return;
+  saveFitnessCleanupChoice(row.athlete,row.current,race,button);
+}
+
+function saveFitnessCleanupChoice(athlete,current,race,button){
+  if(!athlete||!race)return;
+  button.disabled=true;
+  els.fitnessCleanupStatus.textContent='Saving '+(athlete.name||'athlete')+'...';
+  var seasonParts=raceResultSeasonFromDate(race.meetDate);
+  var payload={
+    contactId:athlete.contactId||'',
+    smartcoachAthleteId:athlete.smartcoachAthleteId||'',
+    athleteName:athlete.name||race.athleteName||'',
+    sport:race.sport||sportForRaceEvent(race.event),
+    event:race.event||'',
+    resultDisplay:race.resultDisplay||'',
+    resultDate:race.meetDate||'',
+    season:race.season||seasonParts.season,
+    seasonYear:race.seasonYear||seasonParts.seasonYear,
+    previousEvent:current.event||'',
+    previousRecordId:current.recordId||''
+  };
+  fetch('/api/smart-trak/athlete-best',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Current fitness could not be saved.');
+    els.fitnessCleanupStatus.textContent='Saved '+(athlete.name||'athlete')+' current fitness as '+race.event+' '+race.resultDisplay+'.';
+    return loadDashboard();
+  }).then(function(){
+    renderFitnessCleanupRows();
+  }).catch(function(error){
+    els.fitnessCleanupStatus.textContent=error.message||'Current fitness could not be saved.';
+  }).finally(function(){
+    button.disabled=false;
+  });
+}
+
+function sportForRaceEvent(event){
+  return eventDistanceMeters(event)>=4000?'cross country':'track';
 }
 
 function loadRaceResultMeets(){

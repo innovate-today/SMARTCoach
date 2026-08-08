@@ -699,6 +699,35 @@ function checkCoachApprovedCurrentFitnessUpdates() {
   console.log("coach-approved current fitness updates ok");
 }
 
+function checkCurrentFitnessCleanupTool() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  [
+    'id="fitnessCleanupBtn" class="modal-action admin-only"',
+    'id="fitnessCleanupModal" class="modal" hidden',
+    "function openFitnessCleanup()",
+    "Owner/admin access is required for the current fitness cleanup tool.",
+    "function fitnessCleanupReviewRows()",
+    "function fitnessCleanupSameAthlete(meet,athlete)",
+    "function fitnessCleanupRecommendation(current,latest)",
+    "Projected",
+    "Restore Previous",
+    "Use Latest",
+    "previousRecordId:current.recordId||''",
+    "fetch('/api/smart-trak/athlete-best'",
+    "return loadDashboard();",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`current fitness cleanup tool missing ${text}`);
+  });
+  [
+    "recordId: best.recordId || \"\"",
+    "recordId: record && record.id ? record.id : \"\"",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`dashboard current fitness record id missing ${text}`);
+  });
+  console.log("current fitness cleanup tool ok");
+}
+
 function checkDashboardCompletedVolumeParsing() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -4660,6 +4689,7 @@ checkDashboardFilterContextAndArchivedGroups();
 checkDashboardTrainingPaces();
 checkDashboardCurrentFitnessTargetFallback();
 checkCoachApprovedCurrentFitnessUpdates();
+checkCurrentFitnessCleanupTool();
 checkMilesBoardFeature();
 checkResultsBoardFeature();
 checkSpeedTrakFeature();

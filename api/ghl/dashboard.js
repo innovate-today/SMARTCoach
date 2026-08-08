@@ -1249,6 +1249,7 @@ function chooseCurrentFitness(bests) {
   const resultMs = parseTimeToMs(display);
   const date = best.lastResultDate || "";
   return {
+    recordId: best.recordId || "",
     event: best.event || "",
     display,
     resultMs: resultMs || 0,
@@ -1320,6 +1321,7 @@ function contactGender(contact, genderFieldIds = []) {
 function normalizeBest(record) {
   const props = recordProperties(record);
   return {
+    recordId: record && record.id ? record.id : "",
     event: prop(props, "event"),
     personalBestDisplay: prop(props, "personal_best_display"),
     personalBestMs: Number(prop(props, "personal_best_ms")) || 0,
