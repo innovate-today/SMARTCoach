@@ -5605,7 +5605,7 @@ function fitnessCleanupReviewRows(){
       current:current,
       latest:latest,
       previous:previous,
-      recommendation:fitnessCleanupRecommendation(current,latest)
+      recommendation:fitnessCleanupRecommendation(current,latest,previous)
     };
   }).filter(Boolean);
 }
@@ -5619,22 +5619,36 @@ function fitnessCleanupSameAthlete(meet,athlete){
   return !!meetName&&!!athleteName&&meetName===athleteName;
 }
 
-function fitnessCleanupRecommendation(current,latest){
+function fitnessCleanupRecommendation(current,latest,previous){
   if(!latest)return {label:'No recent race',detail:'No race result is available in the current dashboard data.'};
   var latestMs=parseDurationMs(latest.resultDisplay);
-  var source=trainingPaceSource(current);
   var latestMeters=eventDistanceMeters(latest.event);
   var currentMatchesLatest=String(current.event||'').toLowerCase()===String(latest.event||'').toLowerCase() &&
     String(current.display||'')===String(latest.resultDisplay||'') &&
     String(current.date||'')===String(latest.meetDate||'');
+  var baseline=currentMatchesLatest&&previous?fitnessCleanupRaceFitness(previous):current;
+  var source=trainingPaceSource(baseline);
   if(!source||!latestMeters||!latestMs){
     return {label:'Manual review',detail:'Current fitness or latest race cannot be projected.'};
   }
   var projected=equivalentRaceMs(source.resultMs,source.distanceMeters,latestMeters);
   var diffRatio=(latestMs-projected)/projected;
+  if(currentMatchesLatest&&previous){
+    return diffRatio<=0.03
+      ? {label:'Latest is usable',detail:'Latest race is close to or faster than the previous fitness projection.',projected:projected}
+      : {label:'Restore previous',detail:'Latest race is much slower than the previous fitness projection.',projected:projected};
+  }
   if(currentMatchesLatest)return {label:'Latest is current',detail:'Restore previous if this race should not control training paces.',projected:projected};
   if(diffRatio<=0.03)return {label:'Latest is usable',detail:'Latest race is close to or faster than projection.',projected:projected};
   return {label:'Keep current',detail:'Latest race is much slower than projection.',projected:projected};
+}
+
+function fitnessCleanupRaceFitness(race){
+  return {
+    event:race&&race.event||'',
+    display:race&&race.resultDisplay||'',
+    resultMs:parseDurationMs(race&&race.resultDisplay||'')
+  };
 }
 
 function renderFitnessCleanupRows(){
