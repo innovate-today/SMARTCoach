@@ -705,6 +705,8 @@ function checkCurrentFitnessCleanupTool() {
   [
     'id="fitnessCleanupBtn" class="modal-action admin-only"',
     'id="fitnessCleanupModal" class="modal" hidden',
+    "fitness-cleanup-panel{width:min(1320px,calc(100vw - 28px))",
+    'class="tablewrap recentwrap fitness-cleanup-tablewrap"',
     "function openFitnessCleanup()",
     "Owner/admin access is required for the current fitness cleanup tool.",
     "function fitnessCleanupReviewRows()",

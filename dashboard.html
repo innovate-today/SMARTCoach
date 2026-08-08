@@ -168,6 +168,10 @@ tr:last-child td{border-bottom:0}
 .modalpanel{width:min(760px,100%);background:#fff;border-radius:10px;border:1px solid var(--line);box-shadow:0 18px 45px rgba(15,23,42,.2);overflow:hidden}
 .simulator-panel{width:min(420px,100%)}
 .staff-access-panel{width:min(1080px,100%)}
+.fitness-cleanup-panel{width:min(1320px,calc(100vw - 28px));max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+.fitness-cleanup-panel .modalbody{overflow:auto}
+.fitness-cleanup-tablewrap{overflow:auto}
+.fitness-cleanup-tablewrap table{min-width:1120px}
 .modalhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .modalhead h2{font-size:20px;margin:0}
 .modalbody{padding:16px 18px 20px}
@@ -642,7 +646,7 @@ tr:last-child td{border-bottom:0}
   </section>
 </div>
 <div id="fitnessCleanupModal" class="modal" hidden>
-  <section class="modalpanel whats-new-panel" role="dialog" aria-modal="true" aria-labelledby="fitnessCleanupTitle">
+  <section class="modalpanel fitness-cleanup-panel" role="dialog" aria-modal="true" aria-labelledby="fitnessCleanupTitle">
     <div class="modalhead">
       <h2 id="fitnessCleanupTitle">Current Fitness Cleanup</h2>
       <button id="fitnessCleanupClose" class="secondary" type="button">Close</button>
@@ -650,7 +654,7 @@ tr:last-child td{border-bottom:0}
     <div class="modalbody">
       <p class="whats-new-intro">Temporary owner/admin review tool for checking whether the latest race should be used for training paces.</p>
       <div id="fitnessCleanupStatus" class="modalstatus">Review each athlete, then restore the previous race or use the latest race when needed.</div>
-      <section class="tablewrap recentwrap" style="margin-top:10px">
+      <section class="tablewrap recentwrap fitness-cleanup-tablewrap" style="margin-top:10px">
         <table>
           <thead>
             <tr>
