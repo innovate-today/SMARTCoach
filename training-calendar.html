@@ -2128,9 +2128,12 @@ function showReturnedStravaMessage(){
   try{
     var params=new URLSearchParams(window.location.search||'');
     var strava=params.get('strava')||'';
-    if(strava==='connected'){
+    if(strava==='connected'&&params.get('stravaConfirmed')==='1'){
       els.stravaStatus.textContent='Strava connected. Load athlete activities to import completed workouts.';
       els.stravaStatus.style.color='var(--good)';
+    }else if(strava==='connected'){
+      els.stravaStatus.textContent='Returned from Strava. Checking the saved connection in SMARTCoach.';
+      els.stravaStatus.style.color='var(--muted)';
     }
     if(strava==='error'){
       els.stravaStatus.textContent=params.get('stravaMessage')||'Strava connection failed.';

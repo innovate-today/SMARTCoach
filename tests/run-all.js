@@ -1955,6 +1955,8 @@ function checkStravaAdminTestFlow() {
     "function defaultStravaReturnPath(accountKey)",
     "function defaultAthleteStravaReturnPath(accountKey, athlete)",
     "function cleanStravaReturnPath(value, accountKey)",
+    "function confirmedStravaReturnPath(value)",
+    'url.searchParams.set("stravaConfirmed", "1");',
     "firstQueryValue(req.query && req.query.returnPath)",
     '["/dashboard.html", "/training-calendar.html", "/strava-connected.html"].includes(url.pathname)',
     'url.hash = url.pathname === "/training-calendar.html" ? "#strava" : "#strava-test";',
@@ -1988,9 +1990,17 @@ function checkStravaAdminTestFlow() {
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`SMART Trak Strava admin API missing ${text}`);
   });
-  if (!fs.readFileSync("strava-connected.html", "utf8").includes("Strava is connected.")) {
+  const stravaConnectedPage = fs.readFileSync("strava-connected.html", "utf8");
+  if (!stravaConnectedPage.includes("Strava is connected.")) {
     throw new Error("Athlete Strava connected page missing success copy");
   }
+  [
+    "params.get('stravaConfirmed')==='1'",
+    "Return to SMARTCoach to verify Strava.",
+    "This page cannot confirm the saved connection by itself.",
+  ].forEach((text) => {
+    if (!stravaConnectedPage.includes(text)) throw new Error(`Athlete Strava connected page missing verified-status guard ${text}`);
+  });
   [
     "sourceSessionId: clean(payload.sourceSessionId)",
     "if (session && session.sourceSessionId) return slugValue(session.sourceSessionId);",

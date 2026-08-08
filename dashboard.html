@@ -3676,9 +3676,12 @@ function showReturnedStravaMessage(){
   try{
     var params=new URLSearchParams(window.location.search||'');
     var strava=params.get('strava')||'';
-    if(strava==='connected'){
+    if(strava==='connected'&&params.get('stravaConfirmed')==='1'){
       els.stravaTestStatus.textContent='Strava connected. Load recent activities to verify the read path.';
       els.stravaTestStatus.style.color='#08783c';
+    }else if(strava==='connected'){
+      els.stravaTestStatus.textContent='Returned from Strava. Checking the saved connection in SMARTCoach.';
+      els.stravaTestStatus.style.color='#64748b';
     }
     if(strava==='error'){
       els.stravaTestStatus.textContent=params.get('stravaMessage')||'Strava connection failed.';

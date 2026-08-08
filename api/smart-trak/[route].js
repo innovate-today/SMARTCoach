@@ -537,7 +537,7 @@ async function accountStravaCallback(req, res) {
           updatedAt: now,
         })),
       });
-      res.writeHead(302, { Location: returnPath });
+      res.writeHead(302, { Location: confirmedStravaReturnPath(returnPath) });
       res.end();
       return;
     }
@@ -551,7 +551,7 @@ async function accountStravaCallback(req, res) {
         updatedAt: now,
       }),
     });
-    res.writeHead(302, { Location: returnPath });
+    res.writeHead(302, { Location: confirmedStravaReturnPath(returnPath) });
     res.end();
   } catch (error) {
     const url = new URL(returnPath, "https://app.smartcoach-pro.com");
@@ -5963,6 +5963,17 @@ function cleanStravaReturnPath(value, accountKey) {
     return `${url.pathname}${url.search}${url.hash}`;
   } catch (error) {
     return "";
+  }
+}
+
+function confirmedStravaReturnPath(value) {
+  try {
+    const url = new URL(cleanSetupText(value), "https://app.smartcoach-pro.com");
+    url.searchParams.set("strava", "connected");
+    url.searchParams.set("stravaConfirmed", "1");
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch (error) {
+    return value;
   }
 }
 
