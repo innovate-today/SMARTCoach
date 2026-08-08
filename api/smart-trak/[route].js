@@ -526,16 +526,25 @@ async function accountStravaCallback(req, res) {
     if (state.flow === "athlete") {
       const athlete = normalizeStravaConnectionAthlete(state.athlete || {});
       if (!stravaConnectionAthleteKey(athlete)) throw httpError(400, "Strava athlete connection was missing the SMART Trak athlete.");
+      const savedConnection = normalizeSavedStravaAthleteConnection({
+        ...tokenData,
+        athlete,
+        stravaAthlete: tokenData.athlete,
+        connected: true,
+        connectedAt: now,
+        updatedAt: now,
+      });
+      if (!savedConnection.refreshToken) {
+        throw httpError(502, "Strava did not return a reusable athlete token. Please ask your coach for a new Strava connection link.");
+      }
+      if (stravaConnectionNameMismatchForAthlete(savedConnection, athlete)) {
+        const selectedName = athlete.name || "the selected SMART Trak athlete";
+        const stravaName = stravaAthleteDisplayName(savedConnection.stravaAthlete) || "the signed-in Strava account";
+        throw httpError(409, `This Strava login appears to be ${stravaName}, not ${selectedName}. Please sign out of Strava or switch accounts, then open a new SMARTCoach Strava link.`);
+      }
       await saveAccountRecord(accountKey, {
         ...existing,
-        stravaAthleteConnections: upsertStravaAthleteConnection(existing.stravaAthleteConnections, normalizeSavedStravaAthleteConnection({
-          ...tokenData,
-          athlete,
-          stravaAthlete: tokenData.athlete,
-          connected: true,
-          connectedAt: now,
-          updatedAt: now,
-        })),
+        stravaAthleteConnections: upsertStravaAthleteConnection(existing.stravaAthleteConnections, savedConnection),
       });
       res.writeHead(302, { Location: confirmedStravaReturnPath(returnPath) });
       res.end();
