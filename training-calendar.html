@@ -2634,12 +2634,13 @@ function importStravaActivity(activityId,button){
 }
 function stravaImportPayload(activity,athlete,detail){
   var dateText=stravaActivityDate(activity);
-  var meters=stravaImportDistanceMeters(activity,detail);
+  var matchDay=stravaPlanMatchForActivity(activity,athlete);
+  var importSummary=stravaImportRunSummary(matchDay,activity,detail);
+  var meters=importSummary.distanceMeters;
   var miles=meters?Math.round((meters/1609.344)*100)/100:0;
-  var seconds=stravaImportDurationSeconds(activity,detail);
+  var seconds=importSummary.durationSeconds;
   var durationMs=seconds*1000;
   var duration=durationMs?formatDurationShort(durationMs):'Untimed';
-  var matchDay=stravaPlanMatchForActivity(activity,athlete);
   var matchPlan=stravaDayPlan(matchDay);
   var matchTitle=matchDay&&(matchDay.title||matchDay.dayType||'');
   var importLaps=stravaImportLapsForActivity(matchDay,detail);
@@ -2704,6 +2705,30 @@ function stravaImportPayload(activity,athlete,detail){
       }]
     }]
   };
+}
+function stravaImportRunSummary(matchDay,activity,detail){
+  var plannedLaps=stravaPlannedLapsFromDay(matchDay);
+  var splitSummary=plannedLaps.length?null:stravaStandardSplitSummaryFromDetail(detail);
+  return {
+    distanceMeters:splitSummary&&splitSummary.distanceMeters||stravaImportDistanceMeters(activity,detail),
+    durationSeconds:splitSummary&&splitSummary.durationSeconds||stravaImportDurationSeconds(activity,detail),
+    source:splitSummary?'standard_splits':'activity_summary'
+  };
+}
+function stravaStandardSplitSummaryFromDetail(detail){
+  if(!detail||!Array.isArray(detail.splitsStandard))return null;
+  var meters=0;
+  var seconds=0;
+  detail.splitsStandard.forEach(function(split){
+    var splitMeters=num(split&&split.distanceMeters);
+    var splitSeconds=num(split&&split.movingTimeSeconds)||num(split&&split.elapsedTimeSeconds);
+    if(splitMeters>0&&splitSeconds>0){
+      meters+=splitMeters;
+      seconds+=splitSeconds;
+    }
+  });
+  if(!meters||!seconds)return null;
+  return {distanceMeters:Math.round(meters),durationSeconds:Math.round(seconds)};
 }
 function stravaImportDistanceMeters(activity,detail){
   var streamMeters=stravaStreamTotalDistanceMeters(detail&&detail.streams);
