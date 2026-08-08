@@ -774,6 +774,8 @@ How to use it:
 
 Saved race results update the Dashboard, Meet History, and athlete bests. They do not automatically update the official Records page.
 
+Before you save an individual race result, SMART Trak shows a **Current Fitness Review**. It compares the athlete's current mark, a projected time for the race distance, and the new race result. Check **Use this result as the athlete's current fitness for training paces** only when the race is a fair picture of that athlete's current fitness. Leave it unchecked if the course was long, very hilly, muddy, very hot, or the athlete simply had a rough race. PB/SB can still be saved without changing training paces.
+
 Relay results:
 
 1. Change **Result Type** to **Relay**.

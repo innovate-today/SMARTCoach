@@ -1240,15 +1240,14 @@ function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords
 }
 
 function chooseCurrentFitness(bests) {
-  const usable = bests.filter((item) => !isFutureDate(bestDate(item)));
-  const source = usable.length ? usable : bests;
-  const sorted = source.slice().sort((a, b) => String(bestDate(b)).localeCompare(String(bestDate(a))));
+  const explicit = bests.filter((item) => clean(item.lastResultDisplay));
+  const usable = explicit.filter((item) => !isFutureDate(item.lastResultDate));
+  const source = usable.length ? usable : explicit;
+  const sorted = source.slice().sort((a, b) => String(b.lastResultDate || "").localeCompare(String(a.lastResultDate || "")));
   const best = sorted[0] || {};
-  const display = best.lastResultDisplay || best.seasonBestDisplay || best.personalBestDisplay || "";
-  const resultMs = best.lastResultDisplay === display
-    ? parseTimeToMs(display)
-    : (best.seasonBestDisplay === display ? best.seasonBestMs : best.personalBestMs) || parseTimeToMs(display);
-  const date = bestDate(best);
+  const display = best.lastResultDisplay || "";
+  const resultMs = parseTimeToMs(display);
+  const date = best.lastResultDate || "";
   return {
     event: best.event || "",
     display,

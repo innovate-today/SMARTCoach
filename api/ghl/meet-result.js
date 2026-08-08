@@ -166,6 +166,7 @@ module.exports = async function handler(req, res) {
       sourceRecordId: properties.source_record_id,
       seasonRecord,
       athleteBest,
+      currentFitnessUpdated: meetResult.useAsCurrentFitness === true,
       records: [],
     });
   } catch (error) {
@@ -215,6 +216,7 @@ function normalizeMeetResult(payload) {
     relayTeamName,
     isPr: resultType !== "relay" && truthy(payload.isPr),
     isSeasonBest: truthy(payload.isSeasonBest),
+    useAsCurrentFitness: resultType === "individual" && truthy(payload.useAsCurrentFitness),
     fieldAttempts,
     fieldVideo: clean(payload.fieldVideo),
     coachRaceNotes: clean(payload.coachRaceNotes),
@@ -922,6 +924,7 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
   const existingSbMs = sameSeason(existingProperties, meetResult) ? numberValue(existingValue("season_best_ms")) : 0;
   const isPb = meetResult.isPr === true;
   const isSb = meetResult.isSeasonBest === true;
+  const useAsCurrentFitness = meetResult.useAsCurrentFitness === true;
   const today = dateOnly(new Date());
 
   const properties = {
@@ -942,8 +945,8 @@ function buildAthleteBestProperties({ contactId, meetResult, existing, sourceRec
     season_best_meet: isSb ? meetResult.meetName : sameSeason(existingProperties, meetResult) ? existingValue("season_best_meet") : "",
     season_best_date: isSb ? dateOnly(meetResult.meetDate) : sameSeason(existingProperties, meetResult) ? existingValue("season_best_date") : "",
     season_best_source_record_id: isSb ? meetResultSourceRecordId : sameSeason(existingProperties, meetResult) ? existingValue("season_best_source_record_id") : "",
-    last_result_display: meetResult.resultDisplay,
-    last_result_date: dateOnly(meetResult.meetDate),
+    last_result_display: useAsCurrentFitness ? meetResult.resultDisplay : existingValue("last_result_display"),
+    last_result_date: useAsCurrentFitness ? dateOnly(meetResult.meetDate) : existingValue("last_result_date"),
     pb_updated_at: isPb ? today : existingValue("pb_updated_at"),
     sb_updated_at: isSb ? today : existingValue("sb_updated_at"),
     source_system: "smartcoach_pro",

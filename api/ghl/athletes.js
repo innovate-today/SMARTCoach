@@ -150,8 +150,8 @@ async function listAthleteFitnessRows({ token, locationId }) {
   return recordsFromResult(result).map((record) => {
     const props = recordProperties(record);
     const event = prop(props, "event");
-    const display = prop(props, "last_result_display") || prop(props, "season_best_display") || prop(props, "personal_best_display");
-    const date = prop(props, "last_result_date") || prop(props, "season_best_date") || prop(props, "personal_best_date");
+    const display = prop(props, "last_result_display");
+    const date = prop(props, "last_result_date");
     return {
       recordId: record.id || "",
       contactId: prop(props, "athlete_contact"),

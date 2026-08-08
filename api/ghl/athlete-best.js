@@ -112,8 +112,8 @@ async function listAthleteBestRows({ token, locationId }) {
   const result = await searchAthleteBestRecords({ token, locationId, page: 1, pageLimit: 100 });
   return recordsFromResult(result).map((record) => {
     const props = recordProperties(record);
-    const display = prop(props, "last_result_display") || prop(props, "season_best_display") || prop(props, "personal_best_display");
-    const date = prop(props, "last_result_date") || prop(props, "season_best_date") || prop(props, "personal_best_date");
+    const display = prop(props, "last_result_display");
+    const date = prop(props, "last_result_date");
     const event = prop(props, "event");
     return {
       recordId: record.id || "",

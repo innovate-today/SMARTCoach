@@ -7089,8 +7089,8 @@ function preferredFitnessEvents(text){
 function chooseFitness(profile,rule){
   var bests=(profile&&profile.bests||[]).map(function(b){
     var event=normalizeEventLabel(b.event);
-    var display=b.lastResultDisplay||b.seasonBestDisplay||b.personalBestDisplay||'';
-    return{event:event,display:display,ms:parseFitnessMs(display,event),meters:eventDistance(event),date:b.lastResultDate||b.seasonBestDate||b.personalBestDate||''};
+    var display=b.lastResultDisplay||'';
+    return{event:event,display:display,ms:parseFitnessMs(display,event),meters:eventDistance(event),date:b.lastResultDate||''};
   }).filter(function(b){return b.event&&b.display&&b.ms&&b.meters;});
   if(!bests.length)return null;
   var current=bests.filter(function(b){return !isFutureDateText(b.date);});

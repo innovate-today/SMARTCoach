@@ -641,6 +641,64 @@ function checkDashboardCurrentFitnessTargetFallback() {
   console.log("dashboard current-fitness target fallback ok");
 }
 
+function checkCoachApprovedCurrentFitnessUpdates() {
+  const meetApi = fs.readFileSync("api/ghl/meet-result.js", "utf8");
+  const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  const athletesApi = fs.readFileSync("api/ghl/athletes.js", "utf8");
+  const athleteBestApi = fs.readFileSync("api/ghl/athlete-best.js", "utf8");
+  const app = fs.readFileSync("index.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  [
+    'useAsCurrentFitness: resultType === "individual" && truthy(payload.useAsCurrentFitness)',
+    'last_result_display: useAsCurrentFitness ? meetResult.resultDisplay : existingValue("last_result_display")',
+    "currentFitnessUpdated: meetResult.useAsCurrentFitness === true",
+  ].forEach((text) => {
+    if (!meetApi.includes(text)) throw new Error(`meet-result current-fitness approval missing ${text}`);
+  });
+  [
+    "const explicit = bests.filter((item) => clean(item.lastResultDisplay));",
+    'const display = best.lastResultDisplay || "";',
+    "const resultMs = parseTimeToMs(display);",
+  ].forEach((text) => {
+    if (!dashboardApi.includes(text)) throw new Error(`dashboard explicit current-fitness source missing ${text}`);
+  });
+  [athletesApi, athleteBestApi].forEach((api, index) => {
+    ['const display = prop(props, "last_result_display");', 'const date = prop(props, "last_result_date");'].forEach((text) => {
+      if (!api.includes(text)) throw new Error(`athlete fitness API ${index + 1} should use explicit current fitness only`);
+    });
+    if (api.includes('last_result_display") || prop(props, "season_best_display"')) {
+      throw new Error(`athlete fitness API ${index + 1} should not fall back to season best as current fitness`);
+    }
+  });
+  ["var display=b.lastResultDisplay||'';", "date:b.lastResultDate||''"].forEach((text) => {
+    if (!app.includes(text)) throw new Error(`mobile app current-fitness source missing ${text}`);
+  });
+  if (app.includes("b.lastResultDisplay||b.seasonBestDisplay")) {
+    throw new Error("mobile app should not use PB/SB values as current fitness");
+  }
+  [
+    ["dashboard", dashboard],
+    ["training calendar", calendar],
+  ].forEach(([name, html]) => {
+    [
+      'id="raceFitnessReview"',
+      'id="raceResultUseFitness"',
+      "Current Fitness Review",
+      "Projected Time",
+      "Normal race conditions",
+      "function updateRaceFitnessReview()",
+      "equivalentRaceMs(source.resultMs,source.distanceMeters,eventMeters)",
+      "diffRatio<=0.03",
+      "useAsCurrentFitness:!isRelay&&!isField&&els.raceResultUseFitness&&els.raceResultUseFitness.checked",
+      "Current fitness updated.",
+    ].forEach((text) => {
+      if (!html.includes(text)) throw new Error(`${name} current-fitness review missing ${text}`);
+    });
+  });
+  console.log("coach-approved current fitness updates ok");
+}
+
 function checkDashboardCompletedVolumeParsing() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -4601,6 +4659,7 @@ checkDashboardActivityRangeLayout();
 checkDashboardFilterContextAndArchivedGroups();
 checkDashboardTrainingPaces();
 checkDashboardCurrentFitnessTargetFallback();
+checkCoachApprovedCurrentFitnessUpdates();
 checkMilesBoardFeature();
 checkResultsBoardFeature();
 checkSpeedTrakFeature();

@@ -132,6 +132,16 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .field{display:grid;gap:5px}
 .field.full{grid-column:1/-1}
+.fitness-review{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:12px}
+.fitness-review h3{margin:0 0 8px;font-size:14px}
+.fitness-review-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.fitness-review-card{border:1px solid #e0e7f1;border-radius:8px;background:#fff;padding:8px}
+.fitness-review-card b{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.02em}
+.fitness-review-card span{display:block;font-size:16px;font-weight:900;margin-top:3px}
+.fitness-review-card small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.fitness-review-action{display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:800;color:#24324a}
+.fitness-review-action input{width:auto;margin-top:2px}
+.fitness-review-note{margin:8px 0 0;color:var(--muted);font-size:12px;font-weight:700}
 .field label{font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.03em}
 .fieldinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:5px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe;vertical-align:middle}
 .fieldinfo::after{content:attr(data-tip);position:absolute;left:-8px;top:24px;width:260px;max-width:min(80vw,260px);padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:30;white-space:normal}
@@ -227,6 +237,7 @@ button.compact{padding:6px 9px;font-size:12px}
   .bar{grid-template-columns:1fr}
   .viewtabs{grid-template-columns:1fr}
   .detailgrid{grid-template-columns:1fr}
+  .fitness-review-grid{grid-template-columns:1fr}
   .activitychooser{grid-template-columns:1fr}
   .compactgrid,.manual-row-grid,.manual-rest-grid{grid-template-columns:1fr}
   .mini-input,.mini-select{max-width:none}
@@ -565,6 +576,16 @@ button.compact{padding:6px 9px;font-size:12px}
         <div class="field"><label for="raceResultResult">Result <span class="fieldinfo" tabindex="0" data-tip="Enter the official time or field mark.">i</span></label><input id="raceResultResult" type="text" placeholder="Example: 19:08"></div>
         <div class="field"><label for="raceResultWind">Wind <span class="fieldinfo info-left" tabindex="0" data-tip="Optional wind reading for track events.">i</span></label><input id="raceResultWind" type="text" placeholder="Optional, e.g. +1.2"></div>
         <div class="field"><label for="raceResultBest">Best Status <span class="fieldinfo" tabindex="0" data-tip="Mark PB or SB if the coach already knows it.">i</span></label><select id="raceResultBest"><option value="none">No PB/SB</option><option value="pb">PB only</option><option value="sb">SB only</option><option value="both">PB and SB</option></select></div>
+        <div id="raceFitnessReview" class="fitness-review" hidden>
+          <h3>Current Fitness Review</h3>
+          <div class="fitness-review-grid">
+            <div class="fitness-review-card"><b>Current Mark</b><span id="raceFitnessCurrent">--</span><small id="raceFitnessCurrentSub"></small></div>
+            <div class="fitness-review-card"><b>Projected Time</b><span id="raceFitnessProjected">--</span><small>Normal race conditions</small></div>
+            <div class="fitness-review-card"><b>New Result</b><span id="raceFitnessNew">--</span><small id="raceFitnessNewSub"></small></div>
+          </div>
+          <label class="fitness-review-action"><input id="raceResultUseFitness" type="checkbox"> <span>Use this result as the athlete's current fitness for training paces.</span></label>
+          <p id="raceFitnessRecommendation" class="fitness-review-note">Select an athlete, event, and result to review.</p>
+        </div>
         <div class="field full"><label for="raceResultNotes">Notes <span class="fieldinfo" tabindex="0" data-tip="Optional race notes, context, or coach comments.">i</span></label><textarea id="raceResultNotes" placeholder="Optional race notes"></textarea></div>
       </div>
       <div class="modalactions">
@@ -853,6 +874,14 @@ var els={
   raceResultResult:document.getElementById('raceResultResult'),
   raceResultWind:document.getElementById('raceResultWind'),
   raceResultBest:document.getElementById('raceResultBest'),
+  raceFitnessReview:document.getElementById('raceFitnessReview'),
+  raceFitnessCurrent:document.getElementById('raceFitnessCurrent'),
+  raceFitnessCurrentSub:document.getElementById('raceFitnessCurrentSub'),
+  raceFitnessProjected:document.getElementById('raceFitnessProjected'),
+  raceFitnessNew:document.getElementById('raceFitnessNew'),
+  raceFitnessNewSub:document.getElementById('raceFitnessNewSub'),
+  raceResultUseFitness:document.getElementById('raceResultUseFitness'),
+  raceFitnessRecommendation:document.getElementById('raceFitnessRecommendation'),
   raceResultNotes:document.getElementById('raceResultNotes'),
   raceResultStatus:document.getElementById('raceResultStatus'),
   raceResultSave:document.getElementById('raceResultSave'),
@@ -4170,6 +4199,7 @@ function openRaceResult(){
   syncRaceResultSport();
   syncRaceResultType();
   setRaceResultStatus('Save a result without leaving the calendar.','');
+  updateRaceFitnessReview();
   els.raceResultModal.hidden=false;
   loadRaceResultMeets();
 }
@@ -4297,6 +4327,7 @@ function syncRaceResultSport(){
     return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
   }).join('');
   if(current&&events.indexOf(current)>=0)els.raceResultEvent.value=current;
+  updateRaceFitnessReview();
 }
 function syncRaceResultType(){
   var type=els.raceResultType&&els.raceResultType.value||'individual';
@@ -4311,6 +4342,7 @@ function syncRaceResultType(){
   if(relay||field)els.raceResultBest.value='none';
   if(els.raceResultResult)els.raceResultResult.placeholder=field?'Example: 18-6 or 42-3.5':'Example: 19:08';
   syncRaceResultSport();
+  updateRaceFitnessReview();
 }
 function relayLegsPayload(){
   var rows=[];
@@ -4328,6 +4360,80 @@ function selectedRaceResultMeet(){
 function selectedRaceResultAthlete(){
   var selected=els.raceResultAthlete.value||'';
   return raceResultAthleteRows().find(function(row){return String(row.contactId||row.name||'')===String(selected);})||null;
+}
+function updateRaceFitnessReview(){
+  if(!els.raceFitnessReview)return;
+  var resultType=els.raceResultType&&els.raceResultType.value||'individual';
+  var athlete=selectedRaceResultAthlete();
+  var eventName=els.raceResultEvent&&els.raceResultEvent.value||'';
+  if(resultType!=='individual'||!athlete||!eventName){
+    els.raceFitnessReview.hidden=true;
+    if(els.raceResultUseFitness)els.raceResultUseFitness.checked=false;
+    return;
+  }
+  var current=athlete.currentFitness||{};
+  var source=trainingPaceSource(current);
+  var eventMeters=eventDistanceMeters(eventName);
+  var resultDisplay=(els.raceResultResult&&els.raceResultResult.value||'').trim();
+  var resultMs=parseDurationMs(resultDisplay);
+  els.raceFitnessReview.hidden=false;
+  if(els.raceFitnessCurrent)els.raceFitnessCurrent.textContent=current.label||[current.event,current.display||current.resultDisplay].filter(Boolean).join(' ')||'Not set';
+  if(els.raceFitnessCurrentSub)els.raceFitnessCurrentSub.textContent=(current.date||current.resultDate)?formatDate(current.date||current.resultDate):'';
+  if(els.raceFitnessNew)els.raceFitnessNew.textContent=resultDisplay||'Enter result';
+  if(els.raceFitnessNewSub)els.raceFitnessNewSub.textContent=eventName;
+  if(!source||!eventMeters){
+    if(els.raceFitnessProjected)els.raceFitnessProjected.textContent='--';
+    if(els.raceResultUseFitness)els.raceResultUseFitness.checked=false;
+    if(els.raceFitnessRecommendation)els.raceFitnessRecommendation.textContent='No running current fitness mark is set for this athlete. Save the result, then check this box only if this race should set training paces.';
+    return;
+  }
+  var projected=equivalentRaceMs(source.resultMs,source.distanceMeters,eventMeters);
+  if(els.raceFitnessProjected)els.raceFitnessProjected.textContent=formatDurationShort(projected);
+  if(!resultMs){
+    if(els.raceResultUseFitness)els.raceResultUseFitness.checked=false;
+    if(els.raceFitnessRecommendation)els.raceFitnessRecommendation.textContent='Enter the race result to compare it with the projected time.';
+    return;
+  }
+  var diffRatio=(resultMs-projected)/projected;
+  var suggested=diffRatio<=0.03;
+  if(els.raceResultUseFitness)els.raceResultUseFitness.checked=suggested;
+  if(els.raceFitnessRecommendation){
+    els.raceFitnessRecommendation.textContent=suggested
+      ? 'Result is close to or faster than the projection. It is reasonable to use it as current fitness if race conditions were normal.'
+      : 'Result is much slower than the projection. Save the race result, but keep current fitness unless conditions still make this the best training mark.';
+  }
+}
+function trainingPaceSource(fitness){
+  if(!fitness)return null;
+  var distance=eventDistanceMeters(fitness.event);
+  var resultMs=num(fitness.resultMs)||parseDurationMs(fitness.display||fitness.resultDisplay);
+  if(!distance||!resultMs)return null;
+  return {distanceMeters:distance,resultMs:resultMs};
+}
+function eventDistanceMeters(event){
+  var text=String(event||'').trim().toLowerCase().replace(/\s+/g,' ');
+  if(!text || /relay|jump|vault|shot|discus|javelin|hammer/.test(text))return 0;
+  var named={'100h':100,'110h':110,'300h':300,'400h':400,'1 mile':1609.344,'1mi':1609.344,'2 mile':3218.688,'2mi':3218.688,'3k':3000,'4k':4000,'5k':5000,'8k':8000,'10k':10000,'15k':15000,'half marathon':21097.5,'marathon':42195};
+  if(named[text])return named[text];
+  var meters=text.match(/^(\d+(?:\.\d+)?)\s*m$/);
+  if(meters)return Number(meters[1]);
+  var compact=text.match(/^(\d+(?:\.\d+)?)(m|k)$/);
+  if(compact)return compact[2]==='k'?Number(compact[1])*1000:Number(compact[1]);
+  return 0;
+}
+function equivalentRaceMs(sourceMs,sourceMeters,targetMeters){
+  return sourceMs*Math.pow(targetMeters/sourceMeters,1.06);
+}
+function parseDurationMs(text){
+  var raw=String(text||'').trim();
+  if(!raw)return 0;
+  var parts=raw.split(':').map(Number);
+  if(parts.some(function(part){return isNaN(part);}))return 0;
+  var seconds=0;
+  if(parts.length===1)seconds=parts[0];
+  if(parts.length===2)seconds=parts[0]*60+parts[1];
+  if(parts.length===3)seconds=parts[0]*3600+parts[1]*60+parts[2];
+  return Math.round(seconds*1000);
 }
 function dateInputValue(value){
   var date=parseCalendarDate(value);
@@ -4380,6 +4486,7 @@ function saveRaceResult(){
     wind:els.raceResultWind.value,
     isPr:!isRelay&&!isField&&(best==='pb'||best==='both'),
     isSeasonBest:!isRelay&&!isField&&(best==='sb'||best==='both'),
+    useAsCurrentFitness:!isRelay&&!isField&&els.raceResultUseFitness&&els.raceResultUseFitness.checked,
     splitsJson:isRelay?JSON.stringify(relayLegs):'',
     coachRaceNotes:els.raceResultNotes.value,
     fieldAttempts:fieldAttempts,
@@ -4395,7 +4502,7 @@ function saveRaceResult(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Race result could not be saved.');
-    setRaceResultStatus('Saved '+(isRelay?(payload.relayTeamName||'relay'):(athlete.name||'athlete'))+' - '+eventName+' '+resultDisplay+'.','ok');
+    setRaceResultStatus('Saved '+(isRelay?(payload.relayTeamName||'relay'):(athlete.name||'athlete'))+' - '+eventName+' '+resultDisplay+'.'+(result.data&&result.data.currentFitnessUpdated?' Current fitness updated.':''),'ok');
     els.raceResultAthlete.value='';
     els.raceResultRelayTeam.value='';
     for(var i=1;i<=4;i+=1){
@@ -4410,6 +4517,7 @@ function saveRaceResult(){
     els.raceResultWind.value='';
     els.raceResultBest.value='none';
     els.raceResultNotes.value='';
+    updateRaceFitnessReview();
     return loadCalendar();
   }).catch(function(error){
     setRaceResultStatus(error.message||'Race result could not be saved.','bad');
@@ -4959,6 +5067,11 @@ function init(){
   els.raceResultMeet.addEventListener('change',syncRaceResultMeet);
   els.raceResultSport.addEventListener('change',syncRaceResultSport);
   els.raceResultType.addEventListener('change',syncRaceResultType);
+  ['change','input'].forEach(function(type){
+    [els.raceResultAthlete,els.raceResultEvent,els.raceResultResult,els.raceResultType].forEach(function(node){
+      if(node)node.addEventListener(type,updateRaceFitnessReview);
+    });
+  });
   els.raceResultSave.addEventListener('click',saveRaceResult);
   els.manageMeetsBtn.addEventListener('click',openMeetManager);
   els.meetManagerClose.addEventListener('click',closeMeetManager);
