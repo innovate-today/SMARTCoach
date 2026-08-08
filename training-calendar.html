@@ -652,6 +652,8 @@ var stravaActivityDetailsCache={};
 var stravaSelectedAthleteKey='';
 var stravaActivitiesLoadedAthleteKey='';
 var stravaAthleteConnections=[];
+var stravaStatusRefreshTimer=null;
+var stravaStatusRefreshUntil=0;
 var trainingGroups=[];
 var calendarMeets=[];
 var calendarMeetsLoaded=false;
@@ -1990,6 +1992,32 @@ function openStravaModal(){
 }
 function closeStravaModal(){
   if(els.stravaModal)els.stravaModal.hidden=true;
+  stopStravaStatusRefreshPoll();
+}
+function stravaModalOpen(){
+  return !!(els.stravaModal&&!els.stravaModal.hidden);
+}
+function refreshStravaStatusIfModalOpen(){
+  if(!stravaModalOpen())return Promise.resolve();
+  return loadStravaStatus();
+}
+function startStravaStatusRefreshPoll(){
+  stopStravaStatusRefreshPoll();
+  stravaStatusRefreshUntil=Date.now()+120000;
+  stravaStatusRefreshTimer=setInterval(function(){
+    if(!stravaModalOpen()||Date.now()>stravaStatusRefreshUntil){
+      stopStravaStatusRefreshPoll();
+      return;
+    }
+    loadStravaStatus();
+  },4000);
+}
+function stopStravaStatusRefreshPoll(){
+  if(stravaStatusRefreshTimer){
+    clearInterval(stravaStatusRefreshTimer);
+    stravaStatusRefreshTimer=null;
+  }
+  stravaStatusRefreshUntil=0;
 }
 function loadStravaStatus(){
   if(!els.stravaStatus)return Promise.resolve();
@@ -2113,8 +2141,9 @@ function showReturnedStravaMessage(){
 function connectStravaAccount(){
   return createStravaAthleteConnectLink().then(function(authUrl){
     if(!authUrl)return;
+    startStravaStatusRefreshPoll();
     return navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(authUrl).then(function(){
-      els.stravaStatus.textContent='Strava connect link copied. Send it to the selected athlete.';
+      els.stravaStatus.textContent='Strava connect link copied. After the athlete connects, this window will refresh the Strava status.';
       els.stravaStatus.style.color='var(--good)';
     }).catch(function(){
       els.stravaStatus.textContent='Copy this Strava connect link: '+authUrl;
@@ -2124,7 +2153,12 @@ function connectStravaAccount(){
 }
 function openStravaAthleteConnectLink(){
   return createStravaAthleteConnectLink().then(function(authUrl){
-    if(authUrl)window.open(authUrl,'_blank','noopener');
+    if(authUrl){
+      window.open(authUrl,'_blank','noopener');
+      startStravaStatusRefreshPoll();
+      els.stravaStatus.textContent='Strava connect link opened. Complete Strava authorization, then return here; SMARTCoach will refresh the connection status.';
+      els.stravaStatus.style.color='var(--muted)';
+    }
   });
 }
 function createStravaAthleteConnectLink(){
@@ -4903,6 +4937,10 @@ function init(){
   if(els.stravaConnectBtn)els.stravaConnectBtn.addEventListener('click',connectStravaAccount);
   if(els.stravaOpenConnectBtn)els.stravaOpenConnectBtn.addEventListener('click',openStravaAthleteConnectLink);
   if(els.stravaLoadActivitiesBtn)els.stravaLoadActivitiesBtn.addEventListener('click',loadStravaActivities);
+  window.addEventListener('focus',refreshStravaStatusIfModalOpen);
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden)refreshStravaStatusIfModalOpen();
+  });
   applyAdminTools();
   els.refreshBtn.addEventListener('click',loadCalendar);
   els.trainingCustomBtn.addEventListener('click',openTrainingCustomization);
