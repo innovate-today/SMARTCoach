@@ -4,6 +4,7 @@ const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME = "account_key";
 const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
+const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
 
 const handlers = {
@@ -478,7 +479,7 @@ async function accountStravaAthleteStart(req, res) {
     auth.searchParams.set("client_id", env.clientId);
     auth.searchParams.set("redirect_uri", env.redirectUri);
     auth.searchParams.set("response_type", "code");
-    auth.searchParams.set("approval_prompt", "auto");
+    auth.searchParams.set("approval_prompt", STRAVA_ATHLETE_APPROVAL_PROMPT);
     auth.searchParams.set("scope", STRAVA_REQUIRED_SCOPES);
     auth.searchParams.set("state", state);
     res.status(200).json({

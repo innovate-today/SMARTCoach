@@ -1974,6 +1974,8 @@ function checkStravaAdminTestFlow() {
     "https://www.strava.com/api/v3/athlete/activities",
     "include_all_efforts",
     "time,distance,velocity_smooth,latlng",
+    'const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";',
+    'auth.searchParams.set("approval_prompt", STRAVA_ATHLETE_APPROVAL_PROMPT);',
     "function sanitizeStravaActivityDetail(activity, streams, streamsError)",
     "function sanitizeStravaLap(lap, index)",
     "streams: sanitizeStravaStreams(streams)",
