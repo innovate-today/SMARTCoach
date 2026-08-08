@@ -600,6 +600,8 @@ function checkDashboardTrainingPaces() {
     "Equivalent Performances",
     "Fast Reps",
     "function eventDistanceMeters",
+    "'mile':1609.344",
+    "var resultMs=parseDurationMs(fitness.display)||num(fitness.resultMs);",
     "renderAthleteTrainingPaces(fitness)",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard roster detail training paces missing ${text}`);

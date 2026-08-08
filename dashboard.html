@@ -7721,7 +7721,7 @@ function renderAthleteTrainingPaces(fitness){
 function trainingPaceSource(fitness){
   if(!fitness)return null;
   var distance=eventDistanceMeters(fitness.event);
-  var resultMs=num(fitness.resultMs)||parseDurationMs(fitness.display);
+  var resultMs=parseDurationMs(fitness.display)||num(fitness.resultMs);
   if(!distance||!resultMs)return null;
   return {distanceMeters:distance,resultMs:resultMs};
 }
@@ -7730,8 +7730,8 @@ function eventDistanceMeters(event){
   var text=String(event||'').trim().toLowerCase().replace(/\s+/g,' ');
   if(!text || /relay|jump|vault|shot|discus|javelin|hammer/.test(text))return 0;
   var named={
-    '100h':100,'110h':110,'300h':300,'400h':400,'1 mile':1609.344,'1mi':1609.344,
-    '2 mile':3218.688,'2mi':3218.688,'3k':3000,'4k':4000,'5k':5000,'8k':8000,'10k':10000,
+    '100h':100,'110h':110,'300h':300,'400h':400,'1600':1600,'1600m':1600,'mile':1609.344,'1 mile':1609.344,'1mi':1609.344,
+    '3200':3200,'3200m':3200,'2 mile':3218.688,'2mi':3218.688,'3k':3000,'4k':4000,'5k':5000,'8k':8000,'10k':10000,
     '15k':15000,'half marathon':21097.5,'marathon':42195
   };
   if(named[text])return named[text];
