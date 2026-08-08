@@ -5623,9 +5623,7 @@ function fitnessCleanupRecommendation(current,latest,previous){
   if(!latest)return {label:'No recent race',detail:'No race result is available in the current dashboard data.'};
   var latestMs=parseDurationMs(latest.resultDisplay);
   var latestMeters=eventDistanceMeters(latest.event);
-  var currentMatchesLatest=String(current.event||'').toLowerCase()===String(latest.event||'').toLowerCase() &&
-    String(current.display||'')===String(latest.resultDisplay||'') &&
-    String(current.date||'')===String(latest.meetDate||'');
+  var currentMatchesLatest=fitnessCleanupCurrentMatchesRace(current,latest);
   var baseline=currentMatchesLatest&&previous?fitnessCleanupRaceFitness(previous):current;
   var source=trainingPaceSource(baseline);
   if(!source||!latestMeters||!latestMs){
@@ -5649,6 +5647,30 @@ function fitnessCleanupRaceFitness(race){
     display:race&&race.resultDisplay||'',
     resultMs:parseDurationMs(race&&race.resultDisplay||'')
   };
+}
+
+function fitnessCleanupCurrentMatchesRace(current,race){
+  var currentEvent=String(current&&current.event||'').trim().toLowerCase();
+  var raceEvent=String(race&&race.event||'').trim().toLowerCase();
+  if(!currentEvent||!raceEvent||currentEvent!==raceEvent)return false;
+  var currentDate=fitnessCleanupDateKey(current&&current.date);
+  var raceDate=fitnessCleanupDateKey(race&&race.meetDate);
+  if(currentDate&&raceDate&&currentDate!==raceDate)return false;
+  var currentMs=parseDurationMs(current&&current.display||'')||num(current&&current.resultMs);
+  var raceMs=parseDurationMs(race&&race.resultDisplay||'');
+  if(currentMs&&raceMs)return Math.abs(currentMs-raceMs)<=5000;
+  return String(current&&current.display||'').trim()===String(race&&race.resultDisplay||'').trim();
+}
+
+function fitnessCleanupDateKey(value){
+  if(!value)return '';
+  var plain=plainDateValue(value);
+  if(plain)return plain;
+  var date=value instanceof Date?value:new Date(value);
+  if(!isNaN(date.getTime())){
+    return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+  }
+  return String(value).trim().toLowerCase();
 }
 
 function renderFitnessCleanupRows(){
