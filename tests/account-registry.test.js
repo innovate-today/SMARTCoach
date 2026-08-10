@@ -277,6 +277,28 @@ async function testAttendanceMirrorItemizedStorage() {
 
       const loaded = await loadAttendanceRecords("Attendance School", { group: "CC Team" });
       assert.deepStrictEqual(loaded.map((row) => row.athleteName).sort(), ["Runner One", "Runner Two"]);
+
+      const replacementDeleteId = "2026-07-09|cross_country|cross_country|2026|cc-team|practice|a2";
+      const edited = await saveAttendanceRecords("Attendance School", [{
+        date: "2026-07-09",
+        groupId: "cc-team",
+        groupName: "CC Team",
+        sport: "Cross Country",
+        season: "Cross Country",
+        seasonYear: 2026,
+        checkpointId: "practice",
+        checkpointName: "Practice Start",
+        athleteId: "a2",
+        athleteName: "Runner Two",
+        status: "excused",
+      }], { deleteIds: [replacementDeleteId] });
+      assert.strictEqual(edited.saved, true);
+
+      const loadedAfterEdit = await loadAttendanceRecords("Attendance School", { group: "CC Team" });
+      const runnerTwo = loadedAfterEdit.find((row) => row.athleteName === "Runner Two");
+      assert.ok(runnerTwo, "same-id attendance edit should not delete the saved row");
+      assert.strictEqual(runnerTwo.status, "excused");
+
       const compactAccountSet = sets.filter((entry) => entry.key === "smartcoach:account:attendanceschool").slice(-1)[0];
       const compactAccount = JSON.parse(compactAccountSet.value);
       assert.deepStrictEqual(compactAccount.attendanceMirror, []);
