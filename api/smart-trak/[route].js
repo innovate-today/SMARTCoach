@@ -606,6 +606,7 @@ async function accountStravaActivities(req, res) {
       athlete: sanitizeStravaAthlete(connection.athlete),
       activities,
       count: activities.length,
+      registryWarning: connection.registryWarning || "",
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Strava activities could not be loaded." });
@@ -653,9 +654,11 @@ async function accountStravaAthleteActivities(req, res) {
       athlete: sanitizeStravaAthlete(connection.stravaAthlete),
       activities,
       count: activities.length,
+      registryWarning: connection.registryWarning || "",
       diagnostic: {
         rawCount: Array.isArray(data) ? data.length : 0,
         returnedCount: activities.length,
+        registryWarning: connection.registryWarning || "",
         query: {
           page: 1,
           limit,
@@ -898,10 +901,10 @@ async function activeStravaConnection(accountKey, accountRecord) {
     connected: true,
     updatedAt: new Date().toISOString(),
   });
-  await saveAccountRecord(accountKey, {
+  await saveStravaMaintenanceRecord(accountKey, {
     ...existing,
     stravaConnection: updated,
-  });
+  }, updated);
   return updated;
 }
 
@@ -936,10 +939,10 @@ async function activeStravaAthleteConnection(accountKey, accountRecord, athleteK
   if (connection.accessToken && Number.isFinite(expiresAtMs) && expiresAtMs - Date.now() > 60000) {
     if (repairedConnection) {
       const existing = (await loadExistingAccountRecord(accountKey)) || record;
-      await saveAccountRecord(accountKey, {
+      await saveStravaMaintenanceRecord(accountKey, {
         ...existing,
         stravaAthleteConnections: upsertStravaAthleteConnection(existing.stravaAthleteConnections, connection),
-      });
+      }, connection);
     }
     return connection;
   }
@@ -956,11 +959,23 @@ async function activeStravaAthleteConnection(accountKey, accountRecord, athleteK
     connected: true,
     updatedAt: new Date().toISOString(),
   });
-  await saveAccountRecord(accountKey, {
+  await saveStravaMaintenanceRecord(accountKey, {
     ...existing,
     stravaAthleteConnections: upsertStravaAthleteConnection(existing.stravaAthleteConnections, updated),
-  });
+  }, updated);
   return updated;
+}
+
+async function saveStravaMaintenanceRecord(accountKey, record, connection) {
+  try {
+    await saveAccountRecord(accountKey, record);
+    return true;
+  } catch (error) {
+    if (connection && typeof connection === "object") {
+      connection.registryWarning = "SMARTCoach loaded Strava, but could not save the refreshed Strava token. Try loading again if this athlete stops showing activities.";
+    }
+    return false;
+  }
 }
 
 function normalizeSavedStravaConnection(value) {

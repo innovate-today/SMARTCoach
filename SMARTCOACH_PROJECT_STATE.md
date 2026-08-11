@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-08-08
+Last updated: 2026-08-11
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- Strava athlete activity loading now treats token/mapping maintenance registry write failures as warnings instead of hard activity-load failures. The Training Calendar Strava modal can still load/show recent activities when Strava responds, and it displays a registry warning/diagnostic if SMARTCoach could not save a refreshed token or repaired athlete mapping. OAuth callback saves are still strict so SMARTCoach does not falsely confirm a new athlete connection unless the connection was actually saved. Regression coverage was updated. Coach how-to and What's New were not updated because Strava remains a private beta/admin-only feature.
 - Current-fitness updates from race results now require explicit coach approval. Dashboard and Training Calendar Log Race Result show a Current Fitness Review with the athlete's current mark, a projected time for the new race distance, the new result, and a checkbox to use the race as current fitness for training paces. The backend only updates `last_result_display` / `last_result_date` when that checkbox is sent, while PB/SB can still be saved independently. Dashboard, Athlete Setup data APIs, athlete-best rows, and the SMARTCoach phone app now treat only explicit `last_result_display` as current fitness instead of silently falling back to PB/SB. Coach how-to and regression coverage were updated. What's New is pending user approval.
 - Strava athlete connect-link usability follow-up: athlete-specific Strava OAuth links now use Strava's forced approval prompt so the athlete is more likely to see/confirm the signed-in Strava account instead of silently reusing the browser's current Strava login. This works together with the backend name-mismatch guard, which still rejects a wrong signed-in profile such as Vanessa being returned for Adeline. Regression coverage was updated. Coach how-to and What's New were not updated because Strava remains a private beta/admin-only feature.
 - Strava athlete connection mismatch follow-up: the backend callback now rejects athlete OAuth connections when Strava returns a signed-in profile whose name does not match the selected SMART Trak athlete, and also rejects token responses without a reusable refresh token. This prevents a browser already logged into the wrong Strava account from saving that profile under another athlete and then sending the athlete to a misleading `stravaConfirmed=1` success page. The error redirect tells the athlete to sign out of Strava or switch accounts and open a new SMARTCoach Strava link. Regression coverage was updated. Coach how-to and What's New were not updated because Strava remains a private beta/admin-only feature.
