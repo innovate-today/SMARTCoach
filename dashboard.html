@@ -8240,9 +8240,12 @@ function recentTrainingHtml(row){
 function targetReviewHtml(row){
   var reviewRow=targetReviewRow(row);
   var repPaces=repPaceReviewHtml(reviewRow)||repPaceDetailsHtml(reviewRow);
-  if(!reviewRow.plannedTarget&&!reviewRow.targetDifference&&!reviewRow.plannedEffort&&!repPaces)return '<span class="muted">No target saved</span>';
-  var reviewTitle=reviewRow.plannedTarget||(repPaces?'Actual rep paces':'Target saved');
   var chips=splitTargetChipsHtml(reviewRow);
+  if(!reviewRow.plannedTarget&&!reviewRow.targetDifference&&!reviewRow.plannedEffort&&!repPaces){
+    if(chips&&shouldShowUntargetedSplitReview(reviewRow))return mainLine('Actual rep/rest times')+chips;
+    return '<span class="muted">No target saved</span>';
+  }
+  var reviewTitle=reviewRow.plannedTarget||(repPaces?'Actual rep paces':'Target saved');
   if(chips){
     return mainLine(reviewTitle)+chips+repPaces+
       subLine([reviewRow.plannedEffort,reviewRow.weather?'Weather: '+reviewRow.weather:''].filter(Boolean).join(' · '));
@@ -8254,7 +8257,13 @@ function targetReviewHtml(row){
 
 function targetReviewText(row){
   var reviewRow=targetReviewRow(row);
-  return [reviewRow.plannedTarget,targetDifferenceText(reviewRow)||reviewRow.targetDifference,repPaceSummaryText(reviewRow),reviewRow.plannedEffort].filter(Boolean).join(' · ');
+  var summary=[reviewRow.plannedTarget,targetDifferenceText(reviewRow)||reviewRow.targetDifference,repPaceSummaryText(reviewRow),reviewRow.plannedEffort].filter(Boolean).join(' · ');
+  if(summary)return summary;
+  if(shouldShowUntargetedSplitReview(reviewRow)){
+    var splits=splitReviewLines(reviewRow);
+    return ['Actual rep/rest times'].concat(splits).join(' · ');
+  }
+  return '';
 }
 
 function targetReviewRow(row){
@@ -8823,6 +8832,15 @@ function splitTargetChipsHtml(row){
     return '<span class="splitchip '+esc(status)+'">'+esc(label+' '+time)+'</span>';
   });
   return chips.length?'<div class="splitchips">'+chips.join('')+'</div>':'';
+}
+
+function shouldShowUntargetedSplitReview(row){
+  var splits=parseSplitLines(row&&row.splitsText);
+  if(!splits.length)return false;
+  return splits.some(function(split,index){
+    var kind=splitKind(row,index,splits);
+    return kind==='work'||kind==='rep'||kind==='recovery'||kind==='rest';
+  });
 }
 
 function cleanSplitTimeForLabel(label,time){

@@ -79,6 +79,8 @@ When correcting a saved workout with reps or rest times, use **Reps / Rest Times
 
 Imported Strava rep/rest rows show as clean rep and rest times in the correction window.
 
+If a completed quality workout has saved rep/rest times but no saved target, Completed Workouts still shows those actual rep/rest times in **Target Review**. If a target is saved, SMART Trak compares the reps against that target.
+
 For timed workouts where the athlete's watch has pace for each segment, use **Actual Rep Paces** in the correction window. Enter one pace per line, such as `Rep 1 work pace: 6:15 /mi` and `Rep 1 recovery pace: 8:42 /mi`. Completed Workouts shows an **Actual vs Target** review so the coach can compare each work rep pace to the saved target pace range. Recovery paces are saved for review but are not graded against the work target.
 
 If a workout has actual rep paces but no saved target, Completed Workouts still shows those paces under **Actual rep paces** so you can review the rep data later.

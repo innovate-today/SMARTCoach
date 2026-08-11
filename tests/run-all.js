@@ -2141,6 +2141,9 @@ function checkStravaAdminTestFlow() {
   if (!guide.includes("Actual rep paces")) {
     throw new Error("Coach guide should mention ungraded actual rep paces");
   }
+  if (!guide.includes("actual rep/rest times")) {
+    throw new Error("Coach guide should mention ungraded actual rep/rest times");
+  }
   console.log("Strava admin test flow ok");
 }
 
@@ -3348,6 +3351,8 @@ function checkDashboardPlainLapSplitsStayLaps() {
     "function hasRepRestPattern(row)",
     "if(!hasRepRestPattern(row)||splits.length<2)return 'lap';",
     "return /\\b\\d+(?:\\s*[-–]\\s*\\d+)?\\s*(?:x|×)\\s*\\d/.test(text) && /(recover|recovery|rest|jog|walk)/.test(text);",
+    "function shouldShowUntargetedSplitReview(row)",
+    "return mainLine('Actual rep/rest times')+chips;",
   ];
   const requiredApi = [
     "function hasRepRestPattern(row)",
