@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1786479000000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1786479600000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1786479000000 -->
-<!-- v1786479000000 -->
+<!-- build:1786479600000 -->
+<!-- v1786479600000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -5516,7 +5516,7 @@ function rHTML(r){
   var partner=partnerStations[0]||null;
   var partnerButtons=partnerStations.map(function(station){return partnerMarkButtonHtml(r,station);}).join('');
   var partnerButton=partnerButtons?'<div class="partner-mark-group">'+partnerButtons+'</div>':'';
-  var normalButtons=partnerButton||('<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+runnerLapButtonClass(r)+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">'+ex(lapButtonLabel(r))+'</button>'+
+  var normalButtons=partnerButton||('<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+runnerLapButtonClass(r)+'"'+runnerLapButtonStyle(r)+' id="lapb-'+r.id+'" onclick="doLap('+r.id+')">'+ex(lapButtonLabel(r))+'</button>'+
         '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>');
   var totalText=partner?partnerRunnerClockText(r):fmt(ge(r));
   var rowRunning=r.on||(partner&&partnerRunnerClockLive(r));
@@ -6651,6 +6651,14 @@ function runnerLapButtonClass(r){
   return'';
 }
 
+function runnerLapButtonStyle(r){
+  if(!r||!r.on||!(CL&&CL.cfg&&CL.cfg.laps))return'';
+  var label=lapButtonLabel(r);
+  if(label==='End Rep')return' style="background:#dc2626;border-color:#dc2626;color:#fff"';
+  if(label==='End Rest')return' style="background:#16a34a;border-color:#16a34a;color:#fff"';
+  return'';
+}
+
 function updateRunnerLapButton(btn,r){
   if(!btn)return;
   var visible=!!(r&&r.on&&CL&&CL.cfg&&CL.cfg.laps);
@@ -6658,6 +6666,19 @@ function updateRunnerLapButton(btn,r){
   btn.classList.toggle('vis',visible);
   btn.classList.toggle('rep-action',visible&&label==='End Rep');
   btn.classList.toggle('rest-action',visible&&label==='End Rest');
+  if(visible&&label==='End Rep'){
+    btn.style.backgroundColor='#dc2626';
+    btn.style.borderColor='#dc2626';
+    btn.style.color='#fff';
+  }else if(visible&&label==='End Rest'){
+    btn.style.backgroundColor='#16a34a';
+    btn.style.borderColor='#16a34a';
+    btn.style.color='#fff';
+  }else{
+    btn.style.backgroundColor='';
+    btn.style.borderColor='';
+    btn.style.color='';
+  }
   btn.textContent=label;
 }
 
