@@ -3574,8 +3574,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1784845175002"',
-    "<!-- build:1784845175002 -->",
+    'meta name="app-version" content="1786479000000"',
+    "<!-- build:1786479000000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -3702,6 +3702,23 @@ function checkMobileFieldEventCaptureControls() {
     if (!mobile.includes(text)) throw new Error(`mobile field event capture control missing ${text}`);
   });
   console.log("mobile field event capture controls ok");
+}
+
+function checkMobileIndividualLapButtonCues() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    ".lapbtn.rep-action{background:#dc2626;border-color:#dc2626;color:#fff}",
+    ".lapbtn.rest-action{background:#16a34a;border-color:#16a34a;color:#fff}",
+    "function runnerLapButtonClass(r)",
+    "function updateRunnerLapButton(btn,r)",
+    "runnerLapButtonClass(r)+'\" id=\"lapb-'",
+    "updateRunnerLapButton(lb,r);",
+    "updateRunnerLapButton(lapBtn,r);",
+    ".bb.lapall{background:#fff;color:#102a70}",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile individual lap button cue missing ${text}`);
+  });
+  console.log("mobile individual lap button color cues ok");
 }
 
 function checkKeepTrakFeature() {
@@ -4755,6 +4772,7 @@ checkEquipmentIssueSheetStickyHeader();
 checkEquipmentCoachIssued();
 checkFieldNoMarkResultsAllowed();
 checkMobileFieldEventCaptureControls();
+checkMobileIndividualLapButtonCues();
 checkKeepTrakFeature();
 checkAttendanceCheckpointMarkAll();
 checkAttendanceMobileSummary();

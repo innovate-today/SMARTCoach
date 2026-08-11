@@ -840,6 +840,8 @@ How to use it:
 8. Tap **Stop** when the athlete or group is finished.
 9. Sync to SMART Trak after the workout.
 
+On an individual athlete row, **End Rep** is red and **End Rest** is green so it is easier to see which action is next during practice. The large bottom button still controls the whole group.
+
 The app can still capture splits even if the coach hides splits on the detail line.
 Use the red **X** on a runner row only to remove that athlete from the current timing session. It does not remove the athlete from the saved training group roster. Manage permanent group membership from Athlete Setup in SMART Trak.
 

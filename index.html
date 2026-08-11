@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1784845175002"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1786479000000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1784845175002 -->
-<!-- v1784845175002 -->
+<!-- build:1786479000000 -->
+<!-- v1786479000000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -61,7 +61,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .sbtn:active{opacity:.7}
 .lapbtn{background:var(--W);border:2.5px solid #555;color:#333;border-radius:12px;font-size:17px;font-weight:700;padding:9px 14px;cursor:pointer;font-family:inherit;-webkit-appearance:none;user-select:none;display:none}
 .lapbtn.vis{display:inline-block}
+.lapbtn.rep-action{background:#dc2626;border-color:#dc2626;color:#fff}
+.lapbtn.rest-action{background:#16a34a;border-color:#16a34a;color:#fff}
 .lapbtn:active{background:#eee}
+.lapbtn.rep-action:active{background:#b91c1c}
+.lapbtn.rest-action:active{background:#15803d}
 
 /* BIG BTNS */
 .bigbtns{display:flex;gap:10px;padding:10px 12px;flex-shrink:0;background:var(--B)}
@@ -5512,7 +5516,7 @@ function rHTML(r){
   var partner=partnerStations[0]||null;
   var partnerButtons=partnerStations.map(function(station){return partnerMarkButtonHtml(r,station);}).join('');
   var partnerButton=partnerButtons?'<div class="partner-mark-group">'+partnerButtons+'</div>':'';
-  var normalButtons=partnerButton||('<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">'+ex(lapButtonLabel(r))+'</button>'+
+  var normalButtons=partnerButton||('<button class="lapbtn'+(r.on&&CL.cfg.laps?' vis':'')+runnerLapButtonClass(r)+'" id="lapb-'+r.id+'" onclick="doLap('+r.id+')">'+ex(lapButtonLabel(r))+'</button>'+
         '<button class="sbtn'+(r.on?' on':'')+'" id="sb-'+r.id+'" onclick="togR('+r.id+')">'+(r.on?'Stop':'Start')+'</button>');
   var totalText=partner?partnerRunnerClockText(r):fmt(ge(r));
   var rowRunning=r.on||(partner&&partnerRunnerClockLive(r));
@@ -6463,7 +6467,7 @@ function updateRunnerControls(r){
   var ltEl=row.querySelector('.rlaptime');if(ltEl)ltEl.textContent=r.on?fmt(gle(r)):'';
   var sb=row.querySelector('.sbtn');if(sb){sb.textContent=r.on?'Stop':'Start';sb.classList.toggle('on',!!r.on);}
   var lb=row.querySelector('.lapbtn');
-  if(lb){lb.classList.toggle('vis',!!(r.on&&CL.cfg.laps));lb.textContent=lapButtonLabel(r);}
+  updateRunnerLapButton(lb,r);
   updateSegmentBadge(r);
 }
 
@@ -6606,7 +6610,7 @@ function recordRunnerLap(r,n){
   var lapEl=document.getElementById('rl-'+r.id);
   if(lapEl&&CL.cfg.laps&&CL.cfg.splits)lapEl.innerHTML=lapSummaryHtml(r);
   var lapBtn=document.getElementById('lapb-'+r.id);
-  if(lapBtn)lapBtn.textContent=lapButtonLabel(r);
+  updateRunnerLapButton(lapBtn,r);
   updateSegmentBadge(r);
   updateMasterLapButton();
 }
@@ -6637,6 +6641,24 @@ function lapButtonLabel(r){
   if(!planHasRecovery(plan))return'Lap';
   var meta=splitMeta(plan,(r&&r.laps?r.laps.length:0));
   return meta.kind==='rest'?'End Rest':'End Rep';
+}
+
+function runnerLapButtonClass(r){
+  if(!r||!r.on||!(CL&&CL.cfg&&CL.cfg.laps))return'';
+  var label=lapButtonLabel(r);
+  if(label==='End Rep')return' rep-action';
+  if(label==='End Rest')return' rest-action';
+  return'';
+}
+
+function updateRunnerLapButton(btn,r){
+  if(!btn)return;
+  var visible=!!(r&&r.on&&CL&&CL.cfg&&CL.cfg.laps);
+  var label=lapButtonLabel(r);
+  btn.classList.toggle('vis',visible);
+  btn.classList.toggle('rep-action',visible&&label==='End Rep');
+  btn.classList.toggle('rest-action',visible&&label==='End Rest');
+  btn.textContent=label;
 }
 
 function currentSegmentLabel(r){
