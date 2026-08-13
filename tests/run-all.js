@@ -401,6 +401,40 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
   console.log("SMART Trak athlete counts ignore GHL contacts ok");
 }
 
+function checkAthleteRosterImportParentFields() {
+  const athletesPage = fs.readFileSync("athletes.html", "utf8");
+  const athletesApi = fs.readFileSync("api/ghl/athletes.js", "utf8");
+  [
+    "gender program",
+    "parent guardian 1 email",
+    "parent/guardian 1 email",
+    "parent 1 email",
+    "mother email",
+    "father email",
+    "second guardian email",
+    "parent 2 email",
+    "class of",
+    "function importValue(row,keys){for(var i=0;i<keys.length;i++){var key=importKey(keys[i]);",
+  ].forEach((text) => {
+    if (!athletesPage.includes(text)) throw new Error(`Athlete roster import must recognize common roster heading: ${text}`);
+  });
+  [
+    "gender program",
+    "parent guardian 1 email",
+    "parent/guardian 1 email",
+    "parent 1 email",
+    "mother email",
+    "father email",
+    "parent guardian 2 email",
+    "parent/guardian 2 email",
+    "parent 2 email",
+    "class of",
+  ].forEach((text) => {
+    if (!athletesApi.includes(text)) throw new Error(`Athlete API field aliases must recognize common roster field: ${text}`);
+  });
+  console.log("Athlete roster import parent fields ok");
+}
+
 function checkInactiveAthletesStayOutOfCurrentViews() {
   const athletes = fs.readFileSync("athletes.html", "utf8");
   const dashboard = fs.readFileSync("api/ghl/dashboard.js", "utf8");
@@ -4726,6 +4760,7 @@ checkOnboardingSubscriberPlanLoad();
 checkAdminAccountCleanup();
 checkAccountOwnerExcludedFromAthletes();
 checkSmartTrakAthleteCountsIgnoreGhlContacts();
+checkAthleteRosterImportParentFields();
 checkInactiveAthletesStayOutOfCurrentViews();
 checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();

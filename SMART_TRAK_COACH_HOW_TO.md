@@ -230,6 +230,8 @@ How to use it:
 
 Use **Class Year** instead of grade so the coach does not have to update every athlete each school year.
 
+When importing a roster, include a header row. SMART Trak can read common headings such as name, first name, last name, gender, class year, graduation year, athlete email, parent/guardian name, parent/guardian email, parent/guardian phone, and second parent/guardian fields. After the import finishes, open one athlete and spot-check the gender, class year, and parent contact details.
+
 ## Attendance Trak
 
 Use Attendance Trak to track daily practice attendance, late arrivals, meet-day checkouts, excused absences, unexcused absences, and checkpoint attendance such as weight room attendance after practice.

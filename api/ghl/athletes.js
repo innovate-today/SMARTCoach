@@ -11,14 +11,14 @@ const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../li
 const ATHLETE_FIELD_ALIASES = {
   smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
   smartcoachAthleteId: ["smartcoach athlete id", "smartcoach_athlete_id", "athlete id", "smartcoach id"],
-  gender: ["gender", "sex", "division"],
-  grade: ["graduation year", "graduation_year", "grad year", "class year", "class_year", "class", "grade"],
-  parentGuardianName: ["parent_guardian_name", "parent guardian name", "parent/guardian name", "guardian name", "parent name"],
-  parentGuardianEmail: ["parent_guardian_email", "parent guardian email", "parent/guardian email", "guardian email", "parent email"],
-  parentGuardianPhone: ["parent_guardian_phone", "parent guardian phone", "parent/guardian phone", "guardian phone", "parent phone"],
-  parentGuardian2Name: ["parent_guardian_2_name", "parent guardian 2 name", "parent/guardian 2 name", "guardian 2 name", "second parent name"],
-  parentGuardian2Email: ["parent_guardian_2_email", "parent guardian 2 email", "parent/guardian 2 email", "guardian 2 email", "second parent email"],
-  parentGuardian2Phone: ["parent_guardian_2_phone", "parent guardian 2 phone", "parent/guardian 2 phone", "guardian 2 phone", "second parent phone"],
+  gender: ["gender", "sex", "division", "gender program", "program gender", "boy girl", "boys girls", "male female"],
+  grade: ["graduation year", "graduation_year", "grad year", "grad yr", "class year", "class_year", "class of", "school year", "year", "class", "grade"],
+  parentGuardianName: ["parent_guardian_name", "parent guardian name", "parent/guardian name", "parent guardian 1 name", "parent/guardian 1 name", "guardian name", "guardian 1 name", "parent name", "parent 1 name", "primary parent name", "primary guardian name", "mother name", "father name"],
+  parentGuardianEmail: ["parent_guardian_email", "parent guardian email", "parent/guardian email", "parent guardian 1 email", "parent/guardian 1 email", "guardian email", "guardian 1 email", "parent email", "parent emails", "parent 1 email", "primary parent email", "primary guardian email", "mother email", "father email"],
+  parentGuardianPhone: ["parent_guardian_phone", "parent guardian phone", "parent/guardian phone", "parent guardian 1 phone", "parent/guardian 1 phone", "guardian phone", "guardian 1 phone", "parent phone", "parent 1 phone", "primary parent phone", "primary guardian phone", "mother phone", "father phone"],
+  parentGuardian2Name: ["parent_guardian_2_name", "parent guardian 2 name", "parent/guardian 2 name", "guardian 2 name", "second parent name", "second guardian name", "parent 2 name", "other parent name", "other guardian name"],
+  parentGuardian2Email: ["parent_guardian_2_email", "parent guardian 2 email", "parent/guardian 2 email", "guardian 2 email", "second parent email", "second guardian email", "parent 2 email", "other parent email", "other guardian email"],
+  parentGuardian2Phone: ["parent_guardian_2_phone", "parent guardian 2 phone", "parent/guardian 2 phone", "guardian 2 phone", "second parent phone", "second guardian phone", "parent 2 phone", "other parent phone", "other guardian phone"],
   coachNotes: ["smartcoach_notes", "smartcoach athlete notes", "coach notes", "notes"],
 };
 
