@@ -545,7 +545,7 @@ function existingCustomFieldValueByName(contact, names) {
       item.field_name,
       item.label,
     ].map(normalizeFieldLabel);
-    return labels.some((label) => wanted.includes(label) || wanted.includes(label.split(".").pop()));
+    return labels.some((label) => contactFieldLabelMatches(label, wanted));
   });
   return field ? fieldValue(field) : "";
 }
@@ -563,8 +563,13 @@ function matchingContactFieldIds(fields, names) {
       field.field_name,
       field.label,
     ].map(normalizeFieldLabel);
-    return labels.some((label) => wanted.includes(label) || wanted.includes(label.split(".").pop()));
+    return labels.some((label) => contactFieldLabelMatches(label, wanted));
   }).map((field) => clean(field.id || field.fieldId || field.customFieldId)).filter(Boolean);
+}
+
+function contactFieldLabelMatches(label, wanted) {
+  if (!label) return false;
+  return wanted.some((target) => label === target || label.endsWith(`_${target}`));
 }
 
 function isActiveValue(value) {

@@ -411,6 +411,9 @@ function checkAthleteRosterImportParentFields() {
     "parent 1 email",
     "parent email address",
     "parentGuardian2Name:importParentName",
+    "groupName:importValue",
+    "function syncImportedGroup",
+    "friendlyApiError(error)",
     "function importValueMatching",
     "value==='g'",
     "student gender",
@@ -439,6 +442,8 @@ function checkAthleteRosterImportParentFields() {
     "parent/guardian 2 email",
     "parent 2 email",
     "class of",
+    "function contactFieldLabelMatches",
+    "label.endsWith(`_${target}`)",
   ].forEach((text) => {
     if (!athletesApi.includes(text)) throw new Error(`Athlete API field aliases must recognize common roster field: ${text}`);
   });
