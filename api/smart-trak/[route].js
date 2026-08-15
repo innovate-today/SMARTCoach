@@ -33,7 +33,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -3179,8 +3179,9 @@ async function accountMilesBoard(req, res) {
     res.status(500).json({ error: "Miles Board is not available." });
     return;
   }
+  const groupsState = await loadAccountGroupsState(accountKey, existing.record);
   req.milesBoardSharing = sharing;
-  req.milesBoardAthleteKeys = milesBoardAthleteKeysForGroups(existing.record && existing.record.smartcoachGroups, sharing.groupNames);
+  req.milesBoardAthleteKeys = milesBoardAthleteKeysForGroups(groupsState, sharing.groupNames);
   req.milesBoardSnapshots = normalizeMilesBoardSnapshots(existing.record && existing.record.milesBoardSnapshots);
   if (share.start && req.query && !firstQueryValue(req.query.start)) req.query.start = share.start;
   if (share.end && req.query && !firstQueryValue(req.query.end)) req.query.end = share.end;
@@ -3663,6 +3664,14 @@ function milesBoardAthleteKeysForGroups(groupsState, groupNames) {
     });
   });
   return Array.from(keys);
+}
+
+async function loadAccountGroupsState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, "groups").catch(() => null);
+  if (scoped && scoped.record && typeof scoped.record === "object") {
+    return scoped.record;
+  }
+  return accountRecord && accountRecord.smartcoachGroups || null;
 }
 
 function normalizeMilesBoardGameSettings(source) {

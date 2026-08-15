@@ -4117,6 +4117,8 @@ function checkMobileGroupStorageAccountScoped() {
   });
   [
     "function mergeGroups(existingGroups, incomingGroups, deleteGroupIds)",
+    "loadAccountScopedRecord(accountKey, \"groups\")",
+    "saveAccountScopedRecord(accountKey, \"groups\", { groups, updatedAt })",
     "const existingState = await loadGroupsState({ token, locationId, accountKey });",
     "const groups = mergeGroups(existingState.groups, incomingGroups, deleteGroupIds);",
     "function groupNameKey(group)",
