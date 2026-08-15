@@ -2200,12 +2200,38 @@ function checkCrossCountryRaceResultEvents() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const expected = "var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];";
+  const raceOtherTokens = [
+    'id="raceResultOtherDistanceWrap"',
+    'id="raceResultOtherDistance"',
+    'id="raceResultOtherUnit"',
+    "function raceResultEventName",
+    "function raceEventFromDistance",
+    "Enter the race distance and unit.",
+    "mile|miles|mi",
+  ];
   [dashboard, calendar].forEach((html, index) => {
     const page = index === 0 ? "Dashboard" : "Training Calendar";
     if (!html.includes(expected)) throw new Error(`${page} missing full Cross Country race-result event list.`);
     if (!html.includes("sport==='cross_country'?[''].concat(CROSS_COUNTRY_RACE_EVENT_OPTIONS)")) {
       throw new Error(`${page} race-result dropdown must use the full Cross Country event list.`);
     }
+    raceOtherTokens.forEach((text) => {
+      if (!html.includes(text)) throw new Error(`${page} race-result custom distance missing ${text}`);
+    });
+  });
+  if (!dashboard.includes("type==='field'?[''].concat(FIELD_EVENT_OPTIONS):(sport==='cross_country'?[''].concat(CROSS_COUNTRY_RACE_EVENT_OPTIONS):[''].concat(MEET_EVENT_OPTIONS))")) {
+    throw new Error("Dashboard track race-result dropdown must keep Other available for custom distances.");
+  }
+  if (!calendar.includes("'Half Marathon','Marathon','Other'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS)")) {
+    throw new Error("Training Calendar track race-result dropdown must keep Other available for custom distances.");
+  }
+  [
+    'id="meetCorrectionOtherDistanceWrap"',
+    'id="meetCorrectionOtherDistance"',
+    'id="meetCorrectionOtherUnit"',
+    "function meetCorrectionEventName",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Dashboard meet correction custom distance missing ${text}`);
   });
   console.log("Cross Country race result events ok");
 }

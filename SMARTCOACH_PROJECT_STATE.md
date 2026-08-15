@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-08-14
+Last updated: 2026-08-15
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- Meet result race-distance entry now supports custom **Other** distances in Dashboard **Log Race Result**, Training Calendar **Log Race Result**, and Dashboard **Correct Meet Result**. Coaches enter distance/unit and SMART Trak saves labels such as `3 Mile`, `3K`, or `3000m`; current-fitness projections recognize custom mile labels. Coach how-to and regression coverage were updated. What's New was not updated per user instruction.
 - Training Groups save reliability follow-up: SMART Trak group saves now use a compact account-scoped registry record instead of rewriting the full account registry record on every save. The Groups API still merges desktop/phone saves, still falls back to older `smartcoachGroups` records, and Athlete Calendar plus Miles Board group filtering now read the scoped group store first. This fixes Training Groups saves that could show `Account registry request failed` even though the selected athletes and group payload were valid. Regression coverage was updated. Coach how-to was not changed because the group workflow did not change. What's New is pending user approval.
 - SMART Trak athlete roster import now targets the full Edit Athlete field set: first name, last name, gender, class year, athlete email, group, active status, parent name/email/phone, second parent name/email/phone, and notes. The import template includes `group`, imported group names are matched to saved active SMART Trak groups after the athlete record is saved, and the import status now surfaces row errors or missing group names instead of silently counting failures. The athlete backend field matching now also recognizes CRM-prefixed contact custom-field keys such as `contact_parent_guardian_email`, so imported gender and parent fields can save/reload through accounts whose custom fields use those keys. Coach how-to and regression coverage were updated. What's New is pending user approval.
 - SMART Trak roster import follow-up: athlete imports now recognize more common roster headings for gender and parent contact details, including `B`/`G` gender values, `email address` parent headers, and parent names split into first/last columns. The athlete save/reload backend aliases were widened for the same gender and parent field names, and regression coverage was updated. Coaches should re-import or update affected athletes from the source roster because already-created athlete records cannot recover parent/gender values that were never sent in the original import. Coach how-to was updated; What's New was not updated per prior user instruction.

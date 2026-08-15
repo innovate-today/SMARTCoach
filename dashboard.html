@@ -178,6 +178,7 @@ tr:last-child td{border-bottom:0}
 .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .field{display:grid;gap:5px}
 .field.full{grid-column:1/-1}
+.distancepair{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px}
 .fitness-review{grid-column:1/-1;border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:12px}
 .fitness-review h3{margin:0 0 8px;font-size:14px}
 .fitness-review-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
@@ -1090,6 +1091,17 @@ tr:last-child td{border-bottom:0}
             <option value="5K">5K</option>
           </select>
         </div>
+        <div class="field" id="raceResultOtherDistanceWrap" hidden>
+          <label for="raceResultOtherDistance">Race Distance <span class="fieldinfo info-left" tabindex="0" data-tip="Use this when the race distance is not listed.">i</span></label>
+          <div class="distancepair">
+            <input id="raceResultOtherDistance" type="number" min="0" step="0.01" placeholder="Example: 3">
+            <select id="raceResultOtherUnit" aria-label="Race distance unit">
+              <option value="mi">mi</option>
+              <option value="km">km</option>
+              <option value="m">m</option>
+            </select>
+          </div>
+        </div>
         <div class="relaylegs" id="raceResultRelayLegs" hidden>
           <h3>Relay Splits</h3>
           <div class="relayleg"><select id="raceResultRelayName1"><option value="">Runner 1</option></select><input id="raceResultRelaySplit1" type="text" placeholder="Split"></div>
@@ -1181,6 +1193,17 @@ tr:last-child td{border-bottom:0}
             <option>Special Endurance I</option>
             <option>Special Endurance II</option>
           </select>
+        </div>
+        <div class="field" id="meetCorrectionOtherDistanceWrap" hidden>
+          <label for="meetCorrectionOtherDistance">Race Distance <span class="fieldinfo info-left" tabindex="0" data-tip="Use this when the race distance is not listed.">i</span></label>
+          <div class="distancepair">
+            <input id="meetCorrectionOtherDistance" type="number" min="0" step="0.01" placeholder="Example: 3">
+            <select id="meetCorrectionOtherUnit" aria-label="Race distance unit">
+              <option value="mi">mi</option>
+              <option value="km">km</option>
+              <option value="m">m</option>
+            </select>
+          </div>
         </div>
         <div class="field">
           <label for="correctionSeason">Season</label>
@@ -2901,6 +2924,9 @@ var els={
   raceResultAttempts:document.getElementById('raceResultAttempts'),
   raceResultVideo:document.getElementById('raceResultVideo'),
   raceResultEvent:document.getElementById('raceResultEvent'),
+  raceResultOtherDistanceWrap:document.getElementById('raceResultOtherDistanceWrap'),
+  raceResultOtherDistance:document.getElementById('raceResultOtherDistance'),
+  raceResultOtherUnit:document.getElementById('raceResultOtherUnit'),
   raceResultResult:document.getElementById('raceResultResult'),
   raceResultWind:document.getElementById('raceResultWind'),
   raceResultBest:document.getElementById('raceResultBest'),
@@ -2943,6 +2969,9 @@ var els={
   meetCorrectionSeason:document.getElementById('meetCorrectionSeason'),
   meetCorrectionSeasonYear:document.getElementById('meetCorrectionSeasonYear'),
   meetCorrectionEvent:document.getElementById('meetCorrectionEvent'),
+  meetCorrectionOtherDistanceWrap:document.getElementById('meetCorrectionOtherDistanceWrap'),
+  meetCorrectionOtherDistance:document.getElementById('meetCorrectionOtherDistance'),
+  meetCorrectionOtherUnit:document.getElementById('meetCorrectionOtherUnit'),
   meetCorrectionRelayFields:document.getElementById('meetCorrectionRelayFields'),
   meetCorrectionRelayTeamWrap:document.getElementById('meetCorrectionRelayTeamWrap'),
   meetCorrectionRelayTeam:document.getElementById('meetCorrectionRelayTeam'),
@@ -3308,7 +3337,7 @@ els.raceResultMeet.addEventListener('change',syncRaceResultMeet);
 els.raceResultSport.addEventListener('change',syncRaceResultSport);
 if(els.raceResultType)els.raceResultType.addEventListener('change',syncRaceResultType);
 ['change','input'].forEach(function(type){
-  [els.raceResultAthlete,els.raceResultEvent,els.raceResultResult,els.raceResultType].forEach(function(node){
+  [els.raceResultAthlete,els.raceResultEvent,els.raceResultOtherDistance,els.raceResultOtherUnit,els.raceResultResult,els.raceResultType].forEach(function(node){
     if(node)node.addEventListener(type,updateRaceFitnessReview);
   });
 });
@@ -3318,6 +3347,10 @@ els.correctionSave.addEventListener('click',saveCorrection);
 els.meetCorrectionClose.addEventListener('click',closeMeetCorrectionModal);
 els.meetCorrectionSave.addEventListener('click',saveMeetCorrection);
 els.meetCorrectionEvent.addEventListener('change',syncMeetCorrectionRelayFields);
+[els.meetCorrectionOtherDistance,els.meetCorrectionOtherUnit].forEach(function(node){
+  if(node)node.addEventListener('input',syncMeetCorrectionRelayFields);
+  if(node)node.addEventListener('change',syncMeetCorrectionRelayFields);
+});
 els.voidClose.addEventListener('click',closeVoidModal);
 els.voidSave.addEventListener('click',saveVoidRecord);
 els.meetManagerClose.addEventListener('click',closeMeetManager);
@@ -5802,16 +5835,66 @@ function syncRaceResultMeet(){
   }
 }
 
+function cleanRaceDistanceNumber(value){
+  var raw=String(value||'').trim();
+  if(!raw)return '';
+  var parsed=Number(raw);
+  if(!isFinite(parsed)||parsed<=0)return '';
+  return String(parsed).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1');
+}
+
+function raceEventFromDistance(value,unit){
+  var numberText=cleanRaceDistanceNumber(value);
+  if(!numberText)return '';
+  unit=String(unit||'mi').toLowerCase();
+  if(unit==='km')return numberText+'K';
+  if(unit==='m')return numberText+'m';
+  return numberText+' Mile';
+}
+
+function parseRaceEventDistance(eventName){
+  var text=String(eventName||'').trim();
+  var miles=text.match(/^(\d+(?:\.\d+)?)\s*(mile|miles|mi)$/i);
+  if(miles)return {value:miles[1],unit:'mi'};
+  var km=text.match(/^(\d+(?:\.\d+)?)\s*(k|km)$/i);
+  if(km)return {value:km[1],unit:'km'};
+  var meters=text.match(/^(\d+(?:\.\d+)?)\s*m$/i);
+  if(meters)return {value:meters[1],unit:'m'};
+  return null;
+}
+
+function syncRaceResultOtherDistance(){
+  if(!els.raceResultOtherDistanceWrap)return;
+  var type=els.raceResultType&&els.raceResultType.value||'individual';
+  var show=type==='individual'&&String(els.raceResultEvent&&els.raceResultEvent.value||'')==='Other';
+  els.raceResultOtherDistanceWrap.hidden=!show;
+}
+
+function raceResultEventName(){
+  var selected=String(els.raceResultEvent&&els.raceResultEvent.value||'').trim();
+  if(selected!=='Other')return selected;
+  return raceEventFromDistance(els.raceResultOtherDistance&&els.raceResultOtherDistance.value,els.raceResultOtherUnit&&els.raceResultOtherUnit.value);
+}
+
+function requireRaceResultEventName(){
+  var eventName=raceResultEventName();
+  if(eventName)return eventName;
+  if(String(els.raceResultEvent&&els.raceResultEvent.value||'')==='Other')setRaceResultStatus('Enter the race distance and unit.','bad');
+  else setRaceResultStatus('Select an event.','bad');
+  return '';
+}
+
 function syncRaceResultSport(){
   if(!els.raceResultEvent)return;
   var current=els.raceResultEvent.value;
   var sport=els.raceResultSport.value||'track';
   var type=els.raceResultType&&els.raceResultType.value||'individual';
-  var events=type==='relay'?[''].concat(RELAY_EVENT_OPTIONS):type==='field'?[''].concat(FIELD_EVENT_OPTIONS):(sport==='cross_country'?[''].concat(CROSS_COUNTRY_RACE_EVENT_OPTIONS):[''].concat(MEET_EVENT_OPTIONS.filter(function(eventName){return eventName!=='Other';})));
+  var events=type==='relay'?[''].concat(RELAY_EVENT_OPTIONS):type==='field'?[''].concat(FIELD_EVENT_OPTIONS):(sport==='cross_country'?[''].concat(CROSS_COUNTRY_RACE_EVENT_OPTIONS):[''].concat(MEET_EVENT_OPTIONS));
   els.raceResultEvent.innerHTML=events.map(function(eventName){
     return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
   }).join('');
   if(current&&events.indexOf(current)>=0)els.raceResultEvent.value=current;
+  syncRaceResultOtherDistance();
   updateRaceFitnessReview();
 }
 function syncRaceResultType(){
@@ -5861,7 +5944,8 @@ function updateRaceFitnessReview(){
   if(!els.raceFitnessReview)return;
   var resultType=els.raceResultType&&els.raceResultType.value||'individual';
   var athlete=selectedRaceResultAthlete();
-  var eventName=els.raceResultEvent&&els.raceResultEvent.value||'';
+  syncRaceResultOtherDistance();
+  var eventName=raceResultEventName();
   if(resultType!=='individual'||!athlete||!eventName){
     els.raceFitnessReview.hidden=true;
     if(els.raceResultUseFitness)els.raceResultUseFitness.checked=false;
@@ -5915,7 +5999,7 @@ function saveRaceResult(){
   var manualMeet=(els.raceResultMeet.value||'')==='__new__';
   var meetName=manualMeet?(els.raceResultMeetName.value||'').trim():(meet&&meet.name||'');
   var date=els.raceResultDate.value||todayInputValue();
-  var eventName=els.raceResultEvent.value||'';
+  var eventName=requireRaceResultEventName();
   var resultDisplay=(els.raceResultResult.value||'').trim();
   var relayLegs=relayLegsPayload();
   var relayTeam=(els.raceResultRelayTeam&&els.raceResultRelayTeam.value||'').trim();
@@ -5923,7 +6007,7 @@ function saveRaceResult(){
   var fieldVideo=(els.raceResultVideo&&els.raceResultVideo.value||'').trim();
   if(!isRelay&&!athlete){setRaceResultStatus('Select an athlete.','bad');return;}
   if(!meetName){setRaceResultStatus('Select a meet or enter a meet name.','bad');return;}
-  if(!eventName){setRaceResultStatus('Select an event.','bad');return;}
+  if(!eventName)return;
   if(!resultDisplay){
     if(isField&&fieldAttemptsShowNoLegalMark(eventName,fieldAttempts))resultDisplay=fieldNoMarkResult(eventName);
     else{setRaceResultStatus(isField?'Enter the field mark, or enter foul/pass attempts for a no-mark result.':'Enter the race result.','bad');return;}
@@ -5985,6 +6069,9 @@ function saveRaceResult(){
     els.raceResultWind.value='';
     els.raceResultBest.value='none';
     els.raceResultNotes.value='';
+    if(els.raceResultOtherDistance)els.raceResultOtherDistance.value='';
+    if(els.raceResultOtherUnit)els.raceResultOtherUnit.value='mi';
+    syncRaceResultOtherDistance();
     updateRaceFitnessReview();
   }).catch(function(error){
     setRaceResultStatus(error.message||'Race result could not be saved.','bad');
@@ -6756,16 +6843,49 @@ function closeMeetCorrectionModal(){
 function renderMeetCorrectionEventOptions(current){
   var value=String(current||'').trim();
   var options=MEET_EVENT_OPTIONS.slice();
-  if(value&&options.indexOf(value)<0)options.unshift(value);
+  var parsed=parseRaceEventDistance(value);
+  var custom=parsed&&options.indexOf(value)<0;
+  if(value&&options.indexOf(value)<0&&!custom)options.unshift(value);
   els.meetCorrectionEvent.innerHTML=options.map(function(eventName){
     return '<option value="'+esc(eventName)+'">'+esc(eventName)+'</option>';
   }).join('');
-  els.meetCorrectionEvent.value=value&&options.indexOf(value)>=0?value:'400m';
+  if(custom){
+    els.meetCorrectionEvent.value='Other';
+    if(els.meetCorrectionOtherDistance)els.meetCorrectionOtherDistance.value=parsed.value;
+    if(els.meetCorrectionOtherUnit)els.meetCorrectionOtherUnit.value=parsed.unit;
+  }else{
+    els.meetCorrectionEvent.value=value&&options.indexOf(value)>=0?value:'400m';
+    if(els.meetCorrectionOtherDistance)els.meetCorrectionOtherDistance.value='';
+    if(els.meetCorrectionOtherUnit)els.meetCorrectionOtherUnit.value='mi';
+  }
+  syncMeetCorrectionOtherDistance();
+}
+
+function syncMeetCorrectionOtherDistance(){
+  if(!els.meetCorrectionOtherDistanceWrap)return;
+  var selected=String(els.meetCorrectionEvent&&els.meetCorrectionEvent.value||'').trim();
+  els.meetCorrectionOtherDistanceWrap.hidden=selected!=='Other';
+}
+
+function meetCorrectionEventName(){
+  var selected=String(els.meetCorrectionEvent&&els.meetCorrectionEvent.value||'').trim();
+  if(selected!=='Other')return selected;
+  return raceEventFromDistance(els.meetCorrectionOtherDistance&&els.meetCorrectionOtherDistance.value,els.meetCorrectionOtherUnit&&els.meetCorrectionOtherUnit.value);
+}
+
+function requireMeetCorrectionEventName(){
+  var eventName=meetCorrectionEventName();
+  if(eventName)return eventName;
+  if(String(els.meetCorrectionEvent&&els.meetCorrectionEvent.value||'')==='Other')setMeetCorrectionStatus('Enter the race distance and unit.','error');
+  else setMeetCorrectionStatus('Select an event.','error');
+  return '';
 }
 
 function syncMeetCorrectionRelayFields(){
-  var relay=isRelayResult(meetCorrectionRow)||isRelayEvent(els.meetCorrectionEvent&&els.meetCorrectionEvent.value);
-  var field=isFieldResult(meetCorrectionRow)||isFieldEvent(els.meetCorrectionEvent&&els.meetCorrectionEvent.value);
+  syncMeetCorrectionOtherDistance();
+  var eventName=meetCorrectionEventName()||els.meetCorrectionEvent&&els.meetCorrectionEvent.value;
+  var relay=isRelayResult(meetCorrectionRow)||isRelayEvent(eventName);
+  var field=isFieldResult(meetCorrectionRow)||isFieldEvent(eventName);
   if(els.meetCorrectionRelayFields)els.meetCorrectionRelayFields.hidden=!relay;
   if(els.meetCorrectionRelayTeamWrap)els.meetCorrectionRelayTeamWrap.hidden=!relay;
   if(els.meetCorrectionFieldFields)els.meetCorrectionFieldFields.hidden=!field;
@@ -6831,8 +6951,10 @@ function saveMeetCorrection(){
     return;
   }
   var best=els.meetCorrectionBest.value||'none';
-  var relay=isRelayResult(meetCorrectionRow)||isRelayEvent(els.meetCorrectionEvent.value);
-  var field=isFieldResult(meetCorrectionRow)||isFieldEvent(els.meetCorrectionEvent.value);
+  var eventName=requireMeetCorrectionEventName();
+  if(!eventName)return;
+  var relay=isRelayResult(meetCorrectionRow)||isRelayEvent(eventName);
+  var field=isFieldResult(meetCorrectionRow)||isFieldEvent(eventName);
   var relaySplits=relay?meetCorrectionRelayPayload():[];
   if(relay&&relaySplits.length<2){
     setMeetCorrectionStatus('Add at least two relay legs.','error');
@@ -6858,7 +6980,7 @@ function saveMeetCorrection(){
         sport:els.meetCorrectionSport.value,
         season:els.meetCorrectionSeason.value,
         seasonYear:els.meetCorrectionSeasonYear.value,
-        event:els.meetCorrectionEvent.value,
+        event:eventName,
         resultDisplay:els.meetCorrectionResult.value,
         wind:els.meetCorrectionWind.value,
         isPr:!relay&&!field&&(best==='pb'||best==='both')?'yes':'no',
@@ -6881,7 +7003,7 @@ function saveMeetCorrection(){
       sport:els.meetCorrectionSport.value,
       season:els.meetCorrectionSeason.value,
       seasonYear:els.meetCorrectionSeasonYear.value,
-      event:els.meetCorrectionEvent.value,
+      event:eventName,
       resultDisplay:els.meetCorrectionResult.value,
       wind:els.meetCorrectionWind.value,
       isPr:!relay&&!field&&(best==='pb'||best==='both'),
@@ -7771,6 +7893,8 @@ function eventDistanceMeters(event){
     '15k':15000,'half marathon':21097.5,'marathon':42195
   };
   if(named[text])return named[text];
+  var miles=text.match(/^(\d+(?:\.\d+)?)\s*(mile|miles|mi)$/);
+  if(miles)return Number(miles[1])*1609.344;
   var meters=text.match(/^(\d+(?:\.\d+)?)\s*m$/);
   if(meters)return Number(meters[1]);
   var compact=text.match(/^(\d+(?:\.\d+)?)(m|k)$/);
