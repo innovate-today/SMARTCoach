@@ -10,6 +10,8 @@ const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
   meet_result: ["Khq47asHEk0tRieDVUBg"],
   source_record_id: ["9YD4n4y4aqf3VnkrwLL1", "3HVSAaItyvtLXYNasRAJ"],
+  athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
+  athlete_name_snapshot: ["m20bSENWaEB4jBMtXgMD", "NxKoU2l9QohpmzRt2gin", "0lX15xSvQP77xhNH45q1"],
   group_name: ["ochf7LkGhgAh5ySys5dA"],
   session_date: ["pl69ao2Pu76zeUKMEWpm"],
   season: ["E7WkU0NjC48zZzSNMlMJ"],
@@ -176,6 +178,8 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
   const updates = payload.updates && typeof payload.updates === "object" ? payload.updates : {};
   const previousNote = prop(props, "coach_race_notes");
   const previousValues = {
+    athleteName: prop(props, "athlete_name_snapshot") || athleteName,
+    contactId: prop(props, "athlete_contact") || contactId,
     meetName: prop(props, "meet_name"),
     meetDate: prop(props, "meet_date"),
     event: prop(props, "event"),
@@ -196,6 +200,8 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
   const isRelay = clean(updates.resultType).toLowerCase() === "relay" || clean(previousValues.resultType).toLowerCase() === "relay";
   const isField = clean(updates.resultType).toLowerCase() === "field" || clean(previousValues.resultType).toLowerCase() === "field";
   const nextValues = {
+    athleteName: isRelay ? previousValues.athleteName : clean(updates.athleteName) || previousValues.athleteName,
+    contactId: isRelay ? previousValues.contactId : clean(updates.contactId) || previousValues.contactId,
     meetName: clean(updates.meetName) || previousValues.meetName,
     meetDate: clean(updates.meetDate) || previousValues.meetDate,
     event: clean(updates.event) || previousValues.event,
@@ -216,6 +222,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     notes: clean(updates.notes),
   };
   const changes = changedValues(previousValues, nextValues, {
+    athleteName: "Athlete",
     meetName: "Meet",
     meetDate: "Date",
     event: "Event",
@@ -266,6 +273,11 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
       event: nextValues.event,
       result_display: nextValues.resultDisplay,
       ...(resultMs ? { result_ms: resultMs } : {}),
+      ...(!isRelay && clean(nextValues.contactId) ? { athlete_contact: nextValues.contactId } : {}),
+      ...(!isRelay && clean(nextValues.athleteName) ? {
+        meet_result: [nextValues.athleteName, nextValues.event, nextValues.resultDisplay].filter(Boolean).join(" - "),
+        athlete_name_snapshot: nextValues.athleteName,
+      } : {}),
       wind: nextValues.wind,
       ...(clean(nextValues.sport) ? { sport: sportValue(nextValues.sport) } : {}),
       ...(clean(nextValues.season) ? { season: optionValue(nextValues.season) } : {}),
@@ -277,11 +289,13 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     },
   });
 
+  const nextContactId = isRelay ? contactId : nextValues.contactId;
+  const nextAthleteName = isRelay ? athleteName : nextValues.athleteName;
   const linkedRecords = await updateLinkedMeetRecords({
     token,
     locationId,
-    contactId,
-    athleteName,
+    contactId: nextContactId,
+    athleteName: nextAthleteName,
     record,
     props,
     nextValues,
@@ -290,12 +304,12 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     reason,
   });
 
-  if (contactId) {
+  if (nextContactId) {
     await addCorrectionNote({
       token,
-      contactId,
+      contactId: nextContactId,
       body: buildMeetEditNote({
-        athleteName,
+        athleteName: nextAthleteName,
         reason,
         correctionTime,
         record,
@@ -590,6 +604,8 @@ function previousProps(previous, recordType) {
     return {
       meet_result: clean(data.meetResult) || [clean(data.athleteName), clean(data.event), clean(data.resultDisplay)].filter(Boolean).join(" - "),
       source_record_id: clean(data.sourceRecordId),
+      athlete_contact: clean(data.contactId),
+      athlete_name_snapshot: clean(data.athleteName),
       meet_name: clean(data.meetName),
       meet_date: clean(data.meetDate),
       event: clean(data.event),

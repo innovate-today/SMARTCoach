@@ -1280,6 +1280,12 @@ tr:last-child td{border-bottom:0}
           <label for="meetCorrectionName">Meet</label>
           <input id="meetCorrectionName" type="text" placeholder="Meet name">
         </div>
+        <div class="field" id="meetCorrectionAthleteWrap">
+          <label for="meetCorrectionAthlete">Athlete <span class="fieldinfo info-left" tabindex="0" data-tip="Use this to move a synced placeholder, such as runner 9, to the correct athlete.">i</span></label>
+          <select id="meetCorrectionAthlete">
+            <option value="">Leave unchanged</option>
+          </select>
+        </div>
         <div class="field">
           <label for="meetCorrectionSport">Sport</label>
           <select id="meetCorrectionSport">
@@ -1603,6 +1609,7 @@ var dashboardVolumeUnit='miles';
 var expandedTrainingAthletes={};
 var correctionRow=null;
 var meetCorrectionRow=null;
+var meetCorrectionAthleteOptions=[];
 var voidRequest=null;
 var meetManagerEditingId='';
 var lastLoadedAt='';
@@ -2965,6 +2972,8 @@ var els={
   meetCorrectionClose:document.getElementById('meetCorrectionClose'),
   meetCorrectionDate:document.getElementById('meetCorrectionDate'),
   meetCorrectionName:document.getElementById('meetCorrectionName'),
+  meetCorrectionAthleteWrap:document.getElementById('meetCorrectionAthleteWrap'),
+  meetCorrectionAthlete:document.getElementById('meetCorrectionAthlete'),
   meetCorrectionSport:document.getElementById('meetCorrectionSport'),
   meetCorrectionSeason:document.getElementById('meetCorrectionSeason'),
   meetCorrectionSeasonYear:document.getElementById('meetCorrectionSeasonYear'),
@@ -6817,6 +6826,7 @@ function openMeetCorrectionModal(button){
   }
   els.meetCorrectionDate.value=dateInputValue(meetCorrectionRow.meetDate);
   els.meetCorrectionName.value=meetCorrectionRow.meetName||'';
+  populateMeetCorrectionAthleteOptions(meetCorrectionRow);
   setSelectValue(els.meetCorrectionSport,meetCorrectionRow.sport||'');
   setSelectValue(els.meetCorrectionSeason,meetCorrectionRow.season||'');
   els.meetCorrectionSeasonYear.value=meetCorrectionRow.seasonYear||'';
@@ -6873,6 +6883,39 @@ function meetCorrectionEventName(){
   return raceEventFromDistance(els.meetCorrectionOtherDistance&&els.meetCorrectionOtherDistance.value,els.meetCorrectionOtherUnit&&els.meetCorrectionOtherUnit.value);
 }
 
+function meetCorrectionAthleteKey(row){
+  return String(row&&(row.contactId||row.smartcoachAthleteId||row.runnerId||row.name||row.athleteName)||'').trim().toLowerCase();
+}
+
+function populateMeetCorrectionAthleteOptions(row){
+  if(!els.meetCorrectionAthlete)return;
+  var currentKey=meetCorrectionAthleteKey(row);
+  var rows=activeDashboardAthletes().slice().sort(function(a,b){
+    return String(a.name||'').localeCompare(String(b.name||''));
+  });
+  meetCorrectionAthleteOptions=rows.map(function(item){
+    return {
+      key:meetCorrectionAthleteKey(item),
+      contactId:item.contactId||'',
+      smartcoachAthleteId:item.smartcoachAthleteId||'',
+      name:item.name||item.athleteName||''
+    };
+  }).filter(function(item){return item.key&&item.name;});
+  var leaveLabel=row&&row.athleteName?'Leave as '+row.athleteName:'Leave unchanged';
+  els.meetCorrectionAthlete.innerHTML='<option value="">'+esc(leaveLabel)+'</option>'+meetCorrectionAthleteOptions.map(function(item){
+    return '<option value="'+esc(item.key)+'">'+esc(item.name)+'</option>';
+  }).join('');
+  var exact=meetCorrectionAthleteOptions.find(function(item){return item.key===currentKey;});
+  els.meetCorrectionAthlete.value=exact?exact.key:'';
+}
+
+function selectedMeetCorrectionAthlete(){
+  if(!els.meetCorrectionAthlete)return null;
+  var key=String(els.meetCorrectionAthlete.value||'').trim();
+  if(!key)return null;
+  return meetCorrectionAthleteOptions.find(function(item){return item.key===key;})||null;
+}
+
 function requireMeetCorrectionEventName(){
   var eventName=meetCorrectionEventName();
   if(eventName)return eventName;
@@ -6888,6 +6931,8 @@ function syncMeetCorrectionRelayFields(){
   var field=isFieldResult(meetCorrectionRow)||isFieldEvent(eventName);
   if(els.meetCorrectionRelayFields)els.meetCorrectionRelayFields.hidden=!relay;
   if(els.meetCorrectionRelayTeamWrap)els.meetCorrectionRelayTeamWrap.hidden=!relay;
+  if(els.meetCorrectionAthleteWrap)els.meetCorrectionAthleteWrap.hidden=relay;
+  if(els.meetCorrectionAthlete)els.meetCorrectionAthlete.disabled=relay;
   if(els.meetCorrectionFieldFields)els.meetCorrectionFieldFields.hidden=!field;
   if(els.meetCorrectionBest)els.meetCorrectionBest.disabled=relay||field;
 }
@@ -6960,6 +7005,10 @@ function saveMeetCorrection(){
     setMeetCorrectionStatus('Add at least two relay legs.','error');
     return;
   }
+  var selectedAthlete=relay?null:selectedMeetCorrectionAthlete();
+  var payloadContactId=relay?(meetCorrectionRow.contactId||''):(selectedAthlete&&selectedAthlete.contactId||meetCorrectionRow.contactId||'');
+  var payloadSmartcoachAthleteId=relay?(meetCorrectionRow.smartcoachAthleteId||''):(selectedAthlete&&selectedAthlete.smartcoachAthleteId||meetCorrectionRow.smartcoachAthleteId||'');
+  var payloadAthleteName=relay?(els.meetCorrectionRelayTeam.value||meetCorrectionRow.athleteName||'Relay Team'):(selectedAthlete&&selectedAthlete.name||meetCorrectionRow.athleteName||'');
   els.meetCorrectionSave.disabled=true;
   setMeetCorrectionStatus('Saving correction...','');
   fetch('/api/smart-trak/correction',{
@@ -6970,11 +7019,14 @@ function saveMeetCorrection(){
       recordType:'meet',
       recordId:meetCorrectionRow.recordId||'',
       sourceRecordId:meetCorrectionRow.sourceRecordId||'',
-      contactId:meetCorrectionRow.contactId||'',
-      athleteName:relay?(els.meetCorrectionRelayTeam.value||meetCorrectionRow.athleteName||'Relay Team'):(meetCorrectionRow.athleteName||''),
+      contactId:payloadContactId,
+      athleteName:payloadAthleteName,
       reason:reason,
       previous:meetCorrectionPreviousPayload(meetCorrectionRow),
       updates:{
+        contactId:payloadContactId,
+        smartcoachAthleteId:payloadSmartcoachAthleteId,
+        athleteName:payloadAthleteName,
         meetDate:els.meetCorrectionDate.value,
         meetName:els.meetCorrectionName.value,
         sport:els.meetCorrectionSport.value,
@@ -7008,6 +7060,9 @@ function saveMeetCorrection(){
       wind:els.meetCorrectionWind.value,
       isPr:!relay&&!field&&(best==='pb'||best==='both'),
       isSeasonBest:!relay&&!field&&(best==='sb'||best==='both'),
+      contactId:payloadContactId,
+      smartcoachAthleteId:payloadSmartcoachAthleteId,
+      athleteName:payloadAthleteName,
       notes:els.meetCorrectionNotes.value,
       resultType:relay?'relay':field?'field':'individual',
       relayTeamName:relay?els.meetCorrectionRelayTeam.value:'',
@@ -7033,6 +7088,9 @@ function applyMeetCorrectionLocally(row,updates,reason){
     updatedRow=Object.assign({},item,{
       meetDate:updates.meetDate||item.meetDate,
       meetName:updates.meetName||item.meetName,
+      contactId:updates.contactId||item.contactId,
+      smartcoachAthleteId:updates.smartcoachAthleteId||item.smartcoachAthleteId,
+      athleteName:updates.athleteName||item.athleteName,
       sport:updates.sport||item.sport,
       season:updates.season||item.season,
       seasonYear:updates.seasonYear||item.seasonYear,
@@ -7093,7 +7151,10 @@ function findMeetRow(button){
 function meetCorrectionPreviousPayload(row){
   return {
     athleteName:row.athleteName||'',
+    contactId:row.contactId||'',
+    smartcoachAthleteId:row.smartcoachAthleteId||'',
     sourceRecordId:row.sourceRecordId||'',
+    meetResult:row.meetResult||'',
     meetName:row.meetName||'',
     meetDate:row.meetDate||'',
     sport:row.sport||'',
