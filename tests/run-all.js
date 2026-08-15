@@ -2233,6 +2233,12 @@ function checkCrossCountryRaceResultEvents() {
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Dashboard meet correction custom distance missing ${text}`);
   });
+  const meetEventIndex = dashboard.indexOf('id="meetCorrectionEvent"');
+  const meetOtherIndex = dashboard.indexOf('id="meetCorrectionOtherDistanceWrap"');
+  const meetRelayIndex = dashboard.indexOf('id="meetCorrectionRelayFields"');
+  if (meetEventIndex < 0 || meetOtherIndex < 0 || meetRelayIndex < 0 || !(meetEventIndex < meetOtherIndex && meetOtherIndex < meetRelayIndex)) {
+    throw new Error("Dashboard meet correction custom distance controls must render inside the Correct Meet Result modal after Event.");
+  }
   console.log("Cross Country race result events ok");
 }
 
