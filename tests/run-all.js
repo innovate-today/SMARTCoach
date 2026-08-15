@@ -1189,6 +1189,9 @@ function checkResultsBoardFeature() {
     "All Meets",
     "Top Result - Girls",
     "Top Result - Boys",
+    'id="topEventCards"',
+    "function renderTopEventCards",
+    "summary.topEventResults",
     'data-sort-table="highlight"',
     'data-sort-table="division"',
     'data-sort-table="latest"',
@@ -1245,7 +1248,7 @@ function checkResultsBoardFeature() {
   ].forEach((text) => {
     if (!board.includes(text)) throw new Error(`Results Board page missing ${text}`);
   });
-  if (board.includes("<strong>Top Result</strong>")) throw new Error("Results Board should show only Girls/Boys top-result cards.");
+  if (board.includes("<strong>Top Result</strong>")) throw new Error("Results Board should not show a generic top-result card.");
   if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Results Board must stay read-only.");
   [
     'if (route === "results-board-sharing")',
@@ -1293,6 +1296,8 @@ function checkResultsBoardFeature() {
     "function resultsBoardDivisionLabel(value)",
     "function resultsBoardBestHighlightRows(rows)",
     "function resultsBoardTopTimedResult(rows, gender)",
+    "function resultsBoardEventDistanceSortValue(value)",
+    "function resultsBoardTopTimedResultsByEvent(rows)",
     "athleteGender: result.athleteGender || athlete.gender",
     "meetArchive: resultsBoardMeetArchive(seasonRows)",
     "athleteSummaryRows: resultsBoardAthleteSummaryRows(seasonRows)",
@@ -1301,6 +1306,7 @@ function checkResultsBoardFeature() {
     "bestHighlightRows: resultsBoardBestHighlightRows(seasonRows)",
     "topGirlsResult",
     "topBoysResult",
+    "topEventResults",
     "detailOrder: normalizeResultsBoardDetailOrder",
     "latestRows",
     "seasonRows: seasonBestRows",

@@ -951,6 +951,37 @@ function resultsBoardTopTimedResult(rows, gender) {
   } : null;
 }
 
+function resultsBoardEventDistanceSortValue(value) {
+  const text = clean(value).toLowerCase();
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(k|km|kilometer|kilometers|m|meter|meters|mi|mile|miles)\b/);
+  if (!match) return Number.MAX_SAFE_INTEGER;
+  const amount = Number(match[1]) || 0;
+  const unit = match[2];
+  if (unit === "k" || unit === "km" || unit === "kilometer" || unit === "kilometers") return amount * 1000;
+  if (unit === "mi" || unit === "mile" || unit === "miles") return amount * 1609.344;
+  return amount;
+}
+
+function resultsBoardTopTimedResultsByEvent(rows) {
+  const leaders = new Map();
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const event = clean(row.event);
+    if (!event || !(Number(row.resultMs) > 0)) return;
+    const key = event.toLowerCase();
+    const current = leaders.get(key);
+    if (!current || Number(row.resultMs) < Number(current.resultMs || 0)) leaders.set(key, row);
+  });
+  return Array.from(leaders.values()).sort((a, b) => {
+    const distance = resultsBoardEventDistanceSortValue(a.event) - resultsBoardEventDistanceSortValue(b.event);
+    return distance || clean(a.event).localeCompare(clean(b.event));
+  }).map((row) => ({
+    athleteName: row.athleteName,
+    athleteGender: row.athleteGender,
+    event: row.event,
+    resultDisplay: row.resultDisplay,
+  }));
+}
+
 function resultsBoardMeetSummary(rows, meetName) {
   const list = Array.isArray(rows) ? rows : [];
   return {
@@ -963,6 +994,7 @@ function resultsBoardMeetSummary(rows, meetName) {
     topResult: resultsBoardTopTimedResult(list),
     topGirlsResult: resultsBoardTopTimedResult(list, "girl"),
     topBoysResult: resultsBoardTopTimedResult(list, "boy"),
+    topEventResults: resultsBoardTopTimedResultsByEvent(list),
   };
 }
 
