@@ -962,24 +962,42 @@ function resultsBoardEventDistanceSortValue(value) {
   return amount;
 }
 
-function resultsBoardTopTimedResultsByEvent(rows) {
-  const leaders = new Map();
-  (Array.isArray(rows) ? rows : []).forEach((row) => {
-    const event = clean(row.event);
-    if (!event || !(Number(row.resultMs) > 0)) return;
-    const key = event.toLowerCase();
-    const current = leaders.get(key);
-    if (!current || Number(row.resultMs) < Number(current.resultMs || 0)) leaders.set(key, row);
+function resultsBoardTopTimedResultCards(rows) {
+  const cards = [];
+  const genderLabels = { girl: "Girls", boy: "Boys" };
+  ["girl", "boy"].forEach((gender) => {
+    const genderRows = (Array.isArray(rows) ? rows : []).filter((row) => {
+      return resultsBoardGender(row.athleteGender) === gender && Number(row.resultMs) > 0;
+    });
+    const leaders = new Map();
+    genderRows.forEach((row) => {
+      const event = clean(row.event);
+      if (!event) return;
+      const key = event.toLowerCase();
+      const current = leaders.get(key);
+      if (!current || Number(row.resultMs) < Number(current.resultMs || 0)) leaders.set(key, row);
+    });
+    const sorted = Array.from(leaders.values()).sort((a, b) => {
+      const distance = resultsBoardEventDistanceSortValue(a.event) - resultsBoardEventDistanceSortValue(b.event);
+      return distance || clean(a.event).localeCompare(clean(b.event));
+    });
+    const selected = sorted.length > 1 ? sorted : [resultsBoardTopTimedResult(rows, gender)].filter(Boolean);
+    selected.forEach((row) => {
+      cards.push({
+        label: genderLabels[gender],
+        athleteName: row.athleteName,
+        athleteGender: row.athleteGender,
+        event: row.event,
+        resultDisplay: row.resultDisplay,
+      });
+    });
   });
-  return Array.from(leaders.values()).sort((a, b) => {
+  return cards.sort((a, b) => {
+    const genderOrder = (a.label === "Girls" ? 0 : 1) - (b.label === "Girls" ? 0 : 1);
+    if (genderOrder) return genderOrder;
     const distance = resultsBoardEventDistanceSortValue(a.event) - resultsBoardEventDistanceSortValue(b.event);
     return distance || clean(a.event).localeCompare(clean(b.event));
-  }).map((row) => ({
-    athleteName: row.athleteName,
-    athleteGender: row.athleteGender,
-    event: row.event,
-    resultDisplay: row.resultDisplay,
-  }));
+  });
 }
 
 function resultsBoardMeetSummary(rows, meetName) {
@@ -994,7 +1012,7 @@ function resultsBoardMeetSummary(rows, meetName) {
     topResult: resultsBoardTopTimedResult(list),
     topGirlsResult: resultsBoardTopTimedResult(list, "girl"),
     topBoysResult: resultsBoardTopTimedResult(list, "boy"),
-    topEventResults: resultsBoardTopTimedResultsByEvent(list),
+    topResultCards: resultsBoardTopTimedResultCards(list),
   };
 }
 

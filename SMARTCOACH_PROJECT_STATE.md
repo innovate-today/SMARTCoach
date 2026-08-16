@@ -40,6 +40,7 @@ Current launch status:
 
 Latest handoff:
 
+- Results Board latest-meet top-result cards now split by gender first, then by race distance only when that gender has multiple distances. The card title stays **Top Result - Girls** or **Top Result - Boys**, and the race distance/result stays beneath the athlete name. Coach how-to and regression coverage were updated. What's New is pending user approval.
 - Results Board latest-meet summary now adds top performer cards by race distance/event when the latest meet includes multiple distances, while keeping the existing top girls and top boys cards. Single-distance meets stay unchanged. Coach how-to and regression coverage were updated. What's New is pending user approval.
 - Dashboard **Recent Meet Results > Edit** can now move a synced placeholder meet result such as `runner 9` or `runner 10` to the correct SMART Trak athlete. The Correct Meet Result modal includes an **Athlete** dropdown for individual results, the correction payload saves the meet-result athlete contact/name fields, and relay corrections stay unchanged. Coach how-to and regression coverage were updated. What's New is pending user approval.
 - Follow-up to custom race-result distances: the **Correct Meet Result** modal now renders the **Other** race-distance input/unit controls in the meet-result correction dialog itself. The earlier markup existed but was attached to the completed-workout correction modal, so choosing **Other** in Correct Meet Result did not reveal the distance fields. What's New was not updated per user instruction.
