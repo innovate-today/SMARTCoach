@@ -29,6 +29,7 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 
 Current launch status:
 
+- Athlete roster copy/paste import follow-up: traced import textarea/parser -> import payload -> athletes API custom-field save -> roster reload/render. The copy/paste importer now recognizes bare Guardian/Parent 1 and 2 headers, Mother/Father name columns, and M/F/Boy-Girl-style gender headings; the backend roster-field aliases recognize the same labels so those values can save and reload. Coach how-to and regression coverage were updated. What's New was not updated per user instruction.
 - Code/security/setup cleanup is largely complete for the initial rollout path.
 - Cleanup/launch prep is estimated at 90-95% complete.
 - The previous Vercel Hobby serverless-function deployment blocker has been resolved in code by keeping the API function count within the Hobby limit.
