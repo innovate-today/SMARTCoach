@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-08-15
+Last updated: 2026-08-17
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -29,6 +29,7 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 
 Current launch status:
 
+- Athlete roster import now supports uploading a CSV file in addition to copy/paste. The CSV is read in the browser, loaded into the same review box, and sent through the existing athlete import save path for name, gender, class year, athlete email, group, active status, parent/guardian details, and notes. The parser strips spreadsheet BOM headers and preserves quoted multi-line CSV rows. Coach how-to and regression coverage were updated. What's New was not updated per user instruction.
 - Athlete roster copy/paste import follow-up: traced import textarea/parser -> import payload -> athletes API custom-field save -> roster reload/render. The copy/paste importer now recognizes bare Guardian/Parent 1 and 2 headers, Mother/Father name columns, and M/F/Boy-Girl-style gender headings; the backend roster-field aliases recognize the same labels so those values can save and reload. Coach how-to and regression coverage were updated. What's New was not updated per user instruction.
 - Code/security/setup cleanup is largely complete for the initial rollout path.
 - Cleanup/launch prep is estimated at 90-95% complete.
