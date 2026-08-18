@@ -6,7 +6,26 @@ const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const CLASS_YEAR_TAG_PREFIX = "smartcoach-class-";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
+const { loadAccountScopedRecord, saveAccountScopedRecord } = require("../../lib/account-registry");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+
+const ATHLETE_ROSTER_DETAILS_NAMESPACE = "athlete-roster-details";
+const ATHLETE_ROSTER_DETAIL_FIELDS = [
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "gender",
+  "grade",
+  "parentGuardianName",
+  "parentGuardianEmail",
+  "parentGuardianPhone",
+  "parentGuardian2Name",
+  "parentGuardian2Email",
+  "parentGuardian2Phone",
+  "coachNotes",
+  "groupName",
+];
 
 const ATHLETE_FIELD_ALIASES = {
   smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
@@ -46,7 +65,7 @@ async function handler(req, res) {
     if (req.method === "GET") {
       const includeContacts = /^(yes|true|1)$/i.test(clean(req.query && (req.query.includeContacts || req.query.allContacts)));
       const query = clean(req.query && (req.query.query || req.query.search));
-      const athletes = await listSmartCoachAthletes({ token, locationId, includeContacts, query });
+      const athletes = await listSmartCoachAthletes({ accountKey, token, locationId, includeContacts, query });
       const fitnessRows = await safeListAthleteFitnessRows({ token, locationId });
       attachCurrentFitnessRows(athletes, fitnessRows);
       if (clean(req.query && req.query.action) === "calendarLink") {
@@ -69,8 +88,8 @@ async function handler(req, res) {
 
     if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-      await enforceActiveAthleteLimit({ token, locationId, payload, activeAthleteLimit, productPlanLabel });
-      const athlete = await createOrUpdateAthlete({ token, locationId, payload });
+      await enforceActiveAthleteLimit({ accountKey, token, locationId, payload, activeAthleteLimit, productPlanLabel });
+      const athlete = await createOrUpdateAthlete({ accountKey, token, locationId, payload });
       res.status(200).json({ success: true, athlete });
       return;
     }
@@ -87,12 +106,12 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code, X-SMARTCoach-Session");
 }
 
-async function enforceActiveAthleteLimit({ token, locationId, payload, activeAthleteLimit, productPlanLabel }) {
+async function enforceActiveAthleteLimit({ accountKey, token, locationId, payload, activeAthleteLimit, productPlanLabel }) {
   const limit = Number(activeAthleteLimit) || 0;
   if (!limit) return;
   const wantsActive = !payload || !Object.prototype.hasOwnProperty.call(payload, "smartcoachActive") || truthy(payload.smartcoachActive);
   if (!wantsActive) return;
-  const activeAthletes = await listSmartCoachAthletes({ token, locationId, includeContacts: false });
+  const activeAthletes = await listSmartCoachAthletes({ accountKey, token, locationId, includeContacts: false });
   const contactId = clean(payload && payload.contactId);
   const athleteId = clean(payload && payload.smartcoachAthleteId);
   const name = clean(payload && payload.name).toLowerCase();
@@ -105,8 +124,9 @@ async function enforceActiveAthleteLimit({ token, locationId, payload, activeAth
   throw httpError(403, `${productPlanLabel || "This plan"} allows ${limit} active athlete${limit === 1 ? "" : "s"}. Archive or mark an athlete inactive before adding another active athlete.`);
 }
 
-async function listSmartCoachAthletes({ token, locationId, includeContacts = false, query = "" }) {
+async function listSmartCoachAthletes({ accountKey, token, locationId, includeContacts = false, query = "" }) {
   const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
+  const rosterDetails = await loadAthleteRosterDetails(accountKey);
   const searchParam = query ? `&query=${encodeURIComponent(query)}` : "";
   const result = await ghlFetch({
     token,
@@ -131,7 +151,7 @@ async function listSmartCoachAthletes({ token, locationId, includeContacts = fal
   }
 
   return uniqueContacts(contacts)
-    .map((contact) => normalizeContact(contact, { rosterFieldIds }))
+    .map((contact) => mergeAthleteRosterDetail(normalizeContact(contact, { rosterFieldIds }), rosterDetails))
     .filter((athlete) => !athlete.excludedSystemContact)
     .filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -234,6 +254,144 @@ function uniqueContacts(contacts) {
   });
 }
 
+function emptyAthleteRosterDetailsRecord() {
+  return { version: 1, athletes: {}, aliases: {} };
+}
+
+async function loadAthleteRosterDetails(accountKey) {
+  if (!clean(accountKey)) return emptyAthleteRosterDetailsRecord();
+  try {
+    const result = await loadAccountScopedRecord(accountKey, ATHLETE_ROSTER_DETAILS_NAMESPACE);
+    const record = result && result.record;
+    if (!record || typeof record !== "object") return emptyAthleteRosterDetailsRecord();
+    return {
+      version: 1,
+      athletes: record.athletes && typeof record.athletes === "object" ? record.athletes : {},
+      aliases: record.aliases && typeof record.aliases === "object" ? record.aliases : {},
+    };
+  } catch (error) {
+    return emptyAthleteRosterDetailsRecord();
+  }
+}
+
+async function saveAthleteRosterDetail({ accountKey, athlete, payload }) {
+  if (!clean(accountKey)) return null;
+  const existing = await loadAthleteRosterDetails(accountKey);
+  const detail = rosterDetailFromPayload(athlete, payload);
+  const key = rosterDetailStorageKey(detail);
+  if (!key) return detail;
+  const record = {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    athletes: Object.assign({}, existing.athletes || {}, { [key]: detail }),
+    aliases: Object.assign({}, existing.aliases || {}),
+  };
+  setRosterDetailAliases(record, detail, key);
+  await saveAccountScopedRecord(accountKey, ATHLETE_ROSTER_DETAILS_NAMESPACE, record);
+  return detail;
+}
+
+function rosterDetailFromPayload(athlete, payload) {
+  const detail = {
+    id: clean((athlete && athlete.id) || (payload && payload.contactId)),
+    smartcoachAthleteId: clean((athlete && athlete.smartcoachAthleteId) || (payload && payload.smartcoachAthleteId)),
+    name: firstCleanValue([payload && payload.name, athlete && athlete.name]),
+    updatedAt: new Date().toISOString(),
+  };
+  ATHLETE_ROSTER_DETAIL_FIELDS.forEach((field) => {
+    if (payload && Object.prototype.hasOwnProperty.call(payload, field)) {
+      detail[field] = clean(payload[field]);
+    } else if (athlete && Object.prototype.hasOwnProperty.call(athlete, field)) {
+      detail[field] = clean(athlete[field]);
+    }
+  });
+  if (payload && Object.prototype.hasOwnProperty.call(payload, "smartcoachActive")) {
+    detail.smartcoachActive = truthy(payload.smartcoachActive);
+  } else if (athlete && typeof athlete.smartcoachActive === "boolean") {
+    detail.smartcoachActive = athlete.smartcoachActive;
+  }
+  if (!detail.name) detail.name = [detail.firstName, detail.lastName].filter(Boolean).join(" ");
+  return detail;
+}
+
+function mergeAthleteRosterDetail(athlete, source) {
+  const detail = source && source.athletes ? athleteRosterDetailFor(athlete, source) : source;
+  if (!athlete || !detail) return athlete;
+  const merged = Object.assign({}, athlete);
+  ATHLETE_ROSTER_DETAIL_FIELDS.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(detail, field)) {
+      merged[field] = clean(detail[field]);
+    }
+  });
+  if (clean(detail.name)) {
+    merged.name = clean(detail.name);
+  } else if (clean(merged.firstName) || clean(merged.lastName)) {
+    merged.name = [clean(merged.firstName), clean(merged.lastName)].filter(Boolean).join(" ");
+  }
+  if (typeof detail.smartcoachActive === "boolean") merged.smartcoachActive = detail.smartcoachActive;
+  if (merged.smartcoachActive) merged.smartcoachRosterMember = true;
+  merged.smartcoachSetupCandidate = !!(
+    merged.name ||
+    merged.email ||
+    merged.gender ||
+    merged.grade ||
+    merged.parentGuardianName ||
+    merged.parentGuardianEmail ||
+    merged.parentGuardianPhone ||
+    merged.parentGuardian2Name ||
+    merged.parentGuardian2Email ||
+    merged.parentGuardian2Phone ||
+    merged.coachNotes
+  );
+  return merged;
+}
+
+function athleteRosterDetailFor(athlete, record) {
+  const athletes = (record && record.athletes) || {};
+  const aliases = (record && record.aliases) || {};
+  const keys = rosterDetailAliasKeys(athlete);
+  for (const alias of keys) {
+    const key = aliases[alias] || alias;
+    if (athletes[key]) return athletes[key];
+  }
+  return null;
+}
+
+function rosterDetailStorageKey(detail) {
+  return rosterDetailAliasKeys(detail)[0] || "";
+}
+
+function setRosterDetailAliases(record, detail, key) {
+  rosterDetailAliasKeys(detail).forEach((alias) => {
+    record.aliases[alias] = key;
+  });
+}
+
+function rosterDetailAliasKeys(input) {
+  const keys = [];
+  const id = clean(input && (input.id || input.contactId));
+  const smartcoachAthleteId = clean(input && input.smartcoachAthleteId);
+  const name = normalizeRosterDetailName(input && input.name);
+  const composedName = normalizeRosterDetailName([input && input.firstName, input && input.lastName].filter(Boolean).join(" "));
+  if (id) keys.push(`contact:${id}`);
+  if (smartcoachAthleteId) keys.push(`athlete:${smartcoachAthleteId}`);
+  if (name) keys.push(`name:${name}`);
+  if (composedName && composedName !== name) keys.push(`name:${composedName}`);
+  return keys;
+}
+
+function normalizeRosterDetailName(value) {
+  return clean(value).toLowerCase().replace(/\s+/g, " ");
+}
+
+function firstCleanValue(values) {
+  for (const value of values || []) {
+    const cleaned = clean(value);
+    if (cleaned) return cleaned;
+  }
+  return "";
+}
+
 async function resolveRosterFieldIds({ token, locationId }) {
   try {
     const result = await ghlFetch({
@@ -251,7 +409,7 @@ async function resolveRosterFieldIds({ token, locationId }) {
   }
 }
 
-async function createOrUpdateAthlete({ token, locationId, payload }) {
+async function createOrUpdateAthlete({ accountKey, token, locationId, payload }) {
   const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
   const firstName = clean(payload && payload.firstName);
   const lastName = clean(payload && payload.lastName);
@@ -276,7 +434,9 @@ async function createOrUpdateAthlete({ token, locationId, payload }) {
   });
 
   const updated = await getContact({ token, contactId: contact.id });
-  return normalizeContact(updated, { rosterFieldIds });
+  const normalized = normalizeContact(updated, { rosterFieldIds });
+  const rosterDetail = await saveAthleteRosterDetail({ accountKey, athlete: normalized, payload });
+  return mergeAthleteRosterDetail(normalized, rosterDetail);
 }
 
 async function findOrCreateContact({ token, locationId, athleteName }) {

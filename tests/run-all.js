@@ -463,6 +463,12 @@ function checkAthleteRosterImportParentFields() {
     "guardian2",
     "parent 2 email",
     "class of",
+    "const ATHLETE_ROSTER_DETAILS_NAMESPACE = \"athlete-roster-details\";",
+    "loadAccountScopedRecord(accountKey, ATHLETE_ROSTER_DETAILS_NAMESPACE)",
+    "saveAccountScopedRecord(accountKey, ATHLETE_ROSTER_DETAILS_NAMESPACE, record)",
+    "mergeAthleteRosterDetail(normalizeContact(contact, { rosterFieldIds }), rosterDetails)",
+    "saveAthleteRosterDetail({ accountKey, athlete: normalized, payload })",
+    "\"groupName\"",
     "function contactFieldLabelMatches",
     "label.endsWith(`_${target}`)",
   ].forEach((text) => {
