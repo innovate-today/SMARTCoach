@@ -8,6 +8,8 @@ const {
   loadAttendanceRecords,
   saveKeepTrakNotes,
   loadKeepTrakNotes,
+  savePartnerTimingSession,
+  loadPartnerTimingSessions,
   mirrorSchoolRecords,
   loadSchoolRecordsMirror,
   schoolRecordsMirrorStatus,
@@ -383,6 +385,78 @@ async function testKeepTrakUsesScopedStorage() {
   }
 }
 
+async function testPartnerTimingUsesScopedStorage() {
+  const previousFetch = global.fetch;
+  const store = new Map();
+  const sets = [];
+  global.fetch = async (url) => {
+    const text = String(url);
+    const parts = text.replace("https://registry.example/", "").split("/").map(decodeURIComponent);
+    const command = parts[0];
+    if (command === "set") {
+      const key = parts[1];
+      const value = parts.slice(2).join("/");
+      store.set(key, value);
+      sets.push({ key, value });
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
+    if (command === "get") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: store.get(parts[1]) || "" }) };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+      SMARTCOACH_REGISTRY_PREFIX: undefined,
+    }, async () => {
+      await saveAccountRecord("Partner School", {
+        productPlan: "pro",
+        partnerTimingSessions: [{
+          id: "meet-1",
+          meetName: "Blue Invite",
+          records: [{
+            id: "tap-legacy",
+            stationId: "mile-1",
+            stationLabel: "Mile 1",
+            athleteName: "Hayden Dunn",
+            tapAt: "2026-08-21T12:00:00.000Z",
+          }],
+        }],
+      });
+
+      const baseKey = "smartcoach:account:partnerschool";
+      const scopedKey = "smartcoach:account:partnerschool:partnertiming";
+      const fullSetsBefore = sets.filter((entry) => entry.key === baseKey).length;
+
+      const saved = await savePartnerTimingSession("Partner School", {
+        id: "meet-1",
+        meetName: "Blue Invite",
+        startAt: "2026-08-21T12:00:00.000Z",
+        records: [{
+          id: "tap-new",
+          stationId: "mile-1",
+          stationLabel: "Mile 1",
+          athleteName: "Vanessa Dessommes",
+          tapAt: "2026-08-21T12:01:00.000Z",
+        }],
+      });
+      assert.strictEqual(saved.saved, true);
+      assert.strictEqual(saved.session.records.length, 2);
+      assert.strictEqual(sets.filter((entry) => entry.key === baseKey).length, fullSetsBefore);
+      assert.ok(sets.some((entry) => entry.key === scopedKey), "Partner Timing should save to scoped storage");
+
+      const loaded = await loadPartnerTimingSessions("Partner School", { id: "meet-1" });
+      assert.strictEqual(loaded.length, 1);
+      assert.deepStrictEqual(loaded[0].records.map((record) => record.id).sort(), ["tap-legacy", "tap-new"]);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testCoachDeviceUsageCountsAppDevicesOnly() {
   const previousFetch = global.fetch;
   const store = {};
@@ -436,6 +510,7 @@ async function testCoachDeviceUsageCountsAppDevicesOnly() {
   await testSchoolRecordsMirrorManifestFallback();
   await testAttendanceMirrorItemizedStorage();
   await testKeepTrakUsesScopedStorage();
+  await testPartnerTimingUsesScopedStorage();
   await testCoachDeviceUsageCountsAppDevicesOnly();
   console.log("account registry alias tests passed");
 })().catch((error) => {
