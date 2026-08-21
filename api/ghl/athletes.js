@@ -10,6 +10,8 @@ const { loadAccountScopedRecord, saveAccountScopedRecord } = require("../../lib/
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
 const ATHLETE_ROSTER_DETAILS_NAMESPACE = "athlete-roster-details";
+const CONTACT_LIST_PAGE_LIMIT = 100;
+const CONTACT_LIST_MAX_PAGES = 20;
 const ATHLETE_ROSTER_DETAIL_FIELDS = [
   "firstName",
   "lastName",
@@ -127,14 +129,38 @@ async function enforceActiveAthleteLimit({ accountKey, token, locationId, payloa
 async function listSmartCoachAthletes({ accountKey, token, locationId, includeContacts = false, query = "" }) {
   const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
   const rosterDetails = await loadAthleteRosterDetails(accountKey);
-  const searchParam = query ? `&query=${encodeURIComponent(query)}` : "";
-  const result = await ghlFetch({
-    token,
-    path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=100${searchParam}`,
-    method: "GET",
-  });
+  const contacts = await listLocationContacts({ token, locationId, query });
 
-  const contacts = contactsFromResult(result);
+  return uniqueContacts(contacts)
+    .map((contact) => mergeAthleteRosterDetail(normalizeContact(contact, { rosterFieldIds }), rosterDetails))
+    .filter((athlete) => !athlete.excludedSystemContact)
+    .filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function listLocationContacts({ token, locationId, query = "" }) {
+  const contacts = [];
+  const searchParam = query ? `&query=${encodeURIComponent(query)}` : "";
+  for (let page = 1; page <= CONTACT_LIST_MAX_PAGES; page += 1) {
+    let result;
+    try {
+      result = await ghlFetch({
+        token,
+        path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=${CONTACT_LIST_PAGE_LIMIT}&page=${page}${searchParam}`,
+        method: "GET",
+      });
+    } catch (error) {
+      if (page === 1) throw error;
+      break;
+    }
+    const pageContacts = contactsFromResult(result);
+    if (!pageContacts.length) break;
+    const beforeCount = uniqueContacts(contacts).length;
+    contacts.push(...pageContacts);
+    if (pageContacts.length < CONTACT_LIST_PAGE_LIMIT) break;
+    if (uniqueContacts(contacts).length === beforeCount) break;
+  }
+
   if (query && !contacts.length) {
     const fallback = await ghlFetch({
       token,
@@ -143,18 +169,14 @@ async function listSmartCoachAthletes({ accountKey, token, locationId, includeCo
       body: {
         locationId,
         page: 1,
-        pageLimit: 100,
+        pageLimit: CONTACT_LIST_PAGE_LIMIT,
         query,
       },
     });
     contacts.push(...contactsFromResult(fallback));
   }
 
-  return uniqueContacts(contacts)
-    .map((contact) => mergeAthleteRosterDetail(normalizeContact(contact, { rosterFieldIds }), rosterDetails))
-    .filter((athlete) => !athlete.excludedSystemContact)
-    .filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  return uniqueContacts(contacts);
 }
 
 async function safeListAthleteFitnessRows({ token, locationId }) {
