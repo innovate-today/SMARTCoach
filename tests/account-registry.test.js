@@ -6,6 +6,8 @@ const {
   loadAccountRecord,
   saveAttendanceRecords,
   loadAttendanceRecords,
+  saveKeepTrakNotes,
+  loadKeepTrakNotes,
   mirrorSchoolRecords,
   loadSchoolRecordsMirror,
   schoolRecordsMirrorStatus,
@@ -309,6 +311,78 @@ async function testAttendanceMirrorItemizedStorage() {
   }
 }
 
+async function testKeepTrakUsesScopedStorage() {
+  const previousFetch = global.fetch;
+  const store = new Map();
+  const sets = [];
+  global.fetch = async (url) => {
+    const text = String(url);
+    const parts = text.replace("https://registry.example/", "").split("/").map(decodeURIComponent);
+    const command = parts[0];
+    if (command === "set") {
+      const key = parts[1];
+      const value = parts.slice(2).join("/");
+      store.set(key, value);
+      sets.push({ key, value });
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: "OK" }) };
+    }
+    if (command === "get") {
+      return { ok: true, status: 200, text: async () => JSON.stringify({ result: store.get(parts[1]) || "" }) };
+    }
+    throw new Error(`Unexpected registry call: ${text}`);
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_REGISTRY_REST_URL: "https://registry.example",
+      SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
+      SMARTCOACH_REGISTRY_PREFIX: undefined,
+    }, async () => {
+      const legacyNote = {
+        id: "legacy-note",
+        date: "2026-08-01",
+        body: "Check uniforms",
+        completed: false,
+      };
+      await saveAccountRecord("Keep School", {
+        productPlan: "pro",
+        keepTrakNotes: [legacyNote],
+      });
+
+      const baseKey = "smartcoach:account:keepschool";
+      const scopedKey = "smartcoach:account:keepschool:keeptraknotes";
+      const fullSetsBefore = sets.filter((entry) => entry.key === baseKey).length;
+
+      const saved = await saveKeepTrakNotes("Keep School", [{
+        id: "new-note",
+        date: "2026-08-02",
+        body: "Bring med kit",
+        completed: false,
+      }]);
+      assert.strictEqual(saved.saved, true);
+      assert.strictEqual(saved.total, 2);
+      assert.strictEqual(sets.filter((entry) => entry.key === baseKey).length, fullSetsBefore);
+      assert.ok(sets.some((entry) => entry.key === scopedKey), "Keep Trak notes should save to scoped storage");
+
+      const loaded = await loadKeepTrakNotes("Keep School", {
+        includeArchived: "true",
+        start: "2026-08-01",
+        end: "2026-08-02",
+      });
+      assert.deepStrictEqual(loaded.map((note) => note.id).sort(), ["legacy-note", "new-note"]);
+
+      const deleted = await saveKeepTrakNotes("Keep School", [], { deleteIds: ["legacy-note"] });
+      assert.strictEqual(deleted.saved, true);
+      assert.strictEqual(deleted.deleted, 1);
+
+      const loadedAfterDelete = await loadKeepTrakNotes("Keep School", { includeArchived: "true" });
+      assert.deepStrictEqual(loadedAfterDelete.map((note) => note.id), ["new-note"]);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 async function testCoachDeviceUsageCountsAppDevicesOnly() {
   const previousFetch = global.fetch;
   const store = {};
@@ -361,6 +435,7 @@ async function testCoachDeviceUsageCountsAppDevicesOnly() {
   await testUpstashAliasesAndCustomPrefix();
   await testSchoolRecordsMirrorManifestFallback();
   await testAttendanceMirrorItemizedStorage();
+  await testKeepTrakUsesScopedStorage();
   await testCoachDeviceUsageCountsAppDevicesOnly();
   console.log("account registry alias tests passed");
 })().catch((error) => {

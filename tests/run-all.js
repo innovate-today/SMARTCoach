@@ -3933,6 +3933,14 @@ function checkKeepTrakFeature() {
   ].forEach((text) => {
     if (!api.includes(text) && !registry.includes(text)) throw new Error(`Keep Trak backend missing ${text}`);
   });
+  [
+    'const KEEP_TRAK_NAMESPACE = "keeptraknotes";',
+    "loadAccountScopedRecord(accountKey, KEEP_TRAK_NAMESPACE)",
+    "saveAccountScopedRecord(accountKey, KEEP_TRAK_NAMESPACE",
+    "Array.isArray(previousRecord.notes)",
+  ].forEach((text) => {
+    if (!registry.includes(text)) throw new Error(`Keep Trak scoped storage missing ${text}`);
+  });
   if (!registry.includes(".slice(-1500)")) throw new Error("Keep Trak registry storage must stay capped.");
   console.log("Keep Trak feature ok");
 }
