@@ -435,8 +435,12 @@ async function createOrUpdateAthlete({ accountKey, token, locationId, payload })
 
   const updated = await getContact({ token, contactId: contact.id });
   const normalized = normalizeContact(updated, { rosterFieldIds });
-  const rosterDetail = await saveAthleteRosterDetail({ accountKey, athlete: normalized, payload });
-  return mergeAthleteRosterDetail(normalized, rosterDetail);
+  const detailPayload = Object.assign({}, payload || {}, { contactId: contact.id });
+  const rosterDetail = await saveAthleteRosterDetail({ accountKey, athlete: normalized, payload: detailPayload });
+  const athlete = mergeAthleteRosterDetail(normalized, rosterDetail);
+  athlete.id = clean(athlete.id) || clean(contact.id);
+  athlete.contactId = clean(athlete.contactId) || clean(athlete.id) || clean(contact.id);
+  return athlete;
 }
 
 async function findOrCreateContact({ token, locationId, athleteName }) {
