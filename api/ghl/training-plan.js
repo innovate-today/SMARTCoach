@@ -86,25 +86,33 @@ module.exports = async function handler(req, res) {
         res.status(200).json({ success: true, questionnaire: trainingPlanQuestionnaire() });
         return;
       }
-      if (req.query && req.query.kind === "assignments") {
+      try {
+        if (req.query && req.query.kind === "assignments") {
+          const plans = await listTrainingPlans({ token, locationId });
+          res.status(200).json({ success: true, plans });
+          return;
+        }
+        if (req.query && (req.query.kind === "days" || req.query.trainingPlanId || req.query.planId || req.query.date)) {
+          const days = await listTrainingPlanDays({
+            token,
+            locationId,
+            trainingPlanId: clean(req.query.trainingPlanId || req.query.planId),
+            planSourceId: clean(req.query.planSourceId),
+            date: clean(req.query.date),
+            groupName: clean(req.query.groupName),
+          });
+          res.status(200).json({ success: true, days });
+          return;
+        }
         const plans = await listTrainingPlans({ token, locationId });
         res.status(200).json({ success: true, plans });
-        return;
+      } catch (error) {
+        if (isTrainingPlanObjectMissingError(error)) {
+          res.status(200).json(emptyTrainingPlanReadResponse(req));
+          return;
+        }
+        throw error;
       }
-      if (req.query && (req.query.kind === "days" || req.query.trainingPlanId || req.query.planId || req.query.date)) {
-        const days = await listTrainingPlanDays({
-          token,
-          locationId,
-          trainingPlanId: clean(req.query.trainingPlanId || req.query.planId),
-          planSourceId: clean(req.query.planSourceId),
-          date: clean(req.query.date),
-          groupName: clean(req.query.groupName),
-        });
-        res.status(200).json({ success: true, days });
-        return;
-      }
-      const plans = await listTrainingPlans({ token, locationId });
-      res.status(200).json({ success: true, plans });
       return;
     }
 
@@ -184,6 +192,10 @@ module.exports = async function handler(req, res) {
       days: createdDays,
     });
   } catch (error) {
+    if (isTrainingPlanObjectMissingError(error)) {
+      res.status(409).json({ error: trainingPlanSetupMissingMessage(), setupMissing: true });
+      return;
+    }
     res.status(error.statusCode || 500).json({ error: error.message || "Training plan save failed." });
   }
 };
@@ -1751,6 +1763,34 @@ function parseTimeToMs(value) {
   if (parts.length === 2) return Math.round(((parts[0] * 60) + parts[1]) * 1000);
   if (parts.length === 3) return Math.round(((parts[0] * 3600) + (parts[1] * 60) + parts[2]) * 1000);
   return null;
+}
+
+function trainingPlanSetupMissingMessage() {
+  return "SMART Trak Training is not set up for this account yet. Ask the account owner to finish SMART Trak setup for this subaccount, then refresh Training.";
+}
+
+function isTrainingPlanObjectMissingError(error) {
+  const message = clean(error && (error.message || error.error || error.detail));
+  if (!message) return false;
+  if (!/custom object/i.test(message) || !/not found/i.test(message)) return false;
+  return (
+    message.includes(TRAINING_PLAN_SCHEMA_KEY) ||
+    message.includes(TRAINING_PLAN_DAY_SCHEMA_KEY) ||
+    /training_plans|training_plan_days/i.test(message)
+  );
+}
+
+function emptyTrainingPlanReadResponse(req) {
+  const query = (req && req.query) || {};
+  const isDaysRequest = query.kind === "days" || query.trainingPlanId || query.planId || query.date;
+  const response = {
+    success: true,
+    setupMissing: true,
+    warning: trainingPlanSetupMissingMessage(),
+  };
+  if (isDaysRequest) response.days = [];
+  else response.plans = [];
+  return response;
 }
 
 function cleanLines(value) {

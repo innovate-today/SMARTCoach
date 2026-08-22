@@ -2975,6 +2975,22 @@ function checkTrainingAdjustmentAuditDates() {
   console.log("Training adjustment audit dates ok");
 }
 
+function checkTrainingPlanMissingSetupFallback() {
+  const api = fs.readFileSync("api/ghl/training-plan.js", "utf8");
+  [
+    "function isTrainingPlanObjectMissingError(error)",
+    "function emptyTrainingPlanReadResponse(req)",
+    "SMART Trak Training is not set up for this account yet.",
+    "res.status(200).json(emptyTrainingPlanReadResponse(req));",
+    "res.status(409).json({ error: trainingPlanSetupMissingMessage(), setupMissing: true });",
+    "custom_objects.training_plans",
+    "custom_objects.training_plan_days",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Training missing setup fallback missing ${text}`);
+  });
+  console.log("Training missing setup fallback ok");
+}
+
 function checkQualityWorkoutTypesAccepted() {
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
@@ -4915,6 +4931,7 @@ checkWeatherLocationSaveFallback();
 checkTrainingCalendarQualityEditParsing();
 checkTrainingCalendarEasyRunStandardTarget();
 checkTrainingAdjustmentAuditDates();
+checkTrainingPlanMissingSetupFallback();
 checkQualityWorkoutTypesAccepted();
 checkSmartCoachAppSyncIdempotency();
 checkManualMileageQualitySession();
