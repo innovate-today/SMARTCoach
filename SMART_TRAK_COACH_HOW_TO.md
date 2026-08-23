@@ -643,7 +643,7 @@ How to use it:
 
 1. Choose the SMART Trak season-best source.
 2. Set your team name, race name, division, score runners, and displacers.
-3. Click **My Season Best** to load your team's current season bests.
+3. Click **My Season Best** to load active runners from the current Cross Country season.
 4. Paste or type other teams' runners into the results box.
 5. Click **Score Meet**.
 6. Review team scores, scorers, displacers, average time, and spread.

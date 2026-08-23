@@ -259,6 +259,7 @@ tr:last-child td{border-bottom:0}
 <script>
 var lastSimulation=null;
 var smartTrakMeetResults=[];
+var smartTrakActiveAthleteKeys={};
 var els={
   dashboardLink:document.getElementById('dashboardLink'),
   meetHistoryLink:document.getElementById('meetHistoryLink'),
@@ -594,18 +595,51 @@ function loadSmartTrakDashboard(){
       if(result.data&&result.data.subscriptionAccessRequired)throw new Error(result.data.error||'SMART Trak access is blocked for this account.');
       throw new Error(result.data&&result.data.error||'SMART Trak season bests failed to load.');
     }
+    smartTrakActiveAthleteKeys=activeAthleteKeys(result.data&&result.data.athletes||[]);
     smartTrakMeetResults=result.data.meetResults||result.data.recentMeetResults||[];
     return smartTrakMeetResults;
   }).finally(function(){
     els.loadSbBtn.disabled=false;
   });
 }
+function activeAthleteKeys(athletes){
+  var keys={};
+  (athletes||[]).forEach(function(athlete){
+    if(athlete&&athlete.smartcoachActive===false)return;
+    [athlete&&athlete.contactId,athlete&&athlete.id,athlete&&athlete.name,athlete&&athlete.athleteName].forEach(function(value){
+      var key=String(value||'').trim().toLowerCase();
+      if(key)keys[key]=true;
+    });
+  });
+  return keys;
+}
+function rowMatchesActiveAthlete(row){
+  var keys=Object.keys(smartTrakActiveAthleteKeys||{});
+  if(!keys.length)return true;
+  return [row&&row.contactId,row&&row.athleteName,row&&row.name].some(function(value){
+    var key=String(value||'').trim().toLowerCase();
+    return key&&smartTrakActiveAthleteKeys[key];
+  });
+}
+function currentCrossCountrySeasonYear(){
+  return new Date().getFullYear();
+}
+function rowSeasonYear(row){
+  return Number(row&&row.seasonYear)||yearFromDate(row&&row.meetDate)||yearFromDate(row&&row.syncedAt)||0;
+}
+function yearFromDate(value){
+  var date=value?new Date(value):null;
+  return date&&!isNaN(date.getTime())?date.getFullYear():0;
+}
 function bestRowsForRace(rows,raceKey){
   var targetGender=raceGender(raceKey);
+  var seasonYear=currentCrossCountrySeasonYear();
   var bestByAthlete={};
   rows.forEach(function(row){
+    if(!rowMatchesActiveAthlete(row))return;
     if(genderKey(row.athleteGender)!==targetGender)return;
     if(rowSport(row)&&rowSport(row)!=='cross_country')return;
+    if(rowSeasonYear(row)!==seasonYear)return;
     if(!eventMatchesRace(row,raceKey))return;
     if(!row.isSeasonBest)return;
     var seconds=parseTime(row.resultDisplay);
@@ -623,12 +657,13 @@ function bestRowsForRace(rows,raceKey){
 }
 function loadSeasonBests(){
   var raceKey=els.sbRace.value||'girls_xc_5k';
+  var seasonYear=currentCrossCountrySeasonYear();
   if(!els.teamName.value.trim())els.teamName.value=defaultTeamName(raceKey);
   var load=smartTrakMeetResults.length?Promise.resolve(smartTrakMeetResults):loadSmartTrakDashboard();
   return load.then(function(rows){
     var bests=bestRowsForRace(rows,raceKey);
     if(!bests.length){
-      setStatus('No SMART Trak SB results found for '+raceLabel(raceKey)+'.','warn');
+      setStatus('No SMART Trak SB results found for active '+seasonYear+' '+raceLabel(raceKey)+' runners.','warn');
       return;
     }
     var team=els.teamName.value.trim()||defaultTeamName(raceKey);
@@ -640,7 +675,7 @@ function loadSeasonBests(){
     var opponents=linesWithoutTeam(els.resultInput.value,team)||readSavedOpponentText();
     els.resultInput.value=combineResultBlocks(myTeamText,opponents);
     render();
-    setStatus(bests.length+' SMART Trak SB result'+(bests.length===1?'':'s')+' loaded for '+raceLabel(raceKey)+(opponents?' with saved opponents.':'.'),'');
+    setStatus(bests.length+' active '+seasonYear+' SMART Trak SB result'+(bests.length===1?'':'s')+' loaded for '+raceLabel(raceKey)+(opponents?' with saved opponents.':'.'),'');
   }).catch(function(error){
     setStatus(error.message||'SMART Trak season bests failed to load.','error');
   });

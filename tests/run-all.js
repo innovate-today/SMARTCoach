@@ -2568,6 +2568,30 @@ function checkDashboardToolPreferences() {
   console.log("dashboard tool preferences ok");
 }
 
+function checkXcSimulatorCurrentSeasonBests() {
+  const html = fs.readFileSync("xc-simulator.html", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    "var smartTrakActiveAthleteKeys={};",
+    "smartTrakActiveAthleteKeys=activeAthleteKeys(result.data&&result.data.athletes||[]);",
+    "function activeAthleteKeys(athletes)",
+    "if(athlete&&athlete.smartcoachActive===false)return;",
+    "function rowMatchesActiveAthlete(row)",
+    "function currentCrossCountrySeasonYear()",
+    "function rowSeasonYear(row)",
+    "if(!rowMatchesActiveAthlete(row))return;",
+    "if(rowSeasonYear(row)!==seasonYear)return;",
+    "No SMART Trak SB results found for active '+seasonYear+' '+raceLabel(raceKey)+' runners.",
+    "active '+seasonYear+' SMART Trak SB result",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`XC Simulator current season best filter missing ${text}`);
+  });
+  if (!guide.includes("Click **My Season Best** to load active runners from the current Cross Country season.")) {
+    throw new Error("Coach guide should describe XC Simulator My Season Best as active current Cross Country season runners.");
+  }
+  console.log("XC Simulator current season best filter ok");
+}
+
 function checkBugTrakDesktopFeedback() {
   const widget = fs.readFileSync("assets/smartcoach-help-widget.js", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
@@ -4996,6 +5020,7 @@ checkTrainingCalendarDeletedMeetGuard();
 checkDashboardStartHere();
 checkHowToGuidePage();
 checkDashboardToolPreferences();
+checkXcSimulatorCurrentSeasonBests();
 checkBugTrakDesktopFeedback();
 checkPublicSharePagesHideFeedback();
 checkPlanImportMultiGroupAssignment();
