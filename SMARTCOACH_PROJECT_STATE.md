@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-08-22
+Last updated: 2026-08-23
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -29,6 +29,7 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 
 Current launch status:
 
+- Athlete Setup 3 Mile current-fitness follow-up: traced the current-fitness distance dropdown through Athlete Setup UI, local fitness-row state, `/api/smart-trak/athlete-best` payload, backend save handler, saved athlete-best record shape, reload/render path, and related race-result/projection helpers. Added `3 Mile` to Athlete Setup, race-result choices, and training-plan distance helpers so three-mile cross country marks can be selected and projected consistently. Coach how-to and regression coverage were updated. What's New was not updated per user instruction.
 - Current Fitness Cleanup projection follow-up: traced the Fitness Review projection path and confirmed the race-equivalency formula is consistent, but the comparison source changes when the latest race already matches the saved current-fitness mark. The Projected column now labels whether the projected time comes from the current mark or the previous race, and the review text calls out previous-race vs current-mark projection so owner/admin cleanup explains why rows can differ. Regression coverage was updated. Coach how-to and What's New were not updated because this remains a temporary owner/admin cleanup tool.
 - Training Calendar missing setup fallback follow-up: traced the TCA MS Training failure from the Training button/page load through the Training Calendar API calls (`/api/smart-trak/training-plan?kind=assignments` and `kind=days`) into `api/ghl/training-plan.js`. The failing sub-account is missing the SMART Trak training-plan custom objects (`custom_objects.training_plans` / `custom_objects.training_plan_days`) that TCA US already has, so the page treated setup-not-found as a fatal load error. Training reads now return an empty setup-warning response instead of crashing the whole page, while saves/updates return a clear setup-needed message. Coach how-to and What's New were not updated because this is setup/error handling, not a changed workflow.
 - Manual Add Athlete roster reload follow-up: traced Add Athlete from the Athletes page button, modal state, `/api/ghl/athletes` payload, backend create/update handler, GHL contact save, account-scoped `athlete-roster-details` mirror, roster GET reload, and table render. The athlete contact could be created in GHL but disappear from SMART Trak after reload because the roster GET only loaded the first 100 GHL contacts; the SMARTCoach Pro account now has enough prospect contacts that new athletes can fall outside that first page. The athletes API now pages through GHL contacts with a safe cap and duplicate-page guard before filtering active SMART Trak athletes. Coach how-to and What's New were not updated because the coach workflow did not change and user said no What's New.

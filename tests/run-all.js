@@ -210,6 +210,34 @@ function checkCurrentFitnessClear() {
   console.log("Current fitness clear controls ok");
 }
 
+function checkCurrentFitnessThreeMileOption() {
+  const planSetup = fs.readFileSync("plan-setup.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const calendar = fs.readFileSync("training-calendar.html", "utf8");
+  const trainingPlanApi = fs.readFileSync("api/ghl/training-plan.js", "utf8");
+  if (!planSetup.includes("'2 Mile','3 Mile','4K'")) {
+    throw new Error("Athlete Setup current fitness dropdown should include 3 Mile.");
+  }
+  if (!trainingPlanApi.includes('{ label: "3 Mile", value: "3 Mile" }')) {
+    throw new Error("Training plan current fitness distance option should include 3 Mile.");
+  }
+  if (!trainingPlanApi.includes('"3mile": 4828.03')) {
+    throw new Error("Training plan distance helper should recognize 3 Mile.");
+  }
+  [
+    { page: "Dashboard", html: dashboard },
+    { page: "Training Calendar", html: calendar },
+  ].forEach(({ page, html }) => {
+    if (!html.includes("'5K','3 Mile','2 Mile'")) {
+      throw new Error(`${page} Cross Country event options should include 3 Mile.`);
+    }
+    if (!html.includes("'3 mile':4828.032")) {
+      throw new Error(`${page} distance helper should recognize 3 Mile.`);
+    }
+  });
+  console.log("Current fitness 3 Mile option ok");
+}
+
 function checkAccountStatusLocationVerification() {
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   [
@@ -2249,7 +2277,7 @@ function checkStravaAdminTestFlow() {
 function checkCrossCountryRaceResultEvents() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
-  const expected = "var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];";
+  const expected = "var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','3 Mile','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];";
   const raceOtherTokens = [
     'id="raceResultOtherDistanceWrap"',
     'id="raceResultOtherDistance"',
@@ -4912,6 +4940,7 @@ checkDashboardTrainingPaces();
 checkDashboardCurrentFitnessTargetFallback();
 checkCoachApprovedCurrentFitnessUpdates();
 checkCurrentFitnessCleanupTool();
+checkCurrentFitnessThreeMileOption();
 checkMilesBoardFeature();
 checkResultsBoardFeature();
 checkSpeedTrakFeature();

@@ -694,7 +694,7 @@ var raceResultMeetRows=[];
 var meetManagerRows=[];
 var FIELD_EVENT_OPTIONS=['High Jump','Long Jump','Triple Jump','Pole Vault','Shot Put','Discus','Javelin','Hammer'];
 var RELAY_EVENT_OPTIONS=['4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
-var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];
+var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','3 Mile','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];
 var meetManagerEditingId='';
 var activeDay=null;
 var viewMode='week';
@@ -4365,7 +4365,7 @@ function syncRaceResultSport(){
   var current=els.raceResultEvent.value;
   var sport=els.raceResultSport.value||'track';
   var type=els.raceResultType&&els.raceResultType.value||'individual';
-  var events=type==='relay'?[''].concat(RELAY_EVENT_OPTIONS):type==='field'?[''].concat(FIELD_EVENT_OPTIONS):(sport==='cross_country'?[''].concat(CROSS_COUNTRY_RACE_EVENT_OPTIONS):['','100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS));
+  var events=type==='relay'?[''].concat(RELAY_EVENT_OPTIONS):type==='field'?[''].concat(FIELD_EVENT_OPTIONS):(sport==='cross_country'?[''].concat(CROSS_COUNTRY_RACE_EVENT_OPTIONS):['','100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','3 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon','Other'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS));
   els.raceResultEvent.innerHTML=events.map(function(eventName){
     return '<option value="'+esc(eventName)+'">'+esc(eventName||'Select event')+'</option>';
   }).join('');
@@ -4497,7 +4497,7 @@ function trainingPaceSource(fitness){
 function eventDistanceMeters(event){
   var text=String(event||'').trim().toLowerCase().replace(/\s+/g,' ');
   if(!text || /relay|jump|vault|shot|discus|javelin|hammer/.test(text))return 0;
-  var named={'100h':100,'110h':110,'300h':300,'400h':400,'1 mile':1609.344,'1mi':1609.344,'2 mile':3218.688,'2mi':3218.688,'3k':3000,'4k':4000,'5k':5000,'8k':8000,'10k':10000,'15k':15000,'half marathon':21097.5,'marathon':42195};
+  var named={'100h':100,'110h':110,'300h':300,'400h':400,'1 mile':1609.344,'1mi':1609.344,'2 mile':3218.688,'2mi':3218.688,'3 mile':4828.032,'3mi':4828.032,'3k':3000,'4k':4000,'5k':5000,'8k':8000,'10k':10000,'15k':15000,'half marathon':21097.5,'marathon':42195};
   if(named[text])return named[text];
   var miles=text.match(/^(\d+(?:\.\d+)?)\s*(mile|miles|mi)$/);
   if(miles)return Number(miles[1])*1609.344;

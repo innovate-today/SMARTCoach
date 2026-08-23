@@ -553,7 +553,7 @@ Common uses:
 4. Remove athletes from old group assignments when needed.
 5. After saving or deleting a training group, review the confirmation beside the group action buttons.
 
-If a synced race saved the wrong distance, correct the athlete's current fitness event, time, and date in Athlete Setup, then save. SMART Trak replaces the previous current fitness event for that athlete, so the Dashboard roster and future target paces use the corrected mark after refresh.
+If a synced race saved the wrong distance, correct the athlete's current fitness event, time, and date in Athlete Setup, then save. For a three-mile cross country race, choose **3 Mile**. SMART Trak replaces the previous current fitness event for that athlete, so the Dashboard roster and future target paces use the corrected mark after refresh.
 
 Training groups also appear in the SMARTCoach Pro Mobile App, so keep them clean and practical for how practice is actually organized.
 
@@ -770,7 +770,7 @@ How to use it:
 3. Choose an existing meet or enter a new meet name.
 4. Select the athlete.
    - If the race day is tied to a training group on the calendar, the athlete list uses that group first.
-5. Choose the event. Cross Country includes Marathon, Half Marathon, 15K, 10K, 5K, 2 Mile, 3200m, 3K, 1 Mile, 1600m, 1500m, 800m, and Other.
+5. Choose the event. Cross Country includes Marathon, Half Marathon, 15K, 10K, 5K, 3 Mile, 2 Mile, 3200m, 3K, 1 Mile, 1600m, 1500m, 800m, and Other.
    - If the race distance is not listed, choose **Other**, enter the distance, and choose **mi**, **km**, or **m**. SMART Trak saves it as the event, such as **3 Mile**, **3K**, or **3000m**. The same option is available when correcting a saved meet result.
 6. Enter the result.
 7. Choose best status if needed.

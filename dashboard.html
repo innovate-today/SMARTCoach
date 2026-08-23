@@ -1615,7 +1615,7 @@ var meetManagerEditingId='';
 var lastLoadedAt='';
 var FIELD_EVENT_OPTIONS=['High Jump','Long Jump','Triple Jump','Pole Vault','Shot Put','Discus','Javelin','Hammer'];
 var RELAY_EVENT_OPTIONS=['4x100m','4x200m','4x400m','4x800m','Sprint Medley','Distance Medley','Other Relay'];
-var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];
+var CROSS_COUNTRY_RACE_EVENT_OPTIONS=['Marathon','Half Marathon','15K','10K','5K','3 Mile','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m','Other'];
 var WHATS_NEW_VERSION='2026-07-09-results-board';
 var WHATS_NEW_ITEMS=[
   {area:'Keep Trak',items:['SMARTCoach app notes can now be edited with Save Edit.','Add Bullet keeps one daily briefing note organized as talking points.','Desktop cleanup helps remove notes older than 30 days.']},
@@ -1640,7 +1640,7 @@ var START_HERE_PATHS=[
   {title:'Track Summer Mileage',desc:'Create a friendly, read-only team mileage challenge.',steps:['Set the Dashboard activity range.','Open Miles Trak.','Choose challenge types and points.','Copy the public board link for athletes.'],actions:[['Miles Trak','#share-miles-board'],['Log Miles','#log-miles']]},
   {title:'Coach Field Events',desc:'Plan drills and save individual field-event takeaways.',steps:['Open Field Practice from Training.','Pick the event, group, and drill routine.','Check drills during practice.','Add athlete-specific focus and post-practice summaries.'],actions:[['Training','/training-calendar.html'],['Field Practice','/field-practice.html']]}
 ];
-var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS,['Other']);
+var MEET_EVENT_OPTIONS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','3 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS,['Other']);
 var activeTab='roster';
 var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
@@ -7960,7 +7960,7 @@ function eventDistanceMeters(event){
   if(!text || /relay|jump|vault|shot|discus|javelin|hammer/.test(text))return 0;
   var named={
     '100h':100,'110h':110,'300h':300,'400h':400,'1600':1600,'1600m':1600,'mile':1609.344,'1 mile':1609.344,'1mi':1609.344,
-    '3200':3200,'3200m':3200,'2 mile':3218.688,'2mi':3218.688,'3k':3000,'4k':4000,'5k':5000,'8k':8000,'10k':10000,
+      '3200':3200,'3200m':3200,'2 mile':3218.688,'2mi':3218.688,'3 mile':4828.032,'3mi':4828.032,'3k':3000,'4k':4000,'5k':5000,'8k':8000,'10k':10000,
     '15k':15000,'half marathon':21097.5,'marathon':42195
   };
   if(named[text])return named[text];
