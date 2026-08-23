@@ -2962,10 +2962,18 @@ function checkTrainingCalendarQualityEditParsing() {
     "workoutType:first.effort||type,",
     "workoutType:addDayMode==='quality'?(generated.workoutType||els.addDayWorkoutType.value.trim()||calendarEditDay&&calendarEditDay.workoutType||'')",
     "return ['Easy'].concat(qualityEffortTypes()).map(function(value)",
+    "Recovery Between Sets",
+    "els.addQualityRestBtn.addEventListener('click'",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`Training Calendar quality edit parser missing ${text}`);
   });
+  if (html.includes("<label>Recovery Between Reps</label>")) {
+    throw new Error("Training Calendar quality sets should not force recovery between reps.");
+  }
+  if (html.includes("qualityBlockLine(block)+' / '+qualityRecoveryLine(block)") || html.includes("qualityBlockLine(block)+' with '+qualityRecoveryLine(block)")) {
+    throw new Error("Training Calendar quality generated text should not attach recovery to every set.");
+  }
   console.log("Training Calendar quality edit parser ok");
 }
 

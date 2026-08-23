@@ -525,6 +525,8 @@ Use **Training Customization** when your program wants target paces based on dif
 
 For Quality Session workouts, the effort written on the set line controls the phone-app target and the saved workout effort. For example, `3 x 1 mi @ Interval` uses the Interval target range for those mile repeats, even when SMART Trak stores a broader category behind the scenes.
 
+Quality Session sets describe the work reps only. Use **Add Rest Set** when you want a rest block between different work pieces, or use **Recovery Between Sets** on repeating sets when the whole set should repeat with rest between sets.
+
 ## Upload/Paste Plan
 
 Use Upload/Paste Plan for full plans, not one-day workout entry. One-day workouts, races, rest days, and notes should be added on the Training Calendar.
