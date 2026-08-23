@@ -555,6 +555,8 @@ Common uses:
 
 If a synced race saved the wrong distance, correct the athlete's current fitness event, time, and date in Athlete Setup, then save. For a three-mile cross country race, choose **3 Mile**. SMART Trak replaces the previous current fitness event for that athlete, so the Dashboard roster and future target paces use the corrected mark after refresh.
 
+When you click **Save Fitness**, SMART Trak saves only athletes whose current fitness mark was added or changed. If nothing changed, it will tell you there are no current fitness changes to save.
+
 Training groups also appear in the SMARTCoach Pro Mobile App, so keep them clean and practical for how practice is actually organized.
 
 ## Auto Build Plan

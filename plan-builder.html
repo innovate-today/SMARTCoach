@@ -525,11 +525,12 @@ function normalizeFitnessEvent(value){
 }
 function saveFitnessRows(){
   var rows=collectFitnessRows();
+  var hasDraftFitness=hasFitnessDraftTime();
   if(!rows.length){
     var single=fitnessRowFromPlanFields();
     if(single)rows.push(single);
   }
-  if(!rows.length){setFitnessStatus('Enter at least one current fitness time.','warn');return;}
+  if(!rows.length){setFitnessStatus(hasDraftFitness?'No current fitness changes to save.':'Enter at least one current fitness time.','warn');return;}
   setFitnessStatus('Saving current fitness...',null);
   fetch('/api/smart-trak/athlete-best',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:rows})}).then(function(r){
     return r.json().then(function(data){return{ok:r.ok,data:data};});
@@ -643,7 +644,35 @@ function collectFitnessRows(){
       season:currentSeason(),
       seasonYear:new Date().getFullYear()
     };
-  }).filter(function(row){return row.contactId&&row.event&&row.resultDisplay;});
+  }).filter(function(row){
+    var athlete=athletes.find(function(item){return String(item&&item.id||'')===String(row.contactId||'');})||{};
+    var draft=fitnessDraftValues[fitnessDraftKey(athlete)]||{};
+    return row.contactId&&row.event&&row.resultDisplay&&fitnessDraftChanged(athlete,draft);
+  });
+}
+function hasFitnessDraftTime(){
+  return Object.keys(fitnessDraftValues).some(function(key){
+    var draft=fitnessDraftValues[key]||{};
+    return !!String(draft.time||'').trim();
+  });
+}
+function fitnessDraftChanged(athlete,draft){
+  if(!athlete||!athlete.id||!draft||!String(draft.event||'').trim()||!String(draft.time||'').trim())return false;
+  var previousEvent=draft.previousEvent||'';
+  var saved=savedFitnessForAthlete(athlete,previousEvent||draft.event);
+  if(!saved)return true;
+  if(previousEvent&&normalizeFitnessEvent(previousEvent)!==normalizeFitnessEvent(draft.event))return true;
+  if(String(draft.previousRecordId||'')&&String(saved.recordId||'')&&String(draft.previousRecordId||'')!==String(saved.recordId||''))return true;
+  return fitnessValueChanged(draft.sport||sportForEvent(draft.event),saved.sport||sportForEvent(saved.event))||
+    normalizeFitnessEvent(draft.event)!==normalizeFitnessEvent(saved.event)||
+    fitnessValueChanged(draft.time,saved.resultDisplay)||
+    fitnessValueChanged(fitnessDateOnly(draft.date),fitnessDateOnly(saved.resultDate));
+}
+function fitnessValueChanged(a,b){
+  return String(a||'').trim()!==String(b||'').trim();
+}
+function fitnessDateOnly(value){
+  return String(value||'').trim().slice(0,10);
 }
 function fitnessRowFromPlanFields(){
   var athleteEl=document.getElementById('field-athleteName');
