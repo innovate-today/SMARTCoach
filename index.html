@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1786479600000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1787536500000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1786479600000 -->
-<!-- v1786479600000 -->
+<!-- build:1787536500000 -->
+<!-- v1787536500000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -5617,23 +5617,38 @@ function compactRunnerTarget(plan,profile){
 }
 function plannedTargetData(plan,profile){
   if(isMeetTrainingPlanDay(plan))return null;
-  var text=trainingPlanWorkoutTargetText(plan);
-  var rule=targetRuleForPlan(plan);
-  if(!rule)return null;
-  var fitness=chooseFitness(profile,rule);
-  if(!fitness)return null;
-  var range=targetRangeDataFromFitness(rule,fitness);
-  if(!range)return null;
+  var rows=plannedTargetRows(plan,profile);
+  if(!rows.length)return null;
+  var first=rows[0],rule=first.rule,fitness=first.fitness,range=first.range;
   return{
     cacheKey:targetPlanCacheKey(plan),
-    plannedTargetRange:range.display,
+    plannedTargetRange:rows.length>1?rows.map(function(row){return row.label+': '+row.range.display;}).join('; '):range.display,
     plannedTargetMinMs:range.fast,
     plannedTargetMaxMs:range.slow,
     plannedTargetRep:workoutPrescription(plan,rule),
     currentFitnessEvent:fitness.event,
     currentFitnessDisplay:fitness.display,
-    plannedEffortPercent:Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%'
+    plannedEffortPercent:rows.length>1?rows.map(function(row){return row.label+' '+Math.round(row.rule.low*100)+'-'+Math.round(row.rule.high*100)+'%';}).join('; '):Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%'
   };
+}
+function plannedTargetRows(plan,profile){
+  return targetRulesForPlan(plan).map(function(rule){
+    var fitness=chooseFitness(profile,rule);
+    var range=targetRangeDataFromFitness(rule,fitness);
+    if(!fitness||!range)return null;
+    return{rule:rule,fitness:fitness,range:range,label:rule.repLabel||rule.workLabel||'Rep'};
+  }).filter(Boolean);
+}
+function uniqueText(list){
+  var seen={},out=[];
+  (list||[]).forEach(function(value){
+    var text=String(value||'').trim();
+    var key=text.toLowerCase();
+    if(!text||seen[key])return;
+    seen[key]=true;
+    out.push(text);
+  });
+  return out;
 }
 function targetPlanCacheKey(plan){
   plan=plan||{};
@@ -6936,7 +6951,14 @@ function entryTargetHtml(plan,profile,run){
   var text=trainingPlanWorkoutTargetText(plan);
   var rule=targetRuleForPlan(plan);
   var fitness=chooseFitness(profile,rule);
+  var targetRows=plannedTargetRows(plan,profile);
   var prescription=workoutPrescription(plan,rule);
+  if(targetRows.length>1){
+    var targetLines=targetRows.map(function(row){return ex(row.label+': '+row.range.display);}).join('<br>');
+    var fitnessLines=uniqueText(targetRows.map(function(row){return row.fitness.event+' '+row.fitness.display;})).join('; ');
+    var effortLines=targetRows.map(function(row){return row.label+' '+Math.round(row.rule.low*100)+'-'+Math.round(row.rule.high*100)+'%';}).join('; ');
+    return '<span style="font-weight:700;color:#333">Today: '+ex(qualityWorkoutPrescription(plan,targetRows.map(function(row){return row.rule;}))||prescription||plan.trainingPlanDayTitle||'Workout')+'</span><br><span>Target:<br>'+targetLines+'</span><br><span>Current fitness: '+ex(fitnessLines)+'</span><br><span>Effort: '+ex(effortLines)+'</span>';
+  }
   if(!rule){
     return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||plan.trainingPlanDayTitle||'Workout')+'</span>'+(text?'<br><span>'+ex(text)+'</span>':'');
   }
@@ -6957,6 +6979,8 @@ function entryTargetHtml(plan,profile,run){
   return '<span style="font-weight:700;color:#333">Today: '+ex(prescription||rule.repLabel)+'</span><br><span>Target: '+ex(range)+'</span>'+actual+(diff?'<br><span>Difference: '+ex(diff)+'</span>':'')+'<br><span>Current fitness: '+ex(fitness.event+' '+fitness.display)+'</span><br><span>Effort: '+Math.round(rule.low*100)+'-'+Math.round(rule.high*100)+'%</span>'+(recovery?'<br><span>'+ex(recovery)+'</span>':'');
 }
 function workoutPrescription(plan,rule){
+  var quality=qualityWorkoutPrescription(plan);
+  if(quality)return quality;
   var source=trainingPlanWorkoutTargetText(plan);
   var timed=timedRepPrescription(source);
   if(timed)return timed.count+' x '+timed.label;
@@ -7029,6 +7053,57 @@ function targetRuleForPlan(plan){
     return parseTargetRule('',easyType);
   }
   return parseTargetRule(text,type);
+}
+function targetRulesForPlan(plan){
+  var mode=trainingPlanTargetMode(plan);
+  if(mode==='off'||mode==='race')return[];
+  var text=trainingPlanWorkoutTargetText(plan);
+  var type=trainingPlanWorkoutType(plan);
+  if(mode==='quality'){
+    var qualityRules=qualityTargetRulesFromText(text,type);
+    if(qualityRules.length)return qualityRules;
+  }
+  var single=targetRuleForPlan(plan);
+  return single?[single]:[];
+}
+function qualityTargetRulesFromText(text,workoutType){
+  var source=String(text||''),rules=[],seen={};
+  var pattern=/(?:(\d+)\s*(?:x|×)\s*\(\s*)?(\d+)\s*(?:x|×)\s*([0-9]+(?:\.[0-9]+)?\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\s*@\s*([A-Za-z][A-Za-z\s-]*?)(?=\s*(?:\)|;|\/|\n|$))/gi;
+  var match;
+  while((match=pattern.exec(source))){
+    var repeatCount=Number(match[1]||1)||1;
+    var reps=Number(match[2]||1)||1;
+    var distanceLabel=normalizeEventLabel(match[3]);
+    var effort=String(match[4]||workoutType||'').trim();
+    var rule=paceRule(effort||workoutType);
+    var repMeters=eventDistance(distanceLabel);
+    if(!rule||!rule.distance||!repMeters)continue;
+    var key=[repeatCount,reps,distanceLabel.toLowerCase(),normalizeWorkoutType(effort).toLowerCase()].join('|');
+    if(seen[key])continue;
+    seen[key]=true;
+    rules.push({
+      repLabel:distanceLabel,
+      repMeters:repMeters,
+      low:rule.low,
+      high:rule.high,
+      preferred:preferredFitnessEvents(distanceLabel+' '+source),
+      suffix:rule.suffix||'',
+      effort:rule.label||effort||workoutType,
+      reps:reps,
+      repeatCount:repeatCount,
+      workLabel:reps+' x '+distanceLabel
+    });
+  }
+  return rules;
+}
+function qualityWorkoutPrescription(plan,rules){
+  rules=rules||qualityTargetRulesFromText(trainingPlanWorkoutTargetText(plan),trainingPlanWorkoutType(plan));
+  if(!rules||!rules.length)return'';
+  var repeated=rules.find(function(rule){return Number(rule.repeatCount||1)>1;});
+  if(repeated){
+    return repeated.repeatCount+' x ('+rules.map(function(rule){return rule.workLabel||rule.repLabel;}).join(', ')+')';
+  }
+  return rules.map(function(rule){return rule.workLabel||rule.repLabel;}).join('; ');
 }
 function calendarPlanDayForTarget(plan){
   if(!plan||!Array.isArray(CD))return null;

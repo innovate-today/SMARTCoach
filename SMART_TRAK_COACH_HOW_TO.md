@@ -497,7 +497,7 @@ For Easy Run workouts, leave **Target** blank to use the standard easy target fr
 
 To move a workout or meet to another date, grab the calendar item and drag it to the new day. This updates the saved date for that workout or meet.
 
-To edit a workout already on the calendar, open the workout and click **Edit**. Quality Session edits reopen with the saved warmup, reps, distance, effort, recovery, cooldown, details, and target text so the coach can adjust the actual workout instead of rebuilding it from scratch. Choose the effort inside each set; those set Effort choices include Interval, Repetition, Hills, and Fast Reps.
+To edit a workout already on the calendar, open the workout and click **Edit**. Quality Session edits reopen with the saved warmup, reps, distance, effort, rest sets, cooldown, details, and target text so the coach can adjust the actual workout instead of rebuilding it from scratch. Choose the effort inside each set; those set Effort choices include Interval, Repetition, Hills, and Fast Reps.
 
 Quality Session warmup, cooldown, and set distances can use distance or time units, including miles, kilometers, meters, minutes, and seconds. Time-based pieces are shown in the workout instructions but do not add mileage volume.
 
@@ -524,6 +524,8 @@ Use **Strava** when an athlete should connect their own Strava account. Choose t
 Use **Training Customization** when your program wants target paces based on different effort percentages. The table shows the current percent range for each effort, such as Easy / Recovery Run, Threshold, Interval, Repetition, Tempo, and speed work. Edit the low and high percentages, then click **Save Customization**. Click **Reset Defaults** to return the table to the built-in SMART Trak percentages.
 
 For Quality Session workouts, the effort written on the set line controls the phone-app target and the saved workout effort. For example, `3 x 1 mi @ Interval` uses the Interval target range for those mile repeats, even when SMART Trak stores a broader category behind the scenes.
+
+When a Quality Session has more than one work distance, such as `10 x (1 x 400m, 1 x 100m)`, the SMARTCoach app shows target ranges for each work distance.
 
 Quality Session sets describe the work reps only. Use **Add Rest Set** when you want a rest block between different work pieces or after a repeating set.
 
