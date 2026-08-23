@@ -3,6 +3,7 @@ const GHL_VERSION = "2021-07-28";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const RECORD_SCHEMA_KEY = "custom_objects.records";
+const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { mirrorTrainingRecords } = require("../../lib/account-registry");
@@ -304,6 +305,8 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     reason,
   });
 
+  await cleanupReassignedPlaceholderContact({ token, previousValues, nextValues });
+
   if (nextContactId) {
     await addCorrectionNote({
       token,
@@ -429,6 +432,39 @@ async function addCorrectionNote({ token, contactId, body }) {
     method: "POST",
     body: { body },
   });
+}
+
+async function cleanupReassignedPlaceholderContact({ token, previousValues, nextValues }) {
+  const previousContactId = clean(previousValues && previousValues.contactId);
+  const nextContactId = clean(nextValues && nextValues.contactId);
+  if (!previousContactId || !nextContactId || previousContactId === nextContactId) return;
+  if (!isGeneratedRunnerPlaceholderName(previousValues && previousValues.athleteName)) return;
+  if (isGeneratedRunnerPlaceholderName(nextValues && nextValues.athleteName)) return;
+  try {
+    const previousContact = await getContact({ token, contactId: previousContactId });
+    if (!previousContact || !isGeneratedRunnerPlaceholderName(contactName(previousContact))) return;
+    await ghlFetch({
+      token,
+      path: `/contacts/${encodeURIComponent(previousContactId)}`,
+      method: "PUT",
+      body: { customFields: [{ id: SMARTCOACH_ACTIVE_FIELD_ID, value: "No" }] },
+    });
+  } catch (error) {
+    return;
+  }
+}
+
+async function getContact({ token, contactId }) {
+  const result = await ghlFetch({ token, path: `/contacts/${encodeURIComponent(contactId)}`, method: "GET" });
+  return result.contact || result;
+}
+
+function contactName(contact) {
+  return clean(contact && contact.name) || `${clean(contact && contact.firstName)} ${clean(contact && contact.lastName)}`.trim();
+}
+
+function isGeneratedRunnerPlaceholderName(value) {
+  return /^runner\s+\d+$/i.test(clean(value));
 }
 
 async function mirrorCorrectedTrainingRecord({ accountKey, record, props, contactId, athleteName, nextValues, coachNote, totalMs, syncedAt }) {

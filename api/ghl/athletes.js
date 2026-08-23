@@ -134,6 +134,7 @@ async function listSmartCoachAthletes({ accountKey, token, locationId, includeCo
   return uniqueContacts(contacts)
     .map((contact) => mergeAthleteRosterDetail(normalizeContact(contact, { rosterFieldIds }), rosterDetails))
     .filter((athlete) => !athlete.excludedSystemContact)
+    .filter((athlete) => !isGeneratedRunnerPlaceholderRosterEntry(athlete))
     .filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -366,6 +367,35 @@ function mergeAthleteRosterDetail(athlete, source) {
     merged.coachNotes
   );
   return merged;
+}
+
+function isGeneratedRunnerPlaceholderRosterEntry(athlete) {
+  return !!(
+    athlete &&
+    athlete.smartcoachRosterMember &&
+    isGeneratedRunnerPlaceholderName(athlete.name) &&
+    !hasRosterSetupDetail(athlete)
+  );
+}
+
+function isGeneratedRunnerPlaceholderName(value) {
+  return /^runner\s+\d+$/i.test(clean(value));
+}
+
+function hasRosterSetupDetail(athlete) {
+  return !!(
+    clean(athlete && athlete.email) ||
+    clean(athlete && athlete.phone) ||
+    clean(athlete && athlete.gender) ||
+    clean(athlete && athlete.grade) ||
+    clean(athlete && athlete.parentGuardianName) ||
+    clean(athlete && athlete.parentGuardianEmail) ||
+    clean(athlete && athlete.parentGuardianPhone) ||
+    clean(athlete && athlete.parentGuardian2Name) ||
+    clean(athlete && athlete.parentGuardian2Email) ||
+    clean(athlete && athlete.parentGuardian2Phone) ||
+    clean(athlete && athlete.coachNotes)
+  );
 }
 
 function athleteRosterDetailFor(athlete, record) {
