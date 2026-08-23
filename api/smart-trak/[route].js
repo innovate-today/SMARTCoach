@@ -1261,8 +1261,8 @@ async function accountAttendance(req, res) {
         athleteName: firstQueryValue(req.query && req.query.athleteName),
         status: firstQueryValue(req.query && req.query.status),
       });
-      const activeAttendance = await activeAttendanceRecords({ attendance, token, locationId });
-      res.status(200).json({ success: true, attendance: activeAttendance, count: activeAttendance.length });
+      const rosterNamedAttendance = await rosterNamedAttendanceRecords({ attendance, token, locationId });
+      res.status(200).json({ success: true, attendance: rosterNamedAttendance, count: rosterNamedAttendance.length });
       return;
     }
 
@@ -1285,26 +1285,23 @@ async function accountAttendance(req, res) {
   }
 }
 
-async function activeAttendanceRecords({ attendance, token, locationId }) {
+async function rosterNamedAttendanceRecords({ attendance, token, locationId }) {
   const rows = Array.isArray(attendance) ? attendance : [];
   if (!token || !locationId || !rows.length) return rows;
   const athletes = await athletesApi.listSmartCoachAthletes({ token, locationId, includeContacts: false });
-  const activeKeys = new Set();
   const rosterNames = new Map();
   athletes.filter((athlete) => athlete && athlete.smartcoachActive).forEach((athlete) => {
     const rosterName = cleanSetupText(athlete.name);
     [athlete.id, athlete.contactId, athlete.smartcoachAthleteId, athlete.name].map(cleanSetupText).filter(Boolean).forEach((value) => {
       const key = value.toLowerCase();
-      activeKeys.add(key);
       if (rosterName) rosterNames.set(key, rosterName);
     });
   });
   return rows.map((row) => {
     const keys = [row && row.athleteId, row && row.contactId, row && row.smartcoachAthleteId, row && row.athleteName].map(cleanSetupText).filter(Boolean);
-    if (!keys.some((value) => activeKeys.has(value.toLowerCase()))) return null;
     const currentName = keys.map((value) => rosterNames.get(value.toLowerCase())).find(Boolean);
     return currentName && currentName !== row.athleteName ? { ...row, athleteName: currentName } : row;
-  }).filter(Boolean);
+  });
 }
 
 function attendanceRecordsFromPayload(payload) {

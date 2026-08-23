@@ -4154,11 +4154,9 @@ function checkAttendanceSeasonAttachment() {
   [
     "sport: firstQueryValue(req.query && req.query.sport)",
     "season: firstQueryValue(req.query && req.query.season)",
-    "const activeAttendance = await activeAttendanceRecords({ attendance, token, locationId });",
-    "async function activeAttendanceRecords({ attendance, token, locationId })",
+    "const rosterNamedAttendance = await rosterNamedAttendanceRecords({ attendance, token, locationId });",
+    "async function rosterNamedAttendanceRecords({ attendance, token, locationId })",
     "athletes.filter((athlete) => athlete && athlete.smartcoachActive)",
-    "const rosterNames = new Map();",
-    "if (!keys.some((value) => activeKeys.has(value.toLowerCase()))) return null;",
     "if (rosterName) rosterNames.set(key, rosterName);",
     "const currentName = keys.map((value) => rosterNames.get(value.toLowerCase())).find(Boolean);",
     "return currentName && currentName !== row.athleteName ? { ...row, athleteName: currentName } : row;",
@@ -4167,6 +4165,9 @@ function checkAttendanceSeasonAttachment() {
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`attendance API season attachment missing ${text}`);
   });
+  if (api.includes("if (!keys.some((value) => activeKeys.has(value.toLowerCase()))) return null;")) {
+    throw new Error("attendance review history should not drop inactive athlete marks.");
+  }
   [
     "const sport = clean(filters.sport).toLowerCase();",
     "const sport = normalizeAttendanceSport(record.sport)",
