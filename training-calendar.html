@@ -3763,8 +3763,7 @@ function addQualityRow(values){
       '<div><label>Reps</label><input data-field="reps" class="mini-input" type="number" min="1" step="1" value="'+esc(values.reps||2)+'"></div>'+
       '<div><label>Distance</label><div class="inline-control"><input data-field="distanceValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.distanceValue||1)+'"><select data-field="distanceUnit" class="mini-select">'+distanceUnitOptions(values.distanceUnit||'mi')+'</select></div></div>'+
       '<div><label>Effort</label><select data-field="effort">'+effortOptions(values.effort||'Threshold')+'</select></div>'+
-    '</div>'+
-    (kind==='repeat'?'<div class="manual-set-rest"><label>Recovery Between Sets</label><div class="inline-control"><input data-field="setRecoveryValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.setRecoveryValue||0)+'"><select data-field="setRecoveryUnit" class="mini-select">'+recoveryUnitOptions(values.setRecoveryUnit||'min (jog)')+'</select></div></div>':'');
+    '</div>';
   els.qualityRows.appendChild(row);
   renderAddActivitySummary();
 }
@@ -3780,7 +3779,6 @@ function collectQualityRows(){
     item.reps=Number(item.reps||0);
     item.repeatCount=Number(item.repeatCount||1);
     item.distanceValue=Number(item.distanceValue||0);
-    item.setRecoveryValue=Number(item.setRecoveryValue||0);
     item.restValue=Number(item.restValue||0);
     return item;
   });
@@ -3789,10 +3787,6 @@ function qualityBlockLine(block){
   if(block.kind==='rest')return 'Rest: '+distanceLabel(block.restValue,block.restUnit);
   var inner=block.reps+' x '+distanceLabel(block.distanceValue,block.distanceUnit)+' @ '+block.effort;
   return block.kind==='repeat'?block.repeatCount+' x ('+inner+')':inner;
-}
-function qualitySetRecoveryLine(block){
-  if(block.kind!=='repeat'||!Number(block.setRecoveryValue||0))return '';
-  return distanceLabel(block.setRecoveryValue,block.setRecoveryUnit)+' recovery between sets';
 }
 function parseDistanceMiles(text){
   var value=String(text||'').trim().toLowerCase();
@@ -3828,8 +3822,7 @@ function renderAddActivitySummary(){
       return '<br><br><b>Rest Set</b>'+esc(qualityBlockLine(block));
     }
     total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);
-    var setRecovery=qualitySetRecoveryLine(block);
-    return '<br><br><b>'+(block.kind==='repeat'?'Repeat '+block.repeatCount+' times':'Set')+'</b>'+esc(qualityBlockLine(block))+(setRecovery?'<br>'+esc(setRecovery):'');
+    return '<br><br><b>'+(block.kind==='repeat'?'Repeat '+block.repeatCount+' times':'Set')+'</b>'+esc(qualityBlockLine(block));
   }).join('');
   els.addActivitySummaryBody.innerHTML='<b>Warmup</b>'+esc(warm)+blockHtml+'<br><br><b>Cooldown</b>'+esc(cool)+
     '<div class="summary-total">'+esc(formatMiles(total)||'Volume not set')+'</div>';
@@ -3873,8 +3866,6 @@ function buildAddDayActivityValues(){
         return;
       }
       var line=qualityBlockLine(block);
-      var setRecovery=qualitySetRecoveryLine(block);
-      if(setRecovery)line+=' / '+setRecovery;
       qLines.push(line);
     });
     qLines.push('Cooldown: '+distanceLabel(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value));
@@ -3892,8 +3883,7 @@ function buildAddDayActivityValues(){
       targetSplits:target||blocks.map(function(block){
         if(block.kind==='rest')return qualityBlockLine(block);
         var line=qualityBlockLine(block);
-        var setRecovery=qualitySetRecoveryLine(block);
-        return setRecovery?line+' with '+setRecovery:line;
+        return line;
       }).join('; '),
       details:qLines.join('\n')
     };
