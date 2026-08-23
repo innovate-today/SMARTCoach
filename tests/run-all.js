@@ -3797,8 +3797,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1787536500000"',
-    "<!-- build:1787536500000 -->",
+    'meta name="app-version" content="1787538600000"',
+    "<!-- build:1787538600000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -4842,6 +4842,10 @@ function checkFieldPracticePhaseOne() {
     "day&&day.targetSplits",
     "function trainingPlanNeedsCalendarHydration(plan)",
     "function ensureCalendarDaysForTarget(plan)",
+    "return r.json().then(function(data){return{ok:r.ok,status:r.status,data:data};});",
+    "var busy=e&&(e.status===429||/too many requests|rate limit/i.test(e.message||''));",
+    "SMART Trak is busy. Please retry in a few seconds.",
+    "updateTrainingPlanDisplay(busy?'Try again in a moment':'No plans available');",
     "function trainingPlanTargetMode(plan)",
     "function targetRuleForPlan(plan)",
     "function targetRulesForPlan(plan)",

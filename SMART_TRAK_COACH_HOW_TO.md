@@ -529,6 +529,8 @@ When a Quality Session has more than one work distance, such as `10 x (1 x 400m,
 
 Quality Session sets describe the work reps only. Use **Add Rest Set** when you want a rest block between different work pieces or after a repeating set.
 
+If the SMARTCoach app says **SMART Trak is busy. Please retry in a few seconds.** while loading training plans, wait a moment and open the plan picker again. This usually means SMART Trak is briefly busy, not that the plans are missing.
+
 ## Upload/Paste Plan
 
 Use Upload/Paste Plan for full plans, not one-day workout entry. One-day workouts, races, rest days, and notes should be added on the Training Calendar.

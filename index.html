@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1787536500000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1787538600000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1787536500000 -->
-<!-- v1787536500000 -->
+<!-- build:1787538600000 -->
+<!-- v1787538600000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -7493,20 +7493,25 @@ function openSeasonPlan(assignToGroup){
   sm('m-training-plan');
   Promise.all([
     fetch('/api/smart-trak/training-plan').then(function(r){
-      return r.json().then(function(data){return{ok:r.ok,data:data};});
+      return r.json().then(function(data){return{ok:r.ok,status:r.status,data:data};});
     }),
     loadCalendarDaysCache().then(function(days){return{ok:true,data:{days:days}};}).catch(function(){return{ok:true,data:{days:CD||[]}};})
   ]).then(function(results){
     var result=results[0];
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Training plans unavailable');
+    if(!result.ok){
+      var error=new Error(result.data&&result.data.error?result.data.error:'Training plans unavailable');
+      error.status=result.status;
+      throw error;
+    }
     TP=activeTrainingPlans((result.data&&result.data.plans)||[]);
     var calendarPlan=calendarPlanForCurrentSelection();
     if(calendarPlan)TP.unshift(calendarPlan);
     renderTrainingPlanOptions();
   }).catch(function(e){
-    document.getElementById('tp-status').textContent='Error: '+e.message;
+    var busy=e&&(e.status===429||/too many requests|rate limit/i.test(e.message||''));
+    document.getElementById('tp-status').textContent=busy?'SMART Trak is busy. Please retry in a few seconds.':'Error: '+e.message;
     document.getElementById('tp-status').style.color='#c00';
-    updateTrainingPlanDisplay('No plans available');
+    updateTrainingPlanDisplay(busy?'Try again in a moment':'No plans available');
   });
 }
 function calendarPlanForCurrentSelection(){
