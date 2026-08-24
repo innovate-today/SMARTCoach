@@ -3832,8 +3832,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1787538600000"',
-    "<!-- build:1787538600000 -->",
+    'meta name="app-version" content="1787540400000"',
+    "<!-- build:1787540400000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -4885,7 +4885,7 @@ function checkFieldPracticePhaseOne() {
     "function targetRuleForPlan(plan)",
     "function targetRulesForPlan(plan)",
     "function qualityTargetRulesFromText(text,workoutType)",
-    "var pattern=/(?:(\\d+)\\s*(?:x|×)\\s*\\(\\s*)?(\\d+)\\s*(?:x|×)\\s*([0-9]+(?:\\.[0-9]+)?\\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\\s*@\\s*([A-Za-z][A-Za-z\\s-]*?)(?=\\s*(?:\\)|;|\\/|\\n|$))/gi;",
+    "var pattern=/(?:(\\d+)\\s*(?:x|×)\\s*\\(\\s*)?(\\d+)\\s*(?:x|×)\\s*([0-9]+(?:\\.[0-9]+)?\\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\\s*@\\s*([A-Za-z][A-Za-z\\s-]*?)(?=\\s*(?:\\)|,|;|\\/|\\n|$))/gi;",
     "function qualityWorkoutPrescription(plan,rules)",
     "return repeated.repeatCount+' x ('+rules.map(function(rule){return rule.workLabel||rule.repLabel;}).join(', ')+')';",
     "function plannedTargetRows(plan,profile)",
