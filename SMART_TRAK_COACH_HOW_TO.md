@@ -527,6 +527,8 @@ For Quality Session workouts, the effort written on the set line controls the ph
 
 When a Quality Session has more than one work distance, such as `10 x (1 x 400m, 1 x 100m)`, the SMARTCoach app shows target ranges for each work distance, even when the pieces are separated by commas inside the same repeating set. The runner list still follows the selected **Training/Race Order** setting, using current fitness when that order is set to **Sport, speed, name**.
 
+Current fitness race marks with decimals, such as `24:48.19`, are treated as full race times when SMARTCoach calculates workout targets.
+
 Quality Session sets describe the work reps only. Use **Add Rest Set** when you want a rest block between different work pieces or after a repeating set.
 
 If the SMARTCoach app says **SMART Trak is busy. Please retry in a few seconds.** while loading training plans, wait a moment and open the plan picker again. This usually means SMART Trak is briefly busy, not that the plans are missing.

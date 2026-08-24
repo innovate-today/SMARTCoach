@@ -3836,8 +3836,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1787542200000"',
-    "<!-- build:1787542200000 -->",
+    'meta name="app-version" content="1787544000000"',
+    "<!-- build:1787544000000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -4902,6 +4902,7 @@ function checkFieldPracticePhaseOne() {
     "fetch('/api/smart-trak/training-plan?kind=days',{cache:'no-store'})",
     "trainingPlanWorkoutType(plan)",
     "trainingPlanWorkoutTargetText(plan)",
+    "if(text.indexOf(':')>=0)return parseMs(display);",
     "function timedRepPrescription(text)",
     "var timed=timedRepPrescription(source);",
     "if(timed)return timed.count+' x '+timed.label;",
