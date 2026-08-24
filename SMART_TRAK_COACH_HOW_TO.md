@@ -525,7 +525,7 @@ Use **Training Customization** when your program wants target paces based on dif
 
 For Quality Session workouts, the effort written on the set line controls the phone-app target and the saved workout effort. For example, `3 x 1 mi @ Interval` uses the Interval target range for those mile repeats, even when SMART Trak stores a broader category behind the scenes.
 
-When a Quality Session has more than one work distance, such as `10 x (1 x 400m, 1 x 100m)`, the SMARTCoach app shows target ranges for each work distance, even when the pieces are separated by commas inside the same repeating set.
+When a Quality Session has more than one work distance, such as `10 x (1 x 400m, 1 x 100m)`, the SMARTCoach app shows target ranges for each work distance, even when the pieces are separated by commas inside the same repeating set. The runner list still follows the selected **Training/Race Order** setting, using current fitness when that order is set to **Sport, speed, name**.
 
 Quality Session sets describe the work reps only. Use **Add Rest Set** when you want a rest block between different work pieces or after a repeating set.
 

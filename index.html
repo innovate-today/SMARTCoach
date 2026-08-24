@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1787540400000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1787542200000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1787540400000 -->
-<!-- v1787540400000 -->
+<!-- build:1787542200000 -->
+<!-- v1787542200000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -5620,9 +5620,10 @@ function plannedTargetData(plan,profile){
   var rows=plannedTargetRows(plan,profile);
   if(!rows.length)return null;
   var first=rows[0],rule=first.rule,fitness=first.fitness,range=first.range;
+  var labelRanges=rows.length>1||trainingPlanTargetMode(plan)==='quality';
   return{
     cacheKey:targetPlanCacheKey(plan),
-    plannedTargetRange:rows.length>1?rows.map(function(row){return row.label+': '+row.range.display;}).join('; '):range.display,
+    plannedTargetRange:labelRanges?rows.map(function(row){return row.label+': '+row.range.display;}).join('; '):range.display,
     plannedTargetMinMs:range.fast,
     plannedTargetMaxMs:range.slow,
     plannedTargetRep:workoutPrescription(plan,rule),
@@ -7059,10 +7060,8 @@ function targetRulesForPlan(plan){
   if(mode==='off'||mode==='race')return[];
   var text=trainingPlanWorkoutTargetText(plan);
   var type=trainingPlanWorkoutType(plan);
-  if(mode==='quality'){
-    var qualityRules=qualityTargetRulesFromText(text,type);
-    if(qualityRules.length)return qualityRules;
-  }
+  var qualityRules=qualityTargetRulesFromText(text,type);
+  if(qualityRules.length&&(mode==='quality'||/@\s*[A-Za-z]/.test(text)))return qualityRules;
   var single=targetRuleForPlan(plan);
   return single?[single]:[];
 }
@@ -7190,7 +7189,7 @@ function isGenericPaceRule(rule,input){
 }
 function effortFromTargetText(text){
   var source=String(text||'');
-  var match=source.match(/@\s*([A-Za-z][A-Za-z\s-]*?)(?:\s*(?:\/|;|\n|\)|$))/);
+  var match=source.match(/@\s*([A-Za-z][A-Za-z\s-]*?)(?:\s*(?:\/|,|;|\n|\)|$))/);
   return match?match[1].trim():'';
 }
 function preferredFitnessEvents(text){

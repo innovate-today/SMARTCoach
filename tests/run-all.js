@@ -412,6 +412,7 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
     "const smartcoachRosterMember = !excludedSystemContact && hasAthleteTag;",
     "const fitnessRows = await safeListAthleteFitnessRows({ token, locationId });",
     "attachCurrentFitnessRows(athletes, fitnessRows);",
+    "for (let page = 1; page <= 10; page += 1)",
     "athlete.currentFitnessRows = rows;",
     "const ATHLETE_BEST_SCHEMA_KEY = \"custom_objects.athlete_bests\";",
     ".filter((athlete) => athlete.smartcoachActive || athlete.smartcoachRosterMember || (includeContacts && athlete.smartcoachSetupCandidate))",
@@ -804,6 +805,9 @@ function checkCoachApprovedCurrentFitnessUpdates() {
   ["var display=b.lastResultDisplay||'';", "date:b.lastResultDate||''"].forEach((text) => {
     if (!app.includes(text)) throw new Error(`mobile app current-fitness source missing ${text}`);
   });
+  if (!fs.readFileSync("api/ghl/athlete-profile.js", "utf8").includes("for (let page = 1; page <= 10; page += 1)")) {
+    throw new Error("athlete profile current-fitness lookup should page through athlete best records.");
+  }
   if (app.includes("b.lastResultDisplay||b.seasonBestDisplay")) {
     throw new Error("mobile app should not use PB/SB values as current fitness");
   }
@@ -3832,8 +3836,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1787540400000"',
-    "<!-- build:1787540400000 -->",
+    'meta name="app-version" content="1787542200000"',
+    "<!-- build:1787542200000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -4885,11 +4889,12 @@ function checkFieldPracticePhaseOne() {
     "function targetRuleForPlan(plan)",
     "function targetRulesForPlan(plan)",
     "function qualityTargetRulesFromText(text,workoutType)",
+    "if(qualityRules.length&&(mode==='quality'||/@\\s*[A-Za-z]/.test(text)))return qualityRules;",
     "var pattern=/(?:(\\d+)\\s*(?:x|×)\\s*\\(\\s*)?(\\d+)\\s*(?:x|×)\\s*([0-9]+(?:\\.[0-9]+)?\\s*(?:mi|miles?|km|k|m)|half marathon|marathon)\\s*@\\s*([A-Za-z][A-Za-z\\s-]*?)(?=\\s*(?:\\)|,|;|\\/|\\n|$))/gi;",
     "function qualityWorkoutPrescription(plan,rules)",
     "return repeated.repeatCount+' x ('+rules.map(function(rule){return rule.workLabel||rule.repLabel;}).join(', ')+')';",
     "function plannedTargetRows(plan,profile)",
-    "plannedTargetRange:rows.length>1?rows.map(function(row){return row.label+': '+row.range.display;}).join('; '):range.display",
+    "plannedTargetRange:labelRanges?rows.map(function(row){return row.label+': '+row.range.display;}).join('; '):range.display",
     "var targetRows=plannedTargetRows(plan,profile);",
     "if(targetRows.length>1)",
     "el.textContent='Loading target...';\n  ensureCalendarDaysForTarget(plan).then(function(){",

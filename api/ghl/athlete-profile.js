@@ -113,17 +113,23 @@ module.exports = async function handler(req, res) {
 
     async function searchByAthlete({ token, locationId, schemaKey, limit }) {
       try {
-        const result = await ghlFetch({
-          token,
-          path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
-          method: "POST",
-          body: {
-            locationId,
-            page: 1,
-            pageLimit: 100,
-          },
-        });
-        return recordsFromResult(result).filter((record) => recordMatchesAthlete(record, { contactId, athleteName })).slice(0, limit || 25);
+        const records = [];
+        for (let page = 1; page <= 10; page += 1) {
+          const result = await ghlFetch({
+            token,
+            path: `/objects/${encodeURIComponent(schemaKey)}/records/search`,
+            method: "POST",
+            body: {
+              locationId,
+              page,
+              pageLimit: 100,
+            },
+          });
+          const batch = recordsFromResult(result);
+          records.push(...batch);
+          if (batch.length < 100) break;
+        }
+        return uniqueRecords(records).filter((record) => recordMatchesAthlete(record, { contactId, athleteName })).slice(0, limit || 25);
       } catch (error) {
         if (error.statusCode && error.statusCode >= 500) throw error;
         return [];

@@ -189,8 +189,14 @@ async function safeListAthleteFitnessRows({ token, locationId }) {
 }
 
 async function listAthleteFitnessRows({ token, locationId }) {
-  const result = await searchAthleteBestRecords({ token, locationId, page: 1, pageLimit: 100 });
-  return recordsFromResult(result).map((record) => {
+  const records = [];
+  for (let page = 1; page <= 10; page += 1) {
+    const result = await searchAthleteBestRecords({ token, locationId, page, pageLimit: 100 });
+    const batch = recordsFromResult(result);
+    records.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return uniqueRecords(records).map((record) => {
     const props = recordProperties(record);
     const event = prop(props, "event");
     const display = prop(props, "last_result_display");
@@ -869,6 +875,17 @@ function truthy(value) {
 
 function normalizeFieldLabel(value) {
   return clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function uniqueRecords(records) {
+  const seen = {};
+  return (Array.isArray(records) ? records : []).filter((record) => {
+    const props = recordProperties(record);
+    const key = clean(record && record.id) || clean(prop(props, "source_record_id")) || JSON.stringify(props);
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 function recordsFromResult(result) {
