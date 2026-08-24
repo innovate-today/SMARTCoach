@@ -529,6 +529,8 @@ When a Quality Session has more than one work distance, such as `10 x (1 x 400m,
 
 Current fitness race marks with decimals, such as `24:48.19`, are treated as full race times when SMARTCoach calculates workout targets.
 
+When a repeating set includes more than one work piece, click **Add Work Inside Repeat** inside the repeating set. For example, enter `10` for the repeat count, add `1 x 400m`, then add `1 x 100m` inside that same repeating set.
+
 Quality Session sets describe the work reps only. Use **Add Rest Set** when you want a rest block between different work pieces or after a repeating set.
 
 If the SMARTCoach app says **SMART Trak is busy. Please retry in a few seconds.** while loading training plans, wait a moment and open the plan picker again. This usually means SMART Trak is briefly busy, not that the plans are missing.

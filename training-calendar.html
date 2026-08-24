@@ -3458,18 +3458,35 @@ function normalizeQualityRecoveryUnit(unit){
   return 'min ('+movement+')';
 }
 function parseQualityDistanceLine(line){
-  var match=String(line||'').match(/(?:(\d+)\s*x\s*\(\s*)?(\d+)\s*x\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters|min|minute|minutes|sec|second|seconds)\s*@\s*([^\/;\n]+?)(?=\s+(?:with|\/)|\s*;|\s*$)/i);
+  var source=String(line||'').trim();
+  var repeat=source.match(/^(\d+)\s*x\s*\((.*)\)\s*$/i);
+  if(repeat){
+    var items=repeat[2].split(/\s*,\s*/).map(parseQualityWorkItem).filter(Boolean);
+    if(!items.length)return null;
+    return Object.assign({kind:'repeat',repeatCount:repeat[1],items:items},items[0]);
+  }
+  var match=source.match(/^(\d+)\s*x\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters|min|minute|minutes|sec|second|seconds)\s*@\s*([^\/;\n,)]*?)(?=\s+(?:with|\/)|\s*;|\s*$)/i);
   if(!match)return null;
   var recovery=String(line||'').match(/(?:with|\/)\s*([\d.]+)\s*((?:minute|minutes|min|second|seconds|sec|mile|miles|mi|kilometer|kilometers|km|meter|meters|m)(?:\s*\([^)]*\)|\s+(?:jog|walk|rest))?)(?=\s+recovery|\s*$)/i);
   return {
-    kind:match[1]?'repeat':'set',
-    repeatCount:match[1]||1,
-    reps:match[2],
-    distanceValue:match[3],
-    distanceUnit:normalizeQualityDistanceUnit(match[4]),
-    effort:String(match[5]||'Threshold').trim(),
+    kind:'set',
+    repeatCount:1,
+    reps:match[1],
+    distanceValue:match[2],
+    distanceUnit:normalizeQualityDistanceUnit(match[3]),
+    effort:String(match[4]||'Threshold').trim(),
     recoveryValue:recovery&&recovery[1]||1,
     recoveryUnit:normalizeQualityRecoveryUnit(recovery&&recovery[2]||'min (jog)')
+  };
+}
+function parseQualityWorkItem(text){
+  var match=String(text||'').trim().match(/^(\d+)\s*x\s*([\d.]+)\s*(mi|mile|miles|km|kilometer|kilometers|m|meter|meters|min|minute|minutes|sec|second|seconds)\s*@\s*([^,);\/\n]+)$/i);
+  if(!match)return null;
+  return {
+    reps:match[1],
+    distanceValue:match[2],
+    distanceUnit:normalizeQualityDistanceUnit(match[3]),
+    effort:String(match[4]||'Threshold').trim()
   };
 }
 function stripQualityGeneratedLines(text){
@@ -3757,8 +3774,18 @@ function addQualityRow(values){
     renderAddActivitySummary();
     return;
   }
+  if(kind==='repeat'){
+    var items=Array.isArray(values.items)&&values.items.length?values.items:[values];
+    row.innerHTML='<div class="manual-row-head"><div class="manual-row-title">Repeating Sets</div><button class="ghost" data-remove-quality-row type="button">Remove</button></div>'+
+      '<div class="inline-control" style="padding:12px 10px;color:#64748b"><input data-field="repeatCount" class="mini-input" type="number" min="1" step="1" value="'+esc(values.repeatCount||3)+'"><span>x</span></div>'+
+      '<div data-repeat-items></div>'+
+      '<div style="padding:0 10px 12px"><button class="builder-link" data-add-repeat-work type="button">Add Work Inside Repeat</button></div>';
+    els.qualityRows.appendChild(row);
+    items.forEach(function(item){addRepeatWorkItem(row,item);});
+    renderAddActivitySummary();
+    return;
+  }
   row.innerHTML='<div class="manual-row-head"><div class="manual-row-title">'+(kind==='repeat'?'Repeating Sets':'Set')+'</div><button class="ghost" data-remove-quality-row type="button">Remove</button></div>'+
-    (kind==='repeat'?'<div class="inline-control" style="padding:12px 10px;color:#64748b"><input data-field="repeatCount" class="mini-input" type="number" min="1" step="1" value="'+esc(values.repeatCount||3)+'"><span>x</span></div>':'')+
     '<div class="manual-row-grid">'+
       '<div><label>Reps</label><input data-field="reps" class="mini-input" type="number" min="1" step="1" value="'+esc(values.reps||2)+'"></div>'+
       '<div><label>Distance</label><div class="inline-control"><input data-field="distanceValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.distanceValue||1)+'"><select data-field="distanceUnit" class="mini-select">'+distanceUnitOptions(values.distanceUnit||'mi')+'</select></div></div>'+
@@ -3766,6 +3793,19 @@ function addQualityRow(values){
     '</div>';
   els.qualityRows.appendChild(row);
   renderAddActivitySummary();
+}
+function addRepeatWorkItem(row,values){
+  values=values||{};
+  var wrap=row&&row.querySelector('[data-repeat-items]');
+  if(!wrap)return;
+  var item=document.createElement('div');
+  item.className='manual-row-grid';
+  item.setAttribute('data-repeat-work','1');
+  item.innerHTML='<div><label>Reps</label><input data-repeat-field="reps" class="mini-input" type="number" min="1" step="1" value="'+esc(values.reps||1)+'"></div>'+
+    '<div><label>Distance</label><div class="inline-control"><input data-repeat-field="distanceValue" class="mini-input" type="number" min="0" step="1" value="'+esc(values.distanceValue||200)+'"><select data-repeat-field="distanceUnit" class="mini-select">'+distanceUnitOptions(values.distanceUnit||'m')+'</select></div></div>'+
+    '<div><label>Effort</label><select data-repeat-field="effort">'+effortOptions(values.effort||'Threshold')+'</select></div>'+
+    '<div style="align-self:end"><button class="ghost" data-remove-repeat-work type="button">Remove Work</button></div>';
+  wrap.appendChild(item);
 }
 function seedQualityRows(){
   if(!els.qualityRows)return;
@@ -3780,12 +3820,28 @@ function collectQualityRows(){
     item.repeatCount=Number(item.repeatCount||1);
     item.distanceValue=Number(item.distanceValue||0);
     item.restValue=Number(item.restValue||0);
+    if(item.kind==='repeat'){
+      item.items=Array.prototype.slice.call(row.querySelectorAll('[data-repeat-work]')).map(function(work){
+        var workItem={};
+        work.querySelectorAll('[data-repeat-field]').forEach(function(input){workItem[input.getAttribute('data-repeat-field')]=input.value;});
+        workItem.reps=Number(workItem.reps||0);
+        workItem.distanceValue=Number(workItem.distanceValue||0);
+        return workItem;
+      }).filter(function(workItem){return workItem.reps&&workItem.distanceValue;});
+      if(!item.items.length)item.items=[{reps:item.reps||1,distanceValue:item.distanceValue||200,distanceUnit:item.distanceUnit||'m',effort:item.effort||'Threshold'}];
+    }
     return item;
   });
 }
+function qualityWorkLine(block){
+  return block.reps+' x '+distanceLabel(block.distanceValue,block.distanceUnit)+' @ '+block.effort;
+}
+function qualityBlockEffort(block){
+  return block&&block.effort||block&&block.items&&block.items[0]&&block.items[0].effort||'';
+}
 function qualityBlockLine(block){
   if(block.kind==='rest')return 'Rest: '+distanceLabel(block.restValue,block.restUnit);
-  var inner=block.reps+' x '+distanceLabel(block.distanceValue,block.distanceUnit)+' @ '+block.effort;
+  var inner=block.kind==='repeat'?(block.items||[]).map(qualityWorkLine).join(', '):qualityWorkLine(block);
   return block.kind==='repeat'?block.repeatCount+' x ('+inner+')':inner;
 }
 function parseDistanceMiles(text){
@@ -3821,7 +3877,11 @@ function renderAddActivitySummary(){
     if(block.kind==='rest'){
       return '<br><br><b>Rest Set</b>'+esc(qualityBlockLine(block));
     }
-    total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);
+    if(block.kind==='repeat'){
+      (block.items||[]).forEach(function(item){total+=block.repeatCount*item.reps*unitMiles(item.distanceValue,item.distanceUnit);});
+    }else{
+      total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);
+    }
     return '<br><br><b>'+(block.kind==='repeat'?'Repeat '+block.repeatCount+' times':'Set')+'</b>'+esc(qualityBlockLine(block));
   }).join('');
   els.addActivitySummaryBody.innerHTML='<b>Warmup</b>'+esc(warm)+blockHtml+'<br><br><b>Cooldown</b>'+esc(cool)+
@@ -3871,14 +3931,20 @@ function buildAddDayActivityValues(){
     qLines.push('Cooldown: '+distanceLabel(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value));
     if(details)qLines.push(details);
     var workBlocks=blocks.filter(function(block){return block.kind!=='rest';});
-    var first=workBlocks[0]||{effort:type||'Threshold'};
+    var firstEffort=workBlocks.map(qualityBlockEffort).filter(Boolean)[0]||type||'Threshold';
     var mainSet=workBlocks[0]?qualityBlockLine(workBlocks[0]):'Quality session';
     var total=unitMiles(els.addQualityWarmupValue.value,els.addQualityWarmupUnit.value)+unitMiles(els.addQualityCooldownValue.value,els.addQualityCooldownUnit.value);
-    workBlocks.forEach(function(block){total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);});
+    workBlocks.forEach(function(block){
+      if(block.kind==='repeat'){
+        (block.items||[]).forEach(function(item){total+=block.repeatCount*item.reps*unitMiles(item.distanceValue,item.distanceUnit);});
+      }else{
+        total+=block.repeatCount*block.reps*unitMiles(block.distanceValue,block.distanceUnit);
+      }
+    });
     return {
       dayType:'Workout',
       title:title||(mainSet||'Quality session'),
-      workoutType:first.effort||type,
+      workoutType:firstEffort,
       plannedVolume:volume||(total?formatMiles(total)+' total':'Quality session'),
       targetSplits:target||blocks.map(function(block){
         if(block.kind==='rest')return qualityBlockLine(block);
@@ -5193,6 +5259,27 @@ function init(){
   els.qualityRows.addEventListener('input',markCalendarEditBuilderDirty);
   els.qualityRows.addEventListener('change',markCalendarEditBuilderDirty);
   els.qualityRows.addEventListener('click',function(event){
+    var addButton=event.target.closest&&event.target.closest('[data-add-repeat-work]');
+    if(addButton){
+      var repeatRow=addButton.closest('[data-quality-row="repeat"]');
+      if(repeatRow){
+        markCalendarEditBuilderDirty();
+        addRepeatWorkItem(repeatRow,{reps:1,distanceValue:100,distanceUnit:'m',effort:'Threshold'});
+        renderAddActivitySummary();
+      }
+      return;
+    }
+    var removeWorkButton=event.target.closest&&event.target.closest('[data-remove-repeat-work]');
+    if(removeWorkButton){
+      var work=removeWorkButton.closest('[data-repeat-work]');
+      var wrap=work&&work.parentNode;
+      if(work&&wrap&&wrap.querySelectorAll('[data-repeat-work]').length>1){
+        markCalendarEditBuilderDirty();
+        work.remove();
+        renderAddActivitySummary();
+      }
+      return;
+    }
     var button=event.target.closest&&event.target.closest('[data-remove-quality-row]');
     if(!button)return;
     markCalendarEditBuilderDirty();
