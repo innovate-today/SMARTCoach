@@ -2738,6 +2738,9 @@ function checkMeetManagerSportField() {
     "sport:payload.sport",
   ];
   const requiredApi = [
+    "const MEETS_NAMESPACE = \"meets\";",
+    "loadAccountScopedRecord(accountKey, MEETS_NAMESPACE)",
+    "saveAccountScopedRecord(accountKey, MEETS_NAMESPACE",
     "const sport = clean(payload && payload.sport) || \"Track\";",
     "sport: sport || existing.sport,",
     "sport,",
@@ -3268,7 +3271,10 @@ function checkTrainingCustomization() {
   [
     'route === "training-customization"',
     "function accountTrainingCustomization",
-    "trainingCustomization: normalizeTrainingCustomization",
+    "const TRAINING_CUSTOMIZATION_NAMESPACE = \"trainingcustomization\"",
+    "loadTrainingCustomizationState(accountKey, existing.record)",
+    "saveTrainingCustomizationState(accountKey, customization)",
+    "saveAccountScopedRecord(accountKey, TRAINING_CUSTOMIZATION_NAMESPACE",
     "lastTrainingCustomizationSync",
   ].forEach((text) => {
     if (!route.includes(text)) throw new Error(`Training customization API missing ${text}`);

@@ -33,7 +33,7 @@ const {
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -41,6 +41,8 @@ const {
   isProPlan,
   suggestedSubscriptionAmount: planSubscriptionAmount,
 } = require("../../lib/smartcoach-plans");
+
+const TRAINING_CUSTOMIZATION_NAMESPACE = "trainingcustomization";
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -2991,6 +2993,7 @@ async function accountStatus(req, res) {
   const coachStaff = normalizeCoachStaff(registry.record && registry.record.coachStaff);
   const staffAdminAllowed = !!currentCoachSession && staffAccessAdminAllowed(currentCoachSession, coachStaff);
   const currentStaff = currentCoachSession ? coachStaff[Number(currentCoachSession.coachIndex) || 0] || null : null;
+  const trainingCustomization = await loadTrainingCustomizationState(accountKey, registry.record);
   const missing = [];
   if (proPlan && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (proPlan && !locationId) missing.push({ label: "Location ID", key: locationKey });
@@ -3022,7 +3025,7 @@ async function accountStatus(req, res) {
     sessionRefreshed: !!refreshedSession,
     coachDeviceUsage,
     coachStaff: publicCoachStaff(coachStaff, coachAccessUnlocked),
-    trainingCustomization: normalizeTrainingCustomization(registry.record && registry.record.trainingCustomization),
+    trainingCustomization,
     dashboardPreferences: normalizeDashboardPreferences(registry.record && registry.record.dashboardPreferences),
     milesBoardSharing: normalizeMilesBoardSharing(registry.record && registry.record.milesBoardSharing),
     resultsBoardSharing: normalizeResultsBoardSharing(registry.record && registry.record.resultsBoardSharing),
@@ -3052,6 +3055,25 @@ async function accountStatus(req, res) {
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
     error: configured ? subscriptionBlockedReason || (!coachAccessUnlocked ? "Active coach code needed." : undefined) : `SMARTCoach account "${accountKey}" is not configured.`,
+  });
+}
+
+async function loadTrainingCustomizationState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, TRAINING_CUSTOMIZATION_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeTrainingCustomization(scoped.record.trainingCustomization || scoped.record);
+  }
+  return normalizeTrainingCustomization(accountRecord && accountRecord.trainingCustomization);
+}
+
+async function saveTrainingCustomizationState(accountKey, customization) {
+  const updatedAt = new Date().toISOString();
+  await saveAccountScopedRecord(accountKey, TRAINING_CUSTOMIZATION_NAMESPACE, {
+    trainingCustomization: customization,
+    lastTrainingCustomizationSync: {
+      savedAt: updatedAt,
+      count: customization.rules.length,
+    },
   });
 }
 
@@ -4107,10 +4129,11 @@ async function accountTrainingCustomization(req, res) {
     }
 
     if (req.method === "GET") {
+      const trainingCustomization = await loadTrainingCustomizationState(accountKey, existing.record);
       res.status(200).json({
         success: true,
         accountKey,
-        trainingCustomization: normalizeTrainingCustomization(existing.record.trainingCustomization),
+        trainingCustomization,
       });
       return;
     }
@@ -4133,14 +4156,7 @@ async function accountTrainingCustomization(req, res) {
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
     const customization = normalizeTrainingCustomization(payload.trainingCustomization || payload);
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
-      trainingCustomization: customization,
-      lastTrainingCustomizationSync: {
-        savedAt: new Date().toISOString(),
-        count: customization.rules.length,
-      },
-    });
+    await saveTrainingCustomizationState(accountKey, customization);
     res.status(200).json({ success: true, accountKey, trainingCustomization: customization });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Training customization save failed." });

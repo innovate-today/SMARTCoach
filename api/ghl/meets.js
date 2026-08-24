@@ -3,7 +3,8 @@ const GHL_VERSION = "2021-07-28";
 const MEET_SCHEMA_KEY = "custom_objects.meets";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
-const { loadAccountRecord, saveAccountRecord } = require("../../lib/account-registry");
+const { loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord } = require("../../lib/account-registry");
+const MEETS_NAMESPACE = "meets";
 const FIELD_IDS = {
   meet: ["L6DjPWvVI13p6C1tgUz2"],
   meet_date: ["8dcV6Nl25E96qicqRWUg"],
@@ -223,6 +224,10 @@ async function deleteMeet({ token, accountKey, payload }) {
 }
 
 async function loadAccountMeets(accountKey) {
+  const scoped = await loadAccountScopedRecord(accountKey, MEETS_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeAccountMeets(scoped.record.meets);
+  }
   const existing = await loadAccountRecord(accountKey);
   const rows = existing && existing.record && existing.record.smartcoachMeets;
   return normalizeAccountMeets(rows && rows.meets);
@@ -236,15 +241,12 @@ async function upsertAccountMeet(accountKey, meet) {
 }
 
 async function saveAccountMeets(accountKey, meets) {
-  const existing = await loadAccountRecord(accountKey);
-  if (!existing.configured || !existing.found || !existing.record) {
-    throw httpError(404, "Account registry record was not found.");
-  }
   const updatedAt = new Date().toISOString();
-  await saveAccountRecord(accountKey, {
-    ...existing.record,
-    smartcoachMeets: { meets: normalizeAccountMeets(meets), updatedAt },
-    lastMeetsSync: { savedAt: updatedAt, count: normalizeAccountMeets(meets).length },
+  const normalized = normalizeAccountMeets(meets);
+  await saveAccountScopedRecord(accountKey, MEETS_NAMESPACE, {
+    meets: normalized,
+    smartcoachMeets: { meets: normalized, updatedAt },
+    lastMeetsSync: { savedAt: updatedAt, count: normalized.length },
   });
 }
 
