@@ -5,6 +5,8 @@ const SEASON_RECORD_SCHEMA_KEY = "custom_objects.season_records";
 const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
+const GHL_MAX_RETRIES = 3;
+const GHL_RETRY_STATUS_CODES = new Set([429]);
 const ATHLETE_FIELD_ALIASES = {
   smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
   smartcoachAthleteId: ["smartcoach athlete id", "smartcoach_athlete_id", "athlete id", "smartcoach id"],
@@ -43,9 +45,10 @@ module.exports = async function handler(req, res) {
     const session = normalizeSession(payload);
     const synced = [];
     const linkedPerformanceRecords = [];
+    const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
 
     for (const athlete of session.athletes) {
-      const contact = await findOrCreateContact({ token, locationId, athlete, session });
+      const contact = await findOrCreateContact({ token, locationId, athlete, session, rosterFieldIds });
       if (!session.forceDuplicateSync) {
         const duplicates = await findDuplicatePerformanceRecords({ token, locationId, accountKey, contactId: contact.id, athlete, session });
         if (duplicates.length) {
@@ -245,12 +248,12 @@ function normalizeRun(raw, index) {
   };
 }
 
-async function findOrCreateContact({ token, locationId, athlete, session }) {
+async function findOrCreateContact({ token, locationId, athlete, session, rosterFieldIds }) {
   if (athlete.contactId) {
     const contact = await getContact({ token, contactId: athlete.contactId });
     if (contact && contact.id) {
       await addTags({ token, contactId: contact.id, tags: buildTags(session) });
-      await markContactAsSmartCoachAthlete({ token, locationId, contact, athlete });
+      await markContactAsSmartCoachAthlete({ token, locationId, contact, athlete, rosterFieldIds });
       return contact;
     }
   }
@@ -258,7 +261,7 @@ async function findOrCreateContact({ token, locationId, athlete, session }) {
   const existing = await findExistingContact({ token, locationId, athleteName: athlete.name });
   if (existing) {
     await addTags({ token, contactId: existing.id, tags: buildTags(session) });
-    await markContactAsSmartCoachAthlete({ token, locationId, contact: existing, athlete });
+    await markContactAsSmartCoachAthlete({ token, locationId, contact: existing, athlete, rosterFieldIds });
     return existing;
   }
 
@@ -283,7 +286,7 @@ async function findOrCreateContact({ token, locationId, athlete, session }) {
   if (!contact || !contact.id) {
     throw httpError(502, `SMART Trak did not return a contact for ${athlete.name}.`);
   }
-  await markContactAsSmartCoachAthlete({ token, locationId, contact, athlete });
+  await markContactAsSmartCoachAthlete({ token, locationId, contact, athlete, rosterFieldIds });
   return contact;
 }
 
@@ -324,8 +327,8 @@ async function addTags({ token, contactId, tags }) {
   }
 }
 
-async function markContactAsSmartCoachAthlete({ token, locationId, contact, athlete }) {
-  const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
+async function markContactAsSmartCoachAthlete({ token, locationId, contact, athlete, rosterFieldIds }) {
+  rosterFieldIds = rosterFieldIds || await resolveRosterFieldIds({ token, locationId });
   const activeFieldIds = fieldIdsWithFallback(rosterFieldIds.smartcoachActive, SMARTCOACH_ACTIVE_FIELD_ID);
   const athleteIdFieldIds = fieldIdsWithFallback(rosterFieldIds.smartcoachAthleteId, SMARTCOACH_ATHLETE_ID_FIELD_ID);
   const smartcoachAthleteId = athlete.smartcoachAthleteId
@@ -1062,25 +1065,47 @@ function parseReadableSeasonBests(value) {
 }
 
 async function ghlFetch({ token, path, method, body }) {
-  const response = await fetch(`${GHL_BASE_URL}${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Version: GHL_VERSION,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let lastError = null;
+  for (let attempt = 0; attempt <= GHL_MAX_RETRIES; attempt += 1) {
+    const response = await fetch(`${GHL_BASE_URL}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Version: GHL_VERSION,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-  const text = await response.text();
-  const data = text ? safeJson(text) : {};
+    const text = await response.text();
+    const data = text ? safeJson(text) : {};
 
-  if (!response.ok) {
-    throw httpError(response.status, data.message || data.error || `GHL request failed with ${response.status}.`);
+    if (response.ok) return data;
+
+    lastError = httpError(response.status, data.message || data.error || `GHL request failed with ${response.status}.`);
+    if (!shouldRetryGhlResponse(response, lastError, attempt)) throw lastError;
+    await sleep(retryDelayMs(response, attempt));
   }
 
-  return data;
+  throw lastError || httpError(502, "SMART Trak request failed.");
+}
+
+function shouldRetryGhlResponse(response, error, attempt) {
+  if (attempt >= GHL_MAX_RETRIES) return false;
+  if (GHL_RETRY_STATUS_CODES.has(Number(response && response.status))) return true;
+  return /too many requests|rate limit/i.test(String(error && error.message || ""));
+}
+
+function retryDelayMs(response, attempt) {
+  const retryAfter = response && response.headers && response.headers.get && response.headers.get("retry-after");
+  const seconds = Number(retryAfter);
+  if (Number.isFinite(seconds) && seconds > 0) return Math.min(seconds * 1000, 5000);
+  return Math.min(750 * Math.pow(2, attempt), 5000);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function buildTags(session) {

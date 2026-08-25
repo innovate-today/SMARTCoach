@@ -3160,6 +3160,11 @@ function checkSmartCoachAppSyncIdempotency() {
     "await findObjectRecord({",
     "function shouldRecoverCreatedPerformanceRecord",
     "[408, 409, 425, 429].includes(statusCode) || statusCode >= 500",
+    "const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });",
+    "findOrCreateContact({ token, locationId, athlete, session, rosterFieldIds })",
+    "const GHL_MAX_RETRIES = 3;",
+    "function shouldRetryGhlResponse(response, error, attempt)",
+    "function retryDelayMs(response, attempt)",
     "await mirrorPerformanceRecord(accountKey, createdRecord)",
   ].forEach((text) => {
     if (!syncApi.includes(text)) throw new Error(`SMARTCoach app sync retry guard missing ${text}`);
@@ -3168,6 +3173,8 @@ function checkSmartCoachAppSyncIdempotency() {
     "var mirrorWarning=!mirror||!mirror.saved;",
     "Dashboard confirmation is delayed. Do not sync again; refresh SMART Trak instead.",
     "markSyncedRuns(result.data&&result.data.synced);",
+    "var busy=e&&(e.status===429||/too many requests|rate limit/i.test(e.message||''));",
+    "SMART Trak is busy. Please retry in a few seconds.",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`SMARTCoach app sync mirror-warning flow missing ${text}`);
   });
@@ -3851,8 +3858,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1787544000000"',
-    "<!-- build:1787544000000 -->",
+    'meta name="app-version" content="1787629200000"',
+    "<!-- build:1787629200000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
