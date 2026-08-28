@@ -43,6 +43,7 @@ const {
 } = require("../../lib/smartcoach-plans");
 
 const TRAINING_CUSTOMIZATION_NAMESPACE = "trainingcustomization";
+const DOCU_TRAK_NAMESPACE = "docutrak";
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -1883,9 +1884,15 @@ async function accountDocuTrak(req, res) {
   const { accountKey } = getGhlContext(req);
 
   try {
-    if (req.method === "GET") {
+    let accountRecord = req.smartcoachRegistryAccount || null;
+    if (!accountRecord) {
       const existing = await loadAccountRecord(accountKey);
-      res.status(200).json({ success: true, ...normalizeDocuTrak(existing && existing.record && existing.record.docuTrak) });
+      accountRecord = existing && existing.record || null;
+    }
+
+    if (req.method === "GET") {
+      const docuTrak = await loadDocuTrakState(accountKey, accountRecord);
+      res.status(200).json({ success: true, ...docuTrak });
       return;
     }
 
@@ -1895,13 +1902,12 @@ async function accountDocuTrak(req, res) {
     }
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const existing = await loadAccountRecord(accountKey);
-    if (!existing.configured || !existing.found || !existing.record) {
+    if (!accountRecord) {
       res.status(404).json({ error: "Account registry record was not found." });
       return;
     }
 
-    const current = normalizeDocuTrak(existing.record.docuTrak);
+    const current = await loadDocuTrakState(accountKey, accountRecord);
     const action = cleanSetupText(payload.action || payload.mode).toLowerCase();
     if (action === "save-items") {
       current.items = normalizeDocuItems(payload.items);
@@ -1952,15 +1958,26 @@ async function accountDocuTrak(req, res) {
       throw httpError(400, "Docu Trak action is required.");
     }
 
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
-      docuTrak: current,
-      lastDocuTrakSync: { savedAt: new Date().toISOString(), action },
-    });
+    await saveDocuTrakState(accountKey, current, action);
     res.status(200).json({ success: true, ...current });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Docu Trak save failed." });
   }
+}
+
+async function loadDocuTrakState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, DOCU_TRAK_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeDocuTrak(scoped.record.docuTrak || scoped.record);
+  }
+  return normalizeDocuTrak(accountRecord && accountRecord.docuTrak);
+}
+
+async function saveDocuTrakState(accountKey, docuTrak, action) {
+  await saveAccountScopedRecord(accountKey, DOCU_TRAK_NAMESPACE, {
+    docuTrak,
+    lastDocuTrakSync: { savedAt: new Date().toISOString(), action },
+  });
 }
 
 function normalizeDocuTrak(source) {

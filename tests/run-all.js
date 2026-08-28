@@ -3882,6 +3882,7 @@ function checkEquipmentInventoryModelSerial() {
 
 function checkAthletesDocuTrakSetupLayout() {
   const athletes = fs.readFileSync("athletes.html", "utf8");
+  const route = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   if (athletes.includes("coach-facing view")) {
     throw new Error("Athletes page subtitle should not say coach-facing view.");
   }
@@ -3891,6 +3892,15 @@ function checkAthletesDocuTrakSetupLayout() {
   if (athletes.includes('<button id="addDocuItemBtn" class="utility" type="button">Add Requirement</button>')) {
     throw new Error("Docu Trak add requirement button should not sit in the modal footer.");
   }
+  [
+    "const DOCU_TRAK_NAMESPACE = \"docutrak\";",
+    "async function loadDocuTrakState(accountKey, accountRecord)",
+    "async function saveDocuTrakState(accountKey, docuTrak, action)",
+    "loadAccountScopedRecord(accountKey, DOCU_TRAK_NAMESPACE)",
+    "saveAccountScopedRecord(accountKey, DOCU_TRAK_NAMESPACE",
+  ].forEach((text) => {
+    if (!route.includes(text)) throw new Error(`Docu Trak scoped storage missing ${text}`);
+  });
   console.log("Athletes Docu Trak setup layout ok");
 }
 
