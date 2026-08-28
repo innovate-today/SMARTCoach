@@ -1357,7 +1357,8 @@ function checkResultsBoardFeature() {
     "bestHighlights: input.bestHighlights !== false",
     "detailOrder: normalizeResultsBoardDetailOrder(input.detailOrder)",
     "function normalizeResultsBoardDetailOrder(values)",
-    "resultsBoardSharing: normalizeResultsBoardSharing",
+    "async function loadResultsBoardSharingState(accountKey, accountRecord)",
+    "loadResultsBoardSharingState(accountKey, existing",
     "lastResultsBoardSharingSync",
     "url: `/results-board.html?",
     "SMARTCOACH_RESULTS_BOARD_SECRET",
@@ -2555,7 +2556,8 @@ function checkDashboardToolPreferences() {
     'if (route === "dashboard-preferences")',
     "return accountDashboardPreferences(req, res);",
     "async function accountDashboardPreferences(req, res)",
-    "dashboardPreferences: normalizeDashboardPreferences",
+    "async function loadDashboardPreferencesState(accountKey, accountRecord)",
+    "saveDashboardPreferencesState(accountKey, dashboardPreferences)",
     "function defaultDashboardVisibleTools()",
     "function normalizeDashboardPreferences(source)",
     "lastDashboardPreferencesSync",
@@ -3297,6 +3299,54 @@ function checkTrainingCustomization() {
   console.log("Training customization ok");
 }
 
+function checkScopedRegistryReliabilitySaves() {
+  const route = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
+  const athleteCalendar = fs.readFileSync("lib/athlete-calendar.js", "utf8");
+  [
+    'const TRAINING_MIRROR_NAMESPACE = "trainingmirror";',
+    "loadAccountScopedRecord(accountKey, TRAINING_MIRROR_NAMESPACE)",
+    "saveAccountScopedRecord(accountKey, TRAINING_MIRROR_NAMESPACE",
+  ].forEach((text) => {
+    if (!registry.includes(text)) throw new Error(`Training mirror scoped storage missing ${text}`);
+  });
+  [
+    'const FIELD_PRACTICE_NAMESPACE = "fieldpractice";',
+    'const EQUIPMENT_TRAK_NAMESPACE = "equipmenttrak";',
+    'const DASHBOARD_PREFERENCES_NAMESPACE = "dashboardpreferences";',
+    'const MILES_BOARD_SHARING_NAMESPACE = "milesboardsharing";',
+    'const SPEED_BOARD_SHARING_NAMESPACE = "speedboardsharing";',
+    'const RESULTS_BOARD_SHARING_NAMESPACE = "resultsboardsharing";',
+    'const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";',
+    'const WEATHER_LOCATIONS_NAMESPACE = "weatherlocations";',
+    "async function loadFieldPracticeState(accountKey, accountRecord)",
+    "async function loadEquipmentTrakState(accountKey, accountRecord)",
+    "async function loadDashboardPreferencesState(accountKey, accountRecord)",
+    "async function loadMilesBoardScopedState(accountKey, accountRecord)",
+    "async function loadSpeedBoardSharingState(accountKey, accountRecord)",
+    "async function loadResultsBoardSharingState(accountKey, accountRecord)",
+    "async function loadAthleteCalendarQuestionsState(accountKey, accountRecord)",
+    "async function loadWeatherLocationsState(accountKey, accountRecord)",
+    "saveAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE",
+    "saveAccountScopedRecord(accountKey, EQUIPMENT_TRAK_NAMESPACE",
+    "saveDashboardPreferencesState(accountKey, dashboardPreferences)",
+    "saveMilesBoardScopedState(accountKey",
+    "saveAccountScopedRecord(accountKey, SPEED_BOARD_SHARING_NAMESPACE",
+    "saveAccountScopedRecord(accountKey, RESULTS_BOARD_SHARING_NAMESPACE",
+    "saveAccountScopedRecord(accountKey, ATHLETE_CALENDAR_QUESTIONS_NAMESPACE",
+    "saveAccountScopedRecord(accountKey, WEATHER_LOCATIONS_NAMESPACE",
+  ].forEach((text) => {
+    if (!route.includes(text)) throw new Error(`SMART Trak scoped save missing ${text}`);
+  });
+  [
+    'const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";',
+    "loadAccountScopedRecord(accountKey, ATHLETE_CALENDAR_QUESTIONS_NAMESPACE)",
+  ].forEach((text) => {
+    if (!athleteCalendar.includes(text)) throw new Error(`Athlete Calendar scoped question load missing ${text}`);
+  });
+  console.log("Scoped registry reliability saves ok");
+}
+
 function checkMobileCalendarWorkoutPriority() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
@@ -3527,7 +3577,8 @@ function checkAthleteCalendarQuestions() {
   [
     'route === "athlete-calendar-questions"',
     "function accountAthleteCalendarQuestions",
-    "athleteCalendarQuestions: normalizeAthleteCalendarQuestions",
+    "async function loadAthleteCalendarQuestionsState(accountKey, accountRecord)",
+    "saveAccountScopedRecord(accountKey, ATHLETE_CALENDAR_QUESTIONS_NAMESPACE",
     "lastAthleteCalendarQuestionsSync",
     "function normalizeAthleteCalendarQuestions",
     "function normalizeAthleteCalendarQuestion",
@@ -5076,6 +5127,7 @@ checkQualityWorkoutTypesAccepted();
 checkSmartCoachAppSyncIdempotency();
 checkManualMileageQualitySession();
 checkTrainingCustomization();
+checkScopedRegistryReliabilitySaves();
 checkMobileCalendarWorkoutPriority();
 checkMobileTrainingPlanArchiveFilter();
 checkMobileCalendarMeetDedup();

@@ -44,6 +44,14 @@ const {
 
 const TRAINING_CUSTOMIZATION_NAMESPACE = "trainingcustomization";
 const DOCU_TRAK_NAMESPACE = "docutrak";
+const FIELD_PRACTICE_NAMESPACE = "fieldpractice";
+const EQUIPMENT_TRAK_NAMESPACE = "equipmenttrak";
+const DASHBOARD_PREFERENCES_NAMESPACE = "dashboardpreferences";
+const MILES_BOARD_SHARING_NAMESPACE = "milesboardsharing";
+const SPEED_BOARD_SHARING_NAMESPACE = "speedboardsharing";
+const RESULTS_BOARD_SHARING_NAMESPACE = "resultsboardsharing";
+const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";
+const WEATHER_LOCATIONS_NAMESPACE = "weatherlocations";
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -1459,7 +1467,8 @@ async function accountFieldPractice(req, res) {
   try {
     if (req.method === "GET") {
       const existing = await loadAccountRecord(accountKey);
-      const practices = normalizeFieldPractices(existing && existing.record && existing.record.fieldPracticeSessions);
+      const fieldPracticeState = await loadFieldPracticeState(accountKey, existing && existing.record);
+      const practices = normalizeFieldPractices(fieldPracticeState.fieldPracticeSessions);
       const start = firstQueryValue(req.query && req.query.start);
       const end = firstQueryValue(req.query && req.query.end);
       const event = cleanSetupText(firstQueryValue(req.query && req.query.event)).toLowerCase();
@@ -1480,16 +1489,16 @@ async function accountFieldPractice(req, res) {
       if (!practices.length && !deleteIds.length) throw httpError(400, "No field practice records were provided.");
       const existing = await loadAccountRecord(accountKey);
       if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
+      const fieldPracticeState = await loadFieldPracticeState(accountKey, existing.record);
       const byId = new Map();
-      normalizeFieldPractices(existing.record.fieldPracticeSessions).forEach((item) => byId.set(item.id, item));
+      normalizeFieldPractices(fieldPracticeState.fieldPracticeSessions).forEach((item) => byId.set(item.id, item));
       deleteIds.forEach((id) => byId.delete(id));
       practices.forEach((item) => byId.set(item.id, item));
       const fieldPracticeSessions = Array.from(byId.values())
         .sort((a, b) => cleanSetupText(b.date).localeCompare(cleanSetupText(a.date)) || cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
         .slice(0, 1000);
       const savedAt = new Date().toISOString();
-      await saveAccountRecord(accountKey, {
-        ...existing.record,
+      await saveAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE, {
         fieldPracticeSessions,
         lastFieldPracticeSync: { savedAt, count: practices.length, total: fieldPracticeSessions.length },
       });
@@ -1501,6 +1510,20 @@ async function accountFieldPractice(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Field Practice save failed." });
   }
+}
+
+async function loadFieldPracticeState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return {
+      fieldPracticeSessions: normalizeFieldPractices(scoped.record.fieldPracticeSessions),
+      lastFieldPracticeSync: scoped.record.lastFieldPracticeSync || null,
+    };
+  }
+  return {
+    fieldPracticeSessions: normalizeFieldPractices(accountRecord && accountRecord.fieldPracticeSessions),
+    lastFieldPracticeSync: accountRecord && accountRecord.lastFieldPracticeSync || null,
+  };
 }
 
 function normalizeFieldPractices(items) {
@@ -2181,7 +2204,7 @@ async function accountWeatherLocations(req, res) {
   try {
     if (req.method === "GET") {
       const existing = await loadAccountRecord(accountKey);
-      const weatherLocations = normalizeWeatherLocations(existing && existing.record && existing.record.weatherLocations);
+      const weatherLocations = await loadWeatherLocationsState(accountKey, existing && existing.record);
       res.status(200).json({ success: true, locations: weatherLocations });
       return;
     }
@@ -2199,8 +2222,7 @@ async function accountWeatherLocations(req, res) {
       return;
     }
 
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
+    await saveAccountScopedRecord(accountKey, WEATHER_LOCATIONS_NAMESPACE, {
       weatherLocations,
       lastWeatherLocationSync: { savedAt: new Date().toISOString(), count: weatherLocations.length },
     });
@@ -2217,6 +2239,14 @@ async function accountWeatherLocations(req, res) {
     }
     res.status(error.statusCode || 500).json({ error: error.message || "Weather locations could not be saved." });
   }
+}
+
+async function loadWeatherLocationsState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, WEATHER_LOCATIONS_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeWeatherLocations(scoped.record.weatherLocations || scoped.record.locations || scoped.record);
+  }
+  return normalizeWeatherLocations(accountRecord && accountRecord.weatherLocations);
 }
 
 function normalizeWeatherLocations(locations) {
@@ -2252,7 +2282,8 @@ async function accountEquipmentTrak(req, res) {
   try {
     if (req.method === "GET") {
       const existing = await loadAccountRecord(accountKey);
-      res.status(200).json({ success: true, ...normalizeEquipmentTrak(existing && existing.record && existing.record.equipmentTrak) });
+      const equipmentState = await loadEquipmentTrakState(accountKey, existing && existing.record);
+      res.status(200).json({ success: true, ...equipmentState });
       return;
     }
 
@@ -2268,7 +2299,7 @@ async function accountEquipmentTrak(req, res) {
       return;
     }
 
-    const current = normalizeEquipmentTrak(existing.record.equipmentTrak);
+    const current = await loadEquipmentTrakState(accountKey, existing.record);
     const action = cleanSetupText(payload.action || payload.mode).toLowerCase();
     if (action === "save-items") {
       current.items = normalizeEquipmentItems(payload.items);
@@ -2356,8 +2387,7 @@ async function accountEquipmentTrak(req, res) {
       throw httpError(400, "Equipment Trak action is required.");
     }
 
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
+    await saveAccountScopedRecord(accountKey, EQUIPMENT_TRAK_NAMESPACE, {
       equipmentTrak: current,
       lastEquipmentTrakSync: { savedAt: new Date().toISOString(), action },
     });
@@ -2365,6 +2395,14 @@ async function accountEquipmentTrak(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Equipment Trak save failed." });
   }
+}
+
+async function loadEquipmentTrakState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, EQUIPMENT_TRAK_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeEquipmentTrak(scoped.record.equipmentTrak || scoped.record);
+  }
+  return normalizeEquipmentTrak(accountRecord && accountRecord.equipmentTrak);
 }
 
 function normalizeEquipmentTrak(source) {
@@ -3011,6 +3049,9 @@ async function accountStatus(req, res) {
   const staffAdminAllowed = !!currentCoachSession && staffAccessAdminAllowed(currentCoachSession, coachStaff);
   const currentStaff = currentCoachSession ? coachStaff[Number(currentCoachSession.coachIndex) || 0] || null : null;
   const trainingCustomization = await loadTrainingCustomizationState(accountKey, registry.record);
+  const dashboardPreferences = await loadDashboardPreferencesState(accountKey, registry.record);
+  const milesBoardSharing = (await loadMilesBoardScopedState(accountKey, registry.record)).milesBoardSharing;
+  const resultsBoardSharing = await loadResultsBoardSharingState(accountKey, registry.record);
   const missing = [];
   if (proPlan && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (proPlan && !locationId) missing.push({ label: "Location ID", key: locationKey });
@@ -3043,9 +3084,9 @@ async function accountStatus(req, res) {
     coachDeviceUsage,
     coachStaff: publicCoachStaff(coachStaff, coachAccessUnlocked),
     trainingCustomization,
-    dashboardPreferences: normalizeDashboardPreferences(registry.record && registry.record.dashboardPreferences),
-    milesBoardSharing: normalizeMilesBoardSharing(registry.record && registry.record.milesBoardSharing),
-    resultsBoardSharing: normalizeResultsBoardSharing(registry.record && registry.record.resultsBoardSharing),
+    dashboardPreferences,
+    milesBoardSharing,
+    resultsBoardSharing,
     coachAccessUnlocked,
     staffAdminAllowed,
     coachAccessCodeAccepted: accessCodeAccepted,
@@ -3094,6 +3135,24 @@ async function saveTrainingCustomizationState(accountKey, customization) {
   });
 }
 
+async function loadDashboardPreferencesState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, DASHBOARD_PREFERENCES_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeDashboardPreferences(scoped.record.dashboardPreferences || scoped.record);
+  }
+  return normalizeDashboardPreferences(accountRecord && accountRecord.dashboardPreferences);
+}
+
+async function saveDashboardPreferencesState(accountKey, dashboardPreferences) {
+  await saveAccountScopedRecord(accountKey, DASHBOARD_PREFERENCES_NAMESPACE, {
+    dashboardPreferences,
+    lastDashboardPreferencesSync: {
+      savedAt: new Date().toISOString(),
+      visibleTools: Object.keys(dashboardPreferences.visibleTools).filter((key) => dashboardPreferences.visibleTools[key]),
+    },
+  });
+}
+
 async function accountDashboardPreferences(req, res) {
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -3111,10 +3170,11 @@ async function accountDashboardPreferences(req, res) {
     }
 
     if (req.method === "GET") {
+      const dashboardPreferences = await loadDashboardPreferencesState(accountKey, existing.record);
       res.status(200).json({
         success: true,
         accountKey,
-        dashboardPreferences: normalizeDashboardPreferences(existing.record.dashboardPreferences),
+        dashboardPreferences,
       });
       return;
     }
@@ -3137,14 +3197,7 @@ async function accountDashboardPreferences(req, res) {
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
     const dashboardPreferences = normalizeDashboardPreferences(payload.dashboardPreferences || payload);
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
-      dashboardPreferences,
-      lastDashboardPreferencesSync: {
-        savedAt: new Date().toISOString(),
-        visibleTools: Object.keys(dashboardPreferences.visibleTools).filter((key) => dashboardPreferences.visibleTools[key]),
-      },
-    });
+    await saveDashboardPreferencesState(accountKey, dashboardPreferences);
     res.status(200).json({ success: true, accountKey, dashboardPreferences });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Dashboard preferences save failed." });
@@ -3158,7 +3211,8 @@ async function accountMilesBoardLink(req, res) {
   }
   const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
   const existing = await loadAccountRecord(accountKey);
-  const sharing = normalizeMilesBoardSharing(existing.record && existing.record.milesBoardSharing);
+  const milesState = await loadMilesBoardScopedState(accountKey, existing && existing.record);
+  const sharing = milesState.milesBoardSharing;
   if (!sharing.active) {
     res.status(403).json({ error: "Miles Board sharing is turned off." });
     return;
@@ -3199,8 +3253,9 @@ async function accountMilesBoard(req, res) {
   const accountKey = normalizeSetupAccountKey(share.account || firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
   const provided = cleanSetupText(share.token || firstQueryValue(req.query && req.query.token));
   const existing = await loadAccountRecord(accountKey);
-  const hasSavedSharing = !!(existing.record && existing.record.milesBoardSharing);
-  const sharing = normalizeMilesBoardSharing(existing.record && existing.record.milesBoardSharing);
+  const milesState = await loadMilesBoardScopedState(accountKey, existing && existing.record);
+  const hasSavedSharing = milesState.hasSavedSharing;
+  const sharing = milesState.milesBoardSharing;
   if (!sharing.active) {
     res.status(403).json({ error: "Miles Board sharing is turned off." });
     return;
@@ -3218,7 +3273,7 @@ async function accountMilesBoard(req, res) {
   const groupsState = await loadAccountGroupsState(accountKey, existing.record);
   req.milesBoardSharing = sharing;
   req.milesBoardAthleteKeys = milesBoardAthleteKeysForGroups(groupsState, sharing.groupNames);
-  req.milesBoardSnapshots = normalizeMilesBoardSnapshots(existing.record && existing.record.milesBoardSnapshots);
+  req.milesBoardSnapshots = milesState.milesBoardSnapshots;
   if (share.start && req.query && !firstQueryValue(req.query.start)) req.query.start = share.start;
   if (share.end && req.query && !firstQueryValue(req.query.end)) req.query.end = share.end;
   if (share.sport && req.query && !firstQueryValue(req.query.sport)) req.query.sport = share.sport;
@@ -3226,6 +3281,24 @@ async function accountMilesBoard(req, res) {
   if (share.challenge && req.query && !firstQueryValue(req.query.challenge)) req.query.challenge = share.challenge;
   if (share.challenges && req.query && !firstQueryValue(req.query.challenges)) req.query.challenges = share.challenges;
   return handlers.dashboard.publicMilesBoard(req, res);
+}
+
+async function loadMilesBoardScopedState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, MILES_BOARD_SHARING_NAMESPACE).catch(() => null);
+  const source = scoped && scoped.found && scoped.record ? scoped.record : accountRecord || {};
+  return {
+    hasSavedSharing: !!(source && source.milesBoardSharing),
+    milesBoardSharing: normalizeMilesBoardSharing(source && source.milesBoardSharing),
+    milesBoardSnapshots: normalizeMilesBoardSnapshots(source && source.milesBoardSnapshots),
+  };
+}
+
+async function saveMilesBoardScopedState(accountKey, state) {
+  await saveAccountScopedRecord(accountKey, MILES_BOARD_SHARING_NAMESPACE, {
+    milesBoardSharing: state.milesBoardSharing,
+    milesBoardSnapshots: normalizeMilesBoardSnapshots(state.milesBoardSnapshots),
+    lastMilesBoardSharingSync: state.lastMilesBoardSharingSync,
+  });
 }
 
 async function accountMilesBoardSharing(req, res) {
@@ -3245,10 +3318,11 @@ async function accountMilesBoardSharing(req, res) {
     }
 
     if (req.method === "GET") {
+      const milesState = await loadMilesBoardScopedState(accountKey, existing.record);
       res.status(200).json({
         success: true,
         accountKey,
-        milesBoardSharing: normalizeMilesBoardSharing(existing.record.milesBoardSharing),
+        milesBoardSharing: milesState.milesBoardSharing,
       });
       return;
     }
@@ -3270,11 +3344,12 @@ async function accountMilesBoardSharing(req, res) {
     }
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const current = normalizeMilesBoardSharing(existing.record.milesBoardSharing);
+    const milesState = await loadMilesBoardScopedState(accountKey, existing.record);
+    const current = milesState.milesBoardSharing;
     const input = payload.milesBoardSharing && typeof payload.milesBoardSharing === "object" ? payload.milesBoardSharing : payload;
     const action = cleanSetupText(payload.action || input.action).toLowerCase();
     const next = normalizeMilesBoardSharing({ ...current, ...input });
-    let milesBoardSnapshots = normalizeMilesBoardSnapshots(existing.record.milesBoardSnapshots);
+    let milesBoardSnapshots = milesState.milesBoardSnapshots;
     if (action === "reset") {
       next.active = true;
       next.tokenVersion = milesBoardTokenVersion();
@@ -3286,8 +3361,7 @@ async function accountMilesBoardSharing(req, res) {
       milesBoardSnapshots = [snapshot, ...milesBoardSnapshots.filter((item) => item.id !== snapshot.id && item.rangeLabel !== snapshot.rangeLabel)].slice(0, 12);
     }
     next.updatedAt = new Date().toISOString();
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
+    await saveMilesBoardScopedState(accountKey, {
       milesBoardSharing: next,
       milesBoardSnapshots,
       lastMilesBoardSharingSync: {
@@ -3312,7 +3386,7 @@ async function accountSpeedBoardLink(req, res) {
   }
   const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
   const existing = await loadAccountRecord(accountKey);
-  const sharing = normalizeSpeedBoardSharing(existing.record && existing.record.speedBoardSharing);
+  const sharing = await loadSpeedBoardSharingState(accountKey, existing && existing.record);
   if (!sharing.active) {
     res.status(403).json({ error: "Speed Trak Board sharing is turned off." });
     return;
@@ -3352,7 +3426,7 @@ async function accountSpeedBoard(req, res) {
   const accountKey = normalizeSetupAccountKey(share.account || firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
   const provided = cleanSetupText(share.token || firstQueryValue(req.query && req.query.token));
   const existing = await loadAccountRecord(accountKey);
-  const sharing = normalizeSpeedBoardSharing(existing.record && existing.record.speedBoardSharing);
+  const sharing = await loadSpeedBoardSharingState(accountKey, existing && existing.record);
   if (!sharing.active) {
     res.status(403).json({ error: "Speed Trak Board sharing is turned off." });
     return;
@@ -3366,7 +3440,8 @@ async function accountSpeedBoard(req, res) {
     const metric = speedBoardOptionalFilter(firstQueryValue(req.query && req.query.metric) || share.metric).slice(0, 80);
     const gender = normalizeSpeedBoardGender(firstQueryValue(req.query && req.query.gender) || share.gender);
     const year = speedBoardOptionalFilter(firstQueryValue(req.query && req.query.year) || share.year).slice(0, 20);
-    const practices = normalizeFieldPractices(existing.record && existing.record.fieldPracticeSessions);
+    const fieldPracticeState = await loadFieldPracticeState(accountKey, existing && existing.record);
+    const practices = fieldPracticeState.fieldPracticeSessions;
     const gameSettings = normalizeSpeedBoardGameSettings(sharing.gameSettings);
     const challengeTypes = normalizeSpeedBoardChallenges(share.challenges || firstQueryValue(req.query && req.query.challenges) || sharing.challengeTypes);
     const filterOptions = speedBoardFilterOptions(practices);
@@ -3419,10 +3494,11 @@ async function accountSpeedBoardSharing(req, res) {
     }
 
     if (req.method === "GET") {
+      const speedBoardSharing = await loadSpeedBoardSharingState(accountKey, existing.record);
       res.status(200).json({
         success: true,
         accountKey,
-        speedBoardSharing: normalizeSpeedBoardSharing(existing.record.speedBoardSharing),
+        speedBoardSharing,
       });
       return;
     }
@@ -3444,7 +3520,7 @@ async function accountSpeedBoardSharing(req, res) {
     }
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const current = normalizeSpeedBoardSharing(existing.record.speedBoardSharing);
+    const current = await loadSpeedBoardSharingState(accountKey, existing.record);
     const input = payload.speedBoardSharing && typeof payload.speedBoardSharing === "object" ? payload.speedBoardSharing : payload;
     const action = cleanSetupText(payload.action || input.action).toLowerCase();
     const next = normalizeSpeedBoardSharing({ ...current, ...input });
@@ -3454,8 +3530,7 @@ async function accountSpeedBoardSharing(req, res) {
       next.resetAt = new Date().toISOString();
     }
     next.updatedAt = new Date().toISOString();
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
+    await saveAccountScopedRecord(accountKey, SPEED_BOARD_SHARING_NAMESPACE, {
       speedBoardSharing: next,
       lastSpeedBoardSharingSync: {
         savedAt: next.updatedAt,
@@ -3471,6 +3546,14 @@ async function accountSpeedBoardSharing(req, res) {
   }
 }
 
+async function loadSpeedBoardSharingState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, SPEED_BOARD_SHARING_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeSpeedBoardSharing(scoped.record.speedBoardSharing || scoped.record);
+  }
+  return normalizeSpeedBoardSharing(accountRecord && accountRecord.speedBoardSharing);
+}
+
 async function accountResultsBoardLink(req, res) {
   if (req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
@@ -3478,7 +3561,7 @@ async function accountResultsBoardLink(req, res) {
   }
   const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
   const existing = await loadAccountRecord(accountKey);
-  const sharing = normalizeResultsBoardSharing(existing.record && existing.record.resultsBoardSharing);
+  const sharing = await loadResultsBoardSharingState(accountKey, existing && existing.record);
   if (!sharing.active) {
     res.status(403).json({ error: "Results Board sharing is turned off." });
     return;
@@ -3518,7 +3601,7 @@ async function accountResultsBoard(req, res) {
   const accountKey = normalizeSetupAccountKey(share.account || firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
   const provided = cleanSetupText(share.token || firstQueryValue(req.query && req.query.token));
   const existing = await loadAccountRecord(accountKey);
-  const sharing = normalizeResultsBoardSharing(existing.record && existing.record.resultsBoardSharing);
+  const sharing = await loadResultsBoardSharingState(accountKey, existing && existing.record);
   if (!sharing.active) {
     res.status(403).json({ error: "Results Board sharing is turned off." });
     return;
@@ -3558,10 +3641,11 @@ async function accountResultsBoardSharing(req, res) {
     }
 
     if (req.method === "GET") {
+      const resultsBoardSharing = await loadResultsBoardSharingState(accountKey, existing.record);
       res.status(200).json({
         success: true,
         accountKey,
-        resultsBoardSharing: normalizeResultsBoardSharing(existing.record.resultsBoardSharing),
+        resultsBoardSharing,
       });
       return;
     }
@@ -3583,7 +3667,7 @@ async function accountResultsBoardSharing(req, res) {
     }
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const current = normalizeResultsBoardSharing(existing.record.resultsBoardSharing);
+    const current = await loadResultsBoardSharingState(accountKey, existing.record);
     const input = payload.resultsBoardSharing && typeof payload.resultsBoardSharing === "object" ? payload.resultsBoardSharing : payload;
     const action = cleanSetupText(payload.action || input.action).toLowerCase();
     const next = normalizeResultsBoardSharing({ ...current, ...input });
@@ -3593,8 +3677,7 @@ async function accountResultsBoardSharing(req, res) {
       next.resetAt = new Date().toISOString();
     }
     next.updatedAt = new Date().toISOString();
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
+    await saveAccountScopedRecord(accountKey, RESULTS_BOARD_SHARING_NAMESPACE, {
       resultsBoardSharing: next,
       lastResultsBoardSharingSync: {
         savedAt: next.updatedAt,
@@ -3608,6 +3691,14 @@ async function accountResultsBoardSharing(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Results Board sharing save failed." });
   }
+}
+
+async function loadResultsBoardSharingState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, RESULTS_BOARD_SHARING_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeResultsBoardSharing(scoped.record.resultsBoardSharing || scoped.record);
+  }
+  return normalizeResultsBoardSharing(accountRecord && accountRecord.resultsBoardSharing);
 }
 
 function defaultDashboardVisibleTools() {
@@ -4197,10 +4288,11 @@ async function accountAthleteCalendarQuestions(req, res) {
     }
 
     if (req.method === "GET") {
+      const athleteCalendarQuestions = await loadAthleteCalendarQuestionsState(accountKey, existing.record);
       res.status(200).json({
         success: true,
         accountKey,
-        athleteCalendarQuestions: normalizeAthleteCalendarQuestions(existing.record.athleteCalendarQuestions),
+        athleteCalendarQuestions,
       });
       return;
     }
@@ -4223,8 +4315,7 @@ async function accountAthleteCalendarQuestions(req, res) {
 
     const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
     const questions = normalizeAthleteCalendarQuestions(payload.athleteCalendarQuestions || payload.questions || payload);
-    await saveAccountRecord(accountKey, {
-      ...existing.record,
+    await saveAccountScopedRecord(accountKey, ATHLETE_CALENDAR_QUESTIONS_NAMESPACE, {
       athleteCalendarQuestions: questions,
       lastAthleteCalendarQuestionsSync: {
         savedAt: new Date().toISOString(),
@@ -4235,6 +4326,14 @@ async function accountAthleteCalendarQuestions(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Athlete Calendar questions save failed." });
   }
+}
+
+async function loadAthleteCalendarQuestionsState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, ATHLETE_CALENDAR_QUESTIONS_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeAthleteCalendarQuestions(scoped.record.athleteCalendarQuestions || scoped.record);
+  }
+  return normalizeAthleteCalendarQuestions(accountRecord && accountRecord.athleteCalendarQuestions);
 }
 
 function defaultTrainingCustomizationRules() {
