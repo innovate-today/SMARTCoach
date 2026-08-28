@@ -112,6 +112,7 @@ module.exports = async function handler(req, res) {
       performanceRecords: allPerformanceRecords,
     }));
     const meetResults = buildRecentMeetResults({ athletes, meetRecords });
+    const xcTop20 = buildXcTop20(meetResults);
     const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords });
     const recentMeetResults = meetResults.slice(0, 100);
     const recentTrainingSyncs = trainingSyncs;
@@ -129,6 +130,7 @@ module.exports = async function handler(req, res) {
       },
       athletes: rows,
       recentMeetResults,
+      xcTop20,
       recentTrainingSyncs,
     });
   } catch (error) {
@@ -842,6 +844,80 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
     rows.push(result);
   });
   return rows.sort(sortMeetSyncDesc);
+}
+
+function buildXcTop20(rows) {
+  const lists = {
+    boys5k: xcTop20List(rows, "boy", "5K"),
+    girls5k: xcTop20List(rows, "girl", "5K"),
+    girls2Mile: xcTop20List(rows, "girl", "2 Mile"),
+  };
+  return {
+    generatedAt: new Date().toISOString(),
+    lists,
+    totals: {
+      boys5k: lists.boys5k.length,
+      girls5k: lists.girls5k.length,
+      girls2Mile: lists.girls2Mile.length,
+    },
+  };
+}
+
+function xcTop20List(rows, gender, eventBucket) {
+  const seen = new Set();
+  return (Array.isArray(rows) ? rows : [])
+    .map((row) => xcTop20Row(row, gender, eventBucket))
+    .filter(Boolean)
+    .filter((row) => {
+      const key = [
+        row.athleteName,
+        row.resultDisplay,
+        row.meetName,
+        row.meetDate,
+        row.originalEvent,
+      ].map((value) => clean(value).toLowerCase()).join("|");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => Number(a.resultMs) - Number(b.resultMs) || String(a.meetDate || "").localeCompare(String(b.meetDate || "")) || clean(a.athleteName).localeCompare(clean(b.athleteName)))
+    .slice(0, 20)
+    .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+function xcTop20Row(row, gender, eventBucket) {
+  if (!row || Number(row.resultMs) <= 0) return null;
+  if (isRelayMeetResult(row)) return null;
+  if (optionValue(row.sport) !== "cross_country") return null;
+  if (resultsBoardGender(row.athleteGender) !== gender) return null;
+  const normalizedEvent = xcTop20Event(row.event);
+  if (normalizedEvent !== eventBucket) return null;
+  return {
+    recordId: row.recordId || "",
+    sourceRecordId: row.sourceRecordId || "",
+    athleteName: clean(row.athleteName),
+    athleteGender: resultsBoardGender(row.athleteGender),
+    event: normalizedEvent,
+    originalEvent: clean(row.event),
+    resultDisplay: clean(row.resultDisplay),
+    resultMs: Number(row.resultMs) || 0,
+    meetName: clean(row.meetName),
+    meetDate: clean(row.meetDate),
+    season: clean(row.season),
+    seasonYear: Number(row.seasonYear) || yearFromDateValue(row.meetDate),
+    grade: noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"),
+    classYear: noteValue(row.coachRaceNotes, "Class Year"),
+  };
+}
+
+function xcTop20Event(value) {
+  const text = clean(value).toLowerCase().replace(/\s+/g, " ").trim();
+  const key = optionValue(text);
+  if (["5k", "5_k", "5000", "5000m", "5000_m"].includes(key)) return "5K";
+  if (["2mi", "2_mi", "2mile", "2_mile", "2miles", "2_miles", "two_mile", "two_miles", "3200", "3200m", "3200_m"].includes(key)) return "2 Mile";
+  if (/^5\s*k$/.test(text)) return "5K";
+  if (/^2\s*(mi|mile|miles)$/.test(text) || /^two\s+miles?$/.test(text) || /^3200\s*m?$/.test(text)) return "2 Mile";
+  return "";
 }
 
 function resultsBoardSharing(source) {

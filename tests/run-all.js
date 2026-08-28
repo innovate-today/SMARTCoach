@@ -1407,6 +1407,50 @@ function checkResultsBoardFeature() {
   console.log("Results Board feature ok");
 }
 
+function checkXcTop20RecordsFeature() {
+  const records = fs.readFileSync("records.html", "utf8");
+  const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  [
+    'id="xcTop20Tab"',
+    'id="xcTop20Panel"',
+    'data-xc-list="boys5k"',
+    'data-xc-list="girls5k"',
+    'data-xc-list="girls2Mile"',
+    'id="xcImportFile"',
+    'id="xcImportText"',
+    "Save to Meet History",
+    "/api/ghl/meet-result",
+    "historyImport:true",
+    "function loadXcTop20()",
+    "function saveXcImport()",
+    "function xcNormalizeEvent",
+    "function refreshRecordsPage()",
+    "Meet results and app syncs do not update the School Records table automatically.",
+  ].forEach((needle) => {
+    if (!records.includes(needle)) {
+      throw new Error(`Records page missing XC Top 20 feature marker: ${needle}`);
+    }
+  });
+  [
+    "const xcTop20 = buildXcTop20(meetResults);",
+    "xcTop20,",
+    "function buildXcTop20(rows)",
+    "function xcTop20List(rows, gender, eventBucket)",
+    "function xcTop20Event(value)",
+    'boys5k: xcTop20List(rows, "boy", "5K")',
+    'girls5k: xcTop20List(rows, "girl", "5K")',
+    'girls2Mile: xcTop20List(rows, "girl", "2 Mile")',
+    'if (optionValue(row.sport) !== "cross_country") return null;',
+    '"3200m"',
+    'return "2 Mile";',
+  ].forEach((needle) => {
+    if (!dashboardApi.includes(needle)) {
+      throw new Error(`Dashboard API missing XC Top 20 marker: ${needle}`);
+    }
+  });
+  console.log("XC Top 20 Records feature ok");
+}
+
 function checkSpeedTrakFeature() {
   const page = fs.readFileSync("speed-trak.html", "utf8");
   const board = fs.readFileSync("speed-board.html", "utf8");
@@ -5098,6 +5142,7 @@ checkCurrentFitnessCleanupTool();
 checkCurrentFitnessThreeMileOption();
 checkMilesBoardFeature();
 checkResultsBoardFeature();
+checkXcTop20RecordsFeature();
 checkSpeedTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();

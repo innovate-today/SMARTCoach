@@ -28,6 +28,9 @@ button.danger{background:#fee2e2;color:#b91c1c}
 button:disabled{opacity:.55;cursor:not-allowed}
 .actions .primary-nav{background:var(--blue);color:#fff}
 .actions .utility-action{background:#f8fafc;color:#334155;border:1px solid var(--line);margin-left:4px}
+.viewtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.viewtab{background:#dde3ed;color:#172033}
+.viewtab.active{background:var(--blue);color:#fff}
 .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
 .card:hover{box-shadow:0 10px 24px rgba(15,23,42,.14);transform:translateY(-1px)}
@@ -71,6 +74,17 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .bulkpreview{border:1px solid var(--line);border-radius:8px;overflow:auto;background:#fff;max-height:280px}
 .bulkpreview table{min-width:980px}
 .bulkpreview th{position:sticky;top:0}
+.xcboard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px}
+.xctabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.xctab{background:#eef2f7;color:#172033;border:1px solid var(--line)}
+.xctab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.xcsummary{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:13px;font-weight:800}
+.xcimport{border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:12px;display:grid;gap:10px}
+.xcimport label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+.xcimport .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.xcimport textarea{min-height:150px}
+.xcimportactions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.xcstatus{font-size:13px;font-weight:800;color:var(--muted)}
 .tablewrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto}
 table{width:100%;border-collapse:collapse;min-width:1180px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
@@ -109,6 +123,7 @@ tr:last-child td{border-bottom:0}
   .cards{grid-template-columns:1fr 1fr}
   .bar{grid-template-columns:1fr}
   .bulkhelp,.bulkfile{grid-template-columns:1fr}
+  .xcboard{grid-template-columns:1fr}
   .recordform{grid-template-columns:1fr}
   .recordform .wide{grid-column:auto}
   .status{text-align:left}
@@ -122,7 +137,7 @@ tr:last-child td{border-bottom:0}
       <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
         <h1>SMART Trak Records</h1>
-        <div class="sub">School record board. Update records here with Records Tools or bulk import.</div>
+        <div class="sub">School records and cross country top lists.</div>
         <div id="lastUpdated" class="updated">Last updated --</div>
       </div>
     </div>
@@ -133,13 +148,84 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 
-  <section class="cards">
+  <section id="schoolRecordCards" class="cards">
     <div class="card"><b id="recordCount">--</b><span>Records in view</span></div>
     <div class="card"><b id="currentCount">--</b><span>Current records</span></div>
     <div class="card"><b id="eventCount">--</b><span>Events represented</span></div>
     <div class="card"><b id="athleteCount">--</b><span>Athletes listed</span></div>
   </section>
 
+  <section class="viewtabs" aria-label="Record views">
+    <button id="schoolRecordsTab" class="viewtab active" type="button">School Records</button>
+    <button id="xcTop20Tab" class="viewtab" type="button">XC Top 20</button>
+  </section>
+
+  <section id="xcTop20Panel" class="panel" hidden>
+    <div class="panelhead">
+      <div>
+        <h2>XC Top 20</h2>
+        <div class="sub">Fastest saved cross country meet results. New imports and corrections update this list when records reload.</div>
+      </div>
+      <div id="xcStatus" class="xcstatus">Loading XC results...</div>
+    </div>
+    <div class="panelbody xcboard">
+      <div>
+        <div class="xctabs">
+          <button class="xctab active" data-xc-list="boys5k" type="button">Boys 5K</button>
+          <button class="xctab" data-xc-list="girls5k" type="button">Girls 5K</button>
+          <button class="xctab" data-xc-list="girls2Mile" type="button">Girls 2 Mile</button>
+        </div>
+        <div id="xcSummary" class="xcsummary"></div>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Athlete</th>
+                <th>Time</th>
+                <th>Meet / Course</th>
+                <th>Date</th>
+                <th>Original Event</th>
+              </tr>
+            </thead>
+            <tbody id="xcRows"></tbody>
+          </table>
+          <div id="xcEmpty" class="empty" hidden>No XC marks in this list yet.</div>
+        </div>
+      </div>
+      <div class="xcimport">
+        <label>Default List
+          <select id="xcImportList">
+            <option value="boys5k">Boys 5K</option>
+            <option value="girls5k">Girls 5K</option>
+            <option value="girls2Mile">Girls 2 Mile</option>
+          </select>
+        </label>
+        <div class="row">
+          <label>Meet / Course
+            <input id="xcImportMeet" type="text" placeholder="Meet or course">
+          </label>
+          <label>Date
+            <input id="xcImportDate" type="date">
+          </label>
+        </div>
+        <label>CSV Upload
+          <input id="xcImportFile" type="file" accept=".csv,.tsv,.txt">
+        </label>
+        <label>Copy/Paste
+          <textarea id="xcImportText" placeholder="Athlete, Time, Meet, Date, Event&#10;Avery Womble, 12:03, County Championship, 2026-09-12, 3200m"></textarea>
+        </label>
+        <div class="xcimportactions">
+          <button id="xcPreviewBtn" class="ghost" type="button">Preview</button>
+          <button id="xcSaveBtn" type="button" disabled>Save to Meet History</button>
+        </div>
+        <div id="xcImportStatus" class="xcstatus">Paste or upload XC marks, then preview.</div>
+        <div id="xcPreview" class="bulkpreview" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="schoolRecordsView">
   <section class="bar">
     <input id="search" type="search" placeholder="Search athlete, event, meet, gender, or result" autocomplete="off">
     <select id="genderFilter"><option value="all">All genders</option></select>
@@ -164,7 +250,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <div id="toolsBody" class="panelbody toolsbody" hidden>
       <div class="singletools">
-        <div class="toolnote"><b>Quick add:</b> Add the current school record for one event. Boys and girls are tracked separately. Meet results and app syncs do not update this page automatically. If a newer current record is saved for the same event and gender, the previous current record is kept as historical.</div>
+        <div class="toolnote"><b>Quick add:</b> Add the current school record for one event. Boys and girls are tracked separately. Meet results and app syncs do not update the School Records table automatically. If a newer current record is saved for the same event and gender, the previous current record is kept as historical.</div>
         <div class="recordform" id="singleRecordForm">
         <label hidden>Record Type
           <select id="singleRecordType"></select>
@@ -279,6 +365,7 @@ tr:last-child td{border-bottom:0}
     </table>
     <div id="empty" class="empty" hidden>No records in this view.</div>
   </section>
+  </div>
 </main>
 
 <section id="accessPanel" class="access" hidden>
@@ -360,6 +447,9 @@ tr:last-child td{border-bottom:0}
 
 <script>
 var records=[];
+var xcTop20={lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{boys5k:0,girls5k:0,girls2Mile:0}};
+var xcActiveList='boys5k';
+var xcImportRows=[];
 var searchRenderTimer=null;
 var bulkRows=[];
 var bulkDuplicateCount=0;
@@ -384,6 +474,24 @@ var els={
   meetHistoryLink:document.getElementById('meetHistoryLink'),
   refreshBtn:document.getElementById('refreshBtn'),
   lastUpdated:document.getElementById('lastUpdated'),
+  schoolRecordCards:document.getElementById('schoolRecordCards'),
+  schoolRecordsTab:document.getElementById('schoolRecordsTab'),
+  xcTop20Tab:document.getElementById('xcTop20Tab'),
+  schoolRecordsView:document.getElementById('schoolRecordsView'),
+  xcTop20Panel:document.getElementById('xcTop20Panel'),
+  xcStatus:document.getElementById('xcStatus'),
+  xcSummary:document.getElementById('xcSummary'),
+  xcRows:document.getElementById('xcRows'),
+  xcEmpty:document.getElementById('xcEmpty'),
+  xcImportList:document.getElementById('xcImportList'),
+  xcImportMeet:document.getElementById('xcImportMeet'),
+  xcImportDate:document.getElementById('xcImportDate'),
+  xcImportFile:document.getElementById('xcImportFile'),
+  xcImportText:document.getElementById('xcImportText'),
+  xcPreviewBtn:document.getElementById('xcPreviewBtn'),
+  xcSaveBtn:document.getElementById('xcSaveBtn'),
+  xcImportStatus:document.getElementById('xcImportStatus'),
+  xcPreview:document.getElementById('xcPreview'),
   recordCount:document.getElementById('recordCount'),
   currentCount:document.getElementById('currentCount'),
   eventCount:document.getElementById('eventCount'),
@@ -700,6 +808,194 @@ function fillStaticSelects(){
   els.editSport.innerHTML=optionList(SPORTS,'Track');
   els.editEvent.innerHTML=optionList(EVENTS,'400m');
   els.editSeason.innerHTML=optionList(SEASONS,'Spring');
+}
+function setRecordView(view){
+  var xc=view==='xc';
+  els.schoolRecordsTab.classList.toggle('active',!xc);
+  els.xcTop20Tab.classList.toggle('active',xc);
+  els.schoolRecordCards.hidden=xc;
+  els.schoolRecordsView.hidden=xc;
+  els.xcTop20Panel.hidden=!xc;
+  if(xc)loadXcTop20();
+}
+function xcListLabel(key){
+  return {boys5k:'Boys 5K',girls5k:'Girls 5K',girls2Mile:'Girls 2 Mile'}[key]||'Boys 5K';
+}
+function xcListGender(key){
+  return key==='boys5k'?'Boys':'Girls';
+}
+function xcListEvent(key){
+  return key==='girls2Mile'?'2 Mile':'5K';
+}
+function renderXcTop20(){
+  var lists=xcTop20&&xcTop20.lists||{};
+  var rows=lists[xcActiveList]||[];
+  var totals=xcTop20&&xcTop20.totals||{};
+  els.xcSummary.innerHTML=['boys5k','girls5k','girls2Mile'].map(function(key){
+    return '<span class="pill">'+esc(xcListLabel(key))+': '+esc(totals[key]||0)+'</span>';
+  }).join('');
+  document.querySelectorAll('.xctab[data-xc-list]').forEach(function(button){
+    button.classList.toggle('active',button.getAttribute('data-xc-list')===xcActiveList);
+  });
+  els.xcRows.innerHTML=rows.map(function(row){
+    var original=row.originalEvent&&row.originalEvent!==row.event?'<div class="muted">saved as '+esc(row.originalEvent)+'</div>':'';
+    var grade=[row.grade,row.classYear?'Class '+row.classYear:''].filter(Boolean).join(' · ');
+    return '<tr>'+
+      '<td><b>'+esc(row.rank)+'</b></td>'+
+      '<td><div class="name">'+esc(row.athleteName||'Unlisted athlete')+'</div>'+(grade?'<div class="muted">'+esc(grade)+'</div>':'')+'</td>'+
+      '<td><b>'+esc(row.resultDisplay)+'</b></td>'+
+      '<td>'+esc(row.meetName||'')+'</td>'+
+      '<td>'+esc(formatDate(row.meetDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
+      '<td>'+esc(row.originalEvent||row.event||'')+original+'</td>'+
+    '</tr>';
+  }).join('');
+  els.xcEmpty.hidden=!!rows.length;
+  els.xcStatus.textContent=rows.length+' mark'+(rows.length===1?'':'s')+' in '+xcListLabel(xcActiveList);
+}
+function loadXcTop20(){
+  els.xcStatus.textContent='Loading XC results...';
+  return fetch('/api/ghl/dashboard',{headers:apiHeaders(),cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 failed to load.');
+    xcTop20=result.data&&result.data.xcTop20||{lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+    renderXcTop20();
+  }).catch(function(error){
+    xcTop20={lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+    renderXcTop20();
+    els.xcStatus.textContent=error.message||'XC Top 20 failed to load.';
+  });
+}
+function xcImportHeaderMap(cols){
+  var map={};
+  cols.forEach(function(col,index){
+    var key=String(col||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+    var normalized={athlete:'athleteName',athlete_name:'athleteName',name:'athleteName',runner:'athleteName',time:'resultDisplay',result:'resultDisplay',mark:'resultDisplay',meet:'meetName',meet_name:'meetName',course:'meetName',meet_course:'meetName',date:'meetDate',meet_date:'meetDate',event:'event',distance:'event',gender:'athleteGender',division:'athleteGender',grade:'grade',class_year:'classYear',grad_year:'classYear',year:'seasonYear',season_year:'seasonYear',notes:'notes'}[key];
+    if(normalized)map[normalized]=index;
+  });
+  return map.athleteName!=null||map.resultDisplay!=null||map.event!=null?map:{};
+}
+function xcNormalizeEvent(value,defaultList){
+  var text=String(value||'').trim();
+  var key=text.toLowerCase().replace(/\s+/g,' ').trim();
+  var normalized=key.replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  if(['5k','5_k','5000','5000m','5000_m'].indexOf(normalized)>=0||/^5\s*k$/.test(key))return '5K';
+  if(['2mi','2_mi','2mile','2_mile','2miles','2_miles','two_mile','two_miles','3200','3200m','3200_m'].indexOf(normalized)>=0||/^2\s*(mi|mile|miles)$/.test(key)||/^two\s+miles?$/.test(key)||/^3200\s*m?$/.test(key))return '2 Mile';
+  return xcListEvent(defaultList);
+}
+function xcNormalizeGender(value,defaultList){
+  var text=String(value||'').trim().toLowerCase();
+  if(/^(b|boy|boys|male|m)$/.test(text))return 'Boys';
+  if(/^(g|girl|girls|female|f)$/.test(text))return 'Girls';
+  return xcListGender(defaultList);
+}
+function normalizeXcImportRow(values,index){
+  var defaultList=els.xcImportList.value||'boys5k';
+  var meetDate=dateOnly(values.meetDate)||els.xcImportDate.value||'';
+  var event=xcNormalizeEvent(values.event,defaultList);
+  var gender=xcNormalizeGender(values.athleteGender,defaultList);
+  var seasonYear=values.seasonYear||yearOnlyValue(meetDate)||new Date().getFullYear();
+  return {
+    rowNumber:index+1,
+    athleteName:String(values.athleteName||'').trim(),
+    athleteGender:gender,
+    meetName:String(values.meetName||'').trim()||els.xcImportMeet.value.trim(),
+    meetDate:meetDate,
+    season:'Cross Country',
+    seasonYear:seasonYear,
+    sport:'Cross Country',
+    event:event,
+    originalEvent:String(values.event||event).trim(),
+    resultDisplay:String(values.resultDisplay||'').trim(),
+    grade:String(values.grade||'').trim(),
+    classYear:String(values.classYear||'').trim(),
+    notes:String(values.notes||'').trim()
+  };
+}
+function normalizeXcImportFromColumns(cols,index){
+  return normalizeXcImportRow({athleteName:cols[0],resultDisplay:cols[1],meetName:cols[2],meetDate:cols[3],event:cols[4],athleteGender:cols[5],grade:cols[6],classYear:cols[7],notes:cols[8]},index);
+}
+function parseXcImportRows(text){
+  var lines=String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
+  if(!lines.length)return[];
+  var first=splitRecordLine(lines[0]);
+  var headers=xcImportHeaderMap(first);
+  if(Object.keys(headers).length)lines.shift();
+  return lines.map(function(line,index){
+    var cols=splitRecordLine(line);
+    if(Object.keys(headers).length){
+      var value=function(key){return headers[key]!=null?cols[headers[key]]||'':'';};
+      return normalizeXcImportRow({athleteName:value('athleteName'),resultDisplay:value('resultDisplay'),meetName:value('meetName'),meetDate:value('meetDate'),event:value('event'),athleteGender:value('athleteGender'),grade:value('grade'),classYear:value('classYear'),seasonYear:value('seasonYear'),notes:value('notes')},index);
+    }
+    return normalizeXcImportFromColumns(cols,index);
+  }).filter(function(row){return row.athleteName||row.resultDisplay||row.meetName;});
+}
+function xcImportIssues(rows){
+  return rows.filter(function(row){return !row.athleteName||!row.resultDisplay||!row.meetName||!row.meetDate||!row.event;}).map(function(row){return row.rowNumber;});
+}
+function setXcImportStatus(text,type){
+  els.xcImportStatus.textContent=text||'';
+  els.xcImportStatus.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':type==='warn'?'var(--warn)':'var(--muted)';
+}
+function renderXcPreview(){
+  var issues=xcImportIssues(xcImportRows);
+  els.xcSaveBtn.disabled=!xcImportRows.length||!!issues.length;
+  if(!xcImportRows.length){
+    els.xcPreview.hidden=true;
+    els.xcPreview.innerHTML='';
+    setXcImportStatus('No XC marks loaded yet.','');
+    return;
+  }
+  els.xcPreview.hidden=false;
+  els.xcPreview.innerHTML='<table><thead><tr><th>Athlete</th><th>Gender</th><th>Event</th><th>Time</th><th>Meet / Course</th><th>Date</th></tr></thead><tbody>'+xcImportRows.map(function(row){return '<tr><td>'+esc(row.athleteName)+'</td><td>'+esc(row.athleteGender)+'</td><td>'+esc(row.event)+(row.originalEvent&&row.originalEvent!==row.event?'<div class="muted">from '+esc(row.originalEvent)+'</div>':'')+'</td><td><b>'+esc(row.resultDisplay)+'</b></td><td>'+esc(row.meetName)+'</td><td>'+esc(row.meetDate)+'</td></tr>';}).join('')+'</tbody></table>';
+  setXcImportStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):xcImportRows.length+' XC mark'+(xcImportRows.length===1?'':'s')+' ready to save.',issues.length?'bad':'good');
+}
+function previewXcImport(){
+  xcImportRows=parseXcImportRows(els.xcImportText.value);
+  renderXcPreview();
+}
+function saveXcImport(){
+  var issues=xcImportIssues(xcImportRows);
+  if(!xcImportRows.length||issues.length){setXcImportStatus(issues.length?'Fix required fields first.':'Preview XC marks before saving.','bad');return;}
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.xcSaveBtn.disabled=true;
+  setXcImportStatus('Saving XC marks to Meet History...','');
+  fetch('/api/ghl/meet-result',{method:'POST',headers:headers,body:JSON.stringify({historyImport:true,results:xcImportRows.map(function(row){
+    return {
+      rowNumber:row.rowNumber,
+      athleteName:row.athleteName,
+      athleteGender:row.athleteGender,
+      grade:row.grade,
+      classYear:row.classYear,
+      meetName:row.meetName,
+      meetDate:row.meetDate,
+      season:'Cross Country',
+      seasonYear:row.seasonYear,
+      sport:'Cross Country',
+      event:row.originalEvent||row.event,
+      resultDisplay:row.resultDisplay,
+      isSeasonBest:true,
+      notes:row.notes
+    };
+  })})}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'XC marks could not be saved.');
+    var created=Number(result.data&&result.data.createdCount)||0;
+    var skipped=Number(result.data&&result.data.skippedCount)||0;
+    xcImportRows=[];
+    els.xcImportText.value='';
+    els.xcPreview.hidden=true;
+    els.xcPreview.innerHTML='';
+    setXcImportStatus('Saved '+created+' XC mark'+(created===1?'':'s')+(skipped?'; '+skipped+' duplicate or incomplete row'+(skipped===1?' was':'s were')+' skipped.':'.'),'good');
+    return loadXcTop20();
+  }).catch(function(error){
+    els.xcSaveBtn.disabled=false;
+    setXcImportStatus(error.message||'XC marks could not be saved.','bad');
+  });
 }
 function todayValue(){
   var date=new Date();
@@ -1351,6 +1647,11 @@ function loadRecords(){
     els.refreshBtn.disabled=false;
   });
 }
+function refreshRecordsPage(){
+  var tasks=[loadRecords()];
+  if(!els.xcTop20Panel.hidden)tasks.push(loadXcTop20().catch(function(){}));
+  return Promise.all(tasks);
+}
 function mirrorWarning(mirror){
   if(!mirror)return '';
   var errors=mirror.errors||[];
@@ -1412,7 +1713,7 @@ function submitAccess(){
       setAccessCode('');
       els.accessPanel.hidden=true;
       els.mainPage.hidden=false;
-      loadRecords();
+      refreshRecordsPage();
       return;
     }
     setAccessCode('');
@@ -1436,7 +1737,44 @@ function init(){
   clearSingleRecordForm();
   els.dashboardLink.href=pageUrl('/dashboard.html');
   els.meetHistoryLink.href=pageUrl('/meet-history.html');
-  els.refreshBtn.addEventListener('click',loadRecords);
+  els.refreshBtn.addEventListener('click',refreshRecordsPage);
+  els.schoolRecordsTab.addEventListener('click',function(){setRecordView('school');});
+  els.xcTop20Tab.addEventListener('click',function(){setRecordView('xc');});
+  document.querySelectorAll('.xctab[data-xc-list]').forEach(function(button){
+    button.addEventListener('click',function(){
+      xcActiveList=button.getAttribute('data-xc-list')||'boys5k';
+      els.xcImportList.value=xcActiveList;
+      renderXcTop20();
+    });
+  });
+  els.xcImportList.addEventListener('change',function(){
+    xcActiveList=els.xcImportList.value||'boys5k';
+    renderXcTop20();
+    if(els.xcImportText.value)previewXcImport();
+  });
+  els.xcPreviewBtn.addEventListener('click',previewXcImport);
+  els.xcImportFile.addEventListener('change',function(){
+    var file=els.xcImportFile.files&&els.xcImportFile.files[0];
+    if(!file)return;
+    setXcImportStatus('Reading '+file.name+'...','');
+    file.text().then(function(text){
+      els.xcImportText.value=text;
+      previewXcImport();
+    }).catch(function(){
+      xcImportRows=[];
+      renderXcPreview();
+      setXcImportStatus('File could not be read. Try CSV, TSV, or text export.','bad');
+    });
+  });
+  els.xcImportText.addEventListener('input',function(){
+    xcImportRows=[];
+    els.xcSaveBtn.disabled=true;
+    els.xcPreview.hidden=true;
+    setXcImportStatus('Paste or upload XC marks, then preview.','');
+  });
+  els.xcImportMeet.addEventListener('input',function(){if(els.xcImportText.value)previewXcImport();});
+  els.xcImportDate.addEventListener('change',function(){if(els.xcImportText.value)previewXcImport();});
+  els.xcSaveBtn.addEventListener('click',saveXcImport);
   els.saveSingleBtn.addEventListener('click',saveSingleRecord);
   els.clearSingleBtn.addEventListener('click',clearSingleRecordForm);
   els.deleteAllRecordsBtn.addEventListener('click',deleteAllRecords);
@@ -1551,7 +1889,7 @@ function init(){
   els.saveBulkBtn.addEventListener('click',saveBulkRecords);
   els.accessSubmit.addEventListener('click',submitAccess);
   els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});
-  ensureAccountAccess().then(function(ok){if(ok)loadRecords();});
+  ensureAccountAccess().then(function(ok){if(ok)refreshRecordsPage();});
 }
 init();
 </script>

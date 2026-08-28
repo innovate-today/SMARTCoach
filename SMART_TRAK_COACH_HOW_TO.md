@@ -709,7 +709,9 @@ Completed notes stay visible but are greyed out on the app. The app does not inc
 
 ## Records
 
-Use Records as the school record board. It is meant to display official records entered by the coach.
+Use Records for the official school record board and for cross country top lists.
+
+The **School Records** tab is the official record board. It is meant to display official records entered by the coach.
 
 How to use it:
 
@@ -728,7 +730,28 @@ For bulk import, the required fields are gender, event, result, and year. Use th
 
 If an import uses the wrong sport, date, or other shared fields across many rows, open **Records Tools**, click **Delete All Records**, confirm the warning, and upload the corrected file again.
 
-The Records page is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
+The School Records table is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
+
+The **XC Top 20** tab shows the fastest saved cross country meet results for:
+
+- Boys 5K
+- Girls 5K
+- Girls 2 Mile
+
+The XC Top 20 list updates from saved Meet History results when Records reloads. New app syncs, Log Race Result entries, Meet History corrections, and XC imports can all update the list. For cross country, 3200m and 2 Mile marks are shown together as **2 Mile**.
+
+To import XC Top 20 marks:
+
+1. Open **Records**.
+2. Click **XC Top 20**.
+3. Choose the default list: Boys 5K, Girls 5K, or Girls 2 Mile.
+4. Enter the meet or course and date if those details apply to every row.
+5. Paste rows into the Copy/Paste box or upload a CSV file.
+6. Use columns such as Athlete, Time, Meet, Date, Event, Gender, Grade, Class Year, and Notes. Athlete and Time are the most important fields.
+7. Click **Preview**.
+8. Click **Save to Meet History**.
+
+Imported XC marks are saved in Meet History first. The XC Top 20 list is built from those saved meet results.
 
 ## Manage Meets
 
