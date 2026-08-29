@@ -1436,6 +1436,8 @@ function checkXcTop20RecordsFeature() {
     "rawYear",
     "yearOnlyValue(rawYear)",
     "meetDate:''",
+    "season:String(seasonYear)",
+    "season:String(row.seasonYear)",
     "return rows.filter(function(row){return !row.athleteName||!row.resultDisplay||!row.event;})",
     "function refreshRecordsPage()",
     "Meet results and app syncs do not update the School Records table automatically.",
@@ -1467,6 +1469,8 @@ function checkXcTop20RecordsFeature() {
   });
   [
     "if (!row.athleteName || !row.event || !row.resultDisplay)",
+    "function historyImportSeason(value, seasonYear)",
+    "/^(unlisted|unspecified|cross country)$/i.test(season)",
     "const yearOnlyDate = /^\\d{4}$/.test(rawDate);",
     'meetDate: yearOnlyDate ? "" : rawDate',
     '[row.athleteName, row.event, row.resultDisplay, row.meetName].filter(Boolean).join(" - ")',
@@ -4616,7 +4620,8 @@ function checkMeetHistoryUnlistedSeasonYearFallback() {
   ];
   const requiredApi = [
     "const rawSeason = clean(row && row.season);",
-    "const season = rawSeason && !/^(unlisted|unspecified)$/i.test(rawSeason) ? rawSeason : String(seasonYear);",
+    "const season = historyImportSeason(rawSeason, seasonYear);",
+    "function historyImportSeason(value, seasonYear)",
     "seasonYear: Number(props.season_year) || yearFromDateValue(props.meet_date),",
   ];
   const requiredDashboardApi = [

@@ -471,7 +471,7 @@ function normalizeHistoryImportRow(row) {
   const date = rawDate && !yearOnlyDate ? new Date(rawDate) : null;
   const seasonYear = Number(row && (row.seasonYear || row.year)) || (yearOnlyDate ? Number(rawDate) : 0) || (date && validDate(date) ? date.getFullYear() : new Date().getFullYear());
   const rawSeason = clean(row && row.season);
-  const season = rawSeason && !/^(unlisted|unspecified)$/i.test(rawSeason) ? rawSeason : String(seasonYear);
+  const season = historyImportSeason(rawSeason, seasonYear);
   return {
     rowNumber: Number(row && row.rowNumber) || 0,
     athleteName: clean(row && (row.athleteName || row.athlete)),
@@ -492,6 +492,12 @@ function normalizeHistoryImportRow(row) {
     notes: clean(row && row.notes),
     sourceRecordId: clean(row && row.sourceRecordId),
   };
+}
+
+function historyImportSeason(value, seasonYear) {
+  const season = clean(value);
+  if (!season || /^(unlisted|unspecified|cross country)$/i.test(season)) return String(seasonYear);
+  return season;
 }
 
 function buildHistoryImportProperties(row) {
