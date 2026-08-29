@@ -740,14 +740,16 @@ The **XC Top 20** tab shows the fastest saved cross country meet results for:
 
 The XC Top 20 list updates from saved Meet History results when Records reloads. New app syncs, Log Race Result entries, Meet History corrections, and XC imports can all update the list. Each athlete appears once per list, using that athlete's fastest saved time for that distance. For cross country, 3200m and 2 Mile marks are shown together as **2 Mile**.
 
+Imported athletes do not need to be on the current roster. Old marks can be saved by athlete name only, so a runner from a past team can appear on XC Top 20 without being added to the active athlete list.
+
 To import XC Top 20 marks:
 
 1. Open **Records**.
 2. Click **XC Top 20**.
-3. Choose the default list: Boys 5K, Girls 5K, or Girls 2 Mile.
+3. Choose the default list: Boys 5K, Girls 5K, or Girls 2 Mile. SMART Trak uses that list for gender and distance when the pasted rows do not include those columns.
 4. Enter the meet or course and date if those details apply to every row. Leave them blank if they are not known.
 5. Paste rows into the Copy/Paste box or upload a CSV file.
-6. Use columns such as Athlete, Time, Meet, Date, Event, Gender, Grade, Class Year, and Notes. Athlete and Time are required. Meet, Date, and the other details can be blank.
+6. Use columns such as Athlete, Time, Meet, Date, Event, Gender, Grade, Class Year, and Notes. Athlete and Time are required. Meet, Date, and the other details can be blank. If only the year is known, put the year in the Date or Year column.
 7. Click **Preview**.
 8. Click **Save to Meet History**.
 

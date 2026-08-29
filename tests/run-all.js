@@ -1427,6 +1427,11 @@ function checkXcTop20RecordsFeature() {
     "function xcNormalizeEvent",
     "Meet / Course Optional",
     "Date Optional",
+    "Default List supplies gender and distance when pasted rows do not include those columns.",
+    "Imported athletes do not need to be on the current roster.",
+    "Date or Year",
+    "rawDateOrYear",
+    "yearOnlyValue(rawDateOrYear)",
     "return rows.filter(function(row){return !row.athleteName||!row.resultDisplay||!row.event;})",
     "function refreshRecordsPage()",
     "Meet results and app syncs do not update the School Records table automatically.",
@@ -1459,6 +1464,8 @@ function checkXcTop20RecordsFeature() {
   [
     "if (!row.athleteName || !row.event || !row.resultDisplay)",
     '[row.athleteName, row.event, row.resultDisplay, row.meetName].filter(Boolean).join(" - ")',
+    'athlete_contact: ""',
+    "athlete_name_snapshot: row.athleteName",
   ].forEach((needle) => {
     if (!meetResultApi.includes(needle)) {
       throw new Error(`Meet result import missing optional meet/date marker: ${needle}`);
@@ -1740,7 +1747,7 @@ function checkDashboardWhatsNew() {
     "XC Top 20 shows Boys 5K, Girls 5K, and Girls 2 Mile lists from saved cross country meet results.",
     "Each athlete appears once per list, using that athlete's fastest saved time for that distance.",
     "New app syncs, Log Race Result entries, Meet History corrections, and XC imports update the lists when Records reloads.",
-    "Coaches can paste XC marks or upload a CSV file. Meet and date can be left blank, and 3200m cross country marks are shown with 2 Mile.",
+    "Coaches can paste XC marks or upload a CSV file. Athletes do not need to be on the current roster, meet/date can be left blank, and 3200m cross country marks are shown with 2 Mile.",
     "Athlete Calendar",
     "Calendar Questions lets coaches add up to five Complete/Modify/Skip questions for athletes.",
     "Questions can be marked required, and athlete answers are added to the completed workout Athlete Note.",

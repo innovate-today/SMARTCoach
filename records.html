@@ -200,6 +200,7 @@ tr:last-child td{border-bottom:0}
             <option value="girls2Mile">Girls 2 Mile</option>
           </select>
         </label>
+        <div class="hint">Default List supplies gender and distance when pasted rows do not include those columns. Imported athletes do not need to be on the current roster.</div>
         <div class="row">
           <label>Meet / Course Optional
             <input id="xcImportMeet" type="text" placeholder="Meet or course">
@@ -212,7 +213,7 @@ tr:last-child td{border-bottom:0}
           <input id="xcImportFile" type="file" accept=".csv,.tsv,.txt">
         </label>
         <label>Copy/Paste
-          <textarea id="xcImportText" placeholder="Athlete, Time, Meet, Date, Event&#10;Avery Womble, 12:03, County Championship, 2026-09-12, 3200m"></textarea>
+          <textarea id="xcImportText" placeholder="Athlete, Time, Meet, Date or Year, Event, Gender&#10;Avery Womble, 12:03, County Championship, 2026-09-12, 3200m, Girls&#10;Morgan Lee, 16:42,,2021,5K,Boys"></textarea>
         </label>
         <div class="xcimportactions">
           <button id="xcPreviewBtn" class="ghost" type="button">Preview</button>
@@ -889,10 +890,11 @@ function xcNormalizeGender(value,defaultList){
 }
 function normalizeXcImportRow(values,index){
   var defaultList=els.xcImportList.value||'boys5k';
-  var meetDate=dateOnly(values.meetDate)||els.xcImportDate.value||'';
+  var rawDateOrYear=String(values.meetDate||'').trim();
+  var meetDate=dateOnly(rawDateOrYear)||els.xcImportDate.value||'';
   var event=xcNormalizeEvent(values.event,defaultList);
   var gender=xcNormalizeGender(values.athleteGender,defaultList);
-  var seasonYear=values.seasonYear||yearOnlyValue(meetDate)||new Date().getFullYear();
+  var seasonYear=values.seasonYear||yearOnlyValue(rawDateOrYear)||yearOnlyValue(meetDate)||new Date().getFullYear();
   return {
     rowNumber:index+1,
     athleteName:String(values.athleteName||'').trim(),
