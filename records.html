@@ -184,7 +184,7 @@ tr:last-child td{border-bottom:0}
                 <th>Athlete</th>
                 <th>Time</th>
                 <th>Meet / Course</th>
-                <th>Date</th>
+                <th>Year</th>
               </tr>
             </thead>
             <tbody id="xcRows"></tbody>
@@ -205,15 +205,15 @@ tr:last-child td{border-bottom:0}
           <label>Meet / Course Optional
             <input id="xcImportMeet" type="text" placeholder="Meet or course">
           </label>
-          <label>Date Optional
-            <input id="xcImportDate" type="date">
+          <label>Year Optional
+            <input id="xcImportDate" type="number" min="1900" max="2100" step="1" placeholder="2026">
           </label>
         </div>
         <label>CSV Upload
           <input id="xcImportFile" type="file" accept=".csv,.tsv,.txt">
         </label>
         <label>Copy/Paste
-          <textarea id="xcImportText" placeholder="Athlete, Time, Meet, Date or Year, Event, Gender&#10;Avery Womble, 12:03, County Championship, 2026-09-12, 3200m, Girls&#10;Morgan Lee, 16:42,,2021,5K,Boys"></textarea>
+          <textarea id="xcImportText" placeholder="Athlete, Time, Meet, Year, Event, Gender&#10;Avery Womble, 12:03, County Championship, 2026, 3200m, Girls&#10;Morgan Lee, 16:42,,2021,5K,Boys"></textarea>
         </label>
         <div class="xcimportactions">
           <button id="xcPreviewBtn" class="ghost" type="button">Preview</button>
@@ -844,7 +844,7 @@ function renderXcTop20(){
       '<td><div class="name">'+esc(row.athleteName||'Unlisted athlete')+'</div>'+(grade?'<div class="muted">'+esc(grade)+'</div>':'')+'</td>'+
       '<td><b>'+esc(row.resultDisplay)+'</b></td>'+
       '<td>'+esc(row.meetName||'')+'</td>'+
-      '<td>'+esc(formatDate(row.meetDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
+      '<td>'+esc(row.seasonYear||yearOnlyValue(row.meetDate)||'')+'</td>'+
     '</tr>';
   }).join('');
   els.xcEmpty.hidden=!!rows.length;
@@ -890,17 +890,16 @@ function xcNormalizeGender(value,defaultList){
 }
 function normalizeXcImportRow(values,index){
   var defaultList=els.xcImportList.value||'boys5k';
-  var rawDateOrYear=String(values.meetDate||'').trim();
-  var meetDate=dateOnly(rawDateOrYear)||els.xcImportDate.value||'';
+  var rawYear=String(values.seasonYear||values.meetDate||els.xcImportDate.value||'').trim();
   var event=xcNormalizeEvent(values.event,defaultList);
   var gender=xcNormalizeGender(values.athleteGender,defaultList);
-  var seasonYear=values.seasonYear||yearOnlyValue(rawDateOrYear)||yearOnlyValue(meetDate)||new Date().getFullYear();
+  var seasonYear=yearOnlyValue(rawYear)||new Date().getFullYear();
   return {
     rowNumber:index+1,
     athleteName:String(values.athleteName||'').trim(),
     athleteGender:gender,
     meetName:String(values.meetName||'').trim()||els.xcImportMeet.value.trim(),
-    meetDate:meetDate,
+    meetDate:'',
     season:'Cross Country',
     seasonYear:seasonYear,
     sport:'Cross Country',
@@ -947,7 +946,7 @@ function renderXcPreview(){
     return;
   }
   els.xcPreview.hidden=false;
-  els.xcPreview.innerHTML='<table><thead><tr><th>Athlete</th><th>Gender</th><th>Event</th><th>Time</th><th>Meet / Course</th><th>Date</th></tr></thead><tbody>'+xcImportRows.map(function(row){return '<tr><td>'+esc(row.athleteName)+'</td><td>'+esc(row.athleteGender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay)+'</b></td><td>'+esc(row.meetName)+'</td><td>'+esc(row.meetDate)+'</td></tr>';}).join('')+'</tbody></table>';
+  els.xcPreview.innerHTML='<table><thead><tr><th>Athlete</th><th>Gender</th><th>Event</th><th>Time</th><th>Meet / Course</th><th>Year</th></tr></thead><tbody>'+xcImportRows.map(function(row){return '<tr><td>'+esc(row.athleteName)+'</td><td>'+esc(row.athleteGender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay)+'</b></td><td>'+esc(row.meetName)+'</td><td>'+esc(row.seasonYear)+'</td></tr>';}).join('')+'</tbody></table>';
   setXcImportStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):xcImportRows.length+' XC mark'+(xcImportRows.length===1?'':'s')+' ready to save.',issues.length?'bad':'good');
 }
 function previewXcImport(){

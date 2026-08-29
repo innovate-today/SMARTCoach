@@ -467,8 +467,9 @@ async function saveMeetHistoryImport({ token, locationId, rows }) {
 
 function normalizeHistoryImportRow(row) {
   const rawDate = clean(row && (row.meetDate || row.date));
-  const date = rawDate ? new Date(rawDate) : null;
-  const seasonYear = Number(row && (row.seasonYear || row.year)) || (date && validDate(date) ? date.getFullYear() : new Date().getFullYear());
+  const yearOnlyDate = /^\d{4}$/.test(rawDate);
+  const date = rawDate && !yearOnlyDate ? new Date(rawDate) : null;
+  const seasonYear = Number(row && (row.seasonYear || row.year)) || (yearOnlyDate ? Number(rawDate) : 0) || (date && validDate(date) ? date.getFullYear() : new Date().getFullYear());
   const rawSeason = clean(row && row.season);
   const season = rawSeason && !/^(unlisted|unspecified)$/i.test(rawSeason) ? rawSeason : String(seasonYear);
   return {
@@ -478,7 +479,7 @@ function normalizeHistoryImportRow(row) {
     grade: clean(row && row.grade),
     classYear: clean(row && (row.classYear || row.gradYear || row.graduationYear)),
     meetName: clean(row && (row.meetName || row.meet)),
-    meetDate: rawDate,
+    meetDate: yearOnlyDate ? "" : rawDate,
     season,
     seasonYear,
     sport: clean(row && row.sport) || "Cross Country",
