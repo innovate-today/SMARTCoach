@@ -1327,9 +1327,55 @@ function previewXcImport(){
   xcImportRows=parseXcImportRows(els.xcImportText.value);
   renderXcPreview();
 }
+function xcListKeyForImportRow(row){
+  var gender=xcNormalizeGender(row&&row.athleteGender,xcActiveList);
+  var event=xcNormalizeEvent(row&&row.event,xcActiveList);
+  if(gender==='Boys'&&event==='5K')return 'boys5k';
+  if(gender==='Girls'&&event==='5K')return 'girls5k';
+  if(gender==='Girls'&&event==='2 Mile')return 'girls2Mile';
+  return '';
+}
+function xcSameAthleteEvent(a,b){
+  return String(a&&a.athleteName||'').trim().toLowerCase()===String(b&&b.athleteName||'').trim().toLowerCase()
+    && xcNormalizeEvent(a&&a.event,xcActiveList)===xcNormalizeEvent(b&&b.event,xcActiveList);
+}
+function xcSameVisibleMark(a,b){
+  var aMs=Number(a&&a.resultMs)||parseResultMs(a&&a.resultDisplay);
+  var bMs=Number(b&&b.resultMs)||parseResultMs(b&&b.resultDisplay);
+  return xcSameAthleteEvent(a,b)
+    && (!aMs||!bMs||Math.abs(aMs-bMs)<=5)
+    && String(a&&a.seasonYear||yearOnlyValue(a&&a.meetDate)||'')===String(b&&b.seasonYear||yearOnlyValue(b&&b.meetDate)||'');
+}
+function xcImportVisibilityMessage(rows,created,skipped){
+  var visible=0;
+  var hiddenByFaster=0;
+  var hiddenByRank=0;
+  rows.forEach(function(row){
+    var listKey=xcListKeyForImportRow(row);
+    var listRows=listKey&&xcTop20&&xcTop20.lists?xcTop20.lists[listKey]||[]:[];
+    if(listRows.some(function(item){return xcSameVisibleMark(item,row);})){visible+=1;return;}
+    var sameAthlete=listRows.find(function(item){return xcSameAthleteEvent(item,row);});
+    var rowMs=Number(row&&row.resultMs)||parseResultMs(row&&row.resultDisplay);
+    var sameMs=Number(sameAthlete&&sameAthlete.resultMs)||parseResultMs(sameAthlete&&sameAthlete.resultDisplay);
+    if(sameAthlete&&sameMs&&rowMs&&sameMs<rowMs){hiddenByFaster+=1;return;}
+    hiddenByRank+=1;
+  });
+  var message='Saved '+created+' XC mark'+(created===1?'':'s')+' to Meet History';
+  if(skipped)message+='; '+skipped+' duplicate or incomplete row'+(skipped===1?' was':'s were')+' skipped';
+  message+='.';
+  if(created&&visible<created){
+    message+=' '+visible+' '+(visible===1?'is':'are')+' visible on XC Top 20 now';
+    if(hiddenByFaster)message+="; "+hiddenByFaster+" "+(hiddenByFaster===1?"is":"are")+" behind that athlete's faster saved mark";
+    if(hiddenByRank)message+='; '+hiddenByRank+' '+(hiddenByRank===1?'is':'are')+' outside the current Top 20';
+    message+='.';
+  }
+  return message;
+}
 function saveXcImport(){
+  if(!xcImportRows.length&&els.xcImportText.value)previewXcImport();
   var issues=xcImportIssues(xcImportRows);
   if(!xcImportRows.length||issues.length){setXcImportStatus(issues.length?'Fix required fields first.':'Preview XC marks before saving.','bad');return;}
+  var submittedRows=xcImportRows.slice();
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
   els.xcSaveBtn.disabled=true;
@@ -1358,12 +1404,17 @@ function saveXcImport(){
     if(!result.ok)throw new Error(result.data&&result.data.error||'XC marks could not be saved.');
     var created=Number(result.data&&result.data.createdCount)||0;
     var skipped=Number(result.data&&result.data.skippedCount)||0;
+    var createdRows=Array.isArray(result.data&&result.data.created)&&result.data.created.length?result.data.created:submittedRows.filter(function(row){
+      return !(result.data&&Array.isArray(result.data.skipped)&&result.data.skipped.some(function(item){return Number(item.rowNumber)===Number(row.rowNumber);}));
+    });
     xcImportRows=[];
     els.xcImportText.value='';
     els.xcPreview.hidden=true;
     els.xcPreview.innerHTML='';
-    setXcImportStatus('Saved '+created+' XC mark'+(created===1?'':'s')+(skipped?'; '+skipped+' duplicate or incomplete row'+(skipped===1?' was':'s were')+' skipped.':'.'),'good');
-    return loadXcTop20();
+    setXcImportStatus('Saved '+created+' XC mark'+(created===1?'':'s')+' to Meet History. Refreshing XC Top 20...','good');
+    return loadXcTop20().then(function(){
+      setXcImportStatus(xcImportVisibilityMessage(createdRows,created,skipped),created?'good':'warn');
+    });
   }).catch(function(error){
     els.xcSaveBtn.disabled=false;
     setXcImportStatus(error.message||'XC marks could not be saved.','bad');
@@ -2147,10 +2198,7 @@ function init(){
     });
   });
   els.xcImportText.addEventListener('input',function(){
-    xcImportRows=[];
-    els.xcSaveBtn.disabled=true;
-    els.xcPreview.hidden=true;
-    setXcImportStatus('Paste or upload XC marks, then preview.','');
+    previewXcImport();
   });
   els.xcImportMeet.addEventListener('input',function(){if(els.xcImportText.value)previewXcImport();});
   els.xcImportDate.addEventListener('change',function(){if(els.xcImportText.value)previewXcImport();});

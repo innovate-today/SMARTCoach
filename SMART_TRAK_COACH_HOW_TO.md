@@ -754,10 +754,12 @@ To import XC Top 20 marks:
 4. Enter the meet or course and year if those details apply to every row. Leave them blank if they are not known.
 5. Paste rows into the Copy/Paste box or upload a CSV file. Pasted rows can come from a spreadsheet, a CSV list, or a copied table that uses `|` separators.
 6. Use columns such as Athlete, Time, Meet, Year, Event, Gender, Grade, and Notes. Athlete and Time are required. Grade can be `9`, `10`, `11`, or `12`. Meet, Year, Grade, and the other details can be blank. If a pasted row includes an exact date, SMART Trak uses only the year for the XC Top 20 import.
-7. Click **Preview**.
+7. Review the preview. SMART Trak also updates the preview automatically when you paste or type.
 8. Click **Save to Meet History**.
 
 Imported XC marks are saved in Meet History first. The XC Top 20 list is built from those saved meet results.
+
+After saving, SMART Trak tells you how many marks were saved and whether they are visible on the XC Top 20 list. A saved mark may not appear on the list if that athlete already has a faster saved time for the same distance or if the mark is outside the fastest 20.
 
 To add missing details later, click **Edit** on the XC Top 20 row. You can update the athlete name, gender, event, time, meet or course, year, grade, and notes. The change is saved back to Meet History, and the XC Top 20 list refreshes from the corrected result.
 
