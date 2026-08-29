@@ -74,7 +74,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .bulkpreview{border:1px solid var(--line);border-radius:8px;overflow:auto;background:#fff;max-height:280px}
 .bulkpreview table{min-width:980px}
 .bulkpreview th{position:sticky;top:0}
-.xcboard{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px}
+.xcboard{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:14px}
 .xctabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .xctab{background:#eef2f7;color:#172033;border:1px solid var(--line)}
 .xctab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
@@ -87,6 +87,14 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .xcstatus{font-size:13px;font-weight:800;color:var(--muted)}
 .tablewrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto}
 table{width:100%;border-collapse:collapse;min-width:1180px}
+.xctablewrap{overflow:visible}
+.xctablewrap table{min-width:0;table-layout:fixed}
+.xctablewrap th,.xctablewrap td{padding:10px 9px}
+.xctablewrap th:nth-child(1){width:56px}
+.xctablewrap th:nth-child(3),.xctablewrap th:nth-child(6){width:72px}
+.xctablewrap th:nth-child(4){width:110px}
+.xctablewrap th:nth-child(7){width:78px}
+.xctablewrap td{overflow-wrap:anywhere}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
 .sortbtn{border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer;text-align:left}
@@ -176,7 +184,7 @@ tr:last-child td{border-bottom:0}
           <button class="xctab" data-xc-list="girls2Mile" type="button">Girls 2 Mile</button>
         </div>
         <div id="xcSummary" class="xcsummary"></div>
-        <div class="tablewrap">
+        <div class="tablewrap xctablewrap">
           <table>
             <thead>
               <tr>
@@ -186,6 +194,7 @@ tr:last-child td{border-bottom:0}
                 <th>Time</th>
                 <th>Meet / Course</th>
                 <th>Year</th>
+                <th>Edit</th>
               </tr>
             </thead>
             <tbody id="xcRows"></tbody>
@@ -446,11 +455,56 @@ tr:last-child td{border-bottom:0}
   </section>
 </div>
 
+<div id="xcEditModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="xcEditTitle">
+    <div class="modalhead">
+      <h2 id="xcEditTitle">Edit XC Top 20 Mark</h2>
+      <button id="xcEditClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="recordform">
+        <label>Athlete
+          <input id="xcEditAthlete" type="text">
+        </label>
+        <label>Gender
+          <select id="xcEditGender">
+            <option>Boys</option>
+            <option>Girls</option>
+          </select>
+        </label>
+        <label>Event
+          <input id="xcEditEvent" type="text" placeholder="5K or 2 Mile">
+        </label>
+        <label>Time
+          <input id="xcEditResult" type="text" placeholder="18:04.5">
+        </label>
+        <label>Meet / Course
+          <input id="xcEditMeet" type="text" placeholder="Meet or course">
+        </label>
+        <label>Year
+          <input id="xcEditYear" type="number" min="1900" max="2100" step="1">
+        </label>
+        <label>Grade
+          <input id="xcEditGrade" type="text" placeholder="9, 10, 11, or 12">
+        </label>
+        <label class="wide">Notes
+          <input id="xcEditNotes" type="text" placeholder="Optional note">
+        </label>
+        <div class="recordformactions">
+          <div id="xcEditStatus" class="modalstatus">Changes save to Meet History.</div>
+          <button id="xcEditSave" type="button">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
 <script>
 var records=[];
 var xcTop20={lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{boys5k:0,girls5k:0,girls2Mile:0}};
 var xcActiveList='boys5k';
 var xcImportRows=[];
+var xcEditingRow=null;
 var searchRenderTimer=null;
 var bulkRows=[];
 var bulkDuplicateCount=0;
@@ -493,6 +547,18 @@ var els={
   xcSaveBtn:document.getElementById('xcSaveBtn'),
   xcImportStatus:document.getElementById('xcImportStatus'),
   xcPreview:document.getElementById('xcPreview'),
+  xcEditModal:document.getElementById('xcEditModal'),
+  xcEditClose:document.getElementById('xcEditClose'),
+  xcEditStatus:document.getElementById('xcEditStatus'),
+  xcEditSave:document.getElementById('xcEditSave'),
+  xcEditAthlete:document.getElementById('xcEditAthlete'),
+  xcEditGender:document.getElementById('xcEditGender'),
+  xcEditEvent:document.getElementById('xcEditEvent'),
+  xcEditResult:document.getElementById('xcEditResult'),
+  xcEditMeet:document.getElementById('xcEditMeet'),
+  xcEditYear:document.getElementById('xcEditYear'),
+  xcEditGrade:document.getElementById('xcEditGrade'),
+  xcEditNotes:document.getElementById('xcEditNotes'),
   recordCount:document.getElementById('recordCount'),
   currentCount:document.getElementById('currentCount'),
   eventCount:document.getElementById('eventCount'),
@@ -839,6 +905,7 @@ function renderXcTop20(){
     button.classList.toggle('active',button.getAttribute('data-xc-list')===xcActiveList);
   });
   els.xcRows.innerHTML=rows.map(function(row){
+    var key=encodeURIComponent(xcRowKey(row));
     return '<tr>'+
       '<td><b>'+esc(row.rank)+'</b></td>'+
       '<td><div class="name">'+esc(row.athleteName||'Unlisted athlete')+'</div></td>'+
@@ -846,10 +913,120 @@ function renderXcTop20(){
       '<td><b>'+esc(row.resultDisplay)+'</b></td>'+
       '<td>'+esc(row.meetName||'')+'</td>'+
       '<td>'+esc(row.seasonYear||yearOnlyValue(row.meetDate)||'')+'</td>'+
+      '<td><button class="ghost compact" type="button" data-xc-edit="'+key+'">Edit</button></td>'+
     '</tr>';
   }).join('');
   els.xcEmpty.hidden=!!rows.length;
   els.xcStatus.textContent=rows.length+' mark'+(rows.length===1?'':'s')+' in '+xcListLabel(xcActiveList);
+}
+function xcRowKey(row){
+  return String(row&&row.recordId||row&&row.sourceRecordId||[row&&row.athleteName,row&&row.event,row&&row.resultDisplay,row&&row.seasonYear,row&&row.meetName].join('|'));
+}
+function findXcRowByKey(key){
+  var rows=xcTop20&&xcTop20.lists&&xcTop20.lists[xcActiveList]||[];
+  return rows.find(function(row){return xcRowKey(row)===key;})||null;
+}
+function setXcEditStatus(text,type){
+  els.xcEditStatus.textContent=text||'';
+  els.xcEditStatus.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';
+}
+function xcCoachRaceNotes(row,extraNotes){
+  var notes=[];
+  notes.push('Result Type: Historical Import');
+  if(row&&row.grade)notes.push('Historical Grade: '+row.grade);
+  if(row&&row.classYear)notes.push('Class Year: '+row.classYear);
+  if(row&&row.athleteGender)notes.push('Gender: '+row.athleteGender);
+  if(extraNotes)notes.push(extraNotes);
+  return notes.filter(Boolean).join('\n');
+}
+function openXcEdit(key){
+  xcEditingRow=findXcRowByKey(key);
+  if(!xcEditingRow){setXcEditStatus('This XC mark could not be found. Refresh and try again.','bad');return;}
+  els.xcEditAthlete.value=xcEditingRow.athleteName||'';
+  els.xcEditGender.value=xcEditingRow.athleteGender==='girl'?'Girls':'Boys';
+  els.xcEditEvent.value=xcEditingRow.originalEvent||xcEditingRow.event||xcListEvent(xcActiveList);
+  els.xcEditResult.value=xcEditingRow.resultDisplay||'';
+  els.xcEditMeet.value=xcEditingRow.meetName||'';
+  els.xcEditYear.value=xcEditingRow.seasonYear||yearOnlyValue(xcEditingRow.meetDate)||'';
+  els.xcEditGrade.value=xcEditingRow.grade||'';
+  els.xcEditNotes.value='';
+  setXcEditStatus('Changes save to Meet History.','');
+  els.xcEditModal.hidden=false;
+}
+function closeXcEdit(){
+  els.xcEditModal.hidden=true;
+  xcEditingRow=null;
+}
+function saveXcEdit(){
+  if(!xcEditingRow)return;
+  var athlete=els.xcEditAthlete.value.trim();
+  var result=els.xcEditResult.value.trim();
+  var event=els.xcEditEvent.value.trim();
+  var year=els.xcEditYear.value.trim();
+  var grade=els.xcEditGrade.value.trim();
+  if(!athlete||!result||!event){setXcEditStatus('Athlete, event, and time are required.','bad');return;}
+  if(year&&(!Number.isFinite(Number(year))||Number(year)<1900||Number(year)>2100)){setXcEditStatus('Enter a year like 2026.','bad');return;}
+  if(grade&&!/^(9|10|11|12)$/.test(grade)){setXcEditStatus('Grade can be 9, 10, 11, or 12.','bad');return;}
+  var gender=els.xcEditGender.value||xcListGender(xcActiveList);
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.xcEditSave.disabled=true;
+  setXcEditStatus('Saving changes...','');
+  fetch('/api/smart-trak/correction',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'edit',
+      recordType:'meet',
+      recordId:xcEditingRow.recordId||'',
+      sourceRecordId:xcEditingRow.sourceRecordId||'',
+      contactId:'',
+      athleteName:xcEditingRow.athleteName||athlete,
+      reason:'XC Top 20 edit',
+      previous:{
+        athleteName:xcEditingRow.athleteName||'',
+        sourceRecordId:xcEditingRow.sourceRecordId||'',
+        meetName:xcEditingRow.meetName||'',
+        meetDate:xcEditingRow.meetDate||'',
+        event:xcEditingRow.originalEvent||xcEditingRow.event||'',
+        resultDisplay:xcEditingRow.resultDisplay||'',
+        sport:'Cross Country',
+        season:xcEditingRow.season||'Fall',
+        seasonYear:xcEditingRow.seasonYear||yearOnlyValue(xcEditingRow.meetDate)||'',
+        isPr:'No',
+        isSeasonBest:'Yes',
+        coachRaceNotes:xcCoachRaceNotes({grade:xcEditingRow.grade,classYear:xcEditingRow.classYear,athleteGender:xcEditingRow.athleteGender==='girl'?'Girls':'Boys'})
+      },
+      updates:{
+        athleteName:athlete,
+        meetName:els.xcEditMeet.value.trim(),
+        meetDate:'',
+        sport:'Cross Country',
+        season:'Fall',
+        seasonYear:year,
+        event:event,
+        resultDisplay:result,
+        athleteGender:gender,
+        grade:grade,
+        isPr:'no',
+        isSeasonBest:'yes',
+        notes:els.xcEditNotes.value.trim(),
+        resultType:'historical import'
+      }
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'XC mark could not be saved.');
+    setXcEditStatus('Saved.','good');
+    closeXcEdit();
+    return loadXcTop20();
+  }).catch(function(error){
+    setXcEditStatus(error.message||'XC mark could not be saved.','bad');
+  }).finally(function(){
+    els.xcEditSave.disabled=false;
+  });
 }
 function loadXcTop20(){
   els.xcStatus.textContent='Loading XC results...';
@@ -1782,6 +1959,12 @@ function init(){
   els.xcImportMeet.addEventListener('input',function(){if(els.xcImportText.value)previewXcImport();});
   els.xcImportDate.addEventListener('change',function(){if(els.xcImportText.value)previewXcImport();});
   els.xcSaveBtn.addEventListener('click',saveXcImport);
+  els.xcRows.addEventListener('click',function(event){
+    var button=event.target.closest('[data-xc-edit]');
+    if(button)openXcEdit(decodeURIComponent(button.getAttribute('data-xc-edit')||''));
+  });
+  els.xcEditClose.addEventListener('click',closeXcEdit);
+  els.xcEditSave.addEventListener('click',saveXcEdit);
   els.saveSingleBtn.addEventListener('click',saveSingleRecord);
   els.clearSingleBtn.addEventListener('click',clearSingleRecordForm);
   els.deleteAllRecordsBtn.addEventListener('click',deleteAllRecords);

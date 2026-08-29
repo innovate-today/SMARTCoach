@@ -755,6 +755,8 @@ To import XC Top 20 marks:
 
 Imported XC marks are saved in Meet History first. The XC Top 20 list is built from those saved meet results.
 
+To add missing details later, click **Edit** on the XC Top 20 row. You can update the athlete name, gender, event, time, meet or course, year, grade, and notes. The change is saved back to Meet History, and the XC Top 20 list refreshes from the corrected result.
+
 ## Manage Meets
 
 Use Manage Meets to create and maintain the meet schedule.

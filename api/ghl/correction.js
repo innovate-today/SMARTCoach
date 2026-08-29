@@ -177,6 +177,7 @@ module.exports = async function handler(req, res) {
 
 async function editMeetResult({ token, locationId, contactId, athleteName, reason, record, props, payload }) {
   const updates = payload.updates && typeof payload.updates === "object" ? payload.updates : {};
+  const hasUpdate = (key) => Object.prototype.hasOwnProperty.call(updates, key);
   const previousNote = prop(props, "coach_race_notes");
   const previousValues = {
     athleteName: prop(props, "athlete_name_snapshot") || athleteName,
@@ -189,6 +190,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     sport: prop(props, "sport"),
     season: prop(props, "season"),
     seasonYear: String(prop(props, "season_year") || ""),
+    athleteGender: noteValue(previousNote, "Gender"),
+    grade: noteValue(previousNote, "Historical Grade") || noteValue(previousNote, "Grade"),
+    classYear: noteValue(previousNote, "Class Year"),
     isPr: yesText(prop(props, "is_pr")) ? "Yes" : "No",
     isSeasonBest: yesText(prop(props, "is_season_best")) ? "Yes" : "No",
     resultType: noteValue(previousNote, "Result Type") || "Individual",
@@ -211,6 +215,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     sport: clean(updates.sport) || previousValues.sport,
     season: clean(updates.season) || previousValues.season,
     seasonYear: clean(updates.seasonYear) || previousValues.seasonYear,
+    athleteGender: clean(updates.athleteGender) || previousValues.athleteGender,
+    grade: hasUpdate("grade") ? clean(updates.grade) : previousValues.grade,
+    classYear: hasUpdate("classYear") ? clean(updates.classYear) : previousValues.classYear,
     isPr: isRelay || isField ? "No" : clean(updates.isPr) ? yesText(updates.isPr) ? "Yes" : "No" : previousValues.isPr,
     isSeasonBest: isRelay || isField ? "No" : clean(updates.isSeasonBest) ? yesText(updates.isSeasonBest) ? "Yes" : "No" : previousValues.isSeasonBest,
     resultType: isRelay ? "Relay" : isField ? "Field" : "Individual",
@@ -232,6 +239,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     sport: "Sport",
     season: "Season",
     seasonYear: "Season Year",
+    athleteGender: "Gender",
+    grade: "Grade",
+    classYear: "Class Year",
     isPr: "PB",
     isSeasonBest: "SB",
     resultType: "Result Type",
@@ -260,6 +270,9 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     Video: nextValues.fieldVideo,
     Wind: nextValues.wind,
   } : {
+    "Historical Grade": nextValues.grade,
+    "Class Year": nextValues.classYear,
+    Gender: nextValues.athleteGender,
     Wind: nextValues.wind,
   }, nextValues.notes, correctionTime, reason);
 

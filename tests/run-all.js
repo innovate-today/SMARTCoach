@@ -1411,6 +1411,7 @@ function checkXcTop20RecordsFeature() {
   const records = fs.readFileSync("records.html", "utf8");
   const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const meetResultApi = fs.readFileSync("api/ghl/meet-result.js", "utf8");
+  const correctionApi = fs.readFileSync("api/ghl/correction.js", "utf8");
   [
     'id="xcTop20Tab"',
     'id="xcTop20Panel"',
@@ -1419,6 +1420,14 @@ function checkXcTop20RecordsFeature() {
     'data-xc-list="girls2Mile"',
     'id="xcImportFile"',
     'id="xcImportText"',
+    'id="xcEditModal"',
+    'data-xc-edit',
+    "function openXcEdit(key)",
+    "function saveXcEdit()",
+    "recordType:'meet'",
+    "reason:'XC Top 20 edit'",
+    'class="tablewrap xctablewrap"',
+    ".xctablewrap table{min-width:0;table-layout:fixed}",
     "Save to Meet History",
     "/api/ghl/meet-result",
     "historyImport:true",
@@ -1483,6 +1492,17 @@ function checkXcTop20RecordsFeature() {
   ].forEach((needle) => {
     if (!meetResultApi.includes(needle)) {
       throw new Error(`Meet result import missing optional meet/date marker: ${needle}`);
+    }
+  });
+  [
+    'athleteGender: noteValue(previousNote, "Gender")',
+    'grade: noteValue(previousNote, "Historical Grade") || noteValue(previousNote, "Grade")',
+    'grade: hasUpdate("grade") ? clean(updates.grade) : previousValues.grade',
+    '"Historical Grade": nextValues.grade',
+    "Gender: nextValues.athleteGender",
+  ].forEach((needle) => {
+    if (!correctionApi.includes(needle)) {
+      throw new Error(`Meet result correction missing XC Top 20 edit marker: ${needle}`);
     }
   });
   console.log("XC Top 20 Records feature ok");
