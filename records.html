@@ -206,7 +206,7 @@ tr:last-child td{border-bottom:0}
                 <th>Time</th>
                 <th>Meet / Course</th>
                 <th>Year</th>
-                <th>Edit</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="xcRows"></tbody>
@@ -969,7 +969,7 @@ function renderXcTop20(){
       '<td><b>'+esc(row.resultDisplay)+'</b></td>'+
       '<td>'+esc(row.meetName||'')+'</td>'+
       '<td>'+esc(row.seasonYear||yearOnlyValue(row.meetDate)||'')+'</td>'+
-      '<td><button class="ghost compact" type="button" data-xc-edit="'+key+'">Edit</button></td>'+
+      '<td><button class="ghost compact" type="button" data-xc-edit="'+key+'">Edit</button> <button class="danger compact" type="button" data-xc-delete="'+key+'">Delete</button></td>'+
     '</tr>';
   }).join('');
   els.xcEmpty.hidden=!!rows.length;
@@ -1137,6 +1137,22 @@ function closeXcEdit(){
   els.xcEditModal.hidden=true;
   xcEditingRow=null;
 }
+function xcPreviousPayload(row){
+  return {
+    athleteName:row&&row.athleteName||'',
+    sourceRecordId:row&&row.sourceRecordId||'',
+    meetName:row&&row.meetName||'',
+    meetDate:row&&row.meetDate||'',
+    event:row&&row.originalEvent||row&&row.event||'',
+    resultDisplay:row&&row.resultDisplay||'',
+    sport:'Cross Country',
+    season:row&&row.season||'Fall',
+    seasonYear:row&&row.seasonYear||yearOnlyValue(row&&row.meetDate)||'',
+    isPr:'No',
+    isSeasonBest:'Yes',
+    coachRaceNotes:xcCoachRaceNotes(row)
+  };
+}
 function saveXcEdit(){
   if(!xcEditingRow)return;
   var athlete=els.xcEditAthlete.value.trim();
@@ -1163,20 +1179,7 @@ function saveXcEdit(){
       contactId:'',
       athleteName:xcEditingRow.athleteName||athlete,
       reason:'XC Top 20 edit',
-      previous:{
-        athleteName:xcEditingRow.athleteName||'',
-        sourceRecordId:xcEditingRow.sourceRecordId||'',
-        meetName:xcEditingRow.meetName||'',
-        meetDate:xcEditingRow.meetDate||'',
-        event:xcEditingRow.originalEvent||xcEditingRow.event||'',
-        resultDisplay:xcEditingRow.resultDisplay||'',
-        sport:'Cross Country',
-        season:xcEditingRow.season||'Fall',
-        seasonYear:xcEditingRow.seasonYear||yearOnlyValue(xcEditingRow.meetDate)||'',
-        isPr:'No',
-        isSeasonBest:'Yes',
-        coachRaceNotes:xcCoachRaceNotes(xcEditingRow)
-      },
+      previous:xcPreviousPayload(xcEditingRow),
       updates:{
         athleteName:athlete,
         meetName:els.xcEditMeet.value.trim(),
@@ -1221,6 +1224,43 @@ function saveXcEdit(){
     setXcEditStatus(error.message||'XC mark could not be saved.','bad');
   }).finally(function(){
     els.xcEditSave.disabled=false;
+  });
+}
+function deleteXcRow(key){
+  var row=findXcRowByKey(key);
+  if(!row){els.xcStatus.textContent='This XC mark could not be found. Refresh and try again.';return;}
+  if(!row.recordId&&!row.sourceRecordId){els.xcStatus.textContent='This XC mark does not have a saved Meet History record to delete.';return;}
+  var label=[row.athleteName,row.resultDisplay,row.meetName,row.seasonYear].filter(Boolean).join(' - ');
+  if(!window.confirm('Delete this XC Top 20 mark? It will be voided in Meet History and hidden after refresh.\n\n'+label))return;
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.xcStatus.textContent='Deleting XC mark...';
+  fetch('/api/smart-trak/correction',{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({
+      action:'void',
+      recordType:'meet',
+      recordId:row.recordId||'',
+      sourceRecordId:row.sourceRecordId||'',
+      contactId:row.contactId||'',
+      athleteName:row.athleteName||'',
+      reason:'XC Top 20 delete',
+      previous:xcPreviousPayload(row)
+    })
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'XC mark could not be deleted.');
+    if(xcTop20&&xcTop20.lists&&xcTop20.lists[xcActiveList]){
+      xcTop20.lists[xcActiveList]=xcTop20.lists[xcActiveList].filter(function(item){return xcRowKey(item)!==xcRowKey(row);});
+      renderXcTop20();
+    }
+    els.xcStatus.textContent='Deleted. Refreshing XC Top 20...';
+    return loadXcTop20();
+  }).catch(function(error){
+    els.xcStatus.textContent=error.message||'XC mark could not be deleted.';
   });
 }
 function loadXcTop20(){
@@ -2234,6 +2274,8 @@ function init(){
     if(xcShareUrl)window.open(xcShareUrl,'_blank','noopener');
   });
   els.xcRows.addEventListener('click',function(event){
+    var deleteButton=event.target.closest('[data-xc-delete]');
+    if(deleteButton){deleteXcRow(decodeURIComponent(deleteButton.getAttribute('data-xc-delete')||''));return;}
     var button=event.target.closest('[data-xc-edit]');
     if(button)openXcEdit(decodeURIComponent(button.getAttribute('data-xc-edit')||''));
   });

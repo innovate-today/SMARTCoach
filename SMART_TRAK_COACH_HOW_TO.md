@@ -765,6 +765,8 @@ SMART Trak keeps one mark per athlete on each XC Top 20 list. Extra spaces or pu
 
 To add missing details later, click **Edit** on the XC Top 20 row. You can update the athlete name, gender, event, time, meet or course, year, grade, and notes. The change is saved back to Meet History, and the XC Top 20 list refreshes from the corrected result.
 
+To remove a wrong XC Top 20 mark, click **Delete** on that row. SMART Trak voids the saved Meet History result, hides it from XC Top 20, and refreshes the list. If another saved mark is next in line, it moves onto the list.
+
 ## Manage Meets
 
 Use Manage Meets to create and maintain the meet schedule.
