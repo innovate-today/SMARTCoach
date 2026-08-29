@@ -1490,13 +1490,15 @@ async function accountFieldPractice(req, res) {
       const start = firstQueryValue(req.query && req.query.start);
       const end = firstQueryValue(req.query && req.query.end);
       const event = cleanSetupText(firstQueryValue(req.query && req.query.event)).toLowerCase();
+      const speedOnly = fieldPracticeSpeedOnly(req.query);
       const filtered = practices.filter((item) => {
         if (start && item.date < start) return false;
         if (end && item.date > end) return false;
         if (event && event !== "all" && cleanSetupText(item.event).toLowerCase() !== event) return false;
+        if (speedOnly && !fieldPracticeHasSpeedMetrics(item)) return false;
         return true;
       });
-      res.status(200).json({ success: true, practices: filtered, count: filtered.length });
+      res.status(200).json({ success: true, practices: filtered, count: filtered.length, speedOnly });
       return;
     }
 
@@ -1546,6 +1548,15 @@ async function loadFieldPracticeState(accountKey, accountRecord) {
 
 function normalizeFieldPractices(items) {
   return (Array.isArray(items) ? items : []).map(normalizeFieldPractice).filter(Boolean);
+}
+
+function fieldPracticeSpeedOnly(query) {
+  const kind = cleanSetupText(firstQueryValue(query && (query.kind || query.type || query.view))).toLowerCase();
+  return kind === "speed" || kind === "speed-metrics" || kind === "speed_metrics" || kind === "speed-trak";
+}
+
+function fieldPracticeHasSpeedMetrics(practice) {
+  return Array.isArray(practice && practice.speedMetrics) && practice.speedMetrics.length > 0;
 }
 
 function normalizeFieldPractice(item) {
