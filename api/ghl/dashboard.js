@@ -864,25 +864,24 @@ function buildXcTop20(rows) {
 }
 
 function xcTop20List(rows, gender, eventBucket) {
-  const seen = new Set();
+  const seenAthletes = new Set();
   return (Array.isArray(rows) ? rows : [])
     .map((row) => xcTop20Row(row, gender, eventBucket))
     .filter(Boolean)
+    .sort((a, b) => Number(a.resultMs) - Number(b.resultMs) || String(a.meetDate || "").localeCompare(String(b.meetDate || "")) || clean(a.athleteName).localeCompare(clean(b.athleteName)))
     .filter((row) => {
-      const key = [
-        row.athleteName,
-        row.resultDisplay,
-        row.meetName,
-        row.meetDate,
-        row.originalEvent,
-      ].map((value) => clean(value).toLowerCase()).join("|");
-      if (seen.has(key)) return false;
-      seen.add(key);
+      const key = xcTop20AthleteKey(row);
+      if (!key) return false;
+      if (seenAthletes.has(key)) return false;
+      seenAthletes.add(key);
       return true;
     })
-    .sort((a, b) => Number(a.resultMs) - Number(b.resultMs) || String(a.meetDate || "").localeCompare(String(b.meetDate || "")) || clean(a.athleteName).localeCompare(clean(b.athleteName)))
     .slice(0, 20)
     .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+function xcTop20AthleteKey(row) {
+  return clean(row && row.athleteName).toLowerCase();
 }
 
 function xcTop20Row(row, gender, eventBucket) {

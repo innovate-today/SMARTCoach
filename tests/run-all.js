@@ -1410,6 +1410,7 @@ function checkResultsBoardFeature() {
 function checkXcTop20RecordsFeature() {
   const records = fs.readFileSync("records.html", "utf8");
   const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  const meetResultApi = fs.readFileSync("api/ghl/meet-result.js", "utf8");
   [
     'id="xcTop20Tab"',
     'id="xcTop20Panel"',
@@ -1424,6 +1425,9 @@ function checkXcTop20RecordsFeature() {
     "function loadXcTop20()",
     "function saveXcImport()",
     "function xcNormalizeEvent",
+    "Meet / Course Optional",
+    "Date Optional",
+    "return rows.filter(function(row){return !row.athleteName||!row.resultDisplay||!row.event;})",
     "function refreshRecordsPage()",
     "Meet results and app syncs do not update the School Records table automatically.",
   ].forEach((needle) => {
@@ -1436,6 +1440,7 @@ function checkXcTop20RecordsFeature() {
     "xcTop20,",
     "function buildXcTop20(rows)",
     "function xcTop20List(rows, gender, eventBucket)",
+    "function xcTop20AthleteKey(row)",
     "function xcTop20Event(value)",
     'boys5k: xcTop20List(rows, "boy", "5K")',
     'girls5k: xcTop20List(rows, "girl", "5K")',
@@ -1446,6 +1451,14 @@ function checkXcTop20RecordsFeature() {
   ].forEach((needle) => {
     if (!dashboardApi.includes(needle)) {
       throw new Error(`Dashboard API missing XC Top 20 marker: ${needle}`);
+    }
+  });
+  [
+    "if (!row.athleteName || !row.event || !row.resultDisplay)",
+    '[row.athleteName, row.event, row.resultDisplay, row.meetName].filter(Boolean).join(" - ")',
+  ].forEach((needle) => {
+    if (!meetResultApi.includes(needle)) {
+      throw new Error(`Meet result import missing optional meet/date marker: ${needle}`);
     }
   });
   console.log("XC Top 20 Records feature ok");
@@ -1722,8 +1735,9 @@ function checkDashboardWhatsNew() {
     "Coaches can choose visible sections, reorder board details, add a coach message, and viewers can tap table headers to sort columns.",
     "Records",
     "XC Top 20 shows Boys 5K, Girls 5K, and Girls 2 Mile lists from saved cross country meet results.",
+    "Each athlete appears once per list, using that athlete's fastest saved time for that distance.",
     "New app syncs, Log Race Result entries, Meet History corrections, and XC imports update the lists when Records reloads.",
-    "Coaches can paste XC marks or upload a CSV file, and 3200m cross country marks are shown with 2 Mile.",
+    "Coaches can paste XC marks or upload a CSV file. Meet and date can be left blank, and 3200m cross country marks are shown with 2 Mile.",
     "Athlete Calendar",
     "Calendar Questions lets coaches add up to five Complete/Modify/Skip questions for athletes.",
     "Questions can be marked required, and athlete answers are added to the completed workout Athlete Note.",

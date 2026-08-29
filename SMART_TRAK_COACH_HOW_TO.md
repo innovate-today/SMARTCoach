@@ -738,16 +738,16 @@ The **XC Top 20** tab shows the fastest saved cross country meet results for:
 - Girls 5K
 - Girls 2 Mile
 
-The XC Top 20 list updates from saved Meet History results when Records reloads. New app syncs, Log Race Result entries, Meet History corrections, and XC imports can all update the list. For cross country, 3200m and 2 Mile marks are shown together as **2 Mile**.
+The XC Top 20 list updates from saved Meet History results when Records reloads. New app syncs, Log Race Result entries, Meet History corrections, and XC imports can all update the list. Each athlete appears once per list, using that athlete's fastest saved time for that distance. For cross country, 3200m and 2 Mile marks are shown together as **2 Mile**.
 
 To import XC Top 20 marks:
 
 1. Open **Records**.
 2. Click **XC Top 20**.
 3. Choose the default list: Boys 5K, Girls 5K, or Girls 2 Mile.
-4. Enter the meet or course and date if those details apply to every row.
+4. Enter the meet or course and date if those details apply to every row. Leave them blank if they are not known.
 5. Paste rows into the Copy/Paste box or upload a CSV file.
-6. Use columns such as Athlete, Time, Meet, Date, Event, Gender, Grade, Class Year, and Notes. Athlete and Time are the most important fields.
+6. Use columns such as Athlete, Time, Meet, Date, Event, Gender, Grade, Class Year, and Notes. Athlete and Time are required. Meet, Date, and the other details can be blank.
 7. Click **Preview**.
 8. Click **Save to Meet History**.
 

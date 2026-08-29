@@ -202,10 +202,10 @@ tr:last-child td{border-bottom:0}
           </select>
         </label>
         <div class="row">
-          <label>Meet / Course
+          <label>Meet / Course Optional
             <input id="xcImportMeet" type="text" placeholder="Meet or course">
           </label>
-          <label>Date
+          <label>Date Optional
             <input id="xcImportDate" type="date">
           </label>
         </div>
@@ -932,7 +932,7 @@ function parseXcImportRows(text){
   }).filter(function(row){return row.athleteName||row.resultDisplay||row.meetName;});
 }
 function xcImportIssues(rows){
-  return rows.filter(function(row){return !row.athleteName||!row.resultDisplay||!row.meetName||!row.meetDate||!row.event;}).map(function(row){return row.rowNumber;});
+  return rows.filter(function(row){return !row.athleteName||!row.resultDisplay||!row.event;}).map(function(row){return row.rowNumber;});
 }
 function setXcImportStatus(text,type){
   els.xcImportStatus.textContent=text||'';

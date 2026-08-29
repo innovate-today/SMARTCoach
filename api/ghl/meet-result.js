@@ -435,7 +435,7 @@ async function saveMeetHistoryImport({ token, locationId, rows }) {
   const skipped = [];
   for (const raw of rows) {
     const row = normalizeHistoryImportRow(raw);
-    if (!row.athleteName || !row.meetName || !row.event || !row.resultDisplay || !row.meetDate) {
+    if (!row.athleteName || !row.event || !row.resultDisplay) {
       skipped.push({ rowNumber: row.rowNumber, reason: "Missing required fields." });
       continue;
     }
@@ -504,7 +504,7 @@ function buildHistoryImportProperties(row) {
     row.notes,
   ].filter(Boolean).join("\n");
   return compactProperties({
-    meet_result: `${row.athleteName} - ${row.event} - ${row.resultDisplay} - ${row.meetName}`,
+    meet_result: [row.athleteName, row.event, row.resultDisplay, row.meetName].filter(Boolean).join(" - "),
     athlete_contact: "",
     athlete_name_snapshot: row.athleteName,
     meet_name: row.meetName,
