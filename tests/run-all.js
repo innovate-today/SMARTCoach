@@ -1439,6 +1439,8 @@ function checkXcTop20RecordsFeature() {
     "reason:'XC Top 20 delete'",
     "Deleted. Refreshing XC Top 20...",
     "<th>Actions</th>",
+    "class=\"xcrowactions\"",
+    ".xctablewrap .xcrowactions{display:flex;align-items:center;gap:5px;white-space:nowrap}",
     "var xcPendingEdits={}",
     "function rememberXcEdit(original,updated)",
     "function applyXcPendingEdits()",

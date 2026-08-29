@@ -94,8 +94,10 @@ table{width:100%;border-collapse:collapse;min-width:1180px}
 .xctablewrap th:nth-child(1){width:56px}
 .xctablewrap th:nth-child(3),.xctablewrap th:nth-child(6){width:72px}
 .xctablewrap th:nth-child(4){width:110px}
-.xctablewrap th:nth-child(7){width:78px}
+.xctablewrap th:nth-child(7){width:118px}
 .xctablewrap td{overflow-wrap:anywhere}
+.xctablewrap .xcrowactions{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.xctablewrap .xcrowactions .compact{padding:5px 7px;font-size:12px;line-height:1.1}
 .xctablewrap tr.xc-active-athlete td{background:#f0fdf4}
 .xctablewrap tr.xc-current-year td{background:#fff7ed}
 .xctablewrap tr.xc-active-athlete.xc-current-year td{background:#f0f9ff}
@@ -969,7 +971,7 @@ function renderXcTop20(){
       '<td><b>'+esc(row.resultDisplay)+'</b></td>'+
       '<td>'+esc(row.meetName||'')+'</td>'+
       '<td>'+esc(row.seasonYear||yearOnlyValue(row.meetDate)||'')+'</td>'+
-      '<td><button class="ghost compact" type="button" data-xc-edit="'+key+'">Edit</button> <button class="danger compact" type="button" data-xc-delete="'+key+'">Delete</button></td>'+
+      '<td><div class="xcrowactions"><button class="ghost compact" type="button" data-xc-edit="'+key+'">Edit</button><button class="danger compact" type="button" data-xc-delete="'+key+'">Delete</button></div></td>'+
     '</tr>';
   }).join('');
   els.xcEmpty.hidden=!!rows.length;
