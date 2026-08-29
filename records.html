@@ -182,6 +182,7 @@ tr:last-child td{border-bottom:0}
               <tr>
                 <th>Rank</th>
                 <th>Athlete</th>
+                <th>Grade</th>
                 <th>Time</th>
                 <th>Meet / Course</th>
                 <th>Year</th>
@@ -213,7 +214,7 @@ tr:last-child td{border-bottom:0}
           <input id="xcImportFile" type="file" accept=".csv,.tsv,.txt">
         </label>
         <label>Copy/Paste
-          <textarea id="xcImportText" placeholder="Athlete, Time, Meet, Year, Event, Gender&#10;Avery Womble, 12:03, County Championship, 2026, 3200m, Girls&#10;Morgan Lee, 16:42,,2021,5K,Boys"></textarea>
+          <textarea id="xcImportText" placeholder="Athlete, Time, Meet, Year, Event, Gender, Grade&#10;Avery Womble, 12:03, County Championship, 2026, 3200m, Girls, 11&#10;Morgan Lee, 16:42,,2021,5K,Boys,12"></textarea>
         </label>
         <div class="xcimportactions">
           <button id="xcPreviewBtn" class="ghost" type="button">Preview</button>
@@ -838,10 +839,10 @@ function renderXcTop20(){
     button.classList.toggle('active',button.getAttribute('data-xc-list')===xcActiveList);
   });
   els.xcRows.innerHTML=rows.map(function(row){
-    var grade=[row.grade,row.classYear?'Class '+row.classYear:''].filter(Boolean).join(' · ');
     return '<tr>'+
       '<td><b>'+esc(row.rank)+'</b></td>'+
-      '<td><div class="name">'+esc(row.athleteName||'Unlisted athlete')+'</div>'+(grade?'<div class="muted">'+esc(grade)+'</div>':'')+'</td>'+
+      '<td><div class="name">'+esc(row.athleteName||'Unlisted athlete')+'</div></td>'+
+      '<td>'+esc(row.grade||'')+'</td>'+
       '<td><b>'+esc(row.resultDisplay)+'</b></td>'+
       '<td>'+esc(row.meetName||'')+'</td>'+
       '<td>'+esc(row.seasonYear||yearOnlyValue(row.meetDate)||'')+'</td>'+
@@ -946,7 +947,7 @@ function renderXcPreview(){
     return;
   }
   els.xcPreview.hidden=false;
-  els.xcPreview.innerHTML='<table><thead><tr><th>Athlete</th><th>Gender</th><th>Event</th><th>Time</th><th>Meet / Course</th><th>Year</th></tr></thead><tbody>'+xcImportRows.map(function(row){return '<tr><td>'+esc(row.athleteName)+'</td><td>'+esc(row.athleteGender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay)+'</b></td><td>'+esc(row.meetName)+'</td><td>'+esc(row.seasonYear)+'</td></tr>';}).join('')+'</tbody></table>';
+  els.xcPreview.innerHTML='<table><thead><tr><th>Athlete</th><th>Gender</th><th>Grade</th><th>Event</th><th>Time</th><th>Meet / Course</th><th>Year</th></tr></thead><tbody>'+xcImportRows.map(function(row){return '<tr><td>'+esc(row.athleteName)+'</td><td>'+esc(row.athleteGender)+'</td><td>'+esc(row.grade)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay)+'</b></td><td>'+esc(row.meetName)+'</td><td>'+esc(row.seasonYear)+'</td></tr>';}).join('')+'</tbody></table>';
   setXcImportStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):xcImportRows.length+' XC mark'+(xcImportRows.length===1?'':'s')+' ready to save.',issues.length?'bad':'good');
 }
 function previewXcImport(){
