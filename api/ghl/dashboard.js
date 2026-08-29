@@ -6,6 +6,7 @@ const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS = 4500;
+const DASHBOARD_RECENT_MEET_LIMIT = 100;
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { loadTrainingMirror, loadAttendanceRecords } = require("../../lib/account-registry");
@@ -114,7 +115,7 @@ module.exports = async function handler(req, res) {
     const meetResults = buildRecentMeetResults({ athletes, meetRecords });
     const xcTop20 = buildXcTop20(meetResults, athletes);
     const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords });
-    const recentMeetResults = meetResults.slice(0, 100);
+    const recentMeetResults = dashboardRecentMeetResults(meetResults);
     const recentTrainingSyncs = trainingSyncs;
 
     res.status(200).json({
@@ -881,6 +882,61 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
     rows.push(result);
   });
   return rows.sort(sortMeetSyncDesc);
+}
+
+function dashboardRecentMeetResults(meetResults) {
+  const rows = Array.isArray(meetResults) ? meetResults : [];
+  const currentKeys = dashboardCurrentMeetSeasonKeys(rows);
+  const kept = new Map();
+  const keep = (row) => {
+    const key = dashboardMeetResultKey(row);
+    if (!key || kept.has(key)) return;
+    kept.set(key, row);
+  };
+  rows.slice(0, DASHBOARD_RECENT_MEET_LIMIT).forEach(keep);
+  rows.forEach((row) => {
+    if (currentKeys.has(dashboardMeetSeasonKey(row))) keep(row);
+  });
+  return Array.from(kept.values()).sort(sortMeetSyncDesc);
+}
+
+function dashboardCurrentMeetSeasonKeys(rows) {
+  const date = new Date();
+  const key = dashboardSeasonKeyForDate(date);
+  const year = String(key).split("-")[0] || String(date.getFullYear());
+  const crossCountryKey = `${year}-cross_country`;
+  const available = new Set((Array.isArray(rows) ? rows : []).map(dashboardMeetSeasonKey).filter(Boolean));
+  return new Set(available.has(crossCountryKey) ? [crossCountryKey, key] : [key]);
+}
+
+function dashboardMeetSeasonKey(row) {
+  const sport = optionValue(row && row.sport);
+  const year = Number(row && row.seasonYear) || yearFromDateValue(row && row.meetDate);
+  if (sport === "cross_country") return year ? `${year}-cross_country` : "";
+  const date = parseDate(row && (row.meetDate || row.syncedAt));
+  if (sport === "track" && date) return dashboardSeasonKeyForDate(date);
+  return "";
+}
+
+function dashboardSeasonKeyForDate(date) {
+  if (!date || Number.isNaN(date.getTime())) return "";
+  const month = date.getMonth() + 1;
+  let year = date.getFullYear();
+  const season = month === 12 || month === 1 ? "winter" : month <= 5 ? "spring" : month <= 7 ? "summer" : "fall";
+  if (month === 12) year += 1;
+  return `${year}-${season}`;
+}
+
+function dashboardMeetResultKey(row) {
+  return clean(row && (row.recordId || row.sourceRecordId)) ||
+    [
+      row && row.contactId,
+      row && row.athleteName,
+      row && row.meetName,
+      row && row.meetDate,
+      row && row.event,
+      row && row.resultDisplay,
+    ].map(clean).join("|");
 }
 
 function buildXcTop20(rows, athletes = []) {

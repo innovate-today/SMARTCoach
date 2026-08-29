@@ -1501,6 +1501,13 @@ function checkXcTop20RecordsFeature() {
   }
   [
     "const xcTop20 = buildXcTop20(meetResults, athletes);",
+    "const recentMeetResults = dashboardRecentMeetResults(meetResults);",
+    "const DASHBOARD_RECENT_MEET_LIMIT = 100;",
+    "function dashboardRecentMeetResults(meetResults)",
+    "function dashboardCurrentMeetSeasonKeys(rows)",
+    "function dashboardMeetSeasonKey(row)",
+    "rows.slice(0, DASHBOARD_RECENT_MEET_LIMIT).forEach(keep);",
+    "if (currentKeys.has(dashboardMeetSeasonKey(row))) keep(row);",
     "xcTop20,",
     "module.exports.publicXcTop20Board = publicXcTop20Board;",
     "function buildXcTop20(rows, athletes = [])",
