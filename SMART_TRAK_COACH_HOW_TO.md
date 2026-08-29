@@ -742,6 +742,10 @@ The XC Top 20 list updates from saved Meet History results when Records reloads.
 
 Imported athletes do not need to be on the current roster. Old marks can be saved by athlete name only, so a runner from a past team can appear on XC Top 20 without being added to the active athlete list.
 
+Rows marked **Active** match an athlete currently on the SMART Trak roster. Rows marked **Current year** are from the current season year. These labels help you spot current runners without removing older all-time marks from the list.
+
+Use **Share Link** to create a read-only XC Top 20 board. You can copy the link for athletes, families, or staff. Resetting the link turns the old link off and creates a new one.
+
 To import XC Top 20 marks:
 
 1. Open **Records**.

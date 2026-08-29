@@ -85,6 +85,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .xcimport textarea{min-height:150px}
 .xcimportactions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
 .xcstatus{font-size:13px;font-weight:800;color:var(--muted)}
+.xcheadactions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .tablewrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto}
 table{width:100%;border-collapse:collapse;min-width:1180px}
 .xctablewrap{overflow:visible}
@@ -95,6 +96,10 @@ table{width:100%;border-collapse:collapse;min-width:1180px}
 .xctablewrap th:nth-child(4){width:110px}
 .xctablewrap th:nth-child(7){width:78px}
 .xctablewrap td{overflow-wrap:anywhere}
+.xctablewrap tr.xc-active-athlete td{background:#f0fdf4}
+.xctablewrap tr.xc-current-year td{background:#fff7ed}
+.xctablewrap tr.xc-active-athlete.xc-current-year td{background:#f0f9ff}
+.xctablewrap .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 th,td{border-bottom:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;letter-spacing:.03em;position:sticky;top:0;z-index:1}
 .sortbtn{border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:0;cursor:pointer;text-align:left}
@@ -120,6 +125,10 @@ tr:last-child td{border-bottom:0}
 .modalhead h2{font-size:20px;margin:0}
 .modalbody{padding:14px 16px}
 .modalstatus{font-size:13px;font-weight:900;color:var(--muted)}
+.sharegrid{display:grid;gap:12px}
+.shareline{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.sharetoggle{display:flex;align-items:center;gap:8px;font-weight:900;color:#172033}
+.sharetoggle input{width:auto}
 .compact{padding:7px 9px;font-size:13px}
 .headinfo{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbeafe;color:#173891;font-size:12px;font-weight:900;margin-left:4px;text-transform:none;letter-spacing:0;cursor:help;border:1px solid #bfdbfe}
 .headinfo::after{content:attr(data-tip);position:absolute;left:50%;top:24px;transform:translateX(-50%);width:250px;max-width:80vw;padding:10px 12px;border:1px solid #c7d2fe;border-radius:8px;background:#fff;color:#172033;box-shadow:0 12px 28px rgba(15,23,42,.18);font-size:13px;font-weight:700;line-height:1.35;text-transform:none;letter-spacing:0;opacity:0;pointer-events:none;z-index:30;white-space:normal}
@@ -174,7 +183,10 @@ tr:last-child td{border-bottom:0}
         <h2>XC Top 20</h2>
         <div class="sub">Fastest saved cross country meet results. New imports and corrections update this list when records reload.</div>
       </div>
-      <div id="xcStatus" class="xcstatus">Loading XC results...</div>
+      <div class="xcheadactions">
+        <button id="xcShareBtn" class="ghost" type="button">Share Link</button>
+        <div id="xcStatus" class="xcstatus">Loading XC results...</div>
+      </div>
     </div>
     <div class="panelbody xcboard">
       <div>
@@ -455,6 +467,31 @@ tr:last-child td{border-bottom:0}
   </section>
 </div>
 
+<div id="xcShareModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="xcShareTitle">
+    <div class="modalhead">
+      <h2 id="xcShareTitle">Share XC Top 20</h2>
+      <button id="xcShareClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <div class="sharegrid">
+        <label class="sharetoggle"><input id="xcShareActive" type="checkbox"> Link is active</label>
+        <div class="hint">Shared links show a read-only XC Top 20 board. Resetting the link turns the old link off.</div>
+        <div class="shareline">
+          <input id="xcShareUrl" type="text" readonly placeholder="Create a link to share the XC Top 20 board.">
+          <button id="xcShareCopy" type="button">Copy Link</button>
+          <button id="xcShareOpen" class="ghost" type="button">Open</button>
+        </div>
+        <div class="recordformactions">
+          <div id="xcShareStatus" class="modalstatus">Create a link when you are ready to share.</div>
+          <button id="xcShareReset" class="danger" type="button">Reset Link</button>
+          <button id="xcShareSave" type="button">Save / Create Link</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
 <div id="xcEditModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="xcEditTitle">
     <div class="modalhead">
@@ -506,6 +543,8 @@ var xcActiveList='boys5k';
 var xcImportRows=[];
 var xcEditingRow=null;
 var xcPendingEdits={};
+var xcRecordsSharing={active:true,tokenVersion:'1'};
+var xcShareUrl='';
 var searchRenderTimer=null;
 var bulkRows=[];
 var bulkDuplicateCount=0;
@@ -548,6 +587,16 @@ var els={
   xcSaveBtn:document.getElementById('xcSaveBtn'),
   xcImportStatus:document.getElementById('xcImportStatus'),
   xcPreview:document.getElementById('xcPreview'),
+  xcShareBtn:document.getElementById('xcShareBtn'),
+  xcShareModal:document.getElementById('xcShareModal'),
+  xcShareClose:document.getElementById('xcShareClose'),
+  xcShareActive:document.getElementById('xcShareActive'),
+  xcShareUrl:document.getElementById('xcShareUrl'),
+  xcShareCopy:document.getElementById('xcShareCopy'),
+  xcShareOpen:document.getElementById('xcShareOpen'),
+  xcShareReset:document.getElementById('xcShareReset'),
+  xcShareSave:document.getElementById('xcShareSave'),
+  xcShareStatus:document.getElementById('xcShareStatus'),
   xcEditModal:document.getElementById('xcEditModal'),
   xcEditClose:document.getElementById('xcEditClose'),
   xcEditStatus:document.getElementById('xcEditStatus'),
@@ -907,9 +956,15 @@ function renderXcTop20(){
   });
   els.xcRows.innerHTML=rows.map(function(row){
     var key=encodeURIComponent(xcRowKey(row));
-    return '<tr>'+
+    var classes=[];
+    if(row.activeAthlete)classes.push('xc-active-athlete');
+    if(row.currentYear)classes.push('xc-current-year');
+    var badges=[];
+    if(row.activeAthlete)badges.push('<span class="pill good">Active</span>');
+    if(row.currentYear)badges.push('<span class="pill warn">Current year</span>');
+    return '<tr'+(classes.length?' class="'+classes.join(' ')+'"':'')+'>'+
       '<td><b>'+esc(row.rank)+'</b></td>'+
-      '<td><div class="name">'+esc(row.athleteName||'Unlisted athlete')+'</div></td>'+
+      '<td><div class="name">'+esc(row.athleteName||'Unlisted athlete')+'</div>'+(badges.length?'<div class="badges">'+badges.join('')+'</div>':'')+'</td>'+
       '<td>'+esc(row.grade||'')+'</td>'+
       '<td><b>'+esc(row.resultDisplay)+'</b></td>'+
       '<td>'+esc(row.meetName||'')+'</td>'+
@@ -950,6 +1005,104 @@ function applyXcPendingEdits(){
 function setXcEditStatus(text,type){
   els.xcEditStatus.textContent=text||'';
   els.xcEditStatus.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';
+}
+function normalizeXcRecordsSharing(input){
+  input=input&&typeof input==='object'?input:{};
+  return {
+    active:input.active!==false,
+    tokenVersion:String(input.tokenVersion||'1'),
+    updatedAt:String(input.updatedAt||''),
+    resetAt:String(input.resetAt||'')
+  };
+}
+function setXcShareStatus(text,type){
+  els.xcShareStatus.textContent=text||'';
+  els.xcShareStatus.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';
+}
+function renderXcShare(){
+  els.xcShareActive.checked=xcRecordsSharing.active!==false;
+  els.xcShareUrl.value=xcShareUrl||'';
+  els.xcShareCopy.disabled=!xcShareUrl;
+  els.xcShareOpen.disabled=!xcShareUrl;
+}
+function loadXcShare(){
+  return fetch('/api/smart-trak/xc-records-sharing?account='+encodeURIComponent(accountKey()),{headers:apiHeaders(),cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 sharing could not be loaded.');
+    xcRecordsSharing=normalizeXcRecordsSharing(result.data&&result.data.xcRecordsSharing);
+    renderXcShare();
+  });
+}
+function saveXcShare(action){
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.xcShareSave.disabled=true;
+  els.xcShareReset.disabled=true;
+  setXcShareStatus(action==='reset'?'Resetting link...':'Saving link settings...','');
+  return fetch('/api/smart-trak/xc-records-sharing?account='+encodeURIComponent(accountKey()),{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({action:action||'save',xcRecordsSharing:{active:els.xcShareActive.checked}})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 sharing could not be saved.');
+    xcRecordsSharing=normalizeXcRecordsSharing(result.data&&result.data.xcRecordsSharing);
+    return createXcShareLink();
+  }).finally(function(){
+    els.xcShareSave.disabled=false;
+    els.xcShareReset.disabled=false;
+  });
+}
+function createXcShareLink(){
+  return fetch('/api/smart-trak/xc-records-link?account='+encodeURIComponent(accountKey()),{headers:apiHeaders(),cache:'no-store'}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 link could not be created.');
+    xcShareUrl=new URL(result.data.url,window.location.origin).toString();
+    renderXcShare();
+    setXcShareStatus('Link ready.','good');
+  });
+}
+function openXcShare(){
+  xcShareUrl='';
+  renderXcShare();
+  setXcShareStatus('Loading share settings...','');
+  els.xcShareModal.hidden=false;
+  loadXcShare().then(function(){
+    if(xcRecordsSharing.active!==false)return createXcShareLink();
+    setXcShareStatus('Sharing is turned off. Turn the link on and save when ready.','');
+  }).catch(function(error){
+    setXcShareStatus(error.message||'XC Top 20 sharing could not be loaded.','bad');
+  });
+}
+function closeXcShare(){
+  els.xcShareModal.hidden=true;
+}
+function copyXcShare(){
+  if(!xcShareUrl)return;
+  copyText(xcShareUrl).then(function(){
+    setXcShareStatus('Link copied.','good');
+  }).catch(function(){
+    setXcShareStatus('Copy failed. Select the link and copy it.','bad');
+  });
+}
+function copyText(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text);
+  return new Promise(function(resolve,reject){
+    var input=document.createElement('textarea');
+    input.value=text;
+    input.style.position='fixed';
+    input.style.left='-9999px';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    try{document.execCommand('copy')?resolve():reject(new Error('copy failed'));}catch(error){reject(error);}
+    document.body.removeChild(input);
+  });
 }
 function xcEditableNotes(row){
   return String(row&&row.coachRaceNotes||'').split(/\r?\n/).filter(function(line){
@@ -2002,6 +2155,22 @@ function init(){
   els.xcImportMeet.addEventListener('input',function(){if(els.xcImportText.value)previewXcImport();});
   els.xcImportDate.addEventListener('change',function(){if(els.xcImportText.value)previewXcImport();});
   els.xcSaveBtn.addEventListener('click',saveXcImport);
+  els.xcShareBtn.addEventListener('click',openXcShare);
+  els.xcShareClose.addEventListener('click',closeXcShare);
+  els.xcShareSave.addEventListener('click',function(){
+    saveXcShare('save').catch(function(error){
+      setXcShareStatus(error.message||'XC Top 20 sharing could not be saved.','bad');
+    });
+  });
+  els.xcShareReset.addEventListener('click',function(){
+    saveXcShare('reset').catch(function(error){
+      setXcShareStatus(error.message||'XC Top 20 link could not be reset.','bad');
+    });
+  });
+  els.xcShareCopy.addEventListener('click',copyXcShare);
+  els.xcShareOpen.addEventListener('click',function(){
+    if(xcShareUrl)window.open(xcShareUrl,'_blank','noopener');
+  });
   els.xcRows.addEventListener('click',function(event){
     var button=event.target.closest('[data-xc-edit]');
     if(button)openXcEdit(decodeURIComponent(button.getAttribute('data-xc-edit')||''));

@@ -112,7 +112,7 @@ module.exports = async function handler(req, res) {
       performanceRecords: allPerformanceRecords,
     }));
     const meetResults = buildRecentMeetResults({ athletes, meetRecords });
-    const xcTop20 = buildXcTop20(meetResults);
+    const xcTop20 = buildXcTop20(meetResults, athletes);
     const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords });
     const recentMeetResults = meetResults.slice(0, 100);
     const recentTrainingSyncs = trainingSyncs;
@@ -140,6 +140,43 @@ module.exports = async function handler(req, res) {
 
 module.exports.publicMilesBoard = publicMilesBoard;
 module.exports.publicResultsBoard = publicResultsBoard;
+module.exports.publicXcTop20Board = publicXcTop20Board;
+
+async function publicXcTop20Board(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  const { token, locationId, accountKey, logoUrl } = getGhlContext(req);
+  if (!token || !locationId) {
+    res.status(500).json({ error: "XC Top 20 is not configured for this account." });
+    return;
+  }
+
+  try {
+    const [athletes, meetRecords] = await Promise.all([
+      listActiveAthletes({ token, locationId }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+    ]);
+    const meetResults = buildRecentMeetResults({ athletes, meetRecords });
+    const xcTop20 = buildXcTop20(meetResults, athletes);
+    res.status(200).json({
+      success: true,
+      accountKey,
+      logoUrl,
+      generatedAt: new Date().toISOString(),
+      xcTop20,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "XC Top 20 lookup failed." });
+  }
+}
 
 async function publicResultsBoard(req, res) {
   if (req.method === "OPTIONS") {
@@ -846,14 +883,18 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
   return rows.sort(sortMeetSyncDesc);
 }
 
-function buildXcTop20(rows) {
+function buildXcTop20(rows, athletes = []) {
+  const currentYear = new Date().getFullYear();
+  const activeAthleteKeys = xcTop20ActiveAthleteKeys(athletes);
+  const context = { currentYear, activeAthleteKeys };
   const lists = {
-    boys5k: xcTop20List(rows, "boy", "5K"),
-    girls5k: xcTop20List(rows, "girl", "5K"),
-    girls2Mile: xcTop20List(rows, "girl", "2 Mile"),
+    boys5k: xcTop20List(rows, "boy", "5K", context),
+    girls5k: xcTop20List(rows, "girl", "5K", context),
+    girls2Mile: xcTop20List(rows, "girl", "2 Mile", context),
   };
   return {
     generatedAt: new Date().toISOString(),
+    currentYear,
     lists,
     totals: {
       boys5k: lists.boys5k.length,
@@ -863,10 +904,10 @@ function buildXcTop20(rows) {
   };
 }
 
-function xcTop20List(rows, gender, eventBucket) {
+function xcTop20List(rows, gender, eventBucket, context = {}) {
   const seenAthletes = new Set();
   return (Array.isArray(rows) ? rows : [])
-    .map((row) => xcTop20Row(row, gender, eventBucket))
+    .map((row) => xcTop20Row(row, gender, eventBucket, context))
     .filter(Boolean)
     .sort((a, b) => Number(a.resultMs) - Number(b.resultMs) || String(a.meetDate || "").localeCompare(String(b.meetDate || "")) || clean(a.athleteName).localeCompare(clean(b.athleteName)))
     .filter((row) => {
@@ -884,16 +925,37 @@ function xcTop20AthleteKey(row) {
   return clean(row && row.athleteName).toLowerCase();
 }
 
-function xcTop20Row(row, gender, eventBucket) {
+function xcTop20ActiveAthleteKeys(athletes) {
+  const keys = new Set();
+  (Array.isArray(athletes) ? athletes : []).forEach((athlete) => {
+    const id = clean(athlete && athlete.id);
+    const name = clean(athlete && (athlete.name || contactName(athlete))).toLowerCase();
+    if (id) keys.add(`id:${id}`);
+    if (name) keys.add(`name:${name}`);
+  });
+  return keys;
+}
+
+function xcTop20RowActive(row, context) {
+  const keys = context && context.activeAthleteKeys;
+  if (!keys || typeof keys.has !== "function") return false;
+  const contactId = clean(row && row.contactId);
+  const athleteName = clean(row && row.athleteName).toLowerCase();
+  return Boolean((contactId && keys.has(`id:${contactId}`)) || (athleteName && keys.has(`name:${athleteName}`)));
+}
+
+function xcTop20Row(row, gender, eventBucket, context = {}) {
   if (!row || Number(row.resultMs) <= 0) return null;
   if (isRelayMeetResult(row)) return null;
   if (optionValue(row.sport) !== "cross_country") return null;
   if (resultsBoardGender(row.athleteGender) !== gender) return null;
   const normalizedEvent = xcTop20Event(row.event);
   if (normalizedEvent !== eventBucket) return null;
+  const seasonYear = Number(row.seasonYear) || yearFromDateValue(row.meetDate);
   return {
     recordId: row.recordId || "",
     sourceRecordId: row.sourceRecordId || "",
+    contactId: row.contactId || "",
     athleteName: clean(row.athleteName),
     athleteGender: resultsBoardGender(row.athleteGender),
     event: normalizedEvent,
@@ -903,7 +965,9 @@ function xcTop20Row(row, gender, eventBucket) {
     meetName: clean(row.meetName),
     meetDate: clean(row.meetDate),
     season: clean(row.season),
-    seasonYear: Number(row.seasonYear) || yearFromDateValue(row.meetDate),
+    seasonYear,
+    activeAthlete: xcTop20RowActive(row, context),
+    currentYear: Boolean(seasonYear && Number(seasonYear) === Number(context.currentYear || new Date().getFullYear())),
     grade: noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"),
     classYear: noteValue(row.coachRaceNotes, "Class Year"),
     coachRaceNotes: clean(row.coachRaceNotes),

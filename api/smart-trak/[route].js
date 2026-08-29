@@ -50,6 +50,7 @@ const DASHBOARD_PREFERENCES_NAMESPACE = "dashboardpreferences";
 const MILES_BOARD_SHARING_NAMESPACE = "milesboardsharing";
 const SPEED_BOARD_SHARING_NAMESPACE = "speedboardsharing";
 const RESULTS_BOARD_SHARING_NAMESPACE = "resultsboardsharing";
+const XC_RECORDS_SHARING_NAMESPACE = "xcrecordssharing";
 const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";
 const WEATHER_LOCATIONS_NAMESPACE = "weatherlocations";
 
@@ -232,6 +233,23 @@ module.exports = async function handler(req, res) {
   if (route === "results-board") {
     await attachRegistryAccount(req);
     return accountResultsBoard(req, res);
+  }
+
+  if (route === "xc-records-sharing") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountXcRecordsSharing(req, res);
+  }
+
+  if (route === "xc-records-link") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountXcRecordsLink(req, res);
+  }
+
+  if (route === "xc-records-board") {
+    await attachRegistryAccount(req);
+    return accountXcRecordsBoard(req, res);
   }
 
   if (route === "attendance") {
@@ -3701,6 +3719,130 @@ async function loadResultsBoardSharingState(accountKey, accountRecord) {
   return normalizeResultsBoardSharing(accountRecord && accountRecord.resultsBoardSharing);
 }
 
+async function accountXcRecordsLink(req, res) {
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+  const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = await loadXcRecordsSharingState(accountKey, existing && existing.record);
+  if (!sharing.active) {
+    res.status(403).json({ error: "XC Top 20 sharing is turned off." });
+    return;
+  }
+  const token = xcRecordsToken(accountKey, sharing.tokenVersion);
+  const params = new URLSearchParams({ account: accountKey, token });
+  const compactParams = new URLSearchParams({
+    k: xcRecordsShareKey({ account: accountKey, token }),
+  });
+  res.status(200).json({
+    success: true,
+    token,
+    xcRecordsSharing: sharing,
+    url: `/xc-records-board.html?${compactParams.toString()}`,
+    legacyUrl: `/xc-records-board.html?${params.toString()}`,
+  });
+}
+
+async function accountXcRecordsBoard(req, res) {
+  const share = xcRecordsShareFromKey(firstQueryValue(req.query && req.query.k));
+  const accountKey = normalizeSetupAccountKey(share.account || firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const provided = cleanSetupText(share.token || firstQueryValue(req.query && req.query.token));
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = await loadXcRecordsSharingState(accountKey, existing && existing.record);
+  if (!sharing.active) {
+    res.status(403).json({ error: "XC Top 20 sharing is turned off." });
+    return;
+  }
+  const expected = xcRecordsToken(accountKey, sharing.tokenVersion);
+  if (!provided || !safeEqual(provided, expected)) {
+    res.status(403).json({ error: "XC Top 20 link is invalid or expired." });
+    return;
+  }
+  if (!handlers.dashboard || typeof handlers.dashboard.publicXcTop20Board !== "function") {
+    res.status(500).json({ error: "XC Top 20 is not available." });
+    return;
+  }
+  req.xcRecordsSharing = sharing;
+  return handlers.dashboard.publicXcTop20Board(req, res);
+}
+
+async function accountXcRecordsSharing(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    if (req.method === "GET") {
+      const xcRecordsSharing = await loadXcRecordsSharingState(accountKey, existing.record);
+      res.status(200).json({
+        success: true,
+        accountKey,
+        xcRecordsSharing,
+      });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    const { coachCodeVersion, coachAccessCodes, accessCode } = getGhlContext(req);
+    const session = coachSessionFromRequest(req, accountKey);
+    const sessionAllowed = coachSessionAllowedForAccount(session, existing.record, coachCodeVersion);
+    const providedAccessCode = cleanSetupText(headerValue(req, "x-smartcoach-access-code"));
+    const allowedCodes = coachAccessCodes && coachAccessCodes.length ? coachAccessCodes : accessCode ? [accessCode] : [];
+    const codeAllowed = providedAccessCode && allowedCodes.some((code) => safeEqual(providedAccessCode, code));
+    if (!sessionAllowed && !codeAllowed) {
+      throw httpError(401, "Active coach access is required to update XC Top 20 sharing.");
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const current = await loadXcRecordsSharingState(accountKey, existing.record);
+    const input = payload.xcRecordsSharing && typeof payload.xcRecordsSharing === "object" ? payload.xcRecordsSharing : payload;
+    const action = cleanSetupText(payload.action || input.action).toLowerCase();
+    const next = normalizeXcRecordsSharing({ ...current, ...input });
+    if (action === "reset") {
+      next.active = true;
+      next.tokenVersion = xcRecordsTokenVersion();
+      next.resetAt = new Date().toISOString();
+    }
+    next.updatedAt = new Date().toISOString();
+    await saveAccountScopedRecord(accountKey, XC_RECORDS_SHARING_NAMESPACE, {
+      xcRecordsSharing: next,
+      lastXcRecordsSharingSync: {
+        savedAt: next.updatedAt,
+        active: next.active,
+        resetAt: next.resetAt || "",
+      },
+    });
+    res.status(200).json({ success: true, accountKey, xcRecordsSharing: next });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "XC Top 20 sharing save failed." });
+  }
+}
+
+async function loadXcRecordsSharingState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, XC_RECORDS_SHARING_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return normalizeXcRecordsSharing(scoped.record.xcRecordsSharing || scoped.record);
+  }
+  return normalizeXcRecordsSharing(accountRecord && accountRecord.xcRecordsSharing);
+}
+
 function defaultDashboardVisibleTools() {
   return {
     keepTrak: true,
@@ -7094,6 +7236,48 @@ function resultsBoardShareFromKey(value) {
       meet: cleanSetupText(raw.m || raw.meet),
       event: cleanSetupText(raw.e || raw.event),
       gender: cleanSetupText(raw.g || raw.gender),
+    };
+  } catch (error) {
+    return {};
+  }
+}
+
+function normalizeXcRecordsSharing(source) {
+  const input = source && typeof source === "object" ? source : {};
+  return {
+    active: input.active !== false,
+    tokenVersion: cleanSetupText(input.tokenVersion) || "1",
+    updatedAt: cleanSetupText(input.updatedAt),
+    resetAt: cleanSetupText(input.resetAt),
+  };
+}
+
+function xcRecordsToken(accountKey, tokenVersion = "1") {
+  const secret = cleanSetupText(process.env.SMARTCOACH_XC_RECORDS_SECRET || process.env.SMARTCOACH_SESSION_SECRET || process.env.SMARTCOACH_AUTOMATION_SECRET || process.env.SMARTCOACH_ADMIN_SETUP_CODE || "smartcoach-xc-records");
+  return crypto.createHmac("sha256", secret).update(`xc-records:${normalizeSetupAccountKey(accountKey) || "default"}:${cleanSetupText(tokenVersion) || "1"}`).digest("base64url");
+}
+
+function xcRecordsTokenVersion() {
+  return crypto.randomBytes(12).toString("base64url");
+}
+
+function xcRecordsShareKey(input) {
+  const source = input && typeof input === "object" ? input : {};
+  const payload = {
+    a: normalizeSetupAccountKey(source.account),
+    t: cleanSetupText(source.token),
+  };
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function xcRecordsShareFromKey(value) {
+  const key = cleanSetupText(value);
+  if (!key) return {};
+  try {
+    const raw = JSON.parse(Buffer.from(key, "base64url").toString("utf8"));
+    return {
+      account: normalizeSetupAccountKey(raw.a || raw.account),
+      token: cleanSetupText(raw.t || raw.token),
     };
   } catch (error) {
     return {};

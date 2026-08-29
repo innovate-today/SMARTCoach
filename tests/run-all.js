@@ -1409,9 +1409,12 @@ function checkResultsBoardFeature() {
 
 function checkXcTop20RecordsFeature() {
   const records = fs.readFileSync("records.html", "utf8");
+  const publicBoard = fs.readFileSync("xc-records-board.html", "utf8");
   const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
+  const smartTrakApi = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const meetResultApi = fs.readFileSync("api/ghl/meet-result.js", "utf8");
   const correctionApi = fs.readFileSync("api/ghl/correction.js", "utf8");
+  const vercel = fs.readFileSync("vercel.json", "utf8");
   [
     'id="xcTop20Tab"',
     'id="xcTop20Panel"',
@@ -1421,6 +1424,12 @@ function checkXcTop20RecordsFeature() {
     'id="xcImportFile"',
     'id="xcImportText"',
     'id="xcEditModal"',
+    'id="xcShareModal"',
+    'id="xcShareBtn"',
+    'id="xcShareUrl"',
+    "function openXcShare()",
+    "fetch('/api/smart-trak/xc-records-link?account='",
+    "fetch('/api/smart-trak/xc-records-sharing?account='",
     'data-xc-edit',
     "function openXcEdit(key)",
     "function saveXcEdit()",
@@ -1457,6 +1466,9 @@ function checkXcTop20RecordsFeature() {
     "return rows.filter(function(row){return !row.athleteName||!row.resultDisplay||!row.event;})",
     "function refreshRecordsPage()",
     "Meet results and app syncs do not update the School Records table automatically.",
+    "row.activeAthlete",
+    "row.currentYear",
+    "Current year",
   ].forEach((needle) => {
     if (!records.includes(needle)) {
       throw new Error(`Records page missing XC Top 20 feature marker: ${needle}`);
@@ -1466,16 +1478,21 @@ function checkXcTop20RecordsFeature() {
     throw new Error("XC Top 20 should keep original event behind the scenes, not as a visible table column.");
   }
   [
-    "const xcTop20 = buildXcTop20(meetResults);",
+    "const xcTop20 = buildXcTop20(meetResults, athletes);",
     "xcTop20,",
-    "function buildXcTop20(rows)",
-    "function xcTop20List(rows, gender, eventBucket)",
+    "module.exports.publicXcTop20Board = publicXcTop20Board;",
+    "function buildXcTop20(rows, athletes = [])",
+    "function xcTop20List(rows, gender, eventBucket, context = {})",
     "function xcTop20AthleteKey(row)",
+    "function xcTop20ActiveAthleteKeys(athletes)",
+    "function xcTop20RowActive(row, context)",
     "function xcTop20Event(value)",
-    'boys5k: xcTop20List(rows, "boy", "5K")',
-    'girls5k: xcTop20List(rows, "girl", "5K")',
-    'girls2Mile: xcTop20List(rows, "girl", "2 Mile")',
+    'boys5k: xcTop20List(rows, "boy", "5K", context)',
+    'girls5k: xcTop20List(rows, "girl", "5K", context)',
+    'girls2Mile: xcTop20List(rows, "girl", "2 Mile", context)',
     'if (optionValue(row.sport) !== "cross_country") return null;',
+    "activeAthlete: xcTop20RowActive(row, context)",
+    "currentYear: Boolean(seasonYear && Number(seasonYear) === Number(context.currentYear",
     '"3200m"',
     'return "2 Mile";',
     "coachRaceNotes: clean(row.coachRaceNotes)",
@@ -1484,6 +1501,41 @@ function checkXcTop20RecordsFeature() {
       throw new Error(`Dashboard API missing XC Top 20 marker: ${needle}`);
     }
   });
+  [
+    'const XC_RECORDS_SHARING_NAMESPACE = "xcrecordssharing";',
+    'if (route === "xc-records-sharing")',
+    'if (route === "xc-records-link")',
+    'if (route === "xc-records-board")',
+    "function accountXcRecordsLink(req, res)",
+    "function accountXcRecordsBoard(req, res)",
+    "function accountXcRecordsSharing(req, res)",
+    "function loadXcRecordsSharingState(accountKey, accountRecord)",
+    "function normalizeXcRecordsSharing(source)",
+    "function xcRecordsToken(accountKey, tokenVersion",
+    "function xcRecordsShareKey(input)",
+    "function xcRecordsShareFromKey(value)",
+    "return handlers.dashboard.publicXcTop20Board(req, res);",
+  ].forEach((needle) => {
+    if (!smartTrakApi.includes(needle)) {
+      throw new Error(`SMART Trak API missing XC Top 20 sharing marker: ${needle}`);
+    }
+  });
+  [
+    "<title>SMART Trak XC Top 20</title>",
+    "/api/smart-trak/xc-records-board?",
+    "data-list=\"boys5k\"",
+    "data-list=\"girls5k\"",
+    "data-list=\"girls2Mile\"",
+    "row.activeAthlete",
+    "row.currentYear",
+  ].forEach((needle) => {
+    if (!publicBoard.includes(needle)) {
+      throw new Error(`Public XC Top 20 board missing marker: ${needle}`);
+    }
+  });
+  if (!vercel.includes('"source": "/xc-records-board.html"')) {
+    throw new Error("Vercel headers should include the public XC Top 20 board.");
+  }
   [
     "if (!row.athleteName || !row.event || !row.resultDisplay)",
     "function historyImportSeason(value, sport)",
@@ -2790,10 +2842,12 @@ function checkPublicSharePagesHideFeedback() {
   const athleteCalendar = fs.readFileSync("athlete-calendar.html", "utf8");
   const milesBoard = fs.readFileSync("miles-board.html", "utf8");
   const speedBoard = fs.readFileSync("speed-board.html", "utf8");
+  const xcRecordsBoard = fs.readFileSync("xc-records-board.html", "utf8");
   [
     ["Athlete Calendar", athleteCalendar],
     ["Miles Board", milesBoard],
     ["Speed Trak Board", speedBoard],
+    ["XC Top 20 Board", xcRecordsBoard],
   ].forEach(([label, html]) => {
     if (html.includes("smartcoach-help-widget.js")) {
       throw new Error(`${label} should not load the shared feedback/help widget`);
