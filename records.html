@@ -1296,12 +1296,13 @@ function parseXcImportRows(text){
   if(Object.keys(headers).length)lines.shift();
   return lines.map(function(line,index){
     var cols=splitRecordLine(line);
+    if(isRecordSeparatorRow(cols))return null;
     if(Object.keys(headers).length){
       var value=function(key){return headers[key]!=null?cols[headers[key]]||'':'';};
       return normalizeXcImportRow({athleteName:value('athleteName'),resultDisplay:value('resultDisplay'),meetName:value('meetName'),meetDate:value('meetDate'),event:value('event'),athleteGender:value('athleteGender'),grade:value('grade'),classYear:value('classYear'),seasonYear:value('seasonYear'),notes:value('notes')},index);
     }
     return normalizeXcImportFromColumns(cols,index);
-  }).filter(function(row){return row.athleteName||row.resultDisplay||row.meetName;});
+  }).filter(function(row){return row&&(row.athleteName||row.resultDisplay||row.meetName);});
 }
 function xcImportIssues(rows){
   return rows.filter(function(row){return !row.athleteName||!row.resultDisplay||!row.event;}).map(function(row){return row.rowNumber;});
@@ -1725,6 +1726,11 @@ function splitRecordLine(line){
     return trimmed.replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(col){return col.replace(/\*\*/g,'').trim();});
   }
   return text.indexOf('\t')>=0?text.split(/\t/).map(function(col){return col.trim();}):parseCsvLine(line);
+}
+function isRecordSeparatorRow(cols){
+  return Array.isArray(cols)&&cols.length>1&&cols.every(function(col){
+    return /^:?-+:?$/.test(String(col||'').trim());
+  });
 }
 function recordHeaderMap(cols){
   var map={};

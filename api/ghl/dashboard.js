@@ -949,7 +949,8 @@ function xcTop20Row(row, gender, eventBucket, context = {}) {
   if (isRelayMeetResult(row)) return null;
   if (optionValue(row.sport) !== "cross_country") return null;
   if (resultsBoardGender(row.athleteGender) !== gender) return null;
-  const normalizedEvent = xcTop20Event(row.event);
+  const normalizedGender = resultsBoardGender(row.athleteGender);
+  const normalizedEvent = xcTop20Event(row.event, normalizedGender);
   if (normalizedEvent !== eventBucket) return null;
   const seasonYear = Number(row.seasonYear) || yearFromDateValue(row.meetDate);
   return {
@@ -957,7 +958,7 @@ function xcTop20Row(row, gender, eventBucket, context = {}) {
     sourceRecordId: row.sourceRecordId || "",
     contactId: row.contactId || "",
     athleteName: clean(row.athleteName),
-    athleteGender: resultsBoardGender(row.athleteGender),
+    athleteGender: normalizedGender,
     event: normalizedEvent,
     originalEvent: clean(row.event),
     resultDisplay: clean(row.resultDisplay),
@@ -974,9 +975,10 @@ function xcTop20Row(row, gender, eventBucket, context = {}) {
   };
 }
 
-function xcTop20Event(value) {
+function xcTop20Event(value, gender = "") {
   const text = clean(value).toLowerCase().replace(/\s+/g, " ").trim();
   const key = optionValue(text);
+  if (gender === "boy" && /\b(cross country|cc)\b/.test(text)) return "5K";
   if (["5k", "5_k", "5000", "5000m", "5000_m"].includes(key)) return "5K";
   if (["2mi", "2_mi", "2mile", "2_mile", "2miles", "2_miles", "two_mile", "two_miles", "3200", "3200m", "3200_m"].includes(key)) return "2 Mile";
   if (/^5\s*k$/.test(text)) return "5K";
