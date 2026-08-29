@@ -185,7 +185,6 @@ tr:last-child td{border-bottom:0}
                 <th>Time</th>
                 <th>Meet / Course</th>
                 <th>Date</th>
-                <th>Original Event</th>
               </tr>
             </thead>
             <tbody id="xcRows"></tbody>
@@ -838,7 +837,6 @@ function renderXcTop20(){
     button.classList.toggle('active',button.getAttribute('data-xc-list')===xcActiveList);
   });
   els.xcRows.innerHTML=rows.map(function(row){
-    var original=row.originalEvent&&row.originalEvent!==row.event?'<div class="muted">saved as '+esc(row.originalEvent)+'</div>':'';
     var grade=[row.grade,row.classYear?'Class '+row.classYear:''].filter(Boolean).join(' · ');
     return '<tr>'+
       '<td><b>'+esc(row.rank)+'</b></td>'+
@@ -846,7 +844,6 @@ function renderXcTop20(){
       '<td><b>'+esc(row.resultDisplay)+'</b></td>'+
       '<td>'+esc(row.meetName||'')+'</td>'+
       '<td>'+esc(formatDate(row.meetDate))+'<div class="muted">'+esc([row.season,row.seasonYear].filter(Boolean).join(' '))+'</div></td>'+
-      '<td>'+esc(row.originalEvent||row.event||'')+original+'</td>'+
     '</tr>';
   }).join('');
   els.xcEmpty.hidden=!!rows.length;
@@ -948,7 +945,7 @@ function renderXcPreview(){
     return;
   }
   els.xcPreview.hidden=false;
-  els.xcPreview.innerHTML='<table><thead><tr><th>Athlete</th><th>Gender</th><th>Event</th><th>Time</th><th>Meet / Course</th><th>Date</th></tr></thead><tbody>'+xcImportRows.map(function(row){return '<tr><td>'+esc(row.athleteName)+'</td><td>'+esc(row.athleteGender)+'</td><td>'+esc(row.event)+(row.originalEvent&&row.originalEvent!==row.event?'<div class="muted">from '+esc(row.originalEvent)+'</div>':'')+'</td><td><b>'+esc(row.resultDisplay)+'</b></td><td>'+esc(row.meetName)+'</td><td>'+esc(row.meetDate)+'</td></tr>';}).join('')+'</tbody></table>';
+  els.xcPreview.innerHTML='<table><thead><tr><th>Athlete</th><th>Gender</th><th>Event</th><th>Time</th><th>Meet / Course</th><th>Date</th></tr></thead><tbody>'+xcImportRows.map(function(row){return '<tr><td>'+esc(row.athleteName)+'</td><td>'+esc(row.athleteGender)+'</td><td>'+esc(row.event)+'</td><td><b>'+esc(row.resultDisplay)+'</b></td><td>'+esc(row.meetName)+'</td><td>'+esc(row.meetDate)+'</td></tr>';}).join('')+'</tbody></table>';
   setXcImportStatus(issues.length?'Fix required fields on pasted row(s): '+issues.join(', '):xcImportRows.length+' XC mark'+(xcImportRows.length===1?'':'s')+' ready to save.',issues.length?'bad':'good');
 }
 function previewXcImport(){

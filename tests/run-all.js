@@ -1435,6 +1435,9 @@ function checkXcTop20RecordsFeature() {
       throw new Error(`Records page missing XC Top 20 feature marker: ${needle}`);
     }
   });
+  if (records.includes("<th>Original Event</th>")) {
+    throw new Error("XC Top 20 should keep original event behind the scenes, not as a visible table column.");
+  }
   [
     "const xcTop20 = buildXcTop20(meetResults);",
     "xcTop20,",
