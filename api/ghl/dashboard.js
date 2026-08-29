@@ -906,6 +906,7 @@ function xcTop20Row(row, gender, eventBucket) {
     seasonYear: Number(row.seasonYear) || yearFromDateValue(row.meetDate),
     grade: noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"),
     classYear: noteValue(row.coachRaceNotes, "Class Year"),
+    coachRaceNotes: clean(row.coachRaceNotes),
   };
 }
 

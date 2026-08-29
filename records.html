@@ -505,6 +505,7 @@ var xcTop20={lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{boys5k:0,girls5k
 var xcActiveList='boys5k';
 var xcImportRows=[];
 var xcEditingRow=null;
+var xcPendingEdits={};
 var searchRenderTimer=null;
 var bulkRows=[];
 var bulkDuplicateCount=0;
@@ -926,11 +927,37 @@ function findXcRowByKey(key){
   var rows=xcTop20&&xcTop20.lists&&xcTop20.lists[xcActiveList]||[];
   return rows.find(function(row){return xcRowKey(row)===key;})||null;
 }
+function xcEditKeys(row){
+  return [row&&row.recordId,row&&row.sourceRecordId,xcRowKey(row)].filter(Boolean).map(function(value){return String(value);});
+}
+function rememberXcEdit(original,updated){
+  var entry={expiresAt:Date.now()+120000,values:updated};
+  xcEditKeys(original).concat(xcEditKeys(updated)).forEach(function(key){xcPendingEdits[key]=entry;});
+}
+function applyXcPendingEdits(){
+  var now=Date.now();
+  if(!xcTop20||!xcTop20.lists)return;
+  Object.keys(xcPendingEdits).forEach(function(key){
+    if(!xcPendingEdits[key]||xcPendingEdits[key].expiresAt<now)delete xcPendingEdits[key];
+  });
+  Object.keys(xcTop20.lists).forEach(function(listKey){
+    xcTop20.lists[listKey]=(xcTop20.lists[listKey]||[]).map(function(row){
+      var entry=xcEditKeys(row).map(function(key){return xcPendingEdits[key];}).find(Boolean);
+      return entry?Object.assign({},row,entry.values,{rank:row.rank}):row;
+    });
+  });
+}
 function setXcEditStatus(text,type){
   els.xcEditStatus.textContent=text||'';
   els.xcEditStatus.style.color=type==='bad'?'#b00000':type==='good'?'var(--good)':'var(--muted)';
 }
+function xcEditableNotes(row){
+  return String(row&&row.coachRaceNotes||'').split(/\r?\n/).filter(function(line){
+    return !/^(Result Type|Historical Grade|Class Year|Gender|Place|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+  }).join('\n').trim();
+}
 function xcCoachRaceNotes(row,extraNotes){
+  if(row&&row.coachRaceNotes)return row.coachRaceNotes;
   var notes=[];
   notes.push('Result Type: Historical Import');
   if(row&&row.grade)notes.push('Historical Grade: '+row.grade);
@@ -949,7 +976,7 @@ function openXcEdit(key){
   els.xcEditMeet.value=xcEditingRow.meetName||'';
   els.xcEditYear.value=xcEditingRow.seasonYear||yearOnlyValue(xcEditingRow.meetDate)||'';
   els.xcEditGrade.value=xcEditingRow.grade||'';
-  els.xcEditNotes.value='';
+  els.xcEditNotes.value=xcEditableNotes(xcEditingRow);
   setXcEditStatus('Changes save to Meet History.','');
   els.xcEditModal.hidden=false;
 }
@@ -995,7 +1022,7 @@ function saveXcEdit(){
         seasonYear:xcEditingRow.seasonYear||yearOnlyValue(xcEditingRow.meetDate)||'',
         isPr:'No',
         isSeasonBest:'Yes',
-        coachRaceNotes:xcCoachRaceNotes({grade:xcEditingRow.grade,classYear:xcEditingRow.classYear,athleteGender:xcEditingRow.athleteGender==='girl'?'Girls':'Boys'})
+        coachRaceNotes:xcCoachRaceNotes(xcEditingRow)
       },
       updates:{
         athleteName:athlete,
@@ -1016,9 +1043,24 @@ function saveXcEdit(){
     })
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
-  }).then(function(result){
-    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
-    if(!result.ok)throw new Error(result.data&&result.data.error||'XC mark could not be saved.');
+  }).then(function(response){
+    if(!response.ok&&response.data&&response.data.accessCodeRequired){showAccess(response.data);return;}
+    if(!response.ok)throw new Error(response.data&&response.data.error||'XC mark could not be saved.');
+    rememberXcEdit(xcEditingRow,{
+      athleteName:athlete,
+      athleteGender:gender==='Girls'?'girl':'boy',
+      originalEvent:event,
+      event:xcNormalizeEvent(event,xcActiveList),
+      resultDisplay:result,
+      meetName:els.xcEditMeet.value.trim(),
+      meetDate:'',
+      season:'Fall',
+      seasonYear:Number(year)||'',
+      grade:grade,
+      coachRaceNotes:xcCoachRaceNotes({grade:grade,classYear:xcEditingRow.classYear,athleteGender:gender},els.xcEditNotes.value.trim())
+    });
+    applyXcPendingEdits();
+    renderXcTop20();
     setXcEditStatus('Saved.','good');
     closeXcEdit();
     return loadXcTop20();
@@ -1036,6 +1078,7 @@ function loadXcTop20(){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
     if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 failed to load.');
     xcTop20=result.data&&result.data.xcTop20||{lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+    applyXcPendingEdits();
     renderXcTop20();
   }).catch(function(error){
     xcTop20={lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};

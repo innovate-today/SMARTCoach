@@ -1424,6 +1424,10 @@ function checkXcTop20RecordsFeature() {
     'data-xc-edit',
     "function openXcEdit(key)",
     "function saveXcEdit()",
+    "var xcPendingEdits={}",
+    "function rememberXcEdit(original,updated)",
+    "function applyXcPendingEdits()",
+    "applyXcPendingEdits();",
     "recordType:'meet'",
     "reason:'XC Top 20 edit'",
     'class="tablewrap xctablewrap"',
@@ -1474,6 +1478,7 @@ function checkXcTop20RecordsFeature() {
     'if (optionValue(row.sport) !== "cross_country") return null;',
     '"3200m"',
     'return "2 Mile";',
+    "coachRaceNotes: clean(row.coachRaceNotes)",
   ].forEach((needle) => {
     if (!dashboardApi.includes(needle)) {
       throw new Error(`Dashboard API missing XC Top 20 marker: ${needle}`);
