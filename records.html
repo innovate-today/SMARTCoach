@@ -1342,8 +1342,11 @@ function xcListKeyForImportRow(row){
   return '';
 }
 function xcSameAthleteEvent(a,b){
-  return String(a&&a.athleteName||'').trim().toLowerCase().replace(/\s+/g,' ')===String(b&&b.athleteName||'').trim().toLowerCase().replace(/\s+/g,' ')
+  return xcAthleteNameKey(a&&a.athleteName)===xcAthleteNameKey(b&&b.athleteName)
     && xcNormalizeEvent(a&&a.event,xcActiveList)===xcNormalizeEvent(b&&b.event,xcActiveList);
+}
+function xcAthleteNameKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
 }
 function xcSameVisibleMark(a,b){
   var aMs=Number(a&&a.resultMs)||parseResultMs(a&&a.resultDisplay);

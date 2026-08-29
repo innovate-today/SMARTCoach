@@ -922,7 +922,11 @@ function xcTop20List(rows, gender, eventBucket, context = {}) {
 }
 
 function xcTop20AthleteKey(row) {
-  return clean(row && row.athleteName).toLowerCase().replace(/\s+/g, " ");
+  return clean(row && row.athleteName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function xcTop20ActiveAthleteKeys(athletes) {

@@ -761,6 +761,8 @@ Imported XC marks are saved in Meet History first. The XC Top 20 list is built f
 
 After saving, SMART Trak tells you how many marks were saved and whether they are visible on the XC Top 20 list. A saved mark may not appear on the list if that athlete already has a faster saved time for the same distance or if the mark is outside the fastest 20.
 
+SMART Trak keeps one mark per athlete on each XC Top 20 list. Extra spaces or punctuation in a name are ignored for matching. If the same runner is saved with a different spelling, click **Edit** and make the names match so SMART Trak can keep only that runner's fastest mark.
+
 To add missing details later, click **Edit** on the XC Top 20 row. You can update the athlete name, gender, event, time, meet or course, year, grade, and notes. The change is saved back to Meet History, and the XC Top 20 list refreshes from the corrected result.
 
 ## Manage Meets
