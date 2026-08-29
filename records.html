@@ -901,7 +901,7 @@ function normalizeXcImportRow(values,index){
     athleteGender:gender,
     meetName:String(values.meetName||'').trim()||els.xcImportMeet.value.trim(),
     meetDate:'',
-    season:String(seasonYear),
+    season:'Fall',
     seasonYear:seasonYear,
     sport:'Cross Country',
     event:event,
@@ -970,7 +970,7 @@ function saveXcImport(){
       classYear:row.classYear,
       meetName:row.meetName,
       meetDate:row.meetDate,
-      season:String(row.seasonYear),
+      season:row.season,
       seasonYear:row.seasonYear,
       sport:'Cross Country',
       event:row.originalEvent||row.event,
@@ -1293,7 +1293,15 @@ function parseCsvLine(line){
   out.push(cur.trim());
   return out;
 }
-function splitRecordLine(line){return String(line||'').indexOf('\t')>=0?String(line||'').split(/\t/).map(function(col){return col.trim();}):parseCsvLine(line);}
+function splitRecordLine(line){
+  var text=String(line||'');
+  if(text.indexOf('|')>=0){
+    var trimmed=text.trim();
+    if(/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(trimmed))return[];
+    return trimmed.replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(col){return col.replace(/\*\*/g,'').trim();});
+  }
+  return text.indexOf('\t')>=0?text.split(/\t/).map(function(col){return col.trim();}):parseCsvLine(line);
+}
 function recordHeaderMap(cols){
   var map={};
   cols.forEach(function(col,index){

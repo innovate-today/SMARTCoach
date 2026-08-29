@@ -748,7 +748,7 @@ To import XC Top 20 marks:
 2. Click **XC Top 20**.
 3. Choose the default list: Boys 5K, Girls 5K, or Girls 2 Mile. SMART Trak uses that list for gender and distance when the pasted rows do not include those columns.
 4. Enter the meet or course and year if those details apply to every row. Leave them blank if they are not known.
-5. Paste rows into the Copy/Paste box or upload a CSV file.
+5. Paste rows into the Copy/Paste box or upload a CSV file. Pasted rows can come from a spreadsheet, a CSV list, or a copied table that uses `|` separators.
 6. Use columns such as Athlete, Time, Meet, Year, Event, Gender, Grade, and Notes. Athlete and Time are required. Grade can be `9`, `10`, `11`, or `12`. Meet, Year, Grade, and the other details can be blank. If a pasted row includes an exact date, SMART Trak uses only the year for the XC Top 20 import.
 7. Click **Preview**.
 8. Click **Save to Meet History**.

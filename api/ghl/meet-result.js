@@ -471,7 +471,8 @@ function normalizeHistoryImportRow(row) {
   const date = rawDate && !yearOnlyDate ? new Date(rawDate) : null;
   const seasonYear = Number(row && (row.seasonYear || row.year)) || (yearOnlyDate ? Number(rawDate) : 0) || (date && validDate(date) ? date.getFullYear() : new Date().getFullYear());
   const rawSeason = clean(row && row.season);
-  const season = historyImportSeason(rawSeason, seasonYear);
+  const sport = clean(row && row.sport) || "Cross Country";
+  const season = historyImportSeason(rawSeason, sport);
   return {
     rowNumber: Number(row && row.rowNumber) || 0,
     athleteName: clean(row && (row.athleteName || row.athlete)),
@@ -482,7 +483,7 @@ function normalizeHistoryImportRow(row) {
     meetDate: yearOnlyDate ? "" : rawDate,
     season,
     seasonYear,
-    sport: clean(row && row.sport) || "Cross Country",
+    sport,
     event: clean(row && row.event),
     resultDisplay: clean(row && (row.resultDisplay || row.result || row.mark)),
     resultMs: Number(row && row.resultMs) || parseTimeToMs(row && (row.resultDisplay || row.result || row.mark)) || null,
@@ -494,10 +495,15 @@ function normalizeHistoryImportRow(row) {
   };
 }
 
-function historyImportSeason(value, seasonYear) {
+function historyImportSeason(value, sport) {
   const season = clean(value);
-  if (!season || /^(unlisted|unspecified|cross country)$/i.test(season)) return String(seasonYear);
-  return season;
+  const normalized = optionValue(season);
+  if (["summer", "fall", "winter", "spring"].includes(normalized)) return season;
+  if (/\b(autumn|fall)\b/i.test(season)) return "Fall";
+  if (/\bsummer\b/i.test(season)) return "Summer";
+  if (/\bwinter\b/i.test(season)) return "Winter";
+  if (/\bspring\b/i.test(season)) return "Spring";
+  return sportValue(sport) === "track" ? "Spring" : "Fall";
 }
 
 function buildHistoryImportProperties(row) {
