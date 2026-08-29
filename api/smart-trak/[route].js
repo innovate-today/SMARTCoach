@@ -53,6 +53,7 @@ const RESULTS_BOARD_SHARING_NAMESPACE = "resultsboardsharing";
 const XC_RECORDS_SHARING_NAMESPACE = "xcrecordssharing";
 const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";
 const WEATHER_LOCATIONS_NAMESPACE = "weatherlocations";
+const SIMULATOR_FIELDS_NAMESPACE = "simulatorfields";
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -182,6 +183,12 @@ module.exports = async function handler(req, res) {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
     return accountDashboardPreferences(req, res);
+  }
+
+  if (route === "simulator-field") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountSimulatorField(req, res);
   }
 
   if (route === "miles-board-sharing") {
@@ -3180,6 +3187,102 @@ async function saveDashboardPreferencesState(accountKey, dashboardPreferences) {
       visibleTools: Object.keys(dashboardPreferences.visibleTools).filter((key) => dashboardPreferences.visibleTools[key]),
     },
   });
+}
+
+function normalizeSimulatorFieldKey(value) {
+  return cleanSetupText(value).toLowerCase().replace(/[^a-z0-9:_-]/g, "_").replace(/_+/g, "_").slice(0, 120);
+}
+
+function normalizeSimulatorFields(source) {
+  const input = source && typeof source === "object" ? source : {};
+  const fields = input.fields && typeof input.fields === "object" ? input.fields : input;
+  const normalized = {};
+  Object.keys(fields || {}).forEach((key) => {
+    const fieldKey = normalizeSimulatorFieldKey(key);
+    const item = fields[key] && typeof fields[key] === "object" ? fields[key] : { text: fields[key] };
+    const text = cleanSetupText(item.text).slice(0, 20000);
+    if (!fieldKey || !text) return;
+    normalized[fieldKey] = {
+      key: fieldKey,
+      kind: cleanSetupText(item.kind).slice(0, 20),
+      text,
+      updatedAt: cleanSetupText(item.updatedAt),
+    };
+  });
+  return normalized;
+}
+
+async function loadSimulatorFieldsState(accountKey) {
+  const scoped = await loadAccountScopedRecord(accountKey, SIMULATOR_FIELDS_NAMESPACE).catch(() => null);
+  return normalizeSimulatorFields(scoped && scoped.found && scoped.record);
+}
+
+async function saveSimulatorFieldsState(accountKey, fields) {
+  const updatedAt = new Date().toISOString();
+  await saveAccountScopedRecord(accountKey, SIMULATOR_FIELDS_NAMESPACE, {
+    fields,
+    lastSimulatorFieldsSync: {
+      savedAt: updatedAt,
+      count: Object.keys(fields || {}).length,
+    },
+  });
+  return updatedAt;
+}
+
+async function accountSimulatorField(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const accountKey = normalizeSetupAccountKey(
+    firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key))
+  ) || normalizeSetupAccountKey(headerValue(req, "x-smartcoach-account")) || "default";
+
+  try {
+    const existing = await loadAccountRecord(accountKey);
+    if (!existing.configured || !existing.found || !existing.record) {
+      throw httpError(404, "Account registry record was not found.");
+    }
+
+    const queryKey = normalizeSimulatorFieldKey(firstQueryValue(req.query && req.query.fieldKey));
+    if (req.method === "GET") {
+      const fields = await loadSimulatorFieldsState(accountKey);
+      const field = queryKey ? fields[queryKey] || null : null;
+      res.status(200).json({ success: true, accountKey, fieldKey: queryKey, field, text: field && field.text || "" });
+      return;
+    }
+
+    if (req.method !== "POST" && req.method !== "PATCH" && req.method !== "DELETE") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    await attachRegistryAccountForKey(req, accountKey);
+    requireCoachSession(req, "update simulator saved fields");
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const fieldKey = normalizeSimulatorFieldKey(payload.fieldKey || queryKey);
+    if (!fieldKey) throw httpError(400, "Simulator field key is required.");
+    const fields = await loadSimulatorFieldsState(accountKey);
+
+    if (req.method === "DELETE" || cleanSetupText(payload.action).toLowerCase() === "delete") {
+      delete fields[fieldKey];
+    } else {
+      const text = cleanSetupText(payload.text).slice(0, 20000);
+      if (!text) throw httpError(400, "No simulator field lines were provided.");
+      fields[fieldKey] = {
+        key: fieldKey,
+        kind: cleanSetupText(payload.kind).slice(0, 20),
+        text,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    const savedAt = await saveSimulatorFieldsState(accountKey, fields);
+    res.status(200).json({ success: true, accountKey, fieldKey, field: fields[fieldKey] || null, text: fields[fieldKey] && fields[fieldKey].text || "", savedAt });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Simulator field save failed." });
+  }
 }
 
 async function accountDashboardPreferences(req, res) {

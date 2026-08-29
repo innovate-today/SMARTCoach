@@ -633,9 +633,9 @@ How to use it:
 6. Click **Template CSV** when a spreadsheet template is needed.
 7. Click **Score Meet**.
 8. Review team scores, event places, marks, and projected points.
-9. Use **Save Field** to keep competitor entries for later.
+9. Use **Save Field** to keep competitor entries for that account, season-best source, and event filter.
 10. Use **Load Field** the next week, update marks, then score again.
-11. Use **Delete Field** when a saved opponent field is no longer needed.
+11. Use **Delete Field** when that saved competitor field is no longer needed.
 
 Use this page before a track meet to test lineup decisions, event changes, and projected point swings.
 
@@ -651,9 +651,9 @@ How to use it:
 4. Paste or type other teams' runners into the results box.
 5. Click **Score Meet**.
 6. Review team scores, scorers, displacers, average time, and spread.
-7. Use **Save Field** to keep opponent teams for later.
+7. Use **Save Field** to keep opponent teams for that account and race distance.
 8. Use **Load Field** the next week, update times, then score again.
-9. Use **Delete Field** when a saved opponent field is no longer needed.
+9. Use **Delete Field** when that saved opponent field is no longer needed.
 
 Use this page before a meet to test possible race outcomes and lineup decisions.
 

@@ -2782,6 +2782,8 @@ function checkDashboardToolPreferences() {
 
 function checkXcSimulatorCurrentSeasonBests() {
   const html = fs.readFileSync("xc-simulator.html", "utf8");
+  const track = fs.readFileSync("track-simulator.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     "var smartTrakActiveAthleteKeys={};",
@@ -2795,11 +2797,46 @@ function checkXcSimulatorCurrentSeasonBests() {
     "if(rowSeasonYear(row)!==seasonYear)return;",
     "No SMART Trak SB results found for active '+seasonYear+' '+raceLabel(raceKey)+' runners.",
     "active '+seasonYear+' SMART Trak SB result",
+    "function opponentRemoteKey()",
+    "function saveRemoteOpponentText(text)",
+    "function loadRemoteOpponentText()",
+    "function deleteRemoteOpponentText()",
+    "/api/smart-trak/simulator-field?account=",
+    "Saved on this browser. SMART Trak save failed:",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`XC Simulator current season best filter missing ${text}`);
   });
+  [
+    "function fieldRemoteKey()",
+    "function saveRemoteFieldText(text)",
+    "function loadRemoteFieldText()",
+    "function deleteRemoteFieldText()",
+    "/api/smart-trak/simulator-field?account=",
+    "Saved on this browser. SMART Trak save failed:",
+  ].forEach((text) => {
+    if (!track.includes(text)) throw new Error(`Track Simulator saved field storage missing ${text}`);
+  });
+  [
+    'if (route === "simulator-field")',
+    "return accountSimulatorField(req, res);",
+    'const SIMULATOR_FIELDS_NAMESPACE = "simulatorfields";',
+    "async function accountSimulatorField(req, res)",
+    "function normalizeSimulatorFieldKey(value)",
+    "function normalizeSimulatorFields(source)",
+    "async function loadSimulatorFieldsState(accountKey)",
+    "async function saveSimulatorFieldsState(accountKey, fields)",
+    "requireCoachSession(req, \"update simulator saved fields\")",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Simulator saved field API missing ${text}`);
+  });
   if (!guide.includes("Click **My Season Best** to load active runners from the current Cross Country season.")) {
     throw new Error("Coach guide should describe XC Simulator My Season Best as active current Cross Country season runners.");
+  }
+  if (!guide.includes("Use **Save Field** to keep competitor entries for that account, season-best source, and event filter.")) {
+    throw new Error("Coach guide should describe Track Simulator saved field scope.");
+  }
+  if (!guide.includes("Use **Save Field** to keep opponent teams for that account and race distance.")) {
+    throw new Error("Coach guide should describe XC Simulator saved field scope.");
   }
   console.log("XC Simulator current season best filter ok");
 }

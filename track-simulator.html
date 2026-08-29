@@ -356,9 +356,14 @@ function selectableEvents(){
   return TRACK_EVENTS.filter(function(event){return !isExcludedEvent(event,set);});
 }
 function fieldStorageKey(){return 'track_sim_field_'+accountKey()+'_'+els.genderSelect.value+'_'+els.eventFilter.value;}
+function fieldRemoteKey(){return 'track:'+els.genderSelect.value+':'+els.eventFilter.value;}
+function simulatorFieldUrl(){return '/api/smart-trak/simulator-field?account='+encodeURIComponent(accountKey())+'&fieldKey='+encodeURIComponent(fieldRemoteKey())+'&v='+Date.now();}
 function readSavedFieldText(){try{return localStorage.getItem(fieldStorageKey())||'';}catch(e){return '';}}
 function writeSavedFieldText(text){try{localStorage.setItem(fieldStorageKey(),text||'');}catch(e){}}
 function deleteSavedFieldText(){try{localStorage.removeItem(fieldStorageKey());}catch(e){}}
+function saveRemoteFieldText(text){return fetch(simulatorFieldUrl(),{method:'POST',headers:Object.assign({'Content-Type':'application/json'},apiHeaders()),body:JSON.stringify({kind:'track',fieldKey:fieldRemoteKey(),text:text})}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){if(!result.ok)throw new Error(result.data&&result.data.error||'SMART Trak field save failed.');return result.data;});}
+function loadRemoteFieldText(){return fetch(simulatorFieldUrl(),{cache:'no-store',headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){if(!result.ok)throw new Error(result.data&&result.data.error||'SMART Trak saved field failed to load.');return result.data&&result.data.text||'';});}
+function deleteRemoteFieldText(){return fetch(simulatorFieldUrl(),{method:'DELETE',headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){if(!result.ok)throw new Error(result.data&&result.data.error||'SMART Trak saved field delete failed.');return result.data;});}
 function parseTime(value){
   var raw=String(value||'').trim();
   if(!raw)return null;
@@ -504,21 +509,37 @@ function saveField(){
   var team=els.teamName.value.trim()||'SMART Trak';
   var opponents=linesWithoutTeam(els.entryInput.value,team);
   writeSavedFieldText(opponents);
-  setStatus(opponents?'Saved competitor field for this selection.':'No competitor lines found to save.','');
+  if(!opponents){setStatus('No competitor lines found to save.','');return;}
+  setStatus('Saving competitor field...','');
+  saveRemoteFieldText(opponents).then(function(){
+    setStatus('Saved competitor field for this selection.','');
+  }).catch(function(error){
+    setStatus('Saved on this browser. SMART Trak save failed: '+(error.message||'Try again.'),'warn');
+  });
 }
 function loadField(){
-  var opponents=readSavedFieldText();
-  if(!opponents){setStatus('No saved competitor field for this selection yet.','warn');return;}
   var team=els.teamName.value.trim()||'SMART Trak';
-  var myTeam=linesForTeam(els.entryInput.value,team);
-  els.entryInput.value=combineBlocks(myTeam,opponents);
-  render();
-  setStatus('Loaded saved competitor field.','');
+  setStatus('Loading saved competitor field...','');
+  loadRemoteFieldText().then(function(opponents){
+    opponents=opponents||readSavedFieldText();
+    if(!opponents){setStatus('No saved competitor field for this selection yet.','warn');return;}
+    writeSavedFieldText(opponents);
+    var myTeam=linesForTeam(els.entryInput.value,team);
+    els.entryInput.value=combineBlocks(myTeam,opponents);
+    render();
+    setStatus('Loaded saved competitor field.','');
+  }).catch(function(){
+    var opponents=readSavedFieldText();
+    if(!opponents){setStatus('No saved competitor field for this selection yet.','warn');return;}
+    var myTeam=linesForTeam(els.entryInput.value,team);
+    els.entryInput.value=combineBlocks(myTeam,opponents);
+    render();
+    setStatus('Loaded saved competitor field from this browser.','warn');
+  });
 }
 function deleteField(){
-  if(!readSavedFieldText()){setStatus('No saved competitor field to delete.','warn');return;}
   deleteSavedFieldText();
-  setStatus('Deleted saved competitor field.','');
+  deleteRemoteFieldText().then(function(){setStatus('Deleted saved competitor field.','');}).catch(function(error){setStatus('Deleted browser copy. SMART Trak delete failed: '+(error.message||'Try again.'),'warn');});
 }
 function simulate(){
   var points=pointsList();

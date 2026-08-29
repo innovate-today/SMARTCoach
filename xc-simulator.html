@@ -474,6 +474,12 @@ function defaultTeamName(raceKey){
 function opponentStorageKey(){
   return 'xc_sim_opponents_'+accountKey()+'_'+(els.sbRace&&els.sbRace.value||'xc');
 }
+function opponentRemoteKey(){
+  return 'xc:'+(els.sbRace&&els.sbRace.value||'xc');
+}
+function simulatorFieldUrl(){
+  return '/api/smart-trak/simulator-field?account='+encodeURIComponent(accountKey())+'&fieldKey='+encodeURIComponent(opponentRemoteKey())+'&v='+Date.now();
+}
 function readSavedOpponentText(){
   try{return localStorage.getItem(opponentStorageKey())||'';}catch(e){return '';}
 }
@@ -482,6 +488,15 @@ function writeSavedOpponentText(text){
 }
 function deleteSavedOpponentText(){
   try{localStorage.removeItem(opponentStorageKey());}catch(e){}
+}
+function saveRemoteOpponentText(text){
+  return fetch(simulatorFieldUrl(),{method:'POST',headers:Object.assign({'Content-Type':'application/json'},apiHeaders()),body:JSON.stringify({kind:'xc',fieldKey:opponentRemoteKey(),text:text})}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){if(!result.ok)throw new Error(result.data&&result.data.error||'SMART Trak field save failed.');return result.data;});
+}
+function loadRemoteOpponentText(){
+  return fetch(simulatorFieldUrl(),{cache:'no-store',headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){if(!result.ok)throw new Error(result.data&&result.data.error||'SMART Trak saved field failed to load.');return result.data&&result.data.text||'';});
+}
+function deleteRemoteOpponentText(){
+  return fetch(simulatorFieldUrl(),{method:'DELETE',headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){if(!result.ok)throw new Error(result.data&&result.data.error||'SMART Trak saved field delete failed.');return result.data;});
 }
 function csvCell(value){
   var text=String(value==null?'':value);
@@ -684,27 +699,47 @@ function saveOpponents(){
   var team=els.teamName.value.trim()||defaultTeamName(els.sbRace.value||'girls_xc_5k');
   var opponents=linesWithoutTeam(els.resultInput.value,team);
   writeSavedOpponentText(opponents);
-  setStatus(opponents?'Saved opponent teams for '+raceLabel(els.sbRace.value||'girls_xc_5k')+'.':'No opponent lines found to save.','');
+  if(!opponents){setStatus('No opponent lines found to save.','');return;}
+  setStatus('Saving opponent teams...','');
+  saveRemoteOpponentText(opponents).then(function(){
+    setStatus('Saved opponent teams for '+raceLabel(els.sbRace.value||'girls_xc_5k')+'.','');
+  }).catch(function(error){
+    setStatus('Saved on this browser. SMART Trak save failed: '+(error.message||'Try again.'),'warn');
+  });
 }
 function loadOpponents(){
-  var opponents=readSavedOpponentText();
-  if(!opponents){
-    setStatus('No saved opponents for '+raceLabel(els.sbRace.value||'girls_xc_5k')+' yet.','warn');
-    return;
-  }
   var team=els.teamName.value.trim()||defaultTeamName(els.sbRace.value||'girls_xc_5k');
-  var myTeam=linesForTeam(els.resultInput.value,team);
-  els.resultInput.value=combineResultBlocks(myTeam,opponents);
-  render();
-  setStatus('Loaded saved opponent teams.','');
+  setStatus('Loading saved opponent teams...','');
+  loadRemoteOpponentText().then(function(opponents){
+    opponents=opponents||readSavedOpponentText();
+    if(!opponents){
+      setStatus('No saved opponents for '+raceLabel(els.sbRace.value||'girls_xc_5k')+' yet.','warn');
+      return;
+    }
+    writeSavedOpponentText(opponents);
+    var myTeam=linesForTeam(els.resultInput.value,team);
+    els.resultInput.value=combineResultBlocks(myTeam,opponents);
+    render();
+    setStatus('Loaded saved opponent teams.','');
+  }).catch(function(){
+    var opponents=readSavedOpponentText();
+    if(!opponents){
+      setStatus('No saved opponents for '+raceLabel(els.sbRace.value||'girls_xc_5k')+' yet.','warn');
+      return;
+    }
+    var myTeam=linesForTeam(els.resultInput.value,team);
+    els.resultInput.value=combineResultBlocks(myTeam,opponents);
+    render();
+    setStatus('Loaded saved opponent teams from this browser.','warn');
+  });
 }
 function deleteOpponents(){
-  if(!readSavedOpponentText()){
-    setStatus('No saved opponents to delete for '+raceLabel(els.sbRace.value||'girls_xc_5k')+'.','warn');
-    return;
-  }
   deleteSavedOpponentText();
-  setStatus('Deleted saved opponent teams for '+raceLabel(els.sbRace.value||'girls_xc_5k')+'.','');
+  deleteRemoteOpponentText().then(function(){
+    setStatus('Deleted saved opponent teams for '+raceLabel(els.sbRace.value||'girls_xc_5k')+'.','');
+  }).catch(function(error){
+    setStatus('Deleted browser copy. SMART Trak delete failed: '+(error.message||'Try again.'),'warn');
+  });
 }
 function looksLikeAthleteFirst(first,second){
   var teamWords=/\b(hs|high|school|academy|prep|xc|cc|club|team|unattached|middle)\b/i;
