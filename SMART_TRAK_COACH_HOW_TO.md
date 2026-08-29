@@ -757,7 +757,7 @@ To import XC Top 20 marks:
 7. Review the preview. SMART Trak also updates the preview automatically when you paste or type.
 8. Click **Save to Meet History**.
 
-Imported XC marks are saved in Meet History first. The XC Top 20 list is built from those saved meet results. Boys cross country event labels from results sites, such as `Boys 5A Cross Country` or `Boys 3200 Meter Run CC 5A`, are treated as Boys 5K for this list.
+Imported XC marks are saved in Meet History first. The XC Top 20 list is built from those saved meet results. Boys cross country event labels from results sites, such as `Boys 5A Cross Country` or `Boys 3200 Meter Run CC 5A`, are treated as Boys 5K for this list. Girls labels that include `3200`, `Cross Country`, or `CC` are treated as Girls 2 Mile unless they clearly say 5K.
 
 After saving, SMART Trak tells you how many marks were saved and whether they are visible on the XC Top 20 list. A saved mark may not appear on the list if that athlete already has a faster saved time for the same distance or if the mark is outside the fastest 20.
 

@@ -922,7 +922,7 @@ function xcTop20List(rows, gender, eventBucket, context = {}) {
 }
 
 function xcTop20AthleteKey(row) {
-  return clean(row && row.athleteName).toLowerCase();
+  return clean(row && row.athleteName).toLowerCase().replace(/\s+/g, " ");
 }
 
 function xcTop20ActiveAthleteKeys(athletes) {
@@ -979,6 +979,9 @@ function xcTop20Event(value, gender = "") {
   const text = clean(value).toLowerCase().replace(/\s+/g, " ").trim();
   const key = optionValue(text);
   if (gender === "boy" && /\b(cross country|cc)\b/.test(text)) return "5K";
+  if (/\b(5\s*k|5000\s*m?)\b/.test(text)) return "5K";
+  if (/\b(3200\s*(m|meter|meters)?|2\s*(mi|mile|miles)|two\s+miles?)\b/.test(text)) return "2 Mile";
+  if (gender === "girl" && /\b(cross country|cc)\b/.test(text)) return "2 Mile";
   if (["5k", "5_k", "5000", "5000m", "5000_m"].includes(key)) return "5K";
   if (["2mi", "2_mi", "2mile", "2_mile", "2miles", "2_miles", "two_mile", "two_miles", "3200", "3200m", "3200_m"].includes(key)) return "2 Mile";
   if (/^5\s*k$/.test(text)) return "5K";

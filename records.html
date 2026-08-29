@@ -1252,6 +1252,11 @@ function xcNormalizeEvent(value,defaultList){
   var text=String(value||'').trim();
   var key=text.toLowerCase().replace(/\s+/g,' ').trim();
   var normalized=key.replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  var gender=xcListGender(defaultList);
+  if(gender==='Boys'&&/\b(cross country|cc)\b/.test(key))return '5K';
+  if(/\b(5\s*k|5000\s*m?)\b/.test(key))return '5K';
+  if(/\b(3200\s*(m|meter|meters)?|2\s*(mi|mile|miles)|two\s+miles?)\b/.test(key))return '2 Mile';
+  if(gender==='Girls'&&/\b(cross country|cc)\b/.test(key))return '2 Mile';
   if(['5k','5_k','5000','5000m','5000_m'].indexOf(normalized)>=0||/^5\s*k$/.test(key))return '5K';
   if(['2mi','2_mi','2mile','2_mile','2miles','2_miles','two_mile','two_miles','3200','3200m','3200_m'].indexOf(normalized)>=0||/^2\s*(mi|mile|miles)$/.test(key)||/^two\s+miles?$/.test(key)||/^3200\s*m?$/.test(key))return '2 Mile';
   return xcListEvent(defaultList);
@@ -1337,7 +1342,7 @@ function xcListKeyForImportRow(row){
   return '';
 }
 function xcSameAthleteEvent(a,b){
-  return String(a&&a.athleteName||'').trim().toLowerCase()===String(b&&b.athleteName||'').trim().toLowerCase()
+  return String(a&&a.athleteName||'').trim().toLowerCase().replace(/\s+/g,' ')===String(b&&b.athleteName||'').trim().toLowerCase().replace(/\s+/g,' ')
     && xcNormalizeEvent(a&&a.event,xcActiveList)===xcNormalizeEvent(b&&b.event,xcActiveList);
 }
 function xcSameVisibleMark(a,b){
