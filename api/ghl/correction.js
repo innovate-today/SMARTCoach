@@ -283,7 +283,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     recordId: record.id,
     properties: {
       meet_name: nextValues.meetName,
-      meet_date: nextValues.meetDate,
+      ...(clean(nextValues.meetDate) ? { meet_date: nextValues.meetDate } : {}),
       event: nextValues.event,
       result_display: nextValues.resultDisplay,
       ...(resultMs ? { result_ms: resultMs } : {}),

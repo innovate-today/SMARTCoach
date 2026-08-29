@@ -1555,6 +1555,7 @@ function checkXcTop20RecordsFeature() {
     'athleteGender: noteValue(previousNote, "Gender")',
     'grade: noteValue(previousNote, "Historical Grade") || noteValue(previousNote, "Grade")',
     'grade: hasUpdate("grade") ? clean(updates.grade) : previousValues.grade',
+    '...(clean(nextValues.meetDate) ? { meet_date: nextValues.meetDate } : {})',
     '"Historical Grade": nextValues.grade',
     "Gender: nextValues.athleteGender",
   ].forEach((needle) => {
@@ -3003,6 +3004,7 @@ function checkDashboardMeetCorrectionFields() {
     "athlete_contact: nextValues.contactId",
     "meet_result: [nextValues.athleteName, nextValues.event, nextValues.resultDisplay].filter(Boolean).join(\" - \")",
     "athlete_name_snapshot: nextValues.athleteName",
+    '...(clean(nextValues.meetDate) ? { meet_date: nextValues.meetDate } : {})',
     '...(seasonYearValue ? { season_year: Number(seasonYearValue) } : {})',
     ': clean(updates.splitsJson) || previousValues.splitsJson',
   ].forEach((text) => {
