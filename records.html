@@ -81,7 +81,9 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .xcsummary{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:13px;font-weight:800}
 .xcimport{border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:12px;display:grid;gap:10px}
 .xcimport label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
-.xcimport .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.xcimport .xcdefaults{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.xcimport .xcdefaults label:first-child{grid-column:1/-1}
+.xcimport .xcdefaults input,.xcimport .xcdefaults select{height:36px;padding:7px 9px}
 .xcimport textarea{min-height:150px}
 .xcimportactions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
 .xcstatus{font-size:13px;font-weight:800;color:var(--muted)}
@@ -175,7 +177,7 @@ tr:last-child td{border-bottom:0}
   </section>
 
   <section class="viewtabs" aria-label="Record views">
-    <button id="schoolRecordsTab" class="viewtab active" type="button">School Records</button>
+    <button id="schoolRecordsTab" class="viewtab active" type="button">Track Records</button>
     <button id="xcTop20Tab" class="viewtab" type="button">XC Top 20</button>
   </section>
 
@@ -217,22 +219,22 @@ tr:last-child td{border-bottom:0}
         </div>
       </div>
       <div class="xcimport">
-        <label>Default List
-          <select id="xcImportList">
-            <option value="boys5k">Boys 5K</option>
-            <option value="girls5k">Girls 5K</option>
-            <option value="girls2Mile">Girls 2 Mile</option>
-          </select>
-        </label>
-        <div class="hint">Default List supplies gender and distance when pasted rows do not include those columns. Imported athletes do not need to be on the current roster.</div>
-        <div class="row">
-          <label>Meet / Course Optional
+        <div class="xcdefaults">
+          <label>List fallback
+            <select id="xcImportList">
+              <option value="boys5k">Boys 5K</option>
+              <option value="girls5k">Girls 5K</option>
+              <option value="girls2Mile">Girls 2 Mile</option>
+            </select>
+          </label>
+          <label>Meet fallback
             <input id="xcImportMeet" type="text" placeholder="Meet or course">
           </label>
-          <label>Year Optional
+          <label>Year fallback
             <input id="xcImportDate" type="number" min="1900" max="2100" step="1" placeholder="2026">
           </label>
         </div>
+        <div class="hint">Use these only when pasted rows leave blanks. List fallback fills missing gender and distance. Meet and Year fallbacks fill blank meet/year cells for rows from the same meet or season. Imported athletes do not need to be on the current roster.</div>
         <label>CSV Upload
           <input id="xcImportFile" type="file" accept=".csv,.tsv,.txt">
         </label>
@@ -267,14 +269,14 @@ tr:last-child td{border-bottom:0}
   <section class="panel bulkpanel">
     <div class="panelhead">
       <div class="bulkintro">
-        <div><b>School Record Tools</b><span>Add one record, edit table rows, or import existing school records from a spreadsheet.</span></div>
+        <div><b>Track Record Tools</b><span>Add one record, edit table rows, or import existing track records from a spreadsheet.</span></div>
       </div>
       <div id="bulkStatus" class="bulkstatus">Hidden until needed.</div>
       <button id="toggleToolsBtn" class="ghost" type="button">Open Records Tools</button>
     </div>
     <div id="toolsBody" class="panelbody toolsbody" hidden>
       <div class="singletools">
-        <div class="toolnote"><b>Quick add:</b> Add the current school record for one event. Boys and girls are tracked separately. Meet results and app syncs do not update the School Records table automatically. If a newer current record is saved for the same event and gender, the previous current record is kept as historical.</div>
+        <div class="toolnote"><b>Quick add:</b> Add the current track record for one event. Boys and girls are tracked separately. Meet results and app syncs do not update the Track Records table automatically. If a newer current record is saved for the same event and gender, the previous current record is kept as historical.</div>
         <div class="recordform" id="singleRecordForm">
         <label hidden>Record Type
           <select id="singleRecordType"></select>
@@ -356,7 +358,7 @@ tr:last-child td{border-bottom:0}
         <button id="downloadBulkTemplateBtn" class="secondary" type="button">Download Template</button>
         <input id="bulkFile" type="file" accept=".csv,.tsv,.txt">
       </div>
-      <textarea id="bulkText" placeholder="Gender,Sport,Event,Result,Athlete,Leg 1,Leg 2,Leg 3,Leg 4,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;Girls,Track,3200m,10:52.4,Avery Womble,,,,,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record&#10;Boys,Track,4x400m,3:24.18,,Marcus Moore,Jay Smith,Eli Jones,Chris Hall,District,2026-04-03,Spring,2026,,,"></textarea>
+      <textarea id="bulkText" placeholder="Gender,Sport,Event,Result,Athlete,Leg 1,Leg 2,Leg 3,Leg 4,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes&#10;Girls,Track,3200m,10:52.4,Avery Womble,,,,,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke track record&#10;Boys,Track,4x400m,3:24.18,,Marcus Moore,Jay Smith,Eli Jones,Chris Hall,District,2026-04-03,Spring,2026,,,"></textarea>
       <div class="bulkactions">
         <div class="left">
           <button id="previewBulkBtn" type="button">Preview Records</button>
@@ -374,7 +376,7 @@ tr:last-child td{border-bottom:0}
     <table>
       <thead>
         <tr>
-          <th><button class="sortbtn" data-sort="gender" type="button">Gender</button><span class="headinfo" tabindex="0" data-tip="Records are separated by gender so boys and girls can each have their own school record for the same event.">i</span></th>
+          <th><button class="sortbtn" data-sort="gender" type="button">Gender</button><span class="headinfo" tabindex="0" data-tip="Records are separated by gender so boys and girls can each have their own track record for the same event.">i</span></th>
           <th><button class="sortbtn" data-sort="sport" type="button">Sport</button></th>
           <th><button class="sortbtn active asc" data-sort="event" type="button">Event</button></th>
           <th><button class="sortbtn" data-sort="result" type="button">Record</button></th>
@@ -910,8 +912,11 @@ function findRecordByKey(key){
 }
 function optionList(values,selected){
   return values.map(function(value){
-    return '<option value="'+esc(value)+'"'+(value===selected?' selected':'')+'>'+esc(value)+'</option>';
+    return '<option value="'+esc(value)+'"'+(value===selected?' selected':'')+'>'+esc(recordTypeLabel(value))+'</option>';
   }).join('');
+}
+function recordTypeLabel(value){
+  return String(value||'')==='School Record'?'Track Record':String(value||'');
 }
 function fillStaticSelects(){
   els.singleRecordType.innerHTML=optionList(RECORD_TYPES,'School Record');
@@ -1856,7 +1861,7 @@ function parseBulkRecords(text){
 function downloadBulkTemplate(){
   var csv=[
     'Gender,Sport,Event,Result,Athlete,Leg 1,Leg 2,Leg 3,Leg 4,Meet,Date,Season,Year,Previous Record,Previous Holder,Notes',
-    'Girls,Track,3200m,10:52.4,Avery Womble,,,,,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke school record',
+    'Girls,Track,3200m,10:52.4,Avery Womble,,,,,District,2026-04-03,Spring,2026,10:58.2,Jordan Lee,Broke track record',
     'Boys,Track,4x400m,3:24.18,,Marcus Moore,Jay Smith,Eli Jones,Chris Hall,District,2026-04-03,Spring,2026,,,'
   ].join('\n');
   var blob=new Blob([csv],{type:'text/csv'});
@@ -1921,7 +1926,7 @@ function saveBulkRecords(){
 }
 function fillSelect(select,label,values){
   var previous=select.value||'all';
-  select.innerHTML='<option value="all">'+esc(label)+'</option>'+values.map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
+  select.innerHTML='<option value="all">'+esc(label)+'</option>'+values.map(function(value){return '<option value="'+esc(value)+'">'+esc(recordTypeLabel(value))+'</option>';}).join('');
   select.value=values.indexOf(previous)>=0?previous:'all';
 }
 function renderOptions(){

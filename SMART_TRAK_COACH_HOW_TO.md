@@ -709,9 +709,9 @@ Completed notes stay visible but are greyed out on the app. The app does not inc
 
 ## Records
 
-Use Records for the official school record board and for cross country top lists.
+Use Records for the official track record board and for cross country top lists.
 
-The **School Records** tab is the official record board. It is meant to display official records entered by the coach.
+The **Track Records** tab is the official track record board. It is meant to display official records entered by the coach.
 
 How to use it:
 
@@ -730,7 +730,7 @@ For bulk import, the required fields are gender, event, result, and year. Use th
 
 If an import uses the wrong sport, date, or other shared fields across many rows, open **Records Tools**, click **Delete All Records**, confirm the warning, and upload the corrected file again.
 
-The School Records table is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
+The Track Records table is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
 
 The **XC Top 20** tab shows the fastest saved cross country meet results for:
 
