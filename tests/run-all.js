@@ -4086,6 +4086,44 @@ function checkMeetResultSplitDetails() {
   console.log("Meet result split details ok");
 }
 
+function checkMeetHistoryQuickEntry() {
+  const history = fs.readFileSync("meet-history.html", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    'id="openQuickEntryBtn"',
+    'id="quickEntryModal"',
+    "Enter Event Results",
+    "Choose the meet, date, sport, and event once.",
+    "Required: athlete and result. Place is not needed.",
+    "<th>Splits / Laps</th>",
+    "<th>Status</th>",
+    "function normalizeDashboardAthletes(rows)",
+    "function quickFindAthlete(name)",
+    "function quickSplitPayload(text)",
+    "split(/[,;\\n]+/)",
+    "function parseQuickPasteRows(text)",
+    "Paste columns as Athlete, Result, optional Splits, optional Notes.",
+    "function saveQuickEntry()",
+    "fetch('/api/smart-trak/meet-result'",
+    "useAsCurrentFitness:false",
+    "splitsJson:JSON.stringify(quickSplitPayload(row.splits))",
+    "dashboardAthletes=normalizeDashboardAthletes(dashboard.data.athletes||[]);",
+  ].forEach((text) => {
+    if (!history.includes(text)) throw new Error(`Meet History quick entry missing ${text}`);
+  });
+  if (history.includes("<th>Place</th>")) throw new Error("Meet History quick entry should not require place.");
+  [
+    "Use **Enter Results** when a meet was not timed in the phone app",
+    "Choose the meet, date, sport, and event once",
+    "Splits or laps can be entered in one cell as comma-separated times",
+    "Only rows matched to active athletes are saved from **Enter Results**",
+    "Use **Import History** for older alumni or historical marks",
+  ].forEach((text) => {
+    if (!guide.includes(text)) throw new Error(`Coach guide quick entry instructions missing ${text}`);
+  });
+  console.log("Meet History quick entry ok");
+}
+
 function checkPageSearchDebounces() {
   const pages = [
     ["records.html", "els.search.addEventListener('input',scheduleSearchRender);", "searchRenderTimer=setTimeout(render,120);"],
@@ -5396,6 +5434,7 @@ checkMeetHistoryPerformanceCaches();
 checkMeetHistoryImportOnlySpreadsheet();
 checkMeetHistoryImportedResultCorrections();
 checkMeetResultSplitDetails();
+checkMeetHistoryQuickEntry();
 checkPageSearchDebounces();
 checkAthletesDocuTrakSetupLayout();
 checkEquipmentInventoryModelSerial();

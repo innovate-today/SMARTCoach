@@ -55,6 +55,21 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .importpreview{border:1px solid var(--line);border-radius:8px;overflow:auto;background:#fff;max-height:300px}
 .importpreview table{min-width:1080px}
 .importpreview th{position:sticky;top:0}
+.quickentrypanel{width:min(1180px,100%)}
+.quickentryintro{color:var(--muted);font-size:13px;line-height:1.4;margin:0 0 12px}
+.quickdefaults{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.quicktoolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0 10px}
+.quicktools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.quickhint{color:var(--muted);font-size:12px;font-weight:700}
+.quicktablewrap{border:1px solid var(--line);border-radius:8px;overflow:auto;background:#fff}
+.quicktablewrap table{min-width:960px}
+.quicktablewrap input{padding:8px 9px}
+.quickrowstatus{font-size:12px;font-weight:900;color:var(--muted)}
+.quickrowstatus.good{color:var(--good)}
+.quickrowstatus.warn{color:var(--warn)}
+.quickrowstatus.bad{color:var(--bad)}
+.quickpaste{margin-top:10px}
+.quickpaste textarea{min-height:110px}
 .split{display:grid;grid-template-columns:minmax(260px,300px) minmax(620px,1fr);gap:14px;align-items:start}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .split>.panel:first-child{overflow:visible}
@@ -173,6 +188,7 @@ tr:last-child td{border-bottom:0}
       <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
       <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
       <button id="openImportTopBtn" class="utility-action" type="button">Import History</button>
+      <button id="openQuickEntryBtn" class="utility-action" type="button">Enter Results</button>
       <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
     </div>
   </section>
@@ -376,6 +392,89 @@ tr:last-child td{border-bottom:0}
   </section>
 </div>
 
+<div id="quickEntryModal" class="modal" hidden>
+  <section class="modalpanel quickentrypanel" role="dialog" aria-modal="true" aria-labelledby="quickEntryTitle">
+    <div class="modalhead">
+      <h2 id="quickEntryTitle">Enter Event Results</h2>
+      <button id="quickEntryClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="quickentryintro">Choose the meet, date, sport, and event once. Then enter one athlete per row. Splits can be typed as simple comma-separated times, such as <b>5:21, 5:37, 5:44</b>.</p>
+      <div class="quickdefaults">
+        <div class="field">
+          <label for="quickMeetName">Meet</label>
+          <input id="quickMeetName" type="text" placeholder="Example: Boyd Invitational">
+        </div>
+        <div class="field">
+          <label for="quickMeetDate">Date</label>
+          <input id="quickMeetDate" type="date">
+        </div>
+        <div class="field">
+          <label for="quickSport">Sport</label>
+          <select id="quickSport">
+            <option value="cross_country">Cross Country</option>
+            <option value="track">Track</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="quickEvent">Event</label>
+          <select id="quickEvent"></select>
+        </div>
+        <div class="field">
+          <label for="quickBestDefault">Best Status</label>
+          <select id="quickBestDefault">
+            <option value="auto">Let SMART Trak check</option>
+            <option value="none">No PB/SB</option>
+            <option value="sb">Mark SB</option>
+            <option value="pb">Mark PB</option>
+            <option value="both">Mark PB/SB</option>
+          </select>
+        </div>
+      </div>
+      <div class="quicktoolbar">
+        <div class="quicktools">
+          <button id="quickAddRows" class="secondary" type="button">Add 10 Rows</button>
+          <button id="quickPreview" type="button">Preview Rows</button>
+          <button id="quickClear" class="ghost" type="button">Clear Rows</button>
+        </div>
+        <div class="quickhint">Required: athlete and result. Place is not needed.</div>
+      </div>
+      <div class="quicktablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Athlete</th>
+              <th>Result</th>
+              <th>Splits / Laps</th>
+              <th>Notes</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="quickRows"></tbody>
+        </table>
+      </div>
+      <div class="quickpaste">
+        <div class="field full">
+          <label for="quickPasteText">Paste Rows</label>
+          <textarea id="quickPasteText" placeholder="Hayden Dunn&#9;17:08.8&#9;5:21, 5:37, 5:44&#10;Preston Tom&#9;19:26.56&#10;Ben Hale&#9;20:46.05&#9;6:25, 6:41, 7:40"></textarea>
+        </div>
+        <div class="quicktoolbar">
+          <div class="quicktools">
+            <button id="quickUsePaste" class="secondary" type="button">Use Pasted Rows</button>
+          </div>
+          <div class="quickhint">Paste columns as Athlete, Result, optional Splits, optional Notes.</div>
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="quickStatus" class="modalstatus">Enter or paste rows, preview, then save.</div>
+        <button id="quickSave" type="button" disabled>Save Event Results</button>
+      </div>
+    </div>
+  </section>
+</div>
+
 <div id="historyDetailModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="historyDetailTitle">
     <div class="modalhead">
@@ -419,9 +518,11 @@ tr:last-child td{border-bottom:0}
 <script>
 var scheduledMeets=[];
 var meetResults=[];
+var dashboardAthletes=[];
 var meetGroupCache=null;
 var priorResultCache=null;
 var importRows=[];
+var quickEntryRows=[];
 var importDuplicateCount=0;
 var selectedGroupKey='all';
 var resultSort={key:'athlete',dir:'asc'};
@@ -438,6 +539,7 @@ var els={
   accessStatus:document.getElementById('accessStatus'),
   dashboardLink:document.getElementById('dashboardLink'),
   openImportTopBtn:document.getElementById('openImportTopBtn'),
+  openQuickEntryBtn:document.getElementById('openQuickEntryBtn'),
   refreshBtn:document.getElementById('refreshBtn'),
   lastUpdated:document.getElementById('lastUpdated'),
   meetCount:document.getElementById('meetCount'),
@@ -492,6 +594,21 @@ var els={
   historyVoidReason:document.getElementById('historyVoidReason'),
   historyVoidStatus:document.getElementById('historyVoidStatus'),
   historyVoidSave:document.getElementById('historyVoidSave'),
+  quickEntryModal:document.getElementById('quickEntryModal'),
+  quickEntryClose:document.getElementById('quickEntryClose'),
+  quickMeetName:document.getElementById('quickMeetName'),
+  quickMeetDate:document.getElementById('quickMeetDate'),
+  quickSport:document.getElementById('quickSport'),
+  quickEvent:document.getElementById('quickEvent'),
+  quickBestDefault:document.getElementById('quickBestDefault'),
+  quickRows:document.getElementById('quickRows'),
+  quickAddRows:document.getElementById('quickAddRows'),
+  quickPreview:document.getElementById('quickPreview'),
+  quickClear:document.getElementById('quickClear'),
+  quickPasteText:document.getElementById('quickPasteText'),
+  quickUsePaste:document.getElementById('quickUsePaste'),
+  quickStatus:document.getElementById('quickStatus'),
+  quickSave:document.getElementById('quickSave'),
   meetList:document.getElementById('meetList'),
   meetListCount:document.getElementById('meetListCount'),
   meetEmpty:document.getElementById('meetEmpty'),
@@ -580,6 +697,10 @@ function parseResultMs(value){
   if(parts.length===3)seconds=parts[0]*3600+parts[1]*60+parts[2];
   return Math.round(seconds*1000);
 }
+function todayInputValue(){
+  var date=new Date();
+  return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+}
 function meetKey(name,date){
   return [String(name||'').trim().toLowerCase(),String(date||'').slice(0,10)].join('|');
 }
@@ -666,6 +787,32 @@ function enrichMeetHistoryRow(row){
 }
 function normalizeMeetHistoryRows(rows){
   return (Array.isArray(rows)?rows:[]).map(function(row){return enrichMeetHistoryRow(row);});
+}
+function normalizeDashboardAthletes(rows){
+  return (Array.isArray(rows)?rows:[]).filter(function(row){
+    return row&&row.name&&/active|tagged/i.test(row.status||'Active');
+  }).map(function(row){
+    return {
+      name:String(row.name||'').trim(),
+      contactId:String(row.contactId||'').trim(),
+      smartcoachAthleteId:String(row.smartcoachAthleteId||'').trim(),
+      gender:String(row.gender||'').trim()
+    };
+  }).sort(function(a,b){return a.name.localeCompare(b.name);});
+}
+function athleteMatchKey(value){
+  return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function quickFindAthlete(name){
+  var key=athleteMatchKey(name);
+  if(!key)return null;
+  var exact=dashboardAthletes.find(function(athlete){return athleteMatchKey(athlete.name)===key;});
+  if(exact)return exact;
+  var candidates=dashboardAthletes.filter(function(athlete){
+    var athleteKey=athleteMatchKey(athlete.name);
+    return athleteKey.indexOf(key)>=0||key.indexOf(athleteKey)>=0;
+  });
+  return candidates.length===1?candidates[0]:null;
 }
 function invalidateMeetHistoryCache(){
   meetGroupCache=null;
@@ -876,6 +1023,209 @@ function setHistoryEditStatus(text,type){
 function setHistoryVoidStatus(text,type){
   els.historyVoidStatus.textContent=text||'';
   els.historyVoidStatus.style.color=type==='error'?'var(--bad)':type==='success'?'var(--good)':'var(--muted)';
+}
+function setQuickStatus(text,type){
+  els.quickStatus.textContent=text||'';
+  els.quickStatus.style.color=type==='bad'?'var(--bad)':type==='good'?'var(--good)':type==='warn'?'var(--warn)':'var(--muted)';
+}
+var QUICK_CC_EVENTS=['5K','3 Mile','2 Mile','3200m','3K','1 Mile','1600m','1500m','800m'];
+var QUICK_TRACK_EVENTS=['100m','100H','110H','200m','300m','300H','400m','400H','600m','800m','1500m','1600m','1 Mile','3K','3200m','2 Mile','3 Mile','4K','5K','8K','10K','15K','Half Marathon','Marathon'];
+function renderQuickEventOptions(){
+  var current=els.quickEvent.value;
+  var events=(els.quickSport.value||'cross_country')==='cross_country'?QUICK_CC_EVENTS:QUICK_TRACK_EVENTS;
+  els.quickEvent.innerHTML=events.map(function(eventName){return '<option value="'+esc(eventName)+'">'+esc(eventName)+'</option>';}).join('');
+  els.quickEvent.value=events.indexOf(current)>=0?current:events[0];
+}
+function quickDefaultSeason(){
+  return (els.quickSport.value||'cross_country')==='cross_country'?'Fall':'Spring';
+}
+function quickSeasonYear(){
+  var year=Number(String(els.quickMeetDate.value||'').slice(0,4));
+  return year||new Date().getFullYear();
+}
+function quickSplitPayload(text){
+  return String(text||'').split(/[,;\n]+/).map(function(part){return part.trim();}).filter(Boolean).map(function(time,index){
+    return {lap:index+1,time:time};
+  });
+}
+function quickRowTemplate(data){
+  data=data||{};
+  return {
+    athleteName:data.athleteName||'',
+    resultDisplay:data.resultDisplay||'',
+    splits:data.splits||'',
+    notes:data.notes||'',
+    status:data.status||'',
+    statusType:data.statusType||''
+  };
+}
+function addQuickRows(count){
+  for(var i=0;i<count;i+=1)quickEntryRows.push(quickRowTemplate());
+  renderQuickRows();
+}
+function openQuickEntry(){
+  if(!els.quickMeetDate.value)els.quickMeetDate.value=todayInputValue();
+  renderQuickEventOptions();
+  if(!quickEntryRows.length)addQuickRows(10);
+  setQuickStatus('Enter or paste rows, preview, then save.','');
+  els.quickEntryModal.hidden=false;
+}
+function closeQuickEntry(){
+  els.quickEntryModal.hidden=true;
+}
+function quickRowValues(){
+  var rows=[];
+  Array.prototype.forEach.call(els.quickRows.querySelectorAll('tr[data-quick-row]'),function(tr){
+    rows.push(quickRowTemplate({
+      athleteName:(tr.querySelector('[data-quick-athlete]')||{}).value||'',
+      resultDisplay:(tr.querySelector('[data-quick-result]')||{}).value||'',
+      splits:(tr.querySelector('[data-quick-splits]')||{}).value||'',
+      notes:(tr.querySelector('[data-quick-notes]')||{}).value||''
+    }));
+  });
+  quickEntryRows=rows;
+  return rows;
+}
+function quickPreviewRows(){
+  var meetName=String(els.quickMeetName.value||'').trim();
+  var date=String(els.quickMeetDate.value||'').trim();
+  var eventName=String(els.quickEvent.value||'').trim();
+  var filled=quickRowValues().filter(function(row){return row.athleteName||row.resultDisplay||row.splits||row.notes;});
+  var ready=0;
+  quickEntryRows=quickEntryRows.map(function(row){
+    if(!row.athleteName&&!row.resultDisplay&&!row.splits&&!row.notes)return quickRowTemplate(row);
+    if(row.status==='Saved')return row;
+    var athlete=quickFindAthlete(row.athleteName);
+    if(!meetName)return Object.assign({},row,{status:'Needs meet',statusType:'bad'});
+    if(!date)return Object.assign({},row,{status:'Needs date',statusType:'bad'});
+    if(!eventName)return Object.assign({},row,{status:'Needs event',statusType:'bad'});
+    if(!row.athleteName)return Object.assign({},row,{status:'Needs athlete',statusType:'bad'});
+    if(!athlete)return Object.assign({},row,{status:'Check athlete match',statusType:'warn'});
+    if(!row.resultDisplay)return Object.assign({},row,{status:'Needs result',statusType:'bad'});
+    ready+=1;
+    return Object.assign({},row,{status:'Ready - '+athlete.name,statusType:'good'});
+  });
+  renderQuickRows();
+  els.quickSave.disabled=!ready||quickEntryRows.some(function(row){return row.statusType==='bad'||row.statusType==='warn';});
+  setQuickStatus(ready+' row'+(ready===1?'':'s')+' ready to save'+(filled.length>ready?'; fix highlighted rows first.':'.'),filled.length>ready?'warn':'good');
+}
+function renderQuickRows(){
+  var athleteListId='quickAthleteList';
+  if(!document.getElementById(athleteListId)){
+    var datalist=document.createElement('datalist');
+    datalist.id=athleteListId;
+    document.body.appendChild(datalist);
+  }
+  document.getElementById(athleteListId).innerHTML=dashboardAthletes.map(function(athlete){return '<option value="'+esc(athlete.name)+'"></option>';}).join('');
+  els.quickRows.innerHTML=quickEntryRows.map(function(row,index){
+    return '<tr data-quick-row="'+index+'">'+
+      '<td>'+esc(index+1)+'</td>'+
+      '<td><input data-quick-athlete list="'+athleteListId+'" value="'+esc(row.athleteName)+'" placeholder="Athlete name"></td>'+
+      '<td><input data-quick-result value="'+esc(row.resultDisplay)+'" placeholder="17:08.8"></td>'+
+      '<td><input data-quick-splits value="'+esc(row.splits)+'" placeholder="5:21, 5:37, 5:44"></td>'+
+      '<td><input data-quick-notes value="'+esc(row.notes)+'" placeholder="Optional"></td>'+
+      '<td><span class="quickrowstatus '+esc(row.statusType)+'">'+esc(row.status||'')+'</span></td>'+
+      '<td><button class="danger compact" type="button" data-quick-remove="'+index+'">Remove</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function parseQuickPasteRows(text){
+  return String(text||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean).map(function(line){
+    var cols=line.indexOf('\t')>=0?line.split(/\t/):parseCsvLine(line);
+    return quickRowTemplate({
+      athleteName:cols[0]||'',
+      resultDisplay:cols[1]||'',
+      splits:cols[2]||'',
+      notes:cols.slice(3).join(' ').trim()
+    });
+  }).filter(function(row){return row.athleteName||row.resultDisplay;});
+}
+function useQuickPasteRows(){
+  var parsed=parseQuickPasteRows(els.quickPasteText.value);
+  if(!parsed.length){
+    setQuickStatus('Paste rows as Athlete, Result, optional Splits, optional Notes.','bad');
+    return;
+  }
+  quickEntryRows=parsed;
+  renderQuickRows();
+  quickPreviewRows();
+}
+function quickPayloadForRow(row){
+  var athlete=quickFindAthlete(row.athleteName);
+  var best=els.quickBestDefault.value||'auto';
+  return {
+    resultType:'individual',
+    athleteName:athlete&&athlete.name||row.athleteName,
+    contactId:athlete&&athlete.contactId||'',
+    smartcoachAthleteId:athlete&&athlete.smartcoachAthleteId||'',
+    meetName:els.quickMeetName.value,
+    meetRecordId:'',
+    meetDate:els.quickMeetDate.value,
+    season:quickDefaultSeason(),
+    seasonYear:quickSeasonYear(),
+    sport:els.quickSport.value||'cross_country',
+    event:els.quickEvent.value,
+    resultDisplay:row.resultDisplay,
+    wind:'',
+    isPr:best==='pb'||best==='both',
+    isSeasonBest:best==='sb'||best==='both',
+    useAsCurrentFitness:false,
+    splitsJson:JSON.stringify(quickSplitPayload(row.splits)),
+    coachRaceNotes:row.notes||''
+  };
+}
+function saveQuickEntry(){
+  quickPreviewRows();
+  var rows=quickEntryRows.filter(function(row){return row.statusType==='good'&&row.status!=='Saved';});
+  if(!rows.length){setQuickStatus('No ready rows to save.','bad');return;}
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  els.quickSave.disabled=true;
+  els.quickAddRows.disabled=true;
+  els.quickPreview.disabled=true;
+  setQuickStatus('Saving 1 of '+rows.length+'...','');
+  var saved=[];
+  var failed=[];
+  rows.reduce(function(chain,row,index){
+    return chain.then(function(){
+      setQuickStatus('Saving '+(index+1)+' of '+rows.length+'...','');
+      var payload=quickPayloadForRow(row);
+      return fetch('/api/smart-trak/meet-result',{method:'POST',headers:headers,body:JSON.stringify(payload)}).then(function(res){
+        return res.json().then(function(data){return{ok:res.ok,data:data,payload:payload};});
+      }).then(function(result){
+        if(!result.ok)throw new Error(result.data&&result.data.error||'Save failed.');
+        saved.push(Object.assign({},result.payload,{
+          contactId:result.data.contactId||result.payload.contactId,
+          recordId:result.data.recordId||'',
+          sourceRecordId:result.data.sourceRecordId||'',
+          isPr:!!(result.data.isPr||result.payload.isPr),
+          isSeasonBest:!!(result.data.isSeasonBest||result.payload.isSeasonBest),
+          splitsText:result.payload.splitsJson,
+          syncedAt:new Date().toISOString()
+        }));
+      }).catch(function(error){
+        failed.push({row:row,error:error.message||'Save failed.'});
+      });
+    });
+  },Promise.resolve()).then(function(){
+    if(saved.length)upsertImportedResults(saved);
+    renderOptions();
+    render();
+    els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
+    setQuickStatus(saved.length+' result'+(saved.length===1?'':'s')+' saved.'+(failed.length?' '+failed.length+' row'+(failed.length===1?'':'s')+' need attention.':''),failed.length?'warn':'good');
+    quickEntryRows=quickEntryRows.map(function(row){
+      var savedRow=saved.find(function(item){return athleteMatchKey(item.athleteName)===athleteMatchKey(row.athleteName)&&item.resultDisplay===row.resultDisplay;});
+      var failedRow=failed.find(function(item){return item.row===row;});
+      if(savedRow)return Object.assign({},row,{status:'Saved',statusType:'good'});
+      if(failedRow)return Object.assign({},row,{status:failedRow.error,statusType:'bad'});
+      return row;
+    });
+    renderQuickRows();
+  }).finally(function(){
+    els.quickSave.disabled=!quickEntryRows.some(function(row){return row.statusType==='good'&&row.status!=='Saved';});
+    els.quickAddRows.disabled=false;
+    els.quickPreview.disabled=false;
+  });
 }
 function openHistoryEdit(rowKeyValue){
   historyEditRow=findResultRowByKey(rowKeyValue);
@@ -1985,6 +2335,7 @@ function loadMeetHistory(){
       return;
     }
     if(!dashboard.ok)throw new Error(dashboard.data&&dashboard.data.error||'Meet history failed to load.');
+    dashboardAthletes=normalizeDashboardAthletes(dashboard.data.athletes||[]);
     meetResults=normalizeMeetHistoryRows(dashboard.data.meetResults||dashboard.data.recentMeetResults||[]);
     scheduledMeets=normalizeMeetHistoryRows((results[1].data&&results[1].data.meets)||[]);
     invalidateMeetHistoryCache();
@@ -1994,6 +2345,7 @@ function loadMeetHistory(){
   }).catch(function(error){
     meetResults=[];
     scheduledMeets=[];
+    dashboardAthletes=[];
     invalidateMeetHistoryCache();
     els.meetList.innerHTML='';
     els.resultRows.innerHTML='';
@@ -2078,6 +2430,7 @@ function init(){
     els.importBody.scrollIntoView({behavior:'smooth',block:'start'});
     setImportStatus('Paste spreadsheet rows or upload a CSV/TSV template.','');
   });
+  els.openQuickEntryBtn.addEventListener('click',openQuickEntry);
   els.search.addEventListener('input',function(){
     clearTimeout(searchRenderTimer);
     searchRenderTimer=setTimeout(render,120);
@@ -2129,6 +2482,26 @@ function init(){
   els.historyEditSave.addEventListener('click',saveHistoryEdit);
   els.historyVoidClose.addEventListener('click',closeHistoryVoid);
   els.historyVoidSave.addEventListener('click',saveHistoryVoid);
+  els.quickEntryClose.addEventListener('click',closeQuickEntry);
+  els.quickSport.addEventListener('change',function(){renderQuickEventOptions();quickPreviewRows();});
+  els.quickEvent.addEventListener('change',quickPreviewRows);
+  els.quickMeetName.addEventListener('input',function(){els.quickSave.disabled=true;});
+  els.quickMeetDate.addEventListener('change',quickPreviewRows);
+  els.quickBestDefault.addEventListener('change',quickPreviewRows);
+  els.quickAddRows.addEventListener('click',function(){quickRowValues();addQuickRows(10);});
+  els.quickPreview.addEventListener('click',quickPreviewRows);
+  els.quickClear.addEventListener('click',function(){quickEntryRows=[];els.quickPasteText.value='';addQuickRows(10);els.quickSave.disabled=true;setQuickStatus('Rows cleared.','');});
+  els.quickUsePaste.addEventListener('click',useQuickPasteRows);
+  els.quickSave.addEventListener('click',saveQuickEntry);
+  els.quickRows.addEventListener('input',function(){quickRowValues();els.quickSave.disabled=true;setQuickStatus('Preview rows before saving.','');});
+  els.quickRows.addEventListener('click',function(event){
+    var button=event.target.closest&&event.target.closest('[data-quick-remove]');
+    if(!button)return;
+    quickRowValues();
+    quickEntryRows.splice(Number(button.getAttribute('data-quick-remove')),1);
+    renderQuickRows();
+    els.quickSave.disabled=true;
+  });
   els.toggleImportBtn.addEventListener('click',function(){
     var open=els.importBody.hidden;
     els.importBody.hidden=!open;
