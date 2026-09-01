@@ -437,7 +437,7 @@ tr:last-child td{border-bottom:0}
           <button id="quickPreview" type="button">Preview Rows</button>
           <button id="quickClear" class="ghost" type="button">Clear Rows</button>
         </div>
-        <div class="quickhint">Required: athlete and result. Place is not needed.</div>
+        <div class="quickhint">Required: athlete and result.</div>
       </div>
       <div class="quicktablewrap">
         <table>
@@ -458,7 +458,7 @@ tr:last-child td{border-bottom:0}
       <div class="quickpaste">
         <div class="field full">
           <label for="quickPasteText">Paste Rows</label>
-          <textarea id="quickPasteText" placeholder="Hayden Dunn&#9;17:08.8&#9;5:21, 5:37, 5:44&#10;Preston Tom&#9;19:26.56&#10;Ben Hale&#9;20:46.05&#9;6:25, 6:41, 7:40"></textarea>
+          <textarea id="quickPasteText" placeholder="Jordan Lane&#9;17:08.8&#9;5:21, 5:37, 5:44&#10;Casey Brooks&#9;19:26.56&#10;Morgan Reed&#9;20:46.05&#9;6:25, 6:41, 7:40"></textarea>
         </div>
         <div class="quicktoolbar">
           <div class="quicktools">
@@ -1186,8 +1186,10 @@ function saveQuickEntry(){
   setQuickStatus('Saving 1 of '+rows.length+'...','');
   var saved=[];
   var failed=[];
+  var setupError='';
   rows.reduce(function(chain,row,index){
     return chain.then(function(){
+      if(setupError)return;
       setQuickStatus('Saving '+(index+1)+' of '+rows.length+'...','');
       var payload=quickPayloadForRow(row);
       return fetch('/api/smart-trak/meet-result',{method:'POST',headers:headers,body:JSON.stringify(payload)}).then(function(res){
@@ -1204,7 +1206,13 @@ function saveQuickEntry(){
           syncedAt:new Date().toISOString()
         }));
       }).catch(function(error){
-        failed.push({row:row,error:error.message||'Save failed.'});
+        var message=quickFriendlyError(error.message||'Save failed.');
+        if(isQuickSetupError(message)){
+          setupError=message;
+          failed.push({row:row,error:'Setup needed'});
+          return;
+        }
+        failed.push({row:row,error:message});
       });
     });
   },Promise.resolve()).then(function(){
@@ -1212,12 +1220,13 @@ function saveQuickEntry(){
     renderOptions();
     render();
     els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
-    setQuickStatus(saved.length+' result'+(saved.length===1?'':'s')+' saved.'+(failed.length?' '+failed.length+' row'+(failed.length===1?'':'s')+' need attention.':''),failed.length?'warn':'good');
+    setQuickStatus(setupError||saved.length+' result'+(saved.length===1?'':'s')+' saved.'+(failed.length?' '+failed.length+' row'+(failed.length===1?'':'s')+' need attention.':''),setupError||failed.length?'warn':'good');
     quickEntryRows=quickEntryRows.map(function(row){
       var savedRow=saved.find(function(item){return athleteMatchKey(item.athleteName)===athleteMatchKey(row.athleteName)&&item.resultDisplay===row.resultDisplay;});
       var failedRow=failed.find(function(item){return item.row===row;});
       if(savedRow)return Object.assign({},row,{status:'Saved',statusType:'good'});
       if(failedRow)return Object.assign({},row,{status:failedRow.error,statusType:'bad'});
+      if(setupError&&row.statusType==='good'&&row.status!=='Saved')return Object.assign({},row,{status:'Not saved',statusType:'warn'});
       return row;
     });
     renderQuickRows();
@@ -1226,6 +1235,16 @@ function saveQuickEntry(){
     els.quickAddRows.disabled=false;
     els.quickPreview.disabled=false;
   });
+}
+function quickFriendlyError(message){
+  var text=String(message||'').trim();
+  if(/custom object/i.test(text)&&/not found/i.test(text)&&/meet_results|season_records|athlete_bests/i.test(text)){
+    return 'SMART Trak Meet Results setup is missing for this account. Contact support before saving meet results.';
+  }
+  return text||'Save failed.';
+}
+function isQuickSetupError(message){
+  return /Meet Results setup is missing/i.test(String(message||''));
 }
 function openHistoryEdit(rowKeyValue){
   historyEditRow=findResultRowByKey(rowKeyValue);

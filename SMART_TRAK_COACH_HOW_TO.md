@@ -603,7 +603,7 @@ Season filters use the saved sport and year when available, such as **Cross Coun
 
 ### Enter Current Meet Results
 
-Use **Enter Results** when a meet was not timed in the phone app and results need to be entered from a printed sheet or spreadsheet. Choose the meet, date, sport, and event once, then type or paste one athlete per row. Each row only needs the athlete name and result. Splits or laps can be entered in one cell as comma-separated times, such as `5:21, 5:37, 5:44`; SMART Trak labels them as laps when the result is saved. Place is not required.
+Use **Enter Results** when a meet was not timed in the phone app and results need to be entered from a printed sheet or spreadsheet. Choose the meet, date, sport, and event once, then type or paste one athlete per row. Each row only needs the athlete name and result. Splits or laps can be entered in one cell as comma-separated times, such as `5:21, 5:37, 5:44`; SMART Trak labels them as laps when the result is saved.
 
 Preview the rows before saving. The Status column tells you whether a row is ready, missing information, or needs the athlete name checked. Only rows matched to active athletes are saved from **Enter Results**. Use **Import History** for older alumni or historical marks when the athlete is not on the current roster.
 

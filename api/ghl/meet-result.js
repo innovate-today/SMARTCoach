@@ -170,7 +170,8 @@ module.exports = async function handler(req, res) {
       records: [],
     });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message || "Meet result sync failed." });
+    const setupMessage = meetResultSetupErrorMessage(error);
+    res.status(error.statusCode || 500).json({ error: setupMessage || error.message || "Meet result sync failed." });
   }
 };
 
@@ -1254,6 +1255,13 @@ function cleanValue(value) {
   if (Array.isArray(value)) return value.map(cleanValue).filter(Boolean).join(", ");
   if (value && typeof value === "object") return cleanValue(value.value || value.name || value.label || value.id);
   return String(value || "").trim();
+}
+
+function meetResultSetupErrorMessage(error) {
+  const message = clean(error && error.message);
+  if (!/custom object/i.test(message) || !/not found/i.test(message)) return "";
+  if (!/meet_results|season_records|athlete_bests/i.test(message)) return "";
+  return "SMART Trak Meet Results setup is missing for this account. Contact support before saving meet results.";
 }
 
 function parseJsonObject(value) {

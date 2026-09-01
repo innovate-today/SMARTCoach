@@ -4089,12 +4089,16 @@ function checkMeetResultSplitDetails() {
 function checkMeetHistoryQuickEntry() {
   const history = fs.readFileSync("meet-history.html", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  const meetResultApi = fs.readFileSync("api/ghl/meet-result.js", "utf8");
   [
     'id="openQuickEntryBtn"',
     'id="quickEntryModal"',
     "Enter Event Results",
     "Choose the meet, date, sport, and event once.",
-    "Required: athlete and result. Place is not needed.",
+    "Required: athlete and result.",
+    "Jordan Lane",
+    "Casey Brooks",
+    "Morgan Reed",
     "<th>Splits / Laps</th>",
     "<th>Status</th>",
     "function normalizeDashboardAthletes(rows)",
@@ -4105,13 +4109,23 @@ function checkMeetHistoryQuickEntry() {
     "Paste columns as Athlete, Result, optional Splits, optional Notes.",
     "function saveQuickEntry()",
     "fetch('/api/smart-trak/meet-result'",
+    "function quickFriendlyError(message)",
+    "function isQuickSetupError(message)",
+    "if(setupError)return;",
     "useAsCurrentFitness:false",
     "splitsJson:JSON.stringify(quickSplitPayload(row.splits))",
     "dashboardAthletes=normalizeDashboardAthletes(dashboard.data.athletes||[]);",
   ].forEach((text) => {
     if (!history.includes(text)) throw new Error(`Meet History quick entry missing ${text}`);
   });
-  if (history.includes("<th>Place</th>")) throw new Error("Meet History quick entry should not require place.");
+  [
+    "Place is not needed",
+    "Hayden Dunn&#9;17:08.8",
+    "Preston Tom&#9;19:26.56",
+    "Ben Hale&#9;20:46.05",
+  ].forEach((text) => {
+    if (history.includes(text)) throw new Error(`Meet History quick entry should not show ${text}`);
+  });
   [
     "Use **Enter Results** when a meet was not timed in the phone app",
     "Choose the meet, date, sport, and event once",
@@ -4120,6 +4134,14 @@ function checkMeetHistoryQuickEntry() {
     "Use **Import History** for older alumni or historical marks",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Coach guide quick entry instructions missing ${text}`);
+  });
+  if (guide.includes("Place is not required")) throw new Error("Coach guide should not mention place for quick entry.");
+  [
+    "function meetResultSetupErrorMessage(error)",
+    "SMART Trak Meet Results setup is missing for this account. Contact support before saving meet results.",
+    "setupMessage || error.message",
+  ].forEach((text) => {
+    if (!meetResultApi.includes(text)) throw new Error(`Meet Result setup error message missing ${text}`);
   });
   console.log("Meet History quick entry ok");
 }
