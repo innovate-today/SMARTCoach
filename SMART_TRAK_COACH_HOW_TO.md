@@ -745,7 +745,7 @@ The **XC Top 20** tab shows the fastest saved cross country meet results. The de
 - Girls 5K
 - Girls 2 Mile
 
-Use **Show another XC list** when your team also wants to track another cross country distance, such as Boys 2 Mile, Boys 3K, Girls 3K, Boys 4K, or Girls 4K. Click **Add List** to show that list as a tab. Extra list choices stay on that device. The default three lists always remain available.
+Use **Show another XC list** when your team also wants to track another cross country distance, such as Boys 2 Mile, Boys 3K, Girls 3K, Boys 4K, or Girls 4K. The picker only offers extra lists that already have saved marks. Click **Add List** to show that list as a tab. Click **Delete List** to hide an optional list from that device. Deleting a list tab does not delete the saved meet results. The default three lists always remain available.
 
 The XC Top 20 list updates from saved Meet History results when Records reloads. New app syncs, Log Race Result entries, Meet History corrections, and XC imports can all update the list. Each athlete appears once per list, using that athlete's fastest saved time for that distance. For cross country, 3200m and 2 Mile marks are shown together as **2 Mile**.
 

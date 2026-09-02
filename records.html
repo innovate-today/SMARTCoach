@@ -79,9 +79,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .xctab{background:#eef2f7;color:#172033;border:1px solid var(--line)}
 .xctab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 .xctab.custom{display:inline-flex;align-items:center;gap:6px}
-.xctab .remove-tab{border:0;background:rgba(255,255,255,.18);color:inherit;border-radius:999px;padding:0 5px;font-size:13px;line-height:1.25}
-.xctab:not(.active) .remove-tab{background:#dbe3ef;color:#475569}
-.xclistbuilder{display:grid;grid-template-columns:minmax(180px,260px) auto minmax(160px,1fr);gap:8px;align-items:end;margin-bottom:10px}
+.xclistbuilder{display:grid;grid-template-columns:minmax(180px,260px) auto auto minmax(160px,1fr);gap:8px;align-items:end;margin-bottom:10px}
 .xclistbuilder label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
 .xclistbuilder select{height:36px;padding:7px 9px}
 .xclistbuilder .hint{color:var(--muted);font-size:12px;line-height:1.35;align-self:center}
@@ -212,7 +210,8 @@ tr:last-child td{border-bottom:0}
             <select id="xcAddListSelect"></select>
           </label>
           <button id="xcAddListBtn" class="ghost" type="button">Add List</button>
-          <div class="hint">Choose extra XC distances to track. Each list ranks saved cross country results and keeps one fastest mark per athlete.</div>
+          <button id="xcDeleteListBtn" class="danger" type="button" disabled>Delete List</button>
+          <div class="hint">Choose extra XC distances with saved marks. Each list ranks saved cross country results and keeps one fastest mark per athlete.</div>
         </div>
         <div id="xcSummary" class="xcsummary"></div>
         <div class="tablewrap xctablewrap">
@@ -612,6 +611,7 @@ var els={
   xcEmpty:document.getElementById('xcEmpty'),
   xcAddListSelect:document.getElementById('xcAddListSelect'),
   xcAddListBtn:document.getElementById('xcAddListBtn'),
+  xcDeleteListBtn:document.getElementById('xcDeleteListBtn'),
   xcImportList:document.getElementById('xcImportList'),
   xcImportMeet:document.getElementById('xcImportMeet'),
   xcImportDate:document.getElementById('xcImportDate'),
@@ -1000,11 +1000,16 @@ function xcListOptions(){
 function xcListDefinition(key){
   return xcListOptions().find(function(item){return item.key===key;})||XC_FALLBACK_LIST_OPTIONS.find(function(item){return item.key===key;})||null;
 }
+function xcListHasMarks(key){
+  var lists=xcTop20&&xcTop20.lists||{};
+  return (lists[key]||[]).length>0;
+}
 function xcVisibleListKeys(){
   var keys=XC_DEFAULT_LIST_KEYS.concat(xcCustomListKeys);
   var seen={};
   return keys.filter(function(key){
     if(seen[key]||!xcListDefinition(key))return false;
+    if(XC_DEFAULT_LIST_KEYS.indexOf(key)<0&&!xcListHasMarks(key))return false;
     seen[key]=true;
     return true;
   });
@@ -1032,16 +1037,18 @@ function renderXcListChoices(){
     var count=totals[key]||0;
     return '<button class="xctab'+(custom?' custom':'')+(key===xcActiveList?' active':'')+'" data-xc-list="'+esc(key)+'" type="button">'+
       esc(xcListLabel(key))+
-      (custom?'<span class="remove-tab" data-xc-remove-list="'+esc(key)+'" title="Remove list">x</span>':'')+
       ' <span class="tabcount">'+esc(count)+'</span>'+
     '</button>';
   }).join('');
-  var addable=xcListOptions().filter(function(item){return visible.indexOf(item.key)<0;});
+  var addable=xcListOptions().filter(function(item){
+    return visible.indexOf(item.key)<0&&XC_DEFAULT_LIST_KEYS.indexOf(item.key)<0&&xcListHasMarks(item.key);
+  });
   els.xcAddListSelect.innerHTML=addable.map(function(item){
     return '<option value="'+esc(item.key)+'">'+esc(item.label)+'</option>';
   }).join('');
   els.xcAddListBtn.disabled=!addable.length;
-  if(!addable.length)els.xcAddListSelect.innerHTML='<option value="">All supported lists are shown</option>';
+  els.xcDeleteListBtn.disabled=XC_DEFAULT_LIST_KEYS.indexOf(xcActiveList)>=0;
+  if(!addable.length)els.xcAddListSelect.innerHTML='<option value="">No hidden lists with saved marks</option>';
   els.xcImportList.innerHTML=xcListOptions().map(function(item){
     return '<option value="'+esc(item.key)+'">'+esc(item.label)+'</option>';
   }).join('');
@@ -1063,6 +1070,10 @@ function removeXcCustomList(key){
   saveXcCustomListKeys();
   if(xcActiveList===key)xcActiveList='boys5k';
   renderXcTop20();
+}
+function deleteActiveXcList(){
+  if(XC_DEFAULT_LIST_KEYS.indexOf(xcActiveList)>=0)return;
+  removeXcCustomList(xcActiveList);
 }
 function renderXcTop20(){
   var lists=xcTop20&&xcTop20.lists||{};
@@ -2352,13 +2363,6 @@ function init(){
   els.schoolRecordsTab.addEventListener('click',function(){setRecordView('school');});
   els.xcTop20Tab.addEventListener('click',function(){setRecordView('xc');});
   els.xcTabs.addEventListener('click',function(event){
-    var remove=event.target.closest&&event.target.closest('[data-xc-remove-list]');
-    if(remove){
-      event.preventDefault();
-      event.stopPropagation();
-      removeXcCustomList(remove.getAttribute('data-xc-remove-list')||'');
-      return;
-    }
     var button=event.target.closest&&event.target.closest('[data-xc-list]');
     if(!button)return;
     xcActiveList=button.getAttribute('data-xc-list')||'boys5k';
@@ -2366,6 +2370,7 @@ function init(){
     renderXcTop20();
   });
   els.xcAddListBtn.addEventListener('click',addXcCustomList);
+  els.xcDeleteListBtn.addEventListener('click',deleteActiveXcList);
   els.xcImportList.addEventListener('change',function(){
     xcActiveList=els.xcImportList.value||'boys5k';
     renderXcTop20();
