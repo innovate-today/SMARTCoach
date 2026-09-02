@@ -1125,7 +1125,7 @@ function xcTop20Row(row, gender, eventBucket, context = {}) {
     seasonYear,
     activeAthlete: xcTop20RowActive(row, context),
     currentYear: Boolean(seasonYear && Number(seasonYear) === Number(context.currentYear || new Date().getFullYear())),
-    grade: noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"),
+    grade: clean(row.grade) || noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"),
     classYear: noteValue(row.coachRaceNotes, "Class Year"),
     coachRaceNotes: clean(row.coachRaceNotes),
   };
@@ -1714,6 +1714,7 @@ function normalizeMeetResult(record) {
     sourceRecordId: prop(props, "source_record_id"),
     athleteName: prop(props, "athlete_name_snapshot"),
     athleteGender: noteValue(coachRaceNotes, "Gender"),
+    grade: noteValue(coachRaceNotes, "Historical Grade") || noteValue(coachRaceNotes, "Grade"),
     meetName: prop(props, "meet_name"),
     event: prop(props, "event"),
     resultDisplay: prop(props, "result_display"),

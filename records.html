@@ -1235,7 +1235,7 @@ function copyText(text){
 }
 function xcEditableNotes(row){
   return String(row&&row.coachRaceNotes||'').split(/\r?\n/).filter(function(line){
-    return !/^(Result Type|Historical Grade|Class Year|Gender|Place|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+    return !/^(Result Type|Historical Grade|Class Year|Gender|Place|Original Event|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
   }).join('\n').trim();
 }
 function xcCoachRaceNotes(row,extraNotes){
@@ -1291,7 +1291,7 @@ function saveXcEdit(){
   var grade=els.xcEditGrade.value.trim();
   if(!athlete||!result||!event){setXcEditStatus('Athlete, event, and time are required.','bad');return;}
   if(year&&(!Number.isFinite(Number(year))||Number(year)<1900||Number(year)>2100)){setXcEditStatus('Enter a year like 2026.','bad');return;}
-  if(grade&&!/^(9|10|11|12)$/.test(grade)){setXcEditStatus('Grade can be 9, 10, 11, or 12.','bad');return;}
+  if(grade&&!/^(6|7|8|9|10|11|12)$/.test(grade)){setXcEditStatus('Grade can be 6, 7, 8, 9, 10, 11, or 12.','bad');return;}
   var gender=els.xcEditGender.value||xcListGender(xcActiveList);
   var headers=apiHeaders();
   headers['Content-Type']='application/json';
@@ -1435,6 +1435,11 @@ function xcNormalizeEvent(value,defaultList){
   if(['2mi','2_mi','2mile','2_mile','2miles','2_miles','two_mile','two_miles','3200','3200m','3200_m'].indexOf(normalized)>=0||/^2\s*(mi|mile|miles)$/.test(key)||/^two\s+miles?$/.test(key)||/^3200\s*m?$/.test(key))return '2 Mile';
   return xcListEvent(defaultList);
 }
+function xcImportEventValue(value,defaultList){
+  var text=String(value||'').trim();
+  if(xcListEvent(defaultList)==='2 Mile'&&/^[3-9]\d*\s*(mi|mile|miles)$/i.test(text))return '';
+  return text;
+}
 function xcNormalizeGender(value,defaultList){
   var text=String(value||'').trim().toLowerCase();
   if(/^(b|boy|boys|male|m)$/.test(text))return 'Boys';
@@ -1443,8 +1448,10 @@ function xcNormalizeGender(value,defaultList){
 }
 function normalizeXcImportRow(values,index){
   var defaultList=els.xcImportList.value||'boys5k';
+  var sourceEvent=String(values.event||'').trim();
+  var importEvent=xcImportEventValue(sourceEvent,defaultList);
   var rawYear=String(values.seasonYear||values.meetDate||els.xcImportDate.value||'').trim();
-  var event=xcNormalizeEvent(values.event,defaultList);
+  var event=xcNormalizeEvent(importEvent,defaultList);
   var gender=xcNormalizeGender(values.athleteGender,defaultList);
   var seasonYear=yearOnlyValue(rawYear)||new Date().getFullYear();
   return {
@@ -1457,7 +1464,8 @@ function normalizeXcImportRow(values,index){
     seasonYear:seasonYear,
     sport:'Cross Country',
     event:event,
-    originalEvent:String(values.event||event).trim(),
+    originalEvent:importEvent||event,
+    sourceEvent:sourceEvent&&sourceEvent!==event?sourceEvent:'',
     resultDisplay:String(values.resultDisplay||'').trim(),
     grade:String(values.grade||'').trim(),
     classYear:String(values.classYear||'').trim(),
@@ -1576,10 +1584,10 @@ function saveXcImport(){
       season:row.season,
       seasonYear:row.seasonYear,
       sport:'Cross Country',
-      event:row.originalEvent||row.event,
+      event:row.event,
       resultDisplay:row.resultDisplay,
       isSeasonBest:true,
-      notes:row.notes
+      notes:[row.sourceEvent?'Original Event: '+row.sourceEvent:'',row.notes].filter(Boolean).join('\n')
     };
   })})}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
