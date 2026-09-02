@@ -1146,14 +1146,20 @@ function normalizeResultsBoardDetailOrder(values) {
 function resultsBoardTopTimedResult(rows, gender) {
   const list = Array.isArray(rows) ? rows : [];
   const fastest = list.slice().filter((row) => {
-    if (!(Number(row.resultMs) > 0)) return false;
+    if (!(resultsBoardResultMs(row) > 0)) return false;
     return !gender || resultsBoardGender(row.athleteGender) === gender;
-  }).sort((a, b) => Number(a.resultMs) - Number(b.resultMs))[0] || {};
+  }).sort((a, b) => resultsBoardResultMs(a) - resultsBoardResultMs(b))[0] || {};
   return fastest.athleteName ? {
     athleteName: fastest.athleteName,
+    athleteGender: fastest.athleteGender,
     event: fastest.event,
     resultDisplay: fastest.resultDisplay,
+    resultMs: resultsBoardResultMs(fastest),
   } : null;
+}
+
+function resultsBoardResultMs(row) {
+  return Number(row && row.resultMs) || parseTimeToMs(row && row.resultDisplay) || 0;
 }
 
 function resultsBoardEventDistanceSortValue(value) {
@@ -1172,7 +1178,7 @@ function resultsBoardTopTimedResultCards(rows) {
   const genderLabels = { girl: "Girls", boy: "Boys" };
   ["girl", "boy"].forEach((gender) => {
     const genderRows = (Array.isArray(rows) ? rows : []).filter((row) => {
-      return resultsBoardGender(row.athleteGender) === gender && Number(row.resultMs) > 0;
+      return resultsBoardGender(row.athleteGender) === gender && resultsBoardResultMs(row) > 0;
     });
     const leaders = new Map();
     genderRows.forEach((row) => {
@@ -1180,7 +1186,7 @@ function resultsBoardTopTimedResultCards(rows) {
       if (!event) return;
       const key = event.toLowerCase();
       const current = leaders.get(key);
-      if (!current || Number(row.resultMs) < Number(current.resultMs || 0)) leaders.set(key, row);
+      if (!current || resultsBoardResultMs(row) < resultsBoardResultMs(current)) leaders.set(key, row);
     });
     const sorted = Array.from(leaders.values()).sort((a, b) => {
       const distance = resultsBoardEventDistanceSortValue(a.event) - resultsBoardEventDistanceSortValue(b.event);
@@ -1194,9 +1200,14 @@ function resultsBoardTopTimedResultCards(rows) {
         athleteGender: row.athleteGender,
         event: row.event,
         resultDisplay: row.resultDisplay,
+        resultMs: resultsBoardResultMs(row),
       });
     });
   });
+  if (!cards.length) {
+    const overall = resultsBoardTopTimedResult(rows);
+    if (overall) cards.push({ ...overall, label: "Overall" });
+  }
   return cards.sort((a, b) => {
     const genderOrder = (a.label === "Girls" ? 0 : 1) - (b.label === "Girls" ? 0 : 1);
     if (genderOrder) return genderOrder;
