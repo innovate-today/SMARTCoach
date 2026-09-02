@@ -9,9 +9,10 @@ const OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS = 4500;
 const DASHBOARD_RECENT_MEET_LIMIT = 100;
 const CONTACT_LIST_PAGE_LIMIT = 100;
 const CONTACT_LIST_MAX_PAGES = 20;
+const ATHLETE_ROSTER_DETAILS_NAMESPACE = "athlete-roster-details";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
-const { loadTrainingMirror, loadAttendanceRecords } = require("../../lib/account-registry");
+const { loadAccountScopedRecord, loadTrainingMirror, loadAttendanceRecords } = require("../../lib/account-registry");
 
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
@@ -100,7 +101,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const [athletes, bestRecords, meetRecords, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
-      listActiveAthletes({ token, locationId }),
+      listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
@@ -164,7 +165,7 @@ async function publicXcTop20Board(req, res) {
 
   try {
     const [athletes, meetRecords] = await Promise.all([
-      listActiveAthletes({ token, locationId }),
+      listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
     ]);
     const meetResults = buildRecentMeetResults({ athletes, meetRecords });
@@ -201,7 +202,7 @@ async function publicResultsBoard(req, res) {
   try {
     const sharing = resultsBoardSharing(req.resultsBoardSharing);
     const [athletes, meetRecords] = await Promise.all([
-      listActiveAthletes({ token, locationId }),
+      listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
     ]);
     const allRows = buildRecentMeetResults({ athletes, meetRecords });
@@ -272,7 +273,7 @@ async function publicMilesBoard(req, res) {
     const sharing = req.milesBoardSharing || {};
     const displayOptions = milesBoardDisplayOptions(sharing.displayOptions);
     const [allAthletes, performanceRecords, mirroredPerformanceRecords, attendanceRecords] = await Promise.all([
-      listActiveAthletes({ token, locationId }),
+      listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
       displayOptions.teamAttendance || displayOptions.athleteAttendance ? loadAttendanceRecords(accountKey, {
@@ -743,18 +744,77 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account");
 }
 
-async function listActiveAthletes({ token, locationId }) {
+async function listActiveAthletes({ accountKey, token, locationId }) {
   const [activeFieldIds, athleteIdFieldIds, genderFieldIds] = await Promise.all([
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachActive }),
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachAthleteId }),
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.gender }),
   ]);
+  const rosterDetails = await loadAthleteRosterDetails(accountKey);
   const contacts = await listLocationContacts({ token, locationId });
 
   return uniqueContacts(contacts)
     .map((contact) => normalizeContact(contact, { activeFieldIds, athleteIdFieldIds, genderFieldIds }))
+    .map((athlete) => mergeAthleteRosterDetail(athlete, rosterDetails))
     .filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function emptyAthleteRosterDetailsRecord() {
+  return { version: 1, athletes: {}, aliases: {} };
+}
+
+async function loadAthleteRosterDetails(accountKey) {
+  if (!clean(accountKey)) return emptyAthleteRosterDetailsRecord();
+  try {
+    const result = await loadAccountScopedRecord(accountKey, ATHLETE_ROSTER_DETAILS_NAMESPACE);
+    const record = result && result.record;
+    if (!record || typeof record !== "object") return emptyAthleteRosterDetailsRecord();
+    return {
+      version: 1,
+      athletes: record.athletes && typeof record.athletes === "object" ? record.athletes : {},
+      aliases: record.aliases && typeof record.aliases === "object" ? record.aliases : {},
+    };
+  } catch (error) {
+    return emptyAthleteRosterDetailsRecord();
+  }
+}
+
+function mergeAthleteRosterDetail(athlete, source) {
+  const detail = athleteRosterDetailFor(athlete, source);
+  if (!athlete || !detail) return athlete;
+  const merged = { ...athlete };
+  ["name", "gender", "grade"].forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(detail, field) && clean(detail[field])) merged[field] = clean(detail[field]);
+  });
+  if (typeof detail.smartcoachActive === "boolean") merged.smartcoachActive = detail.smartcoachActive;
+  return merged;
+}
+
+function athleteRosterDetailFor(athlete, record) {
+  const athletes = (record && record.athletes) || {};
+  const aliases = (record && record.aliases) || {};
+  const keys = rosterDetailAliasKeys(athlete);
+  for (const alias of keys) {
+    const key = aliases[alias] || alias;
+    if (athletes[key]) return athletes[key];
+  }
+  return null;
+}
+
+function rosterDetailAliasKeys(input) {
+  const keys = [];
+  const id = clean(input && (input.id || input.contactId));
+  const smartcoachAthleteId = clean(input && input.smartcoachAthleteId);
+  const name = normalizeRosterDetailName(input && input.name);
+  if (id) keys.push(`contact:${id}`);
+  if (smartcoachAthleteId) keys.push(`athlete:${smartcoachAthleteId}`);
+  if (name) keys.push(`name:${name}`);
+  return keys;
+}
+
+function normalizeRosterDetailName(value) {
+  return clean(value).toLowerCase().replace(/\s+/g, " ");
 }
 
 async function listLocationContacts({ token, locationId }) {

@@ -424,6 +424,15 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
   });
   [
     "const ATHLETE_FIELD_ALIASES = {",
+    "const ATHLETE_ROSTER_DETAILS_NAMESPACE = \"athlete-roster-details\";",
+    "const { loadAccountScopedRecord, loadTrainingMirror, loadAttendanceRecords } = require(\"../../lib/account-registry\");",
+    "listActiveAthletes({ accountKey, token, locationId })",
+    "const rosterDetails = await loadAthleteRosterDetails(accountKey);",
+    "function loadAthleteRosterDetails(accountKey)",
+    "function mergeAthleteRosterDetail(athlete, source)",
+    ".map((athlete) => mergeAthleteRosterDetail(athlete, rosterDetails))",
+    "function athleteRosterDetailFor(athlete, record)",
+    "function rosterDetailAliasKeys(input)",
     "\"athlete gender\", \"student gender\", \"runner gender\"",
     "listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachActive })",
     "listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.gender })",
