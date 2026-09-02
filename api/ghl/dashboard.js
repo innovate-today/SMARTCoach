@@ -1745,9 +1745,9 @@ function noteValue(note, label) {
 function recordMatchesAthlete(record, athlete) {
   const props = recordProperties(record);
   const contactValue = prop(props, "athlete_contact");
-  if (contactValue && contactValue === athlete.id) return true;
-  const nameValue = prop(props, "athlete_name_snapshot").toLowerCase();
-  return !!nameValue && !!athlete.name && nameValue === athlete.name.toLowerCase();
+  if (contactValue && valueContainsToken(contactValue, athlete.id)) return true;
+  const nameValue = normalizedName(prop(props, "athlete_name_snapshot"));
+  return !!nameValue && !!athlete.name && nameValue === normalizedName(athlete.name);
 }
 
 function countRunsBetween(training, start, end) {
@@ -2194,7 +2194,7 @@ function fieldValue(field) {
 
 function fieldValuePart(value) {
   if (value === null || typeof value === "undefined") return "";
-  if (typeof value === "object") return clean(value.value || value.name || value.label || value.key || value.id);
+  if (typeof value === "object") return clean(value.value || value.name || value.label || value.key || value.id || value.contactId || value.contact_id || value._id);
   return clean(value);
 }
 
@@ -2246,8 +2246,19 @@ function parseTimeToMs(value) {
 }
 
 function clean(value) {
-  if (value && typeof value === "object") return clean(value.value || value.name || value.label || value.id);
+  if (Array.isArray(value)) return value.map(clean).filter(Boolean).join(", ");
+  if (value && typeof value === "object") return clean(value.value || value.name || value.label || value.key || value.id || value.contactId || value.contact_id || value._id);
   return String(value || "").trim();
+}
+
+function valueContainsToken(value, token) {
+  const wanted = clean(token);
+  if (!wanted) return false;
+  return clean(value).split(",").map((item) => clean(item)).some((item) => item === wanted);
+}
+
+function normalizedName(value) {
+  return clean(value).toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 function safeJson(text) {
