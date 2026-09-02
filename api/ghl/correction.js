@@ -204,6 +204,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
   };
   const isRelay = clean(updates.resultType).toLowerCase() === "relay" || clean(previousValues.resultType).toLowerCase() === "relay";
   const isField = clean(updates.resultType).toLowerCase() === "field" || clean(previousValues.resultType).toLowerCase() === "field";
+  const individualResultType = clean(previousValues.resultType).toLowerCase() === "historical import" ? "Historical Import" : "Individual";
   const nextValues = {
     athleteName: isRelay ? previousValues.athleteName : clean(updates.athleteName) || previousValues.athleteName,
     contactId: isRelay ? previousValues.contactId : clean(updates.contactId) || previousValues.contactId,
@@ -220,7 +221,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
     classYear: hasUpdate("classYear") ? clean(updates.classYear) : previousValues.classYear,
     isPr: isRelay || isField ? "No" : clean(updates.isPr) ? yesText(updates.isPr) ? "Yes" : "No" : previousValues.isPr,
     isSeasonBest: isRelay || isField ? "No" : clean(updates.isSeasonBest) ? yesText(updates.isSeasonBest) ? "Yes" : "No" : previousValues.isSeasonBest,
-    resultType: isRelay ? "Relay" : isField ? "Field" : "Individual",
+    resultType: isRelay ? "Relay" : isField ? "Field" : individualResultType,
     relayTeamName: isRelay ? clean(updates.relayTeamName) || previousValues.relayTeamName : "",
     fieldAttempts: isField ? singleLine(updates.fieldAttempts) || previousValues.fieldAttempts : "",
     fieldVideo: isField ? clean(updates.fieldVideo) || previousValues.fieldVideo : "",

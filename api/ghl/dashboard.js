@@ -959,7 +959,7 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
   meetRecords.forEach((record) => {
     if (isVoidedMeetResult(record)) return;
     const result = normalizeMeetResult(record);
-    if (!isRelayMeetResult(result) && !isHistoricalMeetResult(result)) return;
+    if (!isRelayMeetResult(result) && !isHistoricalMeetResult(result) && !isUnlinkedNamedMeetResult(result)) return;
     if (result.recordId && matchedRecordIds.has(result.recordId)) return;
     rows.push(result);
   });
@@ -1580,6 +1580,13 @@ function isHistoricalMeetResult(result) {
     /Athletic\.net|historical/i.test(clean(result && result.coachRaceNotes));
 }
 
+function isUnlinkedNamedMeetResult(result) {
+  return !clean(result && result.contactId) &&
+    clean(result && result.athleteName) &&
+    clean(result && result.event) &&
+    clean(result && result.resultDisplay);
+}
+
 function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords }) {
   const bests = bestRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeBest).filter((item) => item.event);
   const meets = meetRecords.filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedMeetResult(record)).map(normalizeMeetResult).filter((item) => item.event || item.resultDisplay).sort(sortLatestMeetDesc);
@@ -1712,6 +1719,7 @@ function normalizeMeetResult(record) {
   return {
     recordId: record && record.id ? record.id : "",
     sourceRecordId: prop(props, "source_record_id"),
+    contactId: prop(props, "athlete_contact"),
     athleteName: prop(props, "athlete_name_snapshot"),
     athleteGender: noteValue(coachRaceNotes, "Gender"),
     grade: noteValue(coachRaceNotes, "Historical Grade") || noteValue(coachRaceNotes, "Grade"),
