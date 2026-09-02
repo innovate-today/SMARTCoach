@@ -391,6 +391,14 @@ tr:last-child td{border-bottom:0}
             <option value="both">PB and SB</option>
           </select>
         </div>
+        <div class="field">
+          <label for="historyEditGender">Gender</label>
+          <select id="historyEditGender">
+            <option value="">Keep current</option>
+            <option>Boys</option>
+            <option>Girls</option>
+          </select>
+        </div>
         <div class="field full">
           <label for="historyEditReason">Reason</label>
           <input id="historyEditReason" type="text" placeholder="Required, e.g. Correct imported result">
@@ -597,6 +605,7 @@ var els={
   historyEditEvent:document.getElementById('historyEditEvent'),
   historyEditResult:document.getElementById('historyEditResult'),
   historyEditBest:document.getElementById('historyEditBest'),
+  historyEditGender:document.getElementById('historyEditGender'),
   historyEditReason:document.getElementById('historyEditReason'),
   historyEditNotes:document.getElementById('historyEditNotes'),
   historyEditStatus:document.getElementById('historyEditStatus'),
@@ -1060,6 +1069,12 @@ function historyNotesFromRow(row){
     return !/^(Result Type|Historical Grade|Class Year|Gender|Place|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
   }).join('\n').trim();
 }
+function historyEditGenderValue(value){
+  var key=genderKey(value);
+  if(key==='boys')return 'Boys';
+  if(key==='girls')return 'Girls';
+  return '';
+}
 function historyPreviousPayload(row){
   return {
     meetName:row.meetName||'',
@@ -1072,6 +1087,7 @@ function historyPreviousPayload(row){
     sport:row.sport||'',
     season:row.season||'',
     seasonYear:row.seasonYear||'',
+    athleteGender:historyEditGenderValue(row.athleteGender),
     notes:historyNotesFromRow(row)
   };
 }
@@ -1322,6 +1338,7 @@ function openHistoryEdit(rowKeyValue){
   els.historyEditEvent.value=historyEditRow.event||'';
   els.historyEditResult.value=historyEditRow.resultDisplay||'';
   els.historyEditBest.value=historyEditRow.isPr&&historyEditRow.isSeasonBest?'both':historyEditRow.isPr?'pb':historyEditRow.isSeasonBest?'sb':'none';
+  els.historyEditGender.value=historyEditGenderValue(historyEditRow.athleteGender);
   els.historyEditReason.value='';
   els.historyEditNotes.value=historyNotesFromRow(historyEditRow);
   setHistoryEditStatus('Corrections are saved with an audit note.','');
@@ -1363,6 +1380,7 @@ function saveHistoryEdit(){
         seasonYear:els.historyEditSeasonYear.value,
         event:els.historyEditEvent.value,
         resultDisplay:els.historyEditResult.value,
+        athleteGender:els.historyEditGender.value,
         isPr:best==='pb'||best==='both'?'yes':'no',
         isSeasonBest:best==='sb'||best==='both'?'yes':'no',
         notes:els.historyEditNotes.value,
@@ -1382,6 +1400,7 @@ function saveHistoryEdit(){
       seasonYear:Number(els.historyEditSeasonYear.value)||'',
       event:els.historyEditEvent.value,
       resultDisplay:els.historyEditResult.value,
+      athleteGender:els.historyEditGender.value||historyEditRow.athleteGender||'',
       isPr:best==='pb'||best==='both',
       isSeasonBest:best==='sb'||best==='both',
       notes:els.historyEditNotes.value

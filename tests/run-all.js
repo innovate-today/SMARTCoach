@@ -4102,14 +4102,17 @@ function checkMeetHistoryImportedResultCorrections() {
   [
     'id="historyEditModal"',
     'id="historyVoidModal"',
+    'id="historyEditGender"',
     "<th>Actions</th>",
     "function openHistoryEdit(rowKeyValue)",
+    "function historyEditGenderValue(value)",
     "function saveHistoryEdit()",
     "function openHistoryVoid(rowKeyValue)",
     "function saveHistoryVoid()",
     "fetch('/api/smart-trak/correction'",
     "sport:els.historyEditSport.value",
     "seasonYear:els.historyEditSeasonYear.value",
+    "athleteGender:els.historyEditGender.value",
     "resultType:'historical import'",
     "historyActionButtons(row)",
   ].forEach((text) => {
