@@ -7,6 +7,8 @@ const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS = 4500;
 const DASHBOARD_RECENT_MEET_LIMIT = 100;
+const CONTACT_LIST_PAGE_LIMIT = 100;
+const CONTACT_LIST_MAX_PAGES = 20;
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { loadTrainingMirror, loadAttendanceRecords } = require("../../lib/account-registry");
@@ -747,16 +749,36 @@ async function listActiveAthletes({ token, locationId }) {
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachAthleteId }),
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.gender }),
   ]);
-  const result = await ghlFetch({
-    token,
-    path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=100`,
-    method: "GET",
-  });
+  const contacts = await listLocationContacts({ token, locationId });
 
-  return (result.contacts || [])
+  return uniqueContacts(contacts)
     .map((contact) => normalizeContact(contact, { activeFieldIds, athleteIdFieldIds, genderFieldIds }))
     .filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function listLocationContacts({ token, locationId }) {
+  const contacts = [];
+  for (let page = 1; page <= CONTACT_LIST_MAX_PAGES; page += 1) {
+    let result;
+    try {
+      result = await ghlFetch({
+        token,
+        path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=${CONTACT_LIST_PAGE_LIMIT}&page=${page}`,
+        method: "GET",
+      });
+    } catch (error) {
+      if (page === 1) throw error;
+      break;
+    }
+    const batch = contactsFromResult(result);
+    if (!batch.length) break;
+    const beforeCount = uniqueContacts(contacts).length;
+    contacts.push(...batch);
+    if (batch.length < CONTACT_LIST_PAGE_LIMIT) break;
+    if (uniqueContacts(contacts).length === beforeCount) break;
+  }
+  return uniqueContacts(contacts);
 }
 
 async function listContactFieldIds({ token, locationId, names }) {
@@ -1999,6 +2021,26 @@ function recordsFromResult(result) {
     ...(Array.isArray(result && result.data && result.data.records) ? result.data.records : []),
     ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
   ];
+}
+
+function contactsFromResult(result) {
+  return [
+    ...(Array.isArray(result && result.contacts) ? result.contacts : []),
+    ...(Array.isArray(result && result.items) ? result.items : []),
+    ...(Array.isArray(result && result.data && result.data.contacts) ? result.data.contacts : []),
+    ...(Array.isArray(result && result.data && result.data.items) ? result.data.items : []),
+    ...(Array.isArray(result && result.contact) ? result.contact : []),
+  ];
+}
+
+function uniqueContacts(contacts) {
+  const seen = {};
+  return (Array.isArray(contacts) ? contacts : []).filter((contact) => {
+    const key = clean(contact && contact.id) || contactName(contact).toLowerCase();
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 function customFieldsFromResult(result) {
