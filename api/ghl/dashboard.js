@@ -941,6 +941,7 @@ function buildRecentTrainingSyncs({ athletes, performanceRecords }) {
 function buildRecentMeetResults({ athletes, meetRecords }) {
   const rows = [];
   const matchedRecordIds = new Set();
+  const knownAthletes = meetResultKnownAthletes({ athletes, meetRecords });
   athletes.forEach((athlete) => {
     meetRecords.forEach((record) => {
       if (!recordMatchesAthlete(record, athlete)) return;
@@ -953,6 +954,7 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
         athleteName: athlete.name,
         contactId: athlete.id,
         athleteGender: result.athleteGender || athlete.gender,
+        grade: result.grade || athlete.grade || "",
       });
     });
   });
@@ -961,9 +963,38 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
     const result = normalizeMeetResult(record);
     if (!isRelayMeetResult(result) && !isHistoricalMeetResult(result) && !isUnlinkedNamedMeetResult(result)) return;
     if (result.recordId && matchedRecordIds.has(result.recordId)) return;
-    rows.push(result);
+    const known = knownAthletes.get(xcTop20AthleteKey(result)) || {};
+    rows.push({
+      ...result,
+      athleteGender: result.athleteGender || known.gender || "",
+      grade: result.grade || known.grade || "",
+    });
   });
   return rows.sort(sortMeetSyncDesc);
+}
+
+function meetResultKnownAthletes({ athletes, meetRecords }) {
+  const map = new Map();
+  (Array.isArray(athletes) ? athletes : []).forEach((athlete) => {
+    const key = xcTop20AthleteKey({ athleteName: athlete && athlete.name });
+    if (!key) return;
+    map.set(key, {
+      gender: clean(athlete && athlete.gender),
+      grade: clean(athlete && athlete.grade),
+    });
+  });
+  (Array.isArray(meetRecords) ? meetRecords : []).forEach((record) => {
+    if (isVoidedMeetResult(record)) return;
+    const result = normalizeMeetResult(record);
+    const key = xcTop20AthleteKey(result);
+    if (!key) return;
+    const previous = map.get(key) || {};
+    map.set(key, {
+      gender: previous.gender || clean(result.athleteGender),
+      grade: previous.grade || clean(result.grade),
+    });
+  });
+  return map;
 }
 
 function dashboardRecentMeetResults(meetResults) {
