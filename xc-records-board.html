@@ -93,7 +93,8 @@ tr.active-athlete.current-year td{background:#f0f9ff}
 </main>
 <script>
 var activeList='boys5k';
-var data={lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+var DEFAULT_LIST_KEYS=['boys5k','girls5k','girls2Mile'];
+var data={listOptions:[],lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
 var els={
   updated:document.getElementById('updated'),
   status:document.getElementById('status'),
@@ -108,7 +109,17 @@ function esc(value){
   });
 }
 function listLabel(key){
-  return {boys5k:'Boys 5K',girls5k:'Girls 5K',girls2Mile:'Girls 2 Mile'}[key]||'Boys 5K';
+  var option=(data.listOptions||[]).find(function(item){return item&&item.key===key;});
+  return option&&option.label||{boys5k:'Boys 5K',girls5k:'Girls 5K',girls2Mile:'Girls 2 Mile'}[key]||'Boys 5K';
+}
+function visibleListKeys(){
+  var lists=data&&data.lists||{};
+  var keys=DEFAULT_LIST_KEYS.slice();
+  (data.listOptions||[]).forEach(function(item){
+    var key=item&&item.key;
+    if(key&&keys.indexOf(key)<0&&(lists[key]||[]).length)keys.push(key);
+  });
+  return keys;
 }
 function paramsFromShareKey(){
   var params=new URLSearchParams(window.location.search);
@@ -125,9 +136,14 @@ function paramsFromShareKey(){
 }
 function render(){
   var lists=data&&data.lists||{};
+  var visible=visibleListKeys();
+  if(visible.indexOf(activeList)<0)activeList=visible[0]||'boys5k';
   var rows=lists[activeList]||[];
   var totals=data&&data.totals||{};
-  els.summary.innerHTML=['boys5k','girls5k','girls2Mile'].map(function(key){
+  document.querySelector('.tabs').innerHTML=visible.map(function(key){
+    return '<button class="tab'+(key===activeList?' active':'')+'" data-list="'+esc(key)+'" type="button">'+esc(listLabel(key))+'</button>';
+  }).join('');
+  els.summary.innerHTML=visible.map(function(key){
     return '<span class="pill">'+esc(listLabel(key))+': '+esc(totals[key]||0)+'</span>';
   }).join('');
   document.querySelectorAll('.tab[data-list]').forEach(function(button){
@@ -172,11 +188,11 @@ function load(){
     els.updated.textContent='Not available';
   });
 }
-document.querySelectorAll('.tab[data-list]').forEach(function(button){
-  button.addEventListener('click',function(){
-    activeList=button.getAttribute('data-list')||'boys5k';
-    render();
-  });
+document.querySelector('.tabs').addEventListener('click',function(event){
+  var button=event.target.closest&&event.target.closest('[data-list]');
+  if(!button)return;
+  activeList=button.getAttribute('data-list')||'boys5k';
+  render();
 });
 load();
 </script>

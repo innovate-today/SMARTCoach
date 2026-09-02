@@ -78,6 +78,13 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .xctabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .xctab{background:#eef2f7;color:#172033;border:1px solid var(--line)}
 .xctab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.xctab.custom{display:inline-flex;align-items:center;gap:6px}
+.xctab .remove-tab{border:0;background:rgba(255,255,255,.18);color:inherit;border-radius:999px;padding:0 5px;font-size:13px;line-height:1.25}
+.xctab:not(.active) .remove-tab{background:#dbe3ef;color:#475569}
+.xclistbuilder{display:grid;grid-template-columns:minmax(180px,260px) auto minmax(160px,1fr);gap:8px;align-items:end;margin-bottom:10px}
+.xclistbuilder label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+.xclistbuilder select{height:36px;padding:7px 9px}
+.xclistbuilder .hint{color:var(--muted);font-size:12px;line-height:1.35;align-self:center}
 .xcsummary{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:13px;font-weight:800}
 .xcimport{border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:12px;display:grid;gap:10px}
 .xcimport label{display:grid;gap:5px;color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
@@ -145,6 +152,7 @@ tr:last-child td{border-bottom:0}
   .bar{grid-template-columns:1fr}
   .bulkhelp,.bulkfile{grid-template-columns:1fr}
   .xcboard{grid-template-columns:1fr}
+  .xclistbuilder{grid-template-columns:1fr}
   .recordform{grid-template-columns:1fr}
   .recordform .wide{grid-column:auto}
   .status{text-align:left}
@@ -194,10 +202,17 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="panelbody xcboard">
       <div>
-        <div class="xctabs">
+        <div id="xcTabs" class="xctabs">
           <button class="xctab active" data-xc-list="boys5k" type="button">Boys 5K</button>
           <button class="xctab" data-xc-list="girls5k" type="button">Girls 5K</button>
           <button class="xctab" data-xc-list="girls2Mile" type="button">Girls 2 Mile</button>
+        </div>
+        <div class="xclistbuilder">
+          <label>Show another XC list
+            <select id="xcAddListSelect"></select>
+          </label>
+          <button id="xcAddListBtn" class="ghost" type="button">Add List</button>
+          <div class="hint">Choose extra XC distances to track. Each list ranks saved cross country results and keeps one fastest mark per athlete.</div>
         </div>
         <div id="xcSummary" class="xcsummary"></div>
         <div class="tablewrap xctablewrap">
@@ -542,8 +557,20 @@ tr:last-child td{border-bottom:0}
 
 <script>
 var records=[];
-var xcTop20={lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{boys5k:0,girls5k:0,girls2Mile:0}};
+var XC_DEFAULT_LIST_KEYS=['boys5k','girls5k','girls2Mile'];
+var XC_FALLBACK_LIST_OPTIONS=[
+  {key:'boys5k',label:'Boys 5K',gender:'Boys',event:'5K',defaultList:true},
+  {key:'girls5k',label:'Girls 5K',gender:'Girls',event:'5K',defaultList:true},
+  {key:'girls2Mile',label:'Girls 2 Mile',gender:'Girls',event:'2 Mile',defaultList:true},
+  {key:'boys2Mile',label:'Boys 2 Mile',gender:'Boys',event:'2 Mile'},
+  {key:'boys3k',label:'Boys 3K',gender:'Boys',event:'3K'},
+  {key:'girls3k',label:'Girls 3K',gender:'Girls',event:'3K'},
+  {key:'boys4k',label:'Boys 4K',gender:'Boys',event:'4K'},
+  {key:'girls4k',label:'Girls 4K',gender:'Girls',event:'4K'}
+];
+var xcTop20={listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{boys5k:0,girls5k:0,girls2Mile:0}};
 var xcActiveList='boys5k';
+var xcCustomListKeys=[];
 var xcImportRows=[];
 var xcEditingRow=null;
 var xcPendingEdits={};
@@ -579,9 +606,12 @@ var els={
   schoolRecordsView:document.getElementById('schoolRecordsView'),
   xcTop20Panel:document.getElementById('xcTop20Panel'),
   xcStatus:document.getElementById('xcStatus'),
+  xcTabs:document.getElementById('xcTabs'),
   xcSummary:document.getElementById('xcSummary'),
   xcRows:document.getElementById('xcRows'),
   xcEmpty:document.getElementById('xcEmpty'),
+  xcAddListSelect:document.getElementById('xcAddListSelect'),
+  xcAddListBtn:document.getElementById('xcAddListBtn'),
   xcImportList:document.getElementById('xcImportList'),
   xcImportMeet:document.getElementById('xcImportMeet'),
   xcImportDate:document.getElementById('xcImportDate'),
@@ -942,25 +972,106 @@ function setRecordView(view){
   els.xcTop20Panel.hidden=!xc;
   if(xc)loadXcTop20();
 }
+function xcCustomListsStorageKey(){return 'sc_xc_top20_custom_lists_'+accountKey();}
+function loadXcCustomListKeys(){
+  try{
+    var parsed=JSON.parse(localStorage.getItem(xcCustomListsStorageKey())||'[]');
+    xcCustomListKeys=Array.isArray(parsed)?parsed.filter(function(key){return !!xcListDefinition(key)&&XC_DEFAULT_LIST_KEYS.indexOf(key)<0;}):[];
+  }catch(e){xcCustomListKeys=[];}
+}
+function saveXcCustomListKeys(){
+  try{localStorage.setItem(xcCustomListsStorageKey(),JSON.stringify(xcCustomListKeys));}catch(e){}
+}
+function xcListOptions(){
+  var apiOptions=xcTop20&&Array.isArray(xcTop20.listOptions)?xcTop20.listOptions:[];
+  var options=apiOptions.length?apiOptions:XC_FALLBACK_LIST_OPTIONS;
+  return options.map(function(item){
+    var key=String(item&&item.key||'');
+    var fallback=XC_FALLBACK_LIST_OPTIONS.find(function(def){return def.key===key;})||{};
+    return {
+      key:key,
+      label:String(item&&item.label||fallback.label||key),
+      gender:item&&item.gender||fallback.gender||'',
+      event:item&&item.event||fallback.event||'',
+      defaultList:item&&item.defaultList===true||fallback.defaultList===true
+    };
+  }).filter(function(item){return !!item.key;});
+}
+function xcListDefinition(key){
+  return xcListOptions().find(function(item){return item.key===key;})||XC_FALLBACK_LIST_OPTIONS.find(function(item){return item.key===key;})||null;
+}
+function xcVisibleListKeys(){
+  var keys=XC_DEFAULT_LIST_KEYS.concat(xcCustomListKeys);
+  var seen={};
+  return keys.filter(function(key){
+    if(seen[key]||!xcListDefinition(key))return false;
+    seen[key]=true;
+    return true;
+  });
+}
 function xcListLabel(key){
-  return {boys5k:'Boys 5K',girls5k:'Girls 5K',girls2Mile:'Girls 2 Mile'}[key]||'Boys 5K';
+  var definition=xcListDefinition(key);
+  return definition&&definition.label||'Boys 5K';
 }
 function xcListGender(key){
-  return key==='boys5k'?'Boys':'Girls';
+  var definition=xcListDefinition(key);
+  if(!definition)return key.indexOf('boys')===0?'Boys':'Girls';
+  return /^boy$/i.test(definition.gender)?'Boys':/^girl$/i.test(definition.gender)?'Girls':definition.gender||'Girls';
 }
 function xcListEvent(key){
-  return key==='girls2Mile'?'2 Mile':'5K';
+  var definition=xcListDefinition(key);
+  return definition&&definition.event||'5K';
+}
+function renderXcListChoices(){
+  var totals=xcTop20&&xcTop20.totals||{};
+  var importValue=els.xcImportList.value||xcActiveList;
+  var visible=xcVisibleListKeys();
+  if(visible.indexOf(xcActiveList)<0)xcActiveList=visible[0]||'boys5k';
+  els.xcTabs.innerHTML=visible.map(function(key){
+    var custom=XC_DEFAULT_LIST_KEYS.indexOf(key)<0;
+    var count=totals[key]||0;
+    return '<button class="xctab'+(custom?' custom':'')+(key===xcActiveList?' active':'')+'" data-xc-list="'+esc(key)+'" type="button">'+
+      esc(xcListLabel(key))+
+      (custom?'<span class="remove-tab" data-xc-remove-list="'+esc(key)+'" title="Remove list">x</span>':'')+
+      ' <span class="tabcount">'+esc(count)+'</span>'+
+    '</button>';
+  }).join('');
+  var addable=xcListOptions().filter(function(item){return visible.indexOf(item.key)<0;});
+  els.xcAddListSelect.innerHTML=addable.map(function(item){
+    return '<option value="'+esc(item.key)+'">'+esc(item.label)+'</option>';
+  }).join('');
+  els.xcAddListBtn.disabled=!addable.length;
+  if(!addable.length)els.xcAddListSelect.innerHTML='<option value="">All supported lists are shown</option>';
+  els.xcImportList.innerHTML=xcListOptions().map(function(item){
+    return '<option value="'+esc(item.key)+'">'+esc(item.label)+'</option>';
+  }).join('');
+  els.xcImportList.value=xcListDefinition(importValue)?importValue:xcActiveList;
+}
+function addXcCustomList(){
+  var key=els.xcAddListSelect.value;
+  if(!key||!xcListDefinition(key))return;
+  if(XC_DEFAULT_LIST_KEYS.indexOf(key)<0&&xcCustomListKeys.indexOf(key)<0){
+    xcCustomListKeys.push(key);
+    saveXcCustomListKeys();
+  }
+  xcActiveList=key;
+  renderXcTop20();
+}
+function removeXcCustomList(key){
+  if(XC_DEFAULT_LIST_KEYS.indexOf(key)>=0)return;
+  xcCustomListKeys=xcCustomListKeys.filter(function(item){return item!==key;});
+  saveXcCustomListKeys();
+  if(xcActiveList===key)xcActiveList='boys5k';
+  renderXcTop20();
 }
 function renderXcTop20(){
   var lists=xcTop20&&xcTop20.lists||{};
-  var rows=lists[xcActiveList]||[];
   var totals=xcTop20&&xcTop20.totals||{};
-  els.xcSummary.innerHTML=['boys5k','girls5k','girls2Mile'].map(function(key){
+  renderXcListChoices();
+  var rows=lists[xcActiveList]||[];
+  els.xcSummary.innerHTML=xcVisibleListKeys().map(function(key){
     return '<span class="pill">'+esc(xcListLabel(key))+': '+esc(totals[key]||0)+'</span>';
   }).join('');
-  document.querySelectorAll('.xctab[data-xc-list]').forEach(function(button){
-    button.classList.toggle('active',button.getAttribute('data-xc-list')===xcActiveList);
-  });
   els.xcRows.innerHTML=rows.map(function(row){
     var key=encodeURIComponent(xcRowKey(row));
     var classes=[];
@@ -1277,11 +1388,12 @@ function loadXcTop20(){
   }).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
     if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 failed to load.');
-    xcTop20=result.data&&result.data.xcTop20||{lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+    xcTop20=result.data&&result.data.xcTop20||{listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+    if(!Array.isArray(xcTop20.listOptions)||!xcTop20.listOptions.length)xcTop20.listOptions=XC_FALLBACK_LIST_OPTIONS;
     applyXcPendingEdits();
     renderXcTop20();
   }).catch(function(error){
-    xcTop20={lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+    xcTop20={listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
     renderXcTop20();
     els.xcStatus.textContent=error.message||'XC Top 20 failed to load.';
   });
@@ -1302,9 +1414,13 @@ function xcNormalizeEvent(value,defaultList){
   var gender=xcListGender(defaultList);
   if(gender==='Boys'&&/\b(cross country|cc)\b/.test(key))return '5K';
   if(/\b(5\s*k|5000\s*m?)\b/.test(key))return '5K';
+  if(/\b(4\s*k|4000\s*m?)\b/.test(key))return '4K';
+  if(/\b(3\s*k|3000\s*m?)\b/.test(key))return '3K';
   if(/\b(3200\s*(m|meter|meters)?|2\s*(mi|mile|miles)|two\s+miles?)\b/.test(key))return '2 Mile';
   if(gender==='Girls'&&/\b(cross country|cc)\b/.test(key))return '2 Mile';
   if(['5k','5_k','5000','5000m','5000_m'].indexOf(normalized)>=0||/^5\s*k$/.test(key))return '5K';
+  if(['4k','4_k','4000','4000m','4000_m'].indexOf(normalized)>=0||/^4\s*k$/.test(key))return '4K';
+  if(['3k','3_k','3000','3000m','3000_m'].indexOf(normalized)>=0||/^3\s*k$/.test(key))return '3K';
   if(['2mi','2_mi','2mile','2_mile','2miles','2_miles','two_mile','two_miles','3200','3200m','3200_m'].indexOf(normalized)>=0||/^2\s*(mi|mile|miles)$/.test(key)||/^two\s+miles?$/.test(key)||/^3200\s*m?$/.test(key))return '2 Mile';
   return xcListEvent(defaultList);
 }
@@ -1383,9 +1499,10 @@ function previewXcImport(){
 function xcListKeyForImportRow(row){
   var gender=xcNormalizeGender(row&&row.athleteGender,xcActiveList);
   var event=xcNormalizeEvent(row&&row.event,xcActiveList);
-  if(gender==='Boys'&&event==='5K')return 'boys5k';
-  if(gender==='Girls'&&event==='5K')return 'girls5k';
-  if(gender==='Girls'&&event==='2 Mile')return 'girls2Mile';
+  var match=xcListOptions().find(function(item){
+    return xcListGender(item.key)===gender&&xcListEvent(item.key)===event;
+  });
+  if(match)return match.key;
   return '';
 }
 function xcSameAthleteEvent(a,b){
@@ -2225,20 +2342,30 @@ function init(){
   setBulkStatus('Hidden until needed.','');
   document.body.classList.toggle('embedded',embeddedMode());
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
+  loadXcCustomListKeys();
   fillStaticSelects();
+  renderXcListChoices();
   clearSingleRecordForm();
   els.dashboardLink.href=pageUrl('/dashboard.html');
   els.meetHistoryLink.href=pageUrl('/meet-history.html');
   els.refreshBtn.addEventListener('click',refreshRecordsPage);
   els.schoolRecordsTab.addEventListener('click',function(){setRecordView('school');});
   els.xcTop20Tab.addEventListener('click',function(){setRecordView('xc');});
-  document.querySelectorAll('.xctab[data-xc-list]').forEach(function(button){
-    button.addEventListener('click',function(){
-      xcActiveList=button.getAttribute('data-xc-list')||'boys5k';
-      els.xcImportList.value=xcActiveList;
-      renderXcTop20();
-    });
+  els.xcTabs.addEventListener('click',function(event){
+    var remove=event.target.closest&&event.target.closest('[data-xc-remove-list]');
+    if(remove){
+      event.preventDefault();
+      event.stopPropagation();
+      removeXcCustomList(remove.getAttribute('data-xc-remove-list')||'');
+      return;
+    }
+    var button=event.target.closest&&event.target.closest('[data-xc-list]');
+    if(!button)return;
+    xcActiveList=button.getAttribute('data-xc-list')||'boys5k';
+    els.xcImportList.value=xcActiveList;
+    renderXcTop20();
   });
+  els.xcAddListBtn.addEventListener('click',addXcCustomList);
   els.xcImportList.addEventListener('change',function(){
     xcActiveList=els.xcImportList.value||'boys5k';
     renderXcTop20();

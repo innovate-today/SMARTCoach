@@ -1025,21 +1025,35 @@ function buildXcTop20(rows, athletes = []) {
   const currentYear = new Date().getFullYear();
   const activeAthleteKeys = xcTop20ActiveAthleteKeys(athletes);
   const context = { currentYear, activeAthleteKeys };
-  const lists = {
-    boys5k: xcTop20List(rows, "boy", "5K", context),
-    girls5k: xcTop20List(rows, "girl", "5K", context),
-    girls2Mile: xcTop20List(rows, "girl", "2 Mile", context),
-  };
+  const listOptions = xcTop20ListDefinitions();
+  const lists = {};
+  listOptions.forEach((definition) => {
+    lists[definition.key] = xcTop20List(rows, definition.gender, definition.event, context);
+  });
+  const totals = {};
+  Object.keys(lists).forEach((key) => {
+    totals[key] = lists[key].length;
+  });
   return {
     generatedAt: new Date().toISOString(),
     currentYear,
+    listOptions,
     lists,
-    totals: {
-      boys5k: lists.boys5k.length,
-      girls5k: lists.girls5k.length,
-      girls2Mile: lists.girls2Mile.length,
-    },
+    totals,
   };
+}
+
+function xcTop20ListDefinitions() {
+  return [
+    { key: "boys5k", label: "Boys 5K", gender: "boy", event: "5K", defaultList: true },
+    { key: "girls5k", label: "Girls 5K", gender: "girl", event: "5K", defaultList: true },
+    { key: "girls2Mile", label: "Girls 2 Mile", gender: "girl", event: "2 Mile", defaultList: true },
+    { key: "boys2Mile", label: "Boys 2 Mile", gender: "boy", event: "2 Mile" },
+    { key: "boys3k", label: "Boys 3K", gender: "boy", event: "3K" },
+    { key: "girls3k", label: "Girls 3K", gender: "girl", event: "3K" },
+    { key: "boys4k", label: "Boys 4K", gender: "boy", event: "4K" },
+    { key: "girls4k", label: "Girls 4K", gender: "girl", event: "4K" },
+  ];
 }
 
 function xcTop20List(rows, gender, eventBucket, context = {}) {
@@ -1122,11 +1136,17 @@ function xcTop20Event(value, gender = "") {
   const key = optionValue(text);
   if (gender === "boy" && /\b(cross country|cc)\b/.test(text)) return "5K";
   if (/\b(5\s*k|5000\s*m?)\b/.test(text)) return "5K";
+  if (/\b(4\s*k|4000\s*m?)\b/.test(text)) return "4K";
+  if (/\b(3\s*k|3000\s*m?)\b/.test(text)) return "3K";
   if (/\b(3200\s*(m|meter|meters)?|2\s*(mi|mile|miles)|two\s+miles?)\b/.test(text)) return "2 Mile";
   if (gender === "girl" && /\b(cross country|cc)\b/.test(text)) return "2 Mile";
   if (["5k", "5_k", "5000", "5000m", "5000_m"].includes(key)) return "5K";
+  if (["4k", "4_k", "4000", "4000m", "4000_m"].includes(key)) return "4K";
+  if (["3k", "3_k", "3000", "3000m", "3000_m"].includes(key)) return "3K";
   if (["2mi", "2_mi", "2mile", "2_mile", "2miles", "2_miles", "two_mile", "two_miles", "3200", "3200m", "3200_m"].includes(key)) return "2 Mile";
   if (/^5\s*k$/.test(text)) return "5K";
+  if (/^4\s*k$/.test(text)) return "4K";
+  if (/^3\s*k$/.test(text)) return "3K";
   if (/^2\s*(mi|mile|miles)$/.test(text) || /^two\s+miles?$/.test(text) || /^3200\s*m?$/.test(text)) return "2 Mile";
   return "";
 }

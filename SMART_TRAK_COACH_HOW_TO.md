@@ -739,11 +739,13 @@ If an import uses the wrong sport, date, or other shared fields across many rows
 
 The Track Records table is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
 
-The **XC Top 20** tab shows the fastest saved cross country meet results for:
+The **XC Top 20** tab shows the fastest saved cross country meet results. The default lists are:
 
 - Boys 5K
 - Girls 5K
 - Girls 2 Mile
+
+Use **Show another XC list** when your team also wants to track another cross country distance, such as Boys 2 Mile, Boys 3K, Girls 3K, Boys 4K, or Girls 4K. Click **Add List** to show that list as a tab. Extra list choices stay on that device. The default three lists always remain available.
 
 The XC Top 20 list updates from saved Meet History results when Records reloads. New app syncs, Log Race Result entries, Meet History corrections, and XC imports can all update the list. Each athlete appears once per list, using that athlete's fastest saved time for that distance. For cross country, 3200m and 2 Mile marks are shown together as **2 Mile**.
 
@@ -757,7 +759,7 @@ To import XC Top 20 marks:
 
 1. Open **Records**.
 2. Click **XC Top 20**.
-3. Choose the default list: Boys 5K, Girls 5K, or Girls 2 Mile. SMART Trak uses that list for gender and distance when the pasted rows do not include those columns.
+3. Choose the default list. SMART Trak uses that list for gender and distance when the pasted rows do not include those columns.
 4. Enter the meet or course and year if those details apply to every row. Leave them blank if they are not known.
 5. Paste rows into the Copy/Paste box or upload a CSV file. Pasted rows can come from a spreadsheet, a CSV list, or a copied table that uses `|` separators. Divider rows such as `---` are ignored.
 6. Use columns such as Athlete, Time, Meet, Year, Event, Gender, Grade, and Notes. Athlete and Time are required. Grade can be `9`, `10`, `11`, or `12`. Meet, Year, Grade, and the other details can be blank. If a pasted row includes an exact date, SMART Trak uses only the year for the XC Top 20 import.
