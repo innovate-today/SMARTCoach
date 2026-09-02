@@ -5,6 +5,9 @@ const SEASON_RECORD_SCHEMA_KEY = "custom_objects.season_records";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
+const ATHLETE_FIELD_ALIASES = {
+  gender: ["gender", "athlete gender", "student gender", "runner gender", "sex", "division", "gender program", "program gender", "boy girl", "boys girls", "boy/girl", "boys/girls", "girls/boys", "girl/boy", "b/g", "mf", "m/f", "male female", "male/female", "female male", "female/male", "gender identity"],
+};
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 
@@ -1172,7 +1175,7 @@ function contactName(contact) {
 function contactGender(contact) {
   return clean(
     contact && (contact.gender || contact.sex || contact.genderIdentity)
-  ) || existingCustomFieldValueByName(contact, ["gender", "sex", "division"]);
+  ) || existingCustomFieldValueByName(contact, ATHLETE_FIELD_ALIASES.gender);
 }
 
 function existingCustomFieldValueByName(contact, names) {

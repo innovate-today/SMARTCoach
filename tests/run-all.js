@@ -424,8 +424,11 @@ function checkSmartTrakAthleteCountsIgnoreGhlContacts() {
   });
   [
     "const ATHLETE_FIELD_ALIASES = {",
+    "\"athlete gender\", \"student gender\", \"runner gender\"",
     "listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachActive })",
+    "listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.gender })",
     "existingCustomFieldValueByIdsOrNames(contact, [SMARTCOACH_ACTIVE_FIELD_ID].concat(options.activeFieldIds || []), ATHLETE_FIELD_ALIASES.smartcoachActive)",
+    "existingCustomFieldValueByName(contact, ATHLETE_FIELD_ALIASES.gender)",
     "const inferredSmartCoachAthlete = hasAthleteTag;",
     "const smartcoachActive = !excludedSystemContact && inferredSmartCoachAthlete &&",
     "smartcoachRosterMember: !excludedSystemContact && inferredSmartCoachAthlete",
@@ -4162,6 +4165,8 @@ function checkMeetHistoryQuickEntry() {
     "SMART Trak Meet Results setup is missing for this account. Contact support before saving meet results.",
     "athleteGender: clean(payload.athleteGender || payload.gender)",
     "meetResult.athleteGender = meetResult.athleteGender || contactGender(contact);",
+    "\"athlete gender\", \"student gender\", \"runner gender\"",
+    "existingCustomFieldValueByName(contact, ATHLETE_FIELD_ALIASES.gender)",
     "function contactGender(contact)",
     "meetResult.athleteGender ? `Gender: ${meetResult.athleteGender}` : \"\"",
     "athleteGender: meetResult.athleteGender",

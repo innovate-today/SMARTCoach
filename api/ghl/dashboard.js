@@ -70,7 +70,7 @@ const FIELD_LABELS = {
 const ATHLETE_FIELD_ALIASES = {
   smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
   smartcoachAthleteId: ["smartcoach athlete id", "smartcoach_athlete_id", "athlete id", "smartcoach id"],
-  gender: ["gender", "sex", "division"],
+  gender: ["gender", "athlete gender", "student gender", "runner gender", "sex", "division", "gender program", "program gender", "boy girl", "boys girls", "boy/girl", "boys/girls", "girls/boys", "girl/boy", "b/g", "mf", "m/f", "male female", "male/female", "female male", "female/male", "gender identity"],
 };
 
 module.exports = async function handler(req, res) {
@@ -1603,7 +1603,7 @@ function contactGender(contact, genderFieldIds = []) {
   const fieldValue = genderFieldIds.map((fieldId) => existingCustomFieldValue(contact, fieldId)).find(Boolean);
   return clean(
     contact && (contact.gender || contact.sex || contact.genderIdentity)
-  ) || fieldValue || existingCustomFieldValueByName(contact, ["gender", "sex", "division"]);
+  ) || fieldValue || existingCustomFieldValueByName(contact, ATHLETE_FIELD_ALIASES.gender);
 }
 
 function normalizeBest(record) {
