@@ -65,6 +65,7 @@ module.exports = async function handler(req, res) {
         success: true,
         athlete: meetResult.athleteName,
         contactId: "",
+        athleteGender: meetResult.athleteGender,
         recordId: record.id || (record.record && record.record.id) || null,
         sourceRecordId: properties.source_record_id,
         relay: true,
@@ -75,6 +76,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     const contact = await findOrCreateContact({ token, locationId, meetResult });
+    meetResult.athleteGender = meetResult.athleteGender || contactGender(contact);
     if (meetResult.resultType === "field") {
       const existingFieldResults = await findMeetResultRecordsForAthleteEvent({
         token,
@@ -101,6 +103,7 @@ module.exports = async function handler(req, res) {
         success: true,
         athlete: meetResult.athleteName,
         contactId: contact.id,
+        athleteGender: meetResult.athleteGender,
         recordId: record.id || (record.record && record.record.id) || null,
         sourceRecordId: properties.source_record_id,
         field: true,
@@ -162,6 +165,7 @@ module.exports = async function handler(req, res) {
       success: true,
       athlete: meetResult.athleteName,
       contactId: contact.id,
+      athleteGender: meetResult.athleteGender,
       recordId: meetResultRecordId,
       sourceRecordId: properties.source_record_id,
       seasonRecord,
@@ -200,6 +204,7 @@ function normalizeMeetResult(payload) {
 
   return {
     athleteName,
+    athleteGender: clean(payload.athleteGender || payload.gender),
     contactId: clean(payload.contactId),
     smartcoachAthleteId: clean(payload.smartcoachAthleteId),
     meetName: clean(payload.meetName),
@@ -342,12 +347,18 @@ function meetResultNotes(meetResult) {
   if (meetResult.resultType === "field") {
     return [
       "Result Type: Field",
+      meetResult.athleteGender ? `Gender: ${meetResult.athleteGender}` : "",
       meetResult.fieldAttempts ? `Field Attempts: ${singleLine(meetResult.fieldAttempts)}` : "",
       meetResult.fieldVideo ? `Video: ${meetResult.fieldVideo}` : "",
       meetResult.coachRaceNotes,
     ].filter(Boolean).join("\n");
   }
-  if (meetResult.resultType !== "relay") return meetResult.coachRaceNotes;
+  if (meetResult.resultType !== "relay") {
+    return [
+      meetResult.athleteGender ? `Gender: ${meetResult.athleteGender}` : "",
+      meetResult.coachRaceNotes,
+    ].filter(Boolean).join("\n");
+  }
   return [
     "Result Type: Relay",
     `Relay Type: ${meetResult.relayType || meetResult.event}`,
@@ -1156,6 +1167,36 @@ function existingCustomFieldValue(contact, fieldId) {
 
 function contactName(contact) {
   return clean(contact.name) || `${clean(contact.firstName)} ${clean(contact.lastName)}`.trim();
+}
+
+function contactGender(contact) {
+  return clean(
+    contact && (contact.gender || contact.sex || contact.genderIdentity)
+  ) || existingCustomFieldValueByName(contact, ["gender", "sex", "division"]);
+}
+
+function existingCustomFieldValueByName(contact, names) {
+  const wanted = (Array.isArray(names) ? names : [names]).map((name) => clean(name).toLowerCase());
+  const fields = contactCustomFields(contact);
+  for (const field of fields) {
+    const labels = [field && field.name, field && field.fieldName, field && field.key, field && field.fieldKey, field && field.id]
+      .map((value) => clean(value).toLowerCase())
+      .filter(Boolean);
+    const matches = labels.some((label) => wanted.includes(label) || wanted.includes(label.split(".").pop()));
+    if (!matches) continue;
+    const value = cleanValue(field && (field.value || field.fieldValue || field.field_value));
+    if (value) return value;
+  }
+  return "";
+}
+
+function contactCustomFields(contact) {
+  if (Array.isArray(contact && contact.customFields)) return contact.customFields;
+  if (Array.isArray(contact && contact.customFieldsData)) return contact.customFieldsData;
+  if (contact && contact.customFields && typeof contact.customFields === "object") {
+    return Object.keys(contact.customFields).map((key) => ({ id: key, key, value: contact.customFields[key] }));
+  }
+  return [];
 }
 
 function optionValue(value) {

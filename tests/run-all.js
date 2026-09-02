@@ -4109,6 +4109,8 @@ function checkMeetHistoryQuickEntry() {
     "Paste columns as Athlete, Result, optional Splits, optional Notes.",
     "function saveQuickEntry()",
     "fetch('/api/smart-trak/meet-result'",
+    "athleteGender:athlete&&athlete.gender||''",
+    "athleteGender:result.data.athleteGender||result.payload.athleteGender||''",
     "function quickFriendlyError(message)",
     "function isQuickSetupError(message)",
     "if(setupError)return;",
@@ -4142,6 +4144,11 @@ function checkMeetHistoryQuickEntry() {
   [
     "function meetResultSetupErrorMessage(error)",
     "SMART Trak Meet Results setup is missing for this account. Contact support before saving meet results.",
+    "athleteGender: clean(payload.athleteGender || payload.gender)",
+    "meetResult.athleteGender = meetResult.athleteGender || contactGender(contact);",
+    "function contactGender(contact)",
+    "meetResult.athleteGender ? `Gender: ${meetResult.athleteGender}` : \"\"",
+    "athleteGender: meetResult.athleteGender",
     "setupMessage || error.message",
   ].forEach((text) => {
     if (!meetResultApi.includes(text)) throw new Error(`Meet Result setup error message missing ${text}`);

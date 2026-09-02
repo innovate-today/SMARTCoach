@@ -1164,6 +1164,7 @@ function quickPayloadForRow(row){
   return {
     resultType:'individual',
     athleteName:athlete&&athlete.name||row.athleteName,
+    athleteGender:athlete&&athlete.gender||'',
     contactId:athlete&&athlete.contactId||'',
     smartcoachAthleteId:athlete&&athlete.smartcoachAthleteId||'',
     meetName:els.quickMeetName.value,
@@ -1206,6 +1207,7 @@ function saveQuickEntry(){
         if(!result.ok)throw new Error(result.data&&result.data.error||'Save failed.');
         saved.push(Object.assign({},result.payload,{
           contactId:result.data.contactId||result.payload.contactId,
+          athleteGender:result.data.athleteGender||result.payload.athleteGender||'',
           recordId:result.data.recordId||'',
           sourceRecordId:result.data.sourceRecordId||'',
           isPr:!!(result.data.isPr||result.payload.isPr),
