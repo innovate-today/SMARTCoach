@@ -4106,8 +4106,16 @@ function checkMeetResultSplitDetails() {
     'data-history-detail="',
     "function openHistoryDetail(rowKeyValue)",
     "function parseSplitLines(text)",
+    "function splitChangeDisplay(current,previous)",
+    "function splitDetailHtml(split,index,splits)",
     "Lap / Split Times",
     "No lap or split times saved for this result.",
+    'id="exportMeetResultsBtn"',
+    "var visibleMeetResults=[];",
+    "visibleMeetResults=results.slice();",
+    "function exportSelectedMeetResults()",
+    "headers.push('Change '+i+'-'+(i+1));",
+    "downloadTextFile('smart-trak-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
   ].forEach((text) => {
     if (!history.includes(text)) throw new Error(`Meet History split details missing ${text}`);
   });

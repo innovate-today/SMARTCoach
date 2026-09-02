@@ -86,6 +86,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .paneltitle{display:flex;align-items:center;gap:6px}
 .panelhead h2{font-size:16px;margin:0}
 .panelhead span{font-size:12px;color:var(--muted)}
+.paneltools{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .info-dot{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:#fff;color:#111827;border:1px solid var(--line);font-size:12px;font-weight:900;cursor:help;line-height:1}
 .info-dot:after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 8px);transform:none;width:300px;max-width:min(72vw,300px);padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font-size:12px;font-weight:700;line-height:1.35;box-shadow:0 12px 28px rgba(15,23,42,.18);opacity:0;pointer-events:none;z-index:80}
 .info-dot:hover:after,.info-dot:focus:after{opacity:1}
@@ -149,6 +150,10 @@ tr:last-child td{border-bottom:0}
 .detaillist{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:10px;background:#fff}
 .detailitem{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
 .detailitem:last-child{border-bottom:0}
+.splitdetail{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.splitdelta{font-weight:900;color:var(--muted);white-space:nowrap}
+.splitdelta.good{color:var(--good)}
+.splitdelta.warn{color:var(--warn)}
 .section-title{font-size:15px;margin:12px 0 8px}
 .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .field{display:grid;gap:5px}
@@ -296,7 +301,10 @@ tr:last-child td{border-bottom:0}
     <section class="panel results-panel">
       <div class="panelhead">
         <h2 id="resultsTitle">Results</h2>
-        <span id="resultListCount">--</span>
+        <div class="paneltools">
+          <button id="exportMeetResultsBtn" class="secondary" type="button">Export Results</button>
+          <span id="resultListCount">--</span>
+        </div>
       </div>
       <div class="tablewrap">
         <div id="meetSummary" class="meet-summary"></div>
@@ -534,6 +542,7 @@ var quickEntryRows=[];
 var importDuplicateCount=0;
 var selectedGroupKey='all';
 var resultSort={key:'athlete',dir:'asc'};
+var visibleMeetResults=[];
 var searchRenderTimer=null;
 var filteredGroupsCache=null;
 var filteredGroupsCacheKey='';
@@ -625,6 +634,7 @@ var els={
   meetSummary:document.getElementById('meetSummary'),
   eventLeaders:document.getElementById('eventLeaders'),
   progressionPanel:document.getElementById('progressionPanel'),
+  exportMeetResultsBtn:document.getElementById('exportMeetResultsBtn'),
   resultRows:document.getElementById('resultRows'),
   resultEmpty:document.getElementById('resultEmpty')
 };
@@ -693,6 +703,14 @@ function formatDateTime(value){
   var date=new Date(value);
   if(isNaN(date.getTime()))return '';
   return date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function csvCell(value){
+  var text=String(value==null?'':value);
+  return /[",\r\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;
+}
+function dateStamp(){
+  var date=new Date();
+  return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
 }
 function parseResultMs(value){
   var text=String(value||'').trim();
@@ -955,7 +973,12 @@ function parseSplitLines(text){
       }
     }catch(e){}
   }
-  return raw.split(/\r?\n/).map(function(line,index){
+  var lines=raw.indexOf('\n')<0&&/[;,]/.test(raw)?raw.split(/[;,]+/):raw.split(/\r?\n/);
+  return lines.map(function(line,index){
+    line=String(line||'').trim();
+    if(/^\d+(?::\d{1,2}){1,2}(?:\.\d+)?$/.test(line)){
+      return {lap:index+1,label:'Lap '+(index+1),time:line};
+    }
     var match=line.match(/^\s*(?:(Lap|Rep|Rest|Recovery|Split)\s*)?(\d+)\s*:\s*(.+?)\s*$/i);
     if(match){
       var word=match[1]||'Lap';
@@ -966,6 +989,34 @@ function parseSplitLines(text){
     if(!named)return null;
     return {lap:index+1,label:named[1],name:named[1],time:named[2]};
   }).filter(Boolean);
+}
+function formatSplitDelta(ms){
+  var tenths=Math.round(ms/100);
+  var minutes=Math.floor(tenths/600);
+  var seconds=Math.floor((tenths%600)/10);
+  var decimal=tenths%10;
+  var base=minutes+':'+String(seconds).padStart(2,'0');
+  return decimal?base+'.'+decimal:base;
+}
+function splitChangeDisplay(current,previous){
+  var currentMs=parseResultMs(current);
+  var previousMs=parseResultMs(previous);
+  if(!currentMs||!previousMs)return '';
+  var delta=currentMs-previousMs;
+  if(!delta)return '0:00';
+  return (delta>0?'+':'-')+formatSplitDelta(Math.abs(delta));
+}
+function splitChangeClass(change){
+  if(String(change||'').charAt(0)==='-')return ' good';
+  if(String(change||'').charAt(0)==='+')return ' warn';
+  return '';
+}
+function splitDetailHtml(split,index,splits){
+  var previous=index?splits[index-1]:null;
+  var change=previous?splitChangeDisplay(split.time,previous.time):'';
+  return '<div class="splitdetail"><span><b>'+esc(split.label||('Lap '+split.lap))+'</b> '+esc(split.time)+'</span>'+
+    (change?'<span class="splitdelta'+splitChangeClass(change)+'">'+esc(change)+'</span>':'')+
+    '</div>';
 }
 function openHistoryDetail(rowKeyValue){
   var row=findResultRowByKey(rowKeyValue);
@@ -980,7 +1031,7 @@ function openHistoryDetail(rowKeyValue){
       detailCard('Best Status',bestLabel(row),'')+
     '</div>'+
     '<h3 class="section-title">Lap / Split Times</h3>'+
-    detailList(splits.map(function(split){return '<b>'+esc(split.label||('Lap '+split.lap))+'</b> '+esc(split.time);}), 'No lap or split times saved for this result.')+
+    detailList(splits.map(function(split,index){return splitDetailHtml(split,index,splits);}), 'No lap or split times saved for this result.')+
     (historyNotesFromRow(row)?'<h3 class="section-title">Notes</h3>'+detailList([esc(historyNotesFromRow(row))], 'No notes saved.'):'');
   els.historyDetailModal.hidden=false;
 }
@@ -2244,6 +2295,76 @@ function renderEventLeaders(results){
     return '<div class="leadercard"><b>'+esc(item.event)+(item.division?' '+esc(item.division):'')+' '+esc(item.resultDisplay)+'</b><span>'+esc(item.athleteName||'Unnamed')+'</span></div>';
   }).join('')+'</div>':'';
 }
+function exportGenderLabel(value){
+  var key=genderKey(value);
+  if(key==='girls')return 'Girls';
+  if(key==='boys')return 'Boys';
+  return String(value||'').trim();
+}
+function selectedResultsLabel(){
+  if(selectedGroupKey.indexOf('meet:')===0){
+    var meetKeyValue=selectedGroupKey.slice(5);
+    var group=allMeetGroups().find(function(item){return item.key===meetKeyValue;});
+    return group&&group.name?group.name:'selected-meet';
+  }
+  if(selectedGroupKey.indexOf('series:')===0){
+    var seriesKey=selectedGroupKey.slice(7);
+    var seriesGroup=allMeetGroups().find(function(item){return meetNameKey(item.name)===seriesKey;});
+    return seriesGroup&&seriesGroup.name?seriesGroup.name+' comparison':'meet-comparison';
+  }
+  return 'meet-history';
+}
+function safeFilePart(value){
+  return String(value||'results').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'results';
+}
+function downloadTextFile(filename,text,mimeType){
+  var blob=new Blob([text],{type:mimeType||'text/plain;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var link=document.createElement('a');
+  link.href=url;
+  link.download=filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(function(){URL.revokeObjectURL(url);},0);
+}
+function exportSelectedMeetResults(){
+  var rows=visibleMeetResults.slice();
+  if(!rows.length){
+    els.status.textContent='No meet results to export in this view.';
+    return;
+  }
+  var splitRows=rows.map(function(row){return parseSplitLines(row.splitsText);});
+  var maxSplits=splitRows.reduce(function(max,splits){return Math.max(max,splits.length);},0);
+  var headers=['Athlete','Gender','Event','Final Time','Meet','Date','Best Status'];
+  for(var i=0;i<maxSplits;i+=1){
+    headers.push('Split '+(i+1));
+    if(i>0)headers.push('Change '+i+'-'+(i+1));
+  }
+  headers.push('Notes');
+  var lines=[headers.map(csvCell).join(',')];
+  rows.forEach(function(row,rowIndex){
+    var splits=splitRows[rowIndex]||[];
+    var cells=[
+      row.athleteName||'',
+      exportGenderLabel(row.athleteGender),
+      row.event||'',
+      row.resultDisplay||'',
+      row.meetName||'',
+      formatDate(row.meetDate)||row.meetDate||'',
+      bestLabel(row)
+    ];
+    for(var i=0;i<maxSplits;i+=1){
+      var split=splits[i]||null;
+      cells.push(split&&split.time||'');
+      if(i>0)cells.push(split&&splits[i-1]?splitChangeDisplay(split.time,splits[i-1].time):'');
+    }
+    cells.push(historyNotesFromRow(row));
+    lines.push(cells.map(csvCell).join(','));
+  });
+  downloadTextFile('smart-trak-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv',lines.join('\n'),'text/csv;charset=utf-8');
+  els.status.textContent='Exported '+rows.length+' results.';
+}
 function renderProgressions(results){
   var groups={};
   results.forEach(function(row){
@@ -2298,6 +2419,7 @@ function render(){
     if(!selectedStillExists)selectedGroupKey='all';
   }
   var results=selectedResults(groups);
+  visibleMeetResults=results.slice();
   var resultAthletes={};
   var bestCount=0;
   results.forEach(function(row){
@@ -2310,6 +2432,7 @@ function render(){
   els.bestCount.textContent=bestCount;
   els.meetListCount.textContent=groups.length+' meets';
   els.resultListCount.textContent=results.length+' results';
+  els.exportMeetResultsBtn.disabled=!results.length;
   els.resultsTitle.textContent=selectedGroupKey==='all'?'Results':selectedGroupKey.indexOf('series:')===0?'Meet Comparison':'Results for selected meet';
   updateSortButtons();
   renderMeetSummary(results);
@@ -2451,6 +2574,7 @@ function init(){
   if(xcSimulatorLink)xcSimulatorLink.href=pageUrl('/xc-simulator.html');
   els.importDefaultYear.value=new Date().getFullYear();
   els.refreshBtn.addEventListener('click',loadMeetHistory);
+  els.exportMeetResultsBtn.addEventListener('click',exportSelectedMeetResults);
   els.openImportTopBtn.addEventListener('click',function(){
     if(els.importBody.hidden){
       els.importBody.hidden=false;
