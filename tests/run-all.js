@@ -4136,6 +4136,7 @@ function checkMeetHistoryImportedResultCorrections() {
 function checkMeetResultSplitDetails() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const history = fs.readFileSync("meet-history.html", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     "data-meet-detail=\"1\"",
     "function openMeetResultDetail(button)",
@@ -4155,13 +4156,31 @@ function checkMeetResultSplitDetails() {
     "Lap / Split Times",
     "No lap or split times saved for this result.",
     'id="exportMeetResultsBtn"',
+    'id="exportRaceSheetBtn"',
+    'id="raceSheetExportModal"',
+    'Distance + Gender',
+    'Distance + Gender + Grade',
     "var visibleMeetResults=[];",
     "visibleMeetResults=results.slice();",
     "function exportSelectedMeetResults()",
+    "function exportRaceSheetCsv()",
+    "function buildRaceSheetCsv(rows,grouping)",
+    "function raceSheetSectionKey(row,grouping)",
+    "raceSheetExportStatus.textContent=visibleMeetResults.length+' visible results will be included.'",
+    "cells.push('DNR','DNR');",
     "headers.push('Change '+i+'-'+(i+1));",
     "downloadTextFile('smart-trak-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
+    "downloadTextFile('smart-trak-race-sheet-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
   ].forEach((text) => {
     if (!history.includes(text)) throw new Error(`Meet History split details missing ${text}`);
+  });
+  [
+    "Use **Export Race Sheet CSV**",
+    "Distance + Gender",
+    "Distance + Gender + Grade",
+    "athletes who did not run a selected race show `DNR`",
+  ].forEach((text) => {
+    if (!guide.includes(text)) throw new Error(`Coach guide race sheet export missing ${text}`);
   });
   console.log("Meet result split details ok");
 }

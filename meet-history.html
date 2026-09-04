@@ -302,6 +302,7 @@ tr:last-child td{border-bottom:0}
       <div class="panelhead">
         <h2 id="resultsTitle">Results</h2>
         <div class="paneltools">
+          <button id="exportRaceSheetBtn" class="secondary" type="button">Export Race Sheet CSV</button>
           <button id="exportMeetResultsBtn" class="secondary" type="button">Export Results</button>
           <span id="resultListCount">--</span>
         </div>
@@ -499,6 +500,31 @@ tr:last-child td{border-bottom:0}
   </section>
 </div>
 
+<div id="raceSheetExportModal" class="modal" hidden>
+  <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="raceSheetExportTitle">
+    <div class="modalhead">
+      <h2 id="raceSheetExportTitle">Export Race Sheet CSV</h2>
+      <button id="raceSheetExportClose" class="ghost" type="button">Close</button>
+    </div>
+    <div class="modalbody">
+      <p class="sub">Exports the results currently in view as race blocks. Use meet selection, compare rows, and filters first to choose which races are included.</p>
+      <div class="formgrid">
+        <div class="field">
+          <label for="raceSheetGrouping">Group Rows By</label>
+          <select id="raceSheetGrouping">
+            <option value="distance_gender">Distance + Gender</option>
+            <option value="distance_gender_grade">Distance + Gender + Grade</option>
+          </select>
+        </div>
+      </div>
+      <div class="modalactions">
+        <div id="raceSheetExportStatus" class="modalstatus">Current view is ready to export.</div>
+        <button id="raceSheetExportSave" type="button">Download CSV</button>
+      </div>
+    </div>
+  </section>
+</div>
+
 <div id="historyDetailModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="historyDetailTitle">
     <div class="modalhead">
@@ -635,6 +661,11 @@ var els={
   quickUsePaste:document.getElementById('quickUsePaste'),
   quickStatus:document.getElementById('quickStatus'),
   quickSave:document.getElementById('quickSave'),
+  raceSheetExportModal:document.getElementById('raceSheetExportModal'),
+  raceSheetExportClose:document.getElementById('raceSheetExportClose'),
+  raceSheetGrouping:document.getElementById('raceSheetGrouping'),
+  raceSheetExportStatus:document.getElementById('raceSheetExportStatus'),
+  raceSheetExportSave:document.getElementById('raceSheetExportSave'),
   meetList:document.getElementById('meetList'),
   meetListCount:document.getElementById('meetListCount'),
   meetEmpty:document.getElementById('meetEmpty'),
@@ -643,6 +674,7 @@ var els={
   meetSummary:document.getElementById('meetSummary'),
   eventLeaders:document.getElementById('eventLeaders'),
   progressionPanel:document.getElementById('progressionPanel'),
+  exportRaceSheetBtn:document.getElementById('exportRaceSheetBtn'),
   exportMeetResultsBtn:document.getElementById('exportMeetResultsBtn'),
   resultRows:document.getElementById('resultRows'),
   resultEmpty:document.getElementById('resultEmpty')
@@ -2347,6 +2379,147 @@ function downloadTextFile(filename,text,mimeType){
   document.body.removeChild(link);
   setTimeout(function(){URL.revokeObjectURL(url);},0);
 }
+function raceSheetDistance(row){
+  return String(row&&row.event||'Event').trim()||'Event';
+}
+function raceSheetGender(row){
+  return exportGenderLabel(row&&row.athleteGender)||'Open';
+}
+function raceSheetGrade(row){
+  var grade=String(row&&row.grade||'').match(/\d+/);
+  return grade?grade[0]:'Ungraded';
+}
+function raceSheetSectionKey(row,grouping){
+  var parts=[raceSheetDistance(row),raceSheetGender(row)];
+  if(grouping==='distance_gender_grade')parts.push('Grade '+raceSheetGrade(row));
+  return parts.join(' | ');
+}
+function raceSheetRaceKey(row){
+  return [row&&row.meetName,row&&row.meetDate,raceSheetDistance(row),raceSheetGender(row)].map(function(value){return String(value||'').trim().toLowerCase();}).join('|');
+}
+function raceSheetRaceLabel(row){
+  return [row&&row.meetName||'Unlisted meet',formatDate(row&&row.meetDate)].filter(Boolean).join(' · ');
+}
+function raceSheetAthleteKey(row){
+  return String(row&&row.athleteName||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function raceSheetBestRow(current,next){
+  if(!current)return next;
+  var currentMs=current._resultMs||parseResultMs(current.resultDisplay);
+  var nextMs=next._resultMs||parseResultMs(next.resultDisplay);
+  if(nextMs&&(!currentMs||nextMs<currentMs))return next;
+  return current;
+}
+function raceSheetRaceSort(a,b){
+  return meetDateSortValue(a.date)-meetDateSortValue(b.date) || String(a.name||'').localeCompare(String(b.name||'')) || String(a.event||'').localeCompare(String(b.event||''));
+}
+function raceSheetAthleteSort(section,races){
+  return function(a,b){
+    var bestA=Number.MAX_SAFE_INTEGER;
+    var bestB=Number.MAX_SAFE_INTEGER;
+    races.forEach(function(race){
+      var rowA=section.matrix[a.key]&&section.matrix[a.key][race.key];
+      var rowB=section.matrix[b.key]&&section.matrix[b.key][race.key];
+      if(rowA)bestA=Math.min(bestA,rowA._resultMs||parseResultMs(rowA.resultDisplay)||bestA);
+      if(rowB)bestB=Math.min(bestB,rowB._resultMs||parseResultMs(rowB.resultDisplay)||bestB);
+    });
+    return bestA-bestB || a.name.localeCompare(b.name);
+  };
+}
+function openRaceSheetExport(){
+  if(!visibleMeetResults.length){
+    els.status.textContent='No meet results to export in this view.';
+    return;
+  }
+  els.raceSheetExportStatus.textContent=visibleMeetResults.length+' visible results will be included.';
+  els.raceSheetExportModal.hidden=false;
+}
+function closeRaceSheetExport(){
+  els.raceSheetExportModal.hidden=true;
+}
+function buildRaceSheetCsv(rows,grouping){
+  var sections={};
+  rows.forEach(function(row){
+    if(!row||!row.athleteName||!row.resultDisplay)return;
+    var sectionKey=raceSheetSectionKey(row,grouping);
+    if(!sections[sectionKey])sections[sectionKey]={title:sectionKey,races:{},athletes:{},matrix:{}};
+    var section=sections[sectionKey];
+    var raceKey=raceSheetRaceKey(row);
+    if(!section.races[raceKey])section.races[raceKey]={key:raceKey,name:row.meetName||'Unlisted meet',date:row.meetDate,event:raceSheetDistance(row),gender:raceSheetGender(row),label:raceSheetRaceLabel(row),maxSplits:0};
+    var race=section.races[raceKey];
+    var splits=parseSplitLines(row.splitsText);
+    race.maxSplits=Math.max(race.maxSplits,splits.length);
+    var athleteKey=raceSheetAthleteKey(row);
+    if(!athleteKey)return;
+    if(!section.athletes[athleteKey])section.athletes[athleteKey]={key:athleteKey,name:row.athleteName,grade:row.grade||''};
+    if(row.grade&&!section.athletes[athleteKey].grade)section.athletes[athleteKey].grade=row.grade;
+    if(!section.matrix[athleteKey])section.matrix[athleteKey]={};
+    section.matrix[athleteKey][raceKey]=raceSheetBestRow(section.matrix[athleteKey][raceKey],row);
+  });
+  var lines=[];
+  Object.keys(sections).sort().forEach(function(sectionKey){
+    var section=sections[sectionKey];
+    var races=Object.keys(section.races).map(function(key){return section.races[key];}).sort(raceSheetRaceSort);
+    var athletes=Object.keys(section.athletes).map(function(key){return section.athletes[key];}).sort(raceSheetAthleteSort(section,races));
+    if(!races.length||!athletes.length)return;
+    if(lines.length)lines.push('');
+    lines.push([section.title].map(csvCell).join(','));
+    var raceHeader=['Athlete'];
+    if(grouping==='distance_gender')raceHeader.push('Grade');
+    races.forEach(function(race){
+      var splitCount=Math.max(0,race.maxSplits);
+      var span=splitCount+Math.max(0,splitCount-1)+2;
+      raceHeader.push(race.label);
+      for(var i=1;i<span;i+=1)raceHeader.push('');
+    });
+    lines.push(raceHeader.map(csvCell).join(','));
+    var columnHeader=['Athlete'];
+    if(grouping==='distance_gender')columnHeader.push('Grade');
+    races.forEach(function(race){
+      for(var i=0;i<race.maxSplits;i+=1)columnHeader.push('Split '+(i+1));
+      for(var j=1;j<race.maxSplits;j+=1)columnHeader.push('Change '+j+'-'+(j+1));
+      columnHeader.push('Total');
+      columnHeader.push('Best');
+    });
+    lines.push(columnHeader.map(csvCell).join(','));
+    athletes.forEach(function(athlete){
+      var cells=[athlete.name];
+      if(grouping==='distance_gender')cells.push(athlete.grade||'');
+      races.forEach(function(race){
+        var row=section.matrix[athlete.key]&&section.matrix[athlete.key][race.key];
+        var splits=row?parseSplitLines(row.splitsText):[];
+        if(!row){
+          for(var empty=0;empty<race.maxSplits;empty+=1)cells.push('DNR');
+          for(var changeEmpty=1;changeEmpty<race.maxSplits;changeEmpty+=1)cells.push('DNR');
+          cells.push('DNR','DNR');
+          return;
+        }
+        for(var i=0;i<race.maxSplits;i+=1)cells.push(splits[i]&&splits[i].time||'');
+        for(var j=1;j<race.maxSplits;j+=1)cells.push(splits[j]&&splits[j-1]?splitChangeDisplay(splits[j].time,splits[j-1].time):'');
+        cells.push(row.resultDisplay||'');
+        cells.push(bestLabel(row));
+      });
+      lines.push(cells.map(csvCell).join(','));
+    });
+  });
+  return lines.join('\n');
+}
+function exportRaceSheetCsv(){
+  var rows=visibleMeetResults.slice();
+  if(!rows.length){
+    els.raceSheetExportStatus.textContent='No visible results to export.';
+    return;
+  }
+  var grouping=els.raceSheetGrouping.value||'distance_gender';
+  var csv=buildRaceSheetCsv(rows,grouping);
+  if(!csv.trim()){
+    els.raceSheetExportStatus.textContent='No complete race rows were available to export.';
+    return;
+  }
+  downloadTextFile('smart-trak-race-sheet-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv',csv,'text/csv;charset=utf-8');
+  els.raceSheetExportStatus.textContent='Exported race sheet for '+rows.length+' visible results.';
+  els.status.textContent='Exported race sheet CSV.';
+}
 function exportSelectedMeetResults(){
   var rows=visibleMeetResults.slice();
   if(!rows.length){
@@ -2451,6 +2624,7 @@ function render(){
   els.bestCount.textContent=bestCount;
   els.meetListCount.textContent=groups.length+' meets';
   els.resultListCount.textContent=results.length+' results';
+  els.exportRaceSheetBtn.disabled=!results.length;
   els.exportMeetResultsBtn.disabled=!results.length;
   els.resultsTitle.textContent=selectedGroupKey==='all'?'Results':selectedGroupKey.indexOf('series:')===0?'Meet Comparison':'Results for selected meet';
   updateSortButtons();
@@ -2593,6 +2767,12 @@ function init(){
   if(xcSimulatorLink)xcSimulatorLink.href=pageUrl('/xc-simulator.html');
   els.importDefaultYear.value=new Date().getFullYear();
   els.refreshBtn.addEventListener('click',loadMeetHistory);
+  els.exportRaceSheetBtn.addEventListener('click',openRaceSheetExport);
+  els.raceSheetExportClose.addEventListener('click',closeRaceSheetExport);
+  els.raceSheetExportSave.addEventListener('click',exportRaceSheetCsv);
+  els.raceSheetExportModal.addEventListener('click',function(event){
+    if(event.target===els.raceSheetExportModal)closeRaceSheetExport();
+  });
   els.exportMeetResultsBtn.addEventListener('click',exportSelectedMeetResults);
   els.openImportTopBtn.addEventListener('click',function(){
     if(els.importBody.hidden){
