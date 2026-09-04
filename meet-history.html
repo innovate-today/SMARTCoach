@@ -307,7 +307,7 @@ tr:last-child td{border-bottom:0}
       <div class="panelhead">
         <h2 id="resultsTitle">Results</h2>
         <div class="paneltools">
-          <button id="exportRaceSheetBtn" class="secondary" type="button">Export XC Race Sheet CSV</button>
+          <button id="exportRaceSheetBtn" class="secondary" type="button">Export XC Race Comparison CSV</button>
           <button id="exportMeetResultsBtn" class="secondary" type="button">Export Results</button>
           <span id="resultListCount">--</span>
         </div>
@@ -508,11 +508,11 @@ tr:last-child td{border-bottom:0}
 <div id="raceSheetExportModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="raceSheetExportTitle">
     <div class="modalhead">
-      <h2 id="raceSheetExportTitle">Export XC Race Sheet CSV</h2>
+      <h2 id="raceSheetExportTitle">Export XC Race Comparison CSV</h2>
       <button id="raceSheetExportClose" class="ghost" type="button">Close</button>
     </div>
     <div class="modalbody">
-      <p class="sub">Exports cross country results as race blocks. Use the current view to narrow the list, then choose the races and athletes to include.</p>
+      <p class="sub">Exports cross country results with races across the top. Use the current view to narrow the list, then choose which races and athletes to include; adding a new race each week adds another race block to the CSV.</p>
       <div class="formgrid">
         <div class="field">
           <label for="raceSheetGrouping">Group Rows By</label>
@@ -2627,9 +2627,9 @@ function exportRaceSheetCsv(){
     els.raceSheetExportStatus.textContent='No complete race rows were available to export.';
     return;
   }
-  downloadTextFile('smart-trak-xc-race-sheet-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv',csv,'text/csv;charset=utf-8');
-  els.raceSheetExportStatus.textContent='Exported XC race sheet for '+rows.length+' results.';
-  els.status.textContent='Exported XC race sheet CSV.';
+  downloadTextFile('smart-trak-xc-race-comparison-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv',csv,'text/csv;charset=utf-8');
+  els.raceSheetExportStatus.textContent='Exported XC race comparison for '+rows.length+' results.';
+  els.status.textContent='Exported XC race comparison CSV.';
 }
 function exportSelectedMeetResults(){
   var rows=visibleMeetResults.slice();

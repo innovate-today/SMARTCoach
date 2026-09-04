@@ -597,7 +597,7 @@ How to use it:
 6. Correct or void results if a saved result is wrong.
 7. Select a meet in the Meets column to show only that meet's results. Select a compare row to compare the same meet across dates.
 8. Use **Export Results** to download the results currently in view as a row-by-row CSV. The export includes athlete, gender, event, final time, meet, date, PB/SB status, saved splits, lap-to-lap changes, and notes.
-9. Use **Export XC Race Sheet CSV** when you want a spreadsheet-style cross country race sheet for the results currently in view. Choose the races to include, choose **All athletes**, **Active roster only**, or **Inactive / historical only**, then group rows by **Distance + Gender** or **Distance + Gender + Grade**. Each selected race gets its own split, total, and change columns, and athletes who did not run a selected race show `DNR`.
+9. Use **Export XC Race Comparison CSV** when you want a cumulative spreadsheet-style cross country comparison for the results currently in view. Choose the races to include, choose **All athletes**, **Active roster only**, or **Inactive / historical only**, then group rows by **Distance + Gender** or **Distance + Gender + Grade**. The export places races across the top, with each selected race as its own split, total, and change column block; when another race is added next week, selecting it adds another block. Athletes who did not run a selected race show `DNR`.
 
 Fastest by event should separate boys and girls so results are compared correctly.
 

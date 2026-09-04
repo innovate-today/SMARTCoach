@@ -4158,7 +4158,7 @@ function checkMeetResultSplitDetails() {
     'id="exportMeetResultsBtn"',
     'id="exportRaceSheetBtn"',
     'id="raceSheetExportModal"',
-    'Export XC Race Sheet CSV',
+    'Export XC Race Comparison CSV',
     'Distance + Gender',
     'Distance + Gender + Grade',
     'id="raceSheetAthleteStatus"',
@@ -4180,18 +4180,20 @@ function checkMeetResultSplitDetails() {
     "cells.push('DNR','DNR');",
     "headers.push('Change '+i+'-'+(i+1));",
     "downloadTextFile('smart-trak-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
-    "downloadTextFile('smart-trak-xc-race-sheet-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
+    "downloadTextFile('smart-trak-xc-race-comparison-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
   ].forEach((text) => {
     if (!history.includes(text)) throw new Error(`Meet History split details missing ${text}`);
   });
   [
-    "Use **Export XC Race Sheet CSV**",
+    "Use **Export XC Race Comparison CSV**",
+    "races across the top",
+    "adds another block",
     "Choose the races to include",
     "Active roster only",
     "Inactive / historical only",
     "Distance + Gender",
     "Distance + Gender + Grade",
-    "athletes who did not run a selected race show `DNR`",
+    "Athletes who did not run a selected race show `DNR`",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Coach guide race sheet export missing ${text}`);
   });
