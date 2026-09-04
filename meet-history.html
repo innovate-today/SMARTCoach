@@ -78,6 +78,11 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .quickrowstatus.bad{color:var(--bad)}
 .quickpaste{margin-top:10px}
 .quickpaste textarea{min-height:110px}
+.racesheet-options{margin-top:12px;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}
+.racesheet-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.racesheet-list{display:grid;gap:8px;max-height:280px;overflow:auto}
+.racesheet-row{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:start;border:1px solid #e5edf8;border-radius:8px;background:#fff;padding:9px 10px;font-size:13px;font-weight:800}
+.racesheet-row small{display:block;margin-top:2px;color:var(--muted);font-size:11px;font-weight:700;line-height:1.3}
 .split{display:grid;grid-template-columns:minmax(260px,300px) minmax(620px,1fr);gap:14px;align-items:start}
 .panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .split>.panel:first-child{overflow:visible}
@@ -302,7 +307,7 @@ tr:last-child td{border-bottom:0}
       <div class="panelhead">
         <h2 id="resultsTitle">Results</h2>
         <div class="paneltools">
-          <button id="exportRaceSheetBtn" class="secondary" type="button">Export Race Sheet CSV</button>
+          <button id="exportRaceSheetBtn" class="secondary" type="button">Export XC Race Sheet CSV</button>
           <button id="exportMeetResultsBtn" class="secondary" type="button">Export Results</button>
           <span id="resultListCount">--</span>
         </div>
@@ -503,11 +508,11 @@ tr:last-child td{border-bottom:0}
 <div id="raceSheetExportModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="raceSheetExportTitle">
     <div class="modalhead">
-      <h2 id="raceSheetExportTitle">Export Race Sheet CSV</h2>
+      <h2 id="raceSheetExportTitle">Export XC Race Sheet CSV</h2>
       <button id="raceSheetExportClose" class="ghost" type="button">Close</button>
     </div>
     <div class="modalbody">
-      <p class="sub">Exports the results currently in view as race blocks. Use meet selection, compare rows, and filters first to choose which races are included.</p>
+      <p class="sub">Exports cross country results as race blocks. Use the current view to narrow the list, then choose the races and athletes to include.</p>
       <div class="formgrid">
         <div class="field">
           <label for="raceSheetGrouping">Group Rows By</label>
@@ -516,9 +521,27 @@ tr:last-child td{border-bottom:0}
             <option value="distance_gender_grade">Distance + Gender + Grade</option>
           </select>
         </div>
+        <div class="field">
+          <label for="raceSheetAthleteStatus">Athletes</label>
+          <select id="raceSheetAthleteStatus">
+            <option value="all">All athletes</option>
+            <option value="active">Active roster only</option>
+            <option value="inactive">Inactive / historical only</option>
+          </select>
+        </div>
+      </div>
+      <div class="racesheet-options">
+        <div class="racesheet-tools">
+          <strong>XC Races To Include</strong>
+          <span>
+            <button id="raceSheetSelectAll" class="secondary compact" type="button">Select All</button>
+            <button id="raceSheetClearAll" class="ghost compact" type="button">Clear All</button>
+          </span>
+        </div>
+        <div id="raceSheetRaceList" class="racesheet-list"></div>
       </div>
       <div class="modalactions">
-        <div id="raceSheetExportStatus" class="modalstatus">Current view is ready to export.</div>
+        <div id="raceSheetExportStatus" class="modalstatus">Choose races to export.</div>
         <button id="raceSheetExportSave" type="button">Download CSV</button>
       </div>
     </div>
@@ -664,6 +687,10 @@ var els={
   raceSheetExportModal:document.getElementById('raceSheetExportModal'),
   raceSheetExportClose:document.getElementById('raceSheetExportClose'),
   raceSheetGrouping:document.getElementById('raceSheetGrouping'),
+  raceSheetAthleteStatus:document.getElementById('raceSheetAthleteStatus'),
+  raceSheetRaceList:document.getElementById('raceSheetRaceList'),
+  raceSheetSelectAll:document.getElementById('raceSheetSelectAll'),
+  raceSheetClearAll:document.getElementById('raceSheetClearAll'),
   raceSheetExportStatus:document.getElementById('raceSheetExportStatus'),
   raceSheetExportSave:document.getElementById('raceSheetExportSave'),
   meetList:document.getElementById('meetList'),
@@ -2426,13 +2453,89 @@ function raceSheetAthleteSort(section,races){
     return bestA-bestB || a.name.localeCompare(b.name);
   };
 }
-function openRaceSheetExport(){
-  if(!visibleMeetResults.length){
-    els.status.textContent='No meet results to export in this view.';
+function raceSheetXcRows(){
+  return visibleMeetResults.filter(function(row){return sportText(row)==='Cross Country';});
+}
+function raceSheetActiveAthleteKeys(){
+  var keys={};
+  dashboardAthletes.forEach(function(athlete){
+    if(athlete.contactId)keys['id:'+athlete.contactId]=true;
+    if(athlete.smartcoachAthleteId)keys['id:'+athlete.smartcoachAthleteId]=true;
+    var nameKey=athleteMatchKey(athlete.name);
+    if(nameKey)keys['name:'+nameKey]=true;
+  });
+  return keys;
+}
+function raceSheetIsActiveAthlete(row){
+  var keys=raceSheetActiveAthleteKeys();
+  var ids=[row&&row.athleteId,row&&row.contactId,row&&row.smartcoachAthleteId].filter(Boolean).map(function(value){return String(value).trim();});
+  if(ids.some(function(id){return keys['id:'+id];}))return true;
+  var nameKey=athleteMatchKey(row&&row.athleteName);
+  return !!(nameKey&&keys['name:'+nameKey]);
+}
+function raceSheetRowMatchesStatus(row,status){
+  if(status==='active')return raceSheetIsActiveAthlete(row);
+  if(status==='inactive')return !raceSheetIsActiveAthlete(row);
+  return true;
+}
+function raceSheetRaceOptions(rows){
+  var races={};
+  rows.forEach(function(row){
+    var key=raceSheetRaceKey(row);
+    if(!races[key])races[key]={key:key,label:raceSheetRaceLabel(row),event:raceSheetDistance(row),gender:raceSheetGender(row),date:row&&row.meetDate,name:row&&row.meetName,athletes:{},count:0};
+    races[key].count+=1;
+    var athleteKey=raceSheetAthleteKey(row);
+    if(athleteKey)races[key].athletes[athleteKey]=true;
+  });
+  return Object.keys(races).map(function(key){
+    var race=races[key];
+    race.athleteCount=Object.keys(race.athletes).length;
+    return race;
+  }).sort(raceSheetRaceSort);
+}
+function raceSheetSelectedKeys(){
+  var keys={};
+  els.raceSheetRaceList.querySelectorAll('input[data-race-sheet-key]:checked').forEach(function(input){
+    keys[input.getAttribute('data-race-sheet-key')]=true;
+  });
+  return keys;
+}
+function updateRaceSheetExportStatus(){
+  var total=els.raceSheetRaceList.querySelectorAll('input[data-race-sheet-key]').length;
+  var selected=els.raceSheetRaceList.querySelectorAll('input[data-race-sheet-key]:checked').length;
+  var status=els.raceSheetAthleteStatus.value||'all';
+  var label=status==='active'?'active roster athletes':status==='inactive'?'inactive / historical athletes':'all athletes';
+  els.raceSheetExportStatus.textContent=selected+' of '+total+' XC races selected for '+label+'.';
+  els.raceSheetExportSave.disabled=!selected;
+}
+function renderRaceSheetOptions(){
+  var rows=raceSheetXcRows();
+  var races=raceSheetRaceOptions(rows);
+  if(!races.length){
+    els.raceSheetRaceList.innerHTML='<div class="empty">No cross country races are in the current view.</div>';
+    els.raceSheetExportStatus.textContent='No XC races to export in this view.';
+    els.raceSheetExportSave.disabled=true;
     return;
   }
-  els.raceSheetExportStatus.textContent=visibleMeetResults.length+' visible results will be included.';
+  els.raceSheetRaceList.innerHTML=races.map(function(race){
+    return '<label class="racesheet-row">'+
+      '<input type="checkbox" data-race-sheet-key="'+esc(race.key)+'" checked>'+
+      '<span>'+esc(race.event+' · '+race.gender)+'<small>'+esc(race.label)+'</small></span>'+
+      '<small>'+race.count+' results<br>'+race.athleteCount+' athletes</small>'+
+    '</label>';
+  }).join('');
+  els.raceSheetRaceList.querySelectorAll('input[data-race-sheet-key]').forEach(function(input){
+    input.addEventListener('change',updateRaceSheetExportStatus);
+  });
+  updateRaceSheetExportStatus();
+}
+function openRaceSheetExport(){
+  if(!raceSheetXcRows().length){
+    els.status.textContent='No cross country results to export in this view.';
+    return;
+  }
   els.raceSheetExportModal.hidden=false;
+  renderRaceSheetOptions();
 }
 function closeRaceSheetExport(){
   els.raceSheetExportModal.hidden=true;
@@ -2505,9 +2608,17 @@ function buildRaceSheetCsv(rows,grouping){
   return lines.join('\n');
 }
 function exportRaceSheetCsv(){
-  var rows=visibleMeetResults.slice();
+  var rows=raceSheetXcRows();
   if(!rows.length){
-    els.raceSheetExportStatus.textContent='No visible results to export.';
+    els.raceSheetExportStatus.textContent='No cross country results to export.';
+    return;
+  }
+  var selectedKeys=raceSheetSelectedKeys();
+  rows=rows.filter(function(row){
+    return selectedKeys[raceSheetRaceKey(row)]&&raceSheetRowMatchesStatus(row,els.raceSheetAthleteStatus.value||'all');
+  });
+  if(!rows.length){
+    els.raceSheetExportStatus.textContent='No rows match the selected races and athlete status.';
     return;
   }
   var grouping=els.raceSheetGrouping.value||'distance_gender';
@@ -2516,9 +2627,9 @@ function exportRaceSheetCsv(){
     els.raceSheetExportStatus.textContent='No complete race rows were available to export.';
     return;
   }
-  downloadTextFile('smart-trak-race-sheet-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv',csv,'text/csv;charset=utf-8');
-  els.raceSheetExportStatus.textContent='Exported race sheet for '+rows.length+' visible results.';
-  els.status.textContent='Exported race sheet CSV.';
+  downloadTextFile('smart-trak-xc-race-sheet-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv',csv,'text/csv;charset=utf-8');
+  els.raceSheetExportStatus.textContent='Exported XC race sheet for '+rows.length+' results.';
+  els.status.textContent='Exported XC race sheet CSV.';
 }
 function exportSelectedMeetResults(){
   var rows=visibleMeetResults.slice();
@@ -2624,7 +2735,7 @@ function render(){
   els.bestCount.textContent=bestCount;
   els.meetListCount.textContent=groups.length+' meets';
   els.resultListCount.textContent=results.length+' results';
-  els.exportRaceSheetBtn.disabled=!results.length;
+  els.exportRaceSheetBtn.disabled=!results.some(function(row){return sportText(row)==='Cross Country';});
   els.exportMeetResultsBtn.disabled=!results.length;
   els.resultsTitle.textContent=selectedGroupKey==='all'?'Results':selectedGroupKey.indexOf('series:')===0?'Meet Comparison':'Results for selected meet';
   updateSortButtons();
@@ -2770,6 +2881,15 @@ function init(){
   els.exportRaceSheetBtn.addEventListener('click',openRaceSheetExport);
   els.raceSheetExportClose.addEventListener('click',closeRaceSheetExport);
   els.raceSheetExportSave.addEventListener('click',exportRaceSheetCsv);
+  els.raceSheetAthleteStatus.addEventListener('change',updateRaceSheetExportStatus);
+  els.raceSheetSelectAll.addEventListener('click',function(){
+    els.raceSheetRaceList.querySelectorAll('input[data-race-sheet-key]').forEach(function(input){input.checked=true;});
+    updateRaceSheetExportStatus();
+  });
+  els.raceSheetClearAll.addEventListener('click',function(){
+    els.raceSheetRaceList.querySelectorAll('input[data-race-sheet-key]').forEach(function(input){input.checked=false;});
+    updateRaceSheetExportStatus();
+  });
   els.raceSheetExportModal.addEventListener('click',function(event){
     if(event.target===els.raceSheetExportModal)closeRaceSheetExport();
   });
