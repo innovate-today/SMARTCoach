@@ -95,7 +95,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#f
 .info-dot{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:#fff;color:#111827;border:1px solid var(--line);font-size:12px;font-weight:900;cursor:help;line-height:1}
 .info-dot:after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 8px);transform:none;width:300px;max-width:min(72vw,300px);padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;font-size:12px;font-weight:700;line-height:1.35;box-shadow:0 12px 28px rgba(15,23,42,.18);opacity:0;pointer-events:none;z-index:80}
 .info-dot:hover:after,.info-dot:focus:after{opacity:1}
-.meet-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fbfdff}
+.meet-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fbfdff}
 .meet-summary-card{border:1px solid #edf1f7;border-radius:8px;background:#fff;padding:9px 10px}
 .meet-summary-card b{display:block;font-size:18px;line-height:1.15}
 .meet-summary-card span{display:block;color:var(--muted);font-size:11px;margin-top:3px}
@@ -128,6 +128,7 @@ th{font-size:12px;text-transform:uppercase;color:#475569;background:#f8fafc;lett
 .sortbtn.active.desc:after{content:"▼"}
 td{font-size:14px}
 tr:last-child td{border-bottom:0}
+.division-row td{background:#eef3ff;color:#173891;font-size:13px;font-weight:950;text-transform:uppercase;letter-spacing:.03em;border-top:1px solid #c7d2fe}
 .name{font-weight:900;color:#102a70}
 .muted{color:var(--muted);font-size:12px;margin-top:2px}
 .eventleaders{display:grid;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fff}
@@ -776,6 +777,15 @@ function csvCell(value){
   var text=String(value==null?'':value);
   return /[",\r\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;
 }
+function noteFieldValue(notes,label){
+  var wanted=String(label||'').toLowerCase();
+  var lines=String(notes||'').split(/\r?\n/);
+  for(var i=0;i<lines.length;i+=1){
+    var match=lines[i].match(/^\s*([^:]+)\s*:\s*(.*?)\s*$/);
+    if(match&&match[1].trim().toLowerCase()===wanted)return match[2].trim();
+  }
+  return '';
+}
 function dateStamp(){
   var date=new Date();
   return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
@@ -863,7 +873,7 @@ function sportText(row){
 }
 function searchText(row){
   if(row&&row._searchText)return row._searchText;
-  var text=[row.name,row.meetName,row.athleteName,row.athleteGender,sportText(row),row.event,row.resultDisplay,row.season,row.seasonYear,row.status].filter(Boolean).join(' ').toLowerCase();
+  var text=[row.name,row.meetName,row.athleteName,row.athleteGender,raceDivisionLabel(row),sportText(row),row.event,row.resultDisplay,row.season,row.seasonYear,row.status].filter(Boolean).join(' ').toLowerCase();
   if(row)row._searchText=text;
   return text;
 }
@@ -876,7 +886,8 @@ function enrichMeetHistoryRow(row){
   row._sportText=sportText(row);
   row._resultMs=parseResultMs(row.resultDisplay);
   row._meetDateMs=meetDateSortValue(row.meetDate);
-  row._searchText=[row.name,row.meetName,row.athleteName,row.athleteGender,row._sportText,row.event,row.resultDisplay,row.season,row.seasonYear,row._seasonText,row.status].filter(Boolean).join(' ').toLowerCase();
+  if(!row.raceDivision)row.raceDivision=noteFieldValue(row.coachRaceNotes,'Division');
+  row._searchText=[row.name,row.meetName,row.athleteName,row.athleteGender,raceDivisionLabel(row),row._sportText,row.event,row.resultDisplay,row.season,row.seasonYear,row._seasonText,row.status].filter(Boolean).join(' ').toLowerCase();
   return row;
 }
 function normalizeMeetHistoryRows(rows){
@@ -1125,7 +1136,7 @@ function ensureSelectValue(select,value){
 }
 function historyNotesFromRow(row){
   return String(row&&row.coachRaceNotes||'').split(/\r?\n/).filter(function(line){
-    return !/^(Result Type|Historical Grade|Class Year|Gender|Place|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+    return !/^(Result Type|Historical Grade|Class Year|Gender|Division|Place|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
   }).join('\n').trim();
 }
 function historyEditGenderValue(value){
@@ -1574,7 +1585,7 @@ function selectedEventRankMap(results){
   return map;
 }
 function rankingKey(row){
-  return String(row.event||'').toLowerCase()+'|'+genderKey(row.athleteGender);
+  return String(row.event||'').toLowerCase()+'|'+raceDivisionKey(row);
 }
 function genderKey(value){
   var text=String(value||'').trim().toLowerCase();
@@ -1588,6 +1599,15 @@ function genderLabel(value){
   if(key==='boys')return 'boys';
   if(key==='open')return '';
   return key;
+}
+function raceDivisionLabel(row){
+  var explicit=String(row&&row.raceDivision||'').trim()||noteFieldValue(row&&row.coachRaceNotes,'Division');
+  if(explicit)return explicit;
+  var gender=genderLabel(row&&row.athleteGender);
+  return gender?gender.charAt(0).toUpperCase()+gender.slice(1):'Open';
+}
+function raceDivisionKey(row){
+  return raceDivisionLabel(row).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'open';
 }
 function priorResultFor(row){
   if(!priorResultCache)priorResultCache=buildPriorResultCache();
@@ -1614,7 +1634,7 @@ function comparisonHtml(row,rankMap){
   var parts=[];
   var rank=rankMap[resultIdentity(row)];
   if(rank&&rank.total>1){
-    var division=genderLabel(row.athleteGender);
+    var division=raceDivisionLabel(row);
     parts.push('<span class="comparechip blue">#'+esc(rank.place)+' of '+esc(rank.total)+(division?' '+esc(division):'')+'</span>');
     if(rank.gap>0)parts.push('<span class="comparechip warn">+'+esc(formatSeconds(rank.gap))+' behind leader</span>');
     else parts.push('<span class="comparechip good">Event leader</span>');
@@ -1681,7 +1701,7 @@ function importHeaderMap(cols){
   var map={};
   cols.forEach(function(col,index){
     var key=String(col||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-    var normalized={season:'season',year:'seasonYear',season_year:'seasonYear',sport:'sport',meet:'meetName',meet_name:'meetName',date:'meetDate',meet_date:'meetDate',gender:'athleteGender',division:'athleteGender',sex:'athleteGender',event:'event',athlete:'athleteName',athlete_name:'athleteName',name:'athleteName',grade:'grade',gr:'grade',class:'classYear',class_year:'classYear',grad_year:'classYear',graduation_year:'classYear',result:'resultDisplay',mark:'resultDisplay',time:'resultDisplay',place:'place',pr:'isPr',pb:'isPr',personal_best:'isPr',sb:'isSeasonBest',season_best:'isSeasonBest',notes:'notes',note:'notes'}[key];
+    var normalized={season:'season',year:'seasonYear',season_year:'seasonYear',sport:'sport',meet:'meetName',meet_name:'meetName',date:'meetDate',meet_date:'meetDate',gender:'athleteGender',division:'athleteGender',sex:'athleteGender',race_division:'raceDivision',race_group:'raceDivision',race_day_group:'raceDivision',event:'event',athlete:'athleteName',athlete_name:'athleteName',name:'athleteName',grade:'grade',gr:'grade',class:'classYear',class_year:'classYear',grad_year:'classYear',graduation_year:'classYear',result:'resultDisplay',mark:'resultDisplay',time:'resultDisplay',place:'place',pr:'isPr',pb:'isPr',personal_best:'isPr',sb:'isSeasonBest',season_best:'isSeasonBest',notes:'notes',note:'notes'}[key];
     if(normalized)map[normalized]=index;
   });
   return map.athleteName!=null||map.resultDisplay!=null||map.meetName!=null?map:{};
@@ -2198,6 +2218,7 @@ function normalizeImportRow(values,index){
     meetName:values.meetName||'',
     meetDate:meetDate,
     athleteGender:normalizeImportGender(values.athleteGender||els.importDefaultGender.value),
+    raceDivision:String(values.raceDivision||'').trim(),
     event:values.event||els.importDefaultEvent.value||'',
     athleteName:values.athleteName||'',
     grade:values.grade||'',
@@ -2240,7 +2261,7 @@ function parseImportRows(text){
     var cols=splitImportLine(line);
     if(Object.keys(headers).length){
       var value=function(key){return headers[key]!=null?cols[headers[key]]||'':'';};
-      return normalizeImportRow({season:value('season'),seasonYear:value('seasonYear'),sport:value('sport'),meetName:value('meetName'),meetDate:value('meetDate'),athleteGender:value('athleteGender'),event:value('event'),athleteName:value('athleteName'),grade:value('grade'),classYear:value('classYear'),resultDisplay:value('resultDisplay'),place:value('place'),isPr:value('isPr'),isSeasonBest:value('isSeasonBest'),notes:value('notes')},index);
+      return normalizeImportRow({season:value('season'),seasonYear:value('seasonYear'),sport:value('sport'),meetName:value('meetName'),meetDate:value('meetDate'),athleteGender:value('athleteGender'),raceDivision:value('raceDivision'),event:value('event'),athleteName:value('athleteName'),grade:value('grade'),classYear:value('classYear'),resultDisplay:value('resultDisplay'),place:value('place'),isPr:value('isPr'),isSeasonBest:value('isSeasonBest'),notes:value('notes')},index);
     }
     return normalizeImportRowFromColumns(cols,index);
   }).filter(function(row){return row.athleteName||row.resultDisplay||row.meetName;});
@@ -2338,16 +2359,19 @@ function meetSeries(groups){
 function renderMeetSummary(results){
   var events={};
   var athletes={};
+  var divisions={};
   var bests=0;
   results.forEach(function(row){
     if(row.event)events[row.event]=true;
     if(row.athleteName)athletes[row.athleteName]=true;
+    divisions[raceDivisionLabel(row)]=true;
     if(row.isPr||row.isSeasonBest)bests+=1;
   });
   els.meetSummary.innerHTML=[
     summaryCard(results.length,'Results'),
     summaryCard(Object.keys(events).length,'Events'),
     summaryCard(Object.keys(athletes).length,'Athletes'),
+    summaryCard(Object.keys(divisions).length,'Divisions'),
     summaryCard(bests,'New PB/SB')
   ].join('');
   renderEventLeaders(results);
@@ -2361,7 +2385,7 @@ function renderEventLeaders(results){
     if(!row.event||!row.resultDisplay)return;
     var ms=row._resultMs||parseResultMs(row.resultDisplay);
     if(!ms)return;
-    var division=genderLabel(row.athleteGender);
+    var division=raceDivisionLabel(row);
     var key=String(row.event||'').toLowerCase()+'|'+(division||'open');
     if(!leaders[key]||ms<leaders[key].ms){
       leaders[key]={event:row.event,division:division,ms:ms,athleteName:row.athleteName,resultDisplay:row.resultDisplay};
@@ -2639,7 +2663,7 @@ function exportSelectedMeetResults(){
   }
   var splitRows=rows.map(function(row){return parseSplitLines(row.splitsText);});
   var maxSplits=splitRows.reduce(function(max,splits){return Math.max(max,splits.length);},0);
-  var headers=['Athlete','Gender','Event','Final Time','Meet','Date','Best Status'];
+  var headers=['Athlete','Gender','Division','Event','Final Time','Meet','Date','Best Status'];
   for(var i=0;i<maxSplits;i+=1){
     headers.push('Split '+(i+1));
     if(i>0)headers.push('Change '+i+'-'+(i+1));
@@ -2651,6 +2675,7 @@ function exportSelectedMeetResults(){
     var cells=[
       row.athleteName||'',
       exportGenderLabel(row.athleteGender),
+      raceDivisionLabel(row),
       row.event||'',
       row.resultDisplay||'',
       row.meetName||'',
@@ -2759,12 +2784,33 @@ function render(){
     '</button>';
   }).join('');
   els.meetEmpty.hidden=!!groups.length;
-  els.resultRows.innerHTML=results.map(function(row){
+  var showDivisionSections=selectedGroupKey.indexOf('meet:')===0&&results.length>0;
+  var rowsForRender=results;
+  if(showDivisionSections){
+    var divisionOrder=[];
+    var divisionGroups={};
+    results.forEach(function(row){
+      var key=raceDivisionKey(row);
+      if(!divisionGroups[key]){
+        divisionGroups[key]={label:raceDivisionLabel(row),rows:[]};
+        divisionOrder.push(key);
+      }
+      divisionGroups[key].rows.push(row);
+    });
+    rowsForRender=[];
+    divisionOrder.sort(function(a,b){return divisionGroups[a].label.localeCompare(divisionGroups[b].label);}).forEach(function(key){
+      rowsForRender.push({__divisionHeader:true,label:divisionGroups[key].label,count:divisionGroups[key].rows.length});
+      rowsForRender=rowsForRender.concat(divisionGroups[key].rows);
+    });
+  }
+  els.resultRows.innerHTML=rowsForRender.map(function(row){
+    if(row.__divisionHeader)return '<tr class="division-row"><td colspan="9">'+esc(row.label)+' · '+row.count+' result'+(row.count===1?'':'s')+'</td></tr>';
     var flags=[];
+    var division=raceDivisionLabel(row);
     if(row.isPr)flags.push('<span class="pill pb">PB</span>');
     if(row.isSeasonBest)flags.push('<span class="pill sb">SB</span>');
     return '<tr>'+
-      '<td><div class="name">'+esc(row.athleteName||'Unnamed')+'</div></td>'+
+      '<td><div class="name">'+esc(row.athleteName||'Unnamed')+'</div><div class="muted">'+esc(division)+'</div></td>'+
       '<td>'+esc(row.meetName||'Unlisted meet')+'<div class="muted">'+esc(seasonText(row))+'</div></td>'+
       '<td>'+esc(row.event||'')+'</td>'+
       '<td><b>'+esc(row.resultDisplay||'')+'</b></td>'+

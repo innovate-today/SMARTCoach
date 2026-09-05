@@ -1146,6 +1146,7 @@ function xcTop20Row(row, gender, eventBucket, context = {}) {
     contactId: row.contactId || "",
     athleteName: clean(row.athleteName),
     athleteGender: normalizedGender,
+    raceDivision: clean(row.raceDivision) || noteValue(row.coachRaceNotes, "Division"),
     event: normalizedEvent,
     originalEvent: clean(row.event),
     resultDisplay: clean(row.resultDisplay),
@@ -1502,8 +1503,9 @@ function resultsBoardEventSummaryRows(rows) {
 function resultsBoardDivisionSummaryRows(rows) {
   const byDivision = new Map();
   (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const explicitDivision = clean(row.raceDivision) || noteValue(row.coachRaceNotes, "Division");
     const gender = resultsBoardGender(row.athleteGender);
-    const key = gender || "unlisted";
+    const key = explicitDivision || gender || "unlisted";
     if (!byDivision.has(key)) {
       byDivision.set(key, {
         division: key,
@@ -1527,7 +1529,6 @@ function resultsBoardDivisionSummaryRows(rows) {
     if (!item.leader || resultsBetter(row, item.leader)) item.leader = row;
     if (String(row.meetDate || "") > item.latestDate) item.latestDate = String(row.meetDate || "");
   });
-  const order = { boy: 1, girl: 2, unlisted: 3 };
   return Array.from(byDivision.values()).map((item) => ({
     division: item.division,
     divisionLabel: resultsBoardDivisionLabel(item.division),
@@ -1541,7 +1542,7 @@ function resultsBoardDivisionSummaryRows(rows) {
     leaderEvent: item.leader && item.leader.event || "",
     leaderResult: item.leader && item.leader.resultDisplay || "",
     latestDate: item.latestDate,
-  })).sort((a, b) => (order[a.division] || 99) - (order[b.division] || 99));
+  })).sort((a, b) => a.divisionLabel.localeCompare(b.divisionLabel));
 }
 
 function resultsBoardBestHighlightRows(rows) {
@@ -1602,7 +1603,7 @@ function resultsBoardGender(value) {
 function resultsBoardDivisionLabel(value) {
   if (value === "boy") return "Boys";
   if (value === "girl") return "Girls";
-  return "Unlisted";
+  return clean(value) || "Unlisted";
 }
 
 function isHistoricalMeetResult(result) {
@@ -1753,6 +1754,7 @@ function normalizeMeetResult(record) {
     contactId: prop(props, "athlete_contact"),
     athleteName: prop(props, "athlete_name_snapshot"),
     athleteGender: noteValue(coachRaceNotes, "Gender"),
+    raceDivision: noteValue(coachRaceNotes, "Division"),
     grade: noteValue(coachRaceNotes, "Historical Grade") || noteValue(coachRaceNotes, "Grade"),
     meetName: prop(props, "meet_name"),
     event: prop(props, "event"),

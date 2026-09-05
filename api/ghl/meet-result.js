@@ -216,6 +216,7 @@ function normalizeMeetResult(payload) {
     season: clean(payload.season) || "Unspecified",
     sport: clean(payload.sport) || "track",
     event: clean(payload.event),
+    raceDivision: clean(payload.raceDivision || payload.division),
     resultDisplay,
     resultMs: Number(payload.resultMs) || parseTimeToMs(resultDisplay) || null,
     wind: clean(payload.wind),
@@ -351,6 +352,7 @@ function meetResultNotes(meetResult) {
     return [
       "Result Type: Field",
       meetResult.athleteGender ? `Gender: ${meetResult.athleteGender}` : "",
+      meetResult.raceDivision ? `Division: ${meetResult.raceDivision}` : "",
       meetResult.fieldAttempts ? `Field Attempts: ${singleLine(meetResult.fieldAttempts)}` : "",
       meetResult.fieldVideo ? `Video: ${meetResult.fieldVideo}` : "",
       meetResult.coachRaceNotes,
@@ -359,6 +361,7 @@ function meetResultNotes(meetResult) {
   if (meetResult.resultType !== "relay") {
     return [
       meetResult.athleteGender ? `Gender: ${meetResult.athleteGender}` : "",
+      meetResult.raceDivision ? `Division: ${meetResult.raceDivision}` : "",
       meetResult.coachRaceNotes,
     ].filter(Boolean).join("\n");
   }
@@ -366,6 +369,7 @@ function meetResultNotes(meetResult) {
     "Result Type: Relay",
     `Relay Type: ${meetResult.relayType || meetResult.event}`,
     meetResult.relayTeamName ? `Relay Team: ${meetResult.relayTeamName}` : "",
+    meetResult.raceDivision ? `Division: ${meetResult.raceDivision}` : "",
     meetResult.coachRaceNotes,
   ].filter(Boolean).join("\n");
 }
@@ -492,6 +496,7 @@ function normalizeHistoryImportRow(row) {
     rowNumber: Number(row && row.rowNumber) || 0,
     athleteName: clean(row && (row.athleteName || row.athlete)),
     athleteGender: clean(row && (row.athleteGender || row.gender)),
+    raceDivision: clean(row && (row.raceDivision || row.raceGroup || row.raceDayGroup)),
     grade: clean(row && row.grade),
     classYear: clean(row && (row.classYear || row.gradYear || row.graduationYear)),
     meetName: clean(row && (row.meetName || row.meet)),
@@ -528,6 +533,7 @@ function buildHistoryImportProperties(row) {
     row.grade ? `Historical Grade: ${row.grade}` : "",
     row.classYear ? `Class Year: ${row.classYear}` : "",
     row.athleteGender ? `Gender: ${row.athleteGender}` : "",
+    row.raceDivision ? `Division: ${row.raceDivision}` : "",
     row.place ? `Place: ${row.place}` : "",
     row.notes,
   ].filter(Boolean).join("\n");
@@ -562,6 +568,7 @@ function normalizeHistoryImportCreatedRow(record) {
     sourceRecordId: props.source_record_id || "",
     athleteName: props.athlete_name_snapshot || "",
     athleteGender: noteValue(notes, "Gender"),
+    raceDivision: noteValue(notes, "Division"),
     meetName: props.meet_name || "",
     event: props.event || "",
     resultDisplay: props.result_display || "",

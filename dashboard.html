@@ -1062,6 +1062,10 @@ tr:last-child td{border-bottom:0}
           <select id="raceResultAthlete"><option value="">Select athlete</option></select>
         </div>
         <div class="field">
+          <label for="raceResultDivision">Division <span class="fieldinfo info-left" tabindex="0" data-tip="Use the race-day group such as Varsity Boys, JV Girls, Open Boys, or 7th Girls. This does not change the athlete's saved training group.">i</span></label>
+          <input id="raceResultDivision" type="text" placeholder="Example: Varsity Boys">
+        </div>
+        <div class="field">
           <label for="raceResultType">Result Type <span class="fieldinfo" tabindex="0" data-tip="Choose individual, relay, or field event. Relay and field details are saved with the meet result.">i</span></label>
           <select id="raceResultType"><option value="individual">Individual</option><option value="relay">Relay</option><option value="field">Field Event</option></select>
         </div>
@@ -2924,6 +2928,7 @@ var els={
   raceResultMeetNameWrap:document.getElementById('raceResultMeetNameWrap'),
   raceResultMeetName:document.getElementById('raceResultMeetName'),
   raceResultAthlete:document.getElementById('raceResultAthlete'),
+  raceResultDivision:document.getElementById('raceResultDivision'),
   raceResultType:document.getElementById('raceResultType'),
   raceResultRelayTeamWrap:document.getElementById('raceResultRelayTeamWrap'),
   raceResultRelayTeam:document.getElementById('raceResultRelayTeam'),
@@ -3347,7 +3352,7 @@ els.raceResultMeet.addEventListener('change',syncRaceResultMeet);
 els.raceResultSport.addEventListener('change',syncRaceResultSport);
 if(els.raceResultType)els.raceResultType.addEventListener('change',syncRaceResultType);
 ['change','input'].forEach(function(type){
-  [els.raceResultAthlete,els.raceResultEvent,els.raceResultOtherDistance,els.raceResultOtherUnit,els.raceResultResult,els.raceResultType].forEach(function(node){
+  [els.raceResultAthlete,els.raceResultDivision,els.raceResultEvent,els.raceResultOtherDistance,els.raceResultOtherUnit,els.raceResultResult,els.raceResultType].forEach(function(node){
     if(node)node.addEventListener(type,updateRaceFitnessReview);
   });
 });
@@ -5960,6 +5965,20 @@ function selectedRaceResultAthlete(){
   })||null;
 }
 
+function raceResultGenderLabel(value){
+  var text=String(value||'').trim().toLowerCase();
+  if(['female','f','girl','girls','women','woman'].indexOf(text)>=0)return 'Girls';
+  if(['male','m','boy','boys','men','man'].indexOf(text)>=0)return 'Boys';
+  return String(value||'').trim();
+}
+
+function raceDivisionValue(){
+  var manual=String(els.raceResultDivision&&els.raceResultDivision.value||'').trim();
+  if(manual)return manual;
+  var athlete=selectedRaceResultAthlete();
+  return raceResultGenderLabel(athlete&&athlete.gender);
+}
+
 function updateRaceFitnessReview(){
   if(!els.raceFitnessReview)return;
   var resultType=els.raceResultType&&els.raceResultType.value||'individual';
@@ -6036,6 +6055,7 @@ function saveRaceResult(){
   var best=els.raceResultBest.value||'none';
   var seasonParts=raceResultSeasonFromDate(date);
   var coachNotes=(els.raceResultNotes.value||'').trim();
+  var raceDivision=raceDivisionValue();
   var payload={
     resultType:isRelay?'relay':isField?'field':'individual',
     relayType:isRelay?eventName:'',
@@ -6051,6 +6071,7 @@ function saveRaceResult(){
     event:eventName,
     resultDisplay:resultDisplay,
     wind:els.raceResultWind.value,
+    raceDivision:raceDivision,
     isPr:!isRelay&&!isField&&(best==='pb'||best==='both'),
     isSeasonBest:!isRelay&&!isField&&(best==='sb'||best==='both'),
     useAsCurrentFitness:!isRelay&&!isField&&els.raceResultUseFitness&&els.raceResultUseFitness.checked,
@@ -6077,6 +6098,7 @@ function saveRaceResult(){
     setRaceResultStatus('Saved '+(isRelay?(payload.relayTeamName||'relay'):(athlete.name||'athlete'))+' - '+eventName+' '+resultDisplay+'.'+(result.data&&result.data.currentFitnessUpdated?' Current fitness updated.':''),'ok');
     els.raceResultAthlete.value='';
     if(els.raceResultRelayTeam)els.raceResultRelayTeam.value='';
+    if(els.raceResultDivision)els.raceResultDivision.value='';
     for(var i=1;i<=4;i+=1){
       var name=document.getElementById('raceResultRelayName'+i);
       var split=document.getElementById('raceResultRelaySplit'+i);
@@ -6117,6 +6139,7 @@ function applyRaceResultLocally(payload,result){
     resultType:payload.resultType||'individual',
     relayType:payload.relayType||'',
     relayTeamName:payload.relayTeamName||'',
+    raceDivision:payload.raceDivision||'',
     splitsText:payload.splitsJson||'',
     wind:payload.wind||'',
     isPr:!!(result.isPr||payload.isPr),
@@ -7188,7 +7211,7 @@ function meetCorrectionPreviousPayload(row){
 
 function meetCorrectionNotesFromRow(row){
   return String(row.coachRaceNotes||'').split(/\r?\n/).filter(function(line){
-    return !/^(Wind|Result Type|Relay Type|Relay Team|Field Attempts|Video|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
+    return !/^(Wind|Result Type|Relay Type|Relay Team|Division|Field Attempts|Video|Correction Date|Correction Reason|SMARTCoach Status):/i.test(line.trim());
   }).join('\n');
 }
 

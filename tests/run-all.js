@@ -4341,8 +4341,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1787629200000"',
-    "<!-- build:1787629200000 -->",
+    'meta name="app-version" content="1788636240000"',
+    "<!-- build:1788636240000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
