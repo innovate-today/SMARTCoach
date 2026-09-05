@@ -4241,6 +4241,34 @@ function checkMeetResultSplitDetails() {
   console.log("Meet result split details ok");
 }
 
+function checkMeetHistoryPostRaceSummary() {
+  const history = fs.readFileSync("meet-history.html", "utf8");
+  [
+    'id="postRaceSummary"',
+    "postRaceSummary:document.getElementById('postRaceSummary')",
+    "function postRaceGenderLabel(row)",
+    "function postRaceSectionLabel(row)",
+    "function postRaceSectionSortValue(label)",
+    "function renderPostRaceSummary(results)",
+    "var selectedMeet=selectedGroupKey.indexOf('meet:')===0;",
+    "if(!selectedMeet||!rows.length)",
+    "Post Race Summary",
+    "Unofficial race-day view from saved Meet History results.",
+    "var headers=['Place','Name','Event'];",
+    "headers.push('Split '+(i+1));",
+    "headers.push('Final Time');",
+    "renderPostRaceSummary(results);",
+  ].forEach((text) => {
+    if (!history.includes(text)) throw new Error(`Meet History post race summary missing ${text}`);
+  });
+  const summaryFunction = history.match(/function renderPostRaceSummary\(results\)\{[\s\S]*?\n\}/);
+  if (!summaryFunction) throw new Error("Meet History post race summary function not found");
+  ["downloadTextFile", "print"].forEach((text) => {
+    if (summaryFunction[0].includes(text)) throw new Error(`Post race summary should not include ${text}`);
+  });
+  console.log("Meet History post race summary ok");
+}
+
 function checkMeetHistoryQuickEntry() {
   const history = fs.readFileSync("meet-history.html", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
@@ -5624,6 +5652,7 @@ checkMeetHistoryPerformanceCaches();
 checkMeetHistoryImportOnlySpreadsheet();
 checkMeetHistoryImportedResultCorrections();
 checkMeetResultSplitDetails();
+checkMeetHistoryPostRaceSummary();
 checkMeetHistoryQuickEntry();
 checkPageSearchDebounces();
 checkAthletesDocuTrakSetupLayout();
