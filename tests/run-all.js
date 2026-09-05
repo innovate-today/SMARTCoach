@@ -3835,7 +3835,7 @@ function checkMobileMeetRaceSummary() {
     'id="tray-results-btn"',
     'onclick="openRaceSummary()"',
     '<span>Results</span>',
-    'id="m-race-summary"',
+    'class="mover h" id="m-race-summary"',
     'Race Summary',
     'id="race-summary-title"',
     'id="race-summary-body"',
@@ -4443,8 +4443,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1788646500000"',
-    "<!-- build:1788646500000 -->",
+    'meta name="app-version" content="1788650160000"',
+    "<!-- build:1788650160000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
