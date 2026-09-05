@@ -3847,10 +3847,14 @@ function checkMobileMeetRaceSummary() {
     "function raceSummaryText()",
     "function openRaceSummary()",
     "function shareRaceSummary()",
+    "function raceSummaryShortcutHtml()",
+    "var raceSummaryShortcut=raceSummaryShortcutHtml();",
     "var syncSummary=groupSyncSummaryHtml();",
-    "partnerClock+meetSetup+syncSummary",
-    "View Race Summary",
-    "Recall places, splits, and final times from this race.",
+    "partnerClock+meetSetup+raceSummaryShortcut+syncSummary",
+    "btn.textContent=(isProPlan()&&ready)?(CL.type==='meet'?'Save':'Sync'):(savedMeetResults?'Results':'Share');",
+    "Race Summary",
+    "saved result",
+    "Opens after saved times are captured.",
     "if(resultsBtn)resultsBtn.hidden=!meet;",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile meet race summary missing ${text}`);
@@ -4439,8 +4443,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1788645600000"',
-    "<!-- build:1788645600000 -->",
+    'meta name="app-version" content="1788646500000"',
+    "<!-- build:1788646500000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -5464,12 +5468,12 @@ function checkFieldPracticePhaseOne() {
     "if(CL.trainingRaceManualOrderSession)return;",
     "trainingRaceLastResortSignature",
     "trainingRaceManualOrder:l.trainingRaceManualOrder?1:0",
-    "el.innerHTML=partnerClock+syncSummary+trainingRaceDisplayRunners().map",
+    "el.innerHTML=partnerClock+raceSummaryShortcut+syncSummary+trainingRaceDisplayRunners().map",
     "trainingRaceDisplayRunners().forEach(function(r)",
     "CL.trainingRaceManualOrder=1;",
     "CL.trainingRaceManualOrderSession=1;",
     "return speed||name;",
-    "partnerClock+syncSummary+trainingRaceDisplayRunners().map",
+    "partnerClock+raceSummaryShortcut+syncSummary+trainingRaceDisplayRunners().map",
     "if(!p.speedAthleteOrder.length)groupRunners=trainingRaceOrderedRunners(groupRunners);",
     "fp-speed-result-gender",
     "speedRemovedAthletes",
