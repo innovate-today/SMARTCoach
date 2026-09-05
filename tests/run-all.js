@@ -3815,7 +3815,7 @@ function checkMobileMeetRaceDivisionSetup() {
     "var runners=meetRunnersForGroup(groupNames,log);",
     "function meetDivisionOptions()",
     "return ['Open','Varsity Boys','Varsity Girls','JV Boys','JV Girls','Freshman Boys','Freshman Girls','Middle School Boys','Middle School Girls'];",
-    '<select id="meet-division-input" class="ni" onchange="setMeetGroupDivision(this.value)">',
+    '<select id="meet-division-input" class="sinp" style="max-width:210px;flex:0 0 210px;font-size:15px;font-weight:800;padding:6px 8px" onchange="setMeetGroupDivision(this.value)">',
     "raceDivision:meetGroupDivisionLabel(CL)",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile meet race division setup missing ${text}`);
@@ -3845,9 +3845,9 @@ function checkMobileMeetRaceSummary() {
     "function openRaceSummary()",
     "function shareRaceSummary()",
     "function raceSummaryShortcutHtml()",
-    "var raceSummaryShortcut=raceSummaryShortcutHtml();",
+    "var shortcut=raceSummaryShortcutHtml();",
     "var syncSummary=groupSyncSummaryHtml();",
-    "partnerClock+meetSetup+raceSummaryShortcut+syncSummary",
+    "partnerClock+meetSetup+syncSummary",
     "btn.textContent=(isProPlan()&&ready)?(CL.type==='meet'?'Save':'Sync'):(savedMeetResults?'Results':'Share');",
     "Race Summary",
     "saved result",
@@ -4446,8 +4446,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1788651180000"',
-    "<!-- build:1788651180000 -->",
+    'meta name="app-version" content="1788652020000"',
+    "<!-- build:1788652020000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -5471,12 +5471,12 @@ function checkFieldPracticePhaseOne() {
     "if(CL.trainingRaceManualOrderSession)return;",
     "trainingRaceLastResortSignature",
     "trainingRaceManualOrder:l.trainingRaceManualOrder?1:0",
-    "el.innerHTML=partnerClock+raceSummaryShortcut+syncSummary+trainingRaceDisplayRunners().map",
+    "el.innerHTML=partnerClock+syncSummary+trainingRaceDisplayRunners().map",
     "trainingRaceDisplayRunners().forEach(function(r)",
     "CL.trainingRaceManualOrder=1;",
     "CL.trainingRaceManualOrderSession=1;",
     "return speed||name;",
-    "partnerClock+raceSummaryShortcut+syncSummary+trainingRaceDisplayRunners().map",
+    "partnerClock+syncSummary+trainingRaceDisplayRunners().map",
     "if(!p.speedAthleteOrder.length)groupRunners=trainingRaceOrderedRunners(groupRunners);",
     "fp-speed-result-gender",
     "speedRemovedAthletes",
