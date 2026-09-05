@@ -4253,8 +4253,14 @@ function checkMeetResultSplitDetails() {
     "function renderRaceSheetOptions()",
     "function raceSheetSelectedKeys()",
     "function raceSheetSectionKey(row,grouping)",
+    "function raceSheetResultChangeDisplay(current,previous)",
     "sportText(row)==='Cross Country'",
-    "cells.push('DNR','DNR');",
+    "Exports cross country results as a clean row-by-row comparison.",
+    "var columnHeader=['Athlete','Grade','Gender','Distance','Race Date','Race'];",
+    "columnHeader.push('Final Time');",
+    "columnHeader.push('Best Status');",
+    "columnHeader.push('Change From Previous Race');",
+    "cells.push('DNR','DNR','');",
     "headers.push('Change '+i+'-'+(i+1));",
     "downloadTextFile('smart-trak-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
     "downloadTextFile('smart-trak-xc-race-comparison-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
@@ -4263,13 +4269,14 @@ function checkMeetResultSplitDetails() {
   });
   [
     "Use **Export XC Race Comparison CSV**",
-    "races across the top",
-    "adds another block",
+    "clean cross country comparison",
     "Choose the races to include",
     "Active roster only",
     "Inactive / historical only",
     "Distance + Gender",
     "Distance + Gender + Grade",
+    "one row per athlete per race",
+    "change from the athlete's previous selected race",
     "Athletes who did not run a selected race show `DNR`",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Coach guide race sheet export missing ${text}`);
