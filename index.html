@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1788643800000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1788645600000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1788643800000 -->
-<!-- v1788643800000 -->
+<!-- build:1788645600000 -->
+<!-- v1788645600000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -224,6 +224,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .eq-result:last-child{border-bottom:none}
 .eq-result b{display:block;font-size:15px;color:#111}
 .eq-result small{display:block;margin-top:2px;font-size:12px;color:#666;line-height:1.3}
+.race-summary-head{background:#fff;border:1px solid #d1d5db;border-radius:10px;margin:0 12px 10px;padding:12px;text-align:left}
+.race-summary-head b{display:block;font-size:18px;color:#111827}
+.race-summary-head small{display:block;color:#667085;font-size:12px;font-weight:700;margin-top:3px}
+.race-summary-section{background:#fff;border:1px solid #d1d5db;border-radius:10px;margin:0 12px 10px;overflow:hidden;text-align:left}
+.race-summary-title{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f7f7f9;border-bottom:0.5px solid #e5e5ea;padding:10px 12px}
+.race-summary-title b{font-size:15px;color:#111827}
+.race-summary-title small{font-size:12px;color:#667085;font-weight:800}
+.race-summary-table-wrap{overflow:auto}
+.race-summary-table{width:100%;min-width:560px;border-collapse:collapse}
+.race-summary-table th,.race-summary-table td{border-bottom:0.5px solid #e5e5ea;padding:9px 8px;text-align:left;font-size:12px;color:#111827;vertical-align:top}
+.race-summary-table th{background:#fbfbfd;color:#667085;text-transform:uppercase;letter-spacing:.02em;font-size:10px;font-weight:900}
+.race-summary-table td:first-child,.race-summary-table td:last-child{font-weight:900}
+.race-summary-table td:last-child{color:#102a70}
+.race-summary-table tr:last-child td{border-bottom:none}
+.race-summary-empty{background:#fff;border:1px solid #d1d5db;border-radius:10px;margin:0 12px 10px;padding:18px 12px;color:#777;font-size:14px;font-weight:700;text-align:center}
 .partner-banner{margin:8px 10px 0;padding:10px 12px;border-radius:12px;background:#eef3ff;border:1px solid #bcd0ff;color:#102a70;font-size:13px;font-weight:800}
 .partner-grid{padding:0 12px 10px;display:grid;gap:8px}
 .partner-card{background:#fff;border:1px solid #d1d5db;border-radius:12px;padding:10px 12px}
@@ -375,10 +390,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <button class="tbtn" id="tray-sort-btn" onclick="traySortAction()"><svg id="tray-sort-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="tray-sort-label">Sort</span></button>
     <button class="tbtn" id="tray-sum-btn" onclick="traySumAction()"><svg id="tray-sum-icon" viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg><span id="tray-sum-label">Sum</span></button>
     <button class="tbtn pro-only" id="tray-plan-btn" onclick="trayPlanAction()"><svg id="tray-plan-icon" viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span id="tray-plan-label">Plan</span></button>
+    <button class="tbtn pro-only" id="tray-results-btn" onclick="openRaceSummary()" hidden><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 16V9"/><path d="M12 16V5"/><path d="M17 16v-4"/></svg><span>Results</span></button>
     <button class="tbtn" onclick="addR()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn" id="tray-attendance-btn" onclick="openAttendance()"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M9 2h6v4H9z"/><path d="M6 4H5a2 2 0 0 0-2 2v14h18V6a2 2 0 0 0-2-2h-1"/><path d="M7 11l2 2 4-4"/><path d="M7 17h10"/></svg><span>Attend</span></button>
     <button class="tbtn" onclick="go('s-set')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
     <button class="tbtn" onclick="delR()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg><span>Delete</span></button>
+  </div>
+</div>
+
+<div class="modal" id="m-race-summary">
+  <div class="msh">
+    <div class="mhd">Race Summary</div>
+    <div class="mttl" id="race-summary-title">Results</div>
+    <div class="builder-box" id="race-summary-body"></div>
+    <button class="mbtn" onclick="shareRaceSummary()" style="margin-top:8px;background:#2B4FCC">Share Summary</button>
+    <button class="mbtn c" onclick="hm('m-race-summary')" style="margin-top:8px">Done</button>
   </div>
 </div>
 
@@ -5524,6 +5550,71 @@ function groupSyncSummaryHtml(){
   var color=ready?'var(--R)':'#0a7a44';
   return '<div class="lsec pro-only" style="margin-top:8px"><div class="erow" '+(ready?'onclick="openSMARTCoachSave()"':'')+' style="min-height:42px"><span class="elbl"><b>Status</b><br><small style="color:'+color+';font-weight:700">'+text+'</small></span>'+(ready?'<span style="color:#bbb">&rsaquo;</span>':'')+'</div></div>';
 }
+function raceSummaryRows(){
+  if(!CL||CL.type!=='meet')return[];
+  var rows=[];
+  (CL.runners||[]).forEach(function(r){
+    meetRunsForSave(r,true).forEach(function(entry){
+      var run=entry.run;
+      if(!run||!run.ms)return;
+      rows.push({name:r.name||'Runner',event:CL.eventName||CL.name||'Race',division:meetGroupDivisionLabel(CL)||meetRosterGroupLabel(CL)||'Open',ms:run.ms,time:fmt(run.ms),splits:splitLabelsForRun(CL,r,run),saved:!!run.meetSynced,syncedAt:run.meetSyncedAt||run.syncedAt||'',note:run.note||''});
+    });
+  });
+  return rows.sort(function(a,b){return (a.ms||Number.MAX_SAFE_INTEGER)-(b.ms||Number.MAX_SAFE_INTEGER)||String(a.name).localeCompare(String(b.name));});
+}
+function raceSummarySectionLabel(row){
+  return String(row&&row.division||'Open').trim()||'Open';
+}
+function raceSummaryHtml(){
+  var rows=raceSummaryRows();
+  if(!rows.length)return '<div class="race-summary-empty">No saved race results yet. Stop runners, then save/sync meet results to recall them here.</div>';
+  var maxSplits=rows.reduce(function(max,row){return Math.max(max,(row.splits||[]).length);},0);
+  var groups={};
+  rows.forEach(function(row){
+    var label=raceSummarySectionLabel(row);
+    if(!groups[label])groups[label]=[];
+    groups[label].push(row);
+  });
+  return '<div class="race-summary-head"><b>'+ex(meetDisplayTitle(CL))+'</b><small>'+ex([CL.meetDate,meetRosterGroupLabel(CL),meetGroupDivisionLabel(CL)].filter(Boolean).join(' · '))+'</small></div>'+
+    Object.keys(groups).sort().map(function(label){
+      var section=groups[label];
+      var headers=['Place','Name','Event'];
+      for(var i=0;i<maxSplits;i+=1)headers.push('Split '+(i+1));
+      headers.push('Final');
+      return '<div class="race-summary-section"><div class="race-summary-title"><b>'+ex(label)+'</b><small>'+section.length+' result'+(section.length===1?'':'s')+'</small></div><div class="race-summary-table-wrap"><table class="race-summary-table"><thead><tr>'+headers.map(function(header){return '<th>'+ex(header)+'</th>';}).join('')+'</tr></thead><tbody>'+
+        section.map(function(row,index){
+          var cells=[String(index+1),row.name,row.event];
+          for(var j=0;j<maxSplits;j+=1)cells.push(row.splits[j]?fmt(row.splits[j].ms):'');
+          cells.push(row.time);
+          return '<tr>'+cells.map(function(cell){return '<td>'+ex(cell)+'</td>';}).join('')+'</tr>';
+        }).join('')+'</tbody></table></div></div>';
+    }).join('');
+}
+function raceSummaryText(){
+  var rows=raceSummaryRows();
+  var title=(CL&&meetDisplayTitle(CL)||'Race')+' Summary';
+  if(!rows.length)return title+'\nNo saved race results yet.';
+  var lines=[title];
+  var current='';
+  rows.forEach(function(row,index){
+    var label=raceSummarySectionLabel(row);
+    if(label!==current){current=label;lines.push('',label);}
+    var splits=(row.splits||[]).length?' ['+row.splits.map(function(split,i){return 'S'+(i+1)+' '+fmt(split.ms);}).join(' / ')+']':'';
+    lines.push((index+1)+'. '+row.name+' - '+row.time+splits);
+  });
+  return lines.join('\n');
+}
+function openRaceSummary(){
+  if(!CL||CL.type!=='meet')return;
+  var title=document.getElementById('race-summary-title');
+  var body=document.getElementById('race-summary-body');
+  if(title)title.textContent=meetDisplayTitle(CL);
+  if(body)body.innerHTML=raceSummaryHtml();
+  sm('m-race-summary');
+}
+function shareRaceSummary(){
+  oShare(raceSummaryText());
+}
 function updateTrayActions(){
   var sortBtn=document.getElementById('tray-sort-btn');
   var sumBtn=document.getElementById('tray-sum-btn');
@@ -5534,6 +5625,7 @@ function updateTrayActions(){
   var planBtn=document.getElementById('tray-plan-btn');
   var planLabel=document.getElementById('tray-plan-label');
   var planIcon=document.getElementById('tray-plan-icon');
+  var resultsBtn=document.getElementById('tray-results-btn');
   var attendanceBtn=document.getElementById('tray-attendance-btn');
   var meet=CL&&CL.type==='meet';
   if(sortBtn)sortBtn.hidden=!meet;
@@ -5545,6 +5637,7 @@ function updateTrayActions(){
   if(planBtn)planBtn.hidden=false;
   if(planLabel)planLabel.textContent=meet?'Partner':'Plan';
   if(planIcon)planIcon.innerHTML=meet?'<circle cx="12" cy="5" r="2"/><path d="M12 7v10"/><path d="M6 19h12"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 17v-4h12v4"/>':'<path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/>';
+  if(resultsBtn)resultsBtn.hidden=!meet;
   if(attendanceBtn)attendanceBtn.hidden=!!meet;
 }
 function trayPlanAction(){

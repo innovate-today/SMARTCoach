@@ -3829,6 +3829,31 @@ function checkMobileMeetRaceDivisionSetup() {
   console.log("mobile meet race division setup ok");
 }
 
+function checkMobileMeetRaceSummary() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    'id="tray-results-btn"',
+    'onclick="openRaceSummary()"',
+    '<span>Results</span>',
+    'id="m-race-summary"',
+    'Race Summary',
+    'id="race-summary-title"',
+    'id="race-summary-body"',
+    "function raceSummaryRows()",
+    "meetRunsForSave(r,true).forEach(function(entry)",
+    "splits:splitLabelsForRun(CL,r,run)",
+    "function raceSummaryHtml()",
+    "No saved race results yet.",
+    "function raceSummaryText()",
+    "function openRaceSummary()",
+    "function shareRaceSummary()",
+    "if(resultsBtn)resultsBtn.hidden=!meet;",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile meet race summary missing ${text}`);
+  });
+  console.log("mobile meet race summary ok");
+}
+
 function checkAthleteCalendarBulkEmailLinks() {
   const html = fs.readFileSync("athletes.html", "utf8");
   const api = fs.readFileSync("api/ghl/athletes.js", "utf8");
@@ -4410,8 +4435,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1788643800000"',
-    "<!-- build:1788643800000 -->",
+    'meta name="app-version" content="1788645600000"',
+    "<!-- build:1788645600000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -5640,6 +5665,7 @@ checkMobileTrainingPlanArchiveFilter();
 checkMobileCalendarMeetDedup();
 checkMobileMeetListSort();
 checkMobileMeetRaceDivisionSetup();
+checkMobileMeetRaceSummary();
 checkAthleteCalendarBulkEmailLinks();
 checkAthleteCalendarQuestions();
 checkAthleteCalendarSubmittedStatusPill();
