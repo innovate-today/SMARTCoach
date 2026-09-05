@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1788636240000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1788639120000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1788636240000 -->
-<!-- v1788636240000 -->
+<!-- build:1788639120000 -->
+<!-- v1788639120000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -596,7 +596,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="srow"><label class="slbl">Date</label><input id="mg-date" class="sinp" type="date"/></div>
       <div class="srow"><label class="slbl">Season</label><select id="mg-season" class="sinp"><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></div>
       <div class="srow"><label class="slbl">Event</label><input id="mg-event" type="hidden" value="400m"/><button type="button" id="mg-event-display" class="sinp picker-control" onclick="openMeetEventPicker()">400m</button></div>
-      <div class="srow"><label class="slbl">Division</label><input id="mg-division" class="sinp" type="text" placeholder="Varsity Boys, JV Girls, Open" autocomplete="off"/></div>
+      <div class="srow"><label class="slbl">Division</label><select id="mg-division" class="sinp"><option value="">Open</option><option>Varsity Boys</option><option>Varsity Girls</option><option>JV Boys</option><option>JV Girls</option><option>Freshman Boys</option><option>Freshman Girls</option><option>Middle School Boys</option><option>Middle School Girls</option></select></div>
       <div class="srow h" id="mg-event-other-row"><label class="slbl">Specify</label><input id="mg-event-other" class="sinp" type="text" placeholder="Event name" autocomplete="off"/></div>
     </div>
     <button class="mbtn" onclick="createMeetGroup()">Create</button>
@@ -2253,21 +2253,43 @@ function findTrainingGroupByName(name){
   if(!key)return null;
   return logs.find(function(item){return (item.type||'training')==='training'&&String(item.name||'').trim().toLowerCase()===key;})||null;
 }
+function meetGroupNamesFromDay(day){
+  var raw=[];
+  if(Array.isArray(day&&day.groupNames))raw=raw.concat(day.groupNames);
+  if(Array.isArray(day&&day.groups))raw=raw.concat(day.groups.map(function(group){return group&&typeof group==='object'?(group.name||group.groupName||group.label):group;}));
+  if(Array.isArray(day&&day.assignedGroups))raw=raw.concat(day.assignedGroups.map(function(group){return group&&typeof group==='object'?(group.name||group.groupName||group.label):group;}));
+  raw.push(day&&day.groupName);
+  var seen={},out=[];
+  raw.forEach(function(value){
+    String(value||'').split(/\s*(?:,|\||;|\n)\s*/).forEach(function(part){
+      var name=part.trim(),key=name.toLowerCase();
+      if(name&&!seen[key]){seen[key]=true;out.push(name);}
+    });
+  });
+  return out;
+}
 function meetRunnersForGroup(groupName,existingLog){
-  var source=findTrainingGroupByName(groupName);
+  var groupNames=Array.isArray(groupName)?groupName:meetGroupNamesFromDay({groupName:groupName});
+  var sources=groupNames.map(findTrainingGroupByName).filter(Boolean);
   var existing={};
+  var added={};
   ((existingLog&&existingLog.runners)||[]).forEach(function(r){
     var key=String(r.contactId||r.name||'').trim().toLowerCase();
     if(key)existing[key]=r;
   });
-  return ((source&&source.runners)||[]).map(function(src){
-    var key=String(src.contactId||src.name||'').trim().toLowerCase();
-    var r=existing[key]||mkR();
-    r.name=src.name||r.name;
-    r.contactId=src.contactId||r.contactId||'';
-    r.smartcoachAthleteId=src.smartcoachAthleteId||r.smartcoachAthleteId||'';
-    return r;
-  });
+  return sources.reduce(function(out,source){
+    ((source&&source.runners)||[]).forEach(function(src){
+      var key=String(src.contactId||src.name||'').trim().toLowerCase();
+      if(!key||added[key])return;
+      added[key]=true;
+      var r=existing[key]||mkR();
+      r.name=src.name||r.name;
+      r.contactId=src.contactId||r.contactId||'';
+      r.smartcoachAthleteId=src.smartcoachAthleteId||r.smartcoachAthleteId||'';
+      out.push(r);
+    });
+    return out;
+  },[]);
 }
 function isBadMeetLabel(value){
   var text=String(value||'').trim();
@@ -2334,7 +2356,7 @@ function mergeCalendarMeetDaysIntoLogs(days){
       if(String(log[key]||'')!==String(next[key]||'')){log[key]=next[key];changed=true;}
     });
     if(applyMeetDayCfg(log))changed=true;
-    var runners=meetRunnersForGroup(day.groupName,log);
+    var runners=meetRunnersForGroup(meetGroupNamesFromDay(day),log);
     if(runners.length&&runners.length!==log.runners.length){log.runners=runners;changed=true;}
     else if(runners.length){
       log.runners=runners;
@@ -3061,6 +3083,9 @@ function createMeetGroupFromValues(data){
 function meetGroupDivisionLabel(group){
   return String(group&&group.raceDivision||'').trim();
 }
+function meetDivisionOptions(){
+  return ['Open','Varsity Boys','Varsity Girls','JV Boys','JV Girls','Freshman Boys','Freshman Girls','Middle School Boys','Middle School Girls'];
+}
 function meetGroupSetupHtml(){
   if(!CL||CL.type!=='meet')return '';
   var division=meetGroupDivisionLabel(CL);
@@ -3068,9 +3093,8 @@ function meetGroupSetupHtml(){
     '<div class="lhdr">Race Setup</div>'+
     '<div class="nrow">'+
       '<label class="nlbl" for="meet-division-input">Division</label>'+
-      '<input id="meet-division-input" class="ni" type="text" value="'+ex(division)+'" placeholder="Varsity Boys, JV Girls, Open" autocomplete="off" oninput="setMeetGroupDivision(this.value)"/>'+
+      '<select id="meet-division-input" class="ni" onchange="setMeetGroupDivision(this.value)">'+meetDivisionOptions().map(function(label){var value=label==='Open'?'':label;return '<option value="'+ex(value)+'" '+(value===division?'selected':'')+'>'+ex(label)+'</option>';}).join('')+'</select>'+
     '</div>'+
-    '<div class="erow" style="min-height:42px"><span class="elbl"><b>'+ex(CL.eventName||CL.name||'Race')+'</b><br><small style="color:#777">'+ex((CL.meetName||'Meet')+(CL.meetDate?' · '+CL.meetDate:''))+'</small></span></div>'+
   '</div>';
 }
 function setMeetGroupDivision(value){

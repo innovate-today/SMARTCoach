@@ -3788,6 +3788,31 @@ function checkMobileMeetListSort() {
   console.log("mobile meet list sort ok");
 }
 
+function checkMobileMeetRaceDivisionSetup() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    'id="mg-division" class="sinp"><option value="">Open</option><option>Varsity Boys</option><option>Varsity Girls</option><option>JV Boys</option><option>JV Girls</option>',
+    "function meetGroupNamesFromDay(day)",
+    "if(Array.isArray(day&&day.groupNames))raw=raw.concat(day.groupNames);",
+    "if(Array.isArray(day&&day.assignedGroups))raw=raw.concat(day.assignedGroups.map",
+    "String(value||'').split(/\\s*(?:,|\\||;|\\n)\\s*/)",
+    "var runners=meetRunnersForGroup(meetGroupNamesFromDay(day),log);",
+    "function meetDivisionOptions()",
+    "return ['Open','Varsity Boys','Varsity Girls','JV Boys','JV Girls','Freshman Boys','Freshman Girls','Middle School Boys','Middle School Girls'];",
+    '<select id="meet-division-input" class="ni" onchange="setMeetGroupDivision(this.value)">',
+    "raceDivision:meetGroupDivisionLabel(CL)",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile meet race division setup missing ${text}`);
+  });
+  [
+    "placeholder=\"Varsity Boys, JV Girls, Open\" autocomplete=\"off\" oninput=\"setMeetGroupDivision(this.value)\"",
+    "<b>'+ex(CL.eventName||CL.name||'Race')+'</b><br><small style=\"color:#777\">'+ex((CL.meetName||'Meet')+(CL.meetDate?' · '+CL.meetDate:''))+'</small>",
+  ].forEach((text) => {
+    if (mobile.includes(text)) throw new Error(`Mobile meet race division setup should not include old free-text setup: ${text}`);
+  });
+  console.log("mobile meet race division setup ok");
+}
+
 function checkAthleteCalendarBulkEmailLinks() {
   const html = fs.readFileSync("athletes.html", "utf8");
   const api = fs.readFileSync("api/ghl/athletes.js", "utf8");
@@ -4341,8 +4366,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1788636240000"',
-    "<!-- build:1788636240000 -->",
+    'meta name="app-version" content="1788639120000"',
+    "<!-- build:1788639120000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
@@ -5570,6 +5595,7 @@ checkMobileCalendarWorkoutPriority();
 checkMobileTrainingPlanArchiveFilter();
 checkMobileCalendarMeetDedup();
 checkMobileMeetListSort();
+checkMobileMeetRaceDivisionSetup();
 checkAthleteCalendarBulkEmailLinks();
 checkAthleteCalendarQuestions();
 checkAthleteCalendarSubmittedStatusPill();
