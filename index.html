@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1788650160000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1788651180000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1788650160000 -->
-<!-- v1788650160000 -->
+<!-- build:1788651180000 -->
+<!-- v1788651180000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -390,7 +390,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <button class="tbtn" id="tray-sort-btn" onclick="traySortAction()"><svg id="tray-sort-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="tray-sort-label">Sort</span></button>
     <button class="tbtn" id="tray-sum-btn" onclick="traySumAction()"><svg id="tray-sum-icon" viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg><span id="tray-sum-label">Sum</span></button>
     <button class="tbtn pro-only" id="tray-plan-btn" onclick="trayPlanAction()"><svg id="tray-plan-icon" viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span id="tray-plan-label">Plan</span></button>
-    <button class="tbtn pro-only" id="tray-results-btn" onclick="openRaceSummary()" hidden><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 16V9"/><path d="M12 16V5"/><path d="M17 16v-4"/></svg><span>Results</span></button>
     <button class="tbtn" onclick="addR()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add</span></button>
     <button class="tbtn" id="tray-attendance-btn" onclick="openAttendance()"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M9 2h6v4H9z"/><path d="M6 4H5a2 2 0 0 0-2 2v14h18V6a2 2 0 0 0-2-2h-1"/><path d="M7 11l2 2 4-4"/><path d="M7 17h10"/></svg><span>Attend</span></button>
     <button class="tbtn" onclick="go('s-set')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
@@ -5639,7 +5638,6 @@ function updateTrayActions(){
   var planBtn=document.getElementById('tray-plan-btn');
   var planLabel=document.getElementById('tray-plan-label');
   var planIcon=document.getElementById('tray-plan-icon');
-  var resultsBtn=document.getElementById('tray-results-btn');
   var attendanceBtn=document.getElementById('tray-attendance-btn');
   var meet=CL&&CL.type==='meet';
   if(sortBtn)sortBtn.hidden=!meet;
@@ -5651,7 +5649,6 @@ function updateTrayActions(){
   if(planBtn)planBtn.hidden=false;
   if(planLabel)planLabel.textContent=meet?'Partner':'Plan';
   if(planIcon)planIcon.innerHTML=meet?'<circle cx="12" cy="5" r="2"/><path d="M12 7v10"/><path d="M6 19h12"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 17v-4h12v4"/>':'<path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/>';
-  if(resultsBtn)resultsBtn.hidden=!meet;
   if(attendanceBtn)attendanceBtn.hidden=!!meet;
 }
 function trayPlanAction(){

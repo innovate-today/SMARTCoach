@@ -3832,9 +3832,6 @@ function checkMobileMeetRaceDivisionSetup() {
 function checkMobileMeetRaceSummary() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
-    'id="tray-results-btn"',
-    'onclick="openRaceSummary()"',
-    '<span>Results</span>',
     'class="mover h" id="m-race-summary"',
     'Race Summary',
     'id="race-summary-title"',
@@ -3855,9 +3852,15 @@ function checkMobileMeetRaceSummary() {
     "Race Summary",
     "saved result",
     "Opens after saved times are captured.",
-    "if(resultsBtn)resultsBtn.hidden=!meet;",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile meet race summary missing ${text}`);
+  });
+  [
+    'id="tray-results-btn"',
+    "var resultsBtn=document.getElementById('tray-results-btn');",
+    "if(resultsBtn)resultsBtn.hidden=!meet;",
+  ].forEach((text) => {
+    if (mobile.includes(text)) throw new Error(`Mobile meet race summary should not use tray icon: ${text}`);
   });
   console.log("mobile meet race summary ok");
 }
@@ -4443,8 +4446,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1788650160000"',
-    "<!-- build:1788650160000 -->",
+    'meta name="app-version" content="1788651180000"',
+    "<!-- build:1788651180000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
