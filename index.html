@@ -5418,12 +5418,13 @@ function rr(){
   var el=document.getElementById('rs');
   var partnerClock=partnerTimingEnabled()?partnerRaceClockHtml('screen'):'';
   var meetSetup=meetGroupSetupHtml();
+  var syncSummary=groupSyncSummaryHtml();
   if(!CL.runners.length){
-    el.innerHTML=partnerClock+meetSetup+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
+    el.innerHTML=partnerClock+meetSetup+syncSummary+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
   }else if(meetSetup){
-    el.innerHTML=partnerClock+meetSetup+trainingRaceDisplayRunners().map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=partnerClock+meetSetup+syncSummary+trainingRaceDisplayRunners().map(function(r){return rHTML(r);}).join('');
   }else{
-    el.innerHTML=partnerClock+trainingRaceDisplayRunners().map(function(r){return rHTML(r);}).join('');
+    el.innerHTML=partnerClock+syncSummary+trainingRaceDisplayRunners().map(function(r){return rHTML(r);}).join('');
   }
   updateGroupPrimaryAction();
   updateTrayActions();
@@ -5548,7 +5549,9 @@ function groupSyncSummaryHtml(){
   var doneLabel=CL.type==='meet'?'already saved':'already synced';
   var text=ready?ready+' '+readyLabel+' · '+done+' '+doneLabel:(CL.type==='meet'?'All meet results saved':'All saved runs synced');
   var color=ready?'var(--R)':'#0a7a44';
-  return '<div class="lsec pro-only" style="margin-top:8px"><div class="erow" '+(ready?'onclick="openSMARTCoachSave()"':'')+' style="min-height:42px"><span class="elbl"><b>Status</b><br><small style="color:'+color+';font-weight:700">'+text+'</small></span>'+(ready?'<span style="color:#bbb">&rsaquo;</span>':'')+'</div></div>';
+  var rows='<div class="erow" '+(ready?'onclick="openSMARTCoachSave()"':'')+' style="min-height:46px"><span class="elbl"><b>Status</b><br><small style="color:'+color+';font-weight:700">'+text+'</small></span>'+(ready?'<span style="color:#bbb">&rsaquo;</span>':'')+'</div>';
+  if(CL.type==='meet')rows+='<div class="erow" onclick="openRaceSummary()" style="min-height:54px"><span class="elbl"><b>View Race Summary</b><br><small style="color:#102a70;font-weight:800">Recall places, splits, and final times from this race.</small></span><span style="color:#bbb">&rsaquo;</span></div>';
+  return '<div class="lsec pro-only" style="margin-top:8px">'+rows+'</div>';
 }
 function raceSummaryRows(){
   if(!CL||CL.type!=='meet')return[];
