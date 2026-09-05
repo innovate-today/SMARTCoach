@@ -3760,19 +3760,30 @@ function checkMobileTrainingPlanArchiveFilter() {
 function checkMobileCalendarMeetDedup() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
-    "var changed=false,activeIds={},meetRosterGroups={};",
+    "var changed=false,activeIds={},activeMeetRecordIds={};",
     "var linkedRecordId=String(linkedMeet&&linkedMeet.id||day.linkedMeetId||'');",
+    "var groupNames=meetGroupNamesFromDay(day);",
+    "var log=logs.find(function(item){return item.sharedGroupId===id;});",
+    "log={id:lid++,sharedGroupId:id,name:linkedMeet&&linkedMeet.name||day.title||'Meet',type:'meet',cfg:meetDayCfg(),runners:[]};",
+    "activeIds[id]=true;",
+    "if(linkedRecordId)activeMeetRecordIds[linkedRecordId]=true;",
+    "sharedGroupId:log.sharedGroupId||id",
+    "raceRosterGroups:groupNames,",
+    "var isGenerated=shared.indexOf('calmeet_')===0||shared.indexOf('meetrec_')===0;",
+    "if(!isGenerated||log.archived||hasSavedMeetResults(log))return;",
+    "if(!activeIds[shared]||(shared.indexOf('meetrec_')===0&&recordId&&activeMeetRecordIds[recordId]))",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile calendar meet split missing ${text}`);
+  });
+  [
+    "var changed=false,activeIds={},meetRosterGroups={};",
     "var rosterKey=linkedRecordId?('meetrec_'+linkedRecordId):id;",
     "var log=linkedRecordId?findManagedMeetLogByRecordId(linkedRecordId):null;",
     "sharedGroupId:linkedRecordId?('meetrec_'+linkedRecordId):id",
-    "sharedGroupId:linkedRecordId?('meetrec_'+linkedRecordId):(log.sharedGroupId||id)",
-    "function findManagedMeetLogByRecordId(recordId)",
-    "if(recordId&&shared.indexOf('meetrec_')===0)managedRecordIds[recordId]=true;",
-    "if(!activeIds[shared]||(recordId&&managedRecordIds[recordId]))",
   ].forEach((text) => {
-    if (!mobile.includes(text)) throw new Error(`Mobile calendar meet dedup missing ${text}`);
+    if (mobile.includes(text)) throw new Error(`Mobile calendar meet split should not merge group rosters: ${text}`);
   });
-  console.log("mobile calendar meet dedup ok");
+  console.log("mobile calendar meet split ok");
 }
 
 function checkMobileMeetListSort() {
@@ -3798,8 +3809,10 @@ function checkMobileMeetRaceDivisionSetup() {
     "if(Array.isArray(day&&day.groupNames))raw=raw.concat(day.groupNames);",
     "if(Array.isArray(day&&day.assignedGroups))raw=raw.concat(day.assignedGroups.map",
     "String(value||'').split(/\\s*(?:,|\\||;|\\n)\\s*/)",
-    "meetRosterGroups[rosterKey]=(meetRosterGroups[rosterKey]||[]).concat(meetGroupNamesFromDay(day));",
-    "var runners=meetRunnersForGroup(meetRosterGroups[rosterKey],log);",
+    "raceRosterGroups:Array.isArray(l.raceRosterGroups)?l.raceRosterGroups:[]",
+    "function meetRosterGroupLabel(group)",
+    "if(meetRosterGroupLabel(group))parts.push(meetRosterGroupLabel(group));",
+    "var runners=meetRunnersForGroup(groupNames,log);",
     "function meetDivisionOptions()",
     "return ['Open','Varsity Boys','Varsity Girls','JV Boys','JV Girls','Freshman Boys','Freshman Girls','Middle School Boys','Middle School Girls'];",
     '<select id="meet-division-input" class="ni" onchange="setMeetGroupDivision(this.value)">',
@@ -4369,8 +4382,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1788640260000"',
-    "<!-- build:1788640260000 -->",
+    'meta name="app-version" content="1788643800000"',
+    "<!-- build:1788643800000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
