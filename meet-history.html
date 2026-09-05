@@ -528,7 +528,7 @@ tr:last-child td{border-bottom:0}
       <button id="raceSheetExportClose" class="ghost" type="button">Close</button>
     </div>
     <div class="modalbody">
-      <p class="sub">Exports cross country results as a clean row-by-row comparison. Use the current view to narrow the list, then choose which races and athletes to include.</p>
+      <p class="sub">Exports cross country progression with athletes down the left and selected races across the top. Use the current view to narrow the list, then choose which races and athletes to include.</p>
       <div class="formgrid">
         <div class="field">
           <label for="raceSheetGrouping">Group Rows By</label>
@@ -2624,24 +2624,34 @@ function buildRaceSheetCsv(rows,grouping){
     if(lines.length)lines.push('');
     lines.push([section.title].map(csvCell).join(','));
     var maxSplits=races.reduce(function(max,race){return Math.max(max,race.maxSplits||0);},0);
-    var columnHeader=['Athlete','Grade','Gender','Distance','Race Date','Race'];
-    for(var s=0;s<maxSplits;s+=1)columnHeader.push('Split '+(s+1));
-    for(var c=1;c<maxSplits;c+=1)columnHeader.push('Split Change '+c+'-'+(c+1));
-    columnHeader.push('Final Time');
-    columnHeader.push('Best Status');
-    columnHeader.push('Change From Previous Race');
+    var raceHeader=['Athlete','Grade'];
+    var dateHeader=['',''];
+    var columnHeader=['Athlete','Grade'];
+    races.forEach(function(race){
+      var blockWidth=maxSplits+Math.max(0,maxSplits-1)+3;
+      for(var h=0;h<blockWidth;h+=1){
+        raceHeader.push(h===0?race.name||'Unlisted meet':race.name||'Unlisted meet');
+        dateHeader.push(h===0?formatDate(race.date):formatDate(race.date));
+      }
+      for(var s=0;s<maxSplits;s+=1)columnHeader.push('Split '+(s+1));
+      for(var c=1;c<maxSplits;c+=1)columnHeader.push('Split Change '+c+'-'+(c+1));
+      columnHeader.push('Final Time');
+      columnHeader.push('Best Status');
+      columnHeader.push('Race Change');
+    });
+    lines.push(raceHeader.map(csvCell).join(','));
+    lines.push(dateHeader.map(csvCell).join(','));
     lines.push(columnHeader.map(csvCell).join(','));
     athletes.forEach(function(athlete){
+      var cells=[athlete.name,athlete.grade||''];
       var previousResult=null;
       races.forEach(function(race){
         var row=section.matrix[athlete.key]&&section.matrix[athlete.key][race.key];
         var splits=row?parseSplitLines(row.splitsText):[];
-        var cells=[athlete.name,athlete.grade||'',race.gender||'',race.event||'',formatDate(race.date),race.name||'Unlisted meet'];
         if(!row){
           for(var empty=0;empty<maxSplits;empty+=1)cells.push('');
           for(var changeEmpty=1;changeEmpty<maxSplits;changeEmpty+=1)cells.push('');
           cells.push('DNR','DNR','');
-          lines.push(cells.map(csvCell).join(','));
           return;
         }
         for(var i=0;i<maxSplits;i+=1)cells.push(splits[i]&&splits[i].time||'');
@@ -2650,8 +2660,8 @@ function buildRaceSheetCsv(rows,grouping){
         cells.push(bestLabel(row));
         cells.push(raceSheetResultChangeDisplay(row,previousResult));
         previousResult=row;
-        lines.push(cells.map(csvCell).join(','));
       });
+      lines.push(cells.map(csvCell).join(','));
     });
   });
   return lines.join('\n');
