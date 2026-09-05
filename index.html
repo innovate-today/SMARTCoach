@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="app-version" content="1788639120000"/>
+<meta charset="UTF-8"/><meta name="app-version" content="1788640260000"/>
 <meta http-equiv="Cache-Control" content="no-store"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" sizes="512x512" href="https://innovate-today.github.io/SMARTCoach/icon.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>SMARTCoach v2</title>
-<!-- build:1788639120000 -->
-<!-- v1788639120000 -->
+<!-- build:1788640260000 -->
+<!-- v1788640260000 -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 [hidden]{display:none!important}
@@ -2312,12 +2312,13 @@ function meetDisplaySubtitle(group,archiveLabel){
   return archiveLabel+parts.filter(Boolean).join(' · ');
 }
 function mergeCalendarMeetDaysIntoLogs(days){
-  var changed=false,activeIds={};
+  var changed=false,activeIds={},meetRosterGroups={};
   (days||[]).filter(function(day){return isCalendarMeetDay(day)&&!isRemovedPlanDay(day)&&isActiveTrainingPlanDay(day)&&isActiveCalendarMeetDay(day);}).forEach(function(day){
     var id=calendarMeetGroupId(day);
     var dateSeason=seasonForDate(day.date);
     var linkedMeet=meetRecordForCalendarDay(day);
     var linkedRecordId=String(linkedMeet&&linkedMeet.id||day.linkedMeetId||'');
+    var rosterKey=linkedRecordId?('meetrec_'+linkedRecordId):id;
     var daySport=calendarDaySport(day);
     var log=linkedRecordId?findManagedMeetLogByRecordId(linkedRecordId):null;
     if(!log)log=logs.find(function(item){return item.sharedGroupId===id;});
@@ -2356,7 +2357,8 @@ function mergeCalendarMeetDaysIntoLogs(days){
       if(String(log[key]||'')!==String(next[key]||'')){log[key]=next[key];changed=true;}
     });
     if(applyMeetDayCfg(log))changed=true;
-    var runners=meetRunnersForGroup(meetGroupNamesFromDay(day),log);
+    meetRosterGroups[rosterKey]=(meetRosterGroups[rosterKey]||[]).concat(meetGroupNamesFromDay(day));
+    var runners=meetRunnersForGroup(meetRosterGroups[rosterKey],log);
     if(runners.length&&runners.length!==log.runners.length){log.runners=runners;changed=true;}
     else if(runners.length){
       log.runners=runners;

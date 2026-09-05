@@ -3760,7 +3760,9 @@ function checkMobileTrainingPlanArchiveFilter() {
 function checkMobileCalendarMeetDedup() {
   const mobile = fs.readFileSync("index.html", "utf8");
   [
+    "var changed=false,activeIds={},meetRosterGroups={};",
     "var linkedRecordId=String(linkedMeet&&linkedMeet.id||day.linkedMeetId||'');",
+    "var rosterKey=linkedRecordId?('meetrec_'+linkedRecordId):id;",
     "var log=linkedRecordId?findManagedMeetLogByRecordId(linkedRecordId):null;",
     "sharedGroupId:linkedRecordId?('meetrec_'+linkedRecordId):id",
     "sharedGroupId:linkedRecordId?('meetrec_'+linkedRecordId):(log.sharedGroupId||id)",
@@ -3796,7 +3798,8 @@ function checkMobileMeetRaceDivisionSetup() {
     "if(Array.isArray(day&&day.groupNames))raw=raw.concat(day.groupNames);",
     "if(Array.isArray(day&&day.assignedGroups))raw=raw.concat(day.assignedGroups.map",
     "String(value||'').split(/\\s*(?:,|\\||;|\\n)\\s*/)",
-    "var runners=meetRunnersForGroup(meetGroupNamesFromDay(day),log);",
+    "meetRosterGroups[rosterKey]=(meetRosterGroups[rosterKey]||[]).concat(meetGroupNamesFromDay(day));",
+    "var runners=meetRunnersForGroup(meetRosterGroups[rosterKey],log);",
     "function meetDivisionOptions()",
     "return ['Open','Varsity Boys','Varsity Girls','JV Boys','JV Girls','Freshman Boys','Freshman Girls','Middle School Boys','Middle School Girls'];",
     '<select id="meet-division-input" class="ni" onchange="setMeetGroupDivision(this.value)">',
@@ -4366,8 +4369,8 @@ function checkEquipmentInventoryModelSerial() {
     "Refresh Data",
     "No active athletes in this group.",
     "saveEquipmentRunner(row.index,sheetItems[index],true)",
-    'meta name="app-version" content="1788639120000"',
-    "<!-- build:1788639120000 -->",
+    'meta name="app-version" content="1788640260000"',
+    "<!-- build:1788640260000 -->",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile Equipment Trak metadata search missing ${text}`);
   });
