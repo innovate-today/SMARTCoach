@@ -1239,6 +1239,8 @@ function checkMilesBoardFeature() {
 function checkResultsBoardFeature() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const board = fs.readFileSync("results-board.html", "utf8");
+  const progressionBoard = fs.readFileSync("xc-progression-board.html", "utf8");
+  const meetHistory = fs.readFileSync("meet-history.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const dashboardApi = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   [
@@ -1351,6 +1353,36 @@ function checkResultsBoardFeature() {
   if (board.includes("<strong>Top Result</strong>")) throw new Error("Results Board should not show a generic top-result card.");
   if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Results Board must stay read-only.");
   [
+    'id="copyXcProgressionLinkBtn"',
+    "Copy XC Progression Link",
+    "function selectedXcProgressionParams()",
+    "function copyXcProgressionLink()",
+    "xc-progression-board-link",
+    "XC progression link copied.",
+  ].forEach((text) => {
+    if (!meetHistory.includes(text)) throw new Error(`Meet History XC progression link missing ${text}`);
+  });
+  [
+    "SMART Trak XC Progression",
+    "/api/smart-trak/xc-progression-board?",
+    "Athlete progression by meet.",
+    "Progression Grid",
+    "function compactShareParams()",
+    "function parseSplits(text)",
+    "function timeChange(current,previous)",
+    "function changeClass(value)",
+    "function bestText(row)",
+    "function render()",
+    "Athletes down the left",
+    "Selected races across the top",
+    "class=\"racehead\"",
+    "class=\"dnr\"",
+    "XC Progression Board is taking too long to load. Tap Refresh to try again.",
+  ].forEach((text) => {
+    if (!progressionBoard.includes(text)) throw new Error(`XC Progression Board page missing ${text}`);
+  });
+  if (/Edit|Delete|Void|Save/.test(progressionBoard)) throw new Error("XC Progression Board must stay read-only.");
+  [
     'if (route === "results-board-sharing")',
     "return accountResultsBoardSharing(req, res);",
     'if (route === "results-board-link")',
@@ -1374,12 +1406,24 @@ function checkResultsBoardFeature() {
     "lastResultsBoardSharingSync",
     "url: `/results-board.html?",
     "SMARTCOACH_RESULTS_BOARD_SECRET",
+    'if (route === "xc-progression-board-link")',
+    "return accountXcProgressionBoardLink(req, res);",
+    'if (route === "xc-progression-board")',
+    "return accountXcProgressionBoard(req, res);",
+    "async function accountXcProgressionBoardLink(req, res)",
+    "async function accountXcProgressionBoard(req, res)",
+    "url: `/xc-progression-board.html?",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Results Board API route missing ${text}`);
   });
   [
     "module.exports.publicResultsBoard = publicResultsBoard;",
+    "module.exports.publicXcProgressionBoard = publicXcProgressionBoard;",
     "async function publicResultsBoard(req, res)",
+    "async function publicXcProgressionBoard(req, res)",
+    "XC Progression Board is not configured for this account.",
+    "rows: rows.map((row) => ({",
+    "splitsText: clean(row.splitsText)",
     "function resultsBoardFilters(query, sharing)",
     "allMeets: meetInput === \"__all__\"",
     "function resultsBoardRowMatches(row, filters)",

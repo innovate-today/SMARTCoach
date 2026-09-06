@@ -144,6 +144,7 @@ module.exports = async function handler(req, res) {
 
 module.exports.publicMilesBoard = publicMilesBoard;
 module.exports.publicResultsBoard = publicResultsBoard;
+module.exports.publicXcProgressionBoard = publicXcProgressionBoard;
 module.exports.publicXcTop20Board = publicXcTop20Board;
 
 async function publicXcTop20Board(req, res) {
@@ -249,6 +250,81 @@ async function publicResultsBoard(req, res) {
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Results Board lookup failed." });
+  }
+}
+
+async function publicXcProgressionBoard(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  const { token, locationId, accountKey, logoUrl } = getGhlContext(req);
+  if (!token || !locationId) {
+    res.status(500).json({ error: "XC Progression Board is not configured for this account." });
+    return;
+  }
+
+  try {
+    const sharing = resultsBoardSharing(req.resultsBoardSharing);
+    const [athletes, meetRecords] = await Promise.all([
+      listActiveAthletes({ accountKey, token, locationId }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+    ]);
+    const allRows = buildRecentMeetResults({ athletes, meetRecords }).filter((row) => optionValue(row.sport) === "cross_country");
+    const filters = resultsBoardFilters({ ...(req.query || {}), sport: "Cross Country" }, { ...sharing, sport: "Cross Country" });
+    const rows = allRows.filter((row) => resultsBoardRowMatches(row, filters)).sort((a, b) =>
+      String(a.meetDate || "").localeCompare(String(b.meetDate || "")) ||
+      clean(a.meetName).localeCompare(clean(b.meetName)) ||
+      clean(a.event).localeCompare(clean(b.event)) ||
+      clean(a.athleteName).localeCompare(clean(b.athleteName))
+    );
+    const meetNames = uniqueStrings(rows.map((row) => row.meetName));
+    res.status(200).json({
+      success: true,
+      accountKey,
+      logoUrl,
+      generatedAt: new Date().toISOString(),
+      gameSettings: sharing.gameSettings,
+      filters: {
+        sport: "Cross Country",
+        seasonYear: filters.seasonYear,
+        meet: filters.meetName,
+        event: filters.event,
+        gender: filters.gender,
+        label: resultsBoardFilterLabel(filters, filters.meetName),
+      },
+      filterOptions: resultsBoardFilterOptions(allRows, filters),
+      totals: {
+        results: rows.length,
+        athletes: uniqueStrings(rows.map((row) => row.athleteName)).length,
+        meets: meetNames.length,
+        personalBests: rows.filter((row) => row.isPr).length,
+        seasonBests: rows.filter((row) => row.isSeasonBest).length,
+      },
+      rows: rows.map((row) => ({
+        athleteName: clean(row.athleteName),
+        athleteGender: resultsBoardGender(row.athleteGender),
+        raceDivision: clean(row.raceDivision) || noteValue(row.coachRaceNotes, "Division"),
+        grade: clean(row.grade) || noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"),
+        event: clean(row.event),
+        resultDisplay: clean(row.resultDisplay),
+        resultMs: resultsBoardResultMs(row),
+        meetName: clean(row.meetName),
+        meetDate: clean(row.meetDate),
+        seasonYear: Number(row.seasonYear) || yearFromDateValue(row.meetDate),
+        isPr: !!row.isPr,
+        isSeasonBest: !!row.isSeasonBest,
+        splitsText: clean(row.splitsText),
+      })),
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "XC Progression Board lookup failed." });
   }
 }
 

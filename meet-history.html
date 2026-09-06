@@ -322,6 +322,7 @@ tr:last-child td{border-bottom:0}
       <div class="panelhead">
         <h2 id="resultsTitle">Results</h2>
         <div class="paneltools">
+          <button id="copyXcProgressionLinkBtn" class="secondary" type="button">Copy XC Progression Link</button>
           <button id="exportRaceSheetBtn" class="secondary" type="button">Export XC Race Comparison CSV</button>
           <button id="exportMeetResultsBtn" class="secondary" type="button">Export Results</button>
           <span id="resultListCount">--</span>
@@ -718,6 +719,7 @@ var els={
   eventLeaders:document.getElementById('eventLeaders'),
   progressionPanel:document.getElementById('progressionPanel'),
   postRaceSummary:document.getElementById('postRaceSummary'),
+  copyXcProgressionLinkBtn:document.getElementById('copyXcProgressionLinkBtn'),
   exportRaceSheetBtn:document.getElementById('exportRaceSheetBtn'),
   exportMeetResultsBtn:document.getElementById('exportMeetResultsBtn'),
   resultRows:document.getElementById('resultRows'),
@@ -2512,6 +2514,49 @@ function raceSheetResultChangeDisplay(current,previous){
 function raceSheetXcRows(){
   return visibleMeetResults.filter(function(row){return sportText(row)==='Cross Country';});
 }
+function selectedXcProgressionParams(){
+  var params=new URLSearchParams({account:accountKey(),sport:'Cross Country'});
+  var season=String(els.seasonFilter.value||'').trim();
+  var event=String(els.eventFilter.value||'').trim();
+  if(season&&season!=='all')params.set('seasonYear',season);
+  if(event&&event!=='all')params.set('event',event);
+  if(selectedGroupKey.indexOf('meet:')===0){
+    var meetKeyValue=selectedGroupKey.slice(5);
+    var group=allMeetGroups().find(function(item){return item.key===meetKeyValue;});
+    if(group&&group.name)params.set('meet',group.name);
+  }
+  if(selectedGroupKey.indexOf('series:')===0){
+    var seriesKey=selectedGroupKey.slice(7);
+    var seriesGroup=allMeetGroups().find(function(item){return meetNameKey(item.name)===seriesKey;});
+    if(seriesGroup&&seriesGroup.name)params.set('meet',seriesGroup.name);
+  }
+  return params;
+}
+function copyTextToClipboard(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text).then(function(){return true;}).catch(function(){return false;});
+  }
+  return Promise.resolve(false);
+}
+function copyXcProgressionLink(){
+  var rows=raceSheetXcRows();
+  if(!rows.length){
+    els.status.textContent='No cross country results to share in this view.';
+    return;
+  }
+  els.status.textContent='Creating XC progression link...';
+  fetch('/api/smart-trak/xc-progression-board-link?'+selectedXcProgressionParams().toString(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not create XC progression link.');
+    var url=new URL(result.data.url,window.location.origin).toString();
+    return copyTextToClipboard(url).then(function(copied){
+      els.status.textContent=copied?'XC progression link copied.':'XC progression link ready: '+url;
+    });
+  }).catch(function(error){
+    els.status.textContent=error.message||'Could not create XC progression link.';
+  });
+}
 function raceSheetActiveAthleteKeys(){
   var keys={};
   dashboardAthletes.forEach(function(athlete){
@@ -3011,6 +3056,7 @@ function init(){
   if(xcSimulatorLink)xcSimulatorLink.href=pageUrl('/xc-simulator.html');
   els.importDefaultYear.value=new Date().getFullYear();
   els.refreshBtn.addEventListener('click',loadMeetHistory);
+  els.copyXcProgressionLinkBtn.addEventListener('click',copyXcProgressionLink);
   els.exportRaceSheetBtn.addEventListener('click',openRaceSheetExport);
   els.raceSheetExportClose.addEventListener('click',closeRaceSheetExport);
   els.raceSheetExportSave.addEventListener('click',exportRaceSheetCsv);

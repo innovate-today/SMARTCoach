@@ -242,6 +242,17 @@ module.exports = async function handler(req, res) {
     return accountResultsBoard(req, res);
   }
 
+  if (route === "xc-progression-board-link") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountXcProgressionBoardLink(req, res);
+  }
+
+  if (route === "xc-progression-board") {
+    await attachRegistryAccount(req);
+    return accountXcProgressionBoard(req, res);
+  }
+
   if (route === "xc-records-sharing") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -3831,6 +3842,76 @@ async function loadResultsBoardSharingState(accountKey, accountRecord) {
     return normalizeResultsBoardSharing(scoped.record.resultsBoardSharing || scoped.record);
   }
   return normalizeResultsBoardSharing(accountRecord && accountRecord.resultsBoardSharing);
+}
+
+async function accountXcProgressionBoardLink(req, res) {
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+  const accountKey = normalizeSetupAccountKey(firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = await loadResultsBoardSharingState(accountKey, existing && existing.record);
+  if (!sharing.active) {
+    res.status(403).json({ error: "Results Board sharing is turned off." });
+    return;
+  }
+  const token = resultsBoardToken(accountKey, sharing.tokenVersion);
+  const params = new URLSearchParams({ account: accountKey, token });
+  params.set("sport", "Cross Country");
+  params.set("seasonYear", cleanSetupText(firstQueryValue(req.query && req.query.seasonYear)) || String(sharing.seasonYear || new Date().getFullYear()));
+  const meet = cleanSetupText(firstQueryValue(req.query && req.query.meet)).slice(0, 160);
+  const event = cleanSetupText(firstQueryValue(req.query && req.query.event)).slice(0, 80);
+  const gender = normalizeResultsBoardGender(firstQueryValue(req.query && req.query.gender));
+  if (meet) params.set("meet", meet);
+  if (event) params.set("event", event);
+  if (gender) params.set("gender", gender);
+  const compactParams = new URLSearchParams({
+    k: resultsBoardShareKey({
+      account: accountKey,
+      token,
+      sport: "Cross Country",
+      seasonYear: params.get("seasonYear"),
+      meet: params.get("meet"),
+      event: params.get("event"),
+      gender: params.get("gender"),
+    }),
+  });
+  res.status(200).json({
+    success: true,
+    token,
+    resultsBoardSharing: sharing,
+    url: `/xc-progression-board.html?${compactParams.toString()}`,
+    legacyUrl: `/xc-progression-board.html?${params.toString()}`,
+  });
+}
+
+async function accountXcProgressionBoard(req, res) {
+  const share = resultsBoardShareFromKey(firstQueryValue(req.query && req.query.k));
+  const accountKey = normalizeSetupAccountKey(share.account || firstQueryValue(req.query && req.query.account) || accountKeyFromRequest(req));
+  const provided = cleanSetupText(share.token || firstQueryValue(req.query && req.query.token));
+  const existing = await loadAccountRecord(accountKey);
+  const sharing = await loadResultsBoardSharingState(accountKey, existing && existing.record);
+  if (!sharing.active) {
+    res.status(403).json({ error: "Results Board sharing is turned off." });
+    return;
+  }
+  const expected = resultsBoardToken(accountKey, sharing.tokenVersion);
+  if (!provided || !safeEqual(provided, expected)) {
+    res.status(403).json({ error: "XC Progression Board link is invalid or expired." });
+    return;
+  }
+  if (!handlers.dashboard || typeof handlers.dashboard.publicXcProgressionBoard !== "function") {
+    res.status(500).json({ error: "XC Progression Board is not available." });
+    return;
+  }
+  req.resultsBoardSharing = sharing;
+  if (share.sport && req.query && !firstQueryValue(req.query.sport)) req.query.sport = share.sport;
+  if (share.seasonYear && req.query && !firstQueryValue(req.query.seasonYear)) req.query.seasonYear = share.seasonYear;
+  if (share.meet && req.query && !firstQueryValue(req.query.meet)) req.query.meet = share.meet;
+  if (share.event && req.query && !firstQueryValue(req.query.event)) req.query.event = share.event;
+  if (share.gender && req.query && !firstQueryValue(req.query.gender)) req.query.gender = share.gender;
+  return handlers.dashboard.publicXcProgressionBoard(req, res);
 }
 
 async function accountXcRecordsLink(req, res) {
