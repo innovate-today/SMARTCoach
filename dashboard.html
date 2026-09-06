@@ -2683,7 +2683,7 @@ function syncProductPlanFromAccount(){
     return productPlan();
   }).catch(function(){
     accountStatus=null;
-    applyBrandLogo('');
+    applyBrandLogo('',{preserveExisting:true});
     applyPlanMode();
     applySmartCoachLinks();
     return productPlan();
@@ -2692,10 +2692,30 @@ function syncProductPlanFromAccount(){
 function defaultBrandLogo(){
   return '/assets/smart-logo.png';
 }
-function applyBrandLogo(logoUrl){
-  var src=String(logoUrl||'').trim()||defaultBrandLogo();
+function savedBrandLogoKey(){
+  return 'smartcoach_brand_logo_'+smartCoachAccountKey();
+}
+function rememberedBrandLogo(){
+  try{return localStorage.getItem(savedBrandLogoKey())||'';}catch(error){return '';}
+}
+function rememberBrandLogo(logoUrl){
+  try{
+    if(logoUrl)localStorage.setItem(savedBrandLogoKey(),logoUrl);
+  }catch(error){}
+}
+function applyBrandLogo(logoUrl,options){
+  options=options||{};
+  var incoming=String(logoUrl||'').trim();
+  if(incoming)rememberBrandLogo(incoming);
+  var src=incoming||rememberedBrandLogo()||(options.preserveExisting?null:defaultBrandLogo());
+  if(!src)return;
   document.querySelectorAll('[data-brand-logo]').forEach(function(img){
     img.src=src;
+    img.onerror=function(){
+      img.onerror=null;
+      try{localStorage.removeItem(savedBrandLogoKey());}catch(error){}
+      img.src=defaultBrandLogo();
+    };
   });
 }
 function smartCoachPageUrl(path,planOverride){
