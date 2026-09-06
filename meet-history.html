@@ -624,6 +624,7 @@ var visibleMeetResults=[];
 var searchRenderTimer=null;
 var filteredGroupsCache=null;
 var filteredGroupsCacheKey='';
+var meetHistorySeasonInitialized=false;
 var historyEditRow=null;
 var historyVoidRow=null;
 var els={
@@ -1795,9 +1796,28 @@ function renderOptions(){
     if(row.athleteName)athletes[row.athleteName]=true;
     seasons[seasonText(row)]=true;
   });
-  fillSelect(els.seasonFilter,'All seasons',Object.keys(seasons).sort().reverse());
+  fillSeasonSelect(Object.keys(seasons).sort().reverse());
   fillSelect(els.eventFilter,'All events',Object.keys(events).sort());
   fillSelect(els.athleteFilter,'All athletes',Object.keys(athletes).sort());
+}
+function currentSeasonValue(values){
+  values=Array.isArray(values)?values:[];
+  var now=new Date();
+  var year=now.getFullYear();
+  var month=now.getMonth()+1;
+  var preferredSport=month>=8?'Cross Country':'Track';
+  var preferred=preferredSport+' '+year;
+  if(values.indexOf(preferred)>=0)return preferred;
+  var sameYear=values.find(function(value){return String(value||'').indexOf(String(year))>=0;});
+  return sameYear||values[0]||'all';
+}
+function fillSeasonSelect(values){
+  var previous=els.seasonFilter.value||'all';
+  fillSelect(els.seasonFilter,'All seasons',values);
+  if(!meetHistorySeasonInitialized&&previous==='all'){
+    els.seasonFilter.value=currentSeasonValue(values);
+  }
+  meetHistorySeasonInitialized=true;
 }
 function fillSelect(select,label,values){
   var previous=select.value||'all';
@@ -3225,10 +3245,10 @@ function init(){
     });
   });
   els.clearBtn.addEventListener('click',function(){
-    els.search.value='';
-    els.sportFilter.value='all';
-    els.seasonFilter.value='all';
-    els.eventFilter.value='all';
+	  els.search.value='';
+	  els.sportFilter.value='all';
+	  els.seasonFilter.value=currentSeasonValue(Array.prototype.slice.call(els.seasonFilter.options).map(function(option){return option.value;}).filter(function(value){return value&&value!=='all';}));
+	  els.eventFilter.value='all';
     els.athleteFilter.value='all';
     selectedGroupKey='all';
     resultSort={key:'athlete',dir:'asc'};
