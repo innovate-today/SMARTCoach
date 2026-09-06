@@ -1053,12 +1053,13 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
       const result = normalizeMeetResult(record);
       if (!result.event && !result.resultDisplay) return;
       if (result.recordId) matchedRecordIds.add(result.recordId);
+      const resultSeasonYear = Number(result.seasonYear) || yearFromDateValue(result.meetDate);
       rows.push({
         ...result,
         athleteName: athlete.name,
         contactId: athlete.id,
         athleteGender: result.athleteGender || athlete.gender,
-        grade: result.grade || athlete.grade || "",
+        grade: meetResultGrade(result.grade || athlete.grade, resultSeasonYear),
       });
     });
   });
@@ -1068,13 +1069,18 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
     if (!isRelayMeetResult(result) && !isHistoricalMeetResult(result) && !isUnlinkedNamedMeetResult(result)) return;
     if (result.recordId && matchedRecordIds.has(result.recordId)) return;
     const known = knownAthletes.get(xcTop20AthleteKey(result)) || {};
+    const resultSeasonYear = Number(result.seasonYear) || yearFromDateValue(result.meetDate);
     rows.push({
       ...result,
       athleteGender: result.athleteGender || known.gender || "",
-      grade: result.grade || known.grade || "",
+      grade: meetResultGrade(result.grade || known.grade, resultSeasonYear),
     });
   });
   return rows.sort(sortMeetSyncDesc);
+}
+
+function meetResultGrade(value, seasonYear) {
+  return resultsBoardGrade(value, seasonYear) || "";
 }
 
 function meetResultKnownAthletes({ athletes, meetRecords }) {
@@ -1084,7 +1090,7 @@ function meetResultKnownAthletes({ athletes, meetRecords }) {
     if (!key) return;
     map.set(key, {
       gender: clean(athlete && athlete.gender),
-      grade: clean(athlete && athlete.grade),
+      grade: meetResultGrade(athlete && athlete.grade),
     });
   });
   (Array.isArray(meetRecords) ? meetRecords : []).forEach((record) => {
@@ -1095,7 +1101,7 @@ function meetResultKnownAthletes({ athletes, meetRecords }) {
     const previous = map.get(key) || {};
     map.set(key, {
       gender: previous.gender || clean(result.athleteGender),
-      grade: previous.grade || clean(result.grade),
+      grade: previous.grade || meetResultGrade(result.grade, Number(result.seasonYear) || yearFromDateValue(result.meetDate)),
     });
   });
   return map;
@@ -1261,7 +1267,7 @@ function xcTop20Row(row, gender, eventBucket, context = {}) {
     seasonYear,
     activeAthlete: xcTop20RowActive(row, context),
     currentYear: Boolean(seasonYear && Number(seasonYear) === Number(context.currentYear || new Date().getFullYear())),
-    grade: clean(row.grade) || noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"),
+    grade: meetResultGrade(clean(row.grade) || noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade") || noteValue(row.coachRaceNotes, "Class Year"), seasonYear),
     classYear: noteValue(row.coachRaceNotes, "Class Year"),
     coachRaceNotes: clean(row.coachRaceNotes),
   };
