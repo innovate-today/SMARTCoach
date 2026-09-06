@@ -1354,7 +1354,8 @@ function checkResultsBoardFeature() {
   if (/Edit|Delete|Void|Save/.test(board)) throw new Error("Results Board must stay read-only.");
   [
     'id="copyXcProgressionLinkBtn"',
-    "Copy XC Progression Link",
+    "Share Progress Link",
+    'id="shareLinkStatus"',
     "function selectedXcProgressionParams()",
     "function copyXcProgressionLink()",
     "xc-progression-board-link",
@@ -4303,8 +4304,6 @@ function checkMeetResultSplitDetails() {
     "if(event!=='all'&&historyEventFilterValue(row)!==event)return false;",
     "Lap / Split Times",
     "No lap or split times saved for this result.",
-    'id="exportMeetResultsBtn"',
-    'id="exportRaceSheetBtn"',
     'id="raceSheetExportModal"',
     'Export XC Race Comparison CSV',
     'Distance + Gender',
@@ -4343,6 +4342,12 @@ function checkMeetResultSplitDetails() {
     "downloadTextFile('smart-trak-xc-race-comparison-'+safeFilePart(selectedResultsLabel())+'-'+dateStamp()+'.csv'",
   ].forEach((text) => {
     if (!history.includes(text)) throw new Error(`Meet History split details missing ${text}`);
+  });
+  [
+    'id="exportMeetResultsBtn"',
+    'id="exportRaceSheetBtn"',
+  ].forEach((text) => {
+    if (history.includes(text)) throw new Error(`Meet History should not show removed export button ${text}`);
   });
   [
     "Use **Export XC Race Comparison CSV**",
