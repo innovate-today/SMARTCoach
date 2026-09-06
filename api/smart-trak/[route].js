@@ -7487,9 +7487,21 @@ function normalizeXcRecordsSharing(source) {
   return {
     active: input.active !== false,
     tokenVersion: cleanSetupText(input.tokenVersion) || "1",
+    customListKeys: normalizeXcRecordsCustomListKeys(input.customListKeys),
     updatedAt: cleanSetupText(input.updatedAt),
     resetAt: cleanSetupText(input.resetAt),
   };
+}
+
+function normalizeXcRecordsCustomListKeys(value) {
+  const keys = Array.isArray(value) ? value : typeof value === "string" ? value.split(/[,\s]+/) : [];
+  const allowed = new Set(["boys3k", "girls3k", "boys4k", "girls4k"]);
+  const seen = new Set();
+  return keys.map((key) => cleanSetupText(key)).filter((key) => {
+    if (!allowed.has(key) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function xcRecordsToken(accountKey, tokenVersion = "1") {

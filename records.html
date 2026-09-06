@@ -203,6 +203,7 @@ tr:last-child td{border-bottom:0}
         <div id="xcTabs" class="xctabs">
           <button class="xctab active" data-xc-list="boys5k" type="button">Boys 5K</button>
           <button class="xctab" data-xc-list="girls5k" type="button">Girls 5K</button>
+          <button class="xctab" data-xc-list="boys2Mile" type="button">Boys 2 Mile</button>
           <button class="xctab" data-xc-list="girls2Mile" type="button">Girls 2 Mile</button>
         </div>
         <div class="xclistbuilder">
@@ -556,18 +557,18 @@ tr:last-child td{border-bottom:0}
 
 <script>
 var records=[];
-var XC_DEFAULT_LIST_KEYS=['boys5k','girls5k','girls2Mile'];
+var XC_DEFAULT_LIST_KEYS=['boys5k','girls5k','boys2Mile','girls2Mile'];
 var XC_FALLBACK_LIST_OPTIONS=[
   {key:'boys5k',label:'Boys 5K',gender:'Boys',event:'5K',defaultList:true},
   {key:'girls5k',label:'Girls 5K',gender:'Girls',event:'5K',defaultList:true},
+  {key:'boys2Mile',label:'Boys 2 Mile',gender:'Boys',event:'2 Mile',defaultList:true},
   {key:'girls2Mile',label:'Girls 2 Mile',gender:'Girls',event:'2 Mile',defaultList:true},
-  {key:'boys2Mile',label:'Boys 2 Mile',gender:'Boys',event:'2 Mile'},
   {key:'boys3k',label:'Boys 3K',gender:'Boys',event:'3K'},
   {key:'girls3k',label:'Girls 3K',gender:'Girls',event:'3K'},
   {key:'boys4k',label:'Boys 4K',gender:'Boys',event:'4K'},
   {key:'girls4k',label:'Girls 4K',gender:'Girls',event:'4K'}
 ];
-var xcTop20={listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{boys5k:0,girls5k:0,girls2Mile:0}};
+var xcTop20={listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],boys2Mile:[],girls2Mile:[]},totals:{boys5k:0,girls5k:0,boys2Mile:0,girls2Mile:0}};
 var xcActiveList='boys5k';
 var xcCustomListKeys=[];
 var xcImportRows=[];
@@ -970,17 +971,35 @@ function setRecordView(view){
   els.schoolRecordCards.hidden=xc;
   els.schoolRecordsView.hidden=xc;
   els.xcTop20Panel.hidden=!xc;
-  if(xc)loadXcTop20();
+  if(xc)loadXcTop20View();
 }
-function xcCustomListsStorageKey(){return 'sc_xc_top20_custom_lists_'+accountKey();}
-function loadXcCustomListKeys(){
-  try{
-    var parsed=JSON.parse(localStorage.getItem(xcCustomListsStorageKey())||'[]');
-    xcCustomListKeys=Array.isArray(parsed)?parsed.filter(function(key){return !!xcListDefinition(key)&&XC_DEFAULT_LIST_KEYS.indexOf(key)<0;}):[];
-  }catch(e){xcCustomListKeys=[];}
+function normalizeXcCustomListKeys(keys){
+  var seen={};
+  keys=Array.isArray(keys)?keys:[];
+  return keys.filter(function(key){
+    key=String(key||'').trim();
+    if(!key||seen[key]||!xcListDefinition(key)||XC_DEFAULT_LIST_KEYS.indexOf(key)>=0)return false;
+    seen[key]=true;
+    return true;
+  });
 }
 function saveXcCustomListKeys(){
-  try{localStorage.setItem(xcCustomListsStorageKey(),JSON.stringify(xcCustomListKeys));}catch(e){}
+  var headers=apiHeaders();
+  headers['Content-Type']='application/json';
+  return fetch('/api/smart-trak/xc-records-sharing?account='+encodeURIComponent(accountKey()),{
+    method:'POST',
+    headers:headers,
+    body:JSON.stringify({xcRecordsSharing:{customListKeys:xcCustomListKeys}})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
+    if(!result.ok)throw new Error(result.data&&result.data.error||'XC list setup could not be saved.');
+    xcRecordsSharing=normalizeXcRecordsSharing(result.data&&result.data.xcRecordsSharing);
+    xcCustomListKeys=normalizeXcCustomListKeys(xcRecordsSharing.customListKeys);
+  }).catch(function(error){
+    els.xcStatus.textContent=error.message||'XC list setup could not be saved.';
+  });
 }
 function xcListOptions(){
   var apiOptions=xcTop20&&Array.isArray(xcTop20.listOptions)?xcTop20.listOptions:[];
@@ -1140,6 +1159,7 @@ function normalizeXcRecordsSharing(input){
   return {
     active:input.active!==false,
     tokenVersion:String(input.tokenVersion||'1'),
+    customListKeys:normalizeXcCustomListKeys(input.customListKeys),
     updatedAt:String(input.updatedAt||''),
     resetAt:String(input.resetAt||'')
   };
@@ -1161,6 +1181,8 @@ function loadXcShare(){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
     if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 sharing could not be loaded.');
     xcRecordsSharing=normalizeXcRecordsSharing(result.data&&result.data.xcRecordsSharing);
+    xcCustomListKeys=normalizeXcCustomListKeys(xcRecordsSharing.customListKeys);
+    renderXcTop20();
     renderXcShare();
   });
 }
@@ -1173,7 +1195,7 @@ function saveXcShare(action){
   return fetch('/api/smart-trak/xc-records-sharing?account='+encodeURIComponent(accountKey()),{
     method:'POST',
     headers:headers,
-    body:JSON.stringify({action:action||'save',xcRecordsSharing:{active:els.xcShareActive.checked}})
+    body:JSON.stringify({action:action||'save',xcRecordsSharing:{active:els.xcShareActive.checked,customListKeys:xcCustomListKeys}})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -1399,14 +1421,21 @@ function loadXcTop20(){
   }).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){showAccess(result.data);return;}
     if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 failed to load.');
-    xcTop20=result.data&&result.data.xcTop20||{listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+    xcTop20=result.data&&result.data.xcTop20||{listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],boys2Mile:[],girls2Mile:[]},totals:{}};
     if(!Array.isArray(xcTop20.listOptions)||!xcTop20.listOptions.length)xcTop20.listOptions=XC_FALLBACK_LIST_OPTIONS;
     applyXcPendingEdits();
     renderXcTop20();
   }).catch(function(error){
-    xcTop20={listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+    xcTop20={listOptions:XC_FALLBACK_LIST_OPTIONS,lists:{boys5k:[],girls5k:[],boys2Mile:[],girls2Mile:[]},totals:{}};
     renderXcTop20();
     els.xcStatus.textContent=error.message||'XC Top 20 failed to load.';
+  });
+}
+function loadXcTop20View(){
+  return loadXcShare().catch(function(error){
+    els.xcStatus.textContent=error.message||'XC list setup could not be loaded.';
+  }).then(function(){
+    return loadXcTop20();
   });
 }
 function xcImportHeaderMap(cols){
@@ -2277,7 +2306,7 @@ function loadRecords(){
 }
 function refreshRecordsPage(){
   var tasks=[loadRecords()];
-  if(!els.xcTop20Panel.hidden)tasks.push(loadXcTop20().catch(function(){}));
+  if(!els.xcTop20Panel.hidden)tasks.push(loadXcTop20View().catch(function(){}));
   return Promise.all(tasks);
 }
 function mirrorWarning(mirror){
@@ -2361,7 +2390,6 @@ function init(){
   setBulkStatus('Hidden until needed.','');
   document.body.classList.toggle('embedded',embeddedMode());
   try{localStorage.setItem('sc_account',accountKey());}catch(e){}
-  loadXcCustomListKeys();
   fillStaticSelects();
   renderXcListChoices();
   clearSingleRecordForm();

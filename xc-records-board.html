@@ -67,6 +67,7 @@ tr.active-athlete.current-year td{background:#f0f9ff}
       <div class="tabs">
         <button class="tab active" data-list="boys5k" type="button">Boys 5K</button>
         <button class="tab" data-list="girls5k" type="button">Girls 5K</button>
+        <button class="tab" data-list="boys2Mile" type="button">Boys 2 Mile</button>
         <button class="tab" data-list="girls2Mile" type="button">Girls 2 Mile</button>
       </div>
       <div id="status" class="sub">Loading XC records...</div>
@@ -93,8 +94,8 @@ tr.active-athlete.current-year td{background:#f0f9ff}
 </main>
 <script>
 var activeList='boys5k';
-var DEFAULT_LIST_KEYS=['boys5k','girls5k','girls2Mile'];
-var data={listOptions:[],lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
+var DEFAULT_LIST_KEYS=['boys5k','girls5k','boys2Mile','girls2Mile'];
+var data={listOptions:[],lists:{boys5k:[],girls5k:[],boys2Mile:[],girls2Mile:[]},totals:{}};
 var els={
   logo:document.querySelector('[data-brand-logo]'),
   boardTitle:document.getElementById('boardTitle'),
@@ -112,7 +113,7 @@ function esc(value){
 }
 function listLabel(key){
   var option=(data.listOptions||[]).find(function(item){return item&&item.key===key;});
-  return option&&option.label||{boys5k:'Boys 5K',girls5k:'Girls 5K',girls2Mile:'Girls 2 Mile'}[key]||'Boys 5K';
+  return option&&option.label||{boys5k:'Boys 5K',girls5k:'Girls 5K',boys2Mile:'Boys 2 Mile',girls2Mile:'Girls 2 Mile'}[key]||'Boys 5K';
 }
 function boardTitle(value){
   return String(value||'').trim()||'SMART Trak';

@@ -1182,8 +1182,8 @@ function xcTop20ListDefinitions() {
   return [
     { key: "boys5k", label: "Boys 5K", gender: "boy", event: "5K", defaultList: true },
     { key: "girls5k", label: "Girls 5K", gender: "girl", event: "5K", defaultList: true },
+    { key: "boys2Mile", label: "Boys 2 Mile", gender: "boy", event: "2 Mile", defaultList: true },
     { key: "girls2Mile", label: "Girls 2 Mile", gender: "girl", event: "2 Mile", defaultList: true },
-    { key: "boys2Mile", label: "Boys 2 Mile", gender: "boy", event: "2 Mile" },
     { key: "boys3k", label: "Boys 3K", gender: "boy", event: "3K" },
     { key: "girls3k", label: "Girls 3K", gender: "girl", event: "3K" },
     { key: "boys4k", label: "Boys 4K", gender: "boy", event: "4K" },
