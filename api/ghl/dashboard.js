@@ -165,9 +165,10 @@ async function publicXcTop20Board(req, res) {
   }
 
   try {
-    const [athletes, meetRecords] = await Promise.all([
+    const [athletes, meetRecords, ghlLocationName] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+      safeGhlLocationName({ token, locationId }),
     ]);
     const meetResults = buildRecentMeetResults({ athletes, meetRecords });
     const xcTop20 = buildXcTop20(meetResults, athletes);
@@ -175,6 +176,7 @@ async function publicXcTop20Board(req, res) {
       success: true,
       accountKey,
       logoUrl,
+      schoolName: resultsBoardSchoolName(ghlLocationName),
       generatedAt: new Date().toISOString(),
       xcTop20,
     });
@@ -202,9 +204,10 @@ async function publicResultsBoard(req, res) {
 
   try {
     const sharing = resultsBoardSharing(req.resultsBoardSharing);
-    const [athletes, meetRecords] = await Promise.all([
+    const [athletes, meetRecords, ghlLocationName] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+      safeGhlLocationName({ token, locationId }),
     ]);
     const allRows = buildRecentMeetResults({ athletes, meetRecords });
     const filters = resultsBoardFilters(req.query, sharing);
@@ -218,6 +221,7 @@ async function publicResultsBoard(req, res) {
       success: true,
       accountKey,
       logoUrl,
+      schoolName: resultsBoardSchoolName(ghlLocationName) || sharing.gameSettings.boardName,
       generatedAt: new Date().toISOString(),
       gameSettings: sharing.gameSettings,
       displayOptions: sharing.displayOptions,
@@ -273,9 +277,10 @@ async function publicXcProgressionBoard(req, res) {
 
   try {
     const sharing = resultsBoardSharing(req.resultsBoardSharing);
-    const [athletes, meetRecords] = await Promise.all([
+    const [athletes, meetRecords, ghlLocationName] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+      safeGhlLocationName({ token, locationId }),
     ]);
     const allRows = buildRecentMeetResults({ athletes, meetRecords }).filter((row) => optionValue(row.sport) === "cross_country");
     const filters = resultsBoardFilters({ ...(req.query || {}), sport: "Cross Country" }, { ...sharing, sport: "Cross Country" });
@@ -290,6 +295,7 @@ async function publicXcProgressionBoard(req, res) {
       success: true,
       accountKey,
       logoUrl,
+      schoolName: resultsBoardSchoolName(ghlLocationName) || sharing.gameSettings.boardName,
       generatedAt: new Date().toISOString(),
       gameSettings: sharing.gameSettings,
       filters: {
@@ -350,7 +356,7 @@ async function publicMilesBoard(req, res) {
   try {
     const sharing = req.milesBoardSharing || {};
     const displayOptions = milesBoardDisplayOptions(sharing.displayOptions);
-    const [allAthletes, performanceRecords, mirroredPerformanceRecords, attendanceRecords] = await Promise.all([
+    const [allAthletes, performanceRecords, mirroredPerformanceRecords, attendanceRecords, ghlLocationName] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
@@ -358,6 +364,7 @@ async function publicMilesBoard(req, res) {
         start: dateOnly(rangeForAttendanceStart(req.query && req.query.start)),
         end: dateOnly(rangeForAttendanceEnd(req.query && req.query.end)),
       }) : Promise.resolve([]),
+      safeGhlLocationName({ token, locationId }),
     ]);
     const athletes = milesBoardAthletesForSelectedGroups(allAthletes, req.milesBoardAthleteKeys);
     const allPerformanceRecords = mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords);
@@ -379,6 +386,7 @@ async function publicMilesBoard(req, res) {
       success: true,
       accountKey,
       logoUrl,
+      schoolName: resultsBoardSchoolName(ghlLocationName),
       generatedAt: new Date().toISOString(),
       challengeType: clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total",
       challengeTypes: Array.isArray(req.milesBoardSharing && req.milesBoardSharing.challengeTypes) ? req.milesBoardSharing.challengeTypes : [clean(req.milesBoardSharing && req.milesBoardSharing.challengeType) || "total"],
@@ -947,6 +955,24 @@ async function listContactFieldIds({ token, locationId, names }) {
   } catch (error) {
     return [];
   }
+}
+
+async function safeGhlLocationName({ token, locationId }) {
+  try {
+    const result = await ghlFetch({
+      token,
+      path: `/locations/${encodeURIComponent(locationId)}`,
+      method: "GET",
+    });
+    return ghlLocationNameFromResult(result);
+  } catch (error) {
+    return "";
+  }
+}
+
+function ghlLocationNameFromResult(result) {
+  const source = result && (result.location || result.data || result);
+  return clean(source && (source.name || source.businessName || source.companyName || source.locationName));
 }
 
 async function searchObjectRecords({ token, locationId, schemaKey, signal }) {

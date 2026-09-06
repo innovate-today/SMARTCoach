@@ -55,8 +55,8 @@ tr.active-athlete.current-year td{background:#f0f9ff}
     <div class="brand">
       <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
-        <h1>SMART Trak XC Top 20</h1>
-        <div class="sub">Cross country top lists shared by the team.</div>
+        <h1 id="boardTitle">SMART Trak</h1>
+        <div class="sub">SMART Trak XC Top 20</div>
       </div>
     </div>
     <div id="updated" class="updated">Loading...</div>
@@ -96,6 +96,8 @@ var activeList='boys5k';
 var DEFAULT_LIST_KEYS=['boys5k','girls5k','girls2Mile'];
 var data={listOptions:[],lists:{boys5k:[],girls5k:[],girls2Mile:[]},totals:{}};
 var els={
+  logo:document.querySelector('[data-brand-logo]'),
+  boardTitle:document.getElementById('boardTitle'),
   updated:document.getElementById('updated'),
   status:document.getElementById('status'),
   summary:document.getElementById('summary'),
@@ -111,6 +113,9 @@ function esc(value){
 function listLabel(key){
   var option=(data.listOptions||[]).find(function(item){return item&&item.key===key;});
   return option&&option.label||{boys5k:'Boys 5K',girls5k:'Girls 5K',girls2Mile:'Girls 2 Mile'}[key]||'Boys 5K';
+}
+function boardTitle(value){
+  return String(value||'').trim()||'SMART Trak';
 }
 function visibleListKeys(){
   var lists=data&&data.lists||{};
@@ -174,6 +179,8 @@ function load(){
     return res.json().then(function(json){return{ok:res.ok,data:json};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'XC Top 20 could not be loaded.');
+    if(result.data&&result.data.logoUrl)els.logo.src=result.data.logoUrl;
+    els.boardTitle.textContent=boardTitle(result.data&&result.data.schoolName);
     data=result.data&&result.data.xcTop20||data;
     var stamp=result.data&&result.data.generatedAt?new Date(result.data.generatedAt):new Date();
     els.updated.textContent='Updated '+stamp.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});

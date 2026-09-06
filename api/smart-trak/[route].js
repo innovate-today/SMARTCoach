@@ -3583,7 +3583,10 @@ async function accountSpeedBoard(req, res) {
     const metric = speedBoardOptionalFilter(firstQueryValue(req.query && req.query.metric) || share.metric).slice(0, 80);
     const gender = normalizeSpeedBoardGender(firstQueryValue(req.query && req.query.gender) || share.gender);
     const year = speedBoardOptionalFilter(firstQueryValue(req.query && req.query.year) || share.year).slice(0, 20);
-    const fieldPracticeState = await loadFieldPracticeState(accountKey, existing && existing.record);
+    const [fieldPracticeState, ghlLocationName] = await Promise.all([
+      loadFieldPracticeState(accountKey, existing && existing.record),
+      safeGhlLocationNameFromAccount(existing && existing.record),
+    ]);
     const practices = fieldPracticeState.fieldPracticeSessions;
     const gameSettings = normalizeSpeedBoardGameSettings(sharing.gameSettings);
     const challengeTypes = normalizeSpeedBoardChallenges(share.challenges || firstQueryValue(req.query && req.query.challenges) || sharing.challengeTypes);
@@ -3593,6 +3596,8 @@ async function accountSpeedBoard(req, res) {
     res.status(200).json({
       success: true,
       accountKey,
+      logoUrl: existing && existing.record && existing.record.logoUrl || "",
+      schoolName: normalizeResultsBoardSchoolName(ghlLocationName),
       generatedAt: new Date().toISOString(),
       challengeType: challengeTypes[0] || sharing.challengeType,
       challengeTypes,
@@ -5810,6 +5815,27 @@ async function ghlRequest({ token, path, method = "GET", body }) {
     throw httpError(response.status, data.message || data.error || `GHL request failed with ${response.status}.`);
   }
   return data;
+}
+
+async function safeGhlLocationNameFromAccount(account) {
+  const token = cleanSetupText(account && account.token);
+  const locationId = cleanSetupText(account && account.locationId);
+  if (!token || !locationId) return "";
+  try {
+    const result = await ghlRequest({
+      token,
+      path: `/locations/${encodeURIComponent(locationId)}`,
+      method: "GET",
+    });
+    return ghlLocationNameFromResult(result);
+  } catch (error) {
+    return "";
+  }
+}
+
+function ghlLocationNameFromResult(result) {
+  const source = result && (result.location || result.data || result);
+  return cleanSetupText(source && (source.name || source.businessName || source.companyName || source.locationName));
 }
 
 async function accountRegistry(req, res) {
