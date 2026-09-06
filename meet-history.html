@@ -2826,9 +2826,36 @@ function postRaceSectionSortValue(label){
   var level=low.indexOf('varsity')>=0?0:low.indexOf('jv')>=0?1:low.indexOf('fresh')>=0?2:low.indexOf('middle')>=0?3:4;
   return gender*10+level;
 }
+function postRaceEventKey(row){
+  var text=String(row&&row.event||'').trim().toLowerCase();
+  if(/\b5\s*k\b|5000\s*m|3\.1\s*(mi|mile)/.test(text))return '5k';
+  if(/3200\s*m|2\s*(mi|mile)/.test(text))return '2_mile_3200m';
+  return text;
+}
+function postRaceResultKey(row){
+  return [athleteMatchKey(row&&row.athleteName),postRaceEventKey(row),genderKey(row&&row.athleteGender)].join('|');
+}
+function postRaceBestRow(current,next){
+  if(!current)return next;
+  var currentSplits=parseSplitLines(current.splitsText).length;
+  var nextSplits=parseSplitLines(next.splitsText).length;
+  if(nextSplits!==currentSplits)return nextSplits>currentSplits?next:current;
+  var currentMs=current._resultMs||parseResultMs(current.resultDisplay);
+  var nextMs=next._resultMs||parseResultMs(next.resultDisplay);
+  if(nextMs&&(!currentMs||nextMs<currentMs))return next;
+  return current;
+}
+function postRaceSummaryRows(results){
+  var rowsByKey={};
+  results.filter(function(row){return row&&row.athleteName&&row.resultDisplay;}).forEach(function(row){
+    var key=postRaceResultKey(row);
+    rowsByKey[key]=postRaceBestRow(rowsByKey[key],row);
+  });
+  return Object.keys(rowsByKey).map(function(key){return rowsByKey[key];});
+}
 function renderPostRaceSummary(results){
   var selectedMeet=selectedGroupKey.indexOf('meet:')===0;
-  var rows=results.filter(function(row){return row&&row.athleteName&&row.resultDisplay;});
+  var rows=postRaceSummaryRows(results);
   if(!selectedMeet||!rows.length){
     els.postRaceSummary.hidden=true;
     els.postRaceSummary.innerHTML='';
