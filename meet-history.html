@@ -988,7 +988,7 @@ function filteredGroups(){
     var results=group.results.filter(function(row){
       if(sport!=='all'&&sportText(row)!==sport)return false;
       if(season!=='all'&&seasonText(row)!==season&&String(row.seasonYear||'')!==season)return false;
-      if(event!=='all'&&row.event!==event)return false;
+      if(event!=='all'&&historyEventFilterValue(row)!==event)return false;
       if(athlete!=='all'&&row.athleteName!==athlete)return false;
       if(query&&searchText(row).indexOf(query)===-1&&searchText(group).indexOf(query)===-1)return false;
       return true;
@@ -1625,6 +1625,17 @@ function genderLabel(value){
   if(key==='open')return '';
   return key;
 }
+function normalizedXcEventLabel(value){
+  var text=String(value||'').trim();
+  var low=text.toLowerCase();
+  if(/\b5\s*k\b|5000\s*m|3\.1\s*(mi|mile)/.test(low))return '5K';
+  if(/3200\s*m|2\s*(mi|mile)/.test(low))return '2 Mile / 3200m';
+  return text;
+}
+function historyEventFilterValue(row){
+  var event=String(row&&row.event||'').trim();
+  return sportText(row)==='Cross Country'?normalizedXcEventLabel(event):event;
+}
 function postRaceGenderLabel(row){
   var explicit=genderLabel(row&&row.athleteGender);
   if(explicit)return explicit.charAt(0).toUpperCase()+explicit.slice(1);
@@ -1698,7 +1709,7 @@ function renderOptions(){
   var athletes={};
   allMeetGroups().forEach(function(group){seasons[seasonText(group)]=true;});
   meetResults.forEach(function(row){
-    if(row.event)events[row.event]=true;
+    if(row.event)events[historyEventFilterValue(row)]=true;
     if(row.athleteName)athletes[row.athleteName]=true;
     seasons[seasonText(row)]=true;
   });
@@ -2883,7 +2894,7 @@ function renderPostRaceSummary(results){
       headers.push('Final Time');
       return '<section class="post-summary-section"><div class="post-summary-title"><b>'+esc(section.label)+'</b><span>'+section.rows.length+' runner'+(section.rows.length===1?'':'s')+'</span></div><div class="tablewrap"><table class="post-summary-table"><thead><tr>'+headers.map(function(header){return '<th>'+esc(header)+'</th>';}).join('')+'</tr></thead><tbody>'+
         section.rows.map(function(row,index){
-          var cells=[String(index+1),row.athleteName||'Unnamed',row.event||'Race'];
+          var cells=[String(index+1),row.athleteName||'Unnamed',historyEventFilterValue(row)||'Race'];
           for(var j=0;j<section.maxSplits;j+=1)cells.push(row._postSplits[j]&&row._postSplits[j].time||'');
           cells.push(row.resultDisplay||'');
           return '<tr>'+cells.map(function(cell){return '<td>'+esc(cell)+'</td>';}).join('')+'</tr>';
