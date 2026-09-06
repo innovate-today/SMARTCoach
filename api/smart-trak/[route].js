@@ -4327,9 +4327,14 @@ function normalizeResultsBoardDetailOrder(values) {
 function normalizeResultsBoardGameSettings(source) {
   const input = source && typeof source === "object" ? source : {};
   return {
-    boardName: cleanSetupText(input.boardName).slice(0, 80) || "Team Results Board",
+    boardName: normalizeResultsBoardSchoolName(input.boardName),
     coachMessage: cleanSetupText(input.coachMessage).slice(0, 240),
   };
+}
+
+function normalizeResultsBoardSchoolName(value) {
+  const name = cleanSetupText(value).slice(0, 80);
+  return name.toLowerCase() === "team results board" ? "" : name;
 }
 
 function normalizeResultsBoardSport(value) {

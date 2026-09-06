@@ -847,8 +847,8 @@ tr:last-child td{border-bottom:0}
           </div>
         </div>
         <div class="field full">
-          <label for="resultsBoardName">Board Name</label>
-          <input id="resultsBoardName" type="text" maxlength="80" placeholder="Team Results Board">
+          <label for="resultsBoardName">School Name</label>
+          <input id="resultsBoardName" type="text" maxlength="80" placeholder="Boswell High School">
         </div>
         <div class="field full">
           <label for="resultsBoardCoachMessage">Coach Message</label>
@@ -1869,7 +1869,7 @@ function defaultMilesBoardSharing(){
   return {active:true,challengeType:'total',challengeTypes:['total'],displayOptions:defaultMilesBoardDisplayOptions(),dateRange:defaultMilesBoardDateRange(),groupNames:[],gameSettings:defaultMilesBoardGameSettings(),tokenVersion:'1',updatedAt:new Date().toISOString()};
 }
 function defaultResultsBoardSharing(){
-  return {active:true,sport:'Cross Country',seasonYear:new Date().getFullYear(),displayOptions:{latestMeet:true,seasonSummary:true,meetArchive:true,athleteSummary:true,eventSummary:true,divisionSummary:true,bestHighlights:true,bestBadges:true,teamSummary:true,detailOrder:defaultResultsBoardDetailOrder()},gameSettings:{boardName:'Team Results Board',coachMessage:''},tokenVersion:'1',updatedAt:new Date().toISOString()};
+  return {active:true,sport:'Cross Country',seasonYear:new Date().getFullYear(),displayOptions:{latestMeet:true,seasonSummary:true,meetArchive:true,athleteSummary:true,eventSummary:true,divisionSummary:true,bestHighlights:true,bestBadges:true,teamSummary:true,detailOrder:defaultResultsBoardDetailOrder()},gameSettings:{boardName:'',coachMessage:''},tokenVersion:'1',updatedAt:new Date().toISOString()};
 }
 function defaultResultsBoardDetailOrder(){
   return ['bestHighlights','divisionSummary','latestMeet','meetArchive','athleteSummary','eventSummary','seasonSummary'];
@@ -2320,13 +2320,17 @@ function normalizeResultsBoardSharing(source){
       detailOrder:normalizeResultsBoardDetailOrder(display.detailOrder)
     },
     gameSettings:{
-      boardName:String(game.boardName||'').trim().slice(0,80)||'Team Results Board',
+      boardName:schoolDisplayName(game.boardName),
       coachMessage:String(game.coachMessage||'').trim().slice(0,240)
     },
     tokenVersion:String(input.tokenVersion||'1'),
     updatedAt:String(input.updatedAt||''),
     resetAt:String(input.resetAt||'')
   };
+}
+function schoolDisplayName(value){
+  var name=String(value||'').trim().slice(0,80);
+  return name.toLowerCase()==='team results board'?'':name;
 }
 function renderResultsBoardSharing(){
   var settings=normalizeResultsBoardSharing(resultsBoardSharing||defaultResultsBoardSharing());

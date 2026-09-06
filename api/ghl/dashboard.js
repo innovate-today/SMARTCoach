@@ -1281,10 +1281,15 @@ function resultsBoardSharing(source) {
       detailOrder: normalizeResultsBoardDetailOrder(input.displayOptions && input.displayOptions.detailOrder),
     },
     gameSettings: {
-      boardName: clean(input.gameSettings && input.gameSettings.boardName).slice(0, 80) || "Team Results Board",
+      boardName: resultsBoardSchoolName(input.gameSettings && input.gameSettings.boardName),
       coachMessage: clean(input.gameSettings && input.gameSettings.coachMessage).slice(0, 240),
     },
   };
+}
+
+function resultsBoardSchoolName(value) {
+  const name = clean(value).slice(0, 80);
+  return name.toLowerCase() === "team results board" ? "" : name;
 }
 
 function resultsBoardFilters(query, sharing) {
