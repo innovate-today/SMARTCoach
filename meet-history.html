@@ -406,6 +406,10 @@ tr:last-child td{border-bottom:0}
           <input id="historyEditResult" type="text" placeholder="Example: 18:04.5">
         </div>
         <div class="field">
+          <label for="historyEditSplits">Splits / Laps</label>
+          <input id="historyEditSplits" type="text" placeholder="5:21, 5:37, 5:44">
+        </div>
+        <div class="field">
           <label for="historyEditBest">New Best</label>
           <select id="historyEditBest">
             <option value="none">No PB/SB</option>
@@ -670,6 +674,7 @@ var els={
   historyEditSeasonYear:document.getElementById('historyEditSeasonYear'),
   historyEditEvent:document.getElementById('historyEditEvent'),
   historyEditResult:document.getElementById('historyEditResult'),
+  historyEditSplits:document.getElementById('historyEditSplits'),
   historyEditBest:document.getElementById('historyEditBest'),
   historyEditGender:document.getElementById('historyEditGender'),
   historyEditReason:document.getElementById('historyEditReason'),
@@ -1183,6 +1188,7 @@ function historyPreviousPayload(row){
     season:row.season||'',
     seasonYear:row.seasonYear||'',
     athleteGender:historyEditGenderValue(row.athleteGender),
+    splitsJson:row.splitsText||'',
     notes:historyNotesFromRow(row)
   };
 }
@@ -1217,6 +1223,13 @@ function quickSplitPayload(text){
   return String(text||'').split(/[,;\n]+/).map(function(part){return part.trim();}).filter(Boolean).map(function(time,index){
     return {lap:index+1,time:time};
   });
+}
+function splitsInputFromText(text){
+  return parseSplitLines(text).map(function(split){return split.time;}).join(', ');
+}
+function splitsJsonFromInput(text){
+  var splits=quickSplitPayload(text);
+  return splits.length?JSON.stringify(splits):'';
 }
 function quickRowTemplate(data){
   data=data||{};
@@ -1260,6 +1273,7 @@ function quickPreviewRows(){
   var meetName=String(els.quickMeetName.value||'').trim();
   var date=String(els.quickMeetDate.value||'').trim();
   var eventName=String(els.quickEvent.value||'').trim();
+  var sportName=els.quickSport.value||'cross_country';
   var filled=quickRowValues().filter(function(row){return row.athleteName||row.resultDisplay||row.splits||row.notes;});
   var ready=0;
   quickEntryRows=quickEntryRows.map(function(row){
@@ -1273,7 +1287,8 @@ function quickPreviewRows(){
     if(!athlete)return Object.assign({},row,{status:'Check athlete match',statusType:'warn'});
     if(!row.resultDisplay)return Object.assign({},row,{status:'Needs result',statusType:'bad'});
     ready+=1;
-    return Object.assign({},row,{status:'Ready - '+athlete.name,statusType:'good'});
+    var existing=quickExistingResultFor({athlete:athlete,meetName:meetName,meetDate:date,event:eventName,sport:sportName});
+    return Object.assign({},row,{status:(existing?'Update - ':'Add - ')+athlete.name,statusType:'good'});
   });
   renderQuickRows();
   els.quickSave.disabled=!ready||quickEntryRows.some(function(row){return row.statusType==='bad'||row.statusType==='warn';});
@@ -1345,6 +1360,51 @@ function quickPayloadForRow(row){
     coachRaceNotes:row.notes||''
   };
 }
+function quickExistingResultFor(input){
+  var athlete=input&&input.athlete||{};
+  var meetName=String(input&&input.meetName||'').trim().toLowerCase();
+  var meetDate=String(input&&input.meetDate||'').slice(0,10);
+  var eventLabel=normalizedXcEventLabel(input&&input.event).toLowerCase();
+  var sportLabel=canonicalSport(input&&input.sport)||'Cross Country';
+  var contactId=String(athlete.contactId||'').trim();
+  var athleteKey=athleteMatchKey(athlete.name);
+  return meetResults.find(function(row){
+    if(!(row.recordId||row.sourceRecordId))return false;
+    if(String(row.meetName||'').trim().toLowerCase()!==meetName)return false;
+    if(String(row.meetDate||'').slice(0,10)!==meetDate)return false;
+    if(sportText(row)!==sportLabel)return false;
+    if(normalizedXcEventLabel(row.event).toLowerCase()!==eventLabel)return false;
+    if(contactId&&String(row.contactId||'').trim()===contactId)return true;
+    return athleteKey&&athleteMatchKey(row.athleteName)===athleteKey;
+  })||null;
+}
+function quickCorrectionPayload(existing,payload,row){
+  return {
+    action:'edit',
+    recordType:'meet',
+    recordId:existing.recordId||'',
+    sourceRecordId:existing.sourceRecordId||'',
+    contactId:existing.contactId||payload.contactId||'',
+    athleteName:existing.athleteName||payload.athleteName||'',
+    reason:'Update result from Enter Event Results',
+    previous:historyPreviousPayload(existing),
+    updates:{
+      meetDate:payload.meetDate,
+      meetName:payload.meetName,
+      sport:payload.sport,
+      season:payload.season,
+      seasonYear:payload.seasonYear,
+      event:payload.event,
+      resultDisplay:payload.resultDisplay,
+      splitsJson:payload.splitsJson,
+      athleteGender:payload.athleteGender||existing.athleteGender||'',
+      isPr:payload.isPr?'yes':'no',
+      isSeasonBest:payload.isSeasonBest?'yes':'no',
+      notes:row.notes||historyNotesFromRow(existing),
+      resultType:'individual'
+    }
+  };
+}
 function saveQuickEntry(){
   quickPreviewRows();
   var rows=quickEntryRows.filter(function(row){return row.statusType==='good'&&row.status!=='Saved';});
@@ -1363,15 +1423,33 @@ function saveQuickEntry(){
       if(setupError)return;
       setQuickStatus('Saving '+(index+1)+' of '+rows.length+'...','');
       var payload=quickPayloadForRow(row);
-      return fetch('/api/smart-trak/meet-result',{method:'POST',headers:headers,body:JSON.stringify(payload)}).then(function(res){
-        return res.json().then(function(data){return{ok:res.ok,data:data,payload:payload};});
+      var existing=quickExistingResultFor({athlete:quickFindAthlete(row.athleteName),meetName:payload.meetName,meetDate:payload.meetDate,event:payload.event,sport:payload.sport});
+      var endpoint=existing?'/api/smart-trak/correction':'/api/smart-trak/meet-result';
+      var requestBody=existing?quickCorrectionPayload(existing,payload,row):payload;
+      return fetch(endpoint,{method:'POST',headers:headers,body:JSON.stringify(requestBody)}).then(function(res){
+        return res.json().then(function(data){return{ok:res.ok,data:data,payload:payload,existing:existing};});
       }).then(function(result){
         if(!result.ok)throw new Error(result.data&&result.data.error||'Save failed.');
+        if(result.existing)applyHistoryEditLocally(result.existing,{
+          meetDate:result.payload.meetDate,
+          meetName:result.payload.meetName,
+          sport:result.payload.sport,
+          season:result.payload.season,
+          seasonYear:Number(result.payload.seasonYear)||'',
+          event:result.payload.event,
+          resultDisplay:result.payload.resultDisplay,
+          splitsText:result.payload.splitsJson,
+          athleteGender:result.payload.athleteGender||result.existing.athleteGender||'',
+          isPr:!!result.payload.isPr,
+          isSeasonBest:!!result.payload.isSeasonBest,
+          notes:row.notes||historyNotesFromRow(result.existing)
+        },'Update result from Enter Event Results');
         saved.push(Object.assign({},result.payload,{
           contactId:result.data.contactId||result.payload.contactId,
           athleteGender:result.data.athleteGender||result.payload.athleteGender||'',
-          recordId:result.data.recordId||'',
-          sourceRecordId:result.data.sourceRecordId||'',
+          recordId:result.existing&&result.existing.recordId||result.data.recordId||'',
+          sourceRecordId:result.existing&&result.existing.sourceRecordId||result.data.sourceRecordId||'',
+          _quickMode:result.existing?'updated':'created',
           isPr:!!(result.data.isPr||result.payload.isPr),
           isSeasonBest:!!(result.data.isSeasonBest||result.payload.isSeasonBest),
           splitsText:result.payload.splitsJson,
@@ -1396,7 +1474,7 @@ function saveQuickEntry(){
     quickEntryRows=quickEntryRows.map(function(row){
       var savedRow=saved.find(function(item){return athleteMatchKey(item.athleteName)===athleteMatchKey(row.athleteName)&&item.resultDisplay===row.resultDisplay;});
       var failedRow=failed.find(function(item){return item.row===row;});
-      if(savedRow)return Object.assign({},row,{status:'Saved',statusType:'good'});
+      if(savedRow)return Object.assign({},row,{status:savedRow._quickMode==='updated'?'Updated':'Saved',statusType:'good'});
       if(failedRow)return Object.assign({},row,{status:failedRow.error,statusType:'bad'});
       if(setupError&&row.statusType==='good'&&row.status!=='Saved')return Object.assign({},row,{status:'Not saved',statusType:'warn'});
       return row;
@@ -1432,6 +1510,7 @@ function openHistoryEdit(rowKeyValue){
   els.historyEditSeasonYear.value=historyEditRow.seasonYear||yearFromDateText(historyEditRow.meetDate)||'';
   els.historyEditEvent.value=historyEditRow.event||'';
   els.historyEditResult.value=historyEditRow.resultDisplay||'';
+  els.historyEditSplits.value=splitsInputFromText(historyEditRow.splitsText);
   els.historyEditBest.value=historyEditRow.isPr&&historyEditRow.isSeasonBest?'both':historyEditRow.isPr?'pb':historyEditRow.isSeasonBest?'sb':'none';
   els.historyEditGender.value=historyEditGenderValue(historyEditRow.athleteGender);
   els.historyEditReason.value='';
@@ -1475,6 +1554,7 @@ function saveHistoryEdit(){
         seasonYear:els.historyEditSeasonYear.value,
         event:els.historyEditEvent.value,
         resultDisplay:els.historyEditResult.value,
+        splitsJson:splitsJsonFromInput(els.historyEditSplits.value),
         athleteGender:els.historyEditGender.value,
         isPr:best==='pb'||best==='both'?'yes':'no',
         isSeasonBest:best==='sb'||best==='both'?'yes':'no',
@@ -1495,6 +1575,7 @@ function saveHistoryEdit(){
       seasonYear:Number(els.historyEditSeasonYear.value)||'',
       event:els.historyEditEvent.value,
       resultDisplay:els.historyEditResult.value,
+      splitsText:splitsJsonFromInput(els.historyEditSplits.value)||historyEditRow.splitsText||'',
       athleteGender:els.historyEditGender.value||historyEditRow.athleteGender||'',
       isPr:best==='pb'||best==='both',
       isSeasonBest:best==='sb'||best==='both',
@@ -1516,6 +1597,7 @@ function applyHistoryEditLocally(row,updates,reason){
       corrected:true,
       correctionDate:correctedAt,
       correctionReason:reason,
+      splitsText:Object.prototype.hasOwnProperty.call(updates,'splitsText')?updates.splitsText:item.splitsText,
       coachRaceNotes:updates.notes||item.coachRaceNotes||''
     }));
   });
