@@ -227,6 +227,7 @@ async function publicResultsBoard(req, res) {
         meet: filters.allMeets ? "__all__" : latestMeetName,
         event: filters.event,
         gender: filters.gender,
+        grade: filters.grade,
         label: resultsBoardFilterLabel(filters, latestMeetName),
       },
       filterOptions,
@@ -297,6 +298,7 @@ async function publicXcProgressionBoard(req, res) {
         meet: filters.meetName,
         event: filters.event,
         gender: filters.gender,
+        grade: filters.grade,
         label: resultsBoardFilterLabel(filters, filters.meetName),
       },
       filterOptions: resultsBoardFilterOptions(allRows, filters),
@@ -1288,15 +1290,17 @@ function resultsBoardSharing(source) {
 function resultsBoardFilters(query, sharing) {
   const sport = resultsBoardSport(query && query.sport || sharing.sport);
   const meetInput = clean(query && query.meet).slice(0, 160);
+  const seasonYear = Number(query && query.seasonYear) || Number(sharing.seasonYear) || new Date().getFullYear();
   return {
     sport,
     sportKey: optionValue(sport),
     sportLabel: sport,
-    seasonYear: Number(query && query.seasonYear) || Number(sharing.seasonYear) || new Date().getFullYear(),
+    seasonYear,
     allMeets: meetInput === "__all__",
     meetName: meetInput === "__all__" ? "" : meetInput,
     event: clean(query && query.event).slice(0, 80),
     gender: resultsBoardGender(query && query.gender),
+    grade: resultsBoardGrade(query && query.grade, seasonYear),
   };
 }
 
@@ -1310,6 +1314,7 @@ function resultsBoardRowMatches(row, filters) {
   if (filters.meetName && clean(row.meetName) !== filters.meetName) return false;
   if (filters.event && clean(row.event) !== filters.event) return false;
   if (filters.gender && resultsBoardGender(row.athleteGender) !== filters.gender) return false;
+  if (filters.grade && resultsBoardGrade(row.grade || noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"), filters.seasonYear) !== filters.grade) return false;
   return true;
 }
 
@@ -1327,12 +1332,13 @@ function resultsBoardFilterOptions(rows, filters) {
   return {
     meets: uniqueStrings(scoped.map((row) => row.meetName)),
     events: uniqueStrings(scoped.map((row) => row.event)),
+    grades: uniqueStrings(scoped.map((row) => resultsBoardGrade(row.grade || noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"), filters.seasonYear))).sort((a, b) => Number(a) - Number(b)),
     years: uniqueStrings((Array.isArray(rows) ? rows : []).map((row) => String(Number(row.seasonYear) || yearFromDateValue(row.meetDate) || "")).filter(Boolean)).sort(),
   };
 }
 
 function resultsBoardFilterLabel(filters, meetName) {
-  return [filters.sportLabel, filters.seasonYear, filters.allMeets ? "All Meets" : meetName || "Latest meet"].filter(Boolean).join(" · ");
+  return [filters.sportLabel, filters.seasonYear, filters.grade ? `Grade ${filters.grade}` : "", filters.allMeets ? "All Meets" : meetName || "Latest meet"].filter(Boolean).join(" · ");
 }
 
 function defaultResultsBoardDetailOrder() {
@@ -1674,6 +1680,18 @@ function resultsBoardGender(value) {
   if (/\b(boy|boys|male|men|mens|m)\b/.test(text)) return "boy";
   if (/\b(girl|girls|female|women|womens|f)\b/.test(text)) return "girl";
   return "";
+}
+
+function resultsBoardGrade(value, seasonYear) {
+  const match = clean(value).match(/\d+/);
+  if (!match) return "";
+  let grade = Number(match[0]);
+  if (grade > 20) {
+    const year = Number(seasonYear) || new Date().getFullYear();
+    grade = 13 - (grade - year);
+  }
+  if (grade < 1 || grade > 12) return "";
+  return String(grade);
 }
 
 function resultsBoardDivisionLabel(value) {

@@ -3863,9 +3863,11 @@ async function accountXcProgressionBoardLink(req, res) {
   const meet = cleanSetupText(firstQueryValue(req.query && req.query.meet)).slice(0, 160);
   const event = cleanSetupText(firstQueryValue(req.query && req.query.event)).slice(0, 80);
   const gender = normalizeResultsBoardGender(firstQueryValue(req.query && req.query.gender));
+  const grade = normalizeResultsBoardGrade(firstQueryValue(req.query && req.query.grade));
   if (meet) params.set("meet", meet);
   if (event) params.set("event", event);
   if (gender) params.set("gender", gender);
+  if (grade) params.set("grade", grade);
   const compactParams = new URLSearchParams({
     k: resultsBoardShareKey({
       account: accountKey,
@@ -3875,6 +3877,7 @@ async function accountXcProgressionBoardLink(req, res) {
       meet: params.get("meet"),
       event: params.get("event"),
       gender: params.get("gender"),
+      grade: params.get("grade"),
     }),
   });
   res.status(200).json({
@@ -3911,6 +3914,7 @@ async function accountXcProgressionBoard(req, res) {
   if (share.meet && req.query && !firstQueryValue(req.query.meet)) req.query.meet = share.meet;
   if (share.event && req.query && !firstQueryValue(req.query.event)) req.query.event = share.event;
   if (share.gender && req.query && !firstQueryValue(req.query.gender)) req.query.gender = share.gender;
+  if (share.grade && req.query && !firstQueryValue(req.query.grade)) req.query.grade = share.grade;
   return handlers.dashboard.publicXcProgressionBoard(req, res);
 }
 
@@ -4339,6 +4343,14 @@ function normalizeResultsBoardGender(value) {
   if (text === "boy" || text === "boys" || text === "male" || text === "m") return "boy";
   if (text === "girl" || text === "girls" || text === "female" || text === "f") return "girl";
   return "";
+}
+
+function normalizeResultsBoardGrade(value) {
+  const match = cleanSetupText(value).match(/\d+/);
+  if (!match) return "";
+  const grade = Number(match[0]);
+  if (grade < 1 || grade > 12) return "";
+  return String(grade);
 }
 
 function buildSpeedBoardRows({ practices, metric, gender, year, gameSettings }) {
@@ -7414,6 +7426,7 @@ function resultsBoardShareKey(input) {
     m: cleanSetupText(source.meet),
     e: cleanSetupText(source.event),
     g: cleanSetupText(source.gender),
+    gr: cleanSetupText(source.grade),
   };
   return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
@@ -7431,6 +7444,7 @@ function resultsBoardShareFromKey(value) {
       meet: cleanSetupText(raw.m || raw.meet),
       event: cleanSetupText(raw.e || raw.event),
       gender: cleanSetupText(raw.g || raw.gender),
+      grade: cleanSetupText(raw.gr || raw.grade),
     };
   } catch (error) {
     return {};
