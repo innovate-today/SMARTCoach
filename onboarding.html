@@ -1626,6 +1626,7 @@ function generateSetup(){
   var stripeCustomerId=document.getElementById('stripeCustomerId').value.trim();
   var stripeSubscriptionId=document.getElementById('stripeSubscriptionId').value.trim();
   var subscriptionNotes=document.getElementById('subscriptionNotes').value.trim();
+  var logoUrl=document.getElementById('logoUrl').value.trim();
   var setupCode=document.getElementById('setupCode').value.trim();
   var status=document.getElementById('status');
   if(!account){
@@ -1649,7 +1650,8 @@ function generateSetup(){
     renewalDate:renewalDate,
     stripeCustomerId:stripeCustomerId,
     stripeSubscriptionId:stripeSubscriptionId,
-    subscriptionNotes:subscriptionNotes
+    subscriptionNotes:subscriptionNotes,
+    logoUrl:logoUrl
   });
   fetch('/api/smart-trak/account-setup?'+params.toString(),fetchOptions).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
