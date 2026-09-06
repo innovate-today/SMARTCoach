@@ -4165,6 +4165,12 @@ function checkMeetHistoryMeetListChronological() {
   const html = fs.readFileSync("meet-history.html", "utf8");
   const required = [
     "function meetDateSortValue(value)",
+    "function meetFallbackKey(name,sport,seasonYear)",
+    "var meetFallbacks={};",
+    "meetFallbacks[meetFallbackKey(meet.name,meet.sport,meet.seasonYear)]=key;",
+    "var fallback=meetFallbacks[meetFallbackKey(result.meetName,result.sport,result.seasonYear)];",
+    "var key=fallback||resultMeetKey(result);",
+    "if(!groups[key].date&&result.meetDate)groups[key].date=result.meetDate;",
     "return isNaN(date.getTime()) ? Number.MAX_SAFE_INTEGER : date.getTime();",
     "return meetDateSortValue(a.date)-meetDateSortValue(b.date) || String(a.name||'').localeCompare(String(b.name||''));",
   ];
