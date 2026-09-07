@@ -4179,6 +4179,8 @@ function checkMeetHistoryMeetListChronological() {
   const html = fs.readFileSync("meet-history.html", "utf8");
   const required = [
     "function meetDateSortValue(value)",
+    "function meetDateKey(value)",
+    "return [String(name||'').trim().toLowerCase(),meetDateKey(date)].join('|');",
     "function meetFallbackKey(name,sport,seasonYear)",
     "var meetFallbacks={};",
     "meetFallbacks[meetFallbackKey(meet.name,meet.sport,meet.seasonYear)]=key;",
