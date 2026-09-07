@@ -301,7 +301,7 @@ async function publicXcProgressionBoard(req, res) {
       filters: {
         sport: "Cross Country",
         seasonYear: filters.seasonYear,
-        meet: filters.meetName,
+        meet: filters.allMeets ? "__all__" : filters.meetName,
         event: filters.event,
         gender: filters.gender,
         grade: filters.grade,
