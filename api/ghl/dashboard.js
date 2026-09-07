@@ -100,10 +100,11 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const includeMeetHistory = ["1", "true", "yes"].includes(clean(req.query && req.query.meetHistory).toLowerCase());
     const [athletes, bestRecords, meetRecords, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY }),
-      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: includeMeetHistory ? 15000 : undefined }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
       loadTrainingMirror(accountKey),
     ]);
@@ -134,6 +135,7 @@ module.exports = async function handler(req, res) {
       },
       athletes: rows,
       recentMeetResults,
+      ...(includeMeetHistory ? { meetResults } : {}),
       xcTop20,
       recentTrainingSyncs,
     });
@@ -999,13 +1001,14 @@ async function searchObjectRecords({ token, locationId, schemaKey, signal }) {
 
 async function safeDashboardObjectRecords(options) {
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutMs = Number(options && options.timeoutMs) || OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS;
   let timer = null;
   try {
     const timeout = new Promise((_, reject) => {
       timer = setTimeout(() => {
         if (controller) controller.abort();
         reject(httpError(504, "Dashboard optional lookup timed out."));
-      }, OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS);
+      }, timeoutMs);
     });
     return await Promise.race([
       searchObjectRecords({ ...options, signal: controller && controller.signal }),

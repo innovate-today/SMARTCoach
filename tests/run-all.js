@@ -1613,6 +1613,9 @@ function checkXcTop20RecordsFeature() {
   [
     "const xcTop20 = buildXcTop20(meetResults, athletes);",
     "const recentMeetResults = dashboardRecentMeetResults(meetResults);",
+    "const includeMeetHistory = [\"1\", \"true\", \"yes\"].includes(clean(req.query && req.query.meetHistory).toLowerCase());",
+    "timeoutMs: includeMeetHistory ? 15000 : undefined",
+    "...(includeMeetHistory ? { meetResults } : {})",
     "const DASHBOARD_RECENT_MEET_LIMIT = 100;",
     "function dashboardRecentMeetResults(meetResults)",
     "function dashboardCurrentMeetSeasonKeys(rows)",
@@ -4168,6 +4171,7 @@ function checkMeetHistorySportToolbarFilter() {
     "var groupSport=sportText(group);",
     "var matchesSport=sport==='all'||groupSport===sport||results.length>0;",
     "meetResults=normalizeMeetHistoryRows",
+    "fetch('/api/smart-trak/dashboard?meetHistory=1'",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`Meet History sport toolbar filter missing ${text}`);

@@ -3128,7 +3128,7 @@ function loadMeetHistory(){
   els.refreshBtn.disabled=true;
   els.status.textContent='Loading meet history...';
   return Promise.all([
-    fetch('/api/smart-trak/dashboard',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
+    fetch('/api/smart-trak/dashboard?meetHistory=1',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
     fetch('/api/ghl/meets',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};})
   ]).then(function(results){
     var dashboard=results[0];
