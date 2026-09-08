@@ -206,12 +206,13 @@ async function publicResultsBoard(req, res) {
 
   try {
     const sharing = resultsBoardSharing(req.resultsBoardSharing);
-    const [athletes, meetRecords, ghlLocationName] = await Promise.all([
+    const [athletes, meetRecords, bestRecords, ghlLocationName] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       requiredDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: 12000 }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, timeoutMs: 2500 }),
       safeGhlLocationName({ token, locationId }),
     ]);
-    const allRows = buildRecentMeetResults({ athletes, meetRecords });
+    const allRows = annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords }), bestRecords);
     const filters = resultsBoardFilters(req.query, sharing);
     const displayBoard = resultsBoardDisplayMode(req.query);
     const seasonRows = allRows.filter((row) => resultsBoardRowMatches(row, filters));
@@ -1122,6 +1123,39 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
   return rows.sort(sortMeetSyncDesc);
 }
 
+function annotateResultsBoardBestFlags(rows, bestRecords) {
+  const bests = (Array.isArray(bestRecords) ? bestRecords : []).map(normalizeBest).filter((best) => best.event);
+  if (!bests.length) return rows;
+  return (Array.isArray(rows) ? rows : []).map((row) => {
+    const next = { ...row };
+    bests.forEach((best) => {
+      if (!resultsBoardBestMatchesRow(best, row)) return;
+      if (resultsBoardBestResultMatches(row, best.personalBestDisplay, best.personalBestMs, best.personalBestDate, best.personalBestMeet)) next.isPr = true;
+      if (resultsBoardBestResultMatches(row, best.seasonBestDisplay, best.seasonBestMs, best.seasonBestDate, best.seasonBestMeet)) next.isSeasonBest = true;
+    });
+    return next;
+  });
+}
+
+function resultsBoardBestMatchesRow(best, row) {
+  if (!best || !row) return false;
+  if (optionValue(best.event) !== optionValue(row.event)) return false;
+  const bestIds = [best.contactId, best.athleteName].map(clean).filter(Boolean).map((value) => value.toLowerCase());
+  const rowIds = [row.contactId, row.athleteName].map(clean).filter(Boolean).map((value) => value.toLowerCase());
+  return bestIds.length && rowIds.length && bestIds.some((value) => rowIds.includes(value));
+}
+
+function resultsBoardBestResultMatches(row, display, ms, date, meet) {
+  if (!row || (!display && !ms)) return false;
+  const rowMs = resultsBoardResultMs(row);
+  const bestMs = Number(ms) || parseTimeToMs(display);
+  const sameResult = bestMs && rowMs ? Math.abs(rowMs - bestMs) <= 10 : clean(row.resultDisplay) === clean(display);
+  if (!sameResult) return false;
+  const sameDate = !date || !row.meetDate || clean(date).slice(0, 10) === clean(row.meetDate).slice(0, 10);
+  const sameMeet = !meet || !row.meetName || clean(meet).toLowerCase() === clean(row.meetName).toLowerCase();
+  return sameDate && sameMeet;
+}
+
 function meetResultGrade(value, seasonYear) {
   return resultsBoardGrade(value, seasonYear) || "";
 }
@@ -1907,6 +1941,8 @@ function normalizeBest(record) {
   const props = recordProperties(record);
   return {
     recordId: record && record.id ? record.id : "",
+    contactId: prop(props, "athlete_contact"),
+    athleteName: prop(props, "athlete_name_snapshot"),
     event: prop(props, "event"),
     personalBestDisplay: prop(props, "personal_best_display"),
     personalBestMs: Number(prop(props, "personal_best_ms")) || 0,
