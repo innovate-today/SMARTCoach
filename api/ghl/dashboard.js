@@ -1943,8 +1943,8 @@ function normalizeMeetResult(record) {
     seasonYear: Number(prop(props, "season_year")) || yearFromDateValue(prop(props, "meet_date")),
     sport: labelValue(prop(props, "sport")) || prop(props, "sport"),
     wind: prop(props, "wind"),
-    isPr: yes(prop(props, "is_pr")),
-    isSeasonBest: yes(prop(props, "is_season_best")),
+    isPr: yesValue(prop(props, "is_pr")),
+    isSeasonBest: yesValue(prop(props, "is_season_best")),
     splitsText,
     resultType,
     relayType: noteValue(coachRaceNotes, "Relay Type"),
@@ -2531,6 +2531,10 @@ function labelValue(value) {
 
 function yes(value) {
   return /^(yes|true|1|on)$/i.test(clean(value));
+}
+
+function yesValue(value) {
+  return yes(value) || yes(labelValue(value));
 }
 
 function parseTimeToMs(value) {
