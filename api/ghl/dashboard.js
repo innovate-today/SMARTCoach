@@ -1313,7 +1313,6 @@ function resultsBoardSharing(source) {
       bestBadges: !(input.displayOptions && input.displayOptions.bestBadges === false),
       grades: !(input.displayOptions && input.displayOptions.grades === false),
       teamSummary: !(input.displayOptions && input.displayOptions.teamSummary === false),
-      displayBoard: !!(input.displayOptions && input.displayOptions.displayBoard === true),
       detailOrder: normalizeResultsBoardDetailOrder(input.displayOptions && input.displayOptions.detailOrder),
     },
     gameSettings: {

@@ -3718,7 +3718,7 @@ async function accountResultsBoardLink(req, res) {
   const params = new URLSearchParams({ account: accountKey, token });
   params.set("sport", cleanSetupText(firstQueryValue(req.query && req.query.sport)) || sharing.sport || "Cross Country");
   params.set("seasonYear", cleanSetupText(firstQueryValue(req.query && req.query.seasonYear)) || String(sharing.seasonYear || new Date().getFullYear()));
-  const displayBoard = (sharing.displayOptions && sharing.displayOptions.displayBoard) || cleanSetupText(firstQueryValue(req.query && req.query.display)) === "1";
+  const displayBoard = cleanSetupText(firstQueryValue(req.query && req.query.display)) === "1";
   const meet = cleanSetupText(firstQueryValue(req.query && req.query.meet)).slice(0, 160);
   const event = cleanSetupText(firstQueryValue(req.query && req.query.event)).slice(0, 80);
   const gender = normalizeResultsBoardGender(firstQueryValue(req.query && req.query.gender));
@@ -4310,7 +4310,6 @@ function normalizeResultsBoardDisplayOptions(source) {
     bestBadges: input.bestBadges !== false,
     grades: input.grades !== false,
     teamSummary: input.teamSummary !== false,
-    displayBoard: input.displayBoard === true,
     detailOrder: normalizeResultsBoardDetailOrder(input.detailOrder),
   };
 }
