@@ -2665,14 +2665,32 @@ function selectedXcProgressionParams(){
 }
 function copyTextToClipboard(text){
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    return navigator.clipboard.writeText(text).then(function(){return true;}).catch(function(){return false;});
+    return navigator.clipboard.writeText(text).then(function(){return true;}).catch(function(){return fallbackCopyText(text);});
   }
-  return Promise.resolve(false);
+  return Promise.resolve(fallbackCopyText(text));
+}
+function fallbackCopyText(text){
+  var input=document.createElement('textarea');
+  input.value=text;
+  input.setAttribute('readonly','');
+  input.style.position='fixed';
+  input.style.left='-9999px';
+  input.style.top='0';
+  document.body.appendChild(input);
+  input.focus();
+  input.select();
+  var ok=false;
+  try{ok=document.execCommand('copy');}catch(e){ok=false;}
+  document.body.removeChild(input);
+  return ok;
 }
 function setShareLinkStatus(text,type){
   if(!els.shareLinkStatus)return;
   els.shareLinkStatus.textContent=text||'';
   els.shareLinkStatus.classList.toggle('bad',type==='bad');
+}
+function setXcProgressionCopyDisabled(disabled){
+  if(els.copyXcProgressionLinkBtn)els.copyXcProgressionLinkBtn.disabled=!!disabled;
 }
 function copyXcProgressionLink(){
   var rows=raceSheetXcRows();
@@ -2681,20 +2699,24 @@ function copyXcProgressionLink(){
     return;
   }
   setShareLinkStatus('Creating link...','');
-  els.copyXcProgressionLinkBtn.disabled=true;
-  fetch('/api/smart-trak/xc-progression-board-link?'+selectedXcProgressionParams().toString(),{cache:'no-store',headers:apiHeaders()}).then(function(res){
-    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  setXcProgressionCopyDisabled(true);
+  Promise.resolve().then(function(){
+    return fetch('/api/smart-trak/xc-progression-board-link?'+selectedXcProgressionParams().toString(),{cache:'no-store',headers:apiHeaders()});
+  }).then(function(res){
+    return res.json().catch(function(){return{};}).then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not create XC progression link.');
     var url=new URL(result.data.url,window.location.origin).toString();
+    if(els.shareLinkStatus)els.shareLinkStatus.title=url;
     return copyTextToClipboard(url).then(function(copied){
-      setShareLinkStatus(copied?'Link copied.':'Copy blocked. Link ready in address bar.','');
+      setShareLinkStatus(copied?'Link copied.':'Copy blocked. Link ready in status.','');
       els.status.textContent=copied?'XC progression link copied.':'XC progression link ready: '+url;
     });
   }).catch(function(error){
     setShareLinkStatus(error.message||'Could not create link.','bad');
-  }).finally(function(){
-    els.copyXcProgressionLinkBtn.disabled=!raceSheetXcRows().length;
+    if(els.status)els.status.textContent=error.message||'Could not create XC progression link.';
+  }).then(function(){
+    setXcProgressionCopyDisabled(!raceSheetXcRows().length);
   });
 }
 function raceSheetActiveAthleteKeys(){

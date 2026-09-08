@@ -3718,9 +3718,11 @@ async function accountResultsBoardLink(req, res) {
   const params = new URLSearchParams({ account: accountKey, token });
   params.set("sport", cleanSetupText(firstQueryValue(req.query && req.query.sport)) || sharing.sport || "Cross Country");
   params.set("seasonYear", cleanSetupText(firstQueryValue(req.query && req.query.seasonYear)) || String(sharing.seasonYear || new Date().getFullYear()));
+  const displayBoard = (sharing.displayOptions && sharing.displayOptions.displayBoard) || cleanSetupText(firstQueryValue(req.query && req.query.display)) === "1";
   const meet = cleanSetupText(firstQueryValue(req.query && req.query.meet)).slice(0, 160);
   const event = cleanSetupText(firstQueryValue(req.query && req.query.event)).slice(0, 80);
   const gender = normalizeResultsBoardGender(firstQueryValue(req.query && req.query.gender));
+  if (displayBoard) params.set("display", "1");
   if (meet) params.set("meet", meet);
   if (event) params.set("event", event);
   if (gender) params.set("gender", gender);
@@ -3733,13 +3735,14 @@ async function accountResultsBoardLink(req, res) {
       meet: params.get("meet"),
       event: params.get("event"),
       gender: params.get("gender"),
+      display: params.get("display"),
     }),
   });
   res.status(200).json({
     success: true,
     token,
     resultsBoardSharing: sharing,
-    url: `/results-board.html?${compactParams.toString()}`,
+    url: displayBoard ? `/results-board.html?${params.toString()}` : `/results-board.html?${compactParams.toString()}`,
     legacyUrl: `/results-board.html?${params.toString()}`,
   });
 }
@@ -4307,6 +4310,7 @@ function normalizeResultsBoardDisplayOptions(source) {
     bestBadges: input.bestBadges !== false,
     grades: input.grades !== false,
     teamSummary: input.teamSummary !== false,
+    displayBoard: input.displayBoard === true,
     detailOrder: normalizeResultsBoardDetailOrder(input.detailOrder),
   };
 }
@@ -7458,6 +7462,7 @@ function resultsBoardShareKey(input) {
     e: cleanSetupText(source.event),
     g: cleanSetupText(source.gender),
     gr: cleanSetupText(source.grade),
+    d: cleanSetupText(source.display),
   };
   return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
@@ -7476,6 +7481,7 @@ function resultsBoardShareFromKey(value) {
       event: cleanSetupText(raw.e || raw.event),
       gender: cleanSetupText(raw.g || raw.gender),
       grade: cleanSetupText(raw.gr || raw.grade),
+      display: cleanSetupText(raw.d || raw.display),
     };
   } catch (error) {
     return {};

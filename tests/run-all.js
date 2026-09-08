@@ -1258,9 +1258,13 @@ function checkResultsBoardFeature() {
     'id="resultsBoardShowHighlights"',
     'id="resultsBoardShowBadges"',
     'id="resultsBoardShowSummary"',
+    'id="resultsBoardDisplayBoard"',
     'id="resultsBoardDetailList"',
     'id="resultsBoardDetailsDefault"',
+    "function resultsBoardDisplayUrl(url,settings)",
+    "function resultsBoardPreferredShareUrl(data,settings)",
     'data-results-board-detail="latestMeet"',
+    "params.set('display','1')",
     "meetArchive:true",
     "athleteSummary:true",
     "eventSummary:true",
@@ -1343,6 +1347,11 @@ function checkResultsBoardFeature() {
     "function divisionRowHtml(row)",
     "function highlightRowHtml(row)",
     "function compactShareParams()",
+    "displayOptions.displayBoard===true",
+    "setDisplayMode(active,skipRender)",
+    'id="summaryCards"',
+    "body.display-mode #summaryCards",
+    "grid-template-rows:auto auto minmax(0,1fr)",
     "function renderFilterOptions",
     "function reloadWithFilters",
     "function bestPills(row)",
@@ -1358,11 +1367,17 @@ function checkResultsBoardFeature() {
     'id="shareLinkStatus"',
     "function selectedXcProgressionParams()",
     "function copyXcProgressionLink()",
+    "function fallbackCopyText(text)",
+    "function setXcProgressionCopyDisabled(disabled)",
     "xc-progression-board-link",
     "XC progression link copied.",
+    "Copy blocked. Link ready in status.",
   ].forEach((text) => {
     if (!meetHistory.includes(text)) throw new Error(`Meet History XC progression link missing ${text}`);
   });
+  if (meetHistory.includes("els.copyXcProgressionLinkBtn.disabled=true")) {
+    throw new Error("XC progression copy should use guarded button state helper.");
+  }
   [
     "SMART Trak XC Progression",
     "/api/smart-trak/xc-progression-board?",
@@ -1430,7 +1445,7 @@ function checkResultsBoardFeature() {
     "async function loadResultsBoardSharingState(accountKey, accountRecord)",
     "loadResultsBoardSharingState(accountKey, existing",
     "lastResultsBoardSharingSync",
-    "url: `/results-board.html?",
+    "url: displayBoard ? `/results-board.html?${params.toString()}`",
     "SMARTCOACH_RESULTS_BOARD_SECRET",
     'if (route === "xc-progression-board-link")',
     "return accountXcProgressionBoardLink(req, res);",

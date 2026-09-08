@@ -829,6 +829,10 @@ tr:last-child td{border-bottom:0}
           <label for="resultsBoardSeasonYear">Season Year</label>
           <input id="resultsBoardSeasonYear" type="number" min="2020" max="2100" step="1">
         </div>
+        <label class="checkline" style="display:flex;align-items:center;gap:8px;margin-top:26px;color:#334155;font-size:14px;font-weight:800">
+          <input id="resultsBoardDisplayBoard" type="checkbox">
+          <span>Open link in display board mode</span>
+        </label>
         <div class="field full">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
             <label>Visible Board Details</label>
@@ -2317,6 +2321,7 @@ function normalizeResultsBoardSharing(source){
       bestHighlights:display.bestHighlights!==false,
       bestBadges:display.bestBadges!==false,
       teamSummary:display.teamSummary!==false,
+      displayBoard:display.displayBoard===true,
       detailOrder:normalizeResultsBoardDetailOrder(display.detailOrder)
     },
     gameSettings:{
@@ -2347,6 +2352,7 @@ function renderResultsBoardSharing(){
   if(els.resultsBoardShowHighlights)els.resultsBoardShowHighlights.checked=!!settings.displayOptions.bestHighlights;
   if(els.resultsBoardShowBadges)els.resultsBoardShowBadges.checked=!!settings.displayOptions.bestBadges;
   if(els.resultsBoardShowSummary)els.resultsBoardShowSummary.checked=!!settings.displayOptions.teamSummary;
+  if(els.resultsBoardDisplayBoard)els.resultsBoardDisplayBoard.checked=!!settings.displayOptions.displayBoard;
   if(els.resultsBoardName)els.resultsBoardName.value=settings.gameSettings.boardName;
   if(els.resultsBoardCoachMessage)els.resultsBoardCoachMessage.value=settings.gameSettings.coachMessage;
   if(els.resultsBoardLinkPreview)els.resultsBoardLinkPreview.value=currentResultsBoardUrl||'';
@@ -2383,6 +2389,7 @@ function resetResultsBoardDetailDefaults(){
   [els.resultsBoardShowLatest,els.resultsBoardShowSeason,els.resultsBoardShowArchive,els.resultsBoardShowAthletes,els.resultsBoardShowEvents,els.resultsBoardShowDivisions,els.resultsBoardShowHighlights,els.resultsBoardShowBadges,els.resultsBoardShowSummary].forEach(function(input){
     if(input)input.checked=true;
   });
+  if(els.resultsBoardDisplayBoard)els.resultsBoardDisplayBoard.checked=false;
   setResultsBoardStatus('Board details reset to defaults.','#08783c');
 }
 function collectResultsBoardSharing(){
@@ -2401,6 +2408,7 @@ function collectResultsBoardSharing(){
       bestHighlights:!!(els.resultsBoardShowHighlights&&els.resultsBoardShowHighlights.checked),
       bestBadges:!!(els.resultsBoardShowBadges&&els.resultsBoardShowBadges.checked),
       teamSummary:!!(els.resultsBoardShowSummary&&els.resultsBoardShowSummary.checked),
+      displayBoard:!!(els.resultsBoardDisplayBoard&&els.resultsBoardDisplayBoard.checked),
       detailOrder:collectResultsBoardDetailOrder()
     },
     gameSettings:{
@@ -2470,7 +2478,17 @@ function resultsBoardLinkParams(){
   var params=new URLSearchParams({account:smartCoachAccountKey()});
   params.set('sport',settings.sport);
   params.set('seasonYear',settings.seasonYear);
+  if(settings.displayOptions&&settings.displayOptions.displayBoard)params.set('display','1');
   return params;
+}
+function resultsBoardDisplayUrl(url,settings){
+  var link=new URL(url,window.location.origin);
+  if(settings&&settings.displayOptions&&settings.displayOptions.displayBoard)link.searchParams.set('display','1');
+  return link.toString();
+}
+function resultsBoardPreferredShareUrl(data,settings){
+  var display=settings&&settings.displayOptions&&settings.displayOptions.displayBoard;
+  return display&&data&&data.legacyUrl?data.legacyUrl:data&&data.url;
 }
 function createResultsBoardLink(){
   var settings=collectResultsBoardSharing();
@@ -2485,7 +2503,7 @@ function createResultsBoardLink(){
     });
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not create Results Board link.');
-    currentResultsBoardUrl=new URL(result.data.url,window.location.origin).toString();
+    currentResultsBoardUrl=resultsBoardDisplayUrl(resultsBoardPreferredShareUrl(result.data,settings),settings);
     if(els.resultsBoardLinkPreview)els.resultsBoardLinkPreview.value=currentResultsBoardUrl;
     setResultsBoardStatus('Results Board link is ready.','#08783c');
     return currentResultsBoardUrl;
@@ -2936,6 +2954,7 @@ var els={
   resultsBoardShowHighlights:document.getElementById('resultsBoardShowHighlights'),
   resultsBoardShowBadges:document.getElementById('resultsBoardShowBadges'),
   resultsBoardShowSummary:document.getElementById('resultsBoardShowSummary'),
+  resultsBoardDisplayBoard:document.getElementById('resultsBoardDisplayBoard'),
   resultsBoardName:document.getElementById('resultsBoardName'),
   resultsBoardCoachMessage:document.getElementById('resultsBoardCoachMessage'),
   resultsBoardLinkPreview:document.getElementById('resultsBoardLinkPreview'),
