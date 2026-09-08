@@ -213,13 +213,12 @@ async function publicResultsBoard(req, res) {
     ]);
     const allRows = buildRecentMeetResults({ athletes, meetRecords });
     const filters = resultsBoardFilters(req.query, sharing);
+    const displayBoard = resultsBoardDisplayMode(req.query);
     const seasonRows = allRows.filter((row) => resultsBoardRowMatches(row, filters));
-    const filterOptions = resultsBoardFilterOptions(allRows, filters);
     const latestMeetName = filters.allMeets ? "" : filters.meetName || latestResultsMeetName(seasonRows);
     const latestRows = (filters.allMeets ? seasonRows : seasonRows.filter((row) => !latestMeetName || clean(row.meetName) === latestMeetName)).sort(resultsSort);
-    const seasonBestRows = resultsBoardSeasonBestRows(seasonRows).sort(resultsSort);
     const meetNames = uniqueStrings(seasonRows.map((row) => row.meetName));
-    res.status(200).json({
+    const basePayload = {
       success: true,
       accountKey,
       logoUrl,
@@ -227,6 +226,7 @@ async function publicResultsBoard(req, res) {
       generatedAt: new Date().toISOString(),
       gameSettings: sharing.gameSettings,
       displayOptions: sharing.displayOptions,
+      displayBoard,
       filters: {
         sport: filters.sportLabel,
         seasonYear: filters.seasonYear,
@@ -236,7 +236,6 @@ async function publicResultsBoard(req, res) {
         grade: filters.grade,
         label: resultsBoardFilterLabel(filters, latestMeetName),
       },
-      filterOptions,
       totals: {
         results: seasonRows.length,
         latestMeetResults: latestRows.length,
@@ -246,13 +245,33 @@ async function publicResultsBoard(req, res) {
         seasonBests: seasonRows.filter((row) => row.isSeasonBest).length,
       },
       latestMeet: resultsBoardMeetSummary(latestRows, filters.allMeets ? "All Meets" : latestMeetName),
+      latestRows: displayBoard ? latestRows.slice(0, 12) : latestRows,
+    };
+    if (displayBoard) {
+      res.status(200).json({
+        ...basePayload,
+        filterOptions: { meets: [], events: [], genders: [] },
+        seasonSummary: {},
+        meetArchive: [],
+        athleteSummaryRows: [],
+        eventSummaryRows: [],
+        divisionSummaryRows: [],
+        bestHighlightRows: [],
+        seasonRows: [],
+      });
+      return;
+    }
+    const filterOptions = resultsBoardFilterOptions(allRows, filters);
+    const seasonBestRows = resultsBoardSeasonBestRows(seasonRows).sort(resultsSort);
+    res.status(200).json({
+      ...basePayload,
+      filterOptions,
       seasonSummary: resultsBoardSeasonSummary(seasonRows),
       meetArchive: resultsBoardMeetArchive(seasonRows),
       athleteSummaryRows: resultsBoardAthleteSummaryRows(seasonRows),
       eventSummaryRows: resultsBoardEventSummaryRows(seasonRows),
       divisionSummaryRows: resultsBoardDivisionSummaryRows(seasonRows),
       bestHighlightRows: resultsBoardBestHighlightRows(seasonRows),
-      latestRows,
       seasonRows: seasonBestRows,
     });
   } catch (error) {
@@ -1342,6 +1361,10 @@ function resultsBoardFilters(query, sharing) {
     gender: resultsBoardGender(query && query.gender),
     grade: resultsBoardGrade(query && query.grade, seasonYear),
   };
+}
+
+function resultsBoardDisplayMode(query) {
+  return clean(query && query.display) === "1";
 }
 
 function resultsBoardRowMatches(row, filters) {
