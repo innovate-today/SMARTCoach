@@ -3772,6 +3772,8 @@ async function accountResultsBoard(req, res) {
   if (share.meet && req.query && !firstQueryValue(req.query.meet)) req.query.meet = share.meet;
   if (share.event && req.query && !firstQueryValue(req.query.event)) req.query.event = share.event;
   if (share.gender && req.query && !firstQueryValue(req.query.gender)) req.query.gender = share.gender;
+  if (share.grade && req.query && !firstQueryValue(req.query.grade)) req.query.grade = share.grade;
+  if (share.display && req.query && !firstQueryValue(req.query.display)) req.query.display = share.display;
   return handlers.dashboard.publicResultsBoard(req, res);
 }
 

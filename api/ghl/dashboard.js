@@ -208,7 +208,7 @@ async function publicResultsBoard(req, res) {
     const sharing = resultsBoardSharing(req.resultsBoardSharing);
     const [athletes, meetRecords, ghlLocationName] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
-      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
+      requiredDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: 12000 }),
       safeGhlLocationName({ token, locationId }),
     ]);
     const allRows = buildRecentMeetResults({ athletes, meetRecords });
@@ -996,7 +996,7 @@ function ghlLocationNameFromResult(result) {
   return clean(source && (source.name || source.businessName || source.companyName || source.locationName));
 }
 
-async function searchObjectRecords({ token, locationId, schemaKey, signal }) {
+async function searchObjectRecords({ token, locationId, schemaKey, signal, required }) {
   try {
     const records = [];
     for (let page = 1; page <= 10; page += 1) {
@@ -1013,6 +1013,7 @@ async function searchObjectRecords({ token, locationId, schemaKey, signal }) {
     }
     return uniqueRecords(records);
   } catch (error) {
+    if (required) throw error;
     if (error.statusCode && error.statusCode >= 500) throw error;
     return [];
   }
@@ -1040,6 +1041,26 @@ async function safeDashboardObjectRecords(options) {
       message: error && error.message,
     });
     return [];
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function requiredDashboardObjectRecords(options) {
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutMs = Number(options && options.timeoutMs) || 12000;
+  let timer = null;
+  try {
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        if (controller) controller.abort();
+        reject(httpError(504, "Results Board data lookup timed out."));
+      }, timeoutMs);
+    });
+    return await Promise.race([
+      searchObjectRecords({ ...options, signal: controller && controller.signal, required: true }),
+      timeout,
+    ]);
   } finally {
     if (timer) clearTimeout(timer);
   }
