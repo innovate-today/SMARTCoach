@@ -9,10 +9,16 @@ const OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS = 4500;
 const DASHBOARD_RECENT_MEET_LIMIT = 100;
 const CONTACT_LIST_PAGE_LIMIT = 100;
 const CONTACT_LIST_MAX_PAGES = 20;
+const CONTACT_LIST_PAGE_CONCURRENCY = 4;
+const DASHBOARD_READ_CACHE_TTL_MS = 30000;
+const DASHBOARD_FIELD_CACHE_TTL_MS = 300000;
 const ATHLETE_ROSTER_DETAILS_NAMESPACE = "athlete-roster-details";
+const DASHBOARD_SNAPSHOT_NAMESPACE = "dashboard-snapshot";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { loadAccountScopedRecord, loadTrainingMirror, loadAttendanceRecords } = require("../../lib/account-registry");
+const { saveAccountScopedRecord } = require("../../lib/account-registry");
+const dashboardReadCache = new Map();
 
 const FIELD_IDS = {
   athlete_contact: ["JNGhbB93E0xRao1jAm47", "ZBi4Oj4pmCQs8ekqaNr2", "q9xmnPdCBRL1NuomFuOo"],
@@ -101,6 +107,15 @@ module.exports = async function handler(req, res) {
 
   try {
     const includeMeetHistory = ["1", "true", "yes"].includes(clean(req.query && req.query.meetHistory).toLowerCase());
+    if (!includeMeetHistory && dashboardSnapshotRequested(req)) {
+      const snapshot = await loadDashboardSnapshot(accountKey);
+      if (snapshot) {
+        res.status(200).json(snapshot);
+        return;
+      }
+      res.status(404).json({ error: "Dashboard snapshot is not ready.", snapshotMissing: true });
+      return;
+    }
     const [athletes, bestRecords, meetRecords, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY }),
@@ -109,20 +124,20 @@ module.exports = async function handler(req, res) {
       loadTrainingMirror(accountKey),
     ]);
     const allPerformanceRecords = mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords);
+    const recordIndex = buildDashboardRecordIndex({ athletes, bestRecords, meetRecords, performanceRecords: allPerformanceRecords });
 
     const rows = athletes.map((athlete) => buildAthleteRow({
       athlete,
-      bestRecords,
-      meetRecords,
-      performanceRecords: allPerformanceRecords,
+      bests: athleteIndexedRecords(recordIndex.bestsByAthlete, athlete),
+      meets: athleteIndexedRecords(recordIndex.meetsByAthlete, athlete),
+      training: athleteIndexedRecords(recordIndex.trainingByAthlete, athlete),
     }));
-    const meetResults = buildRecentMeetResults({ athletes, meetRecords });
+    const meetResults = buildRecentMeetResults({ athletes, meetRecords, meetRecordIndex: recordIndex.meetsByAthlete });
     const xcTop20 = buildXcTop20(meetResults, athletes);
-    const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords });
+    const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords, performanceRecordIndex: recordIndex.trainingByAthlete });
     const recentMeetResults = dashboardRecentMeetResults(meetResults);
     const recentTrainingSyncs = trainingSyncs;
-
-    res.status(200).json({
+    const payload = {
       success: true,
       generatedAt: new Date().toISOString(),
       totals: {
@@ -138,7 +153,9 @@ module.exports = async function handler(req, res) {
       ...(includeMeetHistory ? { meetResults } : {}),
       xcTop20,
       recentTrainingSyncs,
-    });
+    };
+    if (!includeMeetHistory) await saveDashboardSnapshot(accountKey, payload).catch(() => {});
+    res.status(200).json(payload);
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Dashboard lookup failed." });
   }
@@ -172,7 +189,8 @@ async function publicXcTop20Board(req, res) {
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
       safeGhlLocationName({ token, locationId }),
     ]);
-    const meetResults = buildRecentMeetResults({ athletes, meetRecords });
+    const recordIndex = buildDashboardRecordIndex({ athletes, meetRecords });
+    const meetResults = buildRecentMeetResults({ athletes, meetRecords, meetRecordIndex: recordIndex.meetsByAthlete });
     const xcTop20 = buildXcTop20(meetResults, athletes);
     res.status(200).json({
       success: true,
@@ -212,7 +230,8 @@ async function publicResultsBoard(req, res) {
       safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, timeoutMs: 2500 }),
       safeGhlLocationName({ token, locationId }),
     ]);
-    const allRows = annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords }), bestRecords);
+    const recordIndex = buildDashboardRecordIndex({ athletes, bestRecords, meetRecords });
+    const allRows = buildResultsBoardRows({ athletes, meetRecords, bestRecords, meetRecordIndex: recordIndex.meetsByAthlete });
     const filters = resultsBoardFilters(req.query, sharing);
     const displayBoard = resultsBoardDisplayMode(req.query);
     const seasonRows = allRows.filter((row) => resultsBoardRowMatches(row, filters));
@@ -304,7 +323,8 @@ async function publicXcProgressionBoard(req, res) {
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY }),
       safeGhlLocationName({ token, locationId }),
     ]);
-    const allRows = buildRecentMeetResults({ athletes, meetRecords }).filter((row) => optionValue(row.sport) === "cross_country");
+    const recordIndex = buildDashboardRecordIndex({ athletes, meetRecords });
+    const allRows = buildRecentMeetResults({ athletes, meetRecords, meetRecordIndex: recordIndex.meetsByAthlete }).filter((row) => optionValue(row.sport) === "cross_country");
     const filters = resultsBoardFilters({ ...(req.query || {}), sport: "Cross Country" }, { ...sharing, sport: "Cross Country" });
     const rows = allRows.filter((row) => resultsBoardRowMatches(row, filters)).sort((a, b) =>
       String(a.meetDate || "").localeCompare(String(b.meetDate || "")) ||
@@ -390,6 +410,7 @@ async function publicMilesBoard(req, res) {
     ]);
     const athletes = milesBoardAthletesForSelectedGroups(allAthletes, req.milesBoardAthleteKeys);
     const allPerformanceRecords = mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords);
+    const recordIndex = buildDashboardRecordIndex({ athletes, performanceRecords: allPerformanceRecords });
     const start = publicBoardDate(req.query && req.query.start);
     const end = publicBoardDate(req.query && req.query.end);
     const range = normalizedBoardRange(start, end);
@@ -399,7 +420,7 @@ async function publicMilesBoard(req, res) {
     });
     const gameSettings = milesBoardGameSettings(sharing.gameSettings);
     const boardFilter = milesBoardFilter(req.query, sharing);
-    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, attendanceRecords: rangeAttendance, start: range.start, end: range.end, gameSettings, displayOptions, boardFilter });
+    const boardRows = buildMilesBoardRows({ athletes, performanceRecords: allPerformanceRecords, performanceRecordIndex: recordIndex.trainingByAthlete, attendanceRecords: rangeAttendance, start: range.start, end: range.end, gameSettings, displayOptions, boardFilter });
     const groupRows = milesBoardGroupRows(boardRows);
     const totalMiles = roundVolume(boardRows.reduce((sum, row) => sum + row.totalMiles, 0));
     const totalWorkouts = boardRows.reduce((sum, row) => sum + row.workouts, 0);
@@ -443,13 +464,13 @@ async function publicMilesBoard(req, res) {
   }
 }
 
-function buildMilesBoardRows({ athletes, performanceRecords, attendanceRecords, start, end, gameSettings, displayOptions, boardFilter }) {
+function buildMilesBoardRows({ athletes = [], performanceRecords = [], performanceRecordIndex, attendanceRecords, start, end, gameSettings, displayOptions, boardFilter }) {
   const showAttendance = !!(displayOptions && displayOptions.athleteAttendance);
   const rows = athletes.map((athlete) => {
-    const training = performanceRecords
+    const training = (performanceRecordIndex ? athleteIndexedRecords(performanceRecordIndex, athlete) : performanceRecords
       .filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record))
       .map(normalizePerformanceRecord)
-      .filter((item) => item.groupName || item.totalTimeDisplay)
+      .filter((item) => item.groupName || item.totalTimeDisplay))
       .filter((item) => milesBoardRecordMatchesFilter(item, boardFilter))
       .filter((item) => {
         const date = parseDate(item.sessionDate || item.syncedAt);
@@ -853,6 +874,10 @@ function setCorsHeaders(res) {
 }
 
 async function listActiveAthletes({ accountKey, token, locationId }) {
+  return cachedDashboardRead(["active-athletes", accountKey, locationId], DASHBOARD_READ_CACHE_TTL_MS, () => listActiveAthletesUncached({ accountKey, token, locationId }));
+}
+
+async function listActiveAthletesUncached({ accountKey, token, locationId }) {
   const [activeFieldIds, athleteIdFieldIds, genderFieldIds] = await Promise.all([
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachActive }),
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachAthleteId }),
@@ -927,29 +952,41 @@ function normalizeRosterDetailName(value) {
 
 async function listLocationContacts({ token, locationId }) {
   const contacts = [];
-  for (let page = 1; page <= CONTACT_LIST_MAX_PAGES; page += 1) {
-    let result;
-    try {
-      result = await ghlFetch({
-        token,
-        path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=${CONTACT_LIST_PAGE_LIMIT}&page=${page}`,
-        method: "GET",
-      });
-    } catch (error) {
-      if (page === 1) throw error;
-      break;
+  const first = await fetchLocationContactsPage({ token, locationId, page: 1 });
+  const firstBatch = contactsFromResult(first);
+  if (!firstBatch.length) return contacts;
+  contacts.push(...firstBatch);
+  if (firstBatch.length < CONTACT_LIST_PAGE_LIMIT) return uniqueContacts(contacts);
+
+  for (let page = 2; page <= CONTACT_LIST_MAX_PAGES; page += CONTACT_LIST_PAGE_CONCURRENCY) {
+    const pages = Array.from({ length: CONTACT_LIST_PAGE_CONCURRENCY }, (_, index) => page + index).filter((item) => item <= CONTACT_LIST_MAX_PAGES);
+    const results = await Promise.all(pages.map((item) => fetchLocationContactsPage({ token, locationId, page: item }).catch(() => null)));
+    for (const result of results) {
+      if (!result) return uniqueContacts(contacts);
+      const batch = contactsFromResult(result);
+      if (!batch.length) return uniqueContacts(contacts);
+      const beforeCount = uniqueContacts(contacts).length;
+      contacts.push(...batch);
+      if (batch.length < CONTACT_LIST_PAGE_LIMIT) return uniqueContacts(contacts);
+      if (uniqueContacts(contacts).length === beforeCount) return uniqueContacts(contacts);
     }
-    const batch = contactsFromResult(result);
-    if (!batch.length) break;
-    const beforeCount = uniqueContacts(contacts).length;
-    contacts.push(...batch);
-    if (batch.length < CONTACT_LIST_PAGE_LIMIT) break;
-    if (uniqueContacts(contacts).length === beforeCount) break;
   }
   return uniqueContacts(contacts);
 }
 
+function fetchLocationContactsPage({ token, locationId, page }) {
+  return ghlFetch({
+    token,
+    path: `/contacts/?locationId=${encodeURIComponent(locationId)}&limit=${CONTACT_LIST_PAGE_LIMIT}&page=${page}`,
+    method: "GET",
+  });
+}
+
 async function listContactFieldIds({ token, locationId, names }) {
+  return cachedDashboardRead(["contact-field-ids", locationId, (names || []).join("|")], DASHBOARD_FIELD_CACHE_TTL_MS, () => listContactFieldIdsUncached({ token, locationId, names }));
+}
+
+async function listContactFieldIdsUncached({ token, locationId, names }) {
   try {
     const result = await ghlFetch({
       token,
@@ -998,6 +1035,10 @@ function ghlLocationNameFromResult(result) {
 }
 
 async function searchObjectRecords({ token, locationId, schemaKey, signal, required }) {
+  return cachedDashboardRead(["object-records", locationId, schemaKey], DASHBOARD_READ_CACHE_TTL_MS, () => searchObjectRecordsUncached({ token, locationId, schemaKey, signal, required }));
+}
+
+async function searchObjectRecordsUncached({ token, locationId, schemaKey, signal, required }) {
   try {
     const records = [];
     for (let page = 1; page <= 10; page += 1) {
@@ -1018,6 +1059,57 @@ async function searchObjectRecords({ token, locationId, schemaKey, signal, requi
     if (error.statusCode && error.statusCode >= 500) throw error;
     return [];
   }
+}
+
+async function cachedDashboardRead(parts, ttlMs, loader) {
+  const key = parts.map((part) => clean(part)).join("|");
+  const now = Date.now();
+  const existing = dashboardReadCache.get(key);
+  if (existing && existing.expiresAt > now) {
+    if (existing.promise) return existing.promise;
+    return existing.value;
+  }
+  const promise = Promise.resolve()
+    .then(loader)
+    .then((value) => {
+      dashboardReadCache.set(key, { value, expiresAt: Date.now() + ttlMs });
+      return value;
+    })
+    .catch((error) => {
+      dashboardReadCache.delete(key);
+      throw error;
+    });
+  dashboardReadCache.set(key, { promise, expiresAt: now + ttlMs });
+  return promise;
+}
+
+function dashboardSnapshotRequested(req) {
+  return ["1", "true", "yes"].includes(clean(req && req.query && req.query.snapshot).toLowerCase());
+}
+
+async function loadDashboardSnapshot(accountKey) {
+  const result = await loadAccountScopedRecord(accountKey, DASHBOARD_SNAPSHOT_NAMESPACE).catch(() => null);
+  const snapshot = result && result.found && result.record && result.record.snapshot;
+  if (!snapshot || typeof snapshot !== "object") return null;
+  return {
+    ...snapshot,
+    success: true,
+    snapshot: true,
+    snapshotSavedAt: clean(result.record.savedAt || snapshot.snapshotSavedAt || snapshot.generatedAt),
+  };
+}
+
+async function saveDashboardSnapshot(accountKey, payload) {
+  if (!payload || typeof payload !== "object") return { saved: false, reason: "No dashboard payload." };
+  const savedAt = new Date().toISOString();
+  return saveAccountScopedRecord(accountKey, DASHBOARD_SNAPSHOT_NAMESPACE, {
+    savedAt,
+    snapshot: {
+      ...payload,
+      snapshot: false,
+      snapshotSavedAt: savedAt,
+    },
+  });
 }
 
 async function safeDashboardObjectRecords(options) {
@@ -1067,14 +1159,110 @@ async function requiredDashboardObjectRecords(options) {
   }
 }
 
-function buildRecentTrainingSyncs({ athletes, performanceRecords }) {
+function buildDashboardRecordIndex({ athletes, bestRecords, meetRecords, performanceRecords }) {
+  const athleteLookup = dashboardAthleteLookup(athletes);
+  return {
+    bestsByAthlete: indexDashboardRecords({
+      records: bestRecords,
+      athleteLookup,
+      normalize: normalizeBest,
+      include: (item) => !!item.event,
+    }),
+    meetsByAthlete: indexDashboardRecords({
+      records: meetRecords,
+      athleteLookup,
+      skipRecord: isVoidedMeetResult,
+      normalize: normalizeMeetResult,
+      include: (item) => !!(item.event || item.resultDisplay),
+    }),
+    trainingByAthlete: indexDashboardRecords({
+      records: performanceRecords,
+      athleteLookup,
+      skipRecord: isVoidedPerformanceRecord,
+      normalize: normalizePerformanceRecord,
+      include: (item) => !!(item.groupName || item.totalTimeDisplay),
+    }),
+  };
+}
+
+function dashboardAthleteLookup(athletes) {
+  const byContactId = new Map();
+  const byName = new Map();
+  (Array.isArray(athletes) ? athletes : []).forEach((athlete) => {
+    const key = athleteDashboardKey(athlete);
+    const id = clean(athlete && athlete.id);
+    const name = normalizedName(athlete && athlete.name);
+    if (key && id) byContactId.set(id, key);
+    if (key && name) byName.set(name, key);
+  });
+  return { byContactId, byName };
+}
+
+function indexDashboardRecords({ records, athleteLookup, skipRecord, normalize, include }) {
+  const byAthlete = new Map();
+  (Array.isArray(records) ? records : []).forEach((record) => {
+    if (skipRecord && skipRecord(record)) return;
+    const keys = dashboardRecordAthleteKeys(record, athleteLookup);
+    if (!keys.length) return;
+    const item = normalize(record);
+    if (include && !include(item)) return;
+    keys.forEach((key) => addIndexedRecord(byAthlete, key, item));
+  });
+  return byAthlete;
+}
+
+function dashboardRecordAthleteKeys(record, athleteLookup) {
+  const props = recordProperties(record);
+  const keys = new Set();
+  clean(prop(props, "athlete_contact")).split(",").map(clean).filter(Boolean).forEach((contactId) => {
+    const key = athleteLookup.byContactId.get(contactId);
+    if (key) keys.add(key);
+  });
+  const nameKey = athleteLookup.byName.get(normalizedName(prop(props, "athlete_name_snapshot")));
+  if (nameKey) keys.add(nameKey);
+  return Array.from(keys);
+}
+
+function addIndexedRecord(byAthlete, athleteKey, item) {
+  const current = byAthlete.get(athleteKey) || [];
+  const itemKey = indexedRecordKey(item);
+  if (itemKey && current.some((existing) => indexedRecordKey(existing) === itemKey)) return;
+  current.push(item);
+  byAthlete.set(athleteKey, current);
+}
+
+function athleteIndexedRecords(index, athlete) {
+  return (index && index.get(athleteDashboardKey(athlete))) || [];
+}
+
+function athleteDashboardKey(athlete) {
+  const id = clean(athlete && athlete.id);
+  if (id) return `id:${id}`;
+  const name = normalizedName(athlete && athlete.name);
+  return name ? `name:${name}` : "";
+}
+
+function indexedRecordKey(item) {
+  return clean(item && (item.recordId || item.sourceRecordId || item.sourceSessionId)) ||
+    [
+      item && item.contactId,
+      item && item.athleteName,
+      item && item.meetName,
+      item && item.meetDate,
+      item && item.event,
+      item && (item.resultDisplay || item.totalTimeDisplay || item.lastResultDisplay),
+      item && item.syncedAt,
+    ].map(clean).join("|");
+}
+
+function buildRecentTrainingSyncs({ athletes = [], performanceRecords = [], performanceRecordIndex }) {
   const rows = [];
   athletes.forEach((athlete) => {
-    performanceRecords.forEach((record) => {
-      if (!recordMatchesAthlete(record, athlete)) return;
-      if (isVoidedPerformanceRecord(record)) return;
-      const training = normalizePerformanceRecord(record);
-      if (!training.groupName && !training.totalTimeDisplay) return;
+    const trainingRecords = performanceRecordIndex ? athleteIndexedRecords(performanceRecordIndex, athlete) : performanceRecords
+      .filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record))
+      .map(normalizePerformanceRecord)
+      .filter((item) => item.groupName || item.totalTimeDisplay);
+    trainingRecords.forEach((training) => {
       rows.push({
         athleteName: athlete.name,
         contactId: athlete.id,
@@ -1086,16 +1274,16 @@ function buildRecentTrainingSyncs({ athletes, performanceRecords }) {
   return rows.sort(sortTrainingSyncDesc);
 }
 
-function buildRecentMeetResults({ athletes, meetRecords }) {
+function buildRecentMeetResults({ athletes = [], meetRecords = [], meetRecordIndex }) {
   const rows = [];
   const matchedRecordIds = new Set();
   const knownAthletes = meetResultKnownAthletes({ athletes, meetRecords });
   athletes.forEach((athlete) => {
-    meetRecords.forEach((record) => {
-      if (!recordMatchesAthlete(record, athlete)) return;
-      if (isVoidedMeetResult(record)) return;
-      const result = normalizeMeetResult(record);
-      if (!result.event && !result.resultDisplay) return;
+    const results = meetRecordIndex ? athleteIndexedRecords(meetRecordIndex, athlete) : meetRecords
+      .filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedMeetResult(record))
+      .map(normalizeMeetResult)
+      .filter((item) => item.event || item.resultDisplay);
+    results.forEach((result) => {
       if (result.recordId) matchedRecordIds.add(result.recordId);
       const resultSeasonYear = Number(result.seasonYear) || yearFromDateValue(result.meetDate);
       rows.push({
@@ -1121,6 +1309,13 @@ function buildRecentMeetResults({ athletes, meetRecords }) {
     });
   });
   return rows.sort(sortMeetSyncDesc);
+}
+
+function buildResultsBoardRows({ athletes, meetRecords, bestRecords, meetRecordIndex }) {
+  if (meetRecordIndex) {
+    return annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords, meetRecordIndex }), bestRecords);
+  }
+  return annotateResultsBoardBestFlags(buildRecentMeetResults({ athletes, meetRecords }), bestRecords);
 }
 
 function annotateResultsBoardBestFlags(rows, bestRecords) {
@@ -1831,10 +2026,10 @@ function isUnlinkedNamedMeetResult(result) {
     clean(result && result.resultDisplay);
 }
 
-function buildAthleteRow({ athlete, bestRecords, meetRecords, performanceRecords }) {
-  const bests = bestRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeBest).filter((item) => item.event);
-  const meets = meetRecords.filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedMeetResult(record)).map(normalizeMeetResult).filter((item) => item.event || item.resultDisplay).sort(sortLatestMeetDesc);
-  const training = performanceRecords.filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record)).map(normalizePerformanceRecord).filter((item) => item.groupName || item.totalTimeDisplay).sort(sortByDateDesc);
+function buildAthleteRow({ athlete, bestRecords = [], meetRecords = [], performanceRecords = [], bests, meets, training }) {
+  bests = Array.isArray(bests) ? bests : bestRecords.filter((record) => recordMatchesAthlete(record, athlete)).map(normalizeBest).filter((item) => item.event);
+  meets = (Array.isArray(meets) ? meets : meetRecords.filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedMeetResult(record)).map(normalizeMeetResult).filter((item) => item.event || item.resultDisplay)).slice().sort(sortLatestMeetDesc);
+  training = (Array.isArray(training) ? training : performanceRecords.filter((record) => recordMatchesAthlete(record, athlete) && !isVoidedPerformanceRecord(record)).map(normalizePerformanceRecord).filter((item) => item.groupName || item.totalTimeDisplay)).slice().sort(sortByDateDesc);
   const currentFitness = chooseCurrentFitness(bests);
   const latestMeet = meets[0] || {};
   const latestTraining = training[0] || {};

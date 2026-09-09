@@ -3551,44 +3551,18 @@ function loadDashboard(){
   els.refreshBtn.disabled=true;
   var stamp=Date.now();
   var fetchOptions={cache:'no-store',headers:{'Cache-Control':'no-store'}};
-  return Promise.all([
-    fetch('/api/smart-trak/dashboard?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
-    fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
-    fetch('/api/smart-trak/attendance?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{attendance:[]}};}),
-    fetch('/api/smart-trak/docu-trak?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{items:[],records:{}}};}),
-    fetch('/api/smart-trak/field-practice?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{practices:[]}};}),
-    checkSmartCoachAccount().catch(function(){return{ok:false,data:{}};})
-  ]).then(function(results){
-    var result=results[0];
+  return fetchDashboardFirstPaint(stamp,fetchOptions).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
       showDashboardAccessCode(result.data);
       return Promise.resolve();
     }
     if(!result.ok)throw new Error(result.data&&result.data.error||'Dashboard failed to load.');
-    dashboardRows=result.data.athletes||[];
-    recentMeetRows=result.data.recentMeetResults||[];
-    fieldPracticeRows=results[4].ok?((results[4].data.practices||results[4].data.items||[])):[];
-    recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
-    trainingGroups=results[1].ok?(results[1].data.groups||[]):[];
-    recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
-    docuItems=results[3].ok?(results[3].data.items||[]):[];
-    docuRecords=results[3].ok?(results[3].data.records||{}):{};
-    renderStaffAccess(results[5]&&results[5].data||{});
-    annotateDashboardRosterGroups();
-    lastLoadedAt=result.data.generatedAt||new Date().toISOString();
-    els.lastUpdated.textContent='Last updated '+formatDateTime(lastLoadedAt);
-    if(els.currentWeekRuns)els.currentWeekRuns.textContent=(result.data.totals&&result.data.totals.currentWeekRuns)||0;
-    if(els.previousWeekRuns)els.previousWeekRuns.textContent=(result.data.totals&&result.data.totals.previousWeekRuns)||0;
-    if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.currentWeekVolumeMiles);
-    if(els.previousWeekVolume)els.previousWeekVolume.textContent=formatMiles(result.data.totals&&result.data.totals.previousWeekVolumeMiles);
-    renderManualMileageAthletes();
-    renderManualMileageGroups();
-    renderSeasonFilterOptions();
-    updateWeekRanges();
-    updateBreakdowns();
-    renderRows();
-    renderStartHereProgress();
-    openPendingDashboardAction();
+    applyDashboardPayload(result.data,{
+      stamp:stamp,
+      fetchOptions:fetchOptions,
+      openPending:true
+    });
+    loadDashboardSupportData(stamp,fetchOptions);
   }).catch(function(error){
     var hadDashboardData=dashboardRows.length||recentMeetRows.length||recentTrainingRows.length;
     if(!hadDashboardData){
@@ -3616,6 +3590,92 @@ function loadDashboard(){
     els.lastUpdated.textContent='Update failed';
   }).finally(function(){
     if(els.refreshBtn)els.refreshBtn.disabled=false;
+  });
+}
+function loadDashboardSupportData(stamp,fetchOptions){
+  Promise.all([
+    fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
+    checkSmartCoachAccount().catch(function(){return{ok:false,data:{}};})
+  ]).then(function(results){
+    if(results[0].ok)trainingGroups=results[0].data.groups||[];
+    renderStaffAccess(results[1]&&results[1].data||{});
+    annotateDashboardRosterGroups();
+    updateBreakdowns();
+    renderRows();
+    renderStartHereProgress();
+  });
+}
+function fetchDashboardFirstPaint(stamp,fetchOptions){
+  var liveUrl='/api/smart-trak/dashboard?v='+stamp;
+  var snapshotUrl=liveUrl+'&snapshot=1';
+  return fetch(snapshotUrl,fetchOptions).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(result.ok){
+      refreshDashboardLive(stamp,fetchOptions);
+      return result;
+    }
+    return fetch(liveUrl,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});
+  }).catch(function(){
+    return fetch(liveUrl,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});
+  });
+}
+function refreshDashboardLive(stamp,fetchOptions){
+  fetch('/api/smart-trak/dashboard?v='+stamp+'&refresh=1',fetchOptions).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)return;
+    applyDashboardPayload(result.data,{stamp:stamp,fetchOptions:fetchOptions,background:true});
+  }).catch(function(){});
+}
+function applyDashboardPayload(data,options){
+  options=options||{};
+  data=data||{};
+  var result={data:data};
+  dashboardRows=result.data.athletes||[];
+  recentMeetRows=result.data.recentMeetResults||[];
+  if(!options.background)fieldPracticeRows=[];
+  recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
+  if(options.groupsResult)trainingGroups=options.groupsResult.ok?(options.groupsResult.data.groups||[]):[];
+  if(!options.background){
+    recentAttendanceRows=[];
+    docuItems=[];
+    docuRecords={};
+  }
+  if(options.accountData)renderStaffAccess(options.accountData||{});
+  annotateDashboardRosterGroups();
+  lastLoadedAt=data.generatedAt||new Date().toISOString();
+  els.lastUpdated.textContent=(data.snapshot?'Last snapshot ':'Last updated ')+formatDateTime(lastLoadedAt);
+  if(els.currentWeekRuns)els.currentWeekRuns.textContent=(data.totals&&data.totals.currentWeekRuns)||0;
+  if(els.previousWeekRuns)els.previousWeekRuns.textContent=(data.totals&&data.totals.previousWeekRuns)||0;
+  if(els.currentWeekVolume)els.currentWeekVolume.textContent=formatMiles(data.totals&&data.totals.currentWeekVolumeMiles);
+  if(els.previousWeekVolume)els.previousWeekVolume.textContent=formatMiles(data.totals&&data.totals.previousWeekVolumeMiles);
+  renderManualMileageAthletes();
+  renderManualMileageGroups();
+  renderSeasonFilterOptions();
+  updateWeekRanges();
+  updateBreakdowns();
+  renderRows();
+  renderStartHereProgress();
+  if(options.openPending)openPendingDashboardAction();
+  loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[]);
+}
+function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows){
+  Promise.all([
+    Promise.resolve({ok:true,data:{}}),
+    Promise.resolve({ok:true,data:{}}),
+    fetch('/api/smart-trak/attendance?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{attendance:[]}};}),
+    fetch('/api/smart-trak/docu-trak?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{items:[],records:{}}};}),
+    fetch('/api/smart-trak/field-practice?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{practices:[]}};})
+  ]).then(function(results){
+    recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
+    docuItems=results[3].ok?(results[3].data.items||[]):[];
+    docuRecords=results[3].ok?(results[3].data.records||{}):{};
+    fieldPracticeRows=results[4].ok?((results[4].data.practices||results[4].data.items||[])):[];
+    recentTrainingRows=(baseTrainingRows||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
+    updateBreakdowns();
+    renderRows();
+    renderStartHereProgress();
   });
 }
 function refreshDashboardAfterFitnessChange(signal){
