@@ -88,12 +88,20 @@
   }
   window.addEventListener('resize',raiseSmartCoachChatBadge);
   setInterval(liftWidget,1000);
-  var script = document.createElement('script');
-  script.src = 'https://beta.leadconnectorhq.com/loader.js';
-  script.setAttribute('data-resources-url','https://beta.leadconnectorhq.com/chat-widget/loader.js');
-  script.setAttribute('data-widget-id','6a1785dc1b5a98ef9df8eae9');
-  script.async = true;
-  document.head.appendChild(script);
+  function loadChatWidget(){
+    if(document.querySelector('script[data-widget-id="6a1785dc1b5a98ef9df8eae9"]'))return;
+    var script = document.createElement('script');
+    script.src = 'https://beta.leadconnectorhq.com/loader.js';
+    script.setAttribute('data-resources-url','https://beta.leadconnectorhq.com/chat-widget/loader.js');
+    script.setAttribute('data-widget-id','6a1785dc1b5a98ef9df8eae9');
+    script.async = true;
+    document.head.appendChild(script);
+  }
+  function scheduleChatWidget(){
+    var start=function(){setTimeout(loadChatWidget,1200);};
+    if('requestIdleCallback' in window)window.requestIdleCallback(start,{timeout:3000});
+    else start();
+  }
   function accountKey(){
     try{
       var params=new URLSearchParams(window.location.search||'');
@@ -237,4 +245,6 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',createBugTrak);
   else createBugTrak();
+  if(document.readyState==='complete')scheduleChatWidget();
+  else window.addEventListener('load',scheduleChatWidget,{once:true});
 })();

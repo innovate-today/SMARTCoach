@@ -261,6 +261,6 @@ function renderList(){var list=$('practiceList');$('listStatus').textContent=pra
 function copyPreview(){var text=$('athletePreview').textContent||'';if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){$('saveStatus').textContent='Copied athlete preview.';});return;}$('saveStatus').textContent='Preview ready to copy.';}
 document.addEventListener('DOMContentLoaded',init);
 </script>
-<script src="/assets/smartcoach-help-widget.js"></script>
+<script src="/assets/smartcoach-help-widget.js" async></script>
 </body>
 </html>
