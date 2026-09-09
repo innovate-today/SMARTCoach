@@ -15,6 +15,9 @@
     'div[class*="chat-widget"]'
   ].join(',') + '{z-index:2147483647!important;}' +
     '.smartcoach-chat-badge-raised{bottom:92px!important;right:18px!important;top:auto!important;z-index:2147483646!important}' +
+    '.smartcoach-livechat-btn{position:fixed;right:18px;bottom:18px;z-index:2147482999;border:0;border-radius:999px;background:#155EEF;color:#fff;font:900 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:12px 14px;box-shadow:0 18px 34px rgba(21,94,239,.25);cursor:pointer}' +
+    '.smartcoach-livechat-btn:hover{background:#1747b9}' +
+    '.smartcoach-livechat-btn:disabled{opacity:.75;cursor:wait}' +
     '.smartcoach-bugtrak-btn{position:fixed;left:18px;bottom:18px;z-index:2147483000;border:1px solid #bfd0ef;border-radius:999px;background:#fff;color:#173891;font:800 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:9px 12px;box-shadow:0 14px 32px rgba(15,23,42,.18);cursor:pointer}' +
     '.smartcoach-bugtrak-btn:hover{background:#eef4ff}' +
     '.smartcoach-bugtrak-overlay{position:fixed;inset:0;z-index:2147483001;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;overflow:auto}' +
@@ -39,7 +42,7 @@
     '.smartcoach-bugtrak-actions button,.smartcoach-bugtrak-close{border:0;border-radius:8px;background:#2B4FCC;color:#fff;font:800 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:8px 11px;cursor:pointer}' +
     '.smartcoach-bugtrak-actions .secondary,.smartcoach-bugtrak-close{background:#dde3ed;color:#172033}' +
     '.smartcoach-bugtrak-actions button:disabled{opacity:.55;cursor:not-allowed}' +
-    '@media(max-width:760px){.smartcoach-bugtrak-btn,.smartcoach-bugtrak-overlay{display:none!important}}';
+    '@media(max-width:760px){.smartcoach-bugtrak-btn,.smartcoach-bugtrak-overlay,.smartcoach-livechat-btn{display:none!important}}';
   var style = document.createElement('style');
   style.setAttribute('data-smartcoach-help-widget','1');
   style.textContent = css;
@@ -81,15 +84,21 @@
       return true;
     });
   }
-  if(window.MutationObserver){
-    var chatBadgeObserver=new MutationObserver(function(){raiseSmartCoachChatBadge();});
-    if(document.body)chatBadgeObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
-    else document.addEventListener('DOMContentLoaded',function(){chatBadgeObserver.observe(document.body,{childList:true,subtree:true,characterData:true});});
+  var chatBadgeObserver=null;
+  var liftWidgetTimer=null;
+  function startChatWidgetLift(){
+    if(window.MutationObserver&&!chatBadgeObserver){
+      chatBadgeObserver=new MutationObserver(function(){raiseSmartCoachChatBadge();});
+      if(document.body)chatBadgeObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+      else document.addEventListener('DOMContentLoaded',function(){chatBadgeObserver.observe(document.body,{childList:true,subtree:true,characterData:true});});
+    }
+    window.addEventListener('resize',raiseSmartCoachChatBadge);
+    if(!liftWidgetTimer)liftWidgetTimer=setInterval(liftWidget,1000);
+    setTimeout(liftWidget,300);
   }
-  window.addEventListener('resize',raiseSmartCoachChatBadge);
-  setInterval(liftWidget,1000);
   function loadChatWidget(){
     if(document.querySelector('script[data-widget-id="6a1785dc1b5a98ef9df8eae9"]'))return;
+    startChatWidgetLift();
     var script = document.createElement('script');
     script.src = 'https://beta.leadconnectorhq.com/loader.js';
     script.setAttribute('data-resources-url','https://beta.leadconnectorhq.com/chat-widget/loader.js');
@@ -97,10 +106,23 @@
     script.async = true;
     document.head.appendChild(script);
   }
+  function createChatLauncher(){
+    if(document.getElementById('smartcoachLiveChatBtn'))return;
+    var button=document.createElement('button');
+    button.id='smartcoachLiveChatBtn';
+    button.className='smartcoach-livechat-btn';
+    button.type='button';
+    button.textContent='Help Chat';
+    button.addEventListener('click',function(){
+      button.disabled=true;
+      button.textContent='Opening Chat';
+      loadChatWidget();
+      setTimeout(function(){button.hidden=true;},1800);
+    });
+    document.body.appendChild(button);
+  }
   function scheduleChatWidget(){
-    var start=function(){setTimeout(loadChatWidget,1200);};
-    if('requestIdleCallback' in window)window.requestIdleCallback(start,{timeout:3000});
-    else start();
+    createChatLauncher();
   }
   function accountKey(){
     try{

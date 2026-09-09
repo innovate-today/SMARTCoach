@@ -3076,6 +3076,10 @@ function checkBugTrakDesktopFeedback() {
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
   [
     "smartcoach-bugtrak-btn",
+    "smartcoach-livechat-btn",
+    "smartcoachLiveChatBtn",
+    "function createChatLauncher()",
+    "button.addEventListener('click',function(){",
     "smartcoachFeedbackBtn",
     "function smartcoachHelpSuppressedPage()",
     "path==='/athlete-calendar'||path==='/athlete-calendar.html'||path==='/miles-board'||path==='/miles-board.html'",
@@ -3099,7 +3103,7 @@ function checkBugTrakDesktopFeedback() {
     "fetch('/api/smart-trak/bug-trak?account='",
     "type:mode",
     "page:location.href",
-    "@media(max-width:760px){.smartcoach-bugtrak-btn,.smartcoach-bugtrak-overlay{display:none!important}}",
+    "@media(max-width:760px){.smartcoach-bugtrak-btn,.smartcoach-bugtrak-overlay,.smartcoach-livechat-btn{display:none!important}}",
   ].forEach((text) => {
     if (!widget.includes(text)) throw new Error(`Bug Trak desktop widget missing ${text}`);
   });
