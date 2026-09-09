@@ -3608,6 +3608,11 @@ function loadDashboardSupportData(stamp,fetchOptions){
 function fetchDashboardFirstPaint(stamp,fetchOptions){
   var liveUrl='/api/smart-trak/dashboard?v='+stamp;
   var snapshotUrl=liveUrl+'&snapshot=1';
+  var browserSnapshot=readDashboardBrowserSnapshot();
+  if(browserSnapshot){
+    refreshDashboardLive(stamp,fetchOptions);
+    return Promise.resolve({ok:true,data:browserSnapshot});
+  }
   return fetch(snapshotUrl,fetchOptions).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -3631,6 +3636,7 @@ function refreshDashboardLive(stamp,fetchOptions){
 function applyDashboardPayload(data,options){
   options=options||{};
   data=data||{};
+  if(!data.snapshot)writeDashboardBrowserSnapshot(data);
   var result={data:data};
   dashboardRows=result.data.athletes||[];
   recentMeetRows=result.data.recentMeetResults||[];
@@ -3659,6 +3665,28 @@ function applyDashboardPayload(data,options){
   renderStartHereProgress();
   if(options.openPending)openPendingDashboardAction();
   loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[]);
+}
+function dashboardBrowserSnapshotKey(){
+  return 'smarttrak_dashboard_snapshot_'+smartCoachAccountKey();
+}
+function readDashboardBrowserSnapshot(){
+  try{
+    var raw=localStorage.getItem(dashboardBrowserSnapshotKey());
+    if(!raw)return null;
+    var saved=JSON.parse(raw);
+    var data=saved&&saved.data;
+    if(!data||!Array.isArray(data.athletes))return null;
+    return Object.assign({},data,{snapshot:true,snapshotSavedAt:saved.savedAt||data.snapshotSavedAt||data.generatedAt});
+  }catch(e){return null;}
+}
+function writeDashboardBrowserSnapshot(data){
+  try{
+    if(!data||!Array.isArray(data.athletes))return;
+    localStorage.setItem(dashboardBrowserSnapshotKey(),JSON.stringify({
+      savedAt:new Date().toISOString(),
+      data:Object.assign({},data,{snapshot:false,snapshotSavedAt:new Date().toISOString()})
+    }));
+  }catch(e){}
 }
 function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows){
   Promise.all([
