@@ -7,6 +7,9 @@ const {
   coachSessionTtlSeconds,
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
+  normalizeAccountAccess,
+  accountAccessAllowed,
+  accountAccessBlockedMessage,
 } = require("../lib/ghl-account");
 const { normalizeProductPlan, planDefinition, suggestedSubscriptionAmount } = require("../lib/smartcoach-plans");
 
@@ -72,6 +75,10 @@ withEnv({
   assert.strictEqual(subscriptionAccessAllowed({ status: "trialing" }), true);
   assert.strictEqual(subscriptionAccessAllowed({ status: "past_due" }), false);
   assert.strictEqual(subscriptionBlockedMessage({ status: "past_due" }), "SMART Trak access is blocked because this subscription is past due.");
+  assert.strictEqual(accountAccessAllowed(normalizeAccountAccess({ accessStatus: "active" })), true);
+  assert.strictEqual(accountAccessAllowed(normalizeAccountAccess({ accessStatus: "inactive" })), false);
+  assert.match(accountAccessBlockedMessage(normalizeAccountAccess({ accessStatus: "manual_hold" })), /manual hold/);
+  assert.strictEqual(normalizeAccountAccess({ accessStatus: "active", betaExpiresAt: "2000-01-01" }).status, "beta_expired");
 
   const activeRes = mockRes();
   assert.strictEqual(requireProPlan(req(), activeRes), false, "coach code should be required without a session or code");
@@ -116,6 +123,17 @@ withEnv({
     const blockedAccess = coachCodeAllowed(req(), "coach-one");
     assert.strictEqual(blockedAccess.allowed, false);
     assert.strictEqual(blockedAccess.statusCode, 402);
+  });
+
+  withEnv({ SMARTCOACH_ACCESS_STATUS_TEST: "inactive" }, () => {
+    const blockedRes = mockRes();
+    assert.strictEqual(requireProPlan(req(), blockedRes), false);
+    assert.strictEqual(blockedRes.statusCode, 403);
+    assert.strictEqual(blockedRes.body.accountAccessRequired, true);
+    assert.match(blockedRes.body.error, /account is inactive/);
+    const blockedAccess = coachCodeAllowed(req(), "coach-one");
+    assert.strictEqual(blockedAccess.allowed, false);
+    assert.strictEqual(blockedAccess.statusCode, 403);
   });
 
   withEnv({ SMARTCOACH_SUBSCRIPTION_STATUS_TEST: "payment failed" }, () => {

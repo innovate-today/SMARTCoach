@@ -277,20 +277,25 @@ function checkOnboardingSubscriberPlanLoad() {
     "raw==='pro unlimited custom'",
     "proUnlimited:'Pro Unlimited (Custom)'",
     'id="subscriberStatusFilter"',
-    "statusFilter==='active'&&account.archived",
+    "statusFilter==='active'&&(account.archived||!subscriberAccessActive(account))",
+    "statusFilter==='inactive'&&(account.archived||subscriberAccessActive(account))",
     "statusFilter==='archived'&&!account.archived",
     "data-subscriber-archive",
+    "data-subscriber-access",
+    "function setSubscriberAccess(account,status)",
     "function setSubscriberArchive(account,action)",
     "Archive '+account+'? Optional reason:",
     "Restore '+account+' to the active Subscriber Accounts list?",
     "body:JSON.stringify({accountKey:account,action:action,reason:reason})",
+    "body:JSON.stringify({accountKey:account,action:'access-status',accessStatus:status,reason:reason})",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`onboarding subscriber plan load missing ${text}`);
   });
   [
     "return accountRegistryUpdate(req, res);",
     "async function accountRegistryUpdate(req, res)",
-    'action !== "archive" && action !== "restore"',
+    'action !== "archive" && action !== "restore" && action !== "access-status"',
+    "function updateAccountAccessRecord(record, payload, now)",
     "archivedAt: now",
     "archivedReason: cleanSetupText(payload.reason).slice(0, 240)",
     "restoredAt: now",
@@ -307,6 +312,8 @@ function checkOnboardingSubscriberPlanLoad() {
     "archived: !!(source.archived || source.archivedAt)",
     "archivedAt: clean(source.archivedAt)",
     "archivedReason: clean(source.archivedReason)",
+    "accessStatus: accountListAccessStatus(source)",
+    "accountAccessActive: accountListAccessActive(source)",
   ].forEach((text) => {
     if (!registry.includes(text)) throw new Error(`subscriber archive registry missing ${text}`);
   });

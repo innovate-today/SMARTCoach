@@ -32,6 +32,10 @@ const {
   coachSessionTtlSeconds,
   subscriptionAccessAllowed,
   subscriptionBlockedMessage,
+  normalizeAccountAccess,
+  normalizeAccountAccessStatus,
+  accountAccessAllowed,
+  accountAccessBlockedMessage,
 } = require("../../lib/ghl-account");
 const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
@@ -3054,7 +3058,7 @@ async function accountStatus(req, res) {
   }
 
   const registry = await attachRegistryAccount(req);
-  const { accountKey, token, locationId, productPlan, productPlanLabel, activeAthleteLimit, accessCode, coachSeats, coachAccessCodes, coachCodeVersion, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
+  const { accountKey, token, locationId, productPlan, productPlanLabel, activeAthleteLimit, accessCode, coachSeats, coachAccessCodes, coachCodeVersion, requireCoachAccess, subscription, accountAccess, logoUrl } = getGhlContext(req);
   const coachSession = coachSessionFromRequest(req, accountKey);
   const currentCoachSession = coachSessionAllowedForAccount(coachSession, registry.record, coachCodeVersion) ? coachSession : null;
   const proPlan = isProPlan(productPlan);
@@ -3074,9 +3078,12 @@ async function accountStatus(req, res) {
   const configured = proPlan ? (crmConfigured && coachAccessConfigured) : coachAccessConfigured;
   const subscriptionAllowed = subscriptionAccessAllowed(subscription);
   const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(subscription);
+  const manualAccessAllowed = accountAccessAllowed(accountAccess);
+  const accountAccessBlockedReason = manualAccessAllowed ? "" : accountAccessBlockedMessage(accountAccess);
   const coachAccessRequired = !proPlan || configuredCoachCodes > 0 || !!requireCoachAccess;
   const coachAccessUnlocked = !coachAccessRequired || (proPlan ? !!currentCoachSession : essentialSessionActive) || accessCodeAccepted;
-  const deviceAccessReady = configured && subscriptionAllowed && coachAccessUnlocked;
+  const accessReady = configured && subscriptionAllowed && manualAccessAllowed;
+  const deviceAccessReady = accessReady && coachAccessUnlocked;
   const refreshedSession = currentCoachSession
     ? createCoachSession(accountKey, {
       coachIndex: Number(currentCoachSession.coachIndex) || 0,
@@ -3116,14 +3123,14 @@ async function accountStatus(req, res) {
   if (requireCoachAccess && configuredCoachCodes < 1) missing.push({ label: "Coach access codes", key: coachAccessKey });
   const statusCode = configured ? 200 : 404;
   const payload = {
-    success: configured && subscriptionAllowed,
+    success: accessReady,
     accountKey,
     productPlan,
     productPlanLabel,
     activeAthleteLimit,
     configured,
     setupReady: configured,
-    accessReady: configured && subscriptionAllowed,
+    accessReady,
     deviceAccessReady,
     crmConfigured,
     coachSeats,
@@ -3156,6 +3163,10 @@ async function accountStatus(req, res) {
     subscription: publicSubscriptionSummary(subscription),
     subscriptionAccessAllowed: subscriptionAllowed,
     subscriptionBlockedReason,
+    accountAccess: publicAccountAccessSummary(accountAccess),
+    accountAccessStatus: accountAccess.status,
+    accountAccessActive: manualAccessAllowed,
+    accountAccessBlockedReason,
     registry: {
       configured: !!registry.configured,
       found: !!registry.found,
@@ -3171,7 +3182,7 @@ async function accountStatus(req, res) {
     logoUrl: logoUrl || "",
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
-    error: configured ? subscriptionBlockedReason || (!coachAccessUnlocked ? "Active coach code needed." : undefined) : `SMARTCoach account "${accountKey}" is not configured.`,
+    error: configured ? accountAccessBlockedReason || subscriptionBlockedReason || (!coachAccessUnlocked ? "Active coach code needed." : undefined) : `SMARTCoach account "${accountKey}" is not configured.`,
   };
   cacheAccountStatus(req, statusCode, payload);
   res.status(statusCode).json(payload);
@@ -3207,6 +3218,13 @@ function cacheAccountStatus(req, statusCode, payload) {
     payload,
     expiresAt: Date.now() + ACCOUNT_STATUS_CACHE_TTL_MS,
   });
+}
+
+function clearAccountStatusCacheForAccount(accountKeyValue) {
+  const accountKey = normalizeSetupAccountKey(accountKeyValue) || "default";
+  for (const key of accountStatusCache.keys()) {
+    if (key === accountKey || key.startsWith(`${accountKey}|`)) accountStatusCache.delete(key);
+  }
 }
 
 async function loadTrainingCustomizationState(accountKey, accountRecord) {
@@ -5045,6 +5063,7 @@ function staffCoachCodeAllowed(account, accountKey, providedCode) {
   if (!provided || !account) return { allowed: false };
   const productPlan = normalizeSetupProductPlan(account.productPlan);
   const subscription = account.subscription || {};
+  const accountAccess = normalizeAccountAccess(account);
   if (!subscriptionAccessAllowed(subscription)) {
     return {
       allowed: false,
@@ -5054,6 +5073,17 @@ function staffCoachCodeAllowed(account, accountKey, providedCode) {
       productPlan,
       subscriptionStatus: subscription && subscription.status,
       subscriptionAccessRequired: true,
+    };
+  }
+  if (!accountAccessAllowed(accountAccess)) {
+    return {
+      allowed: false,
+      statusCode: 403,
+      error: accountAccessBlockedMessage(accountAccess),
+      accountKey,
+      productPlan,
+      accountAccessStatus: accountAccess.status,
+      accountAccessRequired: true,
     };
   }
   const hash = staffCoachCodeHash(accountKey, provided);
@@ -5094,8 +5124,12 @@ function coachInviteAllowed(account, accountKey, inviteToken) {
     return { allowed: false, statusCode: 404, error: "SMART Trak account was not found.", coachAccessRequired: true };
   }
   const subscription = account.subscription || {};
+  const accountAccess = normalizeAccountAccess(account);
   if (!subscriptionAccessAllowed(subscription)) {
     return { allowed: false, statusCode: 403, error: subscriptionBlockedMessage(subscription), accessReady: false, coachAccessRequired: true };
+  }
+  if (!accountAccessAllowed(accountAccess)) {
+    return { allowed: false, statusCode: 403, error: accountAccessBlockedMessage(accountAccess), accessReady: false, coachAccessRequired: true, accountAccessStatus: accountAccess.status, accountAccessRequired: true };
   }
   const staff = normalizeCoachStaff(account.coachStaff);
   const index = staff.findIndex((item) => item.active !== false && normalizeStaffAccessType(item.accessType) !== "app-only" && item.inviteToken && !item.inviteRevokedAt && safeEqual(item.inviteToken, token));
@@ -5204,6 +5238,7 @@ function accountSetup(req, res) {
   const requestedCoachSeats = firstQueryValue(req.query && (req.query.coachSeats || req.query.coaches || req.query.seats)) || "1";
   const coachSeats = normalizeSetupCoachSeats(requestedCoachSeats, productPlan);
   const subscription = setupSubscriptionFromQuery(req.query || {}, productPlan);
+  const accountAccess = setupAccountAccessFromQuery(req.query || {});
   const ownerEmail = cleanEmail(firstQueryValue(req.query && (req.query.accountOwnerEmail || req.query.ownerEmail || req.query.headCoachEmail)));
   const ownerPhone = cleanPhone(firstQueryValue(req.query && (req.query.accountOwnerPhone || req.query.ownerPhone || req.query.headCoachPhone)));
   const suffix = accountKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
@@ -5270,6 +5305,28 @@ function accountSetup(req, res) {
       required: false,
       label: "Subscription notes",
       description: "Optional internal notes about this customer subscription.",
+    },
+    {
+      key: `SMARTCOACH_ACCESS_STATUS_${suffix}`,
+      value: accountAccess.status,
+      required: false,
+      recommended: true,
+      label: "Account access status",
+      description: "Manual account gate: active, inactive, manual_hold, or beta_expired.",
+    },
+    {
+      key: `SMARTCOACH_ACCESS_REASON_${suffix}`,
+      value: accountAccess.reason,
+      required: false,
+      label: "Account access reason",
+      description: "Optional internal reason shown only in admin/support responses.",
+    },
+    {
+      key: `SMARTCOACH_BETA_EXPIRES_AT_${suffix}`,
+      value: accountAccess.betaExpiresAt,
+      required: false,
+      label: "Beta expires at",
+      description: "Optional YYYY-MM-DD date. After this date, account access is automatically blocked.",
     },
   ];
   if (isProPlan(productPlan)) {
@@ -5349,6 +5406,10 @@ function accountSetup(req, res) {
     coachSeats,
     coachAccessCodesConfigured: coachSeats,
     subscription: publicSubscriptionSummary(subscription),
+    accountAccess: publicAccountAccessSummary(accountAccess),
+    accountAccessStatus: accountAccess.status,
+    accountAccessActive: accountAccessAllowed(accountAccess),
+    accountAccessBlockedReason: accountAccessAllowed(accountAccess) ? "" : accountAccessBlockedMessage(accountAccess),
     configured,
     setupState: !isProPlan(productPlan) ? configured ? "essential-ready" : "essential-code-needed" : configured ? "pro-ready" : "pro-setup-needed",
     environment: env,
@@ -5623,6 +5684,7 @@ async function saveAutomationAccount(payload, options = {}) {
     });
   }
   const registryResult = await saveAccountRecord(account.accountKey, account);
+  clearAccountStatusCacheForAccount(account.accountKey);
   const customValueSync = await syncAccountKeyCustomValue(account);
   return automationAccountResult(account, registryResult, { environment, customValueSync });
 }
@@ -5631,6 +5693,9 @@ function automationAccountResult(account, registryResult, extra = {}) {
   const subscriptionAllowed = subscriptionAccessAllowed(account.subscription);
   const setupReady = accountSetupReady(account);
   const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(account.subscription);
+  const accountAccess = normalizeAccountAccess(account);
+  const manualAccessAllowed = accountAccessAllowed(accountAccess);
+  const accountAccessBlockedReason = manualAccessAllowed ? "" : accountAccessBlockedMessage(accountAccess);
   return {
     ...extra,
     accountKey: account.accountKey,
@@ -5641,8 +5706,12 @@ function automationAccountResult(account, registryResult, extra = {}) {
     subscription: publicSubscriptionSummary(account.subscription),
     subscriptionAccessAllowed: subscriptionAllowed,
     subscriptionBlockedReason,
+    accountAccess: publicAccountAccessSummary(accountAccess),
+    accountAccessStatus: accountAccess.status,
+    accountAccessActive: manualAccessAllowed,
+    accountAccessBlockedReason,
     setupReady,
-    accessReady: setupReady && subscriptionAllowed,
+    accessReady: setupReady && subscriptionAllowed && manualAccessAllowed,
     registry: registryResult,
     ghlCustomValueSync: extra.customValueSync || customValueSyncSkipped("Not attempted."),
     accountRegistryRecord: publicAccountRecord(account),
@@ -5775,6 +5844,9 @@ async function previewAutomationAccount(payload, options = {}) {
   const subscriptionAllowed = subscriptionAccessAllowed(account.subscription);
   const setupReady = accountSetupReady(account);
   const subscriptionBlockedReason = subscriptionAllowed ? "" : subscriptionBlockedMessage(account.subscription);
+  const accountAccess = normalizeAccountAccess(account);
+  const manualAccessAllowed = accountAccessAllowed(accountAccess);
+  const accountAccessBlockedReason = manualAccessAllowed ? "" : accountAccessBlockedMessage(accountAccess);
   return {
     accountKey: account.accountKey,
     productPlan: account.productPlan,
@@ -5784,8 +5856,12 @@ async function previewAutomationAccount(payload, options = {}) {
     subscription: publicSubscriptionSummary(account.subscription),
     subscriptionAccessAllowed: subscriptionAllowed,
     subscriptionBlockedReason,
+    accountAccess: publicAccountAccessSummary(accountAccess),
+    accountAccessStatus: accountAccess.status,
+    accountAccessActive: manualAccessAllowed,
+    accountAccessBlockedReason,
     setupReady,
-    accessReady: setupReady && subscriptionAllowed,
+    accessReady: setupReady && subscriptionAllowed && manualAccessAllowed,
     registry: {
       configured: registryConfigured(),
       saved: false,
@@ -5934,13 +6010,20 @@ async function accountRegistry(req, res) {
     const setupReady = result.found ? accountSetupReady(record) : false;
     const subscriptionAllowed = result.found ? subscriptionAccessAllowed(record && record.subscription) : false;
     const subscriptionBlockedReason = result.found && !subscriptionAllowed ? subscriptionBlockedMessage(record && record.subscription) : "";
+    const accountAccess = result.found ? normalizeAccountAccess(record) : normalizeAccountAccess({});
+    const manualAccessAllowed = result.found ? accountAccessAllowed(accountAccess) : false;
+    const accountAccessBlockedReason = result.found && !manualAccessAllowed ? accountAccessBlockedMessage(accountAccess) : "";
     res.status(result.found ? 200 : 404).json({
       success: !!result.found,
       accountKey,
       setupReady,
-      accessReady: setupReady && subscriptionAllowed,
+      accessReady: setupReady && subscriptionAllowed && manualAccessAllowed,
       subscriptionAccessAllowed: subscriptionAllowed,
       subscriptionBlockedReason,
+      accountAccess: publicAccountAccessSummary(accountAccess),
+      accountAccessStatus: accountAccess.status,
+      accountAccessActive: manualAccessAllowed,
+      accountAccessBlockedReason,
       registry: {
         configured: !!result.configured,
         found: !!result.found,
@@ -5960,12 +6043,14 @@ async function accountRegistryUpdate(req, res) {
     const payload = requestBodyObject(req);
     const action = cleanSetupText(payload.action || firstQueryValue(req.query && req.query.action)).toLowerCase();
     const accountKey = normalizeSetupAccountKey(payload.accountKey || firstQueryValue(req.query && (req.query.account || req.query.tenant || req.query.key)));
-    if (action !== "archive" && action !== "restore") throw httpError(400, "Unsupported account registry action.");
+    if (action !== "archive" && action !== "restore" && action !== "access-status") throw httpError(400, "Unsupported account registry action.");
     if (!accountKey) throw httpError(400, "Account key is required.");
     const existing = await loadAccountRecord(accountKey);
     if (!existing || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
     const now = new Date().toISOString();
-    const updated = action === "archive"
+    const updated = action === "access-status"
+      ? updateAccountAccessRecord(existing.record, payload, now)
+      : action === "archive"
       ? {
           ...existing.record,
           archived: true,
@@ -5982,15 +6067,42 @@ async function accountRegistryUpdate(req, res) {
         };
     if (action === "restore") delete updated.archivedReason;
     await saveAccountRecord(accountKey, updated);
+    clearAccountStatusCacheForAccount(accountKey);
     res.status(200).json({
       success: true,
       action,
       accountKey,
+      accountAccess: publicAccountAccessSummary(normalizeAccountAccess(updated)),
       account: publicAccountRecord(updated),
     });
   } catch (error) {
     res.status(error.statusCode || 400).json({ error: error.message || "Could not update account registry record." });
   }
+}
+
+function updateAccountAccessRecord(record, payload, now) {
+  const previous = normalizeAccountAccess(record);
+  const nextStatus = normalizeAccountAccessStatus(payload.accessStatus || payload.status || previous.savedStatus || previous.status || "active");
+  const nextBetaExpiresAt = payload.betaExpiresAt !== undefined || payload.betaAccessExpiresAt !== undefined
+    ? normalizeDateValue(payload.betaExpiresAt || payload.betaAccessExpiresAt)
+    : previous.betaExpiresAt || "";
+  const nextReason = payload.reason !== undefined || payload.accessReason !== undefined || payload.accountAccessReason !== undefined
+    ? cleanSetupText(payload.reason || payload.accessReason || payload.accountAccessReason).slice(0, 240)
+    : previous.reason || "";
+  const normalized = normalizeAccountAccess({
+    accessStatus: nextStatus,
+    accessReason: nextReason,
+    betaExpiresAt: nextBetaExpiresAt,
+  });
+  return {
+    ...record,
+    accessStatus: normalized.savedStatus || normalized.status,
+    accessReason: normalized.reason,
+    betaExpiresAt: normalized.betaExpiresAt,
+    accessUpdatedAt: now,
+    inactiveAt: normalized.active ? "" : record.inactiveAt || now,
+    lastAutomationEvent: { source: "smartcoach-admin-access", action: "access-status", status: normalized.status, at: now },
+  };
 }
 
 async function accountCleanup(req, res) {
@@ -6599,6 +6711,15 @@ function setupSubscriptionFromQuery(query, productPlan) {
   };
 }
 
+function setupAccountAccessFromQuery(query) {
+  const status = normalizeAccountAccessStatus(firstQueryValue(query.accessStatus || query.accountAccessStatus) || "active");
+  return normalizeAccountAccess({
+    accessStatus: status,
+    accessReason: cleanSetupText(firstQueryValue(query.accessReason || query.accountAccessReason)).slice(0, 240),
+    betaExpiresAt: normalizeDateValue(firstQueryValue(query.betaExpiresAt || query.betaAccessExpiresAt)),
+  });
+}
+
 async function loadExistingAccountRecord(accountKey) {
   try {
     const result = await loadAccountRecord(accountKey);
@@ -6624,6 +6745,11 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
   const stripeCustomerValue = firstAutomationValue(payload, ["stripeCustomerId", "customerId", "customer"]);
   const stripeSubscriptionValue = firstAutomationValue(payload, ["stripeSubscriptionId", "subscriptionId", "subscription"]);
   const notesValue = firstAutomationValue(payload, ["subscriptionNotes", "notes"]);
+  const accessStatusValue = firstAutomationValue(payload, ["accessStatus", "accountAccessStatus"]);
+  const accessReasonProvided = automationPayloadHasAnyKey(payload, ["accessReason", "accountAccessReason"]);
+  const accessReasonValue = firstAutomationValue(payload, ["accessReason", "accountAccessReason"]);
+  const betaExpiresAtProvided = automationPayloadHasAnyKey(payload, ["betaExpiresAt", "betaAccessExpiresAt"]);
+  const betaExpiresAtValue = firstAutomationValue(payload, ["betaExpiresAt", "betaAccessExpiresAt"]);
   const billingCadence = billingValue ? normalizeSetupBillingCadence(billingValue) : existingSubscription.billingCadence || "monthly";
   const subscription = {
     status: statusValue ? normalizeSetupSubscriptionStatus(statusValue) : existingSubscription.status || "active",
@@ -6634,6 +6760,12 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     stripeSubscriptionId: cleanSetupText(stripeSubscriptionValue || existingSubscription.stripeSubscriptionId),
     notes: cleanSetupText(notesValue || existingSubscription.notes),
   };
+  const previousAccess = normalizeAccountAccess(existing);
+  const accountAccess = normalizeAccountAccess({
+    accessStatus: accessStatusValue ? normalizeAccountAccessStatus(accessStatusValue) : previousAccess.savedStatus || previousAccess.status || "active",
+    accessReason: accessReasonProvided ? cleanSetupText(accessReasonValue).slice(0, 240) : previousAccess.reason || "",
+    betaExpiresAt: betaExpiresAtProvided ? normalizeDateValue(betaExpiresAtValue) : previousAccess.betaExpiresAt || "",
+  });
   const coachCodesValue = firstAutomationValue(payload, ["coachAccessCodes", "coachCodes", "accessCodes"]);
   const coachCodes = coachCodesValue ? normalizeSetupCoachCodes(coachCodesValue, accountKey, coachSeats, productPlan) : normalizeSetupCoachCodes(existing.coachAccessCodes || [], accountKey, coachSeats, productPlan);
   const coachCodeChange = coachCodeChangeState(existing, coachCodes, options);
@@ -6660,6 +6792,11 @@ function accountAutomationRecord(payload, existingRecord, options = {}) {
     parentEmailCoachAccess: isProPlan(productPlan) ? parentEmailCoachAccess : [],
     requireCoachAccess,
     subscription,
+    accessStatus: accountAccess.savedStatus || accountAccess.status,
+    accessReason: accountAccess.reason,
+    betaExpiresAt: accountAccess.betaExpiresAt,
+    accessUpdatedAt: event.receivedAt,
+    inactiveAt: accountAccess.active ? "" : existing.inactiveAt || event.receivedAt,
     logoUrl: cleanSetupText(logoValue || existing.logoUrl),
     accountOwnerEmail: cleanEmail(ownerEmailValue || existing.accountOwnerEmail),
     accountOwnerPhone: cleanPhone(ownerPhoneValue || existing.accountOwnerPhone),
@@ -6927,6 +7064,28 @@ function accountEnvironmentRows({ suffix, account, includeCrm }) {
       label: "Subscription notes",
       description: "Optional internal notes about this customer subscription.",
     },
+    {
+      key: `SMARTCOACH_ACCESS_STATUS_${suffix}`,
+      value: normalizeAccountAccess(account).savedStatus || normalizeAccountAccess(account).status,
+      required: false,
+      recommended: true,
+      label: "Account access status",
+      description: "Manual account gate: active, inactive, manual_hold, or beta_expired.",
+    },
+    {
+      key: `SMARTCOACH_ACCESS_REASON_${suffix}`,
+      value: normalizeAccountAccess(account).reason,
+      required: false,
+      label: "Account access reason",
+      description: "Optional internal reason shown only in admin/support responses.",
+    },
+    {
+      key: `SMARTCOACH_BETA_EXPIRES_AT_${suffix}`,
+      value: normalizeAccountAccess(account).betaExpiresAt,
+      required: false,
+      label: "Beta expires at",
+      description: "Optional YYYY-MM-DD date. After this date, account access is automatically blocked.",
+    },
   ];
   rows.push(
     {
@@ -7001,6 +7160,19 @@ function publicSubscriptionSummary(subscription) {
     billingCadence: source.billingCadence || "",
     amount: source.amount || "",
     renewalDate: source.renewalDate || "",
+  };
+}
+
+function publicAccountAccessSummary(accountAccess) {
+  const access = normalizeAccountAccess(accountAccess);
+  return {
+    status: access.status,
+    savedStatus: access.savedStatus,
+    active: access.active,
+    reason: access.reason,
+    betaExpiresAt: access.betaExpiresAt,
+    inactiveAt: access.inactiveAt,
+    updatedAt: access.updatedAt,
   };
 }
 
@@ -7264,6 +7436,15 @@ function firstAutomationValue(payload, keys) {
     if (value !== undefined && value !== null && String(value).trim() !== "") return value;
   }
   return "";
+}
+
+function automationPayloadHasAnyKey(payload, keys) {
+  const candidates = automationPayloadCandidates(payload);
+  for (const source of candidates) {
+    if (!source || typeof source !== "object") continue;
+    if (keys.some((key) => Object.prototype.hasOwnProperty.call(source, key))) return true;
+  }
+  return findNestedAutomationValue(payload, keys) !== undefined;
 }
 
 function automationPayloadCandidates(payload) {

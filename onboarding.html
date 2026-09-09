@@ -207,6 +207,7 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <label for="subscriberStatusFilter">Status</label>
           <select id="subscriberStatusFilter">
             <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
             <option value="archived">Archived</option>
             <option value="all">All</option>
           </select>
@@ -439,6 +440,26 @@ textarea{min-height:150px;resize:vertical;font-family:"SFMono-Regular",Consolas,
           <input id="subscriptionNotes" type="text" placeholder="Optional internal notes, promo, school billing contact, etc." autocomplete="off">
         </div>
       </div>
+      <div class="subgrid">
+        <div class="field">
+          <label for="accessStatus">Account Access</label>
+          <select id="accessStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="manual_hold">Manual hold</option>
+            <option value="beta_expired">Beta expired</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="betaExpiresAt">Beta Expires</label>
+          <input id="betaExpiresAt" type="date">
+        </div>
+        <div class="field">
+          <label for="accessReason">Access Reason</label>
+          <input id="accessReason" type="text" placeholder="Optional internal hold or beta note" autocomplete="off">
+        </div>
+      </div>
+      <div class="setupnote"><b>Manual access gate</b>Use subscription status for normal payment automation. Use Account Access for beta holds, school invoice holds, or any support decision that should immediately block or restore SMART Trak.</div>
       <div class="formactions">
         <button id="dryRunRegistryBtn" type="button" class="secondary" onclick="dryRunRegistryUpdate()">Test Setup First</button>
         <button id="saveRegistryBtn" type="button" onclick="saveRegistryUpdate()">Save Account Setup</button>
@@ -708,6 +729,9 @@ function setupForActiveAccount(){
   var subscriptionStatus=String(subscription.status||'').toLowerCase();
   var subscriptionAllowed=!subscriptionStatus||subscriptionStatus==='active'||subscriptionStatus==='trialing';
   var subscriptionBlockedReason=subscriptionAllowed?'':'SMART Trak access is blocked because this subscription is '+subscriptionStatus.replace('_',' ')+'.';
+  var accountAccess=accountAccessFromForm();
+  var accountAccessActive=accountAccess.active;
+  var accountAccessBlockedReason=accountAccessActive?'':accountAccessBlockedMessage(accountAccess);
   var base=account?{
     accountKey:account,
     productPlan:plan,
@@ -721,14 +745,56 @@ function setupForActiveAccount(){
     subscription:subscription,
     subscriptionAccessAllowed:subscriptionAllowed,
     subscriptionBlockedReason:subscriptionBlockedReason,
+    accountAccess:accountAccess,
+    accountAccessStatus:accountAccess.status,
+    accountAccessActive:accountAccessActive,
+    accountAccessBlockedReason:accountAccessBlockedReason,
     accountUrl:'/?account='+encodeURIComponent(account),
     dashboardUrl:'/dashboard.html?account='+encodeURIComponent(account),
     ghlCustomLinkUrl:'/dashboard.html?account='+encodeURIComponent(account)+'&embed=1'
   }:{};
   if(currentSetup&&(!account||!setupAccount||setupAccount===account)){
-    return Object.assign({},base,currentSetup,{productPlan:plan,coachSeats:coachSeats,crmConfigured:base.crmConfigured,coachAccessCodesConfigured:base.coachAccessCodesConfigured,parentEmailCoachAccess:base.parentEmailCoachAccess,logoUrl:base.logoUrl,subscription:subscription,subscriptionAccessAllowed:subscriptionAllowed,subscriptionBlockedReason:subscriptionBlockedReason});
+    return Object.assign({},base,currentSetup,{productPlan:plan,coachSeats:coachSeats,crmConfigured:base.crmConfigured,coachAccessCodesConfigured:base.coachAccessCodesConfigured,parentEmailCoachAccess:base.parentEmailCoachAccess,logoUrl:base.logoUrl,subscription:subscription,subscriptionAccessAllowed:subscriptionAllowed,subscriptionBlockedReason:subscriptionBlockedReason,accountAccess:accountAccess,accountAccessStatus:accountAccess.status,accountAccessActive:accountAccessActive,accountAccessBlockedReason:accountAccessBlockedReason});
   }
   return base;
+}
+function normalizeAccessStatus(value){
+  var status=String(value||'').trim().toLowerCase().replace(/[\s-]+/g,'_');
+  if(status==='disabled'||status==='blocked')status='inactive';
+  if(status==='hold'||status==='suspended')status='manual_hold';
+  if(status==='expired')status='beta_expired';
+  return ['active','inactive','manual_hold','beta_expired'].indexOf(status)>=0?status:'active';
+}
+function accountAccessFromForm(){
+  var savedStatus=normalizeAccessStatus((document.getElementById('accessStatus')||{}).value||'active');
+  var betaExpiresAt=String((document.getElementById('betaExpiresAt')||{}).value||'').trim();
+  var effectiveStatus=betaExpired(betaExpiresAt)?'beta_expired':savedStatus;
+  return {
+    status:effectiveStatus,
+    savedStatus:savedStatus,
+    active:effectiveStatus==='active',
+    reason:String((document.getElementById('accessReason')||{}).value||'').trim(),
+    betaExpiresAt:betaExpiresAt
+  };
+}
+function betaExpired(value){
+  if(!value)return false;
+  var time=Date.parse(String(value).length<=10?String(value)+'T23:59:59Z':String(value));
+  return !Number.isNaN(time)&&time<Date.now();
+}
+function accountAccessBlockedMessage(access){
+  access=access||{};
+  if(access.status==='beta_expired')return 'SMART Trak access is blocked because beta access has expired.';
+  if(access.status==='manual_hold')return 'SMART Trak access is blocked because this account is on manual hold.';
+  return 'SMART Trak access is blocked because this account is inactive.';
+}
+function accountAccessLabel(source){
+  var access=source&&source.accountAccess||source||{};
+  var status=normalizeAccessStatus(access.status||source&&source.accessStatus||'active');
+  if(source&&source.betaExpiresAt&&betaExpired(source.betaExpiresAt))status='beta_expired';
+  if(status==='manual_hold')return 'Manual hold';
+  if(status==='beta_expired')return 'Beta expired';
+  return status==='active'?'Active':'Inactive';
 }
 function accountKeysMismatch(){
   var keys=accountKeyValues();
@@ -785,7 +851,7 @@ function bindAccountKeyWarning(){
       refreshActiveSetupDisplays();
     });
   }
-  ['locationId','privateIntegrationToken','coachAccessCodes','accountOwnerEmail','accountOwnerPhone','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
+  ['locationId','privateIntegrationToken','coachAccessCodes','accountOwnerEmail','accountOwnerPhone','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','accessStatus','accessReason','betaExpiresAt','parentEmailCoachAccess','logoUrl'].forEach(function(id){
     var input=document.getElementById(id);
     if(!input)return;
     input.dataset.previousSetupValue=input.value||'';
@@ -831,6 +897,8 @@ function clearActivationHandoffIfSetupChanged(input){
     renewalDate:true,
     stripeCustomerId:true,
     stripeSubscriptionId:true,
+    accessStatus:true,
+    betaExpiresAt:true,
     parentEmailCoachAccess:true
   };
   if(!critical[input.id])return;
@@ -848,7 +916,7 @@ function rememberCurrentSetupFieldValues(){
     var input=document.getElementById(id);
     if(input)input.dataset.previousAccountKey=cleanAccountKey(input.value);
   });
-  ['plan','coachSeats','locationId','privateIntegrationToken','coachAccessCodes','accountOwnerEmail','accountOwnerPhone','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','parentEmailCoachAccess','logoUrl'].forEach(function(id){
+  ['plan','coachSeats','locationId','privateIntegrationToken','coachAccessCodes','accountOwnerEmail','accountOwnerPhone','subscriptionStatus','billingCadence','subscriptionAmount','renewalDate','stripeCustomerId','stripeSubscriptionId','subscriptionNotes','accessStatus','accessReason','betaExpiresAt','parentEmailCoachAccess','logoUrl'].forEach(function(id){
     var input=document.getElementById(id);
     if(input)input.dataset.previousSetupValue=input.value||'';
   });
@@ -1098,10 +1166,11 @@ function renderSubscribers(){
   var query=String((document.getElementById('subscriberSearch')||{}).value||'').trim().toLowerCase();
   var statusFilter=String((document.getElementById('subscriberStatusFilter')||{}).value||'active').toLowerCase();
   var rows=(subscriberAccounts||[]).filter(function(account){
-    if(statusFilter==='active'&&account.archived)return false;
+    if(statusFilter==='active'&&(account.archived||!subscriberAccessActive(account)))return false;
+    if(statusFilter==='inactive'&&(account.archived||subscriberAccessActive(account)))return false;
     if(statusFilter==='archived'&&!account.archived)return false;
     if(!query)return true;
-    return [account.accountKey,planLabel(account.productPlan),account.subscriptionStatus,account.billingCadence,account.archived?'archived':'active',account.archivedReason,account.lastUpdateSource].filter(Boolean).join(' ').toLowerCase().indexOf(query)>=0;
+    return [account.accountKey,planLabel(account.productPlan),account.subscriptionStatus,account.billingCadence,account.archived?'archived':'active',account.accessStatus,account.accessReason,account.betaExpiresAt,account.archivedReason,account.lastUpdateSource].filter(Boolean).join(' ').toLowerCase().indexOf(query)>=0;
   });
   if(!subscriberAccounts.length){
     box.innerHTML='<div class="empty">Load subscribers to find an account key for support or code resets.</div>';
@@ -1111,15 +1180,20 @@ function renderSubscribers(){
     box.innerHTML='<div class="empty">No '+esc(statusFilter)+' subscriber accounts match this search.</div>';
     return;
   }
-  box.innerHTML='<table class="subscribertable"><thead><tr><th>Account</th><th>Plan</th><th>Subscription</th><th>Staff Access</th><th>Setup</th><th>Updated</th><th>Actions</th></tr></thead><tbody>'+
+  box.innerHTML='<table class="subscribertable"><thead><tr><th>Account</th><th>Plan</th><th>Subscription</th><th>Access</th><th>Staff Access</th><th>Setup</th><th>Updated</th><th>Actions</th></tr></thead><tbody>'+
     rows.map(function(account){
       var sub=[account.subscriptionStatus||'not tracked',account.billingCadence,account.subscriptionAmount?('$'+account.subscriptionAmount):''].filter(Boolean).join(' / ');
       var archiveLabel=account.archived?'Restore':'Archive';
       var archiveClass=account.archived?'secondary':'danger';
+      var accessActive=subscriberAccessActive(account);
+      var accessLabel=accountAccessLabel(account);
+      var accessAction=accessActive?'inactive':'active';
+      var accessButton=account.archived?'':'<button type="button" class="'+(accessActive?'danger':'secondary')+'" data-subscriber-access="'+esc(account.accountKey||'')+'" data-access-status="'+accessAction+'">'+(accessActive?'Make Inactive':'Reactivate')+'</button>';
       return '<tr'+(account.archived?' class="archived"':'')+'>'+
         '<td><code>'+esc(account.accountKey||'')+'</code>'+(account.archived?'<br><span class="muted">Archived '+esc(shortDateTime(account.archivedAt))+'</span>':'')+'</td>'+
         '<td>'+esc(planLabel(account.productPlan))+'</td>'+
         '<td>'+esc(sub)+'</td>'+
+        '<td>'+esc(accessLabel)+(account.betaExpiresAt?'<br><span class="muted">Beta '+esc(account.betaExpiresAt)+'</span>':'')+'</td>'+
         '<td>'+esc((account.coachAccessCodesConfigured?'Code saved':'Missing')+' / '+(account.coachSeats||1)+' seat'+((account.coachSeats||1)===1?'':'s'))+'</td>'+
         '<td>'+esc(account.setupReady?'Ready':'Needs setup')+'</td>'+
         '<td>'+esc(shortDateTime(account.updatedAt))+'</td>'+
@@ -1127,6 +1201,7 @@ function renderSubscribers(){
           '<button type="button" data-subscriber-load="'+esc(account.accountKey||'')+'">Load</button>'+
           '<button type="button" class="secondary" data-subscriber-copy="'+esc(account.accountKey||'')+'">Copy Key</button>'+
           '<a class="linkbtn secondary" href="'+esc('/dashboard.html?account='+encodeURIComponent(account.accountKey||''))+'" target="_blank" rel="noopener">Open</a>'+
+          accessButton+
           '<button type="button" class="'+archiveClass+'" data-subscriber-archive="'+esc(account.accountKey||'')+'" data-archive-action="'+(account.archived?'restore':'archive')+'">'+archiveLabel+'</button>'+
         '</div></td>'+
       '</tr>';
@@ -1143,6 +1218,15 @@ function bindSubscriberActions(){
   document.querySelectorAll('[data-subscriber-archive]').forEach(function(btn){
     btn.addEventListener('click',function(){setSubscriberArchive(btn.getAttribute('data-subscriber-archive')||'',btn.getAttribute('data-archive-action')||'archive');});
   });
+  document.querySelectorAll('[data-subscriber-access]').forEach(function(btn){
+    btn.addEventListener('click',function(){setSubscriberAccess(btn.getAttribute('data-subscriber-access')||'',btn.getAttribute('data-access-status')||'active');});
+  });
+}
+function subscriberAccessActive(account){
+  if(account&&account.accountAccessActive===false)return false;
+  var status=normalizeAccessStatus(account&&account.accessStatus||'active');
+  if(account&&account.betaExpiresAt&&betaExpired(account.betaExpiresAt))status='beta_expired';
+  return status==='active';
 }
 function setSubscriberArchive(account,action){
   account=cleanAccountKey(account);
@@ -1172,6 +1256,36 @@ function setSubscriberArchive(account,action){
     return loadSubscribers();
   }).catch(function(error){
     setStatus(error.message||'Could not update subscriber account.','bad');
+  });
+}
+function setSubscriberAccess(account,status){
+  account=cleanAccountKey(account);
+  status=normalizeAccessStatus(status||'active');
+  var secret=activeAutomationSecret();
+  if(!account){setStatus('Choose a subscriber account first.','bad');return;}
+  if(!secret){setStatus('Enter the automation secret before updating subscriber access.','bad');return;}
+  var reason='';
+  if(status==='active'){
+    if(!window.confirm('Reactivate '+account+'? Customer SMART Trak pages will be allowed again if setup and subscription status are also ready.'))return;
+  }else{
+    var promptedReason=window.prompt('Make '+account+' inactive? Optional internal reason:', '');
+    if(promptedReason===null)return;
+    reason=promptedReason||'';
+    if(!window.confirm('Make '+account+' inactive now? Customer SMART Trak pages will be blocked immediately.'))return;
+  }
+  rememberAutomationSecret(secret);
+  fetch('/api/smart-trak/account-registry',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-SMARTCoach-Automation-Secret':secret},
+    body:JSON.stringify({accountKey:account,action:'access-status',accessStatus:status,reason:reason})
+  }).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).then(function(result){
+    if(!result.ok)throw new Error(result.data&&result.data.error||'Could not update subscriber access.');
+    setStatus((status==='active'?'Reactivated ':'Made inactive ')+account+'.','good');
+    return loadSubscribers();
+  }).catch(function(error){
+    setStatus(error.message||'Could not update subscriber access.','bad');
   });
 }
 function loadSubscriberAccount(account){
@@ -1292,6 +1406,7 @@ function lookupAccount(options){
 function renderLookupResult(data){
   var record=data.accountRegistryRecord||{};
   var sub=record.subscription||{};
+  var access=record.accountAccess||data.accountAccess||record;
   var account=record.accountKey||data.accountKey||'';
   var registry=data.registry||{};
   var registryLabel=registry.dryRun?'Preview':registry.found?'Saved':'Not found';
@@ -1304,7 +1419,7 @@ function renderLookupResult(data){
     {label:'Last update',value:shortDateTime(record.updatedAt)},
     {label:'Account record',value:registryLabel},
     {label:'Setup',value:data.setupReady?'Ready':'Needs setup'},
-    {label:'Account Access',value:data.accessReady?'Account allowed':(data.subscriptionAccessAllowed===false?'Blocked':'Not ready')}
+    {label:'Account Access',value:data.accessReady?'Allowed':(data.accountAccessActive===false?accountAccessLabel(access):data.subscriptionAccessAllowed===false?'Billing blocked':'Not ready')}
   ];
   document.getElementById('lookupResult').innerHTML=
     '<div class="registrytitle"><div><b>'+esc(account||'Account')+'</b><span> '+esc(registryTitle)+'</span></div>'+useFormButton+'</div>'+
@@ -1320,7 +1435,8 @@ function renderLookupResult(data){
     '<div class="registryrow"><b>Stripe Customer</b><span>'+esc(sub.stripeCustomerId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Stripe Subscription</b><span>'+esc(sub.stripeSubscriptionId||'--')+'</span></div>'+
     '<div class="registryrow"><b>Renewal Date</b><span>'+esc(sub.renewalDate||'--')+'</span></div>'+
-    '<div class="registryrow"><b>Account Access</b><span>'+esc(data.accessReady?'Account allowed':(data.subscriptionBlockedReason||'Not ready'))+'</span></div>'+
+    '<div class="registryrow"><b>Account Access</b><span>'+esc(data.accountAccessActive===false?(data.accountAccessBlockedReason||accountAccessBlockedMessage(access)):accountAccessLabel(access))+(access.betaExpiresAt?'<br>Beta expires '+esc(access.betaExpiresAt):'')+(access.reason?'<br>'+esc(access.reason):'')+'</span></div>'+
+    '<div class="registryrow"><b>Subscription Gate</b><span>'+esc(data.subscriptionAccessAllowed===false?(data.subscriptionBlockedReason||'Blocked'):'Allowed')+'</span></div>'+
     '<div class="registryrow"><b>Next Action</b><span>'+esc(accountNextAction(data,record))+'</span></div>'+
     '<div class="registryrow"><b>Last Update Source</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'source'))+'</span></div>'+
     '<div class="registryrow"><b>Last Update Event</b><span>'+esc(lastEventLabel(record.lastAutomationEvent,'event'))+'</span></div>'+
@@ -1340,6 +1456,10 @@ function renderLookupResult(data){
     accessReady:typeof data.accessReady==='boolean'?data.accessReady:undefined,
     subscriptionAccessAllowed:data.subscriptionAccessAllowed,
     subscriptionBlockedReason:data.subscriptionBlockedReason||'',
+    accountAccess:access,
+    accountAccessStatus:access.status||record.accessStatus||'active',
+    accountAccessActive:data.accountAccessActive!==false,
+    accountAccessBlockedReason:data.accountAccessBlockedReason||'',
     coachAccessCodesConfigured:(record.coachAccessCodes||[]).length||(record.accessCode?1:0),
     accountOwnerEmail:record.accountOwnerEmail||'',
     accountOwnerPhone:record.accountOwnerPhone||'',
@@ -1379,6 +1499,9 @@ function fillFormFromLookup(){
   document.getElementById('stripeCustomerId').value=sub.stripeCustomerId||'';
   document.getElementById('stripeSubscriptionId').value=sub.stripeSubscriptionId||'';
   document.getElementById('subscriptionNotes').value=sub.notes||'';
+  document.getElementById('accessStatus').value=normalizeAccessStatus((currentSetup.accountAccess&&currentSetup.accountAccess.savedStatus)||currentSetup.accountAccessStatus||'active');
+  document.getElementById('accessReason').value=(currentSetup.accountAccess&&currentSetup.accountAccess.reason)||'';
+  document.getElementById('betaExpiresAt').value=(currentSetup.accountAccess&&currentSetup.accountAccess.betaExpiresAt)||'';
   resetSystemHealthResult();
   rememberCurrentSetupFieldValues();
   setStatus('Loaded this account into the setup form.','good');
@@ -1406,6 +1529,7 @@ function accountNextAction(data,record){
   data=data||{};
   record=record||{};
   if(data.subscriptionBlockedReason||data.subscriptionAccessAllowed===false)return 'Fix subscription status before sending the coach invite.';
+  if(data.accountAccessBlockedReason||data.accountAccessActive===false)return 'Reactivate account access before sending the coach invite.';
   if(data.unsavedSetupChanges)return 'Save Account Setup after the latest setup changes, then check customer access again.';
   var plan=data.productPlan||record.productPlan||'pro';
   if(plan==='essential')return 'Open the stopwatch link and confirm Essential-only access.';
@@ -1574,8 +1698,9 @@ function dryRunRegistryUpdate(){
       setStatus('Setup preview passed. This account would be ready after saving. Nothing was saved.','good');
       setSetupActionResult('Setup preview passed. This account would be ready after saving. Nothing was saved.','good');
     }else{
-      setStatus(result.data.subscriptionBlockedReason?('Setup preview complete. Subscription blocks access: '+result.data.subscriptionBlockedReason):('Setup preview complete. Fix before saving: '+setupMissingText(result.data)),'bad');
-      setSetupActionResult(result.data.subscriptionBlockedReason?('Setup preview complete. Subscription blocks access: '+result.data.subscriptionBlockedReason):('Setup preview complete. Fix before saving: '+setupMissingText(result.data)),'bad');
+      var blockedReason=result.data.accountAccessBlockedReason||result.data.subscriptionBlockedReason;
+      setStatus(blockedReason?('Setup preview complete. Access is blocked: '+blockedReason):('Setup preview complete. Fix before saving: '+setupMissingText(result.data)),'bad');
+      setSetupActionResult(blockedReason?('Setup preview complete. Access is blocked: '+blockedReason):('Setup preview complete. Fix before saving: '+setupMissingText(result.data)),'bad');
     }
   }).catch(function(error){
     setStatus(error.message||'Could not test setup.','bad');
@@ -1610,7 +1735,10 @@ function registryPayloadFromForm(){
     renewalDate:document.getElementById('renewalDate').value.trim(),
     stripeCustomerId:document.getElementById('stripeCustomerId').value.trim(),
     stripeSubscriptionId:document.getElementById('stripeSubscriptionId').value.trim(),
-    subscriptionNotes:document.getElementById('subscriptionNotes').value.trim()
+    subscriptionNotes:document.getElementById('subscriptionNotes').value.trim(),
+    accessStatus:document.getElementById('accessStatus').value,
+    accessReason:document.getElementById('accessReason').value.trim(),
+    betaExpiresAt:document.getElementById('betaExpiresAt').value.trim()
   };
 }
 function generateSetup(){
@@ -1626,6 +1754,9 @@ function generateSetup(){
   var stripeCustomerId=document.getElementById('stripeCustomerId').value.trim();
   var stripeSubscriptionId=document.getElementById('stripeSubscriptionId').value.trim();
   var subscriptionNotes=document.getElementById('subscriptionNotes').value.trim();
+  var accessStatus=document.getElementById('accessStatus').value;
+  var accessReason=document.getElementById('accessReason').value.trim();
+  var betaExpiresAt=document.getElementById('betaExpiresAt').value.trim();
   var logoUrl=document.getElementById('logoUrl').value.trim();
   var setupCode=document.getElementById('setupCode').value.trim();
   var status=document.getElementById('status');
@@ -1651,6 +1782,9 @@ function generateSetup(){
     stripeCustomerId:stripeCustomerId,
     stripeSubscriptionId:stripeSubscriptionId,
     subscriptionNotes:subscriptionNotes,
+    accessStatus:accessStatus,
+    accessReason:accessReason,
+    betaExpiresAt:betaExpiresAt,
     logoUrl:logoUrl
   });
   fetch('/api/smart-trak/account-setup?'+params.toString(),fetchOptions).then(function(res){
@@ -1687,6 +1821,7 @@ function registryPayloadWarning(payload){
 function setupMissingText(data){
   data=data||{};
   if(data.subscriptionBlockedReason)return data.subscriptionBlockedReason;
+  if(data.accountAccessBlockedReason)return data.accountAccessBlockedReason;
   var record=data.accountRegistryRecord||{};
   var missing=[];
   if(data.productPlan!=='essential'){
@@ -1698,6 +1833,7 @@ function setupMissingText(data){
 function savedRegistryStatusMessage(data){
   data=data||{};
   if(data.accessReady)return 'Account setup saved. SMART Trak will use this account record on the next request.';
+  if(data.accountAccessBlockedReason)return 'Account setup saved. Manual account access blocks SMART Trak: '+data.accountAccessBlockedReason;
   if(data.subscriptionBlockedReason)return 'Account setup saved. Subscription blocks access: '+data.subscriptionBlockedReason;
   return 'Account setup saved, but setup is not ready yet: '+setupMissingText(data);
 }
@@ -1772,6 +1908,7 @@ function renderReadiness(data){
   var plan=data.productPlan||'pro';
   var configured=!!data.configured;
   var subscriptionAllowed=data.subscriptionAccessAllowed!==false;
+  var manualAccessAllowed=data.accountAccessActive!==false;
   if(data.unsavedSetupChanges){
     readyBar.className='readybar warn';
     title.textContent='Unsaved setup changes';
@@ -1779,12 +1916,17 @@ function renderReadiness(data){
     return;
   }
   if(plan==='essential'){
-    readyBar.className='readybar'+(configured&&subscriptionAllowed?' good':' bad');
+    readyBar.className='readybar'+(configured&&subscriptionAllowed&&manualAccessAllowed?' good':' bad');
     title.textContent=configured?'Essential account ready':'Essential code needed';
-    detail.textContent=configured?'This account is set for stopwatch-only use with one active device session.':'Generate and save one active coach code before sending the Essential link.';
+    detail.textContent=configured&&manualAccessAllowed?'This account is set for stopwatch-only use with one active device session.':data.accountAccessBlockedReason||'Generate and save one active coach code before sending the Essential link.';
     return;
   }
-  readyBar.className='readybar'+(configured&&subscriptionAllowed?' good':' bad');
+  readyBar.className='readybar'+(configured&&subscriptionAllowed&&manualAccessAllowed?' good':' bad');
+  if(configured&&!manualAccessAllowed){
+    title.textContent='SMART Trak access blocked';
+    detail.textContent=data.accountAccessBlockedReason||'The SMART Trak connection is configured, but manual account access is blocking Pro access.';
+    return;
+  }
   if(configured&&!subscriptionAllowed){
     title.textContent='SMART Trak access blocked';
     detail.textContent=data.subscriptionBlockedReason||'The SMART Trak connection is configured, but the subscription status is blocking Pro access.';
@@ -1821,7 +1963,9 @@ function checkSetupStatus(){
     document.getElementById('resultSubscription').textContent=subscriptionLabel(currentSetup);
     renderReadiness(currentSetup);
     renderChecklist(currentSetup);
-    if(data.configured&&data.subscriptionAccessAllowed===false){
+    if(data.configured&&data.accountAccessActive===false){
+      setStatus(data.accountAccessBlockedReason||'Account setup is complete, but account access is inactive.','bad');
+    }else if(data.configured&&data.subscriptionAccessAllowed===false){
       setStatus(data.subscriptionBlockedReason||'Account setup is complete, but subscription status is blocking SMART Trak access.','bad');
     }else if(data.configured){
       setStatus('Account is ready.','good');
@@ -1889,12 +2033,12 @@ function renderLiveSmokeAccess(data,ok){
   bar.querySelector('b').textContent=accessAllowed?(deviceReady?'Customer access is ready':'Account ready, coach code needed'):'Customer access needs attention';
   bar.querySelector('span').textContent=accessAllowed
     ?(deviceReady?'This browser or phone is unlocked for coach testing.':'The account is ready, but this browser or phone still needs a coach access code before coach data loads.')
-    : data.subscriptionBlockedReason||data.error||'The live customer account is not ready yet.';
+    : data.accountAccessBlockedReason||data.subscriptionBlockedReason||data.error||'The live customer account is not ready yet.';
   currentSetup=Object.assign({},currentSetup||{},data,{accountKey:data.accountKey||cleanAccountKey(document.getElementById('accountKey').value)});
   var rows=[
     {label:'Plan',value:planLabel(data.productPlan)},
     {label:'Setup',value:setupReady?'Ready':'Needs setup'},
-    {label:'Account Access',value:accessAllowed?'Account allowed':(data.subscriptionBlockedReason?'Blocked':'Not ready')},
+    {label:'Account Access',value:accessAllowed?'Account allowed':(data.accountAccessBlockedReason?accountAccessLabel(data.accountAccess||data):data.subscriptionBlockedReason?'Blocked':'Not ready')},
     {label:'This Device',value:data.deviceAccessReady?'Unlocked':data.coachAccessRequired?'Needs coach code':'Ready'},
     {label:'Subscription',value:subscriptionLabel(data)},
     {label:'Account Record',value:registry.found?'Saved':registry.configured?'Not found':'Not connected'},
@@ -1913,13 +2057,14 @@ function renderLiveSmokeAccess(data,ok){
     '<div class="registrycards">'+rows.map(function(row){return '<div class="card"><b>'+esc(row.value||'--')+'</b><span>'+esc(row.label)+'</span></div>';}).join('')+'</div>'+
     '<div class="registryrow"><b>Account link</b><span>'+linkHtml('/dashboard.html?account='+encodeURIComponent(data.accountKey||''),'Open dashboard')+' · '+linkHtml('/?account='+encodeURIComponent(data.accountKey||''),'Open stopwatch')+'</span></div>'+
     '<div class="registryrow"><b>Coach page checks</b><span>'+pageLinks+'</span></div>'+
-    '<div class="registryrow"><b>Message</b><span>'+esc(accessAllowed?(data.deviceAccessReady?'Ready for coach testing on this device.':'Account is ready. Enter a coach access code on this device before loading coach data.'):(data.subscriptionBlockedReason||data.error||'Finish the missing setup items, then check again.'))+'</span></div>'+
+    '<div class="registryrow"><b>Message</b><span>'+esc(accessAllowed?(data.deviceAccessReady?'Ready for coach testing on this device.':'Account is ready. Enter a coach access code on this device before loading coach data.'):(data.accountAccessBlockedReason||data.subscriptionBlockedReason||data.error||'Finish the missing setup items, then check again.'))+'</span></div>'+
     '<div class="registryrow"><b>Next Action</b><span>'+esc(accountNextAction(data,data.accountRegistryRecord||{}))+'</span></div>'+
     missingHtml;
   if(!document.getElementById('checklistPanel').hidden)renderChecklist(currentSetup);
 }
 function liveSmokeAccessStatusText(data,ok){
   data=data||{};
+  if(data.accountAccessBlockedReason||data.accountAccessActive===false)return data.accountAccessBlockedReason||'Customer access is manually inactive.';
   if(!ok||!data.accessReady)return 'Customer access check found a setup problem.';
   if(data.deviceAccessReady)return 'Customer access is ready on this device.';
   if(data.coachAccessRequired)return 'Account is ready. Enter a coach access code on this device before testing pages.';
@@ -2632,6 +2777,14 @@ function renderChecklist(data){
       status:signals.subscriptionAllowed?'Billing allows':'Access blocked'
     },
     {
+      title:'Confirm account access',
+      body:signals.accountAccessAllowed
+        ?'Manual account access is active. Use Make Inactive for beta holds, school invoice holds, or support blocks.'
+        :signals.accountAccessBlockedReason,
+      state:signals.accountAccessAllowed?'good':'bad',
+      status:signals.accountAccessAllowed?'Access active':'Access inactive'
+    },
+    {
       title:'Check account status',
       body:'Open '+linkHtml(statusUrl,'account status')+'. Essential should report essential. Pro should report pro and configured true after the SMART Trak fields are added.',
       state:signals.accountConfigured?'good':'warn',
@@ -2861,6 +3014,9 @@ function setupSignals(data){
   var subscriptionStatus=String(sub.status||'').toLowerCase();
   var subscriptionAllowed=typeof data.subscriptionAccessAllowed==='boolean'?data.subscriptionAccessAllowed:(!subscriptionStatus||subscriptionStatus==='active'||subscriptionStatus==='trialing');
   var subscriptionBlockedReason=data.subscriptionBlockedReason||('SMART Trak access is blocked because this subscription is '+(subscriptionStatus||'inactive').replace('_',' ')+'.');
+  var accountAccess=data.accountAccess||record.accountAccess||record;
+  var manualAccessAllowed=typeof data.accountAccessActive==='boolean'?data.accountAccessActive:subscriberAccessActive(accountAccess);
+  var accountAccessBlockedReason=data.accountAccessBlockedReason||accountAccessBlockedMessage(accountAccess);
   var crmReady=plan==='essential'||!!data.crmConfigured||!!(record.locationId&&record.token);
   var coachCodesReady=coachCodeCount>0;
   var configured=typeof data.setupReady==='boolean'?data.setupReady:(plan==='essential'||!!data.configured||(crmReady&&coachCodesReady));
@@ -2870,6 +3026,8 @@ function setupSignals(data){
     registrySaved:!data.unsavedSetupChanges&&!!(registry.saved||registry.found||(!registry.dryRun&&record.updatedAt)),
     subscriptionAllowed:subscriptionAllowed,
     subscriptionBlockedReason:subscriptionAllowed?'':subscriptionBlockedReason,
+    accountAccessAllowed:manualAccessAllowed,
+    accountAccessBlockedReason:manualAccessAllowed?'':accountAccessBlockedReason,
     crmReady:crmReady,
     coachCodesReady:coachCodesReady,
     accountConfigured:configured
@@ -2881,6 +3039,7 @@ function accountSetupBlockerText(data){
   if(signals.unsavedSetupChanges)return 'Save Account Setup after the latest setup changes before copying the activation record or coach invite.';
   if(!signals.registrySaved)return 'Save and verify the customer account record before copying the activation record or coach invite.';
   if(!signals.subscriptionAllowed)return signals.subscriptionBlockedReason;
+  if(!signals.accountAccessAllowed)return signals.accountAccessBlockedReason;
   if(!signals.crmReady)return 'Add the customer Location ID and Private Integration Token before copying the activation record or coach invite.';
   if(!signals.coachCodesReady)return 'Generate and save the fallback coach code before copying the activation record or coach invite.';
   if(!signals.accountConfigured)return 'Confirm the customer account status is configured before copying the activation record or coach invite.';
