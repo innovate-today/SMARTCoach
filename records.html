@@ -725,6 +725,7 @@ var els={
 };
 var pendingRecordsSourcePrefix='';
 var firstRecordsLoad=true;
+var recordsRenderedFromCache=false;
 function accountKey(){
   try{
     var params=new URLSearchParams(window.location.search||'');
@@ -912,6 +913,18 @@ function cachedRecords(){
 }
 function saveCachedRecords(rows){
   try{localStorage.setItem(recordsCacheKey(),JSON.stringify((rows||[]).filter(recordIsUsable).slice(0,500)));}catch(e){}
+}
+function renderCachedRecordsFirst(){
+  if(recordsRenderedFromCache)return false;
+  var cached=cachedRecords().filter(recordIsUsable);
+  if(!cached.length)return false;
+  recordsRenderedFromCache=true;
+  records=cached;
+  renderOptions();
+  render();
+  els.status.textContent='Showing saved records...';
+  els.lastUpdated.textContent='Last saved records';
+  return true;
 }
 function mergeAndCacheRecords(serverRows){
   records=mergeRecordLists(serverRows,cachedRecords());
@@ -2279,9 +2292,11 @@ function scheduleSearchRender(){
   clearTimeout(searchRenderTimer);
   searchRenderTimer=setTimeout(render,120);
 }
-function loadRecords(){
+function loadRecords(options){
+  options=options||{};
   els.refreshBtn.disabled=true;
-  els.status.textContent='Loading records...';
+  var showingCache=options.allowCachedFirst&&renderCachedRecordsFirst();
+  els.status.textContent=showingCache?'Refreshing records...':'Loading records...';
   return fetch('/api/ghl/records',{headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -2291,6 +2306,7 @@ function loadRecords(){
     }
     if(!result.ok)throw new Error(result.data&&result.data.error||'Records failed to load.');
     mergeAndCacheRecords(result.data.records||[]);
+    recordsRenderedFromCache=true;
     els.lastUpdated.textContent='Last updated '+formatDateTime(result.data.generatedAt||new Date().toISOString());
     renderOptions();
     if(firstRecordsLoad){
@@ -2304,6 +2320,10 @@ function loadRecords(){
     render();
     showRecordsDebug(result.data&&result.data.debug);
   }).catch(function(error){
+    if(showingCache){
+      els.status.textContent='Refresh failed. Showing saved records.';
+      return;
+    }
     records=[];
     els.rows.innerHTML='';
     els.empty.hidden=false;
@@ -2315,7 +2335,7 @@ function loadRecords(){
   });
 }
 function refreshRecordsPage(){
-  var tasks=[loadRecords()];
+  var tasks=[loadRecords({allowCachedFirst:firstRecordsLoad})];
   if(!els.xcTop20Panel.hidden)tasks.push(loadXcTop20View().catch(function(){}));
   return Promise.all(tasks);
 }
