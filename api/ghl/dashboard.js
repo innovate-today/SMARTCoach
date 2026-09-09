@@ -107,6 +107,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const includeMeetHistory = ["1", "true", "yes"].includes(clean(req.query && req.query.meetHistory).toLowerCase());
+    const lightDashboard = dashboardLightRequested(req);
     if (!includeMeetHistory && dashboardSnapshotRequested(req)) {
       const snapshot = await loadDashboardSnapshot(accountKey);
       if (snapshot) {
@@ -133,7 +134,6 @@ module.exports = async function handler(req, res) {
       training: athleteIndexedRecords(recordIndex.trainingByAthlete, athlete),
     }));
     const meetResults = buildRecentMeetResults({ athletes, meetRecords, meetRecordIndex: recordIndex.meetsByAthlete });
-    const xcTop20 = buildXcTop20(meetResults, athletes);
     const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords, performanceRecordIndex: recordIndex.trainingByAthlete });
     const recentMeetResults = dashboardRecentMeetResults(meetResults);
     const recentTrainingSyncs = trainingSyncs;
@@ -151,7 +151,7 @@ module.exports = async function handler(req, res) {
       athletes: rows,
       recentMeetResults,
       ...(includeMeetHistory ? { meetResults } : {}),
-      xcTop20,
+      ...(lightDashboard ? {} : { xcTop20: buildXcTop20(meetResults, athletes) }),
       recentTrainingSyncs,
     };
     if (!includeMeetHistory) await saveDashboardSnapshot(accountKey, payload).catch(() => {});
@@ -1085,6 +1085,10 @@ async function cachedDashboardRead(parts, ttlMs, loader) {
 
 function dashboardSnapshotRequested(req) {
   return ["1", "true", "yes"].includes(clean(req && req.query && req.query.snapshot).toLowerCase());
+}
+
+function dashboardLightRequested(req) {
+  return ["1", "true", "yes"].includes(clean(req && req.query && req.query.light).toLowerCase());
 }
 
 async function loadDashboardSnapshot(accountKey) {

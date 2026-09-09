@@ -3606,7 +3606,7 @@ function loadDashboardSupportData(stamp,fetchOptions){
   });
 }
 function fetchDashboardFirstPaint(stamp,fetchOptions){
-  var liveUrl='/api/smart-trak/dashboard?v='+stamp;
+  var liveUrl='/api/smart-trak/dashboard?v='+stamp+'&light=1';
   var snapshotUrl=liveUrl+'&snapshot=1';
   var browserSnapshot=readDashboardBrowserSnapshot();
   if(browserSnapshot){
