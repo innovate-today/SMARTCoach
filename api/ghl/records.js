@@ -113,20 +113,42 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    const deletedIds = await loadRecordsDeletedIdsBestEffort(accountKey);
-    const ghlRecords = filterDeletedRecords(await listRecords({ token, locationId }), deletedIds);
     const mirroredRecords = await loadRecordsMirrorBestEffort(accountKey);
+    const deletedIds = await loadRecordsDeletedIdsBestEffort(accountKey);
+    if (!recordsRefreshRequested(req) && mirroredRecords.length) {
+      const records = mergeNormalizedRecords(mirroredRecords, []);
+      res.status(200).json({
+        success: true,
+        generatedAt: new Date().toISOString(),
+        source: "mirror",
+        records,
+        debug: {
+          source: "mirror",
+          ghlCount: 0,
+          mirrorCount: mirroredRecords.length,
+          mergedCount: records.length,
+          deletedCount: deletedIds.length,
+          mirrorStatus: { configured: true, loadCount: mirroredRecords.length },
+        },
+      });
+      return;
+    }
+
+    const ghlRecords = filterDeletedRecords(await listRecords({ token, locationId }), deletedIds);
+    const mirror = await mirrorRecordsBestEffort(accountKey, ghlRecords);
     const records = mergeNormalizedRecords(ghlRecords, mirroredRecords);
     res.status(200).json({
       success: true,
       generatedAt: new Date().toISOString(),
+      source: "ghl",
       records,
       debug: {
+        source: "ghl",
         ghlCount: ghlRecords.length,
         mirrorCount: mirroredRecords.length,
         mergedCount: records.length,
         deletedCount: deletedIds.length,
-        mirrorStatus: await mirrorStatusBestEffort(accountKey),
+        mirrorStatus: { ...(await mirrorStatusBestEffort(accountKey)), lastRefreshMirror: mirror },
       },
     });
   } catch (error) {
@@ -138,6 +160,10 @@ function setCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Access-Code, X-SMARTCoach-Session");
+}
+
+function recordsRefreshRequested(req) {
+  return ["1", "true", "yes"].includes(clean(req && req.query && req.query.refresh).toLowerCase());
 }
 
 async function mirrorRecordsBestEffort(accountKey, records, options) {

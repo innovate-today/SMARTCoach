@@ -2297,7 +2297,8 @@ function loadRecords(options){
   els.refreshBtn.disabled=true;
   var showingCache=options.allowCachedFirst&&renderCachedRecordsFirst();
   els.status.textContent=showingCache?'Refreshing records...':'Loading records...';
-  return fetch('/api/ghl/records',{headers:apiHeaders()}).then(function(res){
+  var url='/api/ghl/records'+(options.forceRefresh?'?refresh=1':'');
+  return fetch(url,{headers:apiHeaders()}).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
@@ -2336,6 +2337,11 @@ function loadRecords(options){
 }
 function refreshRecordsPage(){
   var tasks=[loadRecords({allowCachedFirst:firstRecordsLoad})];
+  if(!els.xcTop20Panel.hidden)tasks.push(loadXcTop20View().catch(function(){}));
+  return Promise.all(tasks);
+}
+function forceRefreshRecordsPage(){
+  var tasks=[loadRecords({forceRefresh:true})];
   if(!els.xcTop20Panel.hidden)tasks.push(loadXcTop20View().catch(function(){}));
   return Promise.all(tasks);
 }
@@ -2432,7 +2438,7 @@ function init(){
   clearSingleRecordForm();
   els.dashboardLink.href=pageUrl('/dashboard.html');
   els.meetHistoryLink.href=pageUrl('/meet-history.html');
-  els.refreshBtn.addEventListener('click',refreshRecordsPage);
+  els.refreshBtn.addEventListener('click',forceRefreshRecordsPage);
   els.schoolRecordsTab.addEventListener('click',function(){setRecordView('school');});
   els.xcTop20Tab.addEventListener('click',function(){setRecordView('xc');});
   els.xcTabs.addEventListener('click',function(event){

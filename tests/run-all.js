@@ -1655,6 +1655,9 @@ function checkXcTop20RecordsFeature() {
     "function startRecordsPageData()",
     "var accessPromise=ensureAccountAccess();",
     "var recordsPromise=refreshRecordsPage();",
+    "function forceRefreshRecordsPage()",
+    "var url='/api/ghl/records'+(options.forceRefresh?'?refresh=1':'');",
+    "els.refreshBtn.addEventListener('click',forceRefreshRecordsPage);",
     "Track Records",
     "Track Record Tools",
     "function recordTypeLabel(value)",
@@ -1670,6 +1673,17 @@ function checkXcTop20RecordsFeature() {
   if (records.includes("<th>Original Event</th>")) {
     throw new Error("XC Top 20 should keep original event behind the scenes, not as a visible table column.");
   }
+  [
+    "function recordsRefreshRequested(req)",
+    "source: \"mirror\"",
+    "source: \"ghl\"",
+    "if (!recordsRefreshRequested(req) && mirroredRecords.length)",
+    "const mirror = await mirrorRecordsBestEffort(accountKey, ghlRecords);",
+  ].forEach((needle) => {
+    if (!fs.readFileSync("api/ghl/records.js", "utf8").includes(needle)) {
+      throw new Error(`Records API missing mirror-first marker: ${needle}`);
+    }
+  });
   [
     "const xcTop20 = buildXcTop20(meetResults, athletes);",
     "const recentMeetResults = dashboardRecentMeetResults(meetResults);",
