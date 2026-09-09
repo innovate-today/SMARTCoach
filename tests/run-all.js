@@ -253,6 +253,13 @@ function checkAccountStatusLocationVerification() {
     "locationCheck",
     "matches: !!resolvedLocationId && safeEqual(resolvedLocationId, expectedLocationId)",
     "function maskLocationId(value)",
+    "const ACCOUNT_STATUS_CACHE_TTL_MS = 30000;",
+    "const accountStatusCache = new Map();",
+    "const cachedStatus = cachedAccountStatus(req);",
+    "cached: true",
+    "function accountStatusCacheAllowed(req)",
+    "function cachedAccountStatus(req)",
+    "function cacheAccountStatus(req, statusCode, payload)",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`account status location verification missing ${text}`);
   });

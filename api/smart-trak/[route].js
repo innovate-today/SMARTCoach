@@ -54,6 +54,8 @@ const XC_RECORDS_SHARING_NAMESPACE = "xcrecordssharing";
 const ATHLETE_CALENDAR_QUESTIONS_NAMESPACE = "athletecalendarquestions";
 const WEATHER_LOCATIONS_NAMESPACE = "weatherlocations";
 const SIMULATOR_FIELDS_NAMESPACE = "simulatorfields";
+const ACCOUNT_STATUS_CACHE_TTL_MS = 30000;
+const accountStatusCache = new Map();
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -3042,6 +3044,15 @@ async function accountStatus(req, res) {
     return;
   }
 
+  const cachedStatus = cachedAccountStatus(req);
+  if (cachedStatus) {
+    res.status(cachedStatus.statusCode).json({
+      ...cachedStatus.payload,
+      cached: true,
+    });
+    return;
+  }
+
   const registry = await attachRegistryAccount(req);
   const { accountKey, token, locationId, productPlan, productPlanLabel, activeAthleteLimit, accessCode, coachSeats, coachAccessCodes, coachCodeVersion, requireCoachAccess, subscription, logoUrl } = getGhlContext(req);
   const coachSession = coachSessionFromRequest(req, accountKey);
@@ -3103,7 +3114,8 @@ async function accountStatus(req, res) {
   if (proPlan && !token) missing.push({ label: "Private integration token", key: tokenKey });
   if (proPlan && !locationId) missing.push({ label: "Location ID", key: locationKey });
   if (requireCoachAccess && configuredCoachCodes < 1) missing.push({ label: "Coach access codes", key: coachAccessKey });
-  res.status(configured ? 200 : 404).json({
+  const statusCode = configured ? 200 : 404;
+  const payload = {
     success: configured && subscriptionAllowed,
     accountKey,
     productPlan,
@@ -3160,6 +3172,40 @@ async function accountStatus(req, res) {
     missingVariables: configured ? [] : missing.map((item) => item.key),
     missingSetupFields: configured ? [] : missing,
     error: configured ? subscriptionBlockedReason || (!coachAccessUnlocked ? "Active coach code needed." : undefined) : `SMARTCoach account "${accountKey}" is not configured.`,
+  };
+  cacheAccountStatus(req, statusCode, payload);
+  res.status(statusCode).json(payload);
+}
+
+function accountStatusCacheKey(req) {
+  const accountKey = cleanSetupText(headerValue(req, "x-smartcoach-account") || firstQueryValue(req && req.query && (req.query.account || req.query.tenant)) || "default")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "") || "default";
+  return [
+    accountKey,
+    cleanSetupText(headerValue(req, "x-smartcoach-session")),
+    cleanSetupText(headerValue(req, "x-smartcoach-access-code")),
+  ].join("|");
+}
+
+function accountStatusCacheAllowed(req) {
+  const query = (req && req.query) || {};
+  return !cleanSetupText(firstQueryValue(query.expectedLocationId || query.locationId) || headerValue(req, "x-smartcoach-expected-location"));
+}
+
+function cachedAccountStatus(req) {
+  if (!accountStatusCacheAllowed(req)) return null;
+  const item = accountStatusCache.get(accountStatusCacheKey(req));
+  if (!item || item.expiresAt <= Date.now()) return null;
+  return item;
+}
+
+function cacheAccountStatus(req, statusCode, payload) {
+  if (!accountStatusCacheAllowed(req)) return;
+  accountStatusCache.set(accountStatusCacheKey(req), {
+    statusCode,
+    payload,
+    expiresAt: Date.now() + ACCOUNT_STATUS_CACHE_TTL_MS,
   });
 }
 
