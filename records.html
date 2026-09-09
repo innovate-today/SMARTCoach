@@ -2385,6 +2385,13 @@ function ensureAccountAccess(){
     return true;
   }).catch(function(){applyBrandLogo('');return true;});
 }
+function startRecordsPageData(){
+  var accessPromise=ensureAccountAccess();
+  var recordsPromise=refreshRecordsPage();
+  return accessPromise.then(function(ok){
+    return ok?recordsPromise:Promise.resolve();
+  });
+}
 function submitAccess(){
   if(!els.accessCode.value.trim()){
     els.accessStatus.textContent='Enter the access code to continue.';
@@ -2600,7 +2607,7 @@ function init(){
   els.saveBulkBtn.addEventListener('click',saveBulkRecords);
   els.accessSubmit.addEventListener('click',submitAccess);
   els.accessCode.addEventListener('keydown',function(event){if(event.key==='Enter')submitAccess();});
-  ensureAccountAccess().then(function(ok){if(ok)refreshRecordsPage();});
+  startRecordsPageData();
 }
 init();
 </script>
