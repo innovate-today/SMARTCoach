@@ -3009,6 +3009,10 @@ function checkDashboardToolPreferences() {
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard hidden tools must not remove summary data flow: ${text}`);
   });
+  const supportScheduleCalls = (html.match(/scheduleDashboardSupportData\(/g) || []).length;
+  if (supportScheduleCalls !== 1) {
+    throw new Error(`dashboard support data should be scheduled from one place, found ${supportScheduleCalls}`);
+  }
   [
     'if (route === "dashboard-preferences")',
     "return accountDashboardPreferences(req, res);",

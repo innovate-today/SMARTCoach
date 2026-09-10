@@ -3594,7 +3594,6 @@ function loadDashboard(options){
       openPending:true,
       deferSecondary:!!result.data.snapshot
     });
-    scheduleDashboardSupportData(stamp,fetchOptions,!!result.data.snapshot);
   }).catch(function(error){
     var hadDashboardData=dashboardRows.length||recentMeetRows.length||recentTrainingRows.length;
     if(!hadDashboardData){
