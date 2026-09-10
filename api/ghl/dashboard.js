@@ -6,6 +6,7 @@ const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const MEET_RESULT_SCHEMA_KEY = "custom_objects.meet_results";
 const PERFORMANCE_RECORD_SCHEMA_KEY = "custom_objects.performance_records";
 const OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS = 4500;
+const LIGHT_DASHBOARD_RECORD_TIMEOUT_MS = 2200;
 const DASHBOARD_RECENT_MEET_LIMIT = 100;
 const CONTACT_LIST_PAGE_LIMIT = 100;
 const CONTACT_LIST_MAX_PAGES = 20;
@@ -117,11 +118,12 @@ module.exports = async function handler(req, res) {
       res.status(404).json({ error: "Dashboard snapshot is not ready.", snapshotMissing: true });
       return;
     }
+    const optionalRecordTimeoutMs = lightDashboard ? LIGHT_DASHBOARD_RECORD_TIMEOUT_MS : OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS;
     const [athletes, bestRecords, meetRecords, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
-      safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY }),
-      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: includeMeetHistory ? 15000 : undefined }),
-      safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, timeoutMs: optionalRecordTimeoutMs }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: includeMeetHistory ? 15000 : optionalRecordTimeoutMs }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, timeoutMs: optionalRecordTimeoutMs }),
       loadTrainingMirror(accountKey),
     ]);
     const allPerformanceRecords = mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords);
