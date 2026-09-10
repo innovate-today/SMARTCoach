@@ -1594,6 +1594,8 @@ var accountStatusLastCheckedAt=0;
 var dashboardLoadRequest=null;
 var dashboardLoadSequence=0;
 var dashboardLiveRefreshSequence=0;
+var dashboardLiveRefreshRequest=null;
+var dashboardLiveLastLoadedAt=0;
 var dashboardBackgroundControllers=[];
 var dashboardSecondaryRequest=null;
 var dashboardSecondaryLastLoadedAt=0;
@@ -3688,6 +3690,8 @@ function fetchDashboardFirstPaint(stamp,fetchOptions,options){
   });
 }
 function scheduleDashboardLiveRefresh(stamp,fetchOptions,loadSequence){
+  if(dashboardLiveRefreshRequest)return;
+  if(dashboardLiveLastLoadedAt&&Date.now()-dashboardLiveLastLoadedAt<30000)return;
   var refreshSequence=++dashboardLiveRefreshSequence;
   scheduleDashboardBackgroundTask(function(){
     if(loadSequence!==dashboardLoadSequence||refreshSequence!==dashboardLiveRefreshSequence)return;
@@ -3712,6 +3716,7 @@ function releaseDashboardBackgroundController(controller){
 }
 function abortDashboardBackgroundRequests(){
   dashboardLiveRefreshSequence++;
+  dashboardLiveRefreshRequest=null;
   dashboardSecondaryRequest=null;
   dashboardBackgroundControllers.forEach(function(controller){
     try{controller.abort();}catch(e){}
@@ -3719,21 +3724,26 @@ function abortDashboardBackgroundRequests(){
   dashboardBackgroundControllers=[];
 }
 function refreshDashboardLive(stamp,fetchOptions,loadSequence,refreshSequence){
+  if(dashboardLiveRefreshRequest)return dashboardLiveRefreshRequest;
   var options=Object.assign({},fetchOptions||{});
   var controller=null;
   if('AbortController' in window){
     controller=trackDashboardBackgroundController(new AbortController());
     options.signal=controller.signal;
   }
-  fetch('/api/smart-trak/dashboard?v='+stamp+'&light=1&refresh=1',options).then(function(res){
+  var request=fetch('/api/smart-trak/dashboard?v='+stamp+'&light=1&refresh=1',options).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(loadSequence!==dashboardLoadSequence||refreshSequence!==dashboardLiveRefreshSequence)return;
     if(!result.ok)return;
+    dashboardLiveLastLoadedAt=Date.now();
     applyDashboardPayload(result.data,{stamp:stamp,fetchOptions:fetchOptions,loadSequence:loadSequence,background:true,skipSecondary:true});
   }).catch(function(){}).finally(function(){
     releaseDashboardBackgroundController(controller);
+    if(dashboardLiveRefreshRequest===request)dashboardLiveRefreshRequest=null;
   });
+  dashboardLiveRefreshRequest=request;
+  return request;
 }
 function applyDashboardPayload(data,options){
   options=options||{};
