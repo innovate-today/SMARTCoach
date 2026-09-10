@@ -2937,6 +2937,7 @@ function checkHowToGuidePage() {
 function checkDashboardToolPreferences() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
   const directPages = [
     "keep-trak.html",
     "attendance.html",
@@ -3004,7 +3005,8 @@ function checkDashboardToolPreferences() {
     'if (route === "dashboard-preferences")',
     "return accountDashboardPreferences(req, res);",
     "function attendanceSummaryMode(query)",
-    "attendanceSummaryMode(req.query)",
+    "const summaryMode = attendanceSummaryMode(req.query);",
+    "skipScan: summaryMode",
     "summary: true",
     "async function accountDashboardPreferences(req, res)",
     "async function loadDashboardPreferencesState(accountKey, accountRecord)",
@@ -3021,6 +3023,14 @@ function checkDashboardToolPreferences() {
     "simulators: true",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`dashboard preferences API missing ${text}`);
+  });
+  [
+    "loadAttendanceMirrorItems(accountKey, { skipScan: !!filters.skipScan })",
+    "const scannedIds = options.skipScan ? [] : await scanAttendanceMirrorIds(config, accountKey);",
+    "async function loadRegistryJsonItems(config, keys)",
+    'registryRequest(config, ["mget"].concat(batch))',
+  ].forEach((text) => {
+    if (!registry.includes(text)) throw new Error(`dashboard attendance summary performance path missing ${text}`);
   });
   console.log("dashboard tool preferences ok");
 }

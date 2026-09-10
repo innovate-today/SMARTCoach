@@ -1303,6 +1303,7 @@ async function accountAttendance(req, res) {
 
   try {
     if (req.method === "GET") {
+      const summaryMode = attendanceSummaryMode(req.query);
       const attendance = await loadAttendanceRecords(accountKey, {
         start: firstQueryValue(req.query && req.query.start),
         end: firstQueryValue(req.query && req.query.end),
@@ -1313,8 +1314,9 @@ async function accountAttendance(req, res) {
         athleteId: firstQueryValue(req.query && (req.query.athleteId || req.query.contactId)),
         athleteName: firstQueryValue(req.query && req.query.athleteName),
         status: firstQueryValue(req.query && req.query.status),
+        skipScan: summaryMode,
       });
-      if (attendanceSummaryMode(req.query)) {
+      if (summaryMode) {
         res.status(200).json({ success: true, attendance, count: attendance.length, summary: true });
         return;
       }
