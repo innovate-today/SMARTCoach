@@ -2987,7 +2987,7 @@ function checkDashboardToolPreferences() {
     if (!html.includes(text)) throw new Error(`dashboard tool preferences missing ${text}`);
   });
   [
-    "fetch('/api/smart-trak/attendance?v='+stamp",
+    "fetch('/api/smart-trak/attendance?v='+stamp+'&summary=1'",
     "fetch('/api/smart-trak/docu-trak?v='+stamp",
     "recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];",
     "docuItems=results[3].ok?(results[3].data.items||[]):[];",
@@ -2999,6 +2999,9 @@ function checkDashboardToolPreferences() {
   [
     'if (route === "dashboard-preferences")',
     "return accountDashboardPreferences(req, res);",
+    "function attendanceSummaryMode(query)",
+    "attendanceSummaryMode(req.query)",
+    "summary: true",
     "async function accountDashboardPreferences(req, res)",
     "async function loadDashboardPreferencesState(accountKey, accountRecord)",
     "saveDashboardPreferencesState(accountKey, dashboardPreferences)",

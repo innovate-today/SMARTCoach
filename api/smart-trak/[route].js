@@ -1314,6 +1314,10 @@ async function accountAttendance(req, res) {
         athleteName: firstQueryValue(req.query && req.query.athleteName),
         status: firstQueryValue(req.query && req.query.status),
       });
+      if (attendanceSummaryMode(req.query)) {
+        res.status(200).json({ success: true, attendance, count: attendance.length, summary: true });
+        return;
+      }
       const rosterNamedAttendance = await rosterNamedAttendanceRecords({ attendance, token, locationId });
       res.status(200).json({ success: true, attendance: rosterNamedAttendance, count: rosterNamedAttendance.length });
       return;
@@ -1336,6 +1340,11 @@ async function accountAttendance(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Attendance save failed." });
   }
+}
+
+function attendanceSummaryMode(query) {
+  const value = cleanSetupText(firstQueryValue(query && (query.summary || query.light || query.dashboard))).toLowerCase();
+  return value === "1" || value === "true" || value === "summary";
 }
 
 async function rosterNamedAttendanceRecords({ attendance, token, locationId }) {

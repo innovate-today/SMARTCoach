@@ -3746,7 +3746,7 @@ function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows){
   Promise.all([
     Promise.resolve({ok:true,data:{}}),
     Promise.resolve({ok:true,data:{}}),
-    fetch('/api/smart-trak/attendance?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{attendance:[]}};}),
+    fetch('/api/smart-trak/attendance?v='+stamp+'&summary=1',fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{attendance:[]}};}),
     fetch('/api/smart-trak/docu-trak?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{items:[],records:{}}};}),
     fetch('/api/smart-trak/field-practice?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{practices:[]}};})
   ]).then(function(results){
