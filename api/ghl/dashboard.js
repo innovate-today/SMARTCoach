@@ -15,6 +15,9 @@ const DASHBOARD_READ_CACHE_TTL_MS = 30000;
 const DASHBOARD_FIELD_CACHE_TTL_MS = 300000;
 const ATHLETE_ROSTER_DETAILS_NAMESPACE = "athlete-roster-details";
 const DASHBOARD_SNAPSHOT_NAMESPACE = "dashboard-snapshot";
+const RESULTS_BOARD_SNAPSHOT_NAMESPACE = "results-board-snapshot";
+const RESULTS_BOARD_SNAPSHOT_TTL_MS = 120000;
+const crypto = require("crypto");
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { loadAccountScopedRecord, loadTrainingMirror, loadAttendanceRecords } = require("../../lib/account-registry");
@@ -226,6 +229,16 @@ async function publicResultsBoard(req, res) {
 
   try {
     const sharing = resultsBoardSharing(req.resultsBoardSharing);
+    const filters = resultsBoardFilters(req.query, sharing);
+    const displayBoard = resultsBoardDisplayMode(req.query);
+    const snapshotNamespace = resultsBoardSnapshotNamespace(filters, displayBoard, sharing);
+    if (!resultsBoardRefreshRequested(req)) {
+      const snapshot = await loadResultsBoardSnapshot(accountKey, snapshotNamespace);
+      if (snapshot) {
+        res.status(200).json(snapshot);
+        return;
+      }
+    }
     const [athletes, meetRecords, bestRecords, ghlLocationName] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       requiredDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: 12000 }),
@@ -234,8 +247,6 @@ async function publicResultsBoard(req, res) {
     ]);
     const recordIndex = buildDashboardRecordIndex({ athletes, bestRecords, meetRecords });
     const allRows = buildResultsBoardRows({ athletes, meetRecords, bestRecords, meetRecordIndex: recordIndex.meetsByAthlete });
-    const filters = resultsBoardFilters(req.query, sharing);
-    const displayBoard = resultsBoardDisplayMode(req.query);
     const seasonRows = allRows.filter((row) => resultsBoardRowMatches(row, filters));
     const latestMeetName = filters.allMeets ? "" : filters.meetName || latestResultsMeetName(seasonRows);
     const latestRows = (filters.allMeets ? seasonRows : seasonRows.filter((row) => !latestMeetName || clean(row.meetName) === latestMeetName)).sort(resultsSort);
@@ -270,7 +281,7 @@ async function publicResultsBoard(req, res) {
       latestRows: displayBoard ? latestRows.slice(0, 12) : latestRows,
     };
     if (displayBoard) {
-      res.status(200).json({
+      const payload = {
         ...basePayload,
         filterOptions: { meets: [], events: [], genders: [] },
         seasonSummary: {},
@@ -280,12 +291,14 @@ async function publicResultsBoard(req, res) {
         divisionSummaryRows: [],
         bestHighlightRows: [],
         seasonRows: [],
-      });
+      };
+      await saveResultsBoardSnapshot(accountKey, snapshotNamespace, payload).catch(() => {});
+      res.status(200).json(payload);
       return;
     }
     const filterOptions = resultsBoardFilterOptions(allRows, filters);
     const seasonBestRows = resultsBoardSeasonBestRows(seasonRows).sort(resultsSort);
-    res.status(200).json({
+    const payload = {
       ...basePayload,
       filterOptions,
       seasonSummary: resultsBoardSeasonSummary(seasonRows),
@@ -295,7 +308,9 @@ async function publicResultsBoard(req, res) {
       divisionSummaryRows: resultsBoardDivisionSummaryRows(seasonRows),
       bestHighlightRows: resultsBoardBestHighlightRows(seasonRows),
       seasonRows: seasonBestRows,
-    });
+    };
+    await saveResultsBoardSnapshot(accountKey, snapshotNamespace, payload).catch(() => {});
+    res.status(200).json(payload);
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Results Board lookup failed." });
   }
@@ -1111,6 +1126,56 @@ async function saveDashboardSnapshot(accountKey, payload) {
   return saveAccountScopedRecord(accountKey, DASHBOARD_SNAPSHOT_NAMESPACE, {
     savedAt,
     snapshot: {
+      ...payload,
+      snapshot: false,
+      snapshotSavedAt: savedAt,
+    },
+  });
+}
+
+function resultsBoardRefreshRequested(req) {
+  return ["1", "true", "yes"].includes(clean(req && req.query && req.query.refresh).toLowerCase());
+}
+
+function resultsBoardSnapshotNamespace(filters, displayBoard, sharing) {
+  const raw = JSON.stringify({
+    version: 1,
+    sport: filters && filters.sportKey,
+    seasonYear: filters && filters.seasonYear,
+    allMeets: !!(filters && filters.allMeets),
+    meetName: filters && filters.meetName,
+    event: filters && filters.event,
+    gender: filters && filters.gender,
+    grade: filters && filters.grade,
+    displayBoard: !!displayBoard,
+    displayOptions: sharing && sharing.displayOptions,
+    gameSettings: sharing && sharing.gameSettings,
+  });
+  return `${RESULTS_BOARD_SNAPSHOT_NAMESPACE}-${crypto.createHash("sha256").update(raw).digest("hex").slice(0, 24)}`;
+}
+
+async function loadResultsBoardSnapshot(accountKey, namespace) {
+  const result = await loadAccountScopedRecord(accountKey, namespace).catch(() => null);
+  const record = result && result.found && result.record;
+  const payload = record && record.payload;
+  if (!payload || typeof payload !== "object") return null;
+  const savedAt = clean(record.savedAt || payload.snapshotSavedAt);
+  const savedMs = Date.parse(savedAt);
+  if (!Number.isFinite(savedMs) || Date.now() - savedMs > RESULTS_BOARD_SNAPSHOT_TTL_MS) return null;
+  return {
+    ...payload,
+    success: true,
+    snapshot: true,
+    snapshotSavedAt: savedAt,
+  };
+}
+
+async function saveResultsBoardSnapshot(accountKey, namespace, payload) {
+  if (!payload || typeof payload !== "object") return { saved: false, reason: "No Results Board payload." };
+  const savedAt = new Date().toISOString();
+  return saveAccountScopedRecord(accountKey, namespace, {
+    savedAt,
+    payload: {
       ...payload,
       snapshot: false,
       snapshotSavedAt: savedAt,
