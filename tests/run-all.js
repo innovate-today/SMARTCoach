@@ -3023,6 +3023,8 @@ function checkDashboardToolPreferences() {
     "function writeDashboardAccountStatusCache(data)",
     "var cached=readDashboardAccountStatusCache();",
     "writeDashboardAccountStatusCache(data);",
+    "<img data-brand-logo alt=\"SMART Trak\">",
+    "applyBrandLogo(data.logoUrl);",
     "var accountStatusRequest=null;",
     "if(accountStatusRequest)return accountStatusRequest;",
     "Date.now()-accountStatusLastCheckedAt<30000",

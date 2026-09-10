@@ -307,7 +307,7 @@ tr:last-child td{border-bottom:0}
 <main class="page pro-page-only">
   <section class="top">
     <div class="brand">
-      <div class="mark"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div class="mark"><img data-brand-logo alt="SMART Trak"></div>
       <div>
         <div class="title-row">
           <h1>SMART Trak Dashboard</h1>
@@ -3737,6 +3737,7 @@ function applyDashboardPayload(data,options){
   options=options||{};
   data=data||{};
   if(!data.snapshot)writeDashboardBrowserSnapshot(data);
+  applyBrandLogo(data.logoUrl);
   var result={data:data};
   dashboardRows=result.data.athletes||[];
   recentMeetRows=result.data.recentMeetResults||[];
