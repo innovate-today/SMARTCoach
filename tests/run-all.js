@@ -3060,6 +3060,8 @@ function checkDashboardToolPreferences() {
     "function dashboardSnapshotAgeMs(data)",
     "function dashboardSnapshotIsFresh(data)",
     "dashboardSnapshotAgeMs(data)<120000",
+    "var lastFitnessRefreshSignal=(function(){",
+    "try{return localStorage.getItem(fitnessRefreshKey)||'';}catch(e){return '';}",
     "if(options.forceRefresh){",
     "return fetch(liveUrl,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});",
     "if(!dashboardSnapshotIsFresh(browserSnapshot))scheduleDashboardLiveRefresh(stamp,fetchOptions,options.loadSequence);",

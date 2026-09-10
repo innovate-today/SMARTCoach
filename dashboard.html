@@ -1660,7 +1660,9 @@ var activeTab='roster';
 var activeTrainingSubtab='volume';
 var dashboardViewKey='smartcoachDashboardView';
 var fitnessRefreshKey='smartcoachFitnessUpdatedAt';
-var lastFitnessRefreshSignal='';
+var lastFitnessRefreshSignal=(function(){
+  try{return localStorage.getItem(fitnessRefreshKey)||'';}catch(e){return '';}
+})();
 var SMARTCOACH_BETA_ACCOUNT_KEYS=['tca-trackandcc'];
 function smartCoachAccountKey(){
   try{
