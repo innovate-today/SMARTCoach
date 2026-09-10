@@ -1593,6 +1593,7 @@ var accountStatusRequest=null;
 var accountStatusLastCheckedAt=0;
 var dashboardLoadSequence=0;
 var dashboardLiveRefreshSequence=0;
+var dashboardBackgroundControllers=[];
 var recentMeetRows=[];
 var recentTrainingRows=[];
 var fieldPracticeRows=[];
@@ -3584,7 +3585,7 @@ function loadDashboard(options){
   els.refreshBtn.disabled=true;
   var stamp=Date.now();
   var loadSequence=++dashboardLoadSequence;
-  if(options.forceRefresh)dashboardLiveRefreshSequence++;
+  abortDashboardBackgroundRequests();
   var fetchOptions={cache:'no-store',headers:{'Cache-Control':'no-store'}};
   return fetchDashboardFirstPaint(stamp,fetchOptions,{forceRefresh:!!options.forceRefresh,loadSequence:loadSequence}).then(function(result){
     if(loadSequence!==dashboardLoadSequence)return Promise.resolve();
@@ -3631,7 +3632,7 @@ function loadDashboard(options){
 }
 function loadDashboardSupportData(stamp,fetchOptions){
   Promise.all([
-    fetch('/api/smart-trak/groups?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{groups:[]}};}),
+    dashboardSupportFetch('/api/smart-trak/groups?v='+stamp,fetchOptions,{groups:[]},1800),
     checkSmartCoachAccount().catch(function(){return{ok:false,data:{}};})
   ]).then(function(results){
     if(results[0].ok)trainingGroups=results[0].data.groups||[];
@@ -3691,14 +3692,37 @@ function scheduleDashboardBackgroundTask(callback,delay){
   if(document.readyState==='complete')setTimeout(run,delay||0);
   else window.addEventListener('load',function(){setTimeout(run,delay||0);},{once:true});
 }
+function trackDashboardBackgroundController(controller){
+  if(controller)dashboardBackgroundControllers.push(controller);
+  return controller;
+}
+function releaseDashboardBackgroundController(controller){
+  if(!controller)return;
+  dashboardBackgroundControllers=dashboardBackgroundControllers.filter(function(item){return item!==controller;});
+}
+function abortDashboardBackgroundRequests(){
+  dashboardLiveRefreshSequence++;
+  dashboardBackgroundControllers.forEach(function(controller){
+    try{controller.abort();}catch(e){}
+  });
+  dashboardBackgroundControllers=[];
+}
 function refreshDashboardLive(stamp,fetchOptions,loadSequence,refreshSequence){
-  fetch('/api/smart-trak/dashboard?v='+stamp+'&refresh=1',fetchOptions).then(function(res){
+  var options=Object.assign({},fetchOptions||{});
+  var controller=null;
+  if('AbortController' in window){
+    controller=trackDashboardBackgroundController(new AbortController());
+    options.signal=controller.signal;
+  }
+  fetch('/api/smart-trak/dashboard?v='+stamp+'&refresh=1',options).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(loadSequence!==dashboardLoadSequence||refreshSequence!==dashboardLiveRefreshSequence)return;
     if(!result.ok)return;
     applyDashboardPayload(result.data,{stamp:stamp,fetchOptions:fetchOptions,background:true,skipSecondary:true});
-  }).catch(function(){});
+  }).catch(function(){}).finally(function(){
+    releaseDashboardBackgroundController(controller);
+  });
 }
 function applyDashboardPayload(data,options){
   options=options||{};
@@ -3774,7 +3798,7 @@ function dashboardSupportFetch(url,fetchOptions,fallback,timeoutMs){
   var controller=null;
   var timer=null;
   if('AbortController' in window){
-    controller=new AbortController();
+    controller=trackDashboardBackgroundController(new AbortController());
     options.signal=controller.signal;
     timer=setTimeout(function(){controller.abort();},timeoutMs||2500);
   }
@@ -3784,6 +3808,7 @@ function dashboardSupportFetch(url,fetchOptions,fallback,timeoutMs){
     return{ok:true,data:fallback||{}};
   }).finally(function(){
     if(timer)clearTimeout(timer);
+    releaseDashboardBackgroundController(controller);
   });
 }
 function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows){
