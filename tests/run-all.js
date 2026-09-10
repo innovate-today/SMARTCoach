@@ -2046,6 +2046,7 @@ function checkSpeedTrakFeature() {
     "completedVolumeMiles:totalMeters/1609.344",
     "var fieldPracticeRows=[];",
     "var liveUrl='/api/smart-trak/dashboard?v='+stamp+'&light=1';",
+    "fetch('/api/smart-trak/dashboard?v='+stamp+'&light=1&refresh=1'",
     "recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));",
     "function saveSpeedPracticeCorrection(reason)",
     "function updateSpeedPracticeForRow(row,updater)",

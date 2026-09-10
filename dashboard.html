@@ -3718,7 +3718,7 @@ function refreshDashboardLive(stamp,fetchOptions,loadSequence,refreshSequence){
     controller=trackDashboardBackgroundController(new AbortController());
     options.signal=controller.signal;
   }
-  fetch('/api/smart-trak/dashboard?v='+stamp+'&refresh=1',options).then(function(res){
+  fetch('/api/smart-trak/dashboard?v='+stamp+'&light=1&refresh=1',options).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(loadSequence!==dashboardLoadSequence||refreshSequence!==dashboardLiveRefreshSequence)return;
