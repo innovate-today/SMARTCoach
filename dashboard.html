@@ -3200,7 +3200,7 @@ initHeaderTooltips();
 renderWhatsNewButton();
 renderStartHereProgress();
 applyDashboardPreferences(defaultDashboardPreferences());
-els.refreshBtn.addEventListener('click',loadDashboard);
+els.refreshBtn.addEventListener('click',function(){loadDashboard({forceRefresh:true});});
 els.startHereClose.addEventListener('click',closeStartHere);
 els.startHereList.addEventListener('click',handleStartHereAction);
 els.startHereModal.addEventListener('click',function(event){
@@ -3560,7 +3560,8 @@ function initHeaderTooltips(){
   window.addEventListener('resize',hideTooltip);
 }
 
-function loadDashboard(){
+function loadDashboard(options){
+  options=options||{};
   applyPlanMode();
   applySmartCoachLinks();
   if(!isProPlan()){
@@ -3581,7 +3582,7 @@ function loadDashboard(){
   els.refreshBtn.disabled=true;
   var stamp=Date.now();
   var fetchOptions={cache:'no-store',headers:{'Cache-Control':'no-store'}};
-  return fetchDashboardFirstPaint(stamp,fetchOptions).then(function(result){
+  return fetchDashboardFirstPaint(stamp,fetchOptions,{forceRefresh:!!options.forceRefresh}).then(function(result){
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
       showDashboardAccessCode(result.data);
       return Promise.resolve();
@@ -3641,19 +3642,23 @@ function scheduleDashboardSupportData(stamp,fetchOptions,defer){
   if(defer)scheduleDashboardBackgroundTask(run,900);
   else run();
 }
-function fetchDashboardFirstPaint(stamp,fetchOptions){
+function fetchDashboardFirstPaint(stamp,fetchOptions,options){
+  options=options||{};
   var liveUrl='/api/smart-trak/dashboard?v='+stamp+'&light=1';
   var snapshotUrl=liveUrl+'&snapshot=1';
-  var browserSnapshot=readDashboardBrowserSnapshot();
+  if(options.forceRefresh){
+    return fetch(liveUrl,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});
+  }
+  var browserSnapshot=options.forceRefresh?null:readDashboardBrowserSnapshot();
   if(browserSnapshot){
-    scheduleDashboardLiveRefresh(stamp,fetchOptions);
+    if(!dashboardSnapshotIsFresh(browserSnapshot))scheduleDashboardLiveRefresh(stamp,fetchOptions);
     return Promise.resolve({ok:true,data:browserSnapshot});
   }
   return fetch(snapshotUrl,fetchOptions).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(result.ok){
-      scheduleDashboardLiveRefresh(stamp,fetchOptions);
+      if(!dashboardSnapshotIsFresh(result.data))scheduleDashboardLiveRefresh(stamp,fetchOptions);
       return result;
     }
     return fetch(liveUrl,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});
@@ -3722,6 +3727,13 @@ function applyDashboardPayload(data,options){
 }
 function dashboardBrowserSnapshotKey(){
   return 'smarttrak_dashboard_snapshot_'+smartCoachAccountKey();
+}
+function dashboardSnapshotAgeMs(data){
+  var saved=Date.parse((data&&data.snapshotSavedAt)||(data&&data.generatedAt)||'');
+  return Number.isFinite(saved)?Date.now()-saved:Infinity;
+}
+function dashboardSnapshotIsFresh(data){
+  return dashboardSnapshotAgeMs(data)<120000;
 }
 function readDashboardBrowserSnapshot(){
   try{
