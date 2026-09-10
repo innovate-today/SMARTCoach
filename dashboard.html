@@ -3750,11 +3750,12 @@ function refreshDashboardLive(stamp,fetchOptions,loadSequence,refreshSequence){
 function applyDashboardPayload(data,options){
   options=options||{};
   data=data||{};
-  if(!data.snapshot)writeDashboardBrowserSnapshot(data);
+  var nextRecentMeetRows=dashboardMeetRowsFromPayload(data,options);
+  if(!data.snapshot)writeDashboardBrowserSnapshot(Object.assign({},data,{recentMeetResults:nextRecentMeetRows}));
   applyBrandLogo(data.logoUrl);
   var result={data:data};
   dashboardRows=result.data.athletes||[];
-  recentMeetRows=result.data.recentMeetResults||[];
+  recentMeetRows=nextRecentMeetRows;
   if(!options.background)fieldPracticeRows=[];
   recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
   if(options.groupsResult)trainingGroups=options.groupsResult.ok?(options.groupsResult.data.groups||[]):[];
@@ -3787,6 +3788,11 @@ function applyDashboardPayload(data,options){
   }else{
     loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence,!!options.forceRefresh);
   }
+}
+function dashboardMeetRowsFromPayload(data,options){
+  var incoming=Array.isArray(data&&data.recentMeetResults)?data.recentMeetResults:[];
+  if(!options.forceRefresh&&!incoming.length&&recentMeetRows.length)return recentMeetRows;
+  return incoming;
 }
 function dashboardBrowserSnapshotKey(){
   return 'smarttrak_dashboard_snapshot_'+smartCoachAccountKey();
