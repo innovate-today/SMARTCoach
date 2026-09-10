@@ -3742,13 +3742,30 @@ function writeDashboardBrowserSnapshot(data){
     }));
   }catch(e){}
 }
+function dashboardSupportFetch(url,fetchOptions,fallback,timeoutMs){
+  var options=Object.assign({},fetchOptions||{});
+  var controller=null;
+  var timer=null;
+  if('AbortController' in window){
+    controller=new AbortController();
+    options.signal=controller.signal;
+    timer=setTimeout(function(){controller.abort();},timeoutMs||2500);
+  }
+  return fetch(url,options).then(function(res){
+    return res.json().then(function(data){return{ok:res.ok,data:data};});
+  }).catch(function(){
+    return{ok:true,data:fallback||{}};
+  }).finally(function(){
+    if(timer)clearTimeout(timer);
+  });
+}
 function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows){
   Promise.all([
     Promise.resolve({ok:true,data:{}}),
     Promise.resolve({ok:true,data:{}}),
-    fetch('/api/smart-trak/attendance?v='+stamp+'&summary=1',fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{attendance:[]}};}),
-    fetch('/api/smart-trak/docu-trak?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{items:[],records:{}}};}),
-    fetch('/api/smart-trak/field-practice?v='+stamp,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:true,data:{practices:[]}};})
+    dashboardSupportFetch('/api/smart-trak/attendance?v='+stamp+'&summary=1',fetchOptions,{attendance:[]},1800),
+    dashboardSupportFetch('/api/smart-trak/docu-trak?v='+stamp,fetchOptions,{items:[],records:{}},1800),
+    dashboardSupportFetch('/api/smart-trak/field-practice?v='+stamp,fetchOptions,{practices:[]},1800)
   ]).then(function(results){
     recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
     docuItems=results[3].ok?(results[3].data.items||[]):[];

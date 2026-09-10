@@ -621,7 +621,7 @@ function checkDashboardActivityRangeLayout() {
     'id="rosterDocuStatus"',
     'id="rosterDocuDetail"',
     "Docu Trak docs",
-    "fetch('/api/smart-trak/docu-trak?v='+stamp",
+    "dashboardSupportFetch('/api/smart-trak/docu-trak?v='+stamp",
     "function updateDocuStatusCard(rows)",
     "function docuStatusSummary(rows)",
     "summary.missing+' missing'",
@@ -2971,6 +2971,9 @@ function checkDashboardToolPreferences() {
     "if(accountStatusRequest)return accountStatusRequest;",
     "Date.now()-accountStatusLastCheckedAt<30000",
     "accountStatusRequest=null;",
+    "function dashboardSupportFetch(url,fetchOptions,fallback,timeoutMs)",
+    "controller.abort();",
+    "finally(function(){",
     "fetch('/api/smart-trak/dashboard-preferences?account='",
     "Hidden tools keep their saved data and can still be opened directly by URL.",
     "Preferences only change dashboard visibility.",
@@ -2987,8 +2990,9 @@ function checkDashboardToolPreferences() {
     if (!html.includes(text)) throw new Error(`dashboard tool preferences missing ${text}`);
   });
   [
-    "fetch('/api/smart-trak/attendance?v='+stamp+'&summary=1'",
-    "fetch('/api/smart-trak/docu-trak?v='+stamp",
+    "dashboardSupportFetch('/api/smart-trak/attendance?v='+stamp+'&summary=1'",
+    "dashboardSupportFetch('/api/smart-trak/docu-trak?v='+stamp",
+    "dashboardSupportFetch('/api/smart-trak/field-practice?v='+stamp",
     "recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];",
     "docuItems=results[3].ok?(results[3].data.items||[]):[];",
     "if(els.rosterAttendanceRate)els.rosterAttendanceRate.textContent=attendanceRateText(attendanceRows);",
