@@ -122,14 +122,18 @@ module.exports = async function handler(req, res) {
       return;
     }
     const optionalRecordTimeoutMs = lightDashboard ? LIGHT_DASHBOARD_RECORD_TIMEOUT_MS : OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS;
-    const [athletes, bestRecords, meetRecords, performanceRecords, mirroredPerformanceRecords] = await Promise.all([
+    const performanceRecordsPromise = lightDashboard && !includeMeetHistory
+      ? loadTrainingMirror(accountKey)
+      : Promise.all([
+        safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, timeoutMs: optionalRecordTimeoutMs }),
+        loadTrainingMirror(accountKey),
+      ]).then(([performanceRecords, mirroredPerformanceRecords]) => mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords));
+    const [athletes, bestRecords, meetRecords, allPerformanceRecords] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, timeoutMs: optionalRecordTimeoutMs }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: includeMeetHistory ? 15000 : optionalRecordTimeoutMs }),
-      safeDashboardObjectRecords({ token, locationId, schemaKey: PERFORMANCE_RECORD_SCHEMA_KEY, timeoutMs: optionalRecordTimeoutMs }),
-      loadTrainingMirror(accountKey),
+      performanceRecordsPromise,
     ]);
-    const allPerformanceRecords = mergePerformanceRecords(performanceRecords, mirroredPerformanceRecords);
     const recordIndex = buildDashboardRecordIndex({ athletes, bestRecords, meetRecords, performanceRecords: allPerformanceRecords });
 
     const rows = athletes.map((athlete) => buildAthleteRow({
