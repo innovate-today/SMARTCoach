@@ -1591,6 +1591,8 @@ var searchRenderTimer=null;
 var accountStatus=null;
 var accountStatusRequest=null;
 var accountStatusLastCheckedAt=0;
+var dashboardLoadSequence=0;
+var dashboardLiveRefreshSequence=0;
 var recentMeetRows=[];
 var recentTrainingRows=[];
 var fieldPracticeRows=[];
@@ -3581,8 +3583,11 @@ function loadDashboard(options){
   els.lastUpdated.textContent='Updating...';
   els.refreshBtn.disabled=true;
   var stamp=Date.now();
+  var loadSequence=++dashboardLoadSequence;
+  if(options.forceRefresh)dashboardLiveRefreshSequence++;
   var fetchOptions={cache:'no-store',headers:{'Cache-Control':'no-store'}};
-  return fetchDashboardFirstPaint(stamp,fetchOptions,{forceRefresh:!!options.forceRefresh}).then(function(result){
+  return fetchDashboardFirstPaint(stamp,fetchOptions,{forceRefresh:!!options.forceRefresh,loadSequence:loadSequence}).then(function(result){
+    if(loadSequence!==dashboardLoadSequence)return Promise.resolve();
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
       showDashboardAccessCode(result.data);
       return Promise.resolve();
@@ -3595,6 +3600,7 @@ function loadDashboard(options){
       deferSecondary:!!result.data.snapshot
     });
   }).catch(function(error){
+    if(loadSequence!==dashboardLoadSequence)return;
     var hadDashboardData=dashboardRows.length||recentMeetRows.length||recentTrainingRows.length;
     if(!hadDashboardData){
       dashboardRows=[];
@@ -3637,9 +3643,14 @@ function loadDashboardSupportData(stamp,fetchOptions){
   });
 }
 function scheduleDashboardSupportData(stamp,fetchOptions,defer){
+  var loadSequence=dashboardLoadSequence;
   var run=function(){loadDashboardSupportData(stamp,fetchOptions);};
-  if(defer)scheduleDashboardBackgroundTask(run,900);
-  else run();
+  var guardedRun=function(){
+    if(loadSequence!==dashboardLoadSequence)return;
+    run();
+  };
+  if(defer)scheduleDashboardBackgroundTask(guardedRun,900);
+  else guardedRun();
 }
 function fetchDashboardFirstPaint(stamp,fetchOptions,options){
   options=options||{};
@@ -3650,14 +3661,14 @@ function fetchDashboardFirstPaint(stamp,fetchOptions,options){
   }
   var browserSnapshot=options.forceRefresh?null:readDashboardBrowserSnapshot();
   if(browserSnapshot){
-    if(!dashboardSnapshotIsFresh(browserSnapshot))scheduleDashboardLiveRefresh(stamp,fetchOptions);
+    if(!dashboardSnapshotIsFresh(browserSnapshot))scheduleDashboardLiveRefresh(stamp,fetchOptions,options.loadSequence);
     return Promise.resolve({ok:true,data:browserSnapshot});
   }
   return fetch(snapshotUrl,fetchOptions).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(result.ok){
-      if(!dashboardSnapshotIsFresh(result.data))scheduleDashboardLiveRefresh(stamp,fetchOptions);
+      if(!dashboardSnapshotIsFresh(result.data))scheduleDashboardLiveRefresh(stamp,fetchOptions,options.loadSequence);
       return result;
     }
     return fetch(liveUrl,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});
@@ -3665,8 +3676,12 @@ function fetchDashboardFirstPaint(stamp,fetchOptions,options){
     return fetch(liveUrl,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});
   });
 }
-function scheduleDashboardLiveRefresh(stamp,fetchOptions){
-  scheduleDashboardBackgroundTask(function(){refreshDashboardLive(stamp,fetchOptions);},1400);
+function scheduleDashboardLiveRefresh(stamp,fetchOptions,loadSequence){
+  var refreshSequence=++dashboardLiveRefreshSequence;
+  scheduleDashboardBackgroundTask(function(){
+    if(loadSequence!==dashboardLoadSequence||refreshSequence!==dashboardLiveRefreshSequence)return;
+    refreshDashboardLive(stamp,fetchOptions,loadSequence,refreshSequence);
+  },1400);
 }
 function scheduleDashboardBackgroundTask(callback,delay){
   var run=function(){
@@ -3676,10 +3691,11 @@ function scheduleDashboardBackgroundTask(callback,delay){
   if(document.readyState==='complete')setTimeout(run,delay||0);
   else window.addEventListener('load',function(){setTimeout(run,delay||0);},{once:true});
 }
-function refreshDashboardLive(stamp,fetchOptions){
+function refreshDashboardLive(stamp,fetchOptions,loadSequence,refreshSequence){
   fetch('/api/smart-trak/dashboard?v='+stamp+'&refresh=1',fetchOptions).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
+    if(loadSequence!==dashboardLoadSequence||refreshSequence!==dashboardLiveRefreshSequence)return;
     if(!result.ok)return;
     applyDashboardPayload(result.data,{stamp:stamp,fetchOptions:fetchOptions,background:true,skipSecondary:true});
   }).catch(function(){});
