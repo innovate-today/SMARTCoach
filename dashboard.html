@@ -1594,6 +1594,8 @@ var accountStatusLastCheckedAt=0;
 var dashboardLoadSequence=0;
 var dashboardLiveRefreshSequence=0;
 var dashboardBackgroundControllers=[];
+var dashboardSecondaryRequest=null;
+var dashboardSecondaryLastLoadedAt=0;
 var recentMeetRows=[];
 var recentTrainingRows=[];
 var fieldPracticeRows=[];
@@ -3597,6 +3599,7 @@ function loadDashboard(options){
     applyDashboardPayload(result.data,{
       stamp:stamp,
       fetchOptions:fetchOptions,
+      loadSequence:loadSequence,
       openPending:true,
       deferSecondary:!!result.data.snapshot
     });
@@ -3702,6 +3705,7 @@ function releaseDashboardBackgroundController(controller){
 }
 function abortDashboardBackgroundRequests(){
   dashboardLiveRefreshSequence++;
+  dashboardSecondaryRequest=null;
   dashboardBackgroundControllers.forEach(function(controller){
     try{controller.abort();}catch(e){}
   });
@@ -3719,7 +3723,7 @@ function refreshDashboardLive(stamp,fetchOptions,loadSequence,refreshSequence){
   }).then(function(result){
     if(loadSequence!==dashboardLoadSequence||refreshSequence!==dashboardLiveRefreshSequence)return;
     if(!result.ok)return;
-    applyDashboardPayload(result.data,{stamp:stamp,fetchOptions:fetchOptions,background:true,skipSecondary:true});
+    applyDashboardPayload(result.data,{stamp:stamp,fetchOptions:fetchOptions,loadSequence:loadSequence,background:true,skipSecondary:true});
   }).catch(function(){}).finally(function(){
     releaseDashboardBackgroundController(controller);
   });
@@ -3758,10 +3762,10 @@ function applyDashboardPayload(data,options){
   if(options.skipSecondary)return;
   if(options.deferSecondary){
     scheduleDashboardBackgroundTask(function(){
-      loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[]);
+      loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence);
     },900);
   }else{
-    loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[]);
+    loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence);
   }
 }
 function dashboardBrowserSnapshotKey(){
@@ -3811,14 +3815,19 @@ function dashboardSupportFetch(url,fetchOptions,fallback,timeoutMs){
     releaseDashboardBackgroundController(controller);
   });
 }
-function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows){
-  Promise.all([
+function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows,loadSequence){
+  loadSequence=loadSequence||dashboardLoadSequence;
+  if(loadSequence!==dashboardLoadSequence)return Promise.resolve({stale:true});
+  if(dashboardSecondaryRequest)return dashboardSecondaryRequest;
+  if(dashboardSecondaryLastLoadedAt&&Date.now()-dashboardSecondaryLastLoadedAt<5000)return Promise.resolve({cached:true});
+  dashboardSecondaryRequest=Promise.all([
     Promise.resolve({ok:true,data:{}}),
     Promise.resolve({ok:true,data:{}}),
     dashboardSupportFetch('/api/smart-trak/attendance?v='+stamp+'&summary=1',fetchOptions,{attendance:[]},1800),
     dashboardSupportFetch('/api/smart-trak/docu-trak?v='+stamp,fetchOptions,{items:[],records:{}},1800),
     dashboardSupportFetch('/api/smart-trak/field-practice?v='+stamp,fetchOptions,{practices:[]},1800)
   ]).then(function(results){
+    if(loadSequence!==dashboardLoadSequence)return{stale:true};
     recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
     docuItems=results[3].ok?(results[3].data.items||[]):[];
     docuRecords=results[3].ok?(results[3].data.records||{}):{};
@@ -3827,7 +3836,12 @@ function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows){
     updateBreakdowns();
     renderRows();
     renderStartHereProgress();
+    dashboardSecondaryLastLoadedAt=Date.now();
+    return{ok:true};
+  }).finally(function(){
+    dashboardSecondaryRequest=null;
   });
+  return dashboardSecondaryRequest;
 }
 function refreshDashboardAfterFitnessChange(signal){
   signal=String(signal||'');
