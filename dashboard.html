@@ -1589,6 +1589,8 @@ tr:last-child td{border-bottom:0}
 var dashboardRows=[];
 var searchRenderTimer=null;
 var accountStatus=null;
+var accountStatusRequest=null;
+var accountStatusLastCheckedAt=0;
 var recentMeetRows=[];
 var recentTrainingRows=[];
 var fieldPracticeRows=[];
@@ -4858,11 +4860,16 @@ function refreshAppVersion(){
 }
 
 function checkSmartCoachAccount(){
+  if(accountStatusRequest)return accountStatusRequest;
+  if(accountStatus&&accountStatusLastCheckedAt&&Date.now()-accountStatusLastCheckedAt<30000){
+    return Promise.resolve({ok:true,data:accountStatus,cached:true});
+  }
   var key=smartCoachAccountKey();
-  return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(res){
+  accountStatusRequest=fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key)+'&v='+Date.now(),{cache:'no-store',headers:{'X-SMARTCoach-Account':key}}).then(function(res){
     return res.json().then(function(data){
       refreshRememberedCoachSession(data);
       accountStatus=data||accountStatus;
+      accountStatusLastCheckedAt=Date.now();
       writeDashboardAccountStatusCache(data);
       applyStaffAccessVisibility(data);
       applyDashboardPreferences(data&&data.dashboardPreferences);
@@ -4870,7 +4877,10 @@ function checkSmartCoachAccount(){
       resultsBoardSharing=normalizeResultsBoardSharing(data&&data.resultsBoardSharing);
       return{ok:res.ok,data:data};
     });
+  }).finally(function(){
+    accountStatusRequest=null;
   });
+  return accountStatusRequest;
 }
 
 function updateBreakdowns(rows,meetRows,trainingRows,volumeRows){
