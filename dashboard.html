@@ -1599,6 +1599,7 @@ var dashboardLiveLastLoadedAt=0;
 var dashboardBackgroundControllers=[];
 var dashboardSecondaryRequest=null;
 var dashboardSecondaryLastLoadedAt=0;
+var DASHBOARD_SECONDARY_BROWSER_TTL_MS=120000;
 var recentMeetRows=[];
 var recentTrainingRows=[];
 var fieldPracticeRows=[];
@@ -3607,7 +3608,8 @@ function loadDashboard(options){
       fetchOptions:fetchOptions,
       loadSequence:loadSequence,
       openPending:true,
-      deferSecondary:!!result.data.snapshot
+      deferSecondary:!!result.data.snapshot,
+      forceRefresh:!!options.forceRefresh
     });
   }).catch(function(error){
     if(loadSequence!==dashboardLoadSequence)return;
@@ -3780,10 +3782,10 @@ function applyDashboardPayload(data,options){
   if(options.skipSecondary)return;
   if(options.deferSecondary){
     scheduleDashboardBackgroundTask(function(){
-      loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence);
+      loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence,!!options.forceRefresh);
     },150);
   }else{
-    loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence);
+    loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence,!!options.forceRefresh);
   }
 }
 function dashboardBrowserSnapshotKey(){
@@ -3833,11 +3835,49 @@ function dashboardSupportFetch(url,fetchOptions,fallback,timeoutMs){
     releaseDashboardBackgroundController(controller);
   });
 }
-function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows,loadSequence){
+function dashboardSecondaryBrowserSnapshotKey(){
+  return 'smarttrak_dashboard_secondary_'+smartCoachAccountKey();
+}
+function readDashboardSecondaryBrowserSnapshot(){
+  try{
+    var raw=localStorage.getItem(dashboardSecondaryBrowserSnapshotKey());
+    if(!raw)return null;
+    var saved=JSON.parse(raw);
+    var savedAtMs=Date.parse(saved&&saved.savedAt||'');
+    if(!saved||!Number.isFinite(savedAtMs)||Date.now()-savedAtMs>DASHBOARD_SECONDARY_BROWSER_TTL_MS)return null;
+    var data=saved.data||{};
+    if(!Array.isArray(data.attendance)||!Array.isArray(data.docuItems)||!data.docuRecords||!Array.isArray(data.fieldPractice))return null;
+    return data;
+  }catch(e){return null;}
+}
+function writeDashboardSecondaryBrowserSnapshot(data){
+  try{
+    if(!data)return;
+    localStorage.setItem(dashboardSecondaryBrowserSnapshotKey(),JSON.stringify({savedAt:new Date().toISOString(),data:data}));
+  }catch(e){}
+}
+function applyDashboardSecondaryPayload(data,baseTrainingRows){
+  data=data||{};
+  recentAttendanceRows=Array.isArray(data.attendance)?data.attendance:[];
+  docuItems=Array.isArray(data.docuItems)?data.docuItems:[];
+  docuRecords=data.docuRecords&&typeof data.docuRecords==='object'?data.docuRecords:{};
+  fieldPracticeRows=Array.isArray(data.fieldPractice)?data.fieldPractice:[];
+  recentTrainingRows=(baseTrainingRows||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
+  updateBreakdowns();
+  renderRows();
+  renderStartHereProgress();
+}
+function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows,loadSequence,forceRefresh){
   loadSequence=loadSequence||dashboardLoadSequence;
   if(loadSequence!==dashboardLoadSequence)return Promise.resolve({stale:true});
   if(dashboardSecondaryRequest)return dashboardSecondaryRequest;
   if(dashboardSecondaryLastLoadedAt&&Date.now()-dashboardSecondaryLastLoadedAt<5000)return Promise.resolve({cached:true});
+  var cached=forceRefresh?null:readDashboardSecondaryBrowserSnapshot();
+  if(cached){
+    applyDashboardSecondaryPayload(cached,baseTrainingRows);
+    dashboardSecondaryLastLoadedAt=Date.now();
+    return Promise.resolve({cached:true});
+  }
   dashboardSecondaryRequest=Promise.all([
     Promise.resolve({ok:true,data:{}}),
     Promise.resolve({ok:true,data:{}}),
@@ -3846,14 +3886,14 @@ function loadDashboardSecondaryData(stamp,fetchOptions,baseTrainingRows,loadSequ
     dashboardSupportFetch('/api/smart-trak/field-practice?v='+stamp,fetchOptions,{practices:[]},1800)
   ]).then(function(results){
     if(loadSequence!==dashboardLoadSequence)return{stale:true};
-    recentAttendanceRows=results[2].ok?(results[2].data.attendance||[]):[];
-    docuItems=results[3].ok?(results[3].data.items||[]):[];
-    docuRecords=results[3].ok?(results[3].data.records||{}):{};
-    fieldPracticeRows=results[4].ok?((results[4].data.practices||results[4].data.items||[])):[];
-    recentTrainingRows=(baseTrainingRows||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
-    updateBreakdowns();
-    renderRows();
-    renderStartHereProgress();
+    var payload={
+      attendance:results[2].ok?(results[2].data.attendance||[]):[],
+      docuItems:results[3].ok?(results[3].data.items||[]):[],
+      docuRecords:results[3].ok?(results[3].data.records||{}):{},
+      fieldPractice:results[4].ok?((results[4].data.practices||results[4].data.items||[])):[]
+    };
+    applyDashboardSecondaryPayload(payload,baseTrainingRows);
+    writeDashboardSecondaryBrowserSnapshot(payload);
     dashboardSecondaryLastLoadedAt=Date.now();
     return{ok:true};
   }).finally(function(){
