@@ -1591,6 +1591,7 @@ var searchRenderTimer=null;
 var accountStatus=null;
 var accountStatusRequest=null;
 var accountStatusLastCheckedAt=0;
+var dashboardLoadRequest=null;
 var dashboardLoadSequence=0;
 var dashboardLiveRefreshSequence=0;
 var dashboardBackgroundControllers=[];
@@ -3582,6 +3583,7 @@ function loadDashboard(options){
     if(els.refreshBtn)els.refreshBtn.disabled=false;
     return Promise.resolve();
   }
+  if(dashboardLoadRequest&&!options.forceRefresh)return dashboardLoadRequest;
   els.status.textContent='Loading dashboard...';
   els.lastUpdated.textContent='Updating...';
   els.refreshBtn.disabled=true;
@@ -3589,7 +3591,7 @@ function loadDashboard(options){
   var loadSequence=++dashboardLoadSequence;
   abortDashboardBackgroundRequests();
   var fetchOptions={cache:'no-store',headers:{'Cache-Control':'no-store'}};
-  return fetchDashboardFirstPaint(stamp,fetchOptions,{forceRefresh:!!options.forceRefresh,loadSequence:loadSequence}).then(function(result){
+  var request=fetchDashboardFirstPaint(stamp,fetchOptions,{forceRefresh:!!options.forceRefresh,loadSequence:loadSequence}).then(function(result){
     if(loadSequence!==dashboardLoadSequence)return Promise.resolve();
     if(!result.ok&&result.data&&result.data.accessCodeRequired){
       showDashboardAccessCode(result.data);
@@ -3630,8 +3632,11 @@ function loadDashboard(options){
     }
     els.lastUpdated.textContent='Update failed';
   }).finally(function(){
+    if(dashboardLoadRequest===request)dashboardLoadRequest=null;
     if(els.refreshBtn)els.refreshBtn.disabled=false;
   });
+  dashboardLoadRequest=request;
+  return request;
 }
 function loadDashboardSupportData(stamp,fetchOptions){
   Promise.all([
