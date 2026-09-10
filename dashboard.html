@@ -3763,7 +3763,7 @@ function applyDashboardPayload(data,options){
   if(options.deferSecondary){
     scheduleDashboardBackgroundTask(function(){
       loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence);
-    },900);
+    },150);
   }else{
     loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence);
   }

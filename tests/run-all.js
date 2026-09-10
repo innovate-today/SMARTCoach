@@ -3007,6 +3007,7 @@ function checkDashboardToolPreferences() {
     "var refreshSequence=++dashboardLiveRefreshSequence;",
     "if(loadSequence!==dashboardLoadSequence||refreshSequence!==dashboardLiveRefreshSequence)return;",
     "refreshDashboardLive(stamp,fetchOptions,loadSequence,refreshSequence);",
+    "},150);",
     "fetch('/api/smart-trak/dashboard-preferences?account='",
     "Hidden tools keep their saved data and can still be opened directly by URL.",
     "Preferences only change dashboard visibility.",
