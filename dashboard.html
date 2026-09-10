@@ -2696,8 +2696,36 @@ function applyStaffAccessVisibility(data){
   els.changeCodeBtn.hidden=!allowed;
   els.changeCodeBtn.disabled=!allowed;
 }
+function dashboardAccountStatusCacheKey(){
+  return 'smarttrak_account_status_'+smartCoachAccountKey();
+}
+function readDashboardAccountStatusCache(){
+  try{
+    var raw=localStorage.getItem(dashboardAccountStatusCacheKey());
+    if(!raw)return null;
+    var saved=JSON.parse(raw);
+    if(!saved||!saved.data||Date.now()-Number(saved.savedAt||0)>120000)return null;
+    return saved.data;
+  }catch(e){return null;}
+}
+function writeDashboardAccountStatusCache(data){
+  try{
+    if(!data||!data.accountKey)return;
+    localStorage.setItem(dashboardAccountStatusCacheKey(),JSON.stringify({savedAt:Date.now(),data:data}));
+  }catch(e){}
+}
 function syncProductPlanFromAccount(){
   if(productPlanOverride())return Promise.resolve(productPlan());
+  var cached=readDashboardAccountStatusCache();
+  if(cached){
+    accountStatus=cached;
+    if(cached.productPlan)setProductPlan(cached.productPlan);
+    applyBrandLogo(cached.logoUrl,{preserveExisting:true});
+    applyPlanMode();
+    applySmartCoachLinks();
+    setTimeout(function(){checkSmartCoachAccount().catch(function(){});},0);
+    return Promise.resolve(productPlan());
+  }
   return checkSmartCoachAccount().then(function(result){
     accountStatus=result.data||null;
     if(result.data&&result.data.productPlan)setProductPlan(result.data.productPlan);
@@ -4835,6 +4863,7 @@ function checkSmartCoachAccount(){
     return res.json().then(function(data){
       refreshRememberedCoachSession(data);
       accountStatus=data||accountStatus;
+      writeDashboardAccountStatusCache(data);
       applyStaffAccessVisibility(data);
       applyDashboardPreferences(data&&data.dashboardPreferences);
       milesBoardSharing=normalizeMilesBoardSharing(data&&data.milesBoardSharing);
