@@ -1077,6 +1077,8 @@ function checkMilesBoardFeature() {
     "function writeCachedBoard(data)",
     "function hasBoardRows(data)",
     "function applyBoardData(data,cached)",
+    "function setLogo(value)",
+    "setLogo(data.logoUrl)",
     "function restoreCachedBoard()",
     "var restored=restoreCachedBoard();",
     "fetchWithTimeout(apiUrl(),{cache:'no-store'},restored?9000:18000)",
@@ -1379,6 +1381,8 @@ function checkResultsBoardFeature() {
     "function boardCacheKey()",
     "function restoreCachedBoard()",
     "function applyBoardData(data,cached)",
+    "function setLogo(value)",
+    "setLogo(data.logoUrl)",
     "writeCachedBoard(data)",
     "function apiUrl(forceRefresh)",
     "if(forceRefresh)p.set('refresh','1')",
@@ -1445,6 +1449,8 @@ function checkResultsBoardFeature() {
     "function writeCachedBoard(data)",
     "function hasBoardRows(data)",
     "function applyBoardData(data,cached)",
+    "function setLogo(value)",
+    "setLogo(data.logoUrl)",
     "function restoreCachedBoard()",
     "var restored=restoreCachedBoard();",
     "fetchWithTimeout(apiUrl(),{cache:'no-store'},restored?9000:18000)",
@@ -1990,6 +1996,8 @@ function checkSpeedTrakFeature() {
     "function renderDisplayRows(rows)",
     "function challengeSortKey(value)",
     "badgeHtml(row.badges)",
+    "function setLogo(value)",
+    "setLogo(data.logoUrl)",
   ].forEach((text) => {
     if (!board.includes(text)) throw new Error(`Speed Trak public board missing ${text}`);
   });
