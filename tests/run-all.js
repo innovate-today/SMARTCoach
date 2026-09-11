@@ -621,7 +621,7 @@ function checkDashboardActivityRangeLayout() {
     'id="rosterDocuStatus"',
     'id="rosterDocuDetail"',
     "Docu Trak docs",
-    "dashboardSupportFetch('/api/smart-trak/docu-trak?v='+stamp",
+    "dashboardSupportFetch('/api/smart-trak/dashboard-support?v='+stamp",
     "function updateDocuStatusCard(rows)",
     "function docuStatusSummary(rows)",
     "summary.missing+' missing'",
@@ -2073,7 +2073,7 @@ function checkSpeedTrakFeature() {
     if (!training.includes(text)) throw new Error(`Training Speed/Miles Trak link missing ${text}`);
   });
   [
-    "/api/smart-trak/field-practice?v=",
+    "/api/smart-trak/dashboard-support?v=",
     "speedPracticeTrainingRows(fieldPracticeRows,dashboardRows)",
     "speedMetricSession:true",
     '<option value="speed_training">Speed / sprints</option>',
@@ -3109,9 +3109,9 @@ function checkDashboardToolPreferences() {
     if (!html.includes(text)) throw new Error(`dashboard tool preferences missing ${text}`);
   });
   [
-    "dashboardSupportFetch('/api/smart-trak/attendance?v='+stamp+'&summary=1'",
-    "dashboardSupportFetch('/api/smart-trak/docu-trak?v='+stamp",
-    "dashboardSupportFetch('/api/smart-trak/field-practice?v='+stamp",
+    "dashboardSupportFetch('/api/smart-trak/dashboard-support?v='+stamp",
+    "docuItems:result.ok?(result.data.docuItems||[]):[]",
+    "fieldPractice:result.ok?(result.data.fieldPractice||[]):[]",
     "if(dashboardSecondaryRequest)return dashboardSecondaryRequest;",
     "Date.now()-dashboardSecondaryLastLoadedAt<5000",
     "if(loadSequence!==dashboardLoadSequence)return{stale:true};",
@@ -3123,6 +3123,17 @@ function checkDashboardToolPreferences() {
     "updateDocuStatusCard(rows);",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard hidden tools must not remove summary data flow: ${text}`);
+  });
+  [
+    'route === "dashboard-support"',
+    "return accountDashboardSupport(req, res);",
+    "async function accountDashboardSupport(req, res)",
+    "loadAttendanceRecords(accountKey, { skipScan: true })",
+    "loadDocuTrakState(accountKey, accountRecord)",
+    "loadFieldPracticeState(accountKey, accountRecord)",
+    "fieldPractice: fieldResult.practices",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`dashboard bundled support endpoint missing ${text}`);
   });
   const supportScheduleCalls = (html.match(/scheduleDashboardSupportData\(/g) || []).length;
   if (supportScheduleCalls !== 1) {

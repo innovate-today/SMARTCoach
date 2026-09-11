@@ -276,6 +276,12 @@ module.exports = async function handler(req, res) {
     return accountXcRecordsBoard(req, res);
   }
 
+  if (route === "dashboard-support") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountDashboardSupport(req, res);
+  }
+
   if (route === "attendance") {
     await attachRegistryAccount(req);
     if (!requireProPlan(req, res)) return;
@@ -1341,6 +1347,46 @@ async function accountAttendance(req, res) {
     res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Attendance save failed." });
+  }
+}
+
+async function accountDashboardSupport(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    const existing = req.smartcoachRegistryAccount
+      ? { record: req.smartcoachRegistryAccount }
+      : await loadAccountRecord(accountKey).catch(() => null);
+    const accountRecord = existing && existing.record || null;
+    const [attendanceResult, docuResult, fieldResult] = await Promise.all([
+      loadAttendanceRecords(accountKey, { skipScan: true }).then((attendance) => ({ ok: true, attendance })).catch(() => ({ ok: false, attendance: [] })),
+      loadDocuTrakState(accountKey, accountRecord).then((docuTrak) => ({ ok: true, docuTrak })).catch(() => ({ ok: false, docuTrak: normalizeDocuTrak(null) })),
+      loadFieldPracticeState(accountKey, accountRecord).then((state) => ({ ok: true, practices: normalizeFieldPractices(state.fieldPracticeSessions) })).catch(() => ({ ok: false, practices: [] })),
+    ]);
+    res.status(200).json({
+      success: true,
+      attendance: attendanceResult.attendance,
+      docuItems: docuResult.docuTrak.items,
+      docuRecords: docuResult.docuTrak.records,
+      fieldPractice: fieldResult.practices,
+      sources: {
+        attendance: attendanceResult.ok,
+        docuTrak: docuResult.ok,
+        fieldPractice: fieldResult.ok,
+      },
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Dashboard support lookup failed." });
   }
 }
 
