@@ -69,6 +69,17 @@ function checkJsonFiles() {
   });
 }
 
+function checkStaticAssets() {
+  if (!fs.existsSync("favicon.ico")) {
+    throw new Error("root favicon.ico is missing; browsers will request it and log a 404.");
+  }
+  const favicon = fs.readFileSync("favicon.ico");
+  if (favicon.length < 4 || favicon[0] !== 0 || favicon[1] !== 0 || favicon[2] !== 1 || favicon[3] !== 0) {
+    throw new Error("favicon.ico must be a valid ICO file.");
+  }
+  console.log("static assets ok");
+}
+
 function checkLiveValidationPage() {
   const html = fs.readFileSync("live-launch-validation.html", "utf8");
   const requiredPageLinks = [
@@ -5996,6 +6007,7 @@ jsFilesUnder("api").concat(jsFilesUnder("lib"), jsFilesUnder("tests")).forEach((
   run(`${file} syntax`, "node", ["-c", file]);
 });
 checkJsonFiles();
+checkStaticAssets();
 checkPageScripts();
 checkLiveValidationPage();
 checkTrainingCalendarButtonLabels();
