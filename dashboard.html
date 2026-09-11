@@ -307,7 +307,7 @@ tr:last-child td{border-bottom:0}
 <main class="page pro-page-only">
   <section class="top">
     <div class="brand">
-      <div class="mark"><img data-brand-logo alt="SMART Trak"></div>
+      <div class="mark"><img data-brand-logo alt="SMART Trak" width="64" height="64" decoding="async" fetchpriority="low"></div>
       <div>
         <div class="title-row">
           <h1>SMART Trak Dashboard</h1>
@@ -2775,12 +2775,14 @@ function applyBrandLogo(logoUrl,options){
   var src=incoming||rememberedBrandLogo()||(options.preserveExisting?null:defaultBrandLogo());
   if(!src)return;
   document.querySelectorAll('[data-brand-logo]').forEach(function(img){
-    img.src=src;
+    img.decoding='async';
+    if('fetchPriority' in img)img.fetchPriority='low';
     img.onerror=function(){
       img.onerror=null;
       try{localStorage.removeItem(savedBrandLogoKey());}catch(error){}
       img.src=defaultBrandLogo();
     };
+    if(img.getAttribute('src')!==src)img.src=src;
   });
 }
 function smartCoachPageUrl(path,planOverride){
