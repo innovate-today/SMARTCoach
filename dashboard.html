@@ -3819,9 +3819,16 @@ function readDashboardBrowserSnapshot(){
 function writeDashboardBrowserSnapshot(data){
   try{
     if(!data||!Array.isArray(data.athletes))return;
+    var snapshot=Object.assign({},data);
+    var recentMeetResults=Array.isArray(snapshot.recentMeetResults)?snapshot.recentMeetResults:[];
+    if(!recentMeetResults.length){
+      var existing=readDashboardBrowserSnapshot();
+      var previousMeetResults=existing&&Array.isArray(existing.recentMeetResults)?existing.recentMeetResults:[];
+      if(previousMeetResults.length)snapshot.recentMeetResults=previousMeetResults;
+    }
     localStorage.setItem(dashboardBrowserSnapshotKey(),JSON.stringify({
       savedAt:new Date().toISOString(),
-      data:Object.assign({},data,{snapshot:false,snapshotSavedAt:new Date().toISOString()})
+      data:Object.assign({},snapshot,{snapshot:false,snapshotSavedAt:new Date().toISOString()})
     }));
   }catch(e){}
 }

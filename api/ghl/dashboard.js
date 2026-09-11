@@ -1127,10 +1127,17 @@ async function loadDashboardSnapshot(accountKey) {
 async function saveDashboardSnapshot(accountKey, payload) {
   if (!payload || typeof payload !== "object") return { saved: false, reason: "No dashboard payload." };
   const savedAt = new Date().toISOString();
+  const snapshot = { ...payload };
+  const recentMeetResults = Array.isArray(snapshot.recentMeetResults) ? snapshot.recentMeetResults : [];
+  if (!recentMeetResults.length) {
+    const existing = await loadDashboardSnapshot(accountKey).catch(() => null);
+    const previousMeetResults = Array.isArray(existing && existing.recentMeetResults) ? existing.recentMeetResults : [];
+    if (previousMeetResults.length) snapshot.recentMeetResults = previousMeetResults;
+  }
   return saveAccountScopedRecord(accountKey, DASHBOARD_SNAPSHOT_NAMESPACE, {
     savedAt,
     snapshot: {
-      ...payload,
+      ...snapshot,
       snapshot: false,
       snapshotSavedAt: savedAt,
     },
