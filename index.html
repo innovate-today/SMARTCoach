@@ -2841,6 +2841,8 @@ function reconcileSmartTrakMeetsIntoLogs(){
       changed=true;
     }
     var dateSeason=seasonForDate(meet.date);
+    var groupNames=meetGroupNamesFromDay(meet);
+    var runners=meetRunnersForGroup(groupNames,log);
     var next={
       sharedGroupId:log.sharedGroupId||('meetrec_'+meet.id),
       name:meet.name,
@@ -2854,8 +2856,9 @@ function reconcileSmartTrakMeetsIntoLogs(){
       meetRecordId:meet.id,
       eventName:log.eventName&&!isBadMeetLabel(log.eventName)?log.eventName:'Race',
       raceDivision:log.raceDivision||'',
+      raceRosterGroups:groupNames,
       cfg:log.cfg||defaultCfg(),
-      runners:log.runners||[]
+      runners:runners.length?runners:log.runners||[]
     };
     Object.keys(next).forEach(function(key){
       if(key==='cfg'||key==='runners')return;
@@ -2864,6 +2867,10 @@ function reconcileSmartTrakMeetsIntoLogs(){
     if(!log.cfg){log.cfg=meetDayCfg();changed=true;}
     if(applyMeetDayCfg(log))changed=true;
     if(!Array.isArray(log.runners)){log.runners=[];changed=true;}
+    if(runners.length&&JSON.stringify((log.runners||[]).map(function(r){return r.contactId||r.name;}))!==JSON.stringify(runners.map(function(r){return r.contactId||r.name;}))){
+      log.runners=runners;
+      changed=true;
+    }
   });
   logs.forEach(function(log){
     if((log.type||'training')!=='meet'||log.archived)return;

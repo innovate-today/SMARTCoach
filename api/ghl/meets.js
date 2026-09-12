@@ -134,6 +134,7 @@ async function createMeet({ token, locationId, accountKey, payload }) {
       seasonYear,
       status: clean(payload && payload.status) || "Scheduled",
       location: clean(payload && payload.location),
+      groupName: clean(payload && payload.groupName),
     });
     await upsertAccountMeet(accountKey, meet);
     return meet;
@@ -170,6 +171,7 @@ async function updateMeet({ token, locationId, accountKey, payload }) {
   const season = clean(payload && payload.season);
   const seasonYear = Number(payload && payload.seasonYear) || (date ? new Date(`${date}T00:00:00`).getFullYear() : undefined);
   const status = clean(payload && payload.status);
+  const hasGroupName = payload && Object.prototype.hasOwnProperty.call(payload, "groupName");
 
   if (accountKey && accountKey !== "default") {
     const existing = (await loadAccountMeets(accountKey)).find((meet) => meet.id === recordId) || {};
@@ -182,6 +184,7 @@ async function updateMeet({ token, locationId, accountKey, payload }) {
       season: season || existing.season,
       seasonYear: seasonYear || existing.seasonYear,
       status: status || existing.status,
+      groupName: hasGroupName ? clean(payload && payload.groupName) : existing.groupName,
     });
     if (!meet.name) throw httpError(400, "Meet name is required.");
     await upsertAccountMeet(accountKey, meet);
@@ -272,6 +275,7 @@ function normalizeAccountMeet(meet) {
     season,
     seasonYear,
     location: clean(row.location),
+    groupName: clean(row.groupName),
     status,
     archived: isArchivedStatus(status),
   };

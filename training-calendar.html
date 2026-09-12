@@ -1413,7 +1413,7 @@ function meetCalendarDay(meet){
     linkedMeetId:meet.id||'',
     date:meet.date||'',
     dayType:'Meet',
-    groupName:'',
+    groupName:meet.groupName||'',
     athleteContact:'',
     athleteName:'',
     title:meet.name||'Race day',
@@ -3266,7 +3266,8 @@ function saveManagedMeetCalendarEdit(reason){
     meetDate:date,
     season:seasonFromDate(date)||meet.season||'Spring',
     seasonYear:String(isNaN(parsed.getTime())?new Date().getFullYear():parsed.getFullYear()),
-    status:els.editStatus.value||meet.status||activeDay.status||'Scheduled'
+    status:els.editStatus.value||meet.status||activeDay.status||'Scheduled',
+    groupName:els.editGroup.value||''
   };
   els.dayEditSave.disabled=true;
   setDayEditStatus('Saving meet changes...','');
@@ -3274,7 +3275,7 @@ function saveManagedMeetCalendarEdit(reason){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save meet changes.');
-    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,season:payload.season,seasonYear:payload.seasonYear,status:payload.status},result.data&&result.data.meet||{});
+    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,season:payload.season,seasonYear:payload.seasonYear,status:payload.status,groupName:els.editGroup.value},result.data&&result.data.meet||{});
     upsertCalendarMeet(saved);
     activeDay=meetCalendarDay(saved);
     setDayEditStatus('Meet updated.','success');
@@ -4039,7 +4040,8 @@ function saveManagedMeetCalendarEditFromAdd(reason,updates){
     sport:sportFromDay(Object.assign({},calendarEditDay,updates)),
     season:seasonFromDate(date)||meet.season||'Spring',
     seasonYear:String(isNaN(parsed.getTime())?new Date().getFullYear():parsed.getFullYear()),
-    status:updates.status||meet.status||calendarEditDay.status||'Scheduled'
+    status:updates.status||meet.status||calendarEditDay.status||'Scheduled',
+    groupName:updates.groupName||''
   };
   els.addDaySave.disabled=true;
   setAddDayStatus('Saving meet changes...','');
@@ -4047,7 +4049,7 @@ function saveManagedMeetCalendarEditFromAdd(reason,updates){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error||'Could not save meet changes.');
-    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,sport:payload.sport,season:payload.season,seasonYear:payload.seasonYear,status:payload.status},result.data&&result.data.meet||{});
+    var saved=Object.assign({},meet,{id:recordId,name:payload.meetName,date:payload.meetDate,sport:payload.sport,season:payload.season,seasonYear:payload.seasonYear,status:payload.status,groupName:payload.groupName},result.data&&result.data.meet||{});
     upsertCalendarMeet(saved);
     activeDay=meetCalendarDay(saved);
     renderOptions();
@@ -4123,7 +4125,8 @@ function createMeetForCalendarDay(plan,day){
       sport:sport,
       season:plan&&plan.season||seasonFromDate(day.date),
       seasonYear:plan&&plan.seasonYear||String(new Date(day.date+'T00:00:00').getFullYear()),
-      status:'Scheduled'
+      status:'Scheduled',
+      groupName:day.groupName||''
     })
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});

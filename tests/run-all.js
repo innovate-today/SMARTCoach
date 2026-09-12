@@ -3427,6 +3427,9 @@ function checkCalendarMeetSportPropagation() {
     "sport:normalizeSport(els.addDaySport.value)",
     "sport:day.sport,",
     "sport:sportFromDay(Object.assign({},calendarEditDay,updates))",
+    "groupName:day.groupName||''",
+    "groupName:updates.groupName||''",
+    "groupName:meet.groupName||''",
   ].forEach((text) => {
     if (!calendar.includes(text)) throw new Error(`Training Calendar meet sport propagation missing ${text}`);
   });
@@ -3435,12 +3438,18 @@ function checkCalendarMeetSportPropagation() {
     "String(day&&day.coachNotes||'').match(/^Sport:\\s*(Track|Cross Country)\\s*$/im)",
     "var daySport=calendarDaySport(day);",
     "sport:daySport||linkedMeet&&linkedMeet.sport||inferMeetSport",
+    "var groupNames=meetGroupNamesFromDay(meet);",
+    "var runners=meetRunnersForGroup(groupNames,log);",
+    "raceRosterGroups:groupNames,",
   ].forEach((text) => {
     if (!app.includes(text)) throw new Error(`Mobile calendar meet sport fallback missing ${text}`);
   });
   [
     "sport: sportValue(sport),",
     "if (sport) properties.sport = sportValue(sport);",
+    "groupName: clean(payload && payload.groupName),",
+    "groupName: hasGroupName ? clean(payload && payload.groupName) : existing.groupName,",
+    "groupName: clean(row.groupName),",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Meets API custom-object sport persistence missing ${text}`);
   });
