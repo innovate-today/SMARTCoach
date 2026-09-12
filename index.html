@@ -2397,7 +2397,9 @@ function mergeCalendarMeetDaysIntoLogs(days){
     var isGenerated=shared.indexOf('calmeet_')===0||shared.indexOf('meetrec_')===0;
     if(!isGenerated||log.archived||hasSavedMeetResults(log))return;
     var recordId=String(log.meetRecordId||log.trainingPlanDayLinkedMeetId||'');
-    if(!activeIds[shared]||(shared.indexOf('meetrec_')===0&&recordId&&activeMeetRecordIds[recordId])){
+    var isMissingCalendarMeet=shared.indexOf('calmeet_')===0&&!activeIds[shared];
+    var isManagedMeetDuplicate=shared.indexOf('meetrec_')===0&&recordId&&activeMeetRecordIds[recordId];
+    if(isMissingCalendarMeet||isManagedMeetDuplicate){
       log.archived=1;
       log.archivedAt=new Date().toISOString();
       changed=true;

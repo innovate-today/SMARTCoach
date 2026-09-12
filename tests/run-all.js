@@ -4117,7 +4117,9 @@ function checkMobileCalendarMeetDedup() {
     "raceRosterGroups:groupNames,",
     "var isGenerated=shared.indexOf('calmeet_')===0||shared.indexOf('meetrec_')===0;",
     "if(!isGenerated||log.archived||hasSavedMeetResults(log))return;",
-    "if(!activeIds[shared]||(shared.indexOf('meetrec_')===0&&recordId&&activeMeetRecordIds[recordId]))",
+    "var isMissingCalendarMeet=shared.indexOf('calmeet_')===0&&!activeIds[shared];",
+    "var isManagedMeetDuplicate=shared.indexOf('meetrec_')===0&&recordId&&activeMeetRecordIds[recordId];",
+    "if(isMissingCalendarMeet||isManagedMeetDuplicate)",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile calendar meet split missing ${text}`);
   });
