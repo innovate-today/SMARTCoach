@@ -83,6 +83,7 @@ const ATHLETE_FIELD_ALIASES = {
   smartcoachActive: ["smartcoach active", "smartcoach_active", "active athlete", "athlete active"],
   smartcoachAthleteId: ["smartcoach athlete id", "smartcoach_athlete_id", "athlete id", "smartcoach id"],
   gender: ["gender", "athlete gender", "student gender", "runner gender", "sex", "division", "gender program", "program gender", "boy girl", "boys girls", "boy/girl", "boys/girls", "girls/boys", "girl/boy", "b/g", "mf", "m/f", "male female", "male/female", "female male", "female/male", "gender identity"],
+  grade: ["graduation year", "graduation_year", "grad year", "grad yr", "class year", "class_year", "class of", "school year", "year", "class", "grade"],
 };
 
 module.exports = async function handler(req, res) {
@@ -902,16 +903,17 @@ async function listActiveAthletes({ accountKey, token, locationId }) {
 }
 
 async function listActiveAthletesUncached({ accountKey, token, locationId }) {
-  const [activeFieldIds, athleteIdFieldIds, genderFieldIds] = await Promise.all([
+  const [activeFieldIds, athleteIdFieldIds, genderFieldIds, gradeFieldIds] = await Promise.all([
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachActive }),
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.smartcoachAthleteId }),
     listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.gender }),
+    listContactFieldIds({ token, locationId, names: ATHLETE_FIELD_ALIASES.grade }),
   ]);
   const rosterDetails = await loadAthleteRosterDetails(accountKey);
   const contacts = await listLocationContacts({ token, locationId });
 
   return uniqueContacts(contacts)
-    .map((contact) => normalizeContact(contact, { activeFieldIds, athleteIdFieldIds, genderFieldIds }))
+    .map((contact) => normalizeContact(contact, { activeFieldIds, athleteIdFieldIds, genderFieldIds, gradeFieldIds }))
     .map((athlete) => mergeAthleteRosterDetail(athlete, rosterDetails))
     .filter((athlete) => athlete.smartcoachActive && !athlete.excludedSystemContact)
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -2248,6 +2250,7 @@ function normalizeContact(contact, options = {}) {
     id: contact.id,
     name: contactName(contact),
     gender: contactGender(contact, options.genderFieldIds),
+    grade: contactGrade(contact, options.gradeFieldIds),
     smartcoachActive,
     smartcoachActiveValue,
     smartcoachAthleteId,
@@ -2281,6 +2284,21 @@ function contactGender(contact, genderFieldIds = []) {
   return clean(
     contact && (contact.gender || contact.sex || contact.genderIdentity)
   ) || fieldValue || existingCustomFieldValueByName(contact, ATHLETE_FIELD_ALIASES.gender);
+}
+
+function contactGrade(contact, gradeFieldIds = []) {
+  return classYearFromTags(contact) || (gradeFieldIds || []).map((fieldId) => existingCustomFieldValue(contact, fieldId)).find(Boolean) || existingCustomFieldValueByName(contact, ATHLETE_FIELD_ALIASES.grade);
+}
+
+function classYearFromTags(contact) {
+  const tags = Array.isArray(contact && contact.tags) ? contact.tags : [];
+  const prefix = "smartcoach-class-";
+  const matches = tags.map(clean).filter((tag) => tag.toLowerCase().indexOf(prefix) === 0);
+  if (!matches.length) return "";
+  const years = matches.map((tag) => tag.slice(prefix.length).replace(/_/g, " ")).filter(Boolean);
+  const numericYears = years.map((year) => Number(year)).filter((year) => Number.isFinite(year));
+  if (numericYears.length) return String(Math.max(...numericYears));
+  return years[years.length - 1] || "";
 }
 
 function normalizeBest(record) {
