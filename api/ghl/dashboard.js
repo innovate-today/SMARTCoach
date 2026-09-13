@@ -147,6 +147,7 @@ module.exports = async function handler(req, res) {
     const trainingSyncs = buildRecentTrainingSyncs({ athletes, performanceRecords: allPerformanceRecords, performanceRecordIndex: recordIndex.trainingByAthlete });
     const recentMeetResults = dashboardRecentMeetResults(meetResults);
     const recentTrainingSyncs = trainingSyncs;
+    const voidedMeetResultKeys = dashboardVoidedMeetResultKeys(meetRecords);
     const payload = {
       success: true,
       generatedAt: new Date().toISOString(),
@@ -160,6 +161,7 @@ module.exports = async function handler(req, res) {
       },
       athletes: rows,
       recentMeetResults,
+      voidedMeetResultKeys,
       ...(includeMeetHistory ? { meetResults } : {}),
       ...(lightDashboard ? {} : { xcTop20: buildXcTop20(meetResults, athletes) }),
       recentTrainingSyncs,
@@ -2348,6 +2350,16 @@ function isRelayMeetResult(result) {
 function isVoidedMeetResult(record) {
   const note = prop(recordProperties(record), "coach_race_notes").toLowerCase();
   return note.indexOf("smartcoach status: voided") >= 0;
+}
+
+function dashboardVoidedMeetResultKeys(records) {
+  const keys = new Set();
+  (Array.isArray(records) ? records : []).forEach((record) => {
+    if (!isVoidedMeetResult(record)) return;
+    const props = recordProperties(record);
+    [record && record.id, prop(props, "source_record_id")].map(clean).filter(Boolean).forEach((key) => keys.add(key));
+  });
+  return Array.from(keys);
 }
 
 function normalizePerformanceRecord(record) {

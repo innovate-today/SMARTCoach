@@ -6,8 +6,9 @@ const RECORD_SCHEMA_KEY = "custom_objects.records";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
-const { mirrorTrainingRecords } = require("../../lib/account-registry");
+const { loadAccountScopedRecord, mirrorTrainingRecords, saveAccountScopedRecord } = require("../../lib/account-registry");
 const { displayNameCase } = require("../../lib/display-name");
+const DASHBOARD_SNAPSHOT_NAMESPACE = "dashboard-snapshot";
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
   meet_result: ["Khq47asHEk0tRieDVUBg"],
@@ -134,6 +135,12 @@ module.exports = async function handler(req, res) {
         properties: isMeetResult ? { coach_race_notes: nextNote } : { coach_note: nextNote },
       },
     });
+    if (isMeetResult) {
+      await pruneDashboardSnapshotMeetResult(accountKey, {
+        recordId: record.id,
+        sourceRecordId: sourceRecordId || prop(props, "source_record_id"),
+      }).catch(() => {});
+    }
 
     let trainingMirror = null;
     if (!isMeetResult) {
@@ -175,6 +182,31 @@ module.exports = async function handler(req, res) {
     res.status(error.statusCode || 500).json({ error: error.message || "Correction failed." });
   }
 };
+
+async function pruneDashboardSnapshotMeetResult(accountKey, identifiers) {
+  const recordId = clean(identifiers && identifiers.recordId);
+  const sourceRecordId = clean(identifiers && identifiers.sourceRecordId);
+  if (!accountKey || (!recordId && !sourceRecordId)) return { saved: false, reason: "No meet result identifier." };
+  const scoped = await loadAccountScopedRecord(accountKey, DASHBOARD_SNAPSHOT_NAMESPACE).catch(() => null);
+  const record = scoped && scoped.found && scoped.record;
+  const snapshot = record && record.snapshot;
+  if (!snapshot || typeof snapshot !== "object") return { saved: false, reason: "Dashboard snapshot not found." };
+  const keep = (row) => {
+    const rowRecordId = clean(row && row.recordId);
+    const rowSourceRecordId = clean(row && row.sourceRecordId);
+    return !((recordId && rowRecordId === recordId) || (sourceRecordId && rowSourceRecordId === sourceRecordId));
+  };
+  const nextSnapshot = {
+    ...snapshot,
+    recentMeetResults: (Array.isArray(snapshot.recentMeetResults) ? snapshot.recentMeetResults : []).filter(keep),
+    meetResults: (Array.isArray(snapshot.meetResults) ? snapshot.meetResults : []).filter(keep),
+    snapshotSavedAt: new Date().toISOString(),
+  };
+  return saveAccountScopedRecord(accountKey, DASHBOARD_SNAPSHOT_NAMESPACE, {
+    savedAt: nextSnapshot.snapshotSavedAt,
+    snapshot: nextSnapshot,
+  });
+}
 
 async function editMeetResult({ token, locationId, contactId, athleteName, reason, record, props, payload }) {
   const updates = payload.updates && typeof payload.updates === "object" ? payload.updates : {};

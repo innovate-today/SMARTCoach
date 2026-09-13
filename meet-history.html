@@ -947,6 +947,19 @@ function mergeMeetHistoryRows(primaryRows,recentRows){
   (Array.isArray(recentRows)?recentRows:[]).forEach(add);
   return merged;
 }
+function filterVoidedSnapshotMeetRows(rows,voidedKeys){
+  var blocked={};
+  (Array.isArray(voidedKeys)?voidedKeys:[]).forEach(function(key){
+    key=String(key||'').trim();
+    if(key)blocked[key]=true;
+  });
+  if(!Object.keys(blocked).length)return rows;
+  return (Array.isArray(rows)?rows:[]).filter(function(row){
+    var recordId=String(row&&row.recordId||'').trim();
+    var sourceRecordId=String(row&&row.sourceRecordId||'').trim();
+    return !((recordId&&blocked[recordId])||(sourceRecordId&&blocked[sourceRecordId]));
+  });
+}
 function normalizeDashboardAthletes(rows){
   return (Array.isArray(rows)?rows:[]).filter(function(row){
     return row&&row.name&&/active|tagged/i.test(row.status||'Active');
@@ -3178,7 +3191,7 @@ function loadMeetHistory(){
     }
     if(!dashboard.ok)throw new Error(dashboard.data&&dashboard.data.error||'Meet history failed to load.');
     dashboardAthletes=normalizeDashboardAthletes(dashboard.data.athletes||[]);
-    var snapshotRows=snapshot&&snapshot.ok&&snapshot.data? snapshot.data.recentMeetResults||[]:[];
+    var snapshotRows=snapshot&&snapshot.ok&&snapshot.data? filterVoidedSnapshotMeetRows(snapshot.data.recentMeetResults||[],dashboard.data.voidedMeetResultKeys||[]):[];
     meetResults=normalizeMeetHistoryRows(mergeMeetHistoryRows(mergeMeetHistoryRows(dashboard.data.meetResults||[],dashboard.data.recentMeetResults||[]),snapshotRows));
     scheduledMeets=normalizeMeetHistoryRows((results[1].data&&results[1].data.meets)||[]);
     invalidateMeetHistoryCache();
