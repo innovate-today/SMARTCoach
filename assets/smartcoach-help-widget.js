@@ -14,7 +14,7 @@
     'div[class*="leadconnector"]',
     'div[class*="chat-widget"]'
   ].join(',') + '{z-index:2147483647!important;}' +
-    '.smartcoach-chat-badge-raised{bottom:92px!important;right:18px!important;top:auto!important;z-index:2147483646!important}' +
+    '.smartcoach-chat-badge-under{bottom:18px!important;right:18px!important;top:auto!important;z-index:2147482500!important}' +
     '.smartcoach-livechat-btn{position:fixed;right:18px;bottom:70px;z-index:2147482999;border:0;border-radius:999px;background:#155EEF;color:#fff;font:900 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:12px 14px;box-shadow:0 18px 34px rgba(21,94,239,.25);cursor:pointer}' +
     '.smartcoach-livechat-btn:hover{background:#1747b9}' +
     '.smartcoach-livechat-btn:disabled{opacity:.75;cursor:wait}' +
@@ -51,7 +51,7 @@
     Array.prototype.slice.call(document.querySelectorAll('iframe[src*="leadconnectorhq.com"],iframe[src*="chat-widget"],div[id*="lc_chat"],div[class*="lc-"],div[class*="leadconnector"],div[class*="chat-widget"]')).forEach(function(node){
       node.style.zIndex = '2147483647';
     });
-    raiseSmartCoachChatBadge();
+    tuckSmartCoachChatBadge();
   }
   function fixedBadgeContainer(node){
     var current=node;
@@ -72,15 +72,17 @@
     if(!rect.width||!rect.height)return false;
     return rect.right>window.innerWidth-260&&rect.bottom>window.innerHeight-140&&rect.width<260&&rect.height<90;
   }
-  function raiseSmartCoachChatBadge(){
+  function tuckSmartCoachChatBadge(){
     Array.prototype.slice.call(document.querySelectorAll('body *')).some(function(node){
       if(!isBottomRightBadge(node))return false;
       var container=fixedBadgeContainer(node);
       if(!container)return false;
-      container.classList.add('smartcoach-chat-badge-raised');
-      container.style.setProperty('bottom','92px','important');
+      container.classList.remove('smartcoach-chat-badge-raised');
+      container.classList.add('smartcoach-chat-badge-under');
+      container.style.setProperty('bottom','18px','important');
       container.style.setProperty('right','18px','important');
       container.style.setProperty('top','auto','important');
+      container.style.setProperty('z-index','2147482500','important');
       return true;
     });
   }
@@ -88,11 +90,11 @@
   var liftWidgetTimer=null;
   function startChatWidgetLift(){
     if(window.MutationObserver&&!chatBadgeObserver){
-      chatBadgeObserver=new MutationObserver(function(){raiseSmartCoachChatBadge();});
+      chatBadgeObserver=new MutationObserver(function(){tuckSmartCoachChatBadge();});
       if(document.body)chatBadgeObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
       else document.addEventListener('DOMContentLoaded',function(){chatBadgeObserver.observe(document.body,{childList:true,subtree:true,characterData:true});});
     }
-    window.addEventListener('resize',raiseSmartCoachChatBadge);
+    window.addEventListener('resize',tuckSmartCoachChatBadge);
     if(!liftWidgetTimer)liftWidgetTimer=setInterval(liftWidget,1000);
     setTimeout(liftWidget,300);
   }
