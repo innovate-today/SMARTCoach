@@ -1475,7 +1475,7 @@ function maybePromptForCoachAccess(data){
 function save(){
   try{
     var s=logs.map(function(l){
-      return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:l.type||'training',sport:l.sport||'',sportMode:raceSportMode(l),season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',raceDivision:l.raceDivision||'',raceRosterGroups:Array.isArray(l.raceRosterGroups)?l.raceRosterGroups:[],meetSyncedRaceKeys:Array.isArray(l.meetSyncedRaceKeys)?l.meetSyncedRaceKeys:[],trainingRaceManualOrder:l.trainingRaceManualOrder?1:0,relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),partnerTiming:normalizePartnerTimingState(l.partnerTiming,l),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanAuto:l.trainingPlanAuto||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:l.cfg,runners:l.runners.map(function(r){
+      return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:l.type||'training',sport:l.sport||'',sportMode:raceSportMode(l),season:l.season||currentSeason().season,seasonYear:l.seasonYear||currentSeason().year,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',raceDivision:l.raceDivision||'',raceRosterGroups:Array.isArray(l.raceRosterGroups)?l.raceRosterGroups:[],raceRosterManual:l.raceRosterManual?1:0,meetSyncedRaceKeys:Array.isArray(l.meetSyncedRaceKeys)?l.meetSyncedRaceKeys:[],trainingRaceManualOrder:l.trainingRaceManualOrder?1:0,relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),partnerTiming:normalizePartnerTimingState(l.partnerTiming,l),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanAuto:l.trainingPlanAuto||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:l.cfg,runners:l.runners.map(function(r){
         return{id:r.id,name:r.name,note:r.note||'',hook:r.hook||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanAuto:r.trainingPlanAuto||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayType:r.trainingPlanDayType||'',trainingPlanDayDate:r.trainingPlanDayDate||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:r.trainingPlanDayLinkedMeetId||'',saved:r.saved||[]};
       })};
     });
@@ -1630,7 +1630,7 @@ function load(){
       var raw=JSON.parse(d);
       logs=raw.map(function(l){
         var meta=normalizeGroupMeta(l);
-        return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:meta.type,sport:meta.sport,sportMode:meta.sportMode,season:meta.season,seasonYear:meta.seasonYear,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,raceDivision:meta.raceDivision,raceRosterGroups:meta.raceRosterGroups,meetSyncedRaceKeys:Array.isArray(l.meetSyncedRaceKeys)?l.meetSyncedRaceKeys:[],trainingRaceManualOrder:l.trainingRaceManualOrder?1:0,relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),partnerTiming:normalizePartnerTimingState(l.partnerTiming,l),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanAuto:l.trainingPlanAuto||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:normalizeCfg(l.cfg),
+        return{id:l.id,sharedGroupId:l.sharedGroupId||'',name:l.name,type:meta.type,sport:meta.sport,sportMode:meta.sportMode,season:meta.season,seasonYear:meta.seasonYear,archived:l.archived?1:0,archivedAt:l.archivedAt||'',meetName:meta.meetName,meetDate:meta.meetDate,meetRecordId:meta.meetRecordId,eventName:meta.eventName,raceDivision:meta.raceDivision,raceRosterGroups:meta.raceRosterGroups,raceRosterManual:meta.raceRosterManual,meetSyncedRaceKeys:Array.isArray(l.meetSyncedRaceKeys)?l.meetSyncedRaceKeys:[],trainingRaceManualOrder:l.trainingRaceManualOrder?1:0,relay:normalizeRelayState(l.relay),field:normalizeFieldState(l.field),partnerTiming:normalizePartnerTimingState(l.partnerTiming,l),attendance:normalizeAttendanceState(l.attendance),trainingPlanId:l.trainingPlanId||'',trainingPlanSourceId:l.trainingPlanSourceId||'',trainingPlanTitle:l.trainingPlanTitle||'',trainingPlanDescription:l.trainingPlanDescription||'',trainingPlanSeason:l.trainingPlanSeason||'',trainingPlanPhase:l.trainingPlanPhase||'',trainingPlanAuto:l.trainingPlanAuto||'',trainingPlanDayId:l.trainingPlanDayId||'',trainingPlanDaySourceId:l.trainingPlanDaySourceId||'',trainingPlanDayTitle:l.trainingPlanDayTitle||'',trainingPlanDayType:l.trainingPlanDayType||'',trainingPlanDayDate:l.trainingPlanDayDate||'',trainingPlanDayWorkoutType:l.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:l.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:l.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:l.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:l.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:l.trainingPlanDayLinkedMeetId||'',cfg:normalizeCfg(l.cfg),
           runners:l.runners.map(function(r){
             return{id:r.id,name:r.name,note:r.note||'',hook:r.hook||'',contactId:r.contactId||'',smartcoachAthleteId:r.smartcoachAthleteId||'',trainingPlanId:r.trainingPlanId||'',trainingPlanSourceId:r.trainingPlanSourceId||'',trainingPlanTitle:r.trainingPlanTitle||'',trainingPlanDescription:r.trainingPlanDescription||'',trainingPlanSeason:r.trainingPlanSeason||'',trainingPlanPhase:r.trainingPlanPhase||'',trainingPlanAuto:r.trainingPlanAuto||'',trainingPlanDayId:r.trainingPlanDayId||'',trainingPlanDaySourceId:r.trainingPlanDaySourceId||'',trainingPlanDayTitle:r.trainingPlanDayTitle||'',trainingPlanDayType:r.trainingPlanDayType||'',trainingPlanDayDate:r.trainingPlanDayDate||'',trainingPlanDayWorkoutType:r.trainingPlanDayWorkoutType||'',trainingPlanDayEnergySystem:r.trainingPlanDayEnergySystem||'',trainingPlanDayTargetSplits:r.trainingPlanDayTargetSplits||'',trainingPlanDayDetails:r.trainingPlanDayDetails||'',trainingPlanDayPlannedVolume:r.trainingPlanDayPlannedVolume||'',trainingPlanDayLinkedMeetId:r.trainingPlanDayLinkedMeetId||'',saved:r.saved||[],
               on:false,el:0,t0:0,le:0,lt:0,laps:[]};
@@ -1670,7 +1670,7 @@ function normalizeGroupMeta(l){
   var cs=currentSeason();
   var type=l.type||'training';
   var sport=canonicalMobileSport(l.sport)||l.sport||'';
-  return{type:type,sport:sport,sportMode:type==='meet'?raceSportMode(Object.assign({},l,{type:type,sport:sport})):'',season:l.season||cs.season,seasonYear:Number(l.seasonYear)||cs.year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',raceDivision:l.raceDivision||l.division||'',raceRosterGroups:Array.isArray(l.raceRosterGroups)?l.raceRosterGroups:[]};
+  return{type:type,sport:sport,sportMode:type==='meet'?raceSportMode(Object.assign({},l,{type:type,sport:sport})):'',season:l.season||cs.season,seasonYear:Number(l.seasonYear)||cs.year,meetName:l.meetName||'',meetDate:l.meetDate||'',meetRecordId:l.meetRecordId||'',eventName:l.eventName||'',raceDivision:l.raceDivision||l.division||'',raceRosterGroups:Array.isArray(l.raceRosterGroups)?l.raceRosterGroups:[],raceRosterManual:l.raceRosterManual?1:0};
 }
 function isCurrentGroup(l){
   var cs=currentSeason();
@@ -2398,6 +2398,7 @@ function mergeCalendarMeetDaysIntoLogs(days){
     }
     activeIds[id]=true;
     if(linkedRecordId)activeMeetRecordIds[linkedRecordId]=true;
+    var manualRoster=!!log.raceRosterManual;
     var next={
       sharedGroupId:log.sharedGroupId||id,
       name:linkedMeet&&linkedMeet.name||day.title||day.workoutType||'Meet',
@@ -2411,7 +2412,7 @@ function mergeCalendarMeetDaysIntoLogs(days){
       meetRecordId:linkedMeet&&linkedMeet.id||day.linkedMeetId||'',
       eventName:day.workoutType||day.targetSplits||'Race',
       raceDivision:log.raceDivision||'',
-      raceRosterGroups:groupNames,
+      raceRosterGroups:manualRoster&&Array.isArray(log.raceRosterGroups)?log.raceRosterGroups:groupNames,
       trainingPlanDayId:day.id||day.sourceRecordId||'',
       trainingPlanDaySourceId:day.sourceRecordId||'',
       trainingPlanDayTitle:day.title||'',
@@ -2430,9 +2431,9 @@ function mergeCalendarMeetDaysIntoLogs(days){
       }else if(String(log[key]||'')!==String(next[key]||'')){log[key]=next[key];changed=true;}
     });
     if(applyMeetDayCfg(log))changed=true;
-    var runners=meetRunnersForGroup(groupNames,log);
-    if(runners.length&&runners.length!==log.runners.length){log.runners=runners;changed=true;}
-    else if(runners.length){
+    var runners=manualRoster?[]:meetRunnersForGroup(groupNames,log);
+    if(!manualRoster&&runners.length&&runners.length!==log.runners.length){log.runners=runners;changed=true;}
+    else if(!manualRoster&&runners.length){
       log.runners=runners;
     }
   });
@@ -2886,7 +2887,8 @@ function reconcileSmartTrakMeetsIntoLogs(){
     }
     var dateSeason=seasonForDate(meet.date);
     var groupNames=meetGroupNamesFromDay(meet);
-    var runners=meetRunnersForGroup(groupNames,log);
+    var manualRoster=!!log.raceRosterManual;
+    var runners=manualRoster?[]:meetRunnersForGroup(groupNames,log);
     var next={
       sharedGroupId:log.sharedGroupId||('meetrec_'+meet.id),
       name:meet.name,
@@ -2900,9 +2902,9 @@ function reconcileSmartTrakMeetsIntoLogs(){
       meetRecordId:meet.id,
       eventName:log.eventName&&!isBadMeetLabel(log.eventName)?log.eventName:'Race',
       raceDivision:log.raceDivision||'',
-      raceRosterGroups:groupNames,
+      raceRosterGroups:manualRoster&&Array.isArray(log.raceRosterGroups)?log.raceRosterGroups:groupNames,
       cfg:log.cfg||defaultCfg(),
-      runners:runners.length?runners:log.runners||[]
+      runners:manualRoster?log.runners||[]:(runners.length?runners:log.runners||[])
     };
     Object.keys(next).forEach(function(key){
       if(key==='cfg'||key==='runners')return;
@@ -3169,6 +3171,29 @@ function meetGroupDivisionLabel(group){
 function meetRosterGroupLabel(group){
   return (Array.isArray(group&&group.raceRosterGroups)?group.raceRosterGroups:[]).filter(Boolean).join(', ');
 }
+function raceRosterGroupOptions(){
+  var seen={},out=[];
+  function add(name){
+    name=String(name||'').trim();
+    var key=name.toLowerCase();
+    if(name&&!seen[key]){seen[key]=true;out.push(name);}
+  }
+  logs.filter(function(item){return (item.type||'training')==='training'&&!item.archived;}).forEach(function(item){add(item.name);});
+  SG.filter(function(item){return (item.type||'training')==='training'&&!item.archived;}).forEach(function(item){add(item.name);});
+  return out.sort(function(a,b){return a.localeCompare(b);});
+}
+function raceRosterGroupSetupHtml(){
+  if(!isCrossCountryRaceMode())return'';
+  var options=raceRosterGroupOptions();
+  var selected=(Array.isArray(CL.raceRosterGroups)?CL.raceRosterGroups:[])[0]||'';
+  var select=options.length?'<select id="xc-roster-group-input" class="sinp" style="max-width:210px;flex:0 0 210px;font-size:15px;font-weight:800;padding:6px 8px"><option value="">Choose group</option>'+options.map(function(name){return '<option value="'+ex(name)+'" '+(name===selected?'selected':'')+'>'+ex(name)+'</option>';}).join('')+'</select>':'<div class="sinp" style="border:none;background:transparent;color:#777;font-weight:700">No groups loaded</div>';
+  var helper=selected?selected+' selected · '+(CL.runners||[]).length+' athlete'+((CL.runners||[]).length===1?'':'s'):'Choose the athletes racing this division.';
+  return '<div class="erow" style="min-height:58px;padding-top:7px;padding-bottom:7px">'+
+    '<span class="elbl"><b>Athletes</b><br><small style="color:#777">'+ex(helper)+'</small></span>'+
+    select+
+    '<button type="button" class="sbtn" style="margin-left:8px;padding:7px 9px;font-size:12px;white-space:nowrap" onclick="applyXCRaceRosterGroup()">Load</button>'+
+  '</div>';
+}
 function meetDivisionOptions(){
   return ['Open','Varsity Boys','Varsity Girls','JV Boys','JV Girls','Freshman Boys','Freshman Girls','Middle School Boys','Middle School Girls'];
 }
@@ -3181,12 +3206,33 @@ function meetGroupSetupHtml(forceTools){
       '<label class="elbl" for="meet-division-input"><b>Division</b></label>'+
       '<select id="meet-division-input" class="sinp" style="max-width:210px;flex:0 0 210px;font-size:15px;font-weight:800;padding:6px 8px" onchange="setMeetGroupDivision(this.value)">'+meetDivisionOptions().map(function(label){var value=label==='Open'?'':label;return '<option value="'+ex(value)+'" '+(value===division?'selected':'')+'>'+ex(label)+'</option>';}).join('')+'</select>'+
     '</div>'+
+    (forceTools?raceRosterGroupSetupHtml():'')+
   '</div>';
 }
 function setMeetGroupDivision(value){
   if(!CL||CL.type!=='meet')return;
   CL.raceDivision=String(value||'').trim();
   save();
+}
+function applyXCRaceRosterGroup(){
+  if(!isCrossCountryRaceMode())return;
+  var input=document.getElementById('xc-roster-group-input');
+  var name=String(input&&input.value||'').trim();
+  if(!name){alert('Choose a group first.');return;}
+  var runners=meetRunnersForGroup([name],CL);
+  if(!runners.length){alert('No active athletes found in '+name+'. Refresh SMART Trak data and try again.');return;}
+  var hasCurrent=(CL.runners||[]).length>0;
+  var hasWork=(CL.runners||[]).some(function(r){return r.on||r.el||(r.laps||[]).length||(r.saved||[]).length;});
+  var message=hasWork?'Replace current race athletes with '+name+'? Matching athletes keep their saved/timed data; removed athletes leave this race.':'Load '+runners.length+' athlete'+(runners.length===1?'':'s')+' from '+name+' into this race?';
+  if(hasCurrent&&!confirm(message))return;
+  CL.raceRosterGroups=[name];
+  CL.raceRosterManual=1;
+  CL.runners=runners;
+  CL.trainingRaceManualOrder=0;
+  CL.trainingRaceManualOrderSession=0;
+  save();
+  rr();
+  openXCTools();
 }
 function selectedMeetOption(){
   var sel=document.getElementById('mg-meet-select');
