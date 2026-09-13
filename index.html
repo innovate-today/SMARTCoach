@@ -725,7 +725,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],activeId:'',mode:'field'}, PAST_RESULTS={rows:[],loaded:false,loading:false,error:'',accountKey:'',query:'',eventOnly:true}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, AR_PROMISE=null, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],activeId:'',mode:'field'}, PAST_RESULTS={rows:[],loaded:false,loading:false,error:'',accountKey:'',query:'',eventOnly:true}, XC_TOOLS_SETUP_OPENED={}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, AR_PROMISE=null, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
 
 function smartCoachAccountKey(){
   try{
@@ -3079,6 +3079,7 @@ function oGroup(id){
     return;
   }
   go('s-group');
+  if(shouldOpenXCToolsSetup())setTimeout(openXCTools,60);
   if(partnerTimingEnabled())loadPartnerTimingSession();
 }
 function openTrainingModePicker(){
@@ -5507,6 +5508,23 @@ function shareAll(){
   oShare(t);
 }
 
+function currentMeetSetupKey(){
+  return String(CL&&CL.sharedGroupId||CL&&CL.meetRecordId||CL&&CL.id||'');
+}
+function shouldOpenXCToolsSetup(){
+  if(!isCrossCountryRaceMode()||(CL.runners||[]).length)return false;
+  var key=currentMeetSetupKey();
+  if(key&&XC_TOOLS_SETUP_OPENED[key])return false;
+  if(key)XC_TOOLS_SETUP_OPENED[key]=1;
+  return true;
+}
+function emptyXCRaceSetupHtml(){
+  return '<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">'+
+    '<b style="display:block;color:#111;margin-bottom:6px">Set up this XC race</b>'+
+    '<div style="margin-bottom:12px">Choose division and athletes in XC Tools.</div>'+
+    '<button type="button" class="sbtn" onclick="openXCTools()" style="padding:10px 14px;font-size:15px">Open XC Tools</button>'+
+  '</div>';
+}
 function mkR(){
   return{id:rid++,name:'Runner '+((CL?CL.runners.length:0)+1),note:'',contactId:'',smartcoachAthleteId:'',
     trainingPlanId:'',trainingPlanSourceId:'',trainingPlanTitle:'',trainingPlanDescription:'',trainingPlanSeason:'',trainingPlanPhase:'',trainingPlanDayId:'',trainingPlanDaySourceId:'',trainingPlanDayTitle:'',trainingPlanDayWorkoutType:'',trainingPlanDayEnergySystem:'',trainingPlanDayTargetSplits:'',trainingPlanDayDetails:'',trainingPlanDayPlannedVolume:'',
@@ -5524,7 +5542,7 @@ function rr(){
   var meetSetup=meetGroupSetupHtml();
   var syncSummary=groupSyncSummaryHtml();
   if(!CL.runners.length){
-    el.innerHTML=partnerClock+meetSetup+syncSummary+'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>';
+    el.innerHTML=partnerClock+meetSetup+syncSummary+(isCrossCountryRaceMode()?emptyXCRaceSetupHtml():'<div style="padding:20px;text-align:center;color:#8e8e93;font-size:16px">Tap + to add runners</div>');
   }else if(meetSetup){
     el.innerHTML=partnerClock+meetSetup+syncSummary+trainingRaceDisplayRunners().map(function(r){return rHTML(r);}).join('');
   }else{
