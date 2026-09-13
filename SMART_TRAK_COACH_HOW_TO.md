@@ -69,6 +69,8 @@ Use the season filter to separate current work from older work. Saved **Cross Co
 
 When a completed workout was saved under the wrong season, click **Edit** on that workout and change **Season**. Choose **Cross Country** for cross country season work. Choose **Track** for track work, and SMART Trak will keep it in the track season for the workout date.
 
+Use **Fitness Review** on the Dashboard when you want to check whether recent race results should become each athlete's current fitness mark for training paces. The review compares the current mark, latest race, projected result, and previous race. Use **Use Latest** when the latest race is a fair current-fitness result. Use **Restore Previous** when the latest race should not guide training paces.
+
 When correcting **Completed Volume**, enter the amount and choose the unit: miles, kilometers, or meters. SMART Trak will ask for the unit before saving so training volume can calculate correctly.
 
 Older completed-workout rows that were saved with only a number are treated as miles on the Dashboard and will open with **Miles** selected when corrected.

@@ -874,12 +874,14 @@ function checkCurrentFitnessCleanupTool() {
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   [
-    'id="fitnessCleanupBtn" class="modal-action admin-only"',
+    'id="fitnessCleanupBtn" class="modal-action" type="button">Fitness Review</button>',
     'id="fitnessCleanupModal" class="modal" hidden',
+    "Current Fitness Review",
+    "Review each athlete's current fitness mark against their latest race before deciding which result should guide training paces.",
+    "Use this when a race result should become the athlete's current fitness, or when the previous mark should stay in place.",
     "fitness-cleanup-panel{width:min(1320px,calc(100vw - 28px))",
     'class="tablewrap recentwrap fitness-cleanup-tablewrap"',
     "function openFitnessCleanup()",
-    "Owner/admin access is required for the current fitness cleanup tool.",
     "function fitnessCleanupReviewRows()",
     "function fitnessCleanupSameAthlete(meet,athlete)",
     "function fitnessCleanupRecommendation(current,latest,previous)",
@@ -902,6 +904,12 @@ function checkCurrentFitnessCleanupTool() {
     "return loadDashboard();",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`current fitness cleanup tool missing ${text}`);
+  });
+  [
+    'id="fitnessCleanupBtn" class="modal-action admin-only"',
+    "Owner/admin access is required for the current fitness cleanup tool.",
+  ].forEach((text) => {
+    if (dashboard.includes(text)) throw new Error(`current fitness review should no longer be admin-only: ${text}`);
   });
   [
     "recordId: best.recordId || \"\"",

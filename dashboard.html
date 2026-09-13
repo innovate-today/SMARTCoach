@@ -342,7 +342,7 @@ tr:last-child td{border-bottom:0}
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="shareMilesBoardBtn" class="modal-action" type="button">Miles Trak</button>
         <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
-        <button id="fitnessCleanupBtn" class="modal-action admin-only" type="button" hidden>Fitness Review</button>
+        <button id="fitnessCleanupBtn" class="modal-action" type="button">Fitness Review</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
       </div>
@@ -649,12 +649,12 @@ tr:last-child td{border-bottom:0}
 <div id="fitnessCleanupModal" class="modal" hidden>
   <section class="modalpanel fitness-cleanup-panel" role="dialog" aria-modal="true" aria-labelledby="fitnessCleanupTitle">
     <div class="modalhead">
-      <h2 id="fitnessCleanupTitle">Current Fitness Cleanup</h2>
+      <h2 id="fitnessCleanupTitle">Current Fitness Review</h2>
       <button id="fitnessCleanupClose" class="secondary" type="button">Close</button>
     </div>
     <div class="modalbody">
-      <p class="whats-new-intro">Temporary owner/admin review tool for checking whether the latest race should be used for training paces.</p>
-      <div id="fitnessCleanupStatus" class="modalstatus">Review each athlete, then restore the previous race or use the latest race when needed.</div>
+      <p class="whats-new-intro">Review each athlete's current fitness mark against their latest race before deciding which result should guide training paces.</p>
+      <div id="fitnessCleanupStatus" class="modalstatus">Use this when a race result should become the athlete's current fitness, or when the previous mark should stay in place.</div>
       <section class="tablewrap recentwrap fitness-cleanup-tablewrap" style="margin-top:10px">
         <table>
           <thead>
@@ -5976,10 +5976,6 @@ function activeDashboardAthletes(){
 }
 
 function openFitnessCleanup(){
-  if(accountStatus&&accountStatus.staffAdminAllowed===false){
-    alert('Owner/admin access is required for the current fitness cleanup tool.');
-    return;
-  }
   renderFitnessCleanupRows();
   els.fitnessCleanupModal.hidden=false;
   els.fitnessCleanupClose.focus();
