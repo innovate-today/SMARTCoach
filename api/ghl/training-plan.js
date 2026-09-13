@@ -4,6 +4,7 @@ const TRAINING_PLAN_SCHEMA_KEY = "custom_objects.training_plans";
 const TRAINING_PLAN_DAY_SCHEMA_KEY = "custom_objects.training_plan_days";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { displayNameCase } = require("../../lib/display-name");
 const FIELD_IDS = {
   training_plan: ["TZbFrs7XAmFTbCUR7Bht"],
   athlete_contact: ["YMBapmRRsxxPa4PnDUvP"],
@@ -233,7 +234,7 @@ function normalizeTrainingPlanRecord(record) {
     phase: labelValue(prop(props, "phase")),
     event: prop(props, "anchor_event"),
     contactId: prop(props, "athlete_contact"),
-    athleteName: prop(props, "athlete_name_snapshot"),
+    athleteName: displayNameCase(prop(props, "athlete_name_snapshot")),
     planDate: prop(props, "plan_date"),
     startDate: prop(props, "plan_start_date"),
     endDate: prop(props, "plan_end_date"),
@@ -320,7 +321,7 @@ async function updateTrainingPlanDay({ token, locationId, payload }) {
     date: dateOnly(updates.date),
     day_type: updates.dayType ? dayTypeValue(updates.dayType) : "",
     group_name: clean(updates.groupName),
-    athlete_name_snapshot: clean(updates.athleteName),
+    athlete_name_snapshot: displayNameCase(updates.athleteName),
     workout_title: clean(updates.title),
     workout_details: clean(updates.details),
     workout_type: updates.workoutType ? workoutTypeValue(updates.workoutType) : "",
@@ -609,7 +610,7 @@ function normalizeTrainingPlanDayRecord(record) {
     dayType: labelValue(dayProp(props, "day_type")),
     groupName: dayProp(props, "group_name"),
     athleteContact: dayProp(props, "athlete_contact"),
-    athleteName: dayProp(props, "athlete_name_snapshot"),
+    athleteName: displayNameCase(dayProp(props, "athlete_name_snapshot")),
     title: dayProp(props, "workout_title") || dayProp(props, "training_plan_days"),
     details: dayProp(props, "workout_details"),
     workoutType: labelValue(dayProp(props, "workout_type")),
@@ -702,7 +703,7 @@ function buildTrainingPlanProperties(plan) {
   return compactProperties({
     training_plan: title,
     athlete_contact: plan.contactId,
-    athlete_name_snapshot: plan.athleteName,
+    athlete_name_snapshot: displayNameCase(plan.athleteName),
     plan_scope: planScopeValue(plan.planScope),
     plan_date: plan.planDate,
     season: optionValue(plan.season),
@@ -971,7 +972,7 @@ function buildTrainingPlanDayProperties(plan, day, planRecord) {
     day_type: dayTypeValue(day.dayType),
     group_name: clean(day.groupName) || plan.assignedGroup,
     athlete_contact: clean(day.athleteContact) || plan.contactId,
-    athlete_name_snapshot: clean(day.athleteName) || plan.athleteName,
+    athlete_name_snapshot: displayNameCase(day.athleteName) || displayNameCase(plan.athleteName),
     workout_title: title,
     workout_details: clean(day.workoutDetails || day.details),
     workout_type: workoutTypeValue(workoutType),
@@ -1018,7 +1019,7 @@ function normalizePlanDays(days) {
     dayType: clean(day && (day.dayType || day.type)),
     groupName: clean(day && day.groupName),
     athleteContact: clean(day && day.athleteContact),
-    athleteName: clean(day && day.athleteName),
+    athleteName: displayNameCase(day && day.athleteName),
     workoutTitle: clean(day && (day.workoutTitle || day.title)) || `Training Day ${index + 1}`,
     workoutDetails: clean(day && (day.workoutDetails || day.details)),
     workoutType: clean(day && day.workoutType),

@@ -10,6 +10,7 @@ const ATHLETE_FIELD_ALIASES = {
 };
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { displayNameCase } = require("../../lib/display-name");
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -198,7 +199,7 @@ function normalizeMeetResult(payload) {
   const resultDisplay = clean(payload.resultDisplay) || (resultType === "field" && fieldAttemptsShowNoLegalMark(payload.event, fieldAttempts) ? fieldNoMarkResult(payload.event) : "");
   const relayType = clean(payload.relayType || payload.event);
   const relayTeamName = clean(payload.relayTeamName);
-  const athleteName = resultType === "relay" ? clean(payload.athleteName || relayTeamName || `${relayType || "Relay"} Team`) : clean(payload.athleteName);
+  const athleteName = resultType === "relay" ? clean(payload.athleteName || relayTeamName || `${relayType || "Relay"} Team`) : displayNameCase(payload.athleteName);
 
   if (resultType !== "relay" && !athleteName && !clean(payload.contactId)) throw httpError(400, "Athlete is required.");
   if (!clean(payload.meetName)) throw httpError(400, "Meet name is required.");
@@ -494,7 +495,7 @@ function normalizeHistoryImportRow(row) {
   const season = historyImportSeason(rawSeason, sport);
   return {
     rowNumber: Number(row && row.rowNumber) || 0,
-    athleteName: clean(row && (row.athleteName || row.athlete)),
+    athleteName: displayNameCase(row && (row.athleteName || row.athlete)),
     athleteGender: clean(row && (row.athleteGender || row.gender)),
     raceDivision: clean(row && (row.raceDivision || row.raceGroup || row.raceDayGroup)),
     grade: clean(row && row.grade),
@@ -566,7 +567,7 @@ function normalizeHistoryImportCreatedRow(record) {
   return {
     recordId: clean(record.id),
     sourceRecordId: props.source_record_id || "",
-    athleteName: props.athlete_name_snapshot || "",
+    athleteName: displayNameCase(props.athlete_name_snapshot),
     athleteGender: noteValue(notes, "Gender"),
     raceDivision: noteValue(notes, "Division"),
     meetName: props.meet_name || "",
@@ -1176,7 +1177,7 @@ function existingCustomFieldValue(contact, fieldId) {
 }
 
 function contactName(contact) {
-  return clean(contact.name) || `${clean(contact.firstName)} ${clean(contact.lastName)}`.trim();
+  return displayNameCase(clean(contact.name) || `${clean(contact.firstName)} ${clean(contact.lastName)}`.trim());
 }
 
 function contactGender(contact) {

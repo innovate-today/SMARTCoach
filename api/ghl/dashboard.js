@@ -22,6 +22,7 @@ const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { loadAccountScopedRecord, loadTrainingMirror, loadAttendanceRecords } = require("../../lib/account-registry");
 const { saveAccountScopedRecord } = require("../../lib/account-registry");
+const { displayNameCase } = require("../../lib/display-name");
 const dashboardReadCache = new Map();
 
 const FIELD_IDS = {
@@ -379,7 +380,7 @@ async function publicXcProgressionBoard(req, res) {
         seasonBests: rows.filter((row) => row.isSeasonBest).length,
       },
       rows: rows.map((row) => ({
-        athleteName: clean(row.athleteName),
+        athleteName: displayNameCase(row.athleteName),
         athleteGender: resultsBoardGender(row.athleteGender),
         raceDivision: clean(row.raceDivision) || noteValue(row.coachRaceNotes, "Division"),
         grade: clean(row.grade) || noteValue(row.coachRaceNotes, "Historical Grade") || noteValue(row.coachRaceNotes, "Grade"),
@@ -713,7 +714,7 @@ function milesBoardHighlight(rows, key, suffix) {
   if (!row) return { athleteName: "", value: 0, label: "No miles yet" };
   const value = Number(row[key]) || 0;
   return {
-    athleteName: row.athleteName,
+    athleteName: displayNameCase(row.athleteName),
     value,
     label: `${key === "workouts" || key === "gameScore" ? Math.round(value) : roundVolume(value)} ${suffix}`,
   };
@@ -1672,7 +1673,7 @@ function xcTop20Row(row, gender, eventBucket, context = {}) {
     recordId: row.recordId || "",
     sourceRecordId: row.sourceRecordId || "",
     contactId: row.contactId || "",
-    athleteName: clean(row.athleteName),
+    athleteName: displayNameCase(row.athleteName),
     athleteGender: normalizedGender,
     raceDivision: clean(row.raceDivision) || noteValue(row.coachRaceNotes, "Division"),
     event: normalizedEvent,
@@ -1871,7 +1872,7 @@ function resultsBoardTopTimedResultCards(rows) {
     selected.forEach((row) => {
       cards.push({
         label: genderLabels[gender],
-        athleteName: row.athleteName,
+        athleteName: displayNameCase(row.athleteName),
         athleteGender: row.athleteGender,
         event: row.event,
         resultDisplay: row.resultDisplay,
@@ -1980,7 +1981,7 @@ function resultsBoardAthleteSummaryRows(rows) {
     if (String(row.meetDate || "") > item.latestDate) item.latestDate = String(row.meetDate || "");
   });
   return Array.from(byAthlete.values()).map((item) => ({
-    athleteName: item.athleteName,
+    athleteName: displayNameCase(item.athleteName),
     gender: item.gender,
     results: item.results,
     meets: item.meets.size,
@@ -2092,7 +2093,7 @@ function resultsBoardBestHighlightRows(rows) {
     Number(!!b.isPr) - Number(!!a.isPr) ||
     clean(a.athleteName).localeCompare(clean(b.athleteName))
   ).map((row) => ({
-    athleteName: clean(row.athleteName),
+    athleteName: displayNameCase(row.athleteName),
     meetName: clean(row.meetName),
     meetDate: clean(row.meetDate),
     event: clean(row.event),
@@ -2285,7 +2286,7 @@ function normalizeBest(record) {
   return {
     recordId: record && record.id ? record.id : "",
     contactId: prop(props, "athlete_contact"),
-    athleteName: prop(props, "athlete_name_snapshot"),
+    athleteName: displayNameCase(prop(props, "athlete_name_snapshot")),
     event: prop(props, "event"),
     personalBestDisplay: prop(props, "personal_best_display"),
     personalBestMs: Number(prop(props, "personal_best_ms")) || 0,
@@ -2311,7 +2312,7 @@ function normalizeMeetResult(record) {
     recordId: record && record.id ? record.id : "",
     sourceRecordId: prop(props, "source_record_id"),
     contactId: prop(props, "athlete_contact"),
-    athleteName: prop(props, "athlete_name_snapshot"),
+    athleteName: displayNameCase(prop(props, "athlete_name_snapshot")),
     athleteGender: noteValue(coachRaceNotes, "Gender"),
     raceDivision: noteValue(coachRaceNotes, "Division"),
     grade: noteValue(coachRaceNotes, "Historical Grade") || noteValue(coachRaceNotes, "Grade"),
@@ -2887,7 +2888,7 @@ function firstPresent(values) {
 }
 
 function contactName(contact) {
-  return clean(contact.name) || `${clean(contact.firstName)} ${clean(contact.lastName)}`.trim();
+  return displayNameCase(clean(contact.name) || `${clean(contact.firstName)} ${clean(contact.lastName)}`.trim());
 }
 
 function isActiveValue(value) {

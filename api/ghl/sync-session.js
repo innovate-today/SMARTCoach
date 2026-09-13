@@ -14,6 +14,7 @@ const ATHLETE_FIELD_ALIASES = {
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { mirrorTrainingRecords, loadTrainingMirror } = require("../../lib/account-registry");
+const { displayNameCase } = require("../../lib/display-name");
 
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
@@ -203,7 +204,7 @@ function normalizeSession(payload) {
 function normalizeAthlete(raw) {
   return {
     runnerId: clean(raw && raw.runnerId),
-    name: clean(raw && raw.name),
+    name: displayNameCase(raw && raw.name),
     contactId: clean(raw && raw.contactId),
     smartcoachAthleteId: clean(raw && raw.smartcoachAthleteId),
     trainingPlanId: clean(raw && raw.trainingPlanId),

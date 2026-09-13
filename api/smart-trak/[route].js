@@ -6,6 +6,7 @@ const GHL_ACCOUNT_KEY_CUSTOM_VALUE_NAME = "account_key";
 const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
 const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
+const { displayNameCase } = require("../../lib/display-name");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1401,7 +1402,7 @@ async function rosterNamedAttendanceRecords({ attendance, token, locationId }) {
   const athletes = await athletesApi.listSmartCoachAthletes({ token, locationId, includeContacts: false });
   const rosterNames = new Map();
   athletes.filter((athlete) => athlete && athlete.smartcoachActive).forEach((athlete) => {
-    const rosterName = cleanSetupText(athlete.name);
+    const rosterName = displayNameCase(athlete.name);
     [athlete.id, athlete.contactId, athlete.smartcoachAthleteId, athlete.name].map(cleanSetupText).filter(Boolean).forEach((value) => {
       const key = value.toLowerCase();
       if (rosterName) rosterNames.set(key, rosterName);
@@ -1410,7 +1411,8 @@ async function rosterNamedAttendanceRecords({ attendance, token, locationId }) {
   return rows.map((row) => {
     const keys = [row && row.athleteId, row && row.contactId, row && row.smartcoachAthleteId, row && row.athleteName].map(cleanSetupText).filter(Boolean);
     const currentName = keys.map((value) => rosterNames.get(value.toLowerCase())).find(Boolean);
-    return currentName && currentName !== row.athleteName ? { ...row, athleteName: currentName } : row;
+    const currentDisplayName = currentName || displayNameCase(row && row.athleteName);
+    return currentDisplayName && currentDisplayName !== row.athleteName ? { ...row, athleteName: currentDisplayName } : row;
   });
 }
 
@@ -1453,7 +1455,7 @@ function attendanceRecordsFromPayload(payload) {
         athleteId: cleanSetupText(runner.contactId || runner.smartcoachAthleteId || runner.id || runner.runnerId || runnerKey),
         contactId: cleanSetupText(runner.contactId),
         smartcoachAthleteId: cleanSetupText(runner.smartcoachAthleteId),
-        athleteName: cleanSetupText(runner.name || row.athleteName),
+        athleteName: displayNameCase(runner.name || row.athleteName),
         status,
         note: cleanSetupText(row.note),
         source: cleanSetupText(row.source) || "coach",
@@ -1653,7 +1655,7 @@ function normalizeFieldPractice(item) {
     groupId: cleanSetupText(source.groupId),
     groupName: cleanSetupText(source.groupName).slice(0, 120),
     athleteId: cleanSetupText(source.athleteId),
-    athleteName: cleanSetupText(source.athleteName).slice(0, 120),
+    athleteName: displayNameCase(source.athleteName).slice(0, 120),
     coachName: cleanSetupText(source.coachName).slice(0, 120),
     focus: cleanSetupText(source.focus).slice(0, 120),
     routineKey: cleanSetupText(source.routineKey).slice(0, 80),
@@ -1724,7 +1726,7 @@ function normalizeFieldPracticeAthleteSummaries(items) {
   return (Array.isArray(items) ? items : []).map((item, index) => {
     const source = item && typeof item === "object" ? item : {};
     const athleteId = cleanSetupText(source.athleteId);
-    const athleteName = cleanSetupText(source.athleteName || source.name).slice(0, 120);
+    const athleteName = displayNameCase(source.athleteName || source.name).slice(0, 120);
     const focus = cleanSetupText(source.focus).slice(0, 120);
     const summary = cleanSetupText(source.summary || source.note || source.coachSummary).slice(0, 1000);
     const bestMark = cleanSetupText(source.bestMark || source.best || source.mark).slice(0, 80);
@@ -1775,7 +1777,7 @@ function normalizeFieldPracticeSpeedMetrics(items) {
   return (Array.isArray(items) ? items : []).map((item, index) => {
     const source = item && typeof item === "object" ? item : {};
     const athleteId = cleanSetupText(source.athleteId);
-    const athleteName = cleanSetupText(source.athleteName || source.name).slice(0, 120);
+    const athleteName = displayNameCase(source.athleteName || source.name).slice(0, 120);
     const zone = cleanSetupText(source.zone || source.focus).slice(0, 120);
     const unit = cleanSetupText(source.unit).toLowerCase() === "yd" ? "yd" : "m";
     const rawDistance = Number(source.distance);
@@ -2050,7 +2052,7 @@ async function accountDocuTrak(req, res) {
       });
     } else if (action === "save-athlete") {
       const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
-      const athleteName = cleanSetupText(payload.athleteName || payload.name);
+      const athleteName = displayNameCase(payload.athleteName || payload.name);
       const athleteKey = docuAthleteKey(athleteId, athleteName);
       if (!athleteKey) throw httpError(400, "Athlete is required.");
       current.records[athleteKey] = {
@@ -2252,7 +2254,7 @@ function normalizeDocuRecords(records) {
     if (!athleteKey) return;
     out[athleteKey] = {
       athleteId: cleanSetupText(row.athleteId),
-      athleteName: cleanSetupText(row.athleteName),
+      athleteName: displayNameCase(row.athleteName),
       updatedAt: cleanSetupText(row.updatedAt),
       items: normalizeDocuAthleteItems(row.items),
     };
@@ -2421,7 +2423,7 @@ async function accountEquipmentTrak(req, res) {
       const athleteId = cleanSetupText(payload.athleteId || payload.contactId);
       const contactId = cleanSetupText(payload.contactId);
       const smartcoachAthleteId = cleanSetupText(payload.smartcoachAthleteId);
-      const athleteName = cleanSetupText(payload.athleteName || payload.name);
+      const athleteName = displayNameCase(payload.athleteName || payload.name);
       const athleteKey = docuAthleteKey(athleteId, athleteName);
       if (!athleteKey) throw httpError(400, "Athlete is required.");
       const previous = current.records[athleteKey];
@@ -2784,7 +2786,7 @@ function normalizeEquipmentRecords(records) {
       athleteId: cleanSetupText(row.athleteId),
       contactId: cleanSetupText(row.contactId),
       smartcoachAthleteId: cleanSetupText(row.smartcoachAthleteId),
-      athleteName: cleanSetupText(row.athleteName),
+      athleteName: displayNameCase(row.athleteName),
       updatedAt: cleanSetupText(row.updatedAt),
       items: normalizeEquipmentAthleteItems(row.items),
     };
@@ -4527,7 +4529,7 @@ function normalizeSpeedBoardReps(practices) {
     metrics.forEach((rep) => {
       const seconds = speedBoardSeconds(rep.seconds || rep.time);
       const meters = speedBoardMeters(rep, practice);
-      const athleteName = cleanSetupText(rep.athleteName || rep.name || [rep.firstName, rep.lastName].filter(Boolean).join(" "));
+      const athleteName = displayNameCase(rep.athleteName || rep.name || [rep.firstName, rep.lastName].filter(Boolean).join(" "));
       if (!athleteName || !seconds || !meters) return;
       const strides = Number(rep.strides || rep.strideCount) || 0;
       const date = cleanSetupText(rep.date || practice.date).slice(0, 10);

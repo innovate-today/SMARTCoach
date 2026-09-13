@@ -1622,7 +1622,7 @@ function checkResultsBoardFeature() {
     "isPr: yesValue(prop(props, \"is_pr\"))",
     "isSeasonBest: yesValue(prop(props, \"is_season_best\"))",
     "contactId: prop(props, \"athlete_contact\")",
-    "athleteName: prop(props, \"athlete_name_snapshot\")",
+    "athleteName: displayNameCase(prop(props, \"athlete_name_snapshot\"))",
     "function annotateResultsBoardBestFlags(rows, bestRecords)",
     "const seasonBests = new Map();",
     "const correctedRowsBySource = new Map();",
@@ -3549,9 +3549,9 @@ function checkDashboardMeetCorrectionFields() {
     'athlete_contact: ["JNGhbB93E0xRao1jAm47"',
     'athlete_name_snapshot: ["m20bSENWaEB4jBMtXgMD"',
     'const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";',
-    'athleteName: prop(props, "athlete_name_snapshot") || athleteName',
+    'athleteName: displayNameCase(prop(props, "athlete_name_snapshot") || athleteName)',
     'contactId: prop(props, "athlete_contact") || contactId',
-    "athleteName: isRelay ? previousValues.athleteName : clean(updates.athleteName) || previousValues.athleteName",
+    "athleteName: isRelay ? previousValues.athleteName : displayNameCase(updates.athleteName) || previousValues.athleteName",
     "contactId: isRelay ? previousValues.contactId : clean(updates.contactId) || previousValues.contactId",
     "await cleanupReassignedPlaceholderContact({ token, previousValues, nextValues });",
     "async function cleanupReassignedPlaceholderContact({ token, previousValues, nextValues })",
@@ -5356,7 +5356,7 @@ function checkAttendanceSeasonAttachment() {
     "athletes.filter((athlete) => athlete && athlete.smartcoachActive)",
     "if (rosterName) rosterNames.set(key, rosterName);",
     "const currentName = keys.map((value) => rosterNames.get(value.toLowerCase())).find(Boolean);",
-    "return currentName && currentName !== row.athleteName ? { ...row, athleteName: currentName } : row;",
+    "return currentDisplayName && currentDisplayName !== row.athleteName ? { ...row, athleteName: currentDisplayName } : row;",
     "const sport = cleanSetupText(payload && payload.sport);",
     "seasonYear",
   ].forEach((text) => {
@@ -6159,6 +6159,36 @@ function checkFieldPracticePhaseOne() {
   console.log("Field Practice phase one ok");
 }
 
+function checkSmartTrakAthleteNameCapitalization() {
+  const { displayNameCase } = require("../lib/display-name");
+  [
+    ["audrey herd", "Audrey Herd"],
+    ["ADELINE MICEK", "Adeline Micek"],
+    ["anna-marie o'connor", "Anna-Marie O'Connor"],
+    ["Quinn McDonald", "Quinn McDonald"],
+  ].forEach(([input, expected]) => {
+    const actual = displayNameCase(input);
+    if (actual !== expected) throw new Error(`display name case expected ${expected}, got ${actual}`);
+  });
+  [
+    "api/ghl/dashboard.js",
+    "api/ghl/athletes.js",
+    "api/ghl/meet-result.js",
+    "api/ghl/correction.js",
+    "api/ghl/sync-session.js",
+    "api/ghl/athlete-best.js",
+    "api/ghl/training-plan.js",
+    "api/ghl/records.js",
+    "api/smart-trak/[route].js",
+    "lib/account-registry.js",
+    "lib/athlete-calendar.js",
+  ].forEach((file) => {
+    const source = fs.readFileSync(file, "utf8");
+    if (!source.includes("displayNameCase")) throw new Error(`${file} does not use displayNameCase for SMART Trak athlete names`);
+  });
+  console.log("SMART Trak athlete name capitalization ok");
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
@@ -6260,5 +6290,6 @@ checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkPartnerTimingPhaseOne();
 checkFieldPracticePhaseOne();
+checkSmartTrakAthleteNameCapitalization();
 
 console.log("SMARTCoach regression checks passed");

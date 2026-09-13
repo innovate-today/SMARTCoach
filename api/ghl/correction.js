@@ -7,6 +7,7 @@ const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { mirrorTrainingRecords } = require("../../lib/account-registry");
+const { displayNameCase } = require("../../lib/display-name");
 const FIELD_IDS = {
   performance_record: ["RCn9Xux9gRK3otwS1QzX"],
   meet_result: ["Khq47asHEk0tRieDVUBg"],
@@ -85,7 +86,7 @@ module.exports = async function handler(req, res) {
     const contactId = clean(payload.contactId);
     const recordId = clean(payload.recordId);
     const sourceRecordId = clean(payload.sourceRecordId);
-    const athleteName = clean(payload.athleteName) || "Athlete";
+    const athleteName = displayNameCase(payload.athleteName) || "Athlete";
     const reason = clean(payload.reason) || "No reason provided.";
     const recordType = clean(payload.recordType || payload.objectType).toLowerCase();
     const isMeetResult = recordType === "meet" || recordType === "meet_result";
@@ -180,7 +181,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
   const hasUpdate = (key) => Object.prototype.hasOwnProperty.call(updates, key);
   const previousNote = prop(props, "coach_race_notes");
   const previousValues = {
-    athleteName: prop(props, "athlete_name_snapshot") || athleteName,
+    athleteName: displayNameCase(prop(props, "athlete_name_snapshot") || athleteName),
     contactId: prop(props, "athlete_contact") || contactId,
     meetName: prop(props, "meet_name"),
     meetDate: prop(props, "meet_date"),
@@ -206,7 +207,7 @@ async function editMeetResult({ token, locationId, contactId, athleteName, reaso
   const isField = clean(updates.resultType).toLowerCase() === "field" || clean(previousValues.resultType).toLowerCase() === "field";
   const individualResultType = clean(previousValues.resultType).toLowerCase() === "historical import" ? "Historical Import" : "Individual";
   const nextValues = {
-    athleteName: isRelay ? previousValues.athleteName : clean(updates.athleteName) || previousValues.athleteName,
+    athleteName: isRelay ? previousValues.athleteName : displayNameCase(updates.athleteName) || previousValues.athleteName,
     contactId: isRelay ? previousValues.contactId : clean(updates.contactId) || previousValues.contactId,
     meetName: clean(updates.meetName) || previousValues.meetName,
     meetDate: clean(updates.meetDate) || previousValues.meetDate,
@@ -474,7 +475,7 @@ async function getContact({ token, contactId }) {
 }
 
 function contactName(contact) {
-  return clean(contact && contact.name) || `${clean(contact && contact.firstName)} ${clean(contact && contact.lastName)}`.trim();
+  return displayNameCase(clean(contact && contact.name) || `${clean(contact && contact.firstName)} ${clean(contact && contact.lastName)}`.trim());
 }
 
 function isGeneratedRunnerPlaceholderName(value) {
@@ -655,7 +656,7 @@ function previousProps(previous, recordType) {
       meet_result: clean(data.meetResult) || [clean(data.athleteName), clean(data.event), clean(data.resultDisplay)].filter(Boolean).join(" - "),
       source_record_id: clean(data.sourceRecordId),
       athlete_contact: clean(data.contactId),
-      athlete_name_snapshot: clean(data.athleteName),
+      athlete_name_snapshot: displayNameCase(data.athleteName),
       meet_name: clean(data.meetName),
       meet_date: clean(data.meetDate),
       event: clean(data.event),

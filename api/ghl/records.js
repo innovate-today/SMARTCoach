@@ -4,6 +4,7 @@ const RECORD_SCHEMA_KEY = "custom_objects.records";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { mirrorSchoolRecords, loadSchoolRecordsMirror, loadSchoolRecordsDeletedIds, schoolRecordsMirrorStatus } = require("../../lib/account-registry");
+const { displayNameCase } = require("../../lib/display-name");
 const HIGHER_IS_BETTER_EVENTS = new Set(["high_jump", "long_jump", "triple_jump", "pole_vault", "shot_put", "discus", "javelin", "hammer"]);
 
 const FIELD_IDS = {
@@ -448,18 +449,18 @@ function normalizeRecordPayload(row) {
     resultDisplay,
     resultMs: Number(row && row.resultMs) || parseTimeToMs(resultDisplay) || null,
     resultMark: clean(row && row.resultMark),
-    athleteName: clean(row && row.athleteName),
-    relayLeg1: clean(row && row.relayLeg1),
-    relayLeg2: clean(row && row.relayLeg2),
-    relayLeg3: clean(row && row.relayLeg3),
-    relayLeg4: clean(row && row.relayLeg4),
+    athleteName: displayNameCase(row && row.athleteName),
+    relayLeg1: displayNameCase(row && row.relayLeg1),
+    relayLeg2: displayNameCase(row && row.relayLeg2),
+    relayLeg3: displayNameCase(row && row.relayLeg3),
+    relayLeg4: displayNameCase(row && row.relayLeg4),
     meetName: clean(row && row.meetName),
     recordDate,
     season: clean(row && row.season),
     seasonYear,
     isCurrent: row && typeof row.isCurrent !== "undefined" ? yes(row.isCurrent) : true,
     previousRecordDisplay: clean(row && row.previousRecordDisplay),
-    previousRecordHolder: clean(row && row.previousRecordHolder),
+    previousRecordHolder: displayNameCase(row && row.previousRecordHolder),
     recordNotes: clean(row && row.recordNotes),
     sourceRecordId: clean(row && row.sourceRecordId),
   };
@@ -513,11 +514,11 @@ function normalizeRecord(record, fallbackProperties) {
     resultMs: Number(prop(props, "result_ms")) || 0,
     resultMark: prop(props, "result_mark"),
     athleteContact: prop(props, "athlete_contact"),
-    athleteName: prop(props, "athlete_name_snapshot") || fallback.athleteName,
-    relayLeg1: relayLegs[0],
-    relayLeg2: relayLegs[1],
-    relayLeg3: relayLegs[2],
-    relayLeg4: relayLegs[3],
+    athleteName: displayNameCase(prop(props, "athlete_name_snapshot") || fallback.athleteName),
+    relayLeg1: displayNameCase(relayLegs[0]),
+    relayLeg2: displayNameCase(relayLegs[1]),
+    relayLeg3: displayNameCase(relayLegs[2]),
+    relayLeg4: displayNameCase(relayLegs[3]),
     meetName: prop(props, "meet_name"),
     meetRecordId: prop(props, "meet_record_id"),
     meetResultId: prop(props, "meet_result_id"),
@@ -526,7 +527,7 @@ function normalizeRecord(record, fallbackProperties) {
     seasonYear: Number(prop(props, "season_year")) || null,
     isCurrent: yes(prop(props, "is_current")),
     previousRecordDisplay: prop(props, "previous_record_display"),
-    previousRecordHolder: prop(props, "previous_record_holder"),
+    previousRecordHolder: displayNameCase(prop(props, "previous_record_holder")),
     recordNotes: notes,
     sourceSystem: prop(props, "source_system"),
     sourceRecordId: prop(props, "source_record_id"),

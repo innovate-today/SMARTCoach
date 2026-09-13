@@ -8,6 +8,7 @@ const CLASS_YEAR_TAG_PREFIX = "smartcoach-class-";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { loadAccountScopedRecord, saveAccountScopedRecord } = require("../../lib/account-registry");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { displayNameCase } = require("../../lib/display-name");
 
 const ATHLETE_ROSTER_DETAILS_NAMESPACE = "athlete-roster-details";
 const CONTACT_LIST_PAGE_LIMIT = 100;
@@ -204,7 +205,7 @@ async function listAthleteFitnessRows({ token, locationId }) {
     return {
       recordId: record.id || "",
       contactId: prop(props, "athlete_contact"),
-      athleteName: prop(props, "athlete_name_snapshot"),
+      athleteName: displayNameCase(prop(props, "athlete_name_snapshot")),
       sport: prop(props, "sport") || sportForFitnessEvent(event),
       event,
       resultDisplay: display,
@@ -324,7 +325,7 @@ function rosterDetailFromPayload(athlete, payload) {
   const detail = {
     id: clean((athlete && athlete.id) || (payload && payload.contactId)),
     smartcoachAthleteId: clean((athlete && athlete.smartcoachAthleteId) || (payload && payload.smartcoachAthleteId)),
-    name: firstCleanValue([payload && payload.name, athlete && athlete.name]),
+    name: displayNameCase(firstCleanValue([payload && payload.name, athlete && athlete.name])),
     updatedAt: new Date().toISOString(),
   };
   ATHLETE_ROSTER_DETAIL_FIELDS.forEach((field) => {
@@ -469,9 +470,9 @@ async function resolveRosterFieldIds({ token, locationId }) {
 
 async function createOrUpdateAthlete({ accountKey, token, locationId, payload }) {
   const rosterFieldIds = await resolveRosterFieldIds({ token, locationId });
-  const firstName = clean(payload && payload.firstName);
-  const lastName = clean(payload && payload.lastName);
-  const name = clean(payload && payload.name) || `${firstName} ${lastName}`.trim();
+  const firstName = displayNameCase(payload && payload.firstName);
+  const lastName = displayNameCase(payload && payload.lastName);
+  const name = displayNameCase(payload && payload.name) || `${firstName} ${lastName}`.trim();
   const contactId = clean(payload && payload.contactId);
 
   if (!name && !contactId) {
@@ -667,8 +668,8 @@ function normalizeContact(contact, options = {}) {
   return {
     id: contact.id,
     name: contactName(contact),
-    firstName: clean(contact.firstName),
-    lastName: clean(contact.lastName),
+    firstName: displayNameCase(contact.firstName),
+    lastName: displayNameCase(contact.lastName),
     email: clean(contact.email),
     phone: clean(contact.phone),
     gender: setupFields.gender,
@@ -737,7 +738,7 @@ function existingCustomFieldValueByIdsOrNames(contact, fieldIds = [], names = []
 }
 
 function contactName(contact) {
-  return clean(contact.name) || `${clean(contact.firstName)} ${clean(contact.lastName)}`.trim();
+  return displayNameCase(clean(contact.name) || `${clean(contact.firstName)} ${clean(contact.lastName)}`.trim());
 }
 
 function existingCustomFieldValue(contact, fieldId) {

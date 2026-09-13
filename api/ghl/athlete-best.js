@@ -3,6 +3,7 @@ const GHL_VERSION = "2021-07-28";
 const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
+const { displayNameCase } = require("../../lib/display-name");
 function bestField(key) {
   return key;
 }
@@ -43,7 +44,7 @@ module.exports = async function handler(req, res) {
         } catch (error) {
           results.push({
             action: "skipped",
-            athleteName: clean(row && row.athleteName),
+            athleteName: displayNameCase(row && row.athleteName),
             event: clean(row && row.event),
             reason: error.message || "Could not save current fitness.",
           });
@@ -118,7 +119,7 @@ async function listAthleteBestRows({ token, locationId }) {
     return {
       recordId: record.id || "",
       contactId: prop(props, "athlete_contact"),
-      athleteName: prop(props, "athlete_name_snapshot"),
+      athleteName: displayNameCase(prop(props, "athlete_name_snapshot")),
       sport: prop(props, "sport") || sportForEvent(event),
       event,
       resultDisplay: display,
