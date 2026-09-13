@@ -5798,6 +5798,32 @@ function normalizePastResultRow(row){
     best:[row&&row.isPr?'PB':'',row&&row.isSeasonBest?'SB':''].filter(Boolean).join(' · ')
   };
 }
+function pastResultsMergeRows(primary,secondary){
+  var seen={},out=[];
+  (primary||[]).concat(secondary||[]).forEach(function(row){
+    if(!row)return;
+    var key=[row.key,row.meet,row.event,row.date,row.time].join('|').toLowerCase();
+    if(seen[key])return;
+    seen[key]=true;
+    out.push(row);
+  });
+  return out.sort(function(a,b){
+    return String(b.date||b.syncedAt||'').localeCompare(String(a.date||a.syncedAt||''))||(a.ms-b.ms)||a.name.localeCompare(b.name);
+  });
+}
+function fetchPastResultsRows(path,timeoutMs){
+  var controller=window.AbortController?new AbortController():null;
+  var timer=controller?setTimeout(function(){controller.abort();},timeoutMs||12000):null;
+  return fetch(smartCoachApiUrl(path),{cache:'no-store',headers:smartCoachApiHeaders(),signal:controller&&controller.signal})
+    .then(function(res){
+      return res.json().catch(function(){return{};}).then(function(data){return{ok:res.ok,data:data};});
+    })
+    .then(function(result){
+      if(!result.ok)throw new Error(result.data&&result.data.error||'Past Results could not load.');
+      return (result.data&&result.data.meetResults||result.data&&result.data.recentMeetResults||[]).map(normalizePastResultRow).filter(Boolean);
+    })
+    .finally(function(){if(timer)clearTimeout(timer);});
+}
 function loadPastResults(force){
   var key=smartCoachAccountKey();
   if(PAST_RESULTS.loading)return Promise.resolve(PAST_RESULTS.rows);
@@ -5805,19 +5831,31 @@ function loadPastResults(force){
   PAST_RESULTS.loading=true;
   PAST_RESULTS.error='';
   renderPastResults();
-  return fetch(smartCoachApiUrl('/api/smart-trak/dashboard?meetHistory=1&v='+Date.now()),{cache:'no-store',headers:smartCoachApiHeaders()})
-    .then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});})
-    .then(function(result){
-      if(!result.ok)throw new Error(result.data&&result.data.error||'Past Results could not load.');
-      var rows=(result.data&&result.data.meetResults||result.data&&result.data.recentMeetResults||[]).map(normalizePastResultRow).filter(Boolean);
-      PAST_RESULTS.rows=rows.sort(function(a,b){
-        return String(b.date||b.syncedAt||'').localeCompare(String(a.date||a.syncedAt||''))||(a.ms-b.ms)||a.name.localeCompare(b.name);
-      });
+  return fetchPastResultsRows('/api/smart-trak/dashboard?light=1&refresh=1&v='+Date.now(),10000)
+    .then(function(recentRows){
+      PAST_RESULTS.rows=pastResultsMergeRows(recentRows,PAST_RESULTS.rows);
       PAST_RESULTS.loaded=true;
       PAST_RESULTS.accountKey=key;
-      return PAST_RESULTS.rows;
+      renderPastResults();
+      return fetchPastResultsRows('/api/smart-trak/dashboard?meetHistory=1&v='+Date.now(),18000).then(function(historyRows){
+        PAST_RESULTS.rows=pastResultsMergeRows(historyRows,PAST_RESULTS.rows);
+        return PAST_RESULTS.rows;
+      }).catch(function(error){
+        PAST_RESULTS.error=PAST_RESULTS.rows.length?'Showing recent results. Full history did not finish loading.':(error&&error.message||'Past Results could not load.');
+        return PAST_RESULTS.rows;
+      });
     })
-    .catch(function(error){PAST_RESULTS.error=error&&error.message||'Past Results could not load.';return[];})
+    .catch(function(error){
+      return fetchPastResultsRows('/api/smart-trak/dashboard?meetHistory=1&v='+Date.now(),18000).then(function(historyRows){
+        PAST_RESULTS.rows=pastResultsMergeRows(historyRows,PAST_RESULTS.rows);
+        PAST_RESULTS.loaded=true;
+        PAST_RESULTS.accountKey=key;
+        return PAST_RESULTS.rows;
+      }).catch(function(historyError){
+        PAST_RESULTS.error=historyError&&historyError.message||error&&error.message||'Past Results could not load.';
+        return[];
+      });
+    })
     .then(function(rows){PAST_RESULTS.loading=false;renderPastResults();return rows;});
 }
 function pastResultsDateLabel(value){
@@ -5889,8 +5927,9 @@ function renderPastResults(){
   if(search&&search.value!==PAST_RESULTS.query)search.value=PAST_RESULTS.query;
   if(eventOnly)eventOnly.checked=!!PAST_RESULTS.eventOnly;
   if(status){
-    status.textContent=PAST_RESULTS.loading?'Loading saved SMART Trak results...':(PAST_RESULTS.error||((PAST_RESULTS.rows||[]).length+' saved result'+((PAST_RESULTS.rows||[]).length===1?'':'s')+' loaded'));
-    status.style.color=PAST_RESULTS.error?'#c00':'#64748b';
+    var loadedCount=(PAST_RESULTS.rows||[]).length;
+    status.textContent=PAST_RESULTS.loading?(loadedCount?'Showing recent results while full history loads...':'Loading saved SMART Trak results...'):(PAST_RESULTS.error||(loadedCount+' saved result'+(loadedCount===1?'':'s')+' loaded'));
+    status.style.color=PAST_RESULTS.error?(loadedCount?'#b45309':'#c00'):'#64748b';
   }
   if(!body)return;
   if(PAST_RESULTS.loading&&!PAST_RESULTS.rows.length){body.innerHTML='<div class="past-empty">Loading Past Results...</div>';return;}
