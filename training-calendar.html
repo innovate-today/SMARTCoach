@@ -461,7 +461,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <div class="field"><label for="addDaySport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country so race and workout days are labeled correctly.">i</span></label><select id="addDaySport"><option>Track</option><option>Cross Country</option></select></div>
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
         <div id="addDayWorkoutTypeField" class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Choose the effort or race type for this activity.">i</span></label><select id="addDayWorkoutType"><option value="">Select effort / type</option></select></div>
-        <div class="field"><label>Groups <span class="fieldinfo info-left" tabindex="0" data-tip="Choose one or more active training groups. Each selected group gets its own calendar workout.">i</span></label><div id="addDayGroup" class="groupchecklist" aria-label="Training groups"></div></div>
+        <div id="addDayGroupField" class="field"><label>Groups <span class="fieldinfo info-left" tabindex="0" data-tip="Choose one or more active training groups. Each selected group gets its own calendar workout.">i</span></label><div id="addDayGroup" class="groupchecklist" aria-label="Training groups"></div></div>
         <div id="addDayStatusField" class="field" hidden><label for="addDayStatusSelect">Status <span class="fieldinfo" tabindex="0" data-tip="Update the calendar status for this workout.">i</span></label><select id="addDayStatusSelect"><option>Draft</option><option>Approved</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select></div>
         <div id="addDayAthleteField" class="field" hidden><label for="addDayAthlete">Athlete <span class="fieldinfo info-left" tabindex="0" data-tip="Shown for athlete-specific calendar days.">i</span></label><input id="addDayAthlete" type="text" placeholder="Optional athlete"></div>
         <div id="addDayVolumeField" class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional override. Easy Run volume is also calculated from the distance below.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles"></div>
@@ -808,6 +808,7 @@ var els={
   addDayTitleInput:document.getElementById('addDayTitleInput'),
   addDayWorkoutTypeField:document.getElementById('addDayWorkoutTypeField'),
   addDayWorkoutType:document.getElementById('addDayWorkoutType'),
+  addDayGroupField:document.getElementById('addDayGroupField'),
   addDayGroup:document.getElementById('addDayGroup'),
   addDayStatusField:document.getElementById('addDayStatusField'),
   addDayStatusSelect:document.getElementById('addDayStatusSelect'),
@@ -3634,7 +3635,7 @@ function syncAddDayPlanFields(){
   if(calendarEditDay)return;
   var plan=selectedAddDayPlan();
   if(!plan)return;
-  if(!selectedAddDayGroups().length)selectAddDayGroups([planSubject(plan)]);
+  if(addDayMode!=='race'&&!selectedAddDayGroups().length)selectAddDayGroups([planSubject(plan)]);
   setSelectValue(els.addDaySport,sportFromPlan(plan));
 }
 function setActivityTypeOptions(options,selected){
@@ -3660,6 +3661,7 @@ function setAddDayMode(mode){
   els.addActivitySummary.hidden=addDayMode!=='quality';
   els.addDayChooser.hidden=false;
   els.addDayWorkoutTypeField.hidden=addDayMode==='easy'||addDayMode==='quality'||addDayMode==='race'||addDayMode==='off';
+  els.addDayGroupField.hidden=addDayMode==='race';
   els.addDayVolumeField.hidden=addDayMode==='easy'||addDayMode==='quality'||addDayMode==='speed'||addDayMode==='off'||(addDayMode==='race'&&normalizeSport(els.addDaySport.value)!=='Cross Country');
   els.addDayTargetField.hidden=addDayMode==='quality'||addDayMode==='speed'||addDayMode==='race'||addDayMode==='off';
   els.addDayDetailsField.hidden=addDayMode==='off';
@@ -4001,6 +4003,7 @@ function buildAddDayActivityValues(){
   return {dayType:els.addDayType.value,title:title,workoutType:type,plannedVolume:volume,targetSplits:target,details:details};
 }
 function selectedEditGroupName(){
+  if(addDayMode==='race')return '';
   var groups=selectedAddDayGroups();
   return groups[0]||calendarEditDay&&calendarEditDay.groupName||'';
 }
@@ -4154,8 +4157,8 @@ function saveAddedCalendarDay(){
   var title=activity.title;
   if(!els.addDayDate.value){setAddDayStatus('Select a date.','error');return;}
   if(!title){setAddDayStatus('Add a short title for the calendar day.','error');return;}
-  var selectedGroups=selectedAddDayGroups();
-  if(!selectedGroups.length&&plan&&planSubject(plan))selectedGroups=[planSubject(plan)];
+  var selectedGroups=addDayMode==='race'?['']:selectedAddDayGroups();
+  if(addDayMode!=='race'&&!selectedGroups.length&&plan&&planSubject(plan))selectedGroups=[planSubject(plan)];
   if(!selectedGroups.length)selectedGroups=[''];
   var dayTemplate={
     date:els.addDayDate.value,

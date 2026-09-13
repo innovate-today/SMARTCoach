@@ -3443,6 +3443,12 @@ function checkCalendarMeetSportPropagation() {
     "groupName:day.groupName||''",
     "groupName:updates.groupName||''",
     "groupName:meet.groupName||''",
+    "addDayGroupField:document.getElementById('addDayGroupField')",
+    "els.addDayGroupField.hidden=addDayMode==='race';",
+    "if(addDayMode==='race')return '';",
+    "var selectedGroups=addDayMode==='race'?['']:selectedAddDayGroups();",
+    "if(addDayMode!=='race'&&!selectedGroups.length&&plan&&planSubject(plan))selectedGroups=[planSubject(plan)];",
+    "if(addDayMode!=='race'&&!selectedAddDayGroups().length)selectAddDayGroups([planSubject(plan)]);",
   ].forEach((text) => {
     if (!calendar.includes(text)) throw new Error(`Training Calendar meet sport propagation missing ${text}`);
   });
