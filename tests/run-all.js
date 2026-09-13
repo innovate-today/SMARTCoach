@@ -1421,6 +1421,7 @@ function checkResultsBoardFeature() {
     "function reloadWithFilters",
     "function bestCell(row)",
     "function newPbMarker(row)",
+    "var marker=newPbMarker(row);",
     "class=\"newpb\">New PB</span>",
     "Number(row&&row.bestMs)||parseResultNumber(row&&row.bestDisplay)||flagText(row)",
     "function bestPills(row)",
