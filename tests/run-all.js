@@ -4581,8 +4581,10 @@ function checkMeetHistorySportToolbarFilter() {
     "var groupSport=sportText(group);",
     "var matchesSport=sport==='all'||groupSport===sport||results.length>0;",
     "function mergeMeetHistoryRows(primaryRows,recentRows)",
-    "meetResults=normalizeMeetHistoryRows(mergeMeetHistoryRows(dashboard.data.meetResults||[],dashboard.data.recentMeetResults||[]));",
+    "var snapshotRows=snapshot&&snapshot.ok&&snapshot.data? snapshot.data.recentMeetResults||[]:[];",
+    "meetResults=normalizeMeetHistoryRows(mergeMeetHistoryRows(mergeMeetHistoryRows(dashboard.data.meetResults||[],dashboard.data.recentMeetResults||[]),snapshotRows));",
     "fetch('/api/smart-trak/dashboard?meetHistory=1'",
+    "fetch('/api/smart-trak/dashboard?snapshot=1'",
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`Meet History sport toolbar filter missing ${text}`);

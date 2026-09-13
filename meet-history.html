@@ -3167,16 +3167,19 @@ function loadMeetHistory(){
   els.status.textContent='Loading meet history...';
   return Promise.all([
     fetch('/api/smart-trak/dashboard?meetHistory=1',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}),
-    fetch('/api/ghl/meets',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};})
+    fetch('/api/ghl/meets',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:false,data:{meets:[]}};}),
+    fetch('/api/smart-trak/dashboard?snapshot=1',{headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).catch(function(){return{ok:false,data:{}};})
   ]).then(function(results){
     var dashboard=results[0];
+    var snapshot=results[2];
     if(!dashboard.ok&&dashboard.data&&dashboard.data.accessCodeRequired){
       showAccess(dashboard.data);
       return;
     }
     if(!dashboard.ok)throw new Error(dashboard.data&&dashboard.data.error||'Meet history failed to load.');
     dashboardAthletes=normalizeDashboardAthletes(dashboard.data.athletes||[]);
-    meetResults=normalizeMeetHistoryRows(mergeMeetHistoryRows(dashboard.data.meetResults||[],dashboard.data.recentMeetResults||[]));
+    var snapshotRows=snapshot&&snapshot.ok&&snapshot.data? snapshot.data.recentMeetResults||[]:[];
+    meetResults=normalizeMeetHistoryRows(mergeMeetHistoryRows(mergeMeetHistoryRows(dashboard.data.meetResults||[],dashboard.data.recentMeetResults||[]),snapshotRows));
     scheduledMeets=normalizeMeetHistoryRows((results[1].data&&results[1].data.meets)||[]);
     invalidateMeetHistoryCache();
     els.lastUpdated.textContent='Last updated '+formatDateTime(dashboard.data.generatedAt||new Date().toISOString());
