@@ -5993,6 +5993,20 @@ function openPastResults(){
 function refreshPastResults(){
   loadPastResults(true);
 }
+function isCrossCountryRaceMode(){
+  return !!(CL&&CL.type==='meet'&&meetResultSport()==='Cross Country');
+}
+function openXCTools(){
+  if(!isCrossCountryRaceMode())return;
+  var body=document.getElementById('xc-tools-body');
+  if(body){
+    body.innerHTML='<div class="lsec" style="margin-top:8px">'+
+      '<div class="erow" onclick="hm(&quot;m-xc-tools&quot;);openRaceSummary()" style="min-height:52px"><span class="elbl"><b>Race Summary</b><br><small style="color:#777">Review saved results for this race day.</small></span><span style="color:#bbb">&rsaquo;</span></div>'+
+      '<div class="erow" onclick="hm(&quot;m-xc-tools&quot;);openPastResults()" style="min-height:52px"><span class="elbl"><b>Past Results</b><br><small style="color:#777">Compare today against saved SMART Trak races.</small></span><span style="color:#bbb">&rsaquo;</span></div>'+
+    '</div>';
+  }
+  sm('m-xc-tools');
+}
 function updateTrayActions(){
   var sortBtn=document.getElementById('tray-sort-btn');
   var sumBtn=document.getElementById('tray-sum-btn');
@@ -6005,27 +6019,27 @@ function updateTrayActions(){
   var planIcon=document.getElementById('tray-plan-icon');
   var attendanceBtn=document.getElementById('tray-attendance-btn');
   var meet=CL&&CL.type==='meet';
+  var xc=meet&&meetResultSport()==='Cross Country';
   if(sortBtn)sortBtn.hidden=!meet;
   if(sumBtn)sumBtn.hidden=!meet;
-  if(sortLabel)sortLabel.textContent=meet?'Field':'Sort';
-  if(sumLabel)sumLabel.textContent=meet?'Relay':'Sum';
-  if(sortIcon)sortIcon.innerHTML=meet?'<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>':'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
-  if(sumIcon)sumIcon.innerHTML=meet?'<circle cx="8" cy="7" r="2"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="15" r="2"/><circle cx="16" cy="15" r="2"/><path d="M4 12c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M12 12c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M4 20c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M12 20c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/>':'<path d="M18 4H6l6 8-6 8h12"/>';
-  if(planBtn)planBtn.hidden=false;
-  if(planLabel)planLabel.textContent=meet?'Partner':'Plan';
-  if(planIcon)planIcon.innerHTML=meet?'<circle cx="12" cy="5" r="2"/><path d="M12 7v10"/><path d="M6 19h12"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 17v-4h12v4"/>':'<path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/>';
+  if(sortLabel)sortLabel.textContent=meet?(xc?'XC Tools':'Field'):'Sort';
+  if(sumLabel)sumLabel.textContent=meet?(xc?'Partner':'Relay'):'Sum';
+  if(sortIcon)sortIcon.innerHTML=meet?(xc?'<path d="M3 18l5-7 4 5 3-4 6 6"/><path d="M6 18h12"/><path d="M5 6h14"/><path d="M8 6v4M16 6v4"/>':'<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>'):'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
+  if(sumIcon)sumIcon.innerHTML=meet?(xc?'<circle cx="12" cy="5" r="2"/><path d="M12 7v10"/><path d="M6 19h12"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 17v-4h12v4"/>':'<circle cx="8" cy="7" r="2"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="15" r="2"/><circle cx="16" cy="15" r="2"/><path d="M4 12c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M12 12c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M4 20c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/><path d="M12 20c.4-2.4 1.8-3.6 4-3.6s3.6 1.2 4 3.6"/>'):'<path d="M18 4H6l6 8-6 8h12"/>';
+  if(planBtn)planBtn.hidden=!!meet;
+  if(planLabel)planLabel.textContent='Plan';
+  if(planIcon)planIcon.innerHTML='<path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/>';
   if(attendanceBtn)attendanceBtn.hidden=!!meet;
 }
 function trayPlanAction(){
-  if(CL&&CL.type==='meet'){openPartnerTiming();return;}
   openSeasonPlan(true);
 }
 function traySortAction(){
-  if(CL&&CL.type==='meet'){openFieldCapture();return;}
+  if(CL&&CL.type==='meet'){if(isCrossCountryRaceMode())openXCTools();else openFieldCapture();return;}
   go('s-sort');
 }
 function traySumAction(){
-  if(CL&&CL.type==='meet'){openRelayControls();return;}
+  if(CL&&CL.type==='meet'){if(isCrossCountryRaceMode())openPartnerTiming();else openRelayControls();return;}
   sums();
 }
 function rHTML(r){
@@ -10632,6 +10646,7 @@ document.addEventListener('touchstart',function(e){
 <div class="mover h" id="m-info"><div class="msh"><div class="mhd"></div><div class="mttl" id="info-title"></div><div style="padding:0 16px 16px;font-size:16px;color:#333;text-align:center;line-height:1.6" id="info-body"></div><button class="mbtn" onclick="hm('m-info')">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-profile"><div class="msh"><div class="mhd"></div><div class="mttl" id="profile-title">Athlete Profile</div><div class="profile-box" id="profile-body"></div><button class="mbtn c" onclick="hm('m-profile')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h pro-only" id="m-training-plan"><div class="msh"><div class="mhd"></div><div class="mttl">Select Training Plan</div><div style="padding:0 4px 4px"><div class="srow"><label class="slbl">Plan</label><input id="tp-plan" type="hidden" value=""/><button type="button" id="tp-plan-display" class="sinp picker-control" onclick="openTrainingPlanPicker()">Loading...</button></div></div><div id="tp-detail" class="profile-box"></div><div id="tp-status" style="font-size:12px;color:#555;text-align:center;padding:4px 0;min-height:16px"></div><button class="mbtn" id="tp-btn" onclick="useSelectedTrainingPlan()" style="background:#2B4FCC">Use Selected Plan</button><button class="mbtn c" id="tp-clear" onclick="useSelectedTrainingPlanForGroup()" style="display:none;margin-top:8px">Use for Group</button><button class="mbtn c" onclick="hm('m-training-plan')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
+<div class="mover h" id="m-xc-tools"><div class="msh"><div class="mhd"></div><div class="mttl">XC Tools</div><div id="xc-tools-body" class="builder-box"></div><button class="mbtn c" onclick="hm('m-xc-tools')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-picker"><div class="msh"><div class="mhd"></div><div class="mttl" id="picker-title">Select</div><div class="picker-list" id="picker-list"></div><button class="mbtn c" onclick="closePicker()" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-relay"><div class="msh"><div class="mhd"></div><div class="mttl">Relay</div><div id="relay-controls"></div><button class="mbtn c" onclick="hm('m-relay')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>
 <div class="mover h" id="m-partner-timing"><div class="msh"><div class="mhd"></div><div class="mttl">Partner Timing</div><div id="partner-controls" class="builder-box"></div><button class="mbtn c" onclick="hm('m-partner-timing')" style="margin-top:8px">Close</button><div style="height:8px"></div></div></div>

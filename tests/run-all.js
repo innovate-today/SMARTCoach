@@ -5731,6 +5731,14 @@ function checkPartnerTimingPhaseOne() {
     "return meetResultSport()==='Cross Country'?crossCountryMeetEventLabels():meetEventLabels();",
     "return canonicalMobileSport(source&&source.sport)||canonicalMobileSport(source&&source.sportMode)||inferMeetSport(source);",
     "return raceSportMode(CL)||inferMeetSport(CL||{});",
+    "function isCrossCountryRaceMode()",
+    "function openXCTools()",
+    "id=\"m-xc-tools\"",
+    "sortLabel.textContent=meet?(xc?'XC Tools':'Field'):'Sort';",
+    "sumLabel.textContent=meet?(xc?'Partner':'Relay'):'Sum';",
+    "if(planBtn)planBtn.hidden=!!meet;",
+    "if(CL&&CL.type==='meet'){if(isCrossCountryRaceMode())openXCTools();else openFieldCapture();return;}",
+    "if(CL&&CL.type==='meet'){if(isCrossCountryRaceMode())openPartnerTiming();else openRelayControls();return;}",
     "if(labels.indexOf(label)<0)label='';",
     "meetResultSport()==='Cross Country'?'Select XC Distance':'Select Event'",
     "Choose a distance before saving meet results.",
@@ -5768,7 +5776,7 @@ function checkPartnerTimingPhaseOne() {
     "t.closest&&t.closest('button')",
     "id=\"m-partner-timing\"",
     "id=\"tray-plan-label\">Plan</span>",
-    "meet?'Partner':'Plan'",
+    "if(planLabel)planLabel.textContent='Plan';",
     "/api/smart-trak/partner-timing",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Partner Timing mobile phase one missing ${text}`);

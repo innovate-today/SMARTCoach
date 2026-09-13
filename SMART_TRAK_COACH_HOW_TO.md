@@ -945,7 +945,7 @@ Meet results should appear in SMART Trak after sync.
 
 For individual events, add the runners for that race, time the event, save the results, and sync.
 
-For relays:
+For relays at a track meet:
 
 1. Open **Meets**.
 2. Select the meet.
@@ -980,9 +980,11 @@ For Partner Timing at a cross country meet:
 
 Partner Timing is built for split points that are too far apart for one coach to cover. **Load Partner Taps** only pulls shared split/finish taps into the race. **Save Meet Results** creates the official SMART Trak Meet History records.
 
+On cross country race screens, tap **XC Tools** for race-day tools such as Race Summary and Past Results. Track meet screens keep **Field** and **Relay** in the tray instead.
+
 Use **Past Results** from an open meet/race in the SMARTCoach app when you need to check saved SMART Trak results during a meet. Past Results pulls recent saved results first, then fills in the larger Meet History in the background. It shows the athletes in the open race first and defaults to the current event. If today's race has already been saved, the card shows **Today** plus the athlete's latest previous comparable race when available. If roster names do not match the saved rows exactly, Past Results falls back to current-event results and then recent saved results instead of leaving the sheet blank. Turn off **Current event only** or search by athlete, meet, or event to look across other saved races. Tap **Refresh Past Results** after a race is saved if you need the newest Meet History records on the phone.
 
-For field events from the SMARTCoach Pro Mobile App:
+For field events from the SMARTCoach Pro Mobile App at a track meet:
 
 1. Open **Meets**.
 2. Select the meet.
