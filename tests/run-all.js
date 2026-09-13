@@ -3336,6 +3336,8 @@ function checkBugTrakDesktopFeedback() {
     "function smartcoachHelpSuppressedPage()",
     "path==='/athlete-calendar'||path==='/athlete-calendar.html'||path==='/miles-board'||path==='/miles-board.html'",
     "smartcoach-chat-badge-under",
+    "bottom:-64px!important",
+    "pointer-events:none!important",
     "function tuckSmartCoachChatBadge()",
     "text!=='SMARTCoach Pro'",
     "rect.right>window.innerWidth-260&&rect.bottom>window.innerHeight-140",

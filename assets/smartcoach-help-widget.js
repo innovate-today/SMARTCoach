@@ -14,7 +14,7 @@
     'div[class*="leadconnector"]',
     'div[class*="chat-widget"]'
   ].join(',') + '{z-index:2147483647!important;}' +
-    '.smartcoach-chat-badge-under{bottom:18px!important;right:18px!important;top:auto!important;z-index:2147482500!important}' +
+    '.smartcoach-chat-badge-under{bottom:-64px!important;right:18px!important;top:auto!important;z-index:1!important;pointer-events:none!important}' +
     '.smartcoach-livechat-btn{position:fixed;right:18px;bottom:70px;z-index:2147482999;border:0;border-radius:999px;background:#155EEF;color:#fff;font:900 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:12px 14px;box-shadow:0 18px 34px rgba(21,94,239,.25);cursor:pointer}' +
     '.smartcoach-livechat-btn:hover{background:#1747b9}' +
     '.smartcoach-livechat-btn:disabled{opacity:.75;cursor:wait}' +
@@ -79,10 +79,11 @@
       if(!container)return false;
       container.classList.remove('smartcoach-chat-badge-raised');
       container.classList.add('smartcoach-chat-badge-under');
-      container.style.setProperty('bottom','18px','important');
+      container.style.setProperty('bottom','-64px','important');
       container.style.setProperty('right','18px','important');
       container.style.setProperty('top','auto','important');
-      container.style.setProperty('z-index','2147482500','important');
+      container.style.setProperty('z-index','1','important');
+      container.style.setProperty('pointer-events','none','important');
       return true;
     });
   }
