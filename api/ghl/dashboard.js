@@ -2354,19 +2354,32 @@ function isVoidedMeetResult(record) {
 
 function dashboardVoidedMeetResultKeys(records) {
   const recordIds = new Set();
-  const sourceRecordIds = new Set();
+  const sourceRecords = [];
   (Array.isArray(records) ? records : []).forEach((record) => {
     if (!isVoidedMeetResult(record)) return;
     const props = recordProperties(record);
     const recordId = clean(record && record.id);
     const sourceRecordId = clean(prop(props, "source_record_id"));
     if (recordId) recordIds.add(recordId);
-    if (sourceRecordId) sourceRecordIds.add(sourceRecordId);
+    if (sourceRecordId) sourceRecords.push({
+      sourceRecordId,
+      fingerprint: meetResultFingerprintFromProps(props),
+    });
   });
   return {
     recordIds: Array.from(recordIds),
-    sourceRecordIds: Array.from(sourceRecordIds),
+    sourceRecords,
   };
+}
+
+function meetResultFingerprintFromProps(props) {
+  return [
+    prop(props, "athlete_name_snapshot"),
+    prop(props, "meet_name"),
+    prop(props, "meet_date"),
+    prop(props, "event"),
+    prop(props, "result_display"),
+  ].map((value) => clean(value).toLowerCase()).join("|");
 }
 
 function normalizePerformanceRecord(record) {

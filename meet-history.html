@@ -949,24 +949,37 @@ function mergeMeetHistoryRows(primaryRows,recentRows){
 }
 function filterVoidedSnapshotMeetRows(rows,voidedKeys){
   var blockedRecords={};
-  var blockedSources={};
+  var blockedSources=[];
   var recordKeys=Array.isArray(voidedKeys&&voidedKeys.recordIds)?voidedKeys.recordIds:(Array.isArray(voidedKeys)?voidedKeys:[]);
-  var sourceKeys=Array.isArray(voidedKeys&&voidedKeys.sourceRecordIds)?voidedKeys.sourceRecordIds:[];
+  var sourceKeys=Array.isArray(voidedKeys&&voidedKeys.sourceRecords)?voidedKeys.sourceRecords:(Array.isArray(voidedKeys&&voidedKeys.sourceRecordIds)?voidedKeys.sourceRecordIds:[]);
   recordKeys.forEach(function(key){
     key=String(key||'').trim();
     if(key)blockedRecords[key]=true;
   });
-  sourceKeys.forEach(function(key){
-    key=String(key||'').trim();
-    if(key)blockedSources[key]=true;
+  sourceKeys.forEach(function(item){
+    var sourceRecordId=String((item&&item.sourceRecordId)||item||'').trim();
+    if(sourceRecordId)blockedSources.push({sourceRecordId:sourceRecordId,fingerprint:String(item&&item.fingerprint||'')});
   });
-  if(!Object.keys(blockedRecords).length&&!Object.keys(blockedSources).length)return rows;
+  if(!Object.keys(blockedRecords).length&&!blockedSources.length)return rows;
   return (Array.isArray(rows)?rows:[]).filter(function(row){
     var recordId=String(row&&row.recordId||'').trim();
     var sourceRecordId=String(row&&row.sourceRecordId||'').trim();
     if(recordId)return !blockedRecords[recordId];
-    return !(sourceRecordId&&blockedSources[sourceRecordId]);
+    if(!sourceRecordId)return true;
+    var fingerprint=snapshotMeetResultFingerprint(row);
+    return !blockedSources.some(function(item){
+      return item.sourceRecordId===sourceRecordId&&(!item.fingerprint||item.fingerprint===fingerprint);
+    });
   });
+}
+function snapshotMeetResultFingerprint(row){
+  return [
+    row&&row.athleteName,
+    row&&row.meetName,
+    row&&row.meetDate,
+    row&&row.event,
+    row&&row.resultDisplay
+  ].map(function(value){return String(value||'').trim().toLowerCase();}).join('|');
 }
 function normalizeDashboardAthletes(rows){
   return (Array.isArray(rows)?rows:[]).filter(function(row){

@@ -139,6 +139,7 @@ module.exports = async function handler(req, res) {
       await pruneDashboardSnapshotMeetResult(accountKey, {
         recordId: record.id,
         sourceRecordId: sourceRecordId || prop(props, "source_record_id"),
+        fingerprint: meetResultFingerprintFromProps(props),
       }).catch(() => {});
     }
 
@@ -186,6 +187,7 @@ module.exports = async function handler(req, res) {
 async function pruneDashboardSnapshotMeetResult(accountKey, identifiers) {
   const recordId = clean(identifiers && identifiers.recordId);
   const sourceRecordId = clean(identifiers && identifiers.sourceRecordId);
+  const sourceFingerprint = clean(identifiers && identifiers.fingerprint);
   if (!accountKey || (!recordId && !sourceRecordId)) return { saved: false, reason: "No meet result identifier." };
   const scoped = await loadAccountScopedRecord(accountKey, DASHBOARD_SNAPSHOT_NAMESPACE).catch(() => null);
   const record = scoped && scoped.found && scoped.record;
@@ -195,7 +197,7 @@ async function pruneDashboardSnapshotMeetResult(accountKey, identifiers) {
     const rowRecordId = clean(row && row.recordId);
     const rowSourceRecordId = clean(row && row.sourceRecordId);
     if (recordId && rowRecordId) return rowRecordId !== recordId;
-    return !(sourceRecordId && rowSourceRecordId === sourceRecordId);
+    return !(sourceRecordId && rowSourceRecordId === sourceRecordId && (!sourceFingerprint || meetResultSnapshotFingerprint(row) === sourceFingerprint));
   };
   const nextSnapshot = {
     ...snapshot,
@@ -207,6 +209,26 @@ async function pruneDashboardSnapshotMeetResult(accountKey, identifiers) {
     savedAt: nextSnapshot.snapshotSavedAt,
     snapshot: nextSnapshot,
   });
+}
+
+function meetResultFingerprintFromProps(props) {
+  return [
+    prop(props, "athlete_name_snapshot"),
+    prop(props, "meet_name"),
+    prop(props, "meet_date"),
+    prop(props, "event"),
+    prop(props, "result_display"),
+  ].map((value) => clean(value).toLowerCase()).join("|");
+}
+
+function meetResultSnapshotFingerprint(row) {
+  return [
+    row && row.athleteName,
+    row && row.meetName,
+    row && row.meetDate,
+    row && row.event,
+    row && row.resultDisplay,
+  ].map((value) => clean(value).toLowerCase()).join("|");
 }
 
 async function editMeetResult({ token, locationId, contactId, athleteName, reason, record, props, payload }) {
