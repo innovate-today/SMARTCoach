@@ -225,8 +225,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .eq-result b{display:block;font-size:15px;color:#111}
 .eq-result small{display:block;margin-top:2px;font-size:12px;color:#666;line-height:1.3}
 .race-summary-head{background:#fff;border:1px solid #d1d5db;border-radius:10px;margin:0 12px 10px;padding:12px;text-align:left}
+.race-summary-head.previous{background:#f8fafc}
 .race-summary-head b{display:block;font-size:18px;color:#111827}
 .race-summary-head small{display:block;color:#667085;font-size:12px;font-weight:700;margin-top:3px}
+.race-summary-archive-title{margin:16px 12px 8px;font-size:12px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.04em;text-align:left}
 .race-summary-section{background:#fff;border:1px solid #d1d5db;border-radius:10px;margin:0 12px 10px;overflow:hidden;text-align:left}
 .race-summary-title{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f7f7f9;border-bottom:0.5px solid #e5e5ea;padding:10px 12px}
 .race-summary-title b{font-size:15px;color:#111827}
@@ -5539,7 +5541,7 @@ function updateGroupPrimaryAction(){
   var btn=document.getElementById('group-action');
   if(!btn||!CL)return;
   var ready=groupReadyRunCount();
-  var savedMeetResults=CL.type==='meet'&&raceSummaryRows().length>0;
+  var savedMeetResults=CL.type==='meet'&&raceSummaryAvailableCount()>0;
   btn.textContent=(isProPlan()&&ready)?(CL.type==='meet'?'Save':'Sync'):(savedMeetResults?'Results':'Share');
 }
 function groupPrimaryAction(){
@@ -5547,7 +5549,7 @@ function groupPrimaryAction(){
     openSMARTCoachSave();
     return;
   }
-  if(CL&&CL.type==='meet'&&raceSummaryRows().length){
+  if(CL&&CL.type==='meet'&&raceSummaryAvailableCount()){
     openRaceSummary();
     return;
   }
@@ -5555,7 +5557,7 @@ function groupPrimaryAction(){
 }
 function raceSummaryShortcutHtml(){
   if(!CL||CL.type!=='meet')return'';
-  var count=raceSummaryRows().length;
+  var count=raceSummaryAvailableCount();
   var note=count?count+' saved result'+(count===1?'':'s')+' available':'Opens after saved times are captured.';
   return '<div class="erow" onclick="openRaceSummary()" style="min-height:46px;padding-top:7px;padding-bottom:7px"><span class="elbl"><b>Race Summary</b><br><small style="color:#102a70;font-weight:800">'+note+'</small></span><span style="color:#bbb">&rsaquo;</span></div>';
 }
@@ -5584,12 +5586,40 @@ function raceSummaryRows(){
   });
   return rows.sort(function(a,b){return (a.ms||Number.MAX_SAFE_INTEGER)-(b.ms||Number.MAX_SAFE_INTEGER)||String(a.name).localeCompare(String(b.name));});
 }
+function raceSummarySnapshots(){
+  return (CL&&Array.isArray(CL.raceSummarySnapshots)?CL.raceSummarySnapshots:[]).filter(function(snapshot){
+    return snapshot&&Array.isArray(snapshot.rows)&&snapshot.rows.length;
+  }).sort(function(a,b){return String(b.createdAt||'').localeCompare(String(a.createdAt||''));});
+}
+function raceSummaryAvailableCount(){
+  return raceSummaryRows().length+raceSummarySnapshots().reduce(function(sum,snapshot){return sum+(snapshot.rows||[]).length;},0);
+}
+function raceSummarySnapshotKey(rows){
+  return (rows||[]).map(function(row){return [row.name,row.event,row.division,row.time,(row.splits||[]).map(function(split){return split.ms;}).join('/')].join('|');}).join('||');
+}
+function preserveRaceSummarySnapshot(reason){
+  if(!CL||CL.type!=='meet')return false;
+  var rows=raceSummaryRows();
+  if(!rows.length)return false;
+  var key=raceSummarySnapshotKey(rows);
+  CL.raceSummarySnapshots=Array.isArray(CL.raceSummarySnapshots)?CL.raceSummarySnapshots:[];
+  if(CL.raceSummarySnapshots.some(function(snapshot){return snapshot.key===key;}))return false;
+  CL.raceSummarySnapshots.unshift({
+    id:'race_summary_'+Date.now(),
+    key:key,
+    title:meetDisplayTitle(CL),
+    meta:[CL.meetDate,meetRosterGroupLabel(CL),meetGroupDivisionLabel(CL)].filter(Boolean).join(' · '),
+    createdAt:new Date().toISOString(),
+    reason:reason||'reset',
+    rows:rows
+  });
+  CL.raceSummarySnapshots=CL.raceSummarySnapshots.slice(0,8);
+  return true;
+}
 function raceSummarySectionLabel(row){
   return String(row&&row.division||'Open').trim()||'Open';
 }
-function raceSummaryHtml(){
-  var rows=raceSummaryRows();
-  if(!rows.length)return '<div class="race-summary-empty">No saved race results yet. Stop runners, then save/sync meet results to recall them here.</div>';
+function raceSummaryTableHtml(rows,title,meta,previous){
   var maxSplits=rows.reduce(function(max,row){return Math.max(max,(row.splits||[]).length);},0);
   var groups={};
   rows.forEach(function(row){
@@ -5597,7 +5627,7 @@ function raceSummaryHtml(){
     if(!groups[label])groups[label]=[];
     groups[label].push(row);
   });
-  return '<div class="race-summary-head"><b>'+ex(meetDisplayTitle(CL))+'</b><small>'+ex([CL.meetDate,meetRosterGroupLabel(CL),meetGroupDivisionLabel(CL)].filter(Boolean).join(' · '))+'</small></div>'+
+  return '<div class="race-summary-head '+(previous?'previous':'')+'"><b>'+ex(title||meetDisplayTitle(CL))+'</b><small>'+ex(meta||[CL.meetDate,meetRosterGroupLabel(CL),meetGroupDivisionLabel(CL)].filter(Boolean).join(' · '))+'</small></div>'+
     Object.keys(groups).sort().map(function(label){
       var section=groups[label];
       var headers=['Place','Name','Event'];
@@ -5612,18 +5642,37 @@ function raceSummaryHtml(){
         }).join('')+'</tbody></table></div></div>';
     }).join('');
 }
+function raceSummaryHtml(){
+  var rows=raceSummaryRows();
+  var snapshots=raceSummarySnapshots();
+  if(!rows.length&&!snapshots.length)return '<div class="race-summary-empty">No saved race results yet. Stop runners, then save/sync meet results to recall them here.</div>';
+  var html=rows.length?raceSummaryTableHtml(rows,meetDisplayTitle(CL),[CL.meetDate,meetRosterGroupLabel(CL),meetGroupDivisionLabel(CL)].filter(Boolean).join(' · '),false):'';
+  if(snapshots.length){
+    html+='<div class="race-summary-archive-title">Previous Race Summaries</div>'+
+      snapshots.map(function(snapshot){
+        return raceSummaryTableHtml(snapshot.rows||[],snapshot.title,snapshot.meta||formatDateTime(snapshot.createdAt),true);
+      }).join('');
+  }
+  return html;
+}
 function raceSummaryText(){
   var rows=raceSummaryRows();
+  var snapshots=raceSummarySnapshots();
   var title=(CL&&meetDisplayTitle(CL)||'Race')+' Summary';
-  if(!rows.length)return title+'\nNo saved race results yet.';
+  if(!rows.length&&!snapshots.length)return title+'\nNo saved race results yet.';
   var lines=[title];
-  var current='';
-  rows.forEach(function(row,index){
-    var label=raceSummarySectionLabel(row);
-    if(label!==current){current=label;lines.push('',label);}
-    var splits=(row.splits||[]).length?' ['+row.splits.map(function(split,i){return 'S'+(i+1)+' '+fmt(split.ms);}).join(' / ')+']':'';
-    lines.push((index+1)+'. '+row.name+' - '+row.time+splits);
-  });
+  function addRows(label,items){
+    var current='';
+    if(label)lines.push('',label);
+    (items||[]).forEach(function(row,index){
+      var section=raceSummarySectionLabel(row);
+      if(section!==current){current=section;lines.push('',section);}
+      var splits=(row.splits||[]).length?' ['+row.splits.map(function(split,i){return 'S'+(i+1)+' '+fmt(split.ms);}).join(' / ')+']':'';
+      lines.push((index+1)+'. '+row.name+' - '+row.time+splits);
+    });
+  }
+  if(rows.length)addRows('',rows);
+  snapshots.forEach(function(snapshot){addRows('Previous: '+(snapshot.title||'Race Summary'),snapshot.rows||[]);});
   return lines.join('\n');
 }
 function openRaceSummary(){
@@ -6147,6 +6196,7 @@ function resetPartnerTimingRace(){
   if(!partnerTimingEnabled())return;
   if(!confirm('Reset Partner Timing race clock and station taps for this race?'))return;
   tapFeedback();
+  preserveRaceSummarySnapshot('partner-reset');
   var partner=ensurePartnerTiming();
   partner.startAt='';
   partner.startCoach='';
@@ -6926,6 +6976,7 @@ function masterReset(){
   }
   if(!confirm('Reset all timers and saved run history for this group?'))return;
   tapFeedback();
+  preserveRaceSummarySnapshot('timer-reset');
   if(relayEnabled())resetRelayTimer(true);
   CL.runners.forEach(function(r){
     r.on=false;r.el=0;r.t0=0;r.le=0;r.lt=0;r.laps=[];r.saved=[];r.ts=null;
