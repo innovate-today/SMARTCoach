@@ -5673,7 +5673,8 @@ function raceSummaryShortcutHtml(forceTools){
   if(!forceTools)return'';
   var count=raceSummaryAvailableCount();
   var note=count?count+' saved result'+(count===1?'':'s')+' available':'Opens after saved times are captured.';
-  return '<div class="erow" onclick="openRaceSummary()" style="min-height:46px;padding-top:7px;padding-bottom:7px"><span class="elbl"><b>Race Summary</b><br><small style="color:#102a70;font-weight:800">'+note+'</small></span><span style="color:#bbb">&rsaquo;</span></div>';
+  var label=isTrackRaceMode()?'Current Meet Results':'Race Summary';
+  return '<div class="erow" onclick="openRaceSummary()" style="min-height:46px;padding-top:7px;padding-bottom:7px"><span class="elbl"><b>'+label+'</b><br><small style="color:#102a70;font-weight:800">'+note+'</small></span><span style="color:#bbb">&rsaquo;</span></div>';
 }
 function pastResultsShortcutHtml(forceTools){
   if(!CL||CL.type!=='meet'||!isProPlan())return'';
@@ -5737,6 +5738,7 @@ function preserveRaceSummarySnapshot(reason){
   return true;
 }
 function raceSummarySectionLabel(row){
+  if(isTrackRaceMode())return String(row&&row.event||'Event').trim()||'Event';
   return String(row&&row.division||'Open').trim()||'Open';
 }
 function raceSummaryTableHtml(rows,title,meta,previous){
@@ -6075,21 +6077,11 @@ function openXCTools(){
   }
   sm('m-xc-tools');
 }
-function openTrackFieldEventsFromTools(){
-  hm('m-track-tools');
-  openFieldCapture();
-}
-function trackToolsFieldShortcutHtml(){
-  if(!isTrackRaceMode())return'';
-  return '<div class="lsec" style="margin-top:8px">'+
-    '<div class="erow" onclick="openTrackFieldEventsFromTools()" style="min-height:46px;padding-top:7px;padding-bottom:7px"><span class="elbl"><b>Field Events</b><br><small style="color:#102a70;font-weight:800">Open field-event flights and attempts.</small></span><span style="color:#bbb">&rsaquo;</span></div>'+
-  '</div>';
-}
 function openTrackTools(){
   if(!isTrackRaceMode())return;
   var body=document.getElementById('track-tools-body');
   if(body){
-    body.innerHTML=meetGroupSetupHtml(true)+trackToolsFieldShortcutHtml()+groupSyncSummaryHtml(true);
+    body.innerHTML='<div class="lsec" style="margin-top:0;border-top:0">'+raceSummaryShortcutHtml(true)+pastResultsShortcutHtml(true)+'</div>';
   }
   sm('m-track-tools');
 }

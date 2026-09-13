@@ -4276,15 +4276,18 @@ function checkMobileMeetRaceDivisionSetup() {
     "function isTrackRaceMode()",
     "function openTrackTools()",
     "id=\"m-track-tools\"",
-    "body.innerHTML=meetGroupSetupHtml(true)+trackToolsFieldShortcutHtml()+groupSyncSummaryHtml(true);",
-    "function trackToolsFieldShortcutHtml()",
-    "openTrackFieldEventsFromTools()",
+    "body.innerHTML='<div class=\"lsec\" style=\"margin-top:0;border-top:0\">'+raceSummaryShortcutHtml(true)+pastResultsShortcutHtml(true)+'</div>';",
+    "var label=isTrackRaceMode()?'Current Meet Results':'Race Summary';",
+    "if(isTrackRaceMode())return String(row&&row.event||'Event').trim()||'Event';",
     '<select id="meet-division-input" class="sinp" style="max-width:210px;flex:0 0 210px;font-size:15px;font-weight:800;padding:6px 8px" onchange="setMeetGroupDivision(this.value)">',
     'id="xc-roster-group-input"',
     "raceDivision:meetGroupDivisionLabel(CL)",
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile meet race division setup missing ${text}`);
   });
+  if (mobile.includes("body.innerHTML=meetGroupSetupHtml(true)+trackToolsFieldShortcutHtml()+groupSyncSummaryHtml(true);")) {
+    throw new Error("Track Tools should only show current meet results and past results");
+  }
   [
     "placeholder=\"Varsity Boys, JV Girls, Open\" autocomplete=\"off\" oninput=\"setMeetGroupDivision(this.value)\"",
     "<b>'+ex(CL.eventName||CL.name||'Race')+'</b><br><small style=\"color:#777\">'+ex((CL.meetName||'Meet')+(CL.meetDate?' · '+CL.meetDate:''))+'</small>",
