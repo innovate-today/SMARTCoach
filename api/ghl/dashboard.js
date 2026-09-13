@@ -2353,13 +2353,20 @@ function isVoidedMeetResult(record) {
 }
 
 function dashboardVoidedMeetResultKeys(records) {
-  const keys = new Set();
+  const recordIds = new Set();
+  const sourceRecordIds = new Set();
   (Array.isArray(records) ? records : []).forEach((record) => {
     if (!isVoidedMeetResult(record)) return;
     const props = recordProperties(record);
-    [record && record.id, prop(props, "source_record_id")].map(clean).filter(Boolean).forEach((key) => keys.add(key));
+    const recordId = clean(record && record.id);
+    const sourceRecordId = clean(prop(props, "source_record_id"));
+    if (recordId) recordIds.add(recordId);
+    if (sourceRecordId) sourceRecordIds.add(sourceRecordId);
   });
-  return Array.from(keys);
+  return {
+    recordIds: Array.from(recordIds),
+    sourceRecordIds: Array.from(sourceRecordIds),
+  };
 }
 
 function normalizePerformanceRecord(record) {

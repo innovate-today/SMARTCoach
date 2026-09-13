@@ -194,7 +194,8 @@ async function pruneDashboardSnapshotMeetResult(accountKey, identifiers) {
   const keep = (row) => {
     const rowRecordId = clean(row && row.recordId);
     const rowSourceRecordId = clean(row && row.sourceRecordId);
-    return !((recordId && rowRecordId === recordId) || (sourceRecordId && rowSourceRecordId === sourceRecordId));
+    if (recordId && rowRecordId) return rowRecordId !== recordId;
+    return !(sourceRecordId && rowSourceRecordId === sourceRecordId);
   };
   const nextSnapshot = {
     ...snapshot,

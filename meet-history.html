@@ -948,16 +948,24 @@ function mergeMeetHistoryRows(primaryRows,recentRows){
   return merged;
 }
 function filterVoidedSnapshotMeetRows(rows,voidedKeys){
-  var blocked={};
-  (Array.isArray(voidedKeys)?voidedKeys:[]).forEach(function(key){
+  var blockedRecords={};
+  var blockedSources={};
+  var recordKeys=Array.isArray(voidedKeys&&voidedKeys.recordIds)?voidedKeys.recordIds:(Array.isArray(voidedKeys)?voidedKeys:[]);
+  var sourceKeys=Array.isArray(voidedKeys&&voidedKeys.sourceRecordIds)?voidedKeys.sourceRecordIds:[];
+  recordKeys.forEach(function(key){
     key=String(key||'').trim();
-    if(key)blocked[key]=true;
+    if(key)blockedRecords[key]=true;
   });
-  if(!Object.keys(blocked).length)return rows;
+  sourceKeys.forEach(function(key){
+    key=String(key||'').trim();
+    if(key)blockedSources[key]=true;
+  });
+  if(!Object.keys(blockedRecords).length&&!Object.keys(blockedSources).length)return rows;
   return (Array.isArray(rows)?rows:[]).filter(function(row){
     var recordId=String(row&&row.recordId||'').trim();
     var sourceRecordId=String(row&&row.sourceRecordId||'').trim();
-    return !((recordId&&blocked[recordId])||(sourceRecordId&&blocked[sourceRecordId]));
+    if(recordId)return !blockedRecords[recordId];
+    return !(sourceRecordId&&blockedSources[sourceRecordId]);
   });
 }
 function normalizeDashboardAthletes(rows){
