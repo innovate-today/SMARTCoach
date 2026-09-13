@@ -1789,7 +1789,8 @@ function checkXcTop20RecordsFeature() {
     "rows.slice(0, DASHBOARD_RECENT_MEET_LIMIT).forEach(keep);",
     "if (currentKeys.has(dashboardMeetSeasonKey(row))) keep(row);",
     "function isUnlinkedNamedMeetResult(result)",
-    "&& !isUnlinkedNamedMeetResult(result)) return;",
+    "if (!(result.event || result.resultDisplay)) return;",
+    "if (resultKey && matchedResultKeys.has(resultKey)) return;",
     "xcTop20,",
     "module.exports.publicXcTop20Board = publicXcTop20Board;",
     "function buildXcTop20(rows, athletes = [])",
@@ -5453,6 +5454,9 @@ function checkHistoricalMeetResultsLoadUnmatched() {
     'resultType).toLowerCase() === "historical import"',
     'startsWith("mhi_")',
     "Athletic\\.net|historical",
+    "const matchedResultKeys = new Set();",
+    "if (!(result.event || result.resultDisplay)) return;",
+    "if (resultKey && matchedResultKeys.has(resultKey)) return;",
   ];
   required.forEach((text) => {
     if (!api.includes(text)) throw new Error(`dashboard must include unmatched historical meet imports: ${text}`);

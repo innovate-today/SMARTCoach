@@ -1359,6 +1359,7 @@ function buildRecentTrainingSyncs({ athletes = [], performanceRecords = [], perf
 function buildRecentMeetResults({ athletes = [], meetRecords = [], meetRecordIndex }) {
   const rows = [];
   const matchedRecordIds = new Set();
+  const matchedResultKeys = new Set();
   const knownAthletes = meetResultKnownAthletes({ athletes, meetRecords });
   athletes.forEach((athlete) => {
     const results = meetRecordIndex ? athleteIndexedRecords(meetRecordIndex, athlete) : meetRecords
@@ -1367,6 +1368,8 @@ function buildRecentMeetResults({ athletes = [], meetRecords = [], meetRecordInd
       .filter((item) => item.event || item.resultDisplay);
     results.forEach((result) => {
       if (result.recordId) matchedRecordIds.add(result.recordId);
+      const matchedKey = dashboardMeetResultKey(result);
+      if (matchedKey) matchedResultKeys.add(matchedKey);
       const resultSeasonYear = Number(result.seasonYear) || yearFromDateValue(result.meetDate);
       rows.push({
         ...result,
@@ -1380,8 +1383,10 @@ function buildRecentMeetResults({ athletes = [], meetRecords = [], meetRecordInd
   meetRecords.forEach((record) => {
     if (isVoidedMeetResult(record)) return;
     const result = normalizeMeetResult(record);
-    if (!isRelayMeetResult(result) && !isHistoricalMeetResult(result) && !isUnlinkedNamedMeetResult(result)) return;
+    if (!(result.event || result.resultDisplay)) return;
     if (result.recordId && matchedRecordIds.has(result.recordId)) return;
+    const resultKey = dashboardMeetResultKey(result);
+    if (resultKey && matchedResultKeys.has(resultKey)) return;
     const known = knownAthletes.get(xcTop20AthleteKey(result)) || {};
     const resultSeasonYear = Number(result.seasonYear) || yearFromDateValue(result.meetDate);
     rows.push({
