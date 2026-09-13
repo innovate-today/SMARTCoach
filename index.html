@@ -5833,15 +5833,23 @@ function pastResultsDeltaHtml(current,previous){
   var label=diffText(delta)+(delta<0?' faster':' slower');
   return '<span class="past-delta '+(delta<0?'faster':'slower')+'">'+ex(label)+'</span>';
 }
-function pastResultCardHtml(row,current){
-  var splitHtml=row.splits&&row.splits.length?'<div class="past-splits">'+row.splits.slice(0,6).map(function(split,index){return '<span class="past-split">S'+(index+1)+' '+ex(fmt(split.ms))+'</span>';}).join('')+'</div>':'';
-  var currentLine=current?'<div class="past-line"><b>Today</b><span><span class="past-result-time">'+ex(current.time)+'</span>'+pastResultsDeltaHtml(current,row)+'</span></div>':'';
-  return '<div class="past-card"><div class="past-card-head"><div><div class="past-card-name">'+ex(row.name)+'</div><small>'+ex([row.event||row.eventBucket,row.division].filter(Boolean).join(' · ')||'Race')+'</small></div>'+(current?'<div class="past-card-current">today saved</div>':'')+'</div><div class="past-card-body">'+
-    currentLine+
-    '<div class="past-line"><b>Past</b><span><span class="past-result-time">'+ex(row.time)+'</span>'+(row.best?' <small>'+ex(row.best)+'</small>':'')+'</span></div>'+
-    '<div class="past-line"><b>Meet</b><span>'+ex(row.meet||'Saved result')+'</span></div>'+
-    '<div class="past-line"><b>Date</b><span>'+ex(pastResultsDateLabel(row.date)||row.date||'')+'</span></div>'+
-    (splitHtml?'<div class="past-line"><b>Splits</b><span>'+splitHtml+'</span></div>':'')+
+function pastResultSplitsHtml(row){
+  return row&&row.splits&&row.splits.length?'<div class="past-splits">'+row.splits.slice(0,6).map(function(split,index){return '<span class="past-split">S'+(index+1)+' '+ex(fmt(split.ms))+'</span>';}).join('')+'</div>':'';
+}
+function pastResultCardHtml(previous,today){
+  var row=today||previous;
+  if(!row)return'';
+  var todayLine=today?'<div class="past-line"><b>Today</b><span><span class="past-result-time">'+ex(today.time)+'</span>'+pastResultsDeltaHtml(today,previous)+'</span></div>':'';
+  var previousLine=previous?
+    '<div class="past-line"><b>Previous</b><span><span class="past-result-time">'+ex(previous.time)+'</span>'+(previous.best?' <small>'+ex(previous.best)+'</small>':'')+'</span></div>'+
+    '<div class="past-line"><b>Meet</b><span>'+ex(previous.meet||'Saved result')+'</span></div>'+
+    '<div class="past-line"><b>Date</b><span>'+ex(pastResultsDateLabel(previous.date)||previous.date||'')+'</span></div>':
+    '<div class="past-line"><b>Previous</b><span>No saved prior result found.</span></div>';
+  var splitSource=today&&today.splits&&today.splits.length?today:previous;
+  return '<div class="past-card"><div class="past-card-head"><div><div class="past-card-name">'+ex(row.name)+'</div><small>'+ex([row.event||row.eventBucket,row.division].filter(Boolean).join(' · ')||'Race')+'</small></div>'+(today?'<div class="past-card-current">today saved</div>':'')+'</div><div class="past-card-body">'+
+    todayLine+
+    previousLine+
+    (splitSource&&splitSource.splits&&splitSource.splits.length?'<div class="past-line"><b>Splits</b><span>'+pastResultSplitsHtml(splitSource)+'</span></div>':'')+
   '</div></div>';
 }
 function pastResultsRowsForView(){
@@ -5865,6 +5873,14 @@ function pastResultIsCurrentMeet(row){
   var rowMeet=String(row.meet||'').trim().toLowerCase();
   return !!(currentDate&&row.date===currentDate&&currentMeet&&rowMeet===currentMeet);
 }
+function pastResultsBestByAthlete(rows,predicate){
+  var map={};
+  (rows||[]).forEach(function(row){
+    if(predicate&&!predicate(row))return;
+    if(!map[row.key])map[row.key]=row;
+  });
+  return map;
+}
 function renderPastResults(){
   var body=document.getElementById('past-results-body');
   var status=document.getElementById('past-results-status');
@@ -5880,20 +5896,20 @@ function renderPastResults(){
   if(PAST_RESULTS.loading&&!PAST_RESULTS.rows.length){body.innerHTML='<div class="past-empty">Loading Past Results...</div>';return;}
   if(PAST_RESULTS.error&&!PAST_RESULTS.rows.length){body.innerHTML='<div class="past-empty">'+ex(PAST_RESULTS.error)+'</div>';return;}
   var rows=pastResultsRowsForView();
-  var current=pastResultsCurrentRowsByAthlete();
-  var latestByAthlete={};
-  rows.forEach(function(row){
-    if(pastResultIsCurrentMeet(row))return;
-    if(!latestByAthlete[row.key])latestByAthlete[row.key]=row;
+  var localToday=pastResultsCurrentRowsByAthlete();
+  var todayByAthlete=pastResultsBestByAthlete(rows,pastResultIsCurrentMeet);
+  Object.keys(localToday).forEach(function(key){
+    if(!todayByAthlete[key])todayByAthlete[key]=localToday[key];
   });
+  var previousByAthlete=pastResultsBestByAthlete(rows,function(row){return !pastResultIsCurrentMeet(row);});
   var raceKeys=(CL&&CL.runners||[]).map(function(r){return pastResultsAthleteKey(r.name);}).filter(Boolean);
   var html='';
   if(raceKeys.length){
-    var cards=raceKeys.map(function(key){return latestByAthlete[key]?pastResultCardHtml(latestByAthlete[key],current[key]):'';}).filter(Boolean);
+    var cards=raceKeys.map(function(key){return (todayByAthlete[key]||previousByAthlete[key])?pastResultCardHtml(previousByAthlete[key],todayByAthlete[key]):'';}).filter(Boolean);
     if(cards.length)html+="<div class=\"past-section-label\">Today's Athletes</div>"+cards.join('');
   }
   var remaining=rows.filter(function(row){return !raceKeys.length||raceKeys.indexOf(row.key)<0;}).slice(0,50);
-  if(remaining.length)html+='<div class="past-section-label">'+(html?'Other Matches':'Saved Results')+'</div>'+remaining.map(function(row){return pastResultCardHtml(row,current[row.key]);}).join('');
+  if(remaining.length)html+='<div class="past-section-label">'+(html?'Other Matches':'Saved Results')+'</div>'+remaining.map(function(row){return pastResultCardHtml(row,null);}).join('');
   if(!html){
     var eventText=PAST_RESULTS.eventOnly&&pastResultsCurrentEventBucket()?(' for '+pastResultsCurrentEventBucket()):'';
     html='<div class="past-empty">No saved Past Results found'+ex(eventText)+'. Try turning off Current event only or searching by athlete.</div>';
