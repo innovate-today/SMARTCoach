@@ -5904,6 +5904,13 @@ function pastResultsRowsForView(){
     return athleteKeys.length?!!athleteSet[row.key]:true;
   });
 }
+function pastResultsEventRows(){
+  var eventBucket=pastResultsCurrentEventBucket();
+  if(!eventBucket)return[];
+  return (PAST_RESULTS.rows||[]).filter(function(row){
+    return row.eventBucket===eventBucket;
+  });
+}
 function pastResultIsCurrentMeet(row){
   if(!CL||!row)return false;
   var currentDate=String(CL.meetDate||'').slice(0,10);
@@ -5947,11 +5954,15 @@ function renderPastResults(){
     var cards=raceKeys.map(function(key){return (todayByAthlete[key]||previousByAthlete[key])?pastResultCardHtml(previousByAthlete[key],todayByAthlete[key]):'';}).filter(Boolean);
     if(cards.length)html+="<div class=\"past-section-label\">Today's Athletes</div>"+cards.join('');
   }
+  if(!html&&!PAST_RESULTS.query&&PAST_RESULTS.eventOnly){
+    var eventRows=pastResultsEventRows().slice(0,50);
+    if(eventRows.length)html+='<div class="past-section-label">Current Event Results</div>'+eventRows.map(function(row){return pastResultCardHtml(row,null);}).join('');
+  }
   var remaining=rows.filter(function(row){return !raceKeys.length||raceKeys.indexOf(row.key)<0;}).slice(0,50);
   if(remaining.length)html+='<div class="past-section-label">'+(html?'Other Matches':'Saved Results')+'</div>'+remaining.map(function(row){return pastResultCardHtml(row,null);}).join('');
   if(!html){
-    var eventText=PAST_RESULTS.eventOnly&&pastResultsCurrentEventBucket()?(' for '+pastResultsCurrentEventBucket()):'';
-    html='<div class="past-empty">No saved Past Results found'+ex(eventText)+'. Try turning off Current event only or searching by athlete.</div>';
+    var fallbackRows=(PAST_RESULTS.rows||[]).slice(0,50);
+    html=fallbackRows.length?'<div class="past-section-label">Recent Saved Results</div>'+fallbackRows.map(function(row){return pastResultCardHtml(row,null);}).join(''):'<div class="past-empty">No saved Past Results loaded yet. Tap Refresh Past Results after the race has been saved.</div>';
   }
   body.innerHTML=html;
 }
