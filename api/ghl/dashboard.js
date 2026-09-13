@@ -1410,16 +1410,38 @@ function buildResultsBoardRows({ athletes, meetRecords, bestRecords, meetRecordI
 
 function annotateResultsBoardBestFlags(rows, bestRecords) {
   const bests = (Array.isArray(bestRecords) ? bestRecords : []).map(normalizeBest).filter((best) => best.event);
-  if (!bests.length) return rows;
+  const rowBests = new Map();
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const key = resultsBoardBestKey(row);
+    if (!key) return;
+    const current = rowBests.get(key);
+    if (!current || resultsBetter(row, current)) rowBests.set(key, row);
+  });
   return (Array.isArray(rows) ? rows : []).map((row) => {
     const next = { ...row };
     bests.forEach((best) => {
       if (!resultsBoardBestMatchesRow(best, row)) return;
-      if (resultsBoardBestResultMatches(row, best.personalBestDisplay, best.personalBestMs, best.personalBestDate, best.personalBestMeet)) next.isPr = true;
+      if (!next.bestDisplay && (best.personalBestDisplay || best.personalBestMs)) {
+        next.bestDisplay = clean(best.personalBestDisplay);
+        next.bestMs = Number(best.personalBestMs) || parseTimeToMs(best.personalBestDisplay) || 0;
+      }
+      if (resultsBoardBestResultMatches(row, best.personalBestDisplay, best.personalBestMs, best.personalBestDate, best.personalBestMeet) || resultsBoardResultAtLeastBest(row, next.bestDisplay, next.bestMs)) next.isPr = true;
       if (resultsBoardBestResultMatches(row, best.seasonBestDisplay, best.seasonBestMs, best.seasonBestDate, best.seasonBestMeet)) next.isSeasonBest = true;
     });
+    const fallbackBest = rowBests.get(resultsBoardBestKey(row));
+    if (!next.bestDisplay && fallbackBest) {
+      next.bestDisplay = clean(fallbackBest.resultDisplay);
+      next.bestMs = resultsBoardResultMs(fallbackBest);
+    }
+    if (resultsBoardResultAtLeastBest(row, next.bestDisplay, next.bestMs)) next.isPr = true;
     return next;
   });
+}
+
+function resultsBoardBestKey(row) {
+  const athlete = clean(row && (row.contactId || row.athleteName)).toLowerCase();
+  const event = optionValue(row && row.event);
+  return athlete && event ? `${athlete}|${event}` : "";
 }
 
 function resultsBoardBestMatchesRow(best, row) {
@@ -1439,6 +1461,13 @@ function resultsBoardBestResultMatches(row, display, ms, date, meet) {
   const sameDate = !date || !row.meetDate || clean(date).slice(0, 10) === clean(row.meetDate).slice(0, 10);
   const sameMeet = !meet || !row.meetName || clean(meet).toLowerCase() === clean(row.meetName).toLowerCase();
   return sameDate && sameMeet;
+}
+
+function resultsBoardResultAtLeastBest(row, display, ms) {
+  if (!row || (!display && !ms)) return false;
+  const rowMs = resultsBoardResultMs(row);
+  const bestMs = Number(ms) || parseTimeToMs(display);
+  return Boolean(rowMs && bestMs && rowMs <= bestMs + 10);
 }
 
 function meetResultGrade(value, seasonYear) {
@@ -2041,6 +2070,8 @@ function resultsBoardBestHighlightRows(rows) {
     meetDate: clean(row.meetDate),
     event: clean(row.event),
     resultDisplay: clean(row.resultDisplay),
+    bestDisplay: clean(row.bestDisplay),
+    bestMs: Number(row.bestMs) || 0,
     isPr: !!row.isPr,
     isSeasonBest: !!row.isSeasonBest,
   }));
