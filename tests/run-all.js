@@ -1772,6 +1772,8 @@ function checkXcTop20RecordsFeature() {
     "Track Records",
     "Track Record Tools",
     "function recordTypeLabel(value)",
+    "function recordSportKey(value)",
+    "recordHasDisplayData(row)&&recordSportKey(row.sport)==='track'",
     "Meet results and app syncs do not update the Track Records table automatically.",
     "row.activeAthlete",
     "row.currentYear",

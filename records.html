@@ -2195,7 +2195,10 @@ function updateSortButtons(){
   });
 }
 function recordIsUsable(row){
-  return !!(row&&typeof row==='object'&&recordHasDisplayData(row));
+  return !!(row&&typeof row==='object'&&recordHasDisplayData(row)&&recordSportKey(row.sport)==='track');
+}
+function recordSportKey(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
 }
 function eventHigherIsBetter(eventName){
   return !!HIGHER_IS_BETTER_EVENTS[String(eventName||'').trim().toLowerCase()];
