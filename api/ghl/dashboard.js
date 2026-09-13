@@ -1412,11 +1412,14 @@ function annotateResultsBoardBestFlags(rows, bestRecords) {
   const bests = (Array.isArray(bestRecords) ? bestRecords : []).map(normalizeBest).filter((best) => best.event);
   const rowBests = new Map();
   const seasonBests = new Map();
+  const correctedRowsBySource = new Map();
   (Array.isArray(rows) ? rows : []).forEach((row) => {
     const key = resultsBoardBestKey(row);
     if (key) {
       const current = rowBests.get(key);
       if (!current || resultsBetter(row, current)) rowBests.set(key, row);
+      const sourceKey = resultsBoardBestSourceKey(row, row && row.sourceRecordId);
+      if (sourceKey && row.corrected) correctedRowsBySource.set(sourceKey, row);
     }
     const seasonKey = resultsBoardSeasonBestKey(row);
     if (seasonKey) {
@@ -1428,7 +1431,11 @@ function annotateResultsBoardBestFlags(rows, bestRecords) {
     const next = { ...row, isPr: false, isSeasonBest: false, bestDisplay: "", bestMs: 0 };
     bests.forEach((best) => {
       if (!resultsBoardBestMatchesRow(best, row)) return;
-      if (!next.bestDisplay && (best.personalBestDisplay || best.personalBestMs)) {
+      const correctedBest = correctedRowsBySource.get(resultsBoardBestSourceKey(row, best.personalBestSourceRecordId));
+      if (correctedBest) {
+        next.bestDisplay = clean(correctedBest.resultDisplay);
+        next.bestMs = resultsBoardResultMs(correctedBest);
+      } else if (!next.bestDisplay && (best.personalBestDisplay || best.personalBestMs)) {
         next.bestDisplay = clean(best.personalBestDisplay);
         next.bestMs = Number(best.personalBestMs) || parseTimeToMs(best.personalBestDisplay) || 0;
       }
@@ -1456,6 +1463,12 @@ function resultsBoardSeasonBestKey(row) {
   const sport = optionValue(row && row.sport);
   const year = Number(row && row.seasonYear) || yearFromDateValue(row && row.meetDate);
   return base && year ? `${base}|${sport}|${year}` : "";
+}
+
+function resultsBoardBestSourceKey(row, sourceRecordId) {
+  const base = resultsBoardBestKey(row);
+  const source = clean(sourceRecordId);
+  return base && source ? `${base}|${source}` : "";
 }
 
 function resultsBoardBestMatchesRow(best, row) {
@@ -2278,10 +2291,12 @@ function normalizeBest(record) {
     personalBestMs: Number(prop(props, "personal_best_ms")) || 0,
     personalBestDate: prop(props, "personal_best_date"),
     personalBestMeet: prop(props, "personal_best_meet"),
+    personalBestSourceRecordId: prop(props, "personal_best_source_record_id"),
     seasonBestDisplay: prop(props, "season_best_display"),
     seasonBestMs: Number(prop(props, "season_best_ms")) || 0,
     seasonBestDate: prop(props, "season_best_date"),
     seasonBestMeet: prop(props, "season_best_meet"),
+    seasonBestSourceRecordId: prop(props, "season_best_source_record_id"),
     lastResultDisplay: prop(props, "last_result_display"),
     lastResultDate: prop(props, "last_result_date"),
   };
