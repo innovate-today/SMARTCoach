@@ -2872,10 +2872,11 @@ function applyAdminTools(){
 })();
 var tableSorts={
   roster:{key:'name',dir:'asc'},
-  meet:{key:'syncedAt',dir:'desc'},
+  meet:{key:'meetDate',dir:'desc'},
   training:{key:'syncedAt',dir:'desc'},
   volume:{key:'volumeMiles',dir:'desc'}
 };
+var DASHBOARD_VIEW_STATE_VERSION='2026-09-12-recent-meet-date-default';
 var pendingDashboardAction=(function(){
   try{return new URLSearchParams(window.location.search||'').get('action')||'';}catch(e){return '';}
 })();
@@ -5309,14 +5310,14 @@ function exportTrainingCsv(){
 function defaultTableSorts(){
   return {
     roster:{key:'name',dir:'asc'},
-    meet:{key:'syncedAt',dir:'desc'},
+    meet:{key:'meetDate',dir:'desc'},
     training:{key:'syncedAt',dir:'desc'},
     volume:{key:'volumeMiles',dir:'desc'}
   };
 }
 function saveView(){
   try{
-    localStorage.setItem(dashboardViewKey,JSON.stringify({search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,activityStartDate:els.activityStartDate.value,activityEndDate:els.activityEndDate.value,seasonFilter:els.seasonFilter.value,activeTab:activeTab,activeTrainingSubtab:activeTrainingSubtab,sorts:tableSorts}));
+    localStorage.setItem(dashboardViewKey,JSON.stringify({viewVersion:DASHBOARD_VIEW_STATE_VERSION,search:els.search.value,filter:els.quickFilter.value,activityRange:els.activityRange.value,activityStartDate:els.activityStartDate.value,activityEndDate:els.activityEndDate.value,seasonFilter:els.seasonFilter.value,activeTab:activeTab,activeTrainingSubtab:activeTrainingSubtab,sorts:tableSorts}));
   }catch(e){}
 }
 function restoreView(){
@@ -5330,12 +5331,14 @@ function restoreView(){
     if(raw.seasonFilter)els.seasonFilter.value=raw.seasonFilter;
     if(raw.activeTab)activeTab=raw.activeTab;
     if(raw.activeTrainingSubtab)activeTrainingSubtab=raw.activeTrainingSubtab;
-    if(raw.sorts&&typeof raw.sorts==='object')tableSorts=mergeSorts(defaultTableSorts(),raw.sorts);
+    if(raw.sorts&&typeof raw.sorts==='object')tableSorts=mergeSorts(defaultTableSorts(),raw.sorts,raw.viewVersion);
   }catch(e){}
   syncActivityRangeControls(false);
 }
-function mergeSorts(base,saved){
+function mergeSorts(base,saved,viewVersion){
+  var migrateMeetSort=viewVersion!==DASHBOARD_VIEW_STATE_VERSION;
   Object.keys(base).forEach(function(key){
+    if(key==='meet'&&migrateMeetSort)return;
     if(saved[key]&&saved[key].key&&saved[key].dir&&document.querySelector('.sortbtn[data-table="'+key+'"][data-sort="'+String(saved[key].key)+'"]')){
       base[key]={key:String(saved[key].key),dir:saved[key].dir==='desc'?'desc':'asc'};
     }
