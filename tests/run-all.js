@@ -4580,7 +4580,8 @@ function checkMeetHistorySportToolbarFilter() {
     "if((seasonSport==='Cross Country'||seasonSport==='Track')&&seasonYear)return seasonSport+' '+seasonYear;",
     "var groupSport=sportText(group);",
     "var matchesSport=sport==='all'||groupSport===sport||results.length>0;",
-    "meetResults=normalizeMeetHistoryRows",
+    "function mergeMeetHistoryRows(primaryRows,recentRows)",
+    "meetResults=normalizeMeetHistoryRows(mergeMeetHistoryRows(dashboard.data.meetResults||[],dashboard.data.recentMeetResults||[]));",
     "fetch('/api/smart-trak/dashboard?meetHistory=1'",
   ];
   required.forEach((text) => {
