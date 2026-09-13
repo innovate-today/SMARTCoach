@@ -980,6 +980,8 @@ For Partner Timing at a cross country meet:
 
 Partner Timing is built for split points that are too far apart for one coach to cover. **Load Partner Taps** only pulls shared split/finish taps into the race. **Save Meet Results** creates the official SMART Trak Meet History records.
 
+Use **Past Results** from an open meet/race in the SMARTCoach app when you need to check saved SMART Trak results during a meet. Past Results pulls from Meet History, shows the athletes in the open race first, and defaults to the current event so a coach can quickly compare today's saved time with the athlete's latest previous comparable race. Turn off **Current event only** or search by athlete, meet, or event to look across other saved races. Tap **Refresh Past Results** after a race is saved if you need the newest Meet History records on the phone.
+
 For field events from the SMARTCoach Pro Mobile App:
 
 1. Open **Meets**.
