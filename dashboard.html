@@ -7204,8 +7204,26 @@ function applyVoidedEntryLocally(request){
   }else{
     recentTrainingRows=recentTrainingRows.filter(keep);
   }
+  pruneDashboardBrowserSnapshotAfterVoid(request,keep);
   refreshRosterAfterVoid(request.kind==='speed'?'training':request.kind,originalRow);
   renderRows();
+}
+
+function pruneDashboardBrowserSnapshotAfterVoid(request,keep){
+  try{
+    var snapshot=readDashboardBrowserSnapshot();
+    if(!snapshot)return;
+    var data=Object.assign({},snapshot);
+    if(request&&request.kind==='meet'){
+      data.recentMeetResults=(Array.isArray(data.recentMeetResults)?data.recentMeetResults:[]).filter(keep);
+    }else{
+      data.recentTrainingSyncs=(Array.isArray(data.recentTrainingSyncs)?data.recentTrainingSyncs:[]).filter(keep);
+    }
+    localStorage.setItem(dashboardBrowserSnapshotKey(),JSON.stringify({
+      savedAt:new Date().toISOString(),
+      data:Object.assign({},data,{snapshot:false,snapshotSavedAt:new Date().toISOString()})
+    }));
+  }catch(e){}
 }
 
 function openMeetCorrectionModal(button){
