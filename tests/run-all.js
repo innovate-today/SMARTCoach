@@ -4195,6 +4195,7 @@ function checkMobileMeetRaceDivisionSetup() {
     "CL.raceRosterGroups=[name];",
     "CL.raceRosterManual=1;",
     "CL.runners=runners;",
+    "hm('m-xc-tools');",
     "var manualRoster=!!log.raceRosterManual;",
     "raceRosterGroups:manualRoster&&Array.isArray(log.raceRosterGroups)?log.raceRosterGroups:groupNames,",
     "if(meetRosterGroupLabel(group))parts.push(meetRosterGroupLabel(group));",
