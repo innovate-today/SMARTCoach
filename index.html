@@ -3172,8 +3172,9 @@ function meetRosterGroupLabel(group){
 function meetDivisionOptions(){
   return ['Open','Varsity Boys','Varsity Girls','JV Boys','JV Girls','Freshman Boys','Freshman Girls','Middle School Boys','Middle School Girls'];
 }
-function meetGroupSetupHtml(){
+function meetGroupSetupHtml(forceTools){
   if(!CL||CL.type!=='meet')return '';
+  if(isCrossCountryRaceMode()&&!forceTools)return '';
   var division=meetGroupDivisionLabel(CL);
   return '<div class="lsec" style="margin-top:0;border-top:0">'+
     '<div class="erow" style="min-height:44px;padding-top:6px;padding-bottom:6px">'+
@@ -5603,19 +5604,22 @@ function groupPrimaryAction(){
   }
   shareGroup();
 }
-function raceSummaryShortcutHtml(){
+function raceSummaryShortcutHtml(forceTools){
   if(!CL||CL.type!=='meet')return'';
+  if(isCrossCountryRaceMode()&&!forceTools)return'';
   var count=raceSummaryAvailableCount();
   var note=count?count+' saved result'+(count===1?'':'s')+' available':'Opens after saved times are captured.';
   return '<div class="erow" onclick="openRaceSummary()" style="min-height:46px;padding-top:7px;padding-bottom:7px"><span class="elbl"><b>Race Summary</b><br><small style="color:#102a70;font-weight:800">'+note+'</small></span><span style="color:#bbb">&rsaquo;</span></div>';
 }
-function pastResultsShortcutHtml(){
+function pastResultsShortcutHtml(forceTools){
   if(!CL||CL.type!=='meet'||!isProPlan())return'';
+  if(isCrossCountryRaceMode()&&!forceTools)return'';
   return "<div class=\"erow\" onclick=\"openPastResults()\" style=\"min-height:46px;padding-top:7px;padding-bottom:7px\"><span class=\"elbl\"><b>Past Results</b><br><small style=\"color:#102a70;font-weight:800\">Recall saved SMART Trak races for today's athletes.</small></span><span style=\"color:#bbb\">&rsaquo;</span></div>";
 }
-function groupSyncSummaryHtml(){
+function groupSyncSummaryHtml(forceTools){
   if(!CL)return'';
-  var shortcut=raceSummaryShortcutHtml()+pastResultsShortcutHtml();
+  if(CL.type==='meet'&&isCrossCountryRaceMode()&&!forceTools)return'';
+  var shortcut=raceSummaryShortcutHtml(forceTools)+pastResultsShortcutHtml(forceTools);
   if(!isProPlan())return shortcut?'<div class="lsec" style="margin-top:6px">'+shortcut+'</div>':'';
   var counts=groupSavedRunCounts(),ready=counts.ready,done=counts.done,total=counts.total;
   if(!total)return shortcut?'<div class="lsec" style="margin-top:6px">'+shortcut+'</div>':'';
@@ -6000,10 +6004,7 @@ function openXCTools(){
   if(!isCrossCountryRaceMode())return;
   var body=document.getElementById('xc-tools-body');
   if(body){
-    body.innerHTML='<div class="lsec" style="margin-top:8px">'+
-      '<div class="erow" onclick="hm(&quot;m-xc-tools&quot;);openRaceSummary()" style="min-height:52px"><span class="elbl"><b>Race Summary</b><br><small style="color:#777">Review saved results for this race day.</small></span><span style="color:#bbb">&rsaquo;</span></div>'+
-      '<div class="erow" onclick="hm(&quot;m-xc-tools&quot;);openPastResults()" style="min-height:52px"><span class="elbl"><b>Past Results</b><br><small style="color:#777">Compare today against saved SMART Trak races.</small></span><span style="color:#bbb">&rsaquo;</span></div>'+
-    '</div>';
+    body.innerHTML=meetGroupSetupHtml(true)+groupSyncSummaryHtml(true);
   }
   sm('m-xc-tools');
 }
