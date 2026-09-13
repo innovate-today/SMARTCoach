@@ -1573,6 +1573,8 @@ function checkResultsBoardFeature() {
     "function resultsBoardEventDistanceSortValue(value)",
     "function resultsBoardTopTimedResultCards(rows)",
     "parseTimeToMs(row && row.resultDisplay)",
+    "if (schemaKey === MEET_RESULT_SCHEMA_KEY || schemaKey === PERFORMANCE_RECORD_SCHEMA_KEY)",
+    "return searchObjectRecordsUncached({ token, locationId, schemaKey, signal, required });",
     "if (!cards.length) {",
     "label: \"Overall\"",
     "const CONTACT_LIST_PAGE_LIMIT = 100;",
@@ -5497,10 +5499,6 @@ function checkHistoricalMeetResultsLoadUnmatched() {
     "const matchedResultKeys = new Set();",
     "if (!(result.event || result.resultDisplay)) return;",
     "if (resultKey && matchedResultKeys.has(resultKey)) return;",
-    "suppressCrossCountryShortDistanceDuplicates(rows).sort(sortMeetSyncDesc)",
-    "function suppressCrossCountryShortDistanceDuplicates(rows)",
-    "const hasDistanceRace = group.some((row) => crossCountryDuplicateDistance(row) >= 1500);",
-    "if (distance > 0 && distance < 800) suppressed.add(row);",
   ];
   required.forEach((text) => {
     if (!api.includes(text)) throw new Error(`dashboard must include unmatched historical meet imports: ${text}`);

@@ -1056,6 +1056,9 @@ function ghlLocationNameFromResult(result) {
 }
 
 async function searchObjectRecords({ token, locationId, schemaKey, signal, required }) {
+  if (schemaKey === MEET_RESULT_SCHEMA_KEY || schemaKey === PERFORMANCE_RECORD_SCHEMA_KEY) {
+    return searchObjectRecordsUncached({ token, locationId, schemaKey, signal, required });
+  }
   return cachedDashboardRead(["object-records", locationId, schemaKey], DASHBOARD_READ_CACHE_TTL_MS, () => searchObjectRecordsUncached({ token, locationId, schemaKey, signal, required }));
 }
 
@@ -1395,50 +1398,7 @@ function buildRecentMeetResults({ athletes = [], meetRecords = [], meetRecordInd
       grade: meetResultGrade(result.grade || known.grade, resultSeasonYear),
     });
   });
-  return suppressCrossCountryShortDistanceDuplicates(rows).sort(sortMeetSyncDesc);
-}
-
-function suppressCrossCountryShortDistanceDuplicates(rows) {
-  const groups = new Map();
-  (Array.isArray(rows) ? rows : []).forEach((row) => {
-    const key = crossCountryDuplicateResultKey(row);
-    if (!key) return;
-    const group = groups.get(key) || [];
-    group.push(row);
-    groups.set(key, group);
-  });
-  const suppressed = new Set();
-  groups.forEach((group) => {
-    if (group.length < 2) return;
-    const hasCrossCountryContext = group.some(crossCountryDuplicateContext);
-    const hasDistanceRace = group.some((row) => crossCountryDuplicateDistance(row) >= 1500);
-    if (!hasCrossCountryContext || !hasDistanceRace) return;
-    group.forEach((row) => {
-      const distance = crossCountryDuplicateDistance(row);
-      if (distance > 0 && distance < 800) suppressed.add(row);
-    });
-  });
-  return (Array.isArray(rows) ? rows : []).filter((row) => !suppressed.has(row));
-}
-
-function crossCountryDuplicateResultKey(row) {
-  const athlete = clean(row && (row.contactId || row.athleteName)).toLowerCase();
-  const meet = clean(row && row.meetName).toLowerCase();
-  const meetDate = clean(row && row.meetDate).slice(0, 10);
-  const resultMs = Number(row && row.resultMs) || parseTimeToMs(row && row.resultDisplay);
-  if (!athlete || !meet || !meetDate || !resultMs) return "";
-  return [athlete, meet, meetDate, resultMs].join("|");
-}
-
-function crossCountryDuplicateContext(row) {
-  const sport = optionValue(row && row.sport).toLowerCase();
-  const meet = clean(row && row.meetName).toLowerCase();
-  return sport === "cross_country" || /\b(cross country|xc)\b/.test(`${sport} ${meet}`);
-}
-
-function crossCountryDuplicateDistance(row) {
-  const value = resultsBoardEventDistanceSortValue(row && row.event);
-  return Number.isFinite(value) && value !== Number.MAX_SAFE_INTEGER ? value : 0;
+  return rows.sort(sortMeetSyncDesc);
 }
 
 function buildResultsBoardRows({ athletes, meetRecords, bestRecords, meetRecordIndex }) {
