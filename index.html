@@ -4565,6 +4565,32 @@ function toggleFieldPracticeSpeedAthlete(key){
   FIELD_PRACTICE.openSpeedAthleteKey=FIELD_PRACTICE.openSpeedAthleteKey===key?'':key;
   renderFieldPractice();
 }
+function startFieldPracticeSpeedToggle(event,key){
+  if(!event||!key)return;
+  FIELD_PRACTICE.speedToggleKey=key;
+  FIELD_PRACTICE.speedToggleStartX=Number(event.clientX||0);
+  FIELD_PRACTICE.speedToggleStartY=Number(event.clientY||0);
+}
+function finishFieldPracticeSpeedToggle(event,key){
+  if(!event||!key)return;
+  var activeKey=FIELD_PRACTICE.speedToggleKey;
+  var startX=Number(FIELD_PRACTICE.speedToggleStartX||0);
+  var startY=Number(FIELD_PRACTICE.speedToggleStartY||0);
+  FIELD_PRACTICE.speedToggleKey='';
+  FIELD_PRACTICE.speedToggleStartX=0;
+  FIELD_PRACTICE.speedToggleStartY=0;
+  if(activeKey!==key)return;
+  var dx=Math.abs(Number(event.clientX||0)-startX);
+  var dy=Math.abs(Number(event.clientY||0)-startY);
+  if(dx>10||dy>10)return;
+  event.preventDefault();
+  toggleFieldPracticeSpeedAthlete(key);
+}
+function cancelFieldPracticeSpeedToggle(){
+  FIELD_PRACTICE.speedToggleKey='';
+  FIELD_PRACTICE.speedToggleStartX=0;
+  FIELD_PRACTICE.speedToggleStartY=0;
+}
 function moveFieldPracticeSpeedAthlete(key,delta){
   var p=activeFieldPractice();
   if(!p)return;
@@ -4758,7 +4784,7 @@ function fieldPracticeSpeedCaptureHtml(p){
     var athleteRows=rows.filter(function(row){return fieldPracticeSpeedKey(row)===key;}).sort(function(a,b){return Number(a.rep||0)-Number(b.rep||0);});
     var best=fieldPracticeBestSpeedRows(p).find(function(row){return fieldPracticeSpeedKey(row)===key;});
     var open=FIELD_PRACTICE.openSpeedAthleteKey===key;
-    html+='<div class="speed-ath-row" data-speed-row-key="'+ex(key)+'"><div class="speed-ath-toggle"><button type="button" class="speed-handle" aria-label="Drag '+ex(athleteName)+'" onpointerdown="startFieldPracticeSpeedDrag(event,\''+fieldPracticeJs(key)+'\')" onpointerup="finishFieldPracticeSpeedDrag(event)" onpointercancel="cancelFieldPracticeSpeedDrag()">☰</button><button type="button" class="speed-ath-open" onclick="toggleFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\')"><span class="speed-ath-main"><span class="speed-ath-name">'+ex(athleteName)+'</span><span class="speed-ath-meta">'+athleteRows.length+' reps'+(best&&best.velocity?' · best '+best.velocity.toFixed(2)+' m/s':'')+'</span></span></button><button type="button" class="speed-ath-remove" aria-label="Remove '+ex(athleteName)+'" onclick="confirmRemoveFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\')">×</button></div>';
+    html+='<div class="speed-ath-row" data-speed-row-key="'+ex(key)+'"><div class="speed-ath-toggle"><button type="button" class="speed-handle" aria-label="Drag '+ex(athleteName)+'" onpointerdown="startFieldPracticeSpeedDrag(event,\''+fieldPracticeJs(key)+'\')" onpointerup="finishFieldPracticeSpeedDrag(event)" onpointercancel="cancelFieldPracticeSpeedDrag()">☰</button><button type="button" class="speed-ath-open" onpointerdown="startFieldPracticeSpeedToggle(event,\''+fieldPracticeJs(key)+'\')" onpointerup="finishFieldPracticeSpeedToggle(event,\''+fieldPracticeJs(key)+'\')" onpointercancel="cancelFieldPracticeSpeedToggle()"><span class="speed-ath-main"><span class="speed-ath-name">'+ex(athleteName)+'</span><span class="speed-ath-meta">'+athleteRows.length+' reps'+(best&&best.velocity?' · best '+best.velocity.toFixed(2)+' m/s':'')+'</span></span></button><button type="button" class="speed-ath-remove" aria-label="Remove '+ex(athleteName)+'" onclick="confirmRemoveFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\')">×</button></div>';
     if(open){
       html+='<div class="speed-ath-detail">';
       athleteRows.forEach(function(row){
