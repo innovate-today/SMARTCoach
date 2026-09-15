@@ -6078,6 +6078,9 @@ function checkFieldPracticePhaseOne() {
     "Move to the next runner",
     "Time captured for",
     "Strides saved for",
+    "renderFieldPracticeSpeedResults();",
+    "placeholder=\"Manual time\" oninput=\"updateFieldPracticeSpeedMetric",
+    "placeholder=\"Strides\" oninput=\"updateFieldPracticeSpeedMetric",
     "m/s",
     "return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});",
   ].forEach((text) => {

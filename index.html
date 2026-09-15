@@ -4487,6 +4487,7 @@ function updateFieldPracticeSpeedMetric(id,field,value){
   row.updatedAt=new Date().toISOString();
   var result=document.getElementById('speed-result-'+fieldPracticeJs(id));
   if(result)result.textContent=fieldPracticeSpeedMetricText(row);
+  renderFieldPracticeSpeedResults();
   var status=document.getElementById('fp-status');
   if(status)status.textContent=fieldPracticeSpeedRepStatus(row,field);
 }
@@ -4758,9 +4759,9 @@ function fieldPracticeSpeedCaptureHtml(p){
         html+='<div class="speed-rep-line"><div class="speed-rep-top"><span>Rep '+ex(row.rep||1)+'</span><span>'+ex(row.time||'--')+'</span></div><div class="speed-rep-metrics" id="speed-result-'+ex(row.id)+'">'+ex(fieldPracticeSpeedMetricText(row))+'</div>'+
           '<div class="speed-timer-actions" style="margin-top:8px"><button class="mbtn '+(row.startedAt?'c':'')+'" type="button" onclick="toggleFieldPracticeSpeedRepTimer(\''+rowId+'\')">'+(row.startedAt?'Stop':'Start')+'</button></div>'+
           '<div class="fp-speed-grid" style="margin-top:8px">'+
-            '<input class="sinp" inputmode="decimal" value="'+ex(row.time||'')+'" placeholder="Manual time" onchange="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;time&quot;,this.value)">'+
-            '<input class="sinp" inputmode="decimal" value="'+ex(row.strides||'')+'" placeholder="Strides" onchange="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;strides&quot;,this.value)">'+
-            '<input class="sinp" value="'+ex(row.note||'')+'" placeholder="Note" onchange="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;note&quot;,this.value)">'+
+            '<input class="sinp" inputmode="decimal" value="'+ex(row.time||'')+'" placeholder="Manual time" oninput="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;time&quot;,this.value)">'+
+            '<input class="sinp" inputmode="decimal" value="'+ex(row.strides||'')+'" placeholder="Strides" oninput="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;strides&quot;,this.value)">'+
+            '<input class="sinp" value="'+ex(row.note||'')+'" placeholder="Note" oninput="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;note&quot;,this.value)">'+
           '</div>'+
           '<div class="speed-rep-actions">'+
             '<button class="speed-add-rep" type="button" onclick="addFieldPracticeSpeedRep(\''+fieldPracticeJs(athleteId)+'\',\''+fieldPracticeJs(athleteName)+'\')">+ Add Rep</button>'+

@@ -29,6 +29,7 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 
 Current launch status:
 
+- Mobile Speed Metrics manual-entry fix: traced Speed Metrics calculation through the SMARTCoach app. Velocity is timed distance divided by seconds; average stride length is timed distance divided by stride count; stride frequency is stride count divided by seconds. Manual time/stride inputs now recalculate the open rep and session results immediately as values are typed instead of waiting for the input to lose focus. Coach how-to and regression coverage were updated.
 - Dashboard single-result wording follow-up: renamed the Dashboard action button from **Log Race Result** to **Log Single Result** to clarify that it is the quick one-off entry path now that Meet History has **Enter Results** for fuller meet entry.
 - Desktop chat badge overlap follow-up: the injected `SMARTCoach Pro` badge is now pushed below the visible viewport and made non-interactive when chat loads, so it cannot overlap the blue chat launcher, chat input, or send button. Regression coverage was updated.
 - Desktop chat badge layering follow-up: adjusted the injected `SMARTCoach Pro` badge handling so the badge stays tucked under the open chat window instead of overlapping the chat input area. Regression coverage was updated.
@@ -1686,6 +1687,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 622. Desktop chat badge layering follow-up: the help widget now tucks the injected bottom-right `SMARTCoach Pro` badge under the open chat window by moving it back to the bottom edge and lowering its z-index, so it does not cover the chat input or send button. Regression coverage was updated.
 623. Desktop chat badge overlap follow-up: after the badge still overlapped the closed chat launcher, the help widget now moves the exact bottom-right `SMARTCoach Pro` badge below the visible viewport and disables pointer events on it. This prevents the badge from covering the blue chat launcher, open chat input, or send button. Regression coverage was updated.
 624. Dashboard single-result wording follow-up: the Dashboard action button now says **Log Single Result** instead of **Log Race Result**, clarifying that it is the quick one-athlete result entry path while Meet History **Enter Results** is the fuller multi-row meet entry path.
+625. Mobile Speed Metrics manual-entry fix: Speed Metrics calculation was traced through the SMARTCoach app. Velocity is timed distance divided by seconds, average stride length is timed distance divided by stride count, and stride frequency is stride count divided by seconds. Manual time, strides, and notes now update on input so entering a manual time and stride count immediately refreshes the rep display and session results table instead of waiting for the field to blur. Coach how-to and regression coverage were updated.
 
 ## Known Good Test Flow
 
