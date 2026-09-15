@@ -320,11 +320,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-field-practice .speed-ath-name{font-size:17px;font-weight:900;line-height:1.15}
 #m-field-practice .speed-ath-meta{font-size:12px;color:#667085;margin-top:3px}
 #m-field-practice .speed-ath-detail{border-top:1px solid #e5edf7;padding:10px 12px;display:grid;gap:8px}
-#m-field-practice .speed-rep-line{border:1px solid #e5edf7;border-radius:8px;padding:8px;background:#f8fafc}
-#m-field-practice .speed-rep-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;font-weight:900}
-#m-field-practice .speed-rep-metrics{font-size:12px;color:#334155;margin-top:4px;line-height:1.3}
-#m-field-practice .speed-timer-actions{display:grid;grid-template-columns:1fr;gap:8px}
-#m-field-practice .speed-timer-actions .mbtn{margin:0;width:100%;padding:11px 8px}
+#m-field-practice .speed-rep-line{border:1px solid #d8e2f1;border-radius:8px;padding:10px;background:#f8fafc}
+#m-field-practice .speed-rep-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px;font-weight:900}
+#m-field-practice .speed-rep-mph{color:#173f99;font-size:17px;font-weight:900;white-space:nowrap}
+#m-field-practice .speed-rep-metrics{font-size:16px;font-weight:800;color:#334155;margin-top:5px;line-height:1.25}
+#m-field-practice .speed-timer-actions{display:flex;justify-content:flex-start;margin-top:8px}
+#m-field-practice .speed-timer-actions .mbtn{margin:0;width:auto;min-width:112px;padding:8px 14px;font-size:15px;border-radius:8px}
 #m-field-practice .speed-rep-actions{display:grid;grid-template-columns:1.15fr .85fr;gap:8px;margin-top:8px}
 #m-field-practice .speed-add-rep{border:1px solid #2B4FCC;background:#2B4FCC;color:#fff;border-radius:8px;font-size:13px;font-weight:900;padding:9px 10px;width:100%;font-family:inherit}
 #m-field-practice .speed-remove-rep{border:1px solid #fecaca;background:#fff5f5;color:#b91c1c;border-radius:8px;font-size:13px;font-weight:900;padding:9px 10px;width:100%;font-family:inherit}
@@ -4422,8 +4423,12 @@ function fieldPracticeSpeedMetricCalc(row){
 }
 function fieldPracticeSpeedMetricText(row){
   var calc=fieldPracticeSpeedMetricCalc(row);
-  if(!calc.velocity)return'Enter time and strides to calculate.';
+  if(!calc.velocity)return'Enter time to calculate speed. Add strides for stride metrics.';
   return calc.velocity.toFixed(2)+' m/s · '+calc.strideLength.toFixed(2)+' m/stride · '+calc.strideFrequency.toFixed(2)+' strides/sec';
+}
+function fieldPracticeSpeedMphText(row){
+  var calc=fieldPracticeSpeedMetricCalc(row);
+  return calc.velocity?(calc.velocity*2.236936).toFixed(2)+' mph':'-- mph';
 }
 function fieldPracticeSpeedRepStatus(row,field){
   var calc=fieldPracticeSpeedMetricCalc(row);
@@ -4487,6 +4492,8 @@ function updateFieldPracticeSpeedMetric(id,field,value){
   row.updatedAt=new Date().toISOString();
   var result=document.getElementById('speed-result-'+fieldPracticeJs(id));
   if(result)result.textContent=fieldPracticeSpeedMetricText(row);
+  var mph=document.getElementById('speed-mph-'+fieldPracticeJs(id));
+  if(mph)mph.textContent=fieldPracticeSpeedMphText(row);
   renderFieldPracticeSpeedResults();
   var status=document.getElementById('fp-status');
   if(status)status.textContent=fieldPracticeSpeedRepStatus(row,field);
@@ -4756,7 +4763,7 @@ function fieldPracticeSpeedCaptureHtml(p){
       html+='<div class="speed-ath-detail">';
       athleteRows.forEach(function(row){
       var rowId=fieldPracticeJs(row.id);
-        html+='<div class="speed-rep-line"><div class="speed-rep-top"><span>Rep '+ex(row.rep||1)+'</span><span>'+ex(row.time||'--')+'</span></div><div class="speed-rep-metrics" id="speed-result-'+ex(row.id)+'">'+ex(fieldPracticeSpeedMetricText(row))+'</div>'+
+        html+='<div class="speed-rep-line"><div class="speed-rep-top"><span>Rep '+ex(row.rep||1)+'</span><span class="speed-rep-mph" id="speed-mph-'+ex(row.id)+'">'+ex(fieldPracticeSpeedMphText(row))+'</span></div><div class="speed-rep-metrics" id="speed-result-'+ex(row.id)+'">'+ex(fieldPracticeSpeedMetricText(row))+'</div>'+
           '<div class="speed-timer-actions" style="margin-top:8px"><button class="mbtn '+(row.startedAt?'c':'')+'" type="button" onclick="toggleFieldPracticeSpeedRepTimer(\''+rowId+'\')">'+(row.startedAt?'Stop':'Start')+'</button></div>'+
           '<div class="fp-speed-grid" style="margin-top:8px">'+
             '<input class="sinp" inputmode="decimal" value="'+ex(row.time||'')+'" placeholder="Manual time" oninput="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;time&quot;,this.value)">'+
