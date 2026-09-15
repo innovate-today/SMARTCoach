@@ -657,6 +657,7 @@ function checkDashboardActivityRangeLayout() {
     '<div class="dashboard-tools-row"><button id="dashboardPrefsBtn" class="dashboard-prefs-link" type="button" aria-haspopup="dialog">Customize Dashboard</button></div>',
     ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap}",
     ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
+    'id="raceResultBtn" class="modal-action" type="button">Log Single Result</button>',
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);

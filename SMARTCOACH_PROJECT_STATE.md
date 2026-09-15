@@ -29,6 +29,7 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 
 Current launch status:
 
+- Dashboard single-result wording follow-up: renamed the Dashboard action button from **Log Race Result** to **Log Single Result** to clarify that it is the quick one-off entry path now that Meet History has **Enter Results** for fuller meet entry.
 - Desktop chat badge overlap follow-up: the injected `SMARTCoach Pro` badge is now pushed below the visible viewport and made non-interactive when chat loads, so it cannot overlap the blue chat launcher, chat input, or send button. Regression coverage was updated.
 - Desktop chat badge layering follow-up: adjusted the injected `SMARTCoach Pro` badge handling so the badge stays tucked under the open chat window instead of overlapping the chat input area. Regression coverage was updated.
 - Dashboard Fitness Review access update: made **Fitness Review** visible to all coaches from the Dashboard instead of hiding it behind owner/admin tools. The modal is now titled **Current Fitness Review** and describes the workflow as choosing whether recent race results should guide training paces, rather than as a temporary cleanup/admin tool. Coach how-to and regression coverage were updated. What's New was not updated pending user direction.
@@ -1684,6 +1685,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 621. Dashboard Fitness Review access update: **Fitness Review** is now a normal Dashboard action for all coaches instead of an owner/admin-only cleanup tool. The button is no longer hidden behind admin tools, the modal title is **Current Fitness Review**, and the description now explains that coaches can compare current fitness, latest race, projected result, and previous race before deciding whether **Use Latest** or **Restore Previous** should guide training paces. Coach how-to and regression coverage were updated.
 622. Desktop chat badge layering follow-up: the help widget now tucks the injected bottom-right `SMARTCoach Pro` badge under the open chat window by moving it back to the bottom edge and lowering its z-index, so it does not cover the chat input or send button. Regression coverage was updated.
 623. Desktop chat badge overlap follow-up: after the badge still overlapped the closed chat launcher, the help widget now moves the exact bottom-right `SMARTCoach Pro` badge below the visible viewport and disables pointer events on it. This prevents the badge from covering the blue chat launcher, open chat input, or send button. Regression coverage was updated.
+624. Dashboard single-result wording follow-up: the Dashboard action button now says **Log Single Result** instead of **Log Race Result**, clarifying that it is the quick one-athlete result entry path while Meet History **Enter Results** is the fuller multi-row meet entry path.
 
 ## Known Good Test Flow
 
