@@ -325,6 +325,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-field-practice .fp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 #m-field-practice .fp-actions .mbtn{width:100%;margin:0;padding:12px 8px}
 #m-field-practice .picker-row small+small{margin-top:4px}
+.picker-row{touch-action:pan-y}
 #m-field-practice .fp-speed-ath{border:1px solid #d8e2f1;border-radius:10px;background:#fff;margin-top:10px;overflow:hidden}
 #m-field-practice .fp-speed-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 12px;background:#f8fafc;font-weight:900}
 #m-field-practice .fp-speed-rep{border-top:1px solid #e5edf7;padding:10px 12px;display:grid;gap:8px}
@@ -3364,7 +3365,7 @@ function openPicker(title,items,onSelect){
   if(!list)return;
   list.innerHTML=(PICK.items.length?PICK.items:[{label:'No options available',disabled:true}]).map(function(item,i){
     var sub=/^smartcoach id:/i.test(String(item.sub||'').trim())?'':item.sub;
-    return '<button type="button" class="picker-row'+(item.selected?' on':'')+'" '+(item.disabled?'disabled':'onclick="choosePicker('+i+')"')+'><b>'+ex(item.label||'')+'</b>'+(sub?'<small>'+ex(sub)+'</small>':'')+'</button>';
+    return '<button type="button" class="picker-row'+(item.selected?' on':'')+'" '+(item.disabled?'disabled':'onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="choosePickerFromRow(event,'+i+')"')+'><b>'+ex(item.label||'')+'</b>'+(sub?'<small>'+ex(sub)+'</small>':'')+'</button>';
   }).join('');
   sm('m-picker');
 }
@@ -3375,6 +3376,10 @@ function choosePicker(index){
   hm('m-picker');
   PICK=null;
   if(item&&cb)cb(item,index);
+}
+function choosePickerFromRow(e,index){
+  if(WORKFLOW_TOUCH.moved){if(e)e.preventDefault();return;}
+  choosePicker(index);
 }
 function closePicker(){hm('m-picker');PICK=null;}
 function openProductPlanPicker(){
