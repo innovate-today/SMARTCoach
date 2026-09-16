@@ -115,7 +115,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 
 /* LISTS */
 .lsec{border-top:0.5px solid var(--G2);border-bottom:0.5px solid var(--G2);margin-top:16px}
-.lrow{display:flex;align-items:center;padding:14px 16px;border-bottom:0.5px solid #e5e5ea;cursor:pointer;background:var(--W);min-height:50px;user-select:none}
+.lrow{display:flex;align-items:center;padding:14px 16px;border-bottom:0.5px solid #e5e5ea;cursor:pointer;background:var(--W);min-height:50px;user-select:none;touch-action:pan-y}
 .lrow:last-child{border-bottom:none}
 .lrow:active{background:#eee}
 .ltxt{font-size:17px;flex:1}
@@ -3634,7 +3634,7 @@ function rl(){
     var title=l.type==='meet'?ex(meetDisplayTitle(l)):ex(l.name);
     var archiveLabel=GV==='archive'&&l.archived?'Archived · ':'';
     var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(meetDisplaySubtitle(l,archiveLabel))+'</div>':(l.trainingPlanTitle?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+l.trainingPlanTitle)+'</div>':(archiveLabel?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+(l.season||'')+' '+(l.seasonYear||''))+'</div>':''));
-    return'<div class="lrow" onclick="oGroup('+l.id+')">'+
+    return'<div class="lrow" onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="openGroupFromRow(event,'+l.id+')">'+
       '<span class="ltxt">'+title+sub+'</span>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
       '<span style="color:#bbb;font-size:16px">&rsaquo;</span></div></div>';
@@ -3665,6 +3665,10 @@ function updateGroupsTrayActions(){
 function setCurrentGroupTitle(){
   var title=document.getElementById('ltit');
   if(title&&CL)title.textContent=CL.type==='meet'?meetDisplayTitle(CL):CL.name;
+}
+function openGroupFromRow(e,id){
+  if(WORKFLOW_TOUCH.moved){if(e)e.preventDefault();return;}
+  oGroup(id);
 }
 function oGroup(id){
   for(var i=0;i<logs.length;i++){if(logs[i].id===id){CL=logs[i];break;}}
