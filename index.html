@@ -484,7 +484,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       </svg>
       <span id="group-picker-nav-title" style="color:#fff">Choose Group</span>
     </div>
-    <div class="nav-btn r" onclick="addGroupForView()">Add</div>
+    <div class="nav-btn r" id="group-picker-add-btn" onclick="addGroupForView()">Add</div>
   </div>
   <div class="group-workflow-banner" id="group-workflow-banner">
     <span class="workflow-icon" id="group-workflow-icon">T</span>
@@ -1037,11 +1037,13 @@ function updateGroupChoiceChrome(){
   var heading=document.getElementById('group-picker-heading');
   var introSub=document.getElementById('group-picker-subtitle');
   var tabs=document.getElementById('group-view-tabs');
+  var addBtn=document.getElementById('group-picker-add-btn');
   if(navTitle)navTitle.textContent=archiveMode?'Archive':'Choose Group';
   if(logo)logo.hidden=archiveMode;
   if(banner)banner.hidden=archiveMode;
   if(intro)intro.hidden=archiveMode;
   if(tabs)tabs.hidden=!archiveMode;
+  if(addBtn)addBtn.hidden=archiveMode;
   if(!archiveMode){
     if(icon){icon.className='workflow-icon'+workflowIconClass(workflow);icon.textContent=workflowIconLabel(workflow);}
     if(title)title.textContent=workflow.label;
