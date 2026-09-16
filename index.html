@@ -1144,7 +1144,8 @@ function powerTrakAthleteId(runner){
 function powerTrakNewRow(runner){
   var name=runner&&runner.name||'Athlete';
   var athleteId=powerTrakAthleteId(runner)||('manual_'+Date.now()+'_'+Math.random().toString(36).slice(2,5));
-  return{id:'ptr_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),athleteId:athleteId,athleteName:name,contactId:runner&&runner.contactId||'',smartcoachAthleteId:runner&&runner.smartcoachAthleteId||'',marks:{},note:''};
+  var athlete=activeAthleteForRunner(runner)||findAthleteByName(name)||{};
+  return{id:'ptr_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),athleteId:athleteId,athleteName:name,contactId:runner&&runner.contactId||athlete.id||athlete.contactId||'',smartcoachAthleteId:runner&&runner.smartcoachAthleteId||athlete.smartcoachAthleteId||'',gender:runner&&runner.gender||runner&&runner.sex||athlete.gender||athlete.sex||'',grade:runner&&runner.grade||runner&&runner.classYear||athlete.grade||athlete.classYear||'',marks:{},note:''};
 }
 function powerTrakCreateSessionForCurrentGroup(){
   var runners=CL&&Array.isArray(CL.runners)?CL.runners:[];
