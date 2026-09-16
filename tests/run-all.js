@@ -5644,6 +5644,7 @@ function checkMobileWorkflowOpeningFlow() {
     "openAttendancePicker()",
     "openFieldPractice()",
     "openArchiveGroupList()",
+    "shareAll()",
   ].forEach((text) => {
     if (workflowScreen.includes(text)) throw new Error(`Workflow home should not expose group-dependent tray shortcut: ${text}`);
   });
