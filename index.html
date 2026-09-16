@@ -6426,7 +6426,7 @@ function raceSummarySnapshots(){
   }).sort(function(a,b){return String(b.createdAt||'').localeCompare(String(a.createdAt||''));});
 }
 function raceSummaryAvailableCount(){
-  return raceSummaryRows().length+raceSummarySnapshots().reduce(function(sum,snapshot){return sum+(snapshot.rows||[]).length;},0);
+  return raceSummaryDisplayRows().length+raceSummarySnapshots().reduce(function(sum,snapshot){return sum+(snapshot.rows||[]).length;},0);
 }
 function raceSummarySnapshotKey(rows){
   return (rows||[]).map(function(row){return [row.name,row.event,row.division,row.time,(row.splits||[]).map(function(split){return split.ms;}).join('/')].join('|');}).join('||');
@@ -6454,6 +6454,26 @@ function raceSummarySectionLabel(row){
   if(isTrackRaceMode())return String(row&&row.event||'Event').trim()||'Event';
   return String(row&&row.division||'Open').trim()||'Open';
 }
+function raceSummaryDisplayKey(row){
+  return [row&&row.name,row&&row.event,row&&row.division,row&&row.time].map(function(value){return String(value||'').trim().toLowerCase();}).join('|');
+}
+function trackMeetSavedRaceSummaryRows(){
+  if(!isTrackRaceMode())return[];
+  return (PAST_RESULTS.rows||[]).filter(pastResultIsCurrentMeet).map(function(row){
+    return {name:row.name||'Runner',event:row.event||row.eventBucket||'Event',division:row.division||'Open',ms:row.ms,time:row.time||fmt(row.ms),splits:row.splits||[],saved:true,syncedAt:row.syncedAt||'',note:'Saved SMART Trak result'};
+  });
+}
+function raceSummaryDisplayRows(){
+  var rows=raceSummaryRows();
+  if(!isTrackRaceMode())return rows;
+  var seen={};
+  return rows.concat(trackMeetSavedRaceSummaryRows()).filter(function(row){
+    var key=raceSummaryDisplayKey(row);
+    if(seen[key])return false;
+    seen[key]=true;
+    return true;
+  }).sort(function(a,b){return String(a.event||'').localeCompare(String(b.event||''))||(a.ms||Number.MAX_SAFE_INTEGER)-(b.ms||Number.MAX_SAFE_INTEGER)||String(a.name).localeCompare(String(b.name));});
+}
 function raceSummaryTableHtml(rows,title,meta,previous){
   var maxSplits=rows.reduce(function(max,row){return Math.max(max,(row.splits||[]).length);},0);
   var groups={};
@@ -6478,8 +6498,9 @@ function raceSummaryTableHtml(rows,title,meta,previous){
     }).join('');
 }
 function raceSummaryHtml(){
-  var rows=raceSummaryRows();
+  var rows=raceSummaryDisplayRows();
   var snapshots=raceSummarySnapshots();
+  if(isTrackRaceMode()&&PAST_RESULTS.loading&&!rows.length)return '<div class="race-summary-empty">Loading Current Meet Results...</div>';
   if(!rows.length&&!snapshots.length)return '<div class="race-summary-empty">No saved race results yet. Stop runners, then save/sync meet results to recall them here.</div>';
   var html=rows.length?raceSummaryTableHtml(rows,meetDisplayTitle(CL),[CL.meetDate,meetRosterGroupLabel(CL),meetGroupDivisionLabel(CL)].filter(Boolean).join(' · '),false):'';
   if(snapshots.length){
@@ -6491,7 +6512,7 @@ function raceSummaryHtml(){
   return html;
 }
 function raceSummaryText(){
-  var rows=raceSummaryRows();
+  var rows=raceSummaryDisplayRows();
   var snapshots=raceSummarySnapshots();
   var title=(CL&&meetDisplayTitle(CL)||'Race')+' Summary';
   if(!rows.length&&!snapshots.length)return title+'\nNo saved race results yet.';
@@ -6517,6 +6538,15 @@ function openRaceSummary(){
   if(title)title.textContent=meetDisplayTitle(CL);
   if(body)body.innerHTML=raceSummaryHtml();
   sm('m-race-summary');
+  if(isTrackRaceMode()&&isProPlan()){
+    var meetKey=[meetDisplayTitle(CL),CL.meetDate].join('|');
+    loadPastResults(false).then(function(){
+      if(!CL||!isTrackRaceMode())return;
+      if([meetDisplayTitle(CL),CL.meetDate].join('|')!==meetKey)return;
+      var currentBody=document.getElementById('race-summary-body');
+      if(currentBody)currentBody.innerHTML=raceSummaryHtml();
+    });
+  }
 }
 function shareRaceSummary(){
   oShare(raceSummaryText());
