@@ -5952,6 +5952,77 @@ function checkMobileAccountLogout() {
   console.log("mobile account logout ok");
 }
 
+function checkSmartTrakCoachAccessGate() {
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const account = fs.readFileSync("lib/ghl-account.js", "utf8");
+  [
+    "SMART Trak coach access code is required.",
+    "accessCodeRequired: true",
+    "coachAccessRequired: true",
+    "const session = coachSessionFromRequest(req, accountKey);",
+    "coachSessionAllowedForStaff(session, coachCodeVersion, coachStaff)",
+    'headerValue(req, "x-smartcoach-access-code")',
+  ].forEach((text) => {
+    if (!account.includes(text)) throw new Error(`SMART Trak coach access gate missing ${text}`);
+  });
+
+  [
+    "training-customization",
+    "athlete-calendar-questions",
+    "dashboard-preferences",
+    "simulator-field",
+    "miles-board-sharing",
+    "miles-board-link",
+    "speed-board-sharing",
+    "speed-board-link",
+    "results-board-sharing",
+    "results-board-link",
+    "xc-progression-board-link",
+    "xc-records-sharing",
+    "xc-records-link",
+    "dashboard-support",
+    "attendance",
+    "keep-trak",
+    "partner-timing",
+    "field-practice",
+    "power-trak",
+    "bug-trak",
+    "docu-trak",
+    "equipment-trak",
+    "weather-locations",
+  ].forEach((route) => {
+    const routeMarker = `if (route === "${route}")`;
+    const start = api.indexOf(routeMarker);
+    if (start < 0) throw new Error(`SMART Trak protected route missing ${routeMarker}`);
+    const nextRoute = api.indexOf("\n  if (route === ", start + routeMarker.length);
+    const block = api.slice(start, nextRoute > start ? nextRoute : api.indexOf("\n  if (!selected)", start));
+    [
+      "await attachRegistryAccount(req);",
+      "if (!requireProPlan(req, res)) return;",
+    ].forEach((text) => {
+      if (!block.includes(text)) throw new Error(`SMART Trak protected route ${route} must stay behind ${text}`);
+    });
+  });
+
+  [
+    'if (route === "miles-board")',
+    'if (route === "speed-board")',
+    'if (route === "results-board")',
+    'if (route === "xc-progression-board")',
+    'if (route === "xc-records-board")',
+  ].forEach((marker) => {
+    const start = api.indexOf(marker);
+    if (start < 0) throw new Error(`SMART Trak public share route missing ${marker}`);
+    const nextRoute = api.indexOf("\n  if (route === ", start + marker.length);
+    const block = api.slice(start, nextRoute > start ? nextRoute : api.indexOf("\n  if (!selected)", start));
+    if (block.includes("if (!requireProPlan(req, res)) return;")) {
+      throw new Error(`${marker} should remain a token-protected public board route, not a coach-session route.`);
+    }
+  });
+
+  console.log("SMART Trak coach access gate ok");
+}
+
 function checkHistoricalMeetResultsLoadUnmatched() {
   const api = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const required = [
@@ -6722,6 +6793,7 @@ checkMobileWorkflowOpeningFlow();
 checkMobilePowerTrakWorkflow();
 checkMobileGroupStorageAccountScoped();
 checkMobileAccountLogout();
+checkSmartTrakCoachAccessGate();
 checkHistoricalMeetResultsLoadUnmatched();
 checkMeetHistoryUnlistedSeasonYearFallback();
 checkPartnerTimingPhaseOne();
