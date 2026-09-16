@@ -842,7 +842,7 @@ How to use it:
 
 If the phone cannot reach SMART Trak during testing, SMARTCoach keeps the Power Trak session on the device and shows that the SMART Trak save failed. Save again after the connection is back.
 
-On the Dashboard, open **Power Trak** to review saved testing sessions. The desktop page can filter by group, metric, saved test, athlete, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved mark or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
+On the Dashboard, open **Power Trak** to review saved testing sessions. The desktop page can filter by group, metric, saved test, athlete, grade, gender, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved athlete name, grade, gender, mark, or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
 
 ## Log Single Result
 
