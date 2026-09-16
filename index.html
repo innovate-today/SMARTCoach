@@ -971,14 +971,31 @@ function workflowIconClass(workflow){
   return'';
 }
 var WORKFLOW_TOUCH={x:0,y:0,moved:false};
+function workflowTapAttrs(action){
+  return ' onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onpointercancel="workflowTouchCancel()" ontouchstart="workflowTouchStart(event)" ontouchmove="workflowTouchMove(event)" ontouchcancel="workflowTouchCancel()" onclick="'+action+'"';
+}
+function workflowEventPoint(e){
+  var t=e&&e.touches&&e.touches[0]||e&&e.changedTouches&&e.changedTouches[0]||e||{};
+  return{x:t.clientX||0,y:t.clientY||0};
+}
+function workflowTouchStart(e){
+  var p=workflowEventPoint(e);
+  WORKFLOW_TOUCH={x:p.x,y:p.y,moved:false};
+}
+function workflowTouchMove(e){
+  var p=workflowEventPoint(e);
+  var dx=Math.abs(p.x-WORKFLOW_TOUCH.x);
+  var dy=Math.abs(p.y-WORKFLOW_TOUCH.y);
+  if(dx>4||dy>4)WORKFLOW_TOUCH.moved=true;
+}
+function workflowTouchCancel(){
+  WORKFLOW_TOUCH.moved=true;
+}
 function workflowPointerDown(e){
-  WORKFLOW_TOUCH={x:e&&e.clientX||0,y:e&&e.clientY||0,moved:false};
+  workflowTouchStart(e);
 }
 function workflowPointerMove(e){
-  if(!e)return;
-  var dx=Math.abs((e.clientX||0)-WORKFLOW_TOUCH.x);
-  var dy=Math.abs((e.clientY||0)-WORKFLOW_TOUCH.y);
-  if(dx>8||dy>8)WORKFLOW_TOUCH.moved=true;
+  workflowTouchMove(e);
 }
 function openWorkflowFromRow(e,id){
   if(WORKFLOW_TOUCH.moved){if(e)e.preventDefault();return;}
@@ -989,7 +1006,7 @@ function renderWorkflowHome(){
   if(list){
     list.innerHTML=APP_WORKFLOWS.map(function(workflow){
       var selected=workflow.id===APP_SELECTED_WORKFLOW;
-      return '<button type="button" class="workflow-row'+(selected?' on':'')+'" onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="openWorkflowFromRow(event,&quot;'+ex(workflow.id)+'&quot;)">'+
+      return '<button type="button" class="workflow-row'+(selected?' on':'')+'"'+workflowTapAttrs('openWorkflowFromRow(event,&quot;'+ex(workflow.id)+'&quot;)')+'>'+
         '<span class="workflow-icon'+workflowIconClass(workflow)+'">'+ex(workflowIconLabel(workflow))+'</span>'+
         '<span><span class="workflow-name">'+ex(workflow.label)+'</span><span class="workflow-desc">'+ex(workflow.description)+'</span></span>'+
         '<span class="workflow-chev">&rsaquo;</span></button>';
@@ -999,7 +1016,7 @@ function renderWorkflowHome(){
   var quickSection=document.getElementById('workflow-quick-section');
   if(quick&&quickSection){
     var workflow=selectedWorkflow();
-    quick.innerHTML='<button type="button" class="quick-row" onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="openWorkflowFromRow(event,&quot;'+ex(workflow.id)+'&quot;)"><span><b>'+ex(workflow.label)+'</b><small>Choose a group for '+ex(workflow.label)+'.</small></span><span class="workflow-chev">&rsaquo;</span></button>';
+    quick.innerHTML='<button type="button" class="quick-row"'+workflowTapAttrs('openWorkflowFromRow(event,&quot;'+ex(workflow.id)+'&quot;)')+'><span><b>'+ex(workflow.label)+'</b><small>Choose a group for '+ex(workflow.label)+'.</small></span><span class="workflow-chev">&rsaquo;</span></button>';
     quickSection.hidden=!APP_WORKFLOW_HAS_STORED;
   }
 }
@@ -3365,7 +3382,7 @@ function openPicker(title,items,onSelect){
   if(!list)return;
   list.innerHTML=(PICK.items.length?PICK.items:[{label:'No options available',disabled:true}]).map(function(item,i){
     var sub=/^smartcoach id:/i.test(String(item.sub||'').trim())?'':item.sub;
-    return '<button type="button" class="picker-row'+(item.selected?' on':'')+'" '+(item.disabled?'disabled':'onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="choosePickerFromRow(event,'+i+')"')+'><b>'+ex(item.label||'')+'</b>'+(sub?'<small>'+ex(sub)+'</small>':'')+'</button>';
+    return '<button type="button" class="picker-row'+(item.selected?' on':'')+'" '+(item.disabled?'disabled':workflowTapAttrs('choosePickerFromRow(event,'+i+')'))+'><b>'+ex(item.label||'')+'</b>'+(sub?'<small>'+ex(sub)+'</small>':'')+'</button>';
   }).join('');
   sm('m-picker');
 }
@@ -3639,7 +3656,7 @@ function rl(){
     var title=l.type==='meet'?ex(meetDisplayTitle(l)):ex(l.name);
     var archiveLabel=GV==='archive'&&l.archived?'Archived · ':'';
     var sub=l.type==='meet'?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(meetDisplaySubtitle(l,archiveLabel))+'</div>':(l.trainingPlanTitle?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+l.trainingPlanTitle)+'</div>':(archiveLabel?'<div style="font-size:12px;color:#777;margin-top:2px">'+ex(archiveLabel+(l.season||'')+' '+(l.seasonYear||''))+'</div>':''));
-    return'<div class="lrow" onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="openGroupFromRow(event,'+l.id+')">'+
+    return'<div class="lrow"'+workflowTapAttrs('openGroupFromRow(event,'+l.id+')')+'>'+
       '<span class="ltxt">'+title+sub+'</span>'+
       '<div style="display:flex;align-items:center;gap:8px">'+(c?'<span class="badge">'+c+'</span>':'')+
       '<span style="color:#bbb;font-size:16px">&rsaquo;</span></div></div>';
@@ -3692,9 +3709,9 @@ function openTrainingModePicker(){
   if(!options)return;
   var speedDay=trainingModeSpeedMetricDay();
   options.innerHTML=
-    '<button type="button" class="picker-row" onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="openTrainingModeFromRow(event,&quot;timer&quot;)"><b>Multi Athlete Timer</b><small>Use the regular group timer for easy runs, intervals, reps, rest, and meet-style timing.</small></button>'+
-    '<button type="button" class="picker-row" onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="openTrainingModeFromRow(event,&quot;speed&quot;)"><b>Speed Metrics</b><small>'+(speedDay?'Open today or the next speed metrics workout for this group.':'Create a speed, fly, acceleration, or runway metrics session for this group.')+'</small></button>'+
-    '<button type="button" class="picker-row" onpointerdown="workflowPointerDown(event)" onpointermove="workflowPointerMove(event)" onclick="openTrainingModeFromRow(event,&quot;calendar&quot;)"><b>Calendar Workout</b><small>Review or switch the workout assigned to this group.</small></button>';
+    '<button type="button" class="picker-row"'+workflowTapAttrs('openTrainingModeFromRow(event,&quot;timer&quot;)')+'><b>Multi Athlete Timer</b><small>Use the regular group timer for easy runs, intervals, reps, rest, and meet-style timing.</small></button>'+
+    '<button type="button" class="picker-row"'+workflowTapAttrs('openTrainingModeFromRow(event,&quot;speed&quot;)')+'><b>Speed Metrics</b><small>'+(speedDay?'Open today or the next speed metrics workout for this group.':'Create a speed, fly, acceleration, or runway metrics session for this group.')+'</small></button>'+
+    '<button type="button" class="picker-row"'+workflowTapAttrs('openTrainingModeFromRow(event,&quot;calendar&quot;)')+'><b>Calendar Workout</b><small>Review or switch the workout assigned to this group.</small></button>';
   sm('m-training-mode');
 }
 function openTrainingModeFromRow(e,mode){
