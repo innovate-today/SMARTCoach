@@ -81,6 +81,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .tbtn{display:flex;flex-direction:column;align-items:center;cursor:pointer;gap:3px;padding:4px 10px;background:none;border:none;user-select:none}
 .tbtn svg{width:23px;height:23px;stroke:var(--R);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tbtn span{font-size:10px;color:#888}
+.workflow-tray{justify-content:center;gap:56px}
 .gfilters{display:flex;gap:6px;padding:8px 10px;background:var(--G0);border-bottom:0.5px solid var(--G2);flex-shrink:0}.gf{flex:1;border:1px solid var(--G2);background:#fff;color:#333;border-radius:8px;font-size:13px;font-weight:700;padding:8px 4px;font-family:inherit}.gf.on{background:var(--R);border-color:var(--R);color:#fff}
 .workflow-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--G0);padding:16px 14px 18px}
 .workflow-section{background:#fff;border:0.5px solid var(--G2);border-radius:10px;overflow:hidden;margin-bottom:14px}
@@ -459,7 +460,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div id="workflow-quick"></div>
     </section>
   </div>
-  <div class="tbar">
+  <div class="tbar workflow-tray">
     <button class="tbtn" onclick="openAccountSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Account</span></button>
     <button class="tbtn" onclick="refreshSmartCoachData()"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M18 2v4h-4"/><path d="M6 22v-4h4"/></svg><span>Refresh</span></button>
   </div>

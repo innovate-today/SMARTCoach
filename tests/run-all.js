@@ -5572,6 +5572,8 @@ function checkMobileWorkflowOpeningFlow() {
     'id="s-workflows"',
     '<div class="nav-btn" onclick="openWorkflowAddMenu()">Add</div>',
     'id="workflow-list"',
+    "workflow-tray{justify-content:center;gap:56px}",
+    '<div class="tbar workflow-tray">',
     "var APP_WORKFLOWS=[",
     "{id:'training',label:'Training'",
     "{id:'meets',label:'Meets'",
