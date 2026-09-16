@@ -3037,6 +3037,7 @@ function checkDashboardStartHere() {
     "Plan Workouts",
     "Run Daily Practice",
     "Run Meet Day",
+    "Open SMARTCoach",
     "Track Summer Mileage",
     "Coach Field Events",
     "function renderStartHereProgress()",
@@ -3052,11 +3053,14 @@ function checkDashboardStartHere() {
     "Use **Start Here** on the Dashboard",
     "It stays available after setup is complete",
     "**Set Up My Team**",
+    "use **Open SMARTCoach** to time or log work",
+    "use **Open SMARTCoach** for timing",
     "**Coach Field Events**",
     "If the account is brand new, start with **Set Up My Team**",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To Start Here guide missing ${text}`);
   });
+  if (html.includes("['Open App','/']")) throw new Error("Dashboard Start Here should label the mobile app action Open SMARTCoach.");
   console.log("Dashboard Start Here ok");
 }
 

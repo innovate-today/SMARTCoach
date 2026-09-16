@@ -20,8 +20,8 @@ Common goal paths:
 
 1. **Set Up My Team**: add or import athletes, create training groups, add current fitness marks, and send calendar links when ready.
 2. **Plan Workouts**: open Training, add or upload a plan, assign workouts to one or more groups, and check the calendar.
-3. **Run Daily Practice**: review today's Training entry, use the SMARTCoach Pro Mobile App to time or log work, take Attendance, and add Keep Trak notes when needed.
-4. **Run Meet Day**: confirm the meet, use the app for timing, relays, field events, or Partner Timing, then review Meet History and Records.
+3. **Run Daily Practice**: review today's Training entry, use **Open SMARTCoach** to time or log work in the SMARTCoach Pro Mobile App, take Attendance, and add Keep Trak notes when needed.
+4. **Run Meet Day**: confirm the meet, use **Open SMARTCoach** for timing, relays, field events, or Partner Timing, then review Meet History and Records.
 5. **Track Summer Mileage**: set the Dashboard activity range, open Miles Trak, choose challenge types, and copy the read-only link.
 6. **Coach Field Events**: open Field Practice from Training, choose the event and drill routine, check off drills, and add athlete-specific focus summaries.
 
