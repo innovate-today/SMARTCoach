@@ -347,8 +347,8 @@ Latest known issues to retest after Vercel deploys latest code:
 - Dashboard Training Load/Volume by Athlete should exclude archived groups from the Groups column.
 - Dashboard cards should respect search/filter context. Example: searching for one athlete should make training load cards reflect that athlete or filtered set, not the whole roster.
 - Confirm race volume counts into total volume, and document `Volume miles` as completed training/race volume converted to miles for the current filters.
-- Manual Log Miles should treat bare numeric distance like `8` as miles or clearly force the unit. Same-day mileage edits must open the exact selected workout, not the first same-day mileage row.
-- Phone app still needs a refresh button, a clearer drag handle for runner reordering, and reliable beep/vibrate on stopwatch button taps.
+- Retest same-day mileage edits to confirm they open the exact selected workout, not the first same-day mileage row.
+- Retest the phone app runner reorder handle on device after the larger handle target ships.
 
 Typical deploy commands:
 
@@ -1700,6 +1700,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 629. Mobile Speed Metrics setup follow-up: setup selections now win over existing rep-row values, fixing the Fly/Start and Speed Metric dropdowns snapping back after athletes were loaded. After a setup choice, the full setup card collapses and the selected Type, Fly Zone, and Metric remain visible as tappable pills at the top of the Speed Metrics screen. Regression coverage was updated.
 630. Power Trak desktop correction follow-up: the Dashboard **Power Trak** review page now shows Gender in the Testing Marks table and the **Edit Mark** modal can correct the saved athlete name, grade, gender, mark, and note for an individual testing row. The save still updates the existing Power Trak session through the same API path, and Download CSV already carries the corrected athlete details. Coach how-to and regression coverage were updated.
 631. Track Tools Current Meet Results follow-up: confirmed the code path behind the race-day step 8 note and tightened it. Track **Current Meet Results** now reuses the saved SMART Trak results loader, merges same-meet saved rows into the summary display, and groups the displayed rows by event so a track meet can show saved 100m, 200m, 400m, and similar event sections even when the open timing screen has no local runners/results. Cross Country Race Summary still uses the local race-summary behavior. Coach how-to and regression coverage were updated. What's New was not updated per prior user direction for race-flow cleanup.
+632. Mobile timer drag/feedback follow-up: traced the remaining phone-app note after the opening-screen refresh and stopwatch tap feedback were already present. The main training/race timer already calls the Beep/Vibrate feedback path from individual Start/Stop, individual Lap/End Rep/End Rest, master Start/Stop, master Lap, relay Lap, and Reset when the setting is enabled. The runner reorder handle now has a larger 32x44 tap target, stronger contrast, a visible blue side bar, and active-state feedback so coaches can more clearly grab the handle without treating the whole athlete row as draggable. Regression coverage was added. Coach how-to was not changed because it already tells coaches to drag the handle beside a name.
 
 ## Known Good Test Flow
 

@@ -5303,6 +5303,31 @@ function checkMobileIndividualLapButtonCues() {
   console.log("mobile individual lap button color cues ok");
 }
 
+function checkMobileTimerFeedbackAndDragHandle() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  [
+    "function tapFeedback()",
+    "if(!CL||!CL.cfg||!CL.cfg.beep)return;",
+    "beep();",
+    "buzz();",
+    "function togR(id)",
+    "function doLap(id)",
+    "function masterToggle()",
+    "function masterReset()",
+    "tapFeedback();",
+    '<button type="button" class="drag-handle" aria-label="Drag to reorder runner"></button>',
+    ".drag-handle{position:absolute;left:6px;top:7px;width:32px;height:44px;",
+    "border:1.5px solid #c7d2e6",
+    ".drag-handle::after{content:\"\";position:absolute;left:5px;top:50%;width:3px;height:22px;",
+    "if(handle){",
+    "_sw[id].timer=setTimeout(function(){_startRunnerDrag(id);},160);",
+    "if(!handle&&_touchInteractive(e.target))return;",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`mobile timer feedback/drag handle missing ${text}`);
+  });
+  console.log("mobile timer feedback and drag handle ok");
+}
+
 function checkKeepTrakFeature() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const desktop = fs.readFileSync("keep-trak.html", "utf8");
@@ -6801,6 +6826,7 @@ checkEquipmentCoachIssued();
 checkFieldNoMarkResultsAllowed();
 checkMobileFieldEventCaptureControls();
 checkMobileIndividualLapButtonCues();
+checkMobileTimerFeedbackAndDragHandle();
 checkKeepTrakFeature();
 checkAttendanceCheckpointMarkAll();
 checkAttendanceMobileSummary();
