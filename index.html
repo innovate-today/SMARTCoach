@@ -310,6 +310,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-field-practice .speed-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 #m-field-practice .speed-chip{background:#eef4ff;border-radius:999px;color:#173f99;font-size:12px;font-weight:800;padding:5px 8px}
 #m-field-practice .speed-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#m-field-practice .speed-setup-label{display:grid;gap:4px}
+#m-field-practice .speed-setup-label span{font-size:11px;font-weight:900;color:#475569;text-transform:uppercase}
 #m-field-practice .speed-ath-row{background:#fff;border:1px solid #d8e2f1;border-radius:9px;margin-top:8px;overflow:hidden;text-align:left}
 #m-field-practice .speed-ath-row.dragging{border-color:#2B4FCC;box-shadow:0 0 0 2px rgba(43,79,204,.14)}
 #m-field-practice .speed-ath-toggle{width:100%;border:0;background:#fff;display:flex;align-items:stretch;gap:8px;text-align:left;padding:10px 12px;font-family:inherit;color:#111827}
@@ -4440,10 +4442,25 @@ function fieldPracticeSpeedRepStatus(row,field){
 }
 function fieldPracticeSpeedDefaults(p){
   var first=(p&&Array.isArray(p.speedMetrics)?p.speedMetrics:[]).find(function(row){return row&&(row.zone||row.distance||row.unit);});
-  if(first)return{zone:first.zone||p&&p.focus||'Fly zone',distance:first.distance||'30',unit:String(first.unit||'m').toLowerCase()==='yd'?'yd':'m'};
+  var focus=fieldPracticeSpeedType(p&&p.focus);
+  if(first)return{zone:fieldPracticeSpeedType(first.zone||p&&p.focus),distance:first.distance||p&&p.speedMetricDistance||'30',flyZoneDistance:p&&p.flyZoneDistance||first.flyZoneDistance||first.distance||'30',unit:String(first.unit||p&&p.speedMetricUnit||'m').toLowerCase()==='yd'?'yd':'m'};
   var text=[p&&p.focus,p&&p.planNotes,p&&p.coachNotes,p&&p.routineName].filter(Boolean).join(' ');
   var match=text.match(/\b(\d{1,3}(?:\.\d+)?)\s*(m|meter|meters|yd|yard|yards)\b/i);
-  return{zone:p&&p.focus||'Fly zone',distance:match?match[1]:'30',unit:match&&/^yd/i.test(match[2])?'yd':'m'};
+  return{zone:focus,distance:p&&p.speedMetricDistance||match&&match[1]||'30',flyZoneDistance:p&&p.flyZoneDistance||match&&match[1]||'30',unit:String(p&&p.speedMetricUnit||'m').toLowerCase()==='yd'||match&&/^yd/i.test(match[2])?'yd':'m'};
+}
+function fieldPracticeSpeedType(value){
+  var text=String(value||'').toLowerCase();
+  if(/start|accel/.test(text))return'Start';
+  return'Fly';
+}
+function fieldPracticeDistanceOptionHtml(values,selected){
+  var normalized=String(selected||'').trim();
+  var list=values.slice();
+  if(normalized&&list.indexOf(normalized)<0)list.unshift(normalized);
+  return list.map(function(value){return '<option value="'+ex(value)+'" '+(String(value)===normalized?'selected':'')+'>'+ex(value)+'</option>';}).join('');
+}
+function fieldPracticeSpeedSetupLabel(defaults){
+  return (defaults.zone==='Start'?'Start':'Fly')+' · '+defaults.distance+' '+defaults.unit+' timed'+(defaults.zone==='Fly'?' · '+defaults.flyZoneDistance+' '+defaults.unit+' fly zone':'');
 }
 function syncFieldPracticeSpeedMetrics(p,force){
   if(!p)return;
@@ -4458,7 +4475,7 @@ function syncFieldPracticeSpeedMetrics(p,force){
     var id=runner.contactId||runner.id||runner.name||'';
     var key=String(id)||('name:'+String(runner.name||'').trim().toLowerCase());
     if(!removed[key]&&!byKey[key]){
-      p.speedMetrics.push({id:'speed_metric_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:id,athleteName:runner.name||'Athlete',rep:1,zone:defaults.zone,distance:defaults.distance,unit:defaults.unit,time:'',strides:'',note:'',updatedAt:''});
+      p.speedMetrics.push({id:'speed_metric_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:id,athleteName:runner.name||'Athlete',rep:1,zone:defaults.zone,flyZoneDistance:defaults.flyZoneDistance,distance:defaults.distance,unit:defaults.unit,time:'',strides:'',note:'',updatedAt:''});
     }
   });
 }
@@ -4471,7 +4488,7 @@ function cleanFieldPracticeSpeedMetrics(p){
     var strides=String(row.strides||'').trim();
     var note=String(row.note||'').trim();
     if(!row.athleteId&&!row.athleteName&&!time&&!strides&&!note&&!calc.velocity)return null;
-    return{id:row.id||('speed_metric_'+(index+1)),athleteId:row.athleteId||'',athleteName:row.athleteName||'',rep:Math.max(1,parseInt(row.rep||index+1,10)||1),zone:row.zone||'',distance:fieldPracticeRoundMetric(row.distance),unit:String(row.unit||'m').toLowerCase()==='yd'?'yd':'m',time:time,strides:fieldPracticeRoundMetric(strides),note:note,meters:calc.meters,seconds:calc.seconds,velocity:calc.velocity,strideLength:calc.strideLength,strideFrequency:calc.strideFrequency,updatedAt:row.updatedAt||new Date().toISOString()};
+    return{id:row.id||('speed_metric_'+(index+1)),athleteId:row.athleteId||'',athleteName:row.athleteName||'',rep:Math.max(1,parseInt(row.rep||index+1,10)||1),zone:row.zone||'',flyZoneDistance:row.flyZoneDistance||'',distance:fieldPracticeRoundMetric(row.distance),unit:String(row.unit||'m').toLowerCase()==='yd'?'yd':'m',time:time,strides:fieldPracticeRoundMetric(strides),note:note,meters:calc.meters,seconds:calc.seconds,velocity:calc.velocity,strideLength:calc.strideLength,strideFrequency:calc.strideFrequency,updatedAt:row.updatedAt||new Date().toISOString()};
   }).filter(Boolean);
 }
 function updateFieldPracticeSpeedSetup(field,value){
@@ -4479,7 +4496,19 @@ function updateFieldPracticeSpeedSetup(field,value){
   if(!p)return;
   updateFieldPracticeFromForm(false);
   p.speedMetrics=Array.isArray(p.speedMetrics)?p.speedMetrics:[];
-  p.speedMetrics.forEach(function(row){row[field]=value;row.updatedAt=new Date().toISOString();});
+  if(field==='zone')p.focus=fieldPracticeSpeedType(value);
+  if(field==='distance')p.speedMetricDistance=value;
+  if(field==='unit')p.speedMetricUnit=String(value||'m').toLowerCase()==='yd'?'yd':'m';
+  if(field==='flyZoneDistance')p.flyZoneDistance=value;
+  var defaults=fieldPracticeSpeedDefaults(p);
+  p.speedMetrics.forEach(function(row){
+    row.zone=defaults.zone;
+    row.distance=defaults.distance;
+    row.unit=defaults.unit;
+    row.flyZoneDistance=defaults.flyZoneDistance;
+    row.updatedAt=new Date().toISOString();
+  });
+  renderFieldPractice();
   var status=document.getElementById('fp-status');
   if(status)status.textContent='Speed setup updated. Tap Save to SMART Trak when finished.';
 }
@@ -4506,7 +4535,7 @@ function addFieldPracticeSpeedRep(athleteId,athleteName){
   var rows=p.speedMetrics.filter(function(row){return fieldPracticeSpeedKey(row)===key;});
   var defaults=fieldPracticeSpeedDefaults(p);
   var last=rows.slice().sort(function(a,b){return Number(b.rep||0)-Number(a.rep||0);})[0]||{};
-  p.speedMetrics.push({id:'speed_metric_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:athleteId||'',athleteName:athleteName||'Athlete',rep:(parseInt(last.rep||rows.length,10)||rows.length)+1,zone:last.zone||defaults.zone,distance:last.distance||defaults.distance,unit:last.unit||defaults.unit,time:'',strides:'',note:'',updatedAt:''});
+  p.speedMetrics.push({id:'speed_metric_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:athleteId||'',athleteName:athleteName||'Athlete',rep:(parseInt(last.rep||rows.length,10)||rows.length)+1,zone:defaults.zone,flyZoneDistance:defaults.flyZoneDistance,distance:defaults.distance,unit:defaults.unit,time:'',strides:'',note:'',updatedAt:''});
   renderFieldPractice();
 }
 function removeFieldPracticeSpeedMetric(id){
@@ -4773,7 +4802,14 @@ function fieldPracticeSpeedCaptureHtml(p){
   var rows=Array.isArray(p.speedMetrics)?p.speedMetrics:[];
   var addOpen=!!FIELD_PRACTICE.addAthleteOpen;
   var addAthleteControls='<div class="fp-speed-grid" style="margin-top:8px"><select id="fp-speed-add-athlete" class="sinp"><option value="">Choose from group</option>'+fieldPracticeGroupRunners(p.groupId).map(function(runner){var id=fieldPracticeRunnerId(runner);return '<option value="'+ex(id)+'">'+ex(runner.name||'Athlete')+'</option>';}).join('')+'</select><input id="fp-speed-add-manual" class="sinp" placeholder="Or type athlete name"></div><button class="speed-add-athlete-submit" type="button" onclick="addFieldPracticeSpeedAthlete()">Add Athlete</button>';
-  var html='<div class="speed-hero"><div class="speed-title">'+ex(p.date||todayISO())+' · '+ex(p.focus||'Speed Metrics')+'</div><div class="speed-sub">'+ex(p.groupName||'Team')+' · '+ex(defaults.distance)+' '+ex(defaults.unit)+' · '+athletes.length+' athletes</div><div class="speed-chips"><span class="speed-chip">'+ex(defaults.zone||'Speed zone')+'</span><span class="speed-chip">'+cleanFieldPracticeSpeedMetrics(p).length+' reps recorded</span></div></div>'+
+  var speedDistances=['10','20','30','40','50','60'];
+  var html='<div class="speed-hero"><div class="speed-title">'+ex(p.date||todayISO())+' · Speed Metrics</div><div class="speed-sub">'+ex(p.groupName||'Team')+' · '+ex(fieldPracticeSpeedSetupLabel(defaults))+' · '+athletes.length+' athletes</div><div class="speed-chips"><span class="speed-chip">'+ex(defaults.zone==='Start'?'Start / acceleration':'Fly zone')+'</span><span class="speed-chip">'+cleanFieldPracticeSpeedMetrics(p).length+' reps recorded</span></div></div>'+
+    '<div class="fp-card speed-setup-card"><div class="fp-title">Speed Setup</div><div class="fp-speed-grid" style="margin-top:8px">'+
+      '<label class="speed-setup-label"><span>Type</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;zone&quot;,this.value)"><option value="Fly" '+(defaults.zone==='Fly'?'selected':'')+'>Fly</option><option value="Start" '+(defaults.zone==='Start'?'selected':'')+'>Start</option></select></label>'+
+      (defaults.zone==='Fly'?'<label class="speed-setup-label"><span>Fly Zone</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;flyZoneDistance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.flyZoneDistance)+'</select></label>':'')+
+      '<label class="speed-setup-label"><span>Speed Metric</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;distance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.distance)+'</select></label>'+
+      '<label class="speed-setup-label"><span>Unit</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;unit&quot;,this.value)"><option value="m" '+(defaults.unit==='m'?'selected':'')+'>Meters</option><option value="yd" '+(defaults.unit==='yd'?'selected':'')+'>Yards</option></select></label>'+
+    '</div><div class="fp-text">Speed Metric is the timed distance used for MPH and velocity. Strides add stride length and frequency.</div></div>'+
     '<div class="fp-card speed-add-athlete-card '+(addOpen?'open':'collapsed')+'"><button class="speed-add-athlete-toggle" type="button" onclick="toggleFieldPracticeSpeedAddAthlete()">+ Athlete</button>'+(addOpen?addAthleteControls:'')+'</div>'+
     '<div class="fp-card"><div class="fp-title">Speed Capture</div><div class="fp-text">Tap an athlete to open details. Drag the handle beside a name to reorder without opening details. Only one athlete stays open at a time.</div>';
   if(!athletes.length)return html+'<div class="fp-text">Choose a group or add an athlete to this session.</div></div><div id="fp-speed-results"></div>';
@@ -4856,6 +4892,13 @@ function createFieldPracticeFromPlanDay(plan,day){
   var focus=(day&&day.workoutType)||((day&&day.title)||'Speed metrics');
   var sourceId=planDayRecordId(day)||[day&&day.date,dayGroup,day&&day.title].filter(Boolean).join('|');
   var practice={id:'calendar_speed_'+String(sourceId||fieldPracticeNewId()).replace(/[^a-zA-Z0-9_-]/g,'_'),date:day&&day.date||todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||dayGroup,athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:focus,routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:planText,coachNotes:'',sourceTrainingPlanTitle:plan&&plan.title||'SMART Trak Calendar',sourcePlanDayId:sourceId,sourcePlanDayDate:day&&day.date||'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  if(event==='Runway / Speed Metrics'){
+    var speedDefaults=fieldPracticeSpeedDefaults(practice);
+    practice.focus=speedDefaults.zone;
+    practice.speedMetricDistance=speedDefaults.distance;
+    practice.flyZoneDistance=speedDefaults.flyZoneDistance;
+    practice.speedMetricUnit=speedDefaults.unit;
+  }
   syncFieldPracticeAthleteSummaries(practice);
   return practice;
 }
@@ -4901,7 +4944,7 @@ function newFieldPractice(){
   var routine=fieldPracticeRoutineOptions(event)[0];
   var group=CL&&String(CL.type||'training')==='training'?CL:null;
   var coach=selectedCoachIdentity();
-  var practice={id:fieldPracticeNewId(),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:speedMode?'Fly zone':'Approach consistency',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:speedMode?'Capture time and stride count for each athlete.':'',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var practice={id:fieldPracticeNewId(),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:speedMode?'Fly':'Approach consistency',speedMetricDistance:speedMode?'30':'',flyZoneDistance:speedMode?'30':'',speedMetricUnit:speedMode?'m':'',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:speedMode?'Choose Fly or Start, set the speed metric distance, then capture time and stride count for each athlete.':'',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
   FIELD_PRACTICE.practices=[practice].concat((FIELD_PRACTICE.practices||[]).filter(function(item){return item.id!==practice.id;}));
   FIELD_PRACTICE.activeId=practice.id;
   renderFieldPractice();
@@ -4913,7 +4956,7 @@ function createSpeedMetricsPracticeForCurrentGroup(){
   var routine=fieldPracticeRoutineOptions(event)[0]||{key:'fly',label:'Fly routine'};
   var group=CL&&String(CL.type||'training')==='training'?CL:null;
   var coach=selectedCoachIdentity();
-  var practice={id:'speed_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:'Fly zone',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:'Capture time and stride count for each athlete.',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var practice={id:'speed_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:'Fly',speedMetricDistance:'30',flyZoneDistance:'30',speedMetricUnit:'m',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:'Choose Fly or Start, set the speed metric distance, then capture time and stride count for each athlete.',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
   syncFieldPracticeAthleteSummaries(practice);
   return practice;
 }
