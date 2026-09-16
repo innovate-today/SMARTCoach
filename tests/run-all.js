@@ -3109,7 +3109,7 @@ function checkHowToGuidePage() {
     "5 x 30m counts as 150m",
     "one completed workout for each athlete with at least one saved rep",
     "completed-workout detail shows the Speed Metrics rep breakdown",
-    "**Training/Race Order** controls how athletes appear when opening training groups, race groups, and Speed Metrics sessions",
+    "**Training/Race Order** controls how athletes appear when opening training groups, race groups, and Speed Trak sessions",
     "The default is **Sport, speed, name**",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
@@ -3118,6 +3118,7 @@ function checkHowToGuidePage() {
     "Choose **Paste Spreadsheet**, **Upload Spreadsheet**, or **Athletic.net Import**.",
     "Athletic.net Import supports copied",
     "paste the season calendar or meet reference list below the records",
+    "training groups, race groups, and Speed Metrics sessions",
   ].forEach((text) => {
     if (guide.includes(text)) throw new Error(`How To guide still describes removed Athletic.net import flow: ${text}`);
   });
