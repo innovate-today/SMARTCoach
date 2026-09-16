@@ -342,6 +342,7 @@ tr:last-child td{border-bottom:0}
         <button id="manualMileageBtn" class="modal-action" type="button">Log Miles</button>
         <button id="shareMilesBoardBtn" class="modal-action" type="button">Miles Trak</button>
         <button id="shareResultsBoardBtn" class="modal-action" type="button">Results</button>
+        <a id="powerTrakLink" class="linkbtn modal-action" href="/power-trak.html" data-dashboard-tool="powerTrak">Power Trak</a>
         <button id="fitnessCleanupBtn" class="modal-action" type="button">Fitness Review</button>
         <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
         <button id="changeCodeBtn" class="quiet-action" type="button">Staff Access</button>
@@ -1789,7 +1790,8 @@ function defaultDashboardPreferences(){
       docuTrak:true,
       weather:true,
       records:true,
-      simulators:true
+      simulators:true,
+      powerTrak:true
     }
   };
 }
@@ -1800,7 +1802,8 @@ var DASHBOARD_TOOL_OPTIONS=[
   {key:'docuTrak',label:'Docu Trak',description:'Docu Trak missing-docs card in Roster Summary.'},
   {key:'weather',label:'Weather',description:'Weather shortcut in the dashboard header.'},
   {key:'records',label:'Records',description:'Records shortcut in the dashboard header.'},
-  {key:'simulators',label:'Simulators',description:'Simulator chooser in the dashboard header.'}
+  {key:'simulators',label:'Simulators',description:'Simulator chooser in the dashboard header.'},
+  {key:'powerTrak',label:'Power Trak',description:'Power testing review shortcut in the dashboard header.'}
 ];
 function normalizeDashboardPreferences(source){
   var defaults=defaultDashboardPreferences();
@@ -2813,6 +2816,8 @@ function applySmartCoachLinks(){
   if(xcSimulator)xcSimulator.href=smartCoachPageUrl('/xc-simulator.html');
   var trainingCalendar=document.getElementById('trainingCalendarLink');
   if(trainingCalendar)trainingCalendar.href=smartCoachPageUrl('/training-calendar.html');
+  var powerTrak=document.getElementById('powerTrakLink');
+  if(powerTrak)powerTrak.href=smartCoachPageUrl('/power-trak.html');
   var planImport=document.getElementById('planImportLink');
   if(planImport)planImport.href=smartCoachPageUrl('/plan-import.html');
   var planSetup=document.getElementById('planSetupLink');

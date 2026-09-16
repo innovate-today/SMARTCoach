@@ -822,7 +822,27 @@ Field Practice includes event-specific drill routines for pole vault, high jump,
 
 Pole vault heights are cleaned into feet-inches format, such as `9-0` or `9-0.25`. Jump attempts are summarized by setup and height, such as `9-0 Crossbar [XOXXO]`, so the coach can quickly review the make/miss pattern without reading every note.
 
-On the SMARTCoach app, tap a training group and choose **Speed Metrics** when the group is doing fly zones, acceleration zones, max velocity, or runway timing. The app opens a compact speed screen and preloads the group athletes collapsed. In **Speed Setup**, choose **Fly** or **Start**. For Fly work, choose the Fly Zone distance and the Speed Metric distance. For Start work, choose the Speed Metric distance. The Speed Metric distance is the timed distance used to calculate MPH and velocity. After setup, those choices stay visible as pills at the top of the screen; tap a pill to reopen setup. Tap an athlete to open that athlete's reps, use the single **Start/Stop** button to time a rep or enter a manual time, enter stride count, and add notes as needed. Once time is entered, the rep shows MPH from the timed distance and time. Once strides are entered, the same rep also shows velocity, average stride length, and stride frequency. After a rep has enough information, the app confirms the rep is saved and tells the coach to move to the next runner or add the next rep. Use the side-by-side **+ Add Rep** and **Remove Rep** controls under a rep when an athlete needs another rep or an incorrect rep needs to be removed; removing a rep asks for confirmation first. Drag the handle beside a name to reorder the session list without opening that athlete's reps. **Remove athlete from this session** only removes that athlete from the current speed session after confirmation; group membership is still managed in SMART Trak. The session leaderboard appears at the bottom automatically and shows best reps sorted by velocity, stride length, stride frequency, time, name, or gender. Tap **Save to SMART Trak** when the session is ready to sync to Speed Trak. Tap **Field** from the main SMARTCoach screen for field-event drill sessions and jump attempts.
+On the SMARTCoach app, choose **Speed Metrics**, then choose the group when the group is doing fly zones, acceleration zones, max velocity, or runway timing. The app opens a compact speed screen and preloads the group athletes collapsed. In **Speed Setup**, choose **Fly** or **Start**. For Fly work, choose the Fly Zone distance and the Speed Metric distance. For Start work, choose the Speed Metric distance. The Speed Metric distance is the timed distance used to calculate MPH and velocity. After setup, those choices stay visible as pills at the top of the screen; tap a pill to reopen setup. Tap an athlete to open that athlete's reps, use the single **Start/Stop** button to time a rep or enter a manual time, enter stride count, and add notes as needed. Once time is entered, the rep shows MPH from the timed distance and time. Once strides are entered, the same rep also shows velocity, average stride length, and stride frequency. After a rep has enough information, the app confirms the rep is saved and tells the coach to move to the next runner or add the next rep. Use the side-by-side **+ Add Rep** and **Remove Rep** controls under a rep when an athlete needs another rep or an incorrect rep needs to be removed; removing a rep asks for confirmation first. Drag the handle beside a name to reorder the session list without opening that athlete's reps. **Remove athlete from this session** only removes that athlete from the current speed session after confirmation; group membership is still managed in SMART Trak. The session leaderboard appears at the bottom automatically and shows best reps sorted by velocity, stride length, stride frequency, time, name, or gender. Tap **Save to SMART Trak** when the session is ready to sync to Speed Trak. Tap **Field** from the main SMARTCoach screen for field-event drill sessions and jump attempts.
+
+## Power Trak
+
+Use **Power Trak** in the SMARTCoach app when a group is testing broad jump, vertical, med ball throw, squat, clean, bench, or similar power marks.
+
+How to use it:
+
+1. Open the SMARTCoach app.
+2. Choose **Power Trak**.
+3. Choose the group.
+4. Confirm the test name and date.
+5. Choose the testing metrics for that session.
+6. Enter marks for each athlete. Blank fields can stay blank.
+7. Add or remove athletes when the testing group changes at practice.
+8. Tap **Save Test** to save the session to SMART Trak.
+9. Use **Saved Tests** to reopen earlier Power Trak tests for the same group, or **+ New Test** to start a new testing session.
+
+If the phone cannot reach SMART Trak during testing, SMARTCoach keeps the Power Trak session on the device and shows that the SMART Trak save failed. Save again after the connection is back.
+
+On the Dashboard, open **Power Trak** to review saved testing sessions. The desktop page can filter by group, metric, saved test, athlete, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved mark or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
 
 ## Log Race Result
 
@@ -894,6 +914,12 @@ Manual mileage and manual quality sessions appear in Dashboard training volume, 
 
 If you log more than one run for the same athlete on the same day, SMART Trak checks the workout details before warning that it may already be synced. Different mileage or time entries can be saved separately. If the same run is submitted again, you will still see the already-synced warning.
 
+## SMARTCoach Pro Mobile App: Opening Screen
+
+The SMARTCoach app opens by asking what the coach is doing first, then which group to use. Choose **Training**, **Meets**, **Power Trak**, **Speed Metrics**, **Multi Athlete Timer**, or **Scheduled Workout**, then choose the group. The group list still uses the same SMART Trak roster source; the selected workflow controls what opens after the group is tapped.
+
+Use **Add** on the opening screen to add a Training Group, add a Meet / Race group, or view archived groups. Use **Refresh** to pull the latest SMART Trak data.
+
 ## SMARTCoach Pro Mobile App: Training Section
 
 Use the Training section at practice for daily workouts.
@@ -904,13 +930,14 @@ How to use it:
 
 1. Open the SMARTCoach app.
 2. Choose **Training**.
-3. Select the group.
-4. Add runners if needed.
-5. Reorder runners into the order they are training that day.
-6. Tap **Start** for one athlete or **Start All** for the group.
-7. Use **Lap All**, **End Rep All**, or **End Rest All** depending on the workout type.
-8. Tap **Stop** when the athlete or group is finished.
-9. Sync to SMART Trak after the workout.
+3. Choose the group.
+4. Choose the training mode when prompted, such as **Multi Athlete Timer**, **Speed Metrics**, or **Calendar Workout**.
+5. Add runners if needed.
+6. Reorder runners into the order they are training that day.
+7. Tap **Start** for one athlete or **Start All** for the group.
+8. Use **Lap All**, **End Rep All**, or **End Rest All** depending on the workout type.
+9. Tap **Stop** when the athlete or group is finished.
+10. Sync to SMART Trak after the workout.
 
 On an individual athlete row, **End Rep** is red and **End Rest** is green so it is easier to see which action is next during practice. The large bottom button still controls the whole group.
 

@@ -50,6 +50,7 @@ const {
 const TRAINING_CUSTOMIZATION_NAMESPACE = "trainingcustomization";
 const DOCU_TRAK_NAMESPACE = "docutrak";
 const FIELD_PRACTICE_NAMESPACE = "fieldpractice";
+const POWER_TRAK_NAMESPACE = "powertrak";
 const EQUIPMENT_TRAK_NAMESPACE = "equipmenttrak";
 const DASHBOARD_PREFERENCES_NAMESPACE = "dashboardpreferences";
 const MILES_BOARD_SHARING_NAMESPACE = "milesboardsharing";
@@ -309,6 +310,13 @@ module.exports = async function handler(req, res) {
     if (!requireProPlan(req, res)) return;
     await recordRequestCoachDevice(req).catch(() => {});
     return accountFieldPractice(req, res);
+  }
+
+  if (route === "power-trak") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    await recordRequestCoachDevice(req).catch(() => {});
+    return accountPowerTrak(req, res);
   }
 
   if (route === "bug-trak") {
@@ -1627,6 +1635,146 @@ async function loadFieldPracticeState(accountKey, accountRecord) {
     fieldPracticeSessions: normalizeFieldPractices(accountRecord && accountRecord.fieldPracticeSessions),
     lastFieldPracticeSync: accountRecord && accountRecord.lastFieldPracticeSync || null,
   };
+}
+
+async function accountPowerTrak(req, res) {
+  setKeepTrakCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  const { accountKey } = getGhlContext(req);
+
+  try {
+    if (req.method === "GET") {
+      const existing = await loadAccountRecord(accountKey);
+      const powerTrakState = await loadPowerTrakState(accountKey, existing && existing.record);
+      const sessions = normalizePowerTrakSessions(powerTrakState.powerTrakSessions);
+      const groupId = cleanSetupText(firstQueryValue(req.query && req.query.groupId));
+      const start = firstQueryValue(req.query && req.query.start);
+      const end = firstQueryValue(req.query && req.query.end);
+      const filtered = sessions.filter((item) => {
+        if (groupId && item.groupId !== groupId) return false;
+        if (start && item.date < start) return false;
+        if (end && item.date > end) return false;
+        return true;
+      });
+      res.status(200).json({ success: true, sessions: filtered, count: filtered.length });
+      return;
+    }
+
+    if (req.method === "POST" || req.method === "PATCH") {
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      const sessions = normalizePowerTrakSessions(Array.isArray(payload.sessions) ? payload.sessions : payload.session ? [payload.session] : [payload]);
+      const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
+      if (!sessions.length && !deleteIds.length) throw httpError(400, "No Power Trak sessions were provided.");
+      const existing = await loadAccountRecord(accountKey);
+      if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
+      const powerTrakState = await loadPowerTrakState(accountKey, existing.record);
+      const byId = new Map();
+      normalizePowerTrakSessions(powerTrakState.powerTrakSessions).forEach((item) => byId.set(item.id, item));
+      deleteIds.forEach((id) => byId.delete(id));
+      sessions.forEach((item) => byId.set(item.id, item));
+      const powerTrakSessions = Array.from(byId.values())
+        .sort((a, b) => cleanSetupText(b.date).localeCompare(cleanSetupText(a.date)) || cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
+        .slice(0, 1000);
+      const savedAt = new Date().toISOString();
+      await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
+        powerTrakSessions,
+        lastPowerTrakSync: { savedAt, count: sessions.length, total: powerTrakSessions.length },
+      });
+      res.status(200).json({ success: true, saved: true, sessions: powerTrakSessions, count: powerTrakSessions.length, savedAt });
+      return;
+    }
+
+    res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Power Trak save failed." });
+  }
+}
+
+async function loadPowerTrakState(accountKey, accountRecord) {
+  const scoped = await loadAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE).catch(() => null);
+  if (scoped && scoped.found && scoped.record) {
+    return {
+      powerTrakSessions: normalizePowerTrakSessions(scoped.record.powerTrakSessions),
+      lastPowerTrakSync: scoped.record.lastPowerTrakSync || null,
+    };
+  }
+  return {
+    powerTrakSessions: normalizePowerTrakSessions(accountRecord && accountRecord.powerTrakSessions),
+    lastPowerTrakSync: accountRecord && accountRecord.lastPowerTrakSync || null,
+  };
+}
+
+function normalizePowerTrakSessions(items) {
+  return (Array.isArray(items) ? items : []).map(normalizePowerTrakSession).filter(Boolean);
+}
+
+function normalizePowerTrakSession(item) {
+  const source = item && typeof item === "object" ? item : {};
+  const date = cleanSetupText(source.date).slice(0, 10);
+  if (!date) return null;
+  const rows = normalizePowerTrakRows(source.rows || source.athletes || source.results);
+  if (!rows.length) return null;
+  const id = cleanSetupText(source.id) || `power_${date}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  return {
+    id,
+    date,
+    testName: cleanSetupText(source.testName || source.name || "Power Trak Test").slice(0, 120) || "Power Trak Test",
+    groupId: cleanSetupText(source.groupId).slice(0, 120),
+    groupName: cleanSetupText(source.groupName).slice(0, 120),
+    metrics: normalizePowerTrakMetrics(source.metrics),
+    rows,
+    coachName: cleanSetupText(source.coachName).slice(0, 120),
+    savedAt: cleanSetupText(source.savedAt),
+    createdAt: cleanSetupText(source.createdAt) || new Date().toISOString(),
+    updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString(),
+  };
+}
+
+function normalizePowerTrakMetrics(items) {
+  const allowed = new Set(["broadJump", "verticalJump", "medBallThrow", "squat", "clean", "bench"]);
+  const metrics = (Array.isArray(items) ? items : []).map(cleanSetupText).filter((key) => allowed.has(key));
+  return metrics.length ? uniqueStrings(metrics) : ["broadJump", "verticalJump", "medBallThrow", "squat", "clean"];
+}
+
+function normalizePowerTrakRows(items) {
+  return (Array.isArray(items) ? items : []).map((item, index) => {
+    const source = item && typeof item === "object" ? item : {};
+    const athleteId = cleanSetupText(source.athleteId);
+    const contactId = cleanSetupText(source.contactId);
+    const smartcoachAthleteId = cleanSetupText(source.smartcoachAthleteId);
+    const athleteName = displayNameCase(source.athleteName || source.name).slice(0, 120);
+    const marks = normalizePowerTrakMarks(source.marks || source);
+    const note = cleanSetupText(source.note || source.notes).slice(0, 500);
+    if (!athleteId && !contactId && !smartcoachAthleteId && !athleteName && !Object.keys(marks).length && !note) return null;
+    return {
+      id: cleanSetupText(source.id) || `power_row_${index + 1}`,
+      athleteId,
+      contactId,
+      smartcoachAthleteId,
+      athleteName,
+      gender: cleanSetupText(source.gender).slice(0, 40),
+      grade: cleanSetupText(source.grade).slice(0, 20),
+      marks,
+      note,
+      updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString(),
+    };
+  }).filter(Boolean).slice(0, 250);
+}
+
+function normalizePowerTrakMarks(source) {
+  const input = source && typeof source === "object" ? source : {};
+  const keys = ["broadJump", "verticalJump", "medBallThrow", "squat", "clean", "bench"];
+  const out = {};
+  keys.forEach((key) => {
+    const value = cleanSetupText(input[key]).slice(0, 60);
+    if (value) out[key] = value;
+  });
+  return out;
 }
 
 function normalizeFieldPractices(items) {
@@ -6904,6 +7052,10 @@ const ACCOUNT_CLEANUP_OPTIONS = {
   fieldPractice: {
     label: "Field Practice sessions",
     fields: ["fieldPracticeSessions", "lastFieldPracticeSync"],
+  },
+  powerTrak: {
+    label: "Power Trak sessions",
+    fields: ["powerTrakSessions", "lastPowerTrakSync"],
   },
   milesBoard: {
     label: "Miles Board sharing",

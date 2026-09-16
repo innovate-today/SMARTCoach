@@ -19,6 +19,7 @@ const htmlFiles = [
   "weather.html",
   "miles-board.html",
   "speed-trak.html",
+  "power-trak.html",
   "speed-board.html",
   "results-board.html",
   "how-to.html",
@@ -2200,6 +2201,85 @@ function checkSpeedTrakFeature() {
   console.log("Speed Trak feature ok");
 }
 
+function checkPowerTrakFeature() {
+  const page = fs.readFileSync("power-trak.html", "utf8");
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    "<title>Power Trak</title>",
+    "<h1>Power Trak</h1>",
+    "Review saved power testing sessions from the SMARTCoach app.",
+    "id=\"groupSelect\"",
+    "id=\"metricSelect\"",
+    "id=\"sessionSelect\"",
+    "id=\"downloadCsvBtn\"",
+    "id=\"deleteSessionBtn\"",
+    "id=\"editMarkModal\"",
+    "Download CSV",
+    "Delete Test",
+    "Edit Mark",
+    "Save Mark",
+    "Saved Tests",
+    "Testing Marks",
+    "POWER_METRICS={broadJump:'Broad Jump',verticalJump:'Vertical',medBallThrow:'Med Ball',squat:'Squat',clean:'Clean',bench:'Bench'}",
+    "function smartCoachAccountKey()",
+    "function apiUrl(path,extra)",
+    "function headers()",
+    "fetchJson(apiUrl('/api/smart-trak/power-trak'))",
+    "function buildRows(sessions)",
+    "function populateFilters()",
+    "function applyFilters()",
+    "function renderSessions()",
+    "function render()",
+    "function csvCell(value)",
+    "function downloadTextFile(filename,text,mimeType)",
+    "function selectedPowerTrakSession()",
+    "function findPowerTrakSession(id)",
+    "function findPowerTrakRow(session,rowInfo)",
+    "function openEditMark(row)",
+    "function closeEditMark()",
+    "function saveEditedMark()",
+    "function downloadPowerTrakCsv()",
+    "function deletePowerTrakSession()",
+    "row.marks[target.metricKey]=mark;",
+    "body:JSON.stringify({session:session})",
+    "Saved '+target.athlete+' '+target.metric+'.",
+    "JSON.stringify({deleteIds:[session.id]})",
+    "Delete \"'+label+'\" and all marks in this test? This cannot be undone.",
+    "Deleted '+label+'.",
+    "smart-trak-'+safeFilePart(label)+'-'+dateStamp()+'.csv",
+    "Exported '+state.filtered.length+' Power Trak marks.",
+    "data-session",
+    "els.dashboardLink.href=pageUrl('/dashboard.html');",
+    "els.trainingLink.href=pageUrl('/training-calendar.html');",
+    "els.downloadCsvBtn.addEventListener('click',downloadPowerTrakCsv);",
+    "els.deleteSessionBtn.addEventListener('click',deletePowerTrakSession);",
+    "els.editMarkSave.addEventListener('click',saveEditedMark);",
+    "data-edit-mark",
+  ].forEach((text) => {
+    if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
+  });
+  [
+    'id="powerTrakLink"',
+    'href="/power-trak.html"',
+    "if(powerTrak)powerTrak.href=smartCoachPageUrl('/power-trak.html');",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Dashboard Power Trak link missing ${text}`);
+  });
+  [
+    "Use **Power Trak** in the SMARTCoach app when a group is testing broad jump, vertical, med ball throw, squat, clean, bench, or similar power marks.",
+    "Tap **Save Test** to save the session to SMART Trak.",
+    "On the Dashboard, open **Power Trak** to review saved testing sessions.",
+    "Use **Download CSV** to export the current filtered view.",
+    "Use **Edit Mark** to correct one saved mark or note inside a test.",
+    "Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.",
+  ].forEach((text) => {
+    if (!guide.includes(text)) throw new Error(`Coach guide Power Trak desktop handoff missing ${text}`);
+  });
+  if (/Void/.test(page)) throw new Error("Power Trak desktop page should not expose void actions.");
+  console.log("Power Trak feature ok");
+}
+
 function checkDashboardWhatsNew() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   [
@@ -3079,6 +3159,7 @@ function checkDashboardToolPreferences() {
     "weather.html",
     "track-simulator.html",
     "xc-simulator.html",
+    "power-trak.html",
   ];
   directPages.forEach((file) => {
     if (!fs.existsSync(file)) throw new Error(`hidden dashboard tools must still load directly by URL: ${file}`);
@@ -3192,7 +3273,10 @@ function checkDashboardToolPreferences() {
     'data-dashboard-tool="weather"',
     'data-dashboard-tool="records"',
     'data-dashboard-tool="simulators"',
+    'data-dashboard-tool="powerTrak"',
     "equipmentTrak:true",
+    "powerTrak:true",
+    "{key:'powerTrak',label:'Power Trak',description:'Power testing review shortcut in the dashboard header.'}",
     "Show All",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard tool preferences missing ${text}`);
@@ -5481,6 +5565,157 @@ function checkGroupsTrayAddHidden() {
   console.log("Groups tray Add hidden ok");
 }
 
+function checkMobileWorkflowOpeningFlow() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    'id="s-workflows"',
+    '<div class="nav-btn" onclick="openWorkflowAddMenu()">Add</div>',
+    'id="workflow-list"',
+    "var APP_WORKFLOWS=[",
+    "{id:'training',label:'Training'",
+    "{id:'meets',label:'Meets'",
+    "{id:'speedMetrics',label:'Speed Metrics'",
+    "{id:'powerTrak',label:'Power Trak'",
+    "{id:'multiAthleteTimer',label:'Multi Athlete Timer'",
+    "{id:'scheduledWorkout',label:'Scheduled Workout'",
+    "function renderWorkflowHome()",
+    "function chooseWorkflow(id)",
+    "selectWorkflowForGroupChoice(id);",
+    "go('s-groups');",
+    "function openWorkflowAddMenu()",
+    "openPicker('Add'",
+    "Training Group",
+    "Meet / Race",
+    "View Archive",
+    "setSelectedWorkflow('meets');",
+    "setGroupView('meets',{preserveWorkflow:true});",
+    "setSelectedWorkflow('training');",
+    "setGroupView('training',{preserveWorkflow:true});",
+    "addGroupForView();",
+    "openArchiveGroupList();",
+    "function updateGroupChoiceChrome()",
+    'id="group-workflow-banner"',
+    'id="group-view-tabs"',
+    "if(tabs)tabs.hidden=!archiveMode;",
+    "function openSelectedWorkflowForGroup()",
+    "return openWorkflowForGroup(APP_SELECTED_WORKFLOW);",
+    "function openWorkflowForGroup(id)",
+    "if(destination==='meet')",
+    "openMeetWorkflowForGroup();",
+    "if(destination==='speed')",
+    "openTrainingModeSpeed();",
+    "if(destination==='power')",
+    "openPowerTrakForGroup();",
+    "if(destination==='timer')",
+    "openTrainingModeDistance();",
+    "if(destination==='calendar')",
+    "openTrainingModeCalendar();",
+    "openTrainingModePicker();",
+    "function openMeetWorkflowForGroup()",
+    "go('s-group');",
+    "if(shouldOpenXCToolsSetup())setTimeout(openXCTools,60);",
+    "if(partnerTimingEnabled())loadPartnerTimingSession();",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile workflow opening flow missing ${text}`);
+  });
+  [
+    "function setGroupView(view,opts)",
+    "if(!opts||!opts.preserveWorkflow)",
+    "if(view==='meets')setSelectedWorkflow('meets');",
+    "else if(view==='training')setSelectedWorkflow('training');",
+    "if(GV==='training'&&String(CL.type||'training')==='training')",
+    "openSelectedWorkflowForGroup();",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile workflow should preserve legacy group behavior: ${text}`);
+  });
+  [
+    "## SMARTCoach Pro Mobile App: Opening Screen",
+    "The SMARTCoach app opens by asking what the coach is doing first, then which group to use.",
+    "Choose **Training**, **Meets**, **Power Trak**, **Speed Metrics**, **Multi Athlete Timer**, or **Scheduled Workout**, then choose the group.",
+    "Use **Add** on the opening screen to add a Training Group, add a Meet / Race group, or view archived groups.",
+    "Choose the training mode when prompted, such as **Multi Athlete Timer**, **Speed Metrics**, or **Calendar Workout**.",
+  ].forEach((text) => {
+    if (!guide.includes(text)) throw new Error(`Coach guide opening workflow missing ${text}`);
+  });
+  console.log("Mobile workflow opening flow ok");
+}
+
+function checkMobilePowerTrakWorkflow() {
+  const mobile = fs.readFileSync("index.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  [
+    'id="m-power-trak"',
+    'id="power-trak-body"',
+    'id="power-trak-status"',
+    "POWER_TRAK={sessions:[],activeId:'',metrics:['broadJump','verticalJump','medBallThrow','squat','clean']}",
+    "var POWER_TRAK_METRICS=[",
+    "function powerTrakStorageKey()",
+    "return 'sc_power_trak_sessions';",
+    "function powerTrakLoadSessions()",
+    "function powerTrakStoreSessions()",
+    "function loadPowerTrakSessionsFromSmartTrak()",
+    "smartCoachApiUrl('/api/smart-trak/power-trak')",
+    "function powerTrakCreateSessionForCurrentGroup()",
+    "function powerTrakSessionsForCurrentGroup()",
+    "function selectPowerTrakSession(id)",
+    "function newPowerTrakSession()",
+    "function openPowerTrakForGroup()",
+    "sm('m-power-trak');",
+    "function updatePowerTrakMark(rowId,key,value)",
+    "function addPowerTrakAthlete()",
+    "function removePowerTrakAthlete(rowId)",
+    "function savePowerTrakSession()",
+    "Power Trak test saved to SMART Trak.",
+    "Saved on this device. SMART Trak save failed:",
+    "function renderPowerTrak(keepStatus)",
+    "Saved Tests",
+    "+ New Test",
+    "pt-session-row",
+    "Testing Marks",
+    "Broad Jump",
+    "Vertical",
+    "Med Ball",
+  ].forEach((text) => {
+    if (!mobile.includes(text)) throw new Error(`Mobile Power Trak workflow missing ${text}`);
+  });
+  if (mobile.includes("Power Trak entry will be added in the next implementation step.")) {
+    throw new Error("Power Trak workflow should no longer be a placeholder alert.");
+  }
+  if (mobile.includes("SMART Trak sync comes in the next Power Trak step.")) {
+    throw new Error("Power Trak workflow should save through the SMART Trak API.");
+  }
+  [
+    'const POWER_TRAK_NAMESPACE = "powertrak";',
+    'if (route === "power-trak")',
+    "return accountPowerTrak(req, res);",
+    "async function accountPowerTrak(req, res)",
+    "async function loadPowerTrakState(accountKey, accountRecord)",
+    "function normalizePowerTrakSessions(items)",
+    "function normalizePowerTrakSession(item)",
+    "function normalizePowerTrakRows(items)",
+    "function normalizePowerTrakMarks(source)",
+    "await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE",
+    "powerTrakSessions",
+    "lastPowerTrakSync",
+    "Power Trak sessions",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Power Trak API route missing ${text}`);
+  });
+  [
+    "## Power Trak",
+    "Use **Power Trak** in the SMARTCoach app when a group is testing broad jump, vertical, med ball throw, squat, clean, bench, or similar power marks.",
+    "Choose **Power Trak**.",
+    "Tap **Save Test** to save the session to SMART Trak.",
+    "Use **Saved Tests** to reopen earlier Power Trak tests for the same group, or **+ New Test** to start a new testing session.",
+    "SMARTCoach keeps the Power Trak session on the device and shows that the SMART Trak save failed.",
+  ].forEach((text) => {
+    if (!guide.includes(text)) throw new Error(`Coach guide Power Trak workflow missing ${text}`);
+  });
+  console.log("Mobile Power Trak workflow ok");
+}
+
 function checkMobileGroupStorageAccountScoped() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const setup = fs.readFileSync("plan-setup.html", "utf8");
@@ -6298,6 +6533,7 @@ checkMilesBoardFeature();
 checkResultsBoardFeature();
 checkXcTop20RecordsFeature();
 checkSpeedTrakFeature();
+checkPowerTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();
 checkDashboardApiUsageAudit();
@@ -6360,6 +6596,8 @@ checkAttendanceCheckpointMarkAll();
 checkAttendanceMobileSummary();
 checkAttendanceSeasonAttachment();
 checkGroupsTrayAddHidden();
+checkMobileWorkflowOpeningFlow();
+checkMobilePowerTrakWorkflow();
 checkMobileGroupStorageAccountScoped();
 checkMobileAccountLogout();
 checkHistoricalMeetResultsLoadUnmatched();
