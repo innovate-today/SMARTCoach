@@ -1212,6 +1212,7 @@ function updatePowerTrakSessionField(field,value){
   if(!session)return;
   session[field]=String(value||'');
   session.updatedAt=new Date().toISOString();
+  powerTrakStoreSessions();
 }
 function togglePowerTrakMetric(key){
   var session=activePowerTrakSession();
@@ -1223,6 +1224,7 @@ function togglePowerTrakMetric(key){
   session.metrics=metrics;
   POWER_TRAK.metrics=metrics.slice();
   session.updatedAt=new Date().toISOString();
+  powerTrakStoreSessions();
   renderPowerTrak();
 }
 function updatePowerTrakMark(rowId,key,value){
@@ -1234,6 +1236,7 @@ function updatePowerTrakMark(rowId,key,value){
   row.marks[key]=String(value||'');
   row.updatedAt=new Date().toISOString();
   session.updatedAt=new Date().toISOString();
+  powerTrakStoreSessions();
 }
 function updatePowerTrakNote(rowId,value){
   var session=activePowerTrakSession();
@@ -1243,6 +1246,7 @@ function updatePowerTrakNote(rowId,value){
   row.note=String(value||'');
   row.updatedAt=new Date().toISOString();
   session.updatedAt=new Date().toISOString();
+  powerTrakStoreSessions();
 }
 function removePowerTrakAthlete(rowId){
   var session=activePowerTrakSession();
@@ -1252,6 +1256,7 @@ function removePowerTrakAthlete(rowId){
   if(!confirm('Remove '+label+' from this Power Trak test?'))return;
   session.rows=(session.rows||[]).filter(function(row){return row.id!==rowId;});
   session.updatedAt=new Date().toISOString();
+  powerTrakStoreSessions();
   renderPowerTrak();
 }
 function addPowerTrakAthlete(){
@@ -1268,6 +1273,7 @@ function addPowerTrakAthlete(){
   if(runner&&session.rows.some(function(row){return String(row.athleteId||row.contactId||'')===powerTrakAthleteId(runner);}))return;
   session.rows.push(powerTrakNewRow(runner||{name:name}));
   session.updatedAt=new Date().toISOString();
+  powerTrakStoreSessions();
   renderPowerTrak();
 }
 function powerTrakCompletedMarkCount(session){

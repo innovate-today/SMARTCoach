@@ -5666,6 +5666,7 @@ function checkMobilePowerTrakWorkflow() {
     "function updatePowerTrakMark(rowId,key,value)",
     "function addPowerTrakAthlete()",
     "function removePowerTrakAthlete(rowId)",
+    "session.updatedAt=new Date().toISOString();\n  powerTrakStoreSessions();",
     "Remove '+label+' from this Power Trak test?",
     "function savePowerTrakSession()",
     "Power Trak test saved to SMART Trak.",
