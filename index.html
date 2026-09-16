@@ -940,6 +940,7 @@ function loadSelectedWorkflow(){
   try{stored=getAccountStorage(appWorkflowStorageKey())||'';}catch(e){}
   APP_WORKFLOW_HAS_STORED=!!stored;
   APP_SELECTED_WORKFLOW=appWorkflow(stored).id;
+  if(stored&&stored!==APP_SELECTED_WORKFLOW)setAccountStorage(appWorkflowStorageKey(),APP_SELECTED_WORKFLOW);
   return APP_SELECTED_WORKFLOW;
 }
 function selectedWorkflow(){

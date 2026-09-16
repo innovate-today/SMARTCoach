@@ -5583,6 +5583,7 @@ function checkMobileWorkflowOpeningFlow() {
     "function renderWorkflowHome()",
     "APP_WORKFLOW_HAS_STORED=false",
     "APP_WORKFLOW_HAS_STORED=!!stored;",
+    "if(stored&&stored!==APP_SELECTED_WORKFLOW)setAccountStorage(appWorkflowStorageKey(),APP_SELECTED_WORKFLOW);",
     "APP_WORKFLOW_HAS_STORED=true;",
     "quickSection.hidden=!APP_WORKFLOW_HAS_STORED;",
     "function chooseWorkflow(id)",
