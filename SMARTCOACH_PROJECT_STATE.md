@@ -1707,6 +1707,7 @@ Use this as the current launch regression test:
 4. Check Customer Access and confirm account access, account source, SMART Trak connection, and device/coach-code status.
 5. Open Dashboard, Athletes, Training Calendar, Keep Trak, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Meet History, Records, Track Simulator, XC Simulator, and Weather with the customer account key.
 6. Confirm pages that need a coach code show their own access prompt and unlock after the assigned code.
+6a. Confirm the SMARTCoach base link and protected backend API routes do not expose SMART Trak data without a valid coach session or accepted coach access code. Test at least one mobile app data refresh/sync route and one desktop SMART Trak data route with no session/code and verify the backend rejects the request, not just the frontend modal.
 7. Create/activate athletes in SMART Trak and confirm app athlete dropdowns show only active athletes.
 8. Create or import a plan, build a training group, assign the plan to a group or selected athletes, and confirm the Training Calendar shows the plan days.
 9. Open the phone app with the customer account key, choose group/plan, select an upcoming workout, time a rep/rest workout, and sync.
