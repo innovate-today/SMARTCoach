@@ -6318,6 +6318,8 @@ function checkFieldPracticePhaseOne() {
     "function openTrainingModeCalendar()",
     "Multi Athlete Timer",
     "Speed Trak",
+    "Open today or the next Speed Trak workout for this group.",
+    "'+ex(p.date||todayISO())+' · Speed Trak",
     "Training Calendar",
     "#m-training-mode .msh{height:100%;max-height:none;border-radius:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}",
     "#m-training-mode .profile-box{flex:1;min-height:0;max-height:none;-webkit-overflow-scrolling:touch}",

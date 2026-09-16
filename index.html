@@ -3710,7 +3710,7 @@ function openTrainingModePicker(){
   var speedDay=trainingModeSpeedMetricDay();
   options.innerHTML=
     '<button type="button" class="picker-row"'+workflowTapAttrs('openTrainingModeFromRow(event,&quot;timer&quot;)')+'><b>Multi Athlete Timer</b><small>Use the regular group timer for easy runs, intervals, reps, rest, and meet-style timing.</small></button>'+
-    '<button type="button" class="picker-row"'+workflowTapAttrs('openTrainingModeFromRow(event,&quot;speed&quot;)')+'><b>Speed Trak</b><small>'+(speedDay?'Open today or the next speed metrics workout for this group.':'Create a speed, fly, acceleration, or runway metrics session for this group.')+'</small></button>'+
+    '<button type="button" class="picker-row"'+workflowTapAttrs('openTrainingModeFromRow(event,&quot;speed&quot;)')+'><b>Speed Trak</b><small>'+(speedDay?'Open today or the next Speed Trak workout for this group.':'Create a speed, fly, acceleration, or runway session for this group.')+'</small></button>'+
     '<button type="button" class="picker-row"'+workflowTapAttrs('openTrainingModeFromRow(event,&quot;calendar&quot;)')+'><b>Training Calendar</b><small>Review or switch the workout assigned to this group.</small></button>';
   sm('m-training-mode');
 }
@@ -5439,7 +5439,7 @@ function fieldPracticeSpeedCaptureHtml(p){
   var speedDistances=['10','20','30','40','50','60'];
   var setupOpen=!!FIELD_PRACTICE.speedSetupOpen||!p.speedSetupTouched;
   var setupSummary='<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">'+ex(defaults.zone==='Start'?'Start':'Fly')+'</button>'+(defaults.zone==='Fly'?'<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">Fly '+ex(defaults.flyZoneDistance)+' '+ex(defaults.unit)+'</button>':'')+'<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">Metric '+ex(defaults.distance)+' '+ex(defaults.unit)+'</button>';
-  var html='<div class="speed-hero"><div class="speed-title">'+ex(p.date||todayISO())+' · Speed Metrics</div><div class="speed-sub">'+ex(p.groupName||'Team')+' · '+athletes.length+' athletes</div><div class="speed-chips">'+setupSummary+'<span class="speed-chip">'+cleanFieldPracticeSpeedMetrics(p).length+' reps recorded</span></div></div>'+
+  var html='<div class="speed-hero"><div class="speed-title">'+ex(p.date||todayISO())+' · Speed Trak</div><div class="speed-sub">'+ex(p.groupName||'Team')+' · '+athletes.length+' athletes</div><div class="speed-chips">'+setupSummary+'<span class="speed-chip">'+cleanFieldPracticeSpeedMetrics(p).length+' reps recorded</span></div></div>'+
     (setupOpen?'<div class="fp-card speed-setup-card"><div class="fp-title">Speed Setup</div><div class="fp-speed-grid" style="margin-top:8px">'+
       '<label class="speed-setup-label"><span>Type</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;zone&quot;,this.value)"><option value="Fly" '+(defaults.zone==='Fly'?'selected':'')+'>Fly</option><option value="Start" '+(defaults.zone==='Start'?'selected':'')+'>Start</option></select></label>'+
       (defaults.zone==='Fly'?'<label class="speed-setup-label"><span>Fly Zone</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;flyZoneDistance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.flyZoneDistance)+'</select></label>':'')+
