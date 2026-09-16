@@ -1284,6 +1284,60 @@ async function testAccountStatusReportsDeviceUnlock() {
   });
 }
 
+async function testProtectedSmartTrakRoutesRequireCoachAccess() {
+  const previousFetch = global.fetch;
+  let fetchCalled = false;
+  global.fetch = async () => {
+    fetchCalled = true;
+    throw new Error("Protected SMART Trak routes should reject before loading remote account data.");
+  };
+
+  try {
+    await withEnv({
+      SMARTCOACH_PRODUCT_PLAN_LOCKED: "pro",
+      GHL_PRIVATE_INTEGRATION_TOKEN_LOCKED: "token",
+      GHL_LOCATION_ID_LOCKED: "location",
+      SMARTCOACH_COACH_ACCESS_CODES_LOCKED: "coach-one",
+      SMARTCOACH_REQUIRE_COACH_ACCESS_LOCKED: "true",
+      SMARTCOACH_SUBSCRIPTION_STATUS_LOCKED: "active",
+      SMARTCOACH_SESSION_SECRET: "session-secret",
+      SMARTCOACH_REGISTRY_REST_URL: undefined,
+      SMARTCOACH_REGISTRY_REST_TOKEN: undefined,
+      KV_REST_API_URL: undefined,
+      KV_REST_API_TOKEN: undefined,
+      UPSTASH_REDIS_REST_URL: undefined,
+      UPSTASH_REDIS_REST_TOKEN: undefined,
+    }, async () => {
+      const mobileRouteRes = mockRes();
+      await handler({
+        method: "GET",
+        query: { route: "field-practice", account: "locked" },
+        headers: {},
+      }, mobileRouteRes);
+
+      assert.strictEqual(mobileRouteRes.statusCode, 401);
+      assert.strictEqual(mobileRouteRes.body.accessCodeRequired, true);
+      assert.strictEqual(mobileRouteRes.body.coachAccessRequired, true);
+      assert.match(mobileRouteRes.body.error, /coach access code is required/i);
+
+      const desktopRouteRes = mockRes();
+      await handler({
+        method: "GET",
+        query: { route: "dashboard", account: "locked" },
+        headers: {},
+      }, desktopRouteRes);
+
+      assert.strictEqual(desktopRouteRes.statusCode, 401);
+      assert.strictEqual(desktopRouteRes.body.accessCodeRequired, true);
+      assert.strictEqual(desktopRouteRes.body.coachAccessRequired, true);
+      assert.match(desktopRouteRes.body.error, /coach access code is required/i);
+      assert.strictEqual(fetchCalled, false);
+    });
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 (async () => {
   await testAutomationDryRunDoesNotSave();
   await testAccountSetupCodeProtection();
@@ -1305,6 +1359,7 @@ async function testAccountStatusReportsDeviceUnlock() {
   await testRegistryLookupHidesSecrets();
   await testRegistryListSubscribers();
   await testAccountStatusReportsDeviceUnlock();
+  await testProtectedSmartTrakRoutesRequireCoachAccess();
   console.log("automation API dry-run and Stripe idempotency tests passed");
 })().catch((error) => {
   console.error(error);
