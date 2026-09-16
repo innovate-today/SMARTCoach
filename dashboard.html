@@ -6996,13 +6996,15 @@ function findTrainingRow(button){
   var rowKey=button.getAttribute('data-row-key')||'';
   var recordId=button.getAttribute('data-record-id')||'';
   var sourceRecordId=button.getAttribute('data-source-record-id')||'';
+  var exact=recentTrainingRows.find(function(item){
+    return (recordId&&item.recordId===recordId) || (sourceRecordId&&item.sourceRecordId===sourceRecordId);
+  });
+  if(exact)return exact;
   if(rowKey){
     var keyed=recentTrainingRows.find(function(item){return trainingRowKey(item)===rowKey;});
     if(keyed)return keyed;
   }
-  return recentTrainingRows.find(function(item){
-    return (recordId&&item.recordId===recordId) || (sourceRecordId&&item.sourceRecordId===sourceRecordId);
-  });
+  return null;
 }
 
 function correctionNotesFromRow(row){

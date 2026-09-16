@@ -4142,6 +4142,30 @@ function checkManualMileageQualitySession() {
   console.log("Manual mileage quality session ok");
 }
 
+function checkTrainingCorrectionExactIdentity() {
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  [
+    "function findTrainingRow(button)",
+    "var exact=recentTrainingRows.find(function(item){",
+    "return (recordId&&item.recordId===recordId) || (sourceRecordId&&item.sourceRecordId===sourceRecordId);",
+    "if(exact)return exact;",
+    "if(rowKey){",
+    "var keyed=recentTrainingRows.find(function(item){return trainingRowKey(item)===rowKey;});",
+    "return null;",
+    "data-row-key=\"'+esc(trainingRowKey(row))",
+    "data-record-id=\"'+esc(row.recordId||'')",
+    "data-source-record-id=\"'+esc(row.sourceRecordId||'')",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`Training correction exact identity missing ${text}`);
+  });
+  const exactIndex = dashboard.indexOf("var exact=recentTrainingRows.find(function(item){");
+  const keyedIndex = dashboard.indexOf("if(rowKey){", exactIndex);
+  if (exactIndex < 0 || keyedIndex < 0 || exactIndex > keyedIndex) {
+    throw new Error("Training correction lookup should prefer exact record/source ids before row-key fallback.");
+  }
+  console.log("Training correction exact identity ok");
+}
+
 function checkTrainingCustomization() {
   const calendar = fs.readFileSync("training-calendar.html", "utf8");
   const app = fs.readFileSync("index.html", "utf8");
@@ -6796,6 +6820,7 @@ checkTrainingPlanMissingSetupFallback();
 checkQualityWorkoutTypesAccepted();
 checkSmartCoachAppSyncIdempotency();
 checkManualMileageQualitySession();
+checkTrainingCorrectionExactIdentity();
 checkTrainingCustomization();
 checkScopedRegistryReliabilitySaves();
 checkMobileCalendarWorkoutPriority();
