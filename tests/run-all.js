@@ -2288,6 +2288,8 @@ function checkDashboardWhatsNew() {
   [
     'id="whatsNewBtn"',
     "What's New",
+    ".title-row{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}",
+    "h1{font-size:24px;line-height:1.15;margin:0;white-space:nowrap}",
     "var WHATS_NEW_VERSION=",
     "var WHATS_NEW_ITEMS=",
     "function whatsNewStorageKey()",
