@@ -863,7 +863,7 @@ var APP_WORKFLOWS=[
   {id:'speedMetrics',label:'Speed Metrics',shortLabel:'Speed',description:'Capture fly/start times, velocity, MPH, and stride data.',groupView:'training',requiresGroup:true,destination:'speed'},
   {id:'powerTrak',label:'Power Trak',shortLabel:'Power',description:'Enter testing marks like broad jump, vertical, med ball, and lifts.',groupView:'training',requiresGroup:true,destination:'power'},
   {id:'multiAthleteTimer',label:'Multi Athlete Timer',shortLabel:'Timer',description:'Time several athletes without setting up a meet.',groupView:'training',requiresGroup:true,destination:'timer'},
-  {id:'scheduledWorkout',label:'Calendar Workout',shortLabel:'Workout',description:'Open a workout already planned on the calendar.',groupView:'training',requiresGroup:true,destination:'calendar'}
+  {id:'calendarWorkout',label:'Calendar Workout',shortLabel:'Workout',description:'Open a workout already planned on the calendar.',groupView:'training',requiresGroup:true,destination:'calendar'}
 ];
 var APP_WORKFLOW_BY_ID={};
 APP_WORKFLOWS.forEach(function(workflow){APP_WORKFLOW_BY_ID[workflow.id]=workflow;});
@@ -929,6 +929,7 @@ function setAccountStorage(base,value){
   }catch(e){}
 }
 function appWorkflow(id){
+  if(id==='scheduledWorkout')id='calendarWorkout';
   return APP_WORKFLOW_BY_ID[id]||APP_WORKFLOW_BY_ID.training;
 }
 function appWorkflowStorageKey(){
@@ -958,7 +959,7 @@ function workflowDestination(id){
   return appWorkflow(id).destination||appWorkflow(id).id;
 }
 function workflowIconLabel(workflow){
-  var map={training:'T',meets:'M',speedMetrics:'S',powerTrak:'P',multiAthleteTimer:'\u23f1',scheduledWorkout:'C'};
+  var map={training:'T',meets:'M',speedMetrics:'S',powerTrak:'P',multiAthleteTimer:'\u23f1',calendarWorkout:'C'};
   return map[workflow&&workflow.id]||String(workflow&&workflow.shortLabel||workflow&&workflow.label||'').slice(0,1)||'?';
 }
 function workflowIconClass(workflow){
