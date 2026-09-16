@@ -6489,6 +6489,7 @@ function checkFieldPracticePhaseOne() {
     "els.fieldPracticeLink.href=pageUrl('/field-practice.html');",
     'data-add-activity-mode="speed"',
     "Add Speed Trak",
+    "At practice, open Speed Trak in the SMARTCoach app.",
     "Max Velocity",
     "max velocity",
     "function speedWorkVolumeLabel(reps,value,unit)",
