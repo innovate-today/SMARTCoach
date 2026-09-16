@@ -3649,9 +3649,13 @@ function updateGroupsTrayActions(){
     ['add','account','refresh','attendance','field','keep','equipment','archive'].forEach(function(key){if(buttons[key])buttons[key].hidden=true;});
   }
 }
+function setCurrentGroupTitle(){
+  var title=document.getElementById('ltit');
+  if(title&&CL)title.textContent=CL.type==='meet'?meetDisplayTitle(CL):CL.name;
+}
 function oGroup(id){
   for(var i=0;i<logs.length;i++){if(logs[i].id===id){CL=logs[i];break;}}
-  document.getElementById('ltit').textContent=CL.type==='meet'?meetDisplayTitle(CL):CL.name;
+  setCurrentGroupTitle();
   if(GV==='training'&&String(CL.type||'training')==='training'){
     openSelectedWorkflowForGroup();
     return;
@@ -3712,6 +3716,7 @@ function createGroup(){
   var group={id:lid++,sharedGroupId:'grp_'+Date.now(),name:name,type:'training',season:cs.season,seasonYear:cs.year,cfg:defaultCfg(),attendance:defaultAttendanceState(),runners:[]};
   logs.unshift(group);
   CL=group;
+  setCurrentGroupTitle();
   hm('ml');document.getElementById('mln').value='';save();queueSharedGroupsSave();openSelectedWorkflowForGroup();
 }
 function createMeetGroup(){
@@ -3735,6 +3740,7 @@ function createMeetGroupFromValues(data){
   var group={id:lid++,name:data.eventName,type:'meet',sport:sport,sportMode:sportMode,season:data.season,seasonYear:data.seasonYear,meetName:data.meetName,meetDate:data.meetDate,meetRecordId:data.meetRecordId||'',eventName:data.eventName,raceDivision:data.raceDivision||'',cfg:meetDayCfg(),runners:[]};
   logs.unshift(group);
   CL=group;
+  setCurrentGroupTitle();
   hm('mmg');
   document.getElementById('mg-meet').value='';
   document.getElementById('mg-event').value='400m';
