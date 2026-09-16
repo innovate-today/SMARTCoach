@@ -450,7 +450,7 @@ button.compact{padding:6px 9px;font-size:12px}
       <div id="addDayChooser" class="activitychooser" aria-label="Choose calendar activity">
         <button class="activitychoice easy" data-add-activity-mode="easy" type="button"><b>Easy Run</b><small>Distance, optional notes, optional strides.</small></button>
         <button class="activitychoice quality" data-add-activity-mode="quality" type="button"><b>Quality Session</b><small>Warmup, reps, effort, recovery, cooldown.</small></button>
-        <button class="activitychoice quality" data-add-activity-mode="speed" type="button"><b>Speed Metrics</b><small>Fly zones, runway timing, stride count.</small></button>
+        <button class="activitychoice quality" data-add-activity-mode="speed" type="button"><b>Speed Trak</b><small>Fly zones, runway timing, stride count.</small></button>
         <button class="activitychoice race" data-add-activity-mode="race" type="button"><b>Race</b><small>Meet or race day, attached to a plan when needed.</small></button>
         <button class="activitychoice rest" data-add-activity-mode="off" type="button"><b>Rest / Day Off</b><small>Add an off day to the calendar.</small></button>
       </div>
@@ -3692,7 +3692,7 @@ function setAddDayMode(mode){
     els.addDayVolume.value='';
     els.addDayTarget.value='';
     els.addDayDetails.placeholder='Add sprint/runway cues, rest, or setup notes...';
-    els.addDayTitle.textContent='Add Speed Metrics';
+    els.addDayTitle.textContent='Add Speed Trak';
   }else if(addDayMode==='race'){
     setSelectValue(els.addDayType,'Meet');
     setActivityTypeOptions(['Race / Meet'],'Race / Meet');

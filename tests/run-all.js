@@ -6488,7 +6488,7 @@ function checkFieldPracticePhaseOne() {
     "Field Practice",
     "els.fieldPracticeLink.href=pageUrl('/field-practice.html');",
     'data-add-activity-mode="speed"',
-    "Add Speed Metrics",
+    "Add Speed Trak",
     "Max Velocity",
     "max velocity",
     "function speedWorkVolumeLabel(reps,value,unit)",
