@@ -5637,6 +5637,14 @@ function checkMobileWorkflowOpeningFlow() {
   ].forEach((text) => {
     if (!mobile.includes(text)) throw new Error(`Mobile workflow opening flow missing ${text}`);
   });
+  const workflowScreen = mobile.slice(mobile.indexOf('id="s-workflows"'), mobile.indexOf("<!-- LOGS SCREEN -->"));
+  [
+    "openAttendancePicker()",
+    "openFieldPractice()",
+    "openArchiveGroupList()",
+  ].forEach((text) => {
+    if (workflowScreen.includes(text)) throw new Error(`Workflow home should not expose group-dependent tray shortcut: ${text}`);
+  });
   [
     "function setGroupView(view,opts)",
     "if(!opts||!opts.preserveWorkflow)",
