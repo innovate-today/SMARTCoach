@@ -165,7 +165,7 @@ To import speed marks, use **Import Speed Data** on the Speed Trak page. Downloa
 
 To enter one result without a spreadsheet, click **Add Result**. Start typing the athlete name and choose the roster match when available. Use **Edit** on a row to correct the athlete, metric, mark, date, grade, gender, stride count, or note. Use **Delete** only when a speed mark should be removed from Speed Trak.
 
-The Speed Trak table shows year, athlete, grade, mark, date, and when available: **velocity**, **stride length**, and **stride frequency**. Velocity is calculated from timed distance and time. Stride length and stride frequency appear when stride count was captured for the rep.
+The Speed Trak table shows year, athlete, grade, mark, date, **velocity**, **MPH**, and when available: **stride length** and **stride frequency**. Velocity and MPH are calculated from timed distance and time, so they do not require a stride count. Stride length and stride frequency appear when stride count was captured for the rep.
 
 Use **Share Board** to create a read-only Speed Trak Board link. Choose the public challenge layers you want to show, such as top velocity, fastest time, and game score. You can also adjust public badge values for **Velocity Club**, **Quick Turnover**, and **Big Mover** before copying the link. The shared board can be filtered by distance/metric, gender, and year so athletes can view separate rankings for different tests such as 10m Fly, 30m Fly, starts, or runway work without mixing distances on one leaderboard. Reps remain visible as supporting detail, but they are not used as a Rep Leader award.
 

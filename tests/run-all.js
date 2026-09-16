@@ -2013,6 +2013,11 @@ function checkSpeedTrakFeature() {
     "strideLength",
     "strideFrequency",
     "velocity",
+    'data-sort="mph"',
+    "var mph=rounded(velocity*2.2369362920544,2);",
+    "mph:mph",
+    "cellMetric(row.mph,'mph')",
+    'colspan="11"',
     "speedAthleteOptions",
     "function matchRosterAthlete(name)",
     "function applyRosterAthleteToForm()",
@@ -2049,6 +2054,10 @@ function checkSpeedTrakFeature() {
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
   });
+  const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  if (!guide.includes("**velocity**, **MPH**")) {
+    throw new Error("Coach guide missing Speed Trak MPH display guidance");
+  }
   [
     "Speed Trak Leaderboard",
     "Team speed leaderboard.",
