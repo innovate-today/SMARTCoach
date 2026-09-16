@@ -2182,7 +2182,7 @@ function checkSpeedTrakFeature() {
     "var fieldPracticeRows=[];",
     "var liveUrl='/api/smart-trak/dashboard?v='+stamp+'&light=1';",
     "fetch('/api/smart-trak/dashboard?v='+stamp+'&light=1&refresh=1'",
-    "recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));",
+    "recentTrainingRows=normalizeDashboardPersonNameRows(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));",
     "function saveSpeedPracticeCorrection(reason)",
     "function updateSpeedPracticeForRow(row,updater)",
     "function speedDistanceFromCorrection(value,row)",
@@ -6602,9 +6602,22 @@ function checkSmartTrakAthleteNameCapitalization() {
     "api/smart-trak/[route].js",
     "lib/account-registry.js",
     "lib/athlete-calendar.js",
+    "dashboard.html",
   ].forEach((file) => {
     const source = fs.readFileSync(file, "utf8");
     if (!source.includes("displayNameCase")) throw new Error(`${file} does not use displayNameCase for SMART Trak athlete names`);
+  });
+  const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  [
+    "function normalizeDashboardPersonNameRows(rows)",
+    "function normalizeDashboardPersonNameRow(row)",
+    "if(next.name)next.name=displayNameCase(next.name);",
+    "if(next.athleteName)next.athleteName=displayNameCase(next.athleteName);",
+    "return incoming.map(normalizeDashboardPersonNameRow);",
+    "dashboardRows=normalizeDashboardPersonNameRows(result.data.athletes||[]);",
+    "recentTrainingRows=normalizeDashboardPersonNameRows(result.data.recentTrainingSyncs||[])",
+  ].forEach((text) => {
+    if (!dashboard.includes(text)) throw new Error(`dashboard athlete name capitalization missing ${text}`);
   });
   console.log("SMART Trak athlete name capitalization ok");
 }

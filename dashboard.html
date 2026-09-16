@@ -3762,10 +3762,10 @@ function applyDashboardPayload(data,options){
   if(!data.snapshot)writeDashboardBrowserSnapshot(Object.assign({},data,{recentMeetResults:nextRecentMeetRows}));
   applyBrandLogo(data.logoUrl);
   var result={data:data};
-  dashboardRows=result.data.athletes||[];
+  dashboardRows=normalizeDashboardPersonNameRows(result.data.athletes||[]);
   recentMeetRows=nextRecentMeetRows;
   if(!options.background)fieldPracticeRows=[];
-  recentTrainingRows=(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
+  recentTrainingRows=normalizeDashboardPersonNameRows(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));
   if(options.groupsResult)trainingGroups=options.groupsResult.ok?(options.groupsResult.data.groups||[]):[];
   if(!options.background){
     recentAttendanceRows=[];
@@ -3791,16 +3791,42 @@ function applyDashboardPayload(data,options){
   if(options.skipSecondary)return;
   if(options.deferSecondary){
     scheduleDashboardBackgroundTask(function(){
-      loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence,!!options.forceRefresh);
+      loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},normalizeDashboardPersonNameRows(data.recentTrainingSyncs||[]),options.loadSequence||dashboardLoadSequence,!!options.forceRefresh);
     },150);
   }else{
-    loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},data.recentTrainingSyncs||[],options.loadSequence||dashboardLoadSequence,!!options.forceRefresh);
+    loadDashboardSecondaryData(options.stamp||Date.now(),options.fetchOptions||{cache:'no-store'},normalizeDashboardPersonNameRows(data.recentTrainingSyncs||[]),options.loadSequence||dashboardLoadSequence,!!options.forceRefresh);
   }
 }
 function dashboardMeetRowsFromPayload(data,options){
   var incoming=Array.isArray(data&&data.recentMeetResults)?data.recentMeetResults:[];
   if(!options.forceRefresh&&!incoming.length&&recentMeetRows.length)return recentMeetRows;
-  return incoming;
+  return incoming.map(normalizeDashboardPersonNameRow);
+}
+function normalizeDashboardPersonNameRows(rows){
+  return (Array.isArray(rows)?rows:[]).map(normalizeDashboardPersonNameRow);
+}
+function normalizeDashboardPersonNameRow(row){
+  if(!row||typeof row!=='object')return row;
+  var next=Object.assign({},row);
+  if(next.name)next.name=displayNameCase(next.name);
+  if(next.athleteName)next.athleteName=displayNameCase(next.athleteName);
+  return next;
+}
+function displayNameCase(value){
+  var text=String(value||'').replace(/\s+/g,' ').trim();
+  if(!text)return '';
+  return text.split(' ').map(displayNamePart).join(' ');
+}
+function displayNamePart(part){
+  return String(part||'').split('-').map(function(piece){
+    return piece.split("'").map(displayNameSegment).join("'");
+  }).join('-');
+}
+function displayNameSegment(segment){
+  segment=String(segment||'');
+  if(!segment)return segment;
+  if(segment!==segment.toLowerCase()&&segment!==segment.toUpperCase())return segment;
+  return segment.charAt(0).toUpperCase()+segment.slice(1).toLowerCase();
 }
 function dashboardBrowserSnapshotKey(){
   return 'smarttrak_dashboard_snapshot_'+smartCoachAccountKey();
