@@ -5607,6 +5607,8 @@ function checkMobileWorkflowOpeningFlow() {
     "if(addBtn)addBtn.hidden=archiveMode;",
     "Tap Add to create a meet or race",
     "Tap Add to create a training group",
+    "if(GV==='meets')",
+    "['attendance','field','keep','equipment'].forEach(function(key){if(buttons[key])buttons[key].hidden=true;});",
     "function openSelectedWorkflowForGroup()",
     "return openWorkflowForGroup(APP_SELECTED_WORKFLOW);",
     "function openWorkflowForGroup(id)",

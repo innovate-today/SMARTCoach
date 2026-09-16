@@ -3642,6 +3642,9 @@ function updateGroupsTrayActions(){
   Object.keys(buttons).forEach(function(key){if(buttons[key])buttons[key].hidden=false;});
   if(buttons.add)buttons.add.hidden=true;
   if(buttons.del)buttons.del.hidden=GV!=='archive';
+  if(GV==='meets'){
+    ['attendance','field','keep','equipment'].forEach(function(key){if(buttons[key])buttons[key].hidden=true;});
+  }
   if(GV==='archive'){
     ['add','account','refresh','attendance','field','keep','equipment','archive'].forEach(function(key){if(buttons[key])buttons[key].hidden=true;});
   }
