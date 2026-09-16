@@ -4248,6 +4248,8 @@ function checkMobileCalendarWorkoutPriority() {
     "Speed Trak ready",
     "function isRunnerCalendarPlanOverride(r)",
     "String(r.trainingPlanTitle||'').indexOf('SMART Trak Calendar')===0",
+    "Manual Training Calendar workout assigned to '+(day.groupName||'this group')+'.",
+    "Manual Training Calendar workouts assigned to '+groupName+'.",
     "onclick=\"useSelectedTrainingPlanForGroup()\"",
     "Workout selected for the group.",
   ].forEach((text) => {
@@ -5698,11 +5700,16 @@ function checkMobileWorkflowOpeningFlow() {
     "Use **Add** on the opening screen to add a Training Group, add a Meet / Race group, or view archived groups.",
     "Choose the training mode when prompted, such as **Multi Athlete Timer**, **Speed Trak**, or **Training Calendar**.",
     "When a training group is using **Training Calendar** from SMART Trak",
+    "Training Calendar workouts from SMART Trak",
+    "older selected Training Calendar workout",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Coach guide opening workflow missing ${text}`);
   });
   if (guide.includes("using **Calendar Workout** from SMART Trak")) {
     throw new Error("Coach guide should use Training Calendar instead of Calendar Workout.");
+  }
+  if (guide.includes("calendar workouts from SMART Trak") || guide.includes("older selected calendar workout")) {
+    throw new Error("Coach guide should use Training Calendar wording for calendar workout refresh copy.");
   }
   console.log("Mobile workflow opening flow ok");
 }
