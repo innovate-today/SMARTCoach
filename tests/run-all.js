@@ -5666,6 +5666,7 @@ function checkMobilePowerTrakWorkflow() {
     "function updatePowerTrakMark(rowId,key,value)",
     "function addPowerTrakAthlete()",
     "function removePowerTrakAthlete(rowId)",
+    "Remove '+label+' from this Power Trak test?",
     "function savePowerTrakSession()",
     "Power Trak test saved to SMART Trak.",
     "Saved on this device. SMART Trak save failed:",

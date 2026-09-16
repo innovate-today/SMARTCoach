@@ -1247,6 +1247,9 @@ function updatePowerTrakNote(rowId,value){
 function removePowerTrakAthlete(rowId){
   var session=activePowerTrakSession();
   if(!session)return;
+  var row=(session.rows||[]).find(function(item){return item.id===rowId;});
+  var label=row&&row.athleteName?row.athleteName:'this athlete';
+  if(!confirm('Remove '+label+' from this Power Trak test?'))return;
   session.rows=(session.rows||[]).filter(function(row){return row.id!==rowId;});
   session.updatedAt=new Date().toISOString();
   renderPowerTrak();
