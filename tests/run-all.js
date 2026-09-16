@@ -5695,9 +5695,13 @@ function checkMobileWorkflowOpeningFlow() {
     "Choose **Training Trak**, **Race Trak**, **Speed Trak**, **Power Trak**, **Multi Athlete Timer**, or **Training Calendar**, then choose the group.",
     "Use **Add** on the opening screen to add a Training Group, add a Meet / Race group, or view archived groups.",
     "Choose the training mode when prompted, such as **Multi Athlete Timer**, **Speed Trak**, or **Training Calendar**.",
+    "When a training group is using **Training Calendar** from SMART Trak",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Coach guide opening workflow missing ${text}`);
   });
+  if (guide.includes("using **Calendar Workout** from SMART Trak")) {
+    throw new Error("Coach guide should use Training Calendar instead of Calendar Workout.");
+  }
   console.log("Mobile workflow opening flow ok");
 }
 
