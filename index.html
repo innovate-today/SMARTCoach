@@ -857,12 +857,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 <script>
 var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],activeId:'',mode:'field'}, POWER_TRAK={sessions:[],activeId:'',metrics:['broadJump','verticalJump','medBallThrow','squat','clean']}, PAST_RESULTS={rows:[],loaded:false,loading:false,error:'',accountKey:'',query:'',eventOnly:true}, XC_TOOLS_SETUP_OPENED={}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, AR_PROMISE=null, APP_SELECTED_WORKFLOW='training', APP_WORKFLOW_HAS_STORED=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
 var APP_WORKFLOWS=[
-  {id:'training',label:'Training',shortLabel:'Training',description:'Open workouts, attendance, and daily training notes.',groupView:'training',requiresGroup:true,destination:'training'},
-  {id:'meets',label:'Meets',shortLabel:'Meets',description:'Open race-day timing and scheduled meet entries.',groupView:'meets',requiresGroup:true,destination:'meet'},
-  {id:'speedMetrics',label:'Speed Metrics',shortLabel:'Speed',description:'Capture fly/start times, velocity, MPH, and stride data.',groupView:'training',requiresGroup:true,destination:'speed'},
+  {id:'training',label:'Training Trak',shortLabel:'Training',description:'Open workouts, attendance, and daily training notes.',groupView:'training',requiresGroup:true,destination:'training'},
+  {id:'meets',label:'Race Trak',shortLabel:'Race',description:'Open race-day timing and scheduled meet entries.',groupView:'meets',requiresGroup:true,destination:'meet'},
+  {id:'speedMetrics',label:'Speed Trak',shortLabel:'Speed',description:'Capture fly/start times, velocity, MPH, and stride data.',groupView:'training',requiresGroup:true,destination:'speed'},
   {id:'powerTrak',label:'Power Trak',shortLabel:'Power',description:'Enter testing marks like broad jump, vertical, med ball, and lifts.',groupView:'training',requiresGroup:true,destination:'power'},
   {id:'multiAthleteTimer',label:'Multi Athlete Timer',shortLabel:'Timer',description:'Time several athletes without setting up a meet.',groupView:'training',requiresGroup:true,destination:'timer'},
-  {id:'calendarWorkout',label:'Calendar Workout',shortLabel:'Workout',description:'Open a workout already planned on the calendar.',groupView:'training',requiresGroup:true,destination:'calendar'}
+  {id:'calendarWorkout',label:'Training Calendar',shortLabel:'Calendar',description:'Open a workout already planned on the Training Calendar.',groupView:'training',requiresGroup:true,destination:'calendar'}
 ];
 var APP_WORKFLOW_BY_ID={};
 APP_WORKFLOWS.forEach(function(workflow){APP_WORKFLOW_BY_ID[workflow.id]=workflow;});

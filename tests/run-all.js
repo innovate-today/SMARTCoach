@@ -5580,12 +5580,12 @@ function checkMobileWorkflowOpeningFlow() {
     "workflow-tray{justify-content:center;gap:56px}",
     '<div class="tbar workflow-tray">',
     "var APP_WORKFLOWS=[",
-    "{id:'training',label:'Training'",
-    "{id:'meets',label:'Meets'",
-    "{id:'speedMetrics',label:'Speed Metrics'",
+    "{id:'training',label:'Training Trak'",
+    "{id:'meets',label:'Race Trak'",
+    "{id:'speedMetrics',label:'Speed Trak'",
     "{id:'powerTrak',label:'Power Trak'",
     "{id:'multiAthleteTimer',label:'Multi Athlete Timer'",
-    "{id:'calendarWorkout',label:'Calendar Workout'",
+    "{id:'calendarWorkout',label:'Training Calendar'",
     "if(id==='scheduledWorkout')id='calendarWorkout';",
     "function renderWorkflowHome()",
     "APP_WORKFLOW_HAS_STORED=false",
@@ -5683,9 +5683,9 @@ function checkMobileWorkflowOpeningFlow() {
   [
     "## SMARTCoach Pro Mobile App: Opening Screen",
     "The SMARTCoach app opens by asking what the coach is doing first, then which group to use.",
-    "Choose **Training**, **Meets**, **Power Trak**, **Speed Metrics**, **Multi Athlete Timer**, or **Calendar Workout**, then choose the group.",
+    "Choose **Training Trak**, **Race Trak**, **Speed Trak**, **Power Trak**, **Multi Athlete Timer**, or **Training Calendar**, then choose the group.",
     "Use **Add** on the opening screen to add a Training Group, add a Meet / Race group, or view archived groups.",
-    "Choose the training mode when prompted, such as **Multi Athlete Timer**, **Speed Metrics**, or **Calendar Workout**.",
+    "Choose the training mode when prompted, such as **Multi Athlete Timer**, **Speed Trak**, or **Training Calendar**.",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Coach guide opening workflow missing ${text}`);
   });
