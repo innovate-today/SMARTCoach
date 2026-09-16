@@ -5618,6 +5618,7 @@ function checkMobileWorkflowOpeningFlow() {
     "workflowTapAttrs('choosePickerFromRow(event,",
     "function choosePickerFromRow(e,index)",
     "Training Group",
+    "Create a group for training, timers, Power Trak, Speed Trak, and Training Calendar workouts.",
     "Meet / Race",
     "View Archive",
     "setSelectedWorkflow('meets');",
