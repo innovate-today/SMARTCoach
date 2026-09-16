@@ -5603,6 +5603,8 @@ function checkMobileWorkflowOpeningFlow() {
     'id="group-workflow-banner"',
     'id="group-view-tabs"',
     "if(tabs)tabs.hidden=!archiveMode;",
+    "Tap Add to create a meet or race",
+    "Tap Add to create a training group",
     "function openSelectedWorkflowForGroup()",
     "return openWorkflowForGroup(APP_SELECTED_WORKFLOW);",
     "function openWorkflowForGroup(id)",
