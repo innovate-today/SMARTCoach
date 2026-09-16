@@ -5578,7 +5578,7 @@ function checkMobileWorkflowOpeningFlow() {
     "{id:'speedMetrics',label:'Speed Metrics'",
     "{id:'powerTrak',label:'Power Trak'",
     "{id:'multiAthleteTimer',label:'Multi Athlete Timer'",
-    "{id:'scheduledWorkout',label:'Scheduled Workout'",
+    "{id:'scheduledWorkout',label:'Calendar Workout'",
     "function renderWorkflowHome()",
     "function chooseWorkflow(id)",
     "selectWorkflowForGroupChoice(id);",
@@ -5632,7 +5632,7 @@ function checkMobileWorkflowOpeningFlow() {
   [
     "## SMARTCoach Pro Mobile App: Opening Screen",
     "The SMARTCoach app opens by asking what the coach is doing first, then which group to use.",
-    "Choose **Training**, **Meets**, **Power Trak**, **Speed Metrics**, **Multi Athlete Timer**, or **Scheduled Workout**, then choose the group.",
+    "Choose **Training**, **Meets**, **Power Trak**, **Speed Metrics**, **Multi Athlete Timer**, or **Calendar Workout**, then choose the group.",
     "Use **Add** on the opening screen to add a Training Group, add a Meet / Race group, or view archived groups.",
     "Choose the training mode when prompted, such as **Multi Athlete Timer**, **Speed Metrics**, or **Calendar Workout**.",
   ].forEach((text) => {

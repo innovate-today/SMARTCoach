@@ -916,7 +916,7 @@ If you log more than one run for the same athlete on the same day, SMART Trak ch
 
 ## SMARTCoach Pro Mobile App: Opening Screen
 
-The SMARTCoach app opens by asking what the coach is doing first, then which group to use. Choose **Training**, **Meets**, **Power Trak**, **Speed Metrics**, **Multi Athlete Timer**, or **Scheduled Workout**, then choose the group. The group list still uses the same SMART Trak roster source; the selected workflow controls what opens after the group is tapped.
+The SMARTCoach app opens by asking what the coach is doing first, then which group to use. Choose **Training**, **Meets**, **Power Trak**, **Speed Metrics**, **Multi Athlete Timer**, or **Calendar Workout**, then choose the group. The group list still uses the same SMART Trak roster source; the selected workflow controls what opens after the group is tapped.
 
 Use **Add** on the opening screen to add a Training Group, add a Meet / Race group, or view archived groups. Use **Refresh** to pull the latest SMART Trak data.
 
