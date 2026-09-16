@@ -461,7 +461,7 @@ button.compact{padding:6px 9px;font-size:12px}
         <div class="field"><label for="addDaySport">Sport <span class="fieldinfo info-left" tabindex="0" data-tip="Choose Track or Cross Country so race and workout days are labeled correctly.">i</span></label><select id="addDaySport"><option>Track</option><option>Cross Country</option></select></div>
         <div class="field"><label for="addDayTitleInput">Title <span class="fieldinfo info-left" tabindex="0" data-tip="Short name shown on the calendar.">i</span></label><input id="addDayTitleInput" type="text" placeholder="Example: 400m acceleration"></div>
         <div id="addDayWorkoutTypeField" class="field"><label for="addDayWorkoutType">Effort / Type <span class="fieldinfo" tabindex="0" data-tip="Choose the effort or race type for this activity.">i</span></label><select id="addDayWorkoutType"><option value="">Select effort / type</option></select></div>
-        <div id="addDayGroupField" class="field"><label>Groups <span class="fieldinfo info-left" tabindex="0" data-tip="Choose one or more active training groups. Each selected group gets its own calendar workout.">i</span></label><div id="addDayGroup" class="groupchecklist" aria-label="Training groups"></div></div>
+        <div id="addDayGroupField" class="field"><label>Groups <span class="fieldinfo info-left" tabindex="0" data-tip="Choose one or more active training groups. Each selected group gets its own Training Calendar workout.">i</span></label><div id="addDayGroup" class="groupchecklist" aria-label="Training groups"></div></div>
         <div id="addDayStatusField" class="field" hidden><label for="addDayStatusSelect">Status <span class="fieldinfo" tabindex="0" data-tip="Update the calendar status for this workout.">i</span></label><select id="addDayStatusSelect"><option>Draft</option><option>Approved</option><option>Scheduled</option><option>Completed</option><option>Skipped</option></select></div>
         <div id="addDayAthleteField" class="field" hidden><label for="addDayAthlete">Athlete <span class="fieldinfo info-left" tabindex="0" data-tip="Shown for athlete-specific calendar days.">i</span></label><input id="addDayAthlete" type="text" placeholder="Optional athlete"></div>
         <div id="addDayVolumeField" class="field"><label for="addDayVolume">Planned Volume <span class="fieldinfo" tabindex="0" data-tip="Optional override. Easy Run volume is also calculated from the distance below.">i</span></label><input id="addDayVolume" type="text" placeholder="Example: 5 miles"></div>
@@ -3605,7 +3605,7 @@ function openAddDayModal(dateValue,mode,editDay){
     hydrateQualityBuilderFromDay(calendarEditDay);
     if(addDayMode==='quality')setActivityTypeOptions(qualityEffortTypes(),firstQualityEffortFromDay(calendarEditDay)||calendarEditDay.workoutType||els.addDayWorkoutType.value||'Threshold');
   }
-  setAddDayStatus(calendarEditDay?'Adjustments update this calendar workout only.':'Save as a manual calendar entry, or connect it to a saved plan.','');
+  setAddDayStatus(calendarEditDay?'Adjustments update this Training Calendar workout only.':'Save as a manual calendar entry, or connect it to a saved plan.','');
   els.addDayModal.hidden=false;
 }
 function closeAddDayModal(){

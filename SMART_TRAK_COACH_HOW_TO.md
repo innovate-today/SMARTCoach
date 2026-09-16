@@ -1149,7 +1149,7 @@ To send links in bulk, filter the Athletes page first if needed, then click **Em
 
 To add completion questions, open **Athletes** and click **Calendar Questions**. Coaches can save up to five questions for the athlete Complete/Modify/Skip form and mark any question as required. The regular Notes field stays available. When an athlete submits the workout, their answers are added to the Athlete Note on the completed workout.
 
-Athlete notes sync into the completed workout/performance note. They are also added to the linked Training Calendar workout's coach notes as **Athlete note:** so coaches can open the calendar workout and read what the athlete submitted.
+Athlete notes sync into the completed workout/performance note. They are also added to the linked Training Calendar workout's coach notes as **Athlete note:** so coaches can open the Training Calendar workout and read what the athlete submitted.
 
 ## Simple Weekly Coach Workflow
 

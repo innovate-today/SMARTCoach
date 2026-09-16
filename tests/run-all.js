@@ -3111,6 +3111,7 @@ function checkHowToGuidePage() {
     "completed-workout detail shows the Speed Metrics rep breakdown",
     "**Training/Race Order** controls how athletes appear when opening training groups, race groups, and Speed Trak sessions",
     "The default is **Sport, speed, name**",
+    "coaches can open the Training Calendar workout and read what the athlete submitted.",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
   });
@@ -3119,6 +3120,7 @@ function checkHowToGuidePage() {
     "Athletic.net Import supports copied",
     "paste the season calendar or meet reference list below the records",
     "training groups, race groups, and Speed Metrics sessions",
+    "coaches can open the calendar workout and read what the athlete submitted.",
   ].forEach((text) => {
     if (guide.includes(text)) throw new Error(`How To guide still describes removed Athletic.net import flow: ${text}`);
   });
@@ -3859,6 +3861,8 @@ function checkTrainingCalendarQualityEditParsing() {
     "workoutType:firstEffort,",
     "workoutType:addDayMode==='quality'?(generated.workoutType||els.addDayWorkoutType.value.trim()||calendarEditDay&&calendarEditDay.workoutType||'')",
     "return ['Easy'].concat(qualityEffortTypes()).map(function(value)",
+    "Each selected group gets its own Training Calendar workout.",
+    "Adjustments update this Training Calendar workout only.",
     "els.addQualityRestBtn.addEventListener('click'",
   ];
   required.forEach((text) => {
