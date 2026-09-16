@@ -658,7 +658,9 @@ function checkDashboardActivityRangeLayout() {
     '<div class="dashboard-tools-row"><button id="dashboardPrefsBtn" class="dashboard-prefs-link" type="button" aria-haspopup="dialog">Customize Dashboard</button></div>',
     ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap}",
     ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
+    "button.modal-action,.linkbtn.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}",
     'id="raceResultBtn" class="modal-action" type="button">Log Single Result</button>',
+    'id="powerTrakLink" class="linkbtn modal-action" href="/power-trak.html"',
     '<h2 id="raceResultTitle">Log Single Result</h2>',
   ];
   required.forEach((text) => {
