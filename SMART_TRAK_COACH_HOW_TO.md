@@ -742,7 +742,7 @@ For bulk import, the required fields are gender, event, result, and year. Use th
 
 If an import uses the wrong sport, date, or other shared fields across many rows, open **Records Tools**, click **Delete All Records**, confirm the warning, and upload the corrected file again.
 
-The Track Records table is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Race Result. Coaches control when the official record board changes.
+The Track Records table is not meant to update automatically from the SMARTCoach Pro Mobile App or from Log Single Result. Coaches control when the official record board changes.
 
 The **XC Top 20** tab shows the fastest saved cross country meet results. The default lists are:
 
@@ -752,7 +752,7 @@ The **XC Top 20** tab shows the fastest saved cross country meet results. The de
 
 Use **Show another XC list** when your team also wants to track another cross country distance, such as Boys 2 Mile, Boys 3K, Girls 3K, Boys 4K, or Girls 4K. The picker only offers extra lists that already have saved marks. Click **Add List** to show that list as a tab. Click **Delete List** to hide an optional list from that device. Deleting a list tab does not delete the saved meet results. The default three lists always remain available.
 
-The XC Top 20 list updates from saved Meet History results when Records reloads. New app syncs, Log Race Result entries, Meet History corrections, and XC imports can all update the list. Each athlete appears once per list, using that athlete's fastest saved time for that distance. For cross country, 3200m and 2 Mile marks are shown together as **2 Mile**.
+The XC Top 20 list updates from saved Meet History results when Records reloads. New app syncs, Log Single Result entries, Meet History corrections, and XC imports can all update the list. Each athlete appears once per list, using that athlete's fastest saved time for that distance. For cross country, 3200m and 2 Mile marks are shown together as **2 Mile**.
 
 Imported athletes do not need to be on the current roster. Old marks can be saved by athlete name only, so a runner from a past team can appear on XC Top 20 without being added to the active athlete list.
 
@@ -844,13 +844,13 @@ If the phone cannot reach SMART Trak during testing, SMARTCoach keeps the Power 
 
 On the Dashboard, open **Power Trak** to review saved testing sessions. The desktop page can filter by group, metric, saved test, athlete, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved mark or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
 
-## Log Race Result
+## Log Single Result
 
-Use Log Race Result when a race result needs to be entered without using the phone stopwatch.
+Use Log Single Result when one race result needs to be entered without using the phone stopwatch. Use **Enter Results** in Meet History when several results need to be entered from a sheet.
 
 How to use it:
 
-1. Click **Log Race Result**.
+1. Click **Log Single Result**.
 2. Choose the date and sport.
 3. Choose an existing meet or enter a new meet name.
 4. Select the athlete.
@@ -1040,7 +1040,7 @@ You can also enter a field result directly from **Save Meet Results** by changin
 
 ## SMART Trak Relay Support
 
-Relay events are available in event dropdowns across SMARTCoach Pro and SMART Trak, including mobile meet timing, Log Race Result, Training Calendar, Records, Track Simulator, and plan setup tools.
+Relay events are available in event dropdowns across SMARTCoach Pro and SMART Trak, including mobile meet timing, Log Single Result, Training Calendar, Records, Track Simulator, and plan setup tools.
 
 Common relay events:
 
@@ -1056,7 +1056,7 @@ Relay results can be reviewed from Dashboard Recent Meet Results and Meet Histor
 
 ## SMART Trak Field Event Support
 
-Field events are available in meet-result event dropdowns across SMARTCoach Pro and SMART Trak, including the SMARTCoach Pro Mobile App, Dashboard Log Race Result, Training Calendar Log Race Result, Records, Track Simulator, and plan setup tools.
+Field events are available in meet-result event dropdowns across SMARTCoach Pro and SMART Trak, including the SMARTCoach Pro Mobile App, Dashboard Log Single Result, Training Calendar Log Single Result, Records, Track Simulator, and plan setup tools.
 
 Supported field events:
 

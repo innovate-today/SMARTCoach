@@ -659,6 +659,7 @@ function checkDashboardActivityRangeLayout() {
     ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap}",
     ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
     'id="raceResultBtn" class="modal-action" type="button">Log Single Result</button>',
+    '<h2 id="raceResultTitle">Log Single Result</h2>',
   ];
   required.forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard activity range layout missing ${text}`);
@@ -2319,7 +2320,7 @@ function checkDashboardWhatsNew() {
     "Records",
     "XC Top 20 shows Boys 5K, Girls 5K, and Girls 2 Mile lists from saved cross country meet results.",
     "Each athlete appears once per list, using that athlete's fastest saved time for that distance.",
-    "New app syncs, Log Race Result entries, Meet History corrections, and XC imports update the lists when Records reloads.",
+    "New app syncs, Log Single Result entries, Meet History corrections, and XC imports update the lists when Records reloads.",
     "Coaches can paste XC marks or upload a CSV file. Athletes do not need to be on the current roster, meet/year can be left blank, result-site divider rows are ignored, and 3200m cross country marks are shown with 2 Mile.",
     "Girls result-site labels with 3200, Cross Country, or CC are treated as Girls 2 Mile unless they clearly say 5K.",
     "After XC imports save, SMART Trak explains how many marks are visible, behind that athlete's faster saved mark, or outside the current Top 20.",
@@ -2968,6 +2969,9 @@ function checkCrossCountryRaceResultEvents() {
   if (!calendar.includes("'Half Marathon','Marathon','Other'].concat(RELAY_EVENT_OPTIONS,FIELD_EVENT_OPTIONS)")) {
     throw new Error("Training Calendar track race-result dropdown must keep Other available for custom distances.");
   }
+  if (!calendar.includes('id="raceResultBtn" class="modal-action" type="button">Log Single Result</button>') || !calendar.includes('<h2 id="raceResultTitle">Log Single Result</h2>')) {
+    throw new Error("Training Calendar race-result entry point should be labeled Log Single Result.");
+  }
   [
     'id="meetCorrectionOtherDistanceWrap"',
     'id="meetCorrectionOtherDistance"',
@@ -3112,6 +3116,10 @@ function checkHowToGuidePage() {
     "**Training/Race Order** controls how athletes appear when opening training groups, race groups, and Speed Trak sessions",
     "The default is **Sport, speed, name**",
     "coaches can open the Training Calendar workout and read what the athlete submitted.",
+    "## Log Single Result",
+    "Use Log Single Result when one race result needs to be entered without using the phone stopwatch.",
+    "Use **Enter Results** in Meet History when several results need to be entered from a sheet.",
+    "1. Click **Log Single Result**.",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`How To guide missing ${text}`);
   });
@@ -3121,6 +3129,8 @@ function checkHowToGuidePage() {
     "paste the season calendar or meet reference list below the records",
     "training groups, race groups, and Speed Metrics sessions",
     "coaches can open the calendar workout and read what the athlete submitted.",
+    "## Log Race Result",
+    "1. Click **Log Race Result**.",
   ].forEach((text) => {
     if (guide.includes(text)) throw new Error(`How To guide still describes removed Athletic.net import flow: ${text}`);
   });
