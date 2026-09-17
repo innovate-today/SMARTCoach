@@ -2343,7 +2343,7 @@ function checkDashboardWhatsNew() {
     "Saved Field Practice sessions can be opened from Training and used by the SMARTCoach app.",
     "Speed Metrics",
     "Training now includes Speed Metrics workouts for acceleration, fly zones, max velocity, and runway timing.",
-    "Coaches can capture time and stride count in the SMARTCoach app, then send reps back to SMART Trak.",
+    "Coaches can capture time in the SMARTCoach app and review velocity and MPH before sending reps back to SMART Trak.",
     "Dashboard Training Load counts saved speed sessions and shows speed-only volume in meters.",
     "Speed Trak",
     "Speed Trak gives coaches a leaderboard for saved Speed Metrics marks.",
@@ -3148,8 +3148,7 @@ function checkHowToGuidePage() {
     "## Speed Trak",
     "Use **Speed Trak** from Training when you want a leaderboard of speed testing marks captured during Speed Metrics practice sessions or imported from a spreadsheet.",
     "velocity",
-    "stride length",
-    "stride frequency",
+    "**MPH**",
     "Dashboard Training Load and Completed Workouts",
     "5 x 30m counts as 150m",
     "one completed workout for each athlete with at least one saved rep",
@@ -6600,15 +6599,14 @@ function checkFieldPracticePhaseOne() {
     "function fieldPracticeSpeedRepStatus(row,field)",
     "Move to the next runner",
     "Time captured for",
-    "Strides saved for",
     "renderFieldPracticeSpeedResults();",
     "function fieldPracticeSpeedMphText(row)",
     "speed-rep-mph",
     "speed-mph-",
     "mph",
-    "Enter time to calculate speed. Add strides for stride metrics.",
+    "Enter time to calculate speed.",
     "placeholder=\"Manual time\" oninput=\"updateFieldPracticeSpeedMetric",
-    "placeholder=\"Strides\" oninput=\"updateFieldPracticeSpeedMetric",
+    "<th>Velocity</th><th>MPH</th>",
     "m/s",
     "return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});",
   ].forEach((text) => {
@@ -6616,6 +6614,16 @@ function checkFieldPracticePhaseOne() {
     if (!app.includes(text)) throw new Error(`Mobile Field Practice app missing ${text}`);
   });
   const fieldPracticeApp = fs.readFileSync("index.html", "utf8");
+  [
+    'placeholder="Strides"',
+    "Strides add stride length and frequency.",
+    ">Stride length</option>",
+    ">Stride frequency</option>",
+    "<th>Stride</th><th>Freq.</th>",
+    "Enter strides to finish the rep.",
+  ].forEach((text) => {
+    if (fieldPracticeApp.includes(text)) throw new Error(`Mobile Speed Trak should hide stride UI: ${text}`);
+  });
   [
     "var effort=effortFromTargetText(source);",
     "var ruleInput=effort||workoutType||source;",

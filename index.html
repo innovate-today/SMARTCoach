@@ -859,7 +859,7 @@ var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[],
 var APP_WORKFLOWS=[
   {id:'training',label:'Training Trak',shortLabel:'Training',description:'Open workouts, attendance, and daily training notes.',groupView:'training',requiresGroup:true,destination:'training'},
   {id:'meets',label:'Race Trak',shortLabel:'Race',description:'Open race-day timing and scheduled meet entries.',groupView:'meets',requiresGroup:true,destination:'meet'},
-  {id:'speedMetrics',label:'Speed Trak',shortLabel:'Speed',description:'Capture fly/start times, velocity, MPH, and stride data.',groupView:'training',requiresGroup:true,destination:'speed'},
+  {id:'speedMetrics',label:'Speed Trak',shortLabel:'Speed',description:'Capture fly/start times, velocity, and MPH.',groupView:'training',requiresGroup:true,destination:'speed'},
   {id:'powerTrak',label:'Power Trak',shortLabel:'Power',description:'Enter testing marks like broad jump, vertical, med ball, and lifts.',groupView:'training',requiresGroup:true,destination:'power'},
   {id:'multiAthleteTimer',label:'Multi Athlete Timer',shortLabel:'Timer',description:'Time several athletes without setting up a meet.',groupView:'training',requiresGroup:true,destination:'timer'},
   {id:'calendarWorkout',label:'Training Calendar',shortLabel:'Calendar',description:'Open a workout already planned on the Training Calendar.',groupView:'training',requiresGroup:true,destination:'calendar'}
@@ -3748,7 +3748,7 @@ function openTrainingModeSpeed(){
     FIELD_PRACTICE.activeId=practice.id;
     renderFieldPractice();
     var status=document.getElementById('fp-status');
-    if(status)status.textContent='Speed Trak ready. Capture time and stride count for each athlete.';
+    if(status)status.textContent='Speed Trak ready. Capture time for each athlete.';
   });
 }
 function openTrainingModeCalendar(){
@@ -4859,7 +4859,7 @@ function openFieldPractice(){
 var FIELD_PRACTICE_EVENTS=['Runway / Speed Metrics','Pole Vault','High Jump','Long Jump','Triple Jump','Shot Put','Discus','Javelin','Hammer'];
 var FIELD_PRACTICE_ROUTINES={
   'Runway / Speed Metrics':{
-    fly:['Dynamic warmup','Acceleration build-ins','Fly zone setup','Time fly zone','Count strides','Review velocity notes'],
+    fly:['Dynamic warmup','Acceleration build-ins','Fly zone setup','Time fly zone','Review velocity notes'],
     acceleration:['Dynamic warmup','Wall drives','Falling starts','10m acceleration','20m acceleration','Stride count review'],
     runway:['Dynamic warmup','Runway check marks','Approach rhythm reps','Takeoff zone accuracy','Time approach zone','Review stride pattern']
   },
@@ -5053,8 +5053,8 @@ function fieldPracticeSpeedMetricCalc(row){
 }
 function fieldPracticeSpeedMetricText(row){
   var calc=fieldPracticeSpeedMetricCalc(row);
-  if(!calc.velocity)return'Enter time to calculate speed. Add strides for stride metrics.';
-  return calc.velocity.toFixed(2)+' m/s · '+calc.strideLength.toFixed(2)+' m/stride · '+calc.strideFrequency.toFixed(2)+' strides/sec';
+  if(!calc.velocity)return'Enter time to calculate speed.';
+  return calc.velocity.toFixed(2)+' m/s';
 }
 function fieldPracticeSpeedMphText(row){
   var calc=fieldPracticeSpeedMetricCalc(row);
@@ -5064,8 +5064,7 @@ function fieldPracticeSpeedRepStatus(row,field){
   var calc=fieldPracticeSpeedMetricCalc(row);
   var name=row&&row.athleteName?row.athleteName:'athlete';
   if(calc.velocity)return'Rep saved for '+name+'. Move to the next runner or tap + Add Rep.';
-  if(field==='time')return'Time captured for '+name+'. Enter strides to finish the rep.';
-  if(field==='strides')return'Strides saved for '+name+'. Enter time to finish the rep.';
+  if(field==='time')return'Time captured for '+name+'.';
   return'Speed metric updated. Tap Save to SMART Trak when finished.';
 }
 function fieldPracticeSpeedDefaults(p){
@@ -5423,11 +5422,11 @@ function renderFieldPracticeSpeedResults(){
   if(!target)return;
   target.innerHTML='<div class="fp-card"><div class="fp-title">Session Results</div><div class="fp-text">Best completed rep for each athlete. Sort by the metric you want to compare.</div>'+
     '<div class="fp-speed-grid" style="margin-top:8px"><div class="srow" style="padding:0"><label class="slbl">Sort</label><select id="fp-speed-result-sort" class="sinp" onchange="renderFieldPracticeSpeedResults()">'+
-      '<option value="velocity" '+(sort==='velocity'?'selected':'')+'>Velocity</option><option value="strideLength" '+(sort==='strideLength'?'selected':'')+'>Stride length</option><option value="strideFrequency" '+(sort==='strideFrequency'?'selected':'')+'>Stride frequency</option><option value="time" '+(sort==='time'?'selected':'')+'>Time</option><option value="name" '+(sort==='name'?'selected':'')+'>Name</option>'+
+      '<option value="velocity" '+(sort==='velocity'?'selected':'')+'>Velocity</option><option value="time" '+(sort==='time'?'selected':'')+'>Time</option><option value="name" '+(sort==='name'?'selected':'')+'>Name</option>'+
     '</select></div><div class="srow" style="padding:0"><label class="slbl">Gender</label><select id="fp-speed-result-gender" class="sinp" onchange="renderFieldPracticeSpeedResults()">'+
       '<option value="all" '+(gender==='all'?'selected':'')+'>All athletes</option><option value="boys" '+(gender==='boys'?'selected':'')+'>Boys</option><option value="girls" '+(gender==='girls'?'selected':'')+'>Girls</option>'+
     '</select></div></div>'+
-    (rows.length?'<div style="overflow-x:auto"><table class="speed-results-table"><thead><tr><th>Athlete</th><th>Rep</th><th>Time</th><th>Vel.</th><th>Stride</th><th>Freq.</th></tr></thead><tbody>'+rows.map(function(row){return '<tr><td>'+ex(row.athleteName||'Athlete')+'</td><td>'+ex(row.rep||1)+'</td><td>'+ex(row.time||'--')+'</td><td>'+ex(row.velocity?row.velocity.toFixed(2)+' m/s':'--')+'</td><td>'+ex(row.strideLength?row.strideLength.toFixed(2)+' m':'--')+'</td><td>'+ex(row.strideFrequency?row.strideFrequency.toFixed(2)+'/s':'--')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class="fp-text">No completed speed reps yet.</div>')+
+    (rows.length?'<div style="overflow-x:auto"><table class="speed-results-table"><thead><tr><th>Athlete</th><th>Rep</th><th>Time</th><th>Velocity</th><th>MPH</th></tr></thead><tbody>'+rows.map(function(row){return '<tr><td>'+ex(row.athleteName||'Athlete')+'</td><td>'+ex(row.rep||1)+'</td><td>'+ex(row.time||'--')+'</td><td>'+ex(row.velocity?row.velocity.toFixed(2)+' m/s':'--')+'</td><td>'+ex(fieldPracticeSpeedMphText(row))+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class="fp-text">No completed speed reps yet.</div>')+
   '</div>';
 }
 function fieldPracticeSpeedCaptureHtml(p){
@@ -5445,7 +5444,7 @@ function fieldPracticeSpeedCaptureHtml(p){
       (defaults.zone==='Fly'?'<label class="speed-setup-label"><span>Fly Zone</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;flyZoneDistance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.flyZoneDistance)+'</select></label>':'')+
       '<label class="speed-setup-label"><span>Speed Metric</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;distance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.distance)+'</select></label>'+
       '<label class="speed-setup-label"><span>Unit</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;unit&quot;,this.value)"><option value="m" '+(defaults.unit==='m'?'selected':'')+'>Meters</option><option value="yd" '+(defaults.unit==='yd'?'selected':'')+'>Yards</option></select></label>'+
-    '</div><div class="fp-text">Speed Metric is the timed distance used for MPH and velocity. Strides add stride length and frequency.</div></div>':'')+
+    '</div><div class="fp-text">Speed Metric is the timed distance used for MPH and velocity.</div></div>':'')+
     '<div class="fp-card speed-add-athlete-card '+(addOpen?'open':'collapsed')+'"><button class="speed-add-athlete-toggle" type="button" onclick="toggleFieldPracticeSpeedAddAthlete()">+ Athlete</button>'+(addOpen?addAthleteControls:'')+'</div>'+
     '<div class="fp-card"><div class="fp-title">Speed Capture</div><div class="fp-text">Tap an athlete to open details. Drag the handle beside a name to reorder without opening details. Only one athlete stays open at a time.</div>';
   if(!athletes.length)return html+'<div class="fp-text">Choose a group or add an athlete to this session.</div></div><div id="fp-speed-results"></div>';
@@ -5465,7 +5464,6 @@ function fieldPracticeSpeedCaptureHtml(p){
           '<div class="speed-timer-actions" style="margin-top:8px"><button class="mbtn '+(row.startedAt?'c':'')+'" type="button" onclick="toggleFieldPracticeSpeedRepTimer(\''+rowId+'\')">'+(row.startedAt?'Stop':'Start')+'</button></div>'+
           '<div class="fp-speed-grid" style="margin-top:8px">'+
             '<input class="sinp" inputmode="decimal" value="'+ex(row.time||'')+'" placeholder="Manual time" oninput="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;time&quot;,this.value)">'+
-            '<input class="sinp" inputmode="decimal" value="'+ex(row.strides||'')+'" placeholder="Strides" oninput="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;strides&quot;,this.value)">'+
             '<input class="sinp" value="'+ex(row.note||'')+'" placeholder="Note" oninput="updateFieldPracticeSpeedMetric(\''+rowId+'\',&quot;note&quot;,this.value)">'+
           '</div>'+
           '<div class="speed-rep-actions">'+
@@ -5580,7 +5578,7 @@ function newFieldPractice(){
   var routine=fieldPracticeRoutineOptions(event)[0];
   var group=CL&&String(CL.type||'training')==='training'?CL:null;
   var coach=selectedCoachIdentity();
-  var practice={id:fieldPracticeNewId(),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:speedMode?'Fly':'Approach consistency',speedMetricDistance:speedMode?'30':'',flyZoneDistance:speedMode?'30':'',speedMetricUnit:speedMode?'m':'',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:speedMode?'Choose Fly or Start, set the speed metric distance, then capture time and stride count for each athlete.':'',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var practice={id:fieldPracticeNewId(),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:speedMode?'Fly':'Approach consistency',speedMetricDistance:speedMode?'30':'',flyZoneDistance:speedMode?'30':'',speedMetricUnit:speedMode?'m':'',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:speedMode?'Choose Fly or Start, set the speed metric distance, then capture time for each athlete.':'',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
   FIELD_PRACTICE.practices=[practice].concat((FIELD_PRACTICE.practices||[]).filter(function(item){return item.id!==practice.id;}));
   FIELD_PRACTICE.activeId=practice.id;
   renderFieldPractice();
@@ -5592,7 +5590,7 @@ function createSpeedMetricsPracticeForCurrentGroup(){
   var routine=fieldPracticeRoutineOptions(event)[0]||{key:'fly',label:'Fly routine'};
   var group=CL&&String(CL.type||'training')==='training'?CL:null;
   var coach=selectedCoachIdentity();
-  var practice={id:'speed_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:'Fly',speedMetricDistance:'30',flyZoneDistance:'30',speedMetricUnit:'m',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:'Choose Fly or Start, set the speed metric distance, then capture time and stride count for each athlete.',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  var practice={id:'speed_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),date:todayISO(),event:event,groupId:group&&group.id||'',groupName:group&&group.name||'',athleteId:'',athleteName:'',coachName:coach&&coach.name||'',focus:'Fly',speedMetricDistance:'30',flyZoneDistance:'30',speedMetricUnit:'m',routineKey:routine.key,routineName:routine.label,setupType:'',height:'',drills:fieldPracticeRoutineDrills(event,routine.key),athleteSummaries:[],speedMetrics:[],attempts:[],planNotes:'Choose Fly or Start, set the speed metric distance, then capture time for each athlete.',coachNotes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
   syncFieldPracticeAthleteSummaries(practice);
   return practice;
 }
@@ -5669,7 +5667,7 @@ function fieldPracticePreviewText(p){
   if(speedRows.length){
     lines.push('','Speed metrics:');
     speedRows.forEach(function(row){
-      lines.push('- '+(row.athleteName||'Athlete')+' rep '+(row.rep||1)+': '+(row.time||'--')+' · '+(row.strides||'--')+' strides · '+(row.velocity?row.velocity.toFixed(2)+' m/s':'velocity pending')+(row.note?' · '+row.note:''));
+      lines.push('- '+(row.athleteName||'Athlete')+' rep '+(row.rep||1)+': '+(row.time||'--')+' · '+(row.velocity?row.velocity.toFixed(2)+' m/s':'velocity pending')+(row.note?' · '+row.note:''));
     });
   }
   var patterns=fieldPracticeAttemptGroups(p.attempts||[]);
