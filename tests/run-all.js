@@ -5053,9 +5053,9 @@ function checkMeetHistoryQuickEntry() {
     "Enter Event Results",
     "Choose the meet, date, sport, and event once.",
     "Required: athlete and result.",
-    "Jordan Lane",
-    "Casey Brooks",
-    "Morgan Reed",
+    "Jordan Sample",
+    "Taylor Example",
+    "Avery Demo",
     "<th>Splits / Laps</th>",
     "<th>Status</th>",
     "function normalizeDashboardAthletes(rows)",
@@ -6792,6 +6792,40 @@ function checkSmartTrakAthleteNameCapitalization() {
   console.log("SMART Trak athlete name capitalization ok");
 }
 
+function checkFictitiousPlaceholderNames() {
+  const files = [
+    "speed-trak.html",
+    "athletes.html",
+    "meet-history.html",
+    "records.html",
+    "track-simulator.html",
+    "xc-simulator.html",
+  ];
+  const customerExamples = files.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+  [
+    "Christian Azevedo",
+    "Jack Zugaro",
+    "Eliot Brookshire",
+    "Avery Womble",
+    "Marcus Moore",
+    "Ava Moore",
+    "Maya Hill",
+    "Jess King",
+    "Avery Johnson",
+    "Mason Lee",
+    "Chris Moore",
+    "Jordan Lane",
+    "Casey Brooks",
+    "Morgan Reed",
+  ].forEach((name) => {
+    if (customerExamples.includes(name)) throw new Error(`Customer example still uses a real-looking name: ${name}`);
+  });
+  ["Jordan Sample", "Taylor Example", "Avery Demo"].forEach((name) => {
+    if (!customerExamples.includes(name)) throw new Error(`Fictitious customer example missing ${name}`);
+  });
+  console.log("SMART Trak fictitious placeholder names ok");
+}
+
 run("automation API regression tests", "node", ["tests/automation-api.test.js"]);
 run("account/security regression tests", "node", ["tests/ghl-account.test.js"]);
 run("account registry regression tests", "node", ["tests/account-registry.test.js"]);
@@ -6900,5 +6934,6 @@ checkMeetHistoryUnlistedSeasonYearFallback();
 checkPartnerTimingPhaseOne();
 checkFieldPracticePhaseOne();
 checkSmartTrakAthleteNameCapitalization();
+checkFictitiousPlaceholderNames();
 
 console.log("SMARTCoach regression checks passed");

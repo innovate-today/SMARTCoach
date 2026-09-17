@@ -191,7 +191,7 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.util
         <div class="sectiontitle">Athlete Details</div>
         <div class="formgrid three">
           <div class="field"><label for="firstName">First Name <span class="fieldinfo" data-tip="Shown in roster.">i</span></label><input id="firstName" type="text" placeholder="Example: Avery"></div>
-          <div class="field"><label for="lastName">Last Name <span class="fieldinfo" data-tip="Shown in roster.">i</span></label><input id="lastName" type="text" placeholder="Example: Johnson"></div>
+          <div class="field"><label for="lastName">Last Name <span class="fieldinfo" data-tip="Shown in roster.">i</span></label><input id="lastName" type="text" placeholder="Example: Sample"></div>
           <div class="field"><label for="gender">Gender <span class="fieldinfo info-left" data-tip="Used for filters.">i</span></label><select id="gender"><option value="">Select gender</option><option>Girl</option><option>Boy</option></select></div>
           <div class="field"><label for="grade">Class Year <span class="fieldinfo" data-tip="Graduation year.">i</span></label><input id="grade" type="text" placeholder="Example: 2029"></div>
           <div class="field"><label for="email">Athlete Email <span class="fieldinfo" data-tip="Optional athlete email.">i</span></label><input id="email" type="email" placeholder="athlete@example.com"></div>
@@ -203,10 +203,10 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.util
       <div class="formsection">
         <div class="sectiontitle">Parent / Guardian</div>
         <div class="formgrid three">
-          <div class="field"><label for="parentGuardianName">Parent Name <span class="fieldinfo" data-tip="Primary parent.">i</span></label><input id="parentGuardianName" type="text" placeholder="Example: Jordan Moore"></div>
+          <div class="field"><label for="parentGuardianName">Parent Name <span class="fieldinfo" data-tip="Primary parent.">i</span></label><input id="parentGuardianName" type="text" placeholder="Example: Jordan Sample"></div>
           <div class="field"><label for="parentGuardianEmail">Parent Email <span class="fieldinfo info-left" data-tip="Parent email on file.">i</span></label><input id="parentGuardianEmail" type="email" placeholder="parent@example.com"></div>
           <div class="field"><label for="parentGuardianPhone">Parent Phone <span class="fieldinfo" data-tip="Parent phone on file.">i</span></label><input id="parentGuardianPhone" type="tel" placeholder="(555) 555-5555"></div>
-          <div class="field"><label for="parentGuardian2Name">Second Parent Name <span class="fieldinfo" data-tip="Optional second parent.">i</span></label><input id="parentGuardian2Name" type="text" placeholder="Example: Taylor Moore"></div>
+          <div class="field"><label for="parentGuardian2Name">Second Parent Name <span class="fieldinfo" data-tip="Optional second parent.">i</span></label><input id="parentGuardian2Name" type="text" placeholder="Example: Taylor Example"></div>
           <div class="field"><label for="parentGuardian2Email">Second Parent Email <span class="fieldinfo info-left" data-tip="Second parent email.">i</span></label><input id="parentGuardian2Email" type="email" placeholder="parent2@example.com"></div>
           <div class="field"><label for="parentGuardian2Phone">Second Parent Phone <span class="fieldinfo" data-tip="Second parent phone.">i</span></label><input id="parentGuardian2Phone" type="tel" placeholder="(555) 555-5555"></div>
         </div>
@@ -243,7 +243,7 @@ button.secondary,.linkbtn.secondary{background:#dde3ed;color:#172033}button.util
           </div>
           <div class="field full">
             <label for="importText">Athlete Rows <span class="fieldinfo" data-tip="Paste a spreadsheet export with a header row. SMART Trak will create or update athlete roster records from these rows.">i</span></label>
-            <textarea id="importText" class="importtext" placeholder="first_name,last_name,gender,class_year,parent_name,parent_email,active&#10;Avery,Johnson,Girl,2029,Jordan Johnson,parent@example.com,Yes"></textarea>
+            <textarea id="importText" class="importtext" placeholder="first_name,last_name,gender,class_year,parent_name,parent_email,active&#10;Avery,Sample,Girl,2029,Jordan Sample,parent@example.com,Yes"></textarea>
           </div>
         </div>
         <div class="importhelp">Upload a CSV or paste spreadsheet rows with column names in the first row. Accepted columns include athlete name, first name, last name, gender, class year, athlete email, group, parent name, parent email, parent phone, second parent fields, notes, and active.</div>
@@ -769,7 +769,7 @@ function openAthleteModal(a){els.modal.hidden=false;els.modalTitle.textContent=a
 function closeModal(){els.modal.hidden=true;}
 function openImportModal(){els.importModal.hidden=false;els.importStatus.textContent='Paste CSV rows or upload a CSV, then import.';if(els.importCsvFile)els.importCsvFile.value='';setTimeout(function(){els.importText.focus();},50);}
 function closeImportModal(){els.importModal.hidden=true;}
-function importTemplateCsv(){return 'first_name,last_name,gender,class_year,athlete_email,group,parent_name,parent_email,parent_phone,second_parent_name,second_parent_email,second_parent_phone,notes,active\nAvery,Johnson,Girl,2029,athlete@example.com,CC Team,Jordan Johnson,parent@example.com,555-555-5555,Taylor Johnson,parent2@example.com,555-555-5556,New transfer,Yes';}
+function importTemplateCsv(){return 'first_name,last_name,gender,class_year,athlete_email,group,parent_name,parent_email,parent_phone,second_parent_name,second_parent_email,second_parent_phone,notes,active\nAvery,Sample,Girl,2029,athlete@example.com,CC Team,Jordan Sample,parent@example.com,555-555-5555,Taylor Example,parent2@example.com,555-555-5556,New transfer,Yes';}
 function loadImportExample(){if(els.importCsvFile)els.importCsvFile.value='';els.importText.value=importTemplateCsv();els.importStatus.textContent='Example loaded. Replace it with your roster rows when ready.';}
 function downloadImportTemplate(){var blob=new Blob([importTemplateCsv()],{type:'text/csv'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='smart-trak-athlete-import-template.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url);},250);els.importStatus.textContent='Template downloaded.';}
 function loadImportCsvFile(event){var file=event&&event.target&&event.target.files&&event.target.files[0];if(!file)return;els.importStatus.textContent='Reading '+file.name+'...';var reader=new FileReader();reader.onload=function(){var text=String(reader.result||'').replace(/^\uFEFF/,'');els.importText.value=text;var count=parseImportRows(text).length;els.importStatus.textContent=count?'Loaded '+file.name+' with '+count+' athlete row'+(count===1?'':'s')+'. Review the rows, then import.':'Loaded '+file.name+', but no athlete rows were found. Make sure the first row has column names.';};reader.onerror=function(){els.importStatus.textContent='Could not read '+file.name+'. Try downloading the template and copying your roster into it.';};reader.readAsText(file);}

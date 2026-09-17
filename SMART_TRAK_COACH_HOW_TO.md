@@ -163,6 +163,8 @@ Speed Trak pulls from saved Speed Metrics reps. It can show common fly and start
 
 To import speed marks, use **Import Speed Data** on the Speed Trak page. Download the template, upload a CSV/TSV file, or paste spreadsheet rows. Required information is athlete name, mark/time, and either a date in the row or the default date above the paste box. Metric can be included in the spreadsheet or supplied by the default metric. The template also includes an optional **Roster Status** column for historical marks. If the athlete name matches the saved roster, SMART Trak links the mark to that roster athlete to help avoid duplicate athlete entries. Preview the rows before clicking **Save Speed Data**.
 
+Names shown in SMART Trak placeholders, paste examples, and downloaded templates are fictional examples. Replace them with the athletes, parents, teams, and meets for your account before saving imported data.
+
 To enter one result without a spreadsheet, click **Add Result**. Start typing the athlete name and choose the roster match when available. Use **Edit** on a row to correct the athlete, metric, mark, date, grade, gender, or note. Use **Delete** only when a speed mark should be removed from Speed Trak.
 
 The Speed Trak table shows year, athlete, grade, mark, date, **velocity**, and **MPH**. Velocity and MPH are calculated from timed distance and time.

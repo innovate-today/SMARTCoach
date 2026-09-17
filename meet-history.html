@@ -295,7 +295,7 @@ tr:last-child td{border-bottom:0}
         </label>
         <div class="muted">CSV, TSV, or copied spreadsheet text works best. Export XLSX files to CSV first.</div>
       </div>
-      <textarea id="importText" placeholder="Season,Year,Sport,Meet,Date,Gender,Event,Athlete,Grade,Class Year,Result,Place,PR,SB,Notes&#10;Fall,2023,Cross Country,TAPPS 6A District,Oct 19,Girls,2 Mile,Eliot Brookshire,11,2025,12:36.6,,Yes,Yes,"></textarea>
+      <textarea id="importText" placeholder="Season,Year,Sport,Meet,Date,Gender,Event,Athlete,Grade,Class Year,Result,Place,PR,SB,Notes&#10;Fall,2023,Cross Country,Example District,Oct 19,Girls,2 Mile,Avery Sample,11,2025,12:36.6,,Yes,Yes,"></textarea>
       <div class="importactions">
         <div class="left">
           <button id="downloadImportTemplateBtn" class="secondary" type="button">Download Template</button>
@@ -455,7 +455,7 @@ tr:last-child td{border-bottom:0}
       <div class="quickdefaults">
         <div class="field">
           <label for="quickMeetName">Meet</label>
-          <input id="quickMeetName" type="text" placeholder="Example: Boyd Invitational">
+          <input id="quickMeetName" type="text" placeholder="Example: Sample Invitational">
         </div>
         <div class="field">
           <label for="quickMeetDate">Date</label>
@@ -510,7 +510,7 @@ tr:last-child td{border-bottom:0}
       <div class="quickpaste">
         <div class="field full">
           <label for="quickPasteText">Paste Rows</label>
-          <textarea id="quickPasteText" placeholder="Jordan Lane&#9;17:08.8&#9;5:21, 5:37, 5:44&#10;Casey Brooks&#9;19:26.56&#10;Morgan Reed&#9;20:46.05&#9;6:25, 6:41, 7:40"></textarea>
+          <textarea id="quickPasteText" placeholder="Jordan Sample&#9;17:08.8&#9;5:21, 5:37, 5:44&#10;Taylor Example&#9;19:26.56&#10;Avery Demo&#9;20:46.05&#9;6:25, 6:41, 7:40"></textarea>
         </div>
         <div class="quicktoolbar">
           <div class="quicktools">
@@ -2497,7 +2497,7 @@ function renderImportPreview(){
 function downloadImportTemplate(){
   var csv=[
     'Season,Year,Sport,Meet,Date,Gender,Event,Athlete,Grade,Class Year,Result,Place,PR,SB,Notes',
-    'Fall,2023,Cross Country,TAPPS 6A District,Oct 19,Girls,2 Mile,Eliot Brookshire,11,2025,12:36.6,,Yes,Yes,',
+    'Fall,2023,Cross Country,Example District,Oct 19,Girls,2 Mile,Avery Sample,11,2025,12:36.6,,Yes,Yes,',
     'Fall,2023,Cross Country,Southlake Invitational,Aug 26,Boys,5K,Gabe Speck,11,2025,17:52.1,,No,Yes,'
   ].join('\n');
   var blob=new Blob([csv],{type:'text/csv'});
