@@ -2101,6 +2101,8 @@ function checkSpeedTrakFeature() {
     "timedDistance:row.timedDistance||row.distance",
     "distanceUnit:row.distanceUnit||row.unit",
     "function saveSpeedImport()",
+    "compactResponse:true",
+    "Saving '+rows.length+' speed reps...",
     'id="openImportCleanupBtn"',
     'id="importCleanupModal"',
     'id="cleanupSavedOn"',
@@ -2125,6 +2127,14 @@ function checkSpeedTrakFeature() {
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
   });
+
+  const registry = fs.readFileSync("lib/account-registry.js", "utf8");
+  const scopedSaveStart = registry.indexOf("async function saveLargeAccountScopedRecord");
+  const scopedSaveEnd = registry.indexOf("async function loadAccountScopedRecord", scopedSaveStart);
+  const scopedSave = registry.slice(scopedSaveStart, scopedSaveEnd);
+  if (!scopedSave.includes('registryPipelineRequest(config, [["set", key, payload]])')) {
+    throw new Error("large scoped registry records must be written through the JSON-body pipeline endpoint");
+  }
   [
     "function normalizeSpeedSurface(value)",
     "function normalizeSpeedTimingMethod(value)",
@@ -4360,7 +4370,7 @@ function checkScopedRegistryReliabilitySaves() {
     "async function loadResultsBoardSharingState(accountKey, accountRecord)",
     "async function loadAthleteCalendarQuestionsState(accountKey, accountRecord)",
     "async function loadWeatherLocationsState(accountKey, accountRecord)",
-    "saveAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE",
+    "saveLargeAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE",
     "saveAccountScopedRecord(accountKey, EQUIPMENT_TRAK_NAMESPACE",
     "saveDashboardPreferencesState(accountKey, dashboardPreferences)",
     "saveMilesBoardScopedState(accountKey",

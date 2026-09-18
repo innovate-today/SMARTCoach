@@ -38,7 +38,7 @@ const {
   accountAccessAllowed,
   accountAccessBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord, saveLargeAccountScopedRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -1616,7 +1616,7 @@ async function accountFieldPractice(req, res) {
         const deleteIds = new Set(cleanup.sessionIds);
         const fieldPracticeSessions = current.filter((item) => !deleteIds.has(item.id));
         const savedAt = new Date().toISOString();
-        await saveAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE, {
+        await saveLargeAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE, {
           fieldPracticeSessions,
           lastFieldPracticeSync: { savedAt, count: 0, total: fieldPracticeSessions.length },
           lastFieldPracticeCleanup: {
@@ -1644,11 +1644,13 @@ async function accountFieldPractice(req, res) {
         .sort((a, b) => cleanSetupText(b.date).localeCompare(cleanSetupText(a.date)) || cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
         .slice(0, 1000);
       const savedAt = new Date().toISOString();
-      await saveAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE, {
+      await saveLargeAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE, {
         fieldPracticeSessions,
         lastFieldPracticeSync: { savedAt, count: practices.length, total: fieldPracticeSessions.length },
       });
-      res.status(200).json({ success: true, saved: true, practices: fieldPracticeSessions, count: fieldPracticeSessions.length, savedAt });
+      const response = { success: true, saved: true, count: fieldPracticeSessions.length, savedCount: practices.length, savedAt };
+      if (!payload.compactResponse) response.practices = fieldPracticeSessions;
+      res.status(200).json(response);
       return;
     }
 
