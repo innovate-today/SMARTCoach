@@ -2063,6 +2063,10 @@ function checkSpeedTrakFeature() {
     "function deleteSpeedResult()",
     "function savePracticeList(practices)",
     "function parseSpeedImportRows(text)",
+    "function metricDistanceFromLabel(label)",
+    "yd|yard|yards|m|meter|meters",
+    "var unit=suppliedDistance?(suppliedUnit||labelDistance.unit||'m'):(labelDistance.unit||suppliedUnit||'m')",
+    "meters:unit==='yd'?distance*0.9144:distance",
     'id="importPreviewActions"',
     'id="showRejectedImportBtn"',
     'id="showAllImportBtn"',
@@ -2155,6 +2159,9 @@ function checkSpeedTrakFeature() {
   }
   if (!guide.includes("**Show Rejected Rows**") || !guide.includes("original spreadsheet row number")) {
     throw new Error("Coach guide missing rejected Speed Trak import guidance");
+  }
+  if (!guide.includes("**10yd Fly**") || !guide.includes("**40yd Dash**")) {
+    throw new Error("Coach guide missing yard-based Speed Trak import guidance");
   }
   if (!guide.includes("Use **Sessions** to review complete testing days.")) {
     throw new Error("Coach guide missing Speed Trak Sessions guidance");
