@@ -2054,6 +2054,8 @@ function checkSpeedTrakFeature() {
     "speedFocus:first.speedFocus||''",
     "startType:first.startType||''",
     "speedMetricDistance:first.timedDistance||first.distance||0",
+    "event:'Runway / Speed Metrics'",
+    "speedEvent:speedEvent",
     "function speedGradeFromClassYear(classYear,date,fallback)",
     "function normalizeTimingMethod(value)",
     "function normalizeSpeedFocus(value)",
@@ -2213,6 +2215,7 @@ function checkSpeedTrakFeature() {
   [
     "/api/smart-trak/dashboard-support?v=",
     "speedPracticeTrainingRows(fieldPracticeRows,dashboardRows)",
+    "if(!metrics.length)return;",
     "speedMetricSession:true",
     '<option value="speed_training">Speed / sprints</option>',
     "if(filter==='speed_training')return hasSpeedTraining(row.name);",

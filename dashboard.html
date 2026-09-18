@@ -9165,8 +9165,9 @@ function speedPracticeTrainingRows(practices,athletes){
   var lookup=speedDashboardAthleteLookup(athletes);
   var rows=[];
   (Array.isArray(practices)?practices:[]).forEach(function(practice){
-    if(!practice||practice.event!=='Runway / Speed Metrics')return;
+    if(!practice)return;
     var metrics=Array.isArray(practice.speedMetrics)?practice.speedMetrics:[];
+    if(!metrics.length)return;
     var grouped={};
     metrics.forEach(function(rep,index){
       if(!rep)return;
