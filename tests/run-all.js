@@ -2038,6 +2038,13 @@ function checkSpeedTrakFeature() {
     "function buildRows(practices,athletes)",
     'id="leaderboardTab"',
     "[hidden]{display:none!important}",
+    'id="progressionTab"',
+    'id="progressionPanel"',
+    'id="progressionAthlete"',
+    'id="progressionMetric"',
+    'id="progressionSurface"',
+    'id="progressionTiming"',
+    'id="progressionRows"',
     'id="sessionsTab"',
     'id="sessionsPanel"',
     'id="sessionRows"',
@@ -2045,6 +2052,9 @@ function checkSpeedTrakFeature() {
     "function buildSpeedSessions(practices,athletes)",
     "function renderSpeedSessions()",
     "function openSpeedSession(index)",
+    "function buildAthleteProgressionRows()",
+    "function renderAthleteProgression()",
+    "session.newPb=true",
     "function setSpeedTrakView(view)",
     "data-session-open",
     "function metricLabel(row,practice)",
@@ -2112,6 +2122,9 @@ function checkSpeedTrakFeature() {
   }
   if (!guide.includes("Use **Sessions** to review complete testing days.")) {
     throw new Error("Coach guide missing Speed Trak Sessions guidance");
+  }
+  if (!guide.includes("Use **Athlete Progression** to compare one athlete across like-for-like testing conditions.")) {
+    throw new Error("Coach guide missing Speed Trak Athlete Progression guidance");
   }
   [
     '<th data-sort="strideLength">',
