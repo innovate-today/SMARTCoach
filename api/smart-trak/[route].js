@@ -1921,14 +1921,61 @@ function roundedMetric(value) {
   return Number.isFinite(number) && number > 0 ? Number(number.toFixed(3)) : 0;
 }
 
+function normalizeSpeedSurface(value) {
+  const text = cleanSetupText(value).toLowerCase();
+  if (text === "track") return "Track";
+  if (text === "turf" || text === "grass") return "Turf";
+  return text ? cleanSetupText(value).slice(0, 40) : "";
+}
+
+function normalizeSpeedTimingMethod(value) {
+  const text = cleanSetupText(value).toLowerCase().replace(/[\s_-]+/g, " ").trim();
+  if (!text) return "";
+  if (text === "freelap" || text === "free lap" || text === "automatic" || text === "auto") return "Freelap";
+  if (text === "stopwatch" || text === "stop watch" || text === "hand" || text === "hand timed") return "Stopwatch";
+  if (text === "video" || text === "video camera" || text === "camera") return "Video";
+  return cleanSetupText(value).slice(0, 40);
+}
+
+function normalizeSpeedFocus(value) {
+  const text = cleanSetupText(value).toLowerCase().replace(/[\s_-]+/g, " ").trim();
+  if (!text) return "";
+  if (text === "max speed" || text === "maximum speed" || text === "max velocity") return "Max Speed";
+  if (text === "acceleration" || text === "accel") return "Acceleration";
+  if (text === "race" || text === "race model") return "Race";
+  return cleanSetupText(value).slice(0, 40);
+}
+
+function normalizeSpeedStartType(value) {
+  const text = cleanSetupText(value).toLowerCase().replace(/[\s_-]+/g, " ").trim();
+  if (!text) return "";
+  if (text === "rolling" || text === "fly" || text === "flying") return "Rolling";
+  if (text === "crouch" || text === "blocks" || text === "block") return "Crouch";
+  if (text === "push release" || text === "push") return "Push Release";
+  return cleanSetupText(value).slice(0, 40);
+}
+
+function speedGradeFromGraduationYear(graduationYear, date, fallback) {
+  const direct = cleanSetupText(fallback).match(/\b(9|10|11|12)\b/);
+  if (direct) return direct[1];
+  const classYear = Number(graduationYear);
+  const match = cleanSetupText(date).match(/^(\d{4})-(\d{2})/);
+  if (!classYear || !match) return "";
+  const calendarYear = Number(match[1]);
+  const academicYear = Number(match[2]) >= 8 ? calendarYear + 1 : calendarYear;
+  const grade = 12 - (classYear - academicYear);
+  return grade >= 9 && grade <= 12 ? String(grade) : "";
+}
+
 function normalizeFieldPracticeSpeedMetrics(items) {
   return (Array.isArray(items) ? items : []).map((item, index) => {
     const source = item && typeof item === "object" ? item : {};
     const athleteId = cleanSetupText(source.athleteId);
     const athleteName = displayNameCase(source.athleteName || source.name).slice(0, 120);
     const zone = cleanSetupText(source.zone || source.focus).slice(0, 120);
-    const unit = cleanSetupText(source.unit).toLowerCase() === "yd" ? "yd" : "m";
-    const rawDistance = Number(source.distance);
+    const unitText = cleanSetupText(source.distanceUnit || source.unit).toLowerCase();
+    const unit = unitText === "yd" || unitText === "yard" || unitText === "yards" ? "yd" : "m";
+    const rawDistance = Number(source.timedDistance || source.distance);
     const rawMeters = Number(source.meters);
     const distance = Number.isFinite(rawDistance) && rawDistance > 0
       ? rawDistance
@@ -1945,20 +1992,38 @@ function normalizeFieldPracticeSpeedMetrics(items) {
     const strideLength = meters && strides ? meters / strides : Number(source.strideLength) || 0;
     const strideFrequency = strides && seconds ? strides / seconds : Number(source.strideFrequency) || 0;
     const note = cleanSetupText(source.note).slice(0, 500);
+    const date = normalizeFieldPracticeDate(source.date);
+    const graduationYear = cleanSetupText(source.graduationYear || source.classYear).slice(0, 20);
+    const seasonYear = cleanSetupText(source.seasonYear || source.year).slice(0, 20);
+    const grade = speedGradeFromGraduationYear(graduationYear, date, source.grade);
+    const flyZoneDistance = roundedMetric(source.flyZoneDistance);
+    const surface = normalizeSpeedSurface(source.surface);
+    const timingMethod = normalizeSpeedTimingMethod(source.timingMethod);
+    const speedFocus = normalizeSpeedFocus(source.speedFocus || source.category);
+    const startType = normalizeSpeedStartType(source.startType || source.start);
     if (!athleteId && !athleteName && !zone && !time && !strides && !note && !velocity) return null;
     return {
       id: cleanSetupText(source.id) || `speed_metric_${index + 1}`,
       athleteId,
       athleteName,
       gender: cleanSetupText(source.gender).slice(0, 40),
-      year: cleanSetupText(source.year).slice(0, 20),
-      grade: cleanSetupText(source.grade).slice(0, 20),
-      date: normalizeFieldPracticeDate(source.date),
+      year: seasonYear,
+      seasonYear,
+      graduationYear,
+      grade,
+      date,
       metric: cleanSetupText(source.metric).slice(0, 80),
       rep: Math.max(1, parseInt(source.rep || index + 1, 10) || 1),
       zone,
+      flyZoneDistance,
       distance: roundedMetric(distance),
       unit,
+      timedDistance: roundedMetric(distance),
+      distanceUnit: unit,
+      surface,
+      timingMethod,
+      speedFocus,
+      startType,
       time,
       strides: roundedMetric(strides),
       note,

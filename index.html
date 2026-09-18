@@ -5108,7 +5108,7 @@ function syncFieldPracticeSpeedMetrics(p,force){
     var id=runner.contactId||runner.id||runner.name||'';
     var key=String(id)||('name:'+String(runner.name||'').trim().toLowerCase());
     if(!removed[key]&&!byKey[key]){
-      p.speedMetrics.push({id:'speed_metric_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:id,athleteName:runner.name||'Athlete',rep:1,zone:defaults.zone,flyZoneDistance:defaults.flyZoneDistance,distance:defaults.distance,unit:defaults.unit,time:'',strides:'',note:'',updatedAt:''});
+      p.speedMetrics.push({id:'speed_metric_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:id,athleteName:runner.name||'Athlete',rep:1,zone:defaults.zone,flyZoneDistance:defaults.flyZoneDistance,distance:defaults.distance,unit:defaults.unit,timedDistance:defaults.distance,distanceUnit:defaults.unit,surface:p.surface||'',timingMethod:p.timingMethod||'',speedFocus:p.speedFocus||'',startType:p.startType||'',graduationYear:runner.graduationYear||runner.classYear||'',seasonYear:p.seasonYear||'',time:'',strides:'',note:'',updatedAt:''});
     }
   });
 }
@@ -5121,7 +5121,9 @@ function cleanFieldPracticeSpeedMetrics(p){
     var strides=String(row.strides||'').trim();
     var note=String(row.note||'').trim();
     if(!row.athleteId&&!row.athleteName&&!time&&!strides&&!note&&!calc.velocity)return null;
-    return{id:row.id||('speed_metric_'+(index+1)),athleteId:row.athleteId||'',athleteName:row.athleteName||'',rep:Math.max(1,parseInt(row.rep||index+1,10)||1),zone:row.zone||'',flyZoneDistance:row.flyZoneDistance||'',distance:fieldPracticeRoundMetric(row.distance),unit:String(row.unit||'m').toLowerCase()==='yd'?'yd':'m',time:time,strides:fieldPracticeRoundMetric(strides),note:note,meters:calc.meters,seconds:calc.seconds,velocity:calc.velocity,strideLength:calc.strideLength,strideFrequency:calc.strideFrequency,updatedAt:row.updatedAt||new Date().toISOString()};
+    var unit=String(row.distanceUnit||row.unit||'m').toLowerCase()==='yd'?'yd':'m';
+    var timedDistance=fieldPracticeRoundMetric(row.timedDistance||row.distance);
+    return{id:row.id||('speed_metric_'+(index+1)),athleteId:row.athleteId||'',athleteName:row.athleteName||'',gender:row.gender||'',grade:row.grade||'',graduationYear:row.graduationYear||row.classYear||'',year:row.seasonYear||row.year||'',seasonYear:row.seasonYear||row.year||'',date:row.date||p.date||'',metric:row.metric||'',rep:Math.max(1,parseInt(row.rep||index+1,10)||1),zone:row.zone||'',flyZoneDistance:fieldPracticeRoundMetric(row.flyZoneDistance),distance:timedDistance,unit:unit,timedDistance:timedDistance,distanceUnit:unit,surface:row.surface||p.surface||'',timingMethod:row.timingMethod||p.timingMethod||'',speedFocus:row.speedFocus||row.category||p.speedFocus||'',startType:row.startType||row.start||p.startType||'',time:time,strides:fieldPracticeRoundMetric(strides),note:note,meters:calc.meters,seconds:calc.seconds,velocity:calc.velocity,strideLength:calc.strideLength,strideFrequency:calc.strideFrequency,updatedAt:row.updatedAt||new Date().toISOString()};
   }).filter(Boolean);
 }
 function updateFieldPracticeSpeedSetup(field,value){
@@ -5170,7 +5172,7 @@ function addFieldPracticeSpeedRep(athleteId,athleteName){
   var rows=p.speedMetrics.filter(function(row){return fieldPracticeSpeedKey(row)===key;});
   var defaults=fieldPracticeSpeedDefaults(p);
   var last=rows.slice().sort(function(a,b){return Number(b.rep||0)-Number(a.rep||0);})[0]||{};
-  var next={id:'speed_metric_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:athleteId||'',athleteName:athleteName||'Athlete',rep:(parseInt(last.rep||rows.length,10)||rows.length)+1,zone:defaults.zone,flyZoneDistance:defaults.flyZoneDistance,distance:defaults.distance,unit:defaults.unit,time:'',strides:'',note:'',updatedAt:''};
+  var next={id:'speed_metric_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),athleteId:athleteId||'',athleteName:athleteName||'Athlete',gender:last.gender||'',grade:last.grade||'',graduationYear:last.graduationYear||'',year:last.seasonYear||last.year||'',seasonYear:last.seasonYear||last.year||'',date:last.date||p.date||'',metric:last.metric||'',rep:(parseInt(last.rep||rows.length,10)||rows.length)+1,zone:defaults.zone,flyZoneDistance:defaults.flyZoneDistance,distance:defaults.distance,unit:defaults.unit,timedDistance:defaults.distance,distanceUnit:defaults.unit,surface:last.surface||p.surface||'',timingMethod:last.timingMethod||p.timingMethod||'',speedFocus:last.speedFocus||p.speedFocus||'',startType:last.startType||p.startType||'',time:'',strides:'',note:'',updatedAt:''};
   p.speedMetrics.push(next);
   FIELD_PRACTICE.openSpeedRepByAthlete=FIELD_PRACTICE.openSpeedRepByAthlete||{};
   FIELD_PRACTICE.openSpeedRepByAthlete[key]=next.id;

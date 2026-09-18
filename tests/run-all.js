@@ -2043,6 +2043,16 @@ function checkSpeedTrakFeature() {
     "function savePracticeList(practices)",
     "function parseSpeedImportRows(text)",
     "function buildSpeedImportPractice(rows,date,index)",
+    "function speedGradeFromClassYear(classYear,date,fallback)",
+    "function normalizeTimingMethod(value)",
+    "function normalizeSpeedFocus(value)",
+    "function normalizeStartType(value)",
+    "function flyZoneFromDescription(value,metric)",
+    "Graduation Year",
+    "Timing Method",
+    "speedFocus:normalizeSpeedFocus",
+    "timedDistance:row.timedDistance||row.distance",
+    "distanceUnit:row.distanceUnit||row.unit",
     "function saveSpeedImport()",
     "function initHeaderTooltips()",
     "data-speed-edit",
@@ -2054,6 +2064,23 @@ function checkSpeedTrakFeature() {
     "headers:headers()",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
+  });
+  [
+    "function normalizeSpeedSurface(value)",
+    "function normalizeSpeedTimingMethod(value)",
+    "function normalizeSpeedFocus(value)",
+    "function normalizeSpeedStartType(value)",
+    "function speedGradeFromGraduationYear(graduationYear, date, fallback)",
+    "timedDistance: roundedMetric(distance)",
+    "distanceUnit: unit",
+    "graduationYear",
+    "seasonYear",
+    "flyZoneDistance",
+    "timingMethod",
+    "speedFocus",
+    "startType",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Speed Trak API model missing ${text}`);
   });
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   if (!guide.includes("**velocity**, and **MPH**")) {
