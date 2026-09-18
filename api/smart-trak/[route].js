@@ -1595,6 +1595,41 @@ async function accountFieldPractice(req, res) {
 
     if (req.method === "POST" || req.method === "PATCH") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      if (cleanSetupText(payload.action).toLowerCase() === "cleanup-speed-import") {
+        requireOwnerAdminSession(req, "clean up imported Speed Trak data");
+        const existing = await loadAccountRecord(accountKey);
+        if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
+        const fieldPracticeState = await loadFieldPracticeState(accountKey, existing.record);
+        const current = normalizeFieldPractices(fieldPracticeState.fieldPracticeSessions);
+        const cleanup = speedImportCleanupPreview(current, payload.filters || payload);
+        const mode = cleanSetupText(payload.mode || "preview").toLowerCase();
+        if (mode === "preview") {
+          res.status(200).json({ success: true, mode, cleanup });
+          return;
+        }
+        if (mode !== "delete") throw httpError(400, "Cleanup mode must be preview or delete.");
+        const confirmation = cleanSetupText(payload.confirmation);
+        if (!cleanup.sessionCount) throw httpError(404, "No matching Speed Trak import sessions were found.");
+        if (!confirmation || !safeEqual(confirmation, cleanup.expectedConfirmation)) {
+          throw httpError(409, "Cleanup confirmation does not match the preview.");
+        }
+        const deleteIds = new Set(cleanup.sessionIds);
+        const fieldPracticeSessions = current.filter((item) => !deleteIds.has(item.id));
+        const savedAt = new Date().toISOString();
+        await saveAccountScopedRecord(accountKey, FIELD_PRACTICE_NAMESPACE, {
+          fieldPracticeSessions,
+          lastFieldPracticeSync: { savedAt, count: 0, total: fieldPracticeSessions.length },
+          lastFieldPracticeCleanup: {
+            savedAt,
+            action: "cleanup-speed-import",
+            deletedSessions: cleanup.sessionCount,
+            deletedReps: cleanup.repCount,
+            filters: cleanup.filters,
+          },
+        });
+        res.status(200).json({ success: true, mode, deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount, remainingSessions: fieldPracticeSessions.length, savedAt });
+        return;
+      }
       const practices = normalizeFieldPractices(Array.isArray(payload.practices) ? payload.practices : payload.practice ? [payload.practice] : [payload]);
       const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
       if (!practices.length && !deleteIds.length) throw httpError(400, "No field practice records were provided.");
@@ -1621,6 +1656,37 @@ async function accountFieldPractice(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Field Practice save failed." });
   }
+}
+
+function speedImportCleanupPreview(practices, sourceFilters) {
+  const input = sourceFilters && typeof sourceFilters === "object" ? sourceFilters : {};
+  const savedOn = normalizeDateValue(input.savedOn || input.importedOn || input.savedDate).slice(0, 10);
+  const sessionDate = normalizeDateValue(input.sessionDate || input.workoutDate).slice(0, 10);
+  const matches = normalizeFieldPractices(practices).filter((practice) => {
+    const imported = cleanSetupText(practice.routineKey).toLowerCase() === "speed_import" ||
+      cleanSetupText(practice.groupName).toLowerCase() === "speed trak import" ||
+      /imported from speed trak spreadsheet/i.test(cleanSetupText(practice.coachNotes));
+    if (!imported || !fieldPracticeHasSpeedMetrics(practice)) return false;
+    if (savedOn) {
+      const savedDate = cleanSetupText(practice.createdAt || practice.updatedAt).slice(0, 10);
+      if (savedDate !== savedOn) return false;
+    }
+    if (sessionDate && cleanSetupText(practice.date).slice(0, 10) !== sessionDate) return false;
+    return true;
+  });
+  const repCount = matches.reduce((sum, practice) => sum + (Array.isArray(practice.speedMetrics) ? practice.speedMetrics.length : 0), 0);
+  const sessionDates = Array.from(new Set(matches.map((practice) => cleanSetupText(practice.date).slice(0, 10)).filter(Boolean))).sort();
+  const savedDates = Array.from(new Set(matches.map((practice) => cleanSetupText(practice.createdAt || practice.updatedAt).slice(0, 10)).filter(Boolean))).sort();
+  return {
+    filters: { source: "Speed Trak Import", savedOn, sessionDate },
+    sessionCount: matches.length,
+    repCount,
+    athleteCount: new Set(matches.flatMap((practice) => (practice.speedMetrics || []).map((rep) => cleanSetupText(rep.athleteId || rep.contactId || rep.athleteName).toLowerCase()).filter(Boolean))).size,
+    sessionDates,
+    savedDates,
+    sessionIds: matches.map((practice) => practice.id).filter(Boolean),
+    expectedConfirmation: `DELETE ${matches.length} SPEED IMPORT SESSIONS / ${repCount} REPS`,
+  };
 }
 
 async function loadFieldPracticeState(accountKey, accountRecord) {
