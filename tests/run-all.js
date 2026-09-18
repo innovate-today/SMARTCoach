@@ -2122,6 +2122,8 @@ function checkSpeedTrakFeature() {
     "(!timing||row.timingMethod===timing)",
     "(!focus||row.speedFocus===focus)",
     "(!start||row.startType===start)",
+    "if(text==='grass')return'Grass'",
+    "if(/^(fat|freelap|free lap|automatic|auto)$/.test(text))return'FAT'",
     'id="openImportCleanupBtn"',
     'id="importCleanupModal"',
     'id="cleanupSavedOn"',
