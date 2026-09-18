@@ -2042,6 +2042,8 @@ function checkSpeedTrakFeature() {
     "function deleteSpeedResult()",
     "function savePracticeList(practices)",
     "function parseSpeedImportRows(text)",
+    "['Athlete','Date','Result','Event','Description','Surface','Timing Method','Category','Start','Distance Unit','Distance','Gender','Graduation Year','Year','Notes']",
+    "cells.splice(10,0,'')",
     "function buildSpeedImportPractice(rows,index)",
     "function speedImportSessionKey(row)",
     "function speedImportSessionGroups(rows)",
