@@ -2063,6 +2063,15 @@ function checkSpeedTrakFeature() {
     "function deleteSpeedResult()",
     "function savePracticeList(practices)",
     "function parseSpeedImportRows(text)",
+    'id="importPreviewActions"',
+    'id="showRejectedImportBtn"',
+    'id="showAllImportBtn"',
+    "importPreviewRows:[]",
+    "showRejectedImport:false",
+    "sourceRow:index",
+    "function renderImportPreviewTable()",
+    "Show Rejected Rows (",
+    "Showing all '+rejected.length+' rejected rows",
     "['Athlete','Date','Result','Event','Description','Surface','Timing Method','Category','Start','Distance Unit','Distance','Gender','Graduation Year','Year','Notes']",
     "cells.splice(10,0,'')",
     "function buildSpeedImportPractice(rows,index)",
@@ -2143,6 +2152,9 @@ function checkSpeedTrakFeature() {
   }
   if (!guide.includes("**Manage Imported Data**") || !guide.includes("exact confirmation phrase")) {
     throw new Error("Coach guide missing Speed Trak import cleanup guidance");
+  }
+  if (!guide.includes("**Show Rejected Rows**") || !guide.includes("original spreadsheet row number")) {
+    throw new Error("Coach guide missing rejected Speed Trak import guidance");
   }
   if (!guide.includes("Use **Sessions** to review complete testing days.")) {
     throw new Error("Coach guide missing Speed Trak Sessions guidance");
