@@ -2088,6 +2088,19 @@ function checkSpeedTrakFeature() {
     "timedDistance:row.timedDistance||row.distance",
     "distanceUnit:row.distanceUnit||row.unit",
     "function saveSpeedImport()",
+    'id="openImportCleanupBtn"',
+    'id="importCleanupModal"',
+    'id="cleanupSavedOn"',
+    'id="cleanupSessionDate"',
+    'id="importCleanupConfirmation"',
+    'id="previewImportCleanupBtn"',
+    'id="deleteImportCleanupBtn"',
+    "function previewImportCleanup()",
+    "function deletePreviewedSpeedImport()",
+    "function updateImportCleanupDeleteState()",
+    "action:'cleanup-speed-import'",
+    "confirmation:preview.expectedConfirmation",
+    "els.importCleanupConfirmation.value!==phrase",
     "function initHeaderTooltips()",
     "data-speed-edit",
     "data-speed-delete",
@@ -2127,6 +2140,9 @@ function checkSpeedTrakFeature() {
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   if (!guide.includes("**velocity**, and **MPH**")) {
     throw new Error("Coach guide missing Speed Trak MPH display guidance");
+  }
+  if (!guide.includes("**Manage Imported Data**") || !guide.includes("exact confirmation phrase")) {
+    throw new Error("Coach guide missing Speed Trak import cleanup guidance");
   }
   if (!guide.includes("Use **Sessions** to review complete testing days.")) {
     throw new Error("Coach guide missing Speed Trak Sessions guidance");
