@@ -2036,6 +2036,16 @@ function checkSpeedTrakFeature() {
     "yearSelect",
     "limitSelect",
     "function buildRows(practices,athletes)",
+    'id="leaderboardTab"',
+    'id="sessionsTab"',
+    'id="sessionsPanel"',
+    'id="sessionRows"',
+    'id="sessionDetails"',
+    "function buildSpeedSessions(practices,athletes)",
+    "function renderSpeedSessions()",
+    "function openSpeedSession(index)",
+    "function setSpeedTrakView(view)",
+    "data-session-open",
     "function metricLabel(row,practice)",
     "function openSpeedResultModal(row)",
     "function saveSpeedResult()",
@@ -2098,6 +2108,9 @@ function checkSpeedTrakFeature() {
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   if (!guide.includes("**velocity**, and **MPH**")) {
     throw new Error("Coach guide missing Speed Trak MPH display guidance");
+  }
+  if (!guide.includes("Use **Sessions** to review complete testing days.")) {
+    throw new Error("Coach guide missing Speed Trak Sessions guidance");
   }
   [
     '<th data-sort="strideLength">',
