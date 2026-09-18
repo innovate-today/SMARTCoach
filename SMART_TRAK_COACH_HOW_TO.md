@@ -159,7 +159,7 @@ The public Results Board is read-only. It includes the latest meet for the selec
 
 Use **Speed Trak** from Training when you want a leaderboard of speed testing marks captured during Speed Metrics practice sessions or imported from a spreadsheet.
 
-Speed Trak pulls from saved Speed Metrics reps. It can show common fly and start metrics such as **10m Fly**, **30m Fly**, **Max Velocity**, **30m Start**, **60m Start**, **90m Start**, **150m Start**, and **250m Start**. Coaches can filter by metric, gender, year, athlete search, and how many results to show.
+Speed Trak pulls from saved Speed Metrics reps. It can show common fly and start metrics such as **10m Fly**, **30m Fly**, **Max Velocity**, **30m Start**, **60m Start**, **90m Start**, **150m Start**, and **250m Start**. Coaches can filter by metric, surface, timing method, speed focus, start type, gender, year, athlete search, and how many athletes to rank. Use the setup filters when results should only be compared under like-for-like testing conditions, such as Freelap rolling starts on turf.
 
 Use the **Leaderboard** tab to compare each athlete's single best qualifying mark for the selected speed metric and filters. Slower reps remain available in **Sessions** and **Athlete Progression**, but do not create duplicate leaderboard rows. Use **Sessions** to review complete testing days. Each session row shows the date, test, setup, surface, timing method, speed focus, athlete count, rep count, and fastest mark. Click **Open** to inspect every saved athlete rep from that session.
 
