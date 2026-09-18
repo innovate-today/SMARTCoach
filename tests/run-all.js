@@ -2037,6 +2037,7 @@ function checkSpeedTrakFeature() {
     "limitSelect",
     "function buildRows(practices,athletes)",
     'id="leaderboardTab"',
+    "[hidden]{display:none!important}",
     'id="sessionsTab"',
     'id="sessionsPanel"',
     'id="sessionRows"',
