@@ -1992,7 +1992,9 @@ function roundedMetric(value) {
 function normalizeSpeedSurface(value) {
   const text = cleanSetupText(value).toLowerCase();
   if (text === "track") return "Track";
-  if (text === "turf" || text === "grass") return "Turf";
+  if (text === "turf") return "Turf";
+  if (text === "grass") return "Grass";
+  if (text === "indoor" || text === "indoors") return "Indoors";
   return text ? cleanSetupText(value).slice(0, 40) : "";
 }
 
