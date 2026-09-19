@@ -2136,6 +2136,14 @@ function checkSpeedTrakFeature() {
     "(!start||row.startType===start)",
     "if(text==='grass')return'Grass'",
     "if(/^(fat|freelap|free lap|automatic|auto)$/.test(text))return'FAT'",
+    'id="progressionSeason"',
+    "function currentProgressionSeason()",
+    "function populateProgressionSeasons()",
+    "function progressionSeasonRows()",
+    "state.athletes.filter(function(athlete){return athlete.smartcoachActive!==false})",
+    "season!==current||active[athleteKey(row.athlete)]",
+    "els.progressionSeason.addEventListener('change'",
+    "@media(max-width:680px){.progression-controls{grid-template-columns:1fr}}",
     'id="openImportCleanupBtn"',
     'id="importCleanupModal"',
     'id="cleanupSavedOn"',
@@ -2211,6 +2219,9 @@ function checkSpeedTrakFeature() {
   }
   if (!guide.includes("Use **Athlete Progression** to compare one athlete across like-for-like testing conditions.")) {
     throw new Error("Coach guide missing Speed Trak Athlete Progression guidance");
+  }
+  if (!guide.includes("**Current season** lists only active athletes") || !guide.includes("athletes who have results saved in that season")) {
+    throw new Error("Coach guide missing season-dependent Speed Trak progression guidance");
   }
   [
     '<th data-sort="strideLength">',
