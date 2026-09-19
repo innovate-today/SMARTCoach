@@ -350,6 +350,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #m-field-practice .speed-ath-open{border:0;background:transparent;display:flex;align-items:center;gap:8px;text-align:left;padding:0;flex:1;min-width:0;font-family:inherit;color:#111827}
 #m-field-practice .speed-handle{border:0;background:transparent;font-size:20px;line-height:1;color:#6b7280;width:30px;text-align:center;flex:0 0 30px;padding:0;touch-action:none;cursor:grab;font-family:inherit}
 #m-field-practice .speed-ath-remove{border:1px solid #fecaca;background:#fff;color:#dc2626;border-radius:999px;width:30px;height:30px;font-size:18px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;flex:0 0 30px;font-family:inherit}
+#m-field-practice .speed-ath-pb{border:1px solid #bfd2ff;background:#eef4ff;color:#173f99;border-radius:999px;width:30px;height:30px;font-size:14px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;flex:0 0 30px;font-family:inherit}
 #m-field-practice .speed-ath-main{flex:1;min-width:0}
 #m-field-practice .speed-ath-name{font-size:17px;font-weight:900;line-height:1.15}
 #m-field-practice .speed-ath-meta{font-size:12px;color:#667085;margin-top:3px}
@@ -857,7 +858,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </div>
 
 <script>
-var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],activeId:'',mode:'field'}, POWER_TRAK={sessions:[],activeId:'',metrics:['broadJump','verticalJump','medBallThrow','squat','clean']}, PAST_RESULTS={rows:[],loaded:false,loading:false,error:'',accountKey:'',query:'',eventOnly:true}, XC_TOOLS_SETUP_OPENED={}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, AR_PROMISE=null, APP_SELECTED_WORKFLOW='training', APP_WORKFLOW_HAS_STORED=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
+var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],savedPracticeIds:{},activeId:'',mode:'field'}, POWER_TRAK={sessions:[],activeId:'',metrics:['broadJump','verticalJump','medBallThrow','squat','clean']}, PAST_RESULTS={rows:[],loaded:false,loading:false,error:'',accountKey:'',query:'',eventOnly:true}, XC_TOOLS_SETUP_OPENED={}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, AR_PROMISE=null, APP_SELECTED_WORKFLOW='training', APP_WORKFLOW_HAS_STORED=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
 var APP_WORKFLOWS=[
   {id:'training',label:'Training Trak',shortLabel:'Training',description:'Open workouts, attendance, and daily training notes.',groupView:'training',requiresGroup:true,destination:'training'},
   {id:'meets',label:'Race Trak',shortLabel:'Race',description:'Open race-day timing and scheduled meet entries.',groupView:'meets',requiresGroup:true,destination:'meet'},
@@ -4934,6 +4935,7 @@ function loadFieldPractice(){
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Field Practice could not load.');
     FIELD_PRACTICE.practices=Array.isArray(result.data.practices)?result.data.practices:[];
+    FIELD_PRACTICE.savedPracticeIds={};FIELD_PRACTICE.practices.forEach(function(item){if(item&&item.id)FIELD_PRACTICE.savedPracticeIds[item.id]=true;});
     if(!FIELD_PRACTICE.activeId&&FIELD_PRACTICE.practices.length){
       var today=todayISO();
       var todayPractice=FIELD_PRACTICE.practices.find(function(item){return item.date===today;});
@@ -5090,6 +5092,37 @@ function fieldPracticeDistanceOptionHtml(values,selected){
 }
 function fieldPracticeSpeedSetupLabel(defaults){
   return (defaults.zone==='Start'?'Start':'Fly')+' · '+defaults.distance+' '+defaults.unit+' timed'+(defaults.zone==='Fly'?' · '+defaults.flyZoneDistance+' '+defaults.unit+' fly zone':'');
+}
+function fieldPracticeSpeedTestLabel(defaults){
+  return String(defaults.distance||'')+String(defaults.unit||'m')+' '+(defaults.zone==='Start'?'Start':'Fly');
+}
+function fieldPracticeSpeedPb(athleteId,athleteName,defaults){
+  var key=fieldPracticeSpeedAthleteKey(athleteId,athleteName);
+  var nameKey=String(athleteName||'').trim().toLowerCase();
+  var wantedDistance=Number(defaults.distance)||0;
+  var best=null;
+  (FIELD_PRACTICE.practices||[]).forEach(function(practice){
+    if(!FIELD_PRACTICE.savedPracticeIds[practice.id])return;
+    (practice.speedMetrics||[]).forEach(function(row){
+      var rowKey=fieldPracticeSpeedKey(row);
+      var rowDefaults={zone:fieldPracticeSpeedType(row.metric||row.zone||practice.focus),distance:String(row.timedDistance||row.distance||practice.speedMetricDistance||''),unit:String(row.distanceUnit||row.unit||practice.speedMetricUnit||'m').toLowerCase()==='yd'?'yd':'m'};
+      var seconds=fieldPracticeParseSeconds(row.seconds||row.time);
+      var athleteMatches=rowKey===key||nameKey&&String(row.athleteName||'').trim().toLowerCase()===nameKey;
+      if(!athleteMatches||rowDefaults.zone!==defaults.zone||Number(rowDefaults.distance)!==wantedDistance||rowDefaults.unit!==defaults.unit||!seconds)return;
+      if(!best||seconds<best.seconds)best={seconds:seconds,date:row.date||practice.date||'',velocity:fieldPracticeSpeedMetricCalc(row).velocity};
+    });
+  });
+  return best;
+}
+function openFieldPracticeSpeedPb(athleteId,athleteName){
+  var practice=activeFieldPractice();
+  if(!practice)return;
+  var defaults=fieldPracticeSpeedDefaults(practice);
+  var label=fieldPracticeSpeedTestLabel(defaults);
+  var best=fieldPracticeSpeedPb(athleteId,athleteName,defaults);
+  document.getElementById('info-title').textContent=(athleteName||'Athlete')+' PB';
+  document.getElementById('info-body').innerHTML='<div style="font-size:13px;font-weight:800;color:#667085">'+ex(label)+'</div>'+(best?'<div style="font-size:34px;font-weight:900;color:#173f99;line-height:1.15;margin-top:8px">'+ex(best.seconds.toFixed(2))+' sec</div><div style="font-size:13px;color:#667085;margin-top:5px">'+ex(best.date||'Date unavailable')+(best.velocity?' · '+ex(best.velocity.toFixed(2))+' m/s':'')+'</div>':'<div style="font-size:16px;font-weight:800;margin-top:10px">No completed '+ex(label)+' result yet.</div>');
+  sm('m-info');
 }
 function toggleFieldPracticeSpeedSetup(open){
   FIELD_PRACTICE.speedSetupOpen=open===undefined?!FIELD_PRACTICE.speedSetupOpen:!!open;
@@ -5477,7 +5510,7 @@ function fieldPracticeSpeedCaptureHtml(p){
     var openRepId=fieldPracticeOpenSpeedRepId(key,athleteRows);
     var best=fieldPracticeBestSpeedRows(p).find(function(row){return fieldPracticeSpeedKey(row)===key;});
     var open=FIELD_PRACTICE.openSpeedAthleteKey===key;
-    html+='<div class="speed-ath-row" data-speed-row-key="'+ex(key)+'"><div class="speed-ath-toggle"><button type="button" class="speed-handle" aria-label="Drag '+ex(athleteName)+'" onpointerdown="startFieldPracticeSpeedDrag(event,\''+fieldPracticeJs(key)+'\')" onpointerup="finishFieldPracticeSpeedDrag(event)" onpointercancel="cancelFieldPracticeSpeedDrag()">☰</button><button type="button" class="speed-ath-open" onpointerdown="startFieldPracticeSpeedToggle(event,\''+fieldPracticeJs(key)+'\')" onpointerup="finishFieldPracticeSpeedToggle(event,\''+fieldPracticeJs(key)+'\')" onpointercancel="cancelFieldPracticeSpeedToggle()"><span class="speed-ath-main"><span class="speed-ath-name">'+ex(athleteName)+'</span><span class="speed-ath-meta">'+athleteRows.length+' reps'+(best&&best.velocity?' · best '+best.velocity.toFixed(2)+' m/s':'')+'</span></span></button><button type="button" class="speed-ath-remove" aria-label="Remove '+ex(athleteName)+'" onclick="confirmRemoveFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\')">×</button></div>';
+    html+='<div class="speed-ath-row" data-speed-row-key="'+ex(key)+'"><div class="speed-ath-toggle"><button type="button" class="speed-handle" aria-label="Drag '+ex(athleteName)+'" onpointerdown="startFieldPracticeSpeedDrag(event,\''+fieldPracticeJs(key)+'\')" onpointerup="finishFieldPracticeSpeedDrag(event)" onpointercancel="cancelFieldPracticeSpeedDrag()">☰</button><button type="button" class="speed-ath-open" onpointerdown="startFieldPracticeSpeedToggle(event,\''+fieldPracticeJs(key)+'\')" onpointerup="finishFieldPracticeSpeedToggle(event,\''+fieldPracticeJs(key)+'\')" onpointercancel="cancelFieldPracticeSpeedToggle()"><span class="speed-ath-main"><span class="speed-ath-name">'+ex(athleteName)+'</span><span class="speed-ath-meta">'+athleteRows.length+' reps'+(best&&best.velocity?' · best '+best.velocity.toFixed(2)+' m/s':'')+'</span></span></button><button type="button" class="speed-ath-pb" aria-label="Show '+ex(athleteName)+' PB for '+ex(fieldPracticeSpeedTestLabel(defaults))+'" onclick="openFieldPracticeSpeedPb(\''+fieldPracticeJs(athleteId)+'\',\''+fieldPracticeJs(athleteName)+'\')">i</button><button type="button" class="speed-ath-remove" aria-label="Remove '+ex(athleteName)+'" onclick="confirmRemoveFieldPracticeSpeedAthlete(\''+fieldPracticeJs(key)+'\')">×</button></div>';
     if(open){
       html+='<div class="speed-ath-detail">';
       athleteRows.forEach(function(row){
@@ -5811,6 +5844,7 @@ function saveFieldPractice(practice){
   }).then(function(result){
     if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Field Practice save failed.');
     FIELD_PRACTICE.practices=Array.isArray(result.data.practices)?result.data.practices:FIELD_PRACTICE.practices;
+    FIELD_PRACTICE.savedPracticeIds={};FIELD_PRACTICE.practices.forEach(function(item){if(item&&item.id)FIELD_PRACTICE.savedPracticeIds[item.id]=true;});
     if(status)status.textContent=speedMode?'Speed Trak saved to SMART Trak.':'Field Practice saved.';
     renderFieldPractice();
     return result.data;
