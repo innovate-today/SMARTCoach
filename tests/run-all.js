@@ -2202,13 +2202,15 @@ function checkSpeedTrakFeature() {
     "(!start||row.startType===start)",
     "if(text==='grass')return'Grass'",
     "if(/^(fat|freelap|free lap|automatic|auto)$/.test(text))return'FAT'",
-    'id="progressionSeason"',
-    "function currentProgressionSeason()",
+    'id="progressionSeasonPicker"',
+    'id="progressionSeasonOptions"',
+    "selectedProgressionYears:[]",
+    "function progressionYears()",
     "function populateProgressionSeasons()",
     "function progressionSeasonRows()",
-    "state.athletes.filter(function(athlete){return athlete.smartcoachActive!==false})",
-    "season!==current||active[athleteKey(row.athlete)]",
-    "els.progressionSeason.addEventListener('change'",
+    "selected.indexOf(String(row.seasonYear||row.year||''))>=0",
+    "els.progressionSeasonOptions.addEventListener('change'",
+    "querySelectorAll('input:checked')",
     "@media(max-width:680px){.progression-controls{grid-template-columns:1fr}}",
     'id="openImportCleanupBtn"',
     'id="importCleanupModal"',
@@ -2298,8 +2300,8 @@ function checkSpeedTrakFeature() {
   if (!guide.includes("Use **Athlete Progression** to compare one athlete across like-for-like testing conditions.")) {
     throw new Error("Coach guide missing Speed Trak Athlete Progression guidance");
   }
-  if (!guide.includes("**Current season** lists only active athletes") || !guide.includes("athletes who have results saved in that season")) {
-    throw new Error("Coach guide missing season-dependent Speed Trak progression guidance");
+  if (!guide.includes("Open **Seasons** and check one or more saved years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
+    throw new Error("Coach guide missing multi-year Speed Trak progression guidance");
   }
   [
     '<th data-sort="strideLength">',
