@@ -2208,9 +2208,12 @@ function checkSpeedTrakFeature() {
     "function progressionYears()",
     "function populateProgressionSeasons()",
     "function progressionSeasonRows()",
+    "function speedMetricOrder(a,b)",
+    ".sort(speedMetricOrder)",
     "selected.indexOf(String(row.seasonYear||row.year||''))>=0",
     "els.progressionSeasonOptions.addEventListener('change'",
     "querySelectorAll('input:checked')",
+    "function y(value){return pad.top+(max-value)/spread*plotHeight}",
     "els.progressionSeasonPicker.open&&!els.progressionSeasonPicker.contains(event.target)",
     "event.key==='Escape'&&els.progressionSeasonPicker.open",
     'id="progressionChart"',
@@ -2243,6 +2246,9 @@ function checkSpeedTrakFeature() {
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
   });
+  if (page.includes("els.progressionAthlete.value='';els.progressionMetric.value='';els.progressionSurface.value='';els.progressionTiming.value='';renderAthleteProgression()")) {
+    throw new Error("Speed Trak season changes should retain valid progression selections");
+  }
   const usedSpeedHeaders = (page.match(/var SPEED_IMPORT_USED_HEADERS=new Set\(\[([^\]]+)\]\)/) || [])[1] || "";
   ["timingmethod", "distanceunit", "graduationyear", "athlete", "date", "result", "event", "year"].forEach((header) => {
     if (!usedSpeedHeaders.includes(`'${header}'`)) throw new Error(`Speed Trak full source import missing used header ${header}`);
