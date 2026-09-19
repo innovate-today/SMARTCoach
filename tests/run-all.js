@@ -2087,6 +2087,12 @@ function checkSpeedTrakFeature() {
     "function deleteSpeedResult()",
     "function savePracticeList(practices)",
     "function parseSpeedImportRows(text)",
+    "var SPEED_IMPORT_USED_HEADERS=new Set(",
+    "function speedImportHeaderIsUsed(value)",
+    "if(speedImportHeaderIsUsed(header))row[normalizeHeader(header)]=cells[i]||''",
+    "timingmethod",
+    "distanceunit",
+    "graduationyear",
     "function metricDistanceFromLabel(label)",
     "yd|yard|yards|m|meter|meters",
     "var unit=suppliedDistance?(suppliedUnit||labelDistance.unit||'m'):(labelDistance.unit||suppliedUnit||'m')",
@@ -2195,6 +2201,13 @@ function checkSpeedTrakFeature() {
     "headers:headers()",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
+  });
+  const usedSpeedHeaders = (page.match(/var SPEED_IMPORT_USED_HEADERS=new Set\(\[([^\]]+)\]\)/) || [])[1] || "";
+  ["timingmethod", "distanceunit", "graduationyear", "athlete", "date", "result", "event", "year"].forEach((header) => {
+    if (!usedSpeedHeaders.includes(`'${header}'`)) throw new Error(`Speed Trak full source import missing used header ${header}`);
+  });
+  ["eventid", "group", "resultunit", "better", "class", "yearlyattempts", "totalattempts", "pr"].forEach((header) => {
+    if (usedSpeedHeaders.includes(`'${header}'`)) throw new Error(`Speed Trak should ignore source-only header ${header}`);
   });
 
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
