@@ -7062,6 +7062,8 @@ function checkFieldPracticePhaseOne() {
     "function normalizeFieldPracticeAttempts(items)",
     "function normalizeFieldPracticeAthleteSummaries(items)",
     "function normalizeFieldPracticeSpeedMetrics(items)",
+    "const contactId = cleanSetupText(source.contactId)",
+    "const smartcoachAthleteId = cleanSetupText(source.smartcoachAthleteId)",
     "speedMetrics: normalizeFieldPracticeSpeedMetrics(source.speedMetrics)",
     "function fieldPracticeSpeedOnly(query)",
     "function fieldPracticeHasSpeedMetrics(practice)",
