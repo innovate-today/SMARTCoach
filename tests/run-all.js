@@ -2211,6 +2211,11 @@ function checkSpeedTrakFeature() {
     "selected.indexOf(String(row.seasonYear||row.year||''))>=0",
     "els.progressionSeasonOptions.addEventListener('change'",
     "querySelectorAll('input:checked')",
+    'id="progressionChart"',
+    'id="progressionChartEmpty"',
+    "function renderProgressionChart(sessions)",
+    "session.newPb?'#0b8a4b':'#2563eb'",
+    "if(state.currentView==='progression')renderProgressionChart(buildAthleteProgressionRows())",
     "@media(max-width:680px){.progression-controls{grid-template-columns:1fr}}",
     'id="openImportCleanupBtn"',
     'id="importCleanupModal"',
@@ -2302,6 +2307,9 @@ function checkSpeedTrakFeature() {
   }
   if (!guide.includes("Open **Seasons** and check one or more saved years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
     throw new Error("Coach guide missing multi-year Speed Trak progression guidance");
+  }
+  if (!guide.includes("**Best Time Trend**") || !guide.includes("green points identify a new chronological PB")) {
+    throw new Error("Coach guide missing Speed Trak progression chart guidance");
   }
   [
     '<th data-sort="strideLength">',
