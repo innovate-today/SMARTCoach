@@ -2223,6 +2223,9 @@ function checkSpeedTrakFeature() {
     "function renderProgressionChart(sessions)",
     "function showProgressionChartPoint(event)",
     "function showProgressionChartSession(point)",
+    "function clearProgressionRowHighlight()",
+    "function highlightProgressionSession(session)",
+    "classList.add('progression-linked-row')",
     "function progressionBestDetail(session)",
     "function showProgressionTableDetail(target)",
     "candidate.session.date===date&&formatSeconds(candidate.session.best)===best",
@@ -2330,7 +2333,7 @@ function checkSpeedTrakFeature() {
   if (!guide.includes("Open **Seasons** and check one or more saved years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
     throw new Error("Coach guide missing multi-year Speed Trak progression guidance");
   }
-  if (!guide.includes("**Best Time Trend**") || !guide.includes("lower time values are faster") || !guide.includes("green points identify a new chronological PB") || !guide.includes("same bubble on its matching chart dot")) {
+  if (!guide.includes("**Best Time Trend**") || !guide.includes("lower time values are faster") || !guide.includes("green points identify a new chronological PB") || !guide.includes("same bubble on its matching chart dot") || !guide.includes("highlight the matching session row")) {
     throw new Error("Coach guide missing Speed Trak progression chart guidance");
   }
   [
