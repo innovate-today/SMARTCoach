@@ -2067,6 +2067,8 @@ function checkSpeedTrakFeature() {
     "open?'Close':'Open'",
     "session-detail-row",
     "function populateSessionFilters(sessions)",
+    "'All season years'",
+    "session.seasonYear===els.sessionYear.value",
     "function sessionRepNumbers(rows)",
     "data-session-edit",
     "data-session-delete",
