@@ -2096,6 +2096,7 @@ function checkSpeedTrakFeature() {
     "function markSavedSpeedImportRows(rows)",
     "row.alreadySaved?'Already saved':'Ready'",
     "Ready rows will be saved; Already saved rows will be skipped.",
+    "#saveImportBtn:disabled{background:#dbe2ec;color:#64748b",
     "els.saveImportBtn.disabled=true;els.importStatus.className='import-status'",
     "function speedImportSessionGroups(rows)",
     "function speedImportSetupSummary(row)",
