@@ -2219,12 +2219,13 @@ function checkSpeedTrakFeature() {
     'id="progressionChart"',
     'id="progressionChartEmpty"',
     'id="progressionChartTooltip"',
-    'id="progressionTableTooltip"',
     "<span>Lower time is faster</span>",
     "function renderProgressionChart(sessions)",
     "function showProgressionChartPoint(event)",
+    "function showProgressionChartSession(point)",
     "function progressionBestDetail(session)",
     "function showProgressionTableDetail(target)",
+    "candidate.session.date===date&&formatSeconds(candidate.session.best)===best",
     "class=\"progression-best-detail\"",
     "state.progressionChartPoints.push({x:px,y:py,session:session})",
     "els.progressionChart.addEventListener('pointerdown',showProgressionChartPoint)",
@@ -2256,6 +2257,9 @@ function checkSpeedTrakFeature() {
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Speed Trak page missing ${text}`);
   });
+  if (page.includes('id="progressionTableTooltip"')) {
+    throw new Error("Speed Trak table Best details should open on the matching chart point");
+  }
   if (page.includes("els.progressionAthlete.value='';els.progressionMetric.value='';els.progressionSurface.value='';els.progressionTiming.value='';renderAthleteProgression()")) {
     throw new Error("Speed Trak season changes should retain valid progression selections");
   }
@@ -2326,7 +2330,7 @@ function checkSpeedTrakFeature() {
   if (!guide.includes("Open **Seasons** and check one or more saved years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
     throw new Error("Coach guide missing multi-year Speed Trak progression guidance");
   }
-  if (!guide.includes("**Best Time Trend**") || !guide.includes("lower time values are faster") || !guide.includes("green points identify a new chronological PB") || !guide.includes("either a chart point or a **Best** value")) {
+  if (!guide.includes("**Best Time Trend**") || !guide.includes("lower time values are faster") || !guide.includes("green points identify a new chronological PB") || !guide.includes("same bubble on its matching chart dot")) {
     throw new Error("Coach guide missing Speed Trak progression chart guidance");
   }
   [
