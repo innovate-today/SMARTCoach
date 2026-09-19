@@ -5128,6 +5128,13 @@ function toggleFieldPracticeSpeedSetup(open){
   FIELD_PRACTICE.speedSetupOpen=open===undefined?!FIELD_PRACTICE.speedSetupOpen:!!open;
   renderFieldPractice();
 }
+function finishFieldPracticeSpeedSetup(){
+  var practice=activeFieldPractice();
+  if(!practice)return;
+  practice.speedSetupTouched=1;
+  FIELD_PRACTICE.speedSetupOpen=false;
+  renderFieldPractice();
+}
 function syncFieldPracticeSpeedMetrics(p,force){
   if(!p)return;
   p.speedMetrics=Array.isArray(p.speedMetrics)?p.speedMetrics:[];
@@ -5498,7 +5505,7 @@ function fieldPracticeSpeedCaptureHtml(p){
       (defaults.zone==='Fly'?'<label class="speed-setup-label"><span>Fly Zone</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;flyZoneDistance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.flyZoneDistance)+'</select></label>':'')+
       '<label class="speed-setup-label"><span>Speed Metric</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;distance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.distance)+'</select></label>'+
       '<label class="speed-setup-label"><span>Unit</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;unit&quot;,this.value)"><option value="m" '+(defaults.unit==='m'?'selected':'')+'>Meters</option><option value="yd" '+(defaults.unit==='yd'?'selected':'')+'>Yards</option></select></label>'+
-    '</div><div class="fp-text">Speed Metric is the timed distance used for MPH and velocity.</div></div>':'')+
+    '</div><div class="fp-text">Speed Metric is the timed distance used for MPH and velocity.</div><button class="mbtn" type="button" onclick="finishFieldPracticeSpeedSetup()" style="width:100%;margin:10px 0 0;background:#2B4FCC">Done</button></div>':'')+
     '<div class="fp-card speed-add-athlete-card '+(addOpen?'open':'collapsed')+'"><button class="speed-add-athlete-toggle" type="button" onclick="toggleFieldPracticeSpeedAddAthlete()">+ Athlete</button>'+(addOpen?addAthleteControls:'')+'</div>'+
     '<div class="fp-card"><div class="fp-title">Speed Capture</div><div class="fp-text">Tap an athlete to open details. Drag the handle beside a name to reorder without opening details. Only one athlete stays open at a time.</div>';
   if(!athletes.length)return html+'<div class="fp-text">Choose a group or add an athlete to this session.</div></div><div id="fp-speed-results"></div>';

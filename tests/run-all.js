@@ -6832,6 +6832,8 @@ function checkFieldPracticePhaseOne() {
     "speed-ath-pb",
     "No completed '+ex(label)+' result yet.",
     "function toggleFieldPracticeSpeedSetup(open)",
+    "function finishFieldPracticeSpeedSetup()",
+    "onclick=\"finishFieldPracticeSpeedSetup()\"",
     "Speed Setup",
     "Fly Zone",
     "Speed Metric",
