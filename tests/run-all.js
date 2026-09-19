@@ -6005,6 +6005,7 @@ function checkMobileWorkflowOpeningFlow() {
     "{id:'calendarWorkout',label:'Training Calendar'",
     "if(id==='scheduledWorkout')id='calendarWorkout';",
     "function renderWorkflowHome()",
+    "if(t.closest&&t.closest('.workflow-row,.quick-row'))return;",
     "APP_WORKFLOW_HAS_STORED=false",
     "APP_WORKFLOW_HAS_STORED=!!stored;",
     "if(stored&&stored!==APP_SELECTED_WORKFLOW)setAccountStorage(appWorkflowStorageKey(),APP_SELECTED_WORKFLOW);",

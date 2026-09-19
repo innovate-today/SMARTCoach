@@ -11519,6 +11519,7 @@ document.addEventListener('touchstart',function(e){
   prepareFeedbackAudio();
   var t=e.target;
   if(t.closest&&t.closest('.picker-row'))return;
+  if(t.closest&&t.closest('.workflow-row,.quick-row'))return;
   if(t.closest&&t.closest('#m-attendance'))return;
   if(t.closest&&t.closest('#m-keep-trak'))return;
   var btn=t.closest&&t.closest('button');
