@@ -2107,6 +2107,8 @@ function checkSpeedTrakFeature() {
     "els.importTab.addEventListener('click',function(){setSpeedTrakView('import')})",
     "data-session-open",
     "function metricLabel(row,practice)",
+    "distance+unit+' '+type",
+    "practice.speedEvent",
     "function openSpeedResultModal(row)",
     "function saveSpeedResult()",
     "function deleteSpeedResult()",
