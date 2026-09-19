@@ -3940,10 +3940,18 @@ async function accountSpeedBoardLink(req, res) {
   }
   const token = speedBoardToken(accountKey, sharing.tokenVersion);
   const metric = cleanSetupText(firstQueryValue(req.query && req.query.metric)).slice(0, 80);
+  const surface = normalizeSpeedSurface(firstQueryValue(req.query && req.query.surface));
+  const timingMethod = normalizeSpeedTimingMethod(firstQueryValue(req.query && req.query.timingMethod));
+  const speedFocus = normalizeSpeedFocus(firstQueryValue(req.query && req.query.speedFocus));
+  const startType = normalizeSpeedStartType(firstQueryValue(req.query && req.query.startType));
   const gender = normalizeSpeedBoardGender(firstQueryValue(req.query && req.query.gender));
   const year = cleanSetupText(firstQueryValue(req.query && req.query.year)).slice(0, 20);
   const params = new URLSearchParams({ account: accountKey, token });
   if (metric) params.set("metric", metric);
+  if (surface) params.set("surface", surface);
+  if (timingMethod) params.set("timingMethod", timingMethod);
+  if (speedFocus) params.set("speedFocus", speedFocus);
+  if (startType) params.set("startType", startType);
   if (gender) params.set("gender", gender);
   if (year) params.set("year", year);
   params.set("challenge", sharing.challengeType);
@@ -3953,6 +3961,10 @@ async function accountSpeedBoardLink(req, res) {
       account: accountKey,
       token,
       metric: params.get("metric"),
+      surface: params.get("surface"),
+      timingMethod: params.get("timingMethod"),
+      speedFocus: params.get("speedFocus"),
+      startType: params.get("startType"),
       gender: params.get("gender"),
       year: params.get("year"),
       challenge: params.get("challenge"),
@@ -3985,6 +3997,10 @@ async function accountSpeedBoard(req, res) {
   }
   try {
     const metric = speedBoardOptionalFilter(firstQueryValue(req.query && req.query.metric) || share.metric).slice(0, 80);
+    const surface = normalizeSpeedSurface(speedBoardOptionalFilter(firstQueryValue(req.query && req.query.surface) || share.surface));
+    const timingMethod = normalizeSpeedTimingMethod(speedBoardOptionalFilter(firstQueryValue(req.query && req.query.timingMethod) || share.timingMethod));
+    const speedFocus = normalizeSpeedFocus(speedBoardOptionalFilter(firstQueryValue(req.query && req.query.speedFocus) || share.speedFocus));
+    const startType = normalizeSpeedStartType(speedBoardOptionalFilter(firstQueryValue(req.query && req.query.startType) || share.startType));
     const gender = normalizeSpeedBoardGender(firstQueryValue(req.query && req.query.gender) || share.gender);
     const year = speedBoardOptionalFilter(firstQueryValue(req.query && req.query.year) || share.year).slice(0, 20);
     const [fieldPracticeState, ghlLocationName] = await Promise.all([
@@ -3995,7 +4011,7 @@ async function accountSpeedBoard(req, res) {
     const gameSettings = normalizeSpeedBoardGameSettings(sharing.gameSettings);
     const challengeTypes = normalizeSpeedBoardChallenges(share.challenges || firstQueryValue(req.query && req.query.challenges) || sharing.challengeTypes);
     const filterOptions = speedBoardFilterOptions(practices);
-    const rows = buildSpeedBoardRows({ practices, metric, gender, year, gameSettings });
+    const rows = buildSpeedBoardRows({ practices, metric, surface, timingMethod, speedFocus, startType, gender, year, gameSettings });
     const totalReps = rows.reduce((sum, row) => sum + row.reps, 0);
     res.status(200).json({
       success: true,
@@ -4008,9 +4024,13 @@ async function accountSpeedBoard(req, res) {
       gameSettings,
       filters: {
         metric: metric || "All metrics",
+        surface,
+        timingMethod,
+        speedFocus,
+        startType,
         gender: gender || "",
         year: year || "",
-        label: speedBoardFilterLabel({ metric, gender, year }),
+        label: speedBoardFilterLabel({ metric, surface, timingMethod, speedFocus, startType, gender, year }),
       },
       filterOptions,
       totals: {
@@ -4772,10 +4792,14 @@ function normalizeResultsBoardGrade(value) {
   return String(grade);
 }
 
-function buildSpeedBoardRows({ practices, metric, gender, year, gameSettings }) {
+function buildSpeedBoardRows({ practices, metric, surface, timingMethod, speedFocus, startType, gender, year, gameSettings }) {
   const rowsByAthlete = new Map();
   normalizeSpeedBoardReps(practices).filter((rep) => {
     if (metric && rep.metric !== metric) return false;
+    if (surface && rep.surface !== surface) return false;
+    if (timingMethod && rep.timingMethod !== timingMethod) return false;
+    if (speedFocus && rep.speedFocus !== speedFocus) return false;
+    if (startType && rep.startType !== startType) return false;
     if (gender && rep.gender !== gender) return false;
     if (year && String(rep.year) !== String(year)) return false;
     return true;
@@ -4798,6 +4822,10 @@ function speedBoardFilterOptions(practices) {
   const reps = normalizeSpeedBoardReps(practices);
   return {
     metrics: uniqueStrings(reps.map((rep) => rep.metric)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    surfaces: uniqueStrings(reps.map((rep) => rep.surface)).sort(),
+    timingMethods: uniqueStrings(reps.map((rep) => rep.timingMethod)).sort(),
+    speedFocuses: uniqueStrings(reps.map((rep) => rep.speedFocus)).sort(),
+    startTypes: uniqueStrings(reps.map((rep) => rep.startType)).sort(),
     genders: uniqueStrings(reps.map((rep) => rep.gender)).sort(),
     years: uniqueStrings(reps.map((rep) => rep.year)).sort((a, b) => String(b).localeCompare(String(a))),
   };
@@ -4820,6 +4848,10 @@ function normalizeSpeedBoardReps(practices) {
         year: cleanSetupText(rep.year || practice.year || date.slice(0, 4)),
         grade: cleanSetupText(rep.grade),
         metric: cleanSetupText(rep.metric) || speedBoardMetricLabel(rep, practice),
+        surface: normalizeSpeedSurface(rep.surface || practice.surface),
+        timingMethod: normalizeSpeedTimingMethod(rep.timingMethod || practice.timingMethod),
+        speedFocus: normalizeSpeedFocus(rep.speedFocus || practice.speedFocus),
+        startType: normalizeSpeedStartType(rep.startType || rep.start || practice.startType || practice.setupType),
         seconds,
         meters,
         velocity: speedBoardRound(rep.velocity || meters / seconds, 2),
@@ -4921,8 +4953,8 @@ function speedBoardFastestWinner(rows) {
   return { name: winner.athleteName, value: winner.bestSeconds, label: `${speedBoardRound(winner.bestSeconds, 2)} sec` };
 }
 
-function speedBoardFilterLabel({ metric, gender, year }) {
-  return [metric || "All metrics", gender === "boy" ? "Boys" : gender === "girl" ? "Girls" : "", year].filter(Boolean).join(" · ");
+function speedBoardFilterLabel({ metric, surface, timingMethod, speedFocus, startType, gender, year }) {
+  return [metric || "All metrics", surface, timingMethod, speedFocus, startType, gender === "boy" ? "Boys" : gender === "girl" ? "Girls" : "", year].filter(Boolean).join(" · ");
 }
 
 function speedBoardSeconds(value) {
@@ -7987,6 +8019,10 @@ function speedBoardShareKey(input) {
     a: normalizeSetupAccountKey(source.account),
     t: cleanSetupText(source.token),
     m: cleanSetupText(source.metric),
+    su: cleanSetupText(source.surface),
+    tm: cleanSetupText(source.timingMethod),
+    f: cleanSetupText(source.speedFocus),
+    st: cleanSetupText(source.startType),
     g: cleanSetupText(source.gender),
     y: cleanSetupText(source.year),
     c: cleanSetupText(source.challenge),
@@ -8004,6 +8040,10 @@ function speedBoardShareFromKey(value) {
       account: normalizeSetupAccountKey(raw.a || raw.account),
       token: cleanSetupText(raw.t || raw.token),
       metric: cleanSetupText(raw.m || raw.metric),
+      surface: cleanSetupText(raw.su || raw.surface),
+      timingMethod: cleanSetupText(raw.tm || raw.timingMethod),
+      speedFocus: cleanSetupText(raw.f || raw.speedFocus),
+      startType: cleanSetupText(raw.st || raw.startType),
       gender: cleanSetupText(raw.g || raw.gender),
       year: cleanSetupText(raw.y || raw.year),
       challenge: cleanSetupText(raw.c || raw.challenge),
