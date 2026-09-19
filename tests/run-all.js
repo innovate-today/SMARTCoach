@@ -2092,6 +2092,11 @@ function checkSpeedTrakFeature() {
     "cells.splice(10,0,'')",
     "function buildSpeedImportPractice(rows,index)",
     "function speedImportSessionKey(row)",
+    "function speedImportRepKey(row)",
+    "function markSavedSpeedImportRows(rows)",
+    "row.alreadySaved?'Already saved':'Ready'",
+    "Ready rows will be saved; Already saved rows will be skipped.",
+    "els.saveImportBtn.disabled=true;els.importStatus.className='import-status'",
     "function speedImportSessionGroups(rows)",
     "function speedImportSetupSummary(row)",
     "reps in '+sessions.length+' session",
@@ -2210,6 +2215,9 @@ function checkSpeedTrakFeature() {
   }
   if (!guide.includes("**Show Rejected Rows**") || !guide.includes("original spreadsheet row number")) {
     throw new Error("Coach guide missing rejected Speed Trak import guidance");
+  }
+  if (!guide.includes("**Already saved**") || !guide.includes("same spreadsheet is previewed again")) {
+    throw new Error("Coach guide missing Speed Trak duplicate import guidance");
   }
   if (!guide.includes("**10yd Fly**") || !guide.includes("**40yd Dash**")) {
     throw new Error("Coach guide missing yard-based Speed Trak import guidance");
