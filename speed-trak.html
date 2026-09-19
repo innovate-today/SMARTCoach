@@ -580,6 +580,8 @@ els.cancelDeleteSpeedSessionBtn.addEventListener('click',closeDeleteSpeedSession
 els.confirmDeleteSpeedSessionBtn.addEventListener('click',deleteSpeedSession);
 els.deleteSpeedSessionModal.addEventListener('click',function(event){if(event.target===els.deleteSpeedSessionModal)closeDeleteSpeedSessionModal()});
 els.progressionSeasonOptions.addEventListener('change',function(){state.selectedProgressionYears=Array.from(els.progressionSeasonOptions.querySelectorAll('input:checked')).map(function(input){return input.value});els.progressionAthlete.value='';els.progressionMetric.value='';els.progressionSurface.value='';els.progressionTiming.value='';renderAthleteProgression()});
+document.addEventListener('pointerdown',function(event){if(els.progressionSeasonPicker.open&&!els.progressionSeasonPicker.contains(event.target))els.progressionSeasonPicker.open=false});
+document.addEventListener('keydown',function(event){if(event.key==='Escape'&&els.progressionSeasonPicker.open){els.progressionSeasonPicker.open=false;els.progressionSeasonSummary.focus()}});
 window.addEventListener('resize',function(){if(state.currentView==='progression')renderProgressionChart(buildAthleteProgressionRows())});
 els.importTab.addEventListener('click',function(){setSpeedTrakView('import')});
 els.exportSpeedDataBtn.addEventListener('click',exportSpeedData);

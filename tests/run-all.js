@@ -2211,6 +2211,8 @@ function checkSpeedTrakFeature() {
     "selected.indexOf(String(row.seasonYear||row.year||''))>=0",
     "els.progressionSeasonOptions.addEventListener('change'",
     "querySelectorAll('input:checked')",
+    "els.progressionSeasonPicker.open&&!els.progressionSeasonPicker.contains(event.target)",
+    "event.key==='Escape'&&els.progressionSeasonPicker.open",
     'id="progressionChart"',
     'id="progressionChartEmpty"',
     "function renderProgressionChart(sessions)",
