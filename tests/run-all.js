@@ -2213,6 +2213,9 @@ function checkSpeedTrakFeature() {
     "if(/^(fat|freelap|free lap|automatic|auto)$/.test(text))return'FAT'",
     'id="progressionSeasonPicker"',
     'id="progressionSeasonOptions"',
+    '<label>Years<details',
+    'Choose years',
+    'No years available',
     "selectedProgressionYears:[]",
     "function progressionYears()",
     "function populateProgressionSeasons()",
@@ -2345,7 +2348,7 @@ function checkSpeedTrakFeature() {
   if (!guide.includes("swipe the compact session table sideways")) {
     throw new Error("Coach guide missing mobile Speed Trak progression guidance");
   }
-  if (!guide.includes("Open **Seasons** and check one or more workout years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
+  if (!guide.includes("Open **Years** and check one or more workout years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
     throw new Error("Coach guide missing multi-year Speed Trak progression guidance");
   }
   if (!guide.includes("**Best Time Trend**") || !guide.includes("lower time values are faster") || !guide.includes("green points identify a new chronological PB") || !guide.includes("same bubble on its matching chart dot") || !guide.includes("highlight the matching session row")) {
