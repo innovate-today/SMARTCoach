@@ -7085,6 +7085,9 @@ function checkFieldPracticePhaseOne() {
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Field Practice API missing ${text}`);
   });
+  if (!/function normalizeFieldPracticeSpeedMetrics\(items\)[\s\S]*?const athleteId = cleanSetupText\(source\.athleteId\);\s*const contactId = cleanSetupText\(source\.contactId\);\s*const smartcoachAthleteId = cleanSetupText\(source\.smartcoachAthleteId\);/.test(api)) {
+    throw new Error("Field Practice speed metric identity declarations are not scoped to the speed normalizer");
+  }
   console.log("Field Practice phase one ok");
 }
 

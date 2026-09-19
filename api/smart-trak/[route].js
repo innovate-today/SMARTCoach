@@ -1942,8 +1942,6 @@ function normalizeFieldPracticeAthleteSummaries(items) {
   return (Array.isArray(items) ? items : []).map((item, index) => {
     const source = item && typeof item === "object" ? item : {};
     const athleteId = cleanSetupText(source.athleteId);
-    const contactId = cleanSetupText(source.contactId);
-    const smartcoachAthleteId = cleanSetupText(source.smartcoachAthleteId);
     const athleteName = displayNameCase(source.athleteName || source.name).slice(0, 120);
     const focus = cleanSetupText(source.focus).slice(0, 120);
     const summary = cleanSetupText(source.summary || source.note || source.coachSummary).slice(0, 1000);
@@ -2043,6 +2041,8 @@ function normalizeFieldPracticeSpeedMetrics(items) {
   return (Array.isArray(items) ? items : []).map((item, index) => {
     const source = item && typeof item === "object" ? item : {};
     const athleteId = cleanSetupText(source.athleteId);
+    const contactId = cleanSetupText(source.contactId);
+    const smartcoachAthleteId = cleanSetupText(source.smartcoachAthleteId);
     const athleteName = displayNameCase(source.athleteName || source.name).slice(0, 120);
     const zone = cleanSetupText(source.zone || source.focus).slice(0, 120);
     const unitText = cleanSetupText(source.distanceUnit || source.unit).toLowerCase();
