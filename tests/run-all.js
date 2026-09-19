@@ -2068,6 +2068,11 @@ function checkSpeedTrakFeature() {
     "function renderAthleteProgression()",
     "session.newPb=true",
     "function setSpeedTrakView(view)",
+    'id="importTab"',
+    ">Import Data</button>",
+    "view==='import'?'import':'leaderboard'",
+    "els.leaderboardImport.hidden=!importing",
+    "els.importTab.addEventListener('click',function(){setSpeedTrakView('import')})",
     "data-session-open",
     "function metricLabel(row,practice)",
     "function openSpeedResultModal(row)",
@@ -2370,10 +2375,8 @@ function checkSpeedTrakFeature() {
   });
   [
     "/api/smart-trak/dashboard-support?v=",
-    "speedPracticeTrainingRows(fieldPracticeRows,dashboardRows)",
     "if(!metrics.length)return;",
     "speedMetricSession:true",
-    '<option value="speed_training">Speed / sprints</option>',
     "if(filter==='speed_training')return hasSpeedTraining(row.name);",
     "if(filter==='speed_training')return !!row.speedMetricSession;",
     "if(filter==='speed_training')return false;",
@@ -2398,7 +2401,9 @@ function checkSpeedTrakFeature() {
     "var fieldPracticeRows=[];",
     "var liveUrl='/api/smart-trak/dashboard?v='+stamp+'&light=1';",
     "fetch('/api/smart-trak/dashboard?v='+stamp+'&light=1&refresh=1'",
-    "recentTrainingRows=normalizeDashboardPersonNameRows(result.data.recentTrainingSyncs||[]).concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows));",
+    "recentTrainingRows=normalizeDashboardPersonNameRows(result.data.recentTrainingSyncs||[]);",
+    "recentTrainingRows=(baseTrainingRows||[]).slice();",
+    "recentTrainingRows=normalRows;",
     "function saveSpeedPracticeCorrection(reason)",
     "function updateSpeedPracticeForRow(row,updater)",
     "function speedDistanceFromCorrection(value,row)",
@@ -2418,6 +2423,12 @@ function checkSpeedTrakFeature() {
     "practice.speedMetrics=(practice.speedMetrics||[]).filter(function(metric){return metrics.indexOf(metric)<0;});",
   ].forEach((text) => {
     if (!dashboard.includes(text)) throw new Error(`Dashboard Speed Metrics training-load bridge missing ${text}`);
+  });
+  [
+    '<option value="speed_training">Speed / sprints</option>',
+    "concat(speedPracticeTrainingRows(fieldPracticeRows,dashboardRows))",
+  ].forEach((text) => {
+    if (dashboard.includes(text)) throw new Error(`Dashboard Completed Workouts should exclude Speed Metrics bridge ${text}`);
   });
   if (/Void/.test(page)) throw new Error("Speed Trak should not expose void actions.");
   console.log("Speed Trak feature ok");
@@ -2541,7 +2552,7 @@ function checkDashboardWhatsNew() {
     "Speed Metrics",
     "Training now includes Speed Metrics workouts for acceleration, fly zones, max velocity, and runway timing.",
     "Coaches can capture time in the SMARTCoach app and review velocity and MPH before sending reps back to SMART Trak.",
-    "Dashboard Training Load counts saved speed sessions and shows speed-only volume in meters.",
+    "Saved speed tests are reviewed in Speed Trak Sessions instead of the distance-training Completed Workouts table.",
     "Speed Trak",
     "Speed Trak gives coaches a leaderboard for saved Speed Metrics marks.",
     "Coaches can import speed marks from a spreadsheet or add one-off results manually.",
@@ -3346,10 +3357,9 @@ function checkHowToGuidePage() {
     "Use **Speed Trak** from Training when you want a leaderboard of speed testing marks captured during Speed Metrics practice sessions or imported from a spreadsheet.",
     "velocity",
     "**MPH**",
-    "Dashboard Training Load and Completed Workouts",
-    "5 x 30m counts as 150m",
-    "one completed workout for each athlete with at least one saved rep",
-    "completed-workout detail shows the Speed Metrics rep breakdown",
+    "Use **Speed Trak → Sessions** as the completed-history view for speed testing.",
+    "Completed Workouts** is reserved for distance-training workouts",
+    "Speed Metrics sessions do not add distance-training workout counts or volume there.",
     "**Training/Race Order** controls how athletes appear when opening training groups, race groups, and Speed Trak sessions",
     "The default is **Sport, speed, name**",
     "coaches can open the Training Calendar workout and read what the athlete submitted.",
