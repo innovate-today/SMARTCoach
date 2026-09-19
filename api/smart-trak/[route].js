@@ -4859,7 +4859,7 @@ function normalizeSpeedBoardReps(practices) {
         athleteKey: cleanSetupText(rep.smartcoachAthleteId || rep.contactId || rep.athleteId).toLowerCase(),
         athleteName,
         gender: normalizeSpeedBoardGender(rep.gender),
-        year: cleanSetupText(rep.year || practice.year || date.slice(0, 4)),
+        year: date.slice(0, 4) || cleanSetupText(rep.year || practice.year),
         grade: cleanSetupText(rep.grade),
         metric: cleanSetupText(rep.metric) || speedBoardMetricLabel(rep, practice),
         surface: normalizeSpeedSurface(rep.surface || practice.surface),

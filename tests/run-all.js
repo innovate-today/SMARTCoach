@@ -2067,8 +2067,10 @@ function checkSpeedTrakFeature() {
     "open?'Close':'Open'",
     "session-detail-row",
     "function populateSessionFilters(sessions)",
-    "'All season years'",
+    "'All years'",
     "session.seasonYear===els.sessionYear.value",
+    "var year=String(date).slice(0,4)||rowYear(rep,practice)",
+    "row.sourceSeasonYear||row.year",
     "function sessionRepNumbers(rows)",
     "data-session-edit",
     "data-session-delete",
@@ -2343,7 +2345,7 @@ function checkSpeedTrakFeature() {
   if (!guide.includes("swipe the compact session table sideways")) {
     throw new Error("Coach guide missing mobile Speed Trak progression guidance");
   }
-  if (!guide.includes("Open **Seasons** and check one or more saved years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
+  if (!guide.includes("Open **Seasons** and check one or more workout years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
     throw new Error("Coach guide missing multi-year Speed Trak progression guidance");
   }
   if (!guide.includes("**Best Time Trend**") || !guide.includes("lower time values are faster") || !guide.includes("green points identify a new chronological PB") || !guide.includes("same bubble on its matching chart dot") || !guide.includes("highlight the matching session row")) {
@@ -2442,6 +2444,7 @@ function checkSpeedTrakFeature() {
     "surfaces: uniqueStrings(reps.map((rep) => rep.surface)).sort(),",
     "function normalizeSpeedBoardReps(practices)",
     "athleteKey: cleanSetupText(rep.smartcoachAthleteId || rep.contactId || rep.athleteId).toLowerCase()",
+    "year: date.slice(0, 4) || cleanSetupText(rep.year || practice.year)",
     "function speedBoardHighlights(rows)",
     "function speedBoardWeeklyWinners(rows)",
     "velocityClubThreshold: milesBoardNumber(input.velocityClubThreshold, 9, 30)",
@@ -6840,7 +6843,7 @@ function checkFieldPracticePhaseOne() {
     "function fieldPracticeSpeedAthleteMeta(runner,p)",
     "activeAthleteForRunner(runner)||findAthleteByName(runner.name)",
     "contactId:row.contactId||''",
-    "seasonYear:p&&p.seasonYear||group&&group.seasonYear||dateYear",
+    "seasonYear:dateYear",
     "function fieldPracticeSpeedTestLabel(defaults)",
     "function fieldPracticeSpeedPb(athleteId,athleteName,defaults)",
     "function openFieldPracticeSpeedPb(athleteId,athleteName)",

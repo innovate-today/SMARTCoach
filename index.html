@@ -5031,9 +5031,8 @@ function fieldPracticeSpeedKey(item){
 function fieldPracticeSpeedAthleteMeta(runner,p){
   runner=runner||{};
   var athlete=activeAthleteForRunner(runner)||findAthleteByName(runner.name)||{};
-  var group=fieldPracticeGroupById(p&&p.groupId);
   var dateYear=String(p&&p.date||todayISO()).slice(0,4);
-  return{contactId:runner.contactId||athlete.contactId||athlete.id||'',smartcoachAthleteId:runner.smartcoachAthleteId||athlete.smartcoachAthleteId||'',gender:runner.gender||runner.sex||athlete.gender||athlete.sex||'',grade:runner.grade||athlete.grade||athlete.classGrade||'',graduationYear:runner.graduationYear||runner.classYear||athlete.graduationYear||athlete.classYear||'',seasonYear:p&&p.seasonYear||group&&group.seasonYear||dateYear};
+  return{contactId:runner.contactId||athlete.contactId||athlete.id||'',smartcoachAthleteId:runner.smartcoachAthleteId||athlete.smartcoachAthleteId||'',gender:runner.gender||runner.sex||athlete.gender||athlete.sex||'',grade:runner.grade||athlete.grade||athlete.classGrade||'',graduationYear:runner.graduationYear||runner.classYear||athlete.graduationYear||athlete.classYear||'',seasonYear:dateYear};
 }
 function fieldPracticeParseSeconds(value){
   var text=String(value||'').trim().toLowerCase().replace(/sec(?:onds?)?$/,'').replace(/s$/,'').trim();
