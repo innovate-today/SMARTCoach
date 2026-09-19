@@ -1741,6 +1741,7 @@ Completed or intentionally narrowed items from the launch cleanup pass:
 
 666. Speed Trak session-level setup corrections: an opened Speed Trak session now provides **Edit Session** for correcting shared date, test, timed distance/unit, fly-zone distance, surface, timing method, speed focus, and start type once across every athlete and rep in that session. Individual marks, athlete identity, grade, and notes remain unchanged. Corrected timed distance recalculates each rep's velocity, MPH source value, and any derived stride values. Coach guidance and regression coverage were updated.
 667. Speed Trak flexible surfaces: **Indoors** is now a standard surface, and **Other** reveals a required custom surface field in both individual-result and session editors. Custom names are preserved and become available through the existing surface filters, progression, exports, and public boards. Backend normalization now also preserves **Grass** separately instead of collapsing it into **Turf**. Coach guidance and regression coverage were updated.
+668. Speed Trak whole-session deletion: an opened Speed Trak session now provides **Delete Session** beside **Edit Session**. A dedicated confirmation identifies the date, test, athlete count, and rep count, warns that every rep will be removed, and deletes the single underlying session through the authenticated Field Practice endpoint. Row-level Delete remains available for removing only one athlete rep. Coach guidance and regression coverage were updated.
 
 ## Known Good Test Flow
 
