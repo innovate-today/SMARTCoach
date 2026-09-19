@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak Navigation Concept</title>
+<style>
+:root{--blue:#2b4fcc;--blue-dark:#173891;--ink:#111827;--muted:#52627a;--line:#d6dfec;--bg:#eef3f9;--panel:#fff;--soft:#f7faff;--green:#08783c;--amber:#9a5b00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button{font:inherit}.app{min-height:100vh}.shell{max-width:1500px;margin:auto;padding:18px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;box-shadow:0 10px 24px rgba(15,23,42,.07)}
+.brand{display:flex;align-items:center;gap:12px;min-width:240px}.brand img{width:58px;height:58px;object-fit:contain}.brand h1{font-size:25px;margin:0;line-height:1.05}.brand p{font-size:13px;color:var(--muted);margin:4px 0 0}
+.global-nav{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}.navbtn,.action,.tab,.text-action{border:1px solid var(--line);border-radius:7px;background:#eef4ff;color:var(--blue-dark);font-weight:800;min-height:36px;padding:8px 11px;cursor:pointer}.navbtn.active,.tab.active,.action.primary{background:var(--blue);border-color:var(--blue);color:#fff}.navbtn:hover,.action:hover,.tab:hover{border-color:#8eaae5}.navbtn:focus-visible,.action:focus-visible,.tab:focus-visible,.summary-link:focus-visible{outline:3px solid #93b4ff;outline-offset:2px}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:18px 0 12px}.page-head h2{font-size:27px;margin:0}.page-head p{color:var(--muted);margin:5px 0 0;font-size:14px}.page-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.action.secondary{background:#fff;color:#334155}.action.danger{background:#fff1f1;color:#b91c1c;border-color:#fecaca}
+.context{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--line);margin-bottom:14px}.tabs{display:flex;gap:7px;overflow:auto}.tab{border-radius:7px 7px 0 0;border-bottom:0;white-space:nowrap}.updated{font-size:12px;color:var(--muted);padding-bottom:9px;white-space:nowrap}
+.view[hidden]{display:none}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px}.stat b{font-size:25px;display:block}.stat span{font-size:13px;color:var(--muted)}
+.overview-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}.panel{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line)}.panel-head h3{font-size:18px;margin:0}.panel-head p{font-size:12px;color:var(--muted);margin:3px 0 0}.panel-body{padding:14px 15px}.summary-list{display:grid}.summary-link{display:grid;grid-template-columns:125px 1fr auto;align-items:center;gap:14px;width:100%;border:0;border-bottom:1px solid var(--line);background:#fff;color:var(--ink);padding:14px 15px;text-align:left;cursor:pointer}.summary-link:last-child{border-bottom:0}.summary-link:hover{background:var(--soft)}.summary-link strong{color:#0f2a70}.summary-link b{font-size:20px}.summary-link small{display:block;color:var(--muted);margin-top:3px}.summary-link span:last-child{color:var(--blue-dark);font-weight:900}
+.attention{display:grid;gap:9px}.alert{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:11px;border:1px solid var(--line);border-radius:7px;background:var(--soft)}.alert b{display:block;font-size:14px}.alert span{color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;min-width:28px;height:25px;padding:0 8px;background:#e8eefc;color:var(--blue-dark);font-size:12px;font-weight:900}.badge.good{background:#dcfce7;color:var(--green)}.badge.warn{background:#fff0d6;color:var(--amber)}
+.filters{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}.filters input,.filters select{width:100%;border:1px solid var(--line);border-radius:7px;background:#fff;padding:10px 11px;font:14px inherit;color:var(--ink)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);font-size:14px}th{background:#f8fbff;color:#41516a;font-size:12px;text-transform:uppercase}.metric{font-weight:900;color:#0f2a70}.positive{font-weight:900;color:var(--green)}.muted{color:var(--muted)}
+.workload{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}.bar-list{display:grid;gap:14px}.bar-row{display:grid;grid-template-columns:130px 1fr 60px;align-items:center;gap:10px;font-size:13px}.bar{height:10px;border-radius:999px;background:#e5ebf4;overflow:hidden}.bar i{display:block;height:100%;background:var(--blue);border-radius:999px}.activity{display:grid;gap:0}.activity-row{display:grid;grid-template-columns:86px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}.activity-row:last-child{border-bottom:0}.activity-row strong{display:block}.activity-row span{color:var(--muted)}
+.concept-note{margin-top:14px;border:1px solid #bfd0ef;background:#f5f9ff;border-radius:8px;padding:12px 14px;color:#334155;font-size:13px;line-height:1.45}.concept-note b{color:#173891}
+@media(max-width:1000px){.topbar{align-items:flex-start;flex-direction:column}.global-nav{justify-content:flex-start}.overview-grid,.workload{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr 1fr}.summary-link{grid-template-columns:110px 1fr auto}}
+@media(max-width:650px){.shell{padding:10px}.brand img{width:48px;height:48px}.brand h1{font-size:22px}.global-nav{width:100%;display:grid;grid-template-columns:1fr 1fr}.navbtn{width:100%}.page-head{display:block}.page-actions{justify-content:flex-start;margin-top:12px}.stats,.filters{grid-template-columns:1fr}.context{align-items:flex-end}.updated{display:none}.summary-link{grid-template-columns:1fr auto}.summary-link>b{display:none}.table-scroll{overflow:auto}.table-scroll table{min-width:720px}.bar-row{grid-template-columns:95px 1fr 45px}}
+</style>
+</head>
+<body>
+<main class="app"><div class="shell">
+  <header class="topbar">
+    <div class="brand"><img src="assets/smart-logo.png" alt="SMART Trak"><div><h1>SMART Trak</h1><p>Team performance and program operations</p></div></div>
+    <nav class="global-nav" aria-label="SMART Trak sections">
+      <button class="navbtn active" data-view="overview">Overview</button>
+      <button class="navbtn" data-view="athletes">Athletes</button>
+      <button class="navbtn" data-view="distance">Distance Training</button>
+      <button class="navbtn" data-view="calendar">Training Calendar</button>
+      <button class="navbtn" data-view="speed">Speed Trak</button>
+      <button class="navbtn" data-view="power">Power Trak</button>
+      <button class="navbtn" data-view="meets">Meets & Records</button>
+    </nav>
+  </header>
+
+  <section class="view" data-panel="overview">
+    <div class="page-head"><div><h2>Team Overview</h2><p>What happened, what is coming, and what needs attention.</p></div><div class="page-actions"><button class="action secondary">Refresh</button><button class="action primary" data-view="calendar">Open Today</button></div></div>
+    <div class="stats"><div class="stat"><b>36</b><span>Active athletes</span></div><div class="stat"><b>12</b><span>Activities this week</span></div><div class="stat"><b>8</b><span>New PBs</span></div><div class="stat"><b>5</b><span>Items needing attention</span></div></div>
+    <div class="overview-grid">
+      <section class="panel"><div class="panel-head"><div><h3>Program Activity</h3><p>Open the complete workspace for each training area.</p></div><span class="badge good">Live</span></div>
+        <div class="summary-list">
+          <button class="summary-link" data-view="distance"><b>46.8 mi</b><span><strong>Distance Training</strong><small>17 completed workouts · 82% on target</small></span><span>Open</span></button>
+          <button class="summary-link" data-view="speed"><b>24.05 mph</b><span><strong>Speed Trak</strong><small>3 testing sessions · 4 new athlete PBs</small></span><span>Open</span></button>
+          <button class="summary-link" data-view="power"><b>28 marks</b><span><strong>Power Trak</strong><small>2 testing sessions · 14 athletes tested</small></span><span>Open</span></button>
+          <button class="summary-link" data-view="meets"><b>2 meets</b><span><strong>Meets & Records</strong><small>Next meet Sep 24 · 3 recent school records</small></span><span>Open</span></button>
+        </div>
+      </section>
+      <section class="panel"><div class="panel-head"><div><h3>Needs Attention</h3><p>Items that may require a coach decision.</p></div><span class="badge warn">5</span></div><div class="panel-body attention">
+        <div class="alert"><span class="badge warn">2</span><div><b>Training targets outside range</b><span>Review athletes before tomorrow's workout.</span></div></div>
+        <div class="alert"><span class="badge">1</span><div><b>Unmatched historical athlete</b><span>One imported Speed Trak name needs roster review.</span></div></div>
+        <div class="alert"><span class="badge">2</span><div><b>Missing documentation</b><span>Two active athletes have incomplete Docu Trak items.</span></div></div>
+      </div></section>
+    </div>
+    <div class="concept-note"><b>Navigation idea:</b> Overview summarizes every program area without mixing their histories. Selecting a summary opens the full Trak workspace. Distance workouts remain in Distance Training; speed tests remain in Speed Trak; power tests remain in Power Trak.</div>
+  </section>
+
+  <section class="view" data-panel="distance" hidden>
+    <div class="page-head"><div><h2>Distance Training</h2><p>Mileage, training load, current fitness, and completed distance workouts.</p></div><div class="page-actions"><button class="action secondary">Export View</button><button class="action primary">Log Miles</button></div></div>
+    <div class="context"><div class="tabs"><button class="tab active">Training Load</button><button class="tab">Completed Workouts</button><button class="tab">Current Fitness</button></div><span class="updated">Updated today, 2:42 PM</span></div>
+    <div class="stats"><div class="stat"><b>46.8 mi</b><span>Completed this week</span></div><div class="stat"><b>17</b><span>Completed workouts</span></div><div class="stat"><b>82%</b><span>On target</span></div><div class="stat"><b>6</b><span>Athletes to review</span></div></div>
+    <div class="workload"><section class="panel"><div class="panel-head"><h3>Weekly Volume</h3><span class="badge">36 athletes</span></div><div class="panel-body bar-list"><div class="bar-row"><span>Adeline M.</span><div class="bar"><i style="width:92%"></i></div><b>31.2</b></div><div class="bar-row"><span>Ben H.</span><div class="bar"><i style="width:76%"></i></div><b>25.8</b></div><div class="bar-row"><span>Jessie L.</span><div class="bar"><i style="width:68%"></i></div><b>23.1</b></div><div class="bar-row"><span>Preston T.</span><div class="bar"><i style="width:61%"></i></div><b>20.7</b></div></div></section><section class="panel"><div class="panel-head"><h3>Recent Distance Work</h3></div><div class="panel-body activity"><div class="activity-row"><b>Today</b><span><strong>Easy Run · CC Team</strong>12 athletes · 42.4 total miles</span><span class="positive">On target</span></div><div class="activity-row"><b>Sep 18</b><span><strong>Tempo Session</strong>8 athletes · 28.6 total miles</span><span>Review</span></div><div class="activity-row"><b>Sep 17</b><span><strong>Recovery Run</strong>14 athletes · 36.1 total miles</span><span class="positive">On target</span></div></div></section></div>
+  </section>
+
+  <section class="view" data-panel="speed" hidden>
+    <div class="page-head"><div><h2>Speed Trak</h2><p>Speed testing leaderboards, athlete progression, and complete sessions.</p></div><div class="page-actions"><button class="action secondary">Share Board</button><button class="action secondary">Export</button><button class="action primary">Add Result</button></div></div>
+    <div class="context"><div class="tabs" data-tabs="speed"><button class="tab active">Leaderboard</button><button class="tab">Athlete Progression</button><button class="tab">Sessions</button><button class="tab">Import Data</button></div><span class="updated">Updated today, 2:42 PM</span></div>
+    <div class="filters"><input placeholder="Search athlete"><select><option>30m Fly</option></select><select><option>All surfaces</option></select><select><option>All years</option></select></div>
+    <div class="stats"><div class="stat"><b>25</b><span>Athletes ranked</span></div><div class="stat"><b>2.94</b><span>Best mark</span></div><div class="stat"><b>24.05 mph</b><span>Top velocity</span></div><div class="stat"><b>Sep 19</b><span>Latest test</span></div></div>
+    <section class="panel"><div class="panel-head"><div><h3>30m Fly Leaderboard</h3><p>Each athlete's best qualifying result.</p></div><span class="badge">25 athletes</span></div><div class="table-scroll"><table><thead><tr><th>#</th><th>Athlete</th><th>Year</th><th>Grade</th><th>Mark</th><th>Velocity</th><th>MPH</th><th>Date</th></tr></thead><tbody><tr><td>1</td><td class="metric">Jordan Mercer</td><td>2026</td><td>11</td><td class="metric">2.94</td><td class="positive">10.20 m/s</td><td>22.82 mph</td><td>Sep 19, 2026</td></tr><tr><td>2</td><td class="metric">Avery Collins</td><td>2026</td><td>10</td><td class="metric">2.98</td><td class="positive">10.07 m/s</td><td>22.53 mph</td><td>Sep 14, 2026</td></tr><tr><td>3</td><td class="metric">Morgan Ellis</td><td>2025</td><td>12</td><td class="metric">3.01</td><td class="positive">9.97 m/s</td><td>22.30 mph</td><td>Apr 15, 2025</td></tr></tbody></table></div></section>
+  </section>
+
+  <section class="view" data-panel="power" hidden>
+    <div class="page-head"><div><h2>Power Trak</h2><p>Jump, throw, and power-test results from complete testing sessions.</p></div><div class="page-actions"><button class="action secondary">Share Board</button><button class="action secondary">Export</button><button class="action primary">Add Result</button></div></div>
+    <div class="context"><div class="tabs" data-tabs="power"><button class="tab active">Leaderboard</button><button class="tab">Athlete Progression</button><button class="tab">Sessions</button><button class="tab">Import Data</button></div><span class="updated">Updated today, 1:18 PM</span></div>
+    <div class="filters"><input placeholder="Search athlete"><select><option>Standing Long Jump</option></select><select><option>All groups</option></select><select><option>All years</option></select></div>
+    <div class="stats"><div class="stat"><b>14</b><span>Athletes ranked</span></div><div class="stat"><b>9 ft 8 in</b><span>Best mark</span></div><div class="stat"><b>28</b><span>Marks recorded</span></div><div class="stat"><b>Sep 18</b><span>Latest test</span></div></div>
+    <section class="panel"><div class="panel-head"><div><h3>Standing Long Jump Leaderboard</h3><p>Each athlete's best qualifying result.</p></div><span class="badge">14 athletes</span></div><div class="table-scroll"><table><thead><tr><th>#</th><th>Athlete</th><th>Year</th><th>Grade</th><th>Best Mark</th><th>Improvement</th><th>Date</th></tr></thead><tbody><tr><td>1</td><td class="metric">Taylor Brooks</td><td>2026</td><td>12</td><td class="metric">9 ft 8 in</td><td class="positive">+4.5 in</td><td>Sep 18, 2026</td></tr><tr><td>2</td><td class="metric">Casey Monroe</td><td>2026</td><td>11</td><td class="metric">9 ft 4 in</td><td class="positive">+2.0 in</td><td>Sep 18, 2026</td></tr><tr><td>3</td><td class="metric">Riley Bennett</td><td>2026</td><td>10</td><td class="metric">9 ft 1 in</td><td class="muted">First test</td><td>Sep 12, 2026</td></tr></tbody></table></div></section>
+  </section>
+
+  <section class="view" data-panel="athletes" hidden><div class="page-head"><div><h2>Athletes</h2><p>Roster, eligibility, documentation, groups, and athlete details.</p></div></div><section class="panel"><div class="panel-body">This concept keeps athlete administration as a global workspace shared by every Trak.</div></section></section>
+  <section class="view" data-panel="calendar" hidden><div class="page-head"><div><h2>Training Calendar</h2><p>Plan and review all scheduled team activity.</p></div></div><section class="panel"><div class="panel-body">The calendar remains global because distance, speed, power, field, and meets all use it.</div></section></section>
+  <section class="view" data-panel="meets" hidden><div class="page-head"><div><h2>Meets & Records</h2><p>Competition history, results, records, and upcoming meets.</p></div></div><section class="panel"><div class="panel-body">Meet administration and records stay together as a global competition workspace.</div></section></section>
+</div></main>
+<script>
+const titles={overview:'SMART Trak Overview',athletes:'Athletes',distance:'Distance Training',calendar:'Training Calendar',speed:'Speed Trak',power:'Power Trak',meets:'Meets & Records'};
+function showView(name){document.querySelectorAll('.view').forEach(el=>el.hidden=el.dataset.panel!==name);document.querySelectorAll('.navbtn').forEach(el=>el.classList.toggle('active',el.dataset.view===name));document.title=titles[name]+' Concept';window.scrollTo({top:0,behavior:'smooth'})}
+document.addEventListener('click',event=>{const view=event.target.closest('[data-view]');if(view){showView(view.dataset.view);return}const tab=event.target.closest('.tab');if(tab){tab.parentElement.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));tab.classList.add('active')}});
+</script>
+</body>
+</html>
