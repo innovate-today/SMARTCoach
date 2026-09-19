@@ -4800,7 +4800,7 @@ function normalizeResultsBoardGrade(value) {
 
 function buildSpeedBoardRows({ practices, metric, surface, timingMethod, speedFocus, startType, gender, year, gameSettings }) {
   const rowsByAthlete = new Map();
-  normalizeSpeedBoardReps(practices).filter((rep) => {
+  const reps = normalizeSpeedBoardReps(practices).filter((rep) => {
     if (metric && rep.metric !== metric) return false;
     if (surface && rep.surface !== surface) return false;
     if (timingMethod && rep.timingMethod !== timingMethod) return false;
@@ -4809,8 +4809,15 @@ function buildSpeedBoardRows({ practices, metric, surface, timingMethod, speedFo
     if (gender && rep.gender !== gender) return false;
     if (year && String(rep.year) !== String(year)) return false;
     return true;
-  }).forEach((rep) => {
-    const key = cleanSetupText(rep.athleteName).toLowerCase();
+  });
+  const identifiedByName = new Map();
+  reps.forEach((rep) => {
+    const nameKey = cleanSetupText(rep.athleteName).toLowerCase();
+    if (nameKey && rep.athleteKey) identifiedByName.set(nameKey, rep.athleteKey);
+  });
+  reps.forEach((rep) => {
+    const nameKey = cleanSetupText(rep.athleteName).toLowerCase();
+    const key = rep.athleteKey || identifiedByName.get(nameKey) || nameKey;
     if (!key) return;
     if (!rowsByAthlete.has(key)) rowsByAthlete.set(key, []);
     rowsByAthlete.get(key).push(rep);
@@ -4849,6 +4856,7 @@ function normalizeSpeedBoardReps(practices) {
       const strides = Number(rep.strides || rep.strideCount) || 0;
       const date = cleanSetupText(rep.date || practice.date).slice(0, 10);
       out.push({
+        athleteKey: cleanSetupText(rep.smartcoachAthleteId || rep.contactId || rep.athleteId).toLowerCase(),
         athleteName,
         gender: normalizeSpeedBoardGender(rep.gender),
         year: cleanSetupText(rep.year || practice.year || date.slice(0, 4)),
