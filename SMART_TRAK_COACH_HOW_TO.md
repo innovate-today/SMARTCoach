@@ -173,7 +173,7 @@ Owners and admins can use **Manage Imported Data** to remove a mistaken Speed Tr
 
 Names shown in SMART Trak placeholders, paste examples, and downloaded templates are fictional examples. Replace them with the athletes, parents, teams, and meets for your account before saving imported data.
 
-To enter one result without a spreadsheet, click **Add Result**. Start typing the athlete name and choose the roster match when available. Use **Edit** on a row to correct the athlete, metric, mark, date, grade, gender, or note. Use **Delete** only when a speed mark should be removed from Speed Trak.
+To enter one result without a spreadsheet, click **Add Result**. Start typing the athlete name and choose the roster match when available. Enter the timed distance and unit, then add the fly-zone distance, surface, timing method, speed focus, and start type when those details are known. These setup details keep the result comparable with matching tests in the Leaderboard, Athlete Progression, and Sessions views. Use **Edit** on a row to correct the athlete, metric, mark, date, grade, gender, setup, or note. Use **Delete** only when a speed mark should be removed from Speed Trak.
 
 The Speed Trak table shows year, athlete, grade, mark, date, **velocity**, and **MPH**. Velocity and MPH are calculated from timed distance and time.
 
