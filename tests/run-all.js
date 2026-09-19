@@ -2218,8 +2218,12 @@ function checkSpeedTrakFeature() {
     "event.key==='Escape'&&els.progressionSeasonPicker.open",
     'id="progressionChart"',
     'id="progressionChartEmpty"',
+    'id="progressionChartTooltip"',
     "<span>Lower time is faster</span>",
     "function renderProgressionChart(sessions)",
+    "function showProgressionChartPoint(event)",
+    "state.progressionChartPoints.push({x:px,y:py,session:session})",
+    "els.progressionChart.addEventListener('pointerdown',showProgressionChartPoint)",
     "session.newPb?'#0b8a4b':'#2563eb'",
     "if(state.currentView==='progression')renderProgressionChart(buildAthleteProgressionRows())",
     "@media(max-width:680px){.progression-controls{grid-template-columns:1fr}}",
@@ -2317,7 +2321,7 @@ function checkSpeedTrakFeature() {
   if (!guide.includes("Open **Seasons** and check one or more saved years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
     throw new Error("Coach guide missing multi-year Speed Trak progression guidance");
   }
-  if (!guide.includes("**Best Time Trend**") || !guide.includes("lower time values are faster") || !guide.includes("green points identify a new chronological PB")) {
+  if (!guide.includes("**Best Time Trend**") || !guide.includes("lower time values are faster") || !guide.includes("green points identify a new chronological PB") || !guide.includes("Hover over a point or tap it")) {
     throw new Error("Coach guide missing Speed Trak progression chart guidance");
   }
   [
