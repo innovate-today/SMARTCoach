@@ -5074,10 +5074,18 @@ function fieldPracticeSpeedRepStatus(row,field){
 function fieldPracticeSpeedDefaults(p){
   var first=(p&&Array.isArray(p.speedMetrics)?p.speedMetrics:[]).find(function(row){return row&&(row.zone||row.distance||row.unit);});
   var focus=fieldPracticeSpeedType(p&&p.focus);
-  if(first)return{zone:fieldPracticeSpeedType(p&&p.focus||first.zone),distance:p&&p.speedMetricDistance||first.distance||'30',flyZoneDistance:p&&p.flyZoneDistance||first.flyZoneDistance||first.distance||'30',unit:String(p&&p.speedMetricUnit||first.unit||'m').toLowerCase()==='yd'?'yd':'m'};
+  var setup=function(zone,row){
+    row=row||{};
+    return{zone:zone,distance:p&&p.speedMetricDistance||row.timedDistance||row.distance||'30',flyZoneDistance:p&&p.flyZoneDistance||row.flyZoneDistance||row.distance||'30',unit:String(p&&p.speedMetricUnit||row.distanceUnit||row.unit||'m').toLowerCase()==='yd'?'yd':'m',surface:p&&p.surface||row.surface||'Track',timingMethod:p&&p.timingMethod||row.timingMethod||'FAT',speedFocus:p&&p.speedFocus||row.speedFocus||row.category||(zone==='Start'?'Acceleration':'Max Speed'),startType:p&&p.startType||row.startType||row.start||(zone==='Start'?'Crouch':'Rolling')};
+  };
+  if(first)return setup(fieldPracticeSpeedType(p&&p.focus||first.zone),first);
   var text=[p&&p.focus,p&&p.planNotes,p&&p.coachNotes,p&&p.routineName].filter(Boolean).join(' ');
   var match=text.match(/\b(\d{1,3}(?:\.\d+)?)\s*(m|meter|meters|yd|yard|yards)\b/i);
-  return{zone:focus,distance:p&&p.speedMetricDistance||match&&match[1]||'30',flyZoneDistance:p&&p.flyZoneDistance||match&&match[1]||'30',unit:String(p&&p.speedMetricUnit||'m').toLowerCase()==='yd'||match&&/^yd/i.test(match[2])?'yd':'m'};
+  var defaults=setup(focus,{});
+  defaults.distance=p&&p.speedMetricDistance||match&&match[1]||'30';
+  defaults.flyZoneDistance=p&&p.flyZoneDistance||match&&match[1]||'30';
+  defaults.unit=String(p&&p.speedMetricUnit||'m').toLowerCase()==='yd'||match&&/^yd/i.test(match[2])?'yd':'m';
+  return defaults;
 }
 function fieldPracticeSpeedType(value){
   var text=String(value||'').toLowerCase();
@@ -5131,6 +5139,12 @@ function toggleFieldPracticeSpeedSetup(open){
 function finishFieldPracticeSpeedSetup(){
   var practice=activeFieldPractice();
   if(!practice)return;
+  var defaults=fieldPracticeSpeedDefaults(practice);
+  practice.surface=defaults.surface;
+  practice.timingMethod=defaults.timingMethod;
+  practice.speedFocus=defaults.speedFocus;
+  practice.startType=defaults.startType;
+  (practice.speedMetrics||[]).forEach(function(row){row.surface=defaults.surface;row.timingMethod=defaults.timingMethod;row.speedFocus=defaults.speedFocus;row.startType=defaults.startType;});
   practice.speedSetupTouched=1;
   FIELD_PRACTICE.speedSetupOpen=false;
   renderFieldPractice();
@@ -5171,18 +5185,34 @@ function updateFieldPracticeSpeedSetup(field,value){
   if(!p)return;
   updateFieldPracticeFromForm(false);
   p.speedMetrics=Array.isArray(p.speedMetrics)?p.speedMetrics:[];
-  if(field==='zone')p.focus=fieldPracticeSpeedType(value);
+  if(field==='zone'){
+    p.focus=fieldPracticeSpeedType(value);
+    p.speedFocus=p.focus==='Start'?'Acceleration':'Max Speed';
+    p.startType=p.focus==='Start'?'Crouch':'Rolling';
+  }
   if(field==='distance')p.speedMetricDistance=value;
   if(field==='unit')p.speedMetricUnit=String(value||'m').toLowerCase()==='yd'?'yd':'m';
   if(field==='flyZoneDistance')p.flyZoneDistance=value;
+  if(field==='surface')p.surface=value;
+  if(field==='customSurface')p.surface=String(value||'').trim()||'Other';
+  if(field==='timingMethod')p.timingMethod=value;
+  if(field==='speedFocus')p.speedFocus=value;
+  if(field==='startType')p.startType=value;
   p.speedSetupTouched=1;
-  FIELD_PRACTICE.speedSetupOpen=false;
+  var setupField=/^(surface|customSurface|timingMethod|speedFocus|startType)$/.test(field);
+  FIELD_PRACTICE.speedSetupOpen=setupField;
   var defaults=fieldPracticeSpeedDefaults(p);
   p.speedMetrics.forEach(function(row){
     row.zone=defaults.zone;
     row.distance=defaults.distance;
+    row.timedDistance=defaults.distance;
     row.unit=defaults.unit;
+    row.distanceUnit=defaults.unit;
     row.flyZoneDistance=defaults.flyZoneDistance;
+    row.surface=defaults.surface;
+    row.timingMethod=defaults.timingMethod;
+    row.speedFocus=defaults.speedFocus;
+    row.startType=defaults.startType;
     row.updatedAt=new Date().toISOString();
   });
   renderFieldPractice();
@@ -5498,13 +5528,20 @@ function fieldPracticeSpeedCaptureHtml(p){
   var addAthleteControls='<div class="fp-speed-grid" style="margin-top:8px"><select id="fp-speed-add-athlete" class="sinp"><option value="">Choose from group</option>'+fieldPracticeGroupRunners(p.groupId).map(function(runner){var id=fieldPracticeRunnerId(runner);return '<option value="'+ex(id)+'">'+ex(runner.name||'Athlete')+'</option>';}).join('')+'</select><input id="fp-speed-add-manual" class="sinp" placeholder="Or type athlete name"></div><button class="speed-add-athlete-submit" type="button" onclick="addFieldPracticeSpeedAthlete()">Add Athlete</button>';
   var speedDistances=['10','20','30','40','50','60'];
   var setupOpen=!!FIELD_PRACTICE.speedSetupOpen||!p.speedSetupTouched;
-  var setupSummary='<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">'+ex(defaults.zone==='Start'?'Start':'Fly')+'</button>'+(defaults.zone==='Fly'?'<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">Fly '+ex(defaults.flyZoneDistance)+' '+ex(defaults.unit)+'</button>':'')+'<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">Metric '+ex(defaults.distance)+' '+ex(defaults.unit)+'</button>';
+  var standardSurfaces=['Track','Turf','Grass','Indoors'];
+  var surfaceChoice=standardSurfaces.indexOf(defaults.surface)>=0?defaults.surface:'Other';
+  var setupSummary='<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">'+ex(defaults.zone==='Start'?'Start':'Fly')+'</button>'+(defaults.zone==='Fly'?'<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">Fly '+ex(defaults.flyZoneDistance)+' '+ex(defaults.unit)+'</button>':'')+'<button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">Metric '+ex(defaults.distance)+' '+ex(defaults.unit)+'</button><button class="speed-chip" type="button" onclick="toggleFieldPracticeSpeedSetup(true)">'+ex(defaults.surface)+' · '+ex(defaults.timingMethod)+'</button>';
   var html='<div class="speed-hero"><div class="speed-title">'+ex(p.date||todayISO())+' · Speed Trak</div><div class="speed-sub">'+ex(p.groupName||'Team')+' · '+athletes.length+' athletes</div><div class="speed-chips">'+setupSummary+'<span class="speed-chip">'+cleanFieldPracticeSpeedMetrics(p).length+' reps recorded</span></div></div>'+
     (setupOpen?'<div class="fp-card speed-setup-card"><div class="fp-title">Speed Setup</div><div class="fp-speed-grid" style="margin-top:8px">'+
       '<label class="speed-setup-label"><span>Type</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;zone&quot;,this.value)"><option value="Fly" '+(defaults.zone==='Fly'?'selected':'')+'>Fly</option><option value="Start" '+(defaults.zone==='Start'?'selected':'')+'>Start</option></select></label>'+
       (defaults.zone==='Fly'?'<label class="speed-setup-label"><span>Fly Zone</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;flyZoneDistance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.flyZoneDistance)+'</select></label>':'')+
       '<label class="speed-setup-label"><span>Speed Metric</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;distance&quot;,this.value)">'+fieldPracticeDistanceOptionHtml(speedDistances,defaults.distance)+'</select></label>'+
       '<label class="speed-setup-label"><span>Unit</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;unit&quot;,this.value)"><option value="m" '+(defaults.unit==='m'?'selected':'')+'>Meters</option><option value="yd" '+(defaults.unit==='yd'?'selected':'')+'>Yards</option></select></label>'+
+      '<label class="speed-setup-label"><span>Surface</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;surface&quot;,this.value)">'+fieldPracticeOptionHtml(['Track','Turf','Grass','Indoors','Other'],surfaceChoice)+'</select></label>'+
+      (surfaceChoice==='Other'?'<label class="speed-setup-label"><span>Other Surface</span><input class="sinp" value="'+ex(defaults.surface==='Other'?'':defaults.surface)+'" placeholder="Surface name" onchange="updateFieldPracticeSpeedSetup(&quot;customSurface&quot;,this.value)"></label>':'')+
+      '<label class="speed-setup-label"><span>Timing</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;timingMethod&quot;,this.value)">'+fieldPracticeOptionHtml(['FAT','Stopwatch','Video'],defaults.timingMethod)+'</select></label>'+
+      '<label class="speed-setup-label"><span>Speed Focus</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;speedFocus&quot;,this.value)">'+fieldPracticeOptionHtml(['Acceleration','Max Speed','Speed Endurance'],defaults.speedFocus)+'</select></label>'+
+      '<label class="speed-setup-label"><span>Start Type</span><select class="sinp" onchange="updateFieldPracticeSpeedSetup(&quot;startType&quot;,this.value)">'+fieldPracticeOptionHtml(['Rolling','Crouch','Push Release','Three Point','Standing'],defaults.startType)+'</select></label>'+
     '</div><div class="fp-text">Speed Metric is the timed distance used for MPH and velocity.</div><button class="mbtn" type="button" onclick="finishFieldPracticeSpeedSetup()" style="width:100%;margin:10px 0 0;background:#2B4FCC">Done</button></div>':'')+
     '<div class="fp-card speed-add-athlete-card '+(addOpen?'open':'collapsed')+'"><button class="speed-add-athlete-toggle" type="button" onclick="toggleFieldPracticeSpeedAddAthlete()">+ Athlete</button>'+(addOpen?addAthleteControls:'')+'</div>'+
     '<div class="fp-card"><div class="fp-title">Speed Capture</div><div class="fp-text">Tap an athlete to open details. Drag the handle beside a name to reorder without opening details. Only one athlete stays open at a time.</div>';
