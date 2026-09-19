@@ -2226,6 +2226,9 @@ function checkSpeedTrakFeature() {
     "function clearProgressionRowHighlight()",
     "function highlightProgressionSession(session)",
     "classList.add('progression-linked-row')",
+    "#progressionPanel .tablewrap table{min-width:720px}",
+    ".viewtabs{overflow-x:auto;scrollbar-width:thin}",
+    ".progression-chart-frame{height:190px}",
     "function progressionBestDetail(session)",
     "function showProgressionTableDetail(target)",
     "candidate.session.date===date&&formatSeconds(candidate.session.best)===best",
@@ -2329,6 +2332,9 @@ function checkSpeedTrakFeature() {
   }
   if (!guide.includes("Use **Athlete Progression** to compare one athlete across like-for-like testing conditions.")) {
     throw new Error("Coach guide missing Speed Trak Athlete Progression guidance");
+  }
+  if (!guide.includes("swipe the compact session table sideways")) {
+    throw new Error("Coach guide missing mobile Speed Trak progression guidance");
   }
   if (!guide.includes("Open **Seasons** and check one or more saved years") || !guide.includes("Choosing multiple years combines their matching sessions")) {
     throw new Error("Coach guide missing multi-year Speed Trak progression guidance");
