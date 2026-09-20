@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { normalizeRackReservations, updateRackAthleteReservation, validateRackSessionClaims } = require("../lib/power-trak-rack-claims");
+const { normalizeRackReservations, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../lib/power-trak-rack-claims");
 
 function claim(options) {
   return updateRackAthleteReservation({
@@ -95,5 +95,17 @@ assert.throws(
 
 const started = validateRackSessionClaims({ existingRackSessions: [], incomingRackSessions: [rackOne], reservations: rackOneReservation });
 assert.deepStrictEqual(Array.from(started), ["athlete-1"]);
+
+const completedRack = {
+  ...rackOne,
+  status: "complete",
+  athletes: rackOne.athletes.map((athlete) => ({ ...athlete, rackStatus: "released" })),
+};
+assert.throws(
+  () => validateRackSessionTransitions({ existingRackSessions: [completedRack], incomingRackSessions: [rackOne] }),
+  (error) => error.statusCode === 409 && /already been completed/.test(error.message),
+);
+assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [completedRack] }));
+assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [completedRack], incomingRackSessions: [{ ...completedRack, rackName: "Corrected Rack 1" }] }));
 
 console.log("Power Trak multi-device rack claim tests passed");

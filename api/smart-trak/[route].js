@@ -7,7 +7,7 @@ const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
 const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
 const { displayNameCase } = require("../../lib/display-name");
-const { normalizeRackReservations, updateRackAthleteReservation, validateRackSessionClaims } = require("../../lib/power-trak-rack-claims");
+const { normalizeRackReservations, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../../lib/power-trak-rack-claims");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1809,6 +1809,7 @@ async function accountPowerTrak(req, res) {
       const powerTrakProvisionalAthletes = hasProvisionalAthletes ? normalizePowerTrakProvisionalAthletes(payload.provisionalAthletes) : normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes);
       const rackSessionsById = new Map();
       const existingRackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
+      validateRackSessionTransitions({ existingRackSessions, incomingRackSessions: rackSessions });
       const startedAthleteIds = validateRackSessionClaims({ existingRackSessions, incomingRackSessions: rackSessions, deleteRackSessionIds, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
       existingRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       deleteRackSessionIds.forEach((id) => rackSessionsById.delete(id));
