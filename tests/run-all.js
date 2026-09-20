@@ -2849,6 +2849,11 @@ function checkPowerTrakFeature() {
     "function endRackFromOverview(rack)",
     'data-end-rack=',
     "This rack was ended from the coach screen.",
+    'id="rackSummarySessions"',
+    'id="rackSummaryAthletes"',
+    'id="rackSummaryReps"',
+    'id="rackSummaryLoad"',
+    "function rackSessionSummary(racks)",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
   });
