@@ -2840,6 +2840,9 @@ function checkPowerTrakFeature() {
     "function rackExercisePrescription(exercise)",
     "function renderRackWorkoutPreview(workout)",
     "reps per athlete",
+    'id="assignTodayBtn"',
+    "function assignPowerWorkoutToday()",
+    "Today · ",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
   });
@@ -2862,6 +2865,7 @@ function checkPowerTrakFeature() {
     "item.status !== \"active\"",
     "is already active on",
     "throw httpError(409",
+    "assignedDate:",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Power Trak rack assignment guard missing ${text}`);
   });

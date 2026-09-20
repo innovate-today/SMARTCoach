@@ -1985,6 +1985,7 @@ function normalizePowerTrakWorkout(item) {
     id: cleanSetupText(source.id).slice(0, 120) || `power_workout_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     name,
     eventGroup: cleanSetupText(source.eventGroup || source.groupName || "All athletes").slice(0, 80) || "All athletes",
+    assignedDate: /^\d{4}-\d{2}-\d{2}$/.test(cleanSetupText(source.assignedDate)) ? cleanSetupText(source.assignedDate) : "",
     status: cleanSetupText(source.status).toLowerCase() === "archived" ? "archived" : "active",
     blocks: normalizePowerTrakBlocks(source.blocks),
     createdAt,
