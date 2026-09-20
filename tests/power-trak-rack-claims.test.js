@@ -110,7 +110,7 @@ assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions:
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [completedRack], incomingRackSessions: [{ ...completedRack, rackName: "Corrected Rack 1" }] }));
 assert.throws(
   () => validateRackSessionTransitions({ existingRackSessions: [{ ...rackOne, updatedAt: "2026-09-20T12:02:00.000Z" }], incomingRackSessions: [{ ...rackOne, updatedAt: "2026-09-20T12:01:00.000Z" }] }),
-  (error) => error.statusCode === 409 && /newer saved update/.test(error.message),
+  (error) => error.statusCode === 409 && error.code === "POWER_RACK_STALE" && /newer saved update/.test(error.message),
 );
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [{ ...rackOne }] }));
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [{ ...rackOne, updatedAt: "2026-09-20T12:01:00.000Z" }] }));
@@ -122,7 +122,7 @@ const tombstones = normalizeRackTombstones([
 assert.deepStrictEqual(tombstones, [{ id: "session-1", deletedAt: "2026-09-20T13:01:00.000Z" }]);
 assert.throws(
   () => validateRackSessionTransitions({ existingRackSessions: [], incomingRackSessions: [rackOne], tombstones }),
-  (error) => error.statusCode === 409 && /was deleted/.test(error.message),
+  (error) => error.statusCode === 409 && error.code === "POWER_RACK_DELETED" && /was deleted/.test(error.message),
 );
 
 console.log("Power Trak multi-device rack claim tests passed");

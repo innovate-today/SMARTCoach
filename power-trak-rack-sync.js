@@ -11,6 +11,7 @@
     const queue = Array.isArray(items) ? items : [];
     const synced = [];
     const failed = [];
+    const discarded = [];
 
     for (const item of queue) {
       const rack = clone(item);
@@ -18,13 +19,15 @@
         const data = await send(rack);
         synced.push({ rack, data });
       } catch (error) {
-        failed.push({ rack, error });
+        if (error && error.discard) discarded.push({ rack, error });
+        else failed.push({ rack, error });
       }
     }
 
     return {
       synced,
       failed,
+      discarded,
       remaining: failed.map((item) => clone(item.rack)),
     };
   }

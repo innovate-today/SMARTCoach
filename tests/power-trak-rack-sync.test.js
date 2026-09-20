@@ -20,6 +20,7 @@ const { flush } = require("../power-trak-rack-sync");
   assert.deepStrictEqual(result.failed.map((item) => item.rack.id), ["rack-2"]);
   assert.deepStrictEqual(result.remaining.map((rack) => rack.id), ["rack-2"]);
   assert.strictEqual(result.synced[0].data.rackSessions[0].id, "rack-1");
+  assert.deepStrictEqual(result.discarded, []);
 
   queue[1].athletes[0].completedReps = 99;
   assert.strictEqual(result.remaining[0].athletes[0].completedReps, 4);
@@ -27,6 +28,17 @@ const { flush } = require("../power-trak-rack-sync");
   const recovered = await flush(result.remaining, async (rack) => ({ savedId: rack.id }));
   assert.deepStrictEqual(recovered.remaining, []);
   assert.deepStrictEqual(recovered.synced.map((item) => item.data.savedId), ["rack-2"]);
+
+  const superseded = await flush(queue, async (rack) => {
+    if (rack.id === "rack-2") {
+      const error = new Error("Newer rack already saved");
+      error.discard = true;
+      throw error;
+    }
+    throw new Error("Temporary network failure");
+  });
+  assert.deepStrictEqual(superseded.discarded.map((item) => item.rack.id), ["rack-2"]);
+  assert.deepStrictEqual(superseded.remaining.map((rack) => rack.id), ["rack-1", "rack-3"]);
 
   console.log("Power Trak offline rack sync tests passed");
 })().catch((error) => {

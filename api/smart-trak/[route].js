@@ -1838,7 +1838,7 @@ async function accountPowerTrak(req, res) {
 
     res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message || "Power Trak save failed." });
+    res.status(error.statusCode || 500).json({ error: error.message || "Power Trak save failed.", ...(error.code ? { code: error.code } : {}) });
   }
 }
 
