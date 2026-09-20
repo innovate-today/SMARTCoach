@@ -1924,6 +1924,7 @@ function normalizePowerTrakExercises(items, blockLabel) {
       fixedUnit: cleanSetupText(source.fixedUnit || source.unit || "lb").slice(0, 20) || "lb",
       percentage: Math.min(200, Math.max(1, Number.parseFloat(source.percentage) || 75)),
       oneRepMaxExercise: cleanSetupText(source.oneRepMaxExercise || source.maxExercise || name).slice(0, 120),
+      instructions: cleanSetupText(source.instructions || source.cue || source.notes).slice(0, 200),
       restSeconds: Math.min(3600, Math.max(0, Number.parseInt(source.restSeconds, 10) || 0)),
     };
   }).filter(Boolean).slice(0, 20);
