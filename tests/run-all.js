@@ -2719,13 +2719,16 @@ function checkPowerTrakFeature() {
     "Use **Import Data** when another strength system provides a CSV or tab-separated report.",
     "Imported report history does not create reusable Workout Library templates",
     "Use **Manage Imported Data** to preview and remove imported history",
-    "Use **Testing History** to review saved testing sessions.",
+    "Use **History** to review saved legacy testing sessions.",
     "Use **Download CSV** to export the current filtered view.",
     "Use **Edit Mark** to correct one saved athlete name, grade, gender, mark, or note inside a test.",
     "Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.",
   ].forEach((text) => {
     if (!guide.includes(text)) throw new Error(`Coach guide Power Trak desktop handoff missing ${text}`);
   });
+  if (page.indexOf('data-power-tab="history">History</button>') > page.indexOf('data-power-tab="import">Import Data</button>')) {
+    throw new Error("Power Trak Import Data should be the final tab.");
+  }
   if (/Void/.test(page)) throw new Error("Power Trak desktop page should not expose void actions.");
   console.log("Power Trak feature ok");
 }
