@@ -1816,7 +1816,7 @@ async function accountPowerTrak(req, res) {
       const startedAthleteIds = validateRackSessionClaims({ existingRackSessions, incomingRackSessions: rackSessions, deleteRackSessionIds, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
       existingRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       deleteRackSessionIds.forEach((id) => rackSessionsById.delete(id));
-      rackSessions.forEach((item) => rackSessionsById.set(item.id, item));
+      rackSessions.forEach((item) => { const previous = rackSessionsById.get(item.id); item.revision = Math.max(0, Number.parseInt(previous && previous.revision, 10) || 0) + 1; rackSessionsById.set(item.id, item); });
       const powerTrakRackSessions = Array.from(rackSessionsById.values())
         .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
         .slice(0, 500);
@@ -1922,6 +1922,7 @@ function normalizePowerTrakRackSessions(items) {
       deviceLabel: cleanSetupText(source.deviceLabel).slice(0, 120),
       date: cleanSetupText(source.date).slice(0, 10) || new Date().toISOString().slice(0, 10),
       status: cleanSetupText(source.status).toLowerCase() === "complete" ? "complete" : "active",
+      revision: Math.max(0, Number.parseInt(source.revision, 10) || 0),
       athletes,
       createdAt: cleanSetupText(source.createdAt) || new Date().toISOString(),
       updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString(),

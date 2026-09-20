@@ -44,6 +44,7 @@ reservations = updateRackAthleteReservation({
   action: "release-rack-athlete",
   athleteId: "athlete-1",
   deviceId: "rack-1",
+  revision: 3,
   rackSessions: [],
   reservations,
 });
@@ -109,11 +110,11 @@ assert.throws(
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [completedRack] }));
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [completedRack], incomingRackSessions: [{ ...completedRack, rackName: "Corrected Rack 1" }] }));
 assert.throws(
-  () => validateRackSessionTransitions({ existingRackSessions: [{ ...rackOne, updatedAt: "2026-09-20T12:02:00.000Z" }], incomingRackSessions: [{ ...rackOne, updatedAt: "2026-09-20T12:01:00.000Z" }] }),
+  () => validateRackSessionTransitions({ existingRackSessions: [{ ...rackOne, revision: 4, updatedAt: "2026-09-20T12:01:00.000Z" }], incomingRackSessions: [{ ...rackOne, revision: 3, updatedAt: "2026-09-20T12:02:00.000Z" }] }),
   (error) => error.statusCode === 409 && error.code === "POWER_RACK_STALE" && /newer saved update/.test(error.message),
 );
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [{ ...rackOne }] }));
-assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [{ ...rackOne, updatedAt: "2026-09-20T12:01:00.000Z" }] }));
+assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [{ ...rackOne, revision: 3, updatedAt: "2026-09-20T11:00:00.000Z" }] }));
 
 const tombstones = normalizeRackTombstones([
   { id: "session-1", deletedAt: "2026-09-20T13:00:00.000Z" },
