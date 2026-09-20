@@ -7,7 +7,7 @@ const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
 const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
 const { displayNameCase } = require("../../lib/display-name");
-const { normalizeRackReservations, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../../lib/power-trak-rack-claims");
+const { normalizeRackReservations, normalizeRackTombstones, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../../lib/power-trak-rack-claims");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1753,7 +1753,7 @@ async function accountPowerTrak(req, res) {
         if (!athleteId || !deviceId) throw httpError(400, "Athlete and rack device are required.");
         const rackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
         const rackReservations = updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
-        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
+        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
         res.status(200).json({ success: true, action, rackReservations });
         return;
       }
@@ -1775,7 +1775,8 @@ async function accountPowerTrak(req, res) {
         const deleteIds = new Set(matches.map((item) => item.id));
         const powerTrakRackSessions = current.filter((item) => !deleteIds.has(item.id));
         const savedAt = new Date().toISOString();
-        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
+        const powerTrakRackTombstones = normalizePowerTrakRackTombstones(normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones).concat(matches.map((item) => ({ id: item.id, deletedAt: savedAt }))));
+        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), powerTrakRackTombstones, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
         res.status(200).json({ success: true, mode, deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount, remainingRackSessions: powerTrakRackSessions.length, savedAt });
         return;
       }
@@ -1809,7 +1810,9 @@ async function accountPowerTrak(req, res) {
       const powerTrakProvisionalAthletes = hasProvisionalAthletes ? normalizePowerTrakProvisionalAthletes(payload.provisionalAthletes) : normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes);
       const rackSessionsById = new Map();
       const existingRackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
-      validateRackSessionTransitions({ existingRackSessions, incomingRackSessions: rackSessions });
+      const rackDeletedAt = new Date().toISOString();
+      const powerTrakRackTombstones = normalizePowerTrakRackTombstones(normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones).concat(deleteRackSessionIds.map((id) => ({ id, deletedAt: rackDeletedAt }))));
+      validateRackSessionTransitions({ existingRackSessions, incomingRackSessions: rackSessions, tombstones: powerTrakRackTombstones });
       const startedAthleteIds = validateRackSessionClaims({ existingRackSessions, incomingRackSessions: rackSessions, deleteRackSessionIds, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
       existingRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       deleteRackSessionIds.forEach((id) => rackSessionsById.delete(id));
@@ -1826,6 +1829,7 @@ async function accountPowerTrak(req, res) {
         powerTrakProvisionalAthletes,
         powerTrakRackSessions,
         powerTrakRackReservations,
+        powerTrakRackTombstones,
         lastPowerTrakSync: { savedAt, count: sessions.length, total: powerTrakSessions.length },
       });
       res.status(200).json({ success: true, saved: true, sessions: powerTrakSessions, workouts: powerTrakWorkouts, exerciseCatalog: powerTrakExerciseCatalog, provisionalAthletes: powerTrakProvisionalAthletes, rackSessions: powerTrakRackSessions, rackReservations: powerTrakRackReservations, count: powerTrakSessions.length, workoutCount: powerTrakWorkouts.length, rackSessionCount: powerTrakRackSessions.length, savedAt });
@@ -1848,6 +1852,7 @@ async function loadPowerTrakState(accountKey, accountRecord) {
       powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(scoped.record.powerTrakProvisionalAthletes),
       powerTrakRackSessions: normalizePowerTrakRackSessions(scoped.record.powerTrakRackSessions),
       powerTrakRackReservations: normalizePowerTrakRackReservations(scoped.record.powerTrakRackReservations),
+      powerTrakRackTombstones: normalizePowerTrakRackTombstones(scoped.record.powerTrakRackTombstones),
       lastPowerTrakSync: scoped.record.lastPowerTrakSync || null,
     };
   }
@@ -1858,12 +1863,17 @@ async function loadPowerTrakState(accountKey, accountRecord) {
     powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(accountRecord && accountRecord.powerTrakProvisionalAthletes),
     powerTrakRackSessions: normalizePowerTrakRackSessions(accountRecord && accountRecord.powerTrakRackSessions),
     powerTrakRackReservations: normalizePowerTrakRackReservations(accountRecord && accountRecord.powerTrakRackReservations),
+    powerTrakRackTombstones: normalizePowerTrakRackTombstones(accountRecord && accountRecord.powerTrakRackTombstones),
     lastPowerTrakSync: accountRecord && accountRecord.lastPowerTrakSync || null,
   };
 }
 
 function normalizePowerTrakRackReservations(items) {
   return normalizeRackReservations(items, { now: Date.now(), cleanText: cleanSetupText, formatName: displayNameCase });
+}
+
+function normalizePowerTrakRackTombstones(items) {
+  return normalizeRackTombstones(items, { cleanText: cleanSetupText });
 }
 
 function normalizePowerTrakRackSessions(items) {
@@ -7452,7 +7462,7 @@ const ACCOUNT_CLEANUP_OPTIONS = {
   },
   powerTrak: {
     label: "Power Trak sessions",
-    fields: ["powerTrakSessions", "powerTrakWorkouts", "powerTrakExerciseCatalog", "powerTrakProvisionalAthletes", "powerTrakRackSessions", "lastPowerTrakSync"],
+    fields: ["powerTrakSessions", "powerTrakWorkouts", "powerTrakExerciseCatalog", "powerTrakProvisionalAthletes", "powerTrakRackSessions", "powerTrakRackReservations", "powerTrakRackTombstones", "lastPowerTrakSync"],
   },
   milesBoard: {
     label: "Miles Board sharing",

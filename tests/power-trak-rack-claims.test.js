@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { normalizeRackReservations, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../lib/power-trak-rack-claims");
+const { normalizeRackReservations, normalizeRackTombstones, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../lib/power-trak-rack-claims");
 
 function claim(options) {
   return updateRackAthleteReservation({
@@ -107,5 +107,15 @@ assert.throws(
 );
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [completedRack] }));
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [completedRack], incomingRackSessions: [{ ...completedRack, rackName: "Corrected Rack 1" }] }));
+
+const tombstones = normalizeRackTombstones([
+  { id: "session-1", deletedAt: "2026-09-20T13:00:00.000Z" },
+  { id: "session-1", deletedAt: "2026-09-20T13:01:00.000Z" },
+]);
+assert.deepStrictEqual(tombstones, [{ id: "session-1", deletedAt: "2026-09-20T13:01:00.000Z" }]);
+assert.throws(
+  () => validateRackSessionTransitions({ existingRackSessions: [], incomingRackSessions: [rackOne], tombstones }),
+  (error) => error.statusCode === 409 && /was deleted/.test(error.message),
+);
 
 console.log("Power Trak multi-device rack claim tests passed");
