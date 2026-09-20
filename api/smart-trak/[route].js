@@ -1722,6 +1722,7 @@ async function accountPowerTrak(req, res) {
       const sessions = normalizePowerTrakSessions(powerTrakState.powerTrakSessions);
       const workouts = normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts);
       const exerciseCatalog = normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog);
+      const provisionalAthletes = normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes);
       const rackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
       const rackReservations = normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations);
       const groupId = cleanSetupText(firstQueryValue(req.query && req.query.groupId));
@@ -1733,7 +1734,7 @@ async function accountPowerTrak(req, res) {
         if (end && item.date > end) return false;
         return true;
       });
-      res.status(200).json({ success: true, sessions: filtered, workouts, exerciseCatalog, rackSessions, rackReservations, count: filtered.length, workoutCount: workouts.length, rackSessionCount: rackSessions.length });
+      res.status(200).json({ success: true, sessions: filtered, workouts, exerciseCatalog, provisionalAthletes, rackSessions, rackReservations, count: filtered.length, workoutCount: workouts.length, rackSessionCount: rackSessions.length });
       return;
     }
 
@@ -1760,7 +1761,7 @@ async function accountPowerTrak(req, res) {
           const claimedAt = new Date().toISOString();
           rackReservations.push({ athleteId, athleteName, deviceId, deviceLabel, claimedAt, expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() });
         }
-        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
+        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
         res.status(200).json({ success: true, action, rackReservations });
         return;
       }
@@ -1782,7 +1783,7 @@ async function accountPowerTrak(req, res) {
         const deleteIds = new Set(matches.map((item) => item.id));
         const powerTrakRackSessions = current.filter((item) => !deleteIds.has(item.id));
         const savedAt = new Date().toISOString();
-        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
+        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
         res.status(200).json({ success: true, mode, deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount, remainingRackSessions: powerTrakRackSessions.length, savedAt });
         return;
       }
@@ -1791,9 +1792,10 @@ async function accountPowerTrak(req, res) {
       const workouts = normalizePowerTrakWorkouts(Array.isArray(payload.workouts) ? payload.workouts : payload.workout ? [payload.workout] : []);
       const deleteWorkoutIds = Array.isArray(payload.deleteWorkoutIds) ? payload.deleteWorkoutIds.map(cleanSetupText).filter(Boolean) : [];
       const hasExerciseCatalog = Array.isArray(payload.exerciseCatalog);
+      const hasProvisionalAthletes = Array.isArray(payload.provisionalAthletes);
       const rackSessions = normalizePowerTrakRackSessions(Array.isArray(payload.rackSessions) ? payload.rackSessions : payload.rackSession ? [payload.rackSession] : []);
       const deleteRackSessionIds = Array.isArray(payload.deleteRackSessionIds) ? payload.deleteRackSessionIds.map(cleanSetupText).filter(Boolean) : [];
-      if (!sessions.length && !deleteIds.length && !workouts.length && !deleteWorkoutIds.length && !rackSessions.length && !deleteRackSessionIds.length && !hasExerciseCatalog) throw httpError(400, "No Power Trak sessions, workouts, exercises, or rack sessions were provided.");
+      if (!sessions.length && !deleteIds.length && !workouts.length && !deleteWorkoutIds.length && !rackSessions.length && !deleteRackSessionIds.length && !hasExerciseCatalog && !hasProvisionalAthletes) throw httpError(400, "No Power Trak sessions, workouts, exercises, athletes, or rack sessions were provided.");
       const existing = await loadAccountRecord(accountKey);
       if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
       const powerTrakState = await loadPowerTrakState(accountKey, existing.record);
@@ -1812,6 +1814,7 @@ async function accountPowerTrak(req, res) {
         .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)) || cleanSetupText(a.name).localeCompare(cleanSetupText(b.name)))
         .slice(0, 250);
       const powerTrakExerciseCatalog = hasExerciseCatalog ? normalizePowerTrakExerciseCatalog(payload.exerciseCatalog) : normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog);
+      const powerTrakProvisionalAthletes = hasProvisionalAthletes ? normalizePowerTrakProvisionalAthletes(payload.provisionalAthletes) : normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes);
       const rackSessionsById = new Map();
       const existingRackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
       const incomingRackIds = new Set(rackSessions.map((item) => item.id));
@@ -1848,11 +1851,12 @@ async function accountPowerTrak(req, res) {
         powerTrakSessions,
         powerTrakWorkouts,
         powerTrakExerciseCatalog,
+        powerTrakProvisionalAthletes,
         powerTrakRackSessions,
         powerTrakRackReservations,
         lastPowerTrakSync: { savedAt, count: sessions.length, total: powerTrakSessions.length },
       });
-      res.status(200).json({ success: true, saved: true, sessions: powerTrakSessions, workouts: powerTrakWorkouts, exerciseCatalog: powerTrakExerciseCatalog, rackSessions: powerTrakRackSessions, rackReservations: powerTrakRackReservations, count: powerTrakSessions.length, workoutCount: powerTrakWorkouts.length, rackSessionCount: powerTrakRackSessions.length, savedAt });
+      res.status(200).json({ success: true, saved: true, sessions: powerTrakSessions, workouts: powerTrakWorkouts, exerciseCatalog: powerTrakExerciseCatalog, provisionalAthletes: powerTrakProvisionalAthletes, rackSessions: powerTrakRackSessions, rackReservations: powerTrakRackReservations, count: powerTrakSessions.length, workoutCount: powerTrakWorkouts.length, rackSessionCount: powerTrakRackSessions.length, savedAt });
       return;
     }
 
@@ -1869,6 +1873,7 @@ async function loadPowerTrakState(accountKey, accountRecord) {
       powerTrakSessions: normalizePowerTrakSessions(scoped.record.powerTrakSessions),
       powerTrakWorkouts: normalizePowerTrakWorkouts(scoped.record.powerTrakWorkouts),
       powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(scoped.record.powerTrakExerciseCatalog),
+      powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(scoped.record.powerTrakProvisionalAthletes),
       powerTrakRackSessions: normalizePowerTrakRackSessions(scoped.record.powerTrakRackSessions),
       powerTrakRackReservations: normalizePowerTrakRackReservations(scoped.record.powerTrakRackReservations),
       lastPowerTrakSync: scoped.record.lastPowerTrakSync || null,
@@ -1878,6 +1883,7 @@ async function loadPowerTrakState(accountKey, accountRecord) {
     powerTrakSessions: normalizePowerTrakSessions(accountRecord && accountRecord.powerTrakSessions),
     powerTrakWorkouts: normalizePowerTrakWorkouts(accountRecord && accountRecord.powerTrakWorkouts),
     powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(accountRecord && accountRecord.powerTrakExerciseCatalog),
+    powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(accountRecord && accountRecord.powerTrakProvisionalAthletes),
     powerTrakRackSessions: normalizePowerTrakRackSessions(accountRecord && accountRecord.powerTrakRackSessions),
     powerTrakRackReservations: normalizePowerTrakRackReservations(accountRecord && accountRecord.powerTrakRackReservations),
     lastPowerTrakSync: accountRecord && accountRecord.lastPowerTrakSync || null,
@@ -1956,6 +1962,18 @@ function normalizePowerTrakWorkouts(items) {
 function normalizePowerTrakExerciseCatalog(items) {
   const names = (Array.isArray(items) ? items : []).map((item) => cleanSetupText(item && typeof item === "object" ? item.name : item).slice(0, 120)).filter(Boolean);
   return Array.from(new Map(names.map((name) => [name.toLowerCase(), name])).values()).sort((a, b) => a.localeCompare(b)).slice(0, 500);
+}
+
+function normalizePowerTrakProvisionalAthletes(items) {
+  return (Array.isArray(items) ? items : []).map((item) => {
+    const source = item && typeof item === "object" ? item : {};
+    const id = cleanSetupText(source.id || source.smartcoachAthleteId).slice(0, 120);
+    const firstName = displayNameCase(source.firstName).slice(0, 80);
+    const lastName = displayNameCase(source.lastName).slice(0, 80);
+    const name = displayNameCase(source.name || `${firstName} ${lastName}`).slice(0, 120);
+    if (!id || !name) return null;
+    return { id, smartcoachAthleteId: id, firstName, lastName, name, graduationYear: cleanSetupText(source.graduationYear).slice(0, 4), gender: cleanSetupText(source.gender).slice(0, 30), eventGroup: cleanSetupText(source.eventGroup).slice(0, 80), provisional: true, rosterReviewStatus: "needs_review", createdAt: cleanSetupText(source.createdAt) || new Date().toISOString(), updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString() };
+  }).filter(Boolean).slice(0, 250);
 }
 
 function normalizePowerTrakWorkout(item) {
@@ -7469,7 +7487,7 @@ const ACCOUNT_CLEANUP_OPTIONS = {
   },
   powerTrak: {
     label: "Power Trak sessions",
-    fields: ["powerTrakSessions", "powerTrakWorkouts", "powerTrakExerciseCatalog", "powerTrakRackSessions", "lastPowerTrakSync"],
+    fields: ["powerTrakSessions", "powerTrakWorkouts", "powerTrakExerciseCatalog", "powerTrakProvisionalAthletes", "powerTrakRackSessions", "lastPowerTrakSync"],
   },
   milesBoard: {
     label: "Miles Board sharing",
