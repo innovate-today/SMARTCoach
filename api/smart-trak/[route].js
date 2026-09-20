@@ -1789,14 +1789,14 @@ async function accountPowerTrak(req, res) {
       const athleteClaims = new Map();
       existingRackSessions.forEach((item) => {
         if (item.status !== "active" || deleteRackSessionIds.includes(item.id) || incomingRackIds.has(item.id)) return;
-        item.athletes.filter((athlete) => athlete.rackStatus !== "released").forEach((athlete) => {
+        item.athletes.filter((athlete) => athlete.rackStatus === "active").forEach((athlete) => {
           const key = cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.id).toLowerCase();
           if (key) athleteClaims.set(key, item);
         });
       });
       rackSessions.forEach((item) => {
         if (item.status !== "active") return;
-        item.athletes.filter((athlete) => athlete.rackStatus !== "released").forEach((athlete) => {
+        item.athletes.filter((athlete) => athlete.rackStatus === "active").forEach((athlete) => {
           const key = cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.id).toLowerCase();
           const claimed = key && athleteClaims.get(key);
           if (claimed && claimed.id !== item.id) throw httpError(409, `${athlete.name || "This athlete"} is already active on ${claimed.rackName || "another rack"}.`);
@@ -1858,8 +1858,9 @@ function normalizePowerTrakRackSessions(items) {
         contactId: cleanSetupText(row.contactId).slice(0, 120),
         smartcoachAthleteId: cleanSetupText(row.smartcoachAthleteId).slice(0, 120),
         name,
-        rackStatus: cleanSetupText(row.rackStatus).toLowerCase() === "released" ? "released" : "active",
+        rackStatus: ["released", "complete"].includes(cleanSetupText(row.rackStatus).toLowerCase()) ? cleanSetupText(row.rackStatus).toLowerCase() : "active",
         releasedAt: cleanSetupText(row.releasedAt),
+        completedAt: cleanSetupText(row.completedAt),
         blockIndex: Math.max(0, Number.parseInt(row.blockIndex, 10) || 0),
         roundIndex: Math.max(0, Number.parseInt(row.roundIndex, 10) || 0),
         exerciseIndex: Math.max(0, Number.parseInt(row.exerciseIndex, 10) || 0),
