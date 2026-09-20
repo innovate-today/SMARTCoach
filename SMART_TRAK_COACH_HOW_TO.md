@@ -862,6 +862,8 @@ Use **Rack Mode** when athletes are ready to complete a saved workout. Give the 
 
 Use **Sessions** to review active and completed rack workouts. Filter by status or workout, or search by rack or athlete. Open a session to see every athlete's recorded exercises, rounds, reps, and actual results. An active session can be resumed from this view. Delete a rack session only when the entire saved rack workout is incorrect; Power Trak asks for confirmation before removing all of its athlete reps.
 
+Use **Leaderboard** to compare the best recorded result for one exercise. Choose the exercise, unit, year, and number of athletes to display. Each athlete appears only once with their best comparable result. Power Trak ranks lower times faster and ranks higher loads, heights, and distances better. Completion-only exercises do not appear on the leaderboard.
+
 Use **Testing History** to review saved testing sessions. The page can filter by group, metric, saved test, athlete, grade, gender, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved athlete name, grade, gender, mark, or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
 
 ## Log Single Result
