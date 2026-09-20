@@ -114,6 +114,7 @@ module.exports = async function handler(req, res) {
   try {
     const includeMeetHistory = ["1", "true", "yes"].includes(clean(req.query && req.query.meetHistory).toLowerCase());
     const lightDashboard = dashboardLightRequested(req);
+    const refreshDashboard = dashboardRefreshRequested(req);
     if (!includeMeetHistory && dashboardSnapshotRequested(req)) {
       const snapshot = await loadDashboardSnapshot(accountKey);
       if (snapshot) {
@@ -124,6 +125,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     const optionalRecordTimeoutMs = lightDashboard ? LIGHT_DASHBOARD_RECORD_TIMEOUT_MS : OPTIONAL_DASHBOARD_RECORD_TIMEOUT_MS;
+    const meetRecordTimeoutMs = includeMeetHistory || refreshDashboard ? 15000 : optionalRecordTimeoutMs;
     const performanceRecordsPromise = lightDashboard && !includeMeetHistory
       ? loadTrainingMirror(accountKey)
       : Promise.all([
@@ -133,7 +135,7 @@ module.exports = async function handler(req, res) {
     const [athletes, bestRecords, meetRecords, allPerformanceRecords] = await Promise.all([
       listActiveAthletes({ accountKey, token, locationId }),
       safeDashboardObjectRecords({ token, locationId, schemaKey: ATHLETE_BEST_SCHEMA_KEY, timeoutMs: optionalRecordTimeoutMs }),
-      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: includeMeetHistory ? 15000 : optionalRecordTimeoutMs }),
+      safeDashboardObjectRecords({ token, locationId, schemaKey: MEET_RESULT_SCHEMA_KEY, timeoutMs: meetRecordTimeoutMs }),
       performanceRecordsPromise,
     ]);
     const recordIndex = buildDashboardRecordIndex({ athletes, bestRecords, meetRecords, performanceRecords: allPerformanceRecords });
@@ -1118,6 +1120,10 @@ function dashboardSnapshotRequested(req) {
 
 function dashboardLightRequested(req) {
   return ["1", "true", "yes"].includes(clean(req && req.query && req.query.light).toLowerCase());
+}
+
+function dashboardRefreshRequested(req) {
+  return ["1", "true", "yes"].includes(clean(req && req.query && req.query.refresh).toLowerCase());
 }
 
 async function loadDashboardSnapshot(accountKey) {

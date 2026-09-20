@@ -3679,7 +3679,7 @@ function fetchDashboardFirstPaint(stamp,fetchOptions,options){
   var liveUrl='/api/smart-trak/dashboard?v='+stamp+'&light=1';
   var snapshotUrl=liveUrl+'&snapshot=1';
   if(options.forceRefresh){
-    return fetch(liveUrl,fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});
+    return fetch(liveUrl+'&refresh=1',fetchOptions).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});});
   }
   var browserSnapshot=options.forceRefresh?null:readDashboardBrowserSnapshot();
   if(browserSnapshot){
