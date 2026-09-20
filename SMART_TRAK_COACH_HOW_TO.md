@@ -1262,3 +1262,5 @@ If volume looks wrong:
 - Confirm the distance includes a unit such as `mi`, `miles`, `m`, or `km`.
 - Confirm the activity is saved to the correct athlete or group.
 - Confirm the current filters are not hiding part of the data.
+
+Power Trak provisional athletes are reviewed from the coach-facing Rack Setup page. Use **Review Provisional** and **Approve to Roster** to create the official active athlete with the same permanent ID, keeping all existing Power Trak history attached. This review control is hidden from the athlete rack kiosk.
