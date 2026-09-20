@@ -299,6 +299,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
     <div class="modal-actions"><button id="rackCompletionDone" type="button">Back to Racks</button></div>
   </div>
 </section>
+<script src="/power-trak-rack-queue.js"></script>
 <script>
 var POWER_METRICS={broadJump:'Broad Jump',verticalJump:'Vertical',medBallThrow:'Med Ball',squat:'Squat',clean:'Clean',bench:'Bench'};
 var DEFAULT_POWER_EXERCISES=['Back Squat','Front Squat','Bench Press','Deadlift','Power Clean','Hang Clean','Push Press','Romanian Deadlift','Split Squat','Hip Thrust','Box Jump','Broad Jump','Vertical Jump','Med Ball Throw'];
@@ -392,8 +393,8 @@ function powerRackQueueKey(){return'sc_power_rack_queue_'+smartCoachAccountKey()
 function powerRackSnapshotKey(){return'sc_power_rack_snapshot_'+smartCoachAccountKey()+'_'+powerRackDeviceId()}
 function readPowerRackQueue(){try{var value=JSON.parse(localStorage.getItem(powerRackQueueKey())||'[]');return Array.isArray(value)?value:[]}catch(e){return[]}}
 function writePowerRackQueue(items){try{localStorage.setItem(powerRackQueueKey(),JSON.stringify(items||[]))}catch(e){}updatePowerRackSyncStatus()}
-function queuePowerRackSession(rack){var items=readPowerRackQueue().filter(function(item){return item.id!==rack.id});items.push(JSON.parse(JSON.stringify(rack)));writePowerRackQueue(items);var index=state.rackSessions.findIndex(function(item){return item.id===rack.id});if(index>=0)state.rackSessions[index]=rack;else state.rackSessions.push(rack);persistPowerRackSnapshot()}
-function removeQueuedPowerRackSession(id){writePowerRackQueue(readPowerRackQueue().filter(function(item){return item.id!==id}))}
+function queuePowerRackSession(rack){writePowerRackQueue(PowerTrakRackQueue.merge(readPowerRackQueue(),rack));var index=state.rackSessions.findIndex(function(item){return item.id===rack.id});if(index>=0)state.rackSessions[index]=rack;else state.rackSessions.push(rack);persistPowerRackSnapshot()}
+function removeQueuedPowerRackSession(id){writePowerRackQueue(PowerTrakRackQueue.remove(readPowerRackQueue(),id))}
 function powerRackKioskMode(){try{return new URLSearchParams(location.search||'').get('rack')==='1'}catch(e){return false}}
 function resumeOwnedPowerRack(){if(!powerRackKioskMode()||state.activeRack)return false;var deviceId=powerRackDeviceId(),rack=state.rackSessions.filter(function(item){return item.status==='active'&&item.deviceId===deviceId}).sort(function(a,b){return String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||''))})[0];if(!rack)return false;openRackLive(rack);els.rackLiveStatus.textContent='Active rack restored on this iPad.';return true}
 function persistPowerRackSnapshot(){if(!state.workouts.length&&!state.rackSessions.length&&!state.athletes.length)return;try{localStorage.setItem(powerRackSnapshotKey(),JSON.stringify({savedAt:new Date().toISOString(),workouts:state.workouts,exerciseCatalog:state.exerciseCatalog,provisionalAthletes:state.provisionalAthletes,rackSessions:state.rackSessions,rackReservations:state.rackReservations,athletes:state.athletes,groups:state.groups}))}catch(e){}}
