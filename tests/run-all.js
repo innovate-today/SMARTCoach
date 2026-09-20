@@ -2,6 +2,7 @@ const fs = require("fs");
 require("./power-trak-rack-claims.test");
 require("./power-trak-rack-queue.test");
 require("./power-trak-rack-sync.test");
+require("./account-scoped-lock.test");
 const { spawnSync } = require("child_process");
 
 const htmlFiles = [

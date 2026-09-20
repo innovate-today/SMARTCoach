@@ -39,7 +39,7 @@ const {
   accountAccessAllowed,
   accountAccessBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord, saveLargeAccountScopedRecord, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord, saveLargeAccountScopedRecord, acquireAccountScopedLock, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -1372,6 +1372,7 @@ async function accountDashboardSupport(req, res) {
   }
 
   const { accountKey } = getGhlContext(req);
+  let releasePowerTrakLock = null;
 
   try {
     const existing = req.smartcoachRegistryAccount
@@ -1507,6 +1508,7 @@ async function accountKeepTrak(req, res) {
     }
 
     if (req.method === "POST" || req.method === "PATCH") {
+      releasePowerTrakLock = await acquireAccountScopedLock(accountKey, POWER_TRAK_NAMESPACE);
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       const notes = Array.isArray(payload.notes) ? payload.notes : payload.note ? [payload.note] : [];
       const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
@@ -1840,6 +1842,8 @@ async function accountPowerTrak(req, res) {
     res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Power Trak save failed.", ...(error.code ? { code: error.code } : {}) });
+  } finally {
+    if (releasePowerTrakLock) await releasePowerTrakLock().catch(() => {});
   }
 }
 
