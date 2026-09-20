@@ -2594,6 +2594,14 @@ function checkPowerTrakFeature() {
     "function rackReservationForAthlete(athleteId)",
     "function updateRackReservation(input,claim,quiet)",
     "function refreshRackReservations()",
+    "function powerRackQueueKey()",
+    "function queuePowerRackSession(rack)",
+    "function restorePowerRackSnapshot()",
+    "function flushPowerRackQueue()",
+    "Saved on this iPad · waiting to sync:",
+    "setInterval(flushPowerRackQueue,10000)",
+    "window.addEventListener('online'",
+    'id="rackSyncStatus"',
     "claim-rack-athlete",
     "release-rack-athlete",
     "setInterval(refreshRackReservations,5000)",
@@ -2767,7 +2775,7 @@ function checkPowerTrakFeature() {
   if (rackManifest.start_url !== "/power-trak.html?rack=1" || rackManifest.display !== "standalone") {
     throw new Error("Power Trak rack PWA manifest is not configured for standalone Rack Mode.");
   }
-  ["power-trak-rack-v1", "/power-trak-rack.webmanifest", "/assets/smart-logo.png", "url.pathname.startsWith(\"/api/\")"].forEach((text) => {
+  ["power-trak-rack-v2", "/power-trak-rack.webmanifest", "/assets/smart-logo.png", "/power-trak-rack-shell", "url.pathname.startsWith(\"/api/\")"].forEach((text) => {
     if (!rackServiceWorker.includes(text)) throw new Error(`Power Trak rack service worker missing ${text}`);
   });
   [
