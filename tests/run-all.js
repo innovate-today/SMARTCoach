@@ -2936,23 +2936,18 @@ function checkPowerTrakFeature() {
     if (!rackServiceWorker.includes(text)) throw new Error(`Power Trak rack service worker missing ${text}`);
   });
   [
-    "const athleteClaims = new Map();",
-    "const reservationClaims = new Map(",
     "updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions",
+    "validateRackSessionClaims({ existingRackSessions, incomingRackSessions: rackSessions",
     '"claim-rack-athlete", "release-rack-athlete"',
     "normalizePowerTrakRackReservations",
-    "reserved on ${reserved.deviceLabel",
-    'athlete.rackStatus === "active"',
     'rackStatus: ["released", "complete"].includes',
     "completedAt: cleanSetupText(row.completedAt)",
-    "item.status !== \"active\"",
-    "is already active on",
     "throw httpError(409",
     "assignedDate:",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Power Trak rack assignment guard missing ${text}`);
   });
-  ["function updateRackAthleteReservation(options = {})", "now.getTime() + 5 * 60 * 1000", "error.statusCode = 409"].forEach((text) => {
+  ["function updateRackAthleteReservation(options = {})", "function validateRackSessionClaims(options = {})", "now.getTime() + 5 * 60 * 1000", "error.statusCode = 409", "reserved on ${reserved.deviceLabel", "is already active on", 'athlete.rackStatus === "active"', 'rack.status !== "active"'].forEach((text) => {
     if (!rackClaims.includes(text)) throw new Error(`Power Trak rack claim helper missing ${text}`);
   });
   [

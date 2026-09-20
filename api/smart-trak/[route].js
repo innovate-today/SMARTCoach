@@ -7,7 +7,7 @@ const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
 const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
 const { displayNameCase } = require("../../lib/display-name");
-const { updateRackAthleteReservation } = require("../../lib/power-trak-rack-claims");
+const { updateRackAthleteReservation, validateRackSessionClaims } = require("../../lib/power-trak-rack-claims");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1809,34 +1809,13 @@ async function accountPowerTrak(req, res) {
       const powerTrakProvisionalAthletes = hasProvisionalAthletes ? normalizePowerTrakProvisionalAthletes(payload.provisionalAthletes) : normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes);
       const rackSessionsById = new Map();
       const existingRackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
-      const incomingRackIds = new Set(rackSessions.map((item) => item.id));
-      const athleteClaims = new Map();
-      const reservationClaims = new Map(normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations).map((item) => [item.athleteId.toLowerCase(), item]));
-      existingRackSessions.forEach((item) => {
-        if (item.status !== "active" || deleteRackSessionIds.includes(item.id) || incomingRackIds.has(item.id)) return;
-        item.athletes.filter((athlete) => athlete.rackStatus === "active").forEach((athlete) => {
-          const key = cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.id).toLowerCase();
-          if (key) athleteClaims.set(key, item);
-        });
-      });
-      rackSessions.forEach((item) => {
-        if (item.status !== "active") return;
-        item.athletes.filter((athlete) => athlete.rackStatus === "active").forEach((athlete) => {
-          const key = cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.id).toLowerCase();
-          const claimed = key && athleteClaims.get(key);
-          if (claimed && claimed.id !== item.id) throw httpError(409, `${athlete.name || "This athlete"} is already active on ${claimed.rackName || "another rack"}.`);
-          const reserved = key && reservationClaims.get(key);
-          if (reserved && reserved.deviceId !== item.deviceId) throw httpError(409, `${athlete.name || reserved.athleteName || "This athlete"} is reserved on ${reserved.deviceLabel || "another rack iPad"}.`);
-          if (key) athleteClaims.set(key, item);
-        });
-      });
+      const startedAthleteIds = validateRackSessionClaims({ existingRackSessions, incomingRackSessions: rackSessions, deleteRackSessionIds, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
       existingRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       deleteRackSessionIds.forEach((id) => rackSessionsById.delete(id));
       rackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       const powerTrakRackSessions = Array.from(rackSessionsById.values())
         .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
         .slice(0, 500);
-      const startedAthleteIds = new Set(rackSessions.filter((item) => item.status === "active").flatMap((item) => item.athletes.filter((athlete) => athlete.rackStatus === "active").map((athlete) => cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.id).toLowerCase())).filter(Boolean));
       const powerTrakRackReservations = normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations).filter((item) => !startedAthleteIds.has(item.athleteId.toLowerCase()));
       const savedAt = new Date().toISOString();
       await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {

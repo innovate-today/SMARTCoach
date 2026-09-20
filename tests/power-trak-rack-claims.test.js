@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { updateRackAthleteReservation } = require("../lib/power-trak-rack-claims");
+const { updateRackAthleteReservation, validateRackSessionClaims } = require("../lib/power-trak-rack-claims");
 
 function claim(options) {
   return updateRackAthleteReservation({
@@ -50,5 +50,34 @@ assert.throws(
   }),
   (error) => error.statusCode === 409 && /already active on Rack 2/.test(error.message),
 );
+
+const rackOne = {
+  id: "session-1",
+  status: "active",
+  rackName: "Rack 1",
+  deviceId: "rack-1",
+  athletes: [{ id: "athlete-1", name: "Test Athlete", rackStatus: "active" }],
+};
+const rackTwo = {
+  id: "session-2",
+  status: "active",
+  rackName: "Rack 2",
+  deviceId: "rack-2",
+  athletes: [{ id: "athlete-1", name: "Test Athlete", rackStatus: "active" }],
+};
+
+assert.throws(
+  () => validateRackSessionClaims({ existingRackSessions: [rackOne], incomingRackSessions: [rackTwo], reservations: [] }),
+  (error) => error.statusCode === 409 && /already active on Rack 1/.test(error.message),
+);
+
+const rackOneReservation = [{ athleteId: "athlete-1", athleteName: "Test Athlete", deviceId: "rack-1", deviceLabel: "Rack 1 iPad" }];
+assert.throws(
+  () => validateRackSessionClaims({ existingRackSessions: [], incomingRackSessions: [rackTwo], reservations: rackOneReservation }),
+  (error) => error.statusCode === 409 && /reserved on Rack 1 iPad/.test(error.message),
+);
+
+const started = validateRackSessionClaims({ existingRackSessions: [], incomingRackSessions: [rackOne], reservations: rackOneReservation });
+assert.deepStrictEqual(Array.from(started), ["athlete-1"]);
 
 console.log("Power Trak multi-device rack claim tests passed");
