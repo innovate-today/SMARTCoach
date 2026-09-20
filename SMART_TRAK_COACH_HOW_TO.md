@@ -1298,3 +1298,5 @@ Sessions search recognizes rack names, athlete names, and exercise names. Click 
 Use **Export Workload** to download the filtered Exercise Workload table. The CSV includes exercise, unit, participating athletes, load reps, total load, average load per rep, and heaviest rep. It follows the same session status, completion, workout, search, and date filters shown on screen.
 
 Use **Reset View** in the Sessions filter bar to clear status, completion, workout, search, and date filters at once. It also closes an expanded session and restores the complete Sessions view.
+
+Power Trak treats `lb`, `lbs`, `pound`, and `pounds` as pounds, and treats `kg`, `kgs`, `kilogram`, and `kilograms` as kilograms. New rack load reps are saved with the short `lb` or `kg` label. Existing aliases combine correctly in workload totals and can provide the matching 1RM for percentage prescriptions.
