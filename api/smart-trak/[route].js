@@ -1737,6 +1737,28 @@ async function accountPowerTrak(req, res) {
 
     if (req.method === "POST" || req.method === "PATCH") {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      if (cleanSetupText(payload.action).toLowerCase() === "cleanup-power-import") {
+        requireOwnerAdminSession(req, "clean up imported Power Trak data");
+        const existing = await loadAccountRecord(accountKey);
+        if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
+        const powerTrakState = await loadPowerTrakState(accountKey, existing.record);
+        const current = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
+        const matches = current.filter((item) => cleanSetupText(item.id).startsWith("power_import_"));
+        const repCount = matches.reduce((total, item) => total + item.athletes.reduce((sum, athlete) => sum + athlete.results.length, 0), 0);
+        const athleteCount = new Set(matches.flatMap((item) => item.athletes.map((athlete) => cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.name).toLowerCase()).filter(Boolean))).size;
+        const cleanup = { sessionCount: matches.length, athleteCount, repCount, sessionDates: Array.from(new Set(matches.map((item) => item.date).filter(Boolean))).sort(), expectedConfirmation: `DELETE ${matches.length} POWER IMPORT SESSIONS / ${repCount} REPS` };
+        const mode = cleanSetupText(payload.mode || "preview").toLowerCase();
+        if (mode === "preview") { res.status(200).json({ success: true, mode, cleanup }); return; }
+        if (mode !== "delete") throw httpError(400, "Cleanup mode must be preview or delete.");
+        if (!matches.length) throw httpError(404, "No imported Power Trak sessions were found.");
+        if (!safeEqual(cleanSetupText(payload.confirmation), cleanup.expectedConfirmation)) throw httpError(409, "Cleanup confirmation does not match the preview.");
+        const deleteIds = new Set(matches.map((item) => item.id));
+        const powerTrakRackSessions = current.filter((item) => !deleteIds.has(item.id));
+        const savedAt = new Date().toISOString();
+        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakRackSessions, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
+        res.status(200).json({ success: true, mode, deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount, remainingRackSessions: powerTrakRackSessions.length, savedAt });
+        return;
+      }
       const sessions = normalizePowerTrakSessions(Array.isArray(payload.sessions) ? payload.sessions : payload.session ? [payload.session] : [payload]);
       const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
       const workouts = normalizePowerTrakWorkouts(Array.isArray(payload.workouts) ? payload.workouts : payload.workout ? [payload.workout] : []);
