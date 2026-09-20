@@ -1278,3 +1278,5 @@ At the top of **Sessions**, the summary follows the current status, workout, and
 Use the **From** and **To** fields in Sessions to review a specific week, month, training phase, or season window. Either boundary can be used alone. The session table, summary totals, and **Export Results** file all follow the same date range together with the status, workout, and search filters.
 
 **Rep Completion** compares recorded repetitions with prescribed repetitions for saved workouts in the current filtered view. Imported and legacy sessions without a reusable workout prescription remain included in the other totals but are excluded from this percentage. This keeps imported history from distorting workout completion.
+
+The Sessions table shows recorded versus prescribed repetitions when the saved workout template is available. Open a session to see the same comparison for every athlete together with **Complete**, **Stopped early**, or **Active** status. Imported history without a prescription shows recorded reps without inventing a target.
