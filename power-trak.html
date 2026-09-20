@@ -44,6 +44,7 @@ input[aria-invalid="true"]{border-color:#dc2626;box-shadow:0 0 0 2px rgba(220,38
 table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{font-size:12px;color:#41516a;text-transform:uppercase;letter-spacing:.03em;background:#f8fbff;cursor:pointer}td{font-size:14px}.name{font-weight:900;color:#0f2a70}.small{display:block;color:#52627a;font-size:12px;margin-top:2px}.metric{font-weight:900;color:#0f2a70}.empty{padding:24px;text-align:center;color:var(--muted)}.note{max-width:260px;color:#334155}.row-actions{display:flex;gap:6px;flex-wrap:wrap}.row-actions button{font-size:12px;min-height:28px;padding:5px 8px}.row-actions .edit{background:#e8eefc;color:#173891}
 .modal{position:fixed;inset:0;z-index:1500;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.48);padding:18px}.modal[hidden]{display:none}.modal-card{width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 24px 70px rgba(15,23,42,.28)}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}.modal-head h2{margin:0;font-size:20px}.modal-body{padding:14px 16px}.formgrid{display:grid;grid-template-columns:1fr;gap:10px}.formgrid label{display:grid;gap:5px;font-size:12px;font-weight:900;color:#41516a;text-transform:uppercase;letter-spacing:.03em}.modal-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 16px 16px}.modal-status{font-size:13px;font-weight:900;color:var(--muted);margin-top:10px}.modal-status.bad{color:#b91c1c}.modal-status.good{color:var(--good)}
 .rack-receipt-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}.rack-receipt-summary div,.rack-receipt-athlete{border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:10px}.rack-receipt-summary b,.rack-receipt-summary span{display:block}.rack-receipt-summary b{font-size:21px}.rack-receipt-summary span,.rack-receipt-athlete span{font-size:12px;color:var(--muted)}.rack-receipt-list{display:grid;gap:7px}.rack-receipt-athlete{display:flex;align-items:center;justify-content:space-between;gap:12px}.rack-receipt-athlete b{display:block}.rack-receipt-status{font-weight:900;color:var(--good);text-align:right}.rack-receipt-status.early{color:#b45309}
+.rack-device-checks{display:grid;gap:8px}.rack-device-check{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:8px;background:#f8fbff;padding:10px 12px}.rack-device-check b,.rack-device-check span{display:block}.rack-device-check span{margin-top:2px;font-size:12px;color:var(--muted)}.rack-device-check strong{white-space:nowrap;color:var(--good)}.rack-device-check.bad strong{color:#b91c1c}
 @media(max-width:1200px){.exercise-row{grid-template-columns:42px minmax(180px,2fr) 82px minmax(180px,1fr)}.exercise-config{grid-column:2/5;grid-template-columns:repeat(2,minmax(180px,1fr))}.exercise-row>.builder-actions{grid-column:2/5}}
 @media(max-width:980px){.cards,.progression-summary,.rack-session-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.controls,.progression-filters,.session-filters{grid-template-columns:1fr 1fr}.layout,.builder-layout,.rack-setup,.rack-live-grid{grid-template-columns:1fr}.sessions,.workout-list{max-height:300px}.block-head{grid-template-columns:auto 1fr 90px auto}.rack-queue{border-left:0;border-top:1px solid var(--line)}}
 @media(max-width:760px){.page{padding:12px 10px}.top{align-items:flex-start;flex-direction:column}.controls,.builder-grid,.rack-fields,.athlete-picker,.leaderboard-filters,.progression-filters,.progression-summary,.import-grid{grid-template-columns:1fr}.tablewrap{overflow:auto}table{min-width:900px}.tabs{overflow:auto}.tabs button{white-space:nowrap}.exercise-row{grid-template-columns:36px 1fr}.exercise-row>*:not(.exercise-code){grid-column:2}.block-head{grid-template-columns:auto 1fr}.block-head>*:nth-child(n+3){grid-column:2}.rack-tabs{grid-template-columns:1fr 1fr}.trend-chart{height:180px}}
@@ -297,6 +298,13 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
     <div class="modal-head"><div><h2>Rack Complete</h2><span id="rackCompletionContext" class="small"></span></div></div>
     <div class="modal-body"><div id="rackCompletionSummary"></div><div id="rackCompletionSync" class="modal-status"></div></div>
     <div class="modal-actions"><button id="rackCompletionDone" type="button">Back to Racks</button></div>
+  </div>
+</section>
+<section id="rackDeviceCheckModal" class="modal" hidden aria-label="Rack iPad device check">
+  <div class="modal-card">
+    <div class="modal-head"><div><h2>Rack iPad Device Check</h2><span class="small">Run before athletes begin using this rack.</span></div><button id="rackDeviceCheckClose" class="utility-action" type="button">Close</button></div>
+    <div class="modal-body"><div id="rackDeviceCheckResults" class="rack-device-checks"><div class="empty">Checking this iPad...</div></div><div id="rackDeviceCheckStatus" class="modal-status"></div></div>
+    <div class="modal-actions"><button id="rackDeviceCheckRun" type="button">Run Again</button></div>
   </div>
 </section>
 <script src="/power-trak-rack-queue.js"></script>
@@ -587,10 +595,10 @@ els.rackLive.addEventListener('click',function(event){if(event.target.closest('[
   try{deviceLabel=localStorage.getItem(labelKey)||deviceLabel}catch(e){}
   var bar=document.createElement('div');
   bar.className='rack-device-bar';
-  bar.innerHTML='<div><b>'+esc(deviceLabel)+'</b><span id="rackSyncStatus" class="small">Checking sync status...</span></div><div class="actions"><button class="utility-action" type="button" data-retry-rack-sync hidden>Retry Sync</button><button class="utility-action" type="button" data-change-rack-login>Change Login</button></div>';
+  bar.innerHTML='<div><b>'+esc(deviceLabel)+'</b><span id="rackSyncStatus" class="small">Checking sync status...</span></div><div class="actions"><button class="utility-action" type="button" data-rack-device-check>Device Check</button><button class="utility-action" type="button" data-retry-rack-sync hidden>Retry Sync</button><button class="utility-action" type="button" data-change-rack-login>Change Login</button></div>';
   var rackPanel=document.getElementById('rackPanel');
   if(rackPanel)rackPanel.parentNode.insertBefore(bar,rackPanel);
-  bar.addEventListener('click',function(event){if(event.target.closest('[data-retry-rack-sync]')){flushPowerRackQueue();return}if(event.target.closest('[data-change-rack-login]'))requestPowerRackLoginChange()});
+  bar.addEventListener('click',function(event){if(event.target.closest('[data-rack-device-check]')){runPowerRackDeviceCheck();return}if(event.target.closest('[data-retry-rack-sync]')){flushPowerRackQueue();return}if(event.target.closest('[data-change-rack-login]'))requestPowerRackLoginChange()});
   function showRackLogin(){
     if(document.getElementById('rackPwaLogin'))return;
     var overlay=document.createElement('div');
@@ -613,6 +621,22 @@ els.rackLive.addEventListener('click',function(event){if(event.target.closest('[
 })();
 </script>
 <script>
+function rackDeviceCheckRow(label,detail,passed){return'<div class="rack-device-check'+(passed?'':' bad')+'"><div><b>'+esc(label)+'</b><span>'+esc(detail)+'</span></div><strong>'+(passed?'Ready':'Needs attention')+'</strong></div>'}
+function runPowerRackDeviceCheck(){
+  var modal=document.getElementById('rackDeviceCheckModal'),results=document.getElementById('rackDeviceCheckResults'),status=document.getElementById('rackDeviceCheckStatus'),run=document.getElementById('rackDeviceCheckRun');
+  modal.hidden=false;run.disabled=true;results.innerHTML='<div class="empty">Checking this iPad...</div>';status.className='modal-status';status.textContent='';
+  var checks=[];
+  checks.push({label:'Internet connection',detail:navigator.onLine?'This iPad reports that it is online.':'Reconnect this iPad to the facility network.',passed:navigator.onLine});
+  var storagePassed=false;
+  try{var storageKey='sc_power_rack_check_'+Date.now();localStorage.setItem(storageKey,'ready');storagePassed=localStorage.getItem(storageKey)==='ready';localStorage.removeItem(storageKey)}catch(e){}
+  checks.push({label:'Offline rack storage',detail:storagePassed?'This iPad can retain rack progress during a brief outage.':'Allow browser storage before athletes use this rack.',passed:storagePassed});
+  var serviceWorkerCheck=('serviceWorker'in navigator)?navigator.serviceWorker.getRegistration('/').then(function(registration){return{label:'Installed rack support',detail:registration?'The rack service worker is available.':'Reload once while online to finish rack installation.',passed:!!registration}}).catch(function(){return{label:'Installed rack support',detail:'Reload once while online to finish rack installation.',passed:false}}):Promise.resolve({label:'Installed rack support',detail:'This browser does not support the rack service worker.',passed:false});
+  var apiCheck=navigator.onLine?fetch(apiUrl('/api/smart-trak/power-trak'),{cache:'no-store',headers:headers()}).then(function(response){if(!response.ok)throw new Error('Protected Power Trak access failed.');return response.json()}).then(function(){return{label:'SMART Trak connection',detail:'Protected rack data loaded for '+powerRackDeviceLabel()+'.',passed:true}}).catch(function(error){return{label:'SMART Trak connection',detail:error.message||'Sign in again and retry this check.',passed:false}}):Promise.resolve({label:'SMART Trak connection',detail:'Reconnect before checking protected rack data.',passed:false});
+  Promise.all([serviceWorkerCheck,apiCheck]).then(function(remoteChecks){checks=checks.concat(remoteChecks);var pending=readPowerRackQueue().length;checks.push({label:'Pending rack updates',detail:pending?pending+' update'+(pending===1?' is':'s are')+' still waiting to sync.':'No rack updates are waiting to sync.',passed:pending===0});results.innerHTML=checks.map(function(check){return rackDeviceCheckRow(check.label,check.detail,check.passed)}).join('');var failed=checks.filter(function(check){return !check.passed}).length;status.className='modal-status '+(failed?'bad':'good');status.textContent=failed?failed+' check'+(failed===1?' needs':'s need')+' attention before the rack starts.':'This rack iPad is ready for athlete entry.'}).finally(function(){run.disabled=false})
+}
+document.getElementById('rackDeviceCheckClose').addEventListener('click',function(){document.getElementById('rackDeviceCheckModal').hidden=true});
+document.getElementById('rackDeviceCheckRun').addEventListener('click',runPowerRackDeviceCheck);
+document.getElementById('rackDeviceCheckModal').addEventListener('click',function(event){if(event.target===this)this.hidden=true});
 function renderRackSetupKeepingWorkout(){var workout=els.rackWorkout.value;renderRackSetup();els.rackWorkout.value=workout}
 function updateRackReservation(input,claim,quiet){
   var roster=activeRoster(),athlete=roster[Number(input.getAttribute('data-roster-index'))],athleteId=input.value;

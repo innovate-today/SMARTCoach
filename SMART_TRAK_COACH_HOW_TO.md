@@ -840,6 +840,8 @@ On the SMARTCoach app, choose **Speed Trak**, then choose the group when the gro
 
 ## Power Trak
 
+On each dedicated rack iPad, tap **Device Check** before athletes begin. Confirm that internet connection, offline rack storage, installed rack support, SMART Trak connection, and pending rack updates all show **Ready**. The check is read-only and does not reserve an athlete or start a rack.
+
 Use **Power Trak** in the SMARTCoach app when a group is testing broad jump, vertical, med ball throw, squat, clean, bench, or similar power marks.
 
 How to use it:
