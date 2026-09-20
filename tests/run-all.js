@@ -2843,6 +2843,9 @@ function checkPowerTrakFeature() {
     'id="assignTodayBtn"',
     "function assignPowerWorkoutToday()",
     "Today · ",
+    "function beginRack(workout,selected)",
+    "Start an unassigned workout?",
+    "Start Anyway",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
   });
