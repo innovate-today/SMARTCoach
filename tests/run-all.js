@@ -2846,6 +2846,9 @@ function checkPowerTrakFeature() {
     "function beginRack(workout,selected)",
     "Start an unassigned workout?",
     "Start Anyway",
+    "function endRackFromOverview(rack)",
+    'data-end-rack=',
+    "This rack was ended from the coach screen.",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
   });
