@@ -2854,6 +2854,10 @@ function checkPowerTrakFeature() {
     'id="rackSummaryReps"',
     'id="rackSummaryLoad"',
     "function rackSessionSummary(racks)",
+    'id="rackSessionStart"',
+    'id="rackSessionEnd"',
+    "if(start&&rack.date<start)",
+    "if(end&&rack.date>end)",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
   });
