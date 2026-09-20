@@ -106,7 +106,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
       <section class="panel"><div class="panelhead"><h2>Active Racks</h2><span id="activeRackCount" class="status">0 active</span></div><div id="activeRackList"><div class="empty">No active racks.</div></div></section>
     </div>
     <div id="rackLive" hidden>
-      <section class="panel"><div class="panelhead"><div><h2 id="rackLiveTitle">Rack</h2><span id="rackLiveWorkout" class="small"></span></div><div class="builder-actions"><button class="utility-action" type="button" data-add-provisional-athlete>Add Provisional Athlete</button><button id="backToRacksBtn" class="utility-action" type="button">Back to Racks</button><button id="completeRackBtn" type="button">Complete Rack</button></div></div><div class="rack-body"><div id="rackAthleteTabs" class="rack-tabs"></div><div class="late-join"><label class="field">Add late athlete<select id="lateAthleteSelect"><option value="">Choose athlete</option></select></label><button id="addLateAthleteBtn" class="utility-action" type="button">Add Athlete</button></div><div id="rackLiveStatus" class="builder-status"></div><div id="rackLiveContent"></div></div></section>
+      <section class="panel"><div class="panelhead"><div class="late-join"><button id="backToRacksBtn" class="utility-action" type="button">← Back to Racks</button><div><h2 id="rackLiveTitle">Rack</h2><span id="rackLiveWorkout" class="small"></span></div></div><button id="completeRackBtn" type="button">Complete Rack</button></div><div class="rack-body"><div id="rackAthleteTabs" class="rack-tabs"></div><div class="late-join"><label class="field">Add late athlete<select id="lateAthleteSelect"><option value="">Choose athlete</option></select></label><button id="addLateAthleteBtn" class="utility-action" type="button">Add Athlete</button><button class="utility-action" type="button" data-add-provisional-athlete>New Provisional Athlete</button><span id="rackAthleteActions"></span></div><div id="rackLiveStatus" class="builder-status"></div><div id="rackLiveContent"></div></div></section>
     </div>
   </section>
 
@@ -441,6 +441,8 @@ renderRackLive=function(){
     var athlete=rack.athletes.find(function(item){return item.id===button.getAttribute('data-rack-athlete')});
     if(athlete&&athlete.rackStatus==='released')button.remove();
   });
+  var actions=document.getElementById('rackAthleteActions');
+  if(actions)actions.innerHTML='';
   var athlete=rack.athletes.find(function(item){return item.id===state.activeRackAthleteId&&(!item.rackStatus||item.rackStatus==='active')});
   if(athlete){
     var release=document.createElement('button');
@@ -448,11 +450,10 @@ renderRackLive=function(){
     release.className='danger-action';
     release.setAttribute('data-release-rack-athlete','');
     release.textContent='Release Athlete';
-    release.style.marginTop='12px';
-    els.rackLiveContent.appendChild(release);
+    if(actions)actions.appendChild(release);
   }
 };
-els.rackLiveContent.addEventListener('click',function(event){if(event.target.closest('[data-release-rack-athlete]'))releaseActiveRackAthlete()});
+els.rackLive.addEventListener('click',function(event){if(event.target.closest('[data-release-rack-athlete]'))releaseActiveRackAthlete()});
 </script>
 <script>
 (function initPowerRackPwa(){
