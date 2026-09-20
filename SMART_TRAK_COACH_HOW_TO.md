@@ -858,6 +858,8 @@ If the phone cannot reach SMART Trak during testing, SMARTCoach keeps the Power 
 
 On the Dashboard, open **Power Trak**. Use **Workouts** to create reusable rack workouts. Give the workout a name and event group, then organize exercises into A, B, C, or later blocks. Set the number of rounds and reps for each exercise. Choose whether athletes use a fixed load, a percentage of their saved one-rep max, an athlete-entered load, completion only, height, distance, or time. Save the workout when every exercise is named. Duplicate an existing workout when a new workout only needs a few changes.
 
+Use **Rack Mode** when athletes are ready to complete a saved workout. Give the rack a name, choose one workout, and select up to four active athletes sharing that iPad. Everyone at that rack receives the same workout, but each athlete keeps an independent place in the exercise, round, and rep sequence. Tap an athlete's name before recording a rep, enter the actual load or result when needed, and tap **Complete Rep** once for each completed repetition. Use **Undo Last Rep** to correct the most recent tap. If an athlete arrives after the rack starts, use **Add late athlete**; the new athlete begins at the start of the workout without resetting anyone else. Use **Complete Rack** when the rack is done.
+
 Use **Testing History** to review saved testing sessions. The page can filter by group, metric, saved test, athlete, grade, gender, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved athlete name, grade, gender, mark, or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
 
 ## Log Single Result

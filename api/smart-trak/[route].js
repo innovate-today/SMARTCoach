@@ -1721,6 +1721,7 @@ async function accountPowerTrak(req, res) {
       const powerTrakState = await loadPowerTrakState(accountKey, existing && existing.record);
       const sessions = normalizePowerTrakSessions(powerTrakState.powerTrakSessions);
       const workouts = normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts);
+      const rackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
       const groupId = cleanSetupText(firstQueryValue(req.query && req.query.groupId));
       const start = firstQueryValue(req.query && req.query.start);
       const end = firstQueryValue(req.query && req.query.end);
@@ -1730,7 +1731,7 @@ async function accountPowerTrak(req, res) {
         if (end && item.date > end) return false;
         return true;
       });
-      res.status(200).json({ success: true, sessions: filtered, workouts, count: filtered.length, workoutCount: workouts.length });
+      res.status(200).json({ success: true, sessions: filtered, workouts, rackSessions, count: filtered.length, workoutCount: workouts.length, rackSessionCount: rackSessions.length });
       return;
     }
 
@@ -1740,7 +1741,9 @@ async function accountPowerTrak(req, res) {
       const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
       const workouts = normalizePowerTrakWorkouts(Array.isArray(payload.workouts) ? payload.workouts : payload.workout ? [payload.workout] : []);
       const deleteWorkoutIds = Array.isArray(payload.deleteWorkoutIds) ? payload.deleteWorkoutIds.map(cleanSetupText).filter(Boolean) : [];
-      if (!sessions.length && !deleteIds.length && !workouts.length && !deleteWorkoutIds.length) throw httpError(400, "No Power Trak sessions or workouts were provided.");
+      const rackSessions = normalizePowerTrakRackSessions(Array.isArray(payload.rackSessions) ? payload.rackSessions : payload.rackSession ? [payload.rackSession] : []);
+      const deleteRackSessionIds = Array.isArray(payload.deleteRackSessionIds) ? payload.deleteRackSessionIds.map(cleanSetupText).filter(Boolean) : [];
+      if (!sessions.length && !deleteIds.length && !workouts.length && !deleteWorkoutIds.length && !rackSessions.length && !deleteRackSessionIds.length) throw httpError(400, "No Power Trak sessions, workouts, or rack sessions were provided.");
       const existing = await loadAccountRecord(accountKey);
       if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
       const powerTrakState = await loadPowerTrakState(accountKey, existing.record);
@@ -1758,13 +1761,21 @@ async function accountPowerTrak(req, res) {
       const powerTrakWorkouts = Array.from(workoutsById.values())
         .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)) || cleanSetupText(a.name).localeCompare(cleanSetupText(b.name)))
         .slice(0, 250);
+      const rackSessionsById = new Map();
+      normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions).forEach((item) => rackSessionsById.set(item.id, item));
+      deleteRackSessionIds.forEach((id) => rackSessionsById.delete(id));
+      rackSessions.forEach((item) => rackSessionsById.set(item.id, item));
+      const powerTrakRackSessions = Array.from(rackSessionsById.values())
+        .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
+        .slice(0, 500);
       const savedAt = new Date().toISOString();
       await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
         powerTrakSessions,
         powerTrakWorkouts,
+        powerTrakRackSessions,
         lastPowerTrakSync: { savedAt, count: sessions.length, total: powerTrakSessions.length },
       });
-      res.status(200).json({ success: true, saved: true, sessions: powerTrakSessions, workouts: powerTrakWorkouts, count: powerTrakSessions.length, workoutCount: powerTrakWorkouts.length, savedAt });
+      res.status(200).json({ success: true, saved: true, sessions: powerTrakSessions, workouts: powerTrakWorkouts, rackSessions: powerTrakRackSessions, count: powerTrakSessions.length, workoutCount: powerTrakWorkouts.length, rackSessionCount: powerTrakRackSessions.length, savedAt });
       return;
     }
 
@@ -1780,14 +1791,63 @@ async function loadPowerTrakState(accountKey, accountRecord) {
     return {
       powerTrakSessions: normalizePowerTrakSessions(scoped.record.powerTrakSessions),
       powerTrakWorkouts: normalizePowerTrakWorkouts(scoped.record.powerTrakWorkouts),
+      powerTrakRackSessions: normalizePowerTrakRackSessions(scoped.record.powerTrakRackSessions),
       lastPowerTrakSync: scoped.record.lastPowerTrakSync || null,
     };
   }
   return {
     powerTrakSessions: normalizePowerTrakSessions(accountRecord && accountRecord.powerTrakSessions),
     powerTrakWorkouts: normalizePowerTrakWorkouts(accountRecord && accountRecord.powerTrakWorkouts),
+    powerTrakRackSessions: normalizePowerTrakRackSessions(accountRecord && accountRecord.powerTrakRackSessions),
     lastPowerTrakSync: accountRecord && accountRecord.lastPowerTrakSync || null,
   };
+}
+
+function normalizePowerTrakRackSessions(items) {
+  return (Array.isArray(items) ? items : []).map((item) => {
+    const source = item && typeof item === "object" ? item : {};
+    const id = cleanSetupText(source.id).slice(0, 120);
+    const workoutId = cleanSetupText(source.workoutId).slice(0, 120);
+    const athletes = (Array.isArray(source.athletes) ? source.athletes : []).map((athlete, index) => {
+      const row = athlete && typeof athlete === "object" ? athlete : {};
+      const name = displayNameCase(row.name || row.athleteName).slice(0, 120);
+      if (!name) return null;
+      return {
+        id: cleanSetupText(row.id || row.smartcoachAthleteId || row.contactId).slice(0, 120) || `rack_athlete_${index + 1}`,
+        contactId: cleanSetupText(row.contactId).slice(0, 120),
+        smartcoachAthleteId: cleanSetupText(row.smartcoachAthleteId).slice(0, 120),
+        name,
+        blockIndex: Math.max(0, Number.parseInt(row.blockIndex, 10) || 0),
+        roundIndex: Math.max(0, Number.parseInt(row.roundIndex, 10) || 0),
+        exerciseIndex: Math.max(0, Number.parseInt(row.exerciseIndex, 10) || 0),
+        repCount: Math.max(0, Number.parseInt(row.repCount, 10) || 0),
+        completedReps: Math.max(0, Number.parseInt(row.completedReps, 10) || 0),
+        results: (Array.isArray(row.results) ? row.results : []).map((result) => ({
+          block: cleanSetupText(result && result.block).slice(0, 10),
+          exerciseId: cleanSetupText(result && result.exerciseId).slice(0, 120),
+          exerciseName: cleanSetupText(result && result.exerciseName).slice(0, 120),
+          round: Math.max(1, Number.parseInt(result && result.round, 10) || 1),
+          rep: Math.max(1, Number.parseInt(result && result.rep, 10) || 1),
+          prescribedValue: cleanSetupText(result && result.prescribedValue).slice(0, 40),
+          actualValue: cleanSetupText(result && result.actualValue).slice(0, 40),
+          unit: cleanSetupText(result && result.unit).slice(0, 20),
+          completedAt: cleanSetupText(result && result.completedAt),
+        })).slice(-500),
+      };
+    }).filter(Boolean).slice(0, 4);
+    if (!id || !workoutId || !athletes.length) return null;
+    return {
+      id,
+      workoutId,
+      workoutName: cleanSetupText(source.workoutName).slice(0, 120),
+      rackName: cleanSetupText(source.rackName || "Rack").slice(0, 80) || "Rack",
+      date: cleanSetupText(source.date).slice(0, 10) || new Date().toISOString().slice(0, 10),
+      status: cleanSetupText(source.status).toLowerCase() === "complete" ? "complete" : "active",
+      athletes,
+      createdAt: cleanSetupText(source.createdAt) || new Date().toISOString(),
+      updatedAt: cleanSetupText(source.updatedAt) || new Date().toISOString(),
+    };
+  }).filter(Boolean);
 }
 
 function normalizePowerTrakWorkouts(items) {
@@ -7304,7 +7364,7 @@ const ACCOUNT_CLEANUP_OPTIONS = {
   },
   powerTrak: {
     label: "Power Trak sessions",
-    fields: ["powerTrakSessions", "powerTrakWorkouts", "lastPowerTrakSync"],
+    fields: ["powerTrakSessions", "powerTrakWorkouts", "powerTrakRackSessions", "lastPowerTrakSync"],
   },
   milesBoard: {
     label: "Miles Board sharing",
