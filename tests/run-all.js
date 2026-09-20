@@ -1,4 +1,5 @@
 const fs = require("fs");
+require("./power-trak-rack-claims.test");
 const { spawnSync } = require("child_process");
 
 const htmlFiles = [
@@ -2551,6 +2552,7 @@ function checkPowerTrakFeature() {
   const rackServiceWorker = fs.readFileSync("power-trak-rack-sw.js", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  const rackClaims = fs.readFileSync("lib/power-trak-rack-claims.js", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     "<title>Power Trak</title>",
@@ -2936,9 +2938,9 @@ function checkPowerTrakFeature() {
   [
     "const athleteClaims = new Map();",
     "const reservationClaims = new Map(",
+    "updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions",
     '"claim-rack-athlete", "release-rack-athlete"',
     "normalizePowerTrakRackReservations",
-    "Date.now() + 5 * 60 * 1000",
     "reserved on ${reserved.deviceLabel",
     'athlete.rackStatus === "active"',
     'rackStatus: ["released", "complete"].includes',
@@ -2949,6 +2951,9 @@ function checkPowerTrakFeature() {
     "assignedDate:",
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Power Trak rack assignment guard missing ${text}`);
+  });
+  ["function updateRackAthleteReservation(options = {})", "now.getTime() + 5 * 60 * 1000", "error.statusCode = 409"].forEach((text) => {
+    if (!rackClaims.includes(text)) throw new Error(`Power Trak rack claim helper missing ${text}`);
   });
   [
     'id="powerTrakLink"',

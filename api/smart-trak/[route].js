@@ -7,6 +7,7 @@ const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
 const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
 const { displayNameCase } = require("../../lib/display-name");
+const { updateRackAthleteReservation } = require("../../lib/power-trak-rack-claims");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1751,16 +1752,7 @@ async function accountPowerTrak(req, res) {
         const deviceLabel = cleanSetupText(payload.deviceLabel || "Rack iPad").slice(0, 120);
         if (!athleteId || !deviceId) throw httpError(400, "Athlete and rack device are required.");
         const rackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
-        const activeRack = rackSessions.find((rack) => rack.status === "active" && rack.athletes.some((athlete) => athlete.rackStatus === "active" && cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.id).toLowerCase() === athleteId.toLowerCase()));
-        if (action === "claim-rack-athlete" && activeRack) throw httpError(409, `${athleteName || "This athlete"} is already active on ${activeRack.rackName || "another rack"}.`);
-        let rackReservations = normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations);
-        const existingClaim = rackReservations.find((item) => item.athleteId.toLowerCase() === athleteId.toLowerCase());
-        if (action === "claim-rack-athlete" && existingClaim && existingClaim.deviceId !== deviceId) throw httpError(409, `${athleteName || existingClaim.athleteName || "This athlete"} is reserved on ${existingClaim.deviceLabel || "another rack iPad"}.`);
-        rackReservations = rackReservations.filter((item) => item.athleteId.toLowerCase() !== athleteId.toLowerCase() || item.deviceId !== deviceId);
-        if (action === "claim-rack-athlete") {
-          const claimedAt = new Date().toISOString();
-          rackReservations.push({ athleteId, athleteName, deviceId, deviceLabel, claimedAt, expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() });
-        }
+        const rackReservations = updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
         await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
         res.status(200).json({ success: true, action, rackReservations });
         return;
