@@ -2893,6 +2893,9 @@ function checkPowerTrakFeature() {
     "Current filtered sessions",
     'id="rackSessionStart"',
     'id="rackSessionEnd"',
+    'id="resetRackSessionFilters"',
+    "function resetRackSessionView()",
+    "state.openRackSessionId=''",
     "if(start&&rack.date<start)",
     "if(end&&rack.date>end)",
   ].forEach((text) => {
