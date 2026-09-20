@@ -7,7 +7,7 @@ const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
 const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
 const { displayNameCase } = require("../../lib/display-name");
-const { normalizeRackReservations, normalizeRackTombstones, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../../lib/power-trak-rack-claims");
+const { advanceRackSessionRevisions, normalizeRackReservations, normalizeRackTombstones, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../../lib/power-trak-rack-claims");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1814,9 +1814,10 @@ async function accountPowerTrak(req, res) {
       const powerTrakRackTombstones = normalizePowerTrakRackTombstones(normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones).concat(deleteRackSessionIds.map((id) => ({ id, deletedAt: rackDeletedAt }))));
       validateRackSessionTransitions({ existingRackSessions, incomingRackSessions: rackSessions, tombstones: powerTrakRackTombstones });
       const startedAthleteIds = validateRackSessionClaims({ existingRackSessions, incomingRackSessions: rackSessions, deleteRackSessionIds, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
+      const versionedRackSessions = advanceRackSessionRevisions(existingRackSessions, rackSessions);
       existingRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       deleteRackSessionIds.forEach((id) => rackSessionsById.delete(id));
-      rackSessions.forEach((item) => { const previous = rackSessionsById.get(item.id); item.revision = Math.max(0, Number.parseInt(previous && previous.revision, 10) || 0) + 1; rackSessionsById.set(item.id, item); });
+      versionedRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       const powerTrakRackSessions = Array.from(rackSessionsById.values())
         .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
         .slice(0, 500);

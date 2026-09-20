@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { normalizeRackReservations, normalizeRackTombstones, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../lib/power-trak-rack-claims");
+const { advanceRackSessionRevisions, normalizeRackReservations, normalizeRackTombstones, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../lib/power-trak-rack-claims");
 
 function claim(options) {
   return updateRackAthleteReservation({
@@ -73,6 +73,7 @@ const rackOne = {
   status: "active",
   rackName: "Rack 1",
   deviceId: "rack-1",
+  revision: 3,
   updatedAt: "2026-09-20T12:00:00.000Z",
   athletes: [{ id: "athlete-1", name: "Test Athlete", rackStatus: "active" }],
 };
@@ -115,6 +116,14 @@ assert.throws(
 );
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [{ ...rackOne }] }));
 assert.doesNotThrow(() => validateRackSessionTransitions({ existingRackSessions: [rackOne], incomingRackSessions: [{ ...rackOne, revision: 3, updatedAt: "2026-09-20T11:00:00.000Z" }] }));
+
+const incomingUpdate = { ...rackOne, rackName: "Updated Rack 1" };
+const newRack = { ...rackTwo, id: "session-new", revision: 0 };
+const advanced = advanceRackSessionRevisions([rackOne], [incomingUpdate, newRack]);
+assert.deepStrictEqual(advanced.map((rack) => rack.revision), [4, 1]);
+assert.strictEqual(advanced[0].rackName, "Updated Rack 1");
+assert.strictEqual(incomingUpdate.revision, 3);
+assert.notStrictEqual(advanced[0], incomingUpdate);
 
 const tombstones = normalizeRackTombstones([
   { id: "session-1", deletedAt: "2026-09-20T13:00:00.000Z" },
