@@ -36,6 +36,12 @@ const { acquireAccountScopedLock } = require("../lib/account-registry");
     assert.match(releases[0][1], /redis\.call\('get'/);
     assert.strictEqual(releases[0][3], commands[1][1]);
     assert.strictEqual(releases[0][4], commands[1][2]);
+
+    global.fetch = async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ result: null }) });
+    await assert.rejects(
+      () => acquireAccountScopedLock("school-one", "powertrak", { waitMs: 25, retryMs: 10, ttlMs: 2000 }),
+      (error) => error.statusCode === 503 && error.code === "POWER_TRAK_BUSY" && /retry automatically/.test(error.message),
+    );
     console.log("Account scoped mutation lock tests passed");
   } finally {
     global.fetch = previousFetch;
