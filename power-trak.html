@@ -5,6 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-store">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2b4fcc">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/power-trak-rack.webmanifest">
+<link rel="apple-touch-icon" href="/icon.png">
 <title>Power Trak</title>
 <style>
 :root{--blue:#2b4fcc;--ink:#111827;--muted:#52627a;--line:#d6dfec;--bg:#eef3f9;--panel:#fff;--good:#08783c}
@@ -37,6 +42,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
 .modal{position:fixed;inset:0;z-index:1500;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.48);padding:18px}.modal[hidden]{display:none}.modal-card{width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 24px 70px rgba(15,23,42,.28)}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}.modal-head h2{margin:0;font-size:20px}.modal-body{padding:14px 16px}.formgrid{display:grid;grid-template-columns:1fr;gap:10px}.formgrid label{display:grid;gap:5px;font-size:12px;font-weight:900;color:#41516a;text-transform:uppercase;letter-spacing:.03em}.modal-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 16px 16px}.modal-status{font-size:13px;font-weight:900;color:var(--muted);margin-top:10px}.modal-status.bad{color:#b91c1c}.modal-status.good{color:var(--good)}
 @media(max-width:980px){.cards,.progression-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.controls,.progression-filters{grid-template-columns:1fr 1fr}.layout,.builder-layout,.rack-setup,.rack-live-grid{grid-template-columns:1fr}.sessions,.workout-list{max-height:300px}.exercise-row{grid-template-columns:42px 1fr 90px 1fr}.exercise-row .danger-action{grid-column:4}.block-head{grid-template-columns:auto 1fr 90px auto}.rack-queue{border-left:0;border-top:1px solid var(--line)}}
 @media(max-width:760px){.page{padding:12px 10px}.top{align-items:flex-start;flex-direction:column}.controls,.builder-grid,.rack-fields,.athlete-picker,.leaderboard-filters,.progression-filters,.progression-summary,.import-grid{grid-template-columns:1fr}.tablewrap{overflow:auto}table{min-width:900px}.tabs{overflow:auto}.tabs button{white-space:nowrap}.exercise-row{grid-template-columns:36px 1fr}.exercise-row>*:not(.exercise-code){grid-column:2}.block-head{grid-template-columns:auto 1fr}.block-head>*:nth-child(n+3){grid-column:2}.rack-tabs{grid-template-columns:1fr 1fr}.trend-chart{height:180px}}
+.rack-kiosk .top-actions,.rack-kiosk>.page>.tabs,.rack-kiosk #workoutsPanel,.rack-kiosk #rackSessionsPanel,.rack-kiosk #powerLeaderboardPanel,.rack-kiosk #powerProgressionPanel,.rack-kiosk #powerImportPanel,.rack-kiosk #historyPanel{display:none!important}.rack-kiosk .top{margin-bottom:10px}.rack-kiosk .brand .sub{display:none}.rack-kiosk #rackPanel{display:block!important}.rack-device-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-bottom:10px}.rack-device-bar b,.rack-device-bar span{display:block}.rack-login{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;background:var(--bg);padding:18px}.rack-login-card{width:min(470px,100%);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 24px 70px rgba(15,23,42,.2);padding:20px}.rack-login-card h2{margin:0 0 6px}.rack-login-card p{color:var(--muted);font-size:14px;line-height:1.45}.rack-login-card .field{margin-top:10px}.rack-login-card button{width:100%;margin-top:14px;min-height:44px}.rack-login-status{min-height:20px;margin-top:10px;font-size:13px;font-weight:800;color:#b91c1c}
 </style>
 </head>
 <body>
@@ -51,6 +57,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
       </div>
     </div>
     <div class="top-actions">
+      <a id="rackPwaLink" class="linkbtn modal-action" href="/power-trak.html?rack=1">Rack iPad Login</a>
       <a id="dashboardLink" class="linkbtn" href="/dashboard.html">Dashboard</a>
       <a id="trainingLink" class="linkbtn modal-action" href="/training-calendar.html">Training</a>
       <button id="downloadCsvBtn" class="utility-action" type="button" hidden>Download CSV</button>
@@ -363,6 +370,53 @@ renderRackLive=function(){
   }
 };
 els.rackLiveContent.addEventListener('click',function(event){if(event.target.closest('[data-release-rack-athlete]'))releaseActiveRackAthlete()});
+</script>
+<script>
+(function initPowerRackPwa(){
+  var params=new URLSearchParams(location.search||'');
+  var launchLink=document.getElementById('rackPwaLink'),launchAccount=smartCoachAccountKey();
+  if(launchLink)launchLink.href='/power-trak.html?rack=1'+(launchAccount&&launchAccount!=='default'?'&account='+encodeURIComponent(launchAccount):'');
+  if(params.get('rack')!=='1')return;
+  document.body.classList.add('rack-kiosk');
+  document.title='Power Trak Rack';
+  var title=document.querySelector('.brand h1');
+  if(title)title.textContent='Power Trak Rack';
+  var rackTab=document.querySelector('[data-power-tab="rack"]');
+  if(rackTab)rackTab.click();
+  var account=smartCoachAccountKey();
+  var deviceKey='sc_power_rack_device_'+(account&&account!=='default'?account:'pending');
+  var deviceId='';
+  try{deviceId=localStorage.getItem(deviceKey)||''}catch(e){}
+  if(!deviceId){deviceId=(self.crypto&&crypto.randomUUID?crypto.randomUUID():'rack_'+Date.now()+'_'+Math.random().toString(36).slice(2));try{localStorage.setItem(deviceKey,deviceId)}catch(e){}}
+  var labelKey='sc_power_rack_label_'+(account&&account!=='default'?account:'pending');
+  var deviceLabel='Rack iPad';
+  try{deviceLabel=localStorage.getItem(labelKey)||deviceLabel}catch(e){}
+  var bar=document.createElement('div');
+  bar.className='rack-device-bar';
+  bar.innerHTML='<div><b>'+esc(deviceLabel)+'</b><span class="small">Dedicated athlete-entry device</span></div><button class="utility-action" type="button" data-change-rack-login>Change Login</button>';
+  var rackPanel=document.getElementById('rackPanel');
+  if(rackPanel)rackPanel.parentNode.insertBefore(bar,rackPanel);
+  bar.addEventListener('click',function(event){if(!event.target.closest('[data-change-rack-login]'))return;try{localStorage.removeItem(rememberedSessionStorageKey());sessionStorage.removeItem(sessionStorageKey())}catch(e){}showRackLogin()});
+  function showRackLogin(){
+    if(document.getElementById('rackPwaLogin'))return;
+    var overlay=document.createElement('div');
+    overlay.id='rackPwaLogin';
+    overlay.className='rack-login';
+    overlay.innerHTML='<form class="rack-login-card"><img src="/assets/smart-logo.png" alt="SMART Trak" width="58" height="58"><h2>Power Trak Rack Login</h2><p>Use the shared SMARTCoach account credentials for every rack iPad. This device will open only athlete Rack Mode.</p><label class="field">Account key<input name="account" autocomplete="username" autocapitalize="none" spellcheck="false" value="'+esc(account==='default'?'':account)+'"></label><label class="field">Access code<input name="code" type="password" autocomplete="current-password"></label><label class="field">Device name<input name="label" autocomplete="off" value="'+esc(deviceLabel)+'" placeholder="Example: Rack 2 iPad"></label><button type="submit">Open Rack Mode</button><div class="rack-login-status" role="status"></div></form>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('form').addEventListener('submit',function(event){
+      event.preventDefault();
+      var form=event.currentTarget,key=String(form.elements.account.value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,''),code=String(form.elements.code.value||'').trim(),label=String(form.elements.label.value||'').trim()||'Rack iPad',status=form.querySelector('.rack-login-status'),button=form.querySelector('button');
+      if(!key||!code){status.textContent='Enter the account key and access code.';return}
+      button.disabled=true;status.textContent='Signing in...';
+      fetch('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:key,accessCode:code,deviceId:deviceId,deviceLabel:label,deviceSource:'app'})}).then(function(response){return response.json().then(function(data){if(!response.ok)throw new Error(data.error||'Login failed.');return data})}).then(function(data){
+        localStorage.setItem('sc_account',key);localStorage.setItem('sc_session_remembered_'+key,data.sessionToken);localStorage.setItem('sc_power_rack_device_'+key,deviceId);localStorage.setItem('sc_power_rack_label_'+key,label);location.href='/power-trak.html?rack=1&account='+encodeURIComponent(key);
+      }).catch(function(error){status.textContent=error.message||'Login failed.';button.disabled=false});
+    });
+  }
+  if(account==='default'||!sessionToken())showRackLogin();
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('/power-trak-rack-sw.js',{scope:'/'}).catch(function(){});
+})();
 </script>
 </body>
 </html>

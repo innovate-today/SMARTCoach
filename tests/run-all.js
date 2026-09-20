@@ -2547,12 +2547,20 @@ function checkSpeedTrakFeature() {
 
 function checkPowerTrakFeature() {
   const page = fs.readFileSync("power-trak.html", "utf8");
+  const rackManifest = JSON.parse(fs.readFileSync("power-trak-rack.webmanifest", "utf8"));
+  const rackServiceWorker = fs.readFileSync("power-trak-rack-sw.js", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     "<title>Power Trak</title>",
     "<h1>Power Trak</h1>",
+    'id="rackPwaLink"',
+    "Power Trak Rack Login",
+    "data-change-rack-login",
+    "deviceSource:'app'",
+    "navigator.serviceWorker.register('/power-trak-rack-sw.js'",
+    "This device will open only athlete Rack Mode.",
     "Build strength workouts and review saved power testing sessions.",
     'data-power-tab="workouts"',
     'data-power-tab="rack"',
@@ -2747,6 +2755,12 @@ function checkPowerTrakFeature() {
     "data-edit-mark",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
+  });
+  if (rackManifest.start_url !== "/power-trak.html?rack=1" || rackManifest.display !== "standalone") {
+    throw new Error("Power Trak rack PWA manifest is not configured for standalone Rack Mode.");
+  }
+  ["power-trak-rack-v1", "/power-trak-rack.webmanifest", "/assets/smart-logo.png", "url.pathname.startsWith(\"/api/\")"].forEach((text) => {
+    if (!rackServiceWorker.includes(text)) throw new Error(`Power Trak rack service worker missing ${text}`);
   });
   [
     "const athleteClaims = new Map();",
