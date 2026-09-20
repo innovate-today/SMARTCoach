@@ -2836,6 +2836,10 @@ function checkPowerTrakFeature() {
     "els.deleteSessionBtn.addEventListener('click',deletePowerTrakSession);",
     "els.editMarkSave.addEventListener('click',saveEditedMark);",
     "data-edit-mark",
+    'id="rackWorkoutPreview"',
+    "function rackExercisePrescription(exercise)",
+    "function renderRackWorkoutPreview(workout)",
+    "reps per athlete",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
   });

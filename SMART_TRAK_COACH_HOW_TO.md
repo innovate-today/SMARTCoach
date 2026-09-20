@@ -1264,3 +1264,5 @@ If volume looks wrong:
 - Confirm the current filters are not hiding part of the data.
 
 Power Trak provisional athletes are reviewed from the coach-facing Rack Setup page. Use **Review Provisional** and **Approve to Roster** to create the official active athlete with the same permanent ID, keeping all existing Power Trak history attached. This review control is hidden from the athlete rack kiosk.
+
+Before starting a Power Trak rack, choose the workout and review the plan shown beneath the selector. The preview lists the event group, blocks, rounds, exercises, rep targets, recording method, and total prescribed reps per athlete. Use it to confirm the correct workout before selecting athletes and tapping **Start Rack**.
