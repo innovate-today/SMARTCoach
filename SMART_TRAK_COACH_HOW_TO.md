@@ -1280,3 +1280,5 @@ Use the **From** and **To** fields in Sessions to review a specific week, month,
 **Rep Completion** compares recorded repetitions with prescribed repetitions for saved workouts in the current filtered view. Imported and legacy sessions without a reusable workout prescription remain included in the other totals but are excluded from this percentage. This keeps imported history from distorting workout completion.
 
 The Sessions table shows recorded versus prescribed repetitions when the saved workout template is available. Open a session to see the same comparison for every athlete together with **Complete**, **Stopped early**, or **Active** status. Imported history without a prescription shows recorded reps without inventing a target.
+
+Use the **Completion** filter in Sessions to isolate **Fully completed**, **Stopped early**, **Still active**, or **Imported history** sessions. The Status column uses these same labels, so an ended rack with unfinished athletes is no longer presented as fully complete. The Sessions summary and **Export Results** continue to follow the filtered list.
