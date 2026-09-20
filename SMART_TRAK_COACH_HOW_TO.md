@@ -1294,3 +1294,5 @@ Click **View Sessions** on an Athlete Completion row to place that athlete in th
 The **Exercise Workload** table groups the same filtered load-bearing reps by exercise and unit. It shows how many athletes performed the exercise, completed load reps, total load, average load per rep, and the heaviest recorded rep. Exercises measured by time, distance, height, or completion checks do not appear in this lifting-load table.
 
 Sessions search recognizes rack names, athlete names, and exercise names. Click **View Sessions** beside an Exercise Workload row to search for that exercise and jump to the rack sessions containing its recorded reps. Clear the search field to restore the broader filtered view.
+
+Use **Export Workload** to download the filtered Exercise Workload table. The CSV includes exercise, unit, participating athletes, load reps, total load, average load per rep, and heaviest rep. It follows the same session status, completion, workout, search, and date filters shown on screen.
