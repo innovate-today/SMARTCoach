@@ -2548,6 +2548,7 @@ function checkSpeedTrakFeature() {
 function checkPowerTrakFeature() {
   const page = fs.readFileSync("power-trak.html", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
+  const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     "<title>Power Trak</title>",
@@ -2580,6 +2581,11 @@ function checkPowerTrakFeature() {
     "function applyRackRest()",
     "function rackRestSeconds(athlete)",
     "function nextReadyRackAthlete(rack,workout,currentId)",
+    "function rackAthleteIdentity(athlete)",
+    "function activeRackAssignment(athleteId,exceptRackId)",
+    "assigned?'disabled':''",
+    "already active on '+conflict.rack.rackName",
+    "function filterLateRackAthletes()",
     "if(next)state.activeRackAthleteId=next.id",
     "return'Rest '+rest+' sec'",
     "function skipRackRest()",
@@ -2734,6 +2740,14 @@ function checkPowerTrakFeature() {
     "data-edit-mark",
   ].forEach((text) => {
     if (!page.includes(text)) throw new Error(`Power Trak page missing ${text}`);
+  });
+  [
+    "const athleteClaims = new Map();",
+    "item.status !== \"active\"",
+    "is already active on",
+    "throw httpError(409",
+  ].forEach((text) => {
+    if (!api.includes(text)) throw new Error(`Power Trak rack assignment guard missing ${text}`);
   });
   [
     'id="powerTrakLink"',

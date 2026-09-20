@@ -1784,7 +1784,26 @@ async function accountPowerTrak(req, res) {
         .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)) || cleanSetupText(a.name).localeCompare(cleanSetupText(b.name)))
         .slice(0, 250);
       const rackSessionsById = new Map();
-      normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions).forEach((item) => rackSessionsById.set(item.id, item));
+      const existingRackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
+      const incomingRackIds = new Set(rackSessions.map((item) => item.id));
+      const athleteClaims = new Map();
+      existingRackSessions.forEach((item) => {
+        if (item.status !== "active" || deleteRackSessionIds.includes(item.id) || incomingRackIds.has(item.id)) return;
+        item.athletes.forEach((athlete) => {
+          const key = cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.id).toLowerCase();
+          if (key) athleteClaims.set(key, item);
+        });
+      });
+      rackSessions.forEach((item) => {
+        if (item.status !== "active") return;
+        item.athletes.forEach((athlete) => {
+          const key = cleanSetupText(athlete.smartcoachAthleteId || athlete.contactId || athlete.id).toLowerCase();
+          const claimed = key && athleteClaims.get(key);
+          if (claimed && claimed.id !== item.id) throw httpError(409, `${athlete.name || "This athlete"} is already active on ${claimed.rackName || "another rack"}.`);
+          if (key) athleteClaims.set(key, item);
+        });
+      });
+      existingRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       deleteRackSessionIds.forEach((id) => rackSessionsById.delete(id));
       rackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       const powerTrakRackSessions = Array.from(rackSessionsById.values())
