@@ -1275,4 +1275,6 @@ The coach's **Active Racks** list provides separate **Open** and **End Rack** co
 
 At the top of **Sessions**, the summary follows the current status, workout, and search filters. It reports sessions in view, unique athletes, recorded reps, and recorded load. Pound and kilogram totals remain separate so unlike units are never combined. Use the summary for a quick workload check, then open a session or export the filtered rep detail when more context is needed.
 
-Use the **From** and **To** fields in Sessions to review a specific week, month, training phase, or season window. Either boundary can be used alone. The session table, four summary totals, and **Export Results** file all follow the same date range together with the status, workout, and search filters.
+Use the **From** and **To** fields in Sessions to review a specific week, month, training phase, or season window. Either boundary can be used alone. The session table, summary totals, and **Export Results** file all follow the same date range together with the status, workout, and search filters.
+
+**Rep Completion** compares recorded repetitions with prescribed repetitions for saved workouts in the current filtered view. Imported and legacy sessions without a reusable workout prescription remain included in the other totals but are excluded from this percentage. This keeps imported history from distorting workout completion.
