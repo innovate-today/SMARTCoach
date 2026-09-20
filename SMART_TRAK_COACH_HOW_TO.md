@@ -1288,3 +1288,5 @@ Use **Export Completion** for one row per athlete in the filtered Sessions view.
 The **Athlete Completion** table beneath Sessions combines each athlete's filtered rack work. It shows sessions attended, finished sessions, recorded and prescribed reps, and rep-completion percentage. Athletes with the lowest comparable completion appear first so follow-up needs are visible quickly. Imported-only history appears without a fabricated percentage.
 
 Click **View Sessions** on an Athlete Completion row to place that athlete in the Sessions search and jump back to the matching rack-session list. Clear the search field to return to the broader filtered view.
+
+**Recorded Load** totals the actual pound and kilogram values entered for completed lifting reps in the filtered view. Pounds and kilograms remain separate. Imported summary measurements such as synthetic **1RM** and **Volume Load** rows are not added again as lifting reps, preventing those derived values from inflating the workload total. The same corrected load fields are included in **Export Completion**.
