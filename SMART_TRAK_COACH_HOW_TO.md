@@ -864,6 +864,8 @@ Use **Sessions** to review active and completed rack workouts. Filter by status 
 
 Use **Leaderboard** to compare the best recorded result for one exercise. Choose the exercise, unit, year, and number of athletes to display. Each athlete appears only once with their best comparable result. Power Trak ranks lower times faster and ranks higher loads, heights, and distances better. Completion-only exercises do not appear on the leaderboard.
 
+Use **Athlete Progression** to follow one athlete's results for the same exercise and unit over time. Choose the athlete, exercise, unit, and optional year. The summary shows the athlete's best result, latest result, change from the first comparable result, and number of testing dates. The trend and table show each date's best result, attempt count, workout, rack, and new PB status. Completion-only exercises are excluded because they do not have a measurable result to compare.
+
 Use **Testing History** to review saved testing sessions. The page can filter by group, metric, saved test, athlete, grade, gender, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved athlete name, grade, gender, mark, or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
 
 ## Log Single Result
