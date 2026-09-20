@@ -1292,3 +1292,5 @@ Click **View Sessions** on an Athlete Completion row to place that athlete in th
 **Recorded Load** totals the actual pound and kilogram values entered for completed lifting reps in the filtered view. Pounds and kilograms remain separate. Imported summary measurements such as synthetic **1RM** and **Volume Load** rows are not added again as lifting reps, preventing those derived values from inflating the workload total. The same corrected load fields are included in **Export Completion**.
 
 The **Exercise Workload** table groups the same filtered load-bearing reps by exercise and unit. It shows how many athletes performed the exercise, completed load reps, total load, average load per rep, and the heaviest recorded rep. Exercises measured by time, distance, height, or completion checks do not appear in this lifting-load table.
+
+Sessions search recognizes rack names, athlete names, and exercise names. Click **View Sessions** beside an Exercise Workload row to search for that exercise and jump to the rack sessions containing its recorded reps. Clear the search field to restore the broader filtered view.
