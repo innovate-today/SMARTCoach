@@ -2583,6 +2583,10 @@ function checkPowerTrakFeature() {
     "function nextReadyRackAthlete(rack,workout,currentId)",
     "function rackAthleteIdentity(athlete)",
     "function activeRackAssignment(athleteId,exceptRackId)",
+    "function activeRackAthletes(rack)",
+    "function releaseActiveRackAthlete()",
+    "data-release-rack-athlete",
+    "Saved reps will remain in this session.",
     "assigned?'disabled':''",
     "already active on '+conflict.rack.rackName",
     "function filterLateRackAthletes()",
@@ -2743,6 +2747,8 @@ function checkPowerTrakFeature() {
   });
   [
     "const athleteClaims = new Map();",
+    'athlete.rackStatus !== "released"',
+    'rackStatus: cleanSetupText(row.rackStatus)',
     "item.status !== \"active\"",
     "is already active on",
     "throw httpError(409",
