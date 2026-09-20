@@ -1,5 +1,5 @@
-const CACHE_NAME = "power-trak-rack-v3";
-const STATIC_ASSETS = ["/icon.png", "/assets/smart-logo.png", "/power-trak-rack.webmanifest", "/power-trak-rack-queue.js"];
+const CACHE_NAME = "power-trak-rack-v4";
+const STATIC_ASSETS = ["/icon.png", "/assets/smart-logo.png", "/power-trak-rack.webmanifest", "/power-trak-rack-queue.js", "/power-trak-rack-sync.js"];
 const RACK_SHELL = "/power-trak-rack-shell";
 
 self.addEventListener("install", (event) => {
