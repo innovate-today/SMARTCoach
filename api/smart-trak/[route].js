@@ -1844,6 +1844,7 @@ function normalizePowerTrakRackSessions(items) {
         exerciseIndex: Math.max(0, Number.parseInt(row.exerciseIndex, 10) || 0),
         repCount: Math.max(0, Number.parseInt(row.repCount, 10) || 0),
         completedReps: Math.max(0, Number.parseInt(row.completedReps, 10) || 0),
+        restUntil: cleanSetupText(row.restUntil),
         results: (Array.isArray(row.results) ? row.results : []).map((result) => ({
           block: cleanSetupText(result && result.block).slice(0, 10),
           exerciseId: cleanSetupText(result && result.exerciseId).slice(0, 120),
