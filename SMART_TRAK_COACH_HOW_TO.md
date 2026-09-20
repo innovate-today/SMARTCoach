@@ -856,7 +856,9 @@ How to use it:
 
 If the phone cannot reach SMART Trak during testing, SMARTCoach keeps the Power Trak session on the device and shows that the SMART Trak save failed. Save again after the connection is back.
 
-On the Dashboard, open **Power Trak** to review saved testing sessions. The desktop page can filter by group, metric, saved test, athlete, grade, gender, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved athlete name, grade, gender, mark, or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
+On the Dashboard, open **Power Trak**. Use **Workouts** to create reusable rack workouts. Give the workout a name and event group, then organize exercises into A, B, C, or later blocks. Set the number of rounds and reps for each exercise. Choose whether athletes use a fixed load, a percentage of their saved one-rep max, an athlete-entered load, completion only, height, distance, or time. Save the workout when every exercise is named. Duplicate an existing workout when a new workout only needs a few changes.
+
+Use **Testing History** to review saved testing sessions. The page can filter by group, metric, saved test, athlete, grade, gender, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved athlete name, grade, gender, mark, or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
 
 ## Log Single Result
 
