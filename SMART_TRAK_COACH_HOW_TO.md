@@ -1284,3 +1284,5 @@ The Sessions table shows recorded versus prescribed repetitions when the saved w
 Use the **Completion** filter in Sessions to isolate **Fully completed**, **Stopped early**, **Still active**, or **Imported history** sessions. The Status column uses these same labels, so an ended rack with unfinished athletes is no longer presented as fully complete. The Sessions summary and **Export Results** continue to follow the filtered list.
 
 Use **Export Completion** for one row per athlete in the filtered Sessions view. It includes rack and athlete completion status, recorded and prescribed reps, and completion percent. Athletes with zero recorded reps remain in this report. Use **Export Results** when you need the separate row for every completed rep.
+
+The **Athlete Completion** table beneath Sessions combines each athlete's filtered rack work. It shows sessions attended, finished sessions, recorded and prescribed reps, and rep-completion percentage. Athletes with the lowest comparable completion appear first so follow-up needs are visible quickly. Imported-only history appears without a fabricated percentage.
