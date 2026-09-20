@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { updateRackAthleteReservation, validateRackSessionClaims } = require("../lib/power-trak-rack-claims");
+const { normalizeRackReservations, updateRackAthleteReservation, validateRackSessionClaims } = require("../lib/power-trak-rack-claims");
 
 function claim(options) {
   return updateRackAthleteReservation({
@@ -19,10 +19,26 @@ assert.strictEqual(reservations.length, 1);
 assert.strictEqual(reservations[0].deviceId, "rack-1");
 assert.strictEqual(reservations[0].expiresAt, "2026-09-20T12:05:00.000Z");
 
+const normalized = normalizeRackReservations([
+  { athleteId: "expired", athleteName: "Old Athlete", deviceId: "rack-old", expiresAt: "2026-09-20T11:59:59.000Z" },
+  reservations[0],
+], { now: new Date("2026-09-20T12:00:00.000Z") });
+assert.deepStrictEqual(normalized.map((item) => item.athleteId), ["athlete-1"]);
+
 assert.throws(
   () => claim({ deviceId: "rack-2", deviceLabel: "Rack 2 iPad", reservations }),
   (error) => error.statusCode === 409 && /reserved on Rack 1 iPad/.test(error.message),
 );
+
+const wrongDeviceRelease = updateRackAthleteReservation({
+  action: "release-rack-athlete",
+  athleteId: "athlete-1",
+  deviceId: "rack-2",
+  rackSessions: [],
+  reservations,
+});
+assert.strictEqual(wrongDeviceRelease.length, 1);
+assert.strictEqual(wrongDeviceRelease[0].deviceId, "rack-1");
 
 reservations = updateRackAthleteReservation({
   action: "release-rack-athlete",

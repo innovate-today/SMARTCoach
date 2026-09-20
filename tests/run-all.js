@@ -2947,7 +2947,7 @@ function checkPowerTrakFeature() {
   ].forEach((text) => {
     if (!api.includes(text)) throw new Error(`Power Trak rack assignment guard missing ${text}`);
   });
-  ["function updateRackAthleteReservation(options = {})", "function validateRackSessionClaims(options = {})", "now.getTime() + 5 * 60 * 1000", "error.statusCode = 409", "reserved on ${reserved.deviceLabel", "is already active on", 'athlete.rackStatus === "active"', 'rack.status !== "active"'].forEach((text) => {
+  ["function normalizeRackReservations(items, options = {})", "new Date(expiresAt).getTime() <= now", "function updateRackAthleteReservation(options = {})", "function validateRackSessionClaims(options = {})", "now.getTime() + 5 * 60 * 1000", "error.statusCode = 409", "reserved on ${reserved.deviceLabel", "is already active on", 'athlete.rackStatus === "active"', 'rack.status !== "active"'].forEach((text) => {
     if (!rackClaims.includes(text)) throw new Error(`Power Trak rack claim helper missing ${text}`);
   });
   [

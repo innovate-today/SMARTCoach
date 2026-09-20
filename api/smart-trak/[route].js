@@ -7,7 +7,7 @@ const STRAVA_REQUIRED_SCOPES = "read,activity:read,activity:read_all";
 const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
 const { displayNameCase } = require("../../lib/display-name");
-const { updateRackAthleteReservation, validateRackSessionClaims } = require("../../lib/power-trak-rack-claims");
+const { normalizeRackReservations, updateRackAthleteReservation, validateRackSessionClaims } = require("../../lib/power-trak-rack-claims");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1862,15 +1862,7 @@ async function loadPowerTrakState(accountKey, accountRecord) {
 }
 
 function normalizePowerTrakRackReservations(items) {
-  const now = Date.now();
-  return (Array.isArray(items) ? items : []).map((item) => {
-    const source = item && typeof item === "object" ? item : {};
-    const athleteId = cleanSetupText(source.athleteId).slice(0, 120);
-    const deviceId = cleanSetupText(source.deviceId).slice(0, 160);
-    const expiresAt = cleanSetupText(source.expiresAt);
-    if (!athleteId || !deviceId || !expiresAt || new Date(expiresAt).getTime() <= now) return null;
-    return { athleteId, athleteName: displayNameCase(source.athleteName).slice(0, 120), deviceId, deviceLabel: cleanSetupText(source.deviceLabel || "Rack iPad").slice(0, 120), claimedAt: cleanSetupText(source.claimedAt), expiresAt };
-  }).filter(Boolean).slice(-250);
+  return normalizeRackReservations(items, { now: Date.now(), cleanText: cleanSetupText, formatName: displayNameCase });
 }
 
 function normalizePowerTrakRackSessions(items) {
