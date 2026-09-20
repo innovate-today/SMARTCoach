@@ -866,6 +866,8 @@ Use **Leaderboard** to compare the best recorded result for one exercise. Choose
 
 Use **Athlete Progression** to follow one athlete's results for the same exercise and unit over time. Choose the athlete, exercise, unit, and optional year. The summary shows the athlete's best result, latest result, change from the first comparable result, and number of testing dates. The trend and table show each date's best result, attempt count, workout, rack, and new PB status. Completion-only exercises are excluded because they do not have a measurable result to compare.
 
+Use **Import Data** when another strength system provides a CSV or tab-separated report. Choose the default result unit, then upload the file or paste the full report including its header row. Click **Preview Data** before saving. The preview reports recognized rows, generated sessions, athlete count, rows already saved, and rejected rows. Power Trak uses athlete name, completed or assigned date, exercise, set results and reps, completion status, highest max, volume load, opt-out status, and group. Source IDs, timestamps, checks, Max Allowed, and helper columns stay out of coaching views. Imported athletes are matched to the SMART Trak roster by name when possible. Reimporting the same rows updates the same imported sessions instead of creating duplicates.
+
 Use **Testing History** to review saved testing sessions. The page can filter by group, metric, saved test, athlete, grade, gender, note, or test name. Use **Download CSV** to export the current filtered view. Use **Edit Mark** to correct one saved athlete name, grade, gender, mark, or note inside a test. Choose a saved test and use **Delete Test** only when the entire testing session was saved by mistake.
 
 ## Log Single Result
