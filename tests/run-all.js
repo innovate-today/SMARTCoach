@@ -2643,6 +2643,8 @@ function checkPowerTrakFeature() {
     "Undo Last Set",
     "function rackResultReps(result)",
     "function rackAthleteRecordedReps(athlete)",
+    "Number(remoteActive.revision)>Number(hadActive.revision)",
+    "String(remoteActive.updatedAt||'')>String(hadActive.updatedAt||'')",
     "targetRir:position.exercise.recordRir",
     "prescribedReps:Number(position.exercise.reps)||1",
     "actualReps:actual.reps",
