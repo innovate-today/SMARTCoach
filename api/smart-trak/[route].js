@@ -1920,6 +1920,8 @@ function normalizePowerTrakRackSessions(items) {
           exerciseName: cleanSetupText(result && result.exerciseName).slice(0, 120),
           round: Math.max(1, Number.parseInt(result && result.round, 10) || 1),
           rep: Math.max(1, Number.parseInt(result && result.rep, 10) || 1),
+          prescribedReps: result && result.prescribedReps !== "" && Number.isFinite(Number(result.prescribedReps)) ? Math.min(1000, Math.max(1, Number.parseInt(result.prescribedReps, 10))) : null,
+          actualReps: result && result.actualReps !== "" && Number.isFinite(Number(result.actualReps)) ? Math.min(1000, Math.max(1, Number.parseInt(result.actualReps, 10))) : null,
           prescribedValue: cleanSetupText(result && result.prescribedValue).slice(0, 40),
           actualValue: cleanSetupText(result && result.actualValue).slice(0, 40),
           unit: cleanSetupText(result && result.unit).slice(0, 20),
