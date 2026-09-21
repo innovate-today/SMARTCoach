@@ -2589,6 +2589,7 @@ function checkPowerTrakFeature() {
     "Your saved rack login expired. Enter the access code again.",
     ").then(function(){overlay.remove();load()})",
     "bar.querySelector('[data-rack-device-check]').addEventListener('click',function(){runPowerRackDeviceCheck()})",
+    "setTimeout(function(){renderPowerRackDeviceCheckSummary()},0)",
     "data-change-rack-login",
     "data-rack-device-check",
     'id="rackDeviceCheckModal"',
@@ -3006,7 +3007,7 @@ function checkPowerTrakFeature() {
   if (rackManifest.start_url !== "/power-trak.html?rack=1" || rackManifest.display !== "standalone") {
     throw new Error("Power Trak rack PWA manifest is not configured for standalone Rack Mode.");
   }
-  ["power-trak-rack-v9", "/power-trak-rack.webmanifest", "/assets/smart-logo.png", "/power-trak-rack-queue.js", "/power-trak-rack-sync.js", "/power-trak-rack-shell", "url.pathname.startsWith(\"/api/\")"].forEach((text) => {
+  ["power-trak-rack-v10", "/power-trak-rack.webmanifest", "/assets/smart-logo.png", "/power-trak-rack-queue.js", "/power-trak-rack-sync.js", "/power-trak-rack-shell", "url.pathname.startsWith(\"/api/\")"].forEach((text) => {
     if (!rackServiceWorker.includes(text)) throw new Error(`Power Trak rack service worker missing ${text}`);
   });
   [

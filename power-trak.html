@@ -606,7 +606,7 @@ els.rackLive.addEventListener('click',function(event){if(event.target.closest('[
   bar.innerHTML='<div><b>'+esc(deviceLabel)+'</b><span id="rackSyncStatus" class="small">Checking sync status...</span><span id="rackDeviceCheckSummary" class="small rack-device-check-summary">Device check needed</span></div><div class="actions"><button class="utility-action" type="button" data-rack-device-check>Device Check</button><button class="utility-action" type="button" data-retry-rack-sync hidden>Retry Sync</button><button class="utility-action" type="button" data-change-rack-login>Change Login</button></div>';
   var rackPanel=document.getElementById('rackPanel');
   if(rackPanel)rackPanel.parentNode.insertBefore(bar,rackPanel);
-  renderPowerRackDeviceCheckSummary();
+  setTimeout(function(){renderPowerRackDeviceCheckSummary()},0);
   bar.querySelector('[data-rack-device-check]').addEventListener('click',function(){runPowerRackDeviceCheck()});
   bar.querySelector('[data-retry-rack-sync]').addEventListener('click',function(){flushPowerRackQueue()});
   bar.querySelector('[data-change-rack-login]').addEventListener('click',function(){requestPowerRackLoginChange()});

@@ -1,4 +1,4 @@
-const CACHE_NAME = "power-trak-rack-v9";
+const CACHE_NAME = "power-trak-rack-v10";
 const STATIC_ASSETS = ["/icon.png", "/assets/smart-logo.png", "/power-trak-rack.webmanifest", "/power-trak-rack-queue.js", "/power-trak-rack-sync.js"];
 const RACK_SHELL = "/power-trak-rack-shell";
 
