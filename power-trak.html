@@ -608,13 +608,19 @@ els.rackLive.addEventListener('click',function(event){if(event.target.closest('[
   if(rackPanel)rackPanel.parentNode.insertBefore(bar,rackPanel);
   renderPowerRackDeviceCheckSummary();
   bar.addEventListener('click',function(event){if(event.target.closest('[data-rack-device-check]')){runPowerRackDeviceCheck();return}if(event.target.closest('[data-retry-rack-sync]')){flushPowerRackQueue();return}if(event.target.closest('[data-change-rack-login]'))requestPowerRackLoginChange()});
-  function showRackLogin(){
-    if(document.getElementById('rackPwaLogin'))return;
-    var overlay=document.createElement('div');
+  function rackLoginOverlay(){
+    var overlay=document.getElementById('rackPwaLogin');
+    if(overlay)return overlay;
+    overlay=document.createElement('div');
     overlay.id='rackPwaLogin';
     overlay.className='rack-login';
-    overlay.innerHTML='<form class="rack-login-card"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak" width="58" height="58"><h2>Power Trak Rack Login</h2><p>Use the shared SMARTCoach account credentials for every rack iPad. This device will open only athlete Rack Mode.</p><label class="field">Account key<input name="account" autocomplete="username" autocapitalize="none" spellcheck="false" value="'+esc(account==='default'?'':account)+'"></label><label class="field">Access code<input name="code" type="password" autocomplete="current-password"></label><label class="field">Device name<input name="label" autocomplete="off" value="'+esc(deviceLabel)+'" placeholder="Example: Rack 2 iPad"></label><button type="submit">Open Rack Mode</button><div class="rack-login-status" role="status"></div></form>';applyBrandLogo(document.querySelector('[data-brand-logo]').src);
     document.body.appendChild(overlay);
+    return overlay;
+  }
+  function showRackLogin(message){
+    var overlay=rackLoginOverlay();
+    overlay.innerHTML='<form class="rack-login-card"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak" width="58" height="58"><h2>Power Trak Rack Login</h2><p>Use the shared SMARTCoach account credentials for every rack iPad. This device will open only athlete Rack Mode.</p><label class="field">Account key<input name="account" autocomplete="username" autocapitalize="none" spellcheck="false" value="'+esc(account==='default'?'':account)+'"></label><label class="field">Access code<input name="code" type="password" autocomplete="current-password"></label><label class="field">Device name<input name="label" autocomplete="off" value="'+esc(deviceLabel)+'" placeholder="Example: Rack 2 iPad"></label><button type="submit">Open Rack Mode</button><div class="rack-login-status" role="status"></div></form>';applyBrandLogo(document.querySelector('[data-brand-logo]').src);
+    if(message)overlay.querySelector('.rack-login-status').textContent=message;
     overlay.querySelector('form').addEventListener('submit',function(event){
       event.preventDefault();
       var form=event.currentTarget,key=String(form.elements.account.value||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,''),code=String(form.elements.code.value||'').trim(),label=String(form.elements.label.value||'').trim()||'Rack iPad',status=form.querySelector('.rack-login-status'),button=form.querySelector('button');
@@ -625,7 +631,20 @@ els.rackLive.addEventListener('click',function(event){if(event.target.closest('[
       }).catch(function(error){status.textContent=error.message||'Login failed.';button.disabled=false});
     });
   }
-  if(account==='default'||!sessionToken())showRackLogin();
+  function verifyRackLogin(){
+    if(account==='default'||!sessionToken()){showRackLogin();return}
+    var overlay=rackLoginOverlay();
+    overlay.innerHTML='<div class="rack-login-card"><img data-brand-logo src="/assets/smart-logo.png" alt="SMART Trak" width="58" height="58"><h2>Power Trak Rack</h2><p>Checking the saved rack login...</p></div>';
+    applyBrandLogo(overlay.querySelector('[data-brand-logo]').src);
+    fetch(apiUrl('/api/smart-trak/power-trak'),{cache:'no-store',headers:headers()}).then(function(response){
+      if(!response.ok)throw new Error('Your saved rack login expired. Enter the access code again.');
+      return response.json();
+    }).then(function(){overlay.remove()}).catch(function(error){
+      try{localStorage.removeItem(rememberedSessionStorageKey());sessionStorage.removeItem(sessionStorageKey())}catch(e){}
+      showRackLogin(error.message||'Sign in again to open Rack Mode.');
+    });
+  }
+  verifyRackLogin();
   if('serviceWorker'in navigator)navigator.serviceWorker.register('/power-trak-rack-sw.js',{scope:'/'}).catch(function(){});
 })();
 </script>

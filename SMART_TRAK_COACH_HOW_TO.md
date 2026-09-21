@@ -1308,3 +1308,5 @@ Use **Export Workload** to download the filtered Exercise Workload table. The CS
 Use **Reset View** in the Sessions filter bar to clear status, completion, workout, search, and date filters at once. It also closes an expanded session and restores the complete Sessions view.
 
 Power Trak treats `lb`, `lbs`, `pound`, and `pounds` as pounds, and treats `kg`, `kgs`, `kilogram`, and `kilograms` as kilograms. New rack load reps are saved with the short `lb` or `kg` label. Existing aliases combine correctly in workload totals and can provide the matching 1RM for percentage prescriptions.
+
+The dedicated rack screen verifies a remembered login before showing setup. When that login has expired, it returns to the login form instead of opening an empty Rack Setup page.
