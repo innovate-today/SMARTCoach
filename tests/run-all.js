@@ -2579,6 +2579,9 @@ function checkPowerTrakFeature() {
   [
     "<title>Power Trak</title>",
     "<h1>Power Trak</h1>",
+    'data-brand-logo src="/assets/smart-logo.png"',
+    "function loadBrandLogo()",
+    "applyBrandLogo(data&&data.logoUrl)",
     'id="rackPwaLink"',
     "Power Trak Rack Login",
     "data-change-rack-login",
