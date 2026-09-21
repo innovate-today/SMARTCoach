@@ -1923,6 +1923,8 @@ function normalizePowerTrakRackSessions(items) {
           prescribedValue: cleanSetupText(result && result.prescribedValue).slice(0, 40),
           actualValue: cleanSetupText(result && result.actualValue).slice(0, 40),
           unit: cleanSetupText(result && result.unit).slice(0, 20),
+          targetRir: result && result.targetRir !== "" && Number.isFinite(Number(result.targetRir)) ? Math.min(5, Math.max(0, Number(result.targetRir))) : null,
+          actualRir: result && result.actualRir !== "" && Number.isFinite(Number(result.actualRir)) ? Math.min(5, Math.max(0, Number(result.actualRir))) : null,
           completedAt: cleanSetupText(result && result.completedAt),
         })).slice(-500),
       };
@@ -2017,6 +2019,8 @@ function normalizePowerTrakExercises(items, blockLabel) {
       oneRepMaxExercise: cleanSetupText(source.oneRepMaxExercise || source.maxExercise || name).slice(0, 120),
       instructions: cleanSetupText(source.instructions || source.cue || source.notes).slice(0, 200),
       restSeconds: Math.min(3600, Math.max(0, Number.parseInt(source.restSeconds, 10) || 0)),
+      recordRir: source.recordRir === true || source.recordRir === "true",
+      targetRir: Math.min(5, Math.max(0, Number.parseInt(source.targetRir, 10) || 0)),
     };
   }).filter(Boolean).slice(0, 20);
 }
