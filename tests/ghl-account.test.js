@@ -97,6 +97,11 @@ withEnv({
   const sessionRes = mockRes();
   assert.strictEqual(requireProPlan(sessionReq, sessionRes), true);
   assert.strictEqual(verifyCoachSession(session.token, "other-account"), null);
+  const rackSession = createCoachSession("test", { sessionScope: "power-rack", deviceId: "rack-ipad-2", deviceLabel: "Rack 2 iPad" });
+  const rackPayload = verifyCoachSession(rackSession.token, "test");
+  assert.strictEqual(rackPayload.sessionScope, "power-rack");
+  assert.strictEqual(rackPayload.deviceId, "rack-ipad-2");
+  assert.strictEqual(rackPayload.deviceLabel, "Rack 2 iPad");
   withEnv({ SMARTCOACH_COACH_CODE_VERSION_TEST: "2" }, () => {
     const staleSession = createCoachSession("test", { coachIndex: 0, coachCodeVersion: 1 });
     const staleRes = mockRes();

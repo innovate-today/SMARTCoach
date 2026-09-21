@@ -1338,6 +1338,43 @@ async function testProtectedSmartTrakRoutesRequireCoachAccess() {
   }
 }
 
+async function testPowerRackSessionCannotOpenCoachRoutes() {
+  await withEnv({
+    SMARTCOACH_PRODUCT_PLAN_RACKSCHOOL: "pro",
+    GHL_PRIVATE_INTEGRATION_TOKEN_RACKSCHOOL: "token",
+    GHL_LOCATION_ID_RACKSCHOOL: "location",
+    SMARTCOACH_COACH_ACCESS_CODES_RACKSCHOOL: "coach-one",
+    SMARTCOACH_REQUIRE_COACH_ACCESS_RACKSCHOOL: "true",
+    SMARTCOACH_SUBSCRIPTION_STATUS_RACKSCHOOL: "active",
+    SMARTCOACH_SESSION_SECRET: "session-secret",
+    SMARTCOACH_REGISTRY_REST_URL: undefined,
+    SMARTCOACH_REGISTRY_REST_TOKEN: undefined,
+    KV_REST_API_URL: undefined,
+    KV_REST_API_TOKEN: undefined,
+    UPSTASH_REDIS_REST_URL: undefined,
+    UPSTASH_REDIS_REST_TOKEN: undefined,
+  }, async () => {
+    const loginRes = mockRes();
+    await handler({
+      method: "POST",
+      query: { route: "account-session" },
+      headers: {},
+      body: { accountKey: "rackschool", accessCode: "coach-one", deviceSource: "power-rack", deviceId: "rack-ipad-1", deviceLabel: "Rack 1 iPad" },
+    }, loginRes);
+    assert.strictEqual(loginRes.statusCode, 200);
+    assert.strictEqual(loginRes.body.sessionScope, "power-rack");
+
+    const blockedRes = mockRes();
+    await handler({
+      method: "GET",
+      query: { route: "dashboard", account: "rackschool" },
+      headers: { "x-smartcoach-session": loginRes.body.sessionToken },
+    }, blockedRes);
+    assert.strictEqual(blockedRes.statusCode, 403);
+    assert.strictEqual(blockedRes.body.rackAccessRequired, true);
+  });
+}
+
 (async () => {
   await testAutomationDryRunDoesNotSave();
   await testAccountSetupCodeProtection();
@@ -1360,6 +1397,7 @@ async function testProtectedSmartTrakRoutesRequireCoachAccess() {
   await testRegistryListSubscribers();
   await testAccountStatusReportsDeviceUnlock();
   await testProtectedSmartTrakRoutesRequireCoachAccess();
+  await testPowerRackSessionCannotOpenCoachRoutes();
   console.log("automation API dry-run and Stripe idempotency tests passed");
 })().catch((error) => {
   console.error(error);

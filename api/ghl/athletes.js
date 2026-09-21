@@ -5,7 +5,7 @@ const ATHLETE_BEST_SCHEMA_KEY = "custom_objects.athlete_bests";
 const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const CLASS_YEAR_TAG_PREFIX = "smartcoach-class-";
-const { getGhlContext, requireProPlan } = require("../../lib/ghl-account");
+const { getGhlContext, requireProPlan, coachSessionFromRequest } = require("../../lib/ghl-account");
 const { loadAccountScopedRecord, saveAccountScopedRecord } = require("../../lib/account-registry");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { displayNameCase } = require("../../lib/display-name");
@@ -58,6 +58,13 @@ async function handler(req, res) {
   if (!requireProPlan(req, res)) return;
 
   const { accountKey, token, locationId, activeAthleteLimit, productPlanLabel } = getGhlContext(req);
+  const coachSession = coachSessionFromRequest(req, accountKey);
+  const rackScoped = clean(coachSession && coachSession.sessionScope).toLowerCase() === "power-rack";
+
+  if (rackScoped && req.method !== "GET") {
+    res.status(403).json({ error: "Rack devices cannot change the SMART Trak roster." });
+    return;
+  }
 
   if (!token || !locationId) {
     res.status(500).json({ error: "SMART Trak athlete roster is not configured on the server." });
@@ -69,6 +76,10 @@ async function handler(req, res) {
       const includeContacts = /^(yes|true|1)$/i.test(clean(req.query && (req.query.includeContacts || req.query.allContacts)));
       const query = clean(req.query && (req.query.query || req.query.search));
       const athletes = await listSmartCoachAthletes({ accountKey, token, locationId, includeContacts, query });
+      if (rackScoped) {
+        res.status(200).json({ success: true, athletes: athletes.filter((athlete) => athlete.smartcoachActive).map(publicRackAthlete) });
+        return;
+      }
       const fitnessRows = await safeListAthleteFitnessRows({ token, locationId });
       attachCurrentFitnessRows(athletes, fitnessRows);
       if (clean(req.query && req.query.action) === "calendarLink") {
@@ -101,6 +112,20 @@ async function handler(req, res) {
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Athlete roster request failed." });
   }
+}
+
+function publicRackAthlete(athlete) {
+  return {
+    id: clean(athlete.id),
+    smartcoachAthleteId: clean(athlete.smartcoachAthleteId),
+    name: displayNameCase(athlete.name),
+    firstName: displayNameCase(athlete.firstName),
+    lastName: displayNameCase(athlete.lastName),
+    gender: clean(athlete.gender),
+    grade: clean(athlete.grade),
+    groupName: clean(athlete.groupName),
+    smartcoachActive: true,
+  };
 }
 
 function setCorsHeaders(res) {

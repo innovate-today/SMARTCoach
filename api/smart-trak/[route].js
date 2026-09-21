@@ -64,11 +64,43 @@ const SIMULATOR_FIELDS_NAMESPACE = "simulatorfields";
 const ACCOUNT_STATUS_CACHE_TTL_MS = 30000;
 const accountStatusCache = new Map();
 
+function powerRackSessionFromRequest(req, accountKey) {
+  const session = coachSessionFromRequest(req, accountKey);
+  return cleanSetupText(session && session.sessionScope).toLowerCase() === "power-rack" ? session : null;
+}
+
+function powerRackRouteAllowed(req, res, route) {
+  const { accountKey } = getGhlContext(req);
+  const session = powerRackSessionFromRequest(req, accountKey);
+  if (!session) return true;
+  const method = cleanSetupText(req.method).toUpperCase();
+  const allowed = route === "power-trak" && ["GET", "POST", "PATCH", "OPTIONS"].includes(method)
+    || ["athletes", "groups", "account-status"].includes(route) && ["GET", "OPTIONS"].includes(method);
+  if (allowed) return true;
+  res.status(403).json({ error: "Rack device access is limited to Power Trak athlete entry.", rackAccessRequired: true });
+  return false;
+}
+
+function enforcePowerRackMutation(req, rackSession, payload) {
+  if (!rackSession) return;
+  const deviceId = cleanSetupText(payload && payload.deviceId).slice(0, 160);
+  const expectedDeviceId = cleanSetupText(rackSession.deviceId).slice(0, 160);
+  if (!expectedDeviceId || !deviceId || !safeEqual(deviceId, expectedDeviceId)) throw httpError(403, "This rack action does not belong to the signed-in iPad.");
+  const action = cleanSetupText(payload && payload.action).toLowerCase();
+  if (["rack-device-write-check", "claim-rack-athlete", "release-rack-athlete", "add-rack-provisional-athlete"].includes(action)) return;
+  const allowedKeys = new Set(["rackSession", "rackSessions", "deviceId"]);
+  if (Object.keys(payload || {}).some((key) => !allowedKeys.has(key))) throw httpError(403, "Rack devices cannot change coach-managed Power Trak data.");
+  const sessions = normalizePowerTrakRackSessions(Array.isArray(payload.rackSessions) ? payload.rackSessions : payload.rackSession ? [payload.rackSession] : []);
+  if (!sessions.length || sessions.some((item) => !safeEqual(cleanSetupText(item.deviceId), expectedDeviceId))) throw httpError(403, "Rack sessions can only be saved by their assigned iPad.");
+}
+
 module.exports = async function handler(req, res) {
   setSmartTrakSecurityHeaders(res);
   const route = Array.isArray(req.query.route) ? req.query.route[0] : req.query.route;
   return runSmartTrakRouteWithAudit(req, res, route, async () => {
   const selected = handlers[route];
+
+  if (route !== "account-session" && !powerRackRouteAllowed(req, res, route)) return;
 
   if (route === "account-status") {
     return accountStatus(req, res);
@@ -1715,6 +1747,12 @@ async function accountPowerTrak(req, res) {
   }
 
   const { accountKey } = getGhlContext(req);
+  const rackSession = powerRackSessionFromRequest(req, accountKey);
+  const rackClient = cleanSetupText(headerValue(req, "x-smartcoach-device-source")).toLowerCase() === "power-rack";
+  if (rackClient && !rackSession) {
+    res.status(401).json({ error: "Rack login must be renewed for protected Power Trak access.", accessCodeRequired: true });
+    return;
+  }
   let releasePowerTrakLock = null;
 
   try {
@@ -1736,13 +1774,18 @@ async function accountPowerTrak(req, res) {
         if (end && item.date > end) return false;
         return true;
       });
-      res.status(200).json({ success: true, sessions: filtered, workouts, exerciseCatalog, provisionalAthletes, rackSessions, rackReservations, count: filtered.length, workoutCount: workouts.length, rackSessionCount: rackSessions.length });
+      const visibleSessions = rackSession ? [] : filtered;
+      const visibleWorkouts = rackSession ? workouts.filter((item) => cleanSetupText(item.status).toLowerCase() !== "archived") : workouts;
+      const visibleCatalog = rackSession ? [] : exerciseCatalog;
+      const visibleRackSessions = rackSession ? rackSessions.filter((item) => cleanSetupText(item.status).toLowerCase() === "active") : rackSessions;
+      res.status(200).json({ success: true, sessions: visibleSessions, workouts: visibleWorkouts, exerciseCatalog: visibleCatalog, provisionalAthletes, rackSessions: visibleRackSessions, rackReservations, count: visibleSessions.length, workoutCount: visibleWorkouts.length, rackSessionCount: visibleRackSessions.length });
       return;
     }
 
     if (req.method === "POST" || req.method === "PATCH") {
       releasePowerTrakLock = await acquireAccountScopedLock(accountKey, POWER_TRAK_NAMESPACE);
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      enforcePowerRackMutation(req, rackSession, payload);
       if (cleanSetupText(payload.action).toLowerCase() === "rack-device-write-check") {
         const deviceId = cleanSetupText(payload.deviceId).slice(0, 160);
         const deviceLabel = cleanSetupText(payload.deviceLabel || "Rack iPad").slice(0, 120);
@@ -1767,6 +1810,26 @@ async function accountPowerTrak(req, res) {
         const rackReservations = updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
         await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
         res.status(200).json({ success: true, action, rackReservations });
+        return;
+      }
+      if (cleanSetupText(payload.action).toLowerCase() === "add-rack-provisional-athlete") {
+        const existing = await loadAccountRecord(accountKey);
+        if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
+        const powerTrakState = await loadPowerTrakState(accountKey, existing.record);
+        const provisionalAthletes = normalizePowerTrakProvisionalAthletes(
+          normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes).concat([payload.provisionalAthlete])
+        );
+        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
+          powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions),
+          powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts),
+          powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog),
+          powerTrakProvisionalAthletes: provisionalAthletes,
+          powerTrakRackSessions: normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions),
+          powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations),
+          powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones),
+          lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null,
+        });
+        res.status(200).json({ success: true, provisionalAthletes });
         return;
       }
       if (cleanSetupText(payload.action).toLowerCase() === "cleanup-power-import") {
@@ -3644,6 +3707,20 @@ async function accountStatus(req, res) {
     return;
   }
 
+  const initialContext = getGhlContext(req);
+  const initialRackSession = powerRackSessionFromRequest(req, initialContext.accountKey);
+  if (initialRackSession) {
+    const registry = await attachRegistryAccount(req);
+    const context = getGhlContext(req);
+    const currentSession = coachSessionAllowedForAccount(initialRackSession, registry.record, context.coachCodeVersion) ? initialRackSession : null;
+    if (!currentSession) {
+      res.status(401).json({ error: "Rack login expired. Enter the coach access code again.", accessCodeRequired: true });
+      return;
+    }
+    res.status(200).json({ success: true, accountKey: context.accountKey, logoUrl: context.logoUrl || "", coachSessionActive: true, sessionScope: "power-rack" });
+    return;
+  }
+
   const cachedStatus = cachedAccountStatus(req);
   if (cachedStatus) {
     res.status(cachedStatus.statusCode).json({
@@ -3689,6 +3766,9 @@ async function accountStatus(req, res) {
       staffCoachId: cleanSetupText(currentCoachSession.staffCoachId),
       staffCodeUpdatedAt: cleanSetupText(currentCoachSession.staffCodeUpdatedAt),
       accessType: cleanSetupText(currentCoachSession.accessType),
+      sessionScope: cleanSetupText(currentCoachSession.sessionScope),
+      deviceId: cleanSetupText(currentCoachSession.deviceId),
+      deviceLabel: cleanSetupText(currentCoachSession.deviceLabel),
     })
     : null;
   if (refreshedSession && productPlan === "essential" && essentialSessionActive && registry.record) {
@@ -5789,7 +5869,7 @@ function coachInviteAllowed(account, accountKey, inviteToken) {
 }
 
 function desktopSessionAllowedForStaff(access, account, deviceSource) {
-  if (cleanSetupText(deviceSource).toLowerCase() === "app") return true;
+  if (["app", "power-rack"].includes(cleanSetupText(deviceSource).toLowerCase())) return true;
   const staff = normalizeCoachStaff(account && account.coachStaff);
   const item = staff[Number(access && access.coachIndex) || 0] || null;
   return !(item && item.active !== false && normalizeStaffAccessType(item.accessType) === "app-only");
@@ -6844,6 +6924,10 @@ async function accountSession(req, res) {
       return;
     }
     const deviceSource = cleanSetupText(firstPayloadValue(payload, ["deviceSource", "source", "client"])).toLowerCase();
+    const rackDeviceSession = deviceSource === "power-rack";
+    const deviceId = ["app", "power-rack"].includes(deviceSource) ? cleanSetupText(firstPayloadValue(payload, ["deviceId", "clientDeviceId"])).slice(0, 160) : "";
+    const deviceLabel = ["app", "power-rack"].includes(deviceSource) ? cleanSetupText(firstPayloadValue(payload, ["deviceLabel", "deviceName"])).slice(0, 120) : "";
+    if (rackDeviceSession && !deviceId) throw httpError(400, "Rack device is required.");
     if (!desktopSessionAllowedForStaff(access, req.smartcoachRegistryAccount, deviceSource)) {
       res.status(403).json({
         allowed: false,
@@ -6864,6 +6948,9 @@ async function accountSession(req, res) {
       staffCoachId: access.staffCoachId || access.staffInviteId || "",
       staffCodeUpdatedAt: access.staffCodeUpdatedAt || "",
       accessType: access.accessType || "",
+      sessionScope: rackDeviceSession ? "power-rack" : "",
+      deviceId,
+      deviceLabel,
     });
     if (!session) {
       res.status(500).json({
@@ -6887,8 +6974,6 @@ async function accountSession(req, res) {
         },
       });
     }
-    const deviceId = deviceSource === "app" ? cleanSetupText(firstPayloadValue(payload, ["deviceId", "clientDeviceId"])) : "";
-    const deviceLabel = deviceSource === "app" ? cleanSetupText(firstPayloadValue(payload, ["deviceLabel", "deviceName"])) : "";
     const usage = deviceId
       ? await recordCoachDeviceSession(accountKey, {
         deviceId,
@@ -6915,6 +7000,7 @@ async function accountSession(req, res) {
       staffInviteAccepted: !!access.staffInvite,
       staffInviteUsedAt,
       parentEmailAllowed,
+      sessionScope: rackDeviceSession ? "power-rack" : "coach",
       sessionToken: session.token,
       expiresAt: session.expiresAt,
       expiresAtIso: session.expiresAtIso,
