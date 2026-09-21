@@ -1743,6 +1743,16 @@ async function accountPowerTrak(req, res) {
     if (req.method === "POST" || req.method === "PATCH") {
       releasePowerTrakLock = await acquireAccountScopedLock(accountKey, POWER_TRAK_NAMESPACE);
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      if (cleanSetupText(payload.action).toLowerCase() === "rack-device-write-check") {
+        const deviceId = cleanSetupText(payload.deviceId).slice(0, 160);
+        const deviceLabel = cleanSetupText(payload.deviceLabel || "Rack iPad").slice(0, 120);
+        if (!deviceId) throw httpError(400, "Rack device is required.");
+        const existing = await loadAccountRecord(accountKey);
+        if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
+        await loadPowerTrakState(accountKey, existing.record);
+        res.status(200).json({ success: true, action: "rack-device-write-check", deviceId, deviceLabel, checkedAt: new Date().toISOString(), saved: false });
+        return;
+      }
       if (["claim-rack-athlete", "release-rack-athlete"].includes(cleanSetupText(payload.action).toLowerCase())) {
         const existing = await loadAccountRecord(accountKey);
         if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");

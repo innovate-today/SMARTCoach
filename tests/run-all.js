@@ -2569,6 +2569,14 @@ function checkPowerTrakFeature() {
     throw new Error("Keep Trak must not acquire or release the Power Trak mutation lock.");
   }
   [
+    'payload.action).toLowerCase() === "rack-device-write-check"',
+    'action: "rack-device-write-check"',
+    "await loadPowerTrakState(accountKey, existing.record);",
+    "saved: false",
+  ].forEach((text) => {
+    if (!powerHandler.includes(text)) throw new Error(`Power Trak device write check missing ${text}`);
+  });
+  [
     "<title>Power Trak</title>",
     "<h1>Power Trak</h1>",
     'id="rackPwaLink"',
@@ -2590,6 +2598,9 @@ function checkPowerTrakFeature() {
     "Offline rack storage",
     "Installed rack support",
     "SMART Trak connection",
+    "Protected rack save path",
+    "action:'rack-device-write-check'",
+    "data.saved!==false",
     "Pending rack updates",
     "deviceSource:'app'",
     "navigator.serviceWorker.register('/power-trak-rack-sw.js'",
