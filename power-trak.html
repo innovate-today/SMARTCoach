@@ -607,7 +607,9 @@ els.rackLive.addEventListener('click',function(event){if(event.target.closest('[
   var rackPanel=document.getElementById('rackPanel');
   if(rackPanel)rackPanel.parentNode.insertBefore(bar,rackPanel);
   renderPowerRackDeviceCheckSummary();
-  bar.addEventListener('click',function(event){if(event.target.closest('[data-rack-device-check]')){runPowerRackDeviceCheck();return}if(event.target.closest('[data-retry-rack-sync]')){flushPowerRackQueue();return}if(event.target.closest('[data-change-rack-login]'))requestPowerRackLoginChange()});
+  bar.querySelector('[data-rack-device-check]').addEventListener('click',runPowerRackDeviceCheck);
+  bar.querySelector('[data-retry-rack-sync]').addEventListener('click',flushPowerRackQueue);
+  bar.querySelector('[data-change-rack-login]').addEventListener('click',requestPowerRackLoginChange);
   function rackLoginOverlay(){
     var overlay=document.getElementById('rackPwaLogin');
     if(overlay)return overlay;
@@ -639,7 +641,7 @@ els.rackLive.addEventListener('click',function(event){if(event.target.closest('[
     fetch(apiUrl('/api/smart-trak/power-trak'),{cache:'no-store',headers:headers()}).then(function(response){
       if(!response.ok)throw new Error('Your saved rack login expired. Enter the access code again.');
       return response.json();
-    }).then(function(){overlay.remove()}).catch(function(error){
+    }).then(function(){overlay.remove();load()}).catch(function(error){
       try{localStorage.removeItem(rememberedSessionStorageKey());sessionStorage.removeItem(sessionStorageKey())}catch(e){}
       showRackLogin(error.message||'Sign in again to open Rack Mode.');
     });
