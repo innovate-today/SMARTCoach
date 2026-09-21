@@ -2657,6 +2657,7 @@ function checkPowerTrakFeature() {
     "function applyRackRest()",
     "function rackRestSeconds(athlete)",
     "function nextReadyRackAthlete(rack,workout,currentId)",
+    "var next=nextReadyRackAthlete(rack,workout,athlete.id);if(next)state.activeRackAthleteId=next.id",
     "function rackAthleteIdentity(athlete)",
     "function powerAthleteGroups(athlete)",
     "function powerWorkoutGroupMatch(athlete,workout)",
