@@ -2560,6 +2560,14 @@ function checkPowerTrakFeature() {
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const rackClaims = fs.readFileSync("lib/power-trak-rack-claims.js", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
+  const powerHandler = api.slice(api.indexOf("async function accountPowerTrak"), api.indexOf("async function loadPowerTrakState"));
+  const keepHandler = api.slice(api.indexOf("async function accountKeepTrak"), api.indexOf("function setKeepTrakCorsHeaders"));
+  if (!powerHandler.includes("let releasePowerTrakLock = null;") || !powerHandler.includes("releasePowerTrakLock = await acquireAccountScopedLock(accountKey, POWER_TRAK_NAMESPACE);")) {
+    throw new Error("Power Trak mutations must acquire the account-scoped Power Trak lock.");
+  }
+  if (keepHandler.includes("releasePowerTrakLock") || keepHandler.includes("POWER_TRAK_NAMESPACE")) {
+    throw new Error("Keep Trak must not acquire or release the Power Trak mutation lock.");
+  }
   [
     "<title>Power Trak</title>",
     "<h1>Power Trak</h1>",

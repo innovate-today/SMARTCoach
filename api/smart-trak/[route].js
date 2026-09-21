@@ -1372,7 +1372,6 @@ async function accountDashboardSupport(req, res) {
   }
 
   const { accountKey } = getGhlContext(req);
-  let releasePowerTrakLock = null;
 
   try {
     const existing = req.smartcoachRegistryAccount
@@ -1508,7 +1507,6 @@ async function accountKeepTrak(req, res) {
     }
 
     if (req.method === "POST" || req.method === "PATCH") {
-      releasePowerTrakLock = await acquireAccountScopedLock(accountKey, POWER_TRAK_NAMESPACE);
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       const notes = Array.isArray(payload.notes) ? payload.notes : payload.note ? [payload.note] : [];
       const deleteIds = Array.isArray(payload.deleteIds) ? payload.deleteIds.map(cleanSetupText).filter(Boolean) : [];
@@ -1717,6 +1715,7 @@ async function accountPowerTrak(req, res) {
   }
 
   const { accountKey } = getGhlContext(req);
+  let releasePowerTrakLock = null;
 
   try {
     if (req.method === "GET") {
@@ -1742,6 +1741,7 @@ async function accountPowerTrak(req, res) {
     }
 
     if (req.method === "POST" || req.method === "PATCH") {
+      releasePowerTrakLock = await acquireAccountScopedLock(accountKey, POWER_TRAK_NAMESPACE);
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       if (["claim-rack-athlete", "release-rack-athlete"].includes(cleanSetupText(payload.action).toLowerCase())) {
         const existing = await loadAccountRecord(accountKey);
