@@ -6,7 +6,7 @@ const SMARTCOACH_ACTIVE_FIELD_ID = "xepTMFvtaTwFdLVrOeQH";
 const SMARTCOACH_ATHLETE_ID_FIELD_ID = "Vi7fmpkblrGZqZFyNBI2";
 const CLASS_YEAR_TAG_PREFIX = "smartcoach-class-";
 const { getGhlContext, requireProPlan, coachSessionFromRequest } = require("../../lib/ghl-account");
-const { loadAccountScopedRecord, saveAccountScopedRecord } = require("../../lib/account-registry");
+const { loadAccountScopedRecord, saveAccountScopedRecord, loadCoachDeviceSession } = require("../../lib/account-registry");
 const { attachRegistryAccount, setSmartTrakSecurityHeaders } = require("../../lib/smart-trak-request");
 const { displayNameCase } = require("../../lib/display-name");
 
@@ -60,6 +60,15 @@ async function handler(req, res) {
   const { accountKey, token, locationId, activeAthleteLimit, productPlanLabel } = getGhlContext(req);
   const coachSession = coachSessionFromRequest(req, accountKey);
   const rackScoped = clean(coachSession && coachSession.sessionScope).toLowerCase() === "power-rack";
+
+  if (rackScoped) {
+    const device = await loadCoachDeviceSession(accountKey, coachSession.deviceId);
+    const revokedAt = Date.parse(device && device.revokedAt || "");
+    if (Number.isFinite(revokedAt) && revokedAt >= Number(coachSession.issuedAtMs || Number(coachSession.iat || 0) * 1000)) {
+      res.status(401).json({ error: "This rack iPad login was revoked.", deviceRevoked: true });
+      return;
+    }
+  }
 
   if (rackScoped && req.method !== "GET") {
     res.status(403).json({ error: "Rack devices cannot change the SMART Trak roster." });

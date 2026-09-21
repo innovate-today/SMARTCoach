@@ -102,6 +102,7 @@ withEnv({
   assert.strictEqual(rackPayload.sessionScope, "power-rack");
   assert.strictEqual(rackPayload.deviceId, "rack-ipad-2");
   assert.strictEqual(rackPayload.deviceLabel, "Rack 2 iPad");
+  assert.ok(rackPayload.issuedAtMs > 0);
   withEnv({ SMARTCOACH_COACH_CODE_VERSION_TEST: "2" }, () => {
     const staleSession = createCoachSession("test", { coachIndex: 0, coachCodeVersion: 1 });
     const staleRes = mockRes();

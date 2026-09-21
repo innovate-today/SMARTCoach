@@ -1363,6 +1363,7 @@ async function testPowerRackSessionCannotOpenCoachRoutes() {
     }, loginRes);
     assert.strictEqual(loginRes.statusCode, 200);
     assert.strictEqual(loginRes.body.sessionScope, "power-rack");
+    assert.ok(loginRes.body.expiresAt * 1000 - Date.now() <= 24 * 60 * 60 * 1000 + 5000);
 
     const blockedRes = mockRes();
     await handler({

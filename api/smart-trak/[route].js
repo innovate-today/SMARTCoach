@@ -39,7 +39,7 @@ const {
   accountAccessAllowed,
   accountAccessBlockedMessage,
 } = require("../../lib/ghl-account");
-const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord, saveLargeAccountScopedRecord, acquireAccountScopedLock, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
+const { registryConfigured, registryHealth, recordApiUsageAudit, loadApiUsageAudit, recordSecurityAuditEvent, loadSecurityAuditEvents, saveAccountRecord, loadAccountRecord, loadAccountScopedRecord, saveAccountScopedRecord, saveLargeAccountScopedRecord, acquireAccountScopedLock, listAccountRecords, recordCoachDeviceSession, loadCoachDeviceUsage, loadCoachDeviceSession, revokeCoachDeviceSession, saveAttendanceRecords, loadAttendanceRecords, saveKeepTrakNotes, loadKeepTrakNotes, saveBugTrakReport, loadBugTrakReports, savePartnerTimingSession, loadPartnerTimingSessions } = require("../../lib/account-registry");
 const { checkSessionAttempt, recordSessionFailure, clearSessionFailures, requestIp } = require("../../lib/session-rate-limit");
 const {
   normalizeProductPlan: normalizePlanKey,
@@ -148,6 +148,12 @@ module.exports = async function handler(req, res) {
 
   if (route === "account-staff") {
     return accountStaff(req, res);
+  }
+
+  if (route === "rack-security") {
+    await attachRegistryAccount(req);
+    if (!requireProPlan(req, res)) return;
+    return accountRackSecurity(req, res);
   }
 
   if (route === "api-usage") {
@@ -457,6 +463,49 @@ async function accountApiUsage(req, res) {
     res.status(200).json({ success: true, ...usage });
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "API usage could not be loaded." });
+  }
+}
+
+async function accountRackSecurity(req, res) {
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  try {
+    const { accountKey } = getGhlContext(req);
+    requireOwnerAdminSession(req, "manage rack device security");
+    if (req.method === "GET") {
+      const usage = await loadCoachDeviceUsage(accountKey);
+      const securityEvents = await loadSecurityAuditEvents(accountKey, 100);
+      res.status(200).json({ success: true, rackSessionHours: 24, securityEvents, ...usage });
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+    const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const action = cleanSetupText(payload.action).toLowerCase();
+    const session = coachSessionFromRequest(req, accountKey);
+    const revokedBy = cleanSetupText(session && session.staffCoachId) || `Coach ${(Number(session && session.coachIndex) || 0) + 1}`;
+    const usage = await loadCoachDeviceUsage(accountKey);
+    const rackDevices = (usage.devices || []).filter((item) => cleanSetupText(item.deviceSource).toLowerCase() === "power-rack");
+    if (action === "revoke-device") {
+      const deviceId = cleanSetupText(payload.deviceId);
+      if (!deviceId) throw httpError(400, "Rack device is required.");
+      await revokeCoachDeviceSession(accountKey, deviceId, { revokedBy, reason: payload.reason });
+      await recordSecurityAuditEvent(accountKey, { type: "rack_device_revoked", outcome: "success", actor: revokedBy, deviceId, detail: cleanSetupText(payload.reason || "Rack iPad signed out") }).catch(() => {});
+    } else if (action === "revoke-all-racks") {
+      for (const device of rackDevices) await revokeCoachDeviceSession(accountKey, device.deviceId, { revokedBy, reason: payload.reason || "All rack iPads signed out by account administrator" });
+      await recordSecurityAuditEvent(accountKey, { type: "all_rack_devices_revoked", outcome: "success", actor: revokedBy, detail: `${rackDevices.length} rack iPad login(s) revoked` }).catch(() => {});
+    } else {
+      throw httpError(400, "Choose a valid rack security action.");
+    }
+    const updated = await loadCoachDeviceUsage(accountKey);
+    const securityEvents = await loadSecurityAuditEvents(accountKey, 100);
+    res.status(200).json({ success: true, action, rackSessionHours: 24, securityEvents, ...updated });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message || "Rack security update failed." });
   }
 }
 
@@ -1739,7 +1788,7 @@ async function loadFieldPracticeState(accountKey, accountRecord) {
 }
 
 async function accountPowerTrak(req, res) {
-  setKeepTrakCorsHeaders(res);
+  setPowerTrakCorsHeaders(req, res);
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -1752,6 +1801,14 @@ async function accountPowerTrak(req, res) {
   if (rackClient && !rackSession) {
     res.status(401).json({ error: "Rack login must be renewed for protected Power Trak access.", accessCodeRequired: true });
     return;
+  }
+  if (rackSession) {
+    const device = await loadCoachDeviceSession(accountKey, rackSession.deviceId);
+    const revokedAt = Date.parse(device && device.revokedAt || "");
+    if (Number.isFinite(revokedAt) && revokedAt >= Number(rackSession.issuedAtMs || Number(rackSession.iat || 0) * 1000)) {
+      res.status(401).json({ error: "This rack iPad login was revoked. Enter the coach access code again.", accessCodeRequired: true, deviceRevoked: true });
+      return;
+    }
   }
   let releasePowerTrakLock = null;
 
@@ -1786,6 +1843,7 @@ async function accountPowerTrak(req, res) {
       releasePowerTrakLock = await acquireAccountScopedLock(accountKey, POWER_TRAK_NAMESPACE);
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       enforcePowerRackMutation(req, rackSession, payload);
+      if (rackSession) await recordSecurityAuditEvent(accountKey, { type: "rack_write", outcome: "allowed", actor: "rack-device", deviceId: rackSession.deviceId, deviceLabel: rackSession.deviceLabel, detail: cleanSetupText(payload.action || (payload.rackSession || payload.rackSessions ? "save-rack-session" : "power-trak-write")) }).catch(() => {});
       if (cleanSetupText(payload.action).toLowerCase() === "rack-device-write-check") {
         const deviceId = cleanSetupText(payload.deviceId).slice(0, 160);
         const deviceLabel = cleanSetupText(payload.deviceLabel || "Rack iPad").slice(0, 120);
@@ -1918,6 +1976,17 @@ async function accountPowerTrak(req, res) {
   } finally {
     if (releasePowerTrakLock) await releasePowerTrakLock().catch(() => {});
   }
+}
+
+function setPowerTrakCorsHeaders(req, res) {
+  const origin = cleanSetupText(headerValue(req, "origin"));
+  const allowed = !origin || origin === "https://app.smartcoach-pro.com" || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+  if (allowed && origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label, X-SMARTCoach-Device-Source");
 }
 
 async function loadPowerTrakState(accountKey, accountRecord) {
@@ -6919,6 +6988,8 @@ async function accountSession(req, res) {
           : coachCodeAllowed({ query: { account: accountKey }, headers: req.headers || {}, smartcoachRegistryAccount: req.smartcoachRegistryAccount }, accessCode);
     if (!access.allowed) {
       const failure = recordSessionFailure({ accountKey, ip });
+      const attemptedSource = cleanSetupText(firstPayloadValue(payload, ["deviceSource", "source", "client"])).toLowerCase();
+      if (attemptedSource === "power-rack") await recordSecurityAuditEvent(accountKey, { type: "rack_login", outcome: "denied", deviceId: cleanSetupText(firstPayloadValue(payload, ["deviceId", "clientDeviceId"])), deviceLabel: cleanSetupText(firstPayloadValue(payload, ["deviceLabel", "deviceName"])), detail: access.error || "Access denied" }).catch(() => {});
       if (failure.blocked) res.setHeader("Retry-After", String(failure.retryAfterSeconds || 900));
       res.status(access.statusCode || 401).json(access);
       return;
@@ -6951,6 +7022,7 @@ async function accountSession(req, res) {
       sessionScope: rackDeviceSession ? "power-rack" : "",
       deviceId,
       deviceLabel,
+      ttlSeconds: rackDeviceSession ? 24 * 60 * 60 : undefined,
     });
     if (!session) {
       res.status(500).json({
@@ -6982,8 +7054,10 @@ async function accountSession(req, res) {
         userAgent: headerValue(req, "user-agent"),
         coachIndex: access.coachIndex || 0,
         expiresAtIso: session.expiresAtIso,
+        clearRevocation: rackDeviceSession,
       }).catch((error) => ({ saved: false, error: error.message || "Device usage could not be saved." }))
       : { saved: false, skipped: true, reason: "Desktop sessions are not counted as coach devices." };
+    if (rackDeviceSession) await recordSecurityAuditEvent(accountKey, { type: "rack_login", outcome: "success", actor: access.staffCoachId || access.coachName || `Coach ${(Number(access.coachIndex) || 0) + 1}`, deviceId, deviceLabel, detail: "24-hour restricted rack session issued" }).catch(() => {});
     const staffInviteUsedAt = access.staffInvite
       ? await markStaffInviteUsed({ accountKey, accountRecord: req.smartcoachRegistryAccount, staffInviteId: access.staffInviteId, deviceSource }).catch(() => "")
       : "";

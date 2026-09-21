@@ -67,6 +67,10 @@ function testVercelHtmlSecurityHeaders() {
   });
 
   assert.strictEqual(requiredSources.size, 0, `Missing Vercel header sources: ${[...requiredSources].join(", ")}`);
+  const powerHeaders = Object.fromEntries((config.headers.find((entry) => entry.source === "/power-trak.html").headers || []).map((header) => [String(header.key).toLowerCase(), String(header.value)]));
+  assert.match(powerHeaders["content-security-policy"] || "", /frame-ancestors 'none'/);
+  assert.strictEqual(powerHeaders["x-frame-options"], "DENY");
+  assert.match(powerHeaders["permissions-policy"] || "", /camera=\(\)/);
 }
 
 (async () => {

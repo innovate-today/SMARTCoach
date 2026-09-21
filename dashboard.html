@@ -1508,6 +1508,16 @@ tr:last-child td{border-bottom:0}
           <div class="metric"><b id="staffAccessWeekDevices">--</b><span>Seen this week</span></div>
         </div>
         <div id="staffAccessWarning" class="staff-warning" hidden></div>
+        <div class="summary-head" style="margin-top:12px">
+          <h3>Rack iPads</h3>
+          <button id="revokeAllRackDevices" class="danger-action" type="button">Sign Out All Racks</button>
+        </div>
+        <div id="rackSecurityDevices" class="staff-list"><div class="empty">No rack iPads have signed in.</div></div>
+        <div id="rackSecurityStatus" class="modalstatus"></div>
+        <details>
+          <summary><b>Security activity</b></summary>
+          <div id="rackSecurityEvents" class="staff-list"><div class="empty">No rack security events.</div></div>
+        </details>
       </section>
       <section class="accesspanel" aria-label="Staff coach list">
         <div class="summary-head">
@@ -2957,6 +2967,10 @@ var els={
   staffAccessWeekDevices:document.getElementById('staffAccessWeekDevices'),
   staffAccessLastSeen:document.getElementById('staffAccessLastSeen'),
   staffAccessWarning:document.getElementById('staffAccessWarning'),
+  rackSecurityDevices:document.getElementById('rackSecurityDevices'),
+  rackSecurityStatus:document.getElementById('rackSecurityStatus'),
+  rackSecurityEvents:document.getElementById('rackSecurityEvents'),
+  revokeAllRackDevices:document.getElementById('revokeAllRackDevices'),
   staffActiveCount:document.getElementById('staffActiveCount'),
   staffInactiveCount:document.getElementById('staffInactiveCount'),
   staffInviteUsedCount:document.getElementById('staffInviteUsedCount'),
@@ -3401,6 +3415,8 @@ if(els.codeRecoverySend)els.codeRecoverySend.addEventListener('click',sendTempor
 if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff=collectStaffRows(true);coachStaff.push({id:'',name:'',active:true});renderStaffList();});
 if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
 if(els.staffList)els.staffList.addEventListener('click',handleStaffListClick);
+if(els.rackSecurityDevices)els.rackSecurityDevices.addEventListener('click',handleRackSecurityClick);
+if(els.revokeAllRackDevices)els.revokeAllRackDevices.addEventListener('click',function(){revokeRackDevices('revoke-all-racks','');});
 if(els.accountBtn)els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
 if(els.apiUsageBtn)els.apiUsageBtn.addEventListener('click',openApiUsageModal);
@@ -4466,6 +4482,7 @@ function openCodeModal(){
   els.codeStatus.style.color='';
   els.codeSave.disabled=false;
   checkSmartCoachAccount().then(function(result){renderStaffAccess(result.data||{});}).catch(function(){});
+  loadRackSecurity();
   els.codeModal.hidden=false;
   setTimeout(function(){els.currentCoachCode.focus();},50);
 }
@@ -4732,9 +4749,22 @@ function renderStaffAccess(data){
   els.staffAccessLastSeen.textContent=usage.lastSeenAt?'Last device activity '+formatDateTime(usage.lastSeenAt):'No device activity yet';
   coachStaff=normalizeStaffForView(data&&data.coachStaff||coachStaff||[]);
   renderStaffAccessWarning(usage);
+  renderRackSecurityDevices(usage.devices||[]);
   renderStaffSummary();
   renderStaffList();
 }
+
+function renderRackSecurityDevices(devices){
+  if(!els.rackSecurityDevices)return;
+  var racks=(devices||[]).filter(function(item){return item.deviceSource==='power-rack';});
+  els.revokeAllRackDevices.hidden=!racks.some(function(item){return !item.revokedAt;});
+  els.rackSecurityDevices.innerHTML=racks.length?racks.map(function(item){return '<div class="staff-row"><div class="staff-audit"><b>'+esc(item.deviceLabel||'Rack iPad')+'</b><span>Last seen '+esc(item.lastSeenAt?formatDateTime(item.lastSeenAt):'never')+'</span>'+(item.revokedAt?'<span>Signed out '+esc(formatDateTime(item.revokedAt))+'</span>':'<span>Active · 24-hour login</span>')+'</div>'+(item.revokedAt?'':'<button class="danger-action" type="button" data-revoke-rack-device="'+esc(item.deviceId)+'">Sign Out</button>')+'</div>';}).join(''):'<div class="empty">No rack iPads have signed in.</div>';
+}
+
+function handleRackSecurityClick(event){var button=event.target.closest('[data-revoke-rack-device]');if(button)revokeRackDevices('revoke-device',button.getAttribute('data-revoke-rack-device'));}
+function renderRackSecurityEvents(events){if(!els.rackSecurityEvents)return;els.rackSecurityEvents.innerHTML=(events||[]).length?(events||[]).slice(0,25).map(function(item){return '<div class="staff-row"><div class="staff-audit"><b>'+esc(String(item.type||'security event').replace(/_/g,' '))+'</b><span>'+esc(item.outcome||'recorded')+'</span><span>'+esc(item.at?formatDateTime(item.at):'')+'</span>'+(item.deviceLabel?'<span>'+esc(item.deviceLabel)+'</span>':'')+'</div></div>';}).join(''):'<div class="empty">No rack security events.</div>';}
+function loadRackSecurity(){return fetch('/api/smart-trak/rack-security?account='+encodeURIComponent(smartCoachAccountKey()),{cache:'no-store'}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.error||'Rack security could not be loaded.');return data;});}).then(function(data){renderRackSecurityDevices(data.devices||[]);renderRackSecurityEvents(data.securityEvents||[]);return data;}).catch(function(error){if(els.rackSecurityStatus)els.rackSecurityStatus.textContent=error.message||'Rack security could not be loaded.';});}
+function revokeRackDevices(action,deviceId){var all=action==='revoke-all-racks';if(!confirm(all?'Sign out every Power Trak rack iPad?':'Sign out this Power Trak rack iPad?'))return;els.rackSecurityStatus.textContent='Updating rack access...';fetch('/api/smart-trak/rack-security?account='+encodeURIComponent(smartCoachAccountKey()),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:action,deviceId:deviceId})}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.error||'Rack security update failed.');return data;});}).then(function(data){els.rackSecurityStatus.textContent=all?'All rack iPads were signed out.':'Rack iPad signed out.';renderRackSecurityDevices(data.devices||[]);renderRackSecurityEvents(data.securityEvents||[]);}).catch(function(error){els.rackSecurityStatus.textContent=error.message||'Rack security update failed.';});}
 
 function renderStaffAccessWarning(usage){
   if(!els.staffAccessWarning)return;
