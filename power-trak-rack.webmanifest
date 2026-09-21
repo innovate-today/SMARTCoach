@@ -9,6 +9,6 @@
   "theme_color": "#2b4fcc",
   "orientation": "landscape",
   "icons": [
-    { "src": "/icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/assets/power-trak-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

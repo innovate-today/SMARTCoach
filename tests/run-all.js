@@ -3009,7 +3009,16 @@ function checkPowerTrakFeature() {
   if (rackManifest.start_url !== "/power-trak.html?rack=1" || rackManifest.display !== "standalone") {
     throw new Error("Power Trak rack PWA manifest is not configured for standalone Rack Mode.");
   }
-  ["power-trak-rack-v11", "/power-trak-rack.webmanifest", "/assets/smart-logo.png", "/power-trak-rack-queue.js", "/power-trak-rack-sync.js", "/power-trak-rack-shell", "url.pathname.startsWith(\"/api/\")"].forEach((text) => {
+  if (!rackManifest.icons.some((icon) => icon.src === "/assets/power-trak-icon-512.png" && icon.sizes === "512x512")) {
+    throw new Error("Power Trak rack PWA manifest is missing its dedicated icon.");
+  }
+  if (!fs.existsSync("assets/power-trak-icon-512.png") || !fs.existsSync("assets/power-trak-icon-180.png")) {
+    throw new Error("Power Trak rack PWA icon assets are missing.");
+  }
+  if (!page.includes('<link rel="apple-touch-icon" sizes="180x180" href="/assets/power-trak-icon-180.png">')) {
+    throw new Error("Power Trak page is missing its dedicated Apple touch icon.");
+  }
+  ["power-trak-rack-v12", "/power-trak-rack.webmanifest", "/assets/power-trak-icon-512.png", "/assets/power-trak-icon-180.png", "/assets/smart-logo.png", "/power-trak-rack-queue.js", "/power-trak-rack-sync.js", "/power-trak-rack-shell", "url.pathname.startsWith(\"/api/\")"].forEach((text) => {
     if (!rackServiceWorker.includes(text)) throw new Error(`Power Trak rack service worker missing ${text}`);
   });
   [
