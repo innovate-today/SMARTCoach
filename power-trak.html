@@ -607,9 +607,9 @@ els.rackLive.addEventListener('click',function(event){if(event.target.closest('[
   var rackPanel=document.getElementById('rackPanel');
   if(rackPanel)rackPanel.parentNode.insertBefore(bar,rackPanel);
   renderPowerRackDeviceCheckSummary();
-  bar.querySelector('[data-rack-device-check]').addEventListener('click',runPowerRackDeviceCheck);
-  bar.querySelector('[data-retry-rack-sync]').addEventListener('click',flushPowerRackQueue);
-  bar.querySelector('[data-change-rack-login]').addEventListener('click',requestPowerRackLoginChange);
+  bar.querySelector('[data-rack-device-check]').addEventListener('click',function(){runPowerRackDeviceCheck()});
+  bar.querySelector('[data-retry-rack-sync]').addEventListener('click',function(){flushPowerRackQueue()});
+  bar.querySelector('[data-change-rack-login]').addEventListener('click',function(){requestPowerRackLoginChange()});
   function rackLoginOverlay(){
     var overlay=document.getElementById('rackPwaLogin');
     if(overlay)return overlay;
