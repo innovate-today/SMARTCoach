@@ -2576,6 +2576,12 @@ function checkSpeedTrakFeature() {
 
 function checkPowerTrakFeature() {
   const page = fs.readFileSync("power-trak.html", "utf8");
+  ["Abduction Lift/Inner rotation-5", "Bodyweight Squat", "Side Plank Leg Lift Hold(30sec)-4", "Superman(right hand)"].forEach((name) => {
+    if (!page.includes(name)) throw new Error(`Power Trak coach exercise list missing ${name}`);
+  });
+  if (!page.includes('id="exerciseLibraryAddList"') || !page.includes("function addCoachExerciseList()")) {
+    throw new Error("Existing Power Trak exercise libraries need the bulk-add action.");
+  }
   const rackManifest = JSON.parse(fs.readFileSync("power-trak-rack.webmanifest", "utf8"));
   const rackServiceWorker = fs.readFileSync("power-trak-rack-sw.js", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
