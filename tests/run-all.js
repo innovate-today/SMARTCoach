@@ -2619,7 +2619,13 @@ function checkPowerTrakFeature() {
     "action:'add-rack-provisional-athlete'",
     "deviceId:powerRackDeviceId()",
     "navigator.serviceWorker.register('/power-trak-rack-sw.js'",
-    "This device will open only athlete Rack Mode.",
+    "The school account is already selected. Enter the shared coach access code and this iPad&apos;s rack number.",
+    'id="rackQrModal"',
+    'id="rackQrCode"',
+    'src="/assets/qrcode-generator.js"',
+    "function initRackQrSetup()",
+    "The access code is never stored in this QR code.",
+    "localStorage.setItem('sc_power_rack_name_'+key+'_'+deviceId,'Rack '+rackNumber)",
     ".rack-kiosk{overflow:hidden}",
     ".rack-kiosk .page{height:100dvh;display:flex;flex-direction:column",
     ".rack-kiosk #rackPanel{display:flex!important;flex-direction:column}",
@@ -3019,6 +3025,7 @@ function checkPowerTrakFeature() {
   if (!fs.existsSync("assets/power-trak-icon-512.png") || !fs.existsSync("assets/power-trak-icon-180.png")) {
     throw new Error("Power Trak rack PWA icon assets are missing.");
   }
+  if (!fs.existsSync("assets/qrcode-generator.js")) throw new Error("Power Trak rack QR encoder is missing.");
   if (!page.includes('<link rel="apple-touch-icon" sizes="180x180" href="/assets/power-trak-icon-180.png">')) {
     throw new Error("Power Trak page is missing its dedicated Apple touch icon.");
   }
