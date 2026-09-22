@@ -63,6 +63,8 @@ How to use it:
 7. Click **Show workouts** under an athlete to see completed workout details.
 8. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
+In **Roster Overview**, click an athlete's name or the **Snapshot** button for a quick athlete-level view without leaving the Dashboard. The snapshot combines roster status, class or grade details, current fitness, latest meet and training results, weekly and monthly volume, attendance, required-document completion, recent Speed Trak and Field Practice activity, PB/SB counts, recent meet and training history, and saved Power Trak results. Power Trak loads separately after the snapshot opens so the rest of the athlete information appears immediately. Use the buttons inside the snapshot to open Roster, Meet History, Speed Trak, Power Trak, or Attendance for deeper review and editing.
+
 Weekly volume and **Volume by Athlete** count completed workout totals saved for the athlete, including completed totals that were saved without `mi` in the row.
 
 Use the season filter to separate current work from older work. Saved **Cross Country 2026** workouts stay in Cross Country 2026 even after those athletes move into a track season. Track workouts stay in their saved track season.

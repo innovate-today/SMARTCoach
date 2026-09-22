@@ -796,6 +796,25 @@ function checkDashboardTrainingPaces() {
   console.log("dashboard roster detail training paces ok");
 }
 
+function checkDashboardAthleteSnapshot() {
+  const html = fs.readFileSync("dashboard.html", "utf8");
+  [
+    "Athlete Snapshot",
+    'title="View athlete snapshot">Snapshot</button>',
+    "function athleteSnapshotAttendance",
+    "function athleteSnapshotDocuments",
+    "function athleteSnapshotField",
+    "function loadAthleteSnapshotPower",
+    "function powerSnapshotRowMatches",
+    "'/api/smart-trak/power-trak?v='",
+    "Recent Meet Results",
+    "Recent Training",
+  ].forEach((text) => {
+    if (!html.includes(text)) throw new Error(`dashboard athlete snapshot missing ${text}`);
+  });
+  console.log("dashboard athlete snapshot ok");
+}
+
 function checkDashboardCurrentFitnessTargetFallback() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   [
@@ -7675,6 +7694,7 @@ checkStandaloneRaceResultSaveScope();
 checkDashboardActivityRangeLayout();
 checkDashboardFilterContextAndArchivedGroups();
 checkDashboardTrainingPaces();
+checkDashboardAthleteSnapshot();
 checkDashboardCurrentFitnessTargetFallback();
 checkCoachApprovedCurrentFitnessUpdates();
 checkCurrentFitnessCleanupTool();

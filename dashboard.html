@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="app-version" content="dashboard-1780144712000">
+<meta name="app-version" content="dashboard-1790072078000">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SMART Trak Dashboard</title>
 <style>
@@ -245,6 +245,12 @@ tr:last-child td{border-bottom:0}
 .detailcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff}
 .detailcard h3{font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
 .detailcard b{display:block;font-size:18px;line-height:1.2}
+.snapshot-summary{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;border:1px solid #bfd0ef;border-left:4px solid var(--blue);border-radius:8px;background:#f8fbff;padding:12px 14px;margin-bottom:14px}
+.snapshot-summary b{display:block;font-size:17px;color:#102a70}.snapshot-summary span{display:block;color:var(--muted);font-size:12px;font-weight:700;margin-top:3px}
+.snapshot-badges{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.snapshot-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:14px 0 2px}.snapshot-actions a{font-size:12px;padding:7px 9px}
+.snapshot-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 8px}.snapshot-section-head .section-title{margin:0}
+.snapshot-loading{color:var(--muted);font-size:12px;font-weight:700}
 .detaillist{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:10px}
 .detailitem{padding:11px 12px;border-bottom:1px solid var(--line)}
 .detailitem:last-child{border-bottom:0}
@@ -897,7 +903,7 @@ tr:last-child td{border-bottom:0}
 <div id="athleteModal" class="modal" hidden>
   <section class="modalpanel" role="dialog" aria-modal="true" aria-labelledby="athleteModalTitle">
     <div class="modalhead">
-      <h2 id="athleteModalTitle">Athlete Details</h2>
+      <h2 id="athleteModalTitle">Athlete Snapshot</h2>
       <button id="athleteModalClose" class="ghost" type="button">Close</button>
     </div>
     <div id="athleteModalBody" class="modalbody"></div>
@@ -5881,7 +5887,7 @@ function rowHtml(row){
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
   return '<tr>'+
-    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="muted">View details</div></td>'+
+    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div><button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete snapshot">Snapshot</button></div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
@@ -5922,23 +5928,117 @@ function openAthleteDetail(row){
   var fitness=row.currentFitness||{};
   var meets=recentMeetRows.filter(function(item){return sameAthlete(item,row);}).slice(0,5);
   var trainingGroups=groupTrainingSessions(recentTrainingRows.filter(function(item){return sameAthlete(item,row);}),5);
-  els.athleteModalTitle.textContent=row.name||'Athlete Details';
+  var attendance=athleteSnapshotAttendance(row);
+  var documents=athleteSnapshotDocuments(row);
+  var speed=recentTrainingRows.filter(function(item){return item.speedMetricSession&&sameAthlete(item,row);}).sort(function(a,b){return compareValues(b.sessionDate||b.syncedAt,a.sessionDate||a.syncedAt);});
+  var field=athleteSnapshotField(row);
+  var meetFlags=recentMeetRows.filter(function(item){return sameAthlete(item,row);});
+  var pbCount=meetFlags.filter(function(item){return item.isPr;}).length;
+  var sbCount=meetFlags.filter(function(item){return item.isSeasonBest;}).length;
+  var identity=[row.grade?'Grade '+row.grade:'',row.graduationYear?'Class of '+row.graduationYear:'',row.gender||'',(row.groups||[]).join(', ')].filter(Boolean).join(' · ');
+  els.athleteModalTitle.textContent=(row.name||'Athlete')+' Snapshot';
   els.athleteModalBody.innerHTML=
+    '<div class="snapshot-summary"><div><b>'+esc(row.name||'Unnamed athlete')+'</b><span>'+esc(identity||'Roster athlete')+'</span></div><div class="snapshot-badges"><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span>'+(pbCount?'<span class="pill pb">'+pbCount+' PB</span>':'')+(sbCount?'<span class="pill sb">'+sbCount+' SB</span>':'')+'</div></div>'+
     '<div class="detailgrid">'+
       detailCard('Current Fitness',fitness.label||'Not set',fitness.date?formatDate(fitness.date):'')+
       detailCard('Latest Meet Result',[latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result',[latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+
       detailCard('Latest Training',[latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout',[latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+
       detailCard('Training Volume',athletePeriodVolumeDisplay(row,'currentWeek')+' this week · '+athletePeriodVolumeDisplay(row,'previousWeek')+' previous week',athleteVisibleVolumeDisplay(row,'currentMonth')+' this month')+
+      detailCard('Attendance',attendance.rate,attendance.detail)+
+      detailCard('Documents',documents.label,documents.detail)+
+      detailCard('Speed Trak',speed.length?(num(speed[0].speedRepCount)||1)+' reps · '+(speed[0].workoutPrescription||speed[0].workoutType||'Speed session'):'No speed sessions',speed.length?formatDate(speed[0].sessionDate||speed[0].syncedAt):'')+
+      detailCard('Field Practice',field.label,field.detail)+
       detailCard('Workout Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training records · '+num(row.meetResultCount)+' meet results')+
     '</div>'+
     renderAthleteTrainingPaces(fitness)+
+    '<div class="snapshot-actions">'+
+      '<a class="linkbtn modal-action" href="'+esc(smartCoachPageUrl('/athletes.html'))+'">Roster</a>'+
+      '<a class="linkbtn modal-action" href="'+esc(smartCoachPageUrl('/meet-history.html'))+'">Meet History</a>'+
+      '<a class="linkbtn modal-action" href="'+esc(smartCoachPageUrl('/speed-trak.html'))+'">Speed Trak</a>'+
+      '<a class="linkbtn modal-action" href="'+esc(smartCoachPageUrl('/power-trak.html'))+'">Power Trak</a>'+
+      '<a class="linkbtn modal-action" href="'+esc(smartCoachPageUrl('/attendance.html'))+'">Attendance</a>'+
+    '</div>'+
     '<h3 class="section-title">Recent Meet Results</h3>'+
     detailList(meets.map(function(item){
       return mainLine([item.event,item.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([item.meetName,formatDate(item.meetDate),flagText(item)].filter(Boolean).join(' · '));
     }),'No recent meet results.')+
     '<h3 class="section-title">Recent Training</h3>'+
-    detailList(trainingGroups.map(trainingSessionDetailHtml),'No recent completed workouts.');
+    detailList(trainingGroups.map(trainingSessionDetailHtml),'No recent completed workouts.')+
+    '<div class="snapshot-section-head"><h3 class="section-title">Power Trak</h3><span id="athleteSnapshotPowerStatus" class="snapshot-loading">Loading...</span></div><div id="athleteSnapshotPower"></div>';
   els.athleteModal.hidden=false;
+  loadAthleteSnapshotPower(row);
+}
+
+function athleteSnapshotAttendance(row){
+  var rows=recentAttendanceRows.filter(function(item){return sameAthlete(item,row);});
+  if(!rows.length)return {rate:'No attendance',detail:'No attendance records found'};
+  var rate=attendanceRateText(rows);
+  var latest=rows.slice().sort(function(a,b){return compareValues(b.date||b.updatedAt||b.syncedAt,a.date||a.updatedAt||a.syncedAt);})[0]||{};
+  return {rate:rate,detail:[rows.length+' checkpoints',latest.status?String(latest.status).replace(/_/g,' '):'',formatDate(latest.date||latest.updatedAt||latest.syncedAt)].filter(Boolean).join(' · ')};
+}
+
+function athleteSnapshotDocuments(row){
+  if(!docuItems.length)return {label:'Not configured',detail:'No required documents configured'};
+  var record=docuRecordForDashboardAthlete(row);
+  var complete=0;
+  docuItems.forEach(function(item){
+    var saved=record.items&&record.items[item.id]||{};
+    if(['complete','waived','not_required'].indexOf(String(saved.status||'missing').toLowerCase())>=0)complete+=1;
+  });
+  var missing=Math.max(0,docuItems.length-complete);
+  return {label:complete+'/'+docuItems.length+' complete',detail:missing?missing+' missing':'All required documents complete'};
+}
+
+function athleteSnapshotField(row){
+  var rows=[];
+  (fieldPracticeRows||[]).forEach(function(practice){
+    if(sameAthlete(practice,row))rows.push({event:practice.event,date:practice.date,bestMark:practice.height||practice.attemptSummary||''});
+    (practice.athleteSummaries||[]).forEach(function(summary){
+      if(sameAthlete(summary,row))rows.push({event:practice.event,date:practice.date,bestMark:summary.bestMark||''});
+    });
+  });
+  rows.sort(function(a,b){return compareValues(b.date,a.date);});
+  var latest=rows[0]||{};
+  return rows.length?{label:[latest.event,latest.bestMark].filter(Boolean).join(' · ')||'Field session',detail:rows.length+' sessions · '+formatDate(latest.date)}:{label:'No field sessions',detail:'No saved field-practice results'};
+}
+
+function powerSnapshotRowMatches(item,row){
+  if(!item)return false;
+  var ids=[item.contactId,item.athleteId,item.smartcoachAthleteId].map(function(value){return String(value||'').trim().toLowerCase();}).filter(Boolean);
+  var rowIds=[row.contactId,row.id,row.smartcoachAthleteId].map(function(value){return String(value||'').trim().toLowerCase();}).filter(Boolean);
+  if(ids.some(function(value){return rowIds.indexOf(value)>=0;}))return true;
+  return String(item.athleteName||item.name||'').trim().toLowerCase()===String(row.name||'').trim().toLowerCase();
+}
+
+function loadAthleteSnapshotPower(row){
+  var target=document.getElementById('athleteSnapshotPower');
+  var status=document.getElementById('athleteSnapshotPowerStatus');
+  if(!target)return;
+  dashboardSupportFetch('/api/smart-trak/power-trak?v='+Date.now(),{cache:'no-store'},{sessions:[],rackSessions:[]},3500).then(function(result){
+    if(!target.isConnected)return;
+    var items=[];
+    (result.data&&result.data.sessions||[]).forEach(function(session){
+      (session.rows||[]).forEach(function(item){
+        if(!powerSnapshotRowMatches(item,row))return;
+        var marks=Object.keys(item.marks||{}).map(function(key){return powerSnapshotMetricLabel(key)+' '+item.marks[key];}).join(' · ');
+        items.push({date:session.date,title:session.testName||'Power test',detail:marks||item.note||'Saved result'});
+      });
+    });
+    (result.data&&result.data.rackSessions||[]).forEach(function(session){
+      (session.athletes||[]).forEach(function(item){
+        if(!powerSnapshotRowMatches(item,row)||!(item.results||[]).length)return;
+        var last=item.results[item.results.length-1]||{};
+        items.push({date:session.date,title:session.workoutName||session.rackName||'Rack workout',detail:[last.exerciseName,last.actualReps?last.actualReps+' reps':'',last.actualValue,last.unit].filter(Boolean).join(' · ')});
+      });
+    });
+    items.sort(function(a,b){return compareValues(b.date,a.date);});
+    target.innerHTML=detailList(items.slice(0,5).map(function(item){return mainLine(item.title)+subLine([item.detail,formatDate(item.date)].filter(Boolean).join(' · '));}),'No saved Power Trak results.');
+    if(status)status.textContent=items.length?items.length+' saved':'No results';
+  });
+}
+
+function powerSnapshotMetricLabel(key){
+  return {broadJump:'Broad jump',verticalJump:'Vertical jump',medBallThrow:'Med-ball throw',squat:'Squat',clean:'Clean',bench:'Bench'}[key]||key;
 }
 
 function closeAthleteDetail(){
