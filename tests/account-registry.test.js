@@ -457,7 +457,7 @@ async function testPartnerTimingUsesScopedStorage() {
   }
 }
 
-async function testCoachDeviceUsageCountsAppDevicesOnly() {
+async function testCoachDeviceUsageCountsAuthorizedDevices() {
   const previousFetch = global.fetch;
   const store = {};
   const setMembers = {};
@@ -489,15 +489,15 @@ async function testCoachDeviceUsageCountsAppDevicesOnly() {
       SMARTCOACH_REGISTRY_REST_TOKEN: "registry-token",
       SMARTCOACH_REGISTRY_PREFIX: undefined,
     }, async () => {
-      await recordCoachDeviceSession("device-school", { deviceId: "desktop_1", deviceLabel: "Mac Safari", userAgent: "Macintosh" });
+      await recordCoachDeviceSession("device-school", { deviceId: "desktop_1", deviceLabel: "Mac Safari", deviceSource: "desktop", userAgent: "Macintosh" });
       await recordCoachDeviceSession("device-school", { deviceId: "app_1", deviceLabel: "iPhone Safari", deviceSource: "app", coachName: "Moore" });
       await recordCoachDeviceSession("device-school", { deviceId: "app_2", deviceLabel: "iPad Safari", deviceSource: "app" });
 
       const usage = await loadCoachDeviceUsage("device-school");
-      assert.strictEqual(usage.activeDevices, 2);
-      assert.strictEqual(usage.devicesSeenThisWeek, 2);
-      assert.strictEqual(usage.unassignedDevices, 1);
-      assert.deepStrictEqual(usage.devices.map((device) => device.deviceId).sort(), ["app_1", "app_2"]);
+      assert.strictEqual(usage.activeDevices, 3);
+      assert.strictEqual(usage.devicesSeenThisWeek, 3);
+      assert.strictEqual(usage.unassignedDevices, 2);
+      assert.deepStrictEqual(usage.devices.map((device) => device.deviceId).sort(), ["app_1", "app_2", "desktop_1"]);
     });
   } finally {
     global.fetch = previousFetch;
@@ -511,7 +511,7 @@ async function testCoachDeviceUsageCountsAppDevicesOnly() {
   await testAttendanceMirrorItemizedStorage();
   await testKeepTrakUsesScopedStorage();
   await testPartnerTimingUsesScopedStorage();
-  await testCoachDeviceUsageCountsAppDevicesOnly();
+  await testCoachDeviceUsageCountsAuthorizedDevices();
   console.log("account registry alias tests passed");
 })().catch((error) => {
   console.error(error);

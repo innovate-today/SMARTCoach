@@ -995,6 +995,10 @@ async function testParentEmailReleaseGate() {
     assert.strictEqual(sessionRes.statusCode, 200);
     assert.strictEqual(sessionRes.body.success, true);
     assert.strictEqual(sessionRes.body.parentEmailAllowed, false);
+    assert.strictEqual(sessionRes.body.deviceSource, "desktop");
+    assert.strictEqual(sessionRes.body.deviceLabel, "SMART Trak browser");
+    assert.match(sessionRes.body.deviceId, /^browser_[a-f0-9]{36}$/);
+    assert.ok(sessionRes.body.expiresAt * 1000 - Date.now() <= 7 * 24 * 60 * 60 * 1000 + 5000);
 
     const statusRes = mockRes();
     await handler({

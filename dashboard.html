@@ -1509,8 +1509,8 @@ tr:last-child td{border-bottom:0}
         </div>
         <div id="staffAccessWarning" class="staff-warning" hidden></div>
         <div class="summary-head" style="margin-top:12px">
-          <h3>Rack iPads</h3>
-          <button id="revokeAllRackDevices" class="danger-action" type="button">Sign Out All Racks</button>
+          <h3>Authorized Devices</h3>
+          <button id="revokeAllRackDevices" class="danger-action" type="button">Sign Out All Devices</button>
         </div>
         <div id="rackSecurityDevices" class="staff-list"><div class="empty">No rack iPads have signed in.</div></div>
         <div id="rackSecurityStatus" class="modalstatus"></div>
@@ -3416,7 +3416,7 @@ if(els.staffAdd)els.staffAdd.addEventListener('click',function(){coachStaff=coll
 if(els.staffSave)els.staffSave.addEventListener('click',saveStaffList);
 if(els.staffList)els.staffList.addEventListener('click',handleStaffListClick);
 if(els.rackSecurityDevices)els.rackSecurityDevices.addEventListener('click',handleRackSecurityClick);
-if(els.revokeAllRackDevices)els.revokeAllRackDevices.addEventListener('click',function(){revokeRackDevices('revoke-all-racks','');});
+if(els.revokeAllRackDevices)els.revokeAllRackDevices.addEventListener('click',function(){revokeRackDevices('revoke-all-devices','');});
 if(els.accountBtn)els.accountBtn.addEventListener('click',openAccountSettings);
 els.accountClose.addEventListener('click',closeAccountSettings);
 if(els.apiUsageBtn)els.apiUsageBtn.addEventListener('click',openApiUsageModal);
@@ -4001,7 +4001,7 @@ function submitDashboardAccessCode(){
   fetch('/api/smart-trak/account-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code,deviceSource:'desktop'})
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),accessCode:code,deviceSource:'desktop',deviceId:smartCoachDeviceId(),deviceLabel:smartCoachDeviceLabel()})
   }).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
@@ -4601,7 +4601,7 @@ function tryDashboardInviteAccess(data){
   fetch('/api/smart-trak/account-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({accountKey:smartCoachAccountKey(),inviteToken:token,deviceSource:'desktop'})
+    body:JSON.stringify({accountKey:smartCoachAccountKey(),inviteToken:token,deviceSource:'desktop',deviceId:smartCoachDeviceId(),deviceLabel:smartCoachDeviceLabel()})
   }).then(function(res){
     return res.json().then(function(response){return{ok:res.ok,data:response};});
   }).then(function(result){
@@ -4756,15 +4756,15 @@ function renderStaffAccess(data){
 
 function renderRackSecurityDevices(devices){
   if(!els.rackSecurityDevices)return;
-  var racks=(devices||[]).filter(function(item){return item.deviceSource==='power-rack';});
-  els.revokeAllRackDevices.hidden=!racks.some(function(item){return !item.revokedAt;});
-  els.rackSecurityDevices.innerHTML=racks.length?racks.map(function(item){return '<div class="staff-row"><div class="staff-audit"><b>'+esc(item.deviceLabel||'Rack iPad')+'</b><span>Last seen '+esc(item.lastSeenAt?formatDateTime(item.lastSeenAt):'never')+'</span>'+(item.revokedAt?'<span>Signed out '+esc(formatDateTime(item.revokedAt))+'</span>':'<span>Active · 24-hour login</span>')+'</div>'+(item.revokedAt?'':'<button class="danger-action" type="button" data-revoke-rack-device="'+esc(item.deviceId)+'">Sign Out</button>')+'</div>';}).join(''):'<div class="empty">No rack iPads have signed in.</div>';
+  var items=devices||[];
+  els.revokeAllRackDevices.hidden=!items.some(function(item){return !item.revokedAt;});
+  els.rackSecurityDevices.innerHTML=items.length?items.map(function(item){var rack=item.deviceSource==='power-rack';return '<div class="staff-row"><div class="staff-audit"><b>'+esc(item.deviceLabel||(rack?'Rack iPad':'Coach device'))+'</b><span>'+esc(rack?'Power Trak Rack':item.deviceSource==='desktop'?'SMART Trak browser':'SMARTCoach app')+'</span><span>Last seen '+esc(item.lastSeenAt?formatDateTime(item.lastSeenAt):'never')+'</span>'+(item.revokedAt?'<span>Signed out '+esc(formatDateTime(item.revokedAt))+'</span>':'<span>Active · '+(rack?'24-hour':'7-day')+' login</span>')+'</div>'+(item.revokedAt?'':'<button class="danger-action" type="button" data-revoke-rack-device="'+esc(item.deviceId)+'">Sign Out</button>')+'</div>';}).join(''):'<div class="empty">No authorized devices have signed in.</div>';
 }
 
 function handleRackSecurityClick(event){var button=event.target.closest('[data-revoke-rack-device]');if(button)revokeRackDevices('revoke-device',button.getAttribute('data-revoke-rack-device'));}
 function renderRackSecurityEvents(events){if(!els.rackSecurityEvents)return;els.rackSecurityEvents.innerHTML=(events||[]).length?(events||[]).slice(0,25).map(function(item){return '<div class="staff-row"><div class="staff-audit"><b>'+esc(String(item.type||'security event').replace(/_/g,' '))+'</b><span>'+esc(item.outcome||'recorded')+'</span><span>'+esc(item.at?formatDateTime(item.at):'')+'</span>'+(item.deviceLabel?'<span>'+esc(item.deviceLabel)+'</span>':'')+'</div></div>';}).join(''):'<div class="empty">No rack security events.</div>';}
 function loadRackSecurity(){return fetch('/api/smart-trak/rack-security?account='+encodeURIComponent(smartCoachAccountKey()),{cache:'no-store'}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.error||'Rack security could not be loaded.');return data;});}).then(function(data){renderRackSecurityDevices(data.devices||[]);renderRackSecurityEvents(data.securityEvents||[]);return data;}).catch(function(error){if(els.rackSecurityStatus)els.rackSecurityStatus.textContent=error.message||'Rack security could not be loaded.';});}
-function revokeRackDevices(action,deviceId){var all=action==='revoke-all-racks';if(!confirm(all?'Sign out every Power Trak rack iPad?':'Sign out this Power Trak rack iPad?'))return;els.rackSecurityStatus.textContent='Updating rack access...';fetch('/api/smart-trak/rack-security?account='+encodeURIComponent(smartCoachAccountKey()),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:action,deviceId:deviceId})}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.error||'Rack security update failed.');return data;});}).then(function(data){els.rackSecurityStatus.textContent=all?'All rack iPads were signed out.':'Rack iPad signed out.';renderRackSecurityDevices(data.devices||[]);renderRackSecurityEvents(data.securityEvents||[]);}).catch(function(error){els.rackSecurityStatus.textContent=error.message||'Rack security update failed.';});}
+function revokeRackDevices(action,deviceId){var all=action==='revoke-all-devices'||action==='revoke-all-racks';if(!confirm(all?'Sign out every authorized SMART Trak device?':'Sign out this SMART Trak device?'))return;els.rackSecurityStatus.textContent='Updating device access...';fetch('/api/smart-trak/rack-security?account='+encodeURIComponent(smartCoachAccountKey()),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:action,deviceId:deviceId})}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.error||'Device security update failed.');return data;});}).then(function(data){els.rackSecurityStatus.textContent=all?'All SMART Trak devices were signed out.':'Device signed out.';renderRackSecurityDevices(data.devices||[]);renderRackSecurityEvents(data.securityEvents||[]);}).catch(function(error){els.rackSecurityStatus.textContent=error.message||'Device security update failed.';});}
 
 function renderStaffAccessWarning(usage){
   if(!els.staffAccessWarning)return;

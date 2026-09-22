@@ -32,6 +32,7 @@ const htmlFiles = [
   "onboarding.html",
   "live-launch-validation.html",
   "sales.html",
+  "privacy.html",
 ];
 const jsonFiles = [
   "package.json",
