@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="app-version" content="dashboard-1790072078000">
+<meta name="app-version" content="dashboard-1790073415000">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SMART Trak Dashboard</title>
 <style>
@@ -5930,7 +5930,7 @@ function openAthleteDetail(row){
   var trainingGroups=groupTrainingSessions(recentTrainingRows.filter(function(item){return sameAthlete(item,row);}),5);
   var attendance=athleteSnapshotAttendance(row);
   var documents=athleteSnapshotDocuments(row);
-  var speed=recentTrainingRows.filter(function(item){return item.speedMetricSession&&sameAthlete(item,row);}).sort(function(a,b){return compareValues(b.sessionDate||b.syncedAt,a.sessionDate||a.syncedAt);});
+  var speed=speedPracticeTrainingRows(fieldPracticeRows,[row]).filter(function(item){return sameAthlete(item,row);}).sort(function(a,b){return compareValues(b.sessionDate||b.syncedAt,a.sessionDate||a.syncedAt);});
   var field=athleteSnapshotField(row);
   var meetFlags=recentMeetRows.filter(function(item){return sameAthlete(item,row);});
   var pbCount=meetFlags.filter(function(item){return item.isPr;}).length;
@@ -5946,7 +5946,7 @@ function openAthleteDetail(row){
       detailCard('Training Volume',athletePeriodVolumeDisplay(row,'currentWeek')+' this week · '+athletePeriodVolumeDisplay(row,'previousWeek')+' previous week',athleteVisibleVolumeDisplay(row,'currentMonth')+' this month')+
       detailCard('Attendance',attendance.rate,attendance.detail)+
       detailCard('Documents',documents.label,documents.detail)+
-      detailCard('Speed Trak',speed.length?(num(speed[0].speedRepCount)||1)+' reps · '+(speed[0].workoutPrescription||speed[0].workoutType||'Speed session'):'No speed sessions',speed.length?formatDate(speed[0].sessionDate||speed[0].syncedAt):'')+
+      detailCard('Speed Trak',speed.length?[speed[0].workoutPrescription||speed[0].workoutType||'Speed session',speed[0].totalTimeDisplay].filter(Boolean).join(' · '):'No speed sessions',speed.length?(num(speed[0].speedRepCount)||1)+' reps · '+formatDate(speed[0].sessionDate||speed[0].syncedAt):'')+
       detailCard('Field Practice',field.label,field.detail)+
       detailCard('Workout Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training records · '+num(row.meetResultCount)+' meet results')+
     '</div>'+
@@ -5992,6 +5992,7 @@ function athleteSnapshotDocuments(row){
 function athleteSnapshotField(row){
   var rows=[];
   (fieldPracticeRows||[]).forEach(function(practice){
+    if(Array.isArray(practice.speedMetrics)&&practice.speedMetrics.length)return;
     if(sameAthlete(practice,row))rows.push({event:practice.event,date:practice.date,bestMark:practice.height||practice.attemptSummary||''});
     (practice.athleteSummaries||[]).forEach(function(summary){
       if(sameAthlete(summary,row))rows.push({event:practice.event,date:practice.date,bestMark:summary.bestMark||''});

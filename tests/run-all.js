@@ -804,6 +804,8 @@ function checkDashboardAthleteSnapshot() {
     "function athleteSnapshotAttendance",
     "function athleteSnapshotDocuments",
     "function athleteSnapshotField",
+    "var speed=speedPracticeTrainingRows(fieldPracticeRows,[row])",
+    "if(Array.isArray(practice.speedMetrics)&&practice.speedMetrics.length)return;",
     "function loadAthleteSnapshotPower",
     "function powerSnapshotRowMatches",
     "'/api/smart-trak/power-trak?v='",
