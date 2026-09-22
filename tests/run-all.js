@@ -6357,6 +6357,15 @@ function checkAttendanceMobileSummary() {
 function checkAttendanceSeasonAttachment() {
   const mobile = fs.readFileSync("index.html", "utf8");
   const desktop = fs.readFileSync("attendance.html", "utf8");
+  [
+    'id="tableScrollTop"',
+    'id="tableScrollSpacer"',
+    "top.addEventListener('scroll',function(){wrap.scrollLeft=top.scrollLeft;})",
+    "wrap.addEventListener('scroll',function(){top.scrollLeft=wrap.scrollLeft;})",
+    "observer.observe(table);observer.observe(wrap);",
+  ].forEach((text) => {
+    if (!desktop.includes(text)) throw new Error(`Attendance top scrollbar missing ${text}`);
+  });
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
   [
