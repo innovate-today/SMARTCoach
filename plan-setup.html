@@ -846,20 +846,20 @@ function setAssignmentStatus(text,type){var s=document.getElementById('assignmen
 function setGroupStatus(text,type){var s=document.getElementById('groupStatus');if(!s)return;s.textContent=text||'';s.style.color=type==='bad'?'var(--bad)':type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--muted)';}
 function groupKey(group){return String(group&&group.id||'');}
 function reconcileTrainingGroupsForRoster(sourceGroups){
-  var ids={},names={};
-  athletes.forEach(function(athlete){
-    if(athlete.id)ids[String(athlete.id)]=true;
-    if(athlete.name)names[String(athlete.name||'').trim().toLowerCase()]=true;
+  var inactiveIds={},inactiveNames={};
+  athletes.filter(function(athlete){return athlete&&athlete.smartcoachActive===false;}).forEach(function(athlete){
+    if(athlete.id)inactiveIds[String(athlete.id)]=true;
+    if(athlete.name)inactiveNames[String(athlete.name||'').trim().toLowerCase()]=true;
   });
   return (sourceGroups||[]).map(function(group){
     var members=(group.athletes||group.runners||[]);
     var cleaned=members.filter(function(member){
       var id=String(member.contactId||member.id||'');
       var name=String(member.name||'').trim().toLowerCase();
-      return id&&ids[id]||name&&names[name];
+      return !(id&&inactiveIds[id]||name&&inactiveNames[name]);
     });
     var next=Object.assign({},group);
-    next.athletes=cleaned.length||!members.length?cleaned:members;
+    next.athletes=cleaned;
     return next;
   }).filter(Boolean);
 }
@@ -933,7 +933,8 @@ function captureGroupAthleteChoices(){
   var name=(document.getElementById('groupName')||{}).value||group.name||'Group';
   group.name=name.trim()||group.name||'Group';
   var existing={};
-  (group.athletes||[]).forEach(function(athlete){existing[String(athlete.contactId||'')]=athlete;});
+  var inactive=new Set(athletes.filter(function(athlete){return athlete&&athlete.smartcoachActive===false;}).map(function(athlete){return String(athlete.id||'')}));
+  (group.athletes||[]).forEach(function(athlete){var id=String(athlete.contactId||'');if(!inactive.has(id))existing[id]=athlete;});
   Array.prototype.slice.call(document.querySelectorAll('.group-athlete')).forEach(function(input){
     if(input.checked){
       existing[String(input.value)]={contactId:input.value,name:input.getAttribute('data-name')||'',smartcoachAthleteId:input.getAttribute('data-athlete-id')||''};

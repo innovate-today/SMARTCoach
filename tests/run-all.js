@@ -577,6 +577,12 @@ function checkInactiveAthletesStayOutOfCurrentViews() {
   const athletes = fs.readFileSync("athletes.html", "utf8");
   const dashboard = fs.readFileSync("api/ghl/dashboard.js", "utf8");
   const planSetup = fs.readFileSync("plan-setup.html", "utf8");
+  const speed = fs.readFileSync("speed-trak.html", "utf8");
+  const power = fs.readFileSync("power-trak.html", "utf8");
+  if (!power.includes("athlete.smartcoachActive!==false&&rosterName(athlete)") || !power.includes("athlete.provisional?'Needs Roster Review':''")) throw new Error("Power Trak setup must list only active athletes without redundant status text.");
+  if (!speed.includes(".filter(function(athlete){return athlete&&athlete.smartcoachActive!==false}).map") || !speed.includes("This athlete is inactive. Activate them on the roster")) throw new Error("Speed Trak must exclude inactive athletes from new result selection.");
+  if (!planSetup.includes("var inactive=new Set(athletes.filter(function(athlete){return athlete&&athlete.smartcoachActive===false;})") || !planSetup.includes("if(!inactive.has(id))existing[id]=athlete") || !planSetup.includes("next.athletes=cleaned;")) throw new Error("Group assignment views and saves must not retain explicitly inactive athletes.");
+  if (!athletes.includes("!saved.id||saved.smartcoachActive===false")) throw new Error("Roster edits must not assign inactive athletes to a group.");
   [
     '<option value="active" selected>Active athletes</option>',
     '<option value="all">All roster entries</option>',
@@ -2730,7 +2736,8 @@ function checkPowerTrakFeature() {
     "function rackAthleteIdentity(athlete)",
     "function powerRosterForWorkout(workout)",
     "status=assigned?'Active on '+assigned.rackName",
-    "athlete.provisional?'Needs Roster Review':'Active'",
+    "athlete.provisional?'Needs Roster Review':''",
+    "(status?'<span class=\"small\">'+esc(status)+'</span>':'')",
     "fetchJson(apiUrl('/api/smart-trak/groups'))",
     "groups:state.groups",
     "function activeRackAssignment(athleteId,exceptRackId)",
@@ -6794,7 +6801,7 @@ function checkMobileGroupStorageAccountScoped() {
   });
   [
     "function reconcileTrainingGroupsForRoster(sourceGroups)",
-    "next.athletes=cleaned.length||!members.length?cleaned:members;",
+    "return !(id&&inactiveIds[id]||name&&inactiveNames[name]);",
     "deleteGroupIds:options.deleteGroupIds||[]",
     ".filter(function(group){return !group.archived;})",
     '<div class="group-actions"><div id="groupStatus" class="group-status"></div>',
