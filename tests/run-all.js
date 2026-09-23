@@ -2589,6 +2589,25 @@ function checkPowerTrakFeature() {
   if (!api.includes("side: Number(result && result.side) === 2 ? 2 : Number(result && result.side) === 1 ? 1")) {
     throw new Error("Power Trak must preserve a completed set's original rack side after an athlete moves.");
   }
+  if (!api.includes("startBlockIndices: Array.isArray(source.startBlockIndices)") || !api.includes("startBlockIndex: Math.max(0, Number.parseInt(row.startBlockIndex")) {
+    throw new Error("Power Trak must save each side's starting block and each athlete's rotated position.");
+  }
+  const positionSource = page.match(/^function athletePosition\(workout,athlete\).*$/m);
+  const advanceSource = page.match(/^function advanceRackAthlete\(workout,athlete\).*$/m);
+  if (!positionSource || !advanceSource) throw new Error("Power Trak block progression is missing.");
+  const advanceRackAthlete = new Function(`${positionSource[0]}\n${advanceSource[0]}\nreturn advanceRackAthlete;`)();
+  const rotationWorkout = { blocks: ["A", "B", "C"].map((label) => ({ label, rounds: 1, exercises: [{ reps: 1 }] })) };
+  for (const startBlockIndex of [0, 1, 2]) {
+    const athlete = { blockIndex: startBlockIndex, startBlockIndex, roundIndex: 0, exerciseIndex: 0, repCount: 1 };
+    const visited = [];
+    for (let set = 0; set < 3; set++) {
+      visited.push(rotationWorkout.blocks[athlete.blockIndex].label);
+      advanceRackAthlete(rotationWorkout, athlete);
+      athlete.repCount = 1;
+    }
+    const expected = ["A", "B", "C"].slice(startBlockIndex).concat(["A", "B", "C"].slice(0, startBlockIndex));
+    if (visited.join(",") !== expected.join(",") || athlete.blockIndex !== 3) throw new Error(`Power Trak must complete every block once when starting at ${expected[0]}.`);
+  }
   const rackClaims = fs.readFileSync("lib/power-trak-rack-claims.js", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   const powerHandler = api.slice(api.indexOf("async function accountPowerTrak"), api.indexOf("async function loadPowerTrakState"));
