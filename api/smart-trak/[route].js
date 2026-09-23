@@ -2054,6 +2054,7 @@ function normalizePowerTrakRackSessions(items) {
         contactId: cleanSetupText(row.contactId).slice(0, 120),
         smartcoachAthleteId: cleanSetupText(row.smartcoachAthleteId).slice(0, 120),
         name,
+        side: Number(row.side) === 2 ? 2 : Number(row.side) === 1 ? 1 : index < 4 ? 1 : 2,
         rackStatus: ["released", "complete"].includes(cleanSetupText(row.rackStatus).toLowerCase()) ? cleanSetupText(row.rackStatus).toLowerCase() : "active",
         releasedAt: cleanSetupText(row.releasedAt),
         completedAt: cleanSetupText(row.completedAt),
@@ -2069,6 +2070,7 @@ function normalizePowerTrakRackSessions(items) {
           exerciseName: cleanSetupText(result && result.exerciseName).slice(0, 120),
           round: Math.max(1, Number.parseInt(result && result.round, 10) || 1),
           rep: Math.max(1, Number.parseInt(result && result.rep, 10) || 1),
+          side: Number(result && result.side) === 2 ? 2 : Number(result && result.side) === 1 ? 1 : Number(row.side) === 2 ? 2 : Number(row.side) === 1 ? 1 : index < 4 ? 1 : 2,
           prescribedReps: result && result.prescribedReps !== "" && Number.isFinite(Number(result.prescribedReps)) ? Math.min(1000, Math.max(1, Number.parseInt(result.prescribedReps, 10))) : null,
           actualReps: result && result.actualReps !== "" && Number.isFinite(Number(result.actualReps)) ? Math.min(1000, Math.max(1, Number.parseInt(result.actualReps, 10))) : null,
           executionMode: ["both", "each_side", "alternating", "left_only", "right_only"].includes(result && result.executionMode) ? result.executionMode : "both",
@@ -2082,13 +2084,15 @@ function normalizePowerTrakRackSessions(items) {
           completedAt: cleanSetupText(result && result.completedAt),
         })).slice(-500),
       };
-    }).filter(Boolean).slice(0, 6);
-    if (!id || !workoutId || !athletes.length) return null;
+    }).filter(Boolean).slice(0, 8);
+    if (!id || !workoutId || !athletes.length || (Array.isArray(source.athletes) && source.athletes.length > 8)) return null;
+    if (Array.isArray(source.sideNames) && [1, 2].some((side) => athletes.filter((athlete) => athlete.side === side && athlete.rackStatus === "active").length > 4)) return null;
     return {
       id,
       workoutId,
       workoutName: cleanSetupText(source.workoutName).slice(0, 120),
       rackName: cleanSetupText(source.rackName || "Rack").slice(0, 80) || "Rack",
+      sideNames: Array.isArray(source.sideNames) ? [cleanSetupText(source.sideNames[0]).slice(0, 40) || "Side 1", cleanSetupText(source.sideNames[1]).slice(0, 40) || "Side 2"] : ["Side 1", "Side 2"],
       deviceId: cleanSetupText(source.deviceId).slice(0, 160),
       deviceLabel: cleanSetupText(source.deviceLabel).slice(0, 120),
       date: cleanSetupText(source.date).slice(0, 10) || new Date().toISOString().slice(0, 10),

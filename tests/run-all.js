@@ -2586,6 +2586,9 @@ function checkPowerTrakFeature() {
   const rackServiceWorker = fs.readFileSync("power-trak-rack-sw.js", "utf8");
   const dashboard = fs.readFileSync("dashboard.html", "utf8");
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
+  if (!api.includes("side: Number(result && result.side) === 2 ? 2 : Number(result && result.side) === 1 ? 1")) {
+    throw new Error("Power Trak must preserve a completed set's original rack side after an athlete moves.");
+  }
   const rackClaims = fs.readFileSync("lib/power-trak-rack-claims.js", "utf8");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   const powerHandler = api.slice(api.indexOf("async function accountPowerTrak"), api.indexOf("async function loadPowerTrakState"));
@@ -2819,8 +2822,13 @@ function checkPowerTrakFeature() {
     'id="addLateAthleteBtn"',
     "Everyone on this iPad completes the same workout.",
     "function startRack()",
-    "Choose no more than six athletes for one rack.",
-    "activeRackAthletes(rack).length>=6",
+    "Choose no more than eight athletes for one rack.",
+    "Choose no more than four athletes per side.",
+    "function rackSetupSideNames()",
+    "function rackSideActiveCount(rack,side)",
+    "recordedSide=rackSideName(rack,Number(result.side)||rackAthleteSide(rack,athlete))",
+    "data-move-rack-athlete",
+    "Completed sets and the current workout position stay with this athlete.",
     "function renderRackLive()",
     "function completeRackRep()",
     "function validatedRackResult(exercise)",
