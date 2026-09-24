@@ -6752,7 +6752,7 @@ function checkMobilePowerTrakWorkflow() {
     "function normalizePowerTrakSession(item)",
     "function normalizePowerTrakRows(items)",
     "function normalizePowerTrakMarks(source)",
-    "await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE",
+    "await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE",
     "powerTrakSessions",
     "powerTrakWorkouts",
     "powerTrakProvisionalAthletes",

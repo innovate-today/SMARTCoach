@@ -1883,7 +1883,7 @@ async function accountPowerTrak(req, res) {
         if (!athleteId || !deviceId) throw httpError(400, "Athlete and rack device are required.");
         const rackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
         const rackReservations = updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
-        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
+        await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
         res.status(200).json({ success: true, action, rackReservations });
         return;
       }
@@ -1894,7 +1894,7 @@ async function accountPowerTrak(req, res) {
         const provisionalAthletes = normalizePowerTrakProvisionalAthletes(
           normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes).concat([payload.provisionalAthlete])
         );
-        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
+        await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
           powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions),
           powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts),
           powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog),
@@ -1926,7 +1926,7 @@ async function accountPowerTrak(req, res) {
         const powerTrakRackSessions = current.filter((item) => !deleteIds.has(item.id));
         const savedAt = new Date().toISOString();
         const powerTrakRackTombstones = normalizePowerTrakRackTombstones(normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones).concat(matches.map((item) => ({ id: item.id, deletedAt: savedAt }))));
-        await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), powerTrakRackTombstones, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
+        await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), powerTrakRackTombstones, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
         res.status(200).json({ success: true, mode, deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount, remainingRackSessions: powerTrakRackSessions.length, savedAt });
         return;
       }
@@ -1973,7 +1973,7 @@ async function accountPowerTrak(req, res) {
         .slice(0, 500);
       const powerTrakRackReservations = normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations).filter((item) => !startedAthleteIds.has(item.athleteId.toLowerCase()));
       const savedAt = new Date().toISOString();
-      await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
+      await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
         powerTrakSessions,
         powerTrakWorkouts,
         powerTrakExerciseCatalog,
