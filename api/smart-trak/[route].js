@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const zlib = require("zlib");
 
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
@@ -1883,7 +1884,7 @@ async function accountPowerTrak(req, res) {
         if (!athleteId || !deviceId) throw httpError(400, "Athlete and rack device are required.");
         const rackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
         const rackReservations = updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
-        await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
+        await savePowerTrakState(accountKey, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
         res.status(200).json({ success: true, action, rackReservations });
         return;
       }
@@ -1894,7 +1895,7 @@ async function accountPowerTrak(req, res) {
         const provisionalAthletes = normalizePowerTrakProvisionalAthletes(
           normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes).concat([payload.provisionalAthlete])
         );
-        await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
+        await savePowerTrakState(accountKey, {
           powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions),
           powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts),
           powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog),
@@ -1926,7 +1927,7 @@ async function accountPowerTrak(req, res) {
         const powerTrakRackSessions = current.filter((item) => !deleteIds.has(item.id));
         const savedAt = new Date().toISOString();
         const powerTrakRackTombstones = normalizePowerTrakRackTombstones(normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones).concat(matches.map((item) => ({ id: item.id, deletedAt: savedAt }))));
-        await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), powerTrakRackTombstones, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
+        await savePowerTrakState(accountKey, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), powerTrakRackTombstones, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
         res.status(200).json({ success: true, mode, deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount, remainingRackSessions: powerTrakRackSessions.length, savedAt });
         return;
       }
@@ -1973,7 +1974,7 @@ async function accountPowerTrak(req, res) {
         .slice(0, 500);
       const powerTrakRackReservations = normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations).filter((item) => !startedAthleteIds.has(item.athleteId.toLowerCase()));
       const savedAt = new Date().toISOString();
-      await saveLargeAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
+      await savePowerTrakState(accountKey, {
         powerTrakSessions,
         powerTrakWorkouts,
         powerTrakExerciseCatalog,
@@ -2006,18 +2007,64 @@ function setPowerTrakCorsHeaders(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label, X-SMARTCoach-Device-Source");
 }
 
+async function savePowerTrakState(accountKey, state) {
+  const current = await loadAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE);
+  const currentManifest = current && current.record && current.record.chunkManifest;
+  const slot = currentManifest && currentManifest.slot === "a" ? "b" : "a";
+  const compressed = zlib.gzipSync(Buffer.from(JSON.stringify(state))).toString("base64");
+  const chunkSize = 250000;
+  const count = Math.ceil(compressed.length / chunkSize);
+  if (!count || count > 200) throw httpError(413, "Power Trak history is too large to save.");
+  for (let index = 0; index < count; index++) {
+    await saveLargeAccountScopedRecord(accountKey, `powertrak_${slot}_${index}`, {
+      data: compressed.slice(index * chunkSize, (index + 1) * chunkSize),
+    });
+  }
+  await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
+    chunkManifest: {
+      slot,
+      count,
+      digest: crypto.createHash("sha256").update(compressed).digest("hex"),
+    },
+  });
+}
+
 async function loadPowerTrakState(accountKey, accountRecord) {
-  const scoped = await loadAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE).catch(() => null);
+  const scoped = await loadAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE);
   if (scoped && scoped.found && scoped.record) {
+    let record = scoped.record;
+    if (record.chunkManifest) {
+      const manifest = record.chunkManifest;
+      if (!["a", "b"].includes(manifest.slot) || !Number.isInteger(manifest.count) || manifest.count < 1 || manifest.count > 200) {
+        throw httpError(502, "Power Trak storage manifest is invalid.");
+      }
+      const chunks = [];
+      for (let index = 0; index < manifest.count; index++) {
+        const chunk = await loadAccountScopedRecord(accountKey, `powertrak_${manifest.slot}_${index}`);
+        if (!chunk || !chunk.found || !chunk.record || typeof chunk.record.data !== "string") {
+          throw httpError(502, "Power Trak storage is incomplete. Please retry after contacting support.");
+        }
+        chunks.push(chunk.record.data);
+      }
+      const compressed = chunks.join("");
+      if (crypto.createHash("sha256").update(compressed).digest("hex") !== manifest.digest) {
+        throw httpError(502, "Power Trak storage integrity check failed.");
+      }
+      try {
+        record = JSON.parse(zlib.gunzipSync(Buffer.from(compressed, "base64")).toString());
+      } catch (_error) {
+        throw httpError(502, "Power Trak storage could not be decoded.");
+      }
+    }
     return {
-      powerTrakSessions: normalizePowerTrakSessions(scoped.record.powerTrakSessions),
-      powerTrakWorkouts: normalizePowerTrakWorkouts(scoped.record.powerTrakWorkouts),
-      powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(scoped.record.powerTrakExerciseCatalog),
-      powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(scoped.record.powerTrakProvisionalAthletes),
-      powerTrakRackSessions: normalizePowerTrakRackSessions(scoped.record.powerTrakRackSessions),
-      powerTrakRackReservations: normalizePowerTrakRackReservations(scoped.record.powerTrakRackReservations),
-      powerTrakRackTombstones: normalizePowerTrakRackTombstones(scoped.record.powerTrakRackTombstones),
-      lastPowerTrakSync: scoped.record.lastPowerTrakSync || null,
+      powerTrakSessions: normalizePowerTrakSessions(record.powerTrakSessions),
+      powerTrakWorkouts: normalizePowerTrakWorkouts(record.powerTrakWorkouts),
+      powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(record.powerTrakExerciseCatalog),
+      powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(record.powerTrakProvisionalAthletes),
+      powerTrakRackSessions: normalizePowerTrakRackSessions(record.powerTrakRackSessions),
+      powerTrakRackReservations: normalizePowerTrakRackReservations(record.powerTrakRackReservations),
+      powerTrakRackTombstones: normalizePowerTrakRackTombstones(record.powerTrakRackTombstones),
+      lastPowerTrakSync: record.lastPowerTrakSync || null,
     };
   }
   return {
