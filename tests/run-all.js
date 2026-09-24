@@ -2753,8 +2753,6 @@ function checkPowerTrakFeature() {
     "Rest '+rest+' sec after exercise",
     "function applyRackRest()",
     "function rackRestSeconds(athlete)",
-    "function nextReadyRackAthlete(rack,workout,currentId)",
-    "var next=nextReadyRackAthlete(rack,workout,athlete.id);if(next)state.activeRackAthleteId=next.id",
     "function rackAthleteIdentity(athlete)",
     "function powerRosterForWorkout(workout)",
     "status=assigned?'Active on '+assigned.rackName",
@@ -2827,7 +2825,6 @@ function checkPowerTrakFeature() {
     "blocked?'disabled':''",
     "already active on '+conflict.rack.rackName",
     "function filterLateRackAthletes()",
-    "if(next)state.activeRackAthleteId=next.id",
     "return'Rest '+rest+' sec'",
     "function skipRackRest()",
     "data-skip-rack-rest",
@@ -3176,6 +3173,10 @@ function checkPowerTrakFeature() {
     throw new Error("Power Trak Import Data should be the final tab.");
   }
   if (/Void/.test(page)) throw new Error("Power Trak desktop page should not expose void actions.");
+  const completeSet = page.slice(page.indexOf("function completeRackRep()"), page.indexOf("function undoRackRep()"));
+  if (!completeSet || completeSet.includes("state.activeRackAthleteId=")) {
+    throw new Error("Complete Set must keep the selected athlete until someone chooses another name.");
+  }
   console.log("Power Trak feature ok");
 }
 
