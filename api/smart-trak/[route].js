@@ -9,6 +9,7 @@ const STRAVA_ATHLETE_APPROVAL_PROMPT = "force";
 const athletesApi = require("../ghl/athletes");
 const { displayNameCase } = require("../../lib/display-name");
 const { advanceRackSessionRevisions, normalizeRackReservations, normalizeRackTombstones, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../../lib/power-trak-rack-claims");
+const { mergePowerImportSessions } = require("../../lib/power-trak-import-merge");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1961,17 +1962,21 @@ async function accountPowerTrak(req, res) {
       const powerTrakProvisionalAthletes = hasProvisionalAthletes ? normalizePowerTrakProvisionalAthletes(payload.provisionalAthletes) : normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes);
       const rackSessionsById = new Map();
       const existingRackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
+      if (rackSessions.some((item) => item.id.startsWith("power_import_") && item.status !== "complete")) throw httpError(400, "Imported Power Trak sessions must be complete.");
+      const importedRackSessions = rackSessions.filter((item) => item.id.startsWith("power_import_") && item.status === "complete");
+      if (rackSession && importedRackSessions.length) throw httpError(403, "Rack iPads cannot import Power Trak history.");
+      const liveRackSessions = rackSessions.filter((item) => !item.id.startsWith("power_import_"));
       const rackDeletedAt = new Date().toISOString();
       const powerTrakRackTombstones = normalizePowerTrakRackTombstones(normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones).concat(deleteRackSessionIds.map((id) => ({ id, deletedAt: rackDeletedAt }))));
-      validateRackSessionTransitions({ existingRackSessions, incomingRackSessions: rackSessions, tombstones: powerTrakRackTombstones });
-      const startedAthleteIds = validateRackSessionClaims({ existingRackSessions, incomingRackSessions: rackSessions, deleteRackSessionIds, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
-      const versionedRackSessions = advanceRackSessionRevisions(existingRackSessions, rackSessions);
+      validateRackSessionTransitions({ existingRackSessions, incomingRackSessions: liveRackSessions, tombstones: powerTrakRackTombstones });
+      const startedAthleteIds = validateRackSessionClaims({ existingRackSessions, incomingRackSessions: liveRackSessions, deleteRackSessionIds, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
+      const versionedRackSessions = advanceRackSessionRevisions(existingRackSessions, liveRackSessions);
       existingRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
       deleteRackSessionIds.forEach((id) => rackSessionsById.delete(id));
       versionedRackSessions.forEach((item) => rackSessionsById.set(item.id, item));
-      const powerTrakRackSessions = Array.from(rackSessionsById.values())
-        .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)))
-        .slice(0, 500);
+      const powerTrakRackSessions = mergePowerImportSessions(Array.from(rackSessionsById.values()), importedRackSessions).sessions
+        .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)));
+      if (powerTrakRackSessions.length > 2000) throw httpError(413, "Power Trak history has reached its session limit. Contact support before importing more.");
       const powerTrakRackReservations = normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations).filter((item) => !startedAthleteIds.has(item.athleteId.toLowerCase()));
       const savedAt = new Date().toISOString();
       await savePowerTrakState(accountKey, {
@@ -2130,7 +2135,7 @@ function normalizePowerTrakRackSessions(items) {
           targetRir: result && result.targetRir !== "" && Number.isFinite(Number(result.targetRir)) ? Math.min(5, Math.max(0, Number(result.targetRir))) : null,
           actualRir: result && result.actualRir !== "" && Number.isFinite(Number(result.actualRir)) ? Math.min(5, Math.max(0, Number(result.actualRir))) : null,
           completedAt: cleanSetupText(result && result.completedAt),
-        })).slice(-500),
+        })).slice(id.startsWith("power_import_") ? 0 : -500),
       };
     }).filter(Boolean).slice(0, 8);
     if (!id || !workoutId || !athletes.length || (Array.isArray(source.athletes) && source.athletes.length > 8)) return null;

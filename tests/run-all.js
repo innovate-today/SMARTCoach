@@ -2580,6 +2580,28 @@ function checkSpeedTrakFeature() {
   console.log("Speed Trak feature ok");
 }
 
+function checkPowerImportBatchMerge() {
+  const { mergePowerImportSessions } = require("../lib/power-trak-import-merge");
+  const result = (exerciseName, rep, actualValue) => ({ exerciseName, round: 1, rep, actualValue, unit: "lb", completedAt: "2024-08-06T12:00:00.000Z" });
+  const athlete = (name, results) => ({ id: name, name, results });
+  const rack = (id, athletes) => ({ id, workoutId: "import-workout-day", workoutName: "Import", date: "2024-08-06", status: "complete", athletes });
+  const live = { id: "rack-1", workoutId: "live-workout", athletes: [athlete("Coach", [])] };
+  const first = rack("power_import_first", [athlete("Alex Runner", [result("Squat", 1, "185")])]);
+  const second = rack("power_import_second", [athlete("Alex Runner", [result("Squat", 1, "185"), result("Bench", 1, "135")]), athlete("Blair Runner", [result("Jump", 1, "24")])]);
+  const merged = mergePowerImportSessions([live, first], [second]);
+  if (!merged.sessions.some((session) => session.id === "rack-1")) throw new Error("Import merge removed a live rack.");
+  const imported = merged.sessions.filter((session) => session.id.startsWith("power_import_"));
+  if (imported.length !== 1 || imported[0].athletes.length !== 2) throw new Error("Import merge split or lost athletes.");
+  const alex = imported[0].athletes.find((entry) => entry.name === "Alex Runner");
+  if (!alex || alex.results.length !== 2) throw new Error("Import merge lost a result or duplicated a repeated set.");
+  const replay = mergePowerImportSessions(merged.sessions, [second]);
+  const replayAlex = replay.sessions.flatMap((session) => session.athletes).find((entry) => entry.name === "Alex Runner");
+  if (!replayAlex || replayAlex.results.length !== 2) throw new Error("Reimport duplicated an athlete's results.");
+  const sameId = mergePowerImportSessions([first], [rack("power_import_first", [athlete("Alex Runner", [result("Bench", 1, "135")])])]);
+  if (sameId.merged[0].athletes[0].results.length !== 2) throw new Error("A later batch replaced earlier results in the same imported session.");
+  console.log("Power Trak import batch merge ok");
+}
+
 function checkPowerTrakFeature() {
   const page = fs.readFileSync("power-trak.html", "utf8");
   ["Abduction Lift/Inner rotation-5", "Bodyweight Squat", "Side Plank Leg Lift Hold(30sec)-4", "Superman(right hand)"].forEach((name) => {
@@ -3096,7 +3118,7 @@ function checkPowerTrakFeature() {
   });
   [
     "updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions",
-    "validateRackSessionClaims({ existingRackSessions, incomingRackSessions: rackSessions",
+    "validateRackSessionClaims({ existingRackSessions, incomingRackSessions: liveRackSessions",
     '"claim-rack-athlete", "release-rack-athlete"',
     'sessionScope: rackDeviceSession ? "power-rack" : ""',
     'Rack device access is limited to Power Trak athlete entry.',
@@ -7757,6 +7779,7 @@ checkMilesBoardFeature();
 checkResultsBoardFeature();
 checkXcTop20RecordsFeature();
 checkSpeedTrakFeature();
+checkPowerImportBatchMerge();
 checkPowerTrakFeature();
 checkDashboardWhatsNew();
 checkDashboardStaffAccessHandoff();
