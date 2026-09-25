@@ -7529,12 +7529,30 @@ function checkFieldPracticePhaseOne() {
     "placeholder=\"Manual time\" oninput=\"updateFieldPracticeSpeedMetric",
     "<th>Velocity</th><th>MPH</th>",
     "m/s",
-    "return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});",
+    "return saved.filter(function(item){return item&&!isSpeedTrakPractice(item);});",
   ].forEach((text) => {
     const app = fs.readFileSync("index.html", "utf8");
     if (!app.includes(text)) throw new Error(`Mobile Field Practice app missing ${text}`);
   });
   const fieldPracticeApp = fs.readFileSync("index.html", "utf8");
+  const classificationSource = fieldPracticeApp.slice(
+    fieldPracticeApp.indexOf("function isSpeedTrakPractice(item)"),
+    fieldPracticeApp.indexOf("function openSelectedPlanDayFieldPractice")
+  );
+  const classificationContext = {
+    FIELD_PRACTICE: { mode: "field", practices: [
+      { id: "speed_import_legacy", event: "30m Fly", groupName: "Speed Trak Import", speedMetrics: [{ time: "3.1" }] },
+      { id: "field_high_jump", event: "High Jump", groupName: "Jumpers", speedMetrics: [] },
+    ] },
+    calendarSpeedMetricFieldPractices: () => [],
+  };
+  const vm = require("vm");
+  vm.runInNewContext(classificationSource, classificationContext);
+  const fieldOnly = vm.runInNewContext("fieldPracticeAllPractices().map(function(item){return item.id;})", classificationContext);
+  if (fieldOnly.join(",") !== "field_high_jump") throw new Error("Speed imports must not appear in the app Field Practice list.");
+  classificationContext.FIELD_PRACTICE.mode = "speed";
+  const speedOnly = vm.runInNewContext("fieldPracticeAllPractices().map(function(item){return item.id;})", classificationContext);
+  if (speedOnly.join(",") !== "speed_import_legacy") throw new Error("Legacy speed imports must remain available in app Speed Trak.");
   [
     'placeholder="Strides"',
     "Strides add stride length and frequency.",

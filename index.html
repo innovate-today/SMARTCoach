@@ -5658,12 +5658,20 @@ function calendarSpeedMetricFieldPractices(saved){
     return practice;
   }).filter(function(practice){return !savedSources[String(practice.sourcePlanDayId||'')];});
 }
+function isSpeedTrakPractice(item){
+  if(!item)return false;
+  return item.event==='Runway / Speed Metrics'||
+    String(item.routineKey||'').toLowerCase()==='speed_import'||
+    String(item.groupName||'').toLowerCase()==='speed trak import'||
+    String(item.id||'').indexOf('speed_import_')===0||
+    (Array.isArray(item.speedMetrics)&&item.speedMetrics.length>0);
+}
 function fieldPracticeAllPractices(){
   var saved=FIELD_PRACTICE.practices||[];
   if(FIELD_PRACTICE.mode==='speed'){
-    return saved.filter(function(item){return item&&item.event==='Runway / Speed Metrics';}).concat(calendarSpeedMetricFieldPractices(saved));
+    return saved.filter(isSpeedTrakPractice).concat(calendarSpeedMetricFieldPractices(saved));
   }
-  return saved.filter(function(item){return item&&item.event!=='Runway / Speed Metrics';});
+  return saved.filter(function(item){return item&&!isSpeedTrakPractice(item);});
 }
 function openSelectedPlanDayFieldPractice(planIndex,dayIndex){
   var plan=TP[planIndex];
@@ -5854,7 +5862,7 @@ function renderFieldPractice(){
   detail.innerHTML=
     '<div class="fp-card"><div class="fp-title">Practice Setup</div><div class="fp-form">'+
       '<div class="srow" style="padding:0"><label class="slbl">Date</label><input id="fp-date" class="sinp" type="date" value="'+ex(p.date||todayISO())+'" onchange="updateFieldPracticeFromForm(false)"></div>'+
-      '<div class="srow" style="padding:0"><label class="slbl">Event</label><select id="fp-event" class="sinp" onchange="updateFieldPracticeFromForm(true)">'+fieldPracticeOptionHtml(FIELD_PRACTICE_EVENTS,p.event||'Pole Vault')+'</select></div>'+
+      '<div class="srow" style="padding:0"><label class="slbl">Event</label><select id="fp-event" class="sinp" onchange="updateFieldPracticeFromForm(true)">'+fieldPracticeOptionHtml(FIELD_PRACTICE_EVENTS.filter(function(event){return event!=='Runway / Speed Metrics';}),p.event||'Pole Vault')+'</select></div>'+
       '<div class="srow" style="padding:0"><label class="slbl">Group</label><select id="fp-group" class="sinp" onchange="updateFieldPracticeFromForm(true)">'+fieldPracticeGroupOptions(p.groupId||'')+'</select></div>'+
       '<div class="srow" style="padding:0"><label class="slbl">Athlete</label><select id="fp-athlete" class="sinp" onchange="updateFieldPracticeFromForm(false)">'+fieldPracticeAthleteOptions(p)+'</select></div>'+
       '<div class="srow" style="padding:0"><label class="slbl">Focus</label><input id="fp-focus" class="sinp" value="'+ex(p.focus||'')+'" placeholder="Practice focus" oninput="updateFieldPracticeFromForm(false)"></div>'+
