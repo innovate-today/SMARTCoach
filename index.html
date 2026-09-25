@@ -5663,8 +5663,7 @@ function isSpeedTrakPractice(item){
   return item.event==='Runway / Speed Metrics'||
     String(item.routineKey||'').toLowerCase()==='speed_import'||
     String(item.groupName||'').toLowerCase()==='speed trak import'||
-    String(item.id||'').indexOf('speed_import_')===0||
-    (Array.isArray(item.speedMetrics)&&item.speedMetrics.length>0);
+    String(item.id||'').indexOf('speed_import_')===0;
 }
 function fieldPracticeAllPractices(){
   var saved=FIELD_PRACTICE.practices||[];

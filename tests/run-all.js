@@ -7542,7 +7542,7 @@ function checkFieldPracticePhaseOne() {
   const classificationContext = {
     FIELD_PRACTICE: { mode: "field", practices: [
       { id: "speed_import_legacy", event: "30m Fly", groupName: "Speed Trak Import", speedMetrics: [{ time: "3.1" }] },
-      { id: "field_high_jump", event: "High Jump", groupName: "Jumpers", speedMetrics: [] },
+      { id: "field_high_jump", event: "High Jump", groupName: "Jumpers", speedMetrics: [{ time: "3.1" }] },
     ] },
     calendarSpeedMetricFieldPractices: () => [],
   };
