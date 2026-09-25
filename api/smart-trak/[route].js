@@ -54,6 +54,7 @@ const TRAINING_CUSTOMIZATION_NAMESPACE = "trainingcustomization";
 const DOCU_TRAK_NAMESPACE = "docutrak";
 const FIELD_PRACTICE_NAMESPACE = "fieldpractice";
 const POWER_TRAK_NAMESPACE = "powertrak";
+const POWER_TRAK_LEADERBOARD_NAMESPACE = "powertrakleaderboard";
 const EQUIPMENT_TRAK_NAMESPACE = "equipmenttrak";
 const DASHBOARD_PREFERENCES_NAMESPACE = "dashboardpreferences";
 const MILES_BOARD_SHARING_NAMESPACE = "milesboardsharing";
@@ -1835,6 +1836,7 @@ async function accountPowerTrak(req, res) {
     if (req.method === "GET") {
       const existing = await loadAccountRecord(accountKey);
       const powerTrakState = await loadPowerTrakState(accountKey, existing && existing.record);
+      const leaderboardSettings = rackSession ? null : await loadAccountScopedRecord(accountKey, POWER_TRAK_LEADERBOARD_NAMESPACE);
       const sessions = normalizePowerTrakSessions(powerTrakState.powerTrakSessions);
       const workouts = normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts);
       const exerciseCatalog = normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog);
@@ -1854,7 +1856,7 @@ async function accountPowerTrak(req, res) {
       const visibleWorkouts = rackSession ? workouts.filter((item) => cleanSetupText(item.status).toLowerCase() !== "archived") : workouts;
       const visibleCatalog = rackSession ? [] : exerciseCatalog;
       const visibleRackSessions = rackSession ? rackSessions.filter((item) => cleanSetupText(item.status).toLowerCase() === "active") : rackSessions;
-      res.status(200).json({ success: true, sessions: visibleSessions, workouts: visibleWorkouts, exerciseCatalog: visibleCatalog, provisionalAthletes, rackSessions: visibleRackSessions, rackReservations, count: visibleSessions.length, workoutCount: visibleWorkouts.length, rackSessionCount: visibleRackSessions.length });
+      res.status(200).json({ success: true, sessions: visibleSessions, workouts: visibleWorkouts, exerciseCatalog: visibleCatalog, provisionalAthletes, rackSessions: visibleRackSessions, rackReservations, leaderboardExercises: normalizePowerLeaderboardExercises(leaderboardSettings && leaderboardSettings.record && leaderboardSettings.record.exercises), count: visibleSessions.length, workoutCount: visibleWorkouts.length, rackSessionCount: visibleRackSessions.length });
       return;
     }
 
@@ -1863,6 +1865,13 @@ async function accountPowerTrak(req, res) {
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       enforcePowerRackMutation(req, rackSession, payload);
       if (rackSession) await recordSecurityAuditEvent(accountKey, { type: "rack_write", outcome: "allowed", actor: "rack-device", deviceId: rackSession.deviceId, deviceLabel: rackSession.deviceLabel, detail: cleanSetupText(payload.action || (payload.rackSession || payload.rackSessions ? "save-rack-session" : "power-trak-write")) }).catch(() => {});
+      if (cleanSetupText(payload.action).toLowerCase() === "save-leaderboard-exercises") {
+        if (!Array.isArray(payload.exercises) || payload.exercises.length > 200) throw httpError(400, "Choose up to 200 leaderboard exercises.");
+        const exercises = normalizePowerLeaderboardExercises(payload.exercises);
+        await saveAccountScopedRecord(accountKey, POWER_TRAK_LEADERBOARD_NAMESPACE, { exercises });
+        res.status(200).json({ success: true, exercises });
+        return;
+      }
       if (cleanSetupText(payload.action).toLowerCase() === "rack-device-write-check") {
         const deviceId = cleanSetupText(payload.deviceId).slice(0, 160);
         const deviceLabel = cleanSetupText(payload.deviceLabel || "Rack iPad").slice(0, 120);
@@ -2010,6 +2019,18 @@ function setPowerTrakCorsHeaders(req, res) {
   }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SMARTCoach-Account, X-SMARTCoach-Session, X-SMARTCoach-Access-Code, X-SMARTCoach-Device-Id, X-SMARTCoach-Device-Label, X-SMARTCoach-Device-Source");
+}
+
+function normalizePowerLeaderboardExercises(items) {
+  const seen = new Set();
+  return (Array.isArray(items) ? items : []).map((item) => {
+    const exercise = cleanSetupText(item && item.exercise).slice(0, 120);
+    const board = cleanSetupText(item && item.board).toLowerCase();
+    const key = exercise.toLowerCase();
+    if (!exercise || !["strength", "explosive"].includes(board) || /(?:1rm|volume load)$/i.test(exercise) || seen.has(key)) return null;
+    seen.add(key);
+    return { exercise, board };
+  }).filter(Boolean).slice(0, 200);
 }
 
 async function savePowerTrakState(accountKey, state) {
