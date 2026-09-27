@@ -2,7 +2,7 @@
 
 Status: step 1 inventory with step 2 navigation decisions approved by the user. This does not authorize changes to existing pages or workflows. The standalone `smart-trak-navigation-concept.html` is illustrative only.
 
-Step 3 rollout began on the dashboard header and now includes Athletes and Attendance Trak. Existing action nodes are regrouped under Distance Trak, Athletes, Training, Meets & Results, Tools, Quick Add, and Account while page content and modal handlers remain unchanged. Quick Add deep links open the existing cross-page create modals after access and roster loading. Overview and other pages' headers are not yet changed. Account Settings is not included. Head Coach Staff Access remains governed by the existing staff-admin permission response; the Athletes and Attendance menus link to the dashboard Staff Access modal only for an authorized Head Coach.
+Step 3 rollout began on the dashboard header and now includes Athletes, Attendance Trak, and Training Calendar. Existing action nodes are regrouped under Distance Trak, Athletes, Training, Meets & Results, Tools, Quick Add, and Account while page content and modal handlers remain unchanged. Training Calendar keeps draft approval and scheduling actions visible. Quick Add deep links open the existing cross-page create modals after access and roster loading. Overview and other pages' headers are not yet changed. Account Settings is not included. Head Coach Staff Access remains governed by the existing staff-admin permission response; the non-dashboard menus link to the dashboard Staff Access modal only for an authorized Head Coach.
 
 ## Current destinations
 

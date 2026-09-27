@@ -162,6 +162,49 @@ const athletesSource = fs.readFileSync('athletes.html', 'utf8');
 const attendanceSource = fs.readFileSync('attendance.html', 'utf8');
 assert.ok(attendanceSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(attendanceSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
+const calendarIds = [
+  'approveDraftsBtn', 'scheduleApprovedBtn', 'dashboardLink', 'milesTrakLink',
+  'speedTrakLink', 'fieldPracticeLink', 'planSetupLink', 'planImportLink',
+  'planBuilderLink', 'trainingCustomBtn', 'stravaTrainingLink', 'manageMeetsBtn',
+  'keepTrakLink', 'weatherLink', 'manualMileageBtn', 'raceResultBtn', 'refreshBtn'
+];
+const calendarNodes = Object.fromEntries(calendarIds.map(id => [id, element('button')]));
+const calendarHeader = element('header');
+calendarHeader.querySelector = () => element('div');
+const calendarDocument = {
+  querySelector: selector => selector === '.top' ? calendarHeader : null,
+  getElementById: id => calendarNodes[id],
+  createElement: element,
+  addEventListener() {}
+};
+let calendarRedirect = '';
+const calendarWindow = { location: { replace: path => { calendarRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: calendarDocument, window: calendarWindow, localStorage: storage,
+  sessionStorage: storage, accountKey: () => 'school-a',
+  pageUrl: path => path + '?account=school-a'
+});
+const calendarNav = calendarHeader.children.find(child => child.tag === 'nav');
+assert.ok(calendarNav, 'Training Calendar navigation mounted');
+assert.strictEqual(menuByName(calendarNav, 'Training').children[0].attributes['aria-current'], 'page');
+const calendarTraining = menuByName(calendarNav, 'Training').children[1].children;
+for (const id of ['fieldPracticeLink', 'planSetupLink', 'planImportLink', 'planBuilderLink', 'trainingCustomBtn', 'stravaTrainingLink']) {
+  assert.ok(calendarTraining.includes(calendarNodes[id]), id + ' remains in Training menu');
+}
+assert.ok(calendarNav.children.includes(calendarNodes.approveDraftsBtn));
+assert.ok(calendarNav.children.includes(calendarNodes.scheduleApprovedBtn));
+assert.ok(calendarNav.children.includes(calendarNodes.refreshBtn));
+assert.ok(menuByName(calendarNav, 'Quick Add').children[1].children.includes(calendarNodes.manualMileageBtn));
+assert.ok(menuByName(calendarNav, 'Quick Add').children[1].children.includes(calendarNodes.raceResultBtn));
+const calendarStaff = menuByName(calendarNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(calendarStaff.hidden, true);
+calendarWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(calendarStaff.hidden, false);
+menuByName(calendarNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(calendarRedirect, '/training-calendar.html?account=school-a');
+const calendarSource = fs.readFileSync('training-calendar.html', 'utf8');
+assert.ok(calendarSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(calendarSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?accountStatus:null)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
