@@ -18,6 +18,9 @@ function element(tag) {
     querySelectorAll() { return []; }
   };
 }
+function menuByName(nav, name) {
+  return nav.children.find(child => child.tag === 'details' && child.children[0].textContent === name);
+}
 const oldActions = element('div');
 const header = element('header');
 header.querySelector = () => oldActions;
@@ -48,6 +51,13 @@ vm.runInNewContext(source, context);
 const nav = header.children.find(child => child.tag === 'nav');
 assert.ok(nav, 'navigation mounted');
 assert.strictEqual(nav.attributes['aria-label'], 'SMART Trak navigation');
+const dashboardDistance = menuByName(nav, 'Distance Trak');
+const dashboardAthletes = menuByName(nav, 'Athletes');
+assert.strictEqual(dashboardDistance.children[0].attributes['aria-current'], 'page');
+assert.strictEqual(dashboardDistance.children[1].children[0], nodes.dashboardLink);
+assert.strictEqual(dashboardDistance.children[1].children[1], nodes.shareMilesBoardBtn);
+assert.strictEqual(dashboardAthletes.children[1].children[0], nodes.athletesLink);
+assert.strictEqual(dashboardAthletes.children[1].children[1].href, '/attendance.html');
 for (const id of ids) {
   assert.ok(source.includes("'" + id + "'"), id + ' remains mapped');
 }
@@ -90,6 +100,13 @@ vm.runInNewContext(source, {
 });
 const athleteNav = athleteHeader.children.find(child => child.tag === 'nav');
 assert.ok(athleteNav, 'athlete navigation mounted');
+const athleteDistance = menuByName(athleteNav, 'Distance Trak');
+const athleteRoster = menuByName(athleteNav, 'Athletes');
+assert.strictEqual(athleteDistance.children[1].children[0], athleteNodes.dashboardLink);
+assert.strictEqual(athleteDistance.children[1].children[1].href, '/dashboard.html?account=school-a#share-miles-board');
+assert.strictEqual(athleteRoster.children[0].attributes['aria-current'], 'page');
+assert.strictEqual(athleteRoster.children[1].children[0].href, '/athletes.html?account=school-a');
+assert.strictEqual(athleteRoster.children[1].children[1], athleteNodes.attendanceLink);
 const athleteAccount = athleteNav.children.find(child => child.children[0] && child.children[0].textContent === 'Account');
 const staffLink = athleteAccount.children[1].children.find(child => child.textContent === 'Staff Access');
 assert.strictEqual(staffLink.href, '/dashboard.html?account=school-a#staff-access');

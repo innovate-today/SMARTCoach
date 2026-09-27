@@ -9,8 +9,10 @@ Step 3 rollout began on the dashboard header and now includes Athletes. Existing
 | Proposed location | Current entry point | Current behavior to preserve |
 | --- | --- | --- |
 | Overview | New page, not yet present | Cross-program summary; must use real data and link to existing workspaces. |
-| Athletes | `/athletes.html` | Existing roster, search/filter, add/import, parent contacts, group/status, Docu Trak, Equipment Trak, calendar links and questions. Do not replace with concept roster. |
-| Training > Distance Training | `/dashboard.html` | Existing dashboard, including roster overview, training load, XC Details, Personal Bests, meet results, filters, and exports. Navigation label may change only after approval; page remains intact. |
+| Distance Trak > Dashboard | `/dashboard.html` | Existing dashboard, including roster overview, training load, XC Details, Personal Bests, meet results, filters, and exports. Navigation label changes; page title and content remain intact. |
+| Distance Trak > Miles Trak | Dashboard Miles Trak modal (`#share-miles-board`) | Opens the existing Miles Trak flow. |
+| Athletes > Roster | `/athletes.html` | Existing roster, search/filter, add/import, parent contacts, group/status, Docu Trak, Equipment Trak, calendar links and questions. Do not replace with concept roster. |
+| Athletes > Attendance | `/attendance.html` | Existing Attendance Trak page. |
 | Training > Training Calendar | `/training-calendar.html` | Existing training/calendar page and setup actions. |
 | Training > Field Practice | `/field-practice.html` | Existing practice capture and review. |
 | Training > Fitness Review | `#fitnessCleanupBtn` on `/dashboard.html` | Opens an existing dashboard modal; no separate page. |
@@ -20,7 +22,6 @@ Step 3 rollout began on the dashboard header and now includes Athletes. Existing
 | Meets & Results > Results | `#shareResultsBoardBtn` on `/dashboard.html` | Opens existing Results board flow; `/results-board.html` is the public/shared board, not the coach entry point. |
 | Meets & Results > Records | `/records.html` | Existing records and XC Top 20. |
 | Meets & Results > Simulators | `/track-simulator.html`, `/xc-simulator.html` | Existing individual simulators; dashboard currently opens a chooser modal. |
-| Tools > Miles Trak | `#shareMilesBoardBtn` on `/dashboard.html` or `/dashboard.html#share-miles-board` | Existing board flow; `/miles-board.html` is a shared-board surface. |
 | Tools > Keep Trak | `/keep-trak.html` | Existing team task workflow. |
 | Tools > Weather | `/weather.html` | Existing weather page. |
 | Tools > Equipment Trak | `#equipmentLookupBtn` on `/athletes.html` | Existing athlete-linked equipment flow; confirm whether a separate global inventory entry exists before routing. |
@@ -54,7 +55,7 @@ Training Calendar also has Athlete Setup (`/plan-setup.html`), Upload/Paste Plan
 
 ## Approved navigation decisions
 
-1. `Distance Training` is the navigation label only. Keep the current dashboard title, layout, and workflows.
+1. Use `Distance Trak` as the navigation group, with Dashboard and Miles Trak under it. Keep the current dashboard title, layout, and workflows. Use Athletes as a group with Roster and Attendance under it.
 2. Use `Training Calendar` instead of `Open Today`. Do not imply a Today filter that does not exist.
 3. Regular coaches see `Sign Out` in Account. The Head Coach also sees `Staff Access`, subject to the existing staff-admin authorization check. No coaches need or have Account Settings access; owner/admin onboarding stays in the custom sidebar. Sign Out removes the current device's stored access code and remembered/session authentication for this account, then returns to the access prompt. It does not change the account's server-side code or sign out other devices.
 4. Equipment Trak and Docu Trak retain their current athlete-specific flows. No new all-athlete page is approved.

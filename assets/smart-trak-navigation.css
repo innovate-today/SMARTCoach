@@ -8,6 +8,6 @@
 .smart-nav .smart-nav-menu>a,.smart-nav .smart-nav-menu>button{display:block;width:100%;min-height:32px;height:auto;padding:7px 9px;border:0;border-radius:5px;background:#fff;color:#172033;text-align:left;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
 .smart-nav .smart-nav-menu>a:hover,.smart-nav .smart-nav-menu>button:hover{background:#eef4ff}
 .smart-nav-menu>hr{border:0;border-top:1px solid var(--line);margin:5px 0}
-.smart-nav>a[aria-current=page]{background:var(--blue);color:#fff;border-color:var(--blue)}
+.smart-nav>a[aria-current=page],.smart-nav>details>summary[aria-current=page]{background:var(--blue);color:#fff;border-color:var(--blue)}
 @media(max-width:1180px){.smart-nav{justify-content:flex-start;width:100%}}
 @media(max-width:760px){.smart-nav>details{position:static}.smart-nav-menu{position:fixed;top:120px;left:10px;right:10px;max-height:70vh;overflow:auto}}

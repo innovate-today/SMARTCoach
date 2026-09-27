@@ -18,11 +18,12 @@
     anchor.href=(athletesPage?pageUrl(path):smartCoachPageUrl(path))+hash;
     return anchor;
   }
-  function menu(label){
+  function menu(label,current){
     var details=document.createElement('details');
     var summary=document.createElement('summary');
     var list=document.createElement('div');
     summary.textContent=label;
+    if(current)summary.setAttribute('aria-current','page');
     list.className='smart-nav-menu';
     details.appendChild(summary);
     details.appendChild(list);
@@ -45,13 +46,18 @@
     parent.appendChild(button);
   }
 
-  var distance=move(nav,'dashboardLink','Distance Training');
-  if(distance&&!athletesPage)distance.setAttribute('aria-current','page');
+  var distance=menu('Distance Trak',!athletesPage);
+  move(distance,'dashboardLink','Dashboard');
+  if(athletesPage)distance.appendChild(link('Miles Trak','/dashboard.html#share-miles-board'));
+  else move(distance,'shareMilesBoardBtn');
+  var athletesMenu=menu('Athletes',athletesPage);
   if(athletesPage){
-    var athletes=link('Athletes','/athletes.html');
-    athletes.setAttribute('aria-current','page');
-    nav.appendChild(athletes);
-  }else move(nav,'athletesLink');
+    athletesMenu.appendChild(link('Roster','/athletes.html'));
+    move(athletesMenu,'attendanceLink');
+  }else{
+    move(athletesMenu,'athletesLink','Roster');
+    athletesMenu.appendChild(link('Attendance','/attendance.html'));
+  }
   var training=menu('Training');
   move(training,'trainingCalendarLink','Training Calendar');
   if(!athletesPage)move(training,'fitnessCleanupBtn');
@@ -76,7 +82,6 @@
 
   var tools=menu('Tools');
   if(athletesPage){
-    move(tools,'attendanceLink');
     move(tools,'equipmentLookupBtn');
     move(tools,'emailCalendarLinksBtn');
     move(tools,'calendarQuestionsBtn');
@@ -86,10 +91,8 @@
     tools.appendChild(link('Keep Trak','/keep-trak.html'));
     tools.appendChild(link('Weather','/weather.html'));
   }else{
-    move(tools,'shareMilesBoardBtn');
     move(tools,'keepTrakLink');
     move(tools,'weatherLink');
-    tools.appendChild(link('Attendance','/attendance.html'));
   }
 
   var quick=menu('Quick Add');
