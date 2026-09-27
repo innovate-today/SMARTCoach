@@ -5935,8 +5935,6 @@ function openAthleteDetail(row){
   var trainingGroups=groupTrainingSessions(recentTrainingRows.filter(function(item){return sameAthlete(item,row);}),5);
   var attendance=athleteSnapshotAttendance(row);
   var documents=athleteSnapshotDocuments(row);
-  var speed=speedPracticeTrainingRows(fieldPracticeRows,[row]).filter(function(item){return sameAthlete(item,row);}).sort(function(a,b){return compareValues(b.sessionDate||b.syncedAt,a.sessionDate||a.syncedAt);});
-  var field=athleteSnapshotField(row);
   var meetFlags=recentMeetRows.filter(function(item){return sameAthlete(item,row);});
   var pbCount=meetFlags.filter(function(item){return item.isPr;}).length;
   var sbCount=meetFlags.filter(function(item){return item.isSeasonBest;}).length;
@@ -5951,8 +5949,6 @@ function openAthleteDetail(row){
       detailCard('Training Volume',athletePeriodVolumeDisplay(row,'currentWeek')+' this week · '+athletePeriodVolumeDisplay(row,'previousWeek')+' previous week',athleteVisibleVolumeDisplay(row,'currentMonth')+' this month')+
       detailCard('Attendance',attendance.rate,attendance.detail)+
       detailCard('Documents',documents.label,documents.detail)+
-      detailCard('Speed Trak',speed.length?[speed[0].workoutPrescription||speed[0].workoutType||'Speed session',speed[0].totalTimeDisplay].filter(Boolean).join(' · '):'No speed sessions',speed.length?(num(speed[0].speedRepCount)||1)+' reps · '+formatDate(speed[0].sessionDate||speed[0].syncedAt):'')+
-      detailCard('Field Practice',field.label,field.detail)+
       detailCard('Workout Counts',num(row.currentWeekRuns)+' this week · '+num(row.previousWeekRuns)+' previous week',num(row.trainingRecordCount)+' training records · '+num(row.meetResultCount)+' meet results')+
     '</div>'+
     renderAthleteTrainingPaces(fitness)+
@@ -5968,10 +5964,8 @@ function openAthleteDetail(row){
       return mainLine([item.event,item.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([item.meetName,formatDate(item.meetDate),flagText(item)].filter(Boolean).join(' · '));
     }),'No recent meet results.')+
     '<h3 class="section-title">Recent Training</h3>'+
-    detailList(trainingGroups.map(trainingSessionDetailHtml),'No recent completed workouts.')+
-    '<div class="snapshot-section-head"><h3 class="section-title">Power Trak</h3><span id="athleteSnapshotPowerStatus" class="snapshot-loading">Loading...</span></div><div id="athleteSnapshotPower"></div>';
+    detailList(trainingGroups.map(trainingSessionDetailHtml),'No recent completed workouts.');
   els.athleteModal.hidden=false;
-  loadAthleteSnapshotPower(row);
 }
 
 function personalBestsRequest(url){

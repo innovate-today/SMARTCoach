@@ -817,7 +817,6 @@ function checkDashboardAthleteSnapshot() {
     "function athleteSnapshotAttendance",
     "function athleteSnapshotDocuments",
     "function athleteSnapshotField",
-    "var speed=speedPracticeTrainingRows(fieldPracticeRows,[row])",
     "if(Array.isArray(practice.speedMetrics)&&practice.speedMetrics.length)return;",
     "function loadAthleteSnapshotPower",
     "function powerSnapshotRowMatches",
@@ -826,6 +825,13 @@ function checkDashboardAthleteSnapshot() {
     "Recent Training",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard athlete snapshot missing ${text}`);
+  });
+  const details = html.slice(html.indexOf('function openAthleteDetail(row)'), html.indexOf('function personalBestsRequest(url)'));
+  ["detailCard('Speed Trak'", "detailCard('Field Practice'", 'athleteSnapshotPower', 'loadAthleteSnapshotPower(row)'].forEach((text) => {
+    if (details.includes(text)) throw new Error(`athlete details still contains removed section: ${text}`);
+  });
+  ['Roster', 'Meet History', 'Speed Trak', 'Power Trak', 'Attendance'].forEach((label) => {
+    if (!details.includes('>'+label+'</a>')) throw new Error(`athlete details navigation missing ${label}`);
   });
   console.log("dashboard athlete snapshot ok");
 }

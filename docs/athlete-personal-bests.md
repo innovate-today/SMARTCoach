@@ -2,7 +2,9 @@
 
 The dashboard roster has separate Details and Snapshot buttons. Clicking an
 athlete's name still opens Details (training, attendance, documents, notes, and
-recent activity). Snapshot opens the personal-best tables for all saved dates,
+recent activity). Details omits Speed Trak and Field Practice cards and the
+embedded Power Trak section, but retains Roster, Meet History, Speed Trak,
+Power Trak, and Attendance navigation buttons. Snapshot opens the personal-best tables for all saved dates,
 independent of the current dashboard filters.
 
 The Snapshot includes Speed, Strength, Jumps & Throws, and Meet Results. It reads
