@@ -7,6 +7,7 @@
 <meta name="app-version" content="dashboard-1790073415000">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SMART Trak Dashboard</title>
+<link rel="stylesheet" href="/assets/athlete-personal-bests.css">
 <style>
 :root{--blue:#2B4FCC;--ink:#111827;--muted:#64748b;--line:#dbe3ef;--bg:#eef3f9;--white:#fff;--good:#0a7a44;--warn:#b45309}
 *{box-sizing:border-box}
@@ -1602,6 +1603,7 @@ tr:last-child td{border-bottom:0}
   </section>
 </div>
 <script src="/assets/power-trak-history-client.js"></script>
+<script src="/assets/athlete-personal-bests.js"></script>
 <script>
 var dashboardRows=[];
 var searchRenderTimer=null;
@@ -3396,13 +3398,13 @@ document.addEventListener('click',function(event){
     deleteManagedMeetRecord(deleteManagedMeet.getAttribute('data-delete-managed-meet')||'');
     return;
   }
-  var button=event.target.closest&&event.target.closest('[data-athlete-detail]');
+  var button=event.target.closest&&event.target.closest('[data-athlete-detail],[data-athlete-bests]');
   if(!button)return;
   var contactId=button.getAttribute('data-contact-id')||'';
   var athlete=dashboardRows.find(function(row){
-    return String(row.contactId||'')===contactId || String(row.name||'').toLowerCase()===String(button.getAttribute('data-athlete-name')||'').toLowerCase();
+    return (contactId&&String(row.contactId||'')===contactId) || String(row.name||'').toLowerCase()===String(button.getAttribute('data-athlete-name')||'').toLowerCase();
   });
-  if(athlete)openAthleteDetail(athlete);
+  if(athlete){if(button.hasAttribute('data-athlete-bests'))openAthletePersonalBests(athlete);else openAthleteDetail(athlete);}
 });
 els.athleteModalClose.addEventListener('click',closeAthleteDetail);
 els.manageMeetsBtn.addEventListener('click',openMeetManager);
@@ -5890,7 +5892,7 @@ function rowHtml(row){
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
   return '<tr>'+
-    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div><button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete snapshot">Snapshot</button></div></td>'+
+    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="row-actions"><button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">Details</button><button class="quiet-action compact" data-athlete-bests="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete personal bests">Snapshot</button></div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
@@ -5939,7 +5941,7 @@ function openAthleteDetail(row){
   var pbCount=meetFlags.filter(function(item){return item.isPr;}).length;
   var sbCount=meetFlags.filter(function(item){return item.isSeasonBest;}).length;
   var identity=[row.grade?'Grade '+row.grade:'',row.graduationYear?'Class of '+row.graduationYear:'',row.gender||'',(row.groups||[]).join(', ')].filter(Boolean).join(' · ');
-  els.athleteModalTitle.textContent=(row.name||'Athlete')+' Snapshot';
+  els.athleteModalTitle.textContent=(row.name||'Athlete')+' Details';
   els.athleteModalBody.innerHTML=
     '<div class="snapshot-summary"><div><b>'+esc(row.name||'Unnamed athlete')+'</b><span>'+esc(identity||'Roster athlete')+'</span></div><div class="snapshot-badges"><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span>'+(pbCount?'<span class="pill pb">'+pbCount+' PB</span>':'')+(sbCount?'<span class="pill sb">'+sbCount+' SB</span>':'')+'</div></div>'+
     '<div class="detailgrid">'+
@@ -5970,6 +5972,54 @@ function openAthleteDetail(row){
     '<div class="snapshot-section-head"><h3 class="section-title">Power Trak</h3><span id="athleteSnapshotPowerStatus" class="snapshot-loading">Loading...</span></div><div id="athleteSnapshotPower"></div>';
   els.athleteModal.hidden=false;
   loadAthleteSnapshotPower(row);
+}
+
+function personalBestsRequest(url){
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},20000);
+  var options={cache:'no-store',signal:controller.signal};
+  var request=url.indexOf('/power-trak')>=0?PowerTrakHistoryClient.readHistory(url,options,fetch):fetch(url,options).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.error||'Could not load results.');return data})});
+  return request.finally(function(){clearTimeout(timer)});
+}
+function openAthletePersonalBests(row){
+  els.athleteModalTitle.textContent=(row.name||'Athlete')+' Personal Bests';
+  els.athleteModalBody.innerHTML='<div class="athlete-pb"><div class="pb-sub">'+esc(row.graduationYear?'Class of '+row.graduationYear+' · ':'')+'All-time saved results</div>'+['Speed','Strength','Jumps & Throws','Meet Results'].map(function(label,index){return'<section><div class="pb-heading"><h3>'+esc(label)+'</h3>'+(index===1?'<label class="pb-sub">Compare sets <select id="athleteBestsReps" aria-label="Strength rep basis" disabled><option>Loading...</option></select></label>':'')+'</div><div id="athleteBestsSection'+index+'" aria-live="polite"><div class="pb-empty">Loading...</div></div></section>'}).join('')+'<div class="pb-footer"><span>SMART Trak · Athlete Snapshot</span><button id="athleteBestsRetry" class="quiet-action compact" type="button">Refresh</button></div></div>';
+  els.athleteModal.hidden=false;
+  var targets=[0,1,2,3].map(function(i){return document.getElementById('athleteBestsSection'+i)});
+  var repSelect=document.getElementById('athleteBestsReps'),fieldRecords=[],powerRecords=[],fieldStatus='loading',powerStatus='loading';
+  function active(){return targets[0].isConnected}
+  function show(index,records){if(active())targets[index].innerHTML=AthletePersonalBests.renderTable(AthletePersonalBests.summarize(records),false)}
+  function unavailable(index){if(active())targets[index].innerHTML='<div class="pb-empty pb-error">Results unavailable. Refresh to try again.</div>'}
+  function renderField(){
+    if(!active())return;
+    var records=fieldRecords.concat(powerRecords);
+    targets[2].innerHTML=records.length?AthletePersonalBests.renderTable(AthletePersonalBests.summarize(records),false):fieldStatus==='loading'||powerStatus==='loading'?'<div class="pb-empty">Loading...</div>':'<div class="pb-empty">No comparable saved results.</div>';
+    if(fieldStatus==='error'||powerStatus==='error')targets[2].innerHTML+='<div class="pb-empty pb-error">'+(fieldStatus==='error'?'Field Practice':'Power Trak')+' results unavailable. Refresh to try again.</div>';
+  }
+  document.getElementById('athleteBestsRetry').addEventListener('click',function(){openAthletePersonalBests(row)});
+  personalBestsRequest('/api/smart-trak/field-practice?v='+Date.now()).then(function(data){
+    if(!active())return;
+    var practices=data.practices||[];
+    show(0,AthletePersonalBests.speed(practices,row));fieldRecords=AthletePersonalBests.field(practices,row);fieldStatus='ready';renderField();
+  }).catch(function(){fieldStatus='error';unavailable(0);renderField()});
+  personalBestsRequest('/api/smart-trak/power-trak?v='+Date.now()+'&athleteId='+encodeURIComponent(row.contactId||row.smartcoachAthleteId||row.id||'')+'&athleteName='+encodeURIComponent(row.name||'')).then(function(data){
+    if(!active())return;
+    var records=AthletePersonalBests.power(data,row);
+    powerRecords=records.field;powerStatus='ready';renderField();
+    var reps=Array.from(new Set(records.strength.map(function(r){return r.reps}).filter(function(n){return Number.isInteger(n)&&n>0}))).sort(function(a,b){return a-b});
+    var unknownReps=records.strength.some(function(r){return r.reps==null});
+    repSelect.innerHTML=(reps.map(function(n){return'<option value="'+n+'">'+n+' rep'+(n===1?'':'s')+'</option>'}).join('')+(unknownReps?'<option value="unknown">Reps unrecorded</option>':''))||'<option>No sets</option>';
+    repSelect.disabled=!reps.length&&!unknownReps;repSelect.value=reps.indexOf(5)>=0?'5':String(reps[0]||(unknownReps?'unknown':'No sets'));
+    function renderStrength(){
+      if(!active())return;
+      targets[1].innerHTML=AthletePersonalBests.renderTable(AthletePersonalBests.strength(records.strength,repSelect.value),true);
+      var estimates=AthletePersonalBests.summarize(records.estimates);
+      if(estimates.length)targets[1].innerHTML+='<div class="pb-heading"><h3>Imported Estimated 1RM</h3></div>'+AthletePersonalBests.renderTable(estimates,false);
+    }
+    repSelect.addEventListener('change',renderStrength);renderStrength();
+  }).catch(function(){powerStatus='error';unavailable(1);if(active())repSelect.innerHTML='<option>Unavailable</option>';renderField()});
+  personalBestsRequest('/api/smart-trak/dashboard?meetHistory=1&v='+Date.now()).then(function(data){
+    show(3,AthletePersonalBests.meets((data.meetResults||[]).concat(data.recentMeetResults||[]),row));
+  }).catch(function(){unavailable(3)});
 }
 
 function athleteSnapshotAttendance(row){

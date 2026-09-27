@@ -6,6 +6,7 @@ require("./power-trak-rack-claims.test");
 require("./power-trak-rack-queue.test");
 require("./power-leaderboard-estimate.test");
 require("./power-trak-rack-history.test");
+require("./athlete-personal-bests.test");
 require("./power-trak-rack-sync.test");
 require("./account-scoped-lock.test");
 
@@ -810,7 +811,9 @@ function checkDashboardAthleteSnapshot() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   [
     "Athlete Snapshot",
-    'title="View athlete snapshot">Snapshot</button>',
+    'title="View athlete personal bests">Snapshot</button>',
+    'data-athlete-bests="1"',
+    'function openAthletePersonalBests',
     "function athleteSnapshotAttendance",
     "function athleteSnapshotDocuments",
     "function athleteSnapshotField",
