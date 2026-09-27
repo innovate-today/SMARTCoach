@@ -8,6 +8,7 @@ require("./power-leaderboard-estimate.test");
 require("./power-trak-rack-history.test");
 require("./athlete-personal-bests.test");
 require("./dashboard-xc-details.test");
+require("./smart-trak-navigation.test");
 require("./power-trak-rack-sync.test");
 require("./account-scoped-lock.test");
 
