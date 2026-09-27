@@ -5892,7 +5892,7 @@ function rowHtml(row){
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
   return '<tr>'+
-    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="row-actions"><button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">Details</button><button class="quiet-action compact" data-athlete-bests="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete personal bests">Snapshot</button></div></td>'+
+    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="row-actions"><button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">XC Details</button><button class="quiet-action compact" data-athlete-bests="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete personal bests">Personal Bests</button></div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
@@ -5939,7 +5939,7 @@ function openAthleteDetail(row){
   var pbCount=meetFlags.filter(function(item){return item.isPr;}).length;
   var sbCount=meetFlags.filter(function(item){return item.isSeasonBest;}).length;
   var identity=[row.grade?'Grade '+row.grade:'',row.graduationYear?'Class of '+row.graduationYear:'',row.gender||'',(row.groups||[]).join(', ')].filter(Boolean).join(' · ');
-  els.athleteModalTitle.textContent=(row.name||'Athlete')+' Details';
+  els.athleteModalTitle.textContent=(row.name||'Athlete')+' XC Details';
   els.athleteModalBody.innerHTML=
     '<div class="snapshot-summary"><div><b>'+esc(row.name||'Unnamed athlete')+'</b><span>'+esc(identity||'Roster athlete')+'</span></div><div class="snapshot-badges"><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span>'+(pbCount?'<span class="pill pb">'+pbCount+' PB</span>':'')+(sbCount?'<span class="pill sb">'+sbCount+' SB</span>':'')+'</div></div>'+
     '<div class="detailgrid">'+

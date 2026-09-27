@@ -1,6 +1,6 @@
 # Athlete Personal Bests
 
-The dashboard roster has separate Details and Snapshot buttons. Clicking an
+The dashboard roster has separate XC Details and Personal Bests buttons. Clicking an
 athlete's name still opens Details (training, attendance, documents, notes, and
 recent activity). Details omits Speed Trak and Field Practice cards and the
 embedded Power Trak section, but retains Roster, Meet History, Speed Trak,

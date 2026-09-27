@@ -811,7 +811,9 @@ function checkDashboardAthleteSnapshot() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   [
     "Athlete Snapshot",
-    'title="View athlete personal bests">Snapshot</button>',
+    'title="View athlete personal bests">Personal Bests</button>',
+    '>XC Details</button>',
+    "+' XC Details'",
     'data-athlete-bests="1"',
     'function openAthletePersonalBests',
     "function athleteSnapshotAttendance",
