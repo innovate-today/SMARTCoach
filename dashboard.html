@@ -3404,7 +3404,7 @@ document.addEventListener('click',function(event){
   var athlete=dashboardRows.find(function(row){
     return (contactId&&String(row.contactId||'')===contactId) || String(row.name||'').toLowerCase()===String(button.getAttribute('data-athlete-name')||'').toLowerCase();
   });
-  if(athlete){if(button.hasAttribute('data-athlete-bests'))openAthletePersonalBests(athlete);else openAthleteDetail(athlete);}
+  if(athlete){if(button.hasAttribute('data-athlete-bests')||!athleteIsXcRunner(athlete))openAthletePersonalBests(athlete);else openAthleteDetail(athlete);}
 });
 els.athleteModalClose.addEventListener('click',closeAthleteDetail);
 els.manageMeetsBtn.addEventListener('click',openMeetManager);
@@ -5887,12 +5887,19 @@ function targetStatus(row){
   return 'none';
 }
 
+function athleteIsXcRunner(row){
+  return (row.groups||[]).some(function(name){
+    return normalizeDashboardSport(name)==='cross_country'||(trainingGroups||[]).some(function(group){
+      return group&&!group.archived&&group.name===name&&normalizeDashboardSport(group.season)==='cross_country';
+    });
+  });
+}
 function rowHtml(row){
   var latestMeet=row.latestMeet||{};
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
   return '<tr>'+
-    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="row-actions"><button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">XC Details</button><button class="quiet-action compact" data-athlete-bests="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete personal bests">Personal Bests</button></div></td>'+
+    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="row-actions">'+(athleteIsXcRunner(row)?'<button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">XC Details</button>':'')+'<button class="quiet-action compact" data-athlete-bests="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete personal bests">Personal Bests</button></div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+

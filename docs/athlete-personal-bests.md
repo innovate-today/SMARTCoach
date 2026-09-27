@@ -1,7 +1,9 @@
 # Athlete Personal Bests
 
-The dashboard roster has separate XC Details and Personal Bests buttons. Clicking an
-athlete's name still opens Details (training, attendance, documents, notes, and
+The dashboard roster shows XC Details only for athletes assigned to an XC group
+(identified by group name or Cross Country season). Personal Bests is available
+to everyone. Clicking an XC athlete's name opens Details; other names open
+Personal Bests. Details includes training, attendance, documents, notes, and
 recent activity). Details omits Speed Trak and Field Practice cards and the
 embedded Power Trak section, but retains Roster, Meet History, Speed Trak,
 Power Trak, and Attendance navigation buttons. Snapshot opens the personal-best tables for all saved dates,
