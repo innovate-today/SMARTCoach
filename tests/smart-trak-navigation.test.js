@@ -58,6 +58,9 @@ assert.strictEqual(dashboardDistance.children[1].children[0], nodes.dashboardLin
 assert.strictEqual(dashboardDistance.children[1].children[1], nodes.shareMilesBoardBtn);
 assert.strictEqual(dashboardAthletes.children[1].children[0], nodes.athletesLink);
 assert.strictEqual(dashboardAthletes.children[1].children[1].href, '/attendance.html');
+const dashboardQuick = menuByName(nav, 'Quick Add').children[1].children;
+assert.strictEqual(dashboardQuick.find(child => child.textContent === 'Add Athlete').href, '/athletes.html#add-athlete');
+assert.strictEqual(dashboardQuick.find(child => child.textContent === 'Import Athletes').href, '/athletes.html#import-athletes');
 for (const id of ids) {
   assert.ok(source.includes("'" + id + "'"), id + ' remains mapped');
 }
@@ -107,6 +110,10 @@ assert.strictEqual(athleteDistance.children[1].children[1].href, '/dashboard.htm
 assert.strictEqual(athleteRoster.children[0].attributes['aria-current'], 'page');
 assert.strictEqual(athleteRoster.children[1].children[0].href, '/athletes.html?account=school-a');
 assert.strictEqual(athleteRoster.children[1].children[1], athleteNodes.attendanceLink);
+const athleteQuick = menuByName(athleteNav, 'Quick Add').children[1].children;
+assert.strictEqual(athleteQuick.find(child => child.textContent === 'Log Miles').href, '/dashboard.html?account=school-a#log-miles');
+assert.strictEqual(athleteQuick.find(child => child.textContent === 'Log Single Result').href, '/dashboard.html?account=school-a#log-single-result');
+assert.strictEqual(athleteQuick.find(child => child.textContent === 'Manage Meets').href, '/dashboard.html?account=school-a#manage-meets');
 const athleteAccount = athleteNav.children.find(child => child.children[0] && child.children[0].textContent === 'Account');
 const staffLink = athleteAccount.children[1].children.find(child => child.textContent === 'Staff Access');
 assert.strictEqual(staffLink.href, '/dashboard.html?account=school-a#staff-access');
@@ -119,4 +126,14 @@ const athleteSignOut = athleteAccount.children[1].children.find(child => child.t
 athleteSignOut.handlers.click();
 assert.strictEqual(athleteRedirect, '/athletes.html?account=school-a');
 for (const id of athleteIds) assert.ok(source.includes("'" + id + "'"), id + ' remains mapped');
+const dashboardSource = fs.readFileSync('dashboard.html', 'utf8');
+const athletesSource = fs.readFileSync('athletes.html', 'utf8');
+for (const [hash, handler] of [
+  ['#log-miles', 'openManualMileage'],
+  ['#log-single-result', 'openRaceResult'],
+  ['#manage-meets', 'openMeetManager']
+]) assert.ok(dashboardSource.includes("location.hash==='" + hash + "')setTimeout(" + handler), hash + ' opens existing dashboard modal');
+assert.ok(athletesSource.includes("if(rows)openQuickAddFromHash()"), 'athlete deep link waits for roster access');
+assert.ok(athletesSource.includes("location.hash==='#add-athlete')openAthleteModal(null)"));
+assert.ok(athletesSource.includes("location.hash==='#import-athletes')openImportModal()"));
 console.log('SMART Trak shared navigation tests passed.');

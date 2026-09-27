@@ -99,10 +99,15 @@
   if(athletesPage){
     move(quick,'addAthleteBtn');
     move(quick,'importAthletesBtn');
+    quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
+    quick.appendChild(link('Log Single Result','/dashboard.html#log-single-result'));
+    quick.appendChild(link('Manage Meets','/dashboard.html#manage-meets'));
   }else{
     move(quick,'manualMileageBtn');
     move(quick,'raceResultBtn');
     command(quick,'Manage Meets','manageMeetsBtn');
+    quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
+    quick.appendChild(link('Import Athletes','/athletes.html#import-athletes'));
   }
 
   var account=menu('Account');
