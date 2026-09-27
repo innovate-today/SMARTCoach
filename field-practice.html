@@ -19,6 +19,7 @@ h1{font-size:26px;line-height:1.1;margin:0}.sub{font-size:14px;color:var(--muted
 .drills{display:grid;gap:7px}.drill{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:9px}.drill input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--blue)}.drill b{display:block;font-size:14px}.drill small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.athnotes{display:grid;gap:8px}.athnote{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(160px,.9fr) minmax(220px,1.4fr) minmax(100px,.5fr);gap:8px;align-items:start;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:10px}.athnote b{font-size:14px;line-height:1.2}.athnote small{display:block;color:var(--muted);font-size:12px;margin-top:3px}.athnote input,.athnote select,.athnote textarea{padding:8px 10px;font-size:13px}.athnote textarea{min-height:58px}.speedbar{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end}.speedmetrics{display:grid;gap:8px;margin-top:10px}.speedmetric{display:grid;grid-template-columns:minmax(130px,.8fr) 88px 82px minmax(220px,1.2fr) minmax(190px,1fr) auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:8px}.speedmetric b{display:block;font-size:14px}.metricresult{font-size:12px;color:#334155;font-weight:900;line-height:1.4}.attemptbar{display:grid;grid-template-columns:1fr 1fr 1fr 2fr auto;gap:8px;align-items:end}.attempts{display:grid;gap:8px;margin-top:10px}.attempt{display:grid;grid-template-columns:70px 96px 80px 1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:8px}.attemptpatterns{display:grid;gap:7px;margin-top:10px}.attemptpattern{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-left:4px solid var(--blue);border-radius:8px;background:#f8fafc;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px 10px}.attemptpattern b{display:block;font-size:15px}.attemptpattern small{display:block;color:var(--muted);font-weight:800;margin-top:2px}.patterncode{font-weight:950;letter-spacing:.08em;color:#172033}.result{font-size:22px;font-weight:950;text-align:center}.result.make{color:var(--good)}.result.miss{color:var(--bad)}.result.pass{color:var(--warn)}.list{display:grid;gap:8px}.practice{border:1px solid var(--line);border-radius:8px;background:#fbfdff;padding:12px}.practice h3{margin:0 0 4px;font-size:16px}.practice .meta{color:var(--muted);font-size:12px;font-weight:800}.practice .summary{margin-top:8px;font-size:13px;line-height:1.4}.practice .row{display:flex;align-items:center;justify-content:space-between;gap:8px}.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.chip{display:inline-flex;border-radius:999px;background:#e8efff;color:#173891;padding:3px 8px;font-size:11px;font-weight:900}.empty{text-align:center;color:var(--muted);padding:22px}.preview{white-space:pre-wrap;border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:10px;font-size:13px;line-height:1.45}
 @media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%;justify-content:stretch}.actions a,.actions button{flex:1}.grid,.formgrid,.attemptbar,.attempt,.athnote,.speedbar,.speedmetric{grid-template-columns:1fr}.full{grid-column:auto}}
 </style>
+<link rel="stylesheet" href="/assets/smart-trak-navigation.css">
 </head>
 <body>
 <main class="page">
@@ -198,6 +199,11 @@ function accessCode(){try{return localStorage.getItem(accessStorageKey())||'';}c
 function sessionToken(){try{return localStorage.getItem(rememberedSessionStorageKey())||sessionStorage.getItem(sessionStorageKey())||'';}catch(e){try{return sessionStorage.getItem(sessionStorageKey())||'';}catch(err){return '';}}}
 function headers(){var h={'Content-Type':'application/json'};var account=smartCoachAccountKey();if(account&&account!=='default')h['X-SMARTCoach-Account']=account;var session=sessionToken();var code=accessCode();if(session)h['X-SMARTCoach-Session']=session;if(code&&!session)h['X-SMARTCoach-Access-Code']=code;return h;}
 function jsonResult(res){return res.json().then(function(data){if(!res.ok)throw new Error(data&&data.error||'Request failed.');return data;});}
+function refreshNavAccess(){
+  return fetch(apiUrl('/api/smart-trak/account-status'),{cache:'no-store',headers:headers()}).then(jsonResult).then(function(status){
+    if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(status);
+  }).catch(function(){if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null);});
+}
 function init(){
   ['dashboardLink','calendarLink','athletesLink','newBtn','refreshBtn','practiceDate','routineSelect','setupSelect','heightInput','attemptSetup','attemptHeight','addDrillBtn','addAttemptBtn','saveBtn','deleteBtn','copyPreviewBtn','speedMetricZone','speedMetricDistance','speedMetricUnit','seedSpeedMetricsBtn'].forEach(function(id){els[id]=$(id);});
   document.body.classList.toggle('embedded',embeddedMode());
@@ -207,6 +213,7 @@ function init(){
   ['eventSelect','groupSelect','athleteSelect','focusSelect','planNotes','coachNotes','attemptResult','attemptSetup','attemptHeight','attemptNote','speedMetricZone','speedMetricDistance','speedMetricUnit'].forEach(function(id){$(id).addEventListener('input',renderPreview);$(id).addEventListener('change',function(){if(id==='groupSelect'||id==='athleteSelect')syncSpeedMetricRows();renderPreview();});});
   $('groupSelect').addEventListener('change',function(){renderAthletes();syncSpeedMetricRows();renderSpeedMetrics();});
   $('athleteSelect').addEventListener('change',function(){syncAthleteSummaryRows();renderAthleteSummaries();syncSpeedMetricRows();renderSpeedMetrics();});
+  refreshNavAccess();
   loadAll();
 }
 function loadAll(){
@@ -261,6 +268,7 @@ function renderList(){var list=$('practiceList');$('listStatus').textContent=pra
 function copyPreview(){var text=$('athletePreview').textContent||'';if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){$('saveStatus').textContent='Copied athlete preview.';});return;}$('saveStatus').textContent='Preview ready to copy.';}
 document.addEventListener('DOMContentLoaded',init);
 </script>
+<script src="/assets/smart-trak-navigation.js"></script>
 <script src="/assets/smartcoach-help-widget.js" async></script>
 </body>
 </html>

@@ -207,6 +207,38 @@ assert.strictEqual(calendarRedirect, '/training-calendar.html?account=school-a')
 const calendarSource = fs.readFileSync('training-calendar.html', 'utf8');
 assert.ok(calendarSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(calendarSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?accountStatus:null)'));
+const fieldIds = ['newBtn', 'dashboardLink', 'calendarLink', 'athletesLink', 'refreshBtn'];
+const fieldNodes = Object.fromEntries(fieldIds.map(id => [id, element('button')]));
+const fieldHeader = element('header');
+fieldHeader.querySelector = () => element('div');
+const fieldDocument = {
+  querySelector: selector => selector === '.top' ? fieldHeader : null,
+  getElementById: id => fieldNodes[id],
+  createElement: element,
+  addEventListener() {}
+};
+let fieldRedirect = '';
+const fieldWindow = { location: { replace: path => { fieldRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: fieldDocument, window: fieldWindow, localStorage: storage,
+  sessionStorage: storage, smartCoachAccountKey: () => 'school-a',
+  pageUrl: path => path + '?account=school-a'
+});
+const fieldNav = fieldHeader.children.find(child => child.tag === 'nav');
+assert.ok(fieldNav, 'Field Practice navigation mounted');
+assert.strictEqual(menuByName(fieldNav, 'Training').children[0].attributes['aria-current'], 'page');
+assert.strictEqual(menuByName(fieldNav, 'Training').children[1].children[0], fieldNodes.calendarLink);
+assert.ok(menuByName(fieldNav, 'Quick Add').children[1].children.includes(fieldNodes.newBtn));
+assert.ok(fieldNav.children.includes(fieldNodes.refreshBtn));
+const fieldStaff = menuByName(fieldNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(fieldStaff.hidden, true);
+fieldWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(fieldStaff.hidden, false);
+menuByName(fieldNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(fieldRedirect, '/field-practice.html?account=school-a');
+const fieldSource = fs.readFileSync('field-practice.html', 'utf8');
+assert.ok(fieldSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(fieldSource.includes('window.smartTrakNavigationUpdateAccess(status)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],

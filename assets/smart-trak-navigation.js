@@ -5,7 +5,8 @@
   var athletesPage=!!document.getElementById('addAthleteBtn');
   var attendancePage=!!document.getElementById('exportBtn');
   var calendarPage=!!document.getElementById('approveDraftsBtn');
-  var dashboardPage=!athletesPage&&!attendancePage&&!calendarPage;
+  var fieldPage=!!document.getElementById('newBtn');
+  var dashboardPage=!athletesPage&&!attendancePage&&!calendarPage&&!fieldPage;
   if(!header||!oldActions||(dashboardPage&&typeof smartCoachPageUrl!=='function')||(dashboardPage&&productPlan()==='essential'))return;
 
   var nav=document.createElement('nav');
@@ -63,8 +64,9 @@
     if(calendarPage)athletesMenu.appendChild(link('Roster','/athletes.html'));
     athletesMenu.appendChild(link('Attendance','/attendance.html'));
   }
-  var training=menu('Training',calendarPage);
+  var training=menu('Training',calendarPage||fieldPage);
   if(calendarPage)training.appendChild(link('Training Calendar','/training-calendar.html'));
+  else if(fieldPage)move(training,'calendarLink','Training Calendar');
   else move(training,'trainingCalendarLink','Training Calendar');
   if(dashboardPage)move(training,'fitnessCleanupBtn');
   if(calendarPage){
@@ -131,6 +133,12 @@
     quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
     quick.appendChild(link('Log Single Result','/dashboard.html#log-single-result'));
     quick.appendChild(link('Manage Meets','/dashboard.html#manage-meets'));
+  }else if(fieldPage){
+    move(quick,'newBtn');
+    quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
+    quick.appendChild(link('Import Athletes','/athletes.html#import-athletes'));
+    quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
+    quick.appendChild(link('Log Single Result','/dashboard.html#log-single-result'));
   }else{
     move(quick,'manualMileageBtn');
     move(quick,'raceResultBtn');
@@ -156,7 +164,7 @@
       localStorage.removeItem('sc_admin_tools');
       sessionStorage.removeItem('sc_session_'+key);
     }catch(error){}
-    window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':'/dashboard.html')+'?account='+encodeURIComponent(calendarPage?accountKey():smartCoachAccountKey()));
+    window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':fieldPage?'/field-practice.html':'/dashboard.html')+'?account='+encodeURIComponent(calendarPage?accountKey():smartCoachAccountKey()));
   });
   account.appendChild(signOut);
   move(nav,'refreshBtn');
