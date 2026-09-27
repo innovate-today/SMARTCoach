@@ -1,4 +1,4 @@
-.actions.smart-nav-mounted{display:none}
+.actions.smart-nav-mounted,.top-actions.smart-nav-mounted{display:none}
 .smart-nav{display:flex;justify-content:flex-end;align-items:center;gap:5px;flex-wrap:wrap;flex:1 1 auto;min-width:0}
 .smart-nav>a,.smart-nav>details>summary,.smart-nav>button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#eef4ff;color:#173891;text-decoration:none;font-family:inherit;font-size:13px;font-weight:800;line-height:1.2;white-space:nowrap;cursor:pointer;list-style:none}
 .smart-nav>details>summary::-webkit-details-marker{display:none}

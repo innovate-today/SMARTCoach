@@ -239,6 +239,41 @@ assert.strictEqual(fieldRedirect, '/field-practice.html?account=school-a');
 const fieldSource = fs.readFileSync('field-practice.html', 'utf8');
 assert.ok(fieldSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(fieldSource.includes('window.smartTrakNavigationUpdateAccess(status)'));
+const speedIds = ['addResultBtn', 'dashboardLink', 'trainingLink', 'fieldPracticeLink', 'refreshBtn', 'shareSpeedBoardBtn', 'exportSpeedDataBtn'];
+const speedNodes = Object.fromEntries(speedIds.map(id => [id, element('button')]));
+const speedHeader = element('header');
+const speedActions = element('div');
+speedHeader.querySelector = selector => selector === '.top-actions' ? speedActions : null;
+const speedDocument = {
+  querySelector: selector => selector === '.top' ? speedHeader : null,
+  getElementById: id => speedNodes[id],
+  createElement: element,
+  addEventListener() {}
+};
+let speedRedirect = '';
+const speedWindow = { location: { replace: path => { speedRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: speedDocument, window: speedWindow, localStorage: storage,
+  sessionStorage: storage, smartCoachAccountKey: () => 'school-a',
+  pageUrl: path => path + '?account=school-a'
+});
+const speedNav = speedHeader.children.find(child => child.tag === 'nav');
+assert.ok(speedNav, 'Speed Trak navigation mounted');
+assert.ok(speedActions.classList, 'original Speed Trak actions remain available for moving');
+assert.strictEqual(speedNav.children.find(child => child.textContent === 'Speed Trak').attributes['aria-current'], 'page');
+assert.strictEqual(menuByName(speedNav, 'Training').children[1].children[0], speedNodes.trainingLink);
+assert.ok(menuByName(speedNav, 'Training').children[1].children.includes(speedNodes.fieldPracticeLink));
+assert.ok(menuByName(speedNav, 'Quick Add').children[1].children.includes(speedNodes.addResultBtn));
+for (const id of ['shareSpeedBoardBtn', 'exportSpeedDataBtn', 'refreshBtn']) assert.ok(speedNav.children.includes(speedNodes[id]), id + ' remains visible');
+const speedStaff = menuByName(speedNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(speedStaff.hidden, true);
+speedWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(speedStaff.hidden, false);
+menuByName(speedNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(speedRedirect, '/speed-trak.html?account=school-a');
+const speedSource = fs.readFileSync('speed-trak.html', 'utf8');
+assert.ok(speedSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(speedSource.includes('window.smartTrakNavigationUpdateAccess(data)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
