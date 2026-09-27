@@ -126,8 +126,42 @@ const athleteSignOut = athleteAccount.children[1].children.find(child => child.t
 athleteSignOut.handlers.click();
 assert.strictEqual(athleteRedirect, '/athletes.html?account=school-a');
 for (const id of athleteIds) assert.ok(source.includes("'" + id + "'"), id + ' remains mapped');
+const attendanceNodes = Object.fromEntries(['dashboardLink', 'athletesLink', 'trainingCalendarLink', 'refreshBtn', 'exportBtn'].map(id => [id, element('button')]));
+attendanceNodes.exportBtn.textContent = 'Export CSV';
+const attendanceHeader = element('header');
+const attendanceActions = element('div');
+attendanceHeader.querySelector = () => attendanceActions;
+const attendanceDocument = {
+  querySelector: selector => selector === '.top' ? attendanceHeader : null,
+  getElementById: id => attendanceNodes[id],
+  createElement: element,
+  addEventListener() {}
+};
+let attendanceRedirect = '';
+const attendanceWindow = { location: { replace: path => { attendanceRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: attendanceDocument, window: attendanceWindow, localStorage: storage,
+  sessionStorage: storage, smartCoachAccountKey: () => 'school-a',
+  pageUrl: path => path + '?account=school-a'
+});
+const attendanceNav = attendanceHeader.children.find(child => child.tag === 'nav');
+assert.ok(attendanceNav, 'attendance navigation mounted');
+assert.strictEqual(menuByName(attendanceNav, 'Athletes').children[0].attributes['aria-current'], 'page');
+assert.strictEqual(menuByName(attendanceNav, 'Athletes').children[1].children[0], attendanceNodes.athletesLink);
+assert.strictEqual(menuByName(attendanceNav, 'Athletes').children[1].children[1].href, '/attendance.html?account=school-a');
+assert.ok(attendanceNav.children.includes(attendanceNodes.exportBtn), 'Export CSV remains visible');
+assert.strictEqual(attendanceNodes.exportBtn.textContent, 'Export CSV', 'Export CSV label is preserved');
+const attendanceStaff = menuByName(attendanceNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(attendanceStaff.hidden, true);
+attendanceWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(attendanceStaff.hidden, false);
+menuByName(attendanceNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(attendanceRedirect, '/attendance.html?account=school-a');
 const dashboardSource = fs.readFileSync('dashboard.html', 'utf8');
 const athletesSource = fs.readFileSync('athletes.html', 'utf8');
+const attendanceSource = fs.readFileSync('attendance.html', 'utf8');
+assert.ok(attendanceSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(attendanceSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
