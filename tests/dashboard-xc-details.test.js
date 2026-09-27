@@ -2,7 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
 const html = fs.readFileSync('dashboard.html', 'utf8');
-const context = { trainingGroups: [
+const context = { recentTrainingRows: [], sameAthlete: (a,b) => !!a.contactId && a.contactId === b.contactId, trainingGroups: [
   { name: 'Distance', season: 'Cross Country' },
   { name: 'Old Distance', season: 'Cross Country', archived: true }
 ] };
@@ -19,6 +19,10 @@ for (const groups of [[], ['Track Team'], ['Sprints'], ['Old Distance']]) {
   assert.strictEqual(context.athleteIsXcRunner({ groups, latestMeet: { sport: 'cross_country' } }), false);
 }
 assert.strictEqual(context.athleteIsXcRunner({}), false);
+assert.strictEqual(context.athleteIsXcRunner({ latestTraining: { groupName: 'Group 2-CC' } }), true);
+context.recentTrainingRows = [{ contactId: 'xc-runner', sport: 'Cross Country' }];
+assert.strictEqual(context.athleteIsXcRunner({ contactId: 'xc-runner', groups: [] }), true);
+assert.strictEqual(context.athleteIsXcRunner({ contactId: 'sprinter', groups: [] }), false);
 assert.ok(html.includes("(athleteIsXcRunner(row)?'<button"));
 assert.ok(html.includes("button.hasAttribute('data-athlete-bests')||!athleteIsXcRunner(athlete)"));
 console.log('Dashboard XC Details visibility tests passed.');

@@ -1,7 +1,9 @@
 # Athlete Personal Bests
 
 The dashboard roster shows XC Details only for athletes assigned to an XC group
-(identified by group name or Cross Country season). Personal Bests is available
+(identified by group name or Cross Country season), or with XC training records
+when group assignments are unavailable. The dashboard season selector alone
+does not qualify an athlete. Personal Bests is available
 to everyone. Clicking an XC athlete's name opens Details; other names open
 Personal Bests. Details includes training, attendance, documents, notes, and
 recent activity). Details omits Speed Trak and Field Practice cards and the

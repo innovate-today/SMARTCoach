@@ -5888,10 +5888,16 @@ function targetStatus(row){
 }
 
 function athleteIsXcRunner(row){
-  return (row.groups||[]).some(function(name){
+  var assigned=(row.groups||[]).some(function(name){
     return normalizeDashboardSport(name)==='cross_country'||(trainingGroups||[]).some(function(group){
       return group&&!group.archived&&group.name===name&&normalizeDashboardSport(group.season)==='cross_country';
     });
+  });
+  if(assigned)return true;
+  var training=[row.latestTraining||{}].concat((recentTrainingRows||[]).filter(function(item){return sameAthlete(item,row);}));
+  return training.some(function(item){
+    return normalizeDashboardSport(item.sport)==='cross_country'||
+      normalizeDashboardSport(item.groupName)==='cross_country';
   });
 }
 function rowHtml(row){
