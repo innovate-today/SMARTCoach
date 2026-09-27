@@ -42,7 +42,7 @@ Step 3 rollout began on the dashboard header and now includes Athletes, Attendan
 | Start Field Practice | Existing Field Practice workflow. |
 | Add Athlete / Import Athletes | Existing Athletes page actions. |
 
-Training Calendar also has Athlete Setup (`/plan-setup.html`), Upload/Paste Plan (`/plan-import.html`), Auto Build Plan (`/plan-builder.html`), and Training Customization. Strava remains outside shared coach navigation; its owner/admin beta entry is available only by direct admin route. The current server authorization treats Head Coach staff-admin sessions as admin, so separate owner/admin credentials would be needed for strict role separation. Athletes also provides Attendance (`/attendance.html`), parent email/calendar actions, and individual Docu/Equipment actions. These are retained even if they do not become global navigation items.
+Training Calendar also has Athlete Setup (`/plan-setup.html`), Upload/Paste Plan (`/plan-import.html`), Auto Build Plan (`/plan-builder.html`), and Training Customization. Its Strava beta link retains the existing demo-account, admin-mode, and Head Coach visibility checks when moved into shared navigation. Athletes also provides Attendance (`/attendance.html`), parent email/calendar actions, and individual Docu/Equipment actions. These are retained even if they do not become global navigation items.
 
 ## Access and visibility findings
 

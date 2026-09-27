@@ -73,6 +73,7 @@
     move(training,'planImportLink');
     move(training,'planBuilderLink');
     move(training,'trainingCustomBtn');
+    move(training,'stravaTrainingLink');
   }else training.appendChild(link('Field Practice','/field-practice.html'));
   if(calendarPage)move(nav,'speedTrakLink');
   else nav.appendChild(link('Speed Trak','/speed-trak.html'));

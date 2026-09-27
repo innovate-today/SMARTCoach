@@ -169,6 +169,7 @@ const calendarIds = [
   'keepTrakLink', 'weatherLink', 'manualMileageBtn', 'raceResultBtn', 'refreshBtn'
 ];
 const calendarNodes = Object.fromEntries(calendarIds.map(id => [id, element('button')]));
+calendarNodes.stravaTrainingLink.hidden = true;
 const calendarHeader = element('header');
 calendarHeader.querySelector = () => element('div');
 const calendarDocument = {
@@ -188,10 +189,10 @@ const calendarNav = calendarHeader.children.find(child => child.tag === 'nav');
 assert.ok(calendarNav, 'Training Calendar navigation mounted');
 assert.strictEqual(menuByName(calendarNav, 'Training').children[0].attributes['aria-current'], 'page');
 const calendarTraining = menuByName(calendarNav, 'Training').children[1].children;
-for (const id of ['fieldPracticeLink', 'planSetupLink', 'planImportLink', 'planBuilderLink', 'trainingCustomBtn']) {
+for (const id of ['fieldPracticeLink', 'planSetupLink', 'planImportLink', 'planBuilderLink', 'trainingCustomBtn', 'stravaTrainingLink']) {
   assert.ok(calendarTraining.includes(calendarNodes[id]), id + ' remains in Training menu');
 }
-assert.ok(!calendarTraining.includes(calendarNodes.stravaTrainingLink), 'Strava stays out of shared coach navigation');
+assert.strictEqual(calendarNodes.stravaTrainingLink.hidden, true, 'navigation keeps the existing beta visibility state');
 assert.ok(calendarNav.children.includes(calendarNodes.approveDraftsBtn));
 assert.ok(calendarNav.children.includes(calendarNodes.scheduleApprovedBtn));
 assert.ok(calendarNav.children.includes(calendarNodes.refreshBtn));
