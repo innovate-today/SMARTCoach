@@ -1601,6 +1601,7 @@ tr:last-child td{border-bottom:0}
     </div>
   </section>
 </div>
+<script src="/assets/power-trak-history-client.js"></script>
 <script>
 var dashboardRows=[];
 var searchRenderTimer=null;
@@ -3887,17 +3888,19 @@ function writeDashboardBrowserSnapshot(data){
 }
 function dashboardSupportFetch(url,fetchOptions,fallback,timeoutMs){
   var options=Object.assign({},fetchOptions||{});
+  var powerHistory=url.indexOf('/api/smart-trak/power-trak')>=0;
   var controller=null;
   var timer=null;
   if('AbortController' in window){
     controller=trackDashboardBackgroundController(new AbortController());
     options.signal=controller.signal;
-    timer=setTimeout(function(){controller.abort();},timeoutMs||2500);
+    timer=setTimeout(function(){controller.abort();},powerHistory?15000:timeoutMs||2500);
   }
-  return fetch(url,options).then(function(res){
+  var request=powerHistory?PowerTrakHistoryClient.readHistory(url,options,fetch).then(function(data){return{ok:true,data:data}}):fetch(url,options).then(function(res){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
-  }).catch(function(){
-    return{ok:true,data:fallback||{}};
+  });
+  return request.catch(function(){
+    return{ok:!powerHistory,data:fallback||{}};
   }).finally(function(){
     if(timer)clearTimeout(timer);
     releaseDashboardBackgroundController(controller);
@@ -6015,8 +6018,9 @@ function loadAthleteSnapshotPower(row){
   var target=document.getElementById('athleteSnapshotPower');
   var status=document.getElementById('athleteSnapshotPowerStatus');
   if(!target)return;
-  dashboardSupportFetch('/api/smart-trak/power-trak?v='+Date.now(),{cache:'no-store'},{sessions:[],rackSessions:[]},3500).then(function(result){
+  dashboardSupportFetch('/api/smart-trak/power-trak?v='+Date.now()+'&athleteId='+encodeURIComponent(row.contactId||row.smartcoachAthleteId||row.id||'')+'&athleteName='+encodeURIComponent(row.name||''),{cache:'no-store'},{sessions:[],rackSessions:[]},3500).then(function(result){
     if(!target.isConnected)return;
+    if(!result.ok){target.textContent='Power Trak results could not be loaded. Try again.';if(status)status.textContent='Unavailable';return;}
     var items=[];
     (result.data&&result.data.sessions||[]).forEach(function(session){
       (session.rows||[]).forEach(function(item){

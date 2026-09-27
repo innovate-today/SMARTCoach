@@ -10,6 +10,8 @@ const athletesApi = require("../ghl/athletes");
 const { displayNameCase } = require("../../lib/display-name");
 const { advanceRackSessionRevisions, normalizeRackReservations, normalizeRackTombstones, updateRackAthleteReservation, validateRackSessionClaims, validateRackSessionTransitions } = require("../../lib/power-trak-rack-claims");
 const { mergePowerImportSessions } = require("../../lib/power-trak-import-merge");
+const { loadSessionState, saveSessionState, selectLegacyState } = require("../../lib/power-trak-session-storage");
+const { saveLargeAccountScopedRecords, expireAccountScopedRecords, publishPowerTrakSessionIndex, loadAccountScopedRecords } = require("../../lib/account-registry");
 
 const handlers = {
   "athlete-best": require("../ghl/athlete-best"),
@@ -1835,7 +1837,19 @@ async function accountPowerTrak(req, res) {
   try {
     if (req.method === "GET") {
       const existing = await loadAccountRecord(accountKey);
-      const powerTrakState = await loadPowerTrakState(accountKey, existing && existing.record);
+      const pageSize = firstQueryValue(req.query && req.query.pageSize);
+      const cursor = firstQueryValue(req.query && req.query.cursor);
+      const activeOnly = Boolean(rackSession) || firstQueryValue(req.query && req.query.activeOnly) === "1";
+      const rackIds = rackSession ? [] : cleanSetupText(firstQueryValue(req.query && req.query.rackIds)).split(",").filter(Boolean).slice(0, 64);
+      const powerTrakState = await loadPowerTrakState(accountKey, existing && existing.record, {
+        pageSize: pageSize || (cursor ? 50 : null), cursor,
+        activeOnly, omitTesting: activeOnly, rackIds,
+        omitRacks: !rackSession && firstQueryValue(req.query && req.query.testingOnly) === "1",
+        athleteId: cleanSetupText(firstQueryValue(req.query && req.query.athleteId)).slice(0, 120),
+        athleteName: cleanSetupText(firstQueryValue(req.query && req.query.athleteName)).slice(0, 120),
+        groupId: cleanSetupText(firstQueryValue(req.query && req.query.groupId)),
+        start: firstQueryValue(req.query && req.query.start), end: firstQueryValue(req.query && req.query.end),
+      });
       const leaderboardSettings = rackSession ? null : await loadAccountScopedRecord(accountKey, POWER_TRAK_LEADERBOARD_NAMESPACE);
       const sessions = normalizePowerTrakSessions(powerTrakState.powerTrakSessions);
       const workouts = normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts);
@@ -1856,7 +1870,8 @@ async function accountPowerTrak(req, res) {
       const visibleWorkouts = rackSession ? workouts.filter((item) => cleanSetupText(item.status).toLowerCase() !== "archived") : workouts;
       const visibleCatalog = rackSession ? [] : exerciseCatalog;
       const visibleRackSessions = rackSession ? rackSessions.filter((item) => cleanSetupText(item.status).toLowerCase() === "active") : rackSessions;
-      res.status(200).json({ success: true, sessions: visibleSessions, workouts: visibleWorkouts, exerciseCatalog: visibleCatalog, provisionalAthletes, rackSessions: visibleRackSessions, rackReservations, leaderboardExercises: normalizePowerLeaderboardExercises(leaderboardSettings && leaderboardSettings.record && leaderboardSettings.record.exercises), count: visibleSessions.length, workoutCount: visibleWorkouts.length, rackSessionCount: visibleRackSessions.length });
+      const historyPage = powerTrakState._powerHistory;
+      res.status(200).json({ success: true, sessions: visibleSessions, workouts: visibleWorkouts, exerciseCatalog: visibleCatalog, provisionalAthletes, rackSessions: visibleRackSessions, rackReservations, leaderboardExercises: normalizePowerLeaderboardExercises(leaderboardSettings && leaderboardSettings.record && leaderboardSettings.record.exercises), count: historyPage.totalSessions, workoutCount: visibleWorkouts.length, rackSessionCount: historyPage.totalRacks, ...(pageSize || cursor ? { historyPage } : {}) });
       return;
     }
 
@@ -1878,14 +1893,14 @@ async function accountPowerTrak(req, res) {
         if (!deviceId) throw httpError(400, "Rack device is required.");
         const existing = await loadAccountRecord(accountKey);
         if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
-        await loadPowerTrakState(accountKey, existing.record);
+        await loadPowerTrakState(accountKey, existing.record, { activeOnly: true, omitTesting: true });
         res.status(200).json({ success: true, action: "rack-device-write-check", deviceId, deviceLabel, checkedAt: new Date().toISOString(), saved: false });
         return;
       }
       if (["claim-rack-athlete", "release-rack-athlete"].includes(cleanSetupText(payload.action).toLowerCase())) {
         const existing = await loadAccountRecord(accountKey);
         if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
-        const powerTrakState = await loadPowerTrakState(accountKey, existing.record);
+        const powerTrakState = await loadPowerTrakState(accountKey, existing.record, { activeOnly: true, omitTesting: true, forMutation: true });
         const action = cleanSetupText(payload.action).toLowerCase();
         const athleteId = cleanSetupText(payload.athleteId).slice(0, 120);
         const athleteName = displayNameCase(payload.athleteName).slice(0, 120);
@@ -1894,14 +1909,14 @@ async function accountPowerTrak(req, res) {
         if (!athleteId || !deviceId) throw httpError(400, "Athlete and rack device are required.");
         const rackSessions = normalizePowerTrakRackSessions(powerTrakState.powerTrakRackSessions);
         const rackReservations = updateRackAthleteReservation({ action, athleteId, athleteName, deviceId, deviceLabel, rackSessions, reservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations) });
-        await savePowerTrakState(accountKey, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null });
+        await savePowerTrakState(accountKey, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions: rackSessions, powerTrakRackReservations: rackReservations, powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones), lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null }, powerStateSaveOptions(powerTrakState, true));
         res.status(200).json({ success: true, action, rackReservations });
         return;
       }
       if (cleanSetupText(payload.action).toLowerCase() === "add-rack-provisional-athlete") {
         const existing = await loadAccountRecord(accountKey);
         if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
-        const powerTrakState = await loadPowerTrakState(accountKey, existing.record);
+        const powerTrakState = await loadPowerTrakState(accountKey, existing.record, { activeOnly: true, omitTesting: true, forMutation: true });
         const provisionalAthletes = normalizePowerTrakProvisionalAthletes(
           normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes).concat([payload.provisionalAthlete])
         );
@@ -1914,7 +1929,7 @@ async function accountPowerTrak(req, res) {
           powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations),
           powerTrakRackTombstones: normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones),
           lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null,
-        });
+        }, powerStateSaveOptions(powerTrakState, true));
         res.status(200).json({ success: true, provisionalAthletes });
         return;
       }
@@ -1937,7 +1952,7 @@ async function accountPowerTrak(req, res) {
         const powerTrakRackSessions = current.filter((item) => !deleteIds.has(item.id));
         const savedAt = new Date().toISOString();
         const powerTrakRackTombstones = normalizePowerTrakRackTombstones(normalizePowerTrakRackTombstones(powerTrakState.powerTrakRackTombstones).concat(matches.map((item) => ({ id: item.id, deletedAt: savedAt }))));
-        await savePowerTrakState(accountKey, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), powerTrakRackTombstones, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } });
+        await savePowerTrakState(accountKey, { powerTrakSessions: normalizePowerTrakSessions(powerTrakState.powerTrakSessions), powerTrakWorkouts: normalizePowerTrakWorkouts(powerTrakState.powerTrakWorkouts), powerTrakExerciseCatalog: normalizePowerTrakExerciseCatalog(powerTrakState.powerTrakExerciseCatalog), powerTrakProvisionalAthletes: normalizePowerTrakProvisionalAthletes(powerTrakState.powerTrakProvisionalAthletes), powerTrakRackSessions, powerTrakRackReservations: normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations), powerTrakRackTombstones, lastPowerTrakSync: powerTrakState.lastPowerTrakSync || null, lastPowerTrakCleanup: { savedAt, action: "cleanup-power-import", deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount } }, powerStateSaveOptions(powerTrakState));
         res.status(200).json({ success: true, mode, deletedSessions: cleanup.sessionCount, deletedReps: cleanup.repCount, remainingRackSessions: powerTrakRackSessions.length, savedAt });
         return;
       }
@@ -1952,7 +1967,17 @@ async function accountPowerTrak(req, res) {
       if (!sessions.length && !deleteIds.length && !workouts.length && !deleteWorkoutIds.length && !rackSessions.length && !deleteRackSessionIds.length && !hasExerciseCatalog && !hasProvisionalAthletes) throw httpError(400, "No Power Trak sessions, workouts, exercises, athletes, or rack sessions were provided.");
       const existing = await loadAccountRecord(accountKey);
       if (!existing.configured || !existing.found || !existing.record) throw httpError(404, "Account registry record was not found.");
-      const powerTrakState = await loadPowerTrakState(accountKey, existing.record);
+      const deltaResponse = firstQueryValue(req.query && req.query.response) === "delta";
+      const incrementalRackSave = deltaResponse && payload.rackSession && !sessions.length && !deleteIds.length && !workouts.length && !deleteWorkoutIds.length && !hasExerciseCatalog && !hasProvisionalAthletes && !deleteRackSessionIds.length && rackSessions.every((item) => !item.id.startsWith("power_import_"));
+      const incrementalTestingSave = deltaResponse && !rackSessions.length && !deleteRackSessionIds.length && !workouts.length && !deleteWorkoutIds.length && !hasExerciseCatalog && !hasProvisionalAthletes && (sessions.length || deleteIds.length);
+      const incrementalImportSave = deltaResponse && rackSessions.length && rackSessions.every((item) => item.id.startsWith("power_import_") && item.status === "complete") && !sessions.length && !deleteIds.length && !deleteRackSessionIds.length && !workouts.length && !deleteWorkoutIds.length && !hasExerciseCatalog && !hasProvisionalAthletes;
+      const incrementalMetadataSave = deltaResponse && !sessions.length && !deleteIds.length && !rackSessions.length && !deleteRackSessionIds.length;
+      const incrementalRackDelete = deltaResponse && deleteRackSessionIds.length && !rackSessions.length && !sessions.length && !deleteIds.length && !workouts.length && !deleteWorkoutIds.length && !hasExerciseCatalog && !hasProvisionalAthletes;
+      const partialRequested = incrementalRackSave || incrementalTestingSave || incrementalImportSave || incrementalMetadataSave || incrementalRackDelete;
+      const powerTrakState = await loadPowerTrakState(accountKey, existing.record, incrementalTestingSave ? { omitRacks: true, sessionIds: sessions.map((item) => item.id).concat(deleteIds), forMutation: true } : partialRequested ? { activeOnly: true, omitTesting: true, rackIds: rackSessions.map((item) => item.id).concat(deleteRackSessionIds), rackWorkoutIds: incrementalImportSave ? rackSessions.map((item) => item.workoutId) : [], forMutation: true } : {});
+      const partialHistory = Boolean(partialRequested && powerTrakState._powerHistory.storageVersion === 2);
+      const previousTestingIds = new Set((powerTrakState.powerTrakSessions || []).map((item) => item.id));
+      const testingTotal = partialHistory ? powerTrakState._powerHistory.storedSessionCount + new Set(sessions.filter((item) => !previousTestingIds.has(item.id)).map((item) => item.id)).size - new Set(deleteIds.filter((id) => previousTestingIds.has(id) && !sessions.some((item) => item.id === id))).size : null;
       const byId = new Map();
       normalizePowerTrakSessions(powerTrakState.powerTrakSessions).forEach((item) => byId.set(item.id, item));
       deleteIds.forEach((id) => byId.delete(id));
@@ -1987,8 +2012,13 @@ async function accountPowerTrak(req, res) {
         .sort((a, b) => cleanSetupText(b.updatedAt).localeCompare(cleanSetupText(a.updatedAt)));
       if (powerTrakRackSessions.length > 2000) throw httpError(413, "Power Trak history has reached its session limit. Contact support before importing more.");
       const powerTrakRackReservations = normalizePowerTrakRackReservations(powerTrakState.powerTrakRackReservations).filter((item) => !startedAthleteIds.has(item.athleteId.toLowerCase()));
+      const changedRackIds = new Set(rackSessions.map((item) => item.id));
+      const affectedImportWorkouts = new Set(importedRackSessions.map((item) => item.workoutId));
+      powerTrakRackSessions.filter((item) => affectedImportWorkouts.has(item.workoutId)).forEach((item) => changedRackIds.add(item.id));
+      const retainedRackIds = new Set(powerTrakRackSessions.map((item) => item.id));
+      const responseDeletedRackIds = deleteRackSessionIds.concat(existingRackSessions.filter((item) => affectedImportWorkouts.has(item.workoutId) && !retainedRackIds.has(item.id)).map((item) => item.id));
       const savedAt = new Date().toISOString();
-      await savePowerTrakState(accountKey, {
+      const storedCounts = await savePowerTrakState(accountKey, {
         powerTrakSessions,
         powerTrakWorkouts,
         powerTrakExerciseCatalog,
@@ -1996,9 +2026,10 @@ async function accountPowerTrak(req, res) {
         powerTrakRackSessions,
         powerTrakRackReservations,
         powerTrakRackTombstones,
-        lastPowerTrakSync: { savedAt, count: sessions.length, total: powerTrakSessions.length },
-      });
-      res.status(200).json({ success: true, saved: true, sessions: powerTrakSessions, workouts: powerTrakWorkouts, exerciseCatalog: powerTrakExerciseCatalog, provisionalAthletes: powerTrakProvisionalAthletes, rackSessions: powerTrakRackSessions, rackReservations: powerTrakRackReservations, count: powerTrakSessions.length, workoutCount: powerTrakWorkouts.length, rackSessionCount: powerTrakRackSessions.length, savedAt });
+        lastPowerTrakSync: incrementalRackSave && partialHistory ? powerTrakState.lastPowerTrakSync : { savedAt, count: sessions.length, total: partialHistory ? testingTotal : powerTrakSessions.length },
+      }, { ...powerStateSaveOptions(powerTrakState, partialHistory), ...(partialHistory ? { deleteIds, deleteRackSessionIds: responseDeletedRackIds } : {}) });
+      const changedSessionIds = new Set(sessions.map((item) => item.id));
+      res.status(200).json({ success: true, saved: true, sessions: deltaResponse ? powerTrakSessions.filter((item) => changedSessionIds.has(item.id)) : powerTrakSessions, workouts: powerTrakWorkouts, exerciseCatalog: powerTrakExerciseCatalog, provisionalAthletes: powerTrakProvisionalAthletes, rackSessions: deltaResponse ? powerTrakRackSessions.filter((item) => changedRackIds.has(item.id)) : powerTrakRackSessions, rackReservations: powerTrakRackReservations, count: storedCounts.sessionCount, workoutCount: powerTrakWorkouts.length, rackSessionCount: storedCounts.rackSessionCount, savedAt, ...(deltaResponse ? { historyDelta: true, deletedSessionIds: deleteIds, deletedRackSessionIds: responseDeletedRackIds } : {}) });
       return;
     }
 
@@ -2033,30 +2064,37 @@ function normalizePowerLeaderboardExercises(items) {
   }).filter(Boolean).slice(0, 200);
 }
 
-async function savePowerTrakState(accountKey, state) {
-  const current = await loadAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE);
-  const currentManifest = current && current.record && current.record.chunkManifest;
-  const slot = currentManifest && currentManifest.slot === "a" ? "b" : "a";
-  const compressed = zlib.gzipSync(Buffer.from(JSON.stringify(state))).toString("base64");
-  const chunkSize = 250000;
-  const count = Math.ceil(compressed.length / chunkSize);
-  if (!count || count > 200) throw httpError(413, "Power Trak history is too large to save.");
-  for (let index = 0; index < count; index++) {
-    await saveLargeAccountScopedRecord(accountKey, `powertrak_${slot}_${index}`, {
-      data: compressed.slice(index * chunkSize, (index + 1) * chunkSize),
-    });
-  }
-  await saveAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE, {
-    chunkManifest: {
-      slot,
-      count,
-      digest: crypto.createHash("sha256").update(compressed).digest("hex"),
-    },
-  });
+function powerSessionStorageIO() {
+  return { load: loadAccountScopedRecord, loadBatch: loadAccountScopedRecords, saveRoot: publishPowerTrakSessionIndex, saveBatch: saveLargeAccountScopedRecords, expire: expireAccountScopedRecords };
 }
 
-async function loadPowerTrakState(accountKey, accountRecord) {
+function powerStateSaveOptions(state, partial = false) {
+  const indexed = state._powerHistory && state._powerHistory.storageVersion === 2;
+  return { partial: Boolean(partial && indexed), expectedVersion: indexed ? state._powerHistory.version : null, expectedRootToken: state._powerHistory && state._powerHistory.rootToken };
+}
+
+async function savePowerTrakState(accountKey, state, options = {}) {
+  return saveSessionState(accountKey, state, powerSessionStorageIO(), options);
+}
+
+async function loadPowerTrakState(accountKey, accountRecord, options = {}) {
   const scoped = await loadAccountScopedRecord(accountKey, POWER_TRAK_NAMESPACE);
+  if (scoped && scoped.record && scoped.record.storageVersion === 2) {
+    const state = await loadSessionState(accountKey, scoped.record, powerSessionStorageIO(), options);
+    state._powerHistory.storageVersion = 2;
+    return state;
+  }
+  const legacy = await loadLegacyPowerTrakState(accountKey, accountRecord, scoped);
+  const record = scoped && scoped.record;
+  const rootToken = { present: Boolean(record), token: record && (record.version || record.chunkManifest && record.chunkManifest.digest || record.updatedAt) || "" };
+  // The first mutation migrates the complete legacy state, never a filtered subset.
+  if (options.forMutation) return { ...legacy, _powerHistory: { storageVersion: 1, rootToken } };
+  const selected = selectLegacyState(legacy, options);
+  selected._powerHistory.rootToken = rootToken;
+  return selected;
+}
+
+async function loadLegacyPowerTrakState(accountKey, accountRecord, scoped) {
   if (scoped && scoped.found && scoped.record) {
     let record = scoped.record;
     if (record.chunkManifest) {

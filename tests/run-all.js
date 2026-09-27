@@ -1,10 +1,12 @@
 const fs = require("fs");
+const { spawnSync } = require("child_process");
+const powerStorageTests = spawnSync(process.execPath, ["tests/power-trak-session-storage.test.js"], { stdio: "inherit" });
+if (powerStorageTests.status !== 0) throw new Error("Power Trak session storage tests failed.");
 require("./power-trak-rack-claims.test");
 require("./power-trak-rack-queue.test");
 require("./power-leaderboard-estimate.test");
 require("./power-trak-rack-sync.test");
 require("./account-scoped-lock.test");
-const { spawnSync } = require("child_process");
 
 const htmlFiles = [
   "index.html",
@@ -6764,7 +6766,7 @@ function checkMobilePowerTrakWorkflow() {
     'if (route === "power-trak")',
     "return accountPowerTrak(req, res);",
     "async function accountPowerTrak(req, res)",
-    "async function loadPowerTrakState(accountKey, accountRecord)",
+    "async function loadPowerTrakState(accountKey, accountRecord, options = {})",
     "function normalizePowerTrakSessions(items)",
     "function normalizePowerTrakWorkouts(items)",
     "function normalizePowerTrakProvisionalAthletes(items)",
@@ -6783,7 +6785,9 @@ function checkMobilePowerTrakWorkflow() {
     "function normalizePowerTrakRows(items)",
     "function normalizePowerTrakMarks(source)",
     "await savePowerTrakState(accountKey, {",
-    "chunkManifest: {",
+    "scoped.record.storageVersion === 2",
+    "saveSessionState(accountKey, state, powerSessionStorageIO(), options)",
+    "loadSessionState(accountKey, scoped.record, powerSessionStorageIO(), options)",
     "Power Trak storage integrity check failed.",
     "powerTrakSessions",
     "powerTrakWorkouts",

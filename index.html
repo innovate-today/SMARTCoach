@@ -857,6 +857,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
 </div>
 
+<script src="/assets/power-trak-history-client.js"></script>
 <script>
 var logs=[], lid=1, rid=1, CL=null, CE=null, SM='latest', tk=null, TC={}, AR=[], MT=[], TP=[], SG=[], TPD={}, CD=[], TPA=null, GV='training', APC={}, PICK=null, EQA=null, EQUIP={items:[],records:{},inventory:[],loaded:false}, FIELD_PRACTICE={practices:[],savedPracticeIds:{},activeId:'',mode:'field'}, POWER_TRAK={sessions:[],activeId:'',metrics:['broadJump','verticalJump','medBallThrow','squat','clean']}, PAST_RESULTS={rows:[],loaded:false,loading:false,error:'',accountKey:'',query:'',eventOnly:true}, XC_TOOLS_SETUP_OPENED={}, BA={ids:{},allSelected:false}, sharedGroupSaveTimer=null, accountStatus=null, TRAINING_CUSTOMIZATION=null, STAFF=[], TP_READY=false, MT_READY=false, AR_READY=false, AR_PROMISE=null, APP_SELECTED_WORKFLOW='training', APP_WORKFLOW_HAS_STORED=false, accountPromptShown=false, coachPromptShown=false, coachNotListedAcknowledgedAt=0;
 var APP_WORKFLOWS=[
@@ -1161,14 +1162,11 @@ function powerTrakMergeSessions(remote){
   return POWER_TRAK.sessions;
 }
 function loadPowerTrakSessionsFromSmartTrak(){
-  return fetch(smartCoachApiUrl('/api/smart-trak/power-trak')+'&v='+Date.now(),{
+  return PowerTrakHistoryClient.readHistory(smartCoachApiUrl('/api/smart-trak/power-trak')+'&testingOnly=1&v='+Date.now(),{
     cache:'no-store',
     headers:smartCoachApiHeaders()
-  }).then(function(res){
-    return res.json().then(function(data){return{ok:res.ok,data:data};});
-  }).then(function(result){
-    if(!result.ok)throw new Error(result.data&&result.data.error?result.data.error:'Power Trak could not load.');
-    return powerTrakMergeSessions(result.data&&result.data.sessions||[]);
+  },fetch).then(function(data){
+    return powerTrakMergeSessions(data&&data.sessions||[]);
   });
 }
 function powerTrakSessionIdForGroup(){
@@ -1332,7 +1330,7 @@ function savePowerTrakSession(){
   session.updatedAt=session.savedAt;
   powerTrakStoreSessions();
   if(status)status.textContent='Saving Power Trak to SMART Trak...';
-  return fetch(smartCoachApiUrl('/api/smart-trak/power-trak'),{
+  return fetch(smartCoachApiUrl('/api/smart-trak/power-trak')+'&response=delta',{
     method:'POST',
     headers:smartCoachApiHeaders({'Content-Type':'application/json'}),
     body:JSON.stringify({session:session})
