@@ -2,7 +2,7 @@
 
 Status: step 1 inventory with step 2 navigation decisions approved by the user. This does not authorize changes to existing pages or workflows. The standalone `smart-trak-navigation-concept.html` is illustrative only.
 
-Step 3 rollout begins on the dashboard header: existing action nodes are regrouped under Training, Meets & Results, Tools, Quick Add, and Account, while the dashboard content and modal handlers remain unchanged. This first slice does not add Overview or change other pages' headers. Account Settings is not included. Head Coach Staff Access remains governed by the existing staff-admin permission response.
+Step 3 rollout began on the dashboard header and now includes Athletes. Existing action nodes are regrouped under Training, Meets & Results, Tools, Quick Add, and Account while page content and modal handlers remain unchanged. Overview and other pages' headers are not yet changed. Account Settings is not included. Head Coach Staff Access remains governed by the existing staff-admin permission response; the Athletes menu links to the dashboard Staff Access modal only for an authorized Head Coach.
 
 ## Current destinations
 

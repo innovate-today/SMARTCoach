@@ -65,4 +65,41 @@ assert.deepStrictEqual(removed.sort(), [
   'smarttrak_account_status_school-a', 'sc_admin_tools'
 ].sort());
 assert.strictEqual(redirected, '/dashboard.html?account=school-a');
-console.log('SMART Trak dashboard navigation tests passed.');
+
+const athleteIds = [
+  'addAthleteBtn', 'dashboardLink', 'trainingCalendarLink', 'attendanceLink',
+  'importAthletesBtn', 'equipmentLookupBtn', 'emailCalendarLinksBtn',
+  'calendarQuestionsBtn', 'emailToolsToggleBtn', 'emailParentsBtn',
+  'copyParentsBtn', 'refreshBtn'
+];
+const athleteNodes = Object.fromEntries(athleteIds.map(id => [id, element('button')]));
+const athleteHeader = element('header');
+athleteHeader.querySelector = () => element('div');
+const athleteDocument = {
+  querySelector: selector => selector === '.top' ? athleteHeader : null,
+  getElementById: id => athleteNodes[id],
+  createElement: element,
+  addEventListener() {}
+};
+let athleteRedirect = '';
+const athleteWindow = { location: { replace: path => { athleteRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: athleteDocument, window: athleteWindow, localStorage: storage,
+  sessionStorage: storage, smartCoachAccountKey: () => 'school-a',
+  pageUrl: path => path + '?account=school-a'
+});
+const athleteNav = athleteHeader.children.find(child => child.tag === 'nav');
+assert.ok(athleteNav, 'athlete navigation mounted');
+const athleteAccount = athleteNav.children.find(child => child.children[0] && child.children[0].textContent === 'Account');
+const staffLink = athleteAccount.children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(staffLink.href, '/dashboard.html?account=school-a#staff-access');
+assert.strictEqual(staffLink.hidden, true);
+athleteWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(staffLink.hidden, false);
+athleteWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: false, coach: { index: 1, role: 'Coach' } });
+assert.strictEqual(staffLink.hidden, true);
+const athleteSignOut = athleteAccount.children[1].children.find(child => child.textContent === 'Sign Out');
+athleteSignOut.handlers.click();
+assert.strictEqual(athleteRedirect, '/athletes.html?account=school-a');
+for (const id of athleteIds) assert.ok(source.includes("'" + id + "'"), id + ' remains mapped');
+console.log('SMART Trak shared navigation tests passed.');
