@@ -5,6 +5,7 @@ if (powerStorageTests.status !== 0) throw new Error("Power Trak session storage 
 require("./power-trak-rack-claims.test");
 require("./power-trak-rack-queue.test");
 require("./power-leaderboard-estimate.test");
+require("./power-trak-rack-history.test");
 require("./power-trak-rack-sync.test");
 require("./account-scoped-lock.test");
 

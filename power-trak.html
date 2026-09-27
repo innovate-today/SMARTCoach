@@ -174,6 +174,22 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
 
   <section id="historyPanel" class="tab-panel" hidden>
 
+  <section class="panel" style="margin-bottom:14px">
+    <div class="panelhead"><h2>Completed Rack Workouts</h2><span id="rackHistoryCount" class="status"></span><button id="exportRackHistoryBtn" class="utility-action" type="button">Export CSV</button></div>
+    <div class="controls">
+      <input id="rackHistorySearch" type="search" placeholder="Search athlete, workout, rack, or exercise" aria-label="Search completed rack history">
+      <label class="field">From<input id="rackHistoryStart" type="date"></label>
+      <label class="field">To<input id="rackHistoryEnd" type="date"></label>
+      <button id="resetRackHistoryBtn" class="utility-action" type="button">Reset View</button>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Date</th><th>Workout / Rack</th><th>Athlete</th><th>Exercise</th><th>Set / Reps</th><th>Result</th><th>Completion</th><th>Actions</th></tr></thead>
+      <tbody id="rackHistoryRows"></tbody>
+    </table></div>
+  </section>
+
+  <h2>Testing History</h2>
+
   <section class="controls" aria-label="Power Trak filters">
     <input id="search" type="search" placeholder="Search athlete, group, test, or note" autocomplete="off">
     <select id="groupSelect" aria-label="Group"><option value="">All groups</option></select>
@@ -326,6 +342,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
 <script src="/power-trak-rack-queue.js"></script>
 <script src="/power-trak-rack-sync.js"></script>
 <script src="/assets/power-trak-history-client.js"></script>
+<script src="/assets/power-trak-rack-history.js"></script>
 <script>
 var POWER_METRICS={broadJump:'Broad Jump',verticalJump:'Vertical',medBallThrow:'Med Ball',squat:'Squat',clean:'Clean',bench:'Bench'};
 var COACH_POWER_EXERCISES=['Abduction Lift/Inner rotation-5','Abduction Lifts-5','Arm Raise(Front/Side)','Bent knee abduction-5','Bodyweight Squat','Box Jumps','Bulgarian Split Squat','Calf Raise','Clam w/knee extension-2','Clam-2','Crunches','DB Curl Press','DB Fly','DB Front/Side Raise','DB Row','DB Runners','Dips','Double Leg Bridge-1','Double RDL','Fire Hydrants-5','Front Squat','Glute Ham','Hip Flexor Resistance','Incline Fly','Jump Squat','Knee Tucks','Large Clockwise Circles-5','Large Counter Clockwise Circles-5','Lateral Steps','Linear Hops','Lunge','Plank Reach & Lift','Push Ups','Red Band Hip Flexion','Reverse Hyper','Reverse Row','Runners w/ 2 or 3 lbs','Russian Twist','Side Plank Hip Dip Leg Raise-4','Side Plank Hold-4','Side Plank Leg Lift Hold(30sec)-4','Side Plank Leg Lift-4','Side Plank Hip Touch/Knee Tuck','Sidebend-3','Sideplank w/leg raise-4','Single Leg Bridge-1','Single RDL','Small Clockwise Circles-5','Small Counter Clockwise Circles-5','Split Squat','Split Squat Hop','Squat Hops','Squats','Step Up','Superman(both hands)','Superman(left hand)','Superman(no hands)','Superman(right hand)'];
@@ -356,6 +373,20 @@ function formatDate(value){if(!value)return'--';var parts=String(value).slice(0,
 function fetchJson(url){if(url.indexOf('/api/smart-trak/power-trak')>=0)return PowerTrakHistoryClient.readHistory(url,{cache:'no-store',headers:headers()},fetch);return fetch(url,{cache:'no-store',headers:headers()}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data&&data.error||'Load failed');return data})})}
 function fetchPowerTrak(url,options){if(!options||!['POST','PATCH'].includes(options.method))return fetch(url,options);return fetch(PowerTrakHistoryClient.withQuery(url,{response:'delta'}),options).then(function(response){var readJson=response.json.bind(response);response.json=function(){return readJson().then(function(data){if(!response.ok||!data.historyDelta)return data;var merged=PowerTrakHistoryClient.mergeDelta(data,state);state.sessions=merged.sessions;state.rackSessions=merged.rackSessions;return merged})};return response})}
 function fetchPowerRackActivity(){var knownActive=state.rackSessions.filter(function(item){return item.status==='active'}).map(function(item){return item.id});var url=PowerTrakHistoryClient.withQuery(apiUrl('/api/smart-trak/power-trak'),{activeOnly:1,rackIds:knownActive.slice(0,64).join(',')});return fetchJson(url).then(function(data){var returned=new Set((data.rackSessions||[]).map(function(item){return item.id}));data.rackSessions=PowerTrakHistoryClient.mergeDelta({historyDelta:true,sessions:[],rackSessions:data.rackSessions,deletedRackSessionIds:knownActive.slice(0,64).filter(function(id){return !returned.has(id)})},state).rackSessions;return data})}
+function rackHistoryRows(){return PowerTrakRackHistory.rows(state.rackSessions,{search:document.getElementById('rackHistorySearch').value,start:document.getElementById('rackHistoryStart').value,end:document.getElementById('rackHistoryEnd').value})}
+function renderRackHistory(){
+  var rows=rackHistoryRows();
+  document.getElementById('rackHistoryCount').textContent=new Set(rows.map(function(row){return row.rackId})).size+' sessions';
+  document.getElementById('exportRackHistoryBtn').disabled=!rows.length;
+  document.getElementById('rackHistoryRows').innerHTML=rows.length?rows.map(function(row){return'<tr><td>'+esc(formatDate(row.date))+'</td><td>'+esc(row.workout)+'<div class="small">'+esc(row.rack)+'</div></td><td class="name">'+esc(row.athlete)+'</td><td>'+esc(row.exercise)+'</td><td>'+esc(row.set)+' · '+esc(row.reps)+' reps'+(row.sides?'<div class="small">'+esc(row.sides)+'</div>':'')+'</td><td>'+esc(row.result)+'</td><td>'+esc(row.status)+'</td><td><button class="edit" type="button" data-history-rack="'+esc(row.rackId)+'">Open Session</button></td></tr>'}).join(''):'<tr><td colspan="8" class="empty">No completed rack workouts in this view.</td></tr>';
+}
+var renderRackSessionsCore=renderRackSessions;
+renderRackSessions=function(){renderRackSessionsCore();renderRackHistory()};
+['rackHistorySearch','rackHistoryStart','rackHistoryEnd'].forEach(function(id){document.getElementById(id).addEventListener('input',renderRackHistory)});
+document.getElementById('resetRackHistoryBtn').addEventListener('click',function(){['rackHistorySearch','rackHistoryStart','rackHistoryEnd'].forEach(function(id){document.getElementById(id).value=''});renderRackHistory()});
+document.querySelector('[data-power-tab="history"]').addEventListener('click',renderRackHistory);
+document.getElementById('rackHistoryRows').addEventListener('click',function(event){var button=event.target.closest('[data-history-rack]');if(!button)return;resetRackSessionView();state.openRackSessionId=button.getAttribute('data-history-rack');document.querySelector('[data-power-tab="sessions"]').click();document.getElementById('rackSessionTable').scrollIntoView({block:'start'})});
+document.getElementById('exportRackHistoryBtn').addEventListener('click',function(){var rows=rackHistoryRows();if(!rows.length)return;var lines=[['Date','Workout','Rack','Athlete','Exercise','Set / Rep','Actual Reps','Result','Left / Right','Completion'].map(csvCell).join(',')];rows.forEach(function(row){lines.push([row.date,row.workout,row.rack,row.athlete,row.exercise,row.set,row.reps,row.result,row.sides,row.status].map(csvCell).join(','))});downloadTextFile('power-trak-rack-history-'+dateStamp()+'.csv',lines.join('\n'),'text/csv;charset=utf-8')});
 function defaultBrandLogo(){return'/assets/smart-logo.png'}
 function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo()}})}
 function loadBrandLogo(){var account=smartCoachAccountKey();if(!account||account==='default'){applyBrandLogo('');return Promise.resolve()}return fetchJson(apiUrl('/api/smart-trak/account-status')).then(function(data){applyBrandLogo(data&&data.logoUrl)}).catch(function(){applyBrandLogo('')})}
