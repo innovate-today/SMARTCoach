@@ -114,11 +114,12 @@ module.exports = async function handler(req, res) {
   try {
     const includeMeetHistory = ["1", "true", "yes"].includes(clean(req.query && req.query.meetHistory).toLowerCase());
     const lightDashboard = dashboardLightRequested(req);
+    const overviewDashboard = dashboardOverviewRequested(req);
     const refreshDashboard = dashboardRefreshRequested(req);
     if (!includeMeetHistory && dashboardSnapshotRequested(req)) {
       const snapshot = await loadDashboardSnapshot(accountKey);
       if (snapshot) {
-        res.status(200).json(snapshot);
+        res.status(200).json(overviewDashboard ? dashboardOverviewPayload(snapshot) : snapshot);
         return;
       }
       res.status(404).json({ error: "Dashboard snapshot is not ready.", snapshotMissing: true });
@@ -170,7 +171,7 @@ module.exports = async function handler(req, res) {
       recentTrainingSyncs,
     };
     if (!includeMeetHistory) await saveDashboardSnapshot(accountKey, payload).catch(() => {});
-    res.status(200).json(payload);
+    res.status(200).json(overviewDashboard ? dashboardOverviewPayload(payload) : payload);
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message || "Dashboard lookup failed." });
   }
@@ -178,6 +179,7 @@ module.exports = async function handler(req, res) {
 
 module.exports.publicMilesBoard = publicMilesBoard;
 module.exports.publicResultsBoard = publicResultsBoard;
+module.exports.dashboardOverviewPayload = dashboardOverviewPayload;
 module.exports.publicXcProgressionBoard = publicXcProgressionBoard;
 module.exports.publicXcTop20Board = publicXcTop20Board;
 
@@ -1120,6 +1122,34 @@ function dashboardSnapshotRequested(req) {
 
 function dashboardLightRequested(req) {
   return ["1", "true", "yes"].includes(clean(req && req.query && req.query.light).toLowerCase());
+}
+
+function dashboardOverviewRequested(req) {
+  return ["1", "true", "yes"].includes(clean(req && req.query && req.query.overview).toLowerCase());
+}
+
+function dashboardOverviewPayload(payload) {
+  const athletes = Array.isArray(payload.athletes) ? payload.athletes : [];
+  const recentMeetResults = Array.isArray(payload.recentMeetResults) ? payload.recentMeetResults : [];
+  return {
+    success: true,
+    snapshot: !!payload.snapshot,
+    snapshotSavedAt: payload.snapshotSavedAt,
+    generatedAt: payload.generatedAt,
+    activeAthletes: athletes.length,
+    missingFitness: athletes.filter((row) => !row.currentFitness || !row.currentFitness.display).length,
+    totals: {
+      currentWeekRuns: Number(payload.totals && payload.totals.currentWeekRuns) || 0,
+      currentWeekVolumeMiles: Number(payload.totals && payload.totals.currentWeekVolumeMiles) || 0,
+    },
+    recentMeetResults: recentMeetResults.slice(0, 5).map((row) => ({
+      athleteName: row.athleteName,
+      relayTeamName: row.relayTeamName,
+      event: row.event,
+      resultDisplay: row.resultDisplay,
+      meetName: row.meetName,
+    })),
+  };
 }
 
 function dashboardRefreshRequested(req) {

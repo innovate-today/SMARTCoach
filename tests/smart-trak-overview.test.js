@@ -1,6 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
+const { dashboardOverviewPayload } = require('../api/ghl/dashboard');
 
 const html = fs.readFileSync('overview.html', 'utf8');
 const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1];
@@ -26,13 +27,28 @@ const browserStorage = {
 const requests = [];
 const payload = {
   generatedAt: '2026-09-27T15:00:00Z',
+  activeAthletes: 2,
+  missingFitness: 1,
   totals: { currentWeekRuns: 8, currentWeekVolumeMiles: 32.4 },
-  athletes: [
-    { name: 'A', currentFitness: { display: '5K 19:00' } },
-    { name: 'B', currentFitness: { display: '' } }
-  ],
   recentMeetResults: [{ athleteName: 'A', event: '5K', resultDisplay: '19:00', meetName: 'Fall Invite' }]
 };
+const projected = dashboardOverviewPayload({
+  ...payload,
+  snapshot: true,
+  athletes: [
+    { name: 'A', currentFitness: { display: '5K 19:00' }, privateDetail: 'not for overview' },
+    { name: 'B', currentFitness: { display: '' } }
+  ],
+  recentTrainingSyncs: [{ privateDetail: 'not for overview' }],
+  recentMeetResults: [{ ...payload.recentMeetResults[0], privateDetail: 'not for overview' }]
+});
+assert.strictEqual(projected.activeAthletes, 2);
+assert.strictEqual(projected.missingFitness, 1);
+assert.strictEqual(projected.snapshot, true);
+assert.strictEqual(projected.recentMeetResults[0].athleteName, 'A');
+assert.ok(!('athletes' in projected));
+assert.ok(!('recentTrainingSyncs' in projected));
+assert.ok(!('privateDetail' in projected.recentMeetResults[0]));
 const context = {
   URL, URLSearchParams, Date, location: { search: '?account=school-a', origin: 'https://example.test' },
   localStorage: browserStorage, sessionStorage: browserStorage,
@@ -115,6 +131,7 @@ setTimeout(() => {
   assert.strictEqual(lockedNode('overviewContent').hidden, true);
   assert.strictEqual(lockedRequests.length, 1, 'locked view does not request dashboard data');
   assert.ok(requests.some(request => request.path.includes('snapshot=1')), 'Overview requests the saved snapshot first');
+  assert.ok(requests.some(request => request.path.includes('overview=1')), 'Overview requests only its display fields');
   assert.ok(!requests.some(request => request.path.includes('/dashboard?') && !request.path.includes('snapshot=1')), 'fresh snapshot avoids the live aggregation');
   (async () => {
     const fresh = overviewLoadCase({ ...payload, snapshot: true, snapshotSavedAt: new Date().toISOString() });

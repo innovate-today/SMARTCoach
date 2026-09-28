@@ -87,9 +87,9 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
   function showAccess(message,blocked){content.hidden=true;accessPanel.hidden=false;document.getElementById('accessMessage').textContent=message||'Enter your coach access code to open this account.';document.getElementById('accessForm').hidden=!!blocked;if(!blocked)document.getElementById('accessCode').focus();}
   function showError(message){error.textContent=message;error.hidden=false;document.getElementById('lastUpdated').textContent='Update failed';}
   function render(data){
-    var rows=Array.isArray(data.athletes)?data.athletes:[],totals=data.totals||{},meets=Array.isArray(data.recentMeetResults)?data.recentMeetResults:[];
-    var missing=rows.filter(function(row){return !row.currentFitness||!row.currentFitness.display;}).length;
-    document.getElementById('activeAthletes').textContent=String(rows.length);
+    var totals=data.totals||{},meets=Array.isArray(data.recentMeetResults)?data.recentMeetResults:[];
+    var missing=Number(data.missingFitness)||0;
+    document.getElementById('activeAthletes').textContent=String(Number(data.activeAthletes)||0);
     document.getElementById('weekRuns').textContent=String(Number(totals.currentWeekRuns)||0);
     document.getElementById('weekMiles').textContent=(Number(totals.currentWeekVolumeMiles)||0).toLocaleString(undefined,{maximumFractionDigits:1})+' mi';
     document.getElementById('missingFitness').textContent=String(missing);
@@ -104,7 +104,7 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
   }
   var loadSequence=0;
   function loadDashboard(forceRefresh,sequence){
-    var live='/api/smart-trak/dashboard?light=1&v='+Date.now();
+    var live='/api/smart-trak/dashboard?light=1&overview=1&v='+Date.now();
     if(forceRefresh)return request(live+'&refresh=1').then(function(data){if(sequence===loadSequence)render(data);});
     return request(live+'&snapshot=1').catch(function(failure){
       if(failure&&failure.snapshotMissing)return request(live);
