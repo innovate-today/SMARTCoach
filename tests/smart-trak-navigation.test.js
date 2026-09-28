@@ -497,6 +497,34 @@ const setupSource = fs.readFileSync('plan-setup.html', 'utf8');
 assert.ok(setupSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(setupSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(setupSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
+const importNodes = Object.fromEntries(['dashboardLink', 'calendarLink', 'setupLink', 'builderLink', 'parsePasteBtn'].map(id => [id, element('button')]));
+const importHeader = element('header');
+importHeader.querySelector = selector => selector === '.actions' ? element('div') : null;
+let importRedirect = '';
+const importWindow = { location: { replace: path => { importRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: {
+    querySelector: selector => selector === '.top' ? importHeader : null,
+    getElementById: id => importNodes[id], createElement: element, addEventListener() {}
+  },
+  window: importWindow, localStorage: storage, sessionStorage: storage,
+  accountKey: () => 'school-a', pageUrl: path => path + '?account=school-a'
+});
+const importNav = importHeader.children.find(child => child.tag === 'nav');
+assert.ok(importNav, 'Upload/Paste Plan navigation mounted');
+assert.strictEqual(menuByName(importNav, 'Training').children[0].attributes['aria-current'], 'page');
+for (const id of ['calendarLink', 'setupLink', 'builderLink']) assert.ok(menuByName(importNav, 'Training').children[1].children.includes(importNodes[id]));
+assert.ok(!importNav.children.includes(importNodes.parsePasteBtn), 'paste preview stays in the page');
+const importStaff = menuByName(importNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(importStaff.hidden, true);
+importWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(importStaff.hidden, false);
+menuByName(importNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(importRedirect, '/plan-import.html?account=school-a');
+const importSource = fs.readFileSync('plan-import.html', 'utf8');
+assert.ok(importSource.includes('/assets/smart-trak-navigation.css'));
+assert.ok(importSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(importSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
