@@ -466,6 +466,37 @@ const weatherSource = fs.readFileSync('weather.html', 'utf8');
 assert.ok(weatherSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(weatherSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(weatherSource.includes("headers['X-SMARTCoach-Session']=session"));
+const setupNodes = Object.fromEntries(['dashboardLink', 'trainingCalendarLink', 'planImportLink', 'planBuilderLink', 'fitnessGenderFilter'].map(id => [id, element('button')]));
+const setupHeader = element('header');
+const setupActions = element('div');
+const setupAdminControl = element('div');
+setupActions.querySelector = selector => selector === '.account-control' ? setupAdminControl : null;
+setupHeader.querySelector = selector => selector === '.top-actions' ? setupActions : null;
+let setupRedirect = '';
+const setupWindow = { location: { replace: path => { setupRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: {
+    querySelector: selector => selector === '.top' ? setupHeader : null,
+    getElementById: id => setupNodes[id], createElement: element, addEventListener() {}
+  },
+  window: setupWindow, localStorage: storage, sessionStorage: storage,
+  smartCoachAccountKey: () => 'school-a', smartCoachPageUrl: path => path + '?account=school-a'
+});
+const setupNav = setupHeader.children.find(child => child.tag === 'nav');
+assert.ok(setupNav, 'Athlete Setup navigation mounted');
+assert.strictEqual(menuByName(setupNav, 'Training').children[0].attributes['aria-current'], 'page');
+for (const id of ['trainingCalendarLink', 'planImportLink', 'planBuilderLink']) assert.ok(menuByName(setupNav, 'Training').children[1].children.includes(setupNodes[id]));
+assert.ok(setupNav.children.includes(setupAdminControl), 'admin-only account control stays in the header, outside Account menu');
+const setupStaff = menuByName(setupNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(setupStaff.hidden, true);
+setupWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(setupStaff.hidden, false);
+menuByName(setupNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(setupRedirect, '/plan-setup.html?account=school-a');
+const setupSource = fs.readFileSync('plan-setup.html', 'utf8');
+assert.ok(setupSource.includes('/assets/smart-trak-navigation.css'));
+assert.ok(setupSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(setupSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
