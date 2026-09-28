@@ -38,8 +38,8 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Manage Meets | `#manageMeetsBtn` on dashboard or Training Calendar. |
 | Create Training Session | Existing Training Calendar workflow. |
 | Add Speed Result | Existing Speed Trak workflow; direct-entry URL/action needs confirmation. |
-| Create Strength Workout / Set Up Rack | Existing Power Trak tabs/actions; direct-entry URL/action needs confirmation. |
-| Start Field Practice | Existing Field Practice workflow. |
+| Create Strength Workout / Set Up Rack | Quick Add opens the existing Power Trak workout builder with a new draft, or selects the existing Rack Setup tab. It does not save or start a rack automatically. |
+| New Field Practice | Quick Add opens the existing Field Practice form with a fresh practice. |
 | Add Athlete / Import Athletes | Existing Athletes page actions. |
 
 Training Calendar also has Athlete Setup (`/plan-setup.html`), Upload/Paste Plan (`/plan-import.html`), Auto Build Plan (`/plan-builder.html`), and Training Customization. Its Strava beta link retains the existing demo-account, admin-mode, and Head Coach visibility checks when moved into shared navigation. Athletes also provides Attendance (`/attendance.html`), parent email/calendar actions, and individual Docu/Equipment actions. These are retained even if they do not become global navigation items.

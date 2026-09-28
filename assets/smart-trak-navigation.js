@@ -259,6 +259,22 @@
     quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
     quick.appendChild(link('Import Athletes','/athletes.html#import-athletes'));
   }
+  if(!fieldPage)quick.appendChild(link('New Field Practice','/field-practice.html#new-practice'));
+  if(powerPage){
+    var newWorkout=document.createElement('button');
+    newWorkout.type='button';
+    newWorkout.textContent='Create Strength Workout';
+    newWorkout.addEventListener('click',function(){document.querySelector('[data-power-tab="workouts"]').click();document.getElementById('newWorkoutBtn').click();});
+    quick.appendChild(newWorkout);
+    var rackSetup=document.createElement('button');
+    rackSetup.type='button';
+    rackSetup.textContent='Set Up Rack';
+    rackSetup.addEventListener('click',function(){document.querySelector('[data-power-tab="rack"]').click();});
+    quick.appendChild(rackSetup);
+  }else{
+    quick.appendChild(link('Create Strength Workout','/power-trak.html#new-workout'));
+    quick.appendChild(link('Set Up Rack','/power-trak.html#rack-setup'));
+  }
 
   var account=menu('Account');
   var staff=dashboardPage?move(account,'changeCodeBtn'):link('Staff Access','/dashboard.html#staff-access');

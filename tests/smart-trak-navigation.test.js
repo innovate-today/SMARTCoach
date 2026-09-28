@@ -592,7 +592,14 @@ assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find
 assert.deepStrictEqual(overviewLinks('Meets & Results'), ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator']);
 assert.strictEqual(menuByName(overviewNav, 'Meets & Results').children[1].children.find(child => child.textContent === 'Results').href, '/meet-history.html?account=school-a#results-board');
 assert.deepStrictEqual(overviewLinks('Tools'), ['Keep Trak', 'Weather']);
-assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes']);
+assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes', 'New Field Practice', 'Create Strength Workout', 'Set Up Rack']);
+const overviewQuick = menuByName(overviewNav, 'Quick Add').children[1].children;
+assert.strictEqual(overviewQuick.find(child => child.textContent === 'New Field Practice').href, '/field-practice.html?account=school-a#new-practice');
+assert.strictEqual(overviewQuick.find(child => child.textContent === 'Create Strength Workout').href, '/power-trak.html?account=school-a#new-workout');
+assert.strictEqual(overviewQuick.find(child => child.textContent === 'Set Up Rack').href, '/power-trak.html?account=school-a#rack-setup');
+assert.ok(menuByName(fieldNav, 'Quick Add').children[1].children.includes(fieldNodes.newBtn), 'Field Practice keeps its local New Practice action');
+assert.ok(menuByName(powerNav, 'Quick Add').children[1].children.some(child => child.textContent === 'Create Strength Workout' && child.tag === 'button'));
+assert.ok(menuByName(powerNav, 'Quick Add').children[1].children.some(child => child.textContent === 'Set Up Rack' && child.tag === 'button'));
 assert.ok(overviewNav.children.includes(overviewNodes.overviewRefreshBtn));
 menuByName(overviewNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
 assert.strictEqual(overviewRedirect, '/overview.html?account=school-a');
@@ -611,6 +618,9 @@ const resultsSharingSource = fs.readFileSync('assets/meet-results-board-sharing.
 new Function(resultsSharingSource);
 assert.ok(meetSource.includes('<script src="/assets/meet-results-board-sharing.js"></script>'));
 assert.ok(meetSource.includes("location.hash==='#results-board'&&window.openMeetResultsBoardSharing"));
+assert.ok(fieldSource.includes("if(location.hash==='#new-practice')newPractice()"));
+assert.ok(powerSource.includes("if(location.hash==='#new-workout')"));
+assert.ok(powerSource.includes("else if(location.hash==='#rack-setup')"));
 for (const fragment of ['/api/smart-trak/results-board-sharing?', '/api/smart-trak/results-board-link?', 'Copy Display Link', 'Turn Off Link', 'data-board-order']) {
   assert.ok(resultsSharingSource.includes(fragment), fragment + ' remains in Meet History Results Board');
 }
