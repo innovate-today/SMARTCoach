@@ -374,6 +374,39 @@ const recordsSource = fs.readFileSync('records.html', 'utf8');
 assert.ok(recordsSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(recordsSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(recordsSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
+for (const [simulator, peer, path] of [
+  ['track', 'xcSimulatorLink', '/track-simulator.html'],
+  ['xc', 'trackSimulatorLink', '/xc-simulator.html']
+]) {
+  const simNodes = Object.fromEntries(['dashboardLink', 'meetHistoryLink', 'recordsLink', peer, 'resetBtn'].map(id => [id, element('button')]));
+  const simHeader = element('header');
+  simHeader.querySelector = selector => selector === '.actions' ? element('div') : null;
+  let simRedirect = '';
+  const simWindow = { location: { replace: target => { simRedirect = target; } } };
+  vm.runInNewContext(source, {
+    document: {
+      querySelector: selector => selector === '.top' ? simHeader : null,
+      getElementById: id => simNodes[id], createElement: element, addEventListener() {}
+    },
+    window: simWindow, localStorage: storage, sessionStorage: storage,
+    accountKey: () => 'school-a', pageUrl: target => target + '?account=school-a'
+  });
+  const simNav = simHeader.children.find(child => child.tag === 'nav');
+  assert.ok(simNav, simulator + ' simulator navigation mounted');
+  assert.strictEqual(menuByName(simNav, 'Meets & Results').children[0].attributes['aria-current'], 'page');
+  for (const id of ['meetHistoryLink', 'recordsLink', peer]) assert.ok(menuByName(simNav, 'Meets & Results').children[1].children.includes(simNodes[id]));
+  assert.ok(simNav.children.includes(simNodes.resetBtn), 'Reset remains directly available');
+  const simStaff = menuByName(simNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+  assert.strictEqual(simStaff.hidden, true);
+  simWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+  assert.strictEqual(simStaff.hidden, false);
+  menuByName(simNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+  assert.strictEqual(simRedirect, path + '?account=school-a');
+  const simSource = fs.readFileSync(simulator + '-simulator.html', 'utf8');
+  assert.ok(simSource.includes('/assets/smart-trak-navigation.css'));
+  assert.ok(simSource.includes('/assets/smart-trak-navigation.js'));
+  assert.ok(simSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
+}
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],

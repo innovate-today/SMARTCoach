@@ -93,6 +93,7 @@ tr:last-child td{border-bottom:0}
   button,.linkbtn{text-align:center}
 }
 </style>
+<link rel="stylesheet" href="/assets/smart-trak-navigation.css">
 </head>
 <body>
 <main class="page">
@@ -308,10 +309,11 @@ function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBran
 function ensureAccountAccess(){
   return fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey())+'&v='+Date.now(),{cache:'no-store',headers:apiHeaders()}).then(function(res){return res.json().then(function(data){return{ok:res.ok,data:data};});}).then(function(result){
     applyBrandLogo(result.data&&result.data.logoUrl);
+    if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(result.ok?result.data:null);
     if(result.data&&result.data.accessReady===false){showAccessBlocked(result.data);return false;}
     if(result.data&&result.data.accessCodeRequired&&!result.data.coachAccessUnlocked&&!result.data.deviceAccessReady){showAccess(result.data);return false;}
     els.accessPanel.hidden=true;els.mainGrid.hidden=false;return true;
-  }).catch(function(){applyBrandLogo('');return true;});
+  }).catch(function(){applyBrandLogo('');if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null);return true;});
 }
 function showAccess(data){els.mainGrid.hidden=true;els.accessPanel.hidden=false;els.accessSubmit.disabled=false;els.accessCode.disabled=false;els.accessCode.value='';els.accessStatus.textContent='Enter the access code for '+(data&&data.accountKey?data.accountKey:'this account')+'.';els.accessStatus.style.color='var(--muted)';setTimeout(function(){els.accessCode.focus();},50);}
 function showAccessBlocked(data){els.mainGrid.hidden=true;els.accessPanel.hidden=false;els.accessStatus.textContent=(data&&data.subscriptionBlockedReason)||(data&&data.error)||'SMART Trak access is blocked for this account.';els.accessStatus.style.color='var(--bad)';els.accessSubmit.disabled=true;els.accessCode.disabled=true;}
@@ -716,6 +718,7 @@ function init(){
 }
 init();
 </script>
+<script src="/assets/smart-trak-navigation.js"></script>
 <script src="/assets/smartcoach-help-widget.js" async></script>
 </body>
 </html>
