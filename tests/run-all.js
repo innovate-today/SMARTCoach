@@ -2,6 +2,8 @@ const fs = require("fs");
 const { spawnSync } = require("child_process");
 const powerStorageTests = spawnSync(process.execPath, ["tests/power-trak-session-storage.test.js"], { stdio: "inherit" });
 if (powerStorageTests.status !== 0) throw new Error("Power Trak session storage tests failed.");
+const powerQuickLoadTests = spawnSync(process.execPath, ["tests/power-trak-quick-load.test.js"], { stdio: "inherit" });
+if (powerQuickLoadTests.status !== 0) throw new Error("Power Trak staged load tests failed.");
 require("./power-trak-rack-claims.test");
 require("./power-trak-rack-queue.test");
 require("./power-leaderboard-estimate.test");
