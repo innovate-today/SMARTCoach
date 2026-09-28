@@ -59,6 +59,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:
 @media(max-width:760px){.rack-kiosk .rack-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.rack-kiosk .rack-live-grid{grid-template-columns:minmax(0,1fr) 220px}.rack-kiosk .rack-queue{border-top:0;border-left:1px solid var(--line);padding:8px}.rack-kiosk .late-join .field{min-width:160px}}
 .rir-control{display:grid;grid-template-columns:repeat(6,44px);gap:5px;justify-content:center;margin-top:8px}.rir-control button{min-height:40px;padding:5px}.rir-control button.on{background:var(--blue);color:#fff}.rir-builder{display:flex;align-items:end;gap:8px}.rir-builder input[type="checkbox"]{width:18px;height:18px;margin-bottom:10px}
 </style>
+<link rel="stylesheet" href="/assets/smart-trak-navigation.css">
 </head>
 <body>
 <main class="page">
@@ -389,7 +390,7 @@ document.getElementById('rackHistoryRows').addEventListener('click',function(eve
 document.getElementById('exportRackHistoryBtn').addEventListener('click',function(){var rows=rackHistoryRows();if(!rows.length)return;var lines=[['Date','Workout','Rack','Athlete','Exercise','Set / Rep','Actual Reps','Result','Left / Right','Completion'].map(csvCell).join(',')];rows.forEach(function(row){lines.push([row.date,row.workout,row.rack,row.athlete,row.exercise,row.set,row.reps,row.result,row.sides,row.status].map(csvCell).join(','))});downloadTextFile('power-trak-rack-history-'+dateStamp()+'.csv',lines.join('\n'),'text/csv;charset=utf-8')});
 function defaultBrandLogo(){return'/assets/smart-logo.png'}
 function applyBrandLogo(logoUrl){var src=String(logoUrl||'').trim()||defaultBrandLogo();document.querySelectorAll('[data-brand-logo]').forEach(function(img){img.src=src;img.onerror=function(){img.onerror=null;img.src=defaultBrandLogo()}})}
-function loadBrandLogo(){var account=smartCoachAccountKey();if(!account||account==='default'){applyBrandLogo('');return Promise.resolve()}return fetchJson(apiUrl('/api/smart-trak/account-status')).then(function(data){applyBrandLogo(data&&data.logoUrl)}).catch(function(){applyBrandLogo('')})}
+function loadBrandLogo(){var account=smartCoachAccountKey();if(!account||account==='default'){applyBrandLogo('');if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null);return Promise.resolve()}return fetchJson(apiUrl('/api/smart-trak/account-status')).then(function(data){applyBrandLogo(data&&data.logoUrl);if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(data)}).catch(function(){applyBrandLogo('');if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null)})}
 function csvCell(value){var text=String(value==null?'':value);return /[",\n\r]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text}
 function safeFilePart(value){return String(value||'power-trak').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80)||'power-trak'}
 function dateStamp(){var d=new Date();return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')}
@@ -985,5 +986,6 @@ els.rackLive.addEventListener('click',function(event){
   });
 });
 </script>
+<script src="/assets/smart-trak-navigation.js"></script>
 </body>
 </html>

@@ -274,6 +274,46 @@ assert.strictEqual(speedRedirect, '/speed-trak.html?account=school-a');
 const speedSource = fs.readFileSync('speed-trak.html', 'utf8');
 assert.ok(speedSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(speedSource.includes('window.smartTrakNavigationUpdateAccess(data)'));
+const powerIds = ['rackPwaLink', 'dashboardLink', 'trainingLink', 'downloadCsvBtn', 'deleteSessionBtn', 'refreshBtn'];
+const powerNodes = Object.fromEntries(powerIds.map(id => [id, element('button')]));
+const powerHeader = element('header');
+const powerActions = element('div');
+powerHeader.querySelector = selector => selector === '.top-actions' ? powerActions : null;
+const powerDocument = {
+  body: { classList: { contains: () => false } },
+  querySelector: selector => selector === '.top' ? powerHeader : null,
+  getElementById: id => powerNodes[id],
+  createElement: element, addEventListener() {}
+};
+let powerRedirect = '';
+const powerWindow = { location: { replace: path => { powerRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: powerDocument, window: powerWindow, localStorage: storage,
+  sessionStorage: storage, smartCoachAccountKey: () => 'school-a',
+  pageUrl: path => path + '?account=school-a'
+});
+const powerNav = powerHeader.children.find(child => child.tag === 'nav');
+assert.ok(powerNav, 'Power Trak coach navigation mounted');
+assert.strictEqual(powerNav.children.find(child => child.textContent === 'Power Trak').attributes['aria-current'], 'page');
+assert.ok(menuByName(powerNav, 'Training').children[1].children.includes(powerNodes.trainingLink));
+for (const id of ['rackPwaLink', 'downloadCsvBtn', 'deleteSessionBtn', 'refreshBtn']) assert.ok(powerNav.children.includes(powerNodes[id]), id + ' remains available');
+const powerStaff = menuByName(powerNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(powerStaff.hidden, true);
+powerWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(powerStaff.hidden, false);
+menuByName(powerNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(powerRedirect, '/power-trak.html?account=school-a');
+const kioskHeader = element('header');
+kioskHeader.querySelector = () => element('div');
+vm.runInNewContext(source, {
+  document: { ...powerDocument, body: { classList: { contains: name => name === 'rack-kiosk' } }, querySelector: () => kioskHeader },
+  window: {}, smartCoachAccountKey: () => 'school-a', pageUrl: path => path
+});
+assert.strictEqual(kioskHeader.children.length, 0, 'Rack iPad mode keeps its existing navigation');
+const powerSource = fs.readFileSync('power-trak.html', 'utf8');
+assert.ok(powerSource.includes('/assets/smart-trak-navigation.css'));
+assert.ok(powerSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(powerSource.includes('window.smartTrakNavigationUpdateAccess(data)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
