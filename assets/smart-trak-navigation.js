@@ -89,6 +89,7 @@
     training.appendChild(link('Upload/Paste Plan','/plan-import.html'));
     training.appendChild(link('Auto Build Plan','/plan-builder.html'));
     training.appendChild(link('Training Customization','/training-calendar.html#training-customization'));
+    training.appendChild(link('Fitness Review','/dashboard.html#fitness-review'));
   }
   else if(builderPage){
     move(training,'trainingCalendarLink','Training Calendar');

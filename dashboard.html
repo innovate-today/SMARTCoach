@@ -2906,7 +2906,7 @@ var tableSorts={
 };
 var DASHBOARD_VIEW_STATE_VERSION='2026-09-12-recent-meet-date-default';
 var pendingDashboardAction=(function(){
-  try{return new URLSearchParams(window.location.search||'').get('action')||'';}catch(e){return '';}
+  try{return window.location.hash==='#fitness-review'?'fitnessReview':new URLSearchParams(window.location.search||'').get('action')||'';}catch(e){return '';}
 })();
 var els={
   rows:document.getElementById('rows'),
@@ -3995,6 +3995,7 @@ function openPendingDashboardAction(){
   pendingDashboardAction='';
   if(action==='logRaceResult')openRaceResult();
   if(action==='manageMeets')openMeetManager();
+  if(action==='fitnessReview')openFitnessCleanup();
 }
 function showDashboardAccessCode(data){
   if(tryDashboardInviteAccess(data))return;

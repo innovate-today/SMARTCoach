@@ -579,8 +579,9 @@ function overviewLinks(name) {
 }
 assert.deepStrictEqual(overviewLinks('Distance Trak'), ['Distance Overview', 'Miles Trak']);
 assert.deepStrictEqual(overviewLinks('Athletes'), ['Roster', 'Attendance']);
-assert.deepStrictEqual(overviewLinks('Training'), ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Field Practice']);
+assert.deepStrictEqual(overviewLinks('Training'), ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice']);
 assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Training Customization').href, '/training-calendar.html?account=school-a#training-customization');
+assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Fitness Review').href, '/dashboard.html?account=school-a#fitness-review');
 assert.deepStrictEqual(overviewLinks('Meets & Results'), ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator']);
 assert.deepStrictEqual(overviewLinks('Tools'), ['Keep Trak', 'Weather']);
 assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes']);
@@ -595,4 +596,6 @@ for (const [hash, handler] of [
 assert.ok(athletesSource.includes("if(rows)openQuickAddFromHash()"), 'athlete deep link waits for roster access');
 assert.ok(athletesSource.includes("location.hash==='#add-athlete')openAthleteModal(null)"));
 assert.ok(athletesSource.includes("location.hash==='#import-athletes')openImportModal()"));
+assert.ok(dashboardSource.includes("window.location.hash==='#fitness-review'?'fitnessReview'"));
+assert.ok(dashboardSource.includes("if(action==='fitnessReview')openFitnessCleanup();"));
 console.log('SMART Trak shared navigation tests passed.');
