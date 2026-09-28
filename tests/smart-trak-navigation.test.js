@@ -314,6 +314,36 @@ const powerSource = fs.readFileSync('power-trak.html', 'utf8');
 assert.ok(powerSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(powerSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(powerSource.includes('window.smartTrakNavigationUpdateAccess(data)'));
+const meetIds = ['dashboardLink', 'recordsLink', 'trackSimulatorLink', 'xcSimulatorLink', 'openImportTopBtn', 'openQuickEntryBtn', 'refreshBtn'];
+const meetNodes = Object.fromEntries(meetIds.map(id => [id, element('button')]));
+const meetHeader = element('header');
+meetHeader.querySelector = selector => selector === '.actions' ? element('div') : null;
+const meetDocument = {
+  querySelector: selector => selector === '.top' ? meetHeader : null,
+  getElementById: id => meetNodes[id], createElement: element, addEventListener() {}
+};
+let meetRedirect = '';
+const meetWindow = { location: { replace: path => { meetRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: meetDocument, window: meetWindow, localStorage: storage,
+  sessionStorage: storage, accountKey: () => 'school-a', pageUrl: path => path + '?account=school-a'
+});
+const meetNav = meetHeader.children.find(child => child.tag === 'nav');
+assert.ok(meetNav, 'Meet History navigation mounted');
+assert.strictEqual(menuByName(meetNav, 'Meets & Results').children[0].attributes['aria-current'], 'page');
+for (const id of ['recordsLink', 'trackSimulatorLink', 'xcSimulatorLink']) assert.ok(menuByName(meetNav, 'Meets & Results').children[1].children.includes(meetNodes[id]));
+for (const id of ['openImportTopBtn', 'openQuickEntryBtn']) assert.ok(menuByName(meetNav, 'Quick Add').children[1].children.includes(meetNodes[id]));
+assert.ok(meetNav.children.includes(meetNodes.refreshBtn));
+const meetStaff = menuByName(meetNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(meetStaff.hidden, true);
+meetWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(meetStaff.hidden, false);
+menuByName(meetNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(meetRedirect, '/meet-history.html?account=school-a');
+const meetSource = fs.readFileSync('meet-history.html', 'utf8');
+assert.ok(meetSource.includes('/assets/smart-trak-navigation.css'));
+assert.ok(meetSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(meetSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],

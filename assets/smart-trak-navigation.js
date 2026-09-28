@@ -8,7 +8,8 @@
   var fieldPage=!!document.getElementById('newBtn');
   var speedPage=!!document.getElementById('addResultBtn');
   var powerPage=!!document.getElementById('rackPwaLink');
-  var dashboardPage=!athletesPage&&!attendancePage&&!calendarPage&&!fieldPage&&!speedPage&&!powerPage;
+  var meetPage=!!document.getElementById('openImportTopBtn');
+  var dashboardPage=!athletesPage&&!attendancePage&&!calendarPage&&!fieldPage&&!speedPage&&!powerPage&&!meetPage;
   if((document.body&&document.body.classList.contains('rack-kiosk'))||!header||!oldActions||(dashboardPage&&typeof smartCoachPageUrl!=='function')||(dashboardPage&&productPlan()==='essential'))return;
 
   var nav=document.createElement('nav');
@@ -51,6 +52,7 @@
     button.addEventListener('click',function(){var original=document.getElementById(id);if(original)original.click();});
     parent.appendChild(button);
   }
+  function currentAccountKey(){return calendarPage||meetPage?accountKey():smartCoachAccountKey();}
 
   var distance=menu('Distance Trak',dashboardPage);
   move(distance,'dashboardLink','Dashboard');
@@ -90,8 +92,13 @@
   if(!dashboardPage){var powerLink=link('Power Trak','/power-trak.html');if(powerPage)powerLink.setAttribute('aria-current','page');nav.appendChild(powerLink);}
   else move(nav,'powerTrakLink');
 
-  var meets=menu('Meets & Results');
-  if(calendarPage){
+  var meets=menu('Meets & Results',meetPage);
+  if(meetPage){
+    meets.appendChild(link('Meet History','/meet-history.html'));
+    move(meets,'recordsLink');
+    move(meets,'trackSimulatorLink');
+    move(meets,'xcSimulatorLink');
+  }else if(calendarPage){
     move(meets,'manageMeetsBtn');
     meets.appendChild(link('Meet History','/meet-history.html'));
     meets.appendChild(link('Records','/records.html'));
@@ -152,6 +159,11 @@
     quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
     quick.appendChild(link('Import Athletes','/athletes.html#import-athletes'));
     quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
+  }else if(meetPage){
+    move(quick,'openQuickEntryBtn');
+    move(quick,'openImportTopBtn');
+    quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
+    quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
   }else{
     move(quick,'manualMileageBtn');
     move(quick,'raceResultBtn');
@@ -168,7 +180,7 @@
   signOut.textContent='Sign Out';
   signOut.addEventListener('click',function(){
     try{
-      var key=calendarPage?accountKey():smartCoachAccountKey();
+      var key=currentAccountKey();
       localStorage.removeItem('sc_access_'+key);
       localStorage.removeItem('sc_session_remembered_'+key);
       localStorage.removeItem('smarttrak_dashboard_snapshot_'+key);
@@ -177,7 +189,7 @@
       localStorage.removeItem('sc_admin_tools');
       sessionStorage.removeItem('sc_session_'+key);
     }catch(error){}
-    window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':fieldPage?'/field-practice.html':speedPage?'/speed-trak.html':powerPage?'/power-trak.html':'/dashboard.html')+'?account='+encodeURIComponent(calendarPage?accountKey():smartCoachAccountKey()));
+    window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':fieldPage?'/field-practice.html':speedPage?'/speed-trak.html':powerPage?'/power-trak.html':meetPage?'/meet-history.html':'/dashboard.html')+'?account='+encodeURIComponent(currentAccountKey()));
   });
   account.appendChild(signOut);
   move(nav,'refreshBtn');
