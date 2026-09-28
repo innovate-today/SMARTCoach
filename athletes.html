@@ -568,6 +568,8 @@ function openQuickAddFromHash(){
   else if(location.hash==='#import-athletes')openImportModal();
   else if(location.hash==='#equipment-trak')openEquipmentLookup();
   else if(location.hash==='#docu-trak')openDocuSetup();
+  else if(location.hash==='#email-calendar-links')openCalendarEmailModal();
+  else if(location.hash==='#calendar-questions')openCalendarQuestionsModal();
   else return;
   history.replaceState(null,'',location.pathname+location.search);
 }

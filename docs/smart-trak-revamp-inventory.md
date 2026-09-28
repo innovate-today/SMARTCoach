@@ -15,6 +15,8 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Athletes > Attendance | `/attendance.html` | Existing Attendance Trak page. |
 | Athletes > Equipment Trak | `/athletes.html#equipment-trak` | Opens the existing roster-wide equipment lookup modal; per-athlete equipment actions remain on roster rows. |
 | Athletes > Docu Trak | `/athletes.html#docu-trak` | Opens the existing Docu Trak setup modal; per-athlete document actions remain on roster rows. |
+| Athletes > Email Calendar Links | `/athletes.html#email-calendar-links` | Opens the existing roster-wide calendar email workflow; personal calendar links stay on athlete rows. |
+| Athletes > Calendar Questions | `/athletes.html#calendar-questions` | Opens the existing calendar question setup modal. |
 | Training > Training Calendar | `/training-calendar.html` | Existing training/calendar page and setup actions. |
 | Training > Field Practice | `/field-practice.html` | Existing practice capture and review. |
 | Training > Fitness Review | `#fitnessCleanupBtn` on `/dashboard.html` | Opens an existing dashboard modal; no separate page. |

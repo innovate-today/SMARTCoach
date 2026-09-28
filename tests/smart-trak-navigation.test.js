@@ -66,6 +66,8 @@ assert.strictEqual(dashboardAthletes.children[1].children[0], nodes.athletesLink
 assert.strictEqual(dashboardAthletes.children[1].children[1].href, '/attendance.html');
 assert.strictEqual(dashboardAthletes.children[1].children[2].href, '/athletes.html#equipment-trak');
 assert.strictEqual(dashboardAthletes.children[1].children[3].href, '/athletes.html#docu-trak');
+assert.strictEqual(dashboardAthletes.children[1].children[4].href, '/athletes.html#email-calendar-links');
+assert.strictEqual(dashboardAthletes.children[1].children[5].href, '/athletes.html#calendar-questions');
 const dashboardQuick = menuByName(nav, 'Quick Add').children[1].children;
 assert.strictEqual(dashboardQuick.find(child => child.textContent === 'Add Athlete').href, '/athletes.html#add-athlete');
 assert.strictEqual(dashboardQuick.find(child => child.textContent === 'Import Athletes').href, '/athletes.html#import-athletes');
@@ -129,6 +131,10 @@ assert.strictEqual(athleteRoster.children[1].children[2], athleteNodes.equipment
 assert.strictEqual(athleteRoster.children[1].children[3].textContent, 'Docu Trak');
 athleteRoster.children[1].children[3].handlers.click();
 assert.strictEqual(docuOpened, true);
+for (const id of ['emailCalendarLinksBtn', 'calendarQuestionsBtn', 'emailToolsToggleBtn', 'emailParentsBtn', 'copyParentsBtn']) {
+  assert.ok(athleteRoster.children[1].children.includes(athleteNodes[id]), id + ' stays under Athletes');
+  assert.ok(!menuByName(athleteNav, 'Tools').children[1].children.includes(athleteNodes[id]), id + ' is not under Tools');
+}
 const athleteQuick = menuByName(athleteNav, 'Quick Add').children[1].children;
 assert.strictEqual(athleteQuick.find(child => child.textContent === 'Log Miles').href, '/dashboard.html?account=school-a#log-miles');
 assert.strictEqual(athleteQuick.find(child => child.textContent === 'Log Single Result').href, '/dashboard.html?account=school-a#log-single-result');
@@ -180,6 +186,8 @@ const dashboardSource = fs.readFileSync('dashboard.html', 'utf8');
 const athletesSource = fs.readFileSync('athletes.html', 'utf8');
 assert.ok(athletesSource.includes("location.hash==='#equipment-trak'"));
 assert.ok(athletesSource.includes("location.hash==='#docu-trak'"));
+assert.ok(athletesSource.includes("location.hash==='#email-calendar-links'"));
+assert.ok(athletesSource.includes("location.hash==='#calendar-questions'"));
 const attendanceSource = fs.readFileSync('attendance.html', 'utf8');
 assert.ok(attendanceSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(attendanceSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
@@ -600,7 +608,7 @@ function overviewLinks(name) {
   return menuByName(overviewNav, name).children[1].children.filter(child => child.tag === 'a').map(child => child.textContent);
 }
 assert.deepStrictEqual(overviewLinks('Distance Trak'), ['Distance Overview', 'Miles Trak']);
-assert.deepStrictEqual(overviewLinks('Athletes'), ['Roster', 'Attendance', 'Equipment Trak', 'Docu Trak']);
+assert.deepStrictEqual(overviewLinks('Athletes'), ['Roster', 'Attendance', 'Equipment Trak', 'Docu Trak', 'Email Calendar Links', 'Calendar Questions']);
 assert.deepStrictEqual(overviewLinks('Training'), ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice']);
 assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Training Customization').href, '/training-calendar.html?account=school-a#training-customization');
 assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Fitness Review').href, '/dashboard.html?account=school-a#fitness-review');

@@ -85,12 +85,19 @@
     docuButton.textContent='Docu Trak';
     docuButton.addEventListener('click',function(){openDocuSetup();});
     athletesMenu.appendChild(docuButton);
+    move(athletesMenu,'emailCalendarLinksBtn');
+    move(athletesMenu,'calendarQuestionsBtn');
+    move(athletesMenu,'emailToolsToggleBtn');
+    move(athletesMenu,'emailParentsBtn');
+    move(athletesMenu,'copyParentsBtn');
   }else{
     move(athletesMenu,'athletesLink','Roster');
     if(calendarPage||overviewPage)athletesMenu.appendChild(link('Roster','/athletes.html'));
     athletesMenu.appendChild(link('Attendance','/attendance.html'));
     athletesMenu.appendChild(link('Equipment Trak','/athletes.html#equipment-trak'));
     athletesMenu.appendChild(link('Docu Trak','/athletes.html#docu-trak'));
+    athletesMenu.appendChild(link('Email Calendar Links','/athletes.html#email-calendar-links'));
+    athletesMenu.appendChild(link('Calendar Questions','/athletes.html#calendar-questions'));
   }
   var training=menu('Training',calendarPage||fieldPage||setupPage||importPage||builderPage);
   if(calendarPage)training.appendChild(link('Training Calendar','/training-calendar.html'));
@@ -197,11 +204,6 @@
 
   var tools=menu('Tools',keepPage||weatherPage);
   if(athletesPage){
-    move(tools,'emailCalendarLinksBtn');
-    move(tools,'calendarQuestionsBtn');
-    move(tools,'emailToolsToggleBtn');
-    move(tools,'emailParentsBtn');
-    move(tools,'copyParentsBtn');
     tools.appendChild(link('Keep Trak','/keep-trak.html'));
     tools.appendChild(link('Weather','/weather.html'));
   }else if(attendancePage||calendarPage){
