@@ -12,7 +12,8 @@
   var recordsPage=!!document.getElementById('xcAddListBtn');
   var trackSimulatorPage=!!document.getElementById('resetBtn')&&!!document.getElementById('xcSimulatorLink');
   var xcSimulatorPage=!!document.getElementById('resetBtn')&&!!document.getElementById('trackSimulatorLink');
-  var dashboardPage=!athletesPage&&!attendancePage&&!calendarPage&&!fieldPage&&!speedPage&&!powerPage&&!meetPage&&!recordsPage&&!trackSimulatorPage&&!xcSimulatorPage;
+  var keepPage=!!document.getElementById('addNoteBtn');
+  var dashboardPage=!athletesPage&&!attendancePage&&!calendarPage&&!fieldPage&&!speedPage&&!powerPage&&!meetPage&&!recordsPage&&!trackSimulatorPage&&!xcSimulatorPage&&!keepPage;
   if((document.body&&document.body.classList.contains('rack-kiosk'))||!header||!oldActions||(dashboardPage&&typeof smartCoachPageUrl!=='function')||(dashboardPage&&productPlan()==='essential'))return;
 
   var nav=document.createElement('nav');
@@ -55,7 +56,7 @@
     button.addEventListener('click',function(){var original=document.getElementById(id);if(original)original.click();});
     parent.appendChild(button);
   }
-  function currentAccountKey(){return calendarPage||meetPage||recordsPage||trackSimulatorPage||xcSimulatorPage?accountKey():smartCoachAccountKey();}
+  function currentAccountKey(){return calendarPage||meetPage||recordsPage||trackSimulatorPage||xcSimulatorPage||keepPage?accountKey():smartCoachAccountKey();}
 
   var distance=menu('Distance Trak',dashboardPage);
   move(distance,'dashboardLink','Dashboard');
@@ -135,7 +136,7 @@
     move(meets,'simulatorBtn');
   }
 
-  var tools=menu('Tools');
+  var tools=menu('Tools',keepPage);
   if(athletesPage){
     move(tools,'equipmentLookupBtn');
     move(tools,'emailCalendarLinksBtn');
@@ -148,6 +149,9 @@
   }else if(attendancePage||calendarPage){
     if(calendarPage){move(tools,'keepTrakLink');move(tools,'weatherLink');}
     else{tools.appendChild(link('Keep Trak','/keep-trak.html'));tools.appendChild(link('Weather','/weather.html'));}
+  }else if(keepPage){
+    tools.appendChild(link('Keep Trak','/keep-trak.html'));
+    move(tools,'weatherLink');
   }else{
     if(!move(tools,'keepTrakLink'))tools.appendChild(link('Keep Trak','/keep-trak.html'));
     if(!move(tools,'weatherLink'))tools.appendChild(link('Weather','/weather.html'));
@@ -182,6 +186,10 @@
     move(quick,'openImportTopBtn');
     quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
     quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
+  }else if(keepPage){
+    move(quick,'addNoteBtn');
+    quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
+    quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
   }else{
     move(quick,'manualMileageBtn');
     move(quick,'raceResultBtn');
@@ -207,7 +215,7 @@
       localStorage.removeItem('sc_admin_tools');
       sessionStorage.removeItem('sc_session_'+key);
     }catch(error){}
-    window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':fieldPage?'/field-practice.html':speedPage?'/speed-trak.html':powerPage?'/power-trak.html':meetPage?'/meet-history.html':recordsPage?'/records.html':trackSimulatorPage?'/track-simulator.html':xcSimulatorPage?'/xc-simulator.html':'/dashboard.html')+'?account='+encodeURIComponent(currentAccountKey()));
+    window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':fieldPage?'/field-practice.html':speedPage?'/speed-trak.html':powerPage?'/power-trak.html':meetPage?'/meet-history.html':recordsPage?'/records.html':trackSimulatorPage?'/track-simulator.html':xcSimulatorPage?'/xc-simulator.html':keepPage?'/keep-trak.html':'/dashboard.html')+'?account='+encodeURIComponent(currentAccountKey()));
   });
   account.appendChild(signOut);
   move(nav,'refreshBtn');

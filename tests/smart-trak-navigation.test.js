@@ -407,6 +407,35 @@ for (const [simulator, peer, path] of [
   assert.ok(simSource.includes('/assets/smart-trak-navigation.js'));
   assert.ok(simSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
 }
+const keepNodes = Object.fromEntries(['dashboardLink', 'calendarLink', 'weatherLink', 'addNoteBtn', 'refreshBtn'].map(id => [id, element('button')]));
+const keepHeader = element('header');
+keepHeader.querySelector = selector => selector === '.actions' ? element('div') : null;
+let keepRedirect = '';
+const keepWindow = { location: { replace: path => { keepRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: {
+    querySelector: selector => selector === '.top' ? keepHeader : null,
+    getElementById: id => keepNodes[id], createElement: element, addEventListener() {}
+  },
+  window: keepWindow, localStorage: storage, sessionStorage: storage,
+  accountKey: () => 'school-a', pageUrl: path => path + '?account=school-a'
+});
+const keepNav = keepHeader.children.find(child => child.tag === 'nav');
+assert.ok(keepNav, 'Keep Trak navigation mounted');
+assert.strictEqual(menuByName(keepNav, 'Tools').children[0].attributes['aria-current'], 'page');
+assert.ok(menuByName(keepNav, 'Tools').children[1].children.includes(keepNodes.weatherLink));
+assert.ok(menuByName(keepNav, 'Quick Add').children[1].children.includes(keepNodes.addNoteBtn));
+assert.ok(keepNav.children.includes(keepNodes.refreshBtn));
+const keepStaff = menuByName(keepNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(keepStaff.hidden, true);
+keepWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(keepStaff.hidden, false);
+menuByName(keepNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(keepRedirect, '/keep-trak.html?account=school-a');
+const keepSource = fs.readFileSync('keep-trak.html', 'utf8');
+assert.ok(keepSource.includes('/assets/smart-trak-navigation.css'));
+assert.ok(keepSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(keepSource.includes("fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey()),{cache:'no-store',headers:apiHeaders()})"));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
