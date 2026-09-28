@@ -6,7 +6,7 @@ const source = fs.readFileSync('assets/smart-trak-navigation.js', 'utf8');
 const ids = [
   'dashboardLink', 'athletesLink', 'trainingCalendarLink', 'fitnessCleanupBtn',
   'powerTrakLink', 'meetHistoryLink', 'manageMeetsBtn', 'shareResultsBoardBtn',
-  'recordsLink', 'simulatorBtn', 'shareMilesBoardBtn', 'keepTrakLink',
+  'recordsLink', 'shareMilesBoardBtn', 'keepTrakLink',
   'weatherLink', 'manualMileageBtn', 'raceResultBtn', 'changeCodeBtn', 'refreshBtn'
 ];
 function element(tag) {
@@ -54,6 +54,7 @@ assert.strictEqual(nav.attributes['aria-label'], 'SMART Trak navigation');
 assert.strictEqual(nav.children.find(child => child.textContent === 'Overview').href, '/overview.html');
 const dashboardDistance = menuByName(nav, 'Distance Trak');
 const dashboardAthletes = menuByName(nav, 'Athletes');
+assert.ok(!menuByName(nav, 'Meets & Results').children[1].children.some(child => child.textContent === 'Simulator'), 'redundant simulator chooser is not in the dashboard menu');
 assert.strictEqual(dashboardDistance.children[0].attributes['aria-current'], 'page');
 assert.strictEqual(dashboardDistance.children[1].children[0], nodes.dashboardLink);
 assert.strictEqual(nodes.dashboardLink.textContent, 'Distance Overview');

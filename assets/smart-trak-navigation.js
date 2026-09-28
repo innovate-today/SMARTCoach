@@ -180,7 +180,6 @@
     move(meets,'manageMeetsBtn');
     move(meets,'shareResultsBoardBtn','Results');
     move(meets,'recordsLink','Records');
-    move(meets,'simulatorBtn');
   }
   ensureLink(meets,'Meet History','/meet-history.html');
   ensureLink(meets,'Results','/meet-history.html#results-board');
