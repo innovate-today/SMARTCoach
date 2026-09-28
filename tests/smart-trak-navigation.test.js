@@ -51,6 +51,7 @@ vm.runInNewContext(source, context);
 const nav = header.children.find(child => child.tag === 'nav');
 assert.ok(nav, 'navigation mounted');
 assert.strictEqual(nav.attributes['aria-label'], 'SMART Trak navigation');
+assert.strictEqual(nav.children.find(child => child.textContent === 'Overview').href, '/overview.html');
 const dashboardDistance = menuByName(nav, 'Distance Trak');
 const dashboardAthletes = menuByName(nav, 'Athletes');
 assert.strictEqual(dashboardDistance.children[0].attributes['aria-current'], 'page');
@@ -556,6 +557,25 @@ const builderSource = fs.readFileSync('plan-builder.html', 'utf8');
 assert.ok(builderSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(builderSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(builderSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
+const overviewNodes = Object.fromEntries(['overviewRefreshBtn'].map(id => [id, element('button')]));
+const overviewHeader = element('header');
+overviewHeader.querySelector = selector => selector === '.actions' ? element('div') : null;
+let overviewRedirect = '';
+const overviewWindow = { location: { replace: path => { overviewRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: {
+    querySelector: selector => selector === '.top' ? overviewHeader : null,
+    getElementById: id => overviewNodes[id], createElement: element, addEventListener() {}
+  },
+  window: overviewWindow, localStorage: storage, sessionStorage: storage,
+  accountKey: () => 'school-a', pageUrl: path => path + '?account=school-a'
+});
+const overviewNav = overviewHeader.children.find(child => child.tag === 'nav');
+assert.ok(overviewNav, 'Overview navigation mounted');
+assert.strictEqual(overviewNav.children.find(child => child.textContent === 'Overview').attributes['aria-current'], 'page');
+assert.ok(overviewNav.children.includes(overviewNodes.overviewRefreshBtn));
+menuByName(overviewNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(overviewRedirect, '/overview.html?account=school-a');
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],

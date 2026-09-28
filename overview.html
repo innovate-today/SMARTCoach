@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Trak Overview</title>
+<style>
+:root{--blue:#2b4fcc;--ink:#111827;--muted:#52627a;--line:#d6dfec;--bg:#eef3f9;--good:#08783c;--warn:#9a5a00}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page{max-width:1480px;margin:0 auto;padding:18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:18px;box-shadow:0 10px 24px rgba(15,23,42,.08)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}.brand img{width:56px;height:56px;object-fit:contain}
+h1{font-size:25px;margin:0;line-height:1.1}.sub{font-size:14px;color:var(--muted);margin-top:4px}
+.actions{display:flex;gap:8px;align-items:center}
+button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff;color:#173891;font-family:inherit;font-size:13px;font-weight:800;padding:8px 11px;min-height:34px;cursor:pointer;text-decoration:none}
+.button-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.heading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:10px 0 18px}
+.heading h2{font-size:22px;margin:0}.heading p{color:var(--muted);font-size:13px;margin:4px 0 0}
+.updated{font-size:12px;color:var(--muted);font-weight:700;text-align:right}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0 18px}
+.metric{min-width:0;padding:2px 16px;border-right:1px solid var(--line)}.metric:first-child{padding-left:0}.metric:last-child{border-right:0}
+.metric b{display:block;font-size:26px;line-height:1.15}.metric span{display:block;color:var(--muted);font-size:12px;font-weight:700;margin-top:4px}
+.grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);gap:24px;margin-top:24px}
+.section{min-width:0}.section h3{font-size:16px;margin:0 0 10px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.section-head a{font-size:12px;font-weight:800;color:#173891;text-decoration:none}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
+.workspace:hover,.result:hover{background:#f8fbff}.workspace b,.workspace small{display:block}.workspace b{font-size:14px}.workspace small{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.3}.workspace strong{font-size:13px;color:#173891;white-space:nowrap}
+.result{padding:11px 2px;border-bottom:1px solid var(--line)}.result b,.result span{display:block}.result b{font-size:13px}.result span{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.3}
+.notice{padding:12px;border-left:3px solid var(--warn);background:#fff8eb;color:#64400b;font-size:13px;margin-top:16px}.notice a{color:#173891;font-weight:800}
+.empty{color:var(--muted);font-size:13px;padding:18px 2px}
+.access{max-width:430px;margin:48px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:20px}.access h2{font-size:20px;margin:0 0 6px}.access p{font-size:13px;color:var(--muted);line-height:1.45}.access label{display:grid;gap:6px;font-size:12px;font-weight:800;margin-top:14px}.access input{width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;font-size:16px}.access button{width:100%;margin-top:14px}
+.error{color:#b91c1c!important}
+@media(max-width:950px){.top{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric:nth-child(2){border-right:0}.metric:nth-child(n+3){padding-top:14px}}
+@media(max-width:560px){.page{padding:10px}.metrics{gap:10px}.metric{padding:0 8px}.metric b{font-size:21px}.heading{align-items:flex-start;flex-direction:column}.updated{text-align:left}}
+</style>
+<link rel="stylesheet" href="/assets/smart-trak-navigation.css">
+</head>
+<body>
+<main class="page">
+  <header class="top">
+    <div class="brand"><img id="brandLogo" src="/assets/smart-logo.png" alt="SMART Trak"><div><h1>SMART Trak</h1><div class="sub">Team overview</div></div></div>
+    <div class="actions"><button id="overviewRefreshBtn" type="button">Refresh</button></div>
+  </header>
+  <section id="accessPanel" class="access" hidden>
+    <h2>Coach access required</h2><p id="accessMessage">Enter your coach access code to open this account.</p>
+    <form id="accessForm"><label for="accessCode">Access code<input id="accessCode" type="password" autocomplete="one-time-code" required></label><button class="button-primary" type="submit">Continue</button></form>
+  </section>
+  <div id="overviewContent" hidden>
+    <div class="heading"><div><h2>Team Overview</h2><p>Current program activity across SMART Trak.</p></div><div id="lastUpdated" class="updated" aria-live="polite">Loading...</div></div>
+    <div class="metrics" aria-label="Team activity">
+      <div class="metric"><b id="activeAthletes">--</b><span>Active athletes</span></div>
+      <div class="metric"><b id="weekRuns">--</b><span>Distance workouts this week</span></div>
+      <div class="metric"><b id="weekMiles">--</b><span>Distance volume this week</span></div>
+      <div class="metric"><b id="missingFitness">--</b><span>Without a current fitness mark</span></div>
+    </div>
+    <div class="grid">
+      <section class="section"><div class="section-head"><h3>Workspaces</h3></div>
+        <a class="workspace" data-route="/dashboard.html"><span><b>Distance Trak</b><small>Training load, fitness, and distance results</small></span><strong id="distanceSummary">Open</strong></a>
+        <a class="workspace" data-route="/training-calendar.html"><span><b>Training Calendar</b><small>Plans, sessions, and athlete assignments</small></span><strong>Open</strong></a>
+        <a class="workspace" data-route="/speed-trak.html"><span><b>Speed Trak</b><small>Testing sessions and athlete progression</small></span><strong>Open</strong></a>
+        <a class="workspace" data-route="/power-trak.html"><span><b>Power Trak</b><small>Workouts, rack sessions, and strength results</small></span><strong>Open</strong></a>
+        <a class="workspace" data-route="/athletes.html"><span><b>Athletes</b><small>Roster, attendance, documents, and equipment</small></span><strong>Open</strong></a>
+        <a class="workspace" data-route="/meet-history.html"><span><b>Meets &amp; Results</b><small>Meet history, records, and corrections</small></span><strong>Open</strong></a>
+      </section>
+      <section class="section"><div class="section-head"><h3>Recent Meet Results</h3><a data-route="/meet-history.html">Meet History</a></div><div id="recentResults" aria-live="polite"><div class="empty">Loading results...</div></div>
+        <div id="fitnessNotice" class="notice" hidden><span id="fitnessNoticeText"></span> <a data-route="/plan-setup.html">Review fitness marks</a></div>
+      </section>
+    </div>
+  </div>
+  <p id="loadError" class="notice error" role="alert" hidden></p>
+</main>
+<script>
+(function(){
+  'use strict';
+  var key=accountKey(),logo=document.getElementById('brandLogo');
+  var accessPanel=document.getElementById('accessPanel'),content=document.getElementById('overviewContent'),error=document.getElementById('loadError');
+  function accountKey(){try{var params=new URLSearchParams(location.search);return String(params.get('account')||localStorage.getItem('sc_account')||'default').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'')||'default';}catch(e){return 'default';}}
+  window.accountKey=accountKey;
+  window.pageUrl=function(path){var url=new URL(path,location.origin);if(key!=='default')url.searchParams.set('account',key);return url.pathname+url.search;};
+  document.querySelectorAll('[data-route]').forEach(function(link){link.href=pageUrl(link.dataset.route);});
+  function headers(){var value={'X-SMARTCoach-Account':key},session='',code='';try{session=localStorage.getItem('sc_session_remembered_'+key)||sessionStorage.getItem('sc_session_'+key)||'';code=localStorage.getItem('sc_access_'+key)||'';}catch(e){}if(session)value['X-SMARTCoach-Session']=session;else if(code)value['X-SMARTCoach-Access-Code']=code;return value;}
+  function request(path,options){return fetch(path,Object.assign({cache:'no-store',headers:headers()},options||{})).then(function(res){return res.json().then(function(data){if(!res.ok)throw data;return data;});});}
+  function showAccess(message,blocked){content.hidden=true;accessPanel.hidden=false;document.getElementById('accessMessage').textContent=message||'Enter your coach access code to open this account.';document.getElementById('accessForm').hidden=!!blocked;if(!blocked)document.getElementById('accessCode').focus();}
+  function showError(message){error.textContent=message;error.hidden=false;document.getElementById('lastUpdated').textContent='Update failed';}
+  function render(data){
+    var rows=Array.isArray(data.athletes)?data.athletes:[],totals=data.totals||{},meets=Array.isArray(data.recentMeetResults)?data.recentMeetResults:[];
+    var missing=rows.filter(function(row){return !row.currentFitness||!row.currentFitness.display;}).length;
+    document.getElementById('activeAthletes').textContent=String(rows.length);
+    document.getElementById('weekRuns').textContent=String(Number(totals.currentWeekRuns)||0);
+    document.getElementById('weekMiles').textContent=(Number(totals.currentWeekVolumeMiles)||0).toLocaleString(undefined,{maximumFractionDigits:1})+' mi';
+    document.getElementById('missingFitness').textContent=String(missing);
+    document.getElementById('distanceSummary').textContent=(Number(totals.currentWeekVolumeMiles)||0).toLocaleString(undefined,{maximumFractionDigits:1})+' mi this week';
+    var results=document.getElementById('recentResults');results.replaceChildren();
+    if(!meets.length){var empty=document.createElement('div');empty.className='empty';empty.textContent='No recent meet results.';results.appendChild(empty);}
+    meets.slice(0,5).forEach(function(row){var item=document.createElement('div'),name=document.createElement('b'),detail=document.createElement('span');item.className='result';name.textContent=row.athleteName||row.relayTeamName||'Meet result';detail.textContent=[row.event,row.resultDisplay,row.meetName].filter(Boolean).join(' · ');item.appendChild(name);item.appendChild(detail);results.appendChild(item);});
+    document.getElementById('fitnessNotice').hidden=missing===0;
+    document.getElementById('fitnessNoticeText').textContent=missing+' active athlete'+(missing===1?' has':'s have')+' no current fitness mark.';
+    var date=new Date(data.generatedAt||Date.now());document.getElementById('lastUpdated').textContent='Updated '+(isNaN(date.getTime())?'recently':date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+    content.hidden=false;error.hidden=true;
+  }
+  function load(){
+    error.hidden=true;document.getElementById('lastUpdated').textContent='Loading...';
+    request('/api/smart-trak/account-status?account='+encodeURIComponent(key)).then(function(status){
+      if(status.sessionToken)try{localStorage.setItem('sc_session_remembered_'+key,status.sessionToken);}catch(e){}
+      if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(status);
+      if(status.logoUrl)logo.src=status.logoUrl;
+      if(status.accessReady===false){showAccess(status.subscriptionBlockedReason||'SMART Trak access is unavailable for this account.',true);return null;}
+      if(status.accessCodeRequired&&!status.coachAccessUnlocked&&!status.deviceAccessReady){showAccess();return null;}
+      accessPanel.hidden=true;
+      return request('/api/smart-trak/dashboard?light=1&v='+Date.now()).then(render);
+    }).catch(function(failure){
+      if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null);
+      if(failure&&failure.accessCodeRequired){showAccess();return;}
+      showError(failure&&failure.error||'Overview could not load. Try Refresh.');
+    });
+  }
+  document.getElementById('overviewRefreshBtn').addEventListener('click',load);
+  document.getElementById('accessForm').addEventListener('submit',function(event){event.preventDefault();var code=document.getElementById('accessCode').value.trim();if(!code)return;request('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:key,accessCode:code})}).then(function(data){if(!data.sessionToken)throw new Error('Access was not accepted.');localStorage.setItem('sc_session_remembered_'+key,data.sessionToken);localStorage.removeItem('sc_access_'+key);document.getElementById('accessCode').value='';load();}).catch(function(failure){document.getElementById('accessMessage').textContent=failure&&failure.error||failure&&failure.message||'Access could not be checked.';});});
+  load();
+})();
+</script>
+<script src="/assets/smart-trak-navigation.js"></script>
+</body>
+</html>

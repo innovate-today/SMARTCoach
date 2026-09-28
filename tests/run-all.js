@@ -9,12 +9,15 @@ require("./power-trak-rack-history.test");
 require("./athlete-personal-bests.test");
 require("./dashboard-xc-details.test");
 require("./smart-trak-navigation.test");
+const overviewTests = spawnSync(process.execPath, ["tests/smart-trak-overview.test.js"], { stdio: "inherit" });
+if (overviewTests.status !== 0) throw new Error("SMART Trak Overview tests failed.");
 require("./power-trak-rack-sync.test");
 require("./account-scoped-lock.test");
 
 const htmlFiles = [
   "index.html",
   "dashboard.html",
+  "overview.html",
   "athletes.html",
   "attendance.html",
   "training-calendar.html",
