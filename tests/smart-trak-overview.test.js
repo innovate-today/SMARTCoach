@@ -4,6 +4,7 @@ const vm = require('vm');
 
 const html = fs.readFileSync('overview.html', 'utf8');
 const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1];
+assert.ok(html.includes('/assets/smart-trak-navigation.js?v=20260927-fitness-review'));
 const nodes = new Map();
 function node(id) {
   if (!nodes.has(id)) nodes.set(id, {
