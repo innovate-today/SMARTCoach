@@ -54,23 +54,36 @@ function testVercelHtmlSecurityHeaders() {
     "x-content-type-options": /^nosniff$/,
   };
 
-  (config.headers || []).forEach((entry) => {
-    if (!requiredSources.has(entry.source)) return;
+  requiredSources.forEach((source) => {
+    const entries = (config.headers || []).filter((entry) => entry.source === source);
+    assert.ok(entries.length, `Missing Vercel header source: ${source}`);
     const headers = {};
-    (entry.headers || []).forEach((header) => {
+    entries.forEach((entry) => (entry.headers || []).forEach((header) => {
       headers[String(header.key || "").toLowerCase()] = String(header.value || "");
-    });
+    }));
     Object.entries(requiredHeaders).forEach(([key, pattern]) => {
-      assert.match(headers[key] || "", pattern, `${entry.source} missing ${key}`);
+      assert.match(headers[key] || "", pattern, `${source} missing ${key}`);
     });
-    requiredSources.delete(entry.source);
   });
-
-  assert.strictEqual(requiredSources.size, 0, `Missing Vercel header sources: ${[...requiredSources].join(", ")}`);
   const powerHeaders = Object.fromEntries((config.headers.find((entry) => entry.source === "/power-trak.html").headers || []).map((header) => [String(header.key).toLowerCase(), String(header.value)]));
   assert.match(powerHeaders["content-security-policy"] || "", /frame-ancestors 'none'/);
   assert.strictEqual(powerHeaders["x-frame-options"], "DENY");
   assert.match(powerHeaders["permissions-policy"] || "", /camera=\(\)/);
+
+  const privateFrameRule = config.headers.find((entry) => entry.source.startsWith("/((?!") && entry.headers.some((header) => header.key === "X-Frame-Options"));
+  assert.ok(privateFrameRule, "private pages retain the frame-blocking rule");
+  const matchesPrivateRule = new RegExp(`^${privateFrameRule.source}$`);
+  for (const board of ["results-board", "miles-board", "speed-board", "xc-records-board", "xc-progression-board"]) {
+    const path = `/${board}.html`;
+    assert.strictEqual(matchesPrivateRule.test(path), false, `${path} must be embeddable`);
+    const boardHeaders = Object.fromEntries((config.headers.find((entry) => entry.source === path).headers || []).map((header) => [String(header.key).toLowerCase(), String(header.value)]));
+    assert.ok(boardHeaders["content-security-policy"], `${path} keeps a content security policy`);
+    assert.doesNotMatch(boardHeaders["content-security-policy"], /frame-ancestors 'none'/);
+    assert.strictEqual(boardHeaders["x-frame-options"], undefined);
+  }
+  for (const path of ["/dashboard.html", "/overview.html", "/athletes.html", "/api/smart-trak/account-status"]) {
+    assert.strictEqual(matchesPrivateRule.test(path), true, `${path} must remain frame-blocked`);
+  }
 }
 
 (async () => {
