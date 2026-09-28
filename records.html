@@ -156,6 +156,7 @@ tr:last-child td{border-bottom:0}
   .status{text-align:left}
 }
 </style>
+<link rel="stylesheet" href="/assets/smart-trak-navigation.css">
 </head>
 <body>
 <main id="mainPage" class="page">
@@ -2382,6 +2383,7 @@ function ensureAccountAccess(){
     return res.json().then(function(data){return{ok:res.ok,data:data};});
   }).then(function(result){
     applyBrandLogo(result.data&&result.data.logoUrl);
+    if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(result.ok?result.data:null);
     if(result.data&&result.data.accessReady===false){
       els.mainPage.hidden=true;
       els.accessPanel.hidden=false;
@@ -2392,7 +2394,7 @@ function ensureAccountAccess(){
       return false;
     }
     return true;
-  }).catch(function(){applyBrandLogo('');return true;});
+  }).catch(function(){applyBrandLogo('');if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null);return true;});
 }
 function startRecordsPageData(){
   var accessPromise=ensureAccountAccess();
@@ -2620,6 +2622,7 @@ function init(){
 }
 init();
 </script>
+<script src="/assets/smart-trak-navigation.js"></script>
 <script src="/assets/smartcoach-help-widget.js" async></script>
 </body>
 </html>

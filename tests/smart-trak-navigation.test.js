@@ -344,6 +344,36 @@ const meetSource = fs.readFileSync('meet-history.html', 'utf8');
 assert.ok(meetSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(meetSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(meetSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
+const recordIds = ['dashboardLink', 'meetHistoryLink', 'xcAddListBtn', 'refreshBtn'];
+const recordNodes = Object.fromEntries(recordIds.map(id => [id, element('button')]));
+const recordHeader = element('header');
+recordHeader.querySelector = selector => selector === '.actions' ? element('div') : null;
+let recordRedirect = '';
+const recordWindow = { location: { replace: path => { recordRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: {
+    querySelector: selector => selector === '.top' ? recordHeader : null,
+    getElementById: id => recordNodes[id], createElement: element, addEventListener() {}
+  },
+  window: recordWindow, localStorage: storage, sessionStorage: storage,
+  accountKey: () => 'school-a', pageUrl: path => path + '?account=school-a'
+});
+const recordNav = recordHeader.children.find(child => child.tag === 'nav');
+assert.ok(recordNav, 'Records navigation mounted');
+assert.strictEqual(menuByName(recordNav, 'Meets & Results').children[0].attributes['aria-current'], 'page');
+assert.ok(menuByName(recordNav, 'Meets & Results').children[1].children.includes(recordNodes.meetHistoryLink));
+assert.ok(recordNav.children.includes(recordNodes.refreshBtn));
+assert.ok(!recordNav.children.includes(recordNodes.xcAddListBtn), 'XC Top 20 controls stay in the page');
+const recordStaff = menuByName(recordNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(recordStaff.hidden, true);
+recordWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(recordStaff.hidden, false);
+menuByName(recordNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(recordRedirect, '/records.html?account=school-a');
+const recordsSource = fs.readFileSync('records.html', 'utf8');
+assert.ok(recordsSource.includes('/assets/smart-trak-navigation.css'));
+assert.ok(recordsSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(recordsSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
