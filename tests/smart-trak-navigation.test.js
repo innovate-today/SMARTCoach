@@ -3,6 +3,9 @@ const fs = require('fs');
 const vm = require('vm');
 
 const source = fs.readFileSync('assets/smart-trak-navigation.js', 'utf8');
+const dashboardHtml = fs.readFileSync('dashboard.html', 'utf8');
+assert.ok(dashboardHtml.includes('<title>Distance Trak</title>'));
+assert.ok(dashboardHtml.includes('<h1>Distance Trak</h1>'));
 const ids = [
   'dashboardLink', 'athletesLink', 'trainingCalendarLink', 'fitnessCleanupBtn',
   'powerTrakLink', 'meetHistoryLink', 'manageMeetsBtn', 'shareResultsBoardBtn',

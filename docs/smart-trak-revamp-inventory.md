@@ -1,6 +1,6 @@
 # SMART Trak revamp: step 1 inventory
 
-Status: step 1 inventory and step 2 navigation decisions approved by the user. The standalone `smart-trak-navigation-concept.html` is illustrative only; existing page workflows remain unchanged.
+Status: inventory and navigation decisions approved by the user; shared navigation and Team Overview are rolled out. The standalone `smart-trak-navigation-concept.html` is illustrative only. Existing page workflows remain unchanged; the former dashboard's heading and browser title are now `Distance Trak`.
 
 Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Training Calendar, Field Practice, Speed Trak, the Power Trak coach page, Meet History, Records, both meet simulators, Keep Trak, Weather, Athlete Setup, Upload/Paste Plan, and Auto Build Plan. Rack iPad kiosk mode is excluded. Existing action nodes are regrouped under Distance Trak, Athletes, Training, Meets & Results, Tools, Quick Add, and Account while page content and modal handlers remain unchanged. Training Calendar keeps draft approval and scheduling actions visible. Field Practice keeps its New Practice command in Quick Add. Speed Trak keeps Share Board, Export Data, and Refresh visible while Add Result moves to Quick Add. Power Trak keeps Rack iPad Setup, Download CSV, Delete Test, and Refresh as page actions. Meet History keeps Enter Results and Import History in Quick Add. Records retains its XC Top 20 and record-entry controls in their current sections. Both simulators retain Reset as a direct page action and keep their scoring controls in place. Keep Trak keeps its note workflow and places Add Note in Quick Add. Weather keeps Search, Save Location, and Refresh in place. Athlete Setup and Auto Build Plan keep their admin-only account controls in the header outside the Account dropdown. Upload/Paste Plan retains its import and preview controls in place. Overview reads the active roster, distance activity, and recent meet results from the existing dashboard API; Speed and Power are workspace links without fabricated statistics. The existing account-status requests gate Staff Access on these pages. Quick Add deep links open the existing cross-page create modals after access and roster loading. Account Settings is not included. Head Coach Staff Access remains governed by the existing staff-admin permission response; the non-dashboard menus link to the dashboard Staff Access modal only for an authorized Head Coach.
 
@@ -9,7 +9,7 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Proposed location | Current entry point | Current behavior to preserve |
 | --- | --- | --- |
 | Overview | `/overview.html` | Live active roster, distance activity, and recent meet results from the dashboard API, with links to existing workspaces. |
-| Distance Trak > Dashboard | `/dashboard.html` | Existing dashboard, including roster overview, training load, XC Details, Personal Bests, meet results, filters, and exports. Navigation label changes; page title and content remain intact. |
+| Distance Trak > Distance Overview | `/dashboard.html` | Existing distance dashboard, including roster overview, training load, XC Details, Personal Bests, meet results, filters, and exports. Its heading and browser title are `Distance Trak`; the workflow remains intact. |
 | Distance Trak > Miles Trak | Dashboard Miles Trak modal (`#share-miles-board`) | Opens the existing Miles Trak flow. |
 | Athletes > Roster | `/athletes.html` | Existing roster, search/filter, add/import, parent contacts, group/status, Docu Trak, Equipment Trak, calendar links and questions. Do not replace with concept roster. |
 | Athletes > Attendance | `/attendance.html` | Existing Attendance Trak page. |
@@ -21,13 +21,13 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Meets & Results > Meet History | `/meet-history.html` | Existing meet administration/history, imports and corrections. |
 | Meets & Results > Results | `/meet-history.html#results-board` | Opens Results Board sharing on Meet History; `/results-board.html` remains the public/shared board. Older Dashboard entry points redirect here. |
 | Meets & Results > Records | `/records.html` | Existing records and XC Top 20. |
-| Meets & Results > Simulators | `/track-simulator.html`, `/xc-simulator.html` | Existing individual simulators; dashboard currently opens a chooser modal. |
+| Meets & Results > Simulators | `/track-simulator.html`, `/xc-simulator.html` | Direct Track Simulator and XC Simulator links; the redundant chooser is removed from the dashboard menu. |
 | Tools > Keep Trak | `/keep-trak.html` | Existing team task workflow. |
 | Tools > Weather | `/weather.html` | Existing weather page. |
 | Tools > Equipment Trak | `#equipmentLookupBtn` on `/athletes.html` | Existing athlete-linked equipment flow; confirm whether a separate global inventory entry exists before routing. |
 | Tools > Docu Trak | Athlete action on `/athletes.html` | Existing athlete documentation flow; confirm a global entry before routing. |
 | Account > Staff Access | `#changeCodeBtn` on `/dashboard.html` | Existing staff/device access modal. |
-| Account > Sign Out | Existing account-access flow | Confirm whether a global sign-out command exists; prototype button is not implemented. |
+| Account > Sign Out | Shared navigation | Clears this device's stored code, remembered/session authentication, and account snapshots, then returns to the page's access prompt. |
 
 ## Quick actions and secondary entry points
 
@@ -55,7 +55,7 @@ Training Calendar also has Athlete Setup (`/plan-setup.html`), Upload/Paste Plan
 
 ## Approved navigation decisions
 
-1. Use `Distance Trak` as the navigation group, with Dashboard and Miles Trak under it. Keep the current dashboard title, layout, and workflows. Use Athletes as a group with Roster and Attendance under it.
+1. Use `Distance Trak` as the navigation group, with Distance Overview and Miles Trak under it. The distance page title is `Distance Trak`; its layout and workflows remain intact. Use Athletes as a group with Roster and Attendance under it.
 2. Use `Training Calendar` instead of `Open Today`. Do not imply a Today filter that does not exist.
 3. Regular coaches see `Sign Out` in Account. The Head Coach also sees `Staff Access`, subject to the existing staff-admin authorization check. No coaches need or have Account Settings access; owner/admin onboarding stays in the custom sidebar. Sign Out removes the current device's stored access code and remembered/session authentication for this account, then returns to the access prompt. It does not change the account's server-side code or sign out other devices.
 4. Equipment Trak and Docu Trak retain their current athlete-specific flows. No new all-athlete page is approved.
