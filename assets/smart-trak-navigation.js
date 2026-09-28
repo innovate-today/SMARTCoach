@@ -68,6 +68,7 @@
   nav.appendChild(overviewLink);
   var distance=menu('Distance Trak',dashboardPage);
   move(distance,'dashboardLink','Dashboard');
+  if(overviewPage)distance.appendChild(link('Dashboard','/dashboard.html'));
   if(calendarPage)move(distance,'milesTrakLink');
   else if(!dashboardPage)distance.appendChild(link('Miles Trak','/dashboard.html#share-miles-board'));
   else move(distance,'shareMilesBoardBtn');
@@ -77,11 +78,17 @@
     move(athletesMenu,'attendanceLink');
   }else{
     move(athletesMenu,'athletesLink','Roster');
-    if(calendarPage)athletesMenu.appendChild(link('Roster','/athletes.html'));
+    if(calendarPage||overviewPage)athletesMenu.appendChild(link('Roster','/athletes.html'));
     athletesMenu.appendChild(link('Attendance','/attendance.html'));
   }
   var training=menu('Training',calendarPage||fieldPage||setupPage||importPage||builderPage);
   if(calendarPage)training.appendChild(link('Training Calendar','/training-calendar.html'));
+  else if(overviewPage){
+    training.appendChild(link('Training Calendar','/training-calendar.html'));
+    training.appendChild(link('Athlete Setup','/plan-setup.html'));
+    training.appendChild(link('Upload/Paste Plan','/plan-import.html'));
+    training.appendChild(link('Auto Build Plan','/plan-builder.html'));
+  }
   else if(builderPage){
     move(training,'trainingCalendarLink','Training Calendar');
     move(training,'planSetupLink');
@@ -151,6 +158,7 @@
     meets.appendChild(link('XC Simulator','/xc-simulator.html'));
   }else if(!dashboardPage){
     meets.appendChild(link('Meet History','/meet-history.html'));
+    if(overviewPage)meets.appendChild(link('Results','/dashboard.html#share-results-board'));
     meets.appendChild(link('Records','/records.html'));
     meets.appendChild(link('Track Simulator','/track-simulator.html'));
     meets.appendChild(link('XC Simulator','/xc-simulator.html'));
@@ -226,7 +234,11 @@
   }else{
     move(quick,'manualMileageBtn');
     move(quick,'raceResultBtn');
-    command(quick,'Manage Meets','manageMeetsBtn');
+    if(overviewPage){
+      quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
+      quick.appendChild(link('Log Single Result','/dashboard.html#log-single-result'));
+      quick.appendChild(link('Manage Meets','/dashboard.html#manage-meets'));
+    }else command(quick,'Manage Meets','manageMeetsBtn');
     quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
     quick.appendChild(link('Import Athletes','/athletes.html#import-athletes'));
   }

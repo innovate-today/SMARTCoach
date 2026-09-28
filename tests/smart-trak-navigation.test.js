@@ -573,6 +573,15 @@ vm.runInNewContext(source, {
 const overviewNav = overviewHeader.children.find(child => child.tag === 'nav');
 assert.ok(overviewNav, 'Overview navigation mounted');
 assert.strictEqual(overviewNav.children.find(child => child.textContent === 'Overview').attributes['aria-current'], 'page');
+function overviewLinks(name) {
+  return menuByName(overviewNav, name).children[1].children.filter(child => child.tag === 'a').map(child => child.textContent);
+}
+assert.deepStrictEqual(overviewLinks('Distance Trak'), ['Dashboard', 'Miles Trak']);
+assert.deepStrictEqual(overviewLinks('Athletes'), ['Roster', 'Attendance']);
+assert.deepStrictEqual(overviewLinks('Training'), ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Field Practice']);
+assert.deepStrictEqual(overviewLinks('Meets & Results'), ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator']);
+assert.deepStrictEqual(overviewLinks('Tools'), ['Keep Trak', 'Weather']);
+assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes']);
 assert.ok(overviewNav.children.includes(overviewNodes.overviewRefreshBtn));
 menuByName(overviewNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
 assert.strictEqual(overviewRedirect, '/overview.html?account=school-a');
