@@ -126,6 +126,7 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
     error.hidden=true;document.getElementById('lastUpdated').textContent='Loading...';
     request('/api/smart-trak/account-status?account='+encodeURIComponent(key)).then(function(status){
       if(status.sessionToken)try{localStorage.setItem('sc_session_remembered_'+key,status.sessionToken);}catch(e){}
+      window.accountStatus=status;
       if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(status);
       if(status.logoUrl)logo.src=status.logoUrl;
       if(status.accessReady===false){showAccess(status.subscriptionBlockedReason||'SMART Trak access is unavailable for this account.',true);return null;}
@@ -133,6 +134,7 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
       accessPanel.hidden=true;
       return loadDashboard(forceRefresh===true,sequence);
     }).catch(function(failure){
+      window.accountStatus=null;
       if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null);
       if(failure&&failure.accessCodeRequired){showAccess();return;}
       showError(failure&&failure.error||'Overview could not load. Try Refresh.');

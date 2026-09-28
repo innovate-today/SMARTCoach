@@ -71,6 +71,11 @@ for (const id of ids) {
   assert.ok(source.includes("'" + id + "'"), id + ' remains mapped');
 }
 assert.strictEqual(nodes.changeCodeBtn.hidden, true, 'Staff Access hidden without Head Coach session');
+vm.runInNewContext(source, {
+  ...context,
+  accountStatus: { staffAdminAllowed: true, coach: { index: 0, role: 'Head Coach' } }
+});
+assert.strictEqual(nodes.changeCodeBtn.hidden, false, 'Head Coach role loaded before navigation still reveals Staff Access');
 context.window.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
 assert.strictEqual(nodes.changeCodeBtn.hidden, false);
 context.window.smartTrakNavigationUpdateAccess({ staffAdminAllowed: false, coach: { index: 1, role: 'Coach' } });

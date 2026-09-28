@@ -124,6 +124,8 @@ setTimeout(() => {
   assert.strictEqual(node('recentResults').children[0].children[0].textContent, 'A');
   assert.ok(requests.every(request => request.options.headers['X-SMARTCoach-Account'] === 'school-a'));
   assert.ok(requests.every(request => request.options.headers['X-SMARTCoach-Session'] === 'valid-session'));
+  assert.strictEqual(context.accountStatus.staffAdminAllowed, false, 'Overview retains the role result for navigation loaded afterward');
+  assert.ok(html.includes('window.accountStatus=status;'));
   assert.ok(routes.every(route => route.href.endsWith('?account=school-a')));
   assert.ok(html.includes('data-route="/speed-trak.html"'));
   assert.ok(html.includes('data-route="/power-trak.html"'));
