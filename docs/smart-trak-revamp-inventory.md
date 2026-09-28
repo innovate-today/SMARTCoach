@@ -19,7 +19,7 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Speed Trak | `/speed-trak.html` | Existing sessions, leaderboard, progression, imports and field-practice-backed results. |
 | Power Trak | `/power-trak.html` | Existing workouts, rack mode, sessions, leaderboard, progression, history and imports; rack iPad setup is a page action. |
 | Meets & Results > Meet History | `/meet-history.html` | Existing meet administration/history, imports and corrections. |
-| Meets & Results > Results | `#shareResultsBoardBtn` on `/dashboard.html` | Opens existing Results board flow; `/results-board.html` is the public/shared board, not the coach entry point. |
+| Meets & Results > Results | `/meet-history.html#results-board` | Opens Results Board sharing on Meet History; `/results-board.html` remains the public/shared board. Older Dashboard entry points redirect here. |
 | Meets & Results > Records | `/records.html` | Existing records and XC Top 20. |
 | Meets & Results > Simulators | `/track-simulator.html`, `/xc-simulator.html` | Existing individual simulators; dashboard currently opens a chooser modal. |
 | Tools > Keep Trak | `/keep-trak.html` | Existing team task workflow. |

@@ -144,6 +144,7 @@
   var meets=menu('Meets & Results',meetPage||recordsPage||trackSimulatorPage||xcSimulatorPage);
   if(meetPage){
     meets.appendChild(link('Meet History','/meet-history.html'));
+    move(meets,'openResultsBoardBtn','Results');
     move(meets,'recordsLink','Records');
     move(meets,'trackSimulatorLink','Track Simulator');
     move(meets,'xcSimulatorLink','XC Simulator');
@@ -170,7 +171,7 @@
     meets.appendChild(link('XC Simulator','/xc-simulator.html'));
   }else if(!dashboardPage){
     meets.appendChild(link('Meet History','/meet-history.html'));
-    if(overviewPage)meets.appendChild(link('Results','/dashboard.html#share-results-board'));
+    if(overviewPage)meets.appendChild(link('Results','/meet-history.html#results-board'));
     meets.appendChild(link('Records','/records.html'));
     meets.appendChild(link('Track Simulator','/track-simulator.html'));
     meets.appendChild(link('XC Simulator','/xc-simulator.html'));
@@ -182,7 +183,7 @@
     move(meets,'simulatorBtn');
   }
   ensureLink(meets,'Meet History','/meet-history.html');
-  ensureLink(meets,'Results','/dashboard.html#share-results-board');
+  ensureLink(meets,'Results','/meet-history.html#results-board');
   ensureLink(meets,'Records','/records.html');
   ensureLink(meets,'Track Simulator','/track-simulator.html');
   ensureLink(meets,'XC Simulator','/xc-simulator.html');

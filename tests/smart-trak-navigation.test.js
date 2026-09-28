@@ -316,7 +316,7 @@ const powerSource = fs.readFileSync('power-trak.html', 'utf8');
 assert.ok(powerSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(powerSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(powerSource.includes('window.smartTrakNavigationUpdateAccess(data)'));
-const meetIds = ['dashboardLink', 'recordsLink', 'trackSimulatorLink', 'xcSimulatorLink', 'openImportTopBtn', 'openQuickEntryBtn', 'refreshBtn'];
+const meetIds = ['dashboardLink', 'recordsLink', 'trackSimulatorLink', 'xcSimulatorLink', 'openResultsBoardBtn', 'openImportTopBtn', 'openQuickEntryBtn', 'refreshBtn'];
 const meetNodes = Object.fromEntries(meetIds.map(id => [id, element('button')]));
 const meetHeader = element('header');
 meetHeader.querySelector = selector => selector === '.actions' ? element('div') : null;
@@ -334,6 +334,7 @@ const meetNav = meetHeader.children.find(child => child.tag === 'nav');
 assert.ok(meetNav, 'Meet History navigation mounted');
 assert.strictEqual(menuByName(meetNav, 'Meets & Results').children[0].attributes['aria-current'], 'page');
 for (const id of ['recordsLink', 'trackSimulatorLink', 'xcSimulatorLink']) assert.ok(menuByName(meetNav, 'Meets & Results').children[1].children.includes(meetNodes[id]));
+assert.ok(menuByName(meetNav, 'Meets & Results').children[1].children.includes(meetNodes.openResultsBoardBtn));
 for (const id of ['openImportTopBtn', 'openQuickEntryBtn']) assert.ok(menuByName(meetNav, 'Quick Add').children[1].children.includes(meetNodes[id]));
 assert.ok(meetNav.children.includes(meetNodes.refreshBtn));
 const meetStaff = menuByName(meetNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
@@ -585,6 +586,7 @@ assert.deepStrictEqual(overviewLinks('Training'), ['Training Calendar', 'Athlete
 assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Training Customization').href, '/training-calendar.html?account=school-a#training-customization');
 assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Fitness Review').href, '/dashboard.html?account=school-a#fitness-review');
 assert.deepStrictEqual(overviewLinks('Meets & Results'), ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator']);
+assert.strictEqual(menuByName(overviewNav, 'Meets & Results').children[1].children.find(child => child.textContent === 'Results').href, '/meet-history.html?account=school-a#results-board');
 assert.deepStrictEqual(overviewLinks('Tools'), ['Keep Trak', 'Weather']);
 assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes']);
 assert.ok(overviewNav.children.includes(overviewNodes.overviewRefreshBtn));
@@ -600,6 +602,14 @@ assert.ok(athletesSource.includes("location.hash==='#add-athlete')openAthleteMod
 assert.ok(athletesSource.includes("location.hash==='#import-athletes')openImportModal()"));
 assert.ok(dashboardSource.includes("window.location.hash==='#fitness-review'?'fitnessReview'"));
 assert.ok(dashboardSource.includes("if(action==='fitnessReview')openFitnessCleanup();"));
+assert.ok(dashboardSource.includes("window.location.href=smartCoachPageUrl('/meet-history.html')+'#results-board';"));
+const resultsSharingSource = fs.readFileSync('assets/meet-results-board-sharing.js', 'utf8');
+new Function(resultsSharingSource);
+assert.ok(meetSource.includes('<script src="/assets/meet-results-board-sharing.js"></script>'));
+assert.ok(meetSource.includes("location.hash==='#results-board'&&window.openMeetResultsBoardSharing"));
+for (const fragment of ['/api/smart-trak/results-board-sharing?', '/api/smart-trak/results-board-link?', 'Copy Display Link', 'Turn Off Link', 'data-board-order']) {
+  assert.ok(resultsSharingSource.includes(fragment), fragment + ' remains in Meet History Results Board');
+}
 const trainingDestinations = ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice'];
 const meetDestinations = ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator'];
 for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, speedNav, powerNav, meetNav, recordNav, ...simulatorNavs, keepNav, weatherNav, setupNav, importNav, builderNav, overviewNav]) {
@@ -611,5 +621,7 @@ for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, sp
   for (const label of meetDestinations) {
     assert.strictEqual(results.filter(item => item === label).length, 1, label + ' appears once in every Meets & Results menu');
   }
+  const resultEntry = menuByName(pageNav, 'Meets & Results').children[1].children.find(child => child.textContent === 'Results');
+  if (resultEntry.tag === 'a') assert.ok(resultEntry.href.includes('/meet-history.html') && resultEntry.href.endsWith('#results-board'), 'Results link opens Meet History');
 }
 console.log('SMART Trak shared navigation tests passed.');

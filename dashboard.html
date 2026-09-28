@@ -2452,11 +2452,7 @@ function collectResultsBoardSharing(){
   });
 }
 function openResultsBoardSharing(){
-  currentResultsBoardUrl='';
-  renderResultsBoardSharing();
-  els.resultsBoardModal.hidden=false;
-  loadResultsBoardSharing();
-  els.resultsBoardClose.focus();
+  window.location.href=smartCoachPageUrl('/meet-history.html')+'#results-board';
 }
 function closeResultsBoardSharing(){
   els.resultsBoardModal.hidden=true;

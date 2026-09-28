@@ -183,6 +183,16 @@ tr:last-child td{border-bottom:0}
 .field label{color:#475569;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
 .modalactions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px}
 .modalstatus{color:var(--muted);font-size:13px;font-weight:700;margin-right:auto}
+.results-board-panel{width:min(880px,100%);max-height:calc(100vh - 40px);display:flex;flex-direction:column}
+.results-board-panel .modalbody{overflow:auto}
+.results-board-intro{color:var(--muted);font-size:13px;line-height:1.4;margin:0 0 14px}
+.results-board-options{display:grid;gap:7px}
+.results-board-option{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.results-board-option span{flex:1;font-size:13px;font-weight:800}
+.results-board-option input{width:auto}
+.results-board-option button{padding:5px 7px;font-size:12px}
+.results-board-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:14px}
+.results-board-actions button{font-size:13px}
 .rowactions{display:flex;gap:6px;flex-wrap:wrap}
 .empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
 .access{max-width:720px;margin:72px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08)}
@@ -223,6 +233,7 @@ tr:last-child td{border-bottom:0}
       <a id="recordsLink" class="linkbtn secondary" href="/records.html">Records</a>
       <a id="trackSimulatorLink" class="linkbtn secondary" href="/track-simulator.html">Track Simulator</a>
       <a id="xcSimulatorLink" class="linkbtn secondary" href="/xc-simulator.html">XC Simulator</a>
+      <button id="openResultsBoardBtn" class="utility-action" type="button">Results</button>
       <button id="openImportTopBtn" class="utility-action" type="button">Import History</button>
       <button id="openQuickEntryBtn" class="utility-action" type="button">Enter Results</button>
       <button id="refreshBtn" class="utility-action" type="button">Refresh</button>
@@ -3450,10 +3461,11 @@ function init(){
   els.accessCode.addEventListener('keydown',function(event){
     if(event.key==='Enter')submitAccess();
   });
-  ensureAccountAccess().then(function(ok){if(ok)loadMeetHistory();});
+  ensureAccountAccess().then(function(ok){if(ok)return loadMeetHistory().then(function(){if(!els.mainPage.hidden&&location.hash==='#results-board'&&window.openMeetResultsBoardSharing)window.openMeetResultsBoardSharing();});});
 }
 init();
 </script>
+<script src="/assets/meet-results-board-sharing.js"></script>
 <script src="/assets/smart-trak-navigation.js"></script>
 <script src="/assets/smartcoach-help-widget.js" async></script>
 </body>
