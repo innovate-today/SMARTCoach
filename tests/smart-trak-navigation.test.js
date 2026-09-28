@@ -376,6 +376,7 @@ const recordsSource = fs.readFileSync('records.html', 'utf8');
 assert.ok(recordsSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(recordsSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(recordsSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
+const simulatorNavs = [];
 for (const [simulator, peer, path] of [
   ['track', 'xcSimulatorLink', '/track-simulator.html'],
   ['xc', 'trackSimulatorLink', '/xc-simulator.html']
@@ -394,6 +395,7 @@ for (const [simulator, peer, path] of [
     accountKey: () => 'school-a', pageUrl: target => target + '?account=school-a'
   });
   const simNav = simHeader.children.find(child => child.tag === 'nav');
+  simulatorNavs.push(simNav);
   assert.ok(simNav, simulator + ' simulator navigation mounted');
   assert.strictEqual(menuByName(simNav, 'Meets & Results').children[0].attributes['aria-current'], 'page');
   for (const id of ['meetHistoryLink', 'recordsLink', peer]) assert.ok(menuByName(simNav, 'Meets & Results').children[1].children.includes(simNodes[id]));
@@ -598,4 +600,11 @@ assert.ok(athletesSource.includes("location.hash==='#add-athlete')openAthleteMod
 assert.ok(athletesSource.includes("location.hash==='#import-athletes')openImportModal()"));
 assert.ok(dashboardSource.includes("window.location.hash==='#fitness-review'?'fitnessReview'"));
 assert.ok(dashboardSource.includes("if(action==='fitnessReview')openFitnessCleanup();"));
+const trainingDestinations = ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice'];
+for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, speedNav, powerNav, meetNav, recordNav, ...simulatorNavs, keepNav, weatherNav, setupNav, importNav, builderNav, overviewNav]) {
+  const items = menuByName(pageNav, 'Training').children[1].children.map(child => child.textContent);
+  for (const label of trainingDestinations) {
+    assert.strictEqual(items.filter(item => item === label).length, 1, label + ' appears once in every Training menu');
+  }
+}
 console.log('SMART Trak shared navigation tests passed.');

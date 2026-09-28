@@ -54,6 +54,9 @@
     }
     return node;
   }
+  function ensureLink(parent,label,path){
+    if(!Array.prototype.some.call(parent.children,function(item){return String(item.textContent||'').trim()===label;}))parent.appendChild(link(label,path));
+  }
   function command(parent,label,id){
     var button=document.createElement('button');
     button.type='button';
@@ -93,35 +96,42 @@
   }
   else if(builderPage){
     move(training,'trainingCalendarLink','Training Calendar');
-    move(training,'planSetupLink');
-    move(training,'planImportLink');
+    move(training,'planSetupLink','Athlete Setup');
+    move(training,'planImportLink','Upload/Paste Plan');
     training.appendChild(link('Auto Build Plan','/plan-builder.html'));
   }
   else if(importPage){
     move(training,'calendarLink','Training Calendar');
-    move(training,'setupLink');
+    move(training,'setupLink','Athlete Setup');
     training.appendChild(link('Upload/Paste Plan','/plan-import.html'));
     move(training,'builderLink','Auto Build Plan');
   }
   else if(setupPage){
     move(training,'trainingCalendarLink','Training Calendar');
     training.appendChild(link('Athlete Setup','/plan-setup.html'));
-    move(training,'planImportLink');
-    move(training,'planBuilderLink');
+    move(training,'planImportLink','Upload/Paste Plan');
+    move(training,'planBuilderLink','Auto Build Plan');
   }
   else if(fieldPage||weatherPage)move(training,'calendarLink','Training Calendar');
   else if(speedPage||powerPage)move(training,'trainingLink','Training Calendar');
   else move(training,'trainingCalendarLink','Training Calendar');
-  if(dashboardPage)move(training,'fitnessCleanupBtn');
+  if(dashboardPage)move(training,'fitnessCleanupBtn','Fitness Review');
   if(calendarPage){
-    move(training,'fieldPracticeLink');
-    move(training,'planSetupLink');
-    move(training,'planImportLink');
-    move(training,'planBuilderLink');
-    move(training,'trainingCustomBtn');
+    move(training,'fieldPracticeLink','Field Practice');
+    move(training,'planSetupLink','Athlete Setup');
+    move(training,'planImportLink','Upload/Paste Plan');
+    move(training,'planBuilderLink','Auto Build Plan');
+    move(training,'trainingCustomBtn','Training Customization');
     move(training,'stravaTrainingLink');
-  }else if(speedPage)move(training,'fieldPracticeLink');
+  }else if(speedPage)move(training,'fieldPracticeLink','Field Practice');
   else training.appendChild(link('Field Practice','/field-practice.html'));
+  ensureLink(training,'Training Calendar','/training-calendar.html');
+  ensureLink(training,'Athlete Setup','/plan-setup.html');
+  ensureLink(training,'Upload/Paste Plan','/plan-import.html');
+  ensureLink(training,'Auto Build Plan','/plan-builder.html');
+  ensureLink(training,'Training Customization','/training-calendar.html#training-customization');
+  ensureLink(training,'Fitness Review','/dashboard.html#fitness-review');
+  ensureLink(training,'Field Practice','/field-practice.html');
   if(calendarPage)move(nav,'speedTrakLink');
   else{
     var speedLink=link('Speed Trak','/speed-trak.html');

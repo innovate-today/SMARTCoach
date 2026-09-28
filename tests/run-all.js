@@ -3211,7 +3211,7 @@ function checkDashboardWhatsNew() {
   [
     'id="whatsNewBtn"',
     "What's New",
-    ".title-row{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}",
+    ".title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}",
     "h1{font-size:24px;line-height:1.15;margin:0;white-space:nowrap;flex:0 0 auto}",
     ".whats-new-btn{position:relative;display:inline-flex;align-items:center;gap:6px;border:1px solid #bfd0ef;background:#fff;color:#173891;border-radius:999px;font-size:12px;font-weight:900;line-height:1;padding:7px 10px;min-height:0;white-space:nowrap;flex:0 0 auto}",
     ".whats-new-count{border-radius:999px;background:#dbeafe;color:#173891;padding:2px 6px;font-size:11px;white-space:nowrap}",
