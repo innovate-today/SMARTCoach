@@ -16,7 +16,8 @@
   var weatherPage=!!document.getElementById('searchBtn')&&!!document.getElementById('saveBtn');
   var setupPage=!!document.getElementById('fitnessGenderFilter')&&!!document.getElementById('planImportLink');
   var importPage=!!document.getElementById('parsePasteBtn');
-  var dashboardPage=!athletesPage&&!attendancePage&&!calendarPage&&!fieldPage&&!speedPage&&!powerPage&&!meetPage&&!recordsPage&&!trackSimulatorPage&&!xcSimulatorPage&&!keepPage&&!weatherPage&&!setupPage&&!importPage;
+  var builderPage=!calendarPage&&!!document.getElementById('planSetupLink')&&!!document.getElementById('planImportLink');
+  var dashboardPage=!athletesPage&&!attendancePage&&!calendarPage&&!fieldPage&&!speedPage&&!powerPage&&!meetPage&&!recordsPage&&!trackSimulatorPage&&!xcSimulatorPage&&!keepPage&&!weatherPage&&!setupPage&&!importPage&&!builderPage;
   if((document.body&&document.body.classList.contains('rack-kiosk'))||!header||!oldActions||(dashboardPage&&typeof smartCoachPageUrl!=='function')||(dashboardPage&&productPlan()==='essential'))return;
 
   var nav=document.createElement('nav');
@@ -29,7 +30,7 @@
     var hash=hashIndex>=0?path.slice(hashIndex):'';
     if(hashIndex>=0)path=path.slice(0,hashIndex);
     anchor.textContent=label;
-    anchor.href=(dashboardPage||setupPage?smartCoachPageUrl(path):pageUrl(path))+hash;
+    anchor.href=(dashboardPage||setupPage||builderPage?smartCoachPageUrl(path):pageUrl(path))+hash;
     return anchor;
   }
   function menu(label,current){
@@ -75,8 +76,14 @@
     if(calendarPage)athletesMenu.appendChild(link('Roster','/athletes.html'));
     athletesMenu.appendChild(link('Attendance','/attendance.html'));
   }
-  var training=menu('Training',calendarPage||fieldPage||setupPage||importPage);
+  var training=menu('Training',calendarPage||fieldPage||setupPage||importPage||builderPage);
   if(calendarPage)training.appendChild(link('Training Calendar','/training-calendar.html'));
+  else if(builderPage){
+    move(training,'trainingCalendarLink','Training Calendar');
+    move(training,'planSetupLink');
+    move(training,'planImportLink');
+    training.appendChild(link('Auto Build Plan','/plan-builder.html'));
+  }
   else if(importPage){
     move(training,'calendarLink','Training Calendar');
     move(training,'setupLink');
@@ -237,7 +244,7 @@
       localStorage.removeItem('sc_admin_tools');
       sessionStorage.removeItem('sc_session_'+key);
     }catch(error){}
-    window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':fieldPage?'/field-practice.html':speedPage?'/speed-trak.html':powerPage?'/power-trak.html':meetPage?'/meet-history.html':recordsPage?'/records.html':trackSimulatorPage?'/track-simulator.html':xcSimulatorPage?'/xc-simulator.html':keepPage?'/keep-trak.html':weatherPage?'/weather.html':setupPage?'/plan-setup.html':importPage?'/plan-import.html':'/dashboard.html')+'?account='+encodeURIComponent(currentAccountKey()));
+    window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':fieldPage?'/field-practice.html':speedPage?'/speed-trak.html':powerPage?'/power-trak.html':meetPage?'/meet-history.html':recordsPage?'/records.html':trackSimulatorPage?'/track-simulator.html':xcSimulatorPage?'/xc-simulator.html':keepPage?'/keep-trak.html':weatherPage?'/weather.html':setupPage?'/plan-setup.html':importPage?'/plan-import.html':builderPage?'/plan-builder.html':'/dashboard.html')+'?account='+encodeURIComponent(currentAccountKey()));
   });
   account.appendChild(signOut);
   move(nav,'refreshBtn');
@@ -246,7 +253,7 @@
   if(calendarPage){move(nav,'approveDraftsBtn');move(nav,'scheduleApprovedBtn');}
   if(speedPage){move(nav,'shareSpeedBoardBtn');move(nav,'exportSpeedDataBtn');}
   if(powerPage){move(nav,'rackPwaLink');move(nav,'downloadCsvBtn');move(nav,'deleteSessionBtn');}
-  if(setupPage){var adminControl=oldActions.querySelector('.account-control');if(adminControl)nav.appendChild(adminControl);}
+  if(setupPage||builderPage){var adminControl=oldActions.querySelector('.account-control');if(adminControl)nav.appendChild(adminControl);}
 
   window.smartTrakNavigationUpdateAccess=function(status){
     var coach=status&&status.coach;

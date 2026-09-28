@@ -525,6 +525,37 @@ const importSource = fs.readFileSync('plan-import.html', 'utf8');
 assert.ok(importSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(importSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(importSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
+const builderNodes = Object.fromEntries(['dashboardLink', 'trainingCalendarLink', 'planImportLink', 'planSetupLink'].map(id => [id, element('button')]));
+const builderHeader = element('header');
+const builderActions = element('div');
+const builderAdminControl = element('div');
+builderActions.querySelector = selector => selector === '.account-control' ? builderAdminControl : null;
+builderHeader.querySelector = selector => selector === '.top-actions' ? builderActions : null;
+let builderRedirect = '';
+const builderWindow = { location: { replace: path => { builderRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: {
+    querySelector: selector => selector === '.top' ? builderHeader : null,
+    getElementById: id => builderNodes[id], createElement: element, addEventListener() {}
+  },
+  window: builderWindow, localStorage: storage, sessionStorage: storage,
+  smartCoachAccountKey: () => 'school-a', smartCoachPageUrl: path => path + '?account=school-a'
+});
+const builderNav = builderHeader.children.find(child => child.tag === 'nav');
+assert.ok(builderNav, 'Auto Build Plan navigation mounted');
+assert.strictEqual(menuByName(builderNav, 'Training').children[0].attributes['aria-current'], 'page');
+for (const id of ['trainingCalendarLink', 'planImportLink', 'planSetupLink']) assert.ok(menuByName(builderNav, 'Training').children[1].children.includes(builderNodes[id]));
+assert.ok(builderNav.children.includes(builderAdminControl), 'admin-only account control remains in header');
+const builderStaff = menuByName(builderNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(builderStaff.hidden, true);
+builderWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(builderStaff.hidden, false);
+menuByName(builderNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(builderRedirect, '/plan-builder.html?account=school-a');
+const builderSource = fs.readFileSync('plan-builder.html', 'utf8');
+assert.ok(builderSource.includes('/assets/smart-trak-navigation.css'));
+assert.ok(builderSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(builderSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],
