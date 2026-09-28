@@ -436,6 +436,36 @@ const keepSource = fs.readFileSync('keep-trak.html', 'utf8');
 assert.ok(keepSource.includes('/assets/smart-trak-navigation.css'));
 assert.ok(keepSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(keepSource.includes("fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey()),{cache:'no-store',headers:apiHeaders()})"));
+const weatherNodes = Object.fromEntries(['dashboardLink', 'calendarLink', 'searchBtn', 'saveBtn', 'refreshBtn'].map(id => [id, element('button')]));
+const weatherHeader = element('header');
+weatherHeader.querySelector = selector => selector === '.actions' ? element('div') : null;
+let weatherRedirect = '';
+const weatherWindow = { location: { replace: path => { weatherRedirect = path; } } };
+vm.runInNewContext(source, {
+  document: {
+    querySelector: selector => selector === '.top' ? weatherHeader : null,
+    getElementById: id => weatherNodes[id], createElement: element, addEventListener() {}
+  },
+  window: weatherWindow, localStorage: storage, sessionStorage: storage,
+  accountKey: () => 'school-a', pageUrl: path => path + '?account=school-a'
+});
+const weatherNav = weatherHeader.children.find(child => child.tag === 'nav');
+assert.ok(weatherNav, 'Weather navigation mounted');
+assert.strictEqual(menuByName(weatherNav, 'Tools').children[0].attributes['aria-current'], 'page');
+assert.ok(menuByName(weatherNav, 'Training').children[1].children.includes(weatherNodes.calendarLink));
+assert.ok(weatherNav.children.includes(weatherNodes.refreshBtn));
+assert.ok(!weatherNav.children.includes(weatherNodes.searchBtn), 'Search remains in Weather');
+assert.ok(!weatherNav.children.includes(weatherNodes.saveBtn), 'Save Location remains in Weather');
+const weatherStaff = menuByName(weatherNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
+assert.strictEqual(weatherStaff.hidden, true);
+weatherWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
+assert.strictEqual(weatherStaff.hidden, false);
+menuByName(weatherNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
+assert.strictEqual(weatherRedirect, '/weather.html?account=school-a');
+const weatherSource = fs.readFileSync('weather.html', 'utf8');
+assert.ok(weatherSource.includes('/assets/smart-trak-navigation.css'));
+assert.ok(weatherSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(weatherSource.includes("headers['X-SMARTCoach-Session']=session"));
 for (const [hash, handler] of [
   ['#log-miles', 'openManualMileage'],
   ['#log-single-result', 'openRaceResult'],

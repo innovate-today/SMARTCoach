@@ -66,6 +66,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 .empty{padding:22px;text-align:center;color:var(--muted)}
 @media(max-width:900px){.top{align-items:flex-start;flex-direction:column}.actions{width:100%;justify-content:stretch}.actions a,.actions button{text-align:center;flex:1}.grid{grid-template-columns:1fr}.forecastgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.locrow{grid-template-columns:1fr}.temp{font-size:46px}}
 </style>
+<link rel="stylesheet" href="/assets/smart-trak-navigation.css">
 </head>
 <body>
 <main class="page">
@@ -336,6 +337,16 @@ function init(){
   if(currentLocation)loadWeather(currentLocation);
 }
 init();
+</script>
+<script src="/assets/smart-trak-navigation.js"></script>
+<script>
+(function(){
+  var key=accountKey(),headers={'X-SMARTCoach-Account':key},session='',code='';
+  try{session=localStorage.getItem('sc_session_remembered_'+key)||sessionStorage.getItem('sc_session_'+key)||'';code=localStorage.getItem('sc_access_'+key)||'';}catch(e){}
+  if(session)headers['X-SMARTCoach-Session']=session;
+  else if(code)headers['X-SMARTCoach-Access-Code']=code;
+  fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key),{cache:'no-store',headers:headers}).then(function(res){return res.ok?res.json():null;}).then(function(status){window.smartTrakNavigationUpdateAccess(status);}).catch(function(){window.smartTrakNavigationUpdateAccess(null);});
+})();
 </script>
 <script src="/assets/smartcoach-help-widget.js" async></script>
 </body>
