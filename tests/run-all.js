@@ -14,7 +14,8 @@ require("./smart-trak-navigation.test");
 const overviewTests = spawnSync(process.execPath, ["tests/smart-trak-overview.test.js"], { stdio: "inherit" });
 if (overviewTests.status !== 0) throw new Error("SMART Trak Overview tests failed.");
 require("./power-trak-rack-sync.test");
-require("./account-scoped-lock.test");
+const accountScopedLockTests = spawnSync(process.execPath, ["tests/account-scoped-lock.test.js"], { stdio: "inherit" });
+if (accountScopedLockTests.status !== 0) throw new Error("Account scoped mutation lock tests failed.");
 
 const htmlFiles = [
   "index.html",
