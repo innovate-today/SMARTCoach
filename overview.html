@@ -102,7 +102,27 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
     var date=new Date(data.generatedAt||Date.now());document.getElementById('lastUpdated').textContent='Updated '+(isNaN(date.getTime())?'recently':date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
     content.hidden=false;error.hidden=true;
   }
-  function load(){
+  var loadSequence=0;
+  function loadDashboard(forceRefresh,sequence){
+    var live='/api/smart-trak/dashboard?light=1&v='+Date.now();
+    if(forceRefresh)return request(live+'&refresh=1').then(function(data){if(sequence===loadSequence)render(data);});
+    return request(live+'&snapshot=1').catch(function(failure){
+      if(failure&&failure.snapshotMissing)return request(live);
+      throw failure;
+    }).then(function(data){
+      if(sequence!==loadSequence)return;
+      render(data);
+      var savedAt=Date.parse(data.snapshotSavedAt||data.generatedAt||'');
+      if(data.snapshot&&(!Number.isFinite(savedAt)||Date.now()-savedAt>60000)){
+        setTimeout(function(){
+          if(sequence!==loadSequence)return;
+          request(live).then(function(fresh){if(sequence===loadSequence)render(fresh);}).catch(function(){});
+        },0);
+      }
+    });
+  }
+  function load(forceRefresh){
+    var sequence=++loadSequence;
     error.hidden=true;document.getElementById('lastUpdated').textContent='Loading...';
     request('/api/smart-trak/account-status?account='+encodeURIComponent(key)).then(function(status){
       if(status.sessionToken)try{localStorage.setItem('sc_session_remembered_'+key,status.sessionToken);}catch(e){}
@@ -111,14 +131,14 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
       if(status.accessReady===false){showAccess(status.subscriptionBlockedReason||'SMART Trak access is unavailable for this account.',true);return null;}
       if(status.accessCodeRequired&&!status.coachAccessUnlocked&&!status.deviceAccessReady){showAccess();return null;}
       accessPanel.hidden=true;
-      return request('/api/smart-trak/dashboard?light=1&v='+Date.now()).then(render);
+      return loadDashboard(forceRefresh===true,sequence);
     }).catch(function(failure){
       if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null);
       if(failure&&failure.accessCodeRequired){showAccess();return;}
       showError(failure&&failure.error||'Overview could not load. Try Refresh.');
     });
   }
-  document.getElementById('overviewRefreshBtn').addEventListener('click',load);
+  document.getElementById('overviewRefreshBtn').addEventListener('click',function(){load(true);});
   document.getElementById('accessForm').addEventListener('submit',function(event){event.preventDefault();var code=document.getElementById('accessCode').value.trim();if(!code)return;request('/api/smart-trak/account-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountKey:key,accessCode:code})}).then(function(data){if(!data.sessionToken)throw new Error('Access was not accepted.');localStorage.setItem('sc_session_remembered_'+key,data.sessionToken);localStorage.removeItem('sc_access_'+key);document.getElementById('accessCode').value='';load();}).catch(function(failure){document.getElementById('accessMessage').textContent=failure&&failure.error||failure&&failure.message||'Access could not be checked.';});});
   load();
 })();
