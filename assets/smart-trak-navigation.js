@@ -67,8 +67,8 @@
   if(overviewPage)overviewLink.setAttribute('aria-current','page');
   nav.appendChild(overviewLink);
   var distance=menu('Distance Trak',dashboardPage);
-  move(distance,'dashboardLink','Dashboard');
-  if(overviewPage)distance.appendChild(link('Dashboard','/dashboard.html'));
+  move(distance,'dashboardLink','Distance Overview');
+  if(overviewPage)distance.appendChild(link('Distance Overview','/dashboard.html'));
   if(calendarPage)move(distance,'milesTrakLink');
   else if(!dashboardPage)distance.appendChild(link('Miles Trak','/dashboard.html#share-miles-board'));
   else move(distance,'shareMilesBoardBtn');
@@ -88,6 +88,7 @@
     training.appendChild(link('Athlete Setup','/plan-setup.html'));
     training.appendChild(link('Upload/Paste Plan','/plan-import.html'));
     training.appendChild(link('Auto Build Plan','/plan-builder.html'));
+    training.appendChild(link('Training Customization','/training-calendar.html#training-customization'));
   }
   else if(builderPage){
     move(training,'trainingCalendarLink','Training Calendar');

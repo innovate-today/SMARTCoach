@@ -5504,6 +5504,7 @@ function init(){
   ensureAccountAccess().then(function(ok){
     if(!ok)return;
     if(location.hash==='#strava'&&stravaBetaAdminVisible())setTimeout(openStravaModal,0);
+    if(location.hash==='#training-customization')setTimeout(openTrainingCustomization,0);
     loadCalendar();
   });
 }

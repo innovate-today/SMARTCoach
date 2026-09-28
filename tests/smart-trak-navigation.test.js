@@ -56,6 +56,7 @@ const dashboardDistance = menuByName(nav, 'Distance Trak');
 const dashboardAthletes = menuByName(nav, 'Athletes');
 assert.strictEqual(dashboardDistance.children[0].attributes['aria-current'], 'page');
 assert.strictEqual(dashboardDistance.children[1].children[0], nodes.dashboardLink);
+assert.strictEqual(nodes.dashboardLink.textContent, 'Distance Overview');
 assert.strictEqual(dashboardDistance.children[1].children[1], nodes.shareMilesBoardBtn);
 assert.strictEqual(dashboardAthletes.children[1].children[0], nodes.athletesLink);
 assert.strictEqual(dashboardAthletes.children[1].children[1].href, '/attendance.html');
@@ -576,9 +577,10 @@ assert.strictEqual(overviewNav.children.find(child => child.textContent === 'Ove
 function overviewLinks(name) {
   return menuByName(overviewNav, name).children[1].children.filter(child => child.tag === 'a').map(child => child.textContent);
 }
-assert.deepStrictEqual(overviewLinks('Distance Trak'), ['Dashboard', 'Miles Trak']);
+assert.deepStrictEqual(overviewLinks('Distance Trak'), ['Distance Overview', 'Miles Trak']);
 assert.deepStrictEqual(overviewLinks('Athletes'), ['Roster', 'Attendance']);
-assert.deepStrictEqual(overviewLinks('Training'), ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Field Practice']);
+assert.deepStrictEqual(overviewLinks('Training'), ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Field Practice']);
+assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Training Customization').href, '/training-calendar.html?account=school-a#training-customization');
 assert.deepStrictEqual(overviewLinks('Meets & Results'), ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator']);
 assert.deepStrictEqual(overviewLinks('Tools'), ['Keep Trak', 'Weather']);
 assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes']);
