@@ -144,22 +144,22 @@
   var meets=menu('Meets & Results',meetPage||recordsPage||trackSimulatorPage||xcSimulatorPage);
   if(meetPage){
     meets.appendChild(link('Meet History','/meet-history.html'));
-    move(meets,'recordsLink');
-    move(meets,'trackSimulatorLink');
-    move(meets,'xcSimulatorLink');
+    move(meets,'recordsLink','Records');
+    move(meets,'trackSimulatorLink','Track Simulator');
+    move(meets,'xcSimulatorLink','XC Simulator');
   }else if(recordsPage){
-    move(meets,'meetHistoryLink');
+    move(meets,'meetHistoryLink','Meet History');
     meets.appendChild(link('Records','/records.html'));
     meets.appendChild(link('Track Simulator','/track-simulator.html'));
     meets.appendChild(link('XC Simulator','/xc-simulator.html'));
   }else if(trackSimulatorPage||xcSimulatorPage){
-    move(meets,'meetHistoryLink');
-    move(meets,'recordsLink');
+    move(meets,'meetHistoryLink','Meet History');
+    move(meets,'recordsLink','Records');
     if(trackSimulatorPage){
       meets.appendChild(link('Track Simulator','/track-simulator.html'));
-      move(meets,'xcSimulatorLink');
+      move(meets,'xcSimulatorLink','XC Simulator');
     }else{
-      move(meets,'trackSimulatorLink');
+      move(meets,'trackSimulatorLink','Track Simulator');
       meets.appendChild(link('XC Simulator','/xc-simulator.html'));
     }
   }else if(calendarPage){
@@ -175,12 +175,17 @@
     meets.appendChild(link('Track Simulator','/track-simulator.html'));
     meets.appendChild(link('XC Simulator','/xc-simulator.html'));
   }else{
-    move(meets,'meetHistoryLink');
+    move(meets,'meetHistoryLink','Meet History');
     move(meets,'manageMeetsBtn');
-    move(meets,'shareResultsBoardBtn');
-    move(meets,'recordsLink');
+    move(meets,'shareResultsBoardBtn','Results');
+    move(meets,'recordsLink','Records');
     move(meets,'simulatorBtn');
   }
+  ensureLink(meets,'Meet History','/meet-history.html');
+  ensureLink(meets,'Results','/dashboard.html#share-results-board');
+  ensureLink(meets,'Records','/records.html');
+  ensureLink(meets,'Track Simulator','/track-simulator.html');
+  ensureLink(meets,'XC Simulator','/xc-simulator.html');
 
   var tools=menu('Tools',keepPage||weatherPage);
   if(athletesPage){

@@ -601,10 +601,15 @@ assert.ok(athletesSource.includes("location.hash==='#import-athletes')openImport
 assert.ok(dashboardSource.includes("window.location.hash==='#fitness-review'?'fitnessReview'"));
 assert.ok(dashboardSource.includes("if(action==='fitnessReview')openFitnessCleanup();"));
 const trainingDestinations = ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice'];
+const meetDestinations = ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator'];
 for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, speedNav, powerNav, meetNav, recordNav, ...simulatorNavs, keepNav, weatherNav, setupNav, importNav, builderNav, overviewNav]) {
   const items = menuByName(pageNav, 'Training').children[1].children.map(child => child.textContent);
   for (const label of trainingDestinations) {
     assert.strictEqual(items.filter(item => item === label).length, 1, label + ' appears once in every Training menu');
+  }
+  const results = menuByName(pageNav, 'Meets & Results').children[1].children.map(child => child.textContent);
+  for (const label of meetDestinations) {
+    assert.strictEqual(results.filter(item => item === label).length, 1, label + ' appears once in every Meets & Results menu');
   }
 }
 console.log('SMART Trak shared navigation tests passed.');
