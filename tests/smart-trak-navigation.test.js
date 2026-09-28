@@ -64,6 +64,8 @@ assert.strictEqual(nodes.dashboardLink.textContent, 'Distance Overview');
 assert.strictEqual(dashboardDistance.children[1].children[1], nodes.shareMilesBoardBtn);
 assert.strictEqual(dashboardAthletes.children[1].children[0], nodes.athletesLink);
 assert.strictEqual(dashboardAthletes.children[1].children[1].href, '/attendance.html');
+assert.strictEqual(dashboardAthletes.children[1].children[2].href, '/athletes.html#equipment-trak');
+assert.strictEqual(dashboardAthletes.children[1].children[3].href, '/athletes.html#docu-trak');
 const dashboardQuick = menuByName(nav, 'Quick Add').children[1].children;
 assert.strictEqual(dashboardQuick.find(child => child.textContent === 'Add Athlete').href, '/athletes.html#add-athlete');
 assert.strictEqual(dashboardQuick.find(child => child.textContent === 'Import Athletes').href, '/athletes.html#import-athletes');
@@ -97,6 +99,7 @@ const athleteIds = [
   'copyParentsBtn', 'refreshBtn'
 ];
 const athleteNodes = Object.fromEntries(athleteIds.map(id => [id, element('button')]));
+let docuOpened = false;
 const athleteHeader = element('header');
 athleteHeader.querySelector = () => element('div');
 const athleteDocument = {
@@ -110,7 +113,8 @@ const athleteWindow = { location: { replace: path => { athleteRedirect = path; }
 vm.runInNewContext(source, {
   document: athleteDocument, window: athleteWindow, localStorage: storage,
   sessionStorage: storage, smartCoachAccountKey: () => 'school-a',
-  pageUrl: path => path + '?account=school-a'
+  pageUrl: path => path + '?account=school-a',
+  openDocuSetup: () => { docuOpened = true; }
 });
 const athleteNav = athleteHeader.children.find(child => child.tag === 'nav');
 assert.ok(athleteNav, 'athlete navigation mounted');
@@ -121,6 +125,10 @@ assert.strictEqual(athleteDistance.children[1].children[1].href, '/dashboard.htm
 assert.strictEqual(athleteRoster.children[0].attributes['aria-current'], 'page');
 assert.strictEqual(athleteRoster.children[1].children[0].href, '/athletes.html?account=school-a');
 assert.strictEqual(athleteRoster.children[1].children[1], athleteNodes.attendanceLink);
+assert.strictEqual(athleteRoster.children[1].children[2], athleteNodes.equipmentLookupBtn);
+assert.strictEqual(athleteRoster.children[1].children[3].textContent, 'Docu Trak');
+athleteRoster.children[1].children[3].handlers.click();
+assert.strictEqual(docuOpened, true);
 const athleteQuick = menuByName(athleteNav, 'Quick Add').children[1].children;
 assert.strictEqual(athleteQuick.find(child => child.textContent === 'Log Miles').href, '/dashboard.html?account=school-a#log-miles');
 assert.strictEqual(athleteQuick.find(child => child.textContent === 'Log Single Result').href, '/dashboard.html?account=school-a#log-single-result');
@@ -170,6 +178,8 @@ menuByName(attendanceNav, 'Account').children[1].children.find(child => child.te
 assert.strictEqual(attendanceRedirect, '/attendance.html?account=school-a');
 const dashboardSource = fs.readFileSync('dashboard.html', 'utf8');
 const athletesSource = fs.readFileSync('athletes.html', 'utf8');
+assert.ok(athletesSource.includes("location.hash==='#equipment-trak'"));
+assert.ok(athletesSource.includes("location.hash==='#docu-trak'"));
 const attendanceSource = fs.readFileSync('attendance.html', 'utf8');
 assert.ok(attendanceSource.includes('/assets/smart-trak-navigation.js'));
 assert.ok(attendanceSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?result.data:null)'));
@@ -590,7 +600,7 @@ function overviewLinks(name) {
   return menuByName(overviewNav, name).children[1].children.filter(child => child.tag === 'a').map(child => child.textContent);
 }
 assert.deepStrictEqual(overviewLinks('Distance Trak'), ['Distance Overview', 'Miles Trak']);
-assert.deepStrictEqual(overviewLinks('Athletes'), ['Roster', 'Attendance']);
+assert.deepStrictEqual(overviewLinks('Athletes'), ['Roster', 'Attendance', 'Equipment Trak', 'Docu Trak']);
 assert.deepStrictEqual(overviewLinks('Training'), ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice']);
 assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Training Customization').href, '/training-calendar.html?account=school-a#training-customization');
 assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find(child => child.textContent === 'Fitness Review').href, '/dashboard.html?account=school-a#fitness-review');

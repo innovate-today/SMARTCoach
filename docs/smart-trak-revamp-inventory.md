@@ -13,6 +13,8 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Distance Trak > Miles Trak | Dashboard Miles Trak modal (`#share-miles-board`) | Opens the existing Miles Trak flow. |
 | Athletes > Roster | `/athletes.html` | Existing roster, search/filter, add/import, parent contacts, group/status, Docu Trak, Equipment Trak, calendar links and questions. Do not replace with concept roster. |
 | Athletes > Attendance | `/attendance.html` | Existing Attendance Trak page. |
+| Athletes > Equipment Trak | `/athletes.html#equipment-trak` | Opens the existing roster-wide equipment lookup modal; per-athlete equipment actions remain on roster rows. |
+| Athletes > Docu Trak | `/athletes.html#docu-trak` | Opens the existing Docu Trak setup modal; per-athlete document actions remain on roster rows. |
 | Training > Training Calendar | `/training-calendar.html` | Existing training/calendar page and setup actions. |
 | Training > Field Practice | `/field-practice.html` | Existing practice capture and review. |
 | Training > Fitness Review | `#fitnessCleanupBtn` on `/dashboard.html` | Opens an existing dashboard modal; no separate page. |
@@ -24,8 +26,6 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Meets & Results > Simulators | `/track-simulator.html`, `/xc-simulator.html` | Direct Track Simulator and XC Simulator links; the redundant chooser is removed from the dashboard menu. |
 | Tools > Keep Trak | `/keep-trak.html` | Existing team task workflow. |
 | Tools > Weather | `/weather.html` | Existing weather page. |
-| Tools > Equipment Trak | `#equipmentLookupBtn` on `/athletes.html` | Existing athlete-linked equipment flow; confirm whether a separate global inventory entry exists before routing. |
-| Tools > Docu Trak | Athlete action on `/athletes.html` | Existing athlete documentation flow; confirm a global entry before routing. |
 | Account > Staff Access | `#changeCodeBtn` on `/dashboard.html` | Existing staff/device access modal. |
 | Account > Sign Out | Shared navigation | Clears this device's stored code, remembered/session authentication, and account snapshots, then returns to the page's access prompt. |
 
@@ -58,5 +58,5 @@ Training Calendar also has Athlete Setup (`/plan-setup.html`), Upload/Paste Plan
 1. Use `Distance Trak` as the navigation group, with Distance Overview and Miles Trak under it. The distance page title is `Distance Trak`; its layout and workflows remain intact. Use Athletes as a group with Roster and Attendance under it.
 2. Use `Training Calendar` instead of `Open Today`. Do not imply a Today filter that does not exist.
 3. Regular coaches see `Sign Out` in Account. The Head Coach also sees `Staff Access`, subject to the existing staff-admin authorization check. No coaches need or have Account Settings access; owner/admin onboarding stays in the custom sidebar. Sign Out removes the current device's stored access code and remembered/session authentication for this account, then returns to the access prompt. It does not change the account's server-side code or sign out other devices.
-4. Equipment Trak and Docu Trak retain their current athlete-specific flows. No new all-athlete page is approved.
+4. Equipment Trak and Docu Trak are reachable from the Athletes menu through their existing modals on the roster page. Their athlete-specific row actions remain available. No new all-athlete page is approved.
 5. Quick Add should open the existing modal/create flow directly, so the coach can work there. Where a reliable cross-page modal entry does not exist yet, create a narrowly scoped deep link without changing the form itself. Do not silently substitute a general workspace page.

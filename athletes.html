@@ -566,6 +566,8 @@ function init(){document.body.classList.toggle('embedded',new URLSearchParams(lo
 function openQuickAddFromHash(){
   if(location.hash==='#add-athlete')openAthleteModal(null);
   else if(location.hash==='#import-athletes')openImportModal();
+  else if(location.hash==='#equipment-trak')openEquipmentLookup();
+  else if(location.hash==='#docu-trak')openDocuSetup();
   else return;
   history.replaceState(null,'',location.pathname+location.search);
 }
