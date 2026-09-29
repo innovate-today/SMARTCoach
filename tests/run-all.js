@@ -4102,7 +4102,10 @@ function checkHowToGuidePage() {
 function checkDashboardToolPreferences() {
   const html = fs.readFileSync("dashboard.html", "utf8");
   if (!html.includes('<div class="dashboard-tools-row" hidden><button id="dashboardPrefsBtn"')) {
-    throw new Error('Customize Dashboard must remain hidden while its saved preferences are preserved.');
+    throw new Error('Customize Dashboard must start hidden until saved preferences load.');
+  }
+  if (!html.includes('els.dashboardPrefsBtn.parentElement.hidden=!Object.keys(dashboardPreferences.visibleTools).some(function(key){')) {
+    throw new Error('Customize Dashboard must be available when the account has hidden tools.');
   }
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");

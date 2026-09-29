@@ -1822,6 +1822,9 @@ function dashboardToolVisible(key){
 }
 function applyDashboardPreferences(source){
   dashboardPreferences=normalizeDashboardPreferences(source||dashboardPreferences);
+  els.dashboardPrefsBtn.parentElement.hidden=!Object.keys(dashboardPreferences.visibleTools).some(function(key){
+    return dashboardPreferences.visibleTools[key]===false;
+  });
   Array.prototype.forEach.call(document.querySelectorAll('[data-dashboard-tool]'),function(node){
     var key=node.getAttribute('data-dashboard-tool')||'';
     node.hidden=!dashboardToolVisible(key);
