@@ -674,6 +674,18 @@ for (const fragment of ['/api/smart-trak/results-board-sharing?', '/api/smart-tr
 const trainingDestinations = ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice'];
 const meetDestinations = ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator'];
 for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, speedNav, powerNav, meetNav, recordNav, ...simulatorNavs, keepNav, weatherNav, setupNav, importNav, builderNav, overviewNav]) {
+  const topLevel = pageNav.children.slice(0, expectedCoreLabels.length);
+  assert.strictEqual(topLevel.length, expectedCoreLabels.length, 'every page has the complete shared navigation');
+  expectedCoreLabels.forEach((label, index) => {
+    const item = topLevel[index];
+    if ((label === 'Power Trak' || label === 'Speed Trak') && !item.textContent) {
+      assert.ok(item.tag === 'a' || item.tag === 'button', label + ' retains its direct destination');
+    } else {
+      assert.strictEqual(item.tag === 'details' ? item.children[0].textContent : item.textContent, label, label + ' keeps its position');
+    }
+  });
+  const refreshButtons = pageNav.children.filter(child => child.textContent === 'Refresh' || child === nodes.refreshBtn || child === overviewNodes.overviewRefreshBtn);
+  if (refreshButtons.length) assert.strictEqual(pageNav.children.at(-1), refreshButtons[0], 'Refresh remains the last header action');
   const items = menuByName(pageNav, 'Training').children[1].children.map(child => child.textContent);
   for (const label of trainingDestinations) {
     assert.strictEqual(items.filter(item => item === label).length, 1, label + ' appears once in every Training menu');
