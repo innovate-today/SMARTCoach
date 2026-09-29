@@ -24,6 +24,10 @@ function element(tag) {
 function menuByName(nav, name) {
   return nav.children.find(child => child.tag === 'details' && child.children[0].textContent === name);
 }
+function coreLabels(nav) {
+  return nav.children.slice(0, 10).map(child => child.tag === 'details' ? child.children[0].textContent : child.textContent);
+}
+const expectedCoreLabels = ['Overview', 'Athletes', 'Training', 'Distance Trak', 'Speed Trak', 'Power Trak', 'Meets & Results', 'Tools', 'Quick Add', 'Account'];
 const oldActions = element('div');
 const header = element('header');
 header.querySelector = () => oldActions;
@@ -53,6 +57,9 @@ const context = {
 vm.runInNewContext(source, context);
 const nav = header.children.find(child => child.tag === 'nav');
 assert.ok(nav, 'navigation mounted');
+assert.strictEqual(nav.children[5], nodes.powerTrakLink);
+assert.deepStrictEqual(coreLabels(nav).filter(Boolean), expectedCoreLabels.filter(label => label !== 'Power Trak'));
+assert.strictEqual(nav.children.at(-1), nodes.refreshBtn);
 assert.strictEqual(nav.attributes['aria-label'], 'SMART Trak navigation');
 assert.strictEqual(nav.children.find(child => child.textContent === 'Overview').href, '/overview.html');
 const dashboardDistance = menuByName(nav, 'Distance Trak');
@@ -614,6 +621,8 @@ vm.runInNewContext(source, {
 });
 const overviewNav = overviewHeader.children.find(child => child.tag === 'nav');
 assert.ok(overviewNav, 'Overview navigation mounted');
+assert.deepStrictEqual(coreLabels(overviewNav), expectedCoreLabels);
+assert.strictEqual(overviewNav.children.at(-1), overviewNodes.overviewRefreshBtn);
 assert.strictEqual(overviewNav.children.find(child => child.textContent === 'Overview').attributes['aria-current'], 'page');
 function overviewLinks(name) {
   return menuByName(overviewNav, name).children[1].children.filter(child => child.tag === 'a').map(child => child.textContent);

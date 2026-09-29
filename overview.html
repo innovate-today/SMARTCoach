@@ -20,7 +20,7 @@ h1{font-size:25px;margin:0;line-height:1.1}.sub{font-size:14px;color:var(--muted
 button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff;color:#173891;font-family:inherit;font-size:13px;font-weight:800;padding:8px 11px;min-height:34px;cursor:pointer;text-decoration:none}
 .button-primary{background:var(--blue);border-color:var(--blue);color:#fff}
 .heading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:10px 0 18px}
-.heading h2{font-size:22px;margin:0}.heading p{color:var(--muted);font-size:13px;margin:4px 0 0}
+.heading-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.heading-pills{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.heading h2{font-size:22px;margin:0}.heading p{color:var(--muted);font-size:13px;margin:4px 0 0}
 .updated{font-size:12px;color:var(--muted);font-weight:700;text-align:right}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0 18px}
 .metric{min-width:0;padding:2px 16px;border-right:1px solid var(--line)}.metric:first-child{padding-left:0}.metric:last-child{border-right:0}
@@ -44,7 +44,7 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
 <body>
 <main class="page">
   <header class="top">
-    <div class="brand"><img id="brandLogo" src="/assets/smart-logo.png" alt="SMART Trak"><div><div class="brand-title"><h1>SMART Trak</h1><button id="startHereBtn" class="guide-pill" type="button" aria-haspopup="dialog"><span class="guide-dot" aria-hidden="true"></span>Start Here</button><button id="whatsNewBtn" class="guide-pill" type="button" aria-haspopup="dialog"><span id="whatsNewDot" class="guide-dot updates" aria-hidden="true"></span>What's New <span id="whatsNewCount" class="guide-count" hidden></span></button></div><div class="sub">Team overview</div></div></div>
+    <div class="brand"><img id="brandLogo" src="/assets/smart-logo.png" alt="SMART Trak"><div><h1>SMART Trak</h1><div class="sub">Team overview</div></div></div>
     <div class="actions"><button id="overviewRefreshBtn" type="button">Refresh</button></div>
   </header>
   <section id="accessPanel" class="access" hidden>
@@ -52,7 +52,7 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
     <form id="accessForm"><label for="accessCode">Access code<input id="accessCode" type="password" autocomplete="one-time-code" required></label><button class="button-primary" type="submit">Continue</button></form>
   </section>
   <div id="overviewContent" hidden>
-    <div class="heading"><div><h2>Team Overview</h2><p>Current program activity across SMART Trak.</p></div><div id="lastUpdated" class="updated" aria-live="polite">Loading...</div></div>
+    <div class="heading"><div><div class="heading-main"><h2>Team Overview</h2><div class="heading-pills"><button id="startHereBtn" class="guide-pill" type="button" aria-haspopup="dialog"><span class="guide-dot" aria-hidden="true"></span>Start Here</button><button id="whatsNewBtn" class="guide-pill" type="button" aria-haspopup="dialog"><span id="whatsNewDot" class="guide-dot updates" aria-hidden="true"></span>What's New <span id="whatsNewCount" class="guide-count" hidden></span></button></div></div><p>Current program activity across SMART Trak.</p></div><div id="lastUpdated" class="updated" aria-live="polite">Loading...</div></div>
     <div class="metrics" aria-label="Team activity">
       <div class="metric"><b id="activeAthletes">--</b><span>Active athletes</span></div>
       <div class="metric"><b id="weekRuns">--</b><span>Distance workouts this week</span></div>

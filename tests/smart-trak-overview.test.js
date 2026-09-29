@@ -63,6 +63,7 @@ const recentOnly = dashboardOverviewPayload({ ...payload, recentMeetResults: [
 ] });
 assert.deepStrictEqual(recentOnly.recentMeetResults.map(row => row.athleteName), ['Yesterday', 'Earlier']);
 assert.ok(html.includes('id="startHereBtn"') && html.includes('id="whatsNewBtn"'));
+assert.ok(html.indexOf('id="startHereBtn"') > html.indexOf('id="overviewContent"'), 'guide pills stay with the Overview heading');
 assert.ok(html.includes('/assets/smart-trak-guide-content.js'));
 const context = {
   URL, URLSearchParams, Date, location: { search: '?account=school-a', origin: 'https://example.test' },

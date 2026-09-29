@@ -69,12 +69,6 @@
   var overviewLink=link('Overview','/overview.html');
   if(overviewPage)overviewLink.setAttribute('aria-current','page');
   nav.appendChild(overviewLink);
-  var distance=menu('Distance Trak',dashboardPage);
-  move(distance,'dashboardLink','Distance Overview');
-  if(overviewPage)distance.appendChild(link('Distance Overview','/dashboard.html'));
-  if(calendarPage)move(distance,'milesTrakLink');
-  else if(!dashboardPage)distance.appendChild(link('Miles Trak','/dashboard.html#share-miles-board'));
-  else move(distance,'shareMilesBoardBtn');
   var athletesMenu=menu('Athletes',athletesPage||attendancePage);
   if(athletesPage){
     athletesMenu.appendChild(link('Roster','/athletes.html'));
@@ -147,6 +141,12 @@
   ensureLink(training,'Training Customization','/training-calendar.html#training-customization');
   ensureLink(training,'Fitness Review','/dashboard.html#fitness-review');
   ensureLink(training,'Field Practice','/field-practice.html');
+  var distance=menu('Distance Trak',dashboardPage);
+  move(distance,'dashboardLink','Distance Overview');
+  if(overviewPage)distance.appendChild(link('Distance Overview','/dashboard.html'));
+  if(calendarPage)move(distance,'milesTrakLink');
+  else if(!dashboardPage)distance.appendChild(link('Miles Trak','/dashboard.html#share-miles-board'));
+  else move(distance,'shareMilesBoardBtn');
   if(calendarPage)move(nav,'speedTrakLink');
   else{
     var speedLink=link('Speed Trak','/speed-trak.html');
@@ -314,14 +314,14 @@
     window.location.replace((athletesPage?'/athletes.html':attendancePage?'/attendance.html':calendarPage?'/training-calendar.html':fieldPage?'/field-practice.html':speedPage?'/speed-trak.html':powerPage?'/power-trak.html':meetPage?'/meet-history.html':recordsPage?'/records.html':trackSimulatorPage?'/track-simulator.html':xcSimulatorPage?'/xc-simulator.html':keepPage?'/keep-trak.html':weatherPage?'/weather.html':setupPage?'/plan-setup.html':importPage?'/plan-import.html':builderPage?'/plan-builder.html':overviewPage?'/overview.html':'/dashboard.html')+'?account='+encodeURIComponent(currentAccountKey()));
   });
   account.appendChild(signOut);
-  move(nav,'refreshBtn');
-  if(overviewPage)move(nav,'overviewRefreshBtn');
   if(trackSimulatorPage||xcSimulatorPage)move(nav,'resetBtn');
   if(attendancePage)move(nav,'exportBtn');
   if(calendarPage){move(nav,'approveDraftsBtn');move(nav,'scheduleApprovedBtn');}
   if(speedPage){move(nav,'shareSpeedBoardBtn');move(nav,'exportSpeedDataBtn');}
   if(powerPage){move(nav,'rackPwaLink');move(nav,'downloadCsvBtn');move(nav,'deleteSessionBtn');}
   if(setupPage||builderPage){var adminControl=oldActions.querySelector('.account-control');if(adminControl)nav.appendChild(adminControl);}
+  var refresh=move(nav,overviewPage?'overviewRefreshBtn':'refreshBtn');
+  if(refresh)refresh.classList.add('smart-nav-refresh');
 
   window.smartTrakNavigationUpdateAccess=function(status){
     var coach=status&&status.coach;
