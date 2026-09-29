@@ -16,6 +16,7 @@ function element(tag) {
   return {
     tag, children: [], handlers: {}, attributes: {}, classList: { add() {} },
     appendChild(child) { this.children.push(child); return child; },
+    after(child) { this.children.push(child); child.afterHeader = true; },
     setAttribute(name, value) { this.attributes[name] = value; },
     addEventListener(name, callback) { this.handlers[name] = callback; },
     querySelectorAll() { return []; }
@@ -57,6 +58,7 @@ const context = {
 vm.runInNewContext(source, context);
 const nav = header.children.find(child => child.tag === 'nav');
 assert.ok(nav, 'navigation mounted');
+assert.ok(!nav.afterHeader, 'Distance Trak keeps its existing header navigation placement');
 assert.strictEqual(nav.children[5], nodes.powerTrakLink);
 assert.deepStrictEqual(coreLabels(nav).filter(Boolean), expectedCoreLabels.filter(label => label !== 'Power Trak'));
 assert.strictEqual(nav.children.at(-1), nodes.refreshBtn);
@@ -621,6 +623,7 @@ vm.runInNewContext(source, {
 });
 const overviewNav = overviewHeader.children.find(child => child.tag === 'nav');
 assert.ok(overviewNav, 'Overview navigation mounted');
+assert.ok(overviewNav.afterHeader, 'Overview navigation sits below the white header');
 assert.deepStrictEqual(coreLabels(overviewNav), expectedCoreLabels);
 assert.strictEqual(overviewNav.children.at(-1), overviewNodes.overviewRefreshBtn);
 assert.strictEqual(overviewNav.children.find(child => child.textContent === 'Overview').attributes['aria-current'], 'page');
@@ -674,6 +677,7 @@ for (const fragment of ['/api/smart-trak/results-board-sharing?', '/api/smart-tr
 const trainingDestinations = ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice'];
 const meetDestinations = ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator'];
 for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, speedNav, powerNav, meetNav, recordNav, ...simulatorNavs, keepNav, weatherNav, setupNav, importNav, builderNav, overviewNav]) {
+  if(pageNav!==nav)assert.ok(pageNav.afterHeader, 'shared navigation sits below the page header');
   const topLevel = pageNav.children.slice(0, expectedCoreLabels.length);
   assert.strictEqual(topLevel.length, expectedCoreLabels.length, 'every page has the complete shared navigation');
   expectedCoreLabels.forEach((label, index) => {
@@ -697,4 +701,5 @@ for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, sp
   const resultEntry = menuByName(pageNav, 'Meets & Results').children[1].children.find(child => child.textContent === 'Results');
   if (resultEntry.tag === 'a') assert.ok(resultEntry.href.includes('/meet-history.html') && resultEntry.href.endsWith('#results-board'), 'Results link opens Meet History');
 }
+assert.ok(keepSource.includes('id="brandLogo"') && keepSource.includes("document.getElementById('brandLogo').src=status.logoUrl"), 'Keep Trak uses the account logo');
 console.log('SMART Trak shared navigation tests passed.');

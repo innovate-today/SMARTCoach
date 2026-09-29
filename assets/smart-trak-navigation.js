@@ -349,5 +349,6 @@
     if(!nav.contains(event.target))nav.querySelectorAll('details[open]').forEach(function(item){item.open=false;});
   });
   oldActions.classList.add('smart-nav-mounted');
-  header.appendChild(nav);
+  if(dashboardPage)header.appendChild(nav);
+  else{nav.classList.add('smart-nav-below');header.after(nav);}
 })();

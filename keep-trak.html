@@ -79,7 +79,7 @@ textarea{min-height:132px;resize:vertical;line-height:1.45}
 <main class="page">
   <section class="top">
     <div class="brand">
-      <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div class="mark"><img id="brandLogo" src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
         <h1>Keep Trak</h1>
         <div class="sub">Practice briefing notes, reminders, and updates.</div>
@@ -476,7 +476,7 @@ init();
 </script>
 <script src="/assets/smart-trak-navigation.js"></script>
 <script>
-fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey()),{cache:'no-store',headers:apiHeaders()}).then(function(res){return res.ok?res.json():null;}).then(function(status){window.smartTrakNavigationUpdateAccess(status);}).catch(function(){window.smartTrakNavigationUpdateAccess(null);});
+fetch('/api/smart-trak/account-status?account='+encodeURIComponent(accountKey()),{cache:'no-store',headers:apiHeaders()}).then(function(res){return res.ok?res.json():null;}).then(function(status){if(status&&status.logoUrl)document.getElementById('brandLogo').src=status.logoUrl;window.smartTrakNavigationUpdateAccess(status);}).catch(function(){window.smartTrakNavigationUpdateAccess(null);});
 </script>
 </body>
 </html>
