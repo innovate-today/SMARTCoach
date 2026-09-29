@@ -72,7 +72,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:8px;backgroun
 <main class="page">
   <section class="top">
     <div class="brand">
-      <div class="mark"><img src="/assets/smart-logo.png" alt="SMART Trak"></div>
+      <div class="mark"><img id="brandLogo" src="/assets/smart-logo.png" alt="SMART Trak"></div>
       <div>
         <h1>SMART Trak Weather</h1>
         <div class="sub">Live conditions and forecasts for practice, meets, and travel days.</div>
@@ -345,7 +345,7 @@ init();
   try{session=localStorage.getItem('sc_session_remembered_'+key)||sessionStorage.getItem('sc_session_'+key)||'';code=localStorage.getItem('sc_access_'+key)||'';}catch(e){}
   if(session)headers['X-SMARTCoach-Session']=session;
   else if(code)headers['X-SMARTCoach-Access-Code']=code;
-  fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key),{cache:'no-store',headers:headers}).then(function(res){return res.ok?res.json():null;}).then(function(status){window.smartTrakNavigationUpdateAccess(status);}).catch(function(){window.smartTrakNavigationUpdateAccess(null);});
+  fetch('/api/smart-trak/account-status?account='+encodeURIComponent(key),{cache:'no-store',headers:headers}).then(function(res){return res.ok?res.json():null;}).then(function(status){if(status&&status.logoUrl)document.getElementById('brandLogo').src=status.logoUrl;window.smartTrakNavigationUpdateAccess(status);}).catch(function(){window.smartTrakNavigationUpdateAccess(null);});
 })();
 </script>
 <script src="/assets/smartcoach-help-widget.js" async></script>

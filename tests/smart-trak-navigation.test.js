@@ -648,6 +648,7 @@ assert.strictEqual(overviewQuick.find(child => child.textContent === 'Set Up Rac
 assert.ok(menuByName(fieldNav, 'Quick Add').children[1].children.includes(fieldNodes.newBtn), 'Field Practice keeps its local New Practice action');
 assert.ok(menuByName(powerNav, 'Quick Add').children[1].children.some(child => child.textContent === 'Create Strength Workout' && child.tag === 'button'));
 assert.ok(menuByName(powerNav, 'Quick Add').children[1].children.some(child => child.textContent === 'Set Up Rack' && child.tag === 'button'));
+assert.strictEqual(menuByName(powerNav, 'Quick Add').children[1].children.find(child => child.textContent === 'Manage Meets').href, '/dashboard.html?account=school-a#manage-meets');
 assert.ok(overviewNav.children.includes(overviewNodes.overviewRefreshBtn));
 menuByName(overviewNav, 'Account').children[1].children.find(child => child.textContent === 'Sign Out').handlers.click();
 assert.strictEqual(overviewRedirect, '/overview.html?account=school-a');
@@ -702,4 +703,6 @@ for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, sp
   if (resultEntry.tag === 'a') assert.ok(resultEntry.href.includes('/meet-history.html') && resultEntry.href.endsWith('#results-board'), 'Results link opens Meet History');
 }
 assert.ok(keepSource.includes('id="brandLogo"') && keepSource.includes("document.getElementById('brandLogo').src=status.logoUrl"), 'Keep Trak uses the account logo');
+assert.ok(fieldSource.includes("document.querySelector('[data-brand-logo]').src=status.logoUrl"), 'Field Practice uses the account logo');
+assert.ok(weatherSource.includes('id="brandLogo"') && weatherSource.includes("document.getElementById('brandLogo').src=status.logoUrl"), 'Weather uses the account logo');
 console.log('SMART Trak shared navigation tests passed.');

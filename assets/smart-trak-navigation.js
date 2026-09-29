@@ -261,7 +261,7 @@
   }else{
     move(quick,'manualMileageBtn');
     move(quick,'raceResultBtn');
-    if(overviewPage){
+    if(!dashboardPage){
       quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
       quick.appendChild(link('Log Single Result','/dashboard.html#log-single-result'));
       quick.appendChild(link('Manage Meets','/dashboard.html#manage-meets'));

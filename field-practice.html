@@ -201,6 +201,7 @@ function headers(){var h={'Content-Type':'application/json'};var account=smartCo
 function jsonResult(res){return res.json().then(function(data){if(!res.ok)throw new Error(data&&data.error||'Request failed.');return data;});}
 function refreshNavAccess(){
   return fetch(apiUrl('/api/smart-trak/account-status'),{cache:'no-store',headers:headers()}).then(jsonResult).then(function(status){
+    if(status&&status.logoUrl)document.querySelector('[data-brand-logo]').src=status.logoUrl;
     if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(status);
   }).catch(function(){if(window.smartTrakNavigationUpdateAccess)window.smartTrakNavigationUpdateAccess(null);});
 }
