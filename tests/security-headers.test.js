@@ -81,6 +81,11 @@ function testVercelHtmlSecurityHeaders() {
     assert.doesNotMatch(boardHeaders["content-security-policy"], /frame-ancestors 'none'/);
     assert.strictEqual(boardHeaders["x-frame-options"], undefined);
   }
+  assert.strictEqual(matchesPrivateRule.test("/onboarding.html"), false, "GHL must be able to embed onboarding");
+  const onboardingHeaders = Object.fromEntries((config.headers.find((entry) => entry.source === "/onboarding.html").headers || []).map((header) => [String(header.key).toLowerCase(), String(header.value)]));
+  assert.strictEqual(onboardingHeaders["x-frame-options"], undefined);
+  assert.match(onboardingHeaders["content-security-policy"], /frame-ancestors 'self' https:\/\/app\.gohighlevel\.com https:\/\/app\.msgsndr\.com/);
+  assert.match(onboardingHeaders["permissions-policy"], /camera=\(\)/);
   for (const path of ["/dashboard.html", "/overview.html", "/athletes.html", "/api/smart-trak/account-status"]) {
     assert.strictEqual(matchesPrivateRule.test(path), true, `${path} must remain frame-blocked`);
   }
