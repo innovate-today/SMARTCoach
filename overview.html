@@ -86,7 +86,12 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
   function request(path,options){return fetch(path,Object.assign({cache:'no-store',headers:headers()},options||{})).then(function(res){return res.json().then(function(data){if(!res.ok)throw data;return data;});});}
   function showAccess(message,blocked){content.hidden=true;accessPanel.hidden=false;document.getElementById('accessMessage').textContent=message||'Enter your coach access code to open this account.';document.getElementById('accessForm').hidden=!!blocked;if(!blocked)document.getElementById('accessCode').focus();}
   function showError(message){error.textContent=message;error.hidden=false;document.getElementById('lastUpdated').textContent='Update failed';}
-  function render(data){
+  function renderMeetResults(meets){
+    var results=document.getElementById('recentResults');results.replaceChildren();
+    if(!meets.length){var empty=document.createElement('div');empty.className='empty';empty.textContent='No meet results in the last 30 days.';results.appendChild(empty);}
+    meets.slice(0,5).forEach(function(row){var item=document.createElement('div'),name=document.createElement('b'),detail=document.createElement('span');item.className='result';name.textContent=row.athleteName||row.relayTeamName||'Meet result';var date=row.meetDate?new Date(String(row.meetDate).slice(0,10)+'T12:00:00'):null;detail.textContent=[row.event,row.resultDisplay,row.meetName,date&&!isNaN(date.getTime())?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):''].filter(Boolean).join(' · ');item.appendChild(name);item.appendChild(detail);results.appendChild(item);});
+  }
+  function render(data,deferMeets){
     var totals=data.totals||{},meets=Array.isArray(data.recentMeetResults)?data.recentMeetResults:[];
     var missing=Number(data.missingFitness)||0;
     document.getElementById('activeAthletes').textContent=String(Number(data.activeAthletes)||0);
@@ -94,9 +99,8 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
     document.getElementById('weekMiles').textContent=(Number(totals.currentWeekVolumeMiles)||0).toLocaleString(undefined,{maximumFractionDigits:1})+' mi';
     document.getElementById('missingFitness').textContent=String(missing);
     document.getElementById('distanceSummary').textContent=(Number(totals.currentWeekVolumeMiles)||0).toLocaleString(undefined,{maximumFractionDigits:1})+' mi this week';
-    var results=document.getElementById('recentResults');results.replaceChildren();
-    if(!meets.length){var empty=document.createElement('div');empty.className='empty';empty.textContent='No recent meet results.';results.appendChild(empty);}
-    meets.slice(0,5).forEach(function(row){var item=document.createElement('div'),name=document.createElement('b'),detail=document.createElement('span');item.className='result';name.textContent=row.athleteName||row.relayTeamName||'Meet result';var date=row.meetDate?new Date(String(row.meetDate).slice(0,10)+'T12:00:00'):null;detail.textContent=[row.event,row.resultDisplay,row.meetName,date&&!isNaN(date.getTime())?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):''].filter(Boolean).join(' · ');item.appendChild(name);item.appendChild(detail);results.appendChild(item);});
+    if(deferMeets)document.getElementById('recentResults').innerHTML='<div class="empty">Loading results...</div>';
+    else renderMeetResults(meets);
     document.getElementById('fitnessNotice').hidden=missing===0;
     document.getElementById('fitnessNoticeText').textContent=missing+' active athlete'+(missing===1?' has':'s have')+' no current fitness mark.';
     var date=new Date(data.generatedAt||Date.now());document.getElementById('lastUpdated').textContent='Updated '+(isNaN(date.getTime())?'recently':date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
@@ -105,15 +109,27 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
   var loadSequence=0;
   function loadDashboard(forceRefresh,sequence){
     var live='/api/smart-trak/dashboard?light=1&overview=1&v='+Date.now();
-    if(forceRefresh)return request(live+'&refresh=1').then(function(data){if(sequence===loadSequence)render(data);});
+    function loadCurrent(){
+      return request(live).then(function(data){
+        if(sequence!==loadSequence)return;
+        render(data,true);
+        return request(live+'&refresh=1').then(function(fresh){
+          if(sequence===loadSequence)renderMeetResults(Array.isArray(fresh.recentMeetResults)?fresh.recentMeetResults:[]);
+        }).catch(function(){
+          if(sequence===loadSequence)document.getElementById('recentResults').innerHTML='<div class="empty">Meet results unavailable. Try Refresh.</div>';
+        });
+      });
+    }
+    if(forceRefresh)return loadCurrent();
     return request(live+'&snapshot=1').catch(function(failure){
-      if(failure&&failure.snapshotMissing)return request(live+'&refresh=1');
+      if(failure&&failure.snapshotMissing)return loadCurrent();
       throw failure;
     }).then(function(data){
       if(sequence!==loadSequence)return;
+      if(!data)return;
       var savedAt=Date.parse(data.snapshotSavedAt||data.generatedAt||'');
       if(data.snapshot&&(!Number.isFinite(savedAt)||Date.now()-savedAt>60000))
-        return request(live+'&refresh=1').then(function(fresh){if(sequence===loadSequence)render(fresh);});
+        return loadCurrent();
       render(data);
     });
   }
