@@ -306,6 +306,8 @@ vm.runInNewContext(source, {
 });
 const speedNav = speedHeader.children.find(child => child.tag === 'nav');
 assert.ok(speedNav, 'Speed Trak navigation mounted');
+assert.strictEqual(menuByName(speedNav, 'Athletes').children[1].children[0].textContent, 'Roster');
+assert.strictEqual(menuByName(speedNav, 'Athletes').children[1].children[0].href, '/athletes.html?account=school-a');
 assert.ok(speedActions.classList, 'original Speed Trak actions remain available for moving');
 assert.strictEqual(speedNav.children.find(child => child.textContent === 'Speed Trak').attributes['aria-current'], 'page');
 assert.strictEqual(menuByName(speedNav, 'Training').children[1].children[0], speedNodes.trainingLink);
@@ -678,6 +680,7 @@ for (const fragment of ['/api/smart-trak/results-board-sharing?', '/api/smart-tr
 const trainingDestinations = ['Training Calendar', 'Athlete Setup', 'Upload/Paste Plan', 'Auto Build Plan', 'Training Customization', 'Fitness Review', 'Field Practice'];
 const meetDestinations = ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator'];
 for (const pageNav of [nav, athleteNav, attendanceNav, calendarNav, fieldNav, speedNav, powerNav, meetNav, recordNav, ...simulatorNavs, keepNav, weatherNav, setupNav, importNav, builderNav, overviewNav]) {
+  assert.strictEqual(menuByName(pageNav, 'Athletes').children[1].children.filter(child => child.textContent === 'Roster').length, 1, 'every Athletes menu has one Roster link');
   if(pageNav!==nav)assert.ok(pageNav.afterHeader, 'shared navigation sits below the page header');
   const topLevel = pageNav.children.slice(0, expectedCoreLabels.length);
   assert.strictEqual(topLevel.length, expectedCoreLabels.length, 'every page has the complete shared navigation');

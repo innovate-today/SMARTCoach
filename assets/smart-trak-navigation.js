@@ -85,8 +85,7 @@
     move(athletesMenu,'emailParentsBtn');
     move(athletesMenu,'copyParentsBtn');
   }else{
-    move(athletesMenu,'athletesLink','Roster');
-    if(calendarPage||overviewPage)athletesMenu.appendChild(link('Roster','/athletes.html'));
+    if(!move(athletesMenu,'athletesLink','Roster'))athletesMenu.appendChild(link('Roster','/athletes.html'));
     athletesMenu.appendChild(link('Attendance','/attendance.html'));
     athletesMenu.appendChild(link('Equipment Trak','/athletes.html#equipment-trak'));
     athletesMenu.appendChild(link('Docu Trak','/athletes.html#docu-trak'));
