@@ -247,6 +247,7 @@
   }else if(meetPage){
     move(quick,'openQuickEntryBtn');
     move(quick,'openImportTopBtn');
+    quick.appendChild(link('Manage Meets','/dashboard.html#manage-meets'));
     quick.appendChild(link('Add Athlete','/athletes.html#add-athlete'));
     quick.appendChild(link('Log Miles','/dashboard.html#log-miles'));
   }else if(keepPage){

@@ -373,6 +373,7 @@ assert.strictEqual(menuByName(meetNav, 'Meets & Results').children[0].attributes
 for (const id of ['recordsLink', 'trackSimulatorLink', 'xcSimulatorLink']) assert.ok(menuByName(meetNav, 'Meets & Results').children[1].children.includes(meetNodes[id]));
 assert.ok(menuByName(meetNav, 'Meets & Results').children[1].children.includes(meetNodes.openResultsBoardBtn));
 for (const id of ['openImportTopBtn', 'openQuickEntryBtn']) assert.ok(menuByName(meetNav, 'Quick Add').children[1].children.includes(meetNodes[id]));
+assert.strictEqual(menuByName(meetNav, 'Quick Add').children[1].children.find(child => child.textContent === 'Manage Meets').href, '/dashboard.html?account=school-a#manage-meets');
 assert.ok(meetNav.children.includes(meetNodes.refreshBtn));
 const meetStaff = menuByName(meetNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
 assert.strictEqual(meetStaff.hidden, true);
