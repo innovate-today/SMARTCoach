@@ -4104,8 +4104,8 @@ function checkDashboardToolPreferences() {
   if (!html.includes('<div class="dashboard-tools-row" hidden><button id="dashboardPrefsBtn"')) {
     throw new Error('Customize Dashboard must start hidden until saved preferences load.');
   }
-  if (!html.includes('els.dashboardPrefsBtn.parentElement.hidden=!Object.keys(dashboardPreferences.visibleTools).some(function(key){')) {
-    throw new Error('Customize Dashboard must be available when the account has hidden tools.');
+  if (!html.includes('els.dashboardPrefsBtn.parentElement.hidden=true;') || !html.includes('node.hidden=false;')) {
+    throw new Error('Retired dashboard customization must show all tools and keep its control hidden.');
   }
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
@@ -4129,7 +4129,6 @@ function checkDashboardToolPreferences() {
     'id="dashboardPrefsList"',
     "function defaultDashboardPreferences()",
     "function normalizeDashboardPreferences(source)",
-    "function dashboardToolVisible(key)",
     "function applyDashboardPreferences(source)",
     "function renderDashboardPrefsList()",
     "function collectDashboardPreferences()",
@@ -4224,7 +4223,7 @@ function checkDashboardToolPreferences() {
     "fetch('/api/smart-trak/dashboard-preferences?account='",
     "Hidden tools keep their saved data and can still be opened directly by URL.",
     "Preferences only change dashboard visibility.",
-    "node.hidden=!dashboardToolVisible(key);",
+    "node.hidden=false;",
     'data-dashboard-tool="keepTrak"',
     'data-dashboard-tool="attendanceTrak"',
     'data-dashboard-tool="docuTrak"',

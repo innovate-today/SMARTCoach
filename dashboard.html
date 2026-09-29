@@ -1816,18 +1816,11 @@ function normalizeDashboardPreferences(source){
   defaults.updatedAt=input.updatedAt||new Date().toISOString();
   return defaults;
 }
-function dashboardToolVisible(key){
-  var prefs=normalizeDashboardPreferences(dashboardPreferences);
-  return prefs.visibleTools[key]!==false;
-}
 function applyDashboardPreferences(source){
   dashboardPreferences=normalizeDashboardPreferences(source||dashboardPreferences);
-  els.dashboardPrefsBtn.parentElement.hidden=!Object.keys(dashboardPreferences.visibleTools).some(function(key){
-    return dashboardPreferences.visibleTools[key]===false;
-  });
+  els.dashboardPrefsBtn.parentElement.hidden=true;
   Array.prototype.forEach.call(document.querySelectorAll('[data-dashboard-tool]'),function(node){
-    var key=node.getAttribute('data-dashboard-tool')||'';
-    node.hidden=!dashboardToolVisible(key);
+    node.hidden=false;
   });
 }
 function renderDashboardPrefsList(){
