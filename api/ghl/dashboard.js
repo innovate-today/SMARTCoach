@@ -1131,6 +1131,7 @@ function dashboardOverviewRequested(req) {
 function dashboardOverviewPayload(payload) {
   const athletes = Array.isArray(payload.athletes) ? payload.athletes : [];
   const recentMeetResults = Array.isArray(payload.recentMeetResults) ? payload.recentMeetResults : [];
+  const recentCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
   return {
     success: true,
     snapshot: !!payload.snapshot,
@@ -1142,12 +1143,16 @@ function dashboardOverviewPayload(payload) {
       currentWeekRuns: Number(payload.totals && payload.totals.currentWeekRuns) || 0,
       currentWeekVolumeMiles: Number(payload.totals && payload.totals.currentWeekVolumeMiles) || 0,
     },
-    recentMeetResults: recentMeetResults.slice(0, 5).map((row) => ({
+    recentMeetResults: recentMeetResults.filter((row) => {
+      const date = parseDate(row.meetDate);
+      return date && date.getTime() >= recentCutoff && date.getTime() <= Date.now();
+    }).sort(sortLatestMeetDesc).slice(0, 5).map((row) => ({
       athleteName: row.athleteName,
       relayTeamName: row.relayTeamName,
       event: row.event,
       resultDisplay: row.resultDisplay,
       meetName: row.meetName,
+      meetDate: row.meetDate,
     })),
   };
 }

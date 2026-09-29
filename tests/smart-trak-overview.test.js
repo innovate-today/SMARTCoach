@@ -30,7 +30,7 @@ const payload = {
   activeAthletes: 2,
   missingFitness: 1,
   totals: { currentWeekRuns: 8, currentWeekVolumeMiles: 32.4 },
-  recentMeetResults: [{ athleteName: 'A', event: '5K', resultDisplay: '19:00', meetName: 'Fall Invite' }]
+  recentMeetResults: [{ athleteName: 'A', event: '5K', resultDisplay: '19:00', meetName: 'Fall Invite', meetDate: new Date(Date.now() - 86400000).toISOString().slice(0, 10) }]
 };
 const projected = dashboardOverviewPayload({
   ...payload,
@@ -49,6 +49,15 @@ assert.strictEqual(projected.recentMeetResults[0].athleteName, 'A');
 assert.ok(!('athletes' in projected));
 assert.ok(!('recentTrainingSyncs' in projected));
 assert.ok(!('privateDetail' in projected.recentMeetResults[0]));
+assert.strictEqual(projected.recentMeetResults[0].meetDate, payload.recentMeetResults[0].meetDate);
+const olderMeetDate = new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10);
+const newerMeetDate = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+const recentOnly = dashboardOverviewPayload({ ...payload, recentMeetResults: [
+  { athleteName: 'Old', meetDate: olderMeetDate, syncedAt: new Date().toISOString() },
+  { athleteName: 'Yesterday', meetDate: payload.recentMeetResults[0].meetDate, syncedAt: olderMeetDate },
+  { athleteName: 'Earlier', meetDate: newerMeetDate, syncedAt: new Date().toISOString() }
+] });
+assert.deepStrictEqual(recentOnly.recentMeetResults.map(row => row.athleteName), ['Yesterday', 'Earlier']);
 const context = {
   URL, URLSearchParams, Date, location: { search: '?account=school-a', origin: 'https://example.test' },
   localStorage: browserStorage, sessionStorage: browserStorage,
@@ -87,11 +96,12 @@ const lockedContext = {
 };
 lockedContext.window = lockedContext;
 vm.runInNewContext(script, lockedContext);
-function overviewLoadCase(snapshot) {
+function overviewLoadCase(snapshot, delayRefresh) {
   const caseNodes = new Map(), calls = [], timers = [];
+  let resolveRefresh;
   const caseNode = id => {
     if (!caseNodes.has(id)) caseNodes.set(id, {
-      textContent: '', hidden: false, value: '', children: [], dataset: {},
+      textContent: '', hidden: id === 'overviewContent', value: '', children: [], dataset: {},
       addEventListener() {}, appendChild(child) { this.children.push(child); },
       replaceChildren() { this.children = []; }, focus() {}
     });
@@ -104,6 +114,7 @@ function overviewLoadCase(snapshot) {
     document: { getElementById: caseNode, querySelectorAll: () => [], createElement: () => caseNode(Symbol()) },
     fetch(path) {
       calls.push(path);
+      if (delayRefresh && path.includes('refresh=1')) return new Promise(resolve => { resolveRefresh = resolve; });
       const status = path.includes('account-status');
       const missing = path.includes('snapshot=1') && !snapshot;
       const data = status ? { accessReady: true, coachAccessUnlocked: true } : missing ? { snapshotMissing: true } : path.includes('snapshot=1') ? snapshot : payload;
@@ -112,7 +123,7 @@ function overviewLoadCase(snapshot) {
   };
   caseContext.window = caseContext;
   vm.runInNewContext(script, caseContext);
-  return { calls, timers, caseNode };
+  return { calls, timers, caseNode, resolveRefresh(data) { resolveRefresh({ ok: true, json: () => Promise.resolve(data) }); } };
 }
 setTimeout(() => {
   assert.strictEqual(node('activeAthletes').textContent, '2');
@@ -138,16 +149,19 @@ setTimeout(() => {
   (async () => {
     const fresh = overviewLoadCase({ ...payload, snapshot: true, snapshotSavedAt: new Date().toISOString() });
     const missing = overviewLoadCase(null);
-    const stale = overviewLoadCase({ ...payload, snapshot: true, snapshotSavedAt: '2020-01-01T00:00:00Z' });
+    const stale = overviewLoadCase({ ...payload, totals: { currentWeekRuns: 0, currentWeekVolumeMiles: 0 }, recentMeetResults: [], snapshot: true, snapshotSavedAt: '2020-01-01T00:00:00Z' }, true);
     await new Promise(setImmediate);
     assert.strictEqual(fresh.calls.filter(path => path.includes('/dashboard?')).length, 1);
     assert.strictEqual(fresh.timers.length, 0);
     assert.strictEqual(missing.calls.filter(path => path.includes('/dashboard?')).length, 2, 'missing snapshot falls back to live data');
-    assert.strictEqual(stale.caseNode('overviewContent').hidden, false, 'stale snapshot renders before refresh');
-    assert.strictEqual(stale.timers.length, 1);
-    stale.timers[0]();
+    assert.ok(missing.calls.some(path => path.includes('refresh=1')), 'missing snapshot requests a complete meet lookup');
+    assert.strictEqual(stale.calls.filter(path => path.includes('/dashboard?')).length, 2, 'expired snapshot triggers a fresh request');
+    assert.ok(stale.calls.some(path => path.includes('refresh=1')), 'expired snapshot requests a complete meet lookup');
+    assert.strictEqual(stale.timers.length, 0, 'expired snapshot does not render then refresh in the background');
+    assert.strictEqual(stale.caseNode('overviewContent').hidden, true, 'stale weekly counts and meet results never flash');
+    stale.resolveRefresh(payload);
     await new Promise(setImmediate);
-    assert.strictEqual(stale.calls.filter(path => path.includes('/dashboard?')).length, 2, 'older snapshot refreshes in background');
+    assert.strictEqual(stale.caseNode('weekRuns').textContent, '8', 'fresh weekly workouts replace the expired snapshot');
     console.log('SMART Trak Overview tests passed.');
   })().catch(error => { console.error(error); process.exitCode = 1; });
 }, 0);
