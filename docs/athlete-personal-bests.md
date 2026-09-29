@@ -1,17 +1,18 @@
 # Athlete Personal Bests
 
-The dashboard roster shows XC Details only for athletes assigned to an XC group
-(identified by group name or Cross Country season), or with XC training records
-when group assignments are unavailable. The dashboard season selector alone
-does not qualify an athlete. Personal Bests is available
-to everyone. Clicking an XC athlete's name opens Details; other names open
-Personal Bests. Details includes training, attendance, documents, notes, and
-recent activity). Details omits Speed Trak and Field Practice cards and the
+The Distance Trak roster shows Distance Details for athletes assigned to an XC
+or distance group, with XC training records, or with saved track-distance meet
+events. The dashboard season selector alone does not qualify an athlete.
+Personal Bests is available to everyone on Distance Trak and in every Athletes
+roster filter, including inactive and setup-needed rows. Clicking a distance
+athlete's name opens Details; other names open Personal Bests. Details includes
+training, attendance, documents, and current-season meet results. It omits Speed Trak and Field Practice cards and the
 embedded Power Trak section, but retains Roster, Meet History, Speed Trak,
-Power Trak, and Attendance navigation buttons. Snapshot opens the personal-best tables for all saved dates,
+Power Trak, and Attendance navigation buttons. Personal Bests opens the personal-best tables for all saved dates,
 independent of the current dashboard filters.
 
-The Snapshot includes Speed, Strength, Jumps & Throws, and Meet Results. It reads
+Personal Bests includes Speed, Strength, Jumps & Throws, and Meet Results when
+each category has saved results. It reads
 Field Practice (including Speed Trak records), paged Power Trak history filtered
 to the athlete, and the Meet History endpoint. It does not write athlete data.
 
@@ -35,7 +36,7 @@ rows exclude voided, no-mark, and relay results; recorded wind-assisted marks
 remain separate from non-assisted and unknown-wind marks.
 
 Each source has an explicit loading/error state. A failed source does not erase
-successful results from another source. Refresh retries the snapshot; stale
+successful results from another source. Refresh retries the modal; stale
 requests cannot overwrite a newly opened athlete view.
 
 Run `npm test` for comparison and regression checks. The optional Playwright

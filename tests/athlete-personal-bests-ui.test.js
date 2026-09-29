@@ -25,16 +25,17 @@ async function run(){
     await page.goto('http://pb.test/');
     await page.addScriptTag({path:path.resolve('assets/athlete-personal-bests.js')});
     await page.addScriptTag({path:path.resolve('assets/power-trak-history-client.js')});
+    await page.addScriptTag({path:path.resolve('assets/athlete-personal-bests-modal.js')});
     await page.addScriptTag({content:'var els={athleteModal:document.getElementById("athleteModal"),athleteModalTitle:document.getElementById("athleteModalTitle"),athleteModalBody:document.getElementById("athleteModalBody")};var esc=AthletePersonalBests.esc;'+functions});
     await page.evaluate(row=>openAthletePersonalBests(row),athlete);
-    await page.locator('#athleteBestsSection0 table').waitFor();
-    await page.locator('#athleteBestsSection1 table').waitFor();
-    await page.locator('#athleteBestsSection3 table').waitFor();
-    assert((await page.locator('#athleteBestsSection1').innerText()).includes('135 lb × 5'));
-    await page.selectOption('#athleteBestsReps','3');
-    assert((await page.locator('#athleteBestsSection1').innerText()).includes('155 lb × 3'));
-    assert((await page.locator('#athleteBestsSection2').innerText()).includes('High Jump'));
-    assert((await page.locator('#athleteBestsSection2').innerText()).includes('Broad Jump'));
+    await page.locator('[data-pb-section="0"] table').waitFor();
+    await page.locator('[data-pb-section="1"] table').waitFor();
+    await page.locator('[data-pb-section="3"] table').waitFor();
+    assert((await page.locator('[data-pb-section="1"]').innerText()).includes('135 lb × 5'));
+    await page.selectOption('[data-pb-reps]','3');
+    assert((await page.locator('[data-pb-section="1"]').innerText()).includes('155 lb × 3'));
+    assert((await page.locator('[data-pb-section="2"]').innerText()).includes('High Jump'));
+    assert((await page.locator('[data-pb-section="2"]').innerText()).includes('Broad Jump'));
     for(const size of [{width:1280,height:900},{width:768,height:1024},{width:390,height:844}]){
       await page.setViewportSize(size);
       const bounds=await page.locator('#athleteModal .modalpanel').boundingBox();
@@ -43,17 +44,17 @@ async function run(){
       await page.screenshot({path:'/private/tmp/athlete-bests-'+size.width+'.png',fullPage:true});
     }
     failPower=true;
-    await page.click('#athleteBestsRetry');
-    await page.locator('#athleteBestsSection1 .pb-error').waitFor();
-    await page.locator('#athleteBestsSection2 .pb-error').waitFor();
-    assert((await page.locator('#athleteBestsSection2').innerText()).includes('High Jump'),'partial source failure must retain field records');
+    await page.click('[data-pb-retry]');
+    await page.locator('[data-pb-section="1"] .pb-error').waitFor();
+    await page.locator('[data-pb-section="2"] .pb-error').waitFor();
+    assert((await page.locator('[data-pb-section="2"]').innerText()).includes('High Jump'),'partial source failure must retain field records');
     assert.deepStrictEqual(errors,[]);
     console.log('Athlete personal best UI checks passed at desktop, tablet, and mobile widths');
   }finally{await browser.close()}
 }
 if(process.argv.includes('--fixture')){
   const base=path.resolve('assets');
-  const fixture='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+style+'</style><link rel="stylesheet" href="file://'+base+'/athlete-personal-bests.css"></head><body>'+modal+'<script src="file://'+base+'/athlete-personal-bests.js"></script><script src="file://'+base+'/power-trak-history-client.js"></script><script>var els={athleteModal:document.getElementById("athleteModal"),athleteModalTitle:document.getElementById("athleteModalTitle"),athleteModalBody:document.getElementById("athleteModalBody")};var esc=AthletePersonalBests.esc;window.fetch=async function(url){var data=url.includes("power-trak")?'+JSON.stringify(power)+':url.includes("field-practice")?{practices:'+JSON.stringify(practices)+'}:{meetResults:[{contactId:"a",event:"100m",meetDate:"2026-09-01",resultDisplay:"13.8"}]};return {ok:true,json:async function(){return data}}};'+functions+'openAthletePersonalBests('+JSON.stringify(athlete)+');</script></body></html>';
+  const fixture='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+style+'</style><link rel="stylesheet" href="file://'+base+'/athlete-personal-bests.css"></head><body>'+modal+'<script src="file://'+base+'/athlete-personal-bests.js"></script><script src="file://'+base+'/power-trak-history-client.js"></script><script src="file://'+base+'/athlete-personal-bests-modal.js"></script><script>var els={athleteModal:document.getElementById("athleteModal"),athleteModalTitle:document.getElementById("athleteModalTitle"),athleteModalBody:document.getElementById("athleteModalBody")};var esc=AthletePersonalBests.esc;window.fetch=async function(url){var data=url.includes("power-trak")?'+JSON.stringify(power)+':url.includes("field-practice")?{practices:'+JSON.stringify(practices)+'}:{meetResults:[{contactId:"a",event:"100m",meetDate:"2026-09-01",resultDisplay:"13.8"}]};return {ok:true,json:async function(){return data}}};'+functions+'openAthletePersonalBests('+JSON.stringify(athlete)+');</script></body></html>';
   fs.writeFileSync('/private/tmp/athlete-bests-preview.html',fixture);
   console.log('/private/tmp/athlete-bests-preview.html');
 }else run().catch(error=>{console.error(error);process.exitCode=1});

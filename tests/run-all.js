@@ -9,6 +9,7 @@ require("./power-trak-rack-queue.test");
 require("./power-leaderboard-estimate.test");
 require("./power-trak-rack-history.test");
 require("./athlete-personal-bests.test");
+require("./athletes-personal-bests.test");
 require("./dashboard-xc-details.test");
 require("./smart-trak-navigation.test");
 const overviewTests = spawnSync(process.execPath, ["tests/smart-trak-overview.test.js"], { stdio: "inherit" });
@@ -820,8 +821,8 @@ function checkDashboardAthleteSnapshot() {
   [
     "Athlete Snapshot",
     'title="View athlete personal bests">Personal Bests</button>',
-    '>XC Details</button>',
-    "+' XC Details'",
+    '>Distance Details</button>',
+    "+' Distance Details'",
     'data-athlete-bests="1"',
     'function openAthletePersonalBests',
     "function athleteSnapshotAttendance",
@@ -830,8 +831,8 @@ function checkDashboardAthleteSnapshot() {
     "if(Array.isArray(practice.speedMetrics)&&practice.speedMetrics.length)return;",
     "function loadAthleteSnapshotPower",
     "function powerSnapshotRowMatches",
-    "'/api/smart-trak/power-trak?v='",
-    "Recent Meet Results",
+    "AthletePersonalBestsModal.open",
+    "Current Season Meet Results",
     "Recent Training",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`dashboard athlete snapshot missing ${text}`);
@@ -3231,8 +3232,8 @@ function checkDashboardWhatsNew() {
     "smartcoachWhatsNewSeen_",
     "Team Overview now shows active athletes, distance activity, recent meet results, and workspace links.",
     "Shared navigation groups Athletes, Training, Distance Trak, Speed Trak, Power Trak, Meets & Results, Tools, and Quick Add.",
-    "Personal Bests brings saved best marks together for an athlete.",
-    "XC Details appears only for XC runners.",
+    "Personal Bests is available from every athlete row and shows all-time saved marks.",
+    "Distance Details appears for XC and track-distance runners, with current-season meet results.",
     "Rack Mode stays on the selected athlete after Complete Set; the next athlete chooses their own name.",
     "All optional Distance Trak tools are visible again.",
     "Customize Dashboard is hidden while its saved settings are preserved.",

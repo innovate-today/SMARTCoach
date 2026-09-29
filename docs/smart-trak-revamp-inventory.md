@@ -17,7 +17,7 @@ Step 3 rollout now covers Overview, Dashboard, Athletes, Attendance Trak, Traini
 | Proposed location | Current entry point | Current behavior to preserve |
 | --- | --- | --- |
 | Overview | `/overview.html` | Live active roster, distance activity, and recent meet results from the dashboard API, with links to existing workspaces. |
-| Distance Trak > Distance Overview | `/dashboard.html` | Existing distance dashboard, including roster overview, training load, XC Details, Personal Bests, meet results, filters, and exports. Its heading and browser title are `Distance Trak`; the workflow remains intact. |
+| Distance Trak > Distance Overview | `/dashboard.html` | Existing distance dashboard, including roster overview, training load, Distance Details, Personal Bests, meet results, filters, and exports. Its heading and browser title are `Distance Trak`; the workflow remains intact. |
 | Distance Trak > Miles Trak | Dashboard Miles Trak modal (`#share-miles-board`) | Opens the existing Miles Trak flow. |
 | Athletes > Roster | `/athletes.html` | Existing roster, search/filter, add/import, parent contacts, group/status, Docu Trak, Equipment Trak, calendar links and questions. Do not replace with concept roster. |
 | Athletes > Attendance | `/attendance.html` | Existing Attendance Trak page. |
@@ -61,7 +61,7 @@ Training Calendar also has Athlete Setup (`/plan-setup.html`), Upload/Paste Plan
 - Staff Access is Head Coach-only. The existing control is hidden when `staffAdminAllowed` is false for a coach session; the new menu must follow that authorization result rather than exposing the management modal to other coaches.
 - Pro/Essential setup changes dashboard visibility. The destination map must preserve plan gating and protected API access; showing or hiding a link is not authorization.
 - The concept's Sign Out is a placeholder; production must clear local access and session state before redirecting.
-- XC Details is conditional on XC assignment or XC training; Personal Bests remains available to every athlete.
+- Distance Details is conditional on XC or track-distance assignment, XC training, or a saved track-distance meet event. Personal Bests remains available to every athlete in every Athletes roster filter.
 
 ## Approved navigation decisions
 

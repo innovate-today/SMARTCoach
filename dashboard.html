@@ -1608,6 +1608,7 @@ tr:last-child td{border-bottom:0}
 </div>
 <script src="/assets/power-trak-history-client.js"></script>
 <script src="/assets/athlete-personal-bests.js"></script>
+<script src="/assets/athlete-personal-bests-modal.js"></script>
 <script src="/assets/smart-trak-guide-content.js"></script>
 <script>
 var dashboardRows=[];
@@ -3380,7 +3381,7 @@ document.addEventListener('click',function(event){
   var athlete=dashboardRows.find(function(row){
     return (contactId&&String(row.contactId||'')===contactId) || String(row.name||'').toLowerCase()===String(button.getAttribute('data-athlete-name')||'').toLowerCase();
   });
-  if(athlete){if(button.hasAttribute('data-athlete-bests')||!athleteIsXcRunner(athlete))openAthletePersonalBests(athlete);else openAthleteDetail(athlete);}
+  if(athlete){if(button.hasAttribute('data-athlete-bests')||!athleteIsDistanceRunner(athlete))openAthletePersonalBests(athlete);else openAthleteDetail(athlete);}
 });
 els.athleteModalClose.addEventListener('click',closeAthleteDetail);
 els.manageMeetsBtn.addEventListener('click',openMeetManager);
@@ -5880,12 +5881,21 @@ function athleteIsXcRunner(row){
       normalizeDashboardSport(item.groupName)==='cross_country';
   });
 }
+function distanceMeetEvent(event){
+  return /^(?:[8-9]00|1[0256]00|2[04]00|3000|3200|5000|10000)\s*m(?:eters?)?$|^(?:1|2|3|5|10)\s*(?:mi(?:le)?s?|k)$/i.test(String(event||'').trim());
+}
+function athleteIsDistanceRunner(row){
+  if(athleteIsXcRunner(row))return true;
+  if((row.groups||[]).some(function(name){return /\b(?:distance|endurance|800|1500|1600|3200)\b/i.test(name)}))return true;
+  if(distanceMeetEvent(row.latestMeet&&row.latestMeet.event))return true;
+  return (recentMeetRows||[]).some(function(item){return sameAthlete(item,row)&&distanceMeetEvent(item.event)});
+}
 function rowHtml(row){
   var latestMeet=row.latestMeet||{};
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
   return '<tr>'+
-    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="row-actions">'+(athleteIsXcRunner(row)?'<button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">XC Details</button>':'')+'<button class="quiet-action compact" data-athlete-bests="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete personal bests">Personal Bests</button></div></td>'+
+    '<td><button class="namebtn" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">'+esc(row.name||'Unnamed')+'</button><div class="row-actions">'+(athleteIsDistanceRunner(row)?'<button class="quiet-action compact" data-athlete-detail="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button">Distance Details</button>':'')+'<button class="quiet-action compact" data-athlete-bests="1" data-contact-id="'+esc(row.contactId||'')+'" data-athlete-name="'+esc(row.name||'')+'" type="button" title="View athlete personal bests">Personal Bests</button></div></td>'+
     '<td>'+mainLine(fitness.label||'Not set')+subLine(fitness.date?formatDate(fitness.date):'')+'</td>'+
     '<td>'+mainLine([latestMeet.event,latestMeet.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([latestMeet.meetName,formatDate(latestMeet.meetDate),flagText(latestMeet)].filter(Boolean).join(' · '))+'</td>'+
     '<td>'+mainLine([latestTraining.totalTimeDisplay,latestTraining.workoutPrescription||latestTraining.workoutType].filter(Boolean).join(' ')||'No workout')+subLine([latestTraining.groupName,formatDate(latestTraining.sessionDate),latestTraining.workoutPrescription?latestTraining.workoutType:''].filter(Boolean).join(' · '))+'</td>'+
@@ -5924,7 +5934,8 @@ function openAthleteDetail(row){
   var latestMeet=row.latestMeet||{};
   var latestTraining=row.latestTraining||{};
   var fitness=row.currentFitness||{};
-  var meets=recentMeetRows.filter(function(item){return sameAthlete(item,row);}).slice(0,5);
+  var currentMeetSeason=(new Date().getMonth()>=7&&new Date().getMonth()<=10)?new Date().getFullYear()+'-cross_country':seasonKeyForDate(new Date());
+  var meets=recentMeetRows.filter(function(item){return sameAthlete(item,row)&&seasonKeyForRow(item,'meet')===currentMeetSeason;}).slice(0,5);
   var trainingGroups=groupTrainingSessions(recentTrainingRows.filter(function(item){return sameAthlete(item,row);}),5);
   var attendance=athleteSnapshotAttendance(row);
   var documents=athleteSnapshotDocuments(row);
@@ -5932,7 +5943,7 @@ function openAthleteDetail(row){
   var pbCount=meetFlags.filter(function(item){return item.isPr;}).length;
   var sbCount=meetFlags.filter(function(item){return item.isSeasonBest;}).length;
   var identity=[row.grade?'Grade '+row.grade:'',row.graduationYear?'Class of '+row.graduationYear:'',row.gender||'',(row.groups||[]).join(', ')].filter(Boolean).join(' · ');
-  els.athleteModalTitle.textContent=(row.name||'Athlete')+' XC Details';
+  els.athleteModalTitle.textContent=(row.name||'Athlete')+' Distance Details';
   els.athleteModalBody.innerHTML=
     '<div class="snapshot-summary"><div><b>'+esc(row.name||'Unnamed athlete')+'</b><span>'+esc(identity||'Roster athlete')+'</span></div><div class="snapshot-badges"><span class="pill '+(row.status==='Active'?'good':'warn')+'">'+esc(row.status||'Review')+'</span>'+(pbCount?'<span class="pill pb">'+pbCount+' PB</span>':'')+(sbCount?'<span class="pill sb">'+sbCount+' SB</span>':'')+'</div></div>'+
     '<div class="detailgrid">'+
@@ -5952,7 +5963,7 @@ function openAthleteDetail(row){
       '<a class="linkbtn modal-action" href="'+esc(smartCoachPageUrl('/power-trak.html'))+'">Power Trak</a>'+
       '<a class="linkbtn modal-action" href="'+esc(smartCoachPageUrl('/attendance.html'))+'">Attendance</a>'+
     '</div>'+
-    '<h3 class="section-title">Recent Meet Results</h3>'+
+    '<h3 class="section-title">Current Season Meet Results · '+esc(seasonLabelForKey(currentMeetSeason))+'</h3>'+
     detailList(meets.map(function(item){
       return mainLine([item.event,item.resultDisplay].filter(Boolean).join(' ')||'No result')+subLine([item.meetName,formatDate(item.meetDate),flagText(item)].filter(Boolean).join(' · '));
     }),'No recent meet results.')+
@@ -5968,45 +5979,7 @@ function personalBestsRequest(url){
   return request.finally(function(){clearTimeout(timer)});
 }
 function openAthletePersonalBests(row){
-  els.athleteModalTitle.textContent=(row.name||'Athlete')+' Personal Bests';
-  els.athleteModalBody.innerHTML='<div class="athlete-pb"><div class="pb-sub">'+esc(row.graduationYear?'Class of '+row.graduationYear+' · ':'')+'All-time saved results</div>'+['Speed','Strength','Jumps & Throws','Meet Results'].map(function(label,index){return'<section><div class="pb-heading"><h3>'+esc(label)+'</h3>'+(index===1?'<label class="pb-sub">Compare sets <select id="athleteBestsReps" aria-label="Strength rep basis" disabled><option>Loading...</option></select></label>':'')+'</div><div id="athleteBestsSection'+index+'" aria-live="polite"><div class="pb-empty">Loading...</div></div></section>'}).join('')+'<div class="pb-footer"><span>SMART Trak · Athlete Snapshot</span><button id="athleteBestsRetry" class="quiet-action compact" type="button">Refresh</button></div></div>';
-  els.athleteModal.hidden=false;
-  var targets=[0,1,2,3].map(function(i){return document.getElementById('athleteBestsSection'+i)});
-  var repSelect=document.getElementById('athleteBestsReps'),fieldRecords=[],powerRecords=[],fieldStatus='loading',powerStatus='loading';
-  function active(){return targets[0].isConnected}
-  function show(index,records){if(active())targets[index].innerHTML=AthletePersonalBests.renderTable(AthletePersonalBests.summarize(records),false)}
-  function unavailable(index){if(active())targets[index].innerHTML='<div class="pb-empty pb-error">Results unavailable. Refresh to try again.</div>'}
-  function renderField(){
-    if(!active())return;
-    var records=fieldRecords.concat(powerRecords);
-    targets[2].innerHTML=records.length?AthletePersonalBests.renderTable(AthletePersonalBests.summarize(records),false):fieldStatus==='loading'||powerStatus==='loading'?'<div class="pb-empty">Loading...</div>':'<div class="pb-empty">No comparable saved results.</div>';
-    if(fieldStatus==='error'||powerStatus==='error')targets[2].innerHTML+='<div class="pb-empty pb-error">'+(fieldStatus==='error'?'Field Practice':'Power Trak')+' results unavailable. Refresh to try again.</div>';
-  }
-  document.getElementById('athleteBestsRetry').addEventListener('click',function(){openAthletePersonalBests(row)});
-  personalBestsRequest('/api/smart-trak/field-practice?v='+Date.now()).then(function(data){
-    if(!active())return;
-    var practices=data.practices||[];
-    show(0,AthletePersonalBests.speed(practices,row));fieldRecords=AthletePersonalBests.field(practices,row);fieldStatus='ready';renderField();
-  }).catch(function(){fieldStatus='error';unavailable(0);renderField()});
-  personalBestsRequest('/api/smart-trak/power-trak?v='+Date.now()+'&athleteId='+encodeURIComponent(row.contactId||row.smartcoachAthleteId||row.id||'')+'&athleteName='+encodeURIComponent(row.name||'')).then(function(data){
-    if(!active())return;
-    var records=AthletePersonalBests.power(data,row);
-    powerRecords=records.field;powerStatus='ready';renderField();
-    var reps=Array.from(new Set(records.strength.map(function(r){return r.reps}).filter(function(n){return Number.isInteger(n)&&n>0}))).sort(function(a,b){return a-b});
-    var unknownReps=records.strength.some(function(r){return r.reps==null});
-    repSelect.innerHTML=(reps.map(function(n){return'<option value="'+n+'">'+n+' rep'+(n===1?'':'s')+'</option>'}).join('')+(unknownReps?'<option value="unknown">Reps unrecorded</option>':''))||'<option>No sets</option>';
-    repSelect.disabled=!reps.length&&!unknownReps;repSelect.value=reps.indexOf(5)>=0?'5':String(reps[0]||(unknownReps?'unknown':'No sets'));
-    function renderStrength(){
-      if(!active())return;
-      targets[1].innerHTML=AthletePersonalBests.renderTable(AthletePersonalBests.strength(records.strength,repSelect.value),true);
-      var estimates=AthletePersonalBests.summarize(records.estimates);
-      if(estimates.length)targets[1].innerHTML+='<div class="pb-heading"><h3>Imported Estimated 1RM</h3></div>'+AthletePersonalBests.renderTable(estimates,false);
-    }
-    repSelect.addEventListener('change',renderStrength);renderStrength();
-  }).catch(function(){powerStatus='error';unavailable(1);if(active())repSelect.innerHTML='<option>Unavailable</option>';renderField()});
-  personalBestsRequest('/api/smart-trak/dashboard?meetHistory=1&v='+Date.now()).then(function(data){
-    show(3,AthletePersonalBests.meets((data.meetResults||[]).concat(data.recentMeetResults||[]),row));
-  }).catch(function(){unavailable(3)});
+  AthletePersonalBestsModal.open({athlete:row,modal:els.athleteModal,title:els.athleteModalTitle,body:els.athleteModalBody,request:function(path){return personalBestsRequest(path+(path.indexOf('?')>=0?'&':'?')+'v='+Date.now())}});
 }
 
 function athleteSnapshotAttendance(row){

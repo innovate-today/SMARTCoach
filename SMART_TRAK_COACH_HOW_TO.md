@@ -69,7 +69,7 @@ How to use it:
 7. Click **Show workouts** under an athlete to see completed workout details.
 8. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
-In **Roster Overview**, use **Personal Bests** for an athlete's best saved speed, strength, and field marks. **XC Details** appears only for XC runners and shows their distance-training and meet details. The athlete view also provides links to Roster, Meet History, Speed Trak, Power Trak, and Attendance for deeper review and editing. Power Trak data loads separately so other athlete information appears first.
+In **Roster Overview**, use **Personal Bests** for an athlete's all-time saved speed, strength, field, and meet marks. **Distance Details** appears for XC and track-distance runners and shows their training and current-season meet results. The athlete view also provides links to Roster, Meet History, Speed Trak, Power Trak, and Attendance for deeper review and editing. Power Trak data loads separately so other athlete information appears first. The Athletes roster also has a Personal Bests button on every row, including inactive and setup-needed athletes.
 
 Weekly volume and **Volume by Athlete** count completed workout totals saved for the athlete, including completed totals that were saved without `mi` in the row.
 
