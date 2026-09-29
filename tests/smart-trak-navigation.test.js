@@ -654,9 +654,9 @@ const resultsSharingSource = fs.readFileSync('assets/meet-results-board-sharing.
 new Function(resultsSharingSource);
 assert.ok(meetSource.includes('<script src="/assets/meet-results-board-sharing.js"></script>'));
 assert.ok(meetSource.includes("location.hash==='#results-board'&&window.openMeetResultsBoardSharing"));
-assert.ok(fieldSource.includes("if(location.hash==='#new-practice')newPractice()"));
-assert.ok(powerSource.includes("if(location.hash==='#new-workout')"));
-assert.ok(powerSource.includes("else if(location.hash==='#rack-setup')"));
+assert.ok(fieldSource.includes("if(location.hash==='#new-practice'){newPractice();history.replaceState(null,'',location.pathname+location.search);}"));
+assert.ok(powerSource.includes("if(location.hash==='#new-workout'){document.querySelector('[data-power-tab=\"workouts\"]').click();els.newWorkoutBtn.click();history.replaceState(null,'',location.pathname+location.search)}"));
+assert.ok(powerSource.includes("else if(location.hash==='#rack-setup'){document.querySelector('[data-power-tab=\"rack\"]').click();if(!els.rackLive.hidden)els.backToRacksBtn.click();history.replaceState(null,'',location.pathname+location.search)}"));
 assert.ok(speedSource.includes("location.hash==='#add-result'"));
 assert.ok(speedSource.includes("return loadSpeedAthletes(seq).then(function()"), 'speed result deep link waits for athlete options');
 for (const fragment of ['/api/smart-trak/results-board-sharing?', '/api/smart-trak/results-board-link?', 'Copy Display Link', 'Turn Off Link', 'data-board-order']) {

@@ -755,8 +755,8 @@ function load(){
     renderRackSetup();
     resumeOwnedPowerRack();
     els.lastUpdated.textContent='Workouts and active racks ready';
-    if(location.hash==='#new-workout'){document.querySelector('[data-power-tab="workouts"]').click();els.newWorkoutBtn.click()}
-    else if(location.hash==='#rack-setup'){document.querySelector('[data-power-tab="rack"]').click();if(!els.rackLive.hidden)els.backToRacksBtn.click()}
+    if(location.hash==='#new-workout'){document.querySelector('[data-power-tab="workouts"]').click();els.newWorkoutBtn.click();history.replaceState(null,'',location.pathname+location.search)}
+    else if(location.hash==='#rack-setup'){document.querySelector('[data-power-tab="rack"]').click();if(!els.rackLive.hidden)els.backToRacksBtn.click();history.replaceState(null,'',location.pathname+location.search)}
     if(!powerRackKioskMode())setTimeout(function(){loadPowerHistory(generation)},0);
   }).catch(function(error){
     if(generation!==powerLoadGeneration)return;
