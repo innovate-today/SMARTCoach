@@ -35,6 +35,7 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 - Keep Trak, Field Practice, and Weather now load the configured school logo from account status. The other page content and workflows were not redesigned. Automated navigation and regression tests pass; a live Coach and Head Coach walkthrough is still useful.
 - Staff Access is still hosted by the Distance Trak modal. The user prefers it to open on Overview. This is **not implemented**: changing only the link would strand the modal, so move its management UI and save/revoke logic into a reusable Overview-hosted flow before changing the route. Preserve backend Head Coach authorization.
 - Keep `SMART_TRAK_COACH_HOW_TO.md` and `assets/smart-trak-guide-content.js` aligned with shipped coach workflows. `how-to.html` renders the markdown directly; the guide content asset powers Start Here and What's New. Update `SMARTCOACH_PROJECT_STATE.md` after material workflow changes, distinguishing shipped work from proposed or deferred work.
+- Start Here paths were checked against their current page and dashboard deep-link destinations. What's New was trimmed from the old multi-release archive to ten current, coach-facing items and versioned `2026-09-28-smart-trak-navigation` so the unread count reflects this set. Retired customization instructions and outdated Dashboard navigation copy were removed; regression coverage now rejects their return.
 
 Current launch status:
 

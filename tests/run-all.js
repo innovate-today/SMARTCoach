@@ -3210,7 +3210,8 @@ function checkPowerTrakFeature() {
 }
 
 function checkDashboardWhatsNew() {
-  const html = fs.readFileSync("dashboard.html", "utf8") + fs.readFileSync("assets/smart-trak-guide-content.js", "utf8");
+  const guideContent = fs.readFileSync("assets/smart-trak-guide-content.js", "utf8");
+  const html = fs.readFileSync("dashboard.html", "utf8") + guideContent;
   const overview = fs.readFileSync("overview.html", "utf8");
   if (!overview.includes('id="whatsNewBtn"') || !fs.readFileSync("dashboard.html", "utf8").includes('id="whatsNewBtn" class="whats-new-btn" type="button" aria-haspopup="dialog" hidden')) throw new Error("What's New pill must be visible on Overview only.");
   [
@@ -3228,53 +3229,13 @@ function checkDashboardWhatsNew() {
     "function openWhatsNew()",
     "function markWhatsNewSeen()",
     "smartcoachWhatsNewSeen_",
-    "Keep Trak",
-    "Attendance Trak",
-    "SMART Trak Navigation",
-    "Team Overview is the starting page for roster, distance activity, recent meet results, and workspace links.",
-    "Use the shared Athletes, Training, Distance Trak, Speed Trak, Power Trak, Meets & Results, Tools, and Quick Add navigation to reach existing workflows.",
-    "Training Calendar",
-    "Training Customization lets coaches adjust the effort percentages used for target pace ranges.",
-    "Saved custom percentages are account-wide and used by the SMARTCoach app when calculating workout targets.",
-    "Field Practice",
-    "Training now includes Field Practice for field-event practice planning.",
-    "Saved Field Practice sessions can be opened from Training and used by the SMARTCoach app.",
-    "Speed Metrics",
-    "Training now includes Speed Metrics workouts for acceleration, fly zones, max velocity, and runway timing.",
-    "Coaches can capture time in the SMARTCoach app and review velocity and MPH before sending reps back to SMART Trak.",
-    "Saved speed tests are reviewed in Speed Trak Sessions instead of the distance-training Completed Workouts table.",
-    "Speed Trak",
-    "Speed Trak gives coaches a leaderboard for saved Speed Metrics marks.",
-    "Coaches can import speed marks from a spreadsheet or add one-off results manually.",
-    "Edit and delete tools help clean up incorrect speed results without reimporting a file.",
-    "Results Board",
-    "Share a read-only team results board for the latest race and season results.",
-    "Viewers can filter by meet, event, and gender, including All Meets for the selected sport and season year.",
-    "Board details include PB/SB Highlights, Boys/Girls summaries, meet archive, athlete summary, event summary, and season results.",
-    "Coaches can choose visible sections, reorder board details, add a coach message, and viewers can tap table headers to sort columns.",
-    "Records",
-    "XC Top 20 shows Boys 5K, Girls 5K, and Girls 2 Mile lists from saved cross country meet results.",
-    "Each athlete appears once per list, using that athlete's fastest saved time for that distance.",
-    "New app syncs, Log Single Result entries, Meet History corrections, and XC imports update the lists when Records reloads.",
-    "Coaches can paste XC marks or upload a CSV file. Athletes do not need to be on the current roster, meet/year can be left blank, result-site divider rows are ignored, and 3200m cross country marks are shown with 2 Mile.",
-    "Girls result-site labels with 3200, Cross Country, or CC are treated as Girls 2 Mile unless they clearly say 5K.",
-    "After XC imports save, SMART Trak explains how many marks are visible, behind that athlete's faster saved mark, or outside the current Top 20.",
-    "Delete removes an incorrect XC Top 20 mark from the list by voiding its saved Meet History result.",
-    "Athlete Calendar",
-    "Calendar Questions lets coaches add up to five Complete/Modify/Skip questions for athletes.",
-    "Questions can be marked required, and athlete answers are added to the completed workout Athlete Note.",
-    "Miles Board",
-    "Share a read-only mileage leaderboard from the Dashboard activity range.",
-    "Coaches can choose multiple challenge types, add a coach message, save weekly snapshots, and use Display Mode for a projector or TV.",
-    "Badges highlight goal hits, mileage clubs, consistency, weekly mileage, big movers, comeback runners, streak leaders, and Pack MVP.",
-    "Partner Timing",
-    "Cross country race timing can now be shared across multiple coach devices.",
-    "Load Partner Taps only pulls shared split/finish taps into the race.",
-    "Meet History",
-    "Feedback",
-    "Bug Trak",
-    "Idea Trak",
-    "Desktop pages now include one Feedback button with Bug Trak and Idea Trak.",
+    "Team Overview now shows active athletes, distance activity, recent meet results, and workspace links.",
+    "Shared navigation groups Athletes, Training, Distance Trak, Speed Trak, Power Trak, Meets & Results, Tools, and Quick Add.",
+    "Personal Bests brings saved best marks together for an athlete.",
+    "XC Details appears only for XC runners.",
+    "Rack Mode stays on the selected athlete after Complete Set; the next athlete chooses their own name.",
+    "All optional Distance Trak tools are visible again.",
+    "Customize Dashboard is hidden while its saved settings are preserved.",
     "Mark All Seen",
   ].forEach((text) => {
     if (!html.includes(text)) throw new Error(`Dashboard What's New missing ${text}`);
@@ -3285,6 +3246,9 @@ function checkDashboardWhatsNew() {
   ].forEach((text) => {
     if (html.includes(text)) throw new Error(`Dashboard What's New includes non-coach-facing text: ${text}`);
   });
+  if (guideContent.includes('Customize Dashboard lets coaches hide') || guideContent.includes('Share a read-only mileage leaderboard from the Dashboard activity range.')) {
+    throw new Error("What's New must not announce removed controls or old navigation labels.");
+  }
   console.log("Dashboard What's New ok");
 }
 
@@ -3998,6 +3962,17 @@ function checkDashboardStartHere() {
     if (!guide.includes(text)) throw new Error(`How To Start Here guide missing ${text}`);
   });
   if (html.includes("['Open App','/']")) throw new Error("Dashboard Start Here should label the mobile app action Open SMARTCoach.");
+  const guideContent = new Function("window", `${fs.readFileSync("assets/smart-trak-guide-content.js", "utf8")}\nreturn window.smartTrakGuideContent;`)({});
+  for (const path of guideContent.paths) {
+    for (const [label, destination] of path.actions) {
+      if (destination.startsWith("/") && destination !== "/" && !fs.existsSync(destination.slice(1).split("#")[0])) {
+        throw new Error(`Start Here action ${label} points to a missing page: ${destination}`);
+      }
+      if (destination.startsWith("#") && !html.includes(destination)) {
+        throw new Error(`Start Here action ${label} points to a missing dashboard deep link: ${destination}`);
+      }
+    }
+  }
   console.log("Dashboard Start Here ok");
 }
 
