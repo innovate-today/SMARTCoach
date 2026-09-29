@@ -682,7 +682,7 @@ function checkDashboardActivityRangeLayout() {
     ".actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:1 1 auto;min-width:0}",
     ".action-row,.modal-action-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;width:100%;max-width:100%}",
     ".actions button,.actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;height:32px;min-height:32px;line-height:1;white-space:nowrap",
-    '<div class="dashboard-tools-row"><button id="dashboardPrefsBtn" class="dashboard-prefs-link" type="button" aria-haspopup="dialog">Customize Dashboard</button></div>',
+    '<div class="dashboard-tools-row" hidden><button id="dashboardPrefsBtn" class="dashboard-prefs-link" type="button" aria-haspopup="dialog">Customize Dashboard</button></div>',
     ".action-row,.modal-action-row{justify-content:flex-start;flex-wrap:nowrap}",
     ".actions button,.actions .linkbtn{flex:0 0 auto;white-space:nowrap}",
     "button.modal-action,.linkbtn.modal-action{background:#eef6ff;color:#173891;border:1px solid #bfd0ef}",
@@ -4101,6 +4101,9 @@ function checkHowToGuidePage() {
 
 function checkDashboardToolPreferences() {
   const html = fs.readFileSync("dashboard.html", "utf8");
+  if (!html.includes('<div class="dashboard-tools-row" hidden><button id="dashboardPrefsBtn"')) {
+    throw new Error('Customize Dashboard must remain hidden while its saved preferences are preserved.');
+  }
   const api = fs.readFileSync("api/smart-trak/[route].js", "utf8");
   const registry = fs.readFileSync("lib/account-registry.js", "utf8");
   const directPages = [
