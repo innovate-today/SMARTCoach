@@ -208,11 +208,14 @@ const calendarDocument = {
   addEventListener() {}
 };
 let calendarRedirect = '';
+let addedActivity = null;
 const calendarWindow = { location: { replace: path => { calendarRedirect = path; } } };
 vm.runInNewContext(source, {
   document: calendarDocument, window: calendarWindow, localStorage: storage,
   sessionStorage: storage, accountKey: () => 'school-a',
-  pageUrl: path => path + '?account=school-a'
+  pageUrl: path => path + '?account=school-a',
+  todayInputValue: () => '2026-09-28',
+  openAddDayModal: (...args) => { addedActivity = args; }
 });
 const calendarNav = calendarHeader.children.find(child => child.tag === 'nav');
 assert.ok(calendarNav, 'Training Calendar navigation mounted');
@@ -227,6 +230,10 @@ assert.ok(calendarNav.children.includes(calendarNodes.scheduleApprovedBtn));
 assert.ok(calendarNav.children.includes(calendarNodes.refreshBtn));
 assert.ok(menuByName(calendarNav, 'Quick Add').children[1].children.includes(calendarNodes.manualMileageBtn));
 assert.ok(menuByName(calendarNav, 'Quick Add').children[1].children.includes(calendarNodes.raceResultBtn));
+const addActivity = menuByName(calendarNav, 'Quick Add').children[1].children.find(child => child.textContent === 'Add Training Activity');
+assert.strictEqual(addActivity.tag, 'button');
+addActivity.handlers.click();
+assert.deepStrictEqual(addedActivity, ['2026-09-28', 'easy']);
 const calendarStaff = menuByName(calendarNav, 'Account').children[1].children.find(child => child.textContent === 'Staff Access');
 assert.strictEqual(calendarStaff.hidden, true);
 calendarWindow.smartTrakNavigationUpdateAccess({ staffAdminAllowed: true, coach: { index: 1, role: 'Head Coach' } });
@@ -235,6 +242,8 @@ menuByName(calendarNav, 'Account').children[1].children.find(child => child.text
 assert.strictEqual(calendarRedirect, '/training-calendar.html?account=school-a');
 const calendarSource = fs.readFileSync('training-calendar.html', 'utf8');
 assert.ok(calendarSource.includes('/assets/smart-trak-navigation.js'));
+assert.ok(calendarSource.includes("location.hash==='#add-activity'"));
+assert.ok(calendarSource.includes("if(loaded&&!els.mainPage.hidden&&location.hash==='#add-activity')"));
 assert.ok(calendarSource.includes('window.smartTrakNavigationUpdateAccess(result.ok?accountStatus:null)'));
 const fieldIds = ['newBtn', 'dashboardLink', 'calendarLink', 'athletesLink', 'refreshBtn'];
 const fieldNodes = Object.fromEntries(fieldIds.map(id => [id, element('button')]));
@@ -616,9 +625,10 @@ assert.strictEqual(menuByName(overviewNav, 'Training').children[1].children.find
 assert.deepStrictEqual(overviewLinks('Meets & Results'), ['Meet History', 'Results', 'Records', 'Track Simulator', 'XC Simulator']);
 assert.strictEqual(menuByName(overviewNav, 'Meets & Results').children[1].children.find(child => child.textContent === 'Results').href, '/meet-history.html?account=school-a#results-board');
 assert.deepStrictEqual(overviewLinks('Tools'), ['Keep Trak', 'Weather']);
-assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes', 'New Field Practice', 'Add Speed Result', 'Create Strength Workout', 'Set Up Rack']);
+assert.deepStrictEqual(overviewLinks('Quick Add'), ['Log Miles', 'Log Single Result', 'Manage Meets', 'Add Athlete', 'Import Athletes', 'New Field Practice', 'Add Speed Result', 'Add Training Activity', 'Create Strength Workout', 'Set Up Rack']);
 const overviewQuick = menuByName(overviewNav, 'Quick Add').children[1].children;
 assert.strictEqual(overviewQuick.find(child => child.textContent === 'Add Speed Result').href, '/speed-trak.html?account=school-a#add-result');
+assert.strictEqual(overviewQuick.find(child => child.textContent === 'Add Training Activity').href, '/training-calendar.html?account=school-a#add-activity');
 assert.strictEqual(overviewQuick.find(child => child.textContent === 'New Field Practice').href, '/field-practice.html?account=school-a#new-practice');
 assert.strictEqual(overviewQuick.find(child => child.textContent === 'Create Strength Workout').href, '/power-trak.html?account=school-a#new-workout');
 assert.strictEqual(overviewQuick.find(child => child.textContent === 'Set Up Rack').href, '/power-trak.html?account=school-a#rack-setup');

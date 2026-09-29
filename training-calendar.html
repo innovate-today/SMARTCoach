@@ -5140,7 +5140,7 @@ function loadCalendar(){
   ]).then(function(results){
     if(!results[0].ok&&results[0].data&&results[0].data.accessCodeRequired){
       showAccess(results[0].data);
-      return;
+      return false;
     }
     if(!results[0].ok)throw new Error(results[0].data&&results[0].data.error||'Plans failed to load.');
     if(!results[1].ok)throw new Error(results[1].data&&results[1].data.error||'Plan days failed to load.');
@@ -5156,6 +5156,7 @@ function loadCalendar(){
     els.lastUpdated.textContent='Last updated '+formatDateTime(new Date().toISOString());
     renderOptions();
     render();
+    return true;
   }).catch(function(error){
     plans=[];
     days=[];
@@ -5169,6 +5170,7 @@ function loadCalendar(){
     els.empty.textContent=error.message||'Training calendar failed to load.';
     els.status.textContent='Needs attention';
     els.lastUpdated.textContent='Update failed';
+    return false;
   }).finally(function(){
     els.refreshBtn.disabled=false;
   });
@@ -5505,7 +5507,12 @@ function init(){
     if(!ok)return;
     if(location.hash==='#strava'&&stravaBetaAdminVisible())setTimeout(openStravaModal,0);
     if(location.hash==='#training-customization')setTimeout(openTrainingCustomization,0);
-    loadCalendar();
+    loadCalendar().then(function(loaded){
+      if(loaded&&!els.mainPage.hidden&&location.hash==='#add-activity'){
+        openAddDayModal(todayInputValue(),'easy');
+        history.replaceState(null,'',location.pathname+location.search);
+      }
+    });
   });
 }
 init();

@@ -270,6 +270,13 @@
   }
   if(!fieldPage)quick.appendChild(link('New Field Practice','/field-practice.html#new-practice'));
   if(!speedPage)quick.appendChild(link('Add Speed Result','/speed-trak.html#add-result'));
+  if(calendarPage){
+    var addActivity=document.createElement('button');
+    addActivity.type='button';
+    addActivity.textContent='Add Training Activity';
+    addActivity.addEventListener('click',function(){openAddDayModal(todayInputValue(),'easy');});
+    quick.appendChild(addActivity);
+  }else quick.appendChild(link('Add Training Activity','/training-calendar.html#add-activity'));
   if(powerPage){
     var newWorkout=document.createElement('button');
     newWorkout.type='button';
