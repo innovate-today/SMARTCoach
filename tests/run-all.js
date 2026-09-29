@@ -3210,7 +3210,9 @@ function checkPowerTrakFeature() {
 }
 
 function checkDashboardWhatsNew() {
-  const html = fs.readFileSync("dashboard.html", "utf8");
+  const html = fs.readFileSync("dashboard.html", "utf8") + fs.readFileSync("assets/smart-trak-guide-content.js", "utf8");
+  const overview = fs.readFileSync("overview.html", "utf8");
+  if (!overview.includes('id="whatsNewBtn"') || !fs.readFileSync("dashboard.html", "utf8").includes('id="whatsNewBtn" class="whats-new-btn" type="button" aria-haspopup="dialog" hidden')) throw new Error("What's New pill must be visible on Overview only.");
   [
     'id="whatsNewBtn"',
     "What's New",
@@ -3958,7 +3960,9 @@ function checkTrainingCalendarDeletedMeetGuard() {
 }
 
 function checkDashboardStartHere() {
-  const html = fs.readFileSync("dashboard.html", "utf8");
+  const html = fs.readFileSync("dashboard.html", "utf8") + fs.readFileSync("assets/smart-trak-guide-content.js", "utf8");
+  const overview = fs.readFileSync("overview.html", "utf8");
+  if (!overview.includes('id="startHereBtn"') || !fs.readFileSync("dashboard.html", "utf8").includes('id="startHereBtn" class="start-here-btn" type="button" aria-haspopup="dialog" onclick="openStartHere()" hidden')) throw new Error("Start Here pill must be visible on Overview only.");
   const guide = fs.readFileSync("SMART_TRAK_COACH_HOW_TO.md", "utf8");
   [
     'id="startHereBtn"',

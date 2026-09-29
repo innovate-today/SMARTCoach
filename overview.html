@@ -14,6 +14,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .page{max-width:1480px;margin:0 auto;padding:18px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:18px;box-shadow:0 10px 24px rgba(15,23,42,.08)}
 .brand{display:flex;align-items:center;gap:12px;min-width:0}.brand img{width:56px;height:56px;object-fit:contain}
+.brand-title{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.guide-pill{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:5px 9px;border-radius:999px;background:#eef6ff;border-color:#b7c7ea;font-size:12px;white-space:nowrap}.guide-pill:hover{background:#dbeafe}.guide-dot{width:8px;height:8px;border-radius:50%;background:#0f9f6e}.guide-dot.updates{background:var(--blue)}.guide-count{padding:2px 6px;border-radius:999px;background:#dbeafe;font-size:11px}
 h1{font-size:25px;margin:0;line-height:1.1}.sub{font-size:14px;color:var(--muted);margin-top:4px}
 .actions{display:flex;gap:8px;align-items:center}
 button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff;color:#173891;font-family:inherit;font-size:13px;font-weight:800;padding:8px 11px;min-height:34px;cursor:pointer;text-decoration:none}
@@ -34,6 +35,7 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
 .empty{color:var(--muted);font-size:13px;padding:18px 2px}
 .access{max-width:430px;margin:48px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:20px}.access h2{font-size:20px;margin:0 0 6px}.access p{font-size:13px;color:var(--muted);line-height:1.45}.access label{display:grid;gap:6px;font-size:12px;font-weight:800;margin-top:14px}.access input{width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;font-size:16px}.access button{width:100%;margin-top:14px}
 .error{color:#b91c1c!important}
+.guide-dialog{width:min(650px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:1px solid var(--line);border-radius:8px;box-shadow:0 20px 60px rgba(15,23,42,.25);color:var(--ink)}.guide-dialog::backdrop{background:rgba(15,23,42,.45)}.guide-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line)}.guide-head h2{font-size:19px;margin:0}.guide-body{padding:16px 18px;overflow:auto;max-height:calc(100vh - 130px)}.guide-list{display:grid;gap:10px}.guide-item{border:1px solid var(--line);border-radius:6px;padding:12px;background:#fbfdff}.guide-item h3{font-size:14px;margin:0 0 7px}.guide-item p{font-size:13px;color:var(--muted);margin:0 0 8px}.guide-item ul,.guide-item ol{font-size:13px;line-height:1.5;margin:0 0 8px;padding-left:20px}.guide-actions{display:flex;flex-wrap:wrap;gap:6px}.guide-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}.guide-footer a{font-size:13px;color:#173891;font-weight:800}
 @media(max-width:950px){.top{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric:nth-child(2){border-right:0}.metric:nth-child(n+3){padding-top:14px}}
 @media(max-width:560px){.page{padding:10px}.metrics{gap:10px}.metric{padding:0 8px}.metric b{font-size:21px}.heading{align-items:flex-start;flex-direction:column}.updated{text-align:left}}
 </style>
@@ -42,7 +44,7 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
 <body>
 <main class="page">
   <header class="top">
-    <div class="brand"><img id="brandLogo" src="/assets/smart-logo.png" alt="SMART Trak"><div><h1>SMART Trak</h1><div class="sub">Team overview</div></div></div>
+    <div class="brand"><img id="brandLogo" src="/assets/smart-logo.png" alt="SMART Trak"><div><div class="brand-title"><h1>SMART Trak</h1><button id="startHereBtn" class="guide-pill" type="button" aria-haspopup="dialog"><span class="guide-dot" aria-hidden="true"></span>Start Here</button><button id="whatsNewBtn" class="guide-pill" type="button" aria-haspopup="dialog"><span id="whatsNewDot" class="guide-dot updates" aria-hidden="true"></span>What's New <span id="whatsNewCount" class="guide-count" hidden></span></button></div><div class="sub">Team overview</div></div></div>
     <div class="actions"><button id="overviewRefreshBtn" type="button">Refresh</button></div>
   </header>
   <section id="accessPanel" class="access" hidden>
@@ -73,6 +75,9 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
   </div>
   <p id="loadError" class="notice error" role="alert" hidden></p>
 </main>
+<dialog id="startHereDialog" class="guide-dialog" aria-labelledby="startHereTitle"><div class="guide-head"><h2 id="startHereTitle">Start Here</h2><button id="startHereClose" type="button">Close</button></div><div class="guide-body"><div id="startHereList" class="guide-list"></div><div class="guide-footer"><a id="startHereGuideLink" href="/how-to.html">Open How To Guide</a></div></div></dialog>
+<dialog id="whatsNewDialog" class="guide-dialog" aria-labelledby="whatsNewTitle"><div class="guide-head"><h2 id="whatsNewTitle">What's New</h2><button id="whatsNewClose" type="button">Close</button></div><div class="guide-body"><div id="whatsNewList" class="guide-list"></div><div class="guide-footer"><span id="whatsNewStatus" class="sub"></span><button id="whatsNewSeenBtn" type="button">Mark All Seen</button></div></div></dialog>
+<script src="/assets/smart-trak-guide-content.js"></script>
 <script>
 (function(){
   'use strict';
@@ -82,6 +87,36 @@ button,.button{border:1px solid var(--line);border-radius:6px;background:#f8fbff
   window.accountKey=accountKey;
   window.pageUrl=function(path){var url=new URL(path,location.origin);if(key!=='default')url.searchParams.set('account',key);return url.pathname+url.search;};
   document.querySelectorAll('[data-route]').forEach(function(link){link.href=pageUrl(link.dataset.route);});
+  var guide=window.smartTrakGuideContent;
+  function addText(parent,tag,value){var node=document.createElement(tag);node.textContent=value;parent.appendChild(node);return node;}
+  function addList(parent,tag,values){var list=document.createElement(tag);values.forEach(function(value){addText(list,'li',value);});parent.appendChild(list);}
+  function guideHref(path){return path.charAt(0)==='#'?pageUrl('/dashboard.html')+path:pageUrl(path);}
+  function renderStartHere(){
+    var list=document.getElementById('startHereList');list.replaceChildren();
+    guide.paths.forEach(function(path){
+      var item=document.createElement('section'),actions=document.createElement('div');item.className='guide-item';actions.className='guide-actions';
+      addText(item,'h3',path.title);addText(item,'p',path.desc);addList(item,'ol',path.steps);
+      path.actions.forEach(function(action){var link=addText(actions,'a',action[0]);link.className='button';link.href=guideHref(action[1]);});
+      item.appendChild(actions);list.appendChild(item);
+    });
+    document.getElementById('startHereGuideLink').href=pageUrl('/how-to.html');
+  }
+  function unreadCount(){
+    try{if(localStorage.getItem('smartcoachWhatsNewSeen_'+key)===guide.version)return 0;}catch(e){}
+    return guide.updates.reduce(function(count,group){return count+group.items.length;},0);
+  }
+  function updateWhatsNewPill(){var count=unreadCount();document.getElementById('whatsNewDot').hidden=!count;document.getElementById('whatsNewCount').hidden=!count;document.getElementById('whatsNewCount').textContent=count?count+' New':'';}
+  function renderWhatsNew(){
+    var list=document.getElementById('whatsNewList');list.replaceChildren();
+    guide.updates.forEach(function(group){var item=document.createElement('section');item.className='guide-item';addText(item,'h3',group.area);addList(item,'ul',group.items);list.appendChild(item);});
+    var count=unreadCount();document.getElementById('whatsNewStatus').textContent=count?count+' unread update'+(count===1?'':'s'):'All updates seen';
+  }
+  document.getElementById('startHereBtn').addEventListener('click',function(){renderStartHere();document.getElementById('startHereDialog').showModal();});
+  document.getElementById('startHereClose').addEventListener('click',function(){document.getElementById('startHereDialog').close();});
+  document.getElementById('whatsNewBtn').addEventListener('click',function(){renderWhatsNew();document.getElementById('whatsNewDialog').showModal();});
+  document.getElementById('whatsNewClose').addEventListener('click',function(){document.getElementById('whatsNewDialog').close();});
+  document.getElementById('whatsNewSeenBtn').addEventListener('click',function(){try{localStorage.setItem('smartcoachWhatsNewSeen_'+key,guide.version);}catch(e){}updateWhatsNewPill();renderWhatsNew();});
+  updateWhatsNewPill();
   function headers(){var value={'X-SMARTCoach-Account':key},session='',code='';try{session=localStorage.getItem('sc_session_remembered_'+key)||sessionStorage.getItem('sc_session_'+key)||'';code=localStorage.getItem('sc_access_'+key)||'';}catch(e){}if(session)value['X-SMARTCoach-Session']=session;else if(code)value['X-SMARTCoach-Access-Code']=code;return value;}
   function request(path,options){return fetch(path,Object.assign({cache:'no-store',headers:headers()},options||{})).then(function(res){return res.json().then(function(data){if(!res.ok)throw data;return data;});});}
   function showAccess(message,blocked){content.hidden=true;accessPanel.hidden=false;document.getElementById('accessMessage').textContent=message||'Enter your coach access code to open this account.';document.getElementById('accessForm').hidden=!!blocked;if(!blocked)document.getElementById('accessCode').focus();}

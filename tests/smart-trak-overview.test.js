@@ -5,6 +5,10 @@ const { dashboardOverviewPayload } = require('../api/ghl/dashboard');
 
 const html = fs.readFileSync('overview.html', 'utf8');
 const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1];
+const guideContext = {};
+guideContext.window = guideContext;
+vm.runInNewContext(fs.readFileSync('assets/smart-trak-guide-content.js', 'utf8'), guideContext);
+const guide = guideContext.smartTrakGuideContent;
 assert.ok(html.includes('/assets/smart-trak-navigation.js?v=20260927-fitness-review'));
 const nodes = new Map();
 function node(id) {
@@ -13,7 +17,7 @@ function node(id) {
     addEventListener(event, handler) { this.handlers[event] = handler; },
     appendChild(child) { this.children.push(child); },
     replaceChildren() { this.children = []; },
-    focus() {}
+    focus() {}, showModal() { this.open = true; }, close() { this.open = false; }
   });
   return nodes.get(id);
 }
@@ -58,8 +62,11 @@ const recentOnly = dashboardOverviewPayload({ ...payload, recentMeetResults: [
   { athleteName: 'Earlier', meetDate: newerMeetDate, syncedAt: new Date().toISOString() }
 ] });
 assert.deepStrictEqual(recentOnly.recentMeetResults.map(row => row.athleteName), ['Yesterday', 'Earlier']);
+assert.ok(html.includes('id="startHereBtn"') && html.includes('id="whatsNewBtn"'));
+assert.ok(html.includes('/assets/smart-trak-guide-content.js'));
 const context = {
   URL, URLSearchParams, Date, location: { search: '?account=school-a', origin: 'https://example.test' },
+  smartTrakGuideContent: guide,
   localStorage: browserStorage, sessionStorage: browserStorage,
   document: {
     getElementById: node,
@@ -76,6 +83,21 @@ const context = {
 };
 context.window = context;
 vm.runInNewContext(script, context);
+assert.strictEqual(node('whatsNewCount').textContent, guide.updates.reduce((sum, group) => sum + group.items.length, 0) + ' New');
+node('startHereBtn').handlers.click();
+assert.strictEqual(node('startHereDialog').open, true);
+assert.strictEqual(node('startHereList').children.length, guide.paths.length);
+assert.strictEqual(node('startHereList').children[0].children[3].children[0].href, '/athletes.html?account=school-a');
+node('startHereClose').handlers.click();
+assert.strictEqual(node('startHereDialog').open, false);
+node('whatsNewBtn').handlers.click();
+assert.strictEqual(node('whatsNewDialog').open, true);
+assert.strictEqual(node('whatsNewList').children.length, guide.updates.length);
+node('whatsNewSeenBtn').handlers.click();
+assert.strictEqual(storage.get('smartcoachWhatsNewSeen_school-a'), guide.version);
+assert.strictEqual(node('whatsNewCount').hidden, true);
+node('whatsNewClose').handlers.click();
+assert.strictEqual(node('whatsNewDialog').open, false);
 const lockedNodes = new Map();
 const lockedNode = id => {
   if (!lockedNodes.has(id)) lockedNodes.set(id, {
@@ -87,6 +109,7 @@ const lockedNode = id => {
 const lockedRequests = [];
 const lockedContext = {
   URL, URLSearchParams, Date, location: { search: '?account=school-a', origin: 'https://example.test' },
+  smartTrakGuideContent: guide,
   localStorage: browserStorage, sessionStorage: browserStorage,
   document: { getElementById: lockedNode, querySelectorAll: () => [], createElement: () => ({}) },
   fetch(path) {
@@ -109,6 +132,7 @@ function overviewLoadCase(snapshot, delayRefresh) {
   };
   const caseContext = {
     URL, URLSearchParams, Date, setTimeout(callback) { timers.push(callback); },
+    smartTrakGuideContent: guide,
     location: { search: '?account=school-a', origin: 'https://example.test' },
     localStorage: browserStorage, sessionStorage: browserStorage,
     document: { getElementById: caseNode, querySelectorAll: () => [], createElement: () => caseNode(Symbol()) },
