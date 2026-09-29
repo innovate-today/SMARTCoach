@@ -3230,9 +3230,9 @@ function checkDashboardWhatsNew() {
     "smartcoachWhatsNewSeen_",
     "Keep Trak",
     "Attendance Trak",
-    "Dashboard",
-    "Customize Dashboard lets coaches hide optional shortcuts or summary cards they do not use every day.",
-    "Hidden tools keep their saved data and can be turned back on with Show All.",
+    "SMART Trak Navigation",
+    "Team Overview is the starting page for roster, distance activity, recent meet results, and workspace links.",
+    "Use the shared Athletes, Training, Distance Trak, Speed Trak, Power Trak, Meets & Results, Tools, and Quick Add navigation to reach existing workflows.",
     "Training Calendar",
     "Training Customization lets coaches adjust the effort percentages used for target pace ranges.",
     "Saved custom percentages are account-wide and used by the SMARTCoach app when calculating workout targets.",
@@ -3987,7 +3987,7 @@ function checkDashboardStartHere() {
   });
   if (html.includes("escAttr(")) throw new Error("Dashboard Start Here references missing escAttr helper.");
   [
-    "Use **Start Here** on the Dashboard",
+    "Use **Start Here** beside the **Team Overview** heading",
     "It stays available after setup is complete",
     "**Set Up My Team**",
     "use **Open SMARTCoach** to time or log work",

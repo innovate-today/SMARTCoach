@@ -1,6 +1,6 @@
 # SMARTCoach / SMART Trak Project State
 
-Last updated: 2026-09-16
+Last updated: 2026-09-28
 
 Use this file as the starting point when resuming SMARTCoach work in a new chat.
 
@@ -26,6 +26,15 @@ Continue SMARTCoach from SMARTCOACH_PROJECT_STATE.md.
 - Deployment: Vercel from GitHub `innovate-today/SMARTCoach`
 - Current working branch: `main`, pushed to `main` with `git push` from the repo root.
 - Codex can usually push now. If GitHub DNS fails on the first try, retry once.
+
+## Current SMART Trak Revamp State (2026-09-28)
+
+- `docs/smart-trak-revamp-inventory.md` is the detailed navigation map. Team Overview is live at `/overview.html`; the former dashboard is titled Distance Trak at `/dashboard.html`. The shared navigation covers the desktop coach pages without replacing their existing workflows. It sits in a separate row below the white header except on Distance Trak, which keeps its existing header layout. Rack iPad kiosk mode is excluded.
+- Start Here and What's New are beside the Team Overview heading. Shared navigation order is Overview, Athletes, Training, Distance Trak, Speed Trak, Power Trak, Meets & Results, Tools, Quick Add, Account, then page actions and Refresh. Quick Add routes to existing create flows; the Power Trak Manage Meets entry now uses the dashboard deep link. Account contains Sign Out, with Staff Access visible only to an authorized Head Coach. Account Settings remains outside the coach menu.
+- The user finalized the customization decision: hide Customize Dashboard for everyone and show all optional Distance Trak tools even when older saved preferences hid them. The saved preferences and modal code remain, but visibility ignores those flags. Do not reintroduce the control as a pending revamp item.
+- Keep Trak, Field Practice, and Weather now load the configured school logo from account status. The other page content and workflows were not redesigned. Automated navigation and regression tests pass; a live Coach and Head Coach walkthrough is still useful.
+- Staff Access is still hosted by the Distance Trak modal. The user prefers it to open on Overview. This is **not implemented**: changing only the link would strand the modal, so move its management UI and save/revoke logic into a reusable Overview-hosted flow before changing the route. Preserve backend Head Coach authorization.
+- Keep `SMART_TRAK_COACH_HOW_TO.md` and `assets/smart-trak-guide-content.js` aligned with shipped coach workflows. `how-to.html` renders the markdown directly; the guide content asset powers Start Here and What's New. Update `SMARTCOACH_PROJECT_STATE.md` after material workflow changes, distinguishing shipped work from proposed or deferred work.
 
 Current launch status:
 

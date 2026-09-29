@@ -14,7 +14,7 @@ The phone app leaves extra space near the bottom action buttons for phones that 
 
 ## Best Place To Start
 
-Use **Start Here** on the Dashboard when you are not sure what to do first. It stays available after setup is complete and opens short goal paths with the next few coach actions and buttons to the right pages.
+Use **Start Here** beside the **Team Overview** heading when you are not sure what to do first. It stays available after setup is complete and opens short goal paths with the next few coach actions and buttons to the right pages.
 
 Common goal paths:
 
@@ -39,15 +39,21 @@ SMARTCoach has five customer plans:
 
 Only active athletes count toward the Pro athlete limit. Archive or mark graduated, inactive, or quit athletes inactive instead of deleting them unless the record was created by mistake. A coach can only move to a lower Pro plan after the active athlete count is at or below that plan's limit. SMARTCoach does not automatically choose athletes to make inactive. Pro accounts can include up to 10 assistant coach seats. Each active staff coach should use their own personal coach code so access and device activity can be tied to the right coach.
 
-Personal coach codes can be created or reset from **Staff Access** on the Dashboard. A Full Access coach code unlocks both SMART Trak and the SMARTCoach phone app. An App Only coach code unlocks the phone app only. Inactive coaches cannot use their personal code. A shared fallback code may still exist for recovery or transition, but staff should use named personal codes for normal access. If the fallback code is lost, click **Send Temporary Code** to email a temporary recovery code to the saved account owner, then enter that temporary code and create a new fallback code. The old code is never displayed. Essential app-only coaches can use **Account Access** from the app settings to email a temporary recovery code and create a new app access code. Support can also help reset access when needed.
+Personal coach codes can be created or reset from **Account > Staff Access** in SMART Trak. The current management window opens on Distance Trak. A Full Access coach code unlocks both SMART Trak and the SMARTCoach phone app. An App Only coach code unlocks the phone app only. Inactive coaches cannot use their personal code. A shared fallback code may still exist for recovery or transition, but staff should use named personal codes for normal access. If the fallback code is lost, click **Send Temporary Code** to email a temporary recovery code to the saved account owner, then enter that temporary code and create a new fallback code. The old code is never displayed. Essential app-only coaches can use **Account Access** from the app settings to email a temporary recovery code and create a new app access code. Support can also help reset access when needed.
 
 Beta customers can use a 30-day Pro 100 trial. After the trial, access continues only when the subscription is active. If a customer wants a lower paid plan after the trial, the active roster must fit that plan before the downgrade can be saved. Canceled or failed-payment accounts lose access until billing is corrected.
 
 Before cancelling, export the data you want to keep from SMART Trak. SMARTCoach keeps cancelled account data for 12 months in case the program returns, but cancelled accounts lose access, so the coach should export before cancellation and contact support if help is needed.
 
-## SMART Trak Dashboard
+## Team Overview And Navigation
 
-Use the Dashboard as the daily coaching home base. It shows roster status, training volume, current fitness, recent meet results, completed workouts, and athlete progress.
+**Overview** is the cross-program starting page. It shows active athletes, this week's distance workouts and volume, recent meet results, and links to the existing workspaces. **Start Here** and **What's New** sit beside the Team Overview heading, below the white header. The shared navigation sits below the white header on the other coach pages as well; Distance Trak keeps its existing header layout.
+
+Use **Athletes** for Roster, Attendance, Equipment Trak, Docu Trak, and athlete calendar email tools. The personal Calendar Link, Docu Trak, and Equipment Trak actions also remain on each athlete's roster row. Use **Training** for Training Calendar, Athlete Setup, Upload/Paste Plan, Auto Build Plan, Training Customization, Fitness Review, and Field Practice. **Distance Trak** contains Distance Overview and Miles Trak. **Speed Trak** and **Power Trak** open their existing workspaces. **Meets & Results** contains Meet History, Results, Records, and the Track and XC simulators. **Tools** contains Keep Trak and Weather. **Quick Add** opens the existing create or entry flows; **Account** contains Sign Out and, for the Head Coach, Staff Access.
+
+## Distance Trak
+
+Open **Distance Trak > Distance Overview** for the existing distance dashboard. It shows roster status, training volume, current fitness, recent meet results, completed workouts, and athlete progress.
 
 How to use it:
 
@@ -63,7 +69,7 @@ How to use it:
 7. Click **Show workouts** under an athlete to see completed workout details.
 8. Use **Edit** to correct a saved workout or **Void** to remove a bad entry from reporting.
 
-In **Roster Overview**, click an athlete's name or the **Snapshot** button for a quick athlete-level view without leaving the Dashboard. The snapshot combines roster status, class or grade details, current fitness, latest meet and training results, weekly and monthly volume, attendance, required-document completion, recent Speed Trak and Field Practice activity, PB/SB counts, recent meet and training history, and saved Power Trak results. Power Trak loads separately after the snapshot opens so the rest of the athlete information appears immediately. Use the buttons inside the snapshot to open Roster, Meet History, Speed Trak, Power Trak, or Attendance for deeper review and editing.
+In **Roster Overview**, use **Personal Bests** for an athlete's best saved speed, strength, and field marks. **XC Details** appears only for XC runners and shows their distance-training and meet details. The athlete view also provides links to Roster, Meet History, Speed Trak, Power Trak, and Attendance for deeper review and editing. Power Trak data loads separately so other athlete information appears first.
 
 Weekly volume and **Volume by Athlete** count completed workout totals saved for the athlete, including completed totals that were saved without `mi` in the row.
 
@@ -91,11 +97,9 @@ If a workout has actual rep paces but no saved target, Completed Workouts still 
 
 For completed Easy/Recovery Run or Long Run mileage rows, **Target Review** can use the athlete's current fitness even when no planned target was saved on that workout. If the row has completed distance and time, SMART Trak compares the athlete's actual pace to the expected pace from current fitness. Strava lap splits on an easy run do not stop this review. Saved planned targets and saved rep pace reviews still take priority when they are present.
 
-The Dashboard title includes **Start Here** and **What's New**. Use **Start Here** for goal-based setup and workflow steps. Use **What's New** to see recent SMART Trak and SMARTCoach app updates such as Keep Trak changes, Attendance Trak season tools, Dashboard Customization, Training Customization, Results Board sharing, Athlete Calendar Questions, Meet History updates, and Feedback updates for Bug Trak and Idea Trak. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list.
+Use **What's New** beside the Team Overview heading to review recent SMART Trak and SMARTCoach app updates. If unread updates are available, the button shows a **New** count. Click **Mark All Seen** after reviewing the list. The former Customize Dashboard control is hidden; previously hidden Distance Trak tools are visible again.
 
-Use **Customize Dashboard** when a coach wants to hide optional tools they do not use every day. Keep Trak, Attendance Trak, Equipment Trak, Docu Trak, Weather, Records, and Simulators can be turned off for the Dashboard view. Hiding a tool only removes its dashboard shortcut or summary card; the tool's saved data stays in SMART Trak, direct page links still work, and **Show All** can turn everything back on.
-
-The Dashboard includes a small **Staff Access** button after **Refresh**. This opens the coach access window and helps the head coach see staff, device activity, personal codes, and invite status without showing saved codes.
+For the Head Coach, **Account > Staff Access** opens the coach access window on Distance Trak to review staff, device activity, personal codes, and invite status without showing saved codes.
 
 Only the head coach can see and use **Staff Access**. Assistant coaches use their personal coach code or SMART Trak invite link for normal access, while staff-management actions stay with the head coach.
 
@@ -189,7 +193,7 @@ Use **Speed Trak → Sessions** as the completed-history view for speed testing.
 
 How to use Staff Access:
 
-1. Click **Staff Access** on the Dashboard.
+1. Choose **Account > Staff Access** in the shared navigation.
 2. Check **Assistant coach seats** to confirm the account allows up to 10 assistant coach seats.
 3. Check **Active devices** to see how many devices have used coach access in the last 30 days.
 4. Check **Seen this week** to see how many devices have been active recently.
